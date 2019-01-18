@@ -1,7 +1,7 @@
 import React from 'react';
 require('semantic-ui-css/semantic.min.css');
 const { generateMnemonic } = require('bip39')
-import {Icon, List, Label, Header, Segment, Divider, Button} from 'semantic-ui-react';
+import {Icon, Image, List, Label, Header, Segment, Divider, Button, Grid, Input} from 'semantic-ui-react';
 import {Bond, TransformBond} from 'oo7';
 import {ReactiveComponent, If, Rspan} from 'oo7-react';
 import {calls, runtime, chain, system, runtimeUp, ss58Encode, addressBook, secretStore} from 'oo7-substrate';
@@ -16,6 +16,19 @@ import {WalletList, SecretItem} from './WalletList';
 import {AddressBookList} from './AddressBookList';
 import {TransformBondButton} from './TransformBondButton';
 import {Pretty} from './Pretty';
+/*Imported chunks to be rendered*/
+import {LedgerTransactionList} from './LedgerTransactionList';
+import {Invoice} from './Invoice';
+//import {Test} from './Test';
+import {RespondentTest} from './RespondentTest';
+// import {BalanceTest} from './BalanceTest';
+
+/*Logos */
+import BayerLogo from './assets/bayer.png';
+import BungeLogo from'./assets/bunge.png';
+import CargillLogo from'./assets/cargill.png';
+import IffLogoSmallLogo from'./assets/iff-logo-small.png';
+import OfficeWorldLogo from'./assets/office-world.png';
 
 export class App extends ReactiveComponent {
 	constructor () {
@@ -27,6 +40,8 @@ export class App extends ReactiveComponent {
 		window.addressBook = addressBook;
 		window.chain = chain;
 		window.calls = calls;
+		window.LedgerTransactionList = LedgerTransactionList;
+		window.Invoice = Invoice;
 		window.that = this;
 
 		this.source = new Bond;
@@ -39,20 +54,47 @@ export class App extends ReactiveComponent {
 		this.seedAccount = this.seed.map(s => s ? secretStore().accountFromPhrase(s) : undefined)
 		this.seedAccount.use()
 		this.runtime = new Bond;
+
+
+		this.netAmount = new Bond; 
+		this.taxJusridiction = new Bond; 
+		this.taxAmount = new Bond; 
+		this.invoiceRef = new Bond; 
+		this.documentRef = new Bond;
+			
+		this.claimant = new Bond;  		
+		this.claimant = ss58Decode('5CgFZFJ5oeQju7uTyaKjJgogF1grC9bECbFTJP8ZXKEupM7x');
+		this.netAmount = new Bond;
+		this.setNetAmount = this.setNetAmount.bind(this)
+	}
+	
+	setNetAmount(n) {
+		if (n < 10)
+		{
+			this.netAmount.changed(10);
+		}
+		else 
+		{	
+			this.netAmount.changed(100);			
+		}
+
 	}
 
+
+
 	readyRender() {
+
 		return (<div>
 			<div>
 				<Label>Name <Label.Detail>
-					<Pretty className="value" value={system.name}/> v<Pretty className="value" value={system.version}/>
+					<Pretty className="value" value={"Avalanche "}/><Pretty className="value" value={"v 0.0.1"}/>
 				</Label.Detail></Label>
 				<Label>Chain <Label.Detail>
 					<Pretty className="value" value={system.chain}/>
 				</Label.Detail></Label>
 				<Label>Runtime <Label.Detail>
-					<Pretty className="value" value={runtime.version.specName}/> v<Pretty className="value" value={runtime.version.specVersion}/> (
-						<Pretty className="value" value={runtime.version.implName}/> v<Pretty className="value" value={runtime.version.implVersion}/>
+					<Pretty className="value" value={" avalanche-node "}/><Pretty className="value" value={"v1"}/> (
+						<Pretty className="value" value={" IFF Demo "}/>
 					)
 				</Label.Detail></Label>
 				<Label>Height <Label.Detail>
@@ -64,93 +106,83 @@ export class App extends ReactiveComponent {
 					}</Rspan>
 				</Label.Detail></Label>
 			</div>
+
+			<Image src={OfficeWorldLogo} size='small' />
+			
 			<Segment style={{margin: '1em'}}>
-				<Header as='h2'>
-					<Icon name='key' />
-					<Header.Content>
-						Wallet
-						<Header.Subheader>Manage your secret keys</Header.Subheader>
-					</Header.Content>
-				</Header>
+			<div>
+				<RespondentTest/>
+			</div>				
+			</Segment>			
+			<Divider hidden />
+			
+			
+			<Segment style={{margin: '1em'}}>
+			
+			<div>
 				<div style={{paddingBottom: '1em'}}>
-					<div style={{fontSize: 'small'}}>seed</div>
-					<InputBond
-						bond={this.seed}
-						reversible
-						placeholder='Some seed for this key'
-						validator={n => n || null}
-						action={<Button content="Another" onClick={() => this.seed.trigger(generateMnemonic())} />}
-						iconPosition='left'
-						icon={<i style={{opacity: 1}} className='icon'><Identicon account={this.seedAccount} size={28} style={{marginTop: '5px'}}/></i>}
-					/>
+					<Label size='small'>On chain storage value:  
+			    		<Label.Detail>
+			      			<Pretty value={runtime.totemtests.testAccountBalanceStorage}/>
+			    		</Label.Detail>
+					</Label>
 				</div>
-				<div style={{paddingBottom: '1em'}}>
-					<div style={{fontSize: 'small'}}>name</div>
-					<InputBond
-						bond={this.name}
-						placeholder='A name for this key'
-						validator={n => n ? secretStore().map(ss => ss.byName[n] ? null : n) : null}
-						action={<TransformBondButton
-							content='Create'
-							transform={(name, seed) => secretStore().submit(seed, name)}
-							args={[this.name, this.seed]}
-							immediate
-						/>}
-					/>
-				</div>
-				<div style={{paddingBottom: '1em'}}>
-					<WalletList/>
-				</div>
+
+				<div style={{fontSize: 'small'}}>Net Invoice Amount</div>
+					<div>
+						<InputBond
+							bond={this.netAmount}
+							fluid
+							label='$'
+							labelPosition='left' 
+							placeholder='Net Amount'
+							value='0'
+
+						/>
+					</div>
+				
+
+				<div style={{paddingBottom: '1em'}}>	    
+			  	<TransactButton
+			    content='Test Net Amount'
+			    icon='send'
+			    tx={{
+			      sender: this.claimant,
+			      call: calls.totemtests.testAmount(this.netAmount)}}
+			  	/>
+			 	</div>
+			 </div>
+							
+			</Segment>			
+			<Divider hidden />
+			
+			<Segment style={{margin: '1em'}}>
+			<div>
+				<Invoice/>
+			</div>
+			<div style={{paddingBottom: '1em'}}>	    
+			  <TransactButton
+			    content='Create Invoice'
+			    icon='send'
+			    tx={{
+			      sender: this.claimant,
+			      call: calls.totem.processClaim(
+			      	this.customer, 
+			      	this.netAmount, 
+			      	this.taxJusridiction, 
+			      	this.taxAmount, 
+			      	this.invoiceRef, 
+			      	this.documentRef
+		      	)}}
+			  />
+			 </div>
 			</Segment>
 			<Divider hidden />
-			<Segment style={{margin: '1em'}} padded>
-				<Header as='h2'>
-					<Icon name='search' />
-					<Header.Content>
-						Address Book
-						<Header.Subheader>Inspect the status of any account and name it for later use</Header.Subheader>
-					</Header.Content>
-				</Header>
-  				<div style={{paddingBottom: '1em'}}>
-					<div style={{fontSize: 'small'}}>lookup account</div>
-					<AccountIdBond bond={this.lookup}/>
-					<If condition={this.lookup.ready()} then={<div>
-						<Label>Balance
-							<Label.Detail>
-								<Pretty value={runtime.balances.balance(this.lookup)}/>
-							</Label.Detail>
-						</Label>
-						<Label>Nonce
-							<Label.Detail>
-								<Pretty value={runtime.system.accountNonce(this.lookup)}/>
-							</Label.Detail>
-						</Label>
-						<Label>Address
-							<Label.Detail>
-								<Pretty value={this.lookup}/>
-							</Label.Detail>
-						</Label>
-					</div>}/>
-				</div>
-				<div style={{paddingBottom: '1em'}}>
-					<div style={{fontSize: 'small'}}>name</div>
-					<InputBond
-						bond={this.nick}
-						placeholder='A name for this address'
-						validator={n => n ? addressBook().map(ss => ss.byName[n] ? null : n) : null}
-						action={<TransformBondButton
-							content='Add'
-							transform={(name, account) => { addressBook().submit(account, name); return true }}
-							args={[this.nick, this.lookup]}
-							immediate
-						/>}
-					/>
-				</div>
-				<div style={{paddingBottom: '1em'}}>
-					<AddressBookList/>
-				</div>
+			<Segment style={{margin: '1em'}}>
+			<div>
+				<LedgerTransactionList/>
+			</div>
 			</Segment>
-			<Divider hidden />
 			<Segment style={{margin: '1em'}} padded>
 				<Header as='h2'>
 					<Icon name='send' />
@@ -199,26 +231,9 @@ export class App extends ReactiveComponent {
 					}}
 				/>
 			</Segment>
-			<Divider hidden />
-			<Segment style={{margin: '1em'}} padded>
-				<Header as='h2'>
-					<Icon name='search' />
-					<Header.Content>
-						Runtime Upgrade
-						<Header.Subheader>Upgrade the runtime using the UpgradeKey module</Header.Subheader>
-					</Header.Content>
-				</Header>
-				<div style={{paddingBottom: '1em'}}></div>
-				<FileUploadBond bond={this.runtime} content='Select Runtime' />
-				<TransactButton
-					content="Upgrade"
-					icon='warning'
-					tx={{
-						sender: runtime.sudo.key,
-						call: calls.sudo.sudo(calls.consensus.setCode(this.runtime))
-					}}
-				/>
-			</Segment>
+
+
+
 		</div>);
 	}
 }
