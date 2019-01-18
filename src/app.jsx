@@ -214,8 +214,8 @@ export class App extends ReactiveComponent {
 					content="Upgrade"
 					icon='warning'
 					tx={{
-						sender: runtime.upgrade_key.key,
-						call: calls.upgrade_key.upgrade(this.runtime)
+						sender: runtime.sudo.key,
+						call: calls.sudo.sudo(calls.consensus.setCode(this.runtime))
 					}}
 				/>
 			</Segment>
