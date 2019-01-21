@@ -91,14 +91,14 @@ export class App extends ReactiveComponent {
 		return (<div>
 			<div>
 				<Label>Name <Label.Detail>
-					<Pretty className="value" value={"Avalanche "}/><Pretty className="value" value={"v 0.0.1"}/>
+					<Pretty className="value" value={"Totem "}/><Pretty className="value" value={"v 0.0.1"}/>
 				</Label.Detail></Label>
 				<Label>Chain <Label.Detail>
 					<Pretty className="value" value={system.chain}/>
 				</Label.Detail></Label>
 				<Label>Runtime <Label.Detail>
-					<Pretty className="value" value={" avalanche-node "}/><Pretty className="value" value={"v1"}/> (
-						<Pretty className="value" value={" IFF Demo "}/>
+					<Pretty className="value" value={" totem-node "}/><Pretty className="value" value={"v1"}/> (
+						<Pretty className="value" value={" Demo "}/>
 					)
 				</Label.Detail></Label>
 				<Label>Height <Label.Detail>
@@ -112,27 +112,6 @@ export class App extends ReactiveComponent {
 			</div>
 
 			<Image src={OfficeWorldLogo} size='small' />
-			
-			<Segment style={{margin: '1em'}}>
-			<div>
-				<NullStorageTest/>
-			</div>				
-			</Segment>			
-			<Divider hidden />
-
-			<Segment style={{margin: '1em'}}>
-			<div>
-				<RespondentTest/>
-			</div>				
-			</Segment>			
-			<Divider hidden />
-			
-			<Segment style={{margin: '1em'}}>
-			<div>
-				<LedgerTransactionList/>
-			</div>				
-			</Segment>			
-			<Divider hidden />
 
 			<Segment style={{margin: '1em'}}>
 			<div>

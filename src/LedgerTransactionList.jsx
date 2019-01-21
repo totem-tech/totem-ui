@@ -9,9 +9,11 @@ import {Pretty} from './Pretty';
 export class LedgerTransactionList extends ReactiveComponent {
 	constructor () {
 		super()
+		this.officeWorldAccount = new Bond;			
+		this.officeWorldAccount.changed(ss58Decode('5CgFZFJ5oeQju7uTyaKjJgogF1grC9bECbFTJP8ZXKEupM7x')); // hardcoded account
 	}
 	
-	render() {
+	readyRender() {
 		return (<Grid celled='internally' padded columns='4' stackable>
 					<Grid.Row>					
 						<Grid.Column >
@@ -51,21 +53,21 @@ export class LedgerTransactionList extends ReactiveComponent {
 				  			<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Purchase Control:
 									<Label.Detail>
-					      				<Pretty value={runtime.totem.glPurchasingControl('5HmG48RSPxoG6S34mpPs2Lytwr4ox4sfQCSLw6gpvMhsLt9J')}/>
+					      				<Pretty value={runtime.totem.glPurchasingControl(this.officeWorldAccount)}/>
 					    			</Label.Detail>
 								</Label>
 							</div>
 							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Sales Control:
 									<Label.Detail>
-										<Pretty value={runtime.totem.glSalesControl('5HmG48RSPxoG6S34mpPs2Lytwr4ox4sfQCSLw6gpvMhsLt9J')}/>
+										<Pretty value={runtime.totem.glSalesControl(this.officeWorldAccount)}/>
 					    			</Label.Detail>
 								</Label>
 							</div>
 							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Stock Value:
 									<Label.Detail>
-										<Pretty value={runtime.totem.glStockAccount('5HmG48RSPxoG6S34mpPs2Lytwr4ox4sfQCSLw6gpvMhsLt9J')}/>
+										<Pretty value={runtime.totem.glStockAccount(this.officeWorldAccount)}/>
 					    			</Label.Detail>
 								</Label>
 							</div>
@@ -79,7 +81,7 @@ export class LedgerTransactionList extends ReactiveComponent {
 							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Stationary:
 									<Label.Detail>
-										<Pretty value={runtime.totem.glStationaryAccount('5HmG48RSPxoG6S34mpPs2Lytwr4ox4sfQCSLw6gpvMhsLt9J')}/>
+										<Pretty value={runtime.totem.glStationaryAccount(this.officeWorldAccount)}/>
 					    			</Label.Detail>
 								</Label>
 							</div>
@@ -93,14 +95,14 @@ export class LedgerTransactionList extends ReactiveComponent {
 							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Spendable Balance:  
 						    		<Label.Detail>
-						      			<Pretty value={runtime.totem.bkSpendAccount('5HmG48RSPxoG6S34mpPs2Lytwr4ox4sfQCSLw6gpvMhsLt9J')}/>
+						      			<Pretty value={runtime.totem.bkSpendAccount(this.officeWorldAccount)}/>
 						    		</Label.Detail>
 								</Label>
 							</div>
 							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Reserve Balance:  
 						    		<Label.Detail>
-						      			<Pretty value={runtime.totem.bkReserveVatAccount('5HmG48RSPxoG6S34mpPs2Lytwr4ox4sfQCSLw6gpvMhsLt9J')}/>
+						      			<Pretty value={runtime.totem.bkReserveVatAccount(this.officeWorldAccount)}/>
 						    		</Label.Detail>
 								</Label>
 							</div>

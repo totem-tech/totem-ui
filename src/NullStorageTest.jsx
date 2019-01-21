@@ -18,25 +18,16 @@ export class NullStorageTest extends ReactiveComponent {
 		this.defaultValue = new Bond;			
 		this.defaultValue.changed(ss58Decode('5C4hrfjw9DjXZTzV3MwzrrAr9P1MJhSrvWGWqi1eSuyUppTZ')); // default null account			
 
-		this.isNull = this.isNull.bind(this);		
+		this.isNullAccountId = this.isNullAccountId.bind(this);		
 		this.onNullSetDefault = this.onNullSetDefault.bind(this);
 
-		// this.storageValue = new Bond;
-		this.storageValue = Bond.all([runtime.nullstoragetest.readAccount,
-		// this.storageValue = Bond.all([runtime.totemtests.testAccount,
-								this.defaultValue]
-								).map(([a, b]) => 	
-								this.onNullSetDefault(this.isNull(a, b), 
-								// runtime.totemtests.testAccount, 
-								runtime.nullstoragetest.readAccount, 
-								'0'));
+		this.storageValue = Bond.all([runtime.nullstoragetest.readAccount, this.defaultValue])
+									.map(([a, b]) => this.onNullSetDefault(this.isNullAccountId(a, b), a, '0'));
 	}
 
-	isNull (a, b) {
-
-
-		console.log(ss58Encode(a));
-		console.log(ss58Encode(b));
+	isNullAccountId (a, b) {
+		// console.log(ss58Encode(a));
+		// console.log(ss58Encode(b));
 		if (ss58Encode(a) === ss58Encode(b) || !a ) {
 			return true;
 		} else {
