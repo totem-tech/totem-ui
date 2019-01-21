@@ -4,7 +4,7 @@ const { generateMnemonic } = require('bip39')
 import {Icon, Image, List, Label, Header, Segment, Divider, Button, Grid, Input} from 'semantic-ui-react';
 import {Bond, TransformBond} from 'oo7';
 import {ReactiveComponent, If, Rspan} from 'oo7-react';
-import {calls, runtime, chain, system, runtimeUp, ss58Encode, addressBook, secretStore} from 'oo7-substrate';
+import {calls, runtime, chain, system, runtimeUp, ss58Encode, ss58Decode, addressBook, secretStore} from 'oo7-substrate';
 import Identicon from 'polkadot-identicon';
 import {AccountIdBond, SignerBond} from './AccountIdBond.jsx';
 import {BalanceBond} from './BalanceBond.jsx';
@@ -21,6 +21,7 @@ import {LedgerTransactionList} from './LedgerTransactionList';
 import {Invoice} from './Invoice';
 //import {Test} from './Test';
 import {RespondentTest} from './RespondentTest';
+import {NullStorageTest} from './NullStorageTest';
 // import {BalanceTest} from './BalanceTest';
 
 /*Logos */
@@ -66,6 +67,9 @@ export class App extends ReactiveComponent {
 		this.claimant = ss58Decode('5CgFZFJ5oeQju7uTyaKjJgogF1grC9bECbFTJP8ZXKEupM7x');
 		this.netAmount = new Bond;
 		this.setNetAmount = this.setNetAmount.bind(this)
+
+
+
 	}
 	
 	setNetAmount(n) {
@@ -111,78 +115,32 @@ export class App extends ReactiveComponent {
 			
 			<Segment style={{margin: '1em'}}>
 			<div>
+				<NullStorageTest/>
+			</div>				
+			</Segment>			
+			<Divider hidden />
+
+			<Segment style={{margin: '1em'}}>
+			<div>
 				<RespondentTest/>
 			</div>				
 			</Segment>			
 			<Divider hidden />
 			
-			
-			<Segment style={{margin: '1em'}}>
-			
-			<div>
-				<div style={{paddingBottom: '1em'}}>
-					<Label size='small'>On chain storage value:  
-			    		<Label.Detail>
-			      			<Pretty value={runtime.totemtests.testAccountBalanceStorage}/>
-			    		</Label.Detail>
-					</Label>
-				</div>
-
-				<div style={{fontSize: 'small'}}>Net Invoice Amount</div>
-					<div>
-						<InputBond
-							bond={this.netAmount}
-							fluid
-							label='$'
-							labelPosition='left' 
-							placeholder='Net Amount'
-							value='0'
-
-						/>
-					</div>
-				
-
-				<div style={{paddingBottom: '1em'}}>	    
-			  	<TransactButton
-			    content='Test Net Amount'
-			    icon='send'
-			    tx={{
-			      sender: this.claimant,
-			      call: calls.totemtests.testAmount(this.netAmount)}}
-			  	/>
-			 	</div>
-			 </div>
-							
-			</Segment>			
-			<Divider hidden />
-			
-			<Segment style={{margin: '1em'}}>
-			<div>
-				<Invoice/>
-			</div>
-			<div style={{paddingBottom: '1em'}}>	    
-			  <TransactButton
-			    content='Create Invoice'
-			    icon='send'
-			    tx={{
-			      sender: this.claimant,
-			      call: calls.totem.processClaim(
-			      	this.customer, 
-			      	this.netAmount, 
-			      	this.taxJusridiction, 
-			      	this.taxAmount, 
-			      	this.invoiceRef, 
-			      	this.documentRef
-		      	)}}
-			  />
-			 </div>
-			</Segment>
-			<Divider hidden />
 			<Segment style={{margin: '1em'}}>
 			<div>
 				<LedgerTransactionList/>
-			</div>
-			</Segment>
+			</div>				
+			</Segment>			
+			<Divider hidden />
+
+			<Segment style={{margin: '1em'}}>
+			<div>
+				<Invoice/>
+			</div>				
+			</Segment>			
+			<Divider hidden />
+			
 			<Segment style={{margin: '1em'}} padded>
 				<Header as='h2'>
 					<Icon name='send' />
