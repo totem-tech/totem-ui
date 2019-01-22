@@ -16,6 +16,7 @@ export class Invoice extends ReactiveComponent {
 
 		this.multiply = (x, y) => x * y;
 	 	this.sumUp = (a, b) => a + b;
+	 	this.equalTo = (c, d) => {if (c == d) return true};
 
 		// Transaction Bonds
 		this.claimant = new Bond; 
@@ -43,7 +44,8 @@ export class Invoice extends ReactiveComponent {
 		this.invoiceRef.changed(0);
 
 	 	// * let netAmount = Bond.mapAll([this.quantity, this.unitPrice], this.multiply);
-
+        // * let totalAmount = Bond.all([this.netAmount, this.tax]).map(([a, b]) => sumNetToTotal(a, b));
+		
 		this.round = this.round.bind(this);
 		this.lookupUnitPrice = this.lookupUnitPrice.bind(this);
 		this.lookupTaxAmount = this.lookupTaxAmount.bind(this);
@@ -55,10 +57,23 @@ export class Invoice extends ReactiveComponent {
 	}
 
 	lookupUnitPrice(p) {
-		console.log(p._value);
-		let r = Bond.mapAll([p, 198.87], this.multiply);
+		console.log(p);
+		let r = new Bond;
+		let b = Bond.mapAll([p, 123], this.equalTo);
+		console.log(b);
+		switch (b) {
+			case true:
+				return r.changed(198.87);
+			break;
+			
+
+			default:
+			   return r.changed(100.96);
+			break;
+
+		}
+		console.log(b);
 		console.log(r);
-		return r;
 	}
 
 	lookupTaxAmount(j) {

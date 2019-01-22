@@ -16,13 +16,16 @@ import {WalletList, SecretItem} from './WalletList';
 import {AddressBookList} from './AddressBookList';
 import {TransformBondButton} from './TransformBondButton';
 import {Pretty} from './Pretty';
-/*Imported chunks to be rendered*/
+
+/*Imported fragments to be rendered*/
 import {LedgerTransactionList} from './LedgerTransactionList';
 import {Invoice} from './Invoice';
-//import {Test} from './Test';
-import {RespondentTest} from './RespondentTest';
-import {NullStorageTest} from './NullStorageTest';
-// import {BalanceTest} from './BalanceTest';
+
+/* Test */
+import {OldInvoice} from './OldInvoice';
+// import {Test} from './Test';
+// import {RespondentTest} from './RespondentTest';
+// import {NullStorageTest} from './NullStorageTest';
 
 /*Logos */
 import BayerLogo from './assets/bayer.png';
@@ -56,34 +59,7 @@ export class App extends ReactiveComponent {
 		this.seedAccount.use()
 		this.runtime = new Bond;
 
-
-		this.netAmount = new Bond; 
-		this.taxJusridiction = new Bond; 
-		this.taxAmount = new Bond; 
-		this.invoiceRef = new Bond; 
-		this.documentRef = new Bond;
-			
-		this.claimant = new Bond;  		
-		this.claimant = ss58Decode('5CgFZFJ5oeQju7uTyaKjJgogF1grC9bECbFTJP8ZXKEupM7x');
-		this.netAmount = new Bond;
-		this.setNetAmount = this.setNetAmount.bind(this)
-
-
-
-	}
-	
-	setNetAmount(n) {
-		if (n < 10)
-		{
-			this.netAmount.changed(10);
-		}
-		else 
-		{	
-			this.netAmount.changed(100);			
-		}
-
-	}
-
+}
 
 
 	readyRender() {
@@ -115,61 +91,10 @@ export class App extends ReactiveComponent {
 
 			<Segment style={{margin: '1em'}}>
 			<div>
-				<Invoice/>
+				<OldInvoice/>
 			</div>				
 			</Segment>			
 			<Divider hidden />
-			
-			<Segment style={{margin: '1em'}} padded>
-				<Header as='h2'>
-					<Icon name='send' />
-					<Header.Content>
-						Send Funds
-						<Header.Subheader>Send funds from your account to another</Header.Subheader>
-					</Header.Content>
-				</Header>
-  				<div style={{paddingBottom: '1em'}}>
-					<div style={{fontSize: 'small'}}>from</div>
-					<SignerBond bond={this.source}/>
-					<If condition={this.source.ready()} then={<span>
-						<Label>Balance
-							<Label.Detail>
-								<Pretty value={runtime.balances.balance(this.source)}/>
-							</Label.Detail>
-						</Label>
-						<Label>Nonce
-							<Label.Detail>
-								<Pretty value={runtime.system.accountNonce(this.source)}/>
-							</Label.Detail>
-						</Label>
-					</span>}/>
-				</div>
-				<div style={{paddingBottom: '1em'}}>
-					<div style={{fontSize: 'small'}}>to</div>
-					<AccountIdBond bond={this.destination}/>
-					<If condition={this.destination.ready()} then={
-						<Label>Balance
-							<Label.Detail>
-								<Pretty value={runtime.balances.balance(this.destination)}/>
-							</Label.Detail>
-						</Label>
-					}/>
-				</div>
-				<div style={{paddingBottom: '1em'}}>
-					<div style={{fontSize: 'small'}}>amount</div>
-					<BalanceBond bond={this.amount}/>
-				</div>
-				<TransactButton
-					content="Send"
-					icon='send'
-					tx={{
-						sender: runtime.indices.tryIndex(this.source),
-						call: calls.balances.transfer(this.destination, this.amount)
-					}}
-				/>
-			</Segment>
-
-
 
 		</div>);
 	}
