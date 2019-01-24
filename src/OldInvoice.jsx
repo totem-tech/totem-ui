@@ -9,14 +9,24 @@ import {TransactButton} from './TransactButton.jsx';
 import {AccountIdBond, SignerBond} from './AccountIdBond.jsx';
 import {Pretty} from './Pretty';
 
+// hardcoded here TODO: better dealt with dynamically
+const decimal_to_int = 10000;
+const int_to_decimal = 1/decimal_to_int; 
 
 export class OldInvoice extends ReactiveComponent {
 	constructor () {
 		super();
+		
+		this.multiply = (x, y) => x * y;
+	 	this.sumUp = (a, b) => a + b;
+	 	this.equalTo = (c, d) => {if (c == d) return true};
+	 	this.roundUpBondToInt = r => this.round(r, 0);
+
+
 		// Transaction Bonds
 		this.claimant = new Bond; 
 		this.customer = new Bond; 
-		this.netAmount = new Bond; 
+		// this.netAmount = new Bond; 
 		this.taxJusridiction = new Bond; 
 		this.taxAmount = new Bond; 
 		this.invoiceRef = new Bond; 
@@ -25,8 +35,12 @@ export class OldInvoice extends ReactiveComponent {
 		this.unitPrice = new Bond; 
 		this.quantity = new Bond; 
 		this.productReference = ""; 
-		this.totalAmount = new Bond; 
+		// this.totalAmount = new Bond; 
 
+		// dynamically updated Bonds
+		this.netAmount = Bond.all([this.unitPrice, this.quantity]).map(([a, b]) => Number(this.round(this.multiply(a, b), 0)));
+		this.totalAmount = Bond.all([this.netAmount, this.taxAmount]).map(([a, b]) => Number(this.round(this.sumUp(a, b), 0)));
+		
 		// function modules
 		this.cleanupQuantityInput = this.cleanupQuantityInput.bind(this)
 		this.getUnitPriceFromReferenceInput = this.getUnitPriceFromReferenceInput.bind(this)
@@ -79,59 +93,74 @@ export class OldInvoice extends ReactiveComponent {
 	}
 
 	getUnitPriceFromReferenceInput() {
+		console.log('getUnitPriceFromReferenceInput');
 		// This function takes a reference value and completes the relevant fields
 		const p = document.getElementById('unitPrice');
-		p.value = 500; // Hardcoded to test no decimals!!!
+		let u = 1988700; // USGAAP says a maximum of 3 decimal places. We'll store 4 for accuracy
+		p.value = this.round(u/10000, 2); // Hardcoded to test ensure two decimals (GAAP 3 decimal places, we display 2)
 
-		this.unitPrice.changed(p.value);
+		this.unitPrice.changed(u); // onchain storage has no decimals
 	}
 
 	getTaxAmountFromTaxCodeInput(n) {
-		// lookup from array r values
-		//const n = document.getElementById('netInvoiceAmount');
-		const x = document.getElementById('taxAmount');
-		// Hardcoded to test
-		let taxPercent = 0.20; // hardcoded to test. using 500 so that results in no decimals
-		let unRoundedTaxAmount = taxPercent * n.value; 
-		x.value = this.round(unRoundedTaxAmount, 2);
+		console.log('getTaxAmountFromTaxCodeInput');
+		// TODO lookup based on Tax code input
+		const d_Tax = document.getElementById('taxAmount');
 
-		this.taxAmount.changed(unRoundedTaxAmount);
-		//this.taxAmount._ready = true;
-		return unRoundedTaxAmount;
+		let taxPercentAsInt = 2100; // hardcoded for testing. 4 decimals
+		let taxPercent = taxPercentAsInt * int_to_decimal; // to match display in decimals for calculations
+
+		// Horrible hack in two parts until I figure out how to do React Display formatting  
+		// 9943500 * 0.21 = 2088135
+		let rawTaxAmount = n * taxPercent ;
+
+		// round and convert to Int for storage
+		this.taxAmount.changed(Number(this.round(rawTaxAmount, 0))); // 2088135
+
+		// change the display
+		d_Tax.value = this.round((rawTaxAmount * int_to_decimal), 2); // 208.81	
+
+		return rawTaxAmount;
+
 	}
 
 	calculateNetInvoiceAmount() {
-		const p = document.getElementById('unitPrice');
-		const q = document.getElementById('quantity');
-		const n = document.getElementById('netInvoiceAmount');
+		// Horrible hack in two parts until I figure out how to do React Display formatting 
+		console.log('calculateNetInvoiceAmount');
+		// Handle Displayed Amounts (decimals)
+		const d_p = document.getElementById('unitPrice');
+		const d_q = document.getElementById('quantity');
+		const d_n = document.getElementById('netInvoiceAmount');
 
-		let unRoundedNetAmount = p.value * q.value;
-		
-		n.value = this.round(unRoundedNetAmount, 2);
-		let x = this.getTaxAmountFromTaxCodeInput(n);
+		// get latest values - need to check that this.unitPrice._value; is not null 
+		let s_p = this.unitPrice._value;
+		this.quantity.changed(d_q.value); 
 
-		// Set bonded vales
-		this.quantity.changed(q.value);
-		this.netAmount.changed(unRoundedNetAmount);
-		// this.netAmount._ready = true;
+		// Unit Price * Quantity = net amount
+		// 5 * 1988700 = 9943500
+		let rawNetAmount = d_q.value * s_p;		
+		// should be 994.35
+		d_n.value = this.round((rawNetAmount * int_to_decimal), 2); // display net amout formatted two decimals
+		console.log(rawNetAmount);
+		// sending 9943500 tax amount should be updated to 2088135
+		let rawTaxAmount = this.getTaxAmountFromTaxCodeInput(rawNetAmount);
 
-		this.calculateInvoiceTotal(p, q, x);	
+		this.calculateInvoiceTotal(rawNetAmount, rawTaxAmount);
+	
 	}
 
-	calculateInvoiceTotal(p, q, x) {
+	calculateInvoiceTotal(net, tax) {
+		console.log('calculateInvoiceTotal');
+		// Horrible hack in two parts until I figure out how to do React Display formatting 	
 		const t = document.getElementById('totalInvoiceAmount');
-
-		let unRoundedNetAmount = p.value * q.value;
-		let unRoundedTotal = x + unRoundedNetAmount;
-
-		t.value = this.round(unRoundedTotal, 2);
+		t.value = this.round(((net + tax) * int_to_decimal), 2); // Net amount + tax amount
 		
-		// Set bonded vales
-		this.totalAmount.changed(unRoundedTotal);
+		// for testing to check ready status.
 		this.debugValues();
+		
 	}
 
-
+	
 
 
 	readyRender () {

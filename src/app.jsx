@@ -61,6 +61,10 @@ export class App extends ReactiveComponent {
 
 }
 
+	round(value, decimals) {
+		return Number(Math.round(value +'e'+ decimals) +'e-'+ decimals).toFixed(decimals);
+	}
+
 
 	readyRender() {
 
@@ -75,7 +79,7 @@ export class App extends ReactiveComponent {
 				<Label>Runtime <Label.Detail>
 					<Pretty className="value" value={" totem-node "}/><Pretty className="value" value={"v1"}/> (
 						<Pretty className="value" value={" Demo "}/>
-					)
+					) 
 				</Label.Detail></Label>
 				<Label>Height <Label.Detail>
 					<Pretty className="value" value={chain.height}/>
@@ -91,10 +95,66 @@ export class App extends ReactiveComponent {
 
 			<Segment style={{margin: '1em'}}>
 			<div>
-				<OldInvoice/>
+				<OldInvoice />
 			</div>				
 			</Segment>			
 			<Divider hidden />
+
+			<Segment style={{margin: '1em'}} padded>
+				<Header as='h2'>
+					<Icon name='send' />
+					<Header.Content>
+						Send Funds
+						<Header.Subheader>Send funds from your account to another</Header.Subheader>
+					</Header.Content>
+				</Header>
+  				<div style={{paddingBottom: '1em'}}>
+					<div style={{fontSize: 'small'}}>from</div>
+					<SignerBond bond={this.source}/>
+					<If condition={this.source.ready()} then={<span>
+						<Label>Balance
+							<Label.Detail>
+								<Pretty value={runtime.balances.balance(this.source).map(x => this.round(x/1000, 2)+' Dollars ')}/>
+							</Label.Detail>
+						</Label>
+						<Label>Nonce
+							<Label.Detail>
+								<Pretty value={runtime.system.accountNonce(this.source)}/>
+							</Label.Detail>
+						</Label>
+					</span>}/>
+				</div>
+				<div style={{paddingBottom: '1em'}}>
+					<div style={{fontSize: 'small'}}>to</div>
+					<AccountIdBond bond={this.destination}/>
+					<If condition={this.destination.ready()} then={
+						<Label>Balance
+							<Label.Detail>
+								<Pretty value={runtime.balances.balance(this.destination).map(x => {
+									let y = x/1000; 
+									let z = this.round(y, 0);
+									let r = z.toLocaleString('en-US', {minimumFractionDigits: 2}); 
+									return r+' Dollars ';
+								}
+								)
+							}/>
+							</Label.Detail> 
+						</Label>
+					}/>
+				</div>
+				<div style={{paddingBottom: '1em'}}>
+					<div style={{fontSize: 'small'}}>amount</div>
+					<BalanceBond bond={this.amount}/>
+				</div>
+				<TransactButton
+					content="Send"
+					icon='send'
+					tx={{
+						sender: runtime.indices.tryIndex(this.source),
+						call: calls.balances.transfer(this.destination, this.amount)
+					}}
+				/>
+			</Segment>
 
 		</div>);
 	}

@@ -53,21 +53,21 @@ export class LedgerTransactionList extends ReactiveComponent {
 				  			<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Purchase Control:
 									<Label.Detail>
-					      				<Pretty value={runtime.totem.glPurchasingControl(this.officeWorldAccount)}/>
+					      				<Pretty value={runtime.totem.glPurchasingControl(this.officeWorldAccount).map(x => this.round(x/1000, 2)+' Dollars ')}/>
 					    			</Label.Detail>
 								</Label>
 							</div>
 							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Sales Control:
 									<Label.Detail>
-										<Pretty value={runtime.totem.glSalesControl(this.officeWorldAccount)}/>
+										<Pretty value={runtime.totem.glSalesControl(this.officeWorldAccount).map(x => this.round(x/1000, 2)+' Dollars ')}/>
 					    			</Label.Detail>
 								</Label>
 							</div>
 							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Stock Value:
 									<Label.Detail>
-										<Pretty value={runtime.totem.glStockAccount(this.officeWorldAccount)}/>
+										<Pretty value={runtime.totem.glStockAccount(this.officeWorldAccount).map(x => this.round(x/1000, 2)+' Dollars ')}/>
 					    			</Label.Detail>
 								</Label>
 							</div>
@@ -81,7 +81,7 @@ export class LedgerTransactionList extends ReactiveComponent {
 							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Stationary:
 									<Label.Detail>
-										<Pretty value={runtime.totem.glStationaryAccount(this.officeWorldAccount)}/>
+										<Pretty value={runtime.totem.glStationaryAccount(this.officeWorldAccount).map(x => this.round(x/1000, 2)+' Dollars ')}/>
 					    			</Label.Detail>
 								</Label>
 							</div>
@@ -95,14 +95,14 @@ export class LedgerTransactionList extends ReactiveComponent {
 							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Spendable Balance:  
 						    		<Label.Detail>
-						      			<Pretty value={runtime.totem.bkSpendAccount(this.officeWorldAccount)}/>
+						      			<Pretty value={runtime.totem.bkSpendAccount(this.officeWorldAccount).map(x => this.round(x/1000, 2)+' Dollars ')}/>
 						    		</Label.Detail>
 								</Label>
 							</div>
 							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Reserve Balance:  
 						    		<Label.Detail>
-						      			<Pretty value={runtime.totem.bkReserveVatAccount(this.officeWorldAccount)}/>
+						      			<Pretty value={runtime.totem.bkReserveVatAccount(this.officeWorldAccount).map(x => this.round(x/1000, 2)+' Dollars ')}/>
 						    		</Label.Detail>
 								</Label>
 							</div>
