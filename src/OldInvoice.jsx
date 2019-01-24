@@ -2,7 +2,7 @@ import React from 'react';
 require('semantic-ui-css/semantic.min.css');
 import {Icon, Image, List, Label, Header, Segment, Divider, Button, Grid, Input} from 'semantic-ui-react';
 import {Bond, TransformBond} from 'oo7';
-import {runtime, ss58Encode, ss58Decode, addCodecTransform, Balance, VecU8, stringToBytes} from 'oo7-substrate';
+import {runtime, ss58Encode, ss58Decode, addCodecTransform, VecU8} from 'oo7-substrate';
 import {ReactiveComponent, If, Rspan} from 'oo7-react';
 import {InputBond} from './InputBond.jsx';
 import {TransactButton} from './TransactButton.jsx';
@@ -53,9 +53,10 @@ export class OldInvoice extends ReactiveComponent {
 		this.claimant.changed(ss58Decode('5CgFZFJ5oeQju7uTyaKjJgogF1grC9bECbFTJP8ZXKEupM7x'));
 
 		// custom types
-		addCodecTransform('AccountBalance', Balance);
+		addCodecTransform('AccountBalance', 'i64');
 		addCodecTransform('ClaimIndex', 'u32');
-		addCodecTransform('Vec\<u8\>', VecU8);
+		addCodecTransform('DocumentReference', VecU8);
+		// addCodecTransform('DocumentReference', 'string');
 
 	}
 
@@ -156,7 +157,7 @@ export class OldInvoice extends ReactiveComponent {
 		t.value = this.round(((net + tax) * int_to_decimal), 2); // Net amount + tax amount
 		
 		// for testing to check ready status.
-		this.debugValues();
+		this.debugValues() ;
 		
 	}
 

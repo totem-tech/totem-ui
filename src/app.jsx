@@ -18,6 +18,7 @@ import {TransformBondButton} from './TransformBondButton';
 import {Pretty} from './Pretty';
 
 /*Imported fragments to be rendered*/
+import {SendFunds} from './SendFunds';
 import {LedgerTransactionList} from './LedgerTransactionList';
 import {Invoice} from './Invoice';
 
@@ -92,71 +93,15 @@ export class App extends ReactiveComponent {
 			</div>
 
 			<Image src={OfficeWorldLogo} size='small' />
-
-			<Segment style={{margin: '1em'}}>
-			<div>
-				<OldInvoice />
-			</div>				
-			</Segment>			
-			<Divider hidden />
+		
 
 			<Segment style={{margin: '1em'}} padded>
-				<Header as='h2'>
-					<Icon name='send' />
-					<Header.Content>
-						Send Funds
-						<Header.Subheader>Send funds from your account to another</Header.Subheader>
-					</Header.Content>
-				</Header>
-  				<div style={{paddingBottom: '1em'}}>
-					<div style={{fontSize: 'small'}}>from</div>
-					<SignerBond bond={this.source}/>
-					<If condition={this.source.ready()} then={<span>
-						<Label>Balance
-							<Label.Detail>
-								<Pretty value={runtime.balances.balance(this.source).map(x => this.round(x/1000, 2)+' Dollars ')}/>
-							</Label.Detail>
-						</Label>
-						<Label>Nonce
-							<Label.Detail>
-								<Pretty value={runtime.system.accountNonce(this.source)}/>
-							</Label.Detail>
-						</Label>
-					</span>}/>
-				</div>
-				<div style={{paddingBottom: '1em'}}>
-					<div style={{fontSize: 'small'}}>to</div>
-					<AccountIdBond bond={this.destination}/>
-					<If condition={this.destination.ready()} then={
-						<Label>Balance
-							<Label.Detail>
-								<Pretty value={runtime.balances.balance(this.destination).map(x => {
-									let y = x/1000; 
-									let z = this.round(y, 0);
-									let r = z.toLocaleString('en-US', {minimumFractionDigits: 2}); 
-									return r+' Dollars ';
-								}
-								)
-							}/>
-							</Label.Detail> 
-						</Label>
-					}/>
-				</div>
-				<div style={{paddingBottom: '1em'}}>
-					<div style={{fontSize: 'small'}}>amount</div>
-					<BalanceBond bond={this.amount}/>
-				</div>
-				<TransactButton
-					content="Send"
-					icon='send'
-					tx={{
-						sender: runtime.indices.tryIndex(this.source),
-						call: calls.balances.transfer(this.destination, this.amount)
-					}}
-				/>
+				<OldInvoice/>
 			</Segment>
+			<Divider hidden />
 
-		</div>);
+		</div>
+		);
 	}
 }
 
