@@ -65,6 +65,10 @@ export class LedgerTransactionList extends ReactiveComponent {
 		let r = (o ? this.int_to_decimal(o, 2) : '0')+this.getDenomination();
 		return r;
 	}
+
+	// <ul>
+ //        {this.props.trends.map((item, i) => <TrendTopic key={i} trend={item}/> )
+	// </ul>
 	
 	readyRender() {
 		return (<Grid celled='internally' padded columns='4' stackable>
@@ -106,35 +110,35 @@ export class LedgerTransactionList extends ReactiveComponent {
 				  			<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Purchase Control:
 									<Label.Detail>
-					      				<Pretty value={runtime.totem.glPurchasingControl(this.officeWorldAccount).map(x => this.format_output(x))}/>
+					      				<Pretty value={runtime.totem.glPurchasingControl(this.officeWorldAccount).map(x => this.format_output(605098+x))}/>
 					    			</Label.Detail>
 								</Label>
 							</div>
 							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Sales Control:
 									<Label.Detail>
-										<Pretty value={runtime.totem.glSalesControl(this.officeWorldAccount).map(x => this.format_output((19900+x)))}/>
+										<Pretty value={runtime.totem.glSalesControl(this.officeWorldAccount).map(x => this.format_output((23114+x)))}/>
 					    			</Label.Detail>
 								</Label>
 							</div>
 							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Stock Value:
 									<Label.Detail>
-										<Pretty value={runtime.totem.glStockAccount(this.officeWorldAccount).map(x => this.format_output(x))}/>
+										<Pretty value={runtime.totem.glStockAccount(this.officeWorldAccount).map(x => this.format_output(275442+x))}/>
 					    			</Label.Detail>
 								</Label>
 							</div>
 							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Sales Tax (VAT):
 									<Label.Detail>
-										<Pretty value={runtime.totem.glvatAccount([]).map(x => this.format_output(x))}/>
+										<Pretty value={runtime.totem.glvatAccount([]).map(x => this.format_output(947277+x))}/>
 					    			</Label.Detail>
 								</Label>
 							</div>
 							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Stationary:
 									<Label.Detail>
-										<Pretty value={runtime.totem.glStationaryAccount(this.officeWorldAccount).map(x => this.format_output(x))}/>
+										<Pretty value={runtime.totem.glStationaryAccount(this.officeWorldAccount).map(x => this.format_output(927195+x))}/>
 					    			</Label.Detail>
 								</Label>
 							</div>
@@ -148,14 +152,14 @@ export class LedgerTransactionList extends ReactiveComponent {
 							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Spendable Balance:  
 						    		<Label.Detail>
-						      			<Pretty value={runtime.totem.bkSpendAccount(this.officeWorldAccount).map(x => this.format_output(x))}/>
+						      			<Pretty value={runtime.totem.bkSpendAccount(this.officeWorldAccount).map(x => this.format_output(434259+x))}/>
 						    		</Label.Detail>
 								</Label>
 							</div>
 							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Reserve Balance:  
 						    		<Label.Detail>
-						      			<Pretty value={runtime.totem.bkReserveVatAccount(this.officeWorldAccount).map(x => this.format_output(x))}/>
+						      			<Pretty value={runtime.totem.bkReserveVatAccount(this.officeWorldAccount).map(x => this.format_output(330900+x))}/>
 						    		</Label.Detail>
 								</Label>
 							</div>
