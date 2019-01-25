@@ -96,7 +96,7 @@ export class App extends ReactiveComponent {
 		
 
 			<Segment style={{margin: '1em'}} padded>
-				<OldInvoice/>
+				<LedgerTransactionList/>
 			</Segment>
 			<Divider hidden />
 
