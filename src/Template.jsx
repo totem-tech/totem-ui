@@ -11,7 +11,9 @@ export class MyComponentName extends ReactiveComponent {
 		super()
 	}
 	
-	render() {
-		return ()
+	readyRender() {
+		return (<React.Fragment>
+			
+		</React.Fragment>)
 	}
 }

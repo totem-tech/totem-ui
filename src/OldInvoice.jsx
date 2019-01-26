@@ -64,22 +64,21 @@ export class OldInvoice extends ReactiveComponent {
 		let that = this;
 		console.log(
 			 "this.claimant: ", 
-			 this.claimant, // "is ready?: ", this.claimant.isReady(), 
+			 this.claimant,  "is ready?: ", this.claimant.isReady(), 
 			 "\n  this.customer: ", 
 			 this.customer, "is ready?: ", this.customer.isReady(),
 			 "\n  this.netAmount: ", 
-			 this.netAmount, // "is ready?: ", this.netAmount.isReady(), 
+			 this.netAmount,  "is ready?: ", this.netAmount.isReady(), 
 			 "\n  this.taxJusridiction: ", 
 			 this.taxJusridiction, "is ready?: ", this.taxJusridiction.isReady(), 
 			 "\n  this.taxAmount: ", 
-			 this.taxAmount, // "is ready?: ", this.taxAmount.isReady(), 
+			 this.taxAmount,  "is ready?: ", this.taxAmount.isReady(), 
 			 "\n  this.invoiceRef: ", 
 			 this.invoiceRef, "is ready?: ", this.invoiceRef.isReady(), 
 			 "\n  this.documentRef: ",
-			 this.documentRef, "is ready?: ", this.documentRef.isReady(),
-			 "\n  that.props.tx: ",
-			 // Bond.all([this.props.tx]).isReady(), 
-			 that.props
+			 this.documentRef, "is ready?: ", this.documentRef.isReady()
+			 // "\n  that.props.tx: ", Bond.all([this.props.tx]).isReady(), 
+			 // that.props
 			)
 	}
 
@@ -94,7 +93,6 @@ export class OldInvoice extends ReactiveComponent {
 	}
 
 	getUnitPriceFromReferenceInput() {
-		console.log('getUnitPriceFromReferenceInput');
 		// This function takes a reference value and completes the relevant fields
 		const p = document.getElementById('unitPrice');
 		let u = 1988700; // USGAAP says a maximum of 3 decimal places. We'll store 4 for accuracy
@@ -104,7 +102,6 @@ export class OldInvoice extends ReactiveComponent {
 	}
 
 	getTaxAmountFromTaxCodeInput(n) {
-		console.log('getTaxAmountFromTaxCodeInput');
 		// TODO lookup based on Tax code input
 		const d_Tax = document.getElementById('taxAmount');
 
@@ -127,7 +124,6 @@ export class OldInvoice extends ReactiveComponent {
 
 	calculateNetInvoiceAmount() {
 		// Horrible hack in two parts until I figure out how to do React Display formatting 
-		console.log('calculateNetInvoiceAmount');
 		// Handle Displayed Amounts (decimals)
 		const d_p = document.getElementById('unitPrice');
 		const d_q = document.getElementById('quantity');
@@ -142,7 +138,7 @@ export class OldInvoice extends ReactiveComponent {
 		let rawNetAmount = d_q.value * s_p;		
 		// should be 994.35
 		d_n.value = this.round((rawNetAmount * int_to_decimal), 2); // display net amout formatted two decimals
-		console.log(rawNetAmount);
+		// console.log(rawNetAmount);
 		// sending 9943500 tax amount should be updated to 2088135
 		let rawTaxAmount = this.getTaxAmountFromTaxCodeInput(rawNetAmount);
 
@@ -151,13 +147,12 @@ export class OldInvoice extends ReactiveComponent {
 	}
 
 	calculateInvoiceTotal(net, tax) {
-		console.log('calculateInvoiceTotal');
 		// Horrible hack in two parts until I figure out how to do React Display formatting 	
 		const t = document.getElementById('totalInvoiceAmount');
 		t.value = this.round(((net + tax) * int_to_decimal), 2); // Net amount + tax amount
 		
 		// for testing to check ready status.
-		this.debugValues() ;
+		// this.debugValues() ;
 		
 	}
 
@@ -350,13 +345,7 @@ export class OldInvoice extends ReactiveComponent {
 					content="Create Invoice"
 					tx={{
 						sender: this.claimant,
-						call: calls.totem.processClaim(
-						this.customer, 
-			      		this.netAmount, 
-			      		this.taxJusridiction, 
-			      		this.taxAmount, 
-			      		this.invoiceRef, 
-			      		this.documentRef)
+						call: calls.totem.processClaim(this.customer, this.netAmount, this.taxJusridiction, this.taxAmount, this.invoiceRef, this.documentRef)
 					}}
 				/>
 

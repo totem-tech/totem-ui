@@ -24,7 +24,9 @@ import {Invoice} from './Invoice';
 
 /* Test */
 import {OldInvoice} from './OldInvoice';
-// import {Test} from './Test';
+import {IndexTest} from './IndexTest';
+import {TestAccountIdSave} from './TestAccountIdSave';
+// import {TestAmount} from './TestAmount';
 // import {RespondentTest} from './RespondentTest';
 // import {NullStorageTest} from './NullStorageTest';
 
@@ -92,14 +94,26 @@ export class App extends ReactiveComponent {
 				</Label.Detail></Label>
 			</div>
 
-			<Image src={OfficeWorldLogo} size='small' />
-		
+			<Image src={OfficeWorldLogo} size='small' />	
 
 			<Segment style={{margin: '1em'}} padded>
-				<LedgerTransactionList/>
+				<IndexTest/>
 			</Segment>
 			<Divider hidden />
 
+			<Segment style={{margin: '1em'}} padded>
+				<TestAccountIdSave/>
+			</Segment>
+			<Divider hidden />
+
+			<Segment style={{margin: '1em'}} padded>
+				{/*<TestAmount/>*/}
+			</Segment>
+			<Divider hidden />
+			<Segment style={{margin: '1em'}} padded>
+				<SendFunds/>
+			</Segment>
+			<Divider hidden />	
 		</div>
 		);
 	}
