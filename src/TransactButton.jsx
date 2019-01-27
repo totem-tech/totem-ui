@@ -14,8 +14,8 @@ class TransactButton extends ReactiveComponent {
 	handleClick () {
 		let begin = false;
 		let s = this.state;
-		console.log('Status in handleClick: \n');
-		console.log(s.status);
+		// console.log('Status in handleClick: \n');
+		// console.log(s.status);
 		if (s.status) {
 			s.status = null;
 		} else {
@@ -25,37 +25,36 @@ class TransactButton extends ReactiveComponent {
 		this.setState(s);
 
 		if (begin) {
-			console.log('Begin execNext(): ');
+			// console.log('Begin execNext(): ');
 			this.execNext();
 		}
 	}
 	execNext () {
 		let s = this.state;
 		let single = typeof(this.props.tx) === 'function' || this.props.tx.length === undefined;
-		console.log(
-			'going into execNext() s.index: '+s.index,
-			'\n this.props.tx.length: '+this.props.tx.length,
-			'\n single: '+single
-			);
+		// console.log(
+		// 	'going into execNext() s.index: '+s.index,
+		// 	'\n this.props.tx.length: '+this.props.tx.length,
+		// 	'\n single: '+single
+		// 	);
 		if ((single && s.index === 0) || s.index < this.props.tx.length) {
 			let t = single ? this.props.tx : this.props.tx[s.index];
-			console.log(
-					'this.props.order: '+this.props.order,
-					'\n this.props.causal: '+this.props.causal,
-					'\n whatever t is: '+t
-				);
+			// console.log(
+			// 		'this.props.order: '+this.props.order,
+			// 		'\n this.props.causal: '+this.props.causal,
+			// 		'\n whatever t is: '+t
+			// 	);
 
 			s.status = typeof(t) === 'function'
 				? t() // execute function
 				: post(t);
 			s.status.tie((x, i) => {
-			console.log(
-					'this.props.order: '+this.props.order,
-					'\n this.props.causal: '+this.props.causal,
-					'whatever x is: '+JSON.stringify(x),
-					'\n whatever i is: '+i
-				);
-
+			// console.log(
+			// 		'this.props.order: '+this.props.order,
+			// 		'\n this.props.causal: '+this.props.causal,
+			// 		'whatever x is: '+JSON.stringify(x),
+			// 		'\n whatever i is: \n', i
+			// 	);
 
 				if (this.props.order 
 					? this.props.causal 
@@ -64,7 +63,7 @@ class TransactButton extends ReactiveComponent {
 					: x.requested) 
 				{
 					this.execNext();
-					console.log('Whatever i is: '+i);
+					// console.log('Whatever i is: '+i);
 					s.status.untie(i);
 				
 				} else if (this.props.failed) {
@@ -73,7 +72,7 @@ class TransactButton extends ReactiveComponent {
 			});
 		}
 		s.index++
-		console.log('End of execNext() s.index++: '+s.index,);
+		// console.log('End of execNext() s.index++: '+s.index,);
 		this.setState(s);
 	}
 	render () {

@@ -36,7 +36,8 @@ class InputBond extends ReactiveComponent {
 	}
 
 	handleEdit(v, onlyDefault = false) {
-//		console.log('handleEdit', v, onlyDefault);
+		// console.log('handleEdit', v, onlyDefault);
+		// console.log('Start this.editLock', this.editLock);
 		if (this.editLock)
 			return;
 
@@ -44,14 +45,16 @@ class InputBond extends ReactiveComponent {
 		this.latestEdit = Symbol();
 
 		let f = function (b) {
-//			console.log('updating...', b);
+			// console.log('updating...', b);
+			// console.log('type of input', typeof(b));
+			// console.log('length of input', b.length);
 			if (typeof(b) === 'string') {
 				b = { display: b, external: b, internal: b };
 			}
 			if (typeof(b) !== 'object') {
 				throw { message: 'Invalid value returned from validity function. Must be object with internal and optionally external, display, blurred fields or null', b };
 			}
-//			console.log('ok...', b);
+			// console.log('ok...', b);
 			if (b === null) {
 				this.setState({ok: false});
 			} else {
@@ -70,13 +73,17 @@ class InputBond extends ReactiveComponent {
 			}
 			/// Horrible duck-typing, necessary since the specific Bond class instance here is different to the other libraries since it's
 			/// pre-webpacked in a separate preprocessing step.
+			// console.log('duck-typing...', b);
 			if (Bond.instanceOf(this.props.bond)) {
 				if (b === null) {
 					this.props.bond.reset();
 				} else {
 					this.editLock = true;
+					// console.log('True this.editLock', this.props.bond);
 					this.props.bond.changed(b && b.hasOwnProperty('external') ? b.external : b && b.hasOwnProperty('internal') ? b.internal : this.state.internal);
+					// console.log("I'm here");
 					this.editLock = false;
+					// console.log('End this.editLock', this.editLock);
 				}
 			}
 		}.bind(this);
@@ -114,7 +121,7 @@ class InputBond extends ReactiveComponent {
 
 	resetDefaultValueUpdate () {
 		if (this.lastDefaultValueUpdate) {
-//			console.log('kill update');
+			// console.log('kill update');
 			window.clearTimeout(this.lastDefaultValueUpdate);
 			delete this.lastDefaultValueUpdate;
 		}
@@ -122,13 +129,13 @@ class InputBond extends ReactiveComponent {
 
 	resetValueToDefault () {
 		this.resetDefaultValueUpdate();
-//		console.log('schedule update');
+		// console.log('schedule update');
 		this.lastDefaultValueUpdate = window.setTimeout(() => { this.handleEdit(this.state.defaultValue, true); }, 0);
 	}
 
 	render () {
 		if (this.state.onlyDefault && typeof(this.state.defaultValue) === 'string' && this.state.display !== this.state.defaultValue) {
-//			console.log('newDefault', this.state.defaultValue);
+			// console.log('newDefault', this.state.defaultValue);
 			this.resetValueToDefault();
 		}
 		let icon = this.makeIcon ? this.makeIcon() : this.props.icon
@@ -162,6 +169,7 @@ class InputBond extends ReactiveComponent {
 InputBond.defaultProps = {
 	placeholder: '',
 	defaultValue: '',
+	// defaultValue: null,
 	reversible: false
 };
 

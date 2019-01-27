@@ -14,16 +14,15 @@ import {Pretty} from './Pretty';
 // test_amount
 // test_string_to_hash
 
+
 export class IndexTest extends ReactiveComponent {
 	constructor () {
-		super()
-
+		super()			
+			addCodecTransform("AnIndexNr", "u64");
 			this.sender = new Bond;
 			this.my_index = new Bond;
 			// Default Values
-			this.sender.changed(ss58Decode('5CgFZFJ5oeQju7uTyaKjJgogF1grC9bECbFTJP8ZXKEupM7x'));
-			
-			addCodecTransform('AnIndexNr', 'u64');
+			this.sender.changed(ss58Decode('5CgFZFJ5oeQju7uTyaKjJgogF1grC9bECbFTJP8ZXKEupM7x'));		
 	}
 	
 	readyRender() {
@@ -48,9 +47,9 @@ export class IndexTest extends ReactiveComponent {
 			  			<div>
 			  				<div style={{fontSize: 'small'}}>To amend invoice enter System Ref Code</div>
 							<div>
-							<InputBond
-								fluid 
-								bond={this.index_number}
+							<InputBond 
+								bond={this.my_index}
+								fluid
 								placeholder='System Invoice Reference (optional)'
 							/>
 							</div>

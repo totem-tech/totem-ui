@@ -26,9 +26,8 @@ import {Invoice} from './Invoice';
 import {OldInvoice} from './OldInvoice';
 import {IndexTest} from './IndexTest';
 import {TestAccountIdSave} from './TestAccountIdSave';
-// import {TestAmount} from './TestAmount';
-// import {RespondentTest} from './RespondentTest';
-// import {NullStorageTest} from './NullStorageTest';
+import {TestAmount} from './TestAmount';
+
 
 /*Logos */
 import BayerLogo from './assets/bayer.png';
@@ -107,7 +106,7 @@ export class App extends ReactiveComponent {
 			<Divider hidden />
 
 			<Segment style={{margin: '1em'}} padded>
-				{/*<TestAmount/>*/}
+				<TestAmount/>
 			</Segment>
 			<Divider hidden />
 			<Segment style={{margin: '1em'}} padded>

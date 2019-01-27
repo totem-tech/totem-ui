@@ -9,38 +9,28 @@ import {TransactButton} from './TransactButton.jsx';
 import {AccountIdBond, SignerBond} from './AccountIdBond.jsx';
 import {Pretty} from './Pretty';
 
-// test_an_index
-// test_account_id_save
-// test_amount
-// test_string_to_hash
-
 export class TestAmount extends ReactiveComponent {
 	constructor () {
 		super()
-			this.multiply = (x, y) => x * y;
-
 			this.sender = new Bond;
-			this.quantity = new Bond;
-			this.unitPrice = new Bond;
+			this.amount = new Bond;
 			
 			// Default Values
 			this.sender.changed(ss58Decode('5CgFZFJ5oeQju7uTyaKjJgogF1grC9bECbFTJP8ZXKEupM7x'));
-			this.unitPrice.changed(1988700);
 
-			// creates a transform bond
-			this.amount = Bond.all([this.quantity, this.unitPrice]).map(([a, b]) => Number(this.round(this.multiply(a, b), 0)));
+			this.processQuantity = this.processQuantity.bind(this);
 
 			// transform for custom types in module
 			addCodecTransform('IntegerBalance', 'i64');
 	}
 
 	getNumeratorDenominator(x) {
-		let n = 10000;
-		if (x) {
-			return n;
-		} else {
-			return 1/n;
-		};
+		const n = 10000;
+			if (x) {
+				return n;
+			} else {
+				return 1/n;
+			};
 	}
 
 	round(value, decimals) {
@@ -52,13 +42,8 @@ export class TestAmount extends ReactiveComponent {
 	}
 
 	processQuantity() {
-		// Horrible hack in two parts until I figure out how to do React Display formatting 
-		// Handle Displayed Amounts (decimals)
-		const d_q = document.getElementById('quantity');
-
-		// get latest values - need to check that this.unitPrice._value; is not null 
-		this.quantity.changed(this.decimal_to_int(d_q.value)); 
-	
+		const d_q = document.getElementById('qty');
+		this.amount.changed(this.decimal_to_int(d_q.value));
 	}
 	
 	readyRender() {
@@ -83,10 +68,10 @@ export class TestAmount extends ReactiveComponent {
 	    		<div style={{fontSize: 'small'}}>Enter Quantity</div>
 				<div>
 					<Input
-						id='quantity'
+						id='qty'
 						fluid
 						placeholder='Enter quantity'
-						onBlur={this.processQuantity()}
+						onBlur={this.processQuantity}
 					/>
 				</div>	
 				
