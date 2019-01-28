@@ -22,7 +22,19 @@ export class IndexTest extends ReactiveComponent {
 			this.sender = new Bond;
 			this.my_index = new Bond;
 			// Default Values
-			this.sender.changed(ss58Decode('5CgFZFJ5oeQju7uTyaKjJgogF1grC9bECbFTJP8ZXKEupM7x'));		
+			this.sender.changed(ss58Decode('5CgFZFJ5oeQju7uTyaKjJgogF1grC9bECbFTJP8ZXKEupM7x'));
+			this.preValidateInputIndex = this.preValidateInputIndex.bind(this);		
+	}
+
+	preValidateInputIndex() {
+		const index_id = document.getElementById('indexId') ;
+
+		if (!index_id) {
+			this.my_index.changed(0);	
+		} else {
+			this.my_index.changed(Math.abs(Number(index_id.value)));
+		}
+
 	}
 	
 	readyRender() {
@@ -39,18 +51,20 @@ export class IndexTest extends ReactiveComponent {
 				<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 					<Label size='small'>On-Chain Data Index by Account:  
 			    		<Label.Detail>
-			      			<Pretty value={runtime.totemtests.testIndexByAccount(this.sender)}/>
+			      			<Pretty value={runtime.totemtests.testIndexByAccount(this.sender).log}/>
 			    		</Label.Detail>
 					</Label>
 				</div>
 
 			  			<div>
-			  				<div style={{fontSize: 'small'}}>To amend invoice enter System Ref Code</div>
+			  				<div style={{fontSize: 'small'}}>Enter an Index</div>
 							<div>
-							<InputBond 
-								bond={this.my_index}
+							<Input
+								id='indexId'
+								onBlur={this.preValidateInputIndex}
 								fluid
-								placeholder='System Invoice Reference (optional)'
+								default='0'
+								placeholder='Enter an Index (optional)'
 							/>
 							</div>
 						</div>

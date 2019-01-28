@@ -18,7 +18,7 @@ export class TestAmount extends ReactiveComponent {
 			// Default Values
 			this.sender.changed(ss58Decode('5CgFZFJ5oeQju7uTyaKjJgogF1grC9bECbFTJP8ZXKEupM7x'));
 
-			this.processQuantity = this.processQuantity.bind(this);
+			this.preValidateInputAmount = this.preValidateInputAmount.bind(this);
 
 			// transform for custom types in module
 			addCodecTransform('IntegerBalance', 'i64');
@@ -41,9 +41,9 @@ export class TestAmount extends ReactiveComponent {
 		return Number(this.round((n * this.getNumeratorDenominator(true)), 0)); 
 	}
 
-	processQuantity() {
+	preValidateInputAmount() {
 		const d_q = document.getElementById('qty');
-		this.amount.changed(this.decimal_to_int(d_q.value));
+		this.amount.changed(Number(this.decimal_to_int(d_q.value)));
 	}
 	
 	readyRender() {
@@ -71,7 +71,7 @@ export class TestAmount extends ReactiveComponent {
 						id='qty'
 						fluid
 						placeholder='Enter quantity'
-						onBlur={this.processQuantity}
+						onBlur={this.preValidateInputAmount}
 					/>
 				</div>	
 				

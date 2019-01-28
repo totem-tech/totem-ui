@@ -100,7 +100,7 @@ export class App extends ReactiveComponent {
 			</Segment>
 			<Divider hidden />
 
-			<Segment style={{margin: '1em'}} padded>
+{/*			<Segment style={{margin: '1em'}} padded>
 				<TestAccountIdSave/>
 			</Segment>
 			<Divider hidden />
@@ -108,7 +108,7 @@ export class App extends ReactiveComponent {
 			<Segment style={{margin: '1em'}} padded>
 				<TestAmount/>
 			</Segment>
-			<Divider hidden />
+			<Divider hidden />*/}
 			<Segment style={{margin: '1em'}} padded>
 				<SendFunds/>
 			</Segment>
