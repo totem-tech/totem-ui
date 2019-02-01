@@ -95,24 +95,37 @@ export class App extends ReactiveComponent {
 
 			<Image src={OfficeWorldLogo} size='small' />	
 
+{/* Ledger Panel */}
+			<Segment style={{margin: '1em'}} padded>
+				<LedgerTransactionList/>
+			</Segment>
+			<Divider hidden />
+
+{/* Invoice Panel */}
+			<Segment style={{margin: '1em'}} padded>
+				<Invoice/>
+			</Segment>
+			<Divider hidden />
+{/* End */}
+{/* TESTING */}
 			<Segment style={{margin: '1em'}} padded>
 				<IndexTest/>
 			</Segment>
 			<Divider hidden />
-
-{/*			<Segment style={{margin: '1em'}} padded>
+			<Segment style={{margin: '1em'}} padded>
 				<TestAccountIdSave/>
 			</Segment>
 			<Divider hidden />
-
 			<Segment style={{margin: '1em'}} padded>
 				<TestAmount/>
 			</Segment>
-			<Divider hidden />*/}
+			<Divider hidden />
+{/* End */}
 			<Segment style={{margin: '1em'}} padded>
 				<SendFunds/>
 			</Segment>
 			<Divider hidden />	
+
 		</div>
 		);
 	}

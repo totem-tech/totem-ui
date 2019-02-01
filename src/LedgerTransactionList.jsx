@@ -80,9 +80,9 @@ export class LedgerTransactionList extends ReactiveComponent {
 				 				</Header.Content>
 				  			</Header>
 							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
-								<Label size='small'>Customer Name:  
+								<Label size='small'>Customer Unpaid Balance:  
 						    		<Label.Detail>
-						      			<Pretty value={runtime.totem.slCustomerAccount([])}/>
+						      			<Pretty value={runtime.totem.slCustomerAccount(this.officeWorldAccount).map(x => x + 'IFF  3065.78 Dollars')}/>
 						    		</Label.Detail>
 								</Label>
 							</div>
@@ -94,9 +94,9 @@ export class LedgerTransactionList extends ReactiveComponent {
 				 				</Header.Content>
 				  			</Header>
 							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
-								<Label size='small'>Vendor Name:  
+								<Label size='small'>Vendor Unpaid Balance:  
 						    		<Label.Detail>
-						      			<Pretty value={runtime.totem.plVendorAccount([])}/>
+						      			<Pretty value={runtime.totem.plVendorAccount(this.officeWorldAccount).map(x => x + 'BIC  25772.07 Dollars')}/>
 						    		</Label.Detail>
 								</Label>
 							</div>
@@ -131,7 +131,7 @@ export class LedgerTransactionList extends ReactiveComponent {
 							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Sales Tax (VAT):
 									<Label.Detail>
-										<Pretty value={runtime.totem.glvatAccount([]).map(x => this.format_output(947277+x))}/>
+										<Pretty value={runtime.totem.glvatAccount(this.officeWorldAccount).map(x => this.format_output(947277+x))}/>
 					    			</Label.Detail>
 								</Label>
 							</div>

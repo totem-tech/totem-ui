@@ -51,7 +51,7 @@ export class IndexTest extends ReactiveComponent {
 				<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 					<Label size='small'>On-Chain Data Index by Account:  
 			    		<Label.Detail>
-			      			<Pretty value={runtime.totemtests.testIndexByAccount(this.sender).log}/>
+			      			<Pretty value={runtime.totemtests.testIndexByAccount(this.sender)}/>
 			    		</Label.Detail>
 					</Label>
 				</div>
