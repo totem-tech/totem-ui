@@ -54,7 +54,7 @@ export class Invoice extends ReactiveComponent {
 
 		// custom types
 		addCodecTransform('AccountBalance', 'i64');
-		addCodecTransform('ClaimIndex', 'u32');
+		addCodecTransform('ClaimIndex', 'u64');
 		addCodecTransform('DocumentReference', VecU8);
 		// addCodecTransform('DocumentReference', 'string'); // This doesn't work
 
@@ -152,8 +152,19 @@ export class Invoice extends ReactiveComponent {
 		t.value = this.round(((net + tax) * int_to_decimal), 2); // Net amount + tax amount
 		
 		// for testing to check ready status.
-		// this.debugValues() ;
+		this.debugValues() ;
 		
+	}
+
+	preValidateInput() {
+		const invoice_reference = document.getElementById('invoice_reference');
+
+		if (!invoice_reference) {
+			this.invoiceRef.changed(0);	// set default value for blank field. Workaround for encoding bug.
+		} else {
+			this.invoiceRef.changed(Math.abs(Number(invoice_reference.value))); //ensure this is a valid number for input.
+		}
+
 	}
 
 	
@@ -209,10 +220,11 @@ export class Invoice extends ReactiveComponent {
 			  			<div>
 			  				<div style={{fontSize: 'small'}}>To amend invoice enter System Ref Code</div>
 							<div>
-							<InputBond
+							<Input
+								id='invoice_reference'
 								fluid 
-								bond={this.invoiceRef}
 								placeholder='System Invoice Reference (optional)'
+								onBlur={this.preValidateInput}
 							/>
 							</div>
 						</div>

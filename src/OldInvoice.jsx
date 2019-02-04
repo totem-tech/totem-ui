@@ -54,7 +54,7 @@ export class OldInvoice extends ReactiveComponent {
 
 		// custom types
 		addCodecTransform('AccountBalance', 'i64');
-		addCodecTransform('ClaimIndex', 'u32');
+		addCodecTransform('ClaimIndex', 'u64');
 		addCodecTransform('DocumentReference', VecU8);
 		// addCodecTransform('DocumentReference', 'string'); // This doesn't work
 
