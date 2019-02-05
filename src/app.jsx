@@ -101,7 +101,7 @@ export class App extends ReactiveComponent {
 			</Segment>
 			<Divider hidden />
 
-{/* Invoice Panel 
+{/* Invoice Panel */ }
 			<Segment style={{margin: '1em'}} padded>
 				<Invoice/>
 			</Segment>

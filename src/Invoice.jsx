@@ -56,7 +56,7 @@ export class Invoice extends ReactiveComponent {
 		// custom types
 		addCodecTransform('AccountBalance', 'i64');
 		addCodecTransform('ClaimIndex', 'u64');
-		addCodecTransform('DocumentReference', VecU8);
+		addCodecTransform('DocumentReference', 'Vec<u8>');
 		// addCodecTransform('DocumentReference', 'string'); // This doesn't work
 
 	}
@@ -358,7 +358,7 @@ export class Invoice extends ReactiveComponent {
 					content="Create Invoice"
 					tx={{
 						sender: this.claimant,
-						call: calls.totem.processClaim(this.customer, this.netAmount, this.taxJusridiction, this.taxAmount, this.invoiceRef, this.documentRef)
+						call: calls.totem.processClaim(this.customer, this.netAmount, this.taxJusridiction, this.taxAmount, this.invoiceRef, stringToBytes(this.documentRef))
 					}}
 				/>
 
