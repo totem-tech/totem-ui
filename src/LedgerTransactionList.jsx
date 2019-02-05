@@ -121,13 +121,13 @@ export class LedgerTransactionList extends ReactiveComponent {
 					    			</Label.Detail>
 								</Label>
 							</div>
-							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
+							{/*<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Stock Value:
 									<Label.Detail>
 										<Pretty value={runtime.totem.glStockAccount(this.officeWorldAccount).map(x => this.format_output(275442+x))}/>
 					    			</Label.Detail>
 								</Label>
-							</div>
+							</div>*/}
 							<div style={{textAlign: 'left', paddingBottom: '8px'}}>
 								<Label size='small'>Sales Tax (VAT):
 									<Label.Detail>

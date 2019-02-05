@@ -93,33 +93,21 @@ export class App extends ReactiveComponent {
 				</Label.Detail></Label>
 			</div>
 
-			<Image src={OfficeWorldLogo} size='small' />	
+			<Image src={OfficeWorldLogo} size='small' />
 
-{/* Ledger Panel */}
-			<Segment style={{margin: '1em'}} padded>
-				<AddressBookList/>
-			</Segment>
-			<Divider hidden />
-
-			<Segment style={{margin: '1em'}} padded>
-				<WalletList/>
-			</Segment>
-			<Divider hidden />
-
-
-{/* Ledger Panel *
+{/* Ledger Panel 
 			<Segment style={{margin: '1em'}} padded>
 				<LedgerTransactionList/>
 			</Segment>
 			<Divider hidden />
 
-{/* Invoice Panel *
+{/* Invoice Panel 
 			<Segment style={{margin: '1em'}} padded>
 				<Invoice/>
 			</Segment>
 			<Divider hidden />
 {/* End */}
-{/* TESTING *
+{/* TESTING */}
 			<Segment style={{margin: '1em'}} padded>
 				<IndexTest/>
 			</Segment>

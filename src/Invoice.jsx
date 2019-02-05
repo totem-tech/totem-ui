@@ -47,6 +47,7 @@ export class Invoice extends ReactiveComponent {
 		this.getTaxAmountFromTaxCodeInput = this.getTaxAmountFromTaxCodeInput.bind(this)
 		this.calculateNetInvoiceAmount = this.calculateNetInvoiceAmount.bind(this)
 		this.calculateInvoiceTotal = this.calculateInvoiceTotal.bind(this)
+		this.preValidateInput = this.preValidateInput.bind(this)
 		this.debugValues = this.debugValues.bind(this)
 
 		// Default Values
