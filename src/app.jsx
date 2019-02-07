@@ -95,7 +95,7 @@ export class App extends ReactiveComponent {
 
 			<Image src={OfficeWorldLogo} size='small' />
 
-{/* Ledger Panel 
+{/* Ledger Panel */}
 			<Segment style={{margin: '1em'}} padded>
 				<LedgerTransactionList/>
 			</Segment>

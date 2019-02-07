@@ -54,10 +54,11 @@ export class Invoice extends ReactiveComponent {
 		this.claimant.changed(ss58Decode('5CgFZFJ5oeQju7uTyaKjJgogF1grC9bECbFTJP8ZXKEupM7x'));
 
 		// custom types
+		addCodecTransform('DocumentReference', 'Vec<u8>');
 		addCodecTransform('AccountBalance', 'i64');
 		addCodecTransform('ClaimIndex', 'u64');
-		addCodecTransform('DocumentReference', 'Vec<u8>');
-		// addCodecTransform('DocumentReference', 'string'); // This doesn't work
+
+		// addCodecTransform('DocumentReference', 'string'); // This doesn't work>
 
 	}
 
