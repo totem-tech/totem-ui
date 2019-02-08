@@ -14,6 +14,7 @@ export class AddressBookList extends ReactiveComponent {
 				return r
 			})
 		})
+
 	}
 
 	readyRender () {
