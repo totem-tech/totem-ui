@@ -22,13 +22,6 @@ import {SendFunds} from './SendFunds';
 import {LedgerTransactionList} from './LedgerTransactionList';
 import {Invoice} from './Invoice';
 
-/* Test */
-import {OldInvoice} from './OldInvoice';
-import {IndexTest} from './IndexTest';
-import {TestAccountIdSave} from './TestAccountIdSave';
-import {TestAmount} from './TestAmount';
-
-
 /*Logos */
 import BayerLogo from './assets/bayer.png';
 import BungeLogo from'./assets/bunge.png';
@@ -50,16 +43,12 @@ export class App extends ReactiveComponent {
 		window.Invoice = Invoice;
 		window.that = this;
 
-		// this.source = new Bond;
-		// this.amount = new Bond;
-		// this.destination = new Bond;
+
 		this.nick = new Bond;
 		this.lookup = new Bond;
-		// this.name = new Bond;
 		this.seed = new Bond;
 		this.seedAccount = this.seed.map(s => s ? secretStore().accountFromPhrase(s) : undefined)
 		this.seedAccount.use()
-		// this.runtime = new Bond;
 
 }
 
