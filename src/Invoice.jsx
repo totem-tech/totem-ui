@@ -26,23 +26,19 @@ export class Invoice extends ReactiveComponent {
 		// Transaction Bonds
 		this.claimant = new Bond; 
 		this.customer = new Bond; 
-		// this.netAmount = new Bond; 
 		this.taxJusridiction = new Bond; 
 		this.taxAmount = new Bond; 
 		this.invoiceRef = new Bond; 
 		this.documentRef = new Bond; 
-		
 		this.unitPrice = new Bond; 
 		this.quantity = new Bond; 
-		this.productReference = ""; 
-		// this.totalAmount = new Bond; 
+ 
 
 		// dynamically updated Bonds
 		this.netAmount = Bond.all([this.unitPrice, this.quantity]).map(([a, b]) => Number(this.round(this.multiply(a, b), 0)));
 		this.totalAmount = Bond.all([this.netAmount, this.taxAmount]).map(([a, b]) => Number(this.round(this.sumUp(a, b), 0)));
 		
 		// function modules
-		this.cleanupQuantityInput = this.cleanupQuantityInput.bind(this)
 		this.getUnitPriceFromReferenceInput = this.getUnitPriceFromReferenceInput.bind(this)
 		this.getTaxAmountFromTaxCodeInput = this.getTaxAmountFromTaxCodeInput.bind(this)
 		this.calculateNetInvoiceAmount = this.calculateNetInvoiceAmount.bind(this)
@@ -51,14 +47,13 @@ export class Invoice extends ReactiveComponent {
 		this.debugValues = this.debugValues.bind(this)
 
 		// Default Values
+		this.productReference = "";
 		this.claimant.changed(ss58Decode('5CgFZFJ5oeQju7uTyaKjJgogF1grC9bECbFTJP8ZXKEupM7x'));
 
 		// custom types
 		addCodecTransform('DocumentReference', 'Vec<u8>');
 		addCodecTransform('AccountBalance', 'i64');
 		addCodecTransform('ClaimIndex', 'u64');
-
-		// addCodecTransform('DocumentReference', 'string'); // This doesn't work>
 
 	}
 
@@ -79,19 +74,11 @@ export class Invoice extends ReactiveComponent {
 			 this.invoiceRef, "is ready?: ", this.invoiceRef.isReady(), 
 			 "\n  this.documentRef: ",
 			 this.documentRef, "is ready?: ", this.documentRef.isReady()
-			 // "\n  that.props.tx: ", Bond.all([this.props.tx]).isReady(), 
-			 // that.props
 			)
 	}
 
 	round(value, decimals) {
     	return Number(Math.round(value +'e'+ decimals) +'e-'+ decimals).toFixed(decimals);
-	}
-
-	cleanupQuantityInput() {
-	// Qty always return absolute values Math.abs()
-	// Qty always return integer values parseInt("10.9876") also returns NaN
-	// Qty Is not a number isNan(valueToTest)		
 	}
 
 	getUnitPriceFromReferenceInput() {
@@ -111,7 +98,6 @@ export class Invoice extends ReactiveComponent {
 		let taxPercent = taxPercentAsInt * int_to_decimal; // to match display in decimals for calculations
 
 		// Horrible hack in two parts until I figure out how to do React Display formatting  
-		// 9943500 * 0.21 = 2088135
 		let rawTaxAmount = n * taxPercent ;
 
 		// round and convert to Int for storage
@@ -136,12 +122,8 @@ export class Invoice extends ReactiveComponent {
 		this.quantity.changed(d_q.value); 
 
 		// Unit Price * Quantity = net amount
-		// 5 * 1988700 = 9943500
 		let rawNetAmount = d_q.value * s_p;		
-		// should be 994.35
 		d_n.value = this.round((rawNetAmount * int_to_decimal), 2); // display net amout formatted two decimals
-		// console.log(rawNetAmount);
-		// sending 9943500 tax amount should be updated to 2088135
 		let rawTaxAmount = this.getTaxAmountFromTaxCodeInput(rawNetAmount);
 
 		this.calculateInvoiceTotal(rawNetAmount, rawTaxAmount);
@@ -154,7 +136,7 @@ export class Invoice extends ReactiveComponent {
 		t.value = this.round(((net + tax) * int_to_decimal), 2); // Net amount + tax amount
 		
 		// for testing to check ready status.
-		this.debugValues() ;
+		// this.debugValues() ;
 		
 	}
 
@@ -168,9 +150,6 @@ export class Invoice extends ReactiveComponent {
 		}
 
 	}
-
-	
-
 
 	readyRender () {
 		  

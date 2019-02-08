@@ -78,15 +78,10 @@ export class LedgerTransactionList extends ReactiveComponent {
 	}
 
 	format_output(o) {
-		// let r = (o ? this.int_to_decimal(o, 2) : '0')+this.getDenomination();
-		let r = (o ? this.int_to_decimal((o*10000), 2) : '0')+this.getDenomination(); // Correct this in Production. Should not be *100000
+		let r = (o ? this.int_to_decimal(o, 2) : '0')+this.getDenomination();
 		return r;
 	}
-
-	// <ul>
- //        {this.props.trends.map((item, i) => <TrendTopic key={i} trend={item}/> )
-	// </ul>
-	
+		
 	readyRender() {
 		return (<Grid celled='internally' padded columns='4' stackable>
 					<Grid.Row>					

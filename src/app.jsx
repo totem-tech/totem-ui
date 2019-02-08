@@ -50,16 +50,16 @@ export class App extends ReactiveComponent {
 		window.Invoice = Invoice;
 		window.that = this;
 
-		this.source = new Bond;
-		this.amount = new Bond;
-		this.destination = new Bond;
-		this.nick = new Bond;
-		this.lookup = new Bond;
-		this.name = new Bond;
+		// this.source = new Bond;
+		// this.amount = new Bond;
+		// this.destination = new Bond;
+		// this.nick = new Bond;
+		// this.lookup = new Bond;
+		// this.name = new Bond;
 		this.seed = new Bond;
 		this.seedAccount = this.seed.map(s => s ? secretStore().accountFromPhrase(s) : undefined)
 		this.seedAccount.use()
-		this.runtime = new Bond;
+		// this.runtime = new Bond;
 
 }
 
@@ -91,6 +91,9 @@ export class App extends ReactiveComponent {
 						runtime.core.authorities.mapEach(a => <Identicon key={a} account={a} size={16}/>)
 					}</Rspan>
 				</Label.Detail></Label>
+				<Label>Last Claim Nr. <Label.Detail>
+					<Pretty className="value" value={runtime.totem.claimsCount}/>
+				</Label.Detail></Label>
 			</div>
 
 			<Image src={OfficeWorldLogo} size='small' />
@@ -106,21 +109,7 @@ export class App extends ReactiveComponent {
 				<Invoice/>
 			</Segment>
 			<Divider hidden />
-{/* End */}
-{/* TESTING */}
-			<Segment style={{margin: '1em'}} padded>
-				<IndexTest/>
-			</Segment>
-			<Divider hidden />
-			<Segment style={{margin: '1em'}} padded>
-				<TestAccountIdSave/>
-			</Segment>
-			<Divider hidden />
-			<Segment style={{margin: '1em'}} padded>
-				<TestAmount/>
-			</Segment>
-			<Divider hidden />
-{/* End */}
+
 			<Segment style={{margin: '1em'}} padded>
 				<SendFunds/>
 			</Segment>
