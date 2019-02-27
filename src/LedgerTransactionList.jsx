@@ -27,7 +27,7 @@ export class LedgerTransactionList extends ReactiveComponent {
 		this.tX9000099XAccount.changed(ss58Decode('5CTpNeAMjX8EPXNuxh4dakGD2A715LeT7gCfQWtbLw98YXtZ')); // hardcoded account
 		this.tX3334099GAccount.changed(ss58Decode('5FLyityGivbrdxn8jsmRcYHZm5BP5pLj1TKGMRq7xesux4Ef')); // hardcoded account
 		this.tX27600PGAAccount.changed(ss58Decode('5DdverAiQXHmKZNin4igERQGRmMEHdpU3dzR2W34jSwHF95c')); // hardcoded account
-		this.frutaromAccount.changed(ss58Decode('5DdverAiQXHmKZNin4igERQGRmMEHdpU3dzR2W34jSwHF95c')); // hardcoded account
+		this.frutaromAccount.changed(ss58Decode('5HmG48RSPxoG6S34mpPs2Lytwr4ox4sfQCSLw6gpvMhsLt9J')); // hardcoded account
 		this.iFFAccount.changed(ss58Decode('5FWqm8DxVss9sXxWmxy17v3Pa6MbVxDD6c3pX1iKMBhJwVJY')); // hardcoded account
 
 	}

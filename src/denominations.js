@@ -9,6 +9,28 @@ init({
 	ticker: 'BBQ'
 })
 */
+
+
+// init({
+// 	denominations: {
+// 		eighteen: 18,
+// 		twelve: 12,
+// 		zero: 0,
+// 	},
+// 	primary: 'twelve',
+// 	unit: 'zero',
+// 	ticker: 'XTT'
+// })
+
+init({
+	denominations: { 
+		unit: 10, 
+	},
+	primary: 'unit',
+	unit: 'unit',
+	ticker: 'UNIT'
+})
+
 setNetworkDefault(42)
 
 /*const denominationInfoDOT = {
