@@ -15,6 +15,7 @@ import {StakingStatusLabel} from './StakingStatusLabel';
 import {WalletList, SecretItem} from './WalletList';
 import {AddressBookList} from './AddressBookList';
 import {TransformBondButton} from './TransformBondButton';
+import {Masthead} from './Masthead';
 import {Pretty} from './Pretty';
 
 /*Imported fragments to be rendered*/
@@ -88,6 +89,10 @@ export class App extends ReactiveComponent {
 			<Image src={OfficeWorldLogo} size='small' />
 
 {/* Ledger Panel */}
+			<Segment style={{margin: '1em'}} padded>
+				<Masthead />
+			</Segment>
+			<Divider hidden />	
 			<Segment style={{margin: '1em'}} padded>
 				<LedgerTransactionList/>
 			</Segment>
