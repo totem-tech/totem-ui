@@ -15,7 +15,7 @@ import {StakingStatusLabel} from './StakingStatusLabel';
 import {WalletList, SecretItem} from './WalletList';
 import {AddressBookList} from './AddressBookList';
 import {TransformBondButton} from './TransformBondButton';
-import {Masthead} from './Masthead';
+// import {Masthead} from './Masthead';
 import {Pretty} from './Pretty';
 
 /*Imported fragments to be rendered*/
@@ -90,7 +90,7 @@ export class App extends ReactiveComponent {
 
 {/* Ledger Panel */}
 			<Segment style={{margin: '1em'}} padded>
-				<Masthead />
+				{/*<Masthead />*/}
 			</Segment>
 			<Divider hidden />	
 			<Segment style={{margin: '1em'}} padded>
@@ -98,7 +98,7 @@ export class App extends ReactiveComponent {
 			</Segment>
 			<Divider hidden />
 
-{/* Invoice Panel */ }
+{/* Invoice Panel */}
 			<Segment style={{margin: '1em'}} padded>
 				<Invoice/>
 			</Segment>
@@ -155,7 +155,46 @@ export class App extends ReactiveComponent {
 				<SendFunds/>
 			</Segment>
 			<Divider hidden />	
+			<Segment style={{margin: '1em'}}>
+				<Header as='h2'>
+					<Icon name='key' />
+					<Header.Content>
+						Wallet
+						<Header.Subheader>Manage your secret keys</Header.Subheader>
+					</Header.Content>
+				</Header>
+				<div style={{paddingBottom: '1em'}}>
+					<div style={{fontSize: 'small'}}>seed</div>
+					<InputBond
+						bond={this.seed}
+						reversible
+						placeholder='Some seed for this key'
+						validator={n => n || null}
+						action={<Button content="Another" onClick={() => this.seed.trigger(generateMnemonic())} />}
+						iconPosition='left'
+						icon={<i style={{opacity: 1}} className='icon'><Identicon account={this.seedAccount} size={28} style={{marginTop: '5px'}}/></i>}
+					/>
+				</div>
+				<div style={{paddingBottom: '1em'}}>
+					<div style={{fontSize: 'small'}}>name</div>
+					<InputBond
+						bond={this.name}
+						placeholder='A name for this key'
+						validator={n => n ? secretStore().map(ss => ss.byName[n] ? null : n) : null}
+						action={<TransformBondButton
+							content='Create'
+							transform={(name, seed) => secretStore().submit(seed, name)}
+							args={[this.name, this.seed]}
+							immediate
+						/>}
+					/>
+				</div>
+				<div style={{paddingBottom: '1em'}}>
+					<WalletList/>
+				</div>
+			</Segment>
 
+			<Divider hidden />	
 		</div>
 		);
 	}
