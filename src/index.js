@@ -5,6 +5,7 @@ import {App} from './app.jsx';
 import { setNodeUri } from 'oo7-substrate'
 require('./denominations')
 
-setNodeUri(['ws://127.0.0.1:9944/', 'wss://substrate-rpc.parity.io/'])
+setNodeUri(['ws://104.248.37.226:16181/'])
+// setNodeUri(['ws://127.0.0.1:9944/', 'wss://substrate-rpc.parity.io/'])
 
 render(<App/>, document.getElementById('app'));
