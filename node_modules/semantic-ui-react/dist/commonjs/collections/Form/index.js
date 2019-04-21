@@ -1,14 +1,15 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = undefined;
+Object.defineProperty(exports, "default", {
+  enumerable: true,
+  get: function get() {
+    return _Form.default;
+  }
+});
 
-var _Form = require('./Form');
-
-var _Form2 = _interopRequireDefault(_Form);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = _Form2.default;
+var _Form = _interopRequireDefault(require("./Form"));

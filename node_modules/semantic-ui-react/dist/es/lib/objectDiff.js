@@ -1,7 +1,6 @@
-import _isEqual from 'lodash/isEqual';
-import _has from 'lodash/has';
-import _transform from 'lodash/transform';
-
+import _isEqual from "lodash/isEqual";
+import _has from "lodash/has";
+import _transform from "lodash/transform";
 
 /**
  * Naive and inefficient object difference, intended for development / debugging use only.
@@ -21,8 +20,7 @@ import _transform from 'lodash/transform';
 export default (function (source, target) {
   return _transform(source, function (res, val, key) {
     // deleted keys
-    if (!_has(target, key)) res[key] = '[DELETED]';
-    // new keys / changed values
+    if (!_has(target, key)) res[key] = '[DELETED]'; // new keys / changed values
     // Note, we tolerate isEqual here as this is a dev only utility and not included in production code
     else if (!_isEqual(val, target[key])) res[key] = target[key];
   }, {});

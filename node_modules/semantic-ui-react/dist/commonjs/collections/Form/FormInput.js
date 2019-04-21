@@ -1,28 +1,21 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _react = _interopRequireDefault(require("react"));
 
-var _react = require('react');
+var _lib = require("../../lib");
 
-var _react2 = _interopRequireDefault(_react);
+var _Input = _interopRequireDefault(require("../../elements/Input"));
 
-var _lib = require('../../lib');
-
-var _Input = require('../../elements/Input');
-
-var _Input2 = _interopRequireDefault(_Input);
-
-var _FormField = require('./FormField');
-
-var _FormField2 = _interopRequireDefault(_FormField);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _FormField = _interopRequireDefault(require("./FormField"));
 
 /**
  * Sugar for <Form.Field control={Input} />.
@@ -31,31 +24,24 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  */
 function FormInput(props) {
   var control = props.control;
-
   var rest = (0, _lib.getUnhandledProps)(FormInput, props);
   var ElementType = (0, _lib.getElementType)(FormInput, props);
-
-  return _react2.default.createElement(ElementType, (0, _extends3.default)({}, rest, { control: control }));
+  return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+    control: control
+  }));
 }
 
-FormInput.handledProps = ['as', 'control'];
-FormInput._meta = {
-  name: 'FormInput',
-  parent: 'Form',
-  type: _lib.META.TYPES.COLLECTION
-};
-
+FormInput.handledProps = ["as", "control"];
 FormInput.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: _lib.customPropTypes.as,
 
   /** A FormField control prop. */
-  control: _FormField2.default.propTypes.control
+  control: _FormField.default.propTypes.control
 } : {};
-
 FormInput.defaultProps = {
-  as: _FormField2.default,
-  control: _Input2.default
+  as: _FormField.default,
+  control: _Input.default
 };
-
-exports.default = FormInput;
+var _default = FormInput;
+exports.default = _default;

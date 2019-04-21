@@ -1,14 +1,13 @@
-import _toConsumableArray from 'babel-runtime/helpers/toConsumableArray';
-import _extends from 'babel-runtime/helpers/extends';
+import _toConsumableArray from "@babel/runtime/helpers/toConsumableArray";
+import _extends from "@babel/runtime/helpers/extends";
 import cx from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { customPropTypes, getElementType, getUnhandledProps, META, SUI, useKeyOnly, useMultipleProp, useTextAlignProp, useVerticalAlignProp, useWidthProp } from '../../lib';
-
+import { customPropTypes, getElementType, getUnhandledProps, SUI, useKeyOnly, useMultipleProp, useTextAlignProp, useVerticalAlignProp, useWidthProp } from '../../lib';
 /**
  * A row sub-component for Grid.
  */
+
 function GridRow(props) {
   var centered = props.centered,
       children = props.children,
@@ -21,26 +20,15 @@ function GridRow(props) {
       stretched = props.stretched,
       textAlign = props.textAlign,
       verticalAlign = props.verticalAlign;
-
-
   var classes = cx(color, useKeyOnly(centered, 'centered'), useKeyOnly(divided, 'divided'), useKeyOnly(stretched, 'stretched'), useMultipleProp(only, 'only'), useMultipleProp(reversed, 'reversed'), useTextAlignProp(textAlign), useVerticalAlignProp(verticalAlign), useWidthProp(columns, 'column', true), 'row', className);
   var rest = getUnhandledProps(GridRow, props);
   var ElementType = getElementType(GridRow, props);
-
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    children
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), children);
 }
 
-GridRow.handledProps = ['as', 'centered', 'children', 'className', 'color', 'columns', 'divided', 'only', 'reversed', 'stretched', 'textAlign', 'verticalAlign'];
-GridRow._meta = {
-  name: 'GridRow',
-  parent: 'Grid',
-  type: META.TYPES.COLLECTION
-};
-
+GridRow.handledProps = ["as", "centered", "children", "className", "color", "columns", "divided", "only", "reversed", "stretched", "textAlign", "verticalAlign"];
 GridRow.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -58,7 +46,7 @@ GridRow.propTypes = process.env.NODE_ENV !== "production" ? {
   color: PropTypes.oneOf(SUI.COLORS),
 
   /** Represents column count per line in Row. */
-  columns: PropTypes.oneOf([].concat(_toConsumableArray(SUI.WIDTHS), ['equal'])),
+  columns: PropTypes.oneOf(_toConsumableArray(SUI.WIDTHS).concat(['equal'])),
 
   /** A row can have dividers between its columns. */
   divided: PropTypes.bool,
@@ -78,5 +66,4 @@ GridRow.propTypes = process.env.NODE_ENV !== "production" ? {
   /** A row can specify its vertical alignment to have all its columns vertically centered. */
   verticalAlign: PropTypes.oneOf(SUI.VERTICAL_ALIGNMENTS)
 } : {};
-
 export default GridRow;

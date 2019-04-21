@@ -1,15 +1,14 @@
-import _extends from 'babel-runtime/helpers/extends';
+import _extends from "@babel/runtime/helpers/extends";
 import cx from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { childrenUtils, createShorthandFactory, customPropTypes, getElementType, getUnhandledProps, META, SUI, useValueAndKey, useVerticalAlignProp } from '../../lib';
+import { childrenUtils, createShorthandFactory, customPropTypes, getElementType, getUnhandledProps, SUI, useValueAndKey, useVerticalAlignProp } from '../../lib';
 import ListDescription from './ListDescription';
 import ListHeader from './ListHeader';
-
 /**
  * A list item can contain a content.
  */
+
 function ListContent(props) {
   var children = props.children,
       className = props.className,
@@ -18,34 +17,22 @@ function ListContent(props) {
       floated = props.floated,
       header = props.header,
       verticalAlign = props.verticalAlign;
-
-
   var classes = cx(useValueAndKey(floated, 'floated'), useVerticalAlignProp(verticalAlign), 'content', className);
   var rest = getUnhandledProps(ListContent, props);
   var ElementType = getElementType(ListContent, props);
 
-  if (!childrenUtils.isNil(children)) return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    children
-  );
+  if (!childrenUtils.isNil(children)) {
+    return React.createElement(ElementType, _extends({}, rest, {
+      className: classes
+    }), children);
+  }
 
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    ListHeader.create(header),
-    ListDescription.create(description),
-    content
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), ListHeader.create(header), ListDescription.create(description), content);
 }
 
-ListContent.handledProps = ['as', 'children', 'className', 'content', 'description', 'floated', 'header', 'verticalAlign'];
-ListContent._meta = {
-  name: 'ListContent',
-  parent: 'List',
-  type: META.TYPES.ELEMENT
-};
-
+ListContent.handledProps = ["as", "children", "className", "content", "description", "floated", "header", "verticalAlign"];
 ListContent.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -71,9 +58,9 @@ ListContent.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element inside a list can be vertically aligned. */
   verticalAlign: PropTypes.oneOf(SUI.VERTICAL_ALIGNMENTS)
 } : {};
-
 ListContent.create = createShorthandFactory(ListContent, function (content) {
-  return { content: content };
+  return {
+    content: content
+  };
 });
-
 export default ListContent;

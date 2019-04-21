@@ -1,14 +1,15 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = undefined;
+Object.defineProperty(exports, "default", {
+  enumerable: true,
+  get: function get() {
+    return _Progress.default;
+  }
+});
 
-var _Progress = require('./Progress');
-
-var _Progress2 = _interopRequireDefault(_Progress);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = _Progress2.default;
+var _Progress = _interopRequireDefault(require("./Progress"));

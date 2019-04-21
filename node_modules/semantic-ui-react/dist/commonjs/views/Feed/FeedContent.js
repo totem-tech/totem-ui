@@ -1,44 +1,29 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _classnames = _interopRequireDefault(require("classnames"));
 
-var _classnames = require('classnames');
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
-var _classnames2 = _interopRequireDefault(_classnames);
+var _react = _interopRequireDefault(require("react"));
 
-var _propTypes = require('prop-types');
+var _lib = require("../../lib");
 
-var _propTypes2 = _interopRequireDefault(_propTypes);
+var _FeedDate = _interopRequireDefault(require("./FeedDate"));
 
-var _react = require('react');
+var _FeedExtra = _interopRequireDefault(require("./FeedExtra"));
 
-var _react2 = _interopRequireDefault(_react);
+var _FeedMeta = _interopRequireDefault(require("./FeedMeta"));
 
-var _lib = require('../../lib');
-
-var _FeedDate = require('./FeedDate');
-
-var _FeedDate2 = _interopRequireDefault(_FeedDate);
-
-var _FeedExtra = require('./FeedExtra');
-
-var _FeedExtra2 = _interopRequireDefault(_FeedExtra);
-
-var _FeedMeta = require('./FeedMeta');
-
-var _FeedMeta2 = _interopRequireDefault(_FeedMeta);
-
-var _FeedSummary = require('./FeedSummary');
-
-var _FeedSummary2 = _interopRequireDefault(_FeedSummary);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _FeedSummary = _interopRequireDefault(require("./FeedSummary"));
 
 function FeedContent(props) {
   var children = props.children,
@@ -49,58 +34,62 @@ function FeedContent(props) {
       date = props.date,
       meta = props.meta,
       summary = props.summary;
-
-
-  var classes = (0, _classnames2.default)('content', className);
+  var classes = (0, _classnames.default)('content', className);
   var rest = (0, _lib.getUnhandledProps)(FeedContent, props);
   var ElementType = (0, _lib.getElementType)(FeedContent, props);
 
   if (!_lib.childrenUtils.isNil(children)) {
-    return _react2.default.createElement(
-      ElementType,
-      (0, _extends3.default)({}, rest, { className: classes }),
-      children
-    );
+    return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+      className: classes
+    }), children);
   }
 
-  return _react2.default.createElement(
-    ElementType,
-    (0, _extends3.default)({}, rest, { className: classes }),
-    (0, _lib.createShorthand)(_FeedDate2.default, function (val) {
-      return { content: val };
-    }, date),
-    (0, _lib.createShorthand)(_FeedSummary2.default, function (val) {
-      return { content: val };
-    }, summary),
-    content,
-    (0, _lib.createShorthand)(_FeedExtra2.default, function (val) {
-      return { text: true, content: val };
-    }, extraText),
-    (0, _lib.createShorthand)(_FeedExtra2.default, function (val) {
-      return { images: val };
-    }, extraImages),
-    (0, _lib.createShorthand)(_FeedMeta2.default, function (val) {
-      return { content: val };
-    }, meta)
-  );
+  return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+    className: classes
+  }), (0, _lib.createShorthand)(_FeedDate.default, function (val) {
+    return {
+      content: val
+    };
+  }, date, {
+    autoGenerateKey: false
+  }), (0, _lib.createShorthand)(_FeedSummary.default, function (val) {
+    return {
+      content: val
+    };
+  }, summary, {
+    autoGenerateKey: false
+  }), content, (0, _lib.createShorthand)(_FeedExtra.default, function (val) {
+    return {
+      text: true,
+      content: val
+    };
+  }, extraText, {
+    autoGenerateKey: false
+  }), (0, _lib.createShorthand)(_FeedExtra.default, function (val) {
+    return {
+      images: val
+    };
+  }, extraImages, {
+    autoGenerateKey: false
+  }), (0, _lib.createShorthand)(_FeedMeta.default, function (val) {
+    return {
+      content: val
+    };
+  }, meta, {
+    autoGenerateKey: false
+  }));
 }
 
-FeedContent.handledProps = ['as', 'children', 'className', 'content', 'date', 'extraImages', 'extraText', 'meta', 'summary'];
-FeedContent._meta = {
-  name: 'FeedContent',
-  parent: 'Feed',
-  type: _lib.META.TYPES.VIEW
-};
-
+FeedContent.handledProps = ["as", "children", "className", "content", "date", "extraImages", "extraText", "meta", "summary"];
 FeedContent.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: _lib.customPropTypes.as,
 
   /** Primary content. */
-  children: _propTypes2.default.node,
+  children: _propTypes.default.node,
 
   /** Additional classes. */
-  className: _propTypes2.default.string,
+  className: _propTypes.default.string,
 
   /** Shorthand for primary content. */
   content: _lib.customPropTypes.contentShorthand,
@@ -109,7 +98,7 @@ FeedContent.propTypes = process.env.NODE_ENV !== "production" ? {
   date: _lib.customPropTypes.itemShorthand,
 
   /** Shorthand for FeedExtra with images. */
-  extraImages: _FeedExtra2.default.propTypes.images,
+  extraImages: _FeedExtra.default.propTypes.images,
 
   /** Shorthand for FeedExtra with text. */
   extraText: _lib.customPropTypes.itemShorthand,
@@ -120,5 +109,5 @@ FeedContent.propTypes = process.env.NODE_ENV !== "production" ? {
   /** Shorthand for FeedSummary. */
   summary: _lib.customPropTypes.itemShorthand
 } : {};
-
-exports.default = FeedContent;
+var _default = FeedContent;
+exports.default = _default;

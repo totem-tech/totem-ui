@@ -1,15 +1,13 @@
-import _extends from 'babel-runtime/helpers/extends';
-import _without from 'lodash/without';
+import _extends from "@babel/runtime/helpers/extends";
+import _without from "lodash/without";
 import cx from 'classnames';
-
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, META, SUI, useKeyOnly, useKeyOrValueAndKey } from '../../lib';
-
+import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, SUI, useKeyOnly, useKeyOrValueAndKey } from '../../lib';
 /**
  * A rail is used to show accompanying content outside the boundaries of the main view of a site.
  */
+
 function Rail(props) {
   var attached = props.attached,
       children = props.children,
@@ -20,25 +18,15 @@ function Rail(props) {
       internal = props.internal,
       position = props.position,
       size = props.size;
-
-
   var classes = cx('ui', position, size, useKeyOnly(attached, 'attached'), useKeyOnly(dividing, 'dividing'), useKeyOnly(internal, 'internal'), useKeyOrValueAndKey(close, 'close'), 'rail', className);
   var rest = getUnhandledProps(Rail, props);
   var ElementType = getElementType(Rail, props);
-
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    childrenUtils.isNil(children) ? content : children
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), childrenUtils.isNil(children) ? content : children);
 }
 
-Rail.handledProps = ['as', 'attached', 'children', 'className', 'close', 'content', 'dividing', 'internal', 'position', 'size'];
-Rail._meta = {
-  name: 'Rail',
-  type: META.TYPES.ELEMENT
-};
-
+Rail.handledProps = ["as", "attached", "children", "className", "close", "content", "dividing", "internal", "position", "size"];
 Rail.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -70,5 +58,4 @@ Rail.propTypes = process.env.NODE_ENV !== "production" ? {
   /** A rail can have different sizes. */
   size: PropTypes.oneOf(_without(SUI.SIZES, 'medium'))
 } : {};
-
 export default Rail;

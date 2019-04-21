@@ -1,20 +1,17 @@
-import _extends from 'babel-runtime/helpers/extends';
-import _without from 'lodash/without';
-
+import _extends from "@babel/runtime/helpers/extends";
+import _without from "lodash/without";
 import cx from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, META, SUI, useValueAndKey, useTextAlignProp, useKeyOrValueAndKey, useKeyOnly } from '../../lib';
+import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, SUI, useValueAndKey, useTextAlignProp, useKeyOrValueAndKey, useKeyOnly } from '../../lib';
 import Icon from '../../elements/Icon';
 import Image from '../../elements/Image';
-
 import HeaderSubheader from './HeaderSubheader';
 import HeaderContent from './HeaderContent';
-
 /**
  * A header provides a short summary of content
  */
+
 function Header(props) {
   var attached = props.attached,
       block = props.block,
@@ -32,52 +29,38 @@ function Header(props) {
       sub = props.sub,
       subheader = props.subheader,
       textAlign = props.textAlign;
-
-
   var classes = cx('ui', color, size, useKeyOnly(block, 'block'), useKeyOnly(disabled, 'disabled'), useKeyOnly(dividing, 'dividing'), useValueAndKey(floated, 'floated'), useKeyOnly(icon === true, 'icon'), useKeyOnly(image === true, 'image'), useKeyOnly(inverted, 'inverted'), useKeyOnly(sub, 'sub'), useKeyOrValueAndKey(attached, 'attached'), useTextAlignProp(textAlign), 'header', className);
   var rest = getUnhandledProps(Header, props);
   var ElementType = getElementType(Header, props);
 
   if (!childrenUtils.isNil(children)) {
-    return React.createElement(
-      ElementType,
-      _extends({}, rest, { className: classes }),
-      children
-    );
+    return React.createElement(ElementType, _extends({}, rest, {
+      className: classes
+    }), children);
   }
 
-  var iconElement = Icon.create(icon);
-  var imageElement = Image.create(image);
-  var subheaderElement = HeaderSubheader.create(subheader);
+  var iconElement = Icon.create(icon, {
+    autoGenerateKey: false
+  });
+  var imageElement = Image.create(image, {
+    autoGenerateKey: false
+  });
+  var subheaderElement = HeaderSubheader.create(subheader, {
+    autoGenerateKey: false
+  });
 
   if (iconElement || imageElement) {
-    return React.createElement(
-      ElementType,
-      _extends({}, rest, { className: classes }),
-      iconElement || imageElement,
-      (content || subheaderElement) && React.createElement(
-        HeaderContent,
-        null,
-        content,
-        subheaderElement
-      )
-    );
+    return React.createElement(ElementType, _extends({}, rest, {
+      className: classes
+    }), iconElement || imageElement, (content || subheaderElement) && React.createElement(HeaderContent, null, content, subheaderElement));
   }
 
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    content,
-    subheaderElement
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), content, subheaderElement);
 }
 
-Header.handledProps = ['as', 'attached', 'block', 'children', 'className', 'color', 'content', 'disabled', 'dividing', 'floated', 'icon', 'image', 'inverted', 'size', 'sub', 'subheader', 'textAlign'];
-Header._meta = {
-  name: 'Header',
-  type: META.TYPES.ELEMENT
-};
-
+Header.handledProps = ["as", "attached", "block", "children", "className", "color", "content", "disabled", "dividing", "floated", "icon", "image", "inverted", "size", "sub", "subheader", "textAlign"];
 Header.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -130,8 +113,6 @@ Header.propTypes = process.env.NODE_ENV !== "production" ? {
   /** Align header content. */
   textAlign: PropTypes.oneOf(SUI.TEXT_ALIGNMENTS)
 } : {};
-
 Header.Content = HeaderContent;
 Header.Subheader = HeaderSubheader;
-
 export default Header;

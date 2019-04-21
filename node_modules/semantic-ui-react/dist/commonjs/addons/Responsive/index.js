@@ -1,14 +1,15 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = undefined;
+Object.defineProperty(exports, "default", {
+  enumerable: true,
+  get: function get() {
+    return _Responsive.default;
+  }
+});
 
-var _Responsive = require('./Responsive');
-
-var _Responsive2 = _interopRequireDefault(_Responsive);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = _Responsive2.default;
+var _Responsive = _interopRequireDefault(require("./Responsive"));

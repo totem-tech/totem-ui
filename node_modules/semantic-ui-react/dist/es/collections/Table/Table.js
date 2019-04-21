@@ -1,22 +1,20 @@
-import _extends from 'babel-runtime/helpers/extends';
-import _without from 'lodash/without';
-import _map from 'lodash/map';
-
+import _extends from "@babel/runtime/helpers/extends";
+import _without from "lodash/without";
+import _map from "lodash/map";
 import cx from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, META, SUI, useKeyOnly, useKeyOrValueAndKey, useTextAlignProp, useVerticalAlignProp, useWidthProp } from '../../lib';
+import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, SUI, useKeyOnly, useKeyOrValueAndKey, useTextAlignProp, useVerticalAlignProp, useWidthProp } from '../../lib';
 import TableBody from './TableBody';
 import TableCell from './TableCell';
 import TableFooter from './TableFooter';
 import TableHeader from './TableHeader';
 import TableHeaderCell from './TableHeaderCell';
 import TableRow from './TableRow';
-
 /**
  * A table displays a collections of data grouped into rows.
  */
+
 function Table(props) {
   var attached = props.attached,
       basic = props.basic,
@@ -45,53 +43,31 @@ function Table(props) {
       textAlign = props.textAlign,
       unstackable = props.unstackable,
       verticalAlign = props.verticalAlign;
-
-
   var classes = cx('ui', color, size, useKeyOnly(celled, 'celled'), useKeyOnly(collapsing, 'collapsing'), useKeyOnly(definition, 'definition'), useKeyOnly(fixed, 'fixed'), useKeyOnly(inverted, 'inverted'), useKeyOnly(selectable, 'selectable'), useKeyOnly(singleLine, 'single line'), useKeyOnly(sortable, 'sortable'), useKeyOnly(stackable, 'stackable'), useKeyOnly(striped, 'striped'), useKeyOnly(structured, 'structured'), useKeyOnly(unstackable, 'unstackable'), useKeyOrValueAndKey(attached, 'attached'), useKeyOrValueAndKey(basic, 'basic'), useKeyOrValueAndKey(compact, 'compact'), useKeyOrValueAndKey(padded, 'padded'), useTextAlignProp(textAlign), useVerticalAlignProp(verticalAlign), useWidthProp(columns, 'column'), 'table', className);
   var rest = getUnhandledProps(Table, props);
   var ElementType = getElementType(Table, props);
 
   if (!childrenUtils.isNil(children)) {
-    return React.createElement(
-      ElementType,
-      _extends({}, rest, { className: classes }),
-      children
-    );
+    return React.createElement(ElementType, _extends({}, rest, {
+      className: classes
+    }), children);
   }
 
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    headerRow && React.createElement(
-      TableHeader,
-      null,
-      TableRow.create(headerRow, { defaultProps: { cellAs: 'th' } })
-    ),
-    React.createElement(
-      TableBody,
-      null,
-      renderBodyRow && _map(tableData, function (data, index) {
-        return TableRow.create(renderBodyRow(data, index));
-      })
-    ),
-    footerRow && React.createElement(
-      TableFooter,
-      null,
-      TableRow.create(footerRow)
-    )
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), headerRow && React.createElement(TableHeader, null, TableRow.create(headerRow, {
+    defaultProps: {
+      cellAs: 'th'
+    }
+  })), React.createElement(TableBody, null, renderBodyRow && _map(tableData, function (data, index) {
+    return TableRow.create(renderBodyRow(data, index));
+  })), footerRow && React.createElement(TableFooter, null, TableRow.create(footerRow)));
 }
 
-Table.handledProps = ['as', 'attached', 'basic', 'celled', 'children', 'className', 'collapsing', 'color', 'columns', 'compact', 'definition', 'fixed', 'footerRow', 'headerRow', 'inverted', 'padded', 'renderBodyRow', 'selectable', 'singleLine', 'size', 'sortable', 'stackable', 'striped', 'structured', 'tableData', 'textAlign', 'unstackable', 'verticalAlign'];
-Table._meta = {
-  name: 'Table',
-  type: META.TYPES.COLLECTION
-};
-
+Table.handledProps = ["as", "attached", "basic", "celled", "children", "className", "collapsing", "color", "columns", "compact", "definition", "fixed", "footerRow", "headerRow", "inverted", "padded", "renderBodyRow", "selectable", "singleLine", "size", "sortable", "stackable", "striped", "structured", "tableData", "textAlign", "unstackable", "verticalAlign"];
 Table.defaultProps = {
   as: 'table'
 };
-
 Table.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -185,12 +161,10 @@ Table.propTypes = process.env.NODE_ENV !== "production" ? {
   /** A table can adjust its text alignment. */
   verticalAlign: PropTypes.oneOf(SUI.VERTICAL_ALIGNMENTS)
 } : {};
-
 Table.Body = TableBody;
 Table.Cell = TableCell;
 Table.Footer = TableFooter;
 Table.Header = TableHeader;
 Table.HeaderCell = TableHeaderCell;
 Table.Row = TableRow;
-
 export default Table;

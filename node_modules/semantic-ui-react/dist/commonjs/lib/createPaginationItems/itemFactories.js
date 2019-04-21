@@ -1,48 +1,59 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.createLastItem = exports.createNextItem = exports.createPageFactory = exports.createPrevItem = exports.createFirstPage = exports.createEllipsisItem = void 0;
+
 /**
  * @param {number} pageNumber
  * @return {Object}
  */
-var createEllipsisItem = exports.createEllipsisItem = function createEllipsisItem(pageNumber) {
+var createEllipsisItem = function createEllipsisItem(pageNumber) {
   return {
     active: false,
     type: 'ellipsisItem',
     value: pageNumber
   };
 };
-
 /**
  * @return {Object}
  */
-var createFirstPage = exports.createFirstPage = function createFirstPage() {
+
+
+exports.createEllipsisItem = createEllipsisItem;
+
+var createFirstPage = function createFirstPage() {
   return {
     active: false,
     type: 'firstItem',
     value: 1
   };
 };
-
 /**
  * @param {number} activePage
  * @return {Object}
  */
-var createPrevItem = exports.createPrevItem = function createPrevItem(activePage) {
+
+
+exports.createFirstPage = createFirstPage;
+
+var createPrevItem = function createPrevItem(activePage) {
   return {
     active: false,
     type: 'prevItem',
     value: Math.max(1, activePage - 1)
   };
 };
-
 /**
  * @param {number} activePage
  * @return {function}
  */
-var createPageFactory = exports.createPageFactory = function createPageFactory(activePage) {
+
+
+exports.createPrevItem = createPrevItem;
+
+var createPageFactory = function createPageFactory(activePage) {
   return function (pageNumber) {
     return {
       active: activePage === pageNumber,
@@ -51,28 +62,36 @@ var createPageFactory = exports.createPageFactory = function createPageFactory(a
     };
   };
 };
-
 /**
  * @param {number} activePage
  * @param {number} totalPages
  * @return {Object}
  */
-var createNextItem = exports.createNextItem = function createNextItem(activePage, totalPages) {
+
+
+exports.createPageFactory = createPageFactory;
+
+var createNextItem = function createNextItem(activePage, totalPages) {
   return {
     active: false,
     type: 'nextItem',
     value: Math.min(activePage + 1, totalPages)
   };
 };
-
 /**
  * @param {number} totalPages
  * @return {Object}
  */
-var createLastItem = exports.createLastItem = function createLastItem(totalPages) {
+
+
+exports.createNextItem = createNextItem;
+
+var createLastItem = function createLastItem(totalPages) {
   return {
     active: false,
     type: 'lastItem',
     value: totalPages
   };
 };
+
+exports.createLastItem = createLastItem;

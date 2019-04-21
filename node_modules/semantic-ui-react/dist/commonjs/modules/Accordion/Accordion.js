@@ -1,40 +1,29 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _classnames = _interopRequireDefault(require("classnames"));
 
-var _classnames = require('classnames');
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
-var _classnames2 = _interopRequireDefault(_classnames);
+var _react = _interopRequireDefault(require("react"));
 
-var _propTypes = require('prop-types');
+var _lib = require("../../lib");
 
-var _propTypes2 = _interopRequireDefault(_propTypes);
+var _AccordionAccordion = _interopRequireDefault(require("./AccordionAccordion"));
 
-var _react = require('react');
+var _AccordionContent = _interopRequireDefault(require("./AccordionContent"));
 
-var _react2 = _interopRequireDefault(_react);
+var _AccordionPanel = _interopRequireDefault(require("./AccordionPanel"));
 
-var _lib = require('../../lib');
-
-var _AccordionAccordion = require('./AccordionAccordion');
-
-var _AccordionAccordion2 = _interopRequireDefault(_AccordionAccordion);
-
-var _AccordionContent = require('./AccordionContent');
-
-var _AccordionContent2 = _interopRequireDefault(_AccordionContent);
-
-var _AccordionTitle = require('./AccordionTitle');
-
-var _AccordionTitle2 = _interopRequireDefault(_AccordionTitle);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _AccordionTitle = _interopRequireDefault(require("./AccordionTitle"));
 
 /**
  * An accordion allows users to toggle the display of sections of content.
@@ -44,36 +33,30 @@ function Accordion(props) {
       fluid = props.fluid,
       inverted = props.inverted,
       styled = props.styled;
-
-
-  var classes = (0, _classnames2.default)('ui', (0, _lib.useKeyOnly)(fluid, 'fluid'), (0, _lib.useKeyOnly)(inverted, 'inverted'), (0, _lib.useKeyOnly)(styled, 'styled'), className);
+  var classes = (0, _classnames.default)('ui', (0, _lib.useKeyOnly)(fluid, 'fluid'), (0, _lib.useKeyOnly)(inverted, 'inverted'), (0, _lib.useKeyOnly)(styled, 'styled'), className);
   var rest = (0, _lib.getUnhandledProps)(Accordion, props);
-
-  return _react2.default.createElement(_AccordionAccordion2.default, (0, _extends3.default)({}, rest, { className: classes }));
+  return _react.default.createElement(_AccordionAccordion.default, (0, _extends2.default)({}, rest, {
+    className: classes
+  }));
 }
 
-Accordion.handledProps = ['className', 'fluid', 'inverted', 'styled'];
-Accordion._meta = {
-  name: 'Accordion',
-  type: _lib.META.TYPES.MODULE
-};
-
+Accordion.handledProps = ["className", "fluid", "inverted", "styled"];
 Accordion.propTypes = process.env.NODE_ENV !== "production" ? {
   /** Additional classes. */
-  className: _propTypes2.default.string,
+  className: _propTypes.default.string,
 
   /** Format to take up the width of its container. */
-  fluid: _propTypes2.default.bool,
+  fluid: _propTypes.default.bool,
 
   /** Format for dark backgrounds. */
-  inverted: _propTypes2.default.bool,
+  inverted: _propTypes.default.bool,
 
   /** Adds some basic styling to accordion panels. */
-  styled: _propTypes2.default.bool
+  styled: _propTypes.default.bool
 } : {};
-
-Accordion.Accordion = _AccordionAccordion2.default;
-Accordion.Content = _AccordionContent2.default;
-Accordion.Title = _AccordionTitle2.default;
-
-exports.default = Accordion;
+Accordion.Accordion = _AccordionAccordion.default;
+Accordion.Content = _AccordionContent.default;
+Accordion.Panel = _AccordionPanel.default;
+Accordion.Title = _AccordionTitle.default;
+var _default = Accordion;
+exports.default = _default;

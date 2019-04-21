@@ -1,28 +1,25 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
-var _react = require('react');
+var _react = _interopRequireDefault(require("react"));
 
-var _react2 = _interopRequireDefault(_react);
+var _lib = require("../../lib");
 
-var _lib = require('../../lib');
+var _Select = _interopRequireDefault(require("../../addons/Select"));
 
-var _Select = require('../../addons/Select');
+var _Dropdown = _interopRequireDefault(require("../../modules/Dropdown"));
 
-var _Select2 = _interopRequireDefault(_Select);
-
-var _FormField = require('./FormField');
-
-var _FormField2 = _interopRequireDefault(_FormField);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _FormField = _interopRequireDefault(require("./FormField"));
 
 /**
  * Sugar for <Form.Field control={Select} />.
@@ -30,32 +27,30 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @see Select
  */
 function FormSelect(props) {
-  var control = props.control;
-
+  var control = props.control,
+      options = props.options;
   var rest = (0, _lib.getUnhandledProps)(FormSelect, props);
   var ElementType = (0, _lib.getElementType)(FormSelect, props);
-
-  return _react2.default.createElement(ElementType, (0, _extends3.default)({}, rest, { control: control }));
+  return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+    control: control,
+    options: options
+  }));
 }
 
-FormSelect.handledProps = ['as', 'control'];
-FormSelect._meta = {
-  name: 'FormSelect',
-  parent: 'Form',
-  type: _lib.META.TYPES.COLLECTION
-};
-
+FormSelect.handledProps = ["as", "control", "options"];
 FormSelect.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: _lib.customPropTypes.as,
 
   /** A FormField control prop. */
-  control: _FormField2.default.propTypes.control
+  control: _FormField.default.propTypes.control,
+
+  /** Array of Dropdown.Item props e.g. `{ text: '', value: '' }` */
+  options: _propTypes.default.arrayOf(_propTypes.default.shape(_Dropdown.default.Item.propTypes)).isRequired
 } : {};
-
 FormSelect.defaultProps = {
-  as: _FormField2.default,
-  control: _Select2.default
+  as: _FormField.default,
+  control: _Select.default
 };
-
-exports.default = FormSelect;
+var _default = FormSelect;
+exports.default = _default;

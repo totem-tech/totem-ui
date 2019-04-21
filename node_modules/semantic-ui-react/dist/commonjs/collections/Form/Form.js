@@ -1,88 +1,59 @@
-'use strict';
+"use strict";
+
+var _interopRequireWildcard = require("@babel/runtime/helpers/interopRequireWildcard");
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
 
-var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
+var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
 
-var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime/helpers/possibleConstructorReturn"));
 
-var _createClass2 = require('babel-runtime/helpers/createClass');
+var _getPrototypeOf3 = _interopRequireDefault(require("@babel/runtime/helpers/getPrototypeOf"));
 
-var _createClass3 = _interopRequireDefault(_createClass2);
+var _inherits2 = _interopRequireDefault(require("@babel/runtime/helpers/inherits"));
 
-var _possibleConstructorReturn2 = require('babel-runtime/helpers/possibleConstructorReturn');
+var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
 
-var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
-var _inherits2 = require('babel-runtime/helpers/inherits');
+var _invoke2 = _interopRequireDefault(require("lodash/invoke"));
 
-var _inherits3 = _interopRequireDefault(_inherits2);
+var _without2 = _interopRequireDefault(require("lodash/without"));
 
-var _invoke2 = require('lodash/invoke');
+var _classnames = _interopRequireDefault(require("classnames"));
 
-var _invoke3 = _interopRequireDefault(_invoke2);
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
-var _without2 = require('lodash/without');
+var _react = _interopRequireWildcard(require("react"));
 
-var _without3 = _interopRequireDefault(_without2);
+var _lib = require("../../lib");
 
-var _classnames = require('classnames');
+var _FormButton = _interopRequireDefault(require("./FormButton"));
 
-var _classnames2 = _interopRequireDefault(_classnames);
+var _FormCheckbox = _interopRequireDefault(require("./FormCheckbox"));
 
-var _propTypes = require('prop-types');
+var _FormDropdown = _interopRequireDefault(require("./FormDropdown"));
 
-var _propTypes2 = _interopRequireDefault(_propTypes);
+var _FormField = _interopRequireDefault(require("./FormField"));
 
-var _react = require('react');
+var _FormGroup = _interopRequireDefault(require("./FormGroup"));
 
-var _react2 = _interopRequireDefault(_react);
+var _FormInput = _interopRequireDefault(require("./FormInput"));
 
-var _lib = require('../../lib');
+var _FormRadio = _interopRequireDefault(require("./FormRadio"));
 
-var _FormButton = require('./FormButton');
+var _FormSelect = _interopRequireDefault(require("./FormSelect"));
 
-var _FormButton2 = _interopRequireDefault(_FormButton);
-
-var _FormCheckbox = require('./FormCheckbox');
-
-var _FormCheckbox2 = _interopRequireDefault(_FormCheckbox);
-
-var _FormDropdown = require('./FormDropdown');
-
-var _FormDropdown2 = _interopRequireDefault(_FormDropdown);
-
-var _FormField = require('./FormField');
-
-var _FormField2 = _interopRequireDefault(_FormField);
-
-var _FormGroup = require('./FormGroup');
-
-var _FormGroup2 = _interopRequireDefault(_FormGroup);
-
-var _FormInput = require('./FormInput');
-
-var _FormInput2 = _interopRequireDefault(_FormInput);
-
-var _FormRadio = require('./FormRadio');
-
-var _FormRadio2 = _interopRequireDefault(_FormRadio);
-
-var _FormSelect = require('./FormSelect');
-
-var _FormSelect2 = _interopRequireDefault(_FormSelect);
-
-var _FormTextArea = require('./FormTextArea');
-
-var _FormTextArea2 = _interopRequireDefault(_FormTextArea);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _FormTextArea = _interopRequireDefault(require("./FormTextArea"));
 
 /**
  * A Form displays a set of related user input fields in a structured way.
@@ -95,136 +66,122 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @see Select
  * @see Visibility
  */
-var Form = function (_Component) {
-  (0, _inherits3.default)(Form, _Component);
+var Form =
+/*#__PURE__*/
+function (_Component) {
+  (0, _inherits2.default)(Form, _Component);
 
   function Form() {
-    var _ref;
+    var _getPrototypeOf2;
 
-    var _temp, _this, _ret;
+    var _this;
 
-    (0, _classCallCheck3.default)(this, Form);
+    (0, _classCallCheck2.default)(this, Form);
 
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-      args[_key] = arguments[_key];
+    for (var _len = arguments.length, _args = new Array(_len), _key = 0; _key < _len; _key++) {
+      _args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this = (0, _possibleConstructorReturn3.default)(this, (_ref = Form.__proto__ || Object.getPrototypeOf(Form)).call.apply(_ref, [this].concat(args))), _this), _initialiseProps.call(_this), _temp), (0, _possibleConstructorReturn3.default)(_this, _ret);
+    _this = (0, _possibleConstructorReturn2.default)(this, (_getPrototypeOf2 = (0, _getPrototypeOf3.default)(Form)).call.apply(_getPrototypeOf2, [this].concat(_args)));
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "handleSubmit", function (e) {
+      var action = _this.props.action; // Heads up! Third party libs can pass own data as first argument, we need to check that it has preventDefault()
+      // method.
+
+      if (typeof action !== 'string') (0, _invoke2.default)(e, 'preventDefault');
+
+      for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+        args[_key2 - 1] = arguments[_key2];
+      }
+
+      _invoke2.default.apply(void 0, [_this.props, 'onSubmit', e, _this.props].concat(args));
+    });
+    return _this;
   }
 
-  (0, _createClass3.default)(Form, [{
-    key: 'render',
+  (0, _createClass2.default)(Form, [{
+    key: "render",
     value: function render() {
-      var _props = this.props,
-          action = _props.action,
-          children = _props.children,
-          className = _props.className,
-          error = _props.error,
-          inverted = _props.inverted,
-          loading = _props.loading,
-          reply = _props.reply,
-          size = _props.size,
-          success = _props.success,
-          unstackable = _props.unstackable,
-          warning = _props.warning,
-          widths = _props.widths;
-
-
-      var classes = (0, _classnames2.default)('ui', size, (0, _lib.useKeyOnly)(error, 'error'), (0, _lib.useKeyOnly)(inverted, 'inverted'), (0, _lib.useKeyOnly)(loading, 'loading'), (0, _lib.useKeyOnly)(reply, 'reply'), (0, _lib.useKeyOnly)(success, 'success'), (0, _lib.useKeyOnly)(unstackable, 'unstackable'), (0, _lib.useKeyOnly)(warning, 'warning'), (0, _lib.useWidthProp)(widths, null, true), 'form', className);
+      var _this$props = this.props,
+          action = _this$props.action,
+          children = _this$props.children,
+          className = _this$props.className,
+          error = _this$props.error,
+          inverted = _this$props.inverted,
+          loading = _this$props.loading,
+          reply = _this$props.reply,
+          size = _this$props.size,
+          success = _this$props.success,
+          unstackable = _this$props.unstackable,
+          warning = _this$props.warning,
+          widths = _this$props.widths;
+      var classes = (0, _classnames.default)('ui', size, (0, _lib.useKeyOnly)(error, 'error'), (0, _lib.useKeyOnly)(inverted, 'inverted'), (0, _lib.useKeyOnly)(loading, 'loading'), (0, _lib.useKeyOnly)(reply, 'reply'), (0, _lib.useKeyOnly)(success, 'success'), (0, _lib.useKeyOnly)(unstackable, 'unstackable'), (0, _lib.useKeyOnly)(warning, 'warning'), (0, _lib.useWidthProp)(widths, null, true), 'form', className);
       var rest = (0, _lib.getUnhandledProps)(Form, this.props);
       var ElementType = (0, _lib.getElementType)(Form, this.props);
-
-      return _react2.default.createElement(
-        ElementType,
-        (0, _extends3.default)({}, rest, {
-          action: action,
-          className: classes,
-          onSubmit: this.handleSubmit
-        }),
-        children
-      );
+      return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+        action: action,
+        className: classes,
+        onSubmit: this.handleSubmit
+      }), children);
     }
   }]);
   return Form;
 }(_react.Component);
 
-Form.defaultProps = {
+(0, _defineProperty2.default)(Form, "defaultProps", {
   as: 'form'
-};
-Form._meta = {
-  name: 'Form',
-  type: _lib.META.TYPES.COLLECTION
-};
-Form.Field = _FormField2.default;
-Form.Button = _FormButton2.default;
-Form.Checkbox = _FormCheckbox2.default;
-Form.Dropdown = _FormDropdown2.default;
-Form.Group = _FormGroup2.default;
-Form.Input = _FormInput2.default;
-Form.Radio = _FormRadio2.default;
-Form.Select = _FormSelect2.default;
-Form.TextArea = _FormTextArea2.default;
-Form.handledProps = ['action', 'as', 'children', 'className', 'error', 'inverted', 'loading', 'onSubmit', 'reply', 'size', 'success', 'unstackable', 'warning', 'widths'];
-
-var _initialiseProps = function _initialiseProps() {
-  var _this2 = this;
-
-  this.handleSubmit = function (e) {
-    for (var _len2 = arguments.length, args = Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-      args[_key2 - 1] = arguments[_key2];
-    }
-
-    var action = _this2.props.action;
-
-    // Heads up! Third party libs can pass own data as first argument, we need to check that it has preventDefault()
-    // method.
-
-    if (typeof action !== 'string') (0, _invoke3.default)(e, 'preventDefault');
-    _invoke3.default.apply(undefined, [_this2.props, 'onSubmit', e, _this2.props].concat(args));
-  };
-};
-
+});
+(0, _defineProperty2.default)(Form, "Field", _FormField.default);
+(0, _defineProperty2.default)(Form, "Button", _FormButton.default);
+(0, _defineProperty2.default)(Form, "Checkbox", _FormCheckbox.default);
+(0, _defineProperty2.default)(Form, "Dropdown", _FormDropdown.default);
+(0, _defineProperty2.default)(Form, "Group", _FormGroup.default);
+(0, _defineProperty2.default)(Form, "Input", _FormInput.default);
+(0, _defineProperty2.default)(Form, "Radio", _FormRadio.default);
+(0, _defineProperty2.default)(Form, "Select", _FormSelect.default);
+(0, _defineProperty2.default)(Form, "TextArea", _FormTextArea.default);
+(0, _defineProperty2.default)(Form, "handledProps", ["action", "as", "children", "className", "error", "inverted", "loading", "onSubmit", "reply", "size", "success", "unstackable", "warning", "widths"]);
 Form.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: _lib.customPropTypes.as,
 
   /** The HTML form action */
-  action: _propTypes2.default.string,
+  action: _propTypes.default.string,
 
   /** Primary content. */
-  children: _propTypes2.default.node,
+  children: _propTypes.default.node,
 
   /** Additional classes. */
-  className: _propTypes2.default.string,
+  className: _propTypes.default.string,
 
   /** Automatically show any error Message children. */
-  error: _propTypes2.default.bool,
+  error: _propTypes.default.bool,
 
   /** A form can have its color inverted for contrast. */
-  inverted: _propTypes2.default.bool,
+  inverted: _propTypes.default.bool,
 
   /** Automatically show a loading indicator. */
-  loading: _propTypes2.default.bool,
+  loading: _propTypes.default.bool,
 
   /** The HTML form submit handler. */
-  onSubmit: _propTypes2.default.func,
+  onSubmit: _propTypes.default.func,
 
   /** A comment can contain a form to reply to a comment. This may have arbitrary content. */
-  reply: _propTypes2.default.bool,
+  reply: _propTypes.default.bool,
 
   /** A form can vary in size. */
-  size: _propTypes2.default.oneOf((0, _without3.default)(_lib.SUI.SIZES, 'medium')),
+  size: _propTypes.default.oneOf((0, _without2.default)(_lib.SUI.SIZES, 'medium')),
 
   /** Automatically show any success Message children. */
-  success: _propTypes2.default.bool,
+  success: _propTypes.default.bool,
 
   /** A form can prevent itself from stacking on mobile. */
-  unstackable: _propTypes2.default.bool,
+  unstackable: _propTypes.default.bool,
 
   /** Automatically show any warning Message children. */
-  warning: _propTypes2.default.bool,
+  warning: _propTypes.default.bool,
 
   /** Forms can automatically divide fields to be equal width. */
-  widths: _propTypes2.default.oneOf(['equal'])
+  widths: _propTypes.default.oneOf(['equal'])
 } : {};
-exports.default = Form;
+var _default = Form;
+exports.default = _default;

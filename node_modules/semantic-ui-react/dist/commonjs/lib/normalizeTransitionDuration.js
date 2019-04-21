@@ -1,8 +1,9 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
 /**
  * Normalizes the duration of a transition.
@@ -10,6 +11,8 @@ Object.defineProperty(exports, "__esModule", {
  * @param {'hide'|'show'} type The type of transition.
  * @returns {number}
  */
-exports.default = function (duration, type) {
+var _default = function _default(duration, type) {
   return typeof duration === 'number' || typeof duration === 'string' ? duration : duration[type];
 };
+
+exports.default = _default;

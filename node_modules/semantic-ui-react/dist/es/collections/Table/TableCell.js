@@ -1,16 +1,14 @@
-import _extends from 'babel-runtime/helpers/extends';
-import _without from 'lodash/without';
-
+import _extends from "@babel/runtime/helpers/extends";
+import _without from "lodash/without";
 import cx from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { childrenUtils, createShorthandFactory, customPropTypes, getElementType, getUnhandledProps, META, SUI, useKeyOnly, useTextAlignProp, useVerticalAlignProp, useWidthProp } from '../../lib';
+import { childrenUtils, createShorthandFactory, customPropTypes, getElementType, getUnhandledProps, SUI, useKeyOnly, useTextAlignProp, useVerticalAlignProp, useWidthProp } from '../../lib';
 import Icon from '../../elements/Icon';
-
 /**
  * A table row can have cells.
  */
+
 function TableCell(props) {
   var active = props.active,
       children = props.children,
@@ -28,39 +26,25 @@ function TableCell(props) {
       verticalAlign = props.verticalAlign,
       warning = props.warning,
       width = props.width;
-
-
   var classes = cx(useKeyOnly(active, 'active'), useKeyOnly(collapsing, 'collapsing'), useKeyOnly(disabled, 'disabled'), useKeyOnly(error, 'error'), useKeyOnly(negative, 'negative'), useKeyOnly(positive, 'positive'), useKeyOnly(selectable, 'selectable'), useKeyOnly(singleLine, 'single line'), useKeyOnly(warning, 'warning'), useTextAlignProp(textAlign), useVerticalAlignProp(verticalAlign), useWidthProp(width, 'wide'), className);
   var rest = getUnhandledProps(TableCell, props);
   var ElementType = getElementType(TableCell, props);
 
   if (!childrenUtils.isNil(children)) {
-    return React.createElement(
-      ElementType,
-      _extends({}, rest, { className: classes }),
-      children
-    );
+    return React.createElement(ElementType, _extends({}, rest, {
+      className: classes
+    }), children);
   }
 
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    Icon.create(icon),
-    content
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), Icon.create(icon), content);
 }
 
-TableCell.handledProps = ['active', 'as', 'children', 'className', 'collapsing', 'content', 'disabled', 'error', 'icon', 'negative', 'positive', 'selectable', 'singleLine', 'textAlign', 'verticalAlign', 'warning', 'width'];
-TableCell._meta = {
-  name: 'TableCell',
-  type: META.TYPES.COLLECTION,
-  parent: 'Table'
-};
-
+TableCell.handledProps = ["active", "as", "children", "className", "collapsing", "content", "disabled", "error", "icon", "negative", "positive", "selectable", "singleLine", "textAlign", "verticalAlign", "warning", "width"];
 TableCell.defaultProps = {
   as: 'td'
 };
-
 TableCell.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -113,9 +97,9 @@ TableCell.propTypes = process.env.NODE_ENV !== "production" ? {
   /** A table can specify the width of individual columns independently. */
   width: PropTypes.oneOf(SUI.WIDTHS)
 } : {};
-
 TableCell.create = createShorthandFactory(TableCell, function (content) {
-  return { content: content };
+  return {
+    content: content
+  };
 });
-
 export default TableCell;

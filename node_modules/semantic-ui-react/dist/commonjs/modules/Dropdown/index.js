@@ -1,14 +1,15 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = undefined;
+Object.defineProperty(exports, "default", {
+  enumerable: true,
+  get: function get() {
+    return _Dropdown.default;
+  }
+});
 
-var _Dropdown = require('./Dropdown');
-
-var _Dropdown2 = _interopRequireDefault(_Dropdown);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = _Dropdown2.default;
+var _Dropdown = _interopRequireDefault(require("./Dropdown"));

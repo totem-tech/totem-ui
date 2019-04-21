@@ -1,76 +1,45 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _objectWithoutProperties2 = require('babel-runtime/helpers/objectWithoutProperties');
+var _objectWithoutProperties2 = _interopRequireDefault(require("@babel/runtime/helpers/objectWithoutProperties"));
 
-var _objectWithoutProperties3 = _interopRequireDefault(_objectWithoutProperties2);
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _without2 = _interopRequireDefault(require("lodash/without"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _map2 = _interopRequireDefault(require("lodash/map"));
 
-var _without2 = require('lodash/without');
+var _classnames = _interopRequireDefault(require("classnames"));
 
-var _without3 = _interopRequireDefault(_without2);
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
-var _map2 = require('lodash/map');
+var _react = _interopRequireDefault(require("react"));
 
-var _map3 = _interopRequireDefault(_map2);
+var _lib = require("../../lib");
 
-var _classnames = require('classnames');
+var _FeedContent = _interopRequireDefault(require("./FeedContent"));
 
-var _classnames2 = _interopRequireDefault(_classnames);
+var _FeedDate = _interopRequireDefault(require("./FeedDate"));
 
-var _propTypes = require('prop-types');
+var _FeedEvent = _interopRequireDefault(require("./FeedEvent"));
 
-var _propTypes2 = _interopRequireDefault(_propTypes);
+var _FeedExtra = _interopRequireDefault(require("./FeedExtra"));
 
-var _react = require('react');
+var _FeedLabel = _interopRequireDefault(require("./FeedLabel"));
 
-var _react2 = _interopRequireDefault(_react);
+var _FeedLike = _interopRequireDefault(require("./FeedLike"));
 
-var _lib = require('../../lib');
+var _FeedMeta = _interopRequireDefault(require("./FeedMeta"));
 
-var _FeedContent = require('./FeedContent');
+var _FeedSummary = _interopRequireDefault(require("./FeedSummary"));
 
-var _FeedContent2 = _interopRequireDefault(_FeedContent);
-
-var _FeedDate = require('./FeedDate');
-
-var _FeedDate2 = _interopRequireDefault(_FeedDate);
-
-var _FeedEvent = require('./FeedEvent');
-
-var _FeedEvent2 = _interopRequireDefault(_FeedEvent);
-
-var _FeedExtra = require('./FeedExtra');
-
-var _FeedExtra2 = _interopRequireDefault(_FeedExtra);
-
-var _FeedLabel = require('./FeedLabel');
-
-var _FeedLabel2 = _interopRequireDefault(_FeedLabel);
-
-var _FeedLike = require('./FeedLike');
-
-var _FeedLike2 = _interopRequireDefault(_FeedLike);
-
-var _FeedMeta = require('./FeedMeta');
-
-var _FeedMeta2 = _interopRequireDefault(_FeedMeta);
-
-var _FeedSummary = require('./FeedSummary');
-
-var _FeedSummary2 = _interopRequireDefault(_FeedSummary);
-
-var _FeedUser = require('./FeedUser');
-
-var _FeedUser2 = _interopRequireDefault(_FeedUser);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _FeedUser = _interopRequireDefault(require("./FeedUser"));
 
 /**
  * A feed presents user activity chronologically.
@@ -80,75 +49,60 @@ function Feed(props) {
       className = props.className,
       events = props.events,
       size = props.size;
-
-
-  var classes = (0, _classnames2.default)('ui', size, 'feed', className);
+  var classes = (0, _classnames.default)('ui', size, 'feed', className);
   var rest = (0, _lib.getUnhandledProps)(Feed, props);
   var ElementType = (0, _lib.getElementType)(Feed, props);
 
   if (!_lib.childrenUtils.isNil(children)) {
-    return _react2.default.createElement(
-      ElementType,
-      (0, _extends3.default)({}, rest, { className: classes }),
-      children
-    );
+    return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+      className: classes
+    }), children);
   }
 
-  var eventElements = (0, _map3.default)(events, function (eventProps) {
+  var eventElements = (0, _map2.default)(events, function (eventProps) {
     var childKey = eventProps.childKey,
         date = eventProps.date,
         meta = eventProps.meta,
         summary = eventProps.summary,
-        eventData = (0, _objectWithoutProperties3.default)(eventProps, ['childKey', 'date', 'meta', 'summary']);
-
+        eventData = (0, _objectWithoutProperties2.default)(eventProps, ["childKey", "date", "meta", "summary"]);
     var finalKey = childKey || [date, meta, summary].join('-');
-
-    return _react2.default.createElement(_FeedEvent2.default, (0, _extends3.default)({
+    return _react.default.createElement(_FeedEvent.default, (0, _extends2.default)({
       date: date,
       key: finalKey,
       meta: meta,
       summary: summary
     }, eventData));
   });
-
-  return _react2.default.createElement(
-    ElementType,
-    (0, _extends3.default)({}, rest, { className: classes }),
-    eventElements
-  );
+  return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+    className: classes
+  }), eventElements);
 }
 
-Feed.handledProps = ['as', 'children', 'className', 'events', 'size'];
-Feed._meta = {
-  name: 'Feed',
-  type: _lib.META.TYPES.VIEW
-};
-
+Feed.handledProps = ["as", "children", "className", "events", "size"];
 Feed.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: _lib.customPropTypes.as,
 
   /** Primary content. */
-  children: _propTypes2.default.node,
+  children: _propTypes.default.node,
 
   /** Additional classes. */
-  className: _propTypes2.default.string,
+  className: _propTypes.default.string,
 
   /** Shorthand array of props for FeedEvent. */
   events: _lib.customPropTypes.collectionShorthand,
 
   /** A feed can have different sizes. */
-  size: _propTypes2.default.oneOf((0, _without3.default)(_lib.SUI.SIZES, 'mini', 'tiny', 'medium', 'big', 'huge', 'massive'))
+  size: _propTypes.default.oneOf((0, _without2.default)(_lib.SUI.SIZES, 'mini', 'tiny', 'medium', 'big', 'huge', 'massive'))
 } : {};
-
-Feed.Content = _FeedContent2.default;
-Feed.Date = _FeedDate2.default;
-Feed.Event = _FeedEvent2.default;
-Feed.Extra = _FeedExtra2.default;
-Feed.Label = _FeedLabel2.default;
-Feed.Like = _FeedLike2.default;
-Feed.Meta = _FeedMeta2.default;
-Feed.Summary = _FeedSummary2.default;
-Feed.User = _FeedUser2.default;
-
-exports.default = Feed;
+Feed.Content = _FeedContent.default;
+Feed.Date = _FeedDate.default;
+Feed.Event = _FeedEvent.default;
+Feed.Extra = _FeedExtra.default;
+Feed.Label = _FeedLabel.default;
+Feed.Like = _FeedLike.default;
+Feed.Meta = _FeedMeta.default;
+Feed.Summary = _FeedSummary.default;
+Feed.User = _FeedUser.default;
+var _default = Feed;
+exports.default = _default;

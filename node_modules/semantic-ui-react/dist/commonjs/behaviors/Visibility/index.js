@@ -1,14 +1,15 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = undefined;
+Object.defineProperty(exports, "default", {
+  enumerable: true,
+  get: function get() {
+    return _Visibility.default;
+  }
+});
 
-var _Visibility = require('./Visibility');
-
-var _Visibility2 = _interopRequireDefault(_Visibility);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = _Visibility2.default;
+var _Visibility = _interopRequireDefault(require("./Visibility"));

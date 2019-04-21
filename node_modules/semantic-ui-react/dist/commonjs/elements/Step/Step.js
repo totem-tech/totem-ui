@@ -1,171 +1,153 @@
-'use strict';
+"use strict";
+
+var _interopRequireWildcard = require("@babel/runtime/helpers/interopRequireWildcard");
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
 
-var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
+var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
 
-var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime/helpers/possibleConstructorReturn"));
 
-var _createClass2 = require('babel-runtime/helpers/createClass');
+var _getPrototypeOf3 = _interopRequireDefault(require("@babel/runtime/helpers/getPrototypeOf"));
 
-var _createClass3 = _interopRequireDefault(_createClass2);
+var _inherits2 = _interopRequireDefault(require("@babel/runtime/helpers/inherits"));
 
-var _possibleConstructorReturn2 = require('babel-runtime/helpers/possibleConstructorReturn');
+var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
 
-var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
-var _inherits2 = require('babel-runtime/helpers/inherits');
+var _invoke2 = _interopRequireDefault(require("lodash/invoke"));
 
-var _inherits3 = _interopRequireDefault(_inherits2);
+var _classnames = _interopRequireDefault(require("classnames"));
 
-var _invoke2 = require('lodash/invoke');
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
-var _invoke3 = _interopRequireDefault(_invoke2);
+var _react = _interopRequireWildcard(require("react"));
 
-var _classnames = require('classnames');
+var _lib = require("../../lib");
 
-var _classnames2 = _interopRequireDefault(_classnames);
+var _Icon = _interopRequireDefault(require("../../elements/Icon"));
 
-var _propTypes = require('prop-types');
+var _StepContent = _interopRequireDefault(require("./StepContent"));
 
-var _propTypes2 = _interopRequireDefault(_propTypes);
+var _StepDescription = _interopRequireDefault(require("./StepDescription"));
 
-var _react = require('react');
+var _StepGroup = _interopRequireDefault(require("./StepGroup"));
 
-var _react2 = _interopRequireDefault(_react);
-
-var _lib = require('../../lib');
-
-var _Icon = require('../../elements/Icon');
-
-var _Icon2 = _interopRequireDefault(_Icon);
-
-var _StepContent = require('./StepContent');
-
-var _StepContent2 = _interopRequireDefault(_StepContent);
-
-var _StepDescription = require('./StepDescription');
-
-var _StepDescription2 = _interopRequireDefault(_StepDescription);
-
-var _StepGroup = require('./StepGroup');
-
-var _StepGroup2 = _interopRequireDefault(_StepGroup);
-
-var _StepTitle = require('./StepTitle');
-
-var _StepTitle2 = _interopRequireDefault(_StepTitle);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _StepTitle = _interopRequireDefault(require("./StepTitle"));
 
 /**
  * A step shows the completion status of an activity in a series of activities.
  */
-var Step = function (_Component) {
-  (0, _inherits3.default)(Step, _Component);
+var Step =
+/*#__PURE__*/
+function (_Component) {
+  (0, _inherits2.default)(Step, _Component);
 
   function Step() {
-    var _ref;
+    var _getPrototypeOf2;
 
-    var _temp, _this, _ret;
+    var _this;
 
-    (0, _classCallCheck3.default)(this, Step);
+    (0, _classCallCheck2.default)(this, Step);
 
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
       args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this = (0, _possibleConstructorReturn3.default)(this, (_ref = Step.__proto__ || Object.getPrototypeOf(Step)).call.apply(_ref, [this].concat(args))), _this), _this.computeElementType = function () {
+    _this = (0, _possibleConstructorReturn2.default)(this, (_getPrototypeOf2 = (0, _getPrototypeOf3.default)(Step)).call.apply(_getPrototypeOf2, [this].concat(args)));
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "computeElementType", function () {
       var onClick = _this.props.onClick;
-
-
       if (onClick) return 'a';
-    }, _this.handleClick = function (e) {
+    });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "handleClick", function (e) {
       var disabled = _this.props.disabled;
-
-
-      if (!disabled) (0, _invoke3.default)(_this.props, 'onClick', e, _this.props);
-    }, _temp), (0, _possibleConstructorReturn3.default)(_this, _ret);
+      if (!disabled) (0, _invoke2.default)(_this.props, 'onClick', e, _this.props);
+    });
+    return _this;
   }
 
-  (0, _createClass3.default)(Step, [{
-    key: 'render',
+  (0, _createClass2.default)(Step, [{
+    key: "render",
     value: function render() {
-      var _props = this.props,
-          active = _props.active,
-          children = _props.children,
-          className = _props.className,
-          completed = _props.completed,
-          content = _props.content,
-          description = _props.description,
-          disabled = _props.disabled,
-          href = _props.href,
-          icon = _props.icon,
-          link = _props.link,
-          title = _props.title;
-
-
-      var classes = (0, _classnames2.default)((0, _lib.useKeyOnly)(active, 'active'), (0, _lib.useKeyOnly)(completed, 'completed'), (0, _lib.useKeyOnly)(disabled, 'disabled'), (0, _lib.useKeyOnly)(link, 'link'), 'step', className);
+      var _this$props = this.props,
+          active = _this$props.active,
+          children = _this$props.children,
+          className = _this$props.className,
+          completed = _this$props.completed,
+          content = _this$props.content,
+          description = _this$props.description,
+          disabled = _this$props.disabled,
+          href = _this$props.href,
+          icon = _this$props.icon,
+          link = _this$props.link,
+          title = _this$props.title;
+      var classes = (0, _classnames.default)((0, _lib.useKeyOnly)(active, 'active'), (0, _lib.useKeyOnly)(completed, 'completed'), (0, _lib.useKeyOnly)(disabled, 'disabled'), (0, _lib.useKeyOnly)(link, 'link'), 'step', className);
       var rest = (0, _lib.getUnhandledProps)(Step, this.props);
       var ElementType = (0, _lib.getElementType)(Step, this.props, this.computeElementType);
 
       if (!_lib.childrenUtils.isNil(children)) {
-        return _react2.default.createElement(
-          ElementType,
-          (0, _extends3.default)({}, rest, { className: classes, href: href, onClick: this.handleClick }),
-          children
-        );
+        return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+          className: classes,
+          href: href,
+          onClick: this.handleClick
+        }), children);
       }
 
       if (!_lib.childrenUtils.isNil(content)) {
-        return _react2.default.createElement(
-          ElementType,
-          (0, _extends3.default)({}, rest, { className: classes, href: href, onClick: this.handleClick }),
-          content
-        );
+        return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+          className: classes,
+          href: href,
+          onClick: this.handleClick
+        }), content);
       }
 
-      return _react2.default.createElement(
-        ElementType,
-        (0, _extends3.default)({}, rest, { className: classes, href: href, onClick: this.handleClick }),
-        _Icon2.default.create(icon),
-        _StepContent2.default.create({ description: description, title: title })
-      );
+      return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+        className: classes,
+        href: href,
+        onClick: this.handleClick
+      }), _Icon.default.create(icon, {
+        autoGenerateKey: false
+      }), _StepContent.default.create({
+        description: description,
+        title: title
+      }, {
+        autoGenerateKey: false
+      }));
     }
   }]);
   return Step;
 }(_react.Component);
 
-Step._meta = {
-  name: 'Step',
-  type: _lib.META.TYPES.ELEMENT
-};
-Step.Content = _StepContent2.default;
-Step.Description = _StepDescription2.default;
-Step.Group = _StepGroup2.default;
-Step.Title = _StepTitle2.default;
-Step.handledProps = ['active', 'as', 'children', 'className', 'completed', 'content', 'description', 'disabled', 'href', 'icon', 'link', 'onClick', 'ordered', 'title'];
+(0, _defineProperty2.default)(Step, "Content", _StepContent.default);
+(0, _defineProperty2.default)(Step, "Description", _StepDescription.default);
+(0, _defineProperty2.default)(Step, "Group", _StepGroup.default);
+(0, _defineProperty2.default)(Step, "Title", _StepTitle.default);
+(0, _defineProperty2.default)(Step, "handledProps", ["active", "as", "children", "className", "completed", "content", "description", "disabled", "href", "icon", "link", "onClick", "ordered", "title"]);
 Step.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: _lib.customPropTypes.as,
 
   /** A step can be highlighted as active. */
-  active: _propTypes2.default.bool,
+  active: _propTypes.default.bool,
 
   /** Primary content. */
-  children: _propTypes2.default.node,
+  children: _propTypes.default.node,
 
   /** Additional classes. */
-  className: _propTypes2.default.string,
+  className: _propTypes.default.string,
 
   /** A step can show that a user has completed it. */
-  completed: _propTypes2.default.bool,
+  completed: _propTypes.default.bool,
 
   /** Shorthand for primary content. */
   content: _lib.customPropTypes.contentShorthand,
@@ -174,16 +156,16 @@ Step.propTypes = process.env.NODE_ENV !== "production" ? {
   description: _lib.customPropTypes.itemShorthand,
 
   /** Show that the Loader is inactive. */
-  disabled: _propTypes2.default.bool,
+  disabled: _propTypes.default.bool,
 
   /** Render as an `a` tag instead of a `div` and adds the href attribute. */
-  href: _propTypes2.default.string,
+  href: _propTypes.default.string,
 
   /** Shorthand for Icon. */
   icon: _lib.customPropTypes.itemShorthand,
 
   /** A step can be link. */
-  link: _propTypes2.default.bool,
+  link: _propTypes.default.bool,
 
   /**
    * Called on click. When passed, the component will render as an `a`
@@ -192,18 +174,18 @@ Step.propTypes = process.env.NODE_ENV !== "production" ? {
    * @param {SyntheticEvent} event - React's original SyntheticEvent.
    * @param {object} data - All props.
    */
-  onClick: _propTypes2.default.func,
+  onClick: _propTypes.default.func,
 
   /** A step can show a ordered sequence of steps. Passed from StepGroup. */
-  ordered: _propTypes2.default.bool,
+  ordered: _propTypes.default.bool,
 
   /** Shorthand for StepTitle. */
   title: _lib.customPropTypes.itemShorthand
 } : {};
-
-
 Step.create = (0, _lib.createShorthandFactory)(Step, function (content) {
-  return { content: content };
+  return {
+    content: content
+  };
 });
-
-exports.default = Step;
+var _default = Step;
+exports.default = _default;

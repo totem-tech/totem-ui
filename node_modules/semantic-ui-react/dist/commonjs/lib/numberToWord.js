@@ -1,19 +1,16 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.numberToWordMap = undefined;
-
-var _typeof2 = require('babel-runtime/helpers/typeof');
-
-var _typeof3 = _interopRequireDefault(_typeof2);
-
 exports.numberToWord = numberToWord;
+exports.numberToWordMap = void 0;
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _typeof2 = _interopRequireDefault(require("@babel/runtime/helpers/typeof"));
 
-var numberToWordMap = exports.numberToWordMap = {
+var numberToWordMap = {
   1: 'one',
   2: 'two',
   3: 'three',
@@ -30,7 +27,6 @@ var numberToWordMap = exports.numberToWordMap = {
   14: 'fourteen',
   15: 'fifteen',
   16: 'sixteen'
-
   /**
    * Return the number word for numbers 1-16.
    * Returns strings or numbers as is if there is no corresponding word.
@@ -38,8 +34,13 @@ var numberToWordMap = exports.numberToWordMap = {
    * @param {string|number} value The value to convert to a word.
    * @returns {string}
    */
-};function numberToWord(value) {
-  var type = typeof value === 'undefined' ? 'undefined' : (0, _typeof3.default)(value);
+
+};
+exports.numberToWordMap = numberToWordMap;
+
+function numberToWord(value) {
+  var type = (0, _typeof2.default)(value);
+
   if (type === 'string' || type === 'number') {
     return numberToWordMap[value] || value;
   }

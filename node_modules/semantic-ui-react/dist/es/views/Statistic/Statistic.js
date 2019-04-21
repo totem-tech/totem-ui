@@ -1,18 +1,16 @@
-import _extends from 'babel-runtime/helpers/extends';
-import _without from 'lodash/without';
+import _extends from "@babel/runtime/helpers/extends";
+import _without from "lodash/without";
 import cx from 'classnames';
-
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { childrenUtils, createShorthandFactory, customPropTypes, getElementType, getUnhandledProps, META, SUI, useKeyOnly, useValueAndKey } from '../../lib';
+import { childrenUtils, createShorthandFactory, customPropTypes, getElementType, getUnhandledProps, SUI, useKeyOnly, useValueAndKey } from '../../lib';
 import StatisticGroup from './StatisticGroup';
 import StatisticLabel from './StatisticLabel';
 import StatisticValue from './StatisticValue';
-
 /**
  * A statistic emphasizes the current value of an attribute.
  */
+
 function Statistic(props) {
   var children = props.children,
       className = props.className,
@@ -25,39 +23,35 @@ function Statistic(props) {
       size = props.size,
       text = props.text,
       value = props.value;
-
-
   var classes = cx('ui', color, size, useValueAndKey(floated, 'floated'), useKeyOnly(horizontal, 'horizontal'), useKeyOnly(inverted, 'inverted'), 'statistic', className);
   var rest = getUnhandledProps(Statistic, props);
   var ElementType = getElementType(Statistic, props);
 
-  if (!childrenUtils.isNil(children)) return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    children
-  );
-  if (!childrenUtils.isNil(content)) return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    content
-  );
+  if (!childrenUtils.isNil(children)) {
+    return React.createElement(ElementType, _extends({}, rest, {
+      className: classes
+    }), children);
+  }
 
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    StatisticValue.create(value, {
-      defaultProps: { text: text }
-    }),
-    StatisticLabel.create(label)
-  );
+  if (!childrenUtils.isNil(content)) {
+    return React.createElement(ElementType, _extends({}, rest, {
+      className: classes
+    }), content);
+  }
+
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), StatisticValue.create(value, {
+    defaultProps: {
+      text: text
+    },
+    autoGenerateKey: false
+  }), StatisticLabel.create(label, {
+    autoGenerateKey: false
+  }));
 }
 
-Statistic.handledProps = ['as', 'children', 'className', 'color', 'content', 'floated', 'horizontal', 'inverted', 'label', 'size', 'text', 'value'];
-Statistic._meta = {
-  name: 'Statistic',
-  type: META.TYPES.VIEW
-};
-
+Statistic.handledProps = ["as", "children", "className", "color", "content", "floated", "horizontal", "inverted", "label", "size", "text", "value"];
 Statistic.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -95,13 +89,12 @@ Statistic.propTypes = process.env.NODE_ENV !== "production" ? {
   /** Value content of the Statistic. */
   value: customPropTypes.contentShorthand
 } : {};
-
 Statistic.Group = StatisticGroup;
 Statistic.Label = StatisticLabel;
 Statistic.Value = StatisticValue;
-
 Statistic.create = createShorthandFactory(Statistic, function (content) {
-  return { content: content };
+  return {
+    content: content
+  };
 });
-
 export default Statistic;

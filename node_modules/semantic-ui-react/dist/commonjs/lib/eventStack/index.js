@@ -1,14 +1,11 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = undefined;
+exports.default = void 0;
 
-var _eventStack = require('./eventStack');
+var _eventStack = require("@semantic-ui-react/event-stack");
 
-var _eventStack2 = _interopRequireDefault(_eventStack);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = _eventStack2.default;
+var _default = _eventStack.instance;
+exports.default = _default;

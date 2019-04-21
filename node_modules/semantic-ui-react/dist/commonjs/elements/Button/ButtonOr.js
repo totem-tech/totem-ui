@@ -1,28 +1,21 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _classnames = _interopRequireDefault(require("classnames"));
 
-var _classnames = require('classnames');
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
-var _classnames2 = _interopRequireDefault(_classnames);
+var _react = _interopRequireDefault(require("react"));
 
-var _propTypes = require('prop-types');
-
-var _propTypes2 = _interopRequireDefault(_propTypes);
-
-var _react = require('react');
-
-var _react2 = _interopRequireDefault(_react);
-
-var _lib = require('../../lib');
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _lib = require("../../lib");
 
 /**
  * Button groups can contain conditionals.
@@ -30,30 +23,25 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function ButtonOr(props) {
   var className = props.className,
       text = props.text;
-
-  var classes = (0, _classnames2.default)('or', className);
+  var classes = (0, _classnames.default)('or', className);
   var rest = (0, _lib.getUnhandledProps)(ButtonOr, props);
   var ElementType = (0, _lib.getElementType)(ButtonOr, props);
-
-  return _react2.default.createElement(ElementType, (0, _extends3.default)({}, rest, { className: classes, 'data-text': text }));
+  return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+    className: classes,
+    "data-text": text
+  }));
 }
 
-ButtonOr.handledProps = ['as', 'className', 'text'];
-ButtonOr._meta = {
-  name: 'ButtonOr',
-  parent: 'Button',
-  type: _lib.META.TYPES.ELEMENT
-};
-
+ButtonOr.handledProps = ["as", "className", "text"];
 ButtonOr.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: _lib.customPropTypes.as,
 
   /** Additional classes. */
-  className: _propTypes2.default.string,
+  className: _propTypes.default.string,
 
   /** Or buttons can have their text localized, or adjusted by using the text prop. */
-  text: _propTypes2.default.oneOfType([_propTypes2.default.number, _propTypes2.default.string])
+  text: _propTypes.default.oneOfType([_propTypes.default.number, _propTypes.default.string])
 } : {};
-
-exports.default = ButtonOr;
+var _default = ButtonOr;
+exports.default = _default;

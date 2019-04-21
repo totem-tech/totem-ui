@@ -1,8 +1,10 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
+
 /**
  * Returns an object consisting of props beyond the scope of the Component.
  * Useful for getting and spreading unknown props from the user.
@@ -13,9 +15,7 @@ Object.defineProperty(exports, "__esModule", {
 var getUnhandledProps = function getUnhandledProps(Component, props) {
   // Note that `handledProps` are generated automatically during build with `babel-plugin-transform-react-handled-props`
   var _Component$handledPro = Component.handledProps,
-      handledProps = _Component$handledPro === undefined ? [] : _Component$handledPro;
-
-
+      handledProps = _Component$handledPro === void 0 ? [] : _Component$handledPro;
   return Object.keys(props).reduce(function (acc, prop) {
     if (prop === 'childKey') return acc;
     if (handledProps.indexOf(prop) === -1) acc[prop] = props[prop];
@@ -23,4 +23,5 @@ var getUnhandledProps = function getUnhandledProps(Component, props) {
   }, {});
 };
 
-exports.default = getUnhandledProps;
+var _default = getUnhandledProps;
+exports.default = _default;

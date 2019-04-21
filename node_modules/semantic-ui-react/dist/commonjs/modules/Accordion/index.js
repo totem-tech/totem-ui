@@ -1,14 +1,15 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = undefined;
+Object.defineProperty(exports, "default", {
+  enumerable: true,
+  get: function get() {
+    return _Accordion.default;
+  }
+});
 
-var _Accordion = require('./Accordion');
-
-var _Accordion2 = _interopRequireDefault(_Accordion);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = _Accordion2.default;
+var _Accordion = _interopRequireDefault(require("./Accordion"));

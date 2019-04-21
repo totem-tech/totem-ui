@@ -1,119 +1,119 @@
-import _extends from 'babel-runtime/helpers/extends';
-import _classCallCheck from 'babel-runtime/helpers/classCallCheck';
-import _createClass from 'babel-runtime/helpers/createClass';
-import _possibleConstructorReturn from 'babel-runtime/helpers/possibleConstructorReturn';
-import _inherits from 'babel-runtime/helpers/inherits';
-import _isNil from 'lodash/isNil';
-import _without from 'lodash/without';
+import _extends from "@babel/runtime/helpers/extends";
+import _classCallCheck from "@babel/runtime/helpers/classCallCheck";
+import _createClass from "@babel/runtime/helpers/createClass";
+import _possibleConstructorReturn from "@babel/runtime/helpers/possibleConstructorReturn";
+import _getPrototypeOf from "@babel/runtime/helpers/getPrototypeOf";
+import _inherits from "@babel/runtime/helpers/inherits";
+import _assertThisInitialized from "@babel/runtime/helpers/assertThisInitialized";
+import _defineProperty from "@babel/runtime/helpers/defineProperty";
+import _isNil from "lodash/isNil";
+import _without from "lodash/without";
 import cx from 'classnames';
-
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
-
-import { childrenUtils, createHTMLParagraph, customPropTypes, getElementType, getUnhandledProps, META, SUI, useKeyOnly, useKeyOrValueAndKey } from '../../lib';
+import { childrenUtils, createHTMLParagraph, customPropTypes, getElementType, getUnhandledProps, SUI, useKeyOnly, useKeyOrValueAndKey } from '../../lib';
 import Icon from '../../elements/Icon';
 import MessageContent from './MessageContent';
 import MessageHeader from './MessageHeader';
 import MessageList from './MessageList';
 import MessageItem from './MessageItem';
-
 /**
  * A message displays information that explains nearby content.
  * @see Form
  */
 
-var Message = function (_Component) {
+var Message =
+/*#__PURE__*/
+function (_Component) {
   _inherits(Message, _Component);
 
   function Message() {
-    var _ref;
+    var _getPrototypeOf2;
 
-    var _temp, _this, _ret;
+    var _this;
 
     _classCallCheck(this, Message);
 
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
       args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = Message.__proto__ || Object.getPrototypeOf(Message)).call.apply(_ref, [this].concat(args))), _this), _this.handleDismiss = function (e) {
+    _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(Message)).call.apply(_getPrototypeOf2, [this].concat(args)));
+
+    _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "handleDismiss", function (e) {
       var onDismiss = _this.props.onDismiss;
-
-
       if (onDismiss) onDismiss(e, _this.props);
-    }, _temp), _possibleConstructorReturn(_this, _ret);
+    });
+
+    return _this;
   }
 
   _createClass(Message, [{
-    key: 'render',
+    key: "render",
     value: function render() {
-      var _props = this.props,
-          attached = _props.attached,
-          children = _props.children,
-          className = _props.className,
-          color = _props.color,
-          compact = _props.compact,
-          content = _props.content,
-          error = _props.error,
-          floating = _props.floating,
-          header = _props.header,
-          hidden = _props.hidden,
-          icon = _props.icon,
-          info = _props.info,
-          list = _props.list,
-          negative = _props.negative,
-          onDismiss = _props.onDismiss,
-          positive = _props.positive,
-          size = _props.size,
-          success = _props.success,
-          visible = _props.visible,
-          warning = _props.warning;
-
-
+      var _this$props = this.props,
+          attached = _this$props.attached,
+          children = _this$props.children,
+          className = _this$props.className,
+          color = _this$props.color,
+          compact = _this$props.compact,
+          content = _this$props.content,
+          error = _this$props.error,
+          floating = _this$props.floating,
+          header = _this$props.header,
+          hidden = _this$props.hidden,
+          icon = _this$props.icon,
+          info = _this$props.info,
+          list = _this$props.list,
+          negative = _this$props.negative,
+          onDismiss = _this$props.onDismiss,
+          positive = _this$props.positive,
+          size = _this$props.size,
+          success = _this$props.success,
+          visible = _this$props.visible,
+          warning = _this$props.warning;
       var classes = cx('ui', color, size, useKeyOnly(compact, 'compact'), useKeyOnly(error, 'error'), useKeyOnly(floating, 'floating'), useKeyOnly(hidden, 'hidden'), useKeyOnly(icon, 'icon'), useKeyOnly(info, 'info'), useKeyOnly(negative, 'negative'), useKeyOnly(positive, 'positive'), useKeyOnly(success, 'success'), useKeyOnly(visible, 'visible'), useKeyOnly(warning, 'warning'), useKeyOrValueAndKey(attached, 'attached'), 'message', className);
-
-      var dismissIcon = onDismiss && React.createElement(Icon, { name: 'close', onClick: this.handleDismiss });
+      var dismissIcon = onDismiss && React.createElement(Icon, {
+        name: "close",
+        onClick: this.handleDismiss
+      });
       var rest = getUnhandledProps(Message, this.props);
       var ElementType = getElementType(Message, this.props);
 
       if (!childrenUtils.isNil(children)) {
-        return React.createElement(
-          ElementType,
-          _extends({}, rest, { className: classes }),
-          dismissIcon,
-          children
-        );
+        return React.createElement(ElementType, _extends({}, rest, {
+          className: classes
+        }), dismissIcon, children);
       }
 
-      return React.createElement(
-        ElementType,
-        _extends({}, rest, { className: classes }),
-        dismissIcon,
-        Icon.create(icon),
-        (!_isNil(header) || !_isNil(content) || !_isNil(list)) && React.createElement(
-          MessageContent,
-          null,
-          MessageHeader.create(header),
-          MessageList.create(list),
-          createHTMLParagraph(content)
-        )
-      );
+      return React.createElement(ElementType, _extends({}, rest, {
+        className: classes
+      }), dismissIcon, Icon.create(icon, {
+        autoGenerateKey: false
+      }), (!_isNil(header) || !_isNil(content) || !_isNil(list)) && React.createElement(MessageContent, null, MessageHeader.create(header, {
+        autoGenerateKey: false
+      }), MessageList.create(list, {
+        autoGenerateKey: false
+      }), createHTMLParagraph(content, {
+        autoGenerateKey: false
+      })));
     }
   }]);
 
   return Message;
 }(Component);
 
-Message._meta = {
-  name: 'Message',
-  type: META.TYPES.COLLECTION
-};
-Message.Content = MessageContent;
-Message.Header = MessageHeader;
-Message.List = MessageList;
-Message.Item = MessageItem;
-Message.handledProps = ['as', 'attached', 'children', 'className', 'color', 'compact', 'content', 'error', 'floating', 'header', 'hidden', 'icon', 'info', 'list', 'negative', 'onDismiss', 'positive', 'size', 'success', 'visible', 'warning'];
-export default Message;
+_defineProperty(Message, "Content", MessageContent);
+
+_defineProperty(Message, "Header", MessageHeader);
+
+_defineProperty(Message, "List", MessageList);
+
+_defineProperty(Message, "Item", MessageItem);
+
+_defineProperty(Message, "handledProps", ["as", "attached", "children", "className", "color", "compact", "content", "error", "floating", "header", "hidden", "icon", "info", "list", "negative", "onDismiss", "positive", "size", "success", "visible", "warning"]);
+
+export { Message as default };
 Message.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,

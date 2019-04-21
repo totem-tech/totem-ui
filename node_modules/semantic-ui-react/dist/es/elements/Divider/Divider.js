@@ -1,13 +1,12 @@
-import _extends from 'babel-runtime/helpers/extends';
+import _extends from "@babel/runtime/helpers/extends";
 import cx from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, META, useKeyOnly } from '../../lib';
-
+import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, useKeyOnly } from '../../lib';
 /**
  * A divider visually segments content into groups.
  */
+
 function Divider(props) {
   var children = props.children,
       className = props.className,
@@ -19,25 +18,15 @@ function Divider(props) {
       inverted = props.inverted,
       section = props.section,
       vertical = props.vertical;
-
-
   var classes = cx('ui', useKeyOnly(clearing, 'clearing'), useKeyOnly(fitted, 'fitted'), useKeyOnly(hidden, 'hidden'), useKeyOnly(horizontal, 'horizontal'), useKeyOnly(inverted, 'inverted'), useKeyOnly(section, 'section'), useKeyOnly(vertical, 'vertical'), 'divider', className);
   var rest = getUnhandledProps(Divider, props);
   var ElementType = getElementType(Divider, props);
-
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    childrenUtils.isNil(children) ? content : children
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), childrenUtils.isNil(children) ? content : children);
 }
 
-Divider.handledProps = ['as', 'children', 'className', 'clearing', 'content', 'fitted', 'hidden', 'horizontal', 'inverted', 'section', 'vertical'];
-Divider._meta = {
-  name: 'Divider',
-  type: META.TYPES.ELEMENT
-};
-
+Divider.handledProps = ["as", "children", "className", "clearing", "content", "fitted", "hidden", "horizontal", "inverted", "section", "vertical"];
 Divider.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -72,5 +61,4 @@ Divider.propTypes = process.env.NODE_ENV !== "production" ? {
   /** Divider can segment content vertically. */
   vertical: PropTypes.bool
 } : {};
-
 export default Divider;

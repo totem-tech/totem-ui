@@ -1,9 +1,8 @@
-import _extends from 'babel-runtime/helpers/extends';
+import _extends from "@babel/runtime/helpers/extends";
 import cx from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, META, useKeyOnly } from '../../lib';
+import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, useKeyOnly } from '../../lib';
 
 function SearchCategory(props) {
   var active = props.active,
@@ -11,37 +10,25 @@ function SearchCategory(props) {
       className = props.className,
       content = props.content,
       renderer = props.renderer;
-
   var classes = cx(useKeyOnly(active, 'active'), 'category', className);
   var rest = getUnhandledProps(SearchCategory, props);
   var ElementType = getElementType(SearchCategory, props);
-
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    React.createElement(
-      'div',
-      { className: 'name' },
-      renderer(props)
-    ),
-    childrenUtils.isNil(children) ? content : children
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), React.createElement("div", {
+    className: "name"
+  }, renderer(props)), React.createElement("div", {
+    className: "results"
+  }, childrenUtils.isNil(children) ? content : children));
 }
 
-SearchCategory.handledProps = ['active', 'as', 'children', 'className', 'content', 'name', 'renderer', 'results'];
-SearchCategory._meta = {
-  name: 'SearchCategory',
-  parent: 'Search',
-  type: META.TYPES.MODULE
-};
-
+SearchCategory.handledProps = ["active", "as", "children", "className", "content", "name", "renderer", "results"];
 SearchCategory.defaultProps = {
   renderer: function renderer(_ref) {
     var name = _ref.name;
     return name;
   }
 };
-
 SearchCategory.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -72,5 +59,4 @@ SearchCategory.propTypes = process.env.NODE_ENV !== "production" ? {
   /** Array of Search.Result props. */
   results: PropTypes.array
 } : {};
-
 export default SearchCategory;

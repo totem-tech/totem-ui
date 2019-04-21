@@ -7,7 +7,8 @@ import {
   customPropTypes,
   getElementType,
   getUnhandledProps,
-  META,
+  htmlImageProps,
+  partitionHTMLProps,
 } from '../../lib'
 
 /**
@@ -15,17 +16,17 @@ import {
  */
 function CommentAvatar(props) {
   const { className, src } = props
+
   const classes = cx('avatar', className)
   const rest = getUnhandledProps(CommentAvatar, props)
+  const [imageProps, rootProps] = partitionHTMLProps(rest, { htmlProps: htmlImageProps })
   const ElementType = getElementType(CommentAvatar, props)
 
-  return <ElementType {...rest} className={classes}>{createHTMLImage(src)}</ElementType>
-}
-
-CommentAvatar._meta = {
-  name: 'CommentAvatar',
-  parent: 'Comment',
-  type: META.TYPES.VIEW,
+  return (
+    <ElementType {...rootProps} className={classes}>
+      {createHTMLImage(src, { autoGenerateKey: false, defaultProps: imageProps })}
+    </ElementType>
+  )
 }
 
 CommentAvatar.propTypes = {

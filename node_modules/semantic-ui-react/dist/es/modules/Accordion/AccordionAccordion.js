@@ -1,131 +1,146 @@
-import _extends from 'babel-runtime/helpers/extends';
-import _toConsumableArray from 'babel-runtime/helpers/toConsumableArray';
-import _classCallCheck from 'babel-runtime/helpers/classCallCheck';
-import _createClass from 'babel-runtime/helpers/createClass';
-import _possibleConstructorReturn from 'babel-runtime/helpers/possibleConstructorReturn';
-import _inherits from 'babel-runtime/helpers/inherits';
-import _isNil from 'lodash/isNil';
-import _each from 'lodash/each';
-import _invoke from 'lodash/invoke';
-import _without from 'lodash/without';
-import _includes from 'lodash/includes';
+import _extends from "@babel/runtime/helpers/extends";
+import _toConsumableArray from "@babel/runtime/helpers/toConsumableArray";
+import _classCallCheck from "@babel/runtime/helpers/classCallCheck";
+import _createClass from "@babel/runtime/helpers/createClass";
+import _possibleConstructorReturn from "@babel/runtime/helpers/possibleConstructorReturn";
+import _getPrototypeOf from "@babel/runtime/helpers/getPrototypeOf";
+import _inherits from "@babel/runtime/helpers/inherits";
+import _assertThisInitialized from "@babel/runtime/helpers/assertThisInitialized";
+import _defineProperty from "@babel/runtime/helpers/defineProperty";
+import _map from "lodash/map";
+import _invoke from "lodash/invoke";
+import _without from "lodash/without";
+import _includes from "lodash/includes";
+import _isArray from "lodash/isArray";
 import cx from 'classnames';
-
 import PropTypes from 'prop-types';
 import React from 'react';
+import { AutoControlledComponent as Component, childrenUtils, createShorthandFactory, customPropTypes, getElementType, getUnhandledProps } from '../../lib';
+import AccordionPanel from './AccordionPanel';
 
-import { AutoControlledComponent as Component, createShorthandFactory, customPropTypes, getElementType, getUnhandledProps, META } from '../../lib';
-import AccordionContent from './AccordionContent';
-import AccordionTitle from './AccordionTitle';
+var warnIfPropsAreInvalid = function warnIfPropsAreInvalid(props, state) {
+  var exclusive = props.exclusive;
+  var activeIndex = state.activeIndex;
+  /* eslint-disable no-console */
 
+  if (exclusive && typeof activeIndex !== 'number') {
+    console.error('`activeIndex` must be a number if `exclusive` is true');
+  } else if (!exclusive && !_isArray(activeIndex)) {
+    console.error('`activeIndex` must be an array if `exclusive` is false');
+  }
+  /* eslint-enable no-console */
+
+};
 /**
  * An Accordion can contain sub-accordions.
  */
 
-var AccordionAccordion = function (_Component) {
+
+var AccordionAccordion =
+/*#__PURE__*/
+function (_Component) {
   _inherits(AccordionAccordion, _Component);
 
   function AccordionAccordion() {
-    var _ref;
+    var _getPrototypeOf2;
 
-    var _temp, _this, _ret;
+    var _this;
 
     _classCallCheck(this, AccordionAccordion);
 
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
       args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = AccordionAccordion.__proto__ || Object.getPrototypeOf(AccordionAccordion)).call.apply(_ref, [this].concat(args))), _this), _this.computeNewIndex = function (index) {
+    _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(AccordionAccordion)).call.apply(_getPrototypeOf2, [this].concat(args)));
+
+    _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "computeNewIndex", function (index) {
       var exclusive = _this.props.exclusive;
       var activeIndex = _this.state.activeIndex;
+      if (exclusive) return index === activeIndex ? -1 : index; // check to see if index is in array, and remove it, if not then add it
 
+      return _includes(activeIndex, index) ? _without(activeIndex, index) : _toConsumableArray(activeIndex).concat([index]);
+    });
 
-      if (exclusive) return index === activeIndex ? -1 : index;
-      // check to see if index is in array, and remove it, if not then add it
-      return _includes(activeIndex, index) ? _without(activeIndex, index) : [].concat(_toConsumableArray(activeIndex), [index]);
-    }, _this.handleTitleOverrides = function (predefinedProps) {
-      return {
-        onClick: function onClick(e, titleProps) {
-          var index = titleProps.index;
+    _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "handleTitleClick", function (e, titleProps) {
+      var index = titleProps.index;
 
-          var activeIndex = _this.computeNewIndex(index);
-
-          _this.trySetState({ activeIndex: activeIndex });
-
-          _invoke(predefinedProps, 'onClick', e, titleProps);
-          _invoke(_this.props, 'onTitleClick', e, titleProps);
-        }
-      };
-    }, _this.isIndexActive = function (index) {
-      var exclusive = _this.props.exclusive;
-      var activeIndex = _this.state.activeIndex;
-
-
-      return exclusive ? activeIndex === index : _includes(activeIndex, index);
-    }, _this.renderPanels = function () {
-      var children = [];
-      var panels = _this.props.panels;
-
-
-      _each(panels, function (panel, index) {
-        var content = panel.content,
-            title = panel.title;
-
-        var active = _this.isIndexActive(index);
-
-        children.push(AccordionTitle.create(title, {
-          defaultProps: { active: active, index: index },
-          overrideProps: _this.handleTitleOverrides
-        }));
-        children.push(AccordionContent.create(content, { defaultProps: { active: active } }));
+      _this.trySetState({
+        activeIndex: _this.computeNewIndex(index)
       });
 
-      return children;
-    }, _temp), _possibleConstructorReturn(_this, _ret);
+      _invoke(_this.props, 'onTitleClick', e, titleProps);
+    });
+
+    _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "isIndexActive", function (index) {
+      var exclusive = _this.props.exclusive;
+      var activeIndex = _this.state.activeIndex;
+      return exclusive ? activeIndex === index : _includes(activeIndex, index);
+    });
+
+    return _this;
   }
 
   _createClass(AccordionAccordion, [{
-    key: 'getInitialAutoControlledState',
-    value: function getInitialAutoControlledState(_ref2) {
-      var exclusive = _ref2.exclusive;
-
-      return { activeIndex: exclusive ? -1 : [-1] };
+    key: "getInitialAutoControlledState",
+    value: function getInitialAutoControlledState(_ref) {
+      var exclusive = _ref.exclusive;
+      return {
+        activeIndex: exclusive ? -1 : []
+      };
     }
   }, {
-    key: 'render',
+    key: "componentDidMount",
+    value: function componentDidMount() {
+      if (process.env.NODE_ENV !== 'production') {
+        warnIfPropsAreInvalid(this.props, this.state);
+      }
+    }
+  }, {
+    key: "componentDidUpdate",
+    value: function componentDidUpdate() {
+      if (process.env.NODE_ENV !== 'production') {
+        warnIfPropsAreInvalid(this.props, this.state);
+      }
+    }
+  }, {
+    key: "render",
     value: function render() {
-      var _props = this.props,
-          className = _props.className,
-          children = _props.children;
+      var _this2 = this;
 
-
+      var _this$props = this.props,
+          className = _this$props.className,
+          children = _this$props.children,
+          panels = _this$props.panels;
       var classes = cx('accordion', className);
       var rest = getUnhandledProps(AccordionAccordion, this.props);
       var ElementType = getElementType(AccordionAccordion, this.props);
-
-      return React.createElement(
-        ElementType,
-        _extends({}, rest, { className: classes }),
-        _isNil(children) ? this.renderPanels() : children
-      );
+      return React.createElement(ElementType, _extends({}, rest, {
+        className: classes
+      }), childrenUtils.isNil(children) ? _map(panels, function (panel, index) {
+        return AccordionPanel.create(panel, {
+          defaultProps: {
+            active: _this2.isIndexActive(index),
+            index: index,
+            onTitleClick: _this2.handleTitleClick
+          }
+        });
+      }) : children);
     }
   }]);
 
   return AccordionAccordion;
 }(Component);
 
-AccordionAccordion.defaultProps = {
+_defineProperty(AccordionAccordion, "defaultProps", {
   exclusive: true
-};
-AccordionAccordion.autoControlledProps = ['activeIndex'];
-AccordionAccordion._meta = {
-  name: 'AccordionAccordion',
-  type: META.TYPES.MODULE,
-  parent: 'Accordion'
-};
-AccordionAccordion.handledProps = ['activeIndex', 'as', 'children', 'className', 'defaultActiveIndex', 'exclusive', 'onTitleClick', 'panels'];
-export default AccordionAccordion;
+});
+
+_defineProperty(AccordionAccordion, "autoControlledProps", ['activeIndex']);
+
+_defineProperty(AccordionAccordion, "handledProps", ["activeIndex", "as", "children", "className", "defaultActiveIndex", "exclusive", "onTitleClick", "panels"]);
+
+export { AccordionAccordion as default };
 AccordionAccordion.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -159,8 +174,8 @@ AccordionAccordion.propTypes = process.env.NODE_ENV !== "production" ? {
     title: customPropTypes.itemShorthand
   }))])
 } : {};
-
-
 AccordionAccordion.create = createShorthandFactory(AccordionAccordion, function (content) {
-  return { content: content };
+  return {
+    content: content
+  };
 });

@@ -1,4 +1,4 @@
-import _typeof from 'babel-runtime/helpers/typeof';
+import _typeof from "@babel/runtime/helpers/typeof";
 export var numberToWordMap = {
   1: 'one',
   2: 'two',
@@ -16,7 +16,6 @@ export var numberToWordMap = {
   14: 'fourteen',
   15: 'fifteen',
   16: 'sixteen'
-
   /**
    * Return the number word for numbers 1-16.
    * Returns strings or numbers as is if there is no corresponding word.
@@ -24,8 +23,11 @@ export var numberToWordMap = {
    * @param {string|number} value The value to convert to a word.
    * @returns {string}
    */
-};export function numberToWord(value) {
-  var type = typeof value === 'undefined' ? 'undefined' : _typeof(value);
+
+};
+export function numberToWord(value) {
+  var type = _typeof(value);
+
   if (type === 'string' || type === 'number') {
     return numberToWordMap[value] || value;
   }

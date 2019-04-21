@@ -1,39 +1,27 @@
-import _extends from 'babel-runtime/helpers/extends';
+import _extends from "@babel/runtime/helpers/extends";
 import cx from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, META, useKeyOnly } from '../../lib';
-
+import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, useKeyOnly } from '../../lib';
 /**
  * A content sub-component for the Reveal.
  */
+
 function RevealContent(props) {
   var children = props.children,
       className = props.className,
       content = props.content,
       hidden = props.hidden,
       visible = props.visible;
-
-
   var classes = cx('ui', useKeyOnly(hidden, 'hidden'), useKeyOnly(visible, 'visible'), 'content', className);
   var rest = getUnhandledProps(RevealContent, props);
   var ElementType = getElementType(RevealContent, props);
-
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    childrenUtils.isNil(children) ? content : children
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), childrenUtils.isNil(children) ? content : children);
 }
 
-RevealContent.handledProps = ['as', 'children', 'className', 'content', 'hidden', 'visible'];
-RevealContent._meta = {
-  name: 'RevealContent',
-  parent: 'Reveal',
-  type: META.TYPES.ELEMENT
-};
-
+RevealContent.handledProps = ["as", "children", "className", "content", "hidden", "visible"];
 RevealContent.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -53,5 +41,4 @@ RevealContent.propTypes = process.env.NODE_ENV !== "production" ? {
   /** A reveal may contain content that is hidden before user interaction. */
   visible: PropTypes.bool
 } : {};
-
 export default RevealContent;

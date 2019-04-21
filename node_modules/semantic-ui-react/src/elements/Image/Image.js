@@ -9,7 +9,7 @@ import {
   customPropTypes,
   getElementType,
   getUnhandledProps,
-  META,
+  htmlImageProps,
   partitionHTMLProps,
   SUI,
   useKeyOnly,
@@ -20,8 +20,6 @@ import {
 import Dimmer from '../../modules/Dimmer'
 import Label from '../Label/Label'
 import ImageGroup from './ImageGroup'
-
-const imageProps = ['alt', 'height', 'src', 'srcSet', 'width']
 
 /**
  * An image is a graphic representation of something.
@@ -71,34 +69,46 @@ function Image(props) {
     className,
   )
   const rest = getUnhandledProps(Image, props)
-  const [imgTagProps, rootProps] = partitionHTMLProps(rest, { htmlProps: imageProps })
+  const [imgTagProps, rootProps] = partitionHTMLProps(rest, { htmlProps: htmlImageProps })
   const ElementType = getElementType(Image, props, () => {
-    if (!_.isNil(dimmer) || !_.isNil(label) || !_.isNil(wrapped) || !childrenUtils.isNil(children)) return 'div'
+    if (
+      !_.isNil(dimmer) ||
+      !_.isNil(label) ||
+      !_.isNil(wrapped) ||
+      !childrenUtils.isNil(children)
+    ) {
+      return 'div'
+    }
   })
 
   if (!childrenUtils.isNil(children)) {
-    return <ElementType {...rest} className={classes}>{children}</ElementType>
+    return (
+      <ElementType {...rest} className={classes}>
+        {children}
+      </ElementType>
+    )
   }
   if (!childrenUtils.isNil(content)) {
-    return <ElementType {...rest} className={classes}>{content}</ElementType>
+    return (
+      <ElementType {...rest} className={classes}>
+        {content}
+      </ElementType>
+    )
   }
 
-  if (ElementType === 'img') return <ElementType {...rootProps} {...imgTagProps} className={classes} />
+  if (ElementType === 'img') {
+    return <ElementType {...rootProps} {...imgTagProps} className={classes} />
+  }
   return (
     <ElementType {...rootProps} className={classes} href={href}>
-      {Dimmer.create(dimmer)}
-      {Label.create(label)}
+      {Dimmer.create(dimmer, { autoGenerateKey: false })}
+      {Label.create(label, { autoGenerateKey: false })}
       <img {...imgTagProps} />
     </ElementType>
   )
 }
 
 Image.Group = ImageGroup
-
-Image._meta = {
-  name: 'Image',
-  type: META.TYPES.ELEMENT,
-}
 
 Image.propTypes = {
   /** An element type to render as (string or function). */
@@ -135,10 +145,7 @@ Image.propTypes = {
   floated: PropTypes.oneOf(SUI.FLOATS),
 
   /** An image can take up the width of its container. */
-  fluid: customPropTypes.every([
-    PropTypes.bool,
-    customPropTypes.disallow(['size']),
-  ]),
+  fluid: customPropTypes.every([PropTypes.bool, customPropTypes.disallow(['size'])]),
 
   /** An image can be hidden. */
   hidden: PropTypes.bool,
@@ -159,10 +166,7 @@ Image.propTypes = {
   size: PropTypes.oneOf(SUI.SIZES),
 
   /** An image can specify that it needs an additional spacing to separate it from nearby content. */
-  spaced: PropTypes.oneOfType([
-    PropTypes.bool,
-    PropTypes.oneOf(['left', 'right']),
-  ]),
+  spaced: PropTypes.oneOfType([PropTypes.bool, PropTypes.oneOf(['left', 'right'])]),
 
   /** Whether or not to add the ui className. */
   ui: PropTypes.bool,

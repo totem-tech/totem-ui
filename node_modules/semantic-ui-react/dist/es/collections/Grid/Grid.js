@@ -1,16 +1,15 @@
-import _toConsumableArray from 'babel-runtime/helpers/toConsumableArray';
-import _extends from 'babel-runtime/helpers/extends';
+import _toConsumableArray from "@babel/runtime/helpers/toConsumableArray";
+import _extends from "@babel/runtime/helpers/extends";
 import cx from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { customPropTypes, getElementType, getUnhandledProps, META, SUI, useKeyOnly, useKeyOrValueAndKey, useMultipleProp, useTextAlignProp, useVerticalAlignProp, useWidthProp } from '../../lib';
+import { customPropTypes, getElementType, getUnhandledProps, SUI, useKeyOnly, useKeyOrValueAndKey, useMultipleProp, useTextAlignProp, useVerticalAlignProp, useWidthProp } from '../../lib';
 import GridColumn from './GridColumn';
 import GridRow from './GridRow';
-
 /**
  * A grid is used to harmonize negative space in a layout.
  */
+
 function Grid(props) {
   var celled = props.celled,
       centered = props.centered,
@@ -28,28 +27,17 @@ function Grid(props) {
       stretched = props.stretched,
       textAlign = props.textAlign,
       verticalAlign = props.verticalAlign;
-
-
   var classes = cx('ui', useKeyOnly(centered, 'centered'), useKeyOnly(container, 'container'), useKeyOnly(doubling, 'doubling'), useKeyOnly(inverted, 'inverted'), useKeyOnly(stackable, 'stackable'), useKeyOnly(stretched, 'stretched'), useKeyOrValueAndKey(celled, 'celled'), useKeyOrValueAndKey(divided, 'divided'), useKeyOrValueAndKey(padded, 'padded'), useKeyOrValueAndKey(relaxed, 'relaxed'), useMultipleProp(reversed, 'reversed'), useTextAlignProp(textAlign), useVerticalAlignProp(verticalAlign), useWidthProp(columns, 'column', true), 'grid', className);
   var rest = getUnhandledProps(Grid, props);
   var ElementType = getElementType(Grid, props);
-
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    children
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), children);
 }
 
-Grid.handledProps = ['as', 'celled', 'centered', 'children', 'className', 'columns', 'container', 'divided', 'doubling', 'inverted', 'padded', 'relaxed', 'reversed', 'stackable', 'stretched', 'textAlign', 'verticalAlign'];
+Grid.handledProps = ["as", "celled", "centered", "children", "className", "columns", "container", "divided", "doubling", "inverted", "padded", "relaxed", "reversed", "stackable", "stretched", "textAlign", "verticalAlign"];
 Grid.Column = GridColumn;
 Grid.Row = GridRow;
-
-Grid._meta = {
-  name: 'Grid',
-  type: META.TYPES.COLLECTION
-};
-
 Grid.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -67,7 +55,7 @@ Grid.propTypes = process.env.NODE_ENV !== "production" ? {
   className: PropTypes.string,
 
   /** Represents column count per row in Grid. */
-  columns: PropTypes.oneOf([].concat(_toConsumableArray(SUI.WIDTHS), ['equal'])),
+  columns: PropTypes.oneOf(_toConsumableArray(SUI.WIDTHS).concat(['equal'])),
 
   /** A grid can be combined with a container to use the available layout and alignment. */
   container: PropTypes.bool,
@@ -102,5 +90,4 @@ Grid.propTypes = process.env.NODE_ENV !== "production" ? {
   /** A grid can specify its vertical alignment to have all its columns vertically centered. */
   verticalAlign: PropTypes.oneOf(SUI.VERTICAL_ALIGNMENTS)
 } : {};
-
 export default Grid;

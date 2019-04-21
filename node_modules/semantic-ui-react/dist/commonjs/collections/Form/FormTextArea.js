@@ -1,28 +1,21 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _react = _interopRequireDefault(require("react"));
 
-var _react = require('react');
+var _lib = require("../../lib");
 
-var _react2 = _interopRequireDefault(_react);
+var _TextArea = _interopRequireDefault(require("../../addons/TextArea"));
 
-var _lib = require('../../lib');
-
-var _TextArea = require('../../addons/TextArea');
-
-var _TextArea2 = _interopRequireDefault(_TextArea);
-
-var _FormField = require('./FormField');
-
-var _FormField2 = _interopRequireDefault(_FormField);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _FormField = _interopRequireDefault(require("./FormField"));
 
 /**
  * Sugar for <Form.Field control={TextArea} />.
@@ -31,31 +24,24 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  */
 function FormTextArea(props) {
   var control = props.control;
-
   var rest = (0, _lib.getUnhandledProps)(FormTextArea, props);
   var ElementType = (0, _lib.getElementType)(FormTextArea, props);
-
-  return _react2.default.createElement(ElementType, (0, _extends3.default)({}, rest, { control: control }));
+  return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+    control: control
+  }));
 }
 
-FormTextArea.handledProps = ['as', 'control'];
-FormTextArea._meta = {
-  name: 'FormTextArea',
-  parent: 'Form',
-  type: _lib.META.TYPES.COLLECTION
-};
-
+FormTextArea.handledProps = ["as", "control"];
 FormTextArea.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: _lib.customPropTypes.as,
 
   /** A FormField control prop. */
-  control: _FormField2.default.propTypes.control
+  control: _FormField.default.propTypes.control
 } : {};
-
 FormTextArea.defaultProps = {
-  as: _FormField2.default,
-  control: _TextArea2.default
+  as: _FormField.default,
+  control: _TextArea.default
 };
-
-exports.default = FormTextArea;
+var _default = FormTextArea;
+exports.default = _default;

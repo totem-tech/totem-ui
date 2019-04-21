@@ -1,36 +1,25 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _classnames = _interopRequireDefault(require("classnames"));
 
-var _classnames = require('classnames');
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
-var _classnames2 = _interopRequireDefault(_classnames);
+var _react = _interopRequireDefault(require("react"));
 
-var _propTypes = require('prop-types');
+var _lib = require("../../lib");
 
-var _propTypes2 = _interopRequireDefault(_propTypes);
+var _FeedContent = _interopRequireDefault(require("./FeedContent"));
 
-var _react = require('react');
-
-var _react2 = _interopRequireDefault(_react);
-
-var _lib = require('../../lib');
-
-var _FeedContent = require('./FeedContent');
-
-var _FeedContent2 = _interopRequireDefault(_FeedContent);
-
-var _FeedLabel = require('./FeedLabel');
-
-var _FeedLabel2 = _interopRequireDefault(_FeedLabel);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _FeedLabel = _interopRequireDefault(require("./FeedLabel"));
 
 /**
  * A feed contains an event.
@@ -46,45 +35,45 @@ function FeedEvent(props) {
       icon = props.icon,
       meta = props.meta,
       summary = props.summary;
-
-
-  var classes = (0, _classnames2.default)('event', className);
+  var classes = (0, _classnames.default)('event', className);
   var rest = (0, _lib.getUnhandledProps)(FeedEvent, props);
   var ElementType = (0, _lib.getElementType)(FeedEvent, props);
-
   var hasContentProp = content || date || extraImages || extraText || meta || summary;
-  var contentProps = { content: content, date: date, extraImages: extraImages, extraText: extraText, meta: meta, summary: summary };
-
-  return _react2.default.createElement(
-    ElementType,
-    (0, _extends3.default)({}, rest, { className: classes }),
-    (0, _lib.createShorthand)(_FeedLabel2.default, function (val) {
-      return { icon: val };
-    }, icon),
-    (0, _lib.createShorthand)(_FeedLabel2.default, function (val) {
-      return { image: val };
-    }, image),
-    hasContentProp && _react2.default.createElement(_FeedContent2.default, contentProps),
-    children
-  );
+  var contentProps = {
+    content: content,
+    date: date,
+    extraImages: extraImages,
+    extraText: extraText,
+    meta: meta,
+    summary: summary
+  };
+  return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+    className: classes
+  }), (0, _lib.createShorthand)(_FeedLabel.default, function (val) {
+    return {
+      icon: val
+    };
+  }, icon, {
+    autoGenerateKey: false
+  }), (0, _lib.createShorthand)(_FeedLabel.default, function (val) {
+    return {
+      image: val
+    };
+  }, image, {
+    autoGenerateKey: false
+  }), hasContentProp && _react.default.createElement(_FeedContent.default, contentProps), children);
 }
 
-FeedEvent.handledProps = ['as', 'children', 'className', 'content', 'date', 'extraImages', 'extraText', 'icon', 'image', 'meta', 'summary'];
-FeedEvent._meta = {
-  name: 'FeedEvent',
-  parent: 'Feed',
-  type: _lib.META.TYPES.VIEW
-};
-
+FeedEvent.handledProps = ["as", "children", "className", "content", "date", "extraImages", "extraText", "icon", "image", "meta", "summary"];
 FeedEvent.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: _lib.customPropTypes.as,
 
   /** Primary content. */
-  children: _propTypes2.default.node,
+  children: _propTypes.default.node,
 
   /** Additional classes. */
-  className: _propTypes2.default.string,
+  className: _propTypes.default.string,
 
   /** Shorthand for FeedContent. */
   content: _lib.customPropTypes.itemShorthand,
@@ -110,5 +99,5 @@ FeedEvent.propTypes = process.env.NODE_ENV !== "production" ? {
   /** Shorthand for FeedSummary. */
   summary: _lib.customPropTypes.itemShorthand
 } : {};
-
-exports.default = FeedEvent;
+var _default = FeedEvent;
+exports.default = _default;

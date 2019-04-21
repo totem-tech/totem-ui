@@ -1,60 +1,37 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _classnames = _interopRequireDefault(require("classnames"));
 
-var _classnames = require('classnames');
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
-var _classnames2 = _interopRequireDefault(_classnames);
+var _react = _interopRequireDefault(require("react"));
 
-var _propTypes = require('prop-types');
+var _lib = require("../../lib");
 
-var _propTypes2 = _interopRequireDefault(_propTypes);
+var _CommentAction = _interopRequireDefault(require("./CommentAction"));
 
-var _react = require('react');
+var _CommentActions = _interopRequireDefault(require("./CommentActions"));
 
-var _react2 = _interopRequireDefault(_react);
+var _CommentAuthor = _interopRequireDefault(require("./CommentAuthor"));
 
-var _lib = require('../../lib');
+var _CommentAvatar = _interopRequireDefault(require("./CommentAvatar"));
 
-var _CommentAction = require('./CommentAction');
+var _CommentContent = _interopRequireDefault(require("./CommentContent"));
 
-var _CommentAction2 = _interopRequireDefault(_CommentAction);
+var _CommentGroup = _interopRequireDefault(require("./CommentGroup"));
 
-var _CommentActions = require('./CommentActions');
+var _CommentMetadata = _interopRequireDefault(require("./CommentMetadata"));
 
-var _CommentActions2 = _interopRequireDefault(_CommentActions);
-
-var _CommentAuthor = require('./CommentAuthor');
-
-var _CommentAuthor2 = _interopRequireDefault(_CommentAuthor);
-
-var _CommentAvatar = require('./CommentAvatar');
-
-var _CommentAvatar2 = _interopRequireDefault(_CommentAvatar);
-
-var _CommentContent = require('./CommentContent');
-
-var _CommentContent2 = _interopRequireDefault(_CommentContent);
-
-var _CommentGroup = require('./CommentGroup');
-
-var _CommentGroup2 = _interopRequireDefault(_CommentGroup);
-
-var _CommentMetadata = require('./CommentMetadata');
-
-var _CommentMetadata2 = _interopRequireDefault(_CommentMetadata);
-
-var _CommentText = require('./CommentText');
-
-var _CommentText2 = _interopRequireDefault(_CommentText);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _CommentText = _interopRequireDefault(require("./CommentText"));
 
 /**
  * A comment displays user feedback to site content.
@@ -64,49 +41,38 @@ function Comment(props) {
       children = props.children,
       collapsed = props.collapsed,
       content = props.content;
-
-
-  var classes = (0, _classnames2.default)((0, _lib.useKeyOnly)(collapsed, 'collapsed'), 'comment', className);
+  var classes = (0, _classnames.default)((0, _lib.useKeyOnly)(collapsed, 'collapsed'), 'comment', className);
   var rest = (0, _lib.getUnhandledProps)(Comment, props);
   var ElementType = (0, _lib.getElementType)(Comment, props);
-
-  return _react2.default.createElement(
-    ElementType,
-    (0, _extends3.default)({}, rest, { className: classes }),
-    _lib.childrenUtils.isNil(children) ? content : children
-  );
+  return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+    className: classes
+  }), _lib.childrenUtils.isNil(children) ? content : children);
 }
 
-Comment.handledProps = ['as', 'children', 'className', 'collapsed', 'content'];
-Comment._meta = {
-  name: 'Comment',
-  type: _lib.META.TYPES.VIEW
-};
-
+Comment.handledProps = ["as", "children", "className", "collapsed", "content"];
 Comment.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: _lib.customPropTypes.as,
 
   /** Primary content. */
-  children: _propTypes2.default.node,
+  children: _propTypes.default.node,
 
   /** Additional classes. */
-  className: _propTypes2.default.string,
+  className: _propTypes.default.string,
 
   /** Comment can be collapsed, or hidden from view. */
-  collapsed: _propTypes2.default.bool,
+  collapsed: _propTypes.default.bool,
 
   /** Shorthand for primary content. */
   content: _lib.customPropTypes.contentShorthand
 } : {};
-
-Comment.Author = _CommentAuthor2.default;
-Comment.Action = _CommentAction2.default;
-Comment.Actions = _CommentActions2.default;
-Comment.Avatar = _CommentAvatar2.default;
-Comment.Content = _CommentContent2.default;
-Comment.Group = _CommentGroup2.default;
-Comment.Metadata = _CommentMetadata2.default;
-Comment.Text = _CommentText2.default;
-
-exports.default = Comment;
+Comment.Author = _CommentAuthor.default;
+Comment.Action = _CommentAction.default;
+Comment.Actions = _CommentActions.default;
+Comment.Avatar = _CommentAvatar.default;
+Comment.Content = _CommentContent.default;
+Comment.Group = _CommentGroup.default;
+Comment.Metadata = _CommentMetadata.default;
+Comment.Text = _CommentText.default;
+var _default = Comment;
+exports.default = _default;

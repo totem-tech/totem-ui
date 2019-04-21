@@ -1,17 +1,15 @@
-import _extends from 'babel-runtime/helpers/extends';
-import _map from 'lodash/map';
-import _isNil from 'lodash/isNil';
+import _extends from "@babel/runtime/helpers/extends";
+import _map from "lodash/map";
+import _isNil from "lodash/isNil";
 import cx from 'classnames';
-
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, META, SUI, useKeyOnly, useKeyOrValueAndKey, useValueAndKey, useWidthProp } from '../../lib';
+import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, SUI, useKeyOnly, useKeyOrValueAndKey, useValueAndKey, useWidthProp } from '../../lib';
 import Button from './Button';
-
 /**
  * Buttons can be grouped.
  */
+
 function ButtonGroup(props) {
   var attached = props.attached,
       basic = props.basic,
@@ -34,36 +32,24 @@ function ButtonGroup(props) {
       toggle = props.toggle,
       vertical = props.vertical,
       widths = props.widths;
-
-
   var classes = cx('ui', color, size, useKeyOnly(basic, 'basic'), useKeyOnly(compact, 'compact'), useKeyOnly(fluid, 'fluid'), useKeyOnly(icon, 'icon'), useKeyOnly(inverted, 'inverted'), useKeyOnly(labeled, 'labeled'), useKeyOnly(negative, 'negative'), useKeyOnly(positive, 'positive'), useKeyOnly(primary, 'primary'), useKeyOnly(secondary, 'secondary'), useKeyOnly(toggle, 'toggle'), useKeyOnly(vertical, 'vertical'), useKeyOrValueAndKey(attached, 'attached'), useValueAndKey(floated, 'floated'), useWidthProp(widths), 'buttons', className);
   var rest = getUnhandledProps(ButtonGroup, props);
   var ElementType = getElementType(ButtonGroup, props);
 
   if (_isNil(buttons)) {
-    return React.createElement(
-      ElementType,
-      _extends({}, rest, { className: classes }),
-      childrenUtils.isNil(children) ? content : children
-    );
+    return React.createElement(ElementType, _extends({}, rest, {
+      className: classes
+    }), childrenUtils.isNil(children) ? content : children);
   }
 
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    _map(buttons, function (button) {
-      return Button.create(button);
-    })
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), _map(buttons, function (button) {
+    return Button.create(button);
+  }));
 }
 
-ButtonGroup.handledProps = ['as', 'attached', 'basic', 'buttons', 'children', 'className', 'color', 'compact', 'content', 'floated', 'fluid', 'icon', 'inverted', 'labeled', 'negative', 'positive', 'primary', 'secondary', 'size', 'toggle', 'vertical', 'widths'];
-ButtonGroup._meta = {
-  name: 'ButtonGroup',
-  parent: 'Button',
-  type: META.TYPES.ELEMENT
-};
-
+ButtonGroup.handledProps = ["as", "attached", "basic", "buttons", "children", "className", "color", "compact", "content", "floated", "fluid", "icon", "inverted", "labeled", "negative", "positive", "primary", "secondary", "size", "toggle", "vertical", "widths"];
 ButtonGroup.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -131,5 +117,4 @@ ButtonGroup.propTypes = process.env.NODE_ENV !== "production" ? {
   /** Groups can have their widths divided evenly. */
   widths: PropTypes.oneOf(SUI.WIDTHS)
 } : {};
-
 export default ButtonGroup;

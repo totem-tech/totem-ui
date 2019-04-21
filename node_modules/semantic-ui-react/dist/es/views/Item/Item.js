@@ -1,9 +1,8 @@
-import _extends from 'babel-runtime/helpers/extends';
+import _extends from "@babel/runtime/helpers/extends";
 import cx from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, META } from '../../lib';
+import { childrenUtils, customPropTypes, getElementType, getUnhandledProps } from '../../lib';
 import ItemContent from './ItemContent';
 import ItemDescription from './ItemDescription';
 import ItemExtra from './ItemExtra';
@@ -11,10 +10,10 @@ import ItemGroup from './ItemGroup';
 import ItemHeader from './ItemHeader';
 import ItemImage from './ItemImage';
 import ItemMeta from './ItemMeta';
-
 /**
  * An item view presents large collections of site content for display.
  */
+
 function Item(props) {
   var children = props.children,
       className = props.className,
@@ -24,40 +23,30 @@ function Item(props) {
       header = props.header,
       image = props.image,
       meta = props.meta;
-
-
   var classes = cx('item', className);
   var rest = getUnhandledProps(Item, props);
   var ElementType = getElementType(Item, props);
 
   if (!childrenUtils.isNil(children)) {
-    return React.createElement(
-      ElementType,
-      _extends({}, rest, { className: classes }),
-      children
-    );
+    return React.createElement(ElementType, _extends({}, rest, {
+      className: classes
+    }), children);
   }
 
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    ItemImage.create(image),
-    React.createElement(ItemContent, {
-      content: content,
-      description: description,
-      extra: extra,
-      header: header,
-      meta: meta
-    })
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), ItemImage.create(image, {
+    autoGenerateKey: false
+  }), React.createElement(ItemContent, {
+    content: content,
+    description: description,
+    extra: extra,
+    header: header,
+    meta: meta
+  }));
 }
 
-Item.handledProps = ['as', 'children', 'className', 'content', 'description', 'extra', 'header', 'image', 'meta'];
-Item._meta = {
-  name: 'Item',
-  type: META.TYPES.VIEW
-};
-
+Item.handledProps = ["as", "children", "className", "content", "description", "extra", "header", "image", "meta"];
 Item.Content = ItemContent;
 Item.Description = ItemDescription;
 Item.Extra = ItemExtra;
@@ -65,7 +54,6 @@ Item.Group = ItemGroup;
 Item.Header = ItemHeader;
 Item.Image = ItemImage;
 Item.Meta = ItemMeta;
-
 Item.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -94,5 +82,4 @@ Item.propTypes = process.env.NODE_ENV !== "production" ? {
   /** Shorthand for ItemMeta component. */
   meta: customPropTypes.itemShorthand
 } : {};
-
 export default Item;

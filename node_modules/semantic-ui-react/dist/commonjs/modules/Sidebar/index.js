@@ -1,14 +1,15 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = undefined;
+Object.defineProperty(exports, "default", {
+  enumerable: true,
+  get: function get() {
+    return _Sidebar.default;
+  }
+});
 
-var _Sidebar = require('./Sidebar');
-
-var _Sidebar2 = _interopRequireDefault(_Sidebar);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = _Sidebar2.default;
+var _Sidebar = _interopRequireDefault(require("./Sidebar"));

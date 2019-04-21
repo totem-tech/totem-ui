@@ -1,15 +1,13 @@
-import _extends from 'babel-runtime/helpers/extends';
-import _without from 'lodash/without';
+import _extends from "@babel/runtime/helpers/extends";
+import _without from "lodash/without";
 import cx from 'classnames';
-
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, META, SUI, useKeyOnly } from '../../lib';
-
+import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, SUI, useKeyOnly } from '../../lib';
 /**
  * Comments can be grouped.
  */
+
 function CommentGroup(props) {
   var className = props.className,
       children = props.children,
@@ -18,26 +16,15 @@ function CommentGroup(props) {
       minimal = props.minimal,
       size = props.size,
       threaded = props.threaded;
-
-
   var classes = cx('ui', size, useKeyOnly(collapsed, 'collapsed'), useKeyOnly(minimal, 'minimal'), useKeyOnly(threaded, 'threaded'), 'comments', className);
   var rest = getUnhandledProps(CommentGroup, props);
   var ElementType = getElementType(CommentGroup, props);
-
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    childrenUtils.isNil(children) ? content : children
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), childrenUtils.isNil(children) ? content : children);
 }
 
-CommentGroup.handledProps = ['as', 'children', 'className', 'collapsed', 'content', 'minimal', 'size', 'threaded'];
-CommentGroup._meta = {
-  name: 'CommentGroup',
-  parent: 'Comment',
-  type: META.TYPES.VIEW
-};
-
+CommentGroup.handledProps = ["as", "children", "className", "collapsed", "content", "minimal", "size", "threaded"];
 CommentGroup.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -63,5 +50,4 @@ CommentGroup.propTypes = process.env.NODE_ENV !== "production" ? {
   /** A comment list can be threaded to showing the relationship between conversations. */
   threaded: PropTypes.bool
 } : {};
-
 export default CommentGroup;

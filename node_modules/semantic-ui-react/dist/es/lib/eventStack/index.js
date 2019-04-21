@@ -1,2 +1,2 @@
-import _default from './eventStack';
-export { _default as default };
+import { instance } from '@semantic-ui-react/event-stack';
+export default instance;

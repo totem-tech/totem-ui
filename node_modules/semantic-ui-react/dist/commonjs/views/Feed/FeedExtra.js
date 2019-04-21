@@ -1,32 +1,23 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _map2 = _interopRequireDefault(require("lodash/map"));
 
-var _map2 = require('lodash/map');
+var _classnames = _interopRequireDefault(require("classnames"));
 
-var _map3 = _interopRequireDefault(_map2);
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
-var _classnames = require('classnames');
+var _react = _interopRequireDefault(require("react"));
 
-var _classnames2 = _interopRequireDefault(_classnames);
-
-var _propTypes = require('prop-types');
-
-var _propTypes2 = _interopRequireDefault(_propTypes);
-
-var _react = require('react');
-
-var _react2 = _interopRequireDefault(_react);
-
-var _lib = require('../../lib');
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _lib = require("../../lib");
 
 /**
  * A feed can contain an extra content.
@@ -37,59 +28,47 @@ function FeedExtra(props) {
       content = props.content,
       images = props.images,
       text = props.text;
-
-
-  var classes = (0, _classnames2.default)((0, _lib.useKeyOnly)(images, 'images'), (0, _lib.useKeyOnly)(content || text, 'text'), 'extra', className);
+  var classes = (0, _classnames.default)((0, _lib.useKeyOnly)(images, 'images'), (0, _lib.useKeyOnly)(content || text, 'text'), 'extra', className);
   var rest = (0, _lib.getUnhandledProps)(FeedExtra, props);
   var ElementType = (0, _lib.getElementType)(FeedExtra, props);
 
   if (!_lib.childrenUtils.isNil(children)) {
-    return _react2.default.createElement(
-      ElementType,
-      (0, _extends3.default)({}, rest, { className: classes }),
-      children
-    );
-  }
+    return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+      className: classes
+    }), children);
+  } // TODO need a "collection factory" to handle creating multiple image elements and their keys
 
-  // TODO need a "collection factory" to handle creating multiple image elements and their keys
-  var imageElements = (0, _map3.default)(images, function (image, index) {
+
+  var imageElements = (0, _map2.default)(images, function (image, index) {
     var key = [index, image].join('-');
-    return (0, _lib.createHTMLImage)(image, { key: key });
+    return (0, _lib.createHTMLImage)(image, {
+      key: key
+    });
   });
-
-  return _react2.default.createElement(
-    ElementType,
-    (0, _extends3.default)({}, rest, { className: classes }),
-    content,
-    imageElements
-  );
+  return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+    className: classes
+  }), content, imageElements);
 }
 
-FeedExtra.handledProps = ['as', 'children', 'className', 'content', 'images', 'text'];
-FeedExtra._meta = {
-  name: 'FeedExtra',
-  parent: 'Feed',
-  type: _lib.META.TYPES.VIEW
-};
-
+FeedExtra.handledProps = ["as", "children", "className", "content", "images", "text"];
 FeedExtra.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: _lib.customPropTypes.as,
 
   /** Primary content. */
-  children: _propTypes2.default.node,
+  children: _propTypes.default.node,
 
   /** Additional classes. */
-  className: _propTypes2.default.string,
+  className: _propTypes.default.string,
 
   /** Shorthand for primary content. */
   content: _lib.customPropTypes.contentShorthand,
 
   /** An event can contain additional information like a set of images. */
-  images: _lib.customPropTypes.every([_lib.customPropTypes.disallow(['text']), _propTypes2.default.oneOfType([_propTypes2.default.bool, _lib.customPropTypes.collectionShorthand])]),
+  images: _lib.customPropTypes.every([_lib.customPropTypes.disallow(['text']), _propTypes.default.oneOfType([_propTypes.default.bool, _lib.customPropTypes.collectionShorthand])]),
 
   /** An event can contain additional text information. */
-  text: _propTypes2.default.bool
+  text: _propTypes.default.bool
 } : {};
-
-exports.default = FeedExtra;
+var _default = FeedExtra;
+exports.default = _default;

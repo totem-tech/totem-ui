@@ -1,12 +1,14 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
+
 // Copy of sindre's leven, wrapped in dead code elimination for production
 // https://github.com/sindresorhus/leven/blob/master/index.js
-/* eslint-disable complexity, import/no-mutable-exports, no-multi-assign, no-nested-ternary, no-plusplus */
 
+/* eslint-disable complexity, import/no-mutable-exports, no-multi-assign, no-nested-ternary, no-plusplus */
 var leven = function leven() {
   return 0;
 };
@@ -17,17 +19,14 @@ if (process.env.NODE_ENV !== 'production') {
 
   leven = function leven(a, b) {
     if (a === b) return 0;
-
     var aLen = a.length;
     var bLen = b.length;
-
     if (aLen === 0) return bLen;
     if (bLen === 0) return aLen;
-
-    var bCharCode = void 0;
-    var ret = void 0;
-    var tmp = void 0;
-    var tmp2 = void 0;
+    var bCharCode;
+    var ret;
+    var tmp;
+    var tmp2;
     var i = 0;
     var j = 0;
 
@@ -52,4 +51,5 @@ if (process.env.NODE_ENV !== 'production') {
   };
 }
 
-exports.default = leven;
+var _default = leven;
+exports.default = _default;

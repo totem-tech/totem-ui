@@ -2,11 +2,7 @@ import _ from 'lodash'
 import PropTypes from 'prop-types'
 import React, { Component } from 'react'
 
-import {
-  customPropTypes,
-  getUnhandledProps,
-  META,
-} from '../../lib'
+import { customPropTypes, getUnhandledProps } from '../../lib'
 import Button from '../../elements/Button'
 import Modal from '../../modules/Modal'
 
@@ -48,7 +44,7 @@ class Confirm extends Component {
     open: PropTypes.bool,
 
     /** A Confirm can vary in size */
-    size: PropTypes.oneOf(['fullscreen', 'large', 'mini', 'small', 'tiny']),
+    size: PropTypes.oneOf(['mini', 'tiny', 'small', 'large', 'fullscreen']),
   }
 
   static defaultProps = {
@@ -56,11 +52,6 @@ class Confirm extends Component {
     confirmButton: 'OK',
     content: 'Are you sure?',
     size: 'small',
-  }
-
-  static _meta = {
-    name: 'Confirm',
-    type: META.TYPES.ADDON,
   }
 
   handleCancel = (e) => {
@@ -82,14 +73,7 @@ class Confirm extends Component {
   })
 
   render() {
-    const {
-      cancelButton,
-      confirmButton,
-      content,
-      header,
-      open,
-      size,
-    } = this.props
+    const { cancelButton, confirmButton, content, header, open, size } = this.props
     const rest = getUnhandledProps(Confirm, this.props)
 
     // `open` is auto controlled by the Modal
@@ -100,11 +84,15 @@ class Confirm extends Component {
 
     return (
       <Modal {...rest} {...openProp} size={size} onClose={this.handleCancel}>
-        {Modal.Header.create(header)}
-        {Modal.Content.create(content)}
+        {Modal.Header.create(header, { autoGenerateKey: false })}
+        {Modal.Content.create(content, { autoGenerateKey: false })}
         <Modal.Actions>
-          {Button.create(cancelButton, { overrideProps: this.handleCancelOverrides })}
+          {Button.create(cancelButton, {
+            autoGenerateKey: false,
+            overrideProps: this.handleCancelOverrides,
+          })}
           {Button.create(confirmButton, {
+            autoGenerateKey: false,
             defaultProps: { primary: true },
             overrideProps: this.handleConfirmOverrides,
           })}

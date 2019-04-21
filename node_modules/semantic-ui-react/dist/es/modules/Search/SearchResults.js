@@ -1,33 +1,22 @@
-import _extends from 'babel-runtime/helpers/extends';
+import _extends from "@babel/runtime/helpers/extends";
 import cx from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, META } from '../../lib';
+import { childrenUtils, customPropTypes, getElementType, getUnhandledProps } from '../../lib';
 
 function SearchResults(props) {
   var children = props.children,
       className = props.className,
       content = props.content;
-
   var classes = cx('results transition', className);
   var rest = getUnhandledProps(SearchResults, props);
   var ElementType = getElementType(SearchResults, props);
-
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    childrenUtils.isNil(children) ? content : children
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), childrenUtils.isNil(children) ? content : children);
 }
 
-SearchResults.handledProps = ['as', 'children', 'className', 'content'];
-SearchResults._meta = {
-  name: 'SearchResults',
-  parent: 'Search',
-  type: META.TYPES.MODULE
-};
-
+SearchResults.handledProps = ["as", "children", "className", "content"];
 SearchResults.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -41,5 +30,4 @@ SearchResults.propTypes = process.env.NODE_ENV !== "production" ? {
   /** Shorthand for primary content. */
   content: customPropTypes.contentShorthand
 } : {};
-
 export default SearchResults;

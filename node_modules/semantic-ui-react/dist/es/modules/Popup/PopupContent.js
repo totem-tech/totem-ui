@@ -1,30 +1,24 @@
-import _extends from 'babel-runtime/helpers/extends';
+import _extends from "@babel/runtime/helpers/extends";
 import cx from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { childrenUtils, createShorthandFactory, customPropTypes, getElementType, getUnhandledProps, META } from '../../lib';
-
+import { childrenUtils, createShorthandFactory, customPropTypes, getElementType, getUnhandledProps } from '../../lib';
 /**
  * A PopupContent displays the content body of a Popover.
  */
+
 export default function PopupContent(props) {
   var children = props.children,
       className = props.className,
       content = props.content;
-
   var classes = cx('content', className);
   var rest = getUnhandledProps(PopupContent, props);
   var ElementType = getElementType(PopupContent, props);
-
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    childrenUtils.isNil(children) ? content : children
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), childrenUtils.isNil(children) ? content : children);
 }
-
-PopupContent.handledProps = ['as', 'children', 'className', 'content'];
+PopupContent.handledProps = ["as", "children", "className", "content"];
 PopupContent.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -38,13 +32,8 @@ PopupContent.propTypes = process.env.NODE_ENV !== "production" ? {
   /** Shorthand for primary content. */
   content: customPropTypes.contentShorthand
 } : {};
-
-PopupContent._meta = {
-  name: 'PopupContent',
-  type: META.TYPES.MODULE,
-  parent: 'Popup'
-};
-
 PopupContent.create = createShorthandFactory(PopupContent, function (children) {
-  return { children: children };
+  return {
+    children: children
+  };
 });

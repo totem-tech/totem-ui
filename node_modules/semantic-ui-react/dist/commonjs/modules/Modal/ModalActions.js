@@ -1,129 +1,115 @@
-'use strict';
+"use strict";
+
+var _interopRequireWildcard = require("@babel/runtime/helpers/interopRequireWildcard");
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
 
-var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
+var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
 
-var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime/helpers/possibleConstructorReturn"));
 
-var _createClass2 = require('babel-runtime/helpers/createClass');
+var _getPrototypeOf3 = _interopRequireDefault(require("@babel/runtime/helpers/getPrototypeOf"));
 
-var _createClass3 = _interopRequireDefault(_createClass2);
+var _inherits2 = _interopRequireDefault(require("@babel/runtime/helpers/inherits"));
 
-var _possibleConstructorReturn2 = require('babel-runtime/helpers/possibleConstructorReturn');
+var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
 
-var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
-var _inherits2 = require('babel-runtime/helpers/inherits');
+var _map2 = _interopRequireDefault(require("lodash/map"));
 
-var _inherits3 = _interopRequireDefault(_inherits2);
+var _invoke2 = _interopRequireDefault(require("lodash/invoke"));
 
-var _map2 = require('lodash/map');
+var _classnames = _interopRequireDefault(require("classnames"));
 
-var _map3 = _interopRequireDefault(_map2);
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
-var _invoke2 = require('lodash/invoke');
+var _react = _interopRequireWildcard(require("react"));
 
-var _invoke3 = _interopRequireDefault(_invoke2);
+var _lib = require("../../lib");
 
-var _classnames = require('classnames');
-
-var _classnames2 = _interopRequireDefault(_classnames);
-
-var _propTypes = require('prop-types');
-
-var _propTypes2 = _interopRequireDefault(_propTypes);
-
-var _react = require('react');
-
-var _react2 = _interopRequireDefault(_react);
-
-var _lib = require('../../lib');
-
-var _Button = require('../../elements/Button');
-
-var _Button2 = _interopRequireDefault(_Button);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _Button = _interopRequireDefault(require("../../elements/Button"));
 
 /**
  * A modal can contain a row of actions.
  */
-var ModalActions = function (_Component) {
-  (0, _inherits3.default)(ModalActions, _Component);
+var ModalActions =
+/*#__PURE__*/
+function (_Component) {
+  (0, _inherits2.default)(ModalActions, _Component);
 
   function ModalActions() {
-    var _ref;
+    var _getPrototypeOf2;
 
-    var _temp, _this, _ret;
+    var _this;
 
-    (0, _classCallCheck3.default)(this, ModalActions);
+    (0, _classCallCheck2.default)(this, ModalActions);
 
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
       args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this = (0, _possibleConstructorReturn3.default)(this, (_ref = ModalActions.__proto__ || Object.getPrototypeOf(ModalActions)).call.apply(_ref, [this].concat(args))), _this), _this.handleButtonOverrides = function (predefinedProps) {
+    _this = (0, _possibleConstructorReturn2.default)(this, (_getPrototypeOf2 = (0, _getPrototypeOf3.default)(ModalActions)).call.apply(_getPrototypeOf2, [this].concat(args)));
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "handleButtonOverrides", function (predefinedProps) {
       return {
         onClick: function onClick(e, buttonProps) {
-          (0, _invoke3.default)(predefinedProps, 'onClick', e, buttonProps);
-          (0, _invoke3.default)(_this.props, 'onActionClick', e, buttonProps);
+          (0, _invoke2.default)(predefinedProps, 'onClick', e, buttonProps);
+          (0, _invoke2.default)(_this.props, 'onActionClick', e, buttonProps);
         }
       };
-    }, _temp), (0, _possibleConstructorReturn3.default)(_this, _ret);
+    });
+    return _this;
   }
 
-  (0, _createClass3.default)(ModalActions, [{
-    key: 'render',
+  (0, _createClass2.default)(ModalActions, [{
+    key: "render",
     value: function render() {
       var _this2 = this;
 
-      var _props = this.props,
-          actions = _props.actions,
-          children = _props.children,
-          className = _props.className,
-          content = _props.content;
-
-      var classes = (0, _classnames2.default)('actions', className);
+      var _this$props = this.props,
+          actions = _this$props.actions,
+          children = _this$props.children,
+          className = _this$props.className,
+          content = _this$props.content;
+      var classes = (0, _classnames.default)('actions', className);
       var rest = (0, _lib.getUnhandledProps)(ModalActions, this.props);
       var ElementType = (0, _lib.getElementType)(ModalActions, this.props);
 
-      if (!_lib.childrenUtils.isNil(children)) return _react2.default.createElement(
-        ElementType,
-        (0, _extends3.default)({}, rest, { className: classes }),
-        children
-      );
-      if (!_lib.childrenUtils.isNil(content)) return _react2.default.createElement(
-        ElementType,
-        (0, _extends3.default)({}, rest, { className: classes }),
-        content
-      );
+      if (!_lib.childrenUtils.isNil(children)) {
+        return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+          className: classes
+        }), children);
+      }
 
-      return _react2.default.createElement(
-        ElementType,
-        (0, _extends3.default)({}, rest, { className: classes }),
-        (0, _map3.default)(actions, function (action) {
-          return _Button2.default.create(action, { overrideProps: _this2.handleButtonOverrides });
-        })
-      );
+      if (!_lib.childrenUtils.isNil(content)) {
+        return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+          className: classes
+        }), content);
+      }
+
+      return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+        className: classes
+      }), (0, _map2.default)(actions, function (action) {
+        return _Button.default.create(action, {
+          overrideProps: _this2.handleButtonOverrides
+        });
+      }));
     }
   }]);
   return ModalActions;
 }(_react.Component);
 
-ModalActions._meta = {
-  name: 'ModalActions',
-  type: _lib.META.TYPES.MODULE,
-  parent: 'Modal'
-};
-ModalActions.handledProps = ['actions', 'as', 'children', 'className', 'content', 'onActionClick'];
 exports.default = ModalActions;
+(0, _defineProperty2.default)(ModalActions, "handledProps", ["actions", "as", "children", "className", "content", "onActionClick"]);
 ModalActions.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: _lib.customPropTypes.as,
@@ -132,10 +118,10 @@ ModalActions.propTypes = process.env.NODE_ENV !== "production" ? {
   actions: _lib.customPropTypes.collectionShorthand,
 
   /** Primary content. */
-  children: _propTypes2.default.node,
+  children: _propTypes.default.node,
 
   /** Additional classes. */
-  className: _propTypes2.default.string,
+  className: _propTypes.default.string,
 
   /** Shorthand for primary content. */
   content: _lib.customPropTypes.contentShorthand,
@@ -146,10 +132,10 @@ ModalActions.propTypes = process.env.NODE_ENV !== "production" ? {
    * @param {SyntheticEvent} event - React's original SyntheticEvent.
    * @param {object} data - All props from the clicked action.
    */
-  onActionClick: _lib.customPropTypes.every([_lib.customPropTypes.disallow(['children']), _propTypes2.default.func])
+  onActionClick: _lib.customPropTypes.every([_lib.customPropTypes.disallow(['children']), _propTypes.default.func])
 } : {};
-
-
 ModalActions.create = (0, _lib.createShorthandFactory)(ModalActions, function (actions) {
-  return { actions: actions };
+  return {
+    actions: actions
+  };
 });

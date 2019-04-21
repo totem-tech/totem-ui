@@ -1,82 +1,82 @@
-import _extends from 'babel-runtime/helpers/extends';
-import _classCallCheck from 'babel-runtime/helpers/classCallCheck';
-import _createClass from 'babel-runtime/helpers/createClass';
-import _possibleConstructorReturn from 'babel-runtime/helpers/possibleConstructorReturn';
-import _inherits from 'babel-runtime/helpers/inherits';
+import _extends from "@babel/runtime/helpers/extends";
+import _classCallCheck from "@babel/runtime/helpers/classCallCheck";
+import _createClass from "@babel/runtime/helpers/createClass";
+import _possibleConstructorReturn from "@babel/runtime/helpers/possibleConstructorReturn";
+import _getPrototypeOf from "@babel/runtime/helpers/getPrototypeOf";
+import _inherits from "@babel/runtime/helpers/inherits";
+import _assertThisInitialized from "@babel/runtime/helpers/assertThisInitialized";
+import _defineProperty from "@babel/runtime/helpers/defineProperty";
+import _invoke from "lodash/invoke";
 import cx from 'classnames';
+import keyboardKey from 'keyboard-key';
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
-
-import { customPropTypes, getElementType, getUnhandledProps, META, useKeyOnly, keyboardKey } from '../../lib';
-
+import { customPropTypes, getElementType, getUnhandledProps, useKeyOnly } from '../../lib';
 /**
  * An internal icon sub-component for Rating component
  */
 
-var RatingIcon = function (_Component) {
+var RatingIcon =
+/*#__PURE__*/
+function (_Component) {
   _inherits(RatingIcon, _Component);
 
   function RatingIcon() {
-    var _ref;
+    var _getPrototypeOf2;
 
-    var _temp, _this, _ret;
+    var _this;
 
     _classCallCheck(this, RatingIcon);
 
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
       args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = RatingIcon.__proto__ || Object.getPrototypeOf(RatingIcon)).call.apply(_ref, [this].concat(args))), _this), _this.handleClick = function (e) {
-      var onClick = _this.props.onClick;
+    _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(RatingIcon)).call.apply(_getPrototypeOf2, [this].concat(args)));
 
+    _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "handleClick", function (e) {
+      _invoke(_this.props, 'onClick', e, _this.props);
+    });
 
-      if (onClick) onClick(e, _this.props);
-    }, _this.handleKeyUp = function (e) {
-      var _this$props = _this.props,
-          onClick = _this$props.onClick,
-          onKeyUp = _this$props.onKeyUp;
+    _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "handleKeyUp", function (e) {
+      _invoke(_this.props, 'onKeyUp', e, _this.props);
 
+      switch (keyboardKey.getCode(e)) {
+        case keyboardKey.Enter:
+        case keyboardKey.Spacebar:
+          e.preventDefault();
 
-      if (onKeyUp) onKeyUp(e, _this.props);
+          _invoke(_this.props, 'onClick', e, _this.props);
 
-      if (onClick) {
-        switch (keyboardKey.getCode(e)) {
-          case keyboardKey.Enter:
-          case keyboardKey.Spacebar:
-            e.preventDefault();
-            onClick(e, _this.props);
-            break;
-          default:
-        }
+          break;
+
+        default:
       }
-    }, _this.handleMouseEnter = function (e) {
-      var onMouseEnter = _this.props.onMouseEnter;
+    });
 
+    _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "handleMouseEnter", function (e) {
+      _invoke(_this.props, 'onMouseEnter', e, _this.props);
+    });
 
-      if (onMouseEnter) onMouseEnter(e, _this.props);
-    }, _temp), _possibleConstructorReturn(_this, _ret);
+    return _this;
   }
 
   _createClass(RatingIcon, [{
-    key: 'render',
+    key: "render",
     value: function render() {
-      var _props = this.props,
-          active = _props.active,
-          className = _props.className,
-          selected = _props.selected;
-
+      var _this$props = this.props,
+          active = _this$props.active,
+          className = _this$props.className,
+          selected = _this$props.selected;
       var classes = cx(useKeyOnly(active, 'active'), useKeyOnly(selected, 'selected'), 'icon', className);
       var rest = getUnhandledProps(RatingIcon, this.props);
       var ElementType = getElementType(RatingIcon, this.props);
-
       return React.createElement(ElementType, _extends({}, rest, {
         className: classes,
         onClick: this.handleClick,
         onKeyUp: this.handleKeyUp,
         onMouseEnter: this.handleMouseEnter,
-        tabIndex: 0,
-        role: 'radio'
+        role: "radio"
       }));
     }
   }]);
@@ -84,16 +84,13 @@ var RatingIcon = function (_Component) {
   return RatingIcon;
 }(Component);
 
-RatingIcon.defaultProps = {
+_defineProperty(RatingIcon, "defaultProps", {
   as: 'i'
-};
-RatingIcon._meta = {
-  name: 'RatingIcon',
-  parent: 'Rating',
-  type: META.TYPES.MODULE
-};
-RatingIcon.handledProps = ['active', 'as', 'className', 'index', 'onClick', 'onKeyUp', 'onMouseEnter', 'selected'];
-export default RatingIcon;
+});
+
+_defineProperty(RatingIcon, "handledProps", ["active", "as", "className", "index", "onClick", "onKeyUp", "onMouseEnter", "selected"]);
+
+export { RatingIcon as default };
 RatingIcon.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,

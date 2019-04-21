@@ -1,37 +1,25 @@
-import _extends from 'babel-runtime/helpers/extends';
+import _extends from "@babel/runtime/helpers/extends";
 import cx from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, META, useKeyOnly } from '../../lib';
-
+import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, useKeyOnly } from '../../lib';
 /**
  * A list can contain a sub list.
  */
+
 function ListList(props) {
   var children = props.children,
       className = props.className,
       content = props.content;
-
-
   var rest = getUnhandledProps(ListList, props);
   var ElementType = getElementType(ListList, props);
   var classes = cx(useKeyOnly(ElementType !== 'ul' && ElementType !== 'ol', 'list'), className);
-
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    childrenUtils.isNil(children) ? content : children
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), childrenUtils.isNil(children) ? content : children);
 }
 
-ListList.handledProps = ['as', 'children', 'className', 'content'];
-ListList._meta = {
-  name: 'ListList',
-  parent: 'List',
-  type: META.TYPES.ELEMENT
-};
-
+ListList.handledProps = ["as", "children", "className", "content"];
 ListList.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -45,5 +33,4 @@ ListList.propTypes = process.env.NODE_ENV !== "production" ? {
   /** Shorthand for primary content. */
   content: customPropTypes.contentShorthand
 } : {};
-
 export default ListList;

@@ -10,24 +10,24 @@
  */
 export var isSimplePagination = function isSimplePagination(_ref) {
   var boundaryRange = _ref.boundaryRange,
+      hideEllipsis = _ref.hideEllipsis,
       siblingRange = _ref.siblingRange,
       totalPages = _ref.totalPages;
-
   var boundaryRangeSize = 2 * boundaryRange;
-  var ellipsisSize = 2;
+  var ellipsisSize = hideEllipsis ? 0 : 2;
   var siblingRangeSize = 2 * siblingRange;
-
   return 1 + ellipsisSize + siblingRangeSize + boundaryRangeSize >= totalPages;
 };
-
 export var typifyOptions = function typifyOptions(_ref2) {
   var activePage = _ref2.activePage,
       boundaryRange = _ref2.boundaryRange,
+      hideEllipsis = _ref2.hideEllipsis,
       siblingRange = _ref2.siblingRange,
       totalPages = _ref2.totalPages;
   return {
     activePage: +activePage,
     boundaryRange: +boundaryRange,
+    hideEllipsis: !!hideEllipsis,
     siblingRange: +siblingRange,
     totalPages: +totalPages
   };

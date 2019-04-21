@@ -1,140 +1,123 @@
-'use strict';
+"use strict";
+
+var _interopRequireWildcard = require("@babel/runtime/helpers/interopRequireWildcard");
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
 
-var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
+var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
 
-var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime/helpers/possibleConstructorReturn"));
 
-var _createClass2 = require('babel-runtime/helpers/createClass');
+var _getPrototypeOf3 = _interopRequireDefault(require("@babel/runtime/helpers/getPrototypeOf"));
 
-var _createClass3 = _interopRequireDefault(_createClass2);
+var _inherits2 = _interopRequireDefault(require("@babel/runtime/helpers/inherits"));
 
-var _possibleConstructorReturn2 = require('babel-runtime/helpers/possibleConstructorReturn');
+var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
 
-var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
-var _inherits2 = require('babel-runtime/helpers/inherits');
+var _invoke2 = _interopRequireDefault(require("lodash/invoke"));
 
-var _inherits3 = _interopRequireDefault(_inherits2);
+var _classnames = _interopRequireDefault(require("classnames"));
 
-var _classnames = require('classnames');
+var _keyboardKey = _interopRequireDefault(require("keyboard-key"));
 
-var _classnames2 = _interopRequireDefault(_classnames);
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
-var _propTypes = require('prop-types');
+var _react = _interopRequireWildcard(require("react"));
 
-var _propTypes2 = _interopRequireDefault(_propTypes);
-
-var _react = require('react');
-
-var _react2 = _interopRequireDefault(_react);
-
-var _lib = require('../../lib');
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _lib = require("../../lib");
 
 /**
  * An internal icon sub-component for Rating component
  */
-var RatingIcon = function (_Component) {
-  (0, _inherits3.default)(RatingIcon, _Component);
+var RatingIcon =
+/*#__PURE__*/
+function (_Component) {
+  (0, _inherits2.default)(RatingIcon, _Component);
 
   function RatingIcon() {
-    var _ref;
+    var _getPrototypeOf2;
 
-    var _temp, _this, _ret;
+    var _this;
 
-    (0, _classCallCheck3.default)(this, RatingIcon);
+    (0, _classCallCheck2.default)(this, RatingIcon);
 
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
       args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this = (0, _possibleConstructorReturn3.default)(this, (_ref = RatingIcon.__proto__ || Object.getPrototypeOf(RatingIcon)).call.apply(_ref, [this].concat(args))), _this), _this.handleClick = function (e) {
-      var onClick = _this.props.onClick;
+    _this = (0, _possibleConstructorReturn2.default)(this, (_getPrototypeOf2 = (0, _getPrototypeOf3.default)(RatingIcon)).call.apply(_getPrototypeOf2, [this].concat(args)));
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "handleClick", function (e) {
+      (0, _invoke2.default)(_this.props, 'onClick', e, _this.props);
+    });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "handleKeyUp", function (e) {
+      (0, _invoke2.default)(_this.props, 'onKeyUp', e, _this.props);
 
+      switch (_keyboardKey.default.getCode(e)) {
+        case _keyboardKey.default.Enter:
+        case _keyboardKey.default.Spacebar:
+          e.preventDefault();
+          (0, _invoke2.default)(_this.props, 'onClick', e, _this.props);
+          break;
 
-      if (onClick) onClick(e, _this.props);
-    }, _this.handleKeyUp = function (e) {
-      var _this$props = _this.props,
-          onClick = _this$props.onClick,
-          onKeyUp = _this$props.onKeyUp;
-
-
-      if (onKeyUp) onKeyUp(e, _this.props);
-
-      if (onClick) {
-        switch (_lib.keyboardKey.getCode(e)) {
-          case _lib.keyboardKey.Enter:
-          case _lib.keyboardKey.Spacebar:
-            e.preventDefault();
-            onClick(e, _this.props);
-            break;
-          default:
-        }
+        default:
       }
-    }, _this.handleMouseEnter = function (e) {
-      var onMouseEnter = _this.props.onMouseEnter;
-
-
-      if (onMouseEnter) onMouseEnter(e, _this.props);
-    }, _temp), (0, _possibleConstructorReturn3.default)(_this, _ret);
+    });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "handleMouseEnter", function (e) {
+      (0, _invoke2.default)(_this.props, 'onMouseEnter', e, _this.props);
+    });
+    return _this;
   }
 
-  (0, _createClass3.default)(RatingIcon, [{
-    key: 'render',
+  (0, _createClass2.default)(RatingIcon, [{
+    key: "render",
     value: function render() {
-      var _props = this.props,
-          active = _props.active,
-          className = _props.className,
-          selected = _props.selected;
-
-      var classes = (0, _classnames2.default)((0, _lib.useKeyOnly)(active, 'active'), (0, _lib.useKeyOnly)(selected, 'selected'), 'icon', className);
+      var _this$props = this.props,
+          active = _this$props.active,
+          className = _this$props.className,
+          selected = _this$props.selected;
+      var classes = (0, _classnames.default)((0, _lib.useKeyOnly)(active, 'active'), (0, _lib.useKeyOnly)(selected, 'selected'), 'icon', className);
       var rest = (0, _lib.getUnhandledProps)(RatingIcon, this.props);
       var ElementType = (0, _lib.getElementType)(RatingIcon, this.props);
-
-      return _react2.default.createElement(ElementType, (0, _extends3.default)({}, rest, {
+      return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
         className: classes,
         onClick: this.handleClick,
         onKeyUp: this.handleKeyUp,
         onMouseEnter: this.handleMouseEnter,
-        tabIndex: 0,
-        role: 'radio'
+        role: "radio"
       }));
     }
   }]);
   return RatingIcon;
 }(_react.Component);
 
-RatingIcon.defaultProps = {
-  as: 'i'
-};
-RatingIcon._meta = {
-  name: 'RatingIcon',
-  parent: 'Rating',
-  type: _lib.META.TYPES.MODULE
-};
-RatingIcon.handledProps = ['active', 'as', 'className', 'index', 'onClick', 'onKeyUp', 'onMouseEnter', 'selected'];
 exports.default = RatingIcon;
+(0, _defineProperty2.default)(RatingIcon, "defaultProps", {
+  as: 'i'
+});
+(0, _defineProperty2.default)(RatingIcon, "handledProps", ["active", "as", "className", "index", "onClick", "onKeyUp", "onMouseEnter", "selected"]);
 RatingIcon.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: _lib.customPropTypes.as,
 
   /** Indicates activity of an icon. */
-  active: _propTypes2.default.bool,
+  active: _propTypes.default.bool,
 
   /** Additional classes. */
-  className: _propTypes2.default.string,
+  className: _propTypes.default.string,
 
   /** An index of icon inside Rating. */
-  index: _propTypes2.default.number,
+  index: _propTypes.default.number,
 
   /**
    * Called on click.
@@ -142,7 +125,7 @@ RatingIcon.propTypes = process.env.NODE_ENV !== "production" ? {
    * @param {SyntheticEvent} event - React's original SyntheticEvent.
    * @param {object} data - All props.
    */
-  onClick: _propTypes2.default.func,
+  onClick: _propTypes.default.func,
 
   /**
    * Called on keyup.
@@ -150,7 +133,7 @@ RatingIcon.propTypes = process.env.NODE_ENV !== "production" ? {
    * @param {SyntheticEvent} event - React's original SyntheticEvent.
    * @param {object} data - All props.
    */
-  onKeyUp: _propTypes2.default.func,
+  onKeyUp: _propTypes.default.func,
 
   /**
    * Called on mouseenter.
@@ -158,8 +141,8 @@ RatingIcon.propTypes = process.env.NODE_ENV !== "production" ? {
    * @param {SyntheticEvent} event - React's original SyntheticEvent.
    * @param {object} data - All props.
    */
-  onMouseEnter: _propTypes2.default.func,
+  onMouseEnter: _propTypes.default.func,
 
   /** Indicates selection of an icon. */
-  selected: _propTypes2.default.bool
+  selected: _propTypes.default.bool
 } : {};

@@ -1,144 +1,133 @@
-'use strict';
+"use strict";
+
+var _interopRequireWildcard = require("@babel/runtime/helpers/interopRequireWildcard");
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
 
-var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
+var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
 
-var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime/helpers/possibleConstructorReturn"));
 
-var _createClass2 = require('babel-runtime/helpers/createClass');
+var _getPrototypeOf3 = _interopRequireDefault(require("@babel/runtime/helpers/getPrototypeOf"));
 
-var _createClass3 = _interopRequireDefault(_createClass2);
+var _inherits2 = _interopRequireDefault(require("@babel/runtime/helpers/inherits"));
 
-var _possibleConstructorReturn2 = require('babel-runtime/helpers/possibleConstructorReturn');
+var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
 
-var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
-var _inherits2 = require('babel-runtime/helpers/inherits');
+var _has2 = _interopRequireDefault(require("lodash/has"));
 
-var _inherits3 = _interopRequireDefault(_inherits2);
+var _invoke2 = _interopRequireDefault(require("lodash/invoke"));
 
-var _has2 = require('lodash/has');
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
-var _has3 = _interopRequireDefault(_has2);
+var _react = _interopRequireWildcard(require("react"));
 
-var _invoke2 = require('lodash/invoke');
+var _lib = require("../../lib");
 
-var _invoke3 = _interopRequireDefault(_invoke2);
+var _Button = _interopRequireDefault(require("../../elements/Button"));
 
-var _propTypes = require('prop-types');
-
-var _propTypes2 = _interopRequireDefault(_propTypes);
-
-var _react = require('react');
-
-var _react2 = _interopRequireDefault(_react);
-
-var _lib = require('../../lib');
-
-var _Button = require('../../elements/Button');
-
-var _Button2 = _interopRequireDefault(_Button);
-
-var _Modal = require('../../modules/Modal');
-
-var _Modal2 = _interopRequireDefault(_Modal);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _Modal = _interopRequireDefault(require("../../modules/Modal"));
 
 /**
  * A Confirm modal gives the user a choice to confirm or cancel an action/
  * @see Modal
  */
-var Confirm = function (_Component) {
-  (0, _inherits3.default)(Confirm, _Component);
+var Confirm =
+/*#__PURE__*/
+function (_Component) {
+  (0, _inherits2.default)(Confirm, _Component);
 
   function Confirm() {
-    var _ref;
+    var _getPrototypeOf2;
 
-    var _temp, _this, _ret;
+    var _this;
 
-    (0, _classCallCheck3.default)(this, Confirm);
+    (0, _classCallCheck2.default)(this, Confirm);
 
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
       args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this = (0, _possibleConstructorReturn3.default)(this, (_ref = Confirm.__proto__ || Object.getPrototypeOf(Confirm)).call.apply(_ref, [this].concat(args))), _this), _this.handleCancel = function (e) {
-      (0, _invoke3.default)(_this.props, 'onCancel', e, _this.props);
-    }, _this.handleCancelOverrides = function (predefinedProps) {
+    _this = (0, _possibleConstructorReturn2.default)(this, (_getPrototypeOf2 = (0, _getPrototypeOf3.default)(Confirm)).call.apply(_getPrototypeOf2, [this].concat(args)));
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "handleCancel", function (e) {
+      (0, _invoke2.default)(_this.props, 'onCancel', e, _this.props);
+    });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "handleCancelOverrides", function (predefinedProps) {
       return {
         onClick: function onClick(e, buttonProps) {
-          (0, _invoke3.default)(predefinedProps, 'onClick', e, buttonProps);
+          (0, _invoke2.default)(predefinedProps, 'onClick', e, buttonProps);
+
           _this.handleCancel(e);
         }
       };
-    }, _this.handleConfirmOverrides = function (predefinedProps) {
+    });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "handleConfirmOverrides", function (predefinedProps) {
       return {
         onClick: function onClick(e, buttonProps) {
-          (0, _invoke3.default)(predefinedProps, 'onClick', e, buttonProps);
-          (0, _invoke3.default)(_this.props, 'onConfirm', e, _this.props);
+          (0, _invoke2.default)(predefinedProps, 'onClick', e, buttonProps);
+          (0, _invoke2.default)(_this.props, 'onConfirm', e, _this.props);
         }
       };
-    }, _temp), (0, _possibleConstructorReturn3.default)(_this, _ret);
+    });
+    return _this;
   }
 
-  (0, _createClass3.default)(Confirm, [{
-    key: 'render',
+  (0, _createClass2.default)(Confirm, [{
+    key: "render",
     value: function render() {
-      var _props = this.props,
-          cancelButton = _props.cancelButton,
-          confirmButton = _props.confirmButton,
-          content = _props.content,
-          header = _props.header,
-          open = _props.open,
-          size = _props.size;
-
-      var rest = (0, _lib.getUnhandledProps)(Confirm, this.props);
-
-      // `open` is auto controlled by the Modal
+      var _this$props = this.props,
+          cancelButton = _this$props.cancelButton,
+          confirmButton = _this$props.confirmButton,
+          content = _this$props.content,
+          header = _this$props.header,
+          open = _this$props.open,
+          size = _this$props.size;
+      var rest = (0, _lib.getUnhandledProps)(Confirm, this.props); // `open` is auto controlled by the Modal
       // It cannot be present (even undefined) with `defaultOpen`
       // only apply it if the user provided an open prop
-      var openProp = {};
-      if ((0, _has3.default)(this.props, 'open')) openProp.open = open;
 
-      return _react2.default.createElement(
-        _Modal2.default,
-        (0, _extends3.default)({}, rest, openProp, { size: size, onClose: this.handleCancel }),
-        _Modal2.default.Header.create(header),
-        _Modal2.default.Content.create(content),
-        _react2.default.createElement(
-          _Modal2.default.Actions,
-          null,
-          _Button2.default.create(cancelButton, { overrideProps: this.handleCancelOverrides }),
-          _Button2.default.create(confirmButton, {
-            defaultProps: { primary: true },
-            overrideProps: this.handleConfirmOverrides
-          })
-        )
-      );
+      var openProp = {};
+      if ((0, _has2.default)(this.props, 'open')) openProp.open = open;
+      return _react.default.createElement(_Modal.default, (0, _extends2.default)({}, rest, openProp, {
+        size: size,
+        onClose: this.handleCancel
+      }), _Modal.default.Header.create(header, {
+        autoGenerateKey: false
+      }), _Modal.default.Content.create(content, {
+        autoGenerateKey: false
+      }), _react.default.createElement(_Modal.default.Actions, null, _Button.default.create(cancelButton, {
+        autoGenerateKey: false,
+        overrideProps: this.handleCancelOverrides
+      }), _Button.default.create(confirmButton, {
+        autoGenerateKey: false,
+        defaultProps: {
+          primary: true
+        },
+        overrideProps: this.handleConfirmOverrides
+      })));
     }
   }]);
   return Confirm;
 }(_react.Component);
 
-Confirm.defaultProps = {
+(0, _defineProperty2.default)(Confirm, "defaultProps", {
   cancelButton: 'Cancel',
   confirmButton: 'OK',
   content: 'Are you sure?',
   size: 'small'
-};
-Confirm._meta = {
-  name: 'Confirm',
-  type: _lib.META.TYPES.ADDON
-};
-Confirm.handledProps = ['cancelButton', 'confirmButton', 'content', 'header', 'onCancel', 'onConfirm', 'open', 'size'];
+});
+(0, _defineProperty2.default)(Confirm, "handledProps", ["cancelButton", "confirmButton", "content", "header", "onCancel", "onConfirm", "open", "size"]);
 Confirm.propTypes = process.env.NODE_ENV !== "production" ? {
   /** The cancel button text. */
   cancelButton: _lib.customPropTypes.itemShorthand,
@@ -158,7 +147,7 @@ Confirm.propTypes = process.env.NODE_ENV !== "production" ? {
    * @param {SyntheticEvent} event - React's original SyntheticEvent.
    * @param {object} data - All props.
    */
-  onCancel: _propTypes2.default.func,
+  onCancel: _propTypes.default.func,
 
   /**
    * Called when the OK button is clicked.
@@ -166,12 +155,13 @@ Confirm.propTypes = process.env.NODE_ENV !== "production" ? {
    * @param {SyntheticEvent} event - React's original SyntheticEvent.
    * @param {object} data - All props.
    */
-  onConfirm: _propTypes2.default.func,
+  onConfirm: _propTypes.default.func,
 
   /** Whether or not the modal is visible. */
-  open: _propTypes2.default.bool,
+  open: _propTypes.default.bool,
 
   /** A Confirm can vary in size */
-  size: _propTypes2.default.oneOf(['fullscreen', 'large', 'mini', 'small', 'tiny'])
+  size: _propTypes.default.oneOf(['mini', 'tiny', 'small', 'large', 'fullscreen'])
 } : {};
-exports.default = Confirm;
+var _default = Confirm;
+exports.default = _default;

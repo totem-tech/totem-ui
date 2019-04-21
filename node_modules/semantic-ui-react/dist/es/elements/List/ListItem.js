@@ -1,126 +1,132 @@
-import _extends from 'babel-runtime/helpers/extends';
-import _classCallCheck from 'babel-runtime/helpers/classCallCheck';
-import _createClass from 'babel-runtime/helpers/createClass';
-import _possibleConstructorReturn from 'babel-runtime/helpers/possibleConstructorReturn';
-import _inherits from 'babel-runtime/helpers/inherits';
-import _isPlainObject from 'lodash/isPlainObject';
-import _invoke from 'lodash/invoke';
+import _extends from "@babel/runtime/helpers/extends";
+import _classCallCheck from "@babel/runtime/helpers/classCallCheck";
+import _createClass from "@babel/runtime/helpers/createClass";
+import _possibleConstructorReturn from "@babel/runtime/helpers/possibleConstructorReturn";
+import _getPrototypeOf from "@babel/runtime/helpers/getPrototypeOf";
+import _inherits from "@babel/runtime/helpers/inherits";
+import _assertThisInitialized from "@babel/runtime/helpers/assertThisInitialized";
+import _defineProperty from "@babel/runtime/helpers/defineProperty";
+import _isPlainObject from "lodash/isPlainObject";
+import _invoke from "lodash/invoke";
 import cx from 'classnames';
-
 import PropTypes from 'prop-types';
 import React, { Component, isValidElement } from 'react';
-
-import { childrenUtils, createShorthandFactory, customPropTypes, getElementType, getUnhandledProps, META, useKeyOnly } from '../../lib';
+import { childrenUtils, createShorthandFactory, customPropTypes, getElementType, getUnhandledProps, useKeyOnly } from '../../lib';
 import Image from '../../elements/Image';
 import ListContent from './ListContent';
 import ListDescription from './ListDescription';
 import ListHeader from './ListHeader';
 import ListIcon from './ListIcon';
-
 /**
  * A list item can contain a set of items.
  */
 
-var ListItem = function (_Component) {
+var ListItem =
+/*#__PURE__*/
+function (_Component) {
   _inherits(ListItem, _Component);
 
   function ListItem() {
-    var _ref;
+    var _getPrototypeOf2;
 
-    var _temp, _this, _ret;
+    var _this;
 
     _classCallCheck(this, ListItem);
 
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
       args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = ListItem.__proto__ || Object.getPrototypeOf(ListItem)).call.apply(_ref, [this].concat(args))), _this), _this.handleClick = function (e) {
+    _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(ListItem)).call.apply(_getPrototypeOf2, [this].concat(args)));
+
+    _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "handleClick", function (e) {
       var disabled = _this.props.disabled;
-
-
       if (!disabled) _invoke(_this.props, 'onClick', e, _this.props);
-    }, _temp), _possibleConstructorReturn(_this, _ret);
+    });
+
+    return _this;
   }
 
   _createClass(ListItem, [{
-    key: 'render',
+    key: "render",
     value: function render() {
-      var _props = this.props,
-          active = _props.active,
-          children = _props.children,
-          className = _props.className,
-          content = _props.content,
-          description = _props.description,
-          disabled = _props.disabled,
-          header = _props.header,
-          icon = _props.icon,
-          image = _props.image,
-          value = _props.value;
-
-
+      var _this$props = this.props,
+          active = _this$props.active,
+          children = _this$props.children,
+          className = _this$props.className,
+          content = _this$props.content,
+          description = _this$props.description,
+          disabled = _this$props.disabled,
+          header = _this$props.header,
+          icon = _this$props.icon,
+          image = _this$props.image,
+          value = _this$props.value;
       var ElementType = getElementType(ListItem, this.props);
       var classes = cx(useKeyOnly(active, 'active'), useKeyOnly(disabled, 'disabled'), useKeyOnly(ElementType !== 'li', 'item'), className);
       var rest = getUnhandledProps(ListItem, this.props);
-      var valueProp = ElementType === 'li' ? { value: value } : { 'data-value': value };
+      var valueProp = ElementType === 'li' ? {
+        value: value
+      } : {
+        'data-value': value
+      };
 
       if (!childrenUtils.isNil(children)) {
-        return React.createElement(
-          ElementType,
-          _extends({}, rest, valueProp, { role: 'listitem', className: classes, onClick: this.handleClick }),
-          children
-        );
+        return React.createElement(ElementType, _extends({}, valueProp, {
+          role: "listitem",
+          className: classes,
+          onClick: this.handleClick
+        }, rest), children);
       }
 
-      var iconElement = ListIcon.create(icon);
-      var imageElement = Image.create(image);
+      var iconElement = ListIcon.create(icon, {
+        autoGenerateKey: false
+      });
+      var imageElement = Image.create(image, {
+        autoGenerateKey: false
+      }); // See description of `content` prop for explanation about why this is necessary.
 
-      // See description of `content` prop for explanation about why this is necessary.
       if (!isValidElement(content) && _isPlainObject(content)) {
-        return React.createElement(
-          ElementType,
-          _extends({}, rest, valueProp, { role: 'listitem', className: classes, onClick: this.handleClick }),
-          iconElement || imageElement,
-          ListContent.create(content, { header: header, description: description })
-        );
+        return React.createElement(ElementType, _extends({}, valueProp, {
+          role: "listitem",
+          className: classes,
+          onClick: this.handleClick
+        }, rest), iconElement || imageElement, ListContent.create(content, {
+          autoGenerateKey: false,
+          defaultProps: {
+            header: header,
+            description: description
+          }
+        }));
       }
 
-      var headerElement = ListHeader.create(header);
-      var descriptionElement = ListDescription.create(description);
+      var headerElement = ListHeader.create(header, {
+        autoGenerateKey: false
+      });
+      var descriptionElement = ListDescription.create(description, {
+        autoGenerateKey: false
+      });
+
       if (iconElement || imageElement) {
-        return React.createElement(
-          ElementType,
-          _extends({}, rest, valueProp, { role: 'listitem', className: classes, onClick: this.handleClick }),
-          iconElement || imageElement,
-          (content || headerElement || descriptionElement) && React.createElement(
-            ListContent,
-            null,
-            headerElement,
-            descriptionElement,
-            content
-          )
-        );
+        return React.createElement(ElementType, _extends({}, valueProp, {
+          role: "listitem",
+          className: classes,
+          onClick: this.handleClick
+        }, rest), iconElement || imageElement, (content || headerElement || descriptionElement) && React.createElement(ListContent, null, headerElement, descriptionElement, content));
       }
 
-      return React.createElement(
-        ElementType,
-        _extends({}, rest, valueProp, { role: 'listitem', className: classes, onClick: this.handleClick }),
-        headerElement,
-        descriptionElement,
-        content
-      );
+      return React.createElement(ElementType, _extends({}, valueProp, {
+        role: "listitem",
+        className: classes,
+        onClick: this.handleClick
+      }, rest), headerElement, descriptionElement, content);
     }
   }]);
 
   return ListItem;
 }(Component);
 
-ListItem._meta = {
-  name: 'ListItem',
-  parent: 'List',
-  type: META.TYPES.ELEMENT
-};
-ListItem.handledProps = ['active', 'as', 'children', 'className', 'content', 'description', 'disabled', 'header', 'icon', 'image', 'onClick', 'value'];
+_defineProperty(ListItem, "handledProps", ["active", "as", "children", "className", "content", "description", "disabled", "header", "icon", "image", "onClick", "value"]);
+
 ListItem.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -172,10 +178,9 @@ ListItem.propTypes = process.env.NODE_ENV !== "production" ? {
   /** A value for an ordered list. */
   value: PropTypes.string
 } : {};
-
-
 ListItem.create = createShorthandFactory(ListItem, function (content) {
-  return { content: content };
+  return {
+    content: content
+  };
 });
-
 export default ListItem;

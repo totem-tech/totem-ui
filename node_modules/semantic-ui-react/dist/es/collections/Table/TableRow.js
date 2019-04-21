@@ -1,17 +1,15 @@
-import _extends from 'babel-runtime/helpers/extends';
-import _without from 'lodash/without';
-import _map from 'lodash/map';
-
+import _extends from "@babel/runtime/helpers/extends";
+import _without from "lodash/without";
+import _map from "lodash/map";
 import cx from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { childrenUtils, createShorthandFactory, customPropTypes, getElementType, getUnhandledProps, META, SUI, useKeyOnly, useTextAlignProp, useVerticalAlignProp } from '../../lib';
+import { childrenUtils, createShorthandFactory, customPropTypes, getElementType, getUnhandledProps, SUI, useKeyOnly, useTextAlignProp, useVerticalAlignProp } from '../../lib';
 import TableCell from './TableCell';
-
 /**
  * A table can have rows.
  */
+
 function TableRow(props) {
   var active = props.active,
       cellAs = props.cellAs,
@@ -25,41 +23,32 @@ function TableRow(props) {
       textAlign = props.textAlign,
       verticalAlign = props.verticalAlign,
       warning = props.warning;
-
-
   var classes = cx(useKeyOnly(active, 'active'), useKeyOnly(disabled, 'disabled'), useKeyOnly(error, 'error'), useKeyOnly(negative, 'negative'), useKeyOnly(positive, 'positive'), useKeyOnly(warning, 'warning'), useTextAlignProp(textAlign), useVerticalAlignProp(verticalAlign), className);
   var rest = getUnhandledProps(TableRow, props);
   var ElementType = getElementType(TableRow, props);
 
   if (!childrenUtils.isNil(children)) {
-    return React.createElement(
-      ElementType,
-      _extends({}, rest, { className: classes }),
-      children
-    );
+    return React.createElement(ElementType, _extends({}, rest, {
+      className: classes
+    }), children);
   }
 
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    _map(cells, function (cell) {
-      return TableCell.create(cell, { defaultProps: { as: cellAs } });
-    })
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), _map(cells, function (cell) {
+    return TableCell.create(cell, {
+      defaultProps: {
+        as: cellAs
+      }
+    });
+  }));
 }
 
-TableRow.handledProps = ['active', 'as', 'cellAs', 'cells', 'children', 'className', 'disabled', 'error', 'negative', 'positive', 'textAlign', 'verticalAlign', 'warning'];
-TableRow._meta = {
-  name: 'TableRow',
-  type: META.TYPES.COLLECTION,
-  parent: 'Table'
-};
-
+TableRow.handledProps = ["active", "as", "cellAs", "cells", "children", "className", "disabled", "error", "negative", "positive", "textAlign", "verticalAlign", "warning"];
 TableRow.defaultProps = {
   as: 'tr',
   cellAs: 'td'
 };
-
 TableRow.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -100,9 +89,9 @@ TableRow.propTypes = process.env.NODE_ENV !== "production" ? {
   /** A row may warn a user. */
   warning: PropTypes.bool
 } : {};
-
 TableRow.create = createShorthandFactory(TableRow, function (cells) {
-  return { cells: cells };
+  return {
+    cells: cells
+  };
 });
-
 export default TableRow;

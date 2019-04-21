@@ -1,56 +1,35 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _classnames = _interopRequireDefault(require("classnames"));
 
-var _classnames = require('classnames');
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
-var _classnames2 = _interopRequireDefault(_classnames);
+var _react = _interopRequireDefault(require("react"));
 
-var _propTypes = require('prop-types');
+var _lib = require("../../lib");
 
-var _propTypes2 = _interopRequireDefault(_propTypes);
+var _ItemContent = _interopRequireDefault(require("./ItemContent"));
 
-var _react = require('react');
+var _ItemDescription = _interopRequireDefault(require("./ItemDescription"));
 
-var _react2 = _interopRequireDefault(_react);
+var _ItemExtra = _interopRequireDefault(require("./ItemExtra"));
 
-var _lib = require('../../lib');
+var _ItemGroup = _interopRequireDefault(require("./ItemGroup"));
 
-var _ItemContent = require('./ItemContent');
+var _ItemHeader = _interopRequireDefault(require("./ItemHeader"));
 
-var _ItemContent2 = _interopRequireDefault(_ItemContent);
+var _ItemImage = _interopRequireDefault(require("./ItemImage"));
 
-var _ItemDescription = require('./ItemDescription');
-
-var _ItemDescription2 = _interopRequireDefault(_ItemDescription);
-
-var _ItemExtra = require('./ItemExtra');
-
-var _ItemExtra2 = _interopRequireDefault(_ItemExtra);
-
-var _ItemGroup = require('./ItemGroup');
-
-var _ItemGroup2 = _interopRequireDefault(_ItemGroup);
-
-var _ItemHeader = require('./ItemHeader');
-
-var _ItemHeader2 = _interopRequireDefault(_ItemHeader);
-
-var _ItemImage = require('./ItemImage');
-
-var _ItemImage2 = _interopRequireDefault(_ItemImage);
-
-var _ItemMeta = require('./ItemMeta');
-
-var _ItemMeta2 = _interopRequireDefault(_ItemMeta);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _ItemMeta = _interopRequireDefault(require("./ItemMeta"));
 
 /**
  * An item view presents large collections of site content for display.
@@ -64,57 +43,46 @@ function Item(props) {
       header = props.header,
       image = props.image,
       meta = props.meta;
-
-
-  var classes = (0, _classnames2.default)('item', className);
+  var classes = (0, _classnames.default)('item', className);
   var rest = (0, _lib.getUnhandledProps)(Item, props);
   var ElementType = (0, _lib.getElementType)(Item, props);
 
   if (!_lib.childrenUtils.isNil(children)) {
-    return _react2.default.createElement(
-      ElementType,
-      (0, _extends3.default)({}, rest, { className: classes }),
-      children
-    );
+    return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+      className: classes
+    }), children);
   }
 
-  return _react2.default.createElement(
-    ElementType,
-    (0, _extends3.default)({}, rest, { className: classes }),
-    _ItemImage2.default.create(image),
-    _react2.default.createElement(_ItemContent2.default, {
-      content: content,
-      description: description,
-      extra: extra,
-      header: header,
-      meta: meta
-    })
-  );
+  return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+    className: classes
+  }), _ItemImage.default.create(image, {
+    autoGenerateKey: false
+  }), _react.default.createElement(_ItemContent.default, {
+    content: content,
+    description: description,
+    extra: extra,
+    header: header,
+    meta: meta
+  }));
 }
 
-Item.handledProps = ['as', 'children', 'className', 'content', 'description', 'extra', 'header', 'image', 'meta'];
-Item._meta = {
-  name: 'Item',
-  type: _lib.META.TYPES.VIEW
-};
-
-Item.Content = _ItemContent2.default;
-Item.Description = _ItemDescription2.default;
-Item.Extra = _ItemExtra2.default;
-Item.Group = _ItemGroup2.default;
-Item.Header = _ItemHeader2.default;
-Item.Image = _ItemImage2.default;
-Item.Meta = _ItemMeta2.default;
-
+Item.handledProps = ["as", "children", "className", "content", "description", "extra", "header", "image", "meta"];
+Item.Content = _ItemContent.default;
+Item.Description = _ItemDescription.default;
+Item.Extra = _ItemExtra.default;
+Item.Group = _ItemGroup.default;
+Item.Header = _ItemHeader.default;
+Item.Image = _ItemImage.default;
+Item.Meta = _ItemMeta.default;
 Item.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: _lib.customPropTypes.as,
 
   /** Primary content. */
-  children: _propTypes2.default.node,
+  children: _propTypes.default.node,
 
   /** Additional classes. */
-  className: _propTypes2.default.string,
+  className: _propTypes.default.string,
 
   /** Shorthand for ItemContent component. */
   content: _lib.customPropTypes.contentShorthand,
@@ -134,5 +102,5 @@ Item.propTypes = process.env.NODE_ENV !== "production" ? {
   /** Shorthand for ItemMeta component. */
   meta: _lib.customPropTypes.itemShorthand
 } : {};
-
-exports.default = Item;
+var _default = Item;
+exports.default = _default;

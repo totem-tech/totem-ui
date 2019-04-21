@@ -1,216 +1,193 @@
-'use strict';
+"use strict";
+
+var _interopRequireWildcard = require("@babel/runtime/helpers/interopRequireWildcard");
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
 
-var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
+var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
 
-var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime/helpers/possibleConstructorReturn"));
 
-var _createClass2 = require('babel-runtime/helpers/createClass');
+var _getPrototypeOf3 = _interopRequireDefault(require("@babel/runtime/helpers/getPrototypeOf"));
 
-var _createClass3 = _interopRequireDefault(_createClass2);
+var _inherits2 = _interopRequireDefault(require("@babel/runtime/helpers/inherits"));
 
-var _possibleConstructorReturn2 = require('babel-runtime/helpers/possibleConstructorReturn');
+var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
 
-var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
-var _inherits2 = require('babel-runtime/helpers/inherits');
+var _isUndefined2 = _interopRequireDefault(require("lodash/isUndefined"));
 
-var _inherits3 = _interopRequireDefault(_inherits2);
+var _invoke2 = _interopRequireDefault(require("lodash/invoke"));
 
-var _isUndefined2 = require('lodash/isUndefined');
+var _classnames = _interopRequireDefault(require("classnames"));
 
-var _isUndefined3 = _interopRequireDefault(_isUndefined2);
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
-var _invoke2 = require('lodash/invoke');
+var _react = _interopRequireWildcard(require("react"));
 
-var _invoke3 = _interopRequireDefault(_invoke2);
+var _lib = require("../../lib");
 
-var _classnames = require('classnames');
+var _Icon = _interopRequireDefault(require("../Icon/Icon"));
 
-var _classnames2 = _interopRequireDefault(_classnames);
+var _Image = _interopRequireDefault(require("../Image/Image"));
 
-var _propTypes = require('prop-types');
+var _LabelDetail = _interopRequireDefault(require("./LabelDetail"));
 
-var _propTypes2 = _interopRequireDefault(_propTypes);
-
-var _react = require('react');
-
-var _react2 = _interopRequireDefault(_react);
-
-var _lib = require('../../lib');
-
-var _Icon = require('../Icon/Icon');
-
-var _Icon2 = _interopRequireDefault(_Icon);
-
-var _Image = require('../Image/Image');
-
-var _Image2 = _interopRequireDefault(_Image);
-
-var _LabelDetail = require('./LabelDetail');
-
-var _LabelDetail2 = _interopRequireDefault(_LabelDetail);
-
-var _LabelGroup = require('./LabelGroup');
-
-var _LabelGroup2 = _interopRequireDefault(_LabelGroup);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _LabelGroup = _interopRequireDefault(require("./LabelGroup"));
 
 /**
  * A label displays content classification.
  */
-var Label = function (_Component) {
-  (0, _inherits3.default)(Label, _Component);
+var Label =
+/*#__PURE__*/
+function (_Component) {
+  (0, _inherits2.default)(Label, _Component);
 
   function Label() {
-    var _ref;
+    var _getPrototypeOf2;
 
-    var _temp, _this, _ret;
+    var _this;
 
-    (0, _classCallCheck3.default)(this, Label);
+    (0, _classCallCheck2.default)(this, Label);
 
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
       args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this = (0, _possibleConstructorReturn3.default)(this, (_ref = Label.__proto__ || Object.getPrototypeOf(Label)).call.apply(_ref, [this].concat(args))), _this), _this.handleClick = function (e) {
+    _this = (0, _possibleConstructorReturn2.default)(this, (_getPrototypeOf2 = (0, _getPrototypeOf3.default)(Label)).call.apply(_getPrototypeOf2, [this].concat(args)));
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "handleClick", function (e) {
       var onClick = _this.props.onClick;
-
-
       if (onClick) onClick(e, _this.props);
-    }, _this.handleIconOverrides = function (predefinedProps) {
+    });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "handleIconOverrides", function (predefinedProps) {
       return {
         onClick: function onClick(e) {
-          (0, _invoke3.default)(predefinedProps, 'onClick', e);
-          (0, _invoke3.default)(_this.props, 'onRemove', e, _this.props);
+          (0, _invoke2.default)(predefinedProps, 'onClick', e);
+          (0, _invoke2.default)(_this.props, 'onRemove', e, _this.props);
         }
       };
-    }, _temp), (0, _possibleConstructorReturn3.default)(_this, _ret);
+    });
+    return _this;
   }
 
-  (0, _createClass3.default)(Label, [{
-    key: 'render',
+  (0, _createClass2.default)(Label, [{
+    key: "render",
     value: function render() {
-      var _props = this.props,
-          active = _props.active,
-          attached = _props.attached,
-          basic = _props.basic,
-          children = _props.children,
-          circular = _props.circular,
-          className = _props.className,
-          color = _props.color,
-          content = _props.content,
-          corner = _props.corner,
-          detail = _props.detail,
-          empty = _props.empty,
-          floating = _props.floating,
-          horizontal = _props.horizontal,
-          icon = _props.icon,
-          image = _props.image,
-          onRemove = _props.onRemove,
-          pointing = _props.pointing,
-          removeIcon = _props.removeIcon,
-          ribbon = _props.ribbon,
-          size = _props.size,
-          tag = _props.tag;
-
-
-      var pointingClass = pointing === true && 'pointing' || (pointing === 'left' || pointing === 'right') && pointing + ' pointing' || (pointing === 'above' || pointing === 'below') && 'pointing ' + pointing;
-
-      var classes = (0, _classnames2.default)('ui', color, pointingClass, size, (0, _lib.useKeyOnly)(active, 'active'), (0, _lib.useKeyOnly)(basic, 'basic'), (0, _lib.useKeyOnly)(circular, 'circular'), (0, _lib.useKeyOnly)(empty, 'empty'), (0, _lib.useKeyOnly)(floating, 'floating'), (0, _lib.useKeyOnly)(horizontal, 'horizontal'), (0, _lib.useKeyOnly)(image === true, 'image'), (0, _lib.useKeyOnly)(tag, 'tag'), (0, _lib.useKeyOrValueAndKey)(corner, 'corner'), (0, _lib.useKeyOrValueAndKey)(ribbon, 'ribbon'), (0, _lib.useValueAndKey)(attached, 'attached'), 'label', className);
+      var _this$props = this.props,
+          active = _this$props.active,
+          attached = _this$props.attached,
+          basic = _this$props.basic,
+          children = _this$props.children,
+          circular = _this$props.circular,
+          className = _this$props.className,
+          color = _this$props.color,
+          content = _this$props.content,
+          corner = _this$props.corner,
+          detail = _this$props.detail,
+          empty = _this$props.empty,
+          floating = _this$props.floating,
+          horizontal = _this$props.horizontal,
+          icon = _this$props.icon,
+          image = _this$props.image,
+          onRemove = _this$props.onRemove,
+          pointing = _this$props.pointing,
+          removeIcon = _this$props.removeIcon,
+          ribbon = _this$props.ribbon,
+          size = _this$props.size,
+          tag = _this$props.tag;
+      var pointingClass = pointing === true && 'pointing' || (pointing === 'left' || pointing === 'right') && "".concat(pointing, " pointing") || (pointing === 'above' || pointing === 'below') && "pointing ".concat(pointing);
+      var classes = (0, _classnames.default)('ui', color, pointingClass, size, (0, _lib.useKeyOnly)(active, 'active'), (0, _lib.useKeyOnly)(basic, 'basic'), (0, _lib.useKeyOnly)(circular, 'circular'), (0, _lib.useKeyOnly)(empty, 'empty'), (0, _lib.useKeyOnly)(floating, 'floating'), (0, _lib.useKeyOnly)(horizontal, 'horizontal'), (0, _lib.useKeyOnly)(image === true, 'image'), (0, _lib.useKeyOnly)(tag, 'tag'), (0, _lib.useKeyOrValueAndKey)(corner, 'corner'), (0, _lib.useKeyOrValueAndKey)(ribbon, 'ribbon'), (0, _lib.useValueAndKey)(attached, 'attached'), 'label', className);
       var rest = (0, _lib.getUnhandledProps)(Label, this.props);
       var ElementType = (0, _lib.getElementType)(Label, this.props);
 
       if (!_lib.childrenUtils.isNil(children)) {
-        return _react2.default.createElement(
-          ElementType,
-          (0, _extends3.default)({}, rest, { className: classes, onClick: this.handleClick }),
-          children
-        );
+        return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+          className: classes,
+          onClick: this.handleClick
+        }), children);
       }
 
-      var removeIconShorthand = (0, _isUndefined3.default)(removeIcon) ? 'delete' : removeIcon;
-
-      return _react2.default.createElement(
-        ElementType,
-        (0, _extends3.default)({ className: classes, onClick: this.handleClick }, rest),
-        _Icon2.default.create(icon),
-        typeof image !== 'boolean' && _Image2.default.create(image),
-        content,
-        (0, _lib.createShorthand)(_LabelDetail2.default, function (val) {
-          return { content: val };
-        }, detail),
-        onRemove && _Icon2.default.create(removeIconShorthand, { overrideProps: this.handleIconOverrides })
-      );
+      var removeIconShorthand = (0, _isUndefined2.default)(removeIcon) ? 'delete' : removeIcon;
+      return _react.default.createElement(ElementType, (0, _extends2.default)({
+        className: classes,
+        onClick: this.handleClick
+      }, rest), _Icon.default.create(icon, {
+        autoGenerateKey: false
+      }), typeof image !== 'boolean' && _Image.default.create(image, {
+        autoGenerateKey: false
+      }), content, _LabelDetail.default.create(detail, {
+        autoGenerateKey: false
+      }), onRemove && _Icon.default.create(removeIconShorthand, {
+        autoGenerateKey: false,
+        overrideProps: this.handleIconOverrides
+      }));
     }
   }]);
   return Label;
 }(_react.Component);
 
-Label._meta = {
-  name: 'Label',
-  type: _lib.META.TYPES.ELEMENT
-};
-Label.Detail = _LabelDetail2.default;
-Label.Group = _LabelGroup2.default;
-Label.handledProps = ['active', 'as', 'attached', 'basic', 'children', 'circular', 'className', 'color', 'content', 'corner', 'detail', 'empty', 'floating', 'horizontal', 'icon', 'image', 'onClick', 'onRemove', 'pointing', 'removeIcon', 'ribbon', 'size', 'tag'];
 exports.default = Label;
+(0, _defineProperty2.default)(Label, "Detail", _LabelDetail.default);
+(0, _defineProperty2.default)(Label, "Group", _LabelGroup.default);
+(0, _defineProperty2.default)(Label, "handledProps", ["active", "as", "attached", "basic", "children", "circular", "className", "color", "content", "corner", "detail", "empty", "floating", "horizontal", "icon", "image", "onClick", "onRemove", "pointing", "removeIcon", "ribbon", "size", "tag"]);
 Label.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: _lib.customPropTypes.as,
 
   /** A label can be active. */
-  active: _propTypes2.default.bool,
+  active: _propTypes.default.bool,
 
   /** A label can attach to a content segment. */
-  attached: _propTypes2.default.oneOf(['top', 'bottom', 'top right', 'top left', 'bottom left', 'bottom right']),
+  attached: _propTypes.default.oneOf(['top', 'bottom', 'top right', 'top left', 'bottom left', 'bottom right']),
 
   /** A label can reduce its complexity. */
-  basic: _propTypes2.default.bool,
+  basic: _propTypes.default.bool,
 
   /** Primary content. */
-  children: _propTypes2.default.node,
+  children: _propTypes.default.node,
 
   /** A label can be circular. */
-  circular: _propTypes2.default.bool,
+  circular: _propTypes.default.bool,
 
   /** Additional classes. */
-  className: _propTypes2.default.string,
+  className: _propTypes.default.string,
 
   /** Color of the label. */
-  color: _propTypes2.default.oneOf(_lib.SUI.COLORS),
+  color: _propTypes.default.oneOf(_lib.SUI.COLORS),
 
   /** Shorthand for primary content. */
   content: _lib.customPropTypes.contentShorthand,
 
   /** A label can position itself in the corner of an element. */
-  corner: _propTypes2.default.oneOfType([_propTypes2.default.bool, _propTypes2.default.oneOf(['left', 'right'])]),
+  corner: _propTypes.default.oneOfType([_propTypes.default.bool, _propTypes.default.oneOf(['left', 'right'])]),
 
   /** Shorthand for LabelDetail. */
   detail: _lib.customPropTypes.itemShorthand,
 
   /** Formats the label as a dot. */
-  empty: _lib.customPropTypes.every([_propTypes2.default.bool, _lib.customPropTypes.demand(['circular'])]),
+  empty: _lib.customPropTypes.every([_propTypes.default.bool, _lib.customPropTypes.demand(['circular'])]),
 
   /** Float above another element in the upper right corner. */
-  floating: _propTypes2.default.bool,
+  floating: _propTypes.default.bool,
 
   /** A horizontal label is formatted to label content along-side it horizontally. */
-  horizontal: _propTypes2.default.bool,
+  horizontal: _propTypes.default.bool,
 
   /** Shorthand for Icon. */
   icon: _lib.customPropTypes.itemShorthand,
 
   /** A label can be formatted to emphasize an image or prop can be used as shorthand for Image. */
-  image: _propTypes2.default.oneOfType([_propTypes2.default.bool, _lib.customPropTypes.itemShorthand]),
+  image: _propTypes.default.oneOfType([_propTypes.default.bool, _lib.customPropTypes.itemShorthand]),
 
   /**
    * Called on click.
@@ -218,7 +195,7 @@ Label.propTypes = process.env.NODE_ENV !== "production" ? {
    * @param {SyntheticEvent} event - React's original SyntheticEvent.
    * @param {object} data - All props.
    */
-  onClick: _propTypes2.default.func,
+  onClick: _propTypes.default.func,
 
   /**
    * Adds an "x" icon, called when "x" is clicked.
@@ -226,25 +203,25 @@ Label.propTypes = process.env.NODE_ENV !== "production" ? {
    * @param {SyntheticEvent} event - React's original SyntheticEvent.
    * @param {object} data - All props.
    */
-  onRemove: _propTypes2.default.func,
+  onRemove: _propTypes.default.func,
 
   /** A label can point to content next to it. */
-  pointing: _propTypes2.default.oneOfType([_propTypes2.default.bool, _propTypes2.default.oneOf(['above', 'below', 'left', 'right'])]),
+  pointing: _propTypes.default.oneOfType([_propTypes.default.bool, _propTypes.default.oneOf(['above', 'below', 'left', 'right'])]),
 
   /** Shorthand for Icon to appear as the last child and trigger onRemove. */
   removeIcon: _lib.customPropTypes.itemShorthand,
 
   /** A label can appear as a ribbon attaching itself to an element. */
-  ribbon: _propTypes2.default.oneOfType([_propTypes2.default.bool, _propTypes2.default.oneOf(['right'])]),
+  ribbon: _propTypes.default.oneOfType([_propTypes.default.bool, _propTypes.default.oneOf(['right'])]),
 
   /** A label can have different sizes. */
-  size: _propTypes2.default.oneOf(_lib.SUI.SIZES),
+  size: _propTypes.default.oneOf(_lib.SUI.SIZES),
 
   /** A label can appear as a tag. */
-  tag: _propTypes2.default.bool
+  tag: _propTypes.default.bool
 } : {};
-
-
 Label.create = (0, _lib.createShorthandFactory)(Label, function (value) {
-  return { content: value };
+  return {
+    content: value
+  };
 });

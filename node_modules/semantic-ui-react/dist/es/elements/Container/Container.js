@@ -1,13 +1,12 @@
-import _extends from 'babel-runtime/helpers/extends';
+import _extends from "@babel/runtime/helpers/extends";
 import cx from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, META, SUI, useKeyOnly, useTextAlignProp } from '../../lib';
-
+import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, SUI, useKeyOnly, useTextAlignProp } from '../../lib';
 /**
  * A container limits content to a maximum width.
  */
+
 function Container(props) {
   var children = props.children,
       className = props.className,
@@ -15,24 +14,15 @@ function Container(props) {
       fluid = props.fluid,
       text = props.text,
       textAlign = props.textAlign;
-
   var classes = cx('ui', useKeyOnly(text, 'text'), useKeyOnly(fluid, 'fluid'), useTextAlignProp(textAlign), 'container', className);
   var rest = getUnhandledProps(Container, props);
   var ElementType = getElementType(Container, props);
-
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    childrenUtils.isNil(children) ? content : children
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), childrenUtils.isNil(children) ? content : children);
 }
 
-Container.handledProps = ['as', 'children', 'className', 'content', 'fluid', 'text', 'textAlign'];
-Container._meta = {
-  name: 'Container',
-  type: META.TYPES.ELEMENT
-};
-
+Container.handledProps = ["as", "children", "className", "content", "fluid", "text", "textAlign"];
 Container.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -55,5 +45,4 @@ Container.propTypes = process.env.NODE_ENV !== "production" ? {
   /** Align container text. */
   textAlign: PropTypes.oneOf(SUI.TEXT_ALIGNMENTS)
 } : {};
-
 export default Container;

@@ -1,14 +1,15 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = undefined;
+Object.defineProperty(exports, "default", {
+  enumerable: true,
+  get: function get() {
+    return _Reveal.default;
+  }
+});
 
-var _Reveal = require('./Reveal');
-
-var _Reveal2 = _interopRequireDefault(_Reveal);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = _Reveal2.default;
+var _Reveal = _interopRequireDefault(require("./Reveal"));

@@ -1,14 +1,15 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = undefined;
+Object.defineProperty(exports, "default", {
+  enumerable: true,
+  get: function get() {
+    return _TextArea.default;
+  }
+});
 
-var _TextArea = require('./TextArea');
-
-var _TextArea2 = _interopRequireDefault(_TextArea);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = _TextArea2.default;
+var _TextArea = _interopRequireDefault(require("./TextArea"));

@@ -3,6 +3,8 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.typifyOptions = exports.isSimplePagination = void 0;
+
 /**
  * Checks the possibility of using simple range generation, if number of generated pages is equal
  * or greater than total pages to show.
@@ -13,27 +15,32 @@ Object.defineProperty(exports, "__esModule", {
  * @param {number} options.totalPages Total number of pages.
  * @return {boolean}
  */
-var isSimplePagination = exports.isSimplePagination = function isSimplePagination(_ref) {
+var isSimplePagination = function isSimplePagination(_ref) {
   var boundaryRange = _ref.boundaryRange,
+      hideEllipsis = _ref.hideEllipsis,
       siblingRange = _ref.siblingRange,
       totalPages = _ref.totalPages;
-
   var boundaryRangeSize = 2 * boundaryRange;
-  var ellipsisSize = 2;
+  var ellipsisSize = hideEllipsis ? 0 : 2;
   var siblingRangeSize = 2 * siblingRange;
-
   return 1 + ellipsisSize + siblingRangeSize + boundaryRangeSize >= totalPages;
 };
 
-var typifyOptions = exports.typifyOptions = function typifyOptions(_ref2) {
+exports.isSimplePagination = isSimplePagination;
+
+var typifyOptions = function typifyOptions(_ref2) {
   var activePage = _ref2.activePage,
       boundaryRange = _ref2.boundaryRange,
+      hideEllipsis = _ref2.hideEllipsis,
       siblingRange = _ref2.siblingRange,
       totalPages = _ref2.totalPages;
   return {
     activePage: +activePage,
     boundaryRange: +boundaryRange,
+    hideEllipsis: !!hideEllipsis,
     siblingRange: +siblingRange,
     totalPages: +totalPages
   };
 };
+
+exports.typifyOptions = typifyOptions;

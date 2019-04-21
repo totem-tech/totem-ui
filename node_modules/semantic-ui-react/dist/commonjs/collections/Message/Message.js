@@ -1,213 +1,187 @@
-'use strict';
+"use strict";
+
+var _interopRequireWildcard = require("@babel/runtime/helpers/interopRequireWildcard");
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
 
-var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
+var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
 
-var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime/helpers/possibleConstructorReturn"));
 
-var _createClass2 = require('babel-runtime/helpers/createClass');
+var _getPrototypeOf3 = _interopRequireDefault(require("@babel/runtime/helpers/getPrototypeOf"));
 
-var _createClass3 = _interopRequireDefault(_createClass2);
+var _inherits2 = _interopRequireDefault(require("@babel/runtime/helpers/inherits"));
 
-var _possibleConstructorReturn2 = require('babel-runtime/helpers/possibleConstructorReturn');
+var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
 
-var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
-var _inherits2 = require('babel-runtime/helpers/inherits');
+var _isNil2 = _interopRequireDefault(require("lodash/isNil"));
 
-var _inherits3 = _interopRequireDefault(_inherits2);
+var _without2 = _interopRequireDefault(require("lodash/without"));
 
-var _isNil2 = require('lodash/isNil');
+var _classnames = _interopRequireDefault(require("classnames"));
 
-var _isNil3 = _interopRequireDefault(_isNil2);
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
-var _without2 = require('lodash/without');
+var _react = _interopRequireWildcard(require("react"));
 
-var _without3 = _interopRequireDefault(_without2);
+var _lib = require("../../lib");
 
-var _classnames = require('classnames');
+var _Icon = _interopRequireDefault(require("../../elements/Icon"));
 
-var _classnames2 = _interopRequireDefault(_classnames);
+var _MessageContent = _interopRequireDefault(require("./MessageContent"));
 
-var _propTypes = require('prop-types');
+var _MessageHeader = _interopRequireDefault(require("./MessageHeader"));
 
-var _propTypes2 = _interopRequireDefault(_propTypes);
+var _MessageList = _interopRequireDefault(require("./MessageList"));
 
-var _react = require('react');
-
-var _react2 = _interopRequireDefault(_react);
-
-var _lib = require('../../lib');
-
-var _Icon = require('../../elements/Icon');
-
-var _Icon2 = _interopRequireDefault(_Icon);
-
-var _MessageContent = require('./MessageContent');
-
-var _MessageContent2 = _interopRequireDefault(_MessageContent);
-
-var _MessageHeader = require('./MessageHeader');
-
-var _MessageHeader2 = _interopRequireDefault(_MessageHeader);
-
-var _MessageList = require('./MessageList');
-
-var _MessageList2 = _interopRequireDefault(_MessageList);
-
-var _MessageItem = require('./MessageItem');
-
-var _MessageItem2 = _interopRequireDefault(_MessageItem);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _MessageItem = _interopRequireDefault(require("./MessageItem"));
 
 /**
  * A message displays information that explains nearby content.
  * @see Form
  */
-var Message = function (_Component) {
-  (0, _inherits3.default)(Message, _Component);
+var Message =
+/*#__PURE__*/
+function (_Component) {
+  (0, _inherits2.default)(Message, _Component);
 
   function Message() {
-    var _ref;
+    var _getPrototypeOf2;
 
-    var _temp, _this, _ret;
+    var _this;
 
-    (0, _classCallCheck3.default)(this, Message);
+    (0, _classCallCheck2.default)(this, Message);
 
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
       args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this = (0, _possibleConstructorReturn3.default)(this, (_ref = Message.__proto__ || Object.getPrototypeOf(Message)).call.apply(_ref, [this].concat(args))), _this), _this.handleDismiss = function (e) {
+    _this = (0, _possibleConstructorReturn2.default)(this, (_getPrototypeOf2 = (0, _getPrototypeOf3.default)(Message)).call.apply(_getPrototypeOf2, [this].concat(args)));
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "handleDismiss", function (e) {
       var onDismiss = _this.props.onDismiss;
-
-
       if (onDismiss) onDismiss(e, _this.props);
-    }, _temp), (0, _possibleConstructorReturn3.default)(_this, _ret);
+    });
+    return _this;
   }
 
-  (0, _createClass3.default)(Message, [{
-    key: 'render',
+  (0, _createClass2.default)(Message, [{
+    key: "render",
     value: function render() {
-      var _props = this.props,
-          attached = _props.attached,
-          children = _props.children,
-          className = _props.className,
-          color = _props.color,
-          compact = _props.compact,
-          content = _props.content,
-          error = _props.error,
-          floating = _props.floating,
-          header = _props.header,
-          hidden = _props.hidden,
-          icon = _props.icon,
-          info = _props.info,
-          list = _props.list,
-          negative = _props.negative,
-          onDismiss = _props.onDismiss,
-          positive = _props.positive,
-          size = _props.size,
-          success = _props.success,
-          visible = _props.visible,
-          warning = _props.warning;
+      var _this$props = this.props,
+          attached = _this$props.attached,
+          children = _this$props.children,
+          className = _this$props.className,
+          color = _this$props.color,
+          compact = _this$props.compact,
+          content = _this$props.content,
+          error = _this$props.error,
+          floating = _this$props.floating,
+          header = _this$props.header,
+          hidden = _this$props.hidden,
+          icon = _this$props.icon,
+          info = _this$props.info,
+          list = _this$props.list,
+          negative = _this$props.negative,
+          onDismiss = _this$props.onDismiss,
+          positive = _this$props.positive,
+          size = _this$props.size,
+          success = _this$props.success,
+          visible = _this$props.visible,
+          warning = _this$props.warning;
+      var classes = (0, _classnames.default)('ui', color, size, (0, _lib.useKeyOnly)(compact, 'compact'), (0, _lib.useKeyOnly)(error, 'error'), (0, _lib.useKeyOnly)(floating, 'floating'), (0, _lib.useKeyOnly)(hidden, 'hidden'), (0, _lib.useKeyOnly)(icon, 'icon'), (0, _lib.useKeyOnly)(info, 'info'), (0, _lib.useKeyOnly)(negative, 'negative'), (0, _lib.useKeyOnly)(positive, 'positive'), (0, _lib.useKeyOnly)(success, 'success'), (0, _lib.useKeyOnly)(visible, 'visible'), (0, _lib.useKeyOnly)(warning, 'warning'), (0, _lib.useKeyOrValueAndKey)(attached, 'attached'), 'message', className);
 
+      var dismissIcon = onDismiss && _react.default.createElement(_Icon.default, {
+        name: "close",
+        onClick: this.handleDismiss
+      });
 
-      var classes = (0, _classnames2.default)('ui', color, size, (0, _lib.useKeyOnly)(compact, 'compact'), (0, _lib.useKeyOnly)(error, 'error'), (0, _lib.useKeyOnly)(floating, 'floating'), (0, _lib.useKeyOnly)(hidden, 'hidden'), (0, _lib.useKeyOnly)(icon, 'icon'), (0, _lib.useKeyOnly)(info, 'info'), (0, _lib.useKeyOnly)(negative, 'negative'), (0, _lib.useKeyOnly)(positive, 'positive'), (0, _lib.useKeyOnly)(success, 'success'), (0, _lib.useKeyOnly)(visible, 'visible'), (0, _lib.useKeyOnly)(warning, 'warning'), (0, _lib.useKeyOrValueAndKey)(attached, 'attached'), 'message', className);
-
-      var dismissIcon = onDismiss && _react2.default.createElement(_Icon2.default, { name: 'close', onClick: this.handleDismiss });
       var rest = (0, _lib.getUnhandledProps)(Message, this.props);
       var ElementType = (0, _lib.getElementType)(Message, this.props);
 
       if (!_lib.childrenUtils.isNil(children)) {
-        return _react2.default.createElement(
-          ElementType,
-          (0, _extends3.default)({}, rest, { className: classes }),
-          dismissIcon,
-          children
-        );
+        return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+          className: classes
+        }), dismissIcon, children);
       }
 
-      return _react2.default.createElement(
-        ElementType,
-        (0, _extends3.default)({}, rest, { className: classes }),
-        dismissIcon,
-        _Icon2.default.create(icon),
-        (!(0, _isNil3.default)(header) || !(0, _isNil3.default)(content) || !(0, _isNil3.default)(list)) && _react2.default.createElement(
-          _MessageContent2.default,
-          null,
-          _MessageHeader2.default.create(header),
-          _MessageList2.default.create(list),
-          (0, _lib.createHTMLParagraph)(content)
-        )
-      );
+      return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+        className: classes
+      }), dismissIcon, _Icon.default.create(icon, {
+        autoGenerateKey: false
+      }), (!(0, _isNil2.default)(header) || !(0, _isNil2.default)(content) || !(0, _isNil2.default)(list)) && _react.default.createElement(_MessageContent.default, null, _MessageHeader.default.create(header, {
+        autoGenerateKey: false
+      }), _MessageList.default.create(list, {
+        autoGenerateKey: false
+      }), (0, _lib.createHTMLParagraph)(content, {
+        autoGenerateKey: false
+      })));
     }
   }]);
   return Message;
 }(_react.Component);
 
-Message._meta = {
-  name: 'Message',
-  type: _lib.META.TYPES.COLLECTION
-};
-Message.Content = _MessageContent2.default;
-Message.Header = _MessageHeader2.default;
-Message.List = _MessageList2.default;
-Message.Item = _MessageItem2.default;
-Message.handledProps = ['as', 'attached', 'children', 'className', 'color', 'compact', 'content', 'error', 'floating', 'header', 'hidden', 'icon', 'info', 'list', 'negative', 'onDismiss', 'positive', 'size', 'success', 'visible', 'warning'];
 exports.default = Message;
+(0, _defineProperty2.default)(Message, "Content", _MessageContent.default);
+(0, _defineProperty2.default)(Message, "Header", _MessageHeader.default);
+(0, _defineProperty2.default)(Message, "List", _MessageList.default);
+(0, _defineProperty2.default)(Message, "Item", _MessageItem.default);
+(0, _defineProperty2.default)(Message, "handledProps", ["as", "attached", "children", "className", "color", "compact", "content", "error", "floating", "header", "hidden", "icon", "info", "list", "negative", "onDismiss", "positive", "size", "success", "visible", "warning"]);
 Message.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: _lib.customPropTypes.as,
 
   /** A message can be formatted to attach itself to other content. */
-  attached: _propTypes2.default.oneOfType([_propTypes2.default.bool, _propTypes2.default.oneOf(['bottom', 'top'])]),
+  attached: _propTypes.default.oneOfType([_propTypes.default.bool, _propTypes.default.oneOf(['bottom', 'top'])]),
 
   /** Primary content. */
-  children: _propTypes2.default.node,
+  children: _propTypes.default.node,
 
   /** Additional classes. */
-  className: _propTypes2.default.string,
+  className: _propTypes.default.string,
 
   /** A message can be formatted to be different colors. */
-  color: _propTypes2.default.oneOf(_lib.SUI.COLORS),
+  color: _propTypes.default.oneOf(_lib.SUI.COLORS),
 
   /** A message can only take up the width of its content. */
-  compact: _propTypes2.default.bool,
+  compact: _propTypes.default.bool,
 
   /** Shorthand for primary content. */
   content: _lib.customPropTypes.contentShorthand,
 
   /** A message may be formatted to display a negative message. Same as `negative`. */
-  error: _propTypes2.default.bool,
+  error: _propTypes.default.bool,
 
   /** A message can float above content that it is related to. */
-  floating: _propTypes2.default.bool,
+  floating: _propTypes.default.bool,
 
   /** Shorthand for MessageHeader. */
   header: _lib.customPropTypes.itemShorthand,
 
   /** A message can be hidden. */
-  hidden: _propTypes2.default.bool,
+  hidden: _propTypes.default.bool,
 
   /** A message can contain an icon. */
-  icon: _propTypes2.default.oneOfType([_lib.customPropTypes.itemShorthand, _propTypes2.default.bool]),
+  icon: _propTypes.default.oneOfType([_lib.customPropTypes.itemShorthand, _propTypes.default.bool]),
 
   /** A message may be formatted to display information. */
-  info: _propTypes2.default.bool,
+  info: _propTypes.default.bool,
 
   /** Array shorthand items for the MessageList. Mutually exclusive with children. */
   list: _lib.customPropTypes.collectionShorthand,
 
   /** A message may be formatted to display a negative message. Same as `error`. */
-  negative: _propTypes2.default.bool,
+  negative: _propTypes.default.bool,
 
   /**
    * A message that the user can choose to hide.
@@ -216,20 +190,20 @@ Message.propTypes = process.env.NODE_ENV !== "production" ? {
    * @param {SyntheticEvent} event - React's original SyntheticEvent.
    * @param {object} data - All props.
    */
-  onDismiss: _propTypes2.default.func,
+  onDismiss: _propTypes.default.func,
 
   /** A message may be formatted to display a positive message.  Same as `success`. */
-  positive: _propTypes2.default.bool,
+  positive: _propTypes.default.bool,
 
   /** A message can have different sizes. */
-  size: _propTypes2.default.oneOf((0, _without3.default)(_lib.SUI.SIZES, 'medium')),
+  size: _propTypes.default.oneOf((0, _without2.default)(_lib.SUI.SIZES, 'medium')),
 
   /** A message may be formatted to display a positive message.  Same as `positive`. */
-  success: _propTypes2.default.bool,
+  success: _propTypes.default.bool,
 
   /** A message can be set to visible to force itself to be shown. */
-  visible: _propTypes2.default.bool,
+  visible: _propTypes.default.bool,
 
   /** A message may be formatted to display warning messages. */
-  warning: _propTypes2.default.bool
+  warning: _propTypes.default.bool
 } : {};

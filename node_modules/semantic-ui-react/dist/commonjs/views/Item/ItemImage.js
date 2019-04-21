@@ -1,50 +1,42 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _react = _interopRequireDefault(require("react"));
 
-var _react = require('react');
+var _lib = require("../../lib");
 
-var _react2 = _interopRequireDefault(_react);
-
-var _lib = require('../../lib');
-
-var _Image = require('../../elements/Image');
-
-var _Image2 = _interopRequireDefault(_Image);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _Image = _interopRequireDefault(require("../../elements/Image"));
 
 /**
  * An item can contain an image.
  */
 function ItemImage(props) {
   var size = props.size;
-
   var rest = (0, _lib.getUnhandledProps)(ItemImage, props);
-
-  return _react2.default.createElement(_Image2.default, (0, _extends3.default)({}, rest, { size: size, ui: !!size, wrapped: true }));
+  return _react.default.createElement(_Image.default, (0, _extends2.default)({}, rest, {
+    size: size,
+    ui: !!size,
+    wrapped: true
+  }));
 }
 
-ItemImage.handledProps = ['size'];
-ItemImage._meta = {
-  name: 'ItemImage',
-  parent: 'Item',
-  type: _lib.META.TYPES.VIEW
-};
-
+ItemImage.handledProps = ["size"];
 ItemImage.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An image may appear at different sizes. */
-  size: _Image2.default.propTypes.size
+  size: _Image.default.propTypes.size
 } : {};
-
 ItemImage.create = (0, _lib.createShorthandFactory)(ItemImage, function (src) {
-  return { src: src };
+  return {
+    src: src
+  };
 });
-
-exports.default = ItemImage;
+var _default = ItemImage;
+exports.default = _default;

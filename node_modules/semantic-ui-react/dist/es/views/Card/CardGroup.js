@@ -1,17 +1,15 @@
-import _extends from 'babel-runtime/helpers/extends';
-import _without from 'lodash/without';
-import _map from 'lodash/map';
+import _extends from "@babel/runtime/helpers/extends";
+import _without from "lodash/without";
+import _map from "lodash/map";
 import cx from 'classnames';
-
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, META, SUI, useKeyOnly, useTextAlignProp, useWidthProp } from '../../lib';
+import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, SUI, useKeyOnly, useTextAlignProp, useWidthProp } from '../../lib';
 import Card from './Card';
-
 /**
  * A group of cards.
  */
+
 function CardGroup(props) {
   var centered = props.centered,
       children = props.children,
@@ -22,42 +20,35 @@ function CardGroup(props) {
       itemsPerRow = props.itemsPerRow,
       stackable = props.stackable,
       textAlign = props.textAlign;
-
-
   var classes = cx('ui', useKeyOnly(centered, 'centered'), useKeyOnly(doubling, 'doubling'), useKeyOnly(stackable, 'stackable'), useTextAlignProp(textAlign), useWidthProp(itemsPerRow), 'cards', className);
   var rest = getUnhandledProps(CardGroup, props);
   var ElementType = getElementType(CardGroup, props);
 
-  if (!childrenUtils.isNil(children)) return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    children
-  );
-  if (!childrenUtils.isNil(content)) return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    content
-  );
+  if (!childrenUtils.isNil(children)) {
+    return React.createElement(ElementType, _extends({}, rest, {
+      className: classes
+    }), children);
+  }
+
+  if (!childrenUtils.isNil(content)) {
+    return React.createElement(ElementType, _extends({}, rest, {
+      className: classes
+    }), content);
+  }
 
   var itemsJSX = _map(items, function (item) {
     var key = item.key || [item.header, item.description].join('-');
-    return React.createElement(Card, _extends({ key: key }, item));
+    return React.createElement(Card, _extends({
+      key: key
+    }, item));
   });
 
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    itemsJSX
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), itemsJSX);
 }
 
-CardGroup.handledProps = ['as', 'centered', 'children', 'className', 'content', 'doubling', 'items', 'itemsPerRow', 'stackable', 'textAlign'];
-CardGroup._meta = {
-  name: 'CardGroup',
-  parent: 'Card',
-  type: META.TYPES.VIEW
-};
-
+CardGroup.handledProps = ["as", "centered", "children", "className", "content", "doubling", "items", "itemsPerRow", "stackable", "textAlign"];
 CardGroup.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -89,5 +80,4 @@ CardGroup.propTypes = process.env.NODE_ENV !== "production" ? {
   /** A card group can adjust its text alignment. */
   textAlign: PropTypes.oneOf(_without(SUI.TEXT_ALIGNMENTS, 'justified'))
 } : {};
-
 export default CardGroup;

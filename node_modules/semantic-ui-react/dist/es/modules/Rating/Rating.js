@@ -1,147 +1,157 @@
-import _extends from 'babel-runtime/helpers/extends';
-import _classCallCheck from 'babel-runtime/helpers/classCallCheck';
-import _createClass from 'babel-runtime/helpers/createClass';
-import _possibleConstructorReturn from 'babel-runtime/helpers/possibleConstructorReturn';
-import _inherits from 'babel-runtime/helpers/inherits';
-import _times from 'lodash/times';
-import _invoke from 'lodash/invoke';
-import _without from 'lodash/without';
+import _extends from "@babel/runtime/helpers/extends";
+import _objectSpread from "@babel/runtime/helpers/objectSpread";
+import _classCallCheck from "@babel/runtime/helpers/classCallCheck";
+import _createClass from "@babel/runtime/helpers/createClass";
+import _possibleConstructorReturn from "@babel/runtime/helpers/possibleConstructorReturn";
+import _getPrototypeOf from "@babel/runtime/helpers/getPrototypeOf";
+import _inherits from "@babel/runtime/helpers/inherits";
+import _assertThisInitialized from "@babel/runtime/helpers/assertThisInitialized";
+import _defineProperty from "@babel/runtime/helpers/defineProperty";
+import _times from "lodash/times";
+import _invoke from "lodash/invoke";
+import _without from "lodash/without";
 import cx from 'classnames';
-
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { AutoControlledComponent as Component, customPropTypes, getElementType, getUnhandledProps, META, SUI, useKeyOnly } from '../../lib';
+import { AutoControlledComponent as Component, customPropTypes, getElementType, getUnhandledProps, SUI, useKeyOnly } from '../../lib';
 import RatingIcon from './RatingIcon';
-
 /**
  * A rating indicates user interest in content.
  */
 
-var Rating = function (_Component) {
+var Rating =
+/*#__PURE__*/
+function (_Component) {
   _inherits(Rating, _Component);
 
   function Rating() {
-    var _ref;
+    var _getPrototypeOf2;
 
-    var _temp, _this, _ret;
+    var _this;
 
     _classCallCheck(this, Rating);
 
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-      args[_key] = arguments[_key];
+    for (var _len = arguments.length, _args = new Array(_len), _key = 0; _key < _len; _key++) {
+      _args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = Rating.__proto__ || Object.getPrototypeOf(Rating)).call.apply(_ref, [this].concat(args))), _this), _initialiseProps.call(_this), _temp), _possibleConstructorReturn(_this, _ret);
+    _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(Rating)).call.apply(_getPrototypeOf2, [this].concat(_args)));
+
+    _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "handleIconClick", function (e, _ref) {
+      var index = _ref.index;
+      var _this$props = _this.props,
+          clearable = _this$props.clearable,
+          disabled = _this$props.disabled,
+          maxRating = _this$props.maxRating,
+          onRate = _this$props.onRate;
+      var rating = _this.state.rating;
+      if (disabled) return; // default newRating is the clicked icon
+      // allow toggling a binary rating
+      // allow clearing ratings
+
+      var newRating = index + 1;
+
+      if (clearable === 'auto' && maxRating === 1) {
+        newRating = +!rating;
+      } else if (clearable === true && newRating === rating) {
+        newRating = 0;
+      } // set rating
+
+
+      _this.trySetState({
+        rating: newRating
+      }, {
+        isSelecting: false
+      });
+
+      if (onRate) onRate(e, _objectSpread({}, _this.props, {
+        rating: newRating
+      }));
+    });
+
+    _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "handleIconMouseEnter", function (e, _ref2) {
+      var index = _ref2.index;
+      if (_this.props.disabled) return;
+
+      _this.setState({
+        selectedIndex: index,
+        isSelecting: true
+      });
+    });
+
+    _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "handleMouseLeave", function () {
+      for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+        args[_key2] = arguments[_key2];
+      }
+
+      _invoke.apply(void 0, [_this.props, 'onMouseLeave'].concat(args));
+
+      if (_this.props.disabled) return;
+
+      _this.setState({
+        selectedIndex: -1,
+        isSelecting: false
+      });
+    });
+
+    return _this;
   }
 
   _createClass(Rating, [{
-    key: 'render',
+    key: "render",
     value: function render() {
       var _this2 = this;
 
-      var _props = this.props,
-          className = _props.className,
-          disabled = _props.disabled,
-          icon = _props.icon,
-          maxRating = _props.maxRating,
-          size = _props.size;
-      var _state = this.state,
-          rating = _state.rating,
-          selectedIndex = _state.selectedIndex,
-          isSelecting = _state.isSelecting;
-
-
+      var _this$props2 = this.props,
+          className = _this$props2.className,
+          disabled = _this$props2.disabled,
+          icon = _this$props2.icon,
+          maxRating = _this$props2.maxRating,
+          size = _this$props2.size;
+      var _this$state = this.state,
+          rating = _this$state.rating,
+          selectedIndex = _this$state.selectedIndex,
+          isSelecting = _this$state.isSelecting;
       var classes = cx('ui', icon, size, useKeyOnly(disabled, 'disabled'), useKeyOnly(isSelecting && !disabled && selectedIndex >= 0, 'selected'), 'rating', className);
       var rest = getUnhandledProps(Rating, this.props);
       var ElementType = getElementType(Rating, this.props);
-
-      return React.createElement(
-        ElementType,
-        _extends({}, rest, { className: classes, role: 'radiogroup', onMouseLeave: this.handleMouseLeave }),
-        _times(maxRating, function (i) {
-          return React.createElement(RatingIcon, {
-            active: rating >= i + 1,
-            'aria-checked': rating === i + 1,
-            'aria-posinset': i + 1,
-            'aria-setsize': maxRating,
-            index: i,
-            key: i,
-            onClick: _this2.handleIconClick,
-            onMouseEnter: _this2.handleIconMouseEnter,
-            selected: selectedIndex >= i && isSelecting
-          });
-        })
-      );
+      return React.createElement(ElementType, _extends({}, rest, {
+        className: classes,
+        role: "radiogroup",
+        onMouseLeave: this.handleMouseLeave,
+        tabIndex: disabled ? 0 : -1
+      }), _times(maxRating, function (i) {
+        return React.createElement(RatingIcon, {
+          tabIndex: disabled ? -1 : 0,
+          active: rating >= i + 1,
+          "aria-checked": rating === i + 1,
+          "aria-posinset": i + 1,
+          "aria-setsize": maxRating,
+          index: i,
+          key: i,
+          onClick: _this2.handleIconClick,
+          onMouseEnter: _this2.handleIconMouseEnter,
+          selected: selectedIndex >= i && isSelecting
+        });
+      }));
     }
   }]);
 
   return Rating;
 }(Component);
 
-Rating.autoControlledProps = ['rating'];
-Rating.defaultProps = {
+_defineProperty(Rating, "autoControlledProps", ['rating']);
+
+_defineProperty(Rating, "defaultProps", {
   clearable: 'auto',
   maxRating: 1
-};
-Rating._meta = {
-  name: 'Rating',
-  type: META.TYPES.MODULE
-};
-Rating.Icon = RatingIcon;
-Rating.handledProps = ['as', 'className', 'clearable', 'defaultRating', 'disabled', 'icon', 'maxRating', 'onRate', 'rating', 'size'];
+});
 
-var _initialiseProps = function _initialiseProps() {
-  var _this3 = this;
+_defineProperty(Rating, "Icon", RatingIcon);
 
-  this.handleIconClick = function (e, _ref2) {
-    var index = _ref2.index;
-    var _props2 = _this3.props,
-        clearable = _props2.clearable,
-        disabled = _props2.disabled,
-        maxRating = _props2.maxRating,
-        onRate = _props2.onRate;
-    var rating = _this3.state.rating;
+_defineProperty(Rating, "handledProps", ["as", "className", "clearable", "defaultRating", "disabled", "icon", "maxRating", "onRate", "rating", "size"]);
 
-    if (disabled) return;
-
-    // default newRating is the clicked icon
-    // allow toggling a binary rating
-    // allow clearing ratings
-    var newRating = index + 1;
-    if (clearable === 'auto' && maxRating === 1) {
-      newRating = +!rating;
-    } else if (clearable === true && newRating === rating) {
-      newRating = 0;
-    }
-
-    // set rating
-    _this3.trySetState({ rating: newRating }, { isSelecting: false });
-    if (onRate) onRate(e, _extends({}, _this3.props, { rating: newRating }));
-  };
-
-  this.handleIconMouseEnter = function (e, _ref3) {
-    var index = _ref3.index;
-
-    if (_this3.props.disabled) return;
-
-    _this3.setState({ selectedIndex: index, isSelecting: true });
-  };
-
-  this.handleMouseLeave = function () {
-    for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-      args[_key2] = arguments[_key2];
-    }
-
-    _invoke.apply(undefined, [_this3.props, 'onMouseLeave'].concat(args));
-
-    if (_this3.props.disabled) return;
-
-    _this3.setState({ selectedIndex: -1, isSelecting: false });
-  };
-};
-
-export default Rating;
+export { Rating as default };
 Rating.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,

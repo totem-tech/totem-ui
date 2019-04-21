@@ -8,7 +8,6 @@ import {
   customPropTypes,
   getElementType,
   getUnhandledProps,
-  META,
   SUI,
   useKeyOnly,
   useKeyOrValueAndKey,
@@ -72,19 +71,13 @@ class List extends Component {
      * @param {SyntheticEvent} event - React's original SyntheticEvent.
      * @param {object} data - All item props.
      */
-    onItemClick: customPropTypes.every([
-      customPropTypes.disallow(['children']),
-      PropTypes.func,
-    ]),
+    onItemClick: customPropTypes.every([customPropTypes.disallow(['children']), PropTypes.func]),
 
     /** A list can be ordered numerically. */
     ordered: PropTypes.bool,
 
     /** A list can relax its padding to provide more negative space. */
-    relaxed: PropTypes.oneOfType([
-      PropTypes.bool,
-      PropTypes.oneOf(['very']),
-    ]),
+    relaxed: PropTypes.oneOfType([PropTypes.bool, PropTypes.oneOf(['very'])]),
 
     /** A selection list formats list items as possible choices. */
     selection: PropTypes.bool,
@@ -94,11 +87,6 @@ class List extends Component {
 
     /** An element inside a list can be vertically aligned. */
     verticalAlign: PropTypes.oneOf(SUI.VERTICAL_ALIGNMENTS),
-  }
-
-  static _meta = {
-    name: 'List',
-    type: META.TYPES.ELEMENT,
   }
 
   static Content = ListContent
@@ -158,15 +146,23 @@ class List extends Component {
     const ElementType = getElementType(List, this.props)
 
     if (!childrenUtils.isNil(children)) {
-      return <ElementType {...rest} role='list' className={classes}>{children}</ElementType>
+      return (
+        <ElementType role='list' className={classes} {...rest}>
+          {children}
+        </ElementType>
+      )
     }
 
     if (!childrenUtils.isNil(content)) {
-      return <ElementType {...rest} role='list' className={classes}>{content}</ElementType>
+      return (
+        <ElementType role='list' className={classes} {...rest}>
+          {content}
+        </ElementType>
+      )
     }
 
     return (
-      <ElementType {...rest} role='list' className={classes}>
+      <ElementType role='list' className={classes} {...rest}>
         {_.map(items, item => ListItem.create(item, { overrideProps: this.handleItemOverrides }))}
       </ElementType>
     )

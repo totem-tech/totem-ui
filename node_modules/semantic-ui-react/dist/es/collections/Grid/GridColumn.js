@@ -1,13 +1,12 @@
-import _extends from 'babel-runtime/helpers/extends';
+import _extends from "@babel/runtime/helpers/extends";
 import cx from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { customPropTypes, createShorthandFactory, getElementType, getUnhandledProps, META, SUI, useKeyOnly, useMultipleProp, useTextAlignProp, useValueAndKey, useVerticalAlignProp, useWidthProp } from '../../lib';
-
+import { customPropTypes, createShorthandFactory, getElementType, getUnhandledProps, SUI, useKeyOnly, useMultipleProp, useTextAlignProp, useValueAndKey, useVerticalAlignProp, useWidthProp } from '../../lib';
 /**
  * A column sub-component for Grid.
  */
+
 function GridColumn(props) {
   var children = props.children,
       className = props.className,
@@ -23,26 +22,15 @@ function GridColumn(props) {
       verticalAlign = props.verticalAlign,
       widescreen = props.widescreen,
       width = props.width;
-
-
   var classes = cx(color, useKeyOnly(stretched, 'stretched'), useMultipleProp(only, 'only'), useTextAlignProp(textAlign), useValueAndKey(floated, 'floated'), useVerticalAlignProp(verticalAlign), useWidthProp(computer, 'wide computer'), useWidthProp(largeScreen, 'wide large screen'), useWidthProp(mobile, 'wide mobile'), useWidthProp(tablet, 'wide tablet'), useWidthProp(widescreen, 'wide widescreen'), useWidthProp(width, 'wide'), 'column', className);
   var rest = getUnhandledProps(GridColumn, props);
   var ElementType = getElementType(GridColumn, props);
-
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    children
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), children);
 }
 
-GridColumn.handledProps = ['as', 'children', 'className', 'color', 'computer', 'floated', 'largeScreen', 'mobile', 'only', 'stretched', 'tablet', 'textAlign', 'verticalAlign', 'widescreen', 'width'];
-GridColumn._meta = {
-  name: 'GridColumn',
-  parent: 'Grid',
-  type: META.TYPES.COLLECTION
-};
-
+GridColumn.handledProps = ["as", "children", "className", "color", "computer", "floated", "largeScreen", "mobile", "only", "stretched", "tablet", "textAlign", "verticalAlign", "widescreen", "width"];
 GridColumn.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -57,16 +45,16 @@ GridColumn.propTypes = process.env.NODE_ENV !== "production" ? {
   color: PropTypes.oneOf(SUI.COLORS),
 
   /** A column can specify a width for a computer. */
-  computer: PropTypes.oneOf(SUI.WIDTHS),
+  computer: customPropTypes.every([customPropTypes.disallow(['width']), PropTypes.oneOf(SUI.WIDTHS)]),
 
   /** A column can sit flush against the left or right edge of a row. */
   floated: PropTypes.oneOf(SUI.FLOATS),
 
   /** A column can specify a width for a large screen device. */
-  largeScreen: PropTypes.oneOf(SUI.WIDTHS),
+  largeScreen: customPropTypes.every([customPropTypes.disallow(['width']), PropTypes.oneOf(SUI.WIDTHS)]),
 
   /** A column can specify a width for a mobile device. */
-  mobile: PropTypes.oneOf(SUI.WIDTHS),
+  mobile: customPropTypes.every([customPropTypes.disallow(['width']), PropTypes.oneOf(SUI.WIDTHS)]),
 
   /** A column can appear only for a specific device, or screen sizes. */
   only: customPropTypes.multipleProp(SUI.VISIBILITY),
@@ -75,7 +63,7 @@ GridColumn.propTypes = process.env.NODE_ENV !== "production" ? {
   stretched: PropTypes.bool,
 
   /** A column can specify a width for a tablet device. */
-  tablet: PropTypes.oneOf(SUI.WIDTHS),
+  tablet: customPropTypes.every([customPropTypes.disallow(['width']), PropTypes.oneOf(SUI.WIDTHS)]),
 
   /** A column can specify its text alignment. */
   textAlign: PropTypes.oneOf(SUI.TEXT_ALIGNMENTS),
@@ -84,14 +72,14 @@ GridColumn.propTypes = process.env.NODE_ENV !== "production" ? {
   verticalAlign: PropTypes.oneOf(SUI.VERTICAL_ALIGNMENTS),
 
   /** A column can specify a width for a wide screen device. */
-  widescreen: PropTypes.oneOf(SUI.WIDTHS),
+  widescreen: customPropTypes.every([customPropTypes.disallow(['width']), PropTypes.oneOf(SUI.WIDTHS)]),
 
   /** Represents width of column. */
-  width: PropTypes.oneOf(SUI.WIDTHS)
+  width: customPropTypes.every([customPropTypes.disallow(['computer', 'largeScreen', 'mobile', 'tablet', 'widescreen']), PropTypes.oneOf(SUI.WIDTHS)])
 } : {};
-
 GridColumn.create = createShorthandFactory(GridColumn, function (children) {
-  return { children: children };
+  return {
+    children: children
+  };
 });
-
 export default GridColumn;

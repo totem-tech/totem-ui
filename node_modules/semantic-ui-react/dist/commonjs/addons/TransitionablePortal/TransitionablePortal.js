@@ -1,181 +1,165 @@
-'use strict';
+"use strict";
+
+var _interopRequireWildcard = require("@babel/runtime/helpers/interopRequireWildcard");
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _objectSpread2 = _interopRequireDefault(require("@babel/runtime/helpers/objectSpread"));
 
-var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
 
-var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
 
-var _createClass2 = require('babel-runtime/helpers/createClass');
+var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime/helpers/possibleConstructorReturn"));
 
-var _createClass3 = _interopRequireDefault(_createClass2);
+var _getPrototypeOf2 = _interopRequireDefault(require("@babel/runtime/helpers/getPrototypeOf"));
 
-var _possibleConstructorReturn2 = require('babel-runtime/helpers/possibleConstructorReturn');
+var _inherits2 = _interopRequireDefault(require("@babel/runtime/helpers/inherits"));
 
-var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
 
-var _inherits2 = require('babel-runtime/helpers/inherits');
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
-var _inherits3 = _interopRequireDefault(_inherits2);
+var _invoke2 = _interopRequireDefault(require("lodash/invoke"));
 
-var _invoke2 = require('lodash/invoke');
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
-var _invoke3 = _interopRequireDefault(_invoke2);
+var _react = _interopRequireWildcard(require("react"));
 
-var _propTypes = require('prop-types');
+var _Portal = _interopRequireDefault(require("../Portal"));
 
-var _propTypes2 = _interopRequireDefault(_propTypes);
+var _Transition = _interopRequireDefault(require("../../modules/Transition"));
 
-var _react = require('react');
-
-var _react2 = _interopRequireDefault(_react);
-
-var _Portal = require('../Portal');
-
-var _Portal2 = _interopRequireDefault(_Portal);
-
-var _Transition = require('../../modules/Transition');
-
-var _Transition2 = _interopRequireDefault(_Transition);
-
-var _lib = require('../../lib');
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _lib = require("../../lib");
 
 /**
  * A sugar for `Portal` and `Transition`.
  * @see Portal
  * @see Transition
  */
-var TransitionablePortal = function (_Component) {
-  (0, _inherits3.default)(TransitionablePortal, _Component);
+var TransitionablePortal =
+/*#__PURE__*/
+function (_Component) {
+  (0, _inherits2.default)(TransitionablePortal, _Component);
 
   function TransitionablePortal(props) {
-    (0, _classCallCheck3.default)(this, TransitionablePortal);
+    var _this;
 
-    var _this = (0, _possibleConstructorReturn3.default)(this, (TransitionablePortal.__proto__ || Object.getPrototypeOf(TransitionablePortal)).call(this, props));
-
-    _this.handlePortalClose = function () {
-
-      _this.setState({ portalOpen: false });
-    };
-
-    _this.handlePortalOpen = function () {
-
-      _this.setState({ portalOpen: true });
-    };
-
-    _this.handleTransitionHide = function (nothing, data) {
+    (0, _classCallCheck2.default)(this, TransitionablePortal);
+    _this = (0, _possibleConstructorReturn2.default)(this, (0, _getPrototypeOf2.default)(TransitionablePortal).call(this, props));
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "handlePortalClose", function () {
+      _this.setState({
+        portalOpen: false
+      });
+    });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "handlePortalOpen", function () {
+      _this.setState({
+        portalOpen: true
+      });
+    });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "handleTransitionHide", function (nothing, data) {
       var portalOpen = _this.state.portalOpen;
 
+      _this.setState({
+        transitionVisible: false
+      });
 
-      _this.setState({ transitionVisible: false });
-      (0, _invoke3.default)(_this.props, 'onClose', null, (0, _extends3.default)({}, data, { portalOpen: false, transitionVisible: false }));
-      (0, _invoke3.default)(_this.props, 'onHide', null, (0, _extends3.default)({}, data, { portalOpen: portalOpen, transitionVisible: false }));
-    };
-
-    _this.handleTransitionStart = function (nothing, data) {
+      (0, _invoke2.default)(_this.props, 'onClose', null, (0, _objectSpread2.default)({}, data, {
+        portalOpen: false,
+        transitionVisible: false
+      }));
+      (0, _invoke2.default)(_this.props, 'onHide', null, (0, _objectSpread2.default)({}, data, {
+        portalOpen: portalOpen,
+        transitionVisible: false
+      }));
+    });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "handleTransitionStart", function (nothing, data) {
       var portalOpen = _this.state.portalOpen;
       var status = data.status;
+      var transitionVisible = status === _Transition.default.ENTERING;
+      (0, _invoke2.default)(_this.props, 'onStart', null, (0, _objectSpread2.default)({}, data, {
+        portalOpen: portalOpen,
+        transitionVisible: transitionVisible
+      })); // Heads up! TransitionablePortal fires onOpen callback on the start of transition animation
 
-      var transitionVisible = status === _Transition2.default.ENTERING;
-
-      (0, _invoke3.default)(_this.props, 'onStart', null, (0, _extends3.default)({}, data, { portalOpen: portalOpen, transitionVisible: transitionVisible }));
-
-      // Heads up! TransitionablePortal fires onOpen callback on the start of transition animation
       if (!transitionVisible) return;
 
-      _this.setState({ transitionVisible: transitionVisible });
-      (0, _invoke3.default)(_this.props, 'onOpen', null, (0, _extends3.default)({}, data, { transitionVisible: transitionVisible, portalOpen: true }));
-    };
+      _this.setState({
+        transitionVisible: transitionVisible
+      });
 
+      (0, _invoke2.default)(_this.props, 'onOpen', null, (0, _objectSpread2.default)({}, data, {
+        transitionVisible: transitionVisible,
+        portalOpen: true
+      }));
+    });
     _this.state = {
       portalOpen: props.open
     };
     return _this;
-  }
-
-  // ----------------------------------------
+  } // ----------------------------------------
   // Lifecycle
   // ----------------------------------------
 
-  (0, _createClass3.default)(TransitionablePortal, [{
-    key: 'componentWillReceiveProps',
+
+  (0, _createClass2.default)(TransitionablePortal, [{
+    key: "componentWillReceiveProps",
     value: function componentWillReceiveProps(_ref) {
       var open = _ref.open;
-
-
-      this.setState({ portalOpen: open });
-    }
-
-    // ----------------------------------------
+      this.setState({
+        portalOpen: open
+      });
+    } // ----------------------------------------
     // Callback handling
     // ----------------------------------------
 
   }, {
-    key: 'render',
-
-
+    key: "render",
     // ----------------------------------------
     // Render
     // ----------------------------------------
-
     value: function render() {
-      var _props = this.props,
-          children = _props.children,
-          transition = _props.transition;
-      var _state = this.state,
-          portalOpen = _state.portalOpen,
-          transitionVisible = _state.transitionVisible;
-
-
+      var _this$props = this.props,
+          children = _this$props.children,
+          transition = _this$props.transition;
+      var _this$state = this.state,
+          portalOpen = _this$state.portalOpen,
+          transitionVisible = _this$state.transitionVisible;
       var open = portalOpen || transitionVisible;
       var rest = (0, _lib.getUnhandledProps)(TransitionablePortal, this.props);
-
-      return _react2.default.createElement(
-        _Portal2.default,
-        (0, _extends3.default)({}, rest, {
-          open: open,
-          onOpen: this.handlePortalOpen,
-          onClose: this.handlePortalClose
-        }),
-        _react2.default.createElement(
-          _Transition2.default,
-          (0, _extends3.default)({}, transition, {
-            transitionOnMount: true,
-            onStart: this.handleTransitionStart,
-            onHide: this.handleTransitionHide,
-            visible: portalOpen
-          }),
-          children
-        )
-      );
+      return _react.default.createElement(_Portal.default, (0, _extends2.default)({}, rest, {
+        open: open,
+        onOpen: this.handlePortalOpen,
+        onClose: this.handlePortalClose
+      }), _react.default.createElement(_Transition.default, (0, _extends2.default)({}, transition, {
+        transitionOnMount: true,
+        onStart: this.handleTransitionStart,
+        onHide: this.handleTransitionHide,
+        visible: portalOpen
+      }), children));
     }
   }]);
   return TransitionablePortal;
 }(_react.Component);
 
-TransitionablePortal._meta = {
-  name: 'TransitionablePortal',
-  type: _lib.META.TYPES.ADDON
-};
-TransitionablePortal.defaultProps = {
+exports.default = TransitionablePortal;
+(0, _defineProperty2.default)(TransitionablePortal, "defaultProps", {
   transition: {
     animation: 'scale',
     duration: 400
   }
-};
-TransitionablePortal.handledProps = ['children', 'onClose', 'onHide', 'onOpen', 'onStart', 'open', 'transition'];
-exports.default = TransitionablePortal;
+});
+(0, _defineProperty2.default)(TransitionablePortal, "handledProps", ["children", "onClose", "onHide", "onOpen", "onStart", "open", "transition"]);
 TransitionablePortal.propTypes = process.env.NODE_ENV !== "production" ? {
   /** Primary content. */
-  children: _propTypes2.default.node.isRequired,
+  children: _propTypes.default.node.isRequired,
 
   /**
    * Called when a close event happens.
@@ -183,7 +167,7 @@ TransitionablePortal.propTypes = process.env.NODE_ENV !== "production" ? {
    * @param {SyntheticEvent} event - React's original SyntheticEvent.
    * @param {object} data - All props and internal state.
    */
-  onClose: _propTypes2.default.func,
+  onClose: _propTypes.default.func,
 
   /**
    * Callback on each transition that changes visibility to hidden.
@@ -191,7 +175,7 @@ TransitionablePortal.propTypes = process.env.NODE_ENV !== "production" ? {
    * @param {null}
    * @param {object} data - All props with transition status and internal state.
    */
-  onHide: _propTypes2.default.func,
+  onHide: _propTypes.default.func,
 
   /**
    * Called when an open event happens.
@@ -199,7 +183,7 @@ TransitionablePortal.propTypes = process.env.NODE_ENV !== "production" ? {
    * @param {SyntheticEvent} event - React's original SyntheticEvent.
    * @param {object} data - All props and internal state.
    */
-  onOpen: _propTypes2.default.func,
+  onOpen: _propTypes.default.func,
 
   /**
    * Callback on animation start.
@@ -207,11 +191,11 @@ TransitionablePortal.propTypes = process.env.NODE_ENV !== "production" ? {
    * @param {null}
    * @param {object} data - All props with transition status and internal state.
    */
-  onStart: _propTypes2.default.func,
+  onStart: _propTypes.default.func,
 
   /** Controls whether or not the portal is displayed. */
-  open: _propTypes2.default.bool,
+  open: _propTypes.default.bool,
 
   /** Transition props. */
-  transition: _propTypes2.default.object
+  transition: _propTypes.default.object
 } : {};

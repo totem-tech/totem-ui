@@ -1,122 +1,125 @@
-import _extends from 'babel-runtime/helpers/extends';
-import _classCallCheck from 'babel-runtime/helpers/classCallCheck';
-import _createClass from 'babel-runtime/helpers/createClass';
-import _possibleConstructorReturn from 'babel-runtime/helpers/possibleConstructorReturn';
-import _inherits from 'babel-runtime/helpers/inherits';
-import _isUndefined from 'lodash/isUndefined';
-import _invoke from 'lodash/invoke';
+import _extends from "@babel/runtime/helpers/extends";
+import _classCallCheck from "@babel/runtime/helpers/classCallCheck";
+import _createClass from "@babel/runtime/helpers/createClass";
+import _possibleConstructorReturn from "@babel/runtime/helpers/possibleConstructorReturn";
+import _getPrototypeOf from "@babel/runtime/helpers/getPrototypeOf";
+import _inherits from "@babel/runtime/helpers/inherits";
+import _assertThisInitialized from "@babel/runtime/helpers/assertThisInitialized";
+import _defineProperty from "@babel/runtime/helpers/defineProperty";
+import _isUndefined from "lodash/isUndefined";
+import _invoke from "lodash/invoke";
 import cx from 'classnames';
-
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
-
-import { childrenUtils, createShorthand, createShorthandFactory, customPropTypes, getElementType, getUnhandledProps, META, SUI, useKeyOnly, useKeyOrValueAndKey, useValueAndKey } from '../../lib';
+import { childrenUtils, createShorthandFactory, customPropTypes, getElementType, getUnhandledProps, SUI, useKeyOnly, useKeyOrValueAndKey, useValueAndKey } from '../../lib';
 import Icon from '../Icon/Icon';
 import Image from '../Image/Image';
 import LabelDetail from './LabelDetail';
 import LabelGroup from './LabelGroup';
-
 /**
  * A label displays content classification.
  */
 
-var Label = function (_Component) {
+var Label =
+/*#__PURE__*/
+function (_Component) {
   _inherits(Label, _Component);
 
   function Label() {
-    var _ref;
+    var _getPrototypeOf2;
 
-    var _temp, _this, _ret;
+    var _this;
 
     _classCallCheck(this, Label);
 
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
       args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = Label.__proto__ || Object.getPrototypeOf(Label)).call.apply(_ref, [this].concat(args))), _this), _this.handleClick = function (e) {
+    _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(Label)).call.apply(_getPrototypeOf2, [this].concat(args)));
+
+    _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "handleClick", function (e) {
       var onClick = _this.props.onClick;
-
-
       if (onClick) onClick(e, _this.props);
-    }, _this.handleIconOverrides = function (predefinedProps) {
+    });
+
+    _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "handleIconOverrides", function (predefinedProps) {
       return {
         onClick: function onClick(e) {
           _invoke(predefinedProps, 'onClick', e);
+
           _invoke(_this.props, 'onRemove', e, _this.props);
         }
       };
-    }, _temp), _possibleConstructorReturn(_this, _ret);
+    });
+
+    return _this;
   }
 
   _createClass(Label, [{
-    key: 'render',
+    key: "render",
     value: function render() {
-      var _props = this.props,
-          active = _props.active,
-          attached = _props.attached,
-          basic = _props.basic,
-          children = _props.children,
-          circular = _props.circular,
-          className = _props.className,
-          color = _props.color,
-          content = _props.content,
-          corner = _props.corner,
-          detail = _props.detail,
-          empty = _props.empty,
-          floating = _props.floating,
-          horizontal = _props.horizontal,
-          icon = _props.icon,
-          image = _props.image,
-          onRemove = _props.onRemove,
-          pointing = _props.pointing,
-          removeIcon = _props.removeIcon,
-          ribbon = _props.ribbon,
-          size = _props.size,
-          tag = _props.tag;
-
-
-      var pointingClass = pointing === true && 'pointing' || (pointing === 'left' || pointing === 'right') && pointing + ' pointing' || (pointing === 'above' || pointing === 'below') && 'pointing ' + pointing;
-
+      var _this$props = this.props,
+          active = _this$props.active,
+          attached = _this$props.attached,
+          basic = _this$props.basic,
+          children = _this$props.children,
+          circular = _this$props.circular,
+          className = _this$props.className,
+          color = _this$props.color,
+          content = _this$props.content,
+          corner = _this$props.corner,
+          detail = _this$props.detail,
+          empty = _this$props.empty,
+          floating = _this$props.floating,
+          horizontal = _this$props.horizontal,
+          icon = _this$props.icon,
+          image = _this$props.image,
+          onRemove = _this$props.onRemove,
+          pointing = _this$props.pointing,
+          removeIcon = _this$props.removeIcon,
+          ribbon = _this$props.ribbon,
+          size = _this$props.size,
+          tag = _this$props.tag;
+      var pointingClass = pointing === true && 'pointing' || (pointing === 'left' || pointing === 'right') && "".concat(pointing, " pointing") || (pointing === 'above' || pointing === 'below') && "pointing ".concat(pointing);
       var classes = cx('ui', color, pointingClass, size, useKeyOnly(active, 'active'), useKeyOnly(basic, 'basic'), useKeyOnly(circular, 'circular'), useKeyOnly(empty, 'empty'), useKeyOnly(floating, 'floating'), useKeyOnly(horizontal, 'horizontal'), useKeyOnly(image === true, 'image'), useKeyOnly(tag, 'tag'), useKeyOrValueAndKey(corner, 'corner'), useKeyOrValueAndKey(ribbon, 'ribbon'), useValueAndKey(attached, 'attached'), 'label', className);
       var rest = getUnhandledProps(Label, this.props);
       var ElementType = getElementType(Label, this.props);
 
       if (!childrenUtils.isNil(children)) {
-        return React.createElement(
-          ElementType,
-          _extends({}, rest, { className: classes, onClick: this.handleClick }),
-          children
-        );
+        return React.createElement(ElementType, _extends({}, rest, {
+          className: classes,
+          onClick: this.handleClick
+        }), children);
       }
 
       var removeIconShorthand = _isUndefined(removeIcon) ? 'delete' : removeIcon;
-
-      return React.createElement(
-        ElementType,
-        _extends({ className: classes, onClick: this.handleClick }, rest),
-        Icon.create(icon),
-        typeof image !== 'boolean' && Image.create(image),
-        content,
-        createShorthand(LabelDetail, function (val) {
-          return { content: val };
-        }, detail),
-        onRemove && Icon.create(removeIconShorthand, { overrideProps: this.handleIconOverrides })
-      );
+      return React.createElement(ElementType, _extends({
+        className: classes,
+        onClick: this.handleClick
+      }, rest), Icon.create(icon, {
+        autoGenerateKey: false
+      }), typeof image !== 'boolean' && Image.create(image, {
+        autoGenerateKey: false
+      }), content, LabelDetail.create(detail, {
+        autoGenerateKey: false
+      }), onRemove && Icon.create(removeIconShorthand, {
+        autoGenerateKey: false,
+        overrideProps: this.handleIconOverrides
+      }));
     }
   }]);
 
   return Label;
 }(Component);
 
-Label._meta = {
-  name: 'Label',
-  type: META.TYPES.ELEMENT
-};
-Label.Detail = LabelDetail;
-Label.Group = LabelGroup;
-Label.handledProps = ['active', 'as', 'attached', 'basic', 'children', 'circular', 'className', 'color', 'content', 'corner', 'detail', 'empty', 'floating', 'horizontal', 'icon', 'image', 'onClick', 'onRemove', 'pointing', 'removeIcon', 'ribbon', 'size', 'tag'];
-export default Label;
+_defineProperty(Label, "Detail", LabelDetail);
+
+_defineProperty(Label, "Group", LabelGroup);
+
+_defineProperty(Label, "handledProps", ["active", "as", "attached", "basic", "children", "circular", "className", "color", "content", "corner", "detail", "empty", "floating", "horizontal", "icon", "image", "onClick", "onRemove", "pointing", "removeIcon", "ribbon", "size", "tag"]);
+
+export { Label as default };
 Label.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -197,8 +200,8 @@ Label.propTypes = process.env.NODE_ENV !== "production" ? {
   /** A label can appear as a tag. */
   tag: PropTypes.bool
 } : {};
-
-
 Label.create = createShorthandFactory(Label, function (value) {
-  return { content: value };
+  return {
+    content: value
+  };
 });

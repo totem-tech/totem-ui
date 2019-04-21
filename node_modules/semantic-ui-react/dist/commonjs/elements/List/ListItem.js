@@ -1,187 +1,172 @@
-'use strict';
+"use strict";
+
+var _interopRequireWildcard = require("@babel/runtime/helpers/interopRequireWildcard");
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
 
-var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
+var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
 
-var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime/helpers/possibleConstructorReturn"));
 
-var _createClass2 = require('babel-runtime/helpers/createClass');
+var _getPrototypeOf3 = _interopRequireDefault(require("@babel/runtime/helpers/getPrototypeOf"));
 
-var _createClass3 = _interopRequireDefault(_createClass2);
+var _inherits2 = _interopRequireDefault(require("@babel/runtime/helpers/inherits"));
 
-var _possibleConstructorReturn2 = require('babel-runtime/helpers/possibleConstructorReturn');
+var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
 
-var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
-var _inherits2 = require('babel-runtime/helpers/inherits');
+var _isPlainObject2 = _interopRequireDefault(require("lodash/isPlainObject"));
 
-var _inherits3 = _interopRequireDefault(_inherits2);
+var _invoke2 = _interopRequireDefault(require("lodash/invoke"));
 
-var _isPlainObject2 = require('lodash/isPlainObject');
+var _classnames = _interopRequireDefault(require("classnames"));
 
-var _isPlainObject3 = _interopRequireDefault(_isPlainObject2);
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
-var _invoke2 = require('lodash/invoke');
+var _react = _interopRequireWildcard(require("react"));
 
-var _invoke3 = _interopRequireDefault(_invoke2);
+var _lib = require("../../lib");
 
-var _classnames = require('classnames');
+var _Image = _interopRequireDefault(require("../../elements/Image"));
 
-var _classnames2 = _interopRequireDefault(_classnames);
+var _ListContent = _interopRequireDefault(require("./ListContent"));
 
-var _propTypes = require('prop-types');
+var _ListDescription = _interopRequireDefault(require("./ListDescription"));
 
-var _propTypes2 = _interopRequireDefault(_propTypes);
+var _ListHeader = _interopRequireDefault(require("./ListHeader"));
 
-var _react = require('react');
-
-var _react2 = _interopRequireDefault(_react);
-
-var _lib = require('../../lib');
-
-var _Image = require('../../elements/Image');
-
-var _Image2 = _interopRequireDefault(_Image);
-
-var _ListContent = require('./ListContent');
-
-var _ListContent2 = _interopRequireDefault(_ListContent);
-
-var _ListDescription = require('./ListDescription');
-
-var _ListDescription2 = _interopRequireDefault(_ListDescription);
-
-var _ListHeader = require('./ListHeader');
-
-var _ListHeader2 = _interopRequireDefault(_ListHeader);
-
-var _ListIcon = require('./ListIcon');
-
-var _ListIcon2 = _interopRequireDefault(_ListIcon);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _ListIcon = _interopRequireDefault(require("./ListIcon"));
 
 /**
  * A list item can contain a set of items.
  */
-var ListItem = function (_Component) {
-  (0, _inherits3.default)(ListItem, _Component);
+var ListItem =
+/*#__PURE__*/
+function (_Component) {
+  (0, _inherits2.default)(ListItem, _Component);
 
   function ListItem() {
-    var _ref;
+    var _getPrototypeOf2;
 
-    var _temp, _this, _ret;
+    var _this;
 
-    (0, _classCallCheck3.default)(this, ListItem);
+    (0, _classCallCheck2.default)(this, ListItem);
 
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
       args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this = (0, _possibleConstructorReturn3.default)(this, (_ref = ListItem.__proto__ || Object.getPrototypeOf(ListItem)).call.apply(_ref, [this].concat(args))), _this), _this.handleClick = function (e) {
+    _this = (0, _possibleConstructorReturn2.default)(this, (_getPrototypeOf2 = (0, _getPrototypeOf3.default)(ListItem)).call.apply(_getPrototypeOf2, [this].concat(args)));
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "handleClick", function (e) {
       var disabled = _this.props.disabled;
-
-
-      if (!disabled) (0, _invoke3.default)(_this.props, 'onClick', e, _this.props);
-    }, _temp), (0, _possibleConstructorReturn3.default)(_this, _ret);
+      if (!disabled) (0, _invoke2.default)(_this.props, 'onClick', e, _this.props);
+    });
+    return _this;
   }
 
-  (0, _createClass3.default)(ListItem, [{
-    key: 'render',
+  (0, _createClass2.default)(ListItem, [{
+    key: "render",
     value: function render() {
-      var _props = this.props,
-          active = _props.active,
-          children = _props.children,
-          className = _props.className,
-          content = _props.content,
-          description = _props.description,
-          disabled = _props.disabled,
-          header = _props.header,
-          icon = _props.icon,
-          image = _props.image,
-          value = _props.value;
-
-
+      var _this$props = this.props,
+          active = _this$props.active,
+          children = _this$props.children,
+          className = _this$props.className,
+          content = _this$props.content,
+          description = _this$props.description,
+          disabled = _this$props.disabled,
+          header = _this$props.header,
+          icon = _this$props.icon,
+          image = _this$props.image,
+          value = _this$props.value;
       var ElementType = (0, _lib.getElementType)(ListItem, this.props);
-      var classes = (0, _classnames2.default)((0, _lib.useKeyOnly)(active, 'active'), (0, _lib.useKeyOnly)(disabled, 'disabled'), (0, _lib.useKeyOnly)(ElementType !== 'li', 'item'), className);
+      var classes = (0, _classnames.default)((0, _lib.useKeyOnly)(active, 'active'), (0, _lib.useKeyOnly)(disabled, 'disabled'), (0, _lib.useKeyOnly)(ElementType !== 'li', 'item'), className);
       var rest = (0, _lib.getUnhandledProps)(ListItem, this.props);
-      var valueProp = ElementType === 'li' ? { value: value } : { 'data-value': value };
+      var valueProp = ElementType === 'li' ? {
+        value: value
+      } : {
+        'data-value': value
+      };
 
       if (!_lib.childrenUtils.isNil(children)) {
-        return _react2.default.createElement(
-          ElementType,
-          (0, _extends3.default)({}, rest, valueProp, { role: 'listitem', className: classes, onClick: this.handleClick }),
-          children
-        );
+        return _react.default.createElement(ElementType, (0, _extends2.default)({}, valueProp, {
+          role: "listitem",
+          className: classes,
+          onClick: this.handleClick
+        }, rest), children);
       }
 
-      var iconElement = _ListIcon2.default.create(icon);
-      var imageElement = _Image2.default.create(image);
+      var iconElement = _ListIcon.default.create(icon, {
+        autoGenerateKey: false
+      });
 
-      // See description of `content` prop for explanation about why this is necessary.
-      if (!(0, _react.isValidElement)(content) && (0, _isPlainObject3.default)(content)) {
-        return _react2.default.createElement(
-          ElementType,
-          (0, _extends3.default)({}, rest, valueProp, { role: 'listitem', className: classes, onClick: this.handleClick }),
-          iconElement || imageElement,
-          _ListContent2.default.create(content, { header: header, description: description })
-        );
+      var imageElement = _Image.default.create(image, {
+        autoGenerateKey: false
+      }); // See description of `content` prop for explanation about why this is necessary.
+
+
+      if (!(0, _react.isValidElement)(content) && (0, _isPlainObject2.default)(content)) {
+        return _react.default.createElement(ElementType, (0, _extends2.default)({}, valueProp, {
+          role: "listitem",
+          className: classes,
+          onClick: this.handleClick
+        }, rest), iconElement || imageElement, _ListContent.default.create(content, {
+          autoGenerateKey: false,
+          defaultProps: {
+            header: header,
+            description: description
+          }
+        }));
       }
 
-      var headerElement = _ListHeader2.default.create(header);
-      var descriptionElement = _ListDescription2.default.create(description);
+      var headerElement = _ListHeader.default.create(header, {
+        autoGenerateKey: false
+      });
+
+      var descriptionElement = _ListDescription.default.create(description, {
+        autoGenerateKey: false
+      });
+
       if (iconElement || imageElement) {
-        return _react2.default.createElement(
-          ElementType,
-          (0, _extends3.default)({}, rest, valueProp, { role: 'listitem', className: classes, onClick: this.handleClick }),
-          iconElement || imageElement,
-          (content || headerElement || descriptionElement) && _react2.default.createElement(
-            _ListContent2.default,
-            null,
-            headerElement,
-            descriptionElement,
-            content
-          )
-        );
+        return _react.default.createElement(ElementType, (0, _extends2.default)({}, valueProp, {
+          role: "listitem",
+          className: classes,
+          onClick: this.handleClick
+        }, rest), iconElement || imageElement, (content || headerElement || descriptionElement) && _react.default.createElement(_ListContent.default, null, headerElement, descriptionElement, content));
       }
 
-      return _react2.default.createElement(
-        ElementType,
-        (0, _extends3.default)({}, rest, valueProp, { role: 'listitem', className: classes, onClick: this.handleClick }),
-        headerElement,
-        descriptionElement,
-        content
-      );
+      return _react.default.createElement(ElementType, (0, _extends2.default)({}, valueProp, {
+        role: "listitem",
+        className: classes,
+        onClick: this.handleClick
+      }, rest), headerElement, descriptionElement, content);
     }
   }]);
   return ListItem;
 }(_react.Component);
 
-ListItem._meta = {
-  name: 'ListItem',
-  parent: 'List',
-  type: _lib.META.TYPES.ELEMENT
-};
-ListItem.handledProps = ['active', 'as', 'children', 'className', 'content', 'description', 'disabled', 'header', 'icon', 'image', 'onClick', 'value'];
+(0, _defineProperty2.default)(ListItem, "handledProps", ["active", "as", "children", "className", "content", "description", "disabled", "header", "icon", "image", "onClick", "value"]);
 ListItem.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: _lib.customPropTypes.as,
 
   /** A list item can active. */
-  active: _propTypes2.default.bool,
+  active: _propTypes.default.bool,
 
   /** Primary content. */
-  children: _propTypes2.default.node,
+  children: _propTypes.default.node,
 
   /** Additional classes. */
-  className: _propTypes2.default.string,
+  className: _propTypes.default.string,
 
   /**
    * Shorthand for primary content.
@@ -204,7 +189,7 @@ ListItem.propTypes = process.env.NODE_ENV !== "production" ? {
   description: _lib.customPropTypes.itemShorthand,
 
   /** A list item can disabled. */
-  disabled: _propTypes2.default.bool,
+  disabled: _propTypes.default.bool,
 
   /** Shorthand for ListHeader. */
   header: _lib.customPropTypes.itemShorthand,
@@ -216,15 +201,15 @@ ListItem.propTypes = process.env.NODE_ENV !== "production" ? {
   image: _lib.customPropTypes.every([_lib.customPropTypes.disallow(['icon']), _lib.customPropTypes.itemShorthand]),
 
   /** A ListItem can be clicked */
-  onClick: _propTypes2.default.func,
+  onClick: _propTypes.default.func,
 
   /** A value for an ordered list. */
-  value: _propTypes2.default.string
+  value: _propTypes.default.string
 } : {};
-
-
 ListItem.create = (0, _lib.createShorthandFactory)(ListItem, function (content) {
-  return { content: content };
+  return {
+    content: content
+  };
 });
-
-exports.default = ListItem;
+var _default = ListItem;
+exports.default = _default;

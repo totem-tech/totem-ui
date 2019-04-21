@@ -1,22 +1,17 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _isEqual2 = require('lodash/isEqual');
+var _isEqual2 = _interopRequireDefault(require("lodash/isEqual"));
 
-var _isEqual3 = _interopRequireDefault(_isEqual2);
+var _has2 = _interopRequireDefault(require("lodash/has"));
 
-var _has2 = require('lodash/has');
-
-var _has3 = _interopRequireDefault(_has2);
-
-var _transform2 = require('lodash/transform');
-
-var _transform3 = _interopRequireDefault(_transform2);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _transform2 = _interopRequireDefault(require("lodash/transform"));
 
 /**
  * Naive and inefficient object difference, intended for development / debugging use only.
@@ -33,12 +28,13 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * objectDiff(a, b)
  * //=> { foo: 'baz' }
  */
-exports.default = function (source, target) {
-  return (0, _transform3.default)(source, function (res, val, key) {
+var _default = function _default(source, target) {
+  return (0, _transform2.default)(source, function (res, val, key) {
     // deleted keys
-    if (!(0, _has3.default)(target, key)) res[key] = '[DELETED]';
-    // new keys / changed values
+    if (!(0, _has2.default)(target, key)) res[key] = '[DELETED]'; // new keys / changed values
     // Note, we tolerate isEqual here as this is a dev only utility and not included in production code
-    else if (!(0, _isEqual3.default)(val, target[key])) res[key] = target[key];
+    else if (!(0, _isEqual2.default)(val, target[key])) res[key] = target[key];
   }, {});
 };
+
+exports.default = _default;

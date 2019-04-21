@@ -1,17 +1,15 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.useWidthProp = exports.useVerticalAlignProp = exports.useTextAlignProp = exports.useMultipleProp = exports.useKeyOrValueAndKey = exports.useValueAndKey = exports.useKeyOnly = undefined;
+exports.useWidthProp = exports.useVerticalAlignProp = exports.useTextAlignProp = exports.useMultipleProp = exports.useKeyOrValueAndKey = exports.useValueAndKey = exports.useKeyOnly = void 0;
 
-var _typeof2 = require('babel-runtime/helpers/typeof');
+var _typeof2 = _interopRequireDefault(require("@babel/runtime/helpers/typeof"));
 
-var _typeof3 = _interopRequireDefault(_typeof2);
-
-var _numberToWord = require('./numberToWord');
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _numberToWord = require("./numberToWord");
 
 /*
  * There are 3 prop patterns used to build up the className for a component.
@@ -32,10 +30,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * <Label tag />
  * <div class="ui tag label"></div>
  */
-var useKeyOnly = exports.useKeyOnly = function useKeyOnly(val, key) {
+var useKeyOnly = function useKeyOnly(val, key) {
   return val && key;
 };
-
 /**
  * Props that require both a key and value to create a className.
  * @param {*} val A props value
@@ -45,10 +42,13 @@ var useKeyOnly = exports.useKeyOnly = function useKeyOnly(val, key) {
  * <Label corner='left' />
  * <div class="ui left corner label"></div>
  */
-var useValueAndKey = exports.useValueAndKey = function useValueAndKey(val, key) {
-  return val && val !== true && val + ' ' + key;
-};
 
+
+exports.useKeyOnly = useKeyOnly;
+
+var useValueAndKey = function useValueAndKey(val, key) {
+  return val && val !== true && "".concat(val, " ").concat(key);
+};
 /**
  * Props whose key will be used in className, or value and key.
  * @param {*} val A props value
@@ -62,11 +62,13 @@ var useValueAndKey = exports.useValueAndKey = function useValueAndKey(val, key) 
  * <Label pointing='left' />
  * <div class="ui left pointing label"></div>
  */
-var useKeyOrValueAndKey = exports.useKeyOrValueAndKey = function useKeyOrValueAndKey(val, key) {
-  return val && (val === true ? key : val + ' ' + key);
-};
 
-//
+
+exports.useValueAndKey = useValueAndKey;
+
+var useKeyOrValueAndKey = function useKeyOrValueAndKey(val, key) {
+  return val && (val === true ? key : "".concat(val, " ").concat(key));
+}; //
 // Prop to className exceptions
 //
 
@@ -82,14 +84,16 @@ var useKeyOrValueAndKey = exports.useKeyOrValueAndKey = function useKeyOrValueAn
  * <div class="mobile only row"></div>
  * <div class="mobile only tablet only row"></div>
  */
-var useMultipleProp = exports.useMultipleProp = function useMultipleProp(val, key) {
-  if (!val || val === true) return null;
 
+
+exports.useKeyOrValueAndKey = useKeyOrValueAndKey;
+
+var useMultipleProp = function useMultipleProp(val, key) {
+  if (!val || val === true) return null;
   return val.replace('large screen', 'large-screen').replace(/ vertically/g, '-vertically').split(' ').map(function (prop) {
-    return prop.replace('-', ' ') + ' ' + key;
+    return "".concat(prop.replace('-', ' '), " ").concat(key);
   }).join(' ');
 };
-
 /**
  * The "textAlign" prop follows the useValueAndKey except when the value is "justified'.
  * In this case, only the class "justified" is used, ignoring the "aligned" class.
@@ -103,10 +107,13 @@ var useMultipleProp = exports.useMultipleProp = function useMultipleProp(val, ke
  * <Container textAlign='left' />
  * <div class="ui left aligned container"></div>
  */
-var useTextAlignProp = exports.useTextAlignProp = function useTextAlignProp(val) {
+
+
+exports.useMultipleProp = useMultipleProp;
+
+var useTextAlignProp = function useTextAlignProp(val) {
   return val === 'justified' ? 'justified' : useValueAndKey(val, 'aligned');
 };
-
 /**
  * The "verticalAlign" prop follows the useValueAndKey.
  *
@@ -116,10 +123,13 @@ var useTextAlignProp = exports.useTextAlignProp = function useTextAlignProp(val)
  * <Grid verticalAlign='middle' />
  * <div class="ui middle aligned grid"></div>
  */
-var useVerticalAlignProp = exports.useVerticalAlignProp = function useVerticalAlignProp(val) {
+
+
+exports.useTextAlignProp = useTextAlignProp;
+
+var useVerticalAlignProp = function useVerticalAlignProp(val) {
   return useValueAndKey(val, 'aligned');
 };
-
 /**
  * Create "X", "X wide" and "equal width" classNames.
  * "X" is a numberToWord value and "wide" is configurable.
@@ -141,16 +151,25 @@ var useVerticalAlignProp = exports.useVerticalAlignProp = function useVerticalAl
  * <Grid columns={4} />
  * <div class="ui four column grid"></div>
  */
-var useWidthProp = exports.useWidthProp = function useWidthProp(val) {
+
+
+exports.useVerticalAlignProp = useVerticalAlignProp;
+
+var useWidthProp = function useWidthProp(val) {
   var widthClass = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
   var canEqual = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
   if (canEqual && val === 'equal') {
     return 'equal width';
   }
-  var valType = typeof val === 'undefined' ? 'undefined' : (0, _typeof3.default)(val);
+
+  var valType = (0, _typeof2.default)(val);
+
   if ((valType === 'string' || valType === 'number') && widthClass) {
-    return (0, _numberToWord.numberToWord)(val) + ' ' + widthClass;
+    return "".concat((0, _numberToWord.numberToWord)(val), " ").concat(widthClass);
   }
+
   return (0, _numberToWord.numberToWord)(val);
 };
+
+exports.useWidthProp = useWidthProp;

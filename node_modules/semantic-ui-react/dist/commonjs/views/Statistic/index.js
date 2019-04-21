@@ -1,14 +1,15 @@
-'use strict';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = undefined;
+Object.defineProperty(exports, "default", {
+  enumerable: true,
+  get: function get() {
+    return _Statistic.default;
+  }
+});
 
-var _Statistic = require('./Statistic');
-
-var _Statistic2 = _interopRequireDefault(_Statistic);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = _Statistic2.default;
+var _Statistic = _interopRequireDefault(require("./Statistic"));

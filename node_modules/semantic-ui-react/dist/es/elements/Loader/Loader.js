@@ -1,14 +1,13 @@
-import _extends from 'babel-runtime/helpers/extends';
+import _extends from "@babel/runtime/helpers/extends";
 import cx from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, META, SUI, useKeyOnly, useKeyOrValueAndKey } from '../../lib';
-
+import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, SUI, useKeyOnly, useKeyOrValueAndKey } from '../../lib';
 /**
  * A loader alerts a user to wait for an activity to complete.
  * @see Dimmer
  */
+
 function Loader(props) {
   var active = props.active,
       children = props.children,
@@ -19,25 +18,15 @@ function Loader(props) {
       inline = props.inline,
       inverted = props.inverted,
       size = props.size;
-
-
   var classes = cx('ui', size, useKeyOnly(active, 'active'), useKeyOnly(disabled, 'disabled'), useKeyOnly(indeterminate, 'indeterminate'), useKeyOnly(inverted, 'inverted'), useKeyOnly(children || content, 'text'), useKeyOrValueAndKey(inline, 'inline'), 'loader', className);
   var rest = getUnhandledProps(Loader, props);
   var ElementType = getElementType(Loader, props);
-
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    childrenUtils.isNil(children) ? content : children
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), childrenUtils.isNil(children) ? content : children);
 }
 
-Loader.handledProps = ['active', 'as', 'children', 'className', 'content', 'disabled', 'indeterminate', 'inline', 'inverted', 'size'];
-Loader._meta = {
-  name: 'Loader',
-  type: META.TYPES.ELEMENT
-};
-
+Loader.handledProps = ["active", "as", "children", "className", "content", "disabled", "indeterminate", "inline", "inverted", "size"];
 Loader.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -69,5 +58,4 @@ Loader.propTypes = process.env.NODE_ENV !== "production" ? {
   /** Loaders can have different sizes. */
   size: PropTypes.oneOf(SUI.SIZES)
 } : {};
-
 export default Loader;

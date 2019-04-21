@@ -1,64 +1,70 @@
-import _extends from 'babel-runtime/helpers/extends';
-import _classCallCheck from 'babel-runtime/helpers/classCallCheck';
-import _createClass from 'babel-runtime/helpers/createClass';
-import _possibleConstructorReturn from 'babel-runtime/helpers/possibleConstructorReturn';
-import _inherits from 'babel-runtime/helpers/inherits';
-import _map from 'lodash/map';
-import _invoke from 'lodash/invoke';
-import _without from 'lodash/without';
+import _extends from "@babel/runtime/helpers/extends";
+import _classCallCheck from "@babel/runtime/helpers/classCallCheck";
+import _createClass from "@babel/runtime/helpers/createClass";
+import _possibleConstructorReturn from "@babel/runtime/helpers/possibleConstructorReturn";
+import _getPrototypeOf from "@babel/runtime/helpers/getPrototypeOf";
+import _inherits from "@babel/runtime/helpers/inherits";
+import _assertThisInitialized from "@babel/runtime/helpers/assertThisInitialized";
+import _defineProperty from "@babel/runtime/helpers/defineProperty";
+import _map from "lodash/map";
+import _invoke from "lodash/invoke";
+import _without from "lodash/without";
 import cx from 'classnames';
-
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { AutoControlledComponent as Component, childrenUtils, customPropTypes, createShorthandFactory, getElementType, getUnhandledProps, META, SUI, useKeyOnly, useKeyOrValueAndKey, useValueAndKey, useWidthProp } from '../../lib';
+import { AutoControlledComponent as Component, childrenUtils, customPropTypes, createShorthandFactory, getElementType, getUnhandledProps, SUI, useKeyOnly, useKeyOrValueAndKey, useValueAndKey, useWidthProp } from '../../lib';
 import MenuHeader from './MenuHeader';
 import MenuItem from './MenuItem';
 import MenuMenu from './MenuMenu';
-
 /**
  * A menu displays grouped navigation actions.
  * @see Dropdown
  */
 
-var Menu = function (_Component) {
+var Menu =
+/*#__PURE__*/
+function (_Component) {
   _inherits(Menu, _Component);
 
   function Menu() {
-    var _ref;
+    var _getPrototypeOf2;
 
-    var _temp, _this, _ret;
+    var _this;
 
     _classCallCheck(this, Menu);
 
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
       args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = Menu.__proto__ || Object.getPrototypeOf(Menu)).call.apply(_ref, [this].concat(args))), _this), _this.handleItemOverrides = function (predefinedProps) {
+    _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(Menu)).call.apply(_getPrototypeOf2, [this].concat(args)));
+
+    _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "handleItemOverrides", function (predefinedProps) {
       return {
         onClick: function onClick(e, itemProps) {
           var index = itemProps.index;
 
-
-          _this.trySetState({ activeIndex: index });
+          _this.trySetState({
+            activeIndex: index
+          });
 
           _invoke(predefinedProps, 'onClick', e, itemProps);
+
           _invoke(_this.props, 'onItemClick', e, itemProps);
         }
       };
-    }, _temp), _possibleConstructorReturn(_this, _ret);
+    });
+
+    return _this;
   }
 
   _createClass(Menu, [{
-    key: 'renderItems',
+    key: "renderItems",
     value: function renderItems() {
       var _this2 = this;
 
       var items = this.props.items;
       var activeIndex = this.state.activeIndex;
-
-
       return _map(items, function (item, index) {
         return MenuItem.create(item, {
           defaultProps: {
@@ -70,54 +76,51 @@ var Menu = function (_Component) {
       });
     }
   }, {
-    key: 'render',
+    key: "render",
     value: function render() {
-      var _props = this.props,
-          attached = _props.attached,
-          borderless = _props.borderless,
-          children = _props.children,
-          className = _props.className,
-          color = _props.color,
-          compact = _props.compact,
-          fixed = _props.fixed,
-          floated = _props.floated,
-          fluid = _props.fluid,
-          icon = _props.icon,
-          inverted = _props.inverted,
-          pagination = _props.pagination,
-          pointing = _props.pointing,
-          secondary = _props.secondary,
-          size = _props.size,
-          stackable = _props.stackable,
-          tabular = _props.tabular,
-          text = _props.text,
-          vertical = _props.vertical,
-          widths = _props.widths;
-
+      var _this$props = this.props,
+          attached = _this$props.attached,
+          borderless = _this$props.borderless,
+          children = _this$props.children,
+          className = _this$props.className,
+          color = _this$props.color,
+          compact = _this$props.compact,
+          fixed = _this$props.fixed,
+          floated = _this$props.floated,
+          fluid = _this$props.fluid,
+          icon = _this$props.icon,
+          inverted = _this$props.inverted,
+          pagination = _this$props.pagination,
+          pointing = _this$props.pointing,
+          secondary = _this$props.secondary,
+          size = _this$props.size,
+          stackable = _this$props.stackable,
+          tabular = _this$props.tabular,
+          text = _this$props.text,
+          vertical = _this$props.vertical,
+          widths = _this$props.widths;
       var classes = cx('ui', color, size, useKeyOnly(borderless, 'borderless'), useKeyOnly(compact, 'compact'), useKeyOnly(fluid, 'fluid'), useKeyOnly(inverted, 'inverted'), useKeyOnly(pagination, 'pagination'), useKeyOnly(pointing, 'pointing'), useKeyOnly(secondary, 'secondary'), useKeyOnly(stackable, 'stackable'), useKeyOnly(text, 'text'), useKeyOnly(vertical, 'vertical'), useKeyOrValueAndKey(attached, 'attached'), useKeyOrValueAndKey(floated, 'floated'), useKeyOrValueAndKey(icon, 'icon'), useKeyOrValueAndKey(tabular, 'tabular'), useValueAndKey(fixed, 'fixed'), useWidthProp(widths, 'item'), className, 'menu');
       var rest = getUnhandledProps(Menu, this.props);
       var ElementType = getElementType(Menu, this.props);
-
-      return React.createElement(
-        ElementType,
-        _extends({}, rest, { className: classes }),
-        childrenUtils.isNil(children) ? this.renderItems() : children
-      );
+      return React.createElement(ElementType, _extends({}, rest, {
+        className: classes
+      }), childrenUtils.isNil(children) ? this.renderItems() : children);
     }
   }]);
 
   return Menu;
 }(Component);
 
-Menu._meta = {
-  name: 'Menu',
-  type: META.TYPES.COLLECTION
-};
-Menu.autoControlledProps = ['activeIndex'];
-Menu.Header = MenuHeader;
-Menu.Item = MenuItem;
-Menu.Menu = MenuMenu;
-Menu.handledProps = ['activeIndex', 'as', 'attached', 'borderless', 'children', 'className', 'color', 'compact', 'defaultActiveIndex', 'fixed', 'floated', 'fluid', 'icon', 'inverted', 'items', 'onItemClick', 'pagination', 'pointing', 'secondary', 'size', 'stackable', 'tabular', 'text', 'vertical', 'widths'];
+_defineProperty(Menu, "autoControlledProps", ['activeIndex']);
+
+_defineProperty(Menu, "Header", MenuHeader);
+
+_defineProperty(Menu, "Item", MenuItem);
+
+_defineProperty(Menu, "Menu", MenuMenu);
+
+_defineProperty(Menu, "handledProps", ["activeIndex", "as", "attached", "borderless", "children", "className", "color", "compact", "defaultActiveIndex", "fixed", "floated", "fluid", "icon", "inverted", "items", "onItemClick", "pagination", "pointing", "secondary", "size", "stackable", "tabular", "text", "vertical", "widths"]);
+
 Menu.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -199,10 +202,9 @@ Menu.propTypes = process.env.NODE_ENV !== "production" ? {
   /** A menu can have its items divided evenly. */
   widths: PropTypes.oneOf(SUI.WIDTHS)
 } : {};
-
-
 Menu.create = createShorthandFactory(Menu, function (items) {
-  return { items: items };
+  return {
+    items: items
+  };
 });
-
 export default Menu;

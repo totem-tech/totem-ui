@@ -1,255 +1,234 @@
-'use strict';
+"use strict";
+
+var _interopRequireWildcard = require("@babel/runtime/helpers/interopRequireWildcard");
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends2 = require('babel-runtime/helpers/extends');
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _extends3 = _interopRequireDefault(_extends2);
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
 
-var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
+var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
 
-var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime/helpers/possibleConstructorReturn"));
 
-var _createClass2 = require('babel-runtime/helpers/createClass');
+var _getPrototypeOf3 = _interopRequireDefault(require("@babel/runtime/helpers/getPrototypeOf"));
 
-var _createClass3 = _interopRequireDefault(_createClass2);
+var _inherits2 = _interopRequireDefault(require("@babel/runtime/helpers/inherits"));
 
-var _possibleConstructorReturn2 = require('babel-runtime/helpers/possibleConstructorReturn');
+var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
 
-var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
-var _inherits2 = require('babel-runtime/helpers/inherits');
+var _round2 = _interopRequireDefault(require("lodash/round"));
 
-var _inherits3 = _interopRequireDefault(_inherits2);
+var _clamp2 = _interopRequireDefault(require("lodash/clamp"));
 
-var _round2 = require('lodash/round');
+var _isUndefined2 = _interopRequireDefault(require("lodash/isUndefined"));
 
-var _round3 = _interopRequireDefault(_round2);
+var _without2 = _interopRequireDefault(require("lodash/without"));
 
-var _clamp2 = require('lodash/clamp');
+var _classnames = _interopRequireDefault(require("classnames"));
 
-var _clamp3 = _interopRequireDefault(_clamp2);
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
-var _isUndefined2 = require('lodash/isUndefined');
+var _react = _interopRequireWildcard(require("react"));
 
-var _isUndefined3 = _interopRequireDefault(_isUndefined2);
-
-var _without2 = require('lodash/without');
-
-var _without3 = _interopRequireDefault(_without2);
-
-var _classnames = require('classnames');
-
-var _classnames2 = _interopRequireDefault(_classnames);
-
-var _propTypes = require('prop-types');
-
-var _propTypes2 = _interopRequireDefault(_propTypes);
-
-var _react = require('react');
-
-var _react2 = _interopRequireDefault(_react);
-
-var _lib = require('../../lib');
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _lib = require("../../lib");
 
 /**
  * A progress bar shows the progression of a task.
  */
-var Progress = function (_Component) {
-  (0, _inherits3.default)(Progress, _Component);
+var Progress =
+/*#__PURE__*/
+function (_Component) {
+  (0, _inherits2.default)(Progress, _Component);
 
   function Progress() {
-    var _ref;
+    var _getPrototypeOf2;
 
-    var _temp, _this, _ret;
+    var _this;
 
-    (0, _classCallCheck3.default)(this, Progress);
+    (0, _classCallCheck2.default)(this, Progress);
 
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
       args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this = (0, _possibleConstructorReturn3.default)(this, (_ref = Progress.__proto__ || Object.getPrototypeOf(Progress)).call.apply(_ref, [this].concat(args))), _this), _this.calculatePercent = function () {
+    _this = (0, _possibleConstructorReturn2.default)(this, (_getPrototypeOf2 = (0, _getPrototypeOf3.default)(Progress)).call.apply(_getPrototypeOf2, [this].concat(args)));
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "calculatePercent", function () {
       var _this$props = _this.props,
           percent = _this$props.percent,
           total = _this$props.total,
           value = _this$props.value;
-
-
-      if (!(0, _isUndefined3.default)(percent)) return percent;
-      if (!(0, _isUndefined3.default)(total) && !(0, _isUndefined3.default)(value)) return value / total * 100;
-    }, _this.computeValueText = function (percent) {
+      if (!(0, _isUndefined2.default)(percent)) return percent;
+      if (!(0, _isUndefined2.default)(total) && !(0, _isUndefined2.default)(value)) return value / total * 100;
+    });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "computeValueText", function (percent) {
       var _this$props2 = _this.props,
           progress = _this$props2.progress,
           total = _this$props2.total,
           value = _this$props2.value;
-
-
       if (progress === 'value') return value;
-      if (progress === 'ratio') return value + '/' + total;
-      return percent + '%';
-    }, _this.getPercent = function () {
+      if (progress === 'ratio') return "".concat(value, "/").concat(total);
+      return "".concat(percent, "%");
+    });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "getPercent", function () {
       var _this$props3 = _this.props,
           precision = _this$props3.precision,
           progress = _this$props3.progress,
           total = _this$props3.total,
           value = _this$props3.value;
+      var percent = (0, _clamp2.default)(_this.calculatePercent(), 0, 100);
 
-      var percent = (0, _clamp3.default)(_this.calculatePercent(), 0, 100);
-      if (!(0, _isUndefined3.default)(total) && !(0, _isUndefined3.default)(value) && progress === 'value') return value / total * 100;
+      if (!(0, _isUndefined2.default)(total) && !(0, _isUndefined2.default)(value) && progress === 'value') {
+        return value / total * 100;
+      }
+
       if (progress === 'value') return value;
-      if ((0, _isUndefined3.default)(precision)) return percent;
-      return (0, _round3.default)(percent, precision);
-    }, _this.isAutoSuccess = function () {
+      if ((0, _isUndefined2.default)(precision)) return percent;
+      return (0, _round2.default)(percent, precision);
+    });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "isAutoSuccess", function () {
       var _this$props4 = _this.props,
           autoSuccess = _this$props4.autoSuccess,
           percent = _this$props4.percent,
           total = _this$props4.total,
           value = _this$props4.value;
-
-
       return autoSuccess && (percent >= 100 || value >= total);
-    }, _this.renderLabel = function () {
+    });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "renderLabel", function () {
       var _this$props5 = _this.props,
           children = _this$props5.children,
           content = _this$props5.content,
           label = _this$props5.label;
-
-
-      if (!_lib.childrenUtils.isNil(children)) return _react2.default.createElement(
-        'div',
-        { className: 'label' },
-        children
-      );
-      if (!_lib.childrenUtils.isNil(content)) return _react2.default.createElement(
-        'div',
-        { className: 'label' },
-        content
-      );
-      return (0, _lib.createHTMLDivision)(label, { defaultProps: { className: 'label' } });
-    }, _this.renderProgress = function (percent) {
+      if (!_lib.childrenUtils.isNil(children)) return _react.default.createElement("div", {
+        className: "label"
+      }, children);
+      if (!_lib.childrenUtils.isNil(content)) return _react.default.createElement("div", {
+        className: "label"
+      }, content);
+      return (0, _lib.createHTMLDivision)(label, {
+        autoGenerateKey: false,
+        defaultProps: {
+          className: 'label'
+        }
+      });
+    });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "renderProgress", function (percent) {
       var _this$props6 = _this.props,
           precision = _this$props6.precision,
           progress = _this$props6.progress;
-
-
-      if (!progress && (0, _isUndefined3.default)(precision)) return;
-      return _react2.default.createElement(
-        'div',
-        { className: 'progress' },
-        _this.computeValueText(percent)
-      );
-    }, _temp), (0, _possibleConstructorReturn3.default)(_this, _ret);
+      if (!progress && (0, _isUndefined2.default)(precision)) return;
+      return _react.default.createElement("div", {
+        className: "progress"
+      }, _this.computeValueText(percent));
+    });
+    return _this;
   }
 
-  (0, _createClass3.default)(Progress, [{
-    key: 'render',
+  (0, _createClass2.default)(Progress, [{
+    key: "render",
     value: function render() {
-      var _props = this.props,
-          active = _props.active,
-          attached = _props.attached,
-          className = _props.className,
-          color = _props.color,
-          disabled = _props.disabled,
-          error = _props.error,
-          indicating = _props.indicating,
-          inverted = _props.inverted,
-          size = _props.size,
-          success = _props.success,
-          warning = _props.warning;
-
-
-      var classes = (0, _classnames2.default)('ui', color, size, (0, _lib.useKeyOnly)(active || indicating, 'active'), (0, _lib.useKeyOnly)(disabled, 'disabled'), (0, _lib.useKeyOnly)(error, 'error'), (0, _lib.useKeyOnly)(indicating, 'indicating'), (0, _lib.useKeyOnly)(inverted, 'inverted'), (0, _lib.useKeyOnly)(success || this.isAutoSuccess(), 'success'), (0, _lib.useKeyOnly)(warning, 'warning'), (0, _lib.useValueAndKey)(attached, 'attached'), 'progress', className);
+      var _this$props7 = this.props,
+          active = _this$props7.active,
+          attached = _this$props7.attached,
+          className = _this$props7.className,
+          color = _this$props7.color,
+          disabled = _this$props7.disabled,
+          error = _this$props7.error,
+          indicating = _this$props7.indicating,
+          inverted = _this$props7.inverted,
+          size = _this$props7.size,
+          success = _this$props7.success,
+          warning = _this$props7.warning;
+      var classes = (0, _classnames.default)('ui', color, size, (0, _lib.useKeyOnly)(active || indicating, 'active'), (0, _lib.useKeyOnly)(disabled, 'disabled'), (0, _lib.useKeyOnly)(error, 'error'), (0, _lib.useKeyOnly)(indicating, 'indicating'), (0, _lib.useKeyOnly)(inverted, 'inverted'), (0, _lib.useKeyOnly)(success || this.isAutoSuccess(), 'success'), (0, _lib.useKeyOnly)(warning, 'warning'), (0, _lib.useValueAndKey)(attached, 'attached'), 'progress', className);
       var rest = (0, _lib.getUnhandledProps)(Progress, this.props);
       var ElementType = (0, _lib.getElementType)(Progress, this.props);
-      var percent = this.getPercent();
-
-      return _react2.default.createElement(
-        ElementType,
-        (0, _extends3.default)({}, rest, { className: classes, 'data-percent': Math.floor(percent) }),
-        _react2.default.createElement(
-          'div',
-          { className: 'bar', style: { width: percent + '%' } },
-          this.renderProgress(percent)
-        ),
-        this.renderLabel()
-      );
+      var percent = this.getPercent() || 0;
+      return _react.default.createElement(ElementType, (0, _extends2.default)({}, rest, {
+        className: classes,
+        "data-percent": Math.floor(percent)
+      }), _react.default.createElement("div", {
+        className: "bar",
+        style: {
+          width: "".concat(percent, "%")
+        }
+      }, this.renderProgress(percent)), this.renderLabel());
     }
   }]);
   return Progress;
 }(_react.Component);
 
-Progress._meta = {
-  name: 'Progress',
-  type: _lib.META.TYPES.MODULE
-};
-Progress.handledProps = ['active', 'as', 'attached', 'autoSuccess', 'children', 'className', 'color', 'content', 'disabled', 'error', 'indicating', 'inverted', 'label', 'percent', 'precision', 'progress', 'size', 'success', 'total', 'value', 'warning'];
+(0, _defineProperty2.default)(Progress, "handledProps", ["active", "as", "attached", "autoSuccess", "children", "className", "color", "content", "disabled", "error", "indicating", "inverted", "label", "percent", "precision", "progress", "size", "success", "total", "value", "warning"]);
 Progress.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: _lib.customPropTypes.as,
 
   /** A progress bar can show activity. */
-  active: _propTypes2.default.bool,
+  active: _propTypes.default.bool,
 
   /** A progress bar can attach to and show the progress of an element (i.e. Card or Segment). */
-  attached: _propTypes2.default.oneOf(['top', 'bottom']),
+  attached: _propTypes.default.oneOf(['top', 'bottom']),
 
   /** Whether success state should automatically trigger when progress completes. */
-  autoSuccess: _propTypes2.default.bool,
+  autoSuccess: _propTypes.default.bool,
 
   /** Primary content. */
-  children: _propTypes2.default.node,
+  children: _propTypes.default.node,
 
   /** Additional classes. */
-  className: _propTypes2.default.string,
+  className: _propTypes.default.string,
 
   /** A progress bar can have different colors. */
-  color: _propTypes2.default.oneOf(_lib.SUI.COLORS),
+  color: _propTypes.default.oneOf(_lib.SUI.COLORS),
 
   /** Shorthand for primary content. */
   content: _lib.customPropTypes.contentShorthand,
 
   /** A progress bar be disabled. */
-  disabled: _propTypes2.default.bool,
+  disabled: _propTypes.default.bool,
 
   /** A progress bar can show a error state. */
-  error: _propTypes2.default.bool,
+  error: _propTypes.default.bool,
 
   /** An indicating progress bar visually indicates the current level of progress of a task. */
-  indicating: _propTypes2.default.bool,
+  indicating: _propTypes.default.bool,
 
   /** A progress bar can have its colors inverted. */
-  inverted: _propTypes2.default.bool,
+  inverted: _propTypes.default.bool,
 
   /** Can be set to either to display progress as percent or ratio. */
   label: _lib.customPropTypes.itemShorthand,
 
   /** Current percent complete. */
-  percent: _lib.customPropTypes.every([_lib.customPropTypes.disallow(['total', 'value']), _propTypes2.default.oneOfType([_propTypes2.default.number, _propTypes2.default.string])]),
+  percent: _lib.customPropTypes.every([_lib.customPropTypes.disallow(['total', 'value']), _propTypes.default.oneOfType([_propTypes.default.number, _propTypes.default.string])]),
 
   /** Decimal point precision for calculated progress. */
-  precision: _propTypes2.default.number,
+  precision: _propTypes.default.number,
 
   /** A progress bar can contain a text value indicating current progress. */
-  progress: _propTypes2.default.oneOfType([_propTypes2.default.bool, _propTypes2.default.oneOf(['percent', 'ratio', 'value'])]),
+  progress: _propTypes.default.oneOfType([_propTypes.default.bool, _propTypes.default.oneOf(['percent', 'ratio', 'value'])]),
 
   /** A progress bar can vary in size. */
-  size: _propTypes2.default.oneOf((0, _without3.default)(_lib.SUI.SIZES, 'mini', 'huge', 'massive')),
+  size: _propTypes.default.oneOf((0, _without2.default)(_lib.SUI.SIZES, 'mini', 'huge', 'massive')),
 
   /** A progress bar can show a success state. */
-  success: _propTypes2.default.bool,
+  success: _propTypes.default.bool,
 
   /** For use with value. Together, these will calculate the percent. Mutually excludes percent. */
-  total: _lib.customPropTypes.every([_lib.customPropTypes.demand(['value']), _lib.customPropTypes.disallow(['percent']), _propTypes2.default.oneOfType([_propTypes2.default.number, _propTypes2.default.string])]),
+  total: _lib.customPropTypes.every([_lib.customPropTypes.demand(['value']), _lib.customPropTypes.disallow(['percent']), _propTypes.default.oneOfType([_propTypes.default.number, _propTypes.default.string])]),
 
   /** For use with total. Together, these will calculate the percent. Mutually excludes percent. */
-  value: _lib.customPropTypes.every([_lib.customPropTypes.disallow(['percent']), _propTypes2.default.oneOfType([_propTypes2.default.number, _propTypes2.default.string])]),
+  value: _lib.customPropTypes.every([_lib.customPropTypes.disallow(['percent']), _propTypes.default.oneOfType([_propTypes.default.number, _propTypes.default.string])]),
 
   /** A progress bar can show a warning state. */
-  warning: _propTypes2.default.bool
+  warning: _propTypes.default.bool
 } : {};
-exports.default = Progress;
+var _default = Progress;
+exports.default = _default;

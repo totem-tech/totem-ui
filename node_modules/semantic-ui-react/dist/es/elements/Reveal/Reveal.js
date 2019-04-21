@@ -1,14 +1,13 @@
-import _extends from 'babel-runtime/helpers/extends';
+import _extends from "@babel/runtime/helpers/extends";
 import cx from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, META, useKeyOnly } from '../../lib';
+import { childrenUtils, customPropTypes, getElementType, getUnhandledProps, useKeyOnly } from '../../lib';
 import RevealContent from './RevealContent';
-
 /**
  * A reveal displays additional content in place of previous content when activated.
  */
+
 function Reveal(props) {
   var active = props.active,
       animated = props.animated,
@@ -17,25 +16,15 @@ function Reveal(props) {
       content = props.content,
       disabled = props.disabled,
       instant = props.instant;
-
-
   var classes = cx('ui', animated, useKeyOnly(active, 'active'), useKeyOnly(disabled, 'disabled'), useKeyOnly(instant, 'instant'), 'reveal', className);
   var rest = getUnhandledProps(Reveal, props);
   var ElementType = getElementType(Reveal, props);
-
-  return React.createElement(
-    ElementType,
-    _extends({}, rest, { className: classes }),
-    childrenUtils.isNil(children) ? content : children
-  );
+  return React.createElement(ElementType, _extends({}, rest, {
+    className: classes
+  }), childrenUtils.isNil(children) ? content : children);
 }
 
-Reveal.handledProps = ['active', 'animated', 'as', 'children', 'className', 'content', 'disabled', 'instant'];
-Reveal._meta = {
-  name: 'Reveal',
-  type: META.TYPES.ELEMENT
-};
-
+Reveal.handledProps = ["active", "animated", "as", "children", "className", "content", "disabled", "instant"];
 Reveal.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element type to render as (string or function). */
   as: customPropTypes.as,
@@ -61,7 +50,5 @@ Reveal.propTypes = process.env.NODE_ENV !== "production" ? {
   /** An element can show its content without delay. */
   instant: PropTypes.bool
 } : {};
-
 Reveal.Content = RevealContent;
-
 export default Reveal;
