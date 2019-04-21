@@ -3,7 +3,7 @@ import { List, Icon, Button, Label, Popup } from "semantic-ui-react";
 import { ReactiveComponent } from "oo7-react";
 import { runtime, secretStore } from "oo7-substrate";
 import Identicon from "polkadot-identicon";
-
+const colorWhite = { color: "white" };
 export class SecretItem extends ReactiveComponent {
   constructor() {
     super();
@@ -77,6 +77,7 @@ export class WalletList extends ReactiveComponent {
     return (
       <List
         divided
+        inverted
         verticalAlign="bottom"
         style={{ padding: "0 0 4px 4px", overflow: "auto", maxHeight: "20em" }}
       >

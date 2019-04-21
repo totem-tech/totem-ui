@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Component } from "react";
 import { Button } from "semantic-ui-react";
 const { generateMnemonic } = require("bip39");
 import { secretStore } from "oo7-substrate";
@@ -18,21 +18,21 @@ class WalletView extends Component {
         <div style={{ paddingBottom: "1em" }}>
           <div style={{ fontSize: "small" }}>seed</div>
           <InputBond
-            bond={props.seed}
+            bond={this.props.seed}
             reversible
             placeholder="Some seed for this key"
             validator={n => n || null}
             action={
               <Button
                 content="Another"
-                onClick={() => props.seed.trigger(generateMnemonic())}
+                onClick={() => this.props.seed.trigger(generateMnemonic())}
               />
             }
             iconPosition="left"
             icon={
               <i style={{ opacity: 1 }} className="icon">
                 <Identicon
-                  account={props.seedAccount}
+                  account={this.props.seedAccount}
                   size={28}
                   style={{ marginTop: "5px" }}
                 />
@@ -43,7 +43,7 @@ class WalletView extends Component {
         <div style={{ paddingBottom: "1em" }}>
           <div style={{ fontSize: "small" }}>name</div>
           <InputBond
-            bond={props.name}
+            bond={this.props.name}
             placeholder="A name for this key"
             validator={n =>
               n ? secretStore().map(ss => (ss.byName[n] ? null : n)) : null
@@ -52,7 +52,7 @@ class WalletView extends Component {
               <TransformBondButton
                 content="Create"
                 transform={(name, seed) => secretStore().submit(seed, name)}
-                args={[props.name, props.seed]}
+                args={[this.props.name, this.props.seed]}
                 immediate
               />
             }

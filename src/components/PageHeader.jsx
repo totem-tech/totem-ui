@@ -7,12 +7,6 @@ class PageHeader extends Component {
     super(props);
 
     this.state = {
-      options: props.accounts.map((account, i) => ({
-        key: i,
-        text: account.address,
-        value: i,
-        name: account.name
-      })),
       index: props.accounts.length > 0 ? 0 : -1
     };
 
@@ -36,8 +30,13 @@ class PageHeader extends Component {
           <div>
             Address Key:
             <Dropdown
+              className="address-dropdown"
               selection
-              options={this.state.options}
+              options={this.props.accounts.map((account, i) => ({
+                key: i,
+                text: account.address,
+                value: i
+              }))}
               placeholder="Select an address"
               defaultValue={this.state.index}
               onChange={this.handleSelection}

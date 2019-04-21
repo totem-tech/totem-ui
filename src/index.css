@@ -126,3 +126,9 @@ body {
 .ui.sidebar.left a.active.item span {
   color: #6435c9;
 }
+
+/* Address dropdown */
+.ui.selection.dropdown.address-dropdown:not(:hover) {
+  background: none !important;
+  border: none;
+}
