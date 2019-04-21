@@ -16,8 +16,20 @@ import {WalletList, SecretItem} from './WalletList';
 import {AddressBookList} from './AddressBookList';
 import {TransformBondButton} from './TransformBondButton';
 import {Pretty} from './Pretty';
+import {Widget, addResponseMessage, addLinkSnippet, addUserMessage} from 'react-chat-widget';
+
+import 'react-chat-widget/lib/styles.css';
 
 export class App extends ReactiveComponent {
+	componentDidMount() {
+    	addResponseMessage('So, you want to try Totem? Great! Just post your default address and I\'ll send you some funds - and then you can use it!');
+  	}
+
+  	handleNewUserMessage(newMessage) {
+    	// addResponseMessage(newMessage);
+    	// Send to backend
+  	}
+
 	constructor () {
 		super([], { ensureRuntime: runtimeUp })
 
@@ -39,7 +51,7 @@ export class App extends ReactiveComponent {
 		this.seedAccount = this.seed.map(s => s ? secretStore().accountFromPhrase(s) : undefined)
 		this.seedAccount.use()
 		this.runtime = new Bond;
-	}
+	}	
 
 	readyRender() {
 		return (<div>
@@ -64,6 +76,16 @@ export class App extends ReactiveComponent {
 					}</Rspan>
 				</Label.Detail></Label>
 			</div>
+			<div className="App">
+        		<Widget 
+					
+			        title="Totem Messaging"
+          			subtitle="Welcome on board."
+          			senderPlaceHolder="Let's go Toto..."
+        			handleNewUserMessage={this.handleNewUserMessage}
+        			badge={1}
+        		/>
+    		</div>
 			<Segment style={{margin: '1em'}}>
 				<Header as='h2'>
 					<Icon name='key' />
