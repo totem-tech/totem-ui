@@ -83,7 +83,6 @@ export class App extends ReactiveComponent {
 
     this.handleSidebarToggle = this.handleSidebarToggle.bind(this);
     this.toggleMenuItem = this.toggleMenuItem.bind(this);
-    this.handleAddAccount = this.handleAddAccount.bind(this);
 
     // Utilities/Upgrade
     this.state.sidebarItems[0].content = <UtilitiesView />;
@@ -99,7 +98,6 @@ export class App extends ReactiveComponent {
         name={this.name}
         seed={this.seed}
         seedAccount={this.seedAccount}
-        onAddAccount={this.handleAddAccount}
       />
     );
 
@@ -129,11 +127,6 @@ export class App extends ReactiveComponent {
           .getElementById("main-content")
           .scrollTo(0, items[index].elementRef.current.offsetTop);
       }, 100);
-  }
-
-  handleAddAccount(name, seed) {
-    ;
-    // this.setState({ secretStore: secretStore() });
   }
 
   readyRender() {

@@ -104,18 +104,12 @@ class Chat extends Component {
         >
           <Feed>
             {this.state.messages.map((msg, i, arr) => {
-              const color =
-                msg.fromUser === this.state.user.id ? "red" : "black";
+              const userIsSender = msg.fromUser === this.state.user.id;
+              const color = userIsSender ? "red" : "black";
               return (
                 <React.Fragment key={i}>
                   <Feed.Event>
-                    {/* <Feed.Label
-                image={
-                  this.state[
-                    msg.fromUser === this.state.user.id ? "user" : "friend"
-                  ].avatar
-                }
-              /> */}
+                    {/* <Feed.Labelimage={this.state[userIsSender ? "user" : "friend"].avatar} /> */}
                     <Feed.Content style={{ marginTop: 0 }}>
                       {/* <Feed.Date content={formatTime(msg.ts)} /> */}
                       <Feed.Summary style={{ color }}>

@@ -36,6 +36,18 @@ body {
   font-size: 40px;
 }
 
+.header-bar .header-name input {
+  border: none !important;
+  padding: 0 15px !important;
+}
+.header-bar .header-name input:not(:hover) {
+  background: transparent;
+  padding: 0 !important;
+}
+.header-bar .header-name input:not(:hover) + button:not(:hover) {
+  display: none;
+}
+
 /* Sidebar */
 #app > .ui.pushable {
   margin: 0;
@@ -128,7 +140,9 @@ body {
 }
 
 /* Address dropdown */
-.ui.selection.dropdown.address-dropdown:not(:hover) {
-  background: none !important;
+.ui.selection.dropdown.address-dropdown {
   border: none;
+}
+.ui.selection.dropdown.address-dropdown:not(:hover):not(.active) {
+  background: none !important;
 }
