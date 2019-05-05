@@ -1,16 +1,16 @@
-import React from "react";
-import { Label } from "semantic-ui-react";
-import { calls, runtime } from "oo7-substrate";
-import { If } from "oo7-react";
-import { AccountIdBond, SignerBond } from "../AccountIdBond.jsx";
-import { BalanceBond } from "../BalanceBond.jsx";
-import { TransactButton } from "../TransactButton.jsx";
-import { Pretty } from "../Pretty";
+import React from 'react';
+import { Label } from 'semantic-ui-react';
+import { calls, runtime } from 'oo7-substrate';
+import { If } from 'oo7-react';
+import { AccountIdBond, SignerBond } from '../AccountIdBond.jsx';
+import { BalanceBond } from '../BalanceBond.jsx';
+import { TransactButton } from '../TransactButton.jsx';
+import { Pretty } from '../Pretty';
 
 const SendFundsView = props => (
   <React.Fragment>
-    <div style={{ paddingBottom: "1em" }}>
-      <div style={{ fontSize: "small" }}>from</div>
+    <div style={{ paddingBottom: '1em' }}>
+      <div style={{ fontSize: 'small' }}>from</div>
       <SignerBond bond={props.source} />
       <If
         condition={props.source.ready()}
@@ -32,8 +32,8 @@ const SendFundsView = props => (
         }
       />
     </div>
-    <div style={{ paddingBottom: "1em" }}>
-      <div style={{ fontSize: "small" }}>to</div>
+    <div style={{ paddingBottom: '1em' }}>
+      <div style={{ fontSize: 'small' }}>to</div>
       <AccountIdBond bond={props.destination} />
       <If
         condition={props.destination.ready()}
@@ -47,8 +47,8 @@ const SendFundsView = props => (
         }
       />
     </div>
-    <div style={{ paddingBottom: "1em" }}>
-      <div style={{ fontSize: "small" }}>amount</div>
+    <div style={{ paddingBottom: '1em' }}>
+      <div style={{ fontSize: 'small' }}>amount</div>
       <BalanceBond bond={props.amount} />
     </div>
     <TransactButton

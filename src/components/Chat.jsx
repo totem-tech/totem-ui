@@ -1,44 +1,44 @@
-import React, { Component } from "react";
-import { Card, Divider, Feed, Icon, Input } from "semantic-ui-react";
+import React, { Component } from 'react';
+import { Card, Divider, Feed, Icon, Input } from 'semantic-ui-react';
 
 class Chat extends Component {
   constructor(props) {
     super(props);
     this.state = {
       user: {
-        id: "Elliot",
-        avatar: "https://react.semantic-ui.com/images/avatar/small/elliot.jpg"
+        id: 'Elliot',
+        avatar: 'https://react.semantic-ui.com/images/avatar/small/elliot.jpg'
       },
       friend: {
-        id: "JohnDoe",
-        avatar: "https://react.semantic-ui.com/images/avatar/small/jenny.jpg"
+        id: 'JohnDoe',
+        avatar: 'https://react.semantic-ui.com/images/avatar/small/jenny.jpg'
       },
-      draft: "",
+      draft: '',
       loading: false,
       messages: [
         {
           ts: new Date(),
-          fromUser: "Elliot",
-          toUser: "JohnDoe",
-          text: "Hi there!"
+          fromUser: 'Elliot',
+          toUser: 'JohnDoe',
+          text: 'Hi there!'
         },
         {
           ts: new Date(),
-          fromUser: "JohnDoe",
-          toUser: "Elliot",
-          text: "Hello"
+          fromUser: 'JohnDoe',
+          toUser: 'Elliot',
+          text: 'Hello'
         },
         {
           ts: new Date(),
-          fromUser: "Elliot",
-          toUser: "JohnDoe",
-          text: "How are you doing?"
+          fromUser: 'Elliot',
+          toUser: 'JohnDoe',
+          text: 'How are you doing?'
         },
         {
           ts: new Date(),
-          fromUser: "JohnDoe",
-          toUser: "Elliot",
-          text: "I'm doing great!"
+          fromUser: 'JohnDoe',
+          toUser: 'Elliot',
+          text: 'I\'m doing great!'
         }
       ]
     };
@@ -60,7 +60,7 @@ class Chat extends Component {
     ];
     const that = this;
     setTimeout(function() {
-      that.setState({ draft: "", loading: false, messages });
+      that.setState({ draft: '', loading: false, messages });
 
       setTimeout(function() {
         that.setState({
@@ -70,7 +70,7 @@ class Chat extends Component {
               ts: new Date(),
               fromUser: that.state.friend.id,
               toUser: that.state.user.id,
-              text: "This is a test reply!"
+              text: 'This is a test reply!'
             }
           ]
         });
@@ -97,44 +97,44 @@ class Chat extends Component {
         </Card.Content>
         <Card.Content
           style={{
-            backgroundColor: "rgba(241, 241, 241, 0.5)",
+            backgroundColor: 'rgba(241, 241, 241, 0.5)',
             maxHeight: 300,
-            overflowY: "auto"
+            overflowY: 'auto'
           }}
         >
           <Feed>
             {this.state.messages.map((msg, i, arr) => {
               const userIsSender = msg.fromUser === this.state.user.id;
-              const color = userIsSender ? "red" : "black";
+              const color = userIsSender ? 'red' : 'black';
               return (
                 <React.Fragment key={i}>
                   <Feed.Event>
-                    {/* <Feed.Labelimage={this.state[userIsSender ? "user" : "friend"].avatar} /> */}
+                    {/* <Feed.Labelimage={this.state[userIsSender ? 'user' : 'friend'].avatar} /> */}
                     <Feed.Content style={{ marginTop: 0 }}>
                       {/* <Feed.Date content={formatTime(msg.ts)} /> */}
                       <Feed.Summary style={{ color }}>
-                        @{msg.fromUser + ": " + msg.text}
+                        {`@${msg.fromUser}: ${msg.text}`}
                       </Feed.Summary>
                     </Feed.Content>
                   </Feed.Event>
-                  {i < arr.length - 1 ? <Divider fitted /> : ""}
+                  {i < arr.length - 1 && <Divider fitted />}
                 </React.Fragment>
               );
             })}
           </Feed>
         </Card.Content>
-        <Card.Content xstyle={{ backgroundColor: "rgba(241, 241, 241, 0.5)" }}>
+        <Card.Content>
           <Input
             fluid
             action={{
-              color: "teal",
-              icon: "paper plane",
+              color: 'teal',
+              icon: 'paper plane',
               loading: this.state.loading,
               onClick: this.sendMessage
             }}
             onChange={this.handleInputChange}
             value={this.state.draft}
-            placeholder="enter text..."
+            placeholder='enter text...'
             disabled={this.state.loading}
           />
         </Card.Content>
@@ -146,13 +146,13 @@ class Chat extends Component {
 export default Chat;
 
 // const formatTime = date => {
-//   const addPrefixZero = n => (n < 10 ? "0" : "") + n;
+//   const addPrefixZero = n => (n < 10 ? '0' : '') + n;
 
 //   return (
 //     addPrefixZero(date.getHours()) +
-//     ":" +
+//     ':' +
 //     addPrefixZero(date.getMinutes()) +
-//     ":" +
+//     ':' +
 //     addPrefixZero(date.getSeconds())
 //   );
 // };

@@ -1,10 +1,10 @@
-import React from "react";
-import { calls, runtime } from "oo7-substrate";
-import { TransactButton } from "../TransactButton.jsx";
-import { FileUploadBond } from "../FileUploadBond.jsx";
+import React from 'react';
+import { calls, runtime } from 'oo7-substrate';
+import { TransactButton } from '../TransactButton.jsx';
+import { FileUploadBond } from '../FileUploadBond.jsx';
 
 const UtilitiesView = props => (
-  <div style={{ paddingBottom: "1em" }}>
+  <div style={{ paddingBottom: '1em' }}>
     <FileUploadBond bond={runtime} content="Select Runtime" />
     <TransactButton
       content="Upgrade"

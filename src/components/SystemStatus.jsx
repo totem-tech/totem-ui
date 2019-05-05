@@ -1,6 +1,6 @@
-import React from "react";
-import PropTypes from "prop-types";
-import { Header, List } from "semantic-ui-react";
+import React from 'react';
+import PropTypes from 'prop-types';
+import { Header, List } from 'semantic-ui-react';
 
 const SystemStatus = props => {
   return (
@@ -10,13 +10,9 @@ const SystemStatus = props => {
         {props.items.map((item, i) => (
           <List.Item
             key={i}
-            className={item.title === undefined ? "empty" : ""}
+            className={item.title === undefined ? 'empty' : ''}
           >
-            {item.icon ? (
-              <List.Icon name={item.icon} color={item.iconColor} />
-            ) : (
-              ""
-            )}
+            {item.icon && <List.Icon name={item.icon} color={item.iconColor} />}
             <List.Content>{item.title || <br />}</List.Content>
           </List.Item>
         ))}

@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component } from 'react';
 import {
   Container,
   Header,
@@ -6,10 +6,10 @@ import {
   Input,
   Rail,
   Dropdown
-} from "semantic-ui-react";
+} from 'semantic-ui-react';
 
-import { secretStore } from "oo7-substrate";
-import Chat from "./Chat";
+import { secretStore } from 'oo7-substrate';
+import Chat from './Chat';
 
 class PageHeader extends Component {
   constructor(props) {
@@ -24,7 +24,6 @@ class PageHeader extends Component {
     this.handleSelection = this.handleSelection.bind(this);
     this.handleNameChange = this.handleNameChange.bind(this);
     this.saveName = this.saveName.bind(this);
-    console.info("this.props", this.props, "props", props);
   }
 
   handleSelection(e, data) {
@@ -37,7 +36,7 @@ class PageHeader extends Component {
   }
 
   handleNameChange(e, data) {
-    this.setState({ name: data.value || "default" });
+    this.setState({ name: data.value || 'default' });
   }
 
   saveName() {
@@ -61,8 +60,8 @@ class PageHeader extends Component {
             <Input
               className="header-name"
               action={{
-                color: "teal",
-                icon: "pencil",
+                color: 'teal',
+                icon: 'pencil',
                 onClick: this.saveName
               }}
               onChange={this.handleNameChange}
@@ -94,7 +93,7 @@ class PageHeader extends Component {
           style={{
             marginTop: 20,
             zIndex: 1,
-            height: "auto"
+            height: 'auto'
           }}
         >
           <Chat />

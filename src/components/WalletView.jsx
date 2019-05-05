@@ -1,11 +1,11 @@
-import React, { Component } from "react";
-import { Button } from "semantic-ui-react";
-const { generateMnemonic } = require("bip39");
-import { secretStore } from "oo7-substrate";
-import { InputBond } from "../InputBond.jsx";
-import { TransformBondButton } from "../TransformBondButton";
-import Identicon from "polkadot-identicon";
-import { WalletList, SecretItem } from "../WalletList";
+import React, { Component } from 'react';
+import { Button } from 'semantic-ui-react';
+const { generateMnemonic } = require('bip39');
+import { secretStore } from 'oo7-substrate';
+import { InputBond } from '../InputBond.jsx';
+import { TransformBondButton } from '../TransformBondButton';
+import Identicon from 'polkadot-identicon';
+import { WalletList, SecretItem } from '../WalletList';
 
 class WalletView extends Component {
   constructor(props) {
@@ -15,8 +15,8 @@ class WalletView extends Component {
   render() {
     return (
       <React.Fragment>
-        <div style={{ paddingBottom: "1em" }}>
-          <div style={{ fontSize: "small" }}>seed</div>
+        <div style={{ paddingBottom: '1em' }}>
+          <div style={{ fontSize: 'small' }}>seed</div>
           <InputBond
             bond={this.props.seed}
             reversible
@@ -34,20 +34,18 @@ class WalletView extends Component {
                 <Identicon
                   account={this.props.seedAccount}
                   size={28}
-                  style={{ marginTop: "5px" }}
+                  style={{ marginTop: '5px' }}
                 />
               </i>
             }
           />
         </div>
-        <div style={{ paddingBottom: "1em" }}>
-          <div style={{ fontSize: "small" }}>name</div>
+        <div style={{ paddingBottom: '1em' }}>
+          <div style={{ fontSize: 'small' }}>name</div>
           <InputBond
             bond={this.props.name}
             placeholder="A name for this key"
-            validator={n =>
-              n ? secretStore().map(ss => (ss.byName[n] ? null : n)) : null
-            }
+            validator={n =>n ? secretStore().map(ss => (ss.byName[n] ? null : n)) : null}
             action={
               <TransformBondButton
                 content="Create"
@@ -58,7 +56,7 @@ class WalletView extends Component {
             }
           />
         </div>
-        <div style={{ paddingBottom: "1em" }}>
+        <div style={{ paddingBottom: '1em' }}>
           <WalletList />
         </div>
       </React.Fragment>

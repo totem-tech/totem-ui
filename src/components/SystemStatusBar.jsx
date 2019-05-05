@@ -1,6 +1,6 @@
-import React from "react";
-import { Sidebar, Menu } from "semantic-ui-react";
-import SystemStatus from "./SystemStatus";
+import React from 'react';
+import { Sidebar, Menu } from 'semantic-ui-react';
+import SystemStatus from './SystemStatus';
 
 const SystemStatusBar = props => {
   return (

@@ -1,7 +1,7 @@
-import React from "react";
-import { Icon, Header, Image, Segment } from "semantic-ui-react";
+import React from 'react';
+import { Icon, Header, Image, Segment } from 'semantic-ui-react';
 const placeholderImage =
-  "https://react.semantic-ui.com/images/wireframe/paragraph.png";
+  'https://react.semantic-ui.com/images/wireframe/paragraph.png';
 
 const ContentSegment = props => {
   const headerText = props.header || props.title;
@@ -10,18 +10,14 @@ const ContentSegment = props => {
       <Icon name={props.icon} />
       <Header.Content>
         <div>{headerText}</div>
-        {!!props.subHeader && (
-          <Header.Subheader>{props.subHeader}</Header.Subheader>
-        )}
+        {!!props.subHeader && <Header.Subheader>{props.subHeader}</Header.Subheader>}
       </Header.Content>
     </Header>
   );
-  return !props.active ? (
-    ""
-  ) : (
+  return !props.active ? '' : (
     <Segment style={style} padded>
-      {headerText ? header : ""}
-      <div style={{ paddingBottom: "1em" }}>
+      {headerText && header }
+      <div style={{ paddingBottom: '1em' }}>
         {props.content || <Image src={placeholderImage} />}
       </div>
     </Segment>
@@ -31,10 +27,10 @@ const ContentSegment = props => {
 export default ContentSegment;
 
 const style = {
-  color: "white",
-  background: "none",
-  borderColor: "white",
+  color: 'white',
+  background: 'none',
+  borderColor: 'white',
   borderWidth: 5,
   borderRadius: 7,
-  margin: "1em"
+  margin: '1em'
 };
