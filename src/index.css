@@ -10,7 +10,9 @@ body {
 .white {
   color: white;
 }
-/* header bar */
+/*
+ * header bar
+ */
 #app > .header-bar {
   height: 154px;
   border: none;
@@ -40,15 +42,27 @@ body {
   border: none !important;
   padding: 0 15px !important;
 }
-.header-bar .header-name input:not(:hover) {
+.header-bar .header-name:not(:hover) input,
+.header-bar .header-name:not(:hover) input:focus {
   background: transparent;
   padding: 0 !important;
 }
-.header-bar .header-name input:not(:hover) + button:not(:hover) {
+.header-bar .header-name:not(:hover) input + button:not(:hover) {
   display: none;
 }
 
-/* Sidebar */
+/* Address dropdown */
+.ui.selection.dropdown.address-dropdown {
+  border: none;
+}
+.ui.selection.dropdown.address-dropdown:not(:hover):not(.active) {
+  background: none !important;
+}
+
+
+/*
+ * Sidebar
+ */
 #app > .ui.pushable {
   margin: 0;
   height: calc(100% - 155px);
@@ -90,6 +104,9 @@ body {
   margin-left: 0;
 }
 
+/* 
+ * System status
+ */
 .ui.sidebar.left.inverted.menu .system-status,
 .ui.sidebar.statusbar-bottom.inverted.menu {
   background-color: purple;
@@ -139,10 +156,3 @@ body {
   color: #6435c9;
 }
 
-/* Address dropdown */
-.ui.selection.dropdown.address-dropdown {
-  border: none;
-}
-.ui.selection.dropdown.address-dropdown:not(:hover):not(.active) {
-  background: none !important;
-}
