@@ -1,30 +1,10 @@
-import React from 'react';
-import { Icon, Header, Image, Segment } from 'semantic-ui-react';
+import React from 'react'
+import {ReactiveComponent, If} from 'oo7-react'
+import { runtimeUp } from 'oo7-substrate'
+import { Icon, Header, Image, Segment } from 'semantic-ui-react'
 const placeholderImage =
-  'https://react.semantic-ui.com/images/wireframe/paragraph.png';
+  'https://react.semantic-ui.com/images/wireframe/paragraph.png'
 
-const ContentSegment = props => {
-  const headerText = props.header || props.title;
-  const header = (
-    <Header as="h1" inverted>
-      <Icon name={props.icon} />
-      <Header.Content>
-        <div>{headerText}</div>
-        {!!props.subHeader && <Header.Subheader>{props.subHeader}</Header.Subheader>}
-      </Header.Content>
-    </Header>
-  );
-  return !props.active ? '' : (
-    <Segment style={style} padded>
-      {headerText && header }
-      <div style={{ paddingBottom: '1em' }}>
-        {props.content || <Image src={placeholderImage} />}
-      </div>
-    </Segment>
-  );
-};
-
-export default ContentSegment;
 
 const style = {
   color: 'white',
@@ -33,4 +13,35 @@ const style = {
   borderWidth: 5,
   borderRadius: 7,
   margin: '1em'
-};
+}
+
+class ContentSegment extends ReactiveComponent {
+  constructor(props) {
+    super(props, {ensureRuntime: runtimeUp})
+  }
+
+  render() {
+    const headerText = this.props.header || this.props.title
+    const header = (
+      <Header as="h1" inverted>
+        <Icon name={this.props.icon} />
+        <Header.Content>
+          <div>{headerText}</div>
+          {!!this.props.subHeader && <Header.Subheader>{this.props.subHeader}</Header.Subheader>}
+        </Header.Content>
+      </Header>
+    )
+    const segment = (
+      <Segment style={style} padded>
+        {headerText && header }
+        <div style={{ paddingBottom: '1em' }}>
+          {this.props.content || <Image src={placeholderImage} />}
+        </div>
+      </Segment>
+    )
+    return <If condition={this.props.active} then={segment} />
+  }
+} 
+
+export default ContentSegment
+

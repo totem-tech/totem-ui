@@ -1,84 +1,76 @@
-import React from 'react';
-require('semantic-ui-css/semantic.min.css');
-const { generateMnemonic } = require('bip39');
-import { Container, Sidebar } from 'semantic-ui-react';
-import { Bond, TransformBond } from 'oo7';
-import { ReactiveComponent, If, Rspan } from 'oo7-react';
-import { calls, runtime, chain, system, runtimeUp, ss58Encode, addressBook, secretStore } from 'oo7-substrate';
-// import Identicon from 'polkadot-identicon';
-// import { AccountIdBond, SignerBond } from './AccountIdBond.jsx';
-// import { BalanceBond } from './BalanceBond.jsx';
-// import { InputBond } from './InputBond.jsx';
-// import { TransactButton } from './TransactButton.jsx';
-// import { FileUploadBond } from './FileUploadBond.jsx';
-// import { StakingStatusLabel } from './StakingStatusLabel';
-// import { WalletList, SecretItem } from './WalletList';
-// import { AddressBookList } from './AddressBookList';
-// import { TransformBondButton } from './TransformBondButton';
-// import { Pretty } from './Pretty';
+import React from 'react'
+require('semantic-ui-css/semantic.min.css')
+const { generateMnemonic } = require('bip39')
+import { Container, Sidebar } from 'semantic-ui-react'
+import { Bond, TransformBond } from 'oo7'
+import { ReactiveComponent, If, Rspan } from 'oo7-react'
+import { calls, runtime, chain, system, runtimeUp, ss58Encode, addressBook, secretStore } from 'oo7-substrate'
+// import Identicon from 'polkadot-identicon'
+// import { AccountIdBond, SignerBond } from './AccountIdBond.jsx'
+// import { BalanceBond } from './BalanceBond.jsx'
+// import { InputBond } from './InputBond.jsx'
+// import { TransactButton } from './TransactButton.jsx'
+// import { FileUploadBond } from './FileUploadBond.jsx'
+// import { StakingStatusLabel } from './StakingStatusLabel'
+// import { WalletList, SecretItem } from './WalletList'
+// import { AddressBookList } from './AddressBookList'
+// import { TransformBondButton } from './TransformBondButton'
+// import { Pretty } from './Pretty'
 //
-import SystemStatusBar from './components/SystemStatusBar';
-import SidebarLeft from './components/SidebarLeft';
-import ContentSegment from './components/ContentSegment';
-import PageHeader from './components/PageHeader';
-import WalletView from './components/WalletView';
-import SendFundsView from './components/SendFundsView';
-import AddressBookView from './components/AddressBookView';
-import UtilitiesView from './components/UtilitiesView';
+import SystemStatusBar from './components/SystemStatusBar'
+import SidebarLeft from './components/SidebarLeft'
+import ContentSegment from './components/ContentSegment'
+import PageHeader from './components/PageHeader'
+import WalletView from './components/WalletView'
+import SendFundsView from './components/SendFundsView'
+import AddressBookView from './components/AddressBookView'
+import UtilitiesView from './components/UtilitiesView'
 
 export class App extends ReactiveComponent {
   constructor() {
-    super([], { ensureRuntime: runtimeUp, secretStore: secretStore() });
+    super([], { ensureRuntime: runtimeUp, secretStore: secretStore() })
 
     // For debug only.
-    window.runtime = runtime;
-    window.secretStore = secretStore;
-    window.addressBook = addressBook;
-    window.chain = chain;
-    window.calls = calls;
-    window.that = this;
+    window.runtime = runtime
+    window.secretStore = secretStore
+    window.addressBook = addressBook
+    window.chain = chain
+    window.calls = calls
+    window.that = this
 
-    this.source = new Bond();
-    this.amount = new Bond();
-    this.destination = new Bond();
-    this.nick = new Bond();
-    this.lookup = new Bond();
-    this.name = new Bond();
-    this.seed = new Bond();
-    this.seedAccount = this.seed.map(s => s ? secretStore().accountFromPhrase(s) : undefined);
-    this.seedAccount.use();
-    this.runtime = new Bond();
+    this.source = new Bond()
+    this.amount = new Bond()
+    this.destination = new Bond()
+    this.nick = new Bond()
+    this.lookup = new Bond()
+    this.name = new Bond()
+    this.seed = new Bond()
+    this.seedAccount = this.seed.map(s => s ? secretStore().accountFromPhrase(s) : undefined)
+    this.seedAccount.use()
+    this.runtime = new Bond()
 
     this.state = {
       logo: 'https://react.semantic-ui.com/images/wireframe/image.png',
       sidebarItems: [...sidebarItems].map(item => {
-        item.elementRef = React.createRef();
-        return item;
+        item.elementRef = React.createRef()
+        return item
       }),
       systemStatusItems: [...systemStatusItems],
       showSystemStatusBar: false,
       isMobile: false
-    };
+    }
 
-    this.handleSidebarToggle = this.handleSidebarToggle.bind(this);
-    this.toggleMenuItem = this.toggleMenuItem.bind(this);
+    this.handleSidebarToggle = this.handleSidebarToggle.bind(this)
+    this.toggleMenuItem = this.toggleMenuItem.bind(this)
 
     // Utilities/Upgrade
-    this.state.sidebarItems[0].content = <UtilitiesView />;
+    this.state.sidebarItems[0].content = <UtilitiesView />
 
     // Address Book/Partners
-    this.state.sidebarItems[5].content = (
-      <AddressBookView lookup={this.lookup} nick={this.nick} />
-    );
+    this.state.sidebarItems[5].content = <AddressBookView />
 
     // Wallet
-    this.state.sidebarItems[6].content = (
-      <WalletView
-        name={this.name}
-        seed={this.seed}
-        seedAccount={this.seedAccount}
-      />
-    );
+    this.state.sidebarItems[6].content = <WalletView />
 
     // Send/Payment
     this.state.sidebarItems[8].content = (
@@ -87,20 +79,20 @@ export class App extends ReactiveComponent {
         destination={this.destination}
         amount={this.amount}
       />
-    );
+    )
   }
 
   handleSidebarToggle(thin, visible) {
-    this.setState({ showSystemStatusBar: !thin });
+    this.setState({ showSystemStatusBar: !thin })
   }
 
   toggleMenuItem(index) {
-    const items = [...this.state.sidebarItems];
-    items[index].active = !items[index].active;
-    this.setState({ sidebarItems: items });
+    const items = [...this.state.sidebarItems]
+    items[index].active = !items[index].active
+    this.setState({ sidebarItems: items })
     items[index].active && setTimeout(() => {
       document.getElementById('main-content').scrollTo(0, items[index].elementRef.current.offsetTop)
-    }, 100);
+    }, 100)
   }
 
   readyRender() {
@@ -109,7 +101,7 @@ export class App extends ReactiveComponent {
         items={this.state.systemStatusItems}
         visible={this.state.showSystemStatusBar}
       />
-    );
+    )
 
     return (
       <React.Fragment>
@@ -143,7 +135,7 @@ export class App extends ReactiveComponent {
           </Sidebar.Pusher>
         </Sidebar.Pushable>
       </React.Fragment>
-    );
+    )
   }
 }
 
@@ -162,7 +154,8 @@ const sidebarItems = [
     icon: 'sitemap',
     title: 'Partners',
     header: 'Address Book',
-    subHeader: 'Inspect the status of any account and name it for later use'
+    subHeader: 'Inspect the status of any account and name it for later use',
+    active: true
   },
   {
     icon: 'money',
@@ -182,7 +175,7 @@ const sidebarItems = [
   { icon: 'pen square', title: 'Manage Invoices', subHeader: '' },
   { icon: 'bug', title: 'Disputed Items', subHeader: '' },
   { icon: 'settings', title: 'Settings', subHeader: '' }
-];
+]
 
 const systemStatusItems = [
   { title: 'Totem Network Version 0.01' },
@@ -196,7 +189,7 @@ const systemStatusItems = [
     title: 'Last Finalised Block #1236657'
   },
   { icon: 'circle', iconColor: 'red', title: 'Peers #0' }
-];
+]
 
 /*
 <div>

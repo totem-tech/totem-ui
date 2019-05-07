@@ -1,9 +1,11 @@
-import React, { Component } from 'react';
-import { Card, Divider, Feed, Icon, Input } from 'semantic-ui-react';
+import React from 'react'
+import {ReactiveComponent, If} from 'oo7-react'
+import { runtimeUp } from 'oo7-substrate'
+import { Card, Divider, Feed, Icon, Input } from 'semantic-ui-react'
 
-class Chat extends Component {
+class Chat extends ReactiveComponent {
   constructor(props) {
-    super(props);
+    super(props, {ensureRuntime: runtimeUp})
     this.state = {
       user: {
         id: 'Elliot',
@@ -41,14 +43,14 @@ class Chat extends Component {
           text: 'I\'m doing great!'
         }
       ]
-    };
+    }
 
-    this.sendMessage = this.sendMessage.bind(this);
-    this.handleInputChange = this.handleInputChange.bind(this);
+    this.sendMessage = this.sendMessage.bind(this)
+    this.handleInputChange = this.handleInputChange.bind(this)
   }
 
   sendMessage() {
-    this.setState({ loading: true });
+    this.setState({ loading: true })
     const messages = [
       ...this.state.messages,
       {
@@ -57,10 +59,10 @@ class Chat extends Component {
         toUser: this.state.friend.id,
         text: this.state.draft
       }
-    ];
-    const that = this;
+    ]
+    const that = this
     setTimeout(function() {
-      that.setState({ draft: '', loading: false, messages });
+      that.setState({ draft: '', loading: false, messages })
 
       setTimeout(function() {
         that.setState({
@@ -73,54 +75,44 @@ class Chat extends Component {
               text: 'This is a test reply!'
             }
           ]
-        });
-      }, 1000);
-    }, 1000);
+        })
+      }, 1000)
+    }, 1000)
   }
 
   handleInputChange(e, data) {
-    this.setState({ draft: data.value });
+    this.setState({ draft: data.value })
   }
 
   getMessages() {}
 
   render() {
+    const feedEvents = this.state.messages.map((msg, i, arr) => (
+      <React.Fragment key={i}>
+        <Feed.Event>
+          <Feed.Content style={{ marginTop: 0 }}>
+            <Feed.Summary style={{ color: msg.fromUser === this.state.user.id ? 'red' : 'black' }}>
+              {`@${msg.fromUser}: ${msg.text}`}
+            </Feed.Summary>
+          </Feed.Content>
+        </Feed.Event>
+        {i < arr.length - 1 && <Divider fitted />}
+      </React.Fragment>
+    ))
+
     return (
       <Card>
         <Card.Content>
           <Card.Header>
             <span>
               <Icon name="circle" color="green" size="small" />
-              Chat / Alert Messages
+              {this.props.title || 'Chat / Alert Messages'}
             </span>
           </Card.Header>
         </Card.Content>
-        <Card.Content
-          style={{
-            backgroundColor: 'rgba(241, 241, 241, 0.5)',
-            maxHeight: 300,
-            overflowY: 'auto'
-          }}
-        >
-          <Feed>
-            {this.state.messages.map((msg, i, arr) => {
-              const userIsSender = msg.fromUser === this.state.user.id;
-              const color = userIsSender ? 'red' : 'black';
-              return (
-                <React.Fragment key={i}>
-                  <Feed.Event>
-                    {/* <Feed.Labelimage={this.state[userIsSender ? 'user' : 'friend'].avatar} /> */}
-                    <Feed.Content style={{ marginTop: 0 }}>
-                      {/* <Feed.Date content={formatTime(msg.ts)} /> */}
-                      <Feed.Summary style={{ color }}>
-                        {`@${msg.fromUser}: ${msg.text}`}
-                      </Feed.Summary>
-                    </Feed.Content>
-                  </Feed.Event>
-                  {i < arr.length - 1 && <Divider fitted />}
-                </React.Fragment>
-              );
-            })}
+        <Card.Content style={cardContentStyle}>
+          <Feed id="chat-messages">
+            {feedEvents}
           </Feed>
         </Card.Content>
         <Card.Content>
@@ -139,20 +131,14 @@ class Chat extends Component {
           />
         </Card.Content>
       </Card>
-    );
+    )
   }
 }
 
-export default Chat;
+export default Chat
 
-// const formatTime = date => {
-//   const addPrefixZero = n => (n < 10 ? '0' : '') + n;
-
-//   return (
-//     addPrefixZero(date.getHours()) +
-//     ':' +
-//     addPrefixZero(date.getMinutes()) +
-//     ':' +
-//     addPrefixZero(date.getSeconds())
-//   );
-// };
+const cardContentStyle = {
+  backgroundColor: 'rgba(241, 241, 241, 0.5)',
+  maxHeight: 300,
+  overflowY: 'auto'
+}
