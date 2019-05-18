@@ -1,36 +1,57 @@
-import React from "react";
-import PropTypes from "prop-types";
-import { Header, List } from "semantic-ui-react";
+import React from 'react'
+import { ReactiveComponent } from 'oo7-react'
+import { Header, List } from 'semantic-ui-react'
+import {Pretty} from '../Pretty'
 
-const SystemStatus = props => {
-  return (
-    <React.Fragment>
-      <Header as="h2">System Status</Header>
-      <List>
-        {props.items.map((item, i) => (
-          <List.Item
-            key={i}
-            className={item.title === undefined ? "empty" : ""}
-          >
-            {item.icon ? (
-              <List.Icon name={item.icon} color={item.iconColor} />
-            ) : (
-              ""
-            )}
-            <List.Content>{item.title || <br />}</List.Content>
+import { runtime, chain, system, runtimeUp } from 'oo7-substrate'
+
+class SystemStatus extends ReactiveComponent {
+  constructor () {
+    super([], {
+      networkVersion: runtime.version.specVersion,
+      online: runtimeUp,
+      isSyncing: system.health.is_syncing,
+      bestBlock: chain.height,
+      lastFinalisedBlock: 0,
+      peers: system.health.peers
+    }) 
+  }
+
+  render() {
+    return (
+      <React.Fragment>
+        <Header as="h2">System Status </Header>
+        <List className="system-status-list">
+          <List.Item>
+            <List.Content>Totem Network Version <Pretty className="value" value={this.state.networkVersion}/></List.Content>
           </List.Item>
-        ))}
-      </List>
-    </React.Fragment>
-  );
-};
+          <List.Item>
+            <List.Icon name="circle" color={this.state.online ? 'green' : 'red'} />
+            <List.Content>{this.state.online ? 'On' : 'off'}line</List.Content>
+          </List.Item>
+          <List.Item>
+            <List.Icon name="circle" color={this.state.isSyncing ? 'green' : 'yellow'} />
+            <List.Content>Syncing - <Pretty className="value" value={this.state.isSyncing ? 'Yes' : 'No'} /></List.Content>
+          </List.Item>
+          <List.Item className="empty">
+            <List.Content><br /></List.Content>
+          </List.Item>
+          <List.Item>
+            <List.Icon name="circle" color="green" />
+            <List.Content>Best Block #<Pretty className="value" value={this.state.bestBlock} /></List.Content>
+          </List.Item>
+          <List.Item>
+            <List.Icon name="circle" color={this.state.isSyncing ? 'green' : 'yellow'} />
+            <List.Content>Last Finalised Block #<Pretty className="value" value={this.state.lastFinalisedBlock}/></List.Content>
+          </List.Item>
+          <List.Item>
+            <List.Icon name="circle" color={this.state.peers > 0 ? 'green' : 'red'} />
+            <List.Content>Peers #<Pretty className="value" value={system.health.peers}/></List.Content>
+          </List.Item>
+        </List>
+      </React.Fragment>
+    )
+  }
+}
 
-SystemStatus.propTypes = {
-  items: PropTypes.array
-};
-
-SystemStatus.defaultProps = {
-  items: []
-};
-
-export default SystemStatus;
+export default SystemStatus
