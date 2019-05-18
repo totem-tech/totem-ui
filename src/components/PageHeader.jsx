@@ -1,17 +1,24 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { runtimeUp, secretStore } from 'oo7-substrate'
 import { Container, Header, Image, Input, Rail, Dropdown } from 'semantic-ui-react'
 import Chat from './Chat'
 
+const chatRailStyle = {
+  marginTop: 20,
+  zIndex: 1,
+  height: 'auto'
+}
+
 class PageHeader extends ReactiveComponent {
   constructor(props) {
-    super(props, {ensureRuntime: runtimeUp})
-    const index = props.accounts.length > 0 ? 0 : -1
+    super(props, {ensureRuntime: runtimeUp, secretStore: secretStore()})
 
     this.state = {
-      index: index,
-      name: (props.accounts[index] || {}).name
+      index: 0,
+      name: '',
+      accounts: []
     }
 
     this.handleSelection = this.handleSelection.bind(this)
@@ -21,10 +28,10 @@ class PageHeader extends ReactiveComponent {
 
   handleSelection(e, data) {
     const num = eval(data.value)
-    const index = num < this.props.accounts.length ? num : 0
+    const index = num < this.state.accounts.length ? num : 0
     this.setState({
       index: index,
-      name: this.props.accounts[index].name
+      name: this.state.accounts[index].name
     })
   }
 
@@ -33,16 +40,22 @@ class PageHeader extends ReactiveComponent {
   }
 
   saveName() {
-    const account = this.props.accounts[this.state.index]
+    const account = this.state.accounts[this.state.index]
     if (!account || account.name === this.state.name) return;
     
     secretStore().forget(account)
     secretStore().submit(account.phrase, this.state.name)
-    this.setState({ index: this.props.accounts.length - 1 })
+    this.setState({ index: this.state.accounts.length - 1 })
+  }
+
+  componentDidMount() {
+    const accounts = this.state.secretStore.keys
+    const name = (accounts[0] || {}).name
+    this.setState({accounts, name})
   }
 
   render() {
-    const addressOptions = this.props.accounts.map((account, i) => ({
+    const addressOptions = this.state.accounts.map((account, i) => ({
       key: i,
       text: account.address,
       value: i
@@ -88,10 +101,15 @@ class PageHeader extends ReactiveComponent {
     )
   }
 }
-export default PageHeader
 
-const chatRailStyle = {
-  marginTop: 20,
-  zIndex: 1,
-  height: 'auto'
+
+PageHeader.propTypes = {
+  logo: PropTypes.string,
+  id: PropTypes.string
 }
+
+PageHeader.defaultProps = {
+  logo: 'https://react.semantic-ui.com/images/wireframe/image.png'
+}
+
+export default PageHeader

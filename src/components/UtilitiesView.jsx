@@ -9,7 +9,7 @@ class UtilitiesView extends ReactiveComponent {
     super([], {ensureRuntime: runtimeUp})
   }
 
-  render() {
+  readyRender() {
     return (
       <div style={{ paddingBottom: '1em' }}>
         <FileUploadBond bond={runtime} content="Select Runtime" />

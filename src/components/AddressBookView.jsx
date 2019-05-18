@@ -3,13 +3,13 @@ import { Label } from 'semantic-ui-react'
 import { ReactiveComponent, If } from 'oo7-react'
 import { runtime, runtimeUp, addressBook } from 'oo7-substrate'
 import { InputBond } from '../InputBond'
-import { AccountIdBond, SignerBond } from '../AccountIdBond'
+import { AccountIdBond } from '../AccountIdBond'
 import { Pretty } from '../Pretty'
 import { AddressBookList } from '../AddressBookList'
 import { TransformBondButton } from '../TransformBondButton'
-import { Bond, TransformBond } from 'oo7'
+import { Bond } from 'oo7'
 
-class AddressBookView extends ReactiveComponent{
+class AddressBookView extends ReactiveComponent {
   constructor() {
     super([], {ensureRuntime: runtimeUp})
     this.nick = new Bond()

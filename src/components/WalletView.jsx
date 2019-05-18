@@ -19,7 +19,7 @@ class WalletView extends ReactiveComponent {
     this.seedAccount.use()
   }
 
-  render() {
+  readyRender() {
     const seedIcon = (
       <i style={{ opacity: 1 }} className="icon">
         <Identicon

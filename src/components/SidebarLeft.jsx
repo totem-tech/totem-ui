@@ -1,15 +1,15 @@
-import React, { Component } from 'react'
+import React from 'react'
+import PropTypes from 'prop-types'
 import {ReactiveComponent, If} from 'oo7-react'
-import {runtimeUp} from 'oo7-substrate'
 import { Icon, Menu, Segment, Sidebar } from 'semantic-ui-react'
 import SystemStatus from './SystemStatus'
 
 class SidebarLeft extends ReactiveComponent {
   constructor(props) {
-    super(props, {ensureRuntime: runtimeUp})
+    super(props)
     this.state = {
       visible: props.visible,
-      thin: props.thin
+      collapsed: props.collapsed
     }
     this.toggleSidebar = this.toggleSidebar.bind(this)
   }
@@ -17,15 +17,19 @@ class SidebarLeft extends ReactiveComponent {
   // Switch between narrow and wide when on non-mobile devices
   // OR visible and hidden when on mobile
   toggleSidebar() {
+    let collapsed = this.state.collapsed,
+        visible = this.state.visible
     if (!this.props.isMobile) {
-      this.setState({ thin: !this.state.thin })
+      collapsed = !collapsed
+      this.setState({ collapsed })
     } else {
       // TODO: handle mobile view
-      this.setState({ visible: !this.state.visible })
+      visible = !visible
+      this.setState({ visible})
     }
 
     if (typeof this.props.onSidebarToggle === 'function') {
-      this.props.onSidebarToggle(this.state.thin, this.state.visible)
+      this.props.onSidebarToggle(collapsed, visible)
     }
   }
 
@@ -36,17 +40,17 @@ class SidebarLeft extends ReactiveComponent {
         className="sidebar-toggle"
         onClick={this.toggleSidebar}
         position="right"
-        title={this.state.thin ? 'Expand' : 'Collapse'}
+        title={this.state.collapsed ? 'Expand' : 'Collapse'}
       >
         <span>
-          <Icon name={'angle ' + (this.state.thin ? 'right' : 'left')} size='large' />
+          <Icon name={'angle ' + (this.state.collapsed ? 'right' : 'left')} size='large' />
         </span>
       </Menu.Item>
     )
 
     const systemStatus = (
       <Menu.Item as={Segment} className="system-status left-icon">
-        <SystemStatus items={this.props.systemStatusItems} />
+        <SystemStatus />
       </Menu.Item>
     )
 
@@ -57,7 +61,7 @@ class SidebarLeft extends ReactiveComponent {
         direction="left"
         vertical
         visible={this.state.visible || !this.props.isMobile}
-        width={this.state.thin ? 'very thin' : 'wide'}
+        width={this.state.collapsed ? 'very thin' : 'wide'}
         color="violet"
         inverted
       >
@@ -70,23 +74,50 @@ class SidebarLeft extends ReactiveComponent {
             as="a"
             key={i}
             active={item.active}
-            title={this.state.thin ? item.title : ''}
+            title={this.state.collapsed ? item.title : ''}
             onClick={() => this.props.onMenuItemClick(i)}
           >
             <span>
               <Icon
                 name={item.icon || 'folder'}
-                size={this.state.thin ? 'big' : 'large'}
+                size={this.state.collapsed ? 'big' : 'large'}
               />
-              <If condition={!this.state.thin} then={item.title} />
+              <If condition={!this.state.collapsed} then={item.title} />
             </span>
           </Menu.Item>
         ))}
 
-        <If condition={!this.state.thin} then={systemStatus} />
+        <If condition={!this.state.collapsed} then={systemStatus} />
       </Sidebar>
     )
   }
+}
+
+SidebarLeft.propTypes = {
+  collapsed: PropTypes.bool,
+  isMobile: PropTypes.bool,
+  items: PropTypes.array,
+  onMenuItemClick: PropTypes.func,
+  onSidebarToggle: PropTypes.func,
+  visible: PropTypes.bool
+}
+
+SidebarLeft.defaultProps = {
+  collapsed: false,
+  isMobile: false,
+  items: [
+    //// for example only
+    // { 
+    //   icon: 'warning sign',
+    //   title: 'No items available',
+    //   header: 'Sample Header',
+    //   subHeader: 'A sample',
+    //   content: 'This is a sample',
+    //   active: true,
+    //   elementRef: React.createRef()
+    // }
+  ],
+  visible: true
 }
 
 export default SidebarLeft

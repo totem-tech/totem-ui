@@ -2,9 +2,7 @@ import React from 'react'
 import {ReactiveComponent, If} from 'oo7-react'
 import { runtimeUp } from 'oo7-substrate'
 import { Icon, Header, Image, Segment } from 'semantic-ui-react'
-const placeholderImage =
-  'https://react.semantic-ui.com/images/wireframe/paragraph.png'
-
+const placeholderImage = 'https://react.semantic-ui.com/images/wireframe/paragraph.png'
 
 const style = {
   color: 'white',
@@ -17,7 +15,7 @@ const style = {
 
 class ContentSegment extends ReactiveComponent {
   constructor(props) {
-    super(props, {ensureRuntime: runtimeUp})
+    super(props, {ensureRuntimeUp: runtimeUp})
   }
 
   render() {
@@ -33,9 +31,9 @@ class ContentSegment extends ReactiveComponent {
     )
     const segment = (
       <Segment style={style} padded>
-        {headerText && header }
+        <If condition={!!headerText} then={header} />
         <div style={{ paddingBottom: '1em' }}>
-          {this.props.content || <Image src={placeholderImage} />}
+          <If condition={!!this.props.content} then={this.props.content} else={<Image src={placeholderImage} />} />
         </div>
       </Segment>
     )

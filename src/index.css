@@ -94,7 +94,10 @@ body {
   scroll-behavior: smooth;
 }
 
-.system-status.left-icon .ui.list .item > i {
+/* 
+ * System status
+ */
+ .system-status.left-icon .ui.list .item > i {
   float: left !important;
 }
 .system-status .ui.header {
@@ -103,16 +106,14 @@ body {
 .ui.system-status .ui.list .item i {
   margin-left: 0;
 }
-
-/* 
- * System status
- */
 .ui.sidebar.left.inverted.menu .system-status,
 .ui.sidebar.statusbar-bottom.inverted.menu {
   background-color: purple;
   margin-top: 0;
 }
-
+.ui.sidebar.statusbar-bottom:not(.visible) {
+  display:none;
+}
 .ui.sidebar.statusbar-bottom .list .item:not(:last-child) .content:before {
   content: "|";
   position: absolute;

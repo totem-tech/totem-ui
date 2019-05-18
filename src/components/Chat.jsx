@@ -1,11 +1,10 @@
 import React from 'react'
-import {ReactiveComponent, If} from 'oo7-react'
-import { runtimeUp } from 'oo7-substrate'
+import {ReactiveComponent} from 'oo7-react'
 import { Card, Divider, Feed, Icon, Input } from 'semantic-ui-react'
 
 class Chat extends ReactiveComponent {
   constructor(props) {
-    super(props, {ensureRuntime: runtimeUp})
+    super(props)
     this.state = {
       user: {
         id: 'Elliot',
