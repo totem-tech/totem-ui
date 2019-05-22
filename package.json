@@ -48,6 +48,7 @@
     "polkadot-identicon": "^1.1.13",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
+    "react-chat-widget": "^2.1.4-1",
     "semantic-ui-css": "^2.4.1",
     "semantic-ui-react": "^0.86.0",
     "style-loader": "^0.20.3",
