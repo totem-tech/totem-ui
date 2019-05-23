@@ -94,9 +94,9 @@ class PageHeader extends ReactiveComponent {
           </div>
           <div>ID: &nbsp;&nbsp;&nbsp;&nbsp;@{this.props.id}</div>
         </Container>
-        <Rail internal position="right" style={chatRailStyle} >
+        {/* <Rail internal position="right" style={chatRailStyle} >
           <Chat />
-        </Rail>
+        </Rail> */}
       </Container>
     )
   }

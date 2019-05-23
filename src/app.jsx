@@ -2,14 +2,7 @@ import React from "react";
 import { Container, Menu, Sidebar } from "semantic-ui-react";
 import { Bond } from "oo7";
 import { ReactiveComponent } from "oo7-react";
-import {
-  calls,
-  runtime,
-  chain,
-  runtimeUp,
-  addressBook,
-  secretStore
-} from "oo7-substrate";
+import { calls, runtime, chain, runtimeUp, addressBook, secretStore } from "oo7-substrate";
 import SidebarLeft from "./components/SidebarLeft";
 import ContentSegment from "./components/ContentSegment";
 import PageHeader from "./components/PageHeader";
@@ -18,6 +11,8 @@ import SendFundsView from "./components/SendFundsView";
 import AddressBookView from "./components/AddressBookView";
 import UtilitiesView from "./components/UtilitiesView";
 import SystemStatus from "./components/SystemStatus";
+import ChatWidget from './components/ChatWidget'
+
 
 export class App extends ReactiveComponent {
   constructor() {
@@ -52,7 +47,7 @@ export class App extends ReactiveComponent {
         return item;
       }),
       isMobile: false,
-      sidebarCollapsed: true,
+      sidebarCollapsed: false,
       sidebarVisible: true
     };
 
@@ -68,18 +63,17 @@ export class App extends ReactiveComponent {
     const items = [...this.state.sidebarItems];
     items[index].active = !items[index].active;
     this.setState({ sidebarItems: items });
-    items[index].active &&
-      setTimeout(() => {
-        document
-          .getElementById("main-content")
-          .scrollTo(0, items[index].elementRef.current.offsetTop);
-      }, 100);
+    items[index].active && setTimeout(() => {
+      // Scroll down to the content segment
+      document.getElementById("main-content").scrollTo(0, items[index].elementRef.current.offsetTop);
+    }, 100);
   }
 
   readyRender() {
     return (
       <React.Fragment>
         <PageHeader logo={this.state.logo} id={this.state.id} />
+        <ChatWidget />
         <Sidebar.Pushable as={Container} fluid>
           <SidebarLeft
             items={this.state.sidebarItems}
