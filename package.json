@@ -55,6 +55,9 @@
     "tweetnacl": "^1.0.0",
     "url-loader": "^1.0.1",
     "uuid": "^3.3.2",
-    "xxhashjs": "^0.2.2"
+    "xxhashjs": "^0.2.2",
+    "socket.io": "^2.2.0",
+    "socket.io-client": "^2.2.0",
+    "uws": "^10.148.1"
   }
 }

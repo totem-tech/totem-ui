@@ -1,29 +1,32 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { ReactiveComponent } from 'oo7-react'
+import { If, ReactiveComponent } from 'oo7-react'
 import { runtimeUp, secretStore } from 'oo7-substrate'
-import { Container, Header, Image, Input, Rail, Dropdown } from 'semantic-ui-react'
-import Chat from './Chat'
-
-const chatRailStyle = {
-  marginTop: 20,
-  zIndex: 1,
-  height: 'auto'
-}
+import { Container, Header, Image, Input, Label, Dropdown } from 'semantic-ui-react'
+import uuid from 'uuid'
+import {getUser, getClient} from './ChatClient'
+const nameRegex = /^($|[a-z]|[a-z][a-z0-9]+)$/
 
 class PageHeader extends ReactiveComponent {
   constructor(props) {
     super(props, {ensureRuntime: runtimeUp, secretStore: secretStore()})
 
+    const user = getUser()
     this.state = {
+      accounts: [],
       index: 0,
       name: '',
-      accounts: []
+      id: (user || {}).id || '',
+      registered: !!user,
+      loading: false,
+      idValid: false
     }
 
     this.handleSelection = this.handleSelection.bind(this)
     this.handleNameChange = this.handleNameChange.bind(this)
-    this.saveName = this.saveName.bind(this)
+    this.handleSaveName = this.handleSaveName.bind(this)
+    this.handleIdChange = this.handleIdChange.bind(this)
+    this.handleRegister = this.handleRegister.bind(this)
   }
 
   handleSelection(e, data) {
@@ -35,17 +38,42 @@ class PageHeader extends ReactiveComponent {
     })
   }
 
-  handleNameChange(e, data) {
+  handleNameChange(_, data) {
     this.setState({ name: data.value || 'default' })
   }
 
-  saveName() {
+  handleSaveName() {
     const account = this.state.accounts[this.state.index]
     if (!account || account.name === this.state.name) return;
     
-    secretStore().forget(account)
-    secretStore().submit(account.phrase, this.state.name)
-    this.setState({ index: this.state.accounts.length - 1 })
+    setTimeout(() => {
+      secretStore().forget(account)
+      secretStore().submit(account.phrase, this.state.name)
+      this.setState({index: this.state.accounts.length - 1})
+    }, 2000)
+  }
+
+  handleIdChange(_, data) {
+    const val = data.value.trim()
+    const valid = nameRegex.test(val) && val.length <= 16
+    if (!valid) return;
+    const hasMin = val.length < 1 || val.length >= 3
+    this.setState({
+      id: val,
+      idError: !hasMin && 'minimum 3 characters required',
+      idValid: hasMin
+    })
+  }
+
+  handleRegister() {
+    getClient().register(this.state.id, uuid.v1(), err => {
+      console.log('register', err)
+      this.setState({
+        idError: err,
+        idValid: !err,
+        registered: !err
+      })
+    })
   }
 
   componentDidMount() {
@@ -61,24 +89,47 @@ class PageHeader extends ReactiveComponent {
       value: i
     }))
 
+    const userIdInput = (
+      <React.Fragment>
+        <Input
+          label="@"
+          action={{
+            color: 'violet',
+            icon: 'sign-in',
+            onClick: this.handleRegister,
+            loading: this.state.loading,
+            disabled: !this.state.idValid
+          }}
+          onChange={this.handleIdChange}
+          value={this.state.id}
+          placeholder="Enter ID to register for chat"
+          error={!!this.state.idError}
+          style={{minWidth: 270}}
+        />
+        <If 
+          condition={this.state.idError}
+          then={<Label basic color='red' pointing="left">{this.state.idError}</Label>}
+        />
+      </React.Fragment>
+    )
+
     return (
       <Container fluid className="header-bar">
         <Container className="logo">
           <Image src={this.props.logo} />
         </Container>
         <Container className="content">
-          <Header as="h1">
+          <Header as="h1" style={{ marginBottom: 0}}>
             <Input
               className="header-name"
               action={{
-                color: 'teal',
+                color: 'violet',
                 icon: 'pencil',
                 onClick: this.saveName
               }}
               onChange={this.handleNameChange}
-              onBlur={this.saveName}
+              onBlur={this.handleSaveName}
               value={this.state.name}
-              disabled={this.state.loading}
             />
           </Header>
           <div>
@@ -92,11 +143,15 @@ class PageHeader extends ReactiveComponent {
               onChange={this.handleSelection}
             />
           </div>
-          <div>ID: &nbsp;&nbsp;&nbsp;&nbsp;@{this.props.id}</div>
+          <div>
+            <span style={{paddingRight: 10}}>ID:</span>
+            <If
+              condition={!this.state.registered} 
+              then={userIdInput}
+              else={'@' + this.state.id}
+            />
+          </div>
         </Container>
-        {/* <Rail internal position="right" style={chatRailStyle} >
-          <Chat />
-        </Rail> */}
       </Container>
     )
   }
@@ -104,8 +159,7 @@ class PageHeader extends ReactiveComponent {
 
 
 PageHeader.propTypes = {
-  logo: PropTypes.string,
-  id: PropTypes.string
+  logo: PropTypes.string
 }
 
 PageHeader.defaultProps = {
