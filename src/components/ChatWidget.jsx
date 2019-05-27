@@ -1,130 +1,33 @@
 import React from 'react'
-// const {Bond} = require('oo7');
+// const {Bond} = require('oo7')
 import { ReactiveComponent } from 'oo7-react'
 import {
   Widget,
-  addResponseMessage,
-  addLinkSnippet,
+  // addResponseMessage,
+  // addLinkSnippet,
   addUserMessage,
   renderCustomComponent,
-  dropMessages,
+  // dropMessages,
   isWidgetOpened,
-  toggleInputDisabled
-} from 'react-chat-widget';
-import 'react-chat-widget/lib/styles.css';
-import {getClient} from './ChatClient'
+  // toggleInputDisabled,
+  toggleMsgLoader
+} from 'react-chat-widget'
+import 'react-chat-widget/lib/styles.css'
+import { addToHistory, getClient, getUser, getHistory } from './ChatClient'
 
-class ChatWidget extends ReactiveComponent {
-  constructor() {
-    super([]);
-    this.state = {
-      unreadCount: 1,
-      widgetOpen: false,
-      showOfflineMsg: true
-    }
+const eventTypes = [
+  'red',   // error
+  'green', // success
+  'yellow' // warning
+]
 
-    this.handleNewUserMessage = this.handleNewUserMessage.bind(this)
-    this.login = this.login.bind(this)
-    this.setupChatClient = this.setupChatClient.bind(this)
-  }
+const addEventMsg = (messageContent, type) => renderCustomComponent(EventEntry, {
+  background: 'lightyellow',
+  color: eventTypes[type || 0],
+  content: messageContent
+})
 
-  componentDidMount() {
-    addResponseMessage('So, you want to try Totem? Great! Just post your default address and I\'ll send you some funds - and then you can use it!')
-    this.login()
-  }
-
-  setupChatClient() {
-    this.client = getClient()
-    this.client.onReconnect(this.login)
-    
-    // doesn't work
-    // this.client.onDisconnect(() => {
-    //   renderCustomComponent(EventEntry, {
-    //     background: 'lightyellow',
-    //     color: 'green',
-    //     content: 'disconnected'
-    //   })
-    // })
-
-    this.client.onMessage((msg, id) => id === this.state.userId ? addUserMessage(msg) : renderCustomComponent(
-      MessageEntry,
-      {message: msg, id}
-    ))
-
-    this.client.onConnectError(err => {
-      console.log('Connection error: ', err)
-      if (!this.state.showOfflineMsg) return;
-
-      renderCustomComponent(EventEntry, {
-        background: 'lightyellow',
-        color: 'red',
-        content: 'offline'
-      })
-      this.setState({showOfflineMsg: false})
-    })
-  }
-
-  handleNewUserMessage(msg) {
-    this.client.message(msg, (err)=> {
-      err && renderCustomComponent(EventEntry, {
-        background: 'lightyellow',
-        color: 'red',
-        content: (
-          <div>
-            Failed to send message:
-            <pre style={{fontWeight: 'bold'}}>{msg}</pre>
-            Message from server:
-            <pre>{err}</pre>
-          </div>
-        )
-      })
-    })
-    // dropMessages()
-    return false
-  }
-
-  login() {
-    !this.client && this.setupChatClient()
-    const user = this.client.getUser()
-    this.setState({userId: (user || {}).id})
-    if (!user) return;
-
-    this.client.login(user.id, user.secret, err => {
-      renderCustomComponent(EventEntry, {
-        background: 'lightyellow',
-        color: err ? 'red' : 'green',
-        content: !err ? 'online' : <div>Login failed: <pre>{err}</pre></div> 
-      })
-      !err && this.setState({showOfflineMsg: true})
-    })
-  }
-
-  render () {
-    return (
-      <Widget
-        xtitleAvatar="https://react.semantic-ui.com/images/wireframe/image.png"
-        title="Totem Messaging"
-        subtitle="Welcome on board."
-        senderPlaceHolder={"Let's go Toto..."}
-        handleNewUserMessage={this.handleNewUserMessage}
-        badge={this.state.unreadCount}
-      />
-    )
-  }
-};
-
-export default ChatWidget
-
-const MessageEntry = (props) => (
-  <div>
-    <span style={{ fontStyle:'italic', color: 'gray'}}>
-      @{props.id}
-    </span>
-    <div className="rcw-response">
-      {props.message}
-    </div>
-  </div>
-)
+const addResponseWithId = (message, id) => renderCustomComponent( MessageEntry, {message, id})
 
 const EventEntry = (props) => (
   <div style={{
@@ -139,3 +42,99 @@ const EventEntry = (props) => (
     {props.content}
   </div>
 )
+
+const MessageEntry = (props) => (
+  <div>
+    <span style={{ fontStyle:'italic', color: 'gray'}}>
+      @{props.id}
+    </span>
+    <div className="rcw-response">
+      {props.message}
+    </div>
+  </div>
+)
+
+class ChatWidget extends ReactiveComponent {
+  constructor() {
+    super([])
+    this.state = {
+      unreadCount: 1,
+      widgetOpen: false,
+      showOfflineMsg: true,
+      historyAdded: false,
+      userId: ''
+    }
+
+    this.handleNewUserMessage = this.handleNewUserMessage.bind(this)
+    this.login = this.login.bind(this)
+    this.setupChatClient = this.setupChatClient.bind(this)
+  }
+
+  componentDidMount() {
+    // Setup chat client 
+    !this.client && this.setupChatClient()
+    // attempt to login
+    this.login()
+  }
+
+  setupChatClient() {
+    this.client = getClient()
+
+    // Attempt to log back in on reconnect
+    this.client.onReconnect(this.login)
+
+    this.client.onMessage((msg, id) => {
+      id === this.state.userId ? addUserMessage(msg) : addResponseWithId(msg, id)
+      addToHistory(msg, id)
+      !isWidgetOpened() && this.setState({unreadCount: this.state.unreadCount++})
+    })
+
+    this.client.onConnectError(err => {
+      // Prevents showing 'offline' more than once until status changes back to online
+      if (!this.state.showOfflineMsg) return;
+
+      addEventMsg('offline')
+      this.setState({showOfflineMsg: false})
+    })
+  }
+
+  handleNewUserMessage(msg) {
+    this.client.message(msg, err => err ? addEventMsg(err) : addToHistory(msg, this.state.userId))
+  }
+
+  login() {
+    const user = getUser()
+    if (!user) return addEventMsg('Please select an ID to start chat.');
+    
+
+    this.client.login(user.id, user.secret, err => {
+      if (err) {
+        return addEventMsg(<div>Login failed: <pre>{err}</pre></div>)
+      }
+      if (!this.state.historyAdded) {
+        getHistory().forEach(e => {
+          e.id === user.id ? addUserMessage(e.message) : addResponseWithId(e.message, e.id)
+        })
+      }
+
+      addEventMsg('online', 1)
+      this.setState({userId: user.id, showOfflineMsg: true, historyAdded: true})
+    })
+  }
+
+  render () {
+    return (
+      <Widget
+        xtitleAvatar="https://react.semantic-ui.com/images/wireframe/image.png"
+        title="Totem Messaging"
+        subtitle="Welcome on board."
+        senderPlaceHolder={"Let's go Toto..."}
+        handleNewUserMessage={this.handleNewUserMessage}
+        badge={this.state.unreadCount}
+        autofocus={true}
+      />
+    )
+  }
+}
+export default ChatWidget
+

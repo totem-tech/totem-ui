@@ -34,9 +34,9 @@ const findUserByClientId = clientId => {
 // Error messages
 const errMsgs = {
   idInvalid: `Only alpha-numeric characters allowed and must start with an alphabet`,
-  idLength: `Must be between $(idMinLenght) to $(idMaxLength) characters`,
+  idLength: `Must be between ${idMinLength} to ${idMaxLength} characters`,
   idExists: 'User ID already taken',
-  msgLengthExceeds: `Maximum $(msgMaxLength) characters allowed`,
+  msgLengthExceeds: `Maximum ${msgMaxLength} characters allowed`,
   loginFailed: 'Credentials do not match',
   loginAgain: 'Re/login required'
 }
@@ -72,7 +72,7 @@ io.on('connection', client => {
   client.on('register', (userId, secret, callback) => {
     const doCb = isFn(callback)
     if (users.get(userId)) {
-      console.log(userId, ':', errMsgs.idExists, callback)
+      console.log(userId, ':', errMsgs.idExists)
       doCb && callback(errMsgs.idExists)
       return
     }
@@ -105,7 +105,7 @@ io.on('connection', client => {
       err = errMsgs.loginFailed
     }
 
-    console.log('Login ' + (err ? 'failed' : 'success') + ' ID: ', userId, 'Client ID: ', client.id)
+    console.log('Login ' + (err ? 'failed' : 'success') + ' | ID:', userId, '| Client ID: ', client.id)
     isFn(callback) && callback(err)
   })
 })
@@ -113,8 +113,10 @@ io.on('connection', client => {
 // Load user data from json file
 fs.readFile(usersFile, (err, data) => {
   if (err) {
+    // File doesn't exists. Create new file
     saveUsers()
   } else {
+    // Load existing user list
     users = new Map(JSON.parse(data))
   }
 
@@ -129,6 +131,7 @@ const saveUsers = () => {
         id: u[1].id,
         secret: u[1].secret,
         joined: u[1].joined,
+        // remove obsolete client IDs
         clientIds: []
       }
      ]

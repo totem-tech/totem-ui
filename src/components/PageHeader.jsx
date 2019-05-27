@@ -4,6 +4,7 @@ import { If, ReactiveComponent } from 'oo7-react'
 import { runtimeUp, secretStore } from 'oo7-substrate'
 import { Container, Header, Image, Input, Label, Dropdown } from 'semantic-ui-react'
 import uuid from 'uuid'
+import {addResponseMessage, dropMessages, isWidgetOpened, toggleWidget} from 'react-chat-widget'
 import {getUser, getClient} from './ChatClient'
 const nameRegex = /^($|[a-z]|[a-z][a-z0-9]+)$/
 
@@ -16,7 +17,7 @@ class PageHeader extends ReactiveComponent {
       accounts: [],
       index: 0,
       name: '',
-      id: (user || {}).id || '',
+      id: (user || {}).id,
       registered: !!user,
       loading: false,
       idValid: false
@@ -67,12 +68,12 @@ class PageHeader extends ReactiveComponent {
 
   handleRegister() {
     getClient().register(this.state.id, uuid.v1(), err => {
-      console.log('register', err)
-      this.setState({
-        idError: err,
-        idValid: !err,
-        registered: !err
-      })
+      if (err) return this.setState({idError: err, idValid: false});
+
+      this.setState({registered: true})
+      dropMessages()
+      addResponseMessage('So, you want to try Totem? Great! Just post your default address and I\'ll send you some funds - and then you can use it!')
+      !isWidgetOpened() && toggleWidget()
     })
   }
 
