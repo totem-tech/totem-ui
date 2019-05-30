@@ -1,6 +1,5 @@
 import React from "react";
 import { render } from "react-dom";
-import "./index.css";
 import { App } from "./app.jsx";
 import { setNodeUri } from "oo7-substrate";
 require("./denominations");
