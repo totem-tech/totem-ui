@@ -5,6 +5,7 @@ const postLoginCallbacks = []
 // Local Storage Keys
 const USER_KEY = 'chat-user'
 const HISTORY_KEY = 'chat-history'
+const historyLimit = 200
 // Saves user credentails to local storage
 const saveUser = (id, secret) => localStorage.setItem(USER_KEY, JSON.stringify({id, secret}))
 // retrieves user credentails from local storage
@@ -14,7 +15,10 @@ export const getHistory = () => JSON.parse(localStorage.getItem(HISTORY_KEY)) ||
 export const addToHistory = (message, id) => {
     const history = getHistory() || []
     history.push({message, id})
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
+    localStorage.setItem(
+        HISTORY_KEY,
+        JSON.stringify(history.slice(history.length - historyLimit, history.length))
+    )
 }
 const isFn = fn => typeof(fn) === 'function'
 // Adds callback to be executed after login is successful
