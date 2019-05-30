@@ -12,7 +12,7 @@ import AddressBookView from "./components/AddressBookView";
 import UtilitiesView from "./components/UtilitiesView";
 import SystemStatus from "./components/SystemStatus";
 import ChatWidget from './components/ChatWidget'
-
+import TotemButtonLogo from'./assets/totem-button-grey.png';
 
 export class App extends ReactiveComponent {
   constructor() {
@@ -40,7 +40,6 @@ export class App extends ReactiveComponent {
     this.runtime = new Bond();
 
     this.state = {
-      logo: "https://react.semantic-ui.com/images/wireframe/image.png",
       sidebarItems: [...sidebarItems].map(item => {
         item.elementRef = React.createRef();
         return item;
@@ -71,7 +70,7 @@ export class App extends ReactiveComponent {
   readyRender() {
     return (
       <React.Fragment>
-        <PageHeader logo={this.state.logo} />
+        <PageHeader logo={TotemButtonLogo} />
         <ChatWidget />
         <Sidebar.Pushable as={Container} fluid style={styles.pushable}>
           <SidebarLeft
@@ -82,7 +81,6 @@ export class App extends ReactiveComponent {
             onSidebarToggle={this.handleSidebarToggle}
             onMenuItemClick={this.toggleMenuItem}
           />
-          
           <SystemStatus sidebar={true} visible={this.state.sidebarCollapsed} />
 
           <Sidebar.Pusher
@@ -105,44 +103,46 @@ export class App extends ReactiveComponent {
 }
 
 const sidebarItems = [
+  { icon: "object group outline", title: "Overview", subHeader: "", active: true, },
   {
-    icon: "wrench",
-    title: "Utilities",
-    header: "Upgrade chris",
-    subHeader: "Upgrade the runtime using the UpgradeKey module",
-    content: <UtilitiesView />
+    icon: "sitemap", title: "Partners",
+    header: "Vendors and Customers",
+    subHeader: "Inspect the status of any account and name it for later use",
+    active: false,
+    content: <AddressBookView />
   },
-  { icon: "object group outline", title: "Overview", subHeader: "" },
   { icon: "file alternate", title: "Invoice", subHeader: "" },
+  { icon: "pen square", title: "Manage Invoices", subHeader: "" },
+  { icon: "file alternate", title: "Credit Note", subHeader: "" },
   { icon: "tint", title: "Purchase Order", subHeader: "" },
+  { icon: "edit", title: "Manage Orders", subHeader: "" },
+  { icon: "file alternate", title: "Expense", subHeader: "" },
+  { icon: "bug", title: "Disputed Items", subHeader: "" },
+  { icon: "crop", title: "Account Adjustments", subHeader: "" },
+  { icon: "barcode", title: "Projects", subHeader: "" },  
+  { icon: "file alternate", title: "Timekeeping", subHeader: "" },
   { icon: "barcode", title: "Products", subHeader: "" },
   {
-    icon: "sitemap",
-    title: "Partners",
-    header: "Address Book",
-    subHeader: "Inspect the status of any account and name it for later use",
-    active: true,
-    content: <AddressBookView />
+    icon: "dollar sign",
+    title: "Payment",
+    header: "Direct payments",
+    subHeader: "Send funds from your account to another",
+    active: false,
+    content: <SendFundsView />
   },
   {
     icon: "money",
     title: "Wallet",
     subHeader: "Manage your secret keys",
-    active: true,
+    active: false,
     content: <WalletView />
   },
-  { icon: "crop", title: "Adjustments", subHeader: "" },
-  {
-    icon: "dollar sign",
-    title: "Payment",
-    header: "Send",
-    subHeader: "Send funds from your account to another",
-    active: true,
-    content: <SendFundsView />
+  { 
+    icon: "wrench", title: "Utilities",
+    header: "Upgrade",
+    subHeader: "Upgrade the runtime using the UpgradeKey module",
+    content: <UtilitiesView />
   },
-  { icon: "edit", title: "Manage Orders", subHeader: "" },
-  { icon: "pen square", title: "Manage Invoices", subHeader: "" },
-  { icon: "bug", title: "Disputed Items", subHeader: "" },
   { icon: "settings", title: "Settings", subHeader: "" }
 ];
 

@@ -59,9 +59,13 @@
 }
 .ui.visible.left.sidebar:not(.thin) ~ .pusher.main-content {
   -webkit-transform: translate3d(300px, 0, 0);
-  transform: translate3d(265px, 0, 0);
-  max-width: calc(100% - 265px) !important;
+  transform: translate3d(235px, 0, 0);
+  max-width: calc(100% - 235px) !important;
   margin-left: 0 !important;
+}
+
+.ui.black.inverted.vertical.ui.left.wide.visible.sidebar.menu {
+  width: 235px !important;
 }
 
 i.icon {

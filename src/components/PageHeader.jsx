@@ -205,7 +205,7 @@ const styles = {
     border: 'none'
   },
   logo: {
-    width: 265,
+    width: 235,
     float: 'left',
     padding: 15
   },
@@ -217,7 +217,7 @@ const styles = {
   content: {
     // backgroundColor: '#ddd0f5',
     height: 154,
-    width: 'calc(100% - 265px)',
+    width: 'calc(100% - 235px)',
     float: 'right',
     padding: '25px 50px'
   },
