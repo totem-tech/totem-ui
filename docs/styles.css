@@ -63,3 +63,48 @@
   max-width: calc(100% - 265px) !important;
   margin-left: 0 !important;
 }
+
+i.icon {
+  font-size: 1em  !important;
+  margin-right: 1rem  !important;
+  margin-left: 0.25rem  !important;
+}
+
+.angle.left.icon {
+  margin-right: 0rem  !important;
+}
+
+.black.pencil.icon {
+  font-size: 0.5em  !important;
+  margin-left: 0.75rem  !important;
+}
+ 
+.dropdown.icon {
+  margin-right: -1rem  !important;
+  margin-left: 0rem  !important;
+}
+
+  .ui.sidebar.left a span {
+      font-weight: normal;
+}
+
+/* Chat Message Customisation */
+.rcw-conversation-container .rcw-header {
+  background-color:#17537d  !important;
+}
+
+.rcw-full-screen .rcw-close-button {
+  background-color:#17537d  !important;
+}
+
+.rcw-conversation-container .rcw-close-button {
+  background-color:#17537d  !important;
+}
+
+.rcw-launcher {
+  background-color:#17537d  !important;
+}
+
+.rcw-client {
+  background-color:#177d2440  !important;
+}

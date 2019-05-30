@@ -108,7 +108,7 @@ const sidebarItems = [
   {
     icon: "wrench",
     title: "Utilities",
-    header: "Upgrade",
+    header: "Upgrade chris",
     subHeader: "Upgrade the runtime using the UpgradeKey module",
     content: <UtilitiesView />
   },
