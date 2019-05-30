@@ -40,7 +40,6 @@ export class App extends ReactiveComponent {
     this.runtime = new Bond();
 
     this.state = {
-      id: "dksmith",
       logo: "https://react.semantic-ui.com/images/wireframe/image.png",
       sidebarItems: [...sidebarItems].map(item => {
         item.elementRef = React.createRef();
@@ -72,9 +71,9 @@ export class App extends ReactiveComponent {
   readyRender() {
     return (
       <React.Fragment>
-        <PageHeader logo={this.state.logo} id={this.state.id} />
+        <PageHeader logo={this.state.logo} />
         <ChatWidget />
-        <Sidebar.Pushable as={Container} fluid>
+        <Sidebar.Pushable as={Container} fluid style={styles.pushable}>
           <SidebarLeft
             items={this.state.sidebarItems}
             isMobile={this.state.isMobile}
@@ -83,28 +82,18 @@ export class App extends ReactiveComponent {
             onSidebarToggle={this.handleSidebarToggle}
             onMenuItemClick={this.toggleMenuItem}
           />
-          <Sidebar
-            as={Menu}
-            className="statusbar-bottom"
-            visible={this.state.sidebarCollapsed}
-            amination="push"
-            direction="bottom"
-            width="very thin"
-            inverted
-          >
-            <Menu.Item>
-              <SystemStatus />
-            </Menu.Item>
-          </Sidebar>
+          
+          <SystemStatus sidebar={true} visible={this.state.sidebarCollapsed} />
 
           <Sidebar.Pusher
             as={Container}
             fluid
             className="main-content"
             id="main-content"
+            style={this.state.sidebarCollapsed? styles.mainContentCollapsed : styles.mainContent}
           >
             {this.state.sidebarItems.map((item, i) => (
-              <div ref={item.elementRef} key={i} hidden={!item.active}>
+              <div ref={item.elementRef} key={i} hidden={!item.active} style={styles.spaceBelow}>
                 <ContentSegment {...item} />
               </div>
             ))}
@@ -156,3 +145,27 @@ const sidebarItems = [
   { icon: "bug", title: "Disputed Items", subHeader: "" },
   { icon: "settings", title: "Settings", subHeader: "" }
 ];
+
+
+const styles = {
+  pushable: {
+    margin: 0,
+    height: 'calc(100% - 155px)',
+    overflow: 'hidden'
+  },
+  mainContent: {
+    overflow: 'hidden auto',
+    maxHeight: '100%',
+    scrollBehavior: 'smooth',
+    padding: '0 50px'
+  },
+  mainContentCollapsed: {
+    overflow: 'hidden auto',
+    maxHeight: '100%',
+    scrollBehavior: 'smooth',
+    padding: '0 50px 52px'
+  },
+  spaceBelow: {
+    marginBottom: 15
+  }
+}

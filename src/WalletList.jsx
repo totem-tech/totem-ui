@@ -69,8 +69,8 @@ export class WalletList extends ReactiveComponent {
 
 	readyRender () {
 		return <List divided verticalAlign='bottom' style={{padding: '0 0 4px 4px', overflow: 'auto', maxHeight: '20em'}}>{
-			this.state.secretStore.keys.map(key =>
-				<List.Item key={key.name}>
+			this.state.secretStore.keys.map((key, i) =>
+				<List.Item key={i}>
 					<List.Content floated='right'>
 						<SecretItem phrase={key.phrase} seed={key.seed}/>
 						<Button size='small' onClick={() => secretStore().forget(key)}>Delete</Button>

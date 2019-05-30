@@ -38,7 +38,7 @@ const errMsgs = {
   idExists: 'User ID already taken',
   msgLengthExceeds: `Maximum ${msgMaxLength} characters allowed`,
   loginFailed: 'Credentials do not match',
-  loginAgain: 'Re/login required'
+  loginAgain: 'Registration/login required'
 }
 
 io.on('connection', client => {
@@ -124,18 +124,16 @@ fs.readFile(usersFile, (err, data) => {
 });
 
 const saveUsers = () => {
-  const data = Array.from(users.entries()).map(u => {
-    return [
-      u[0],
-      {
-        id: u[1].id,
-        secret: u[1].secret,
-        joined: u[1].joined,
-        // remove obsolete client IDs
-        clientIds: []
-      }
-     ]
-  })
+  const data = Array.from(users.entries()).map(u => [
+    u[0],
+    {
+      id: u[1].id,
+      secret: u[1].secret,
+      joined: u[1].joined,
+      // remove obsolete client IDs
+      clientIds: []
+    }
+  ])
 
   fs.writeFile(
     usersFile,

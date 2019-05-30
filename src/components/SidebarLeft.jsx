@@ -41,16 +41,11 @@ class SidebarLeft extends ReactiveComponent {
         onClick={this.toggleSidebar}
         position="right"
         title={this.state.collapsed ? 'Expand' : 'Collapse'}
+        style={styles.sidebarToggle}
       >
         <span>
           <Icon name={'angle ' + (this.state.collapsed ? 'right' : 'left')} size='large' />
         </span>
-      </Menu.Item>
-    )
-
-    const systemStatus = (
-      <Menu.Item as={Segment} className="system-status left-icon">
-        <SystemStatus />
       </Menu.Item>
     )
 
@@ -62,8 +57,9 @@ class SidebarLeft extends ReactiveComponent {
         vertical
         visible={this.state.visible || !this.props.isMobile}
         width={this.state.collapsed ? 'very thin' : 'wide'}
-        color="violet"
+        color="black"
         inverted
+        style={this.state.collapsed ? styles.collapsed : styles.expanded}
       >
         {/* show sidebar toggle when not on mobile */}
         <If condition={!this.props.isMobile} then={sidebarToggle} />
@@ -87,7 +83,7 @@ class SidebarLeft extends ReactiveComponent {
           </Menu.Item>
         ))}
 
-        <If condition={!this.state.collapsed} then={systemStatus} />
+        <If condition={!this.state.collapsed} then={<SystemStatus  sidebar={false} />} />
       </Sidebar>
     )
   }
@@ -121,3 +117,16 @@ SidebarLeft.defaultProps = {
 }
 
 export default SidebarLeft
+
+const styles = {
+  collapsed: {
+    width: 70,
+    paddingBottom: 52
+  },
+  expanded: {
+    width: 265
+  },
+  sidebarToggle: {
+    textAlign: 'right'
+  }
+}

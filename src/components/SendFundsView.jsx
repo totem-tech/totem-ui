@@ -63,7 +63,7 @@ class SendFundsView extends ReactiveComponent {
         <TransactButton
           content="Send"
           icon="send"
-          inverted={true}
+          inverted
           tx={{
             sender: runtime.indices.tryIndex(this.source),
             call: calls.balances.transfer(this.destination, this.amount)

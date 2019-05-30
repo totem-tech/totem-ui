@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { If, ReactiveComponent } from 'oo7-react'
 import { runtimeUp, secretStore } from 'oo7-substrate'
-import { Container, Header, Image, Input, Label, Dropdown } from 'semantic-ui-react'
+import { Container, Dropdown, Header, Icon, Image, Input, Label, Segment } from 'semantic-ui-react'
 import uuid from 'uuid'
 import {addResponseMessage, dropMessages, isWidgetOpened, toggleWidget} from 'react-chat-widget'
 import {getUser, getClient} from './ChatClient'
@@ -20,7 +20,8 @@ class PageHeader extends ReactiveComponent {
       id: (user || {}).id,
       registered: !!user,
       loading: false,
-      idValid: false
+      idValid: false,
+      showNameInput: false
     }
 
     this.handleSelection = this.handleSelection.bind(this)
@@ -28,31 +29,38 @@ class PageHeader extends ReactiveComponent {
     this.handleSaveName = this.handleSaveName.bind(this)
     this.handleIdChange = this.handleIdChange.bind(this)
     this.handleRegister = this.handleRegister.bind(this)
+    this.toggleNameInput = this.toggleNameInput.bind(this)
   }
 
   handleSelection(e, data) {
     const num = eval(data.value)
-    const index = num < this.state.accounts.length ? num : 0
+    const index = num < this.state.secretStore.keys.length ? num : 0
     this.setState({
       index: index,
-      name: this.state.accounts[index].name
+      name: this.state.secretStore.keys[index].name
     })
   }
 
   handleNameChange(_, data) {
-    this.setState({ name: data.value || 'default' })
+    this.setState({ name: data.value })
   }
 
   handleSaveName() {
-    const account = this.state.accounts[this.state.index]
-    if (!account || account.name === this.state.name) return;
+    const account = this.state.secretStore.keys[this.state.index]
+    if (!account || account.name === this.state.name) return this.setState({showNameInput: false});
     
-    setTimeout(() => {
+    setTimeout(()=> {
       secretStore().forget(account)
       secretStore().submit(account.phrase, this.state.name)
-      this.setState({index: this.state.accounts.length - 1})
-    }, 2000)
-  }
+      const index = this.state.secretStore.keys.length - 1
+      this.setState({
+        index,
+        showNameInput: false,
+        accounts: this.state.secretStore.keys,
+        name: this.state.secretStore.keys[index].name
+      })  
+    })
+}
 
   handleIdChange(_, data) {
     const val = data.value.trim()
@@ -77,6 +85,13 @@ class PageHeader extends ReactiveComponent {
     })
   }
 
+  toggleNameInput() {
+    this.setState({
+      showNameInput: !this.state.showNameInput,
+      name: this.state.secretStore.keys[this.state.index].name
+    })
+  }
+
   componentDidMount() {
     const accounts = this.state.secretStore.keys
     const name = (accounts[0] || {}).name
@@ -84,18 +99,12 @@ class PageHeader extends ReactiveComponent {
   }
 
   render() {
-    const addressOptions = this.state.accounts.map((account, i) => ({
-      key: i,
-      text: account.address,
-      value: i
-    }))
-
     const userIdInput = (
       <React.Fragment>
         <Input
           label="@"
           action={{
-            color: 'violet',
+            color: 'black',
             icon: 'sign-in',
             onClick: this.handleRegister,
             loading: this.state.loading,
@@ -114,33 +123,53 @@ class PageHeader extends ReactiveComponent {
       </React.Fragment>
     )
 
+    const acName = (
+      <Header as="h1" color="black" style={styles.h1}>
+        <span>
+          {this.state.name}
+          <Icon 
+            name="pencil"
+            color="black"
+            style={{fontSize: 15, cursor: 'pointer'}}
+            onClick={this.toggleNameInput}
+          />
+        </span>
+      </Header>
+    )
+
+    const acNameInput = (
+      <Input
+        className="header-name"
+        action={{
+          color: 'black',
+          icon: 'pencil',
+          onClick: this.handleSaveName
+        }}
+        onChange={this.handleNameChange}
+        value={this.state.name}
+      />
+    )
+
     return (
-      <Container fluid className="header-bar">
-        <Container className="logo">
-          <Image src={this.props.logo} />
+      <Container fluid style={styles.headerContainer} className="header-bar">
+        <Container style={styles.logo} className="logo">
+          <Image src={this.props.logo} style={styles.logoImg} />
         </Container>
-        <Container className="content">
-          <Header as="h1" style={{ marginBottom: 0}}>
-            <Input
-              className="header-name"
-              action={{
-                color: 'violet',
-                icon: 'pencil',
-                onClick: this.saveName
-              }}
-              onChange={this.handleNameChange}
-              onBlur={this.handleSaveName}
-              value={this.state.name}
-            />
-          </Header>
+        <Container className="content" style={styles.content}>
+          <If condition={this.state.showNameInput} then={acNameInput} else={acName} />
           <div>
             Address Key:
             <Dropdown
+              style={styles.dropdown}
               className="address-dropdown"
               selection
-              options={addressOptions}
+              options={this.state.secretStore.keys.map((account, i) => ({
+                key: i,
+                text: account.address,
+                value: i
+              }))}
               placeholder="Select an address"
-              defaultValue={this.state.index}
+              value={this.state.index}
               onChange={this.handleSelection}
             />
           </div>
@@ -168,3 +197,37 @@ PageHeader.defaultProps = {
 }
 
 export default PageHeader
+
+
+const styles = {
+  headerContainer: {
+    height: 154,
+    border: 'none'
+  },
+  logo: {
+    width: 265,
+    float: 'left',
+    padding: 15
+  },
+  logoImg: {
+    margin: 'auto',
+    maxHeight: 124,
+    width: 'auto'
+  },
+  content: {
+    // backgroundColor: '#ddd0f5',
+    height: 154,
+    width: 'calc(100% - 265px)',
+    float: 'right',
+    padding: '25px 50px'
+  },
+  h1: {
+    fontSize: 40,
+    marginBottom: 0
+  },
+  dropdown: {
+    background: 'none',
+    border: 'none',
+    boxShadow: 'none'
+  }
+}

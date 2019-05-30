@@ -104,7 +104,7 @@ class ChatWidget extends ReactiveComponent {
 
   login() {
     const user = getUser()
-    if (!user) return addEventMsg('Please select an ID to start chat.');
+    if (!user) return addEventMsg('Please choose an ID to start chat.');
     
 
     this.client.login(user.id, user.secret, err => {

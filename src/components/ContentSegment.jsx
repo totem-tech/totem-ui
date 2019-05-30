@@ -1,17 +1,7 @@
 import React from 'react'
 import {ReactiveComponent, If} from 'oo7-react'
 import { runtimeUp } from 'oo7-substrate'
-import { Icon, Header, Image, Segment } from 'semantic-ui-react'
-const placeholderImage = 'https://react.semantic-ui.com/images/wireframe/paragraph.png'
-
-const style = {
-  color: 'white',
-  background: 'none',
-  borderColor: 'white',
-  borderWidth: 5,
-  borderRadius: 7,
-  margin: '1em'
-}
+import { Icon, Header, Placeholder, Segment } from 'semantic-ui-react'
 
 class ContentSegment extends ReactiveComponent {
   constructor(props) {
@@ -21,7 +11,7 @@ class ContentSegment extends ReactiveComponent {
   render() {
     const headerText = this.props.header || this.props.title
     const header = (
-      <Header as="h1" inverted>
+      <Header as="h1" inverted={this.props.headerInverted}>
         <Icon name={this.props.icon} />
         <Header.Content>
           <div>{headerText}</div>
@@ -30,10 +20,10 @@ class ContentSegment extends ReactiveComponent {
       </Header>
     )
     const segment = (
-      <Segment style={style} padded>
+      <Segment padded color={this.props.color} inverted={this.props.inverted}>
         <If condition={!!headerText} then={header} />
         <div style={{ paddingBottom: '1em' }}>
-          <If condition={!!this.props.content} then={this.props.content} else={<Image src={placeholderImage} />} />
+          <If condition={!!this.props.content} then={this.props.content} else={placeholder} />
         </div>
       </Segment>
     )
@@ -43,3 +33,18 @@ class ContentSegment extends ReactiveComponent {
 
 export default ContentSegment
 
+
+const placeholder = (
+  <Placeholder>
+    <Placeholder.Paragraph>
+      <Placeholder.Line />
+      <Placeholder.Line />
+      <Placeholder.Line />
+      <Placeholder.Line />
+      <Placeholder.Line />
+      <Placeholder.Line />
+      <Placeholder.Line />
+      <Placeholder.Line />
+    </Placeholder.Paragraph>
+  </Placeholder>
+)
