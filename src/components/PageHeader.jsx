@@ -7,6 +7,17 @@ import uuid from 'uuid'
 import {addResponseMessage, dropMessages, isWidgetOpened, toggleWidget} from 'react-chat-widget'
 import {getUser, getClient} from './ChatClient'
 const nameRegex = /^($|[a-z]|[a-z][a-z0-9]+)$/
+const copyToClipboard = str => {
+  const el = document.createElement('textarea');
+  el.value = str;
+  el.setAttribute('readonly', '');
+  el.style.position = 'absolute';
+  el.style.left = '-9999px';
+  document.body.appendChild(el);
+  el.select();
+  document.execCommand('copy');
+  document.body.removeChild(el);
+}
 
 class PageHeader extends ReactiveComponent {
   constructor(props) {
@@ -14,53 +25,23 @@ class PageHeader extends ReactiveComponent {
 
     const user = getUser()
     this.state = {
-      accounts: [],
       index: 0,
-      name: '',
       id: (user || {}).id,
       registered: !!user,
       loading: false,
-      idValid: false,
-      showNameInput: false
+      idValid: false
     }
 
     this.handleSelection = this.handleSelection.bind(this)
-    this.handleNameChange = this.handleNameChange.bind(this)
-    this.handleSaveName = this.handleSaveName.bind(this)
     this.handleIdChange = this.handleIdChange.bind(this)
     this.handleRegister = this.handleRegister.bind(this)
-    this.toggleNameInput = this.toggleNameInput.bind(this)
   }
 
   handleSelection(e, data) {
     const num = eval(data.value)
     const index = num < this.state.secretStore.keys.length ? num : 0
-    this.setState({
-      index: index,
-      name: this.state.secretStore.keys[index].name
-    })
+    this.setState({index})
   }
-
-  handleNameChange(_, data) {
-    this.setState({ name: data.value })
-  }
-
-  handleSaveName() {
-    const account = this.state.secretStore.keys[this.state.index]
-    if (!account || account.name === this.state.name) return this.setState({showNameInput: false});
-    
-    setTimeout(()=> {
-      secretStore().forget(account)
-      secretStore().submit(account.phrase, this.state.name)
-      const index = this.state.secretStore.keys.length - 1
-      this.setState({
-        index,
-        showNameInput: false,
-        accounts: this.state.secretStore.keys,
-        name: this.state.secretStore.keys[index].name
-      })  
-    })
-}
 
   handleIdChange(_, data) {
     const val = data.value.trim()
@@ -83,19 +64,6 @@ class PageHeader extends ReactiveComponent {
       addResponseMessage('So, you want to try Totem? Great! Just post your default address and I\'ll send you some funds - and then you can use it!')
       !isWidgetOpened() && toggleWidget()
     })
-  }
-
-  toggleNameInput() {
-    this.setState({
-      showNameInput: !this.state.showNameInput,
-      name: this.state.secretStore.keys[this.state.index].name
-    })
-  }
-
-  componentDidMount() {
-    const accounts = this.state.secretStore.keys
-    const name = (accounts[0] || {}).name
-    this.setState({accounts, name})
   }
 
   render() {
@@ -123,55 +91,31 @@ class PageHeader extends ReactiveComponent {
       </React.Fragment>
     )
 
-    const acName = (
-      <Header as="h1" color="black" style={styles.h1}>
-        <span>
-          {this.state.name}
-          <Icon 
-            name="pencil"
-            color="black"
-            style={{fontSize: 15, cursor: 'pointer'}}
-            onClick={this.toggleNameInput}
-          />
-        </span>
-      </Header>
-    )
-
-    const acNameInput = (
-      <Input
-        className="header-name"
-        action={{
-          color: 'black',
-          icon: 'pencil',
-          onClick: this.handleSaveName
-        }}
-        onChange={this.handleNameChange}
-        value={this.state.name}
-      />
-    )
-
+    const address = (this.state.secretStore.keys[this.state.index] || {}).address
+    const index = this.state.index < this.state.secretStore.keys.length ? this.state.index : 0
     return (
-      <Container fluid style={styles.headerContainer} className="header-bar">
-        <Container style={styles.logo} className="logo">
+      <Container fluid style={styles.headerContainer}>
+        <Container style={styles.logo}>
           <Image src={this.props.logo} style={styles.logoImg} />
         </Container>
-        <Container className="content" style={styles.content}>
-          <If condition={this.state.showNameInput} then={acNameInput} else={acName} />
+        <Container style={styles.content}>
+          <Dropdown
+            style={styles.dropdown}
+            icon={<Icon name="dropdown" size="big" style={styles.dropdownIcon} />}
+            labeled
+            selection
+            options={this.state.secretStore.keys.map((key, i) => ({
+              key: i,
+              text: key.name,
+              value: i
+            }))}
+            placeholder="Select an account"
+            value={index}
+            onChange={this.handleSelection}
+          />
           <div>
-            Address Key:
-            <Dropdown
-              style={styles.dropdown}
-              className="address-dropdown"
-              selection
-              options={this.state.secretStore.keys.map((account, i) => ({
-                key: i,
-                text: account.address,
-                value: i
-              }))}
-              placeholder="Select an address"
-              value={this.state.index}
-              onChange={this.handleSelection}
-            />
+            Address Key: {address}
+            &nbsp;<Icon link name="copy outline" onClick={copyToClipboard(address)} />
           </div>
           <div>
             <span style={{paddingRight: 10}}>ID:</span>
@@ -221,13 +165,16 @@ const styles = {
     float: 'right',
     padding: '25px 50px'
   },
-  h1: {
-    fontSize: 40,
-    marginBottom: 0
-  },
   dropdown: {
     background: 'none',
     border: 'none',
-    boxShadow: 'none'
+    boxShadow: 'none',
+    minHeight: 'auto',
+    fontSize: 40,
+    padding: '0 40px 0 0',
+    minWidth: 'auto'
+  },
+  dropdownIcon: {
+    padding: 0
   }
 }
