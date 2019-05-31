@@ -2,22 +2,12 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { If, ReactiveComponent } from 'oo7-react'
 import { runtimeUp, secretStore } from 'oo7-substrate'
-import { Container, Dropdown, Header, Icon, Image, Input, Label, Segment } from 'semantic-ui-react'
+import { Button, Container, Dropdown, Header, Icon, Image, Input, Label, Segment } from 'semantic-ui-react'
 import uuid from 'uuid'
 import {addResponseMessage, dropMessages, isWidgetOpened, toggleWidget} from 'react-chat-widget'
-import {getUser, getClient} from './ChatClient'
+import { getUser, getClient } from './ChatClient'
+import { copyToClipboard } from './utils'
 const nameRegex = /^($|[a-z]|[a-z][a-z0-9]+)$/
-const copyToClipboard = str => {
-  const el = document.createElement('textarea');
-  el.value = str;
-  el.setAttribute('readonly', '');
-  el.style.position = 'absolute';
-  el.style.left = '-9999px';
-  document.body.appendChild(el);
-  el.select();
-  document.execCommand('copy');
-  document.body.removeChild(el);
-}
 
 class PageHeader extends ReactiveComponent {
   constructor(props) {
@@ -29,12 +19,14 @@ class PageHeader extends ReactiveComponent {
       id: (user || {}).id,
       registered: !!user,
       loading: false,
-      idValid: false
+      idValid: false,
+      faucetReqMsg: {error: false, text: ''}
     }
 
     this.handleSelection = this.handleSelection.bind(this)
     this.handleIdChange = this.handleIdChange.bind(this)
     this.handleRegister = this.handleRegister.bind(this)
+    this.handleFaucetRequest = this.handleFaucetRequest.bind(this)
   }
 
   handleSelection(e, data) {
@@ -70,6 +62,25 @@ class PageHeader extends ReactiveComponent {
     copyToClipboard(address)
     this.setState({copied: true})
     setTimeout(() => this.setState({copied: false}), 2000)
+  }
+
+  handleFaucetRequest(address, amount) {
+    const client = getClient()
+    if (!client.isConnected()) {
+      this.setState({faucetReqMsg: {
+        text: 'Connection failed!',
+        error: true
+      }})
+      return
+    }
+    client.faucetRequest(address, amount, (err) => {
+      this.setState({faucetReqMsg: {
+        text: err || 'Request sent!',
+        error: !!err
+      }})
+      
+      setTimeout(() => this.setState({faucetReqMsg: {}}), 3000)
+    })
   }
 
   render() {
@@ -123,13 +134,24 @@ class PageHeader extends ReactiveComponent {
             Address Key: {address}&nbsp;&nbsp;
             <Icon
               link
+              title="Copy address"
               name="copy outline"
               onClick={() => this.handleCopy(address)}
             />
-            {this.state.copied && (
-              <Label basic color='green' pointing="left">
-              Address copied to clipboard!</Label>
-            )}
+
+            <If
+              condition={this.state.copied}
+              then={<Label basic color="green" pointing="left">Address copied to clipboard!</Label>}
+            />
+
+            <If
+              condition={this.state.registered && address}
+              then={<Button size="mini" onClick={() => this.handleFaucetRequest(address)}>Request Faucet</Button>}
+            />
+            <If
+              condition={this.state.faucetReqMsg.text}
+              then={<Label basic color={this.state.faucetReqMsg.error ? 'red' : 'green'} pointing="left">{this.state.faucetReqMsg.text}</Label>}
+            />
           </div>
           <div>
             <span style={{paddingRight: 10}}>ID:</span>

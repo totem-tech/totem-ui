@@ -5,13 +5,14 @@ const postLoginCallbacks = []
 // Local Storage Keys
 const USER_KEY = 'chat-user'
 const HISTORY_KEY = 'chat-history'
-const historyLimit = 200
+const historyLimit = 100
 // Saves user credentails to local storage
 const saveUser = (id, secret) => localStorage.setItem(USER_KEY, JSON.stringify({id, secret}))
 // retrieves user credentails from local storage
 export const getUser = () => JSON.parse(localStorage.getItem(USER_KEY))
 // Retrieves chat history from local storage
 export const getHistory = () => JSON.parse(localStorage.getItem(HISTORY_KEY)) || []
+export const getHistoryLimit = () => historyLimit
 export const addToHistory = (message, id) => {
     const history = getHistory() || []
     history.push({message, id})
@@ -44,6 +45,7 @@ export class ChatClient {
         this.url = url || `${window.location.hostname}:${port}`
         socket = io(this.url)
 
+        this.isConnected = () => socket.connected
         this.onConnect = cb => socket.on('connect', cb)
         this.onReconnect = cb => socket.on('reconnect', cb)
         // this.onConnectTimeout = cb => socket.on('connect_timeout', cb);
@@ -51,8 +53,12 @@ export class ChatClient {
         // this.onDisconnect = cb => socket.on('disonnect', cb)  // doesn't work
         this.disconnect = () => socket.disconnect()
         this.onError = cb => socket.on('error', cb)
-        this.onMessage = cb => socket.on('message', cb)
         this.message = (msg, cb) => socket.emit('message', msg, cb)
+        this.onMessage = cb => socket.on('message', cb)
+        // Request funds
+        this.faucetRequest = (address, amount, cb) => socket.emit('faucet-request', address, amount, cb)
+        // Funds received
+        this.onFaucetRequest = cb => socket.on('faucet-request', cb)
     }
 
     register(id, secret, cb) {

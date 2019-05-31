@@ -48,7 +48,7 @@ io.on('connection', client => {
     if (!user) return;
     user.clientIds.splice(findClientIndex(user, client.id), 1)
     user.online = false
-    console.log('Client disconnected: ', client.id)
+    console.info('Client disconnected: ', client.id)
   })
 
   client.on('message', (msg, callback) => {
@@ -61,18 +61,14 @@ io.on('connection', client => {
     const sender = findUserByClientId(client.id)
     // Ignore message from logged out users
     if (!sender) return doCb && callback(errMsgs.loginAgain);
-
-    for (const [_, iClient] of clients) {
-      if (iClient.id === client.id) continue; // ignore sender client
-      iClient.emit('message', msg, sender.id)
-    }
+    emit(client.id, 'message', [msg, sender.id])
     doCb && callback()
   })
 
   client.on('register', (userId, secret, callback) => {
     const doCb = isFn(callback)
     if (users.get(userId)) {
-      console.log(userId, ':', errMsgs.idExists)
+      console.info(userId, ':', errMsgs.idExists)
       doCb && callback(errMsgs.idExists)
       return
     }
@@ -88,7 +84,7 @@ io.on('connection', client => {
     }
     users.set(userId, newUser)
     clients.set(client.id, client)
-    console.log('User registered:', newUser)
+    console.info('User registered:', newUser)
     doCb && callback()
     saveUsers()
   })
@@ -105,8 +101,18 @@ io.on('connection', client => {
       err = errMsgs.loginFailed
     }
 
-    console.log('Login ' + (err ? 'failed' : 'success') + ' | ID:', userId, '| Client ID: ', client.id)
+    console.info('Login ' + (err ? 'failed' : 'success') + ' | ID:', userId, '| Client ID: ', client.id)
     isFn(callback) && callback(err)
+    emit()
+  })
+
+  client.on('faucet-request', (address, amount, callback) => {
+    const doCb = isFn(callback)
+    const sender = findUserByClientId(client.id)
+    if (!sender) return doCb && callback(errMsgs.loginAgain)
+    console.info('faucet-request from @' + sender.id, address, amount)
+    emit([], 'faucet-request', [sender.id, address, amount])
+    doCb && callback()
   })
 })
 
@@ -141,4 +147,15 @@ const saveUsers = () => {
     { flag: 'w' },
     err => err && console.log('Failed to save user data. ' + err)
   )
+}
+
+const emit = (ignoreClientIds, eventName, cbParams) => {
+  ignoreClientIds = Array.isArray(ignoreClientIds) ? ignoreClientIds : [ignoreClientIds]
+  cbParams = cbParams || []
+  cbParams.splice(0, 0, eventName)
+  for (const [_, iClient] of clients) {
+    if (ignoreClientIds.indexOf(iClient.id) >= 0) continue; // ignore sender client
+    // iClient.emit('message', msg, sender.id)
+    iClient.emit.apply(iClient, cbParams)
+  }
 }

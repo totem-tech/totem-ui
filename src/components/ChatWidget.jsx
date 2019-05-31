@@ -1,6 +1,6 @@
 import React from 'react'
-// const {Bond} = require('oo7')
-import { ReactiveComponent } from 'oo7-react'
+import { If, ReactiveComponent } from 'oo7-react'
+import { Icon } from 'semantic-ui-react'
 import {
   Widget,
   // addResponseMessage,
@@ -10,25 +10,12 @@ import {
   // dropMessages,
   isWidgetOpened,
   // toggleInputDisabled,
-  toggleMsgLoader
+  // toggleMsgLoader
 } from 'react-chat-widget'
 import 'react-chat-widget/lib/styles.css'
-import { addToHistory, getClient, getUser, getHistory } from './ChatClient'
-
-// For todays date;
-Date.prototype.today = function () { 
-  return ((this.getDate() < 10)?"0":"") + this.getDate() +"/"+(((this.getMonth()+1) < 10)?"0":"") + (this.getMonth()+1) +"/"+ this.getFullYear();
-}
-
-// For the time now
-Date.prototype.timeNow = function () {
-   return ((this.getHours() < 10)?"0":"") + this.getHours() +":"+ ((this.getMinutes() < 10)?"0":"") + this.getMinutes() +":"+ ((this.getSeconds() < 10)?"0":"") + this.getSeconds();
-}
-
-function getNow() {
-  var datetime = new Date().today() + " @ " + new Date().timeNow();
-  return datetime;
-}
+import { addToHistory, getClient, getUser, getHistory, getHistoryLimit } from './ChatClient'
+import { copyToClipboard, getNow } from './utils'
+// import { BalanceBond } from '../BalanceBond'
 
 const eventTypes = [
   'red',   // error
@@ -36,13 +23,12 @@ const eventTypes = [
   'yellow' // warning
 ]
 
+// Show error, waring, connection status etc
 const addEventMsg = (messageContent, type) => renderCustomComponent(EventEntry, {
   // background: 'lightyellow',
   color: eventTypes[type || 0],
   content: messageContent
 })
-
-const addResponseWithId = (message, id) => renderCustomComponent( MessageEntry, {message, id})
 
 const EventEntry = (props) => (
   <div style={{
@@ -58,6 +44,8 @@ const EventEntry = (props) => (
   </div>
 )
 
+// Message sent by other users
+const addResponseWithId = (message, id) => renderCustomComponent( MessageEntry, {message, id})
 const MessageEntry = (props) => (
   <div>
     <span style={{ fontStyle:'italic', color: 'gray'}}>
@@ -83,6 +71,7 @@ class ChatWidget extends ReactiveComponent {
     this.handleNewUserMessage = this.handleNewUserMessage.bind(this)
     this.login = this.login.bind(this)
     this.setupChatClient = this.setupChatClient.bind(this)
+    this.addFaucetEntry = this.addFaucetEntry.bind(this)
   }
 
   componentDidMount() {
@@ -90,6 +79,10 @@ class ChatWidget extends ReactiveComponent {
     !this.client && this.setupChatClient()
     // attempt to login
     this.login()
+  }
+
+  componentWillUpdate() {
+    console.log('componentWillUpdate')
   }
 
   setupChatClient() {
@@ -111,6 +104,34 @@ class ChatWidget extends ReactiveComponent {
       addEventMsg('chat server offline at : ' + getNow())
       this.setState({showOfflineMsg: false})
     })
+
+    this.client.onFaucetRequest(this.addFaucetEntry)
+  }
+
+  addFaucetEntry(userId, address, amount) {
+    const fromMe = userId === this.state.userId
+    const addArr = address.split('')
+    const addressShort = addArr.slice(0, 4).join('') + '...' + addArr.slice(addArr.length - 4, addArr.length).join('') + ' '
+    const content = (
+      <div>
+        <h4 style={styles.faucetRequestTitle}>{fromMe ? 'You made a Faucet Request' : 'Faucet Request from @' + userId}</h4>
+        <div>Address: {addressShort}
+          <Icon
+            link
+            title="Copy address"
+            name="copy outline"
+            onClick={() => copyToClipboard(address)}
+          />
+        </div>
+      </div>
+    )
+
+    const props = {
+      background: fromMe ? 'grey' : '#f4f7f9',
+      color: fromMe ? 'white' : 'black',
+      content
+    }
+    renderCustomComponent(EventEntry, props)
   }
 
   handleNewUserMessage(msg) {
@@ -142,7 +163,7 @@ class ChatWidget extends ReactiveComponent {
       <Widget
         xtitleAvatar="/assets/totem-logo-white-inner.png"
         title="Totem Chatter"
-        subtitle="Your chat history is not saved on the server, up to 100 messages are saved locally."
+        subtitle={'Your chat history is not saved on the server, up to ' + getHistoryLimit() + ' messages are saved locally.'}
         senderPlaceHolder={"Let's go Toto..."}
         handleNewUserMessage={this.handleNewUserMessage}
         xbadge={this.state.unreadCount}
@@ -153,3 +174,8 @@ class ChatWidget extends ReactiveComponent {
 }
 export default ChatWidget
 
+const styles = {
+  faucetRequestTitle: {
+    margin: 0
+  }
+}
