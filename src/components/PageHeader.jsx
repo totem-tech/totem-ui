@@ -29,8 +29,7 @@ class PageHeader extends ReactiveComponent {
       id: (user || {}).id,
       registered: !!user,
       loading: false,
-      idValid: false,
-      copyTitle: 'Copy address'
+      idValid: false
     }
 
     this.handleSelection = this.handleSelection.bind(this)
@@ -129,7 +128,7 @@ class PageHeader extends ReactiveComponent {
             />
             {this.state.copied && (
               <Label basic color='green' pointing="left">
-              'Address copied to clipboard!'</Label>
+              Address copied to clipboard!</Label>
             )}
           </div>
           <div>
@@ -164,7 +163,7 @@ const styles = {
     border: 'none'
   },
   logo: {
-    width: 265,
+    width: 235,
     float: 'left',
     padding: 15
   },
@@ -176,7 +175,7 @@ const styles = {
   content: {
     // backgroundColor: '#ddd0f5',
     height: 154,
-    width: 'calc(100% - 265px)',
+    width: 'calc(100% - 235px)',
     float: 'right',
     padding: '25px 50px'
   },
@@ -186,7 +185,7 @@ const styles = {
     boxShadow: 'none',
     minHeight: 'auto',
     fontSize: 40,
-    padding: '0 40px 0 0',
+    padding: '0 2.1em 5px 0',
     minWidth: 'auto'
   },
   dropdownIcon: {

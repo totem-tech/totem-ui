@@ -44,7 +44,8 @@ class SidebarLeft extends ReactiveComponent {
         style={styles.sidebarToggle}
       >
         <span>
-          <Icon name={'angle ' + (this.state.collapsed ? 'right' : 'left')} size='large' />
+          {/* <Icon name={'angle ' + (this.state.collapsed ? 'right' : 'left')} size='large' /> */}
+          <Icon name={'angle ' + (this.state.collapsed ? 'right' : 'left')} />
         </span>
       </Menu.Item>
     )
@@ -76,7 +77,7 @@ class SidebarLeft extends ReactiveComponent {
             <span>
               <Icon
                 name={item.icon || 'folder'}
-                size={this.state.collapsed ? 'big' : 'large'}
+                // size={this.state.collapsed ? 'big' : 'large'}
               />
               <If condition={!this.state.collapsed} then={item.title} />
             </span>
