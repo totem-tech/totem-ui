@@ -29,7 +29,8 @@ class PageHeader extends ReactiveComponent {
       id: (user || {}).id,
       registered: !!user,
       loading: false,
-      idValid: false
+      idValid: false,
+      copyTitle: 'Copy address'
     }
 
     this.handleSelection = this.handleSelection.bind(this)
@@ -64,6 +65,12 @@ class PageHeader extends ReactiveComponent {
       addResponseMessage('So, you want to try Totem? Great! Just post your default address and I\'ll send you some funds - and then you can use it!')
       !isWidgetOpened() && toggleWidget()
     })
+  }
+
+  handleCopy(address) {
+    copyToClipboard(address)
+    this.setState({copied: true})
+    setTimeout(() => this.setState({copied: false}), 2000)
   }
 
   render() {
@@ -114,8 +121,16 @@ class PageHeader extends ReactiveComponent {
             onChange={this.handleSelection}
           />
           <div>
-            Address Key: {address}
-            &nbsp;<Icon link name="copy outline" onClick={copyToClipboard(address)} />
+            Address Key: {address}&nbsp;&nbsp;
+            <Icon
+              link
+              name="copy outline"
+              onClick={() => this.handleCopy(address)}
+            />
+            {this.state.copied && (
+              <Label basic color='green' pointing="left">
+              'Address copied to clipboard!'</Label>
+            )}
           </div>
           <div>
             <span style={{paddingRight: 10}}>ID:</span>
