@@ -29,3 +29,14 @@ Date.prototype.timeNow = function () {
 }
 
 export const getNow = () => new Date().today() + " @ " + new Date().timeNow()
+
+export const setStateTimeout = (compInstance, key, dataBefore, dataAfter, delay) => {
+  if (typeof(compInstance.setState) != 'function') return;
+  const data = {}
+  data[key] = dataBefore
+  compInstance.setState(data)
+  setTimeout(() => {
+    data[key] = dataAfter
+    compInstance.setState(data)
+  }, delay || 2000)
+}

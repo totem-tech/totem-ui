@@ -1,5 +1,5 @@
 import React from 'react'
-import { If, ReactiveComponent } from 'oo7-react'
+import { ReactiveComponent } from 'oo7-react'
 import { Icon } from 'semantic-ui-react'
 import {
   Widget,
@@ -8,14 +8,13 @@ import {
   addUserMessage,
   renderCustomComponent,
   // dropMessages,
-  isWidgetOpened,
+  // isWidgetOpened,
   // toggleInputDisabled,
   // toggleMsgLoader
 } from 'react-chat-widget'
 import 'react-chat-widget/lib/styles.css'
 import { addToHistory, getClient, getUser, getHistory, getHistoryLimit } from './ChatClient'
 import { copyToClipboard, getNow } from './utils'
-// import { BalanceBond } from '../BalanceBond'
 
 const eventTypes = [
   'red',   // error
@@ -81,10 +80,6 @@ class ChatWidget extends ReactiveComponent {
     this.login()
   }
 
-  componentWillUpdate() {
-    console.log('componentWillUpdate')
-  }
-
   setupChatClient() {
     this.client = getClient()
 
@@ -94,7 +89,7 @@ class ChatWidget extends ReactiveComponent {
     this.client.onMessage((msg, id) => {
       id === this.state.userId ? addUserMessage(msg) : addResponseWithId(msg, id)
       addToHistory(msg, id)
-      !isWidgetOpened() && this.setState({unreadCount: this.state.unreadCount++})
+      // !isWidgetOpened() && this.setState({unreadCount: this.state.unreadCount++})
     })
 
     this.client.onConnectError(err => {
@@ -114,7 +109,9 @@ class ChatWidget extends ReactiveComponent {
     const addressShort = addArr.slice(0, 4).join('') + '...' + addArr.slice(addArr.length - 4, addArr.length).join('') + ' '
     const content = (
       <div>
-        <h4 style={styles.faucetRequestTitle}>{fromMe ? 'You made a Faucet Request' : 'Faucet Request from @' + userId}</h4>
+        <h4 style={styles.faucetRequestTitle}>
+          {fromMe ? 'You made a Faucet Request' : 'Faucet Request from @' + userId}
+        </h4>
         <div>Address: {addressShort}
           <Icon
             link
@@ -141,7 +138,6 @@ class ChatWidget extends ReactiveComponent {
   login() {
     const user = getUser()
     if (!user) return addEventMsg('Please choose a unique ID.');
-    
 
     this.client.login(user.id, user.secret, err => {
       if (err) {

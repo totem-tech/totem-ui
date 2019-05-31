@@ -6,7 +6,7 @@ import { Button, Container, Dropdown, Header, Icon, Image, Input, Label, Segment
 import uuid from 'uuid'
 import {addResponseMessage, dropMessages, isWidgetOpened, toggleWidget} from 'react-chat-widget'
 import { getUser, getClient } from './ChatClient'
-import { copyToClipboard } from './utils'
+import { copyToClipboard, setStateTimeout } from './utils'
 const nameRegex = /^($|[a-z]|[a-z][a-z0-9]+)$/
 
 class PageHeader extends ReactiveComponent {
@@ -60,26 +60,25 @@ class PageHeader extends ReactiveComponent {
 
   handleCopy(address) {
     copyToClipboard(address)
-    this.setState({copied: true})
-    setTimeout(() => this.setState({copied: false}), 2000)
+    setStateTimeout(this, 'copied', true, false, 2000)
   }
 
   handleFaucetRequest(address, amount) {
     const client = getClient()
     if (!client.isConnected()) {
-      this.setState({faucetReqMsg: {
+      const msg = {
         text: 'Connection failed!',
         error: true
-      }})
+      }
+      setStateTimeout(this, 'faucetReqMsg', msg, {}, 3000)
       return
     }
     client.faucetRequest(address, amount, (err) => {
-      this.setState({faucetReqMsg: {
+      const msg = {
         text: err || 'Request sent!',
         error: !!err
-      }})
-      
-      setTimeout(() => this.setState({faucetReqMsg: {}}), 3000)
+      }
+      setStateTimeout(this, 'faucetReqMsg', msg, 3000)
     })
   }
 
