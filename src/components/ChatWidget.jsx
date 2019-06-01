@@ -15,6 +15,7 @@ import {
 import 'react-chat-widget/lib/styles.css'
 import { addToHistory, getClient, getUser, getHistory, getHistoryLimit } from './ChatClient'
 import { copyToClipboard, getNow } from './utils'
+import TotemLogoCircle from '../assets/totem-button-grey.png';
 
 const eventTypes = [
   'red',   // error
@@ -31,13 +32,15 @@ const addEventMsg = (messageContent, type) => renderCustomComponent(EventEntry, 
 
 const EventEntry = (props) => (
   <div style={{
-    width: props.width || 'auto',
+    width: props.width || '100%',
     background: props.background,
     color: props.color,
-    fontStyle: 'italic',
+    textAlign: 'center',
+    fontStyle: 'light',
     margin: 'auto',
-    padding: '0px 20px',
-    borderRadius: '1px 0px'
+    padding: '5px 0px 5px 0px',
+    borderRadius: '5px 5px',
+    textSize: '0.75rem'
   }}>
     {props.content}
   </div>
@@ -110,7 +113,7 @@ class ChatWidget extends ReactiveComponent {
     const content = (
       <div>
         <h4 style={styles.faucetRequestTitle}>
-          {fromMe ? 'You made a Faucet Request' : 'Faucet Request from @' + userId}
+          {fromMe ? 'You made a request for funds' : 'Funds requested for @' + userId}
         </h4>
         <div>Address: {addressShort}
           <Icon
@@ -137,7 +140,7 @@ class ChatWidget extends ReactiveComponent {
 
   login() {
     const user = getUser()
-    if (!user) return addEventMsg('Please choose a unique ID.');
+    if (!user) return addEventMsg('First you have to create your ID (hint: see the header).');
 
     this.client.login(user.id, user.secret, err => {
       if (err) {
@@ -157,10 +160,10 @@ class ChatWidget extends ReactiveComponent {
   render () {
     return (
       <Widget
-        xtitleAvatar="/assets/totem-logo-white-inner.png"
-        title="Totem Chatter"
-        subtitle={'Your chat history is not saved on the server, up to ' + getHistoryLimit() + ' messages are saved locally.'}
-        senderPlaceHolder={"Let's go Toto..."}
+        titleAvatar={TotemLogoCircle}
+        title="totem live chat"
+        subtitle={'Your chat history is not saved on the server. Up to ' + getHistoryLimit() + ' messages are saved locally.'}
+        senderPlaceHolder={"Let's chat totem..."}
         handleNewUserMessage={this.handleNewUserMessage}
         xbadge={this.state.unreadCount}
         autofocus={true}

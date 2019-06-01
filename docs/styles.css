@@ -41,13 +41,13 @@
 /*
  * New styles
  */
- body {
+ /* body {
   overflow: hidden;
- }
+ } */
  #app {
   height: 100%;
   /* width: 100%; */
-  overflow: hidden;
+  /* overflow: hidden; */
   /* background-color: #aa9dd5; */
 }
 /* Main content width and positioning when sidebar is collapsed (icon-only mode) */
@@ -77,11 +77,6 @@ i.icon {
 .angle.left.icon {
   margin-right: 0rem  !important;
 }
-
-.black.pencil.icon {
-  font-size: 0.5em  !important;
-  margin-left: 0.75rem  !important;
-}
  
 .dropdown.icon {
   margin-right: -1rem  !important;
@@ -93,9 +88,19 @@ i.icon {
 }
 
 /* Chat Message Customisation */
+.rcw-conversation-container .rcw-title {
+  font-size: 20px !important;
+  padding: 5px 0px !important;
+}
+
 .rcw-conversation-container .rcw-header {
   background-color:#17537d  !important;
 }
+
+.rcw-conversation-container .rcw-header span {
+  padding: 0px 50px  !important;
+}
+
 
 .rcw-full-screen .rcw-close-button {
   background-color:#17537d  !important;

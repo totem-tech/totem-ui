@@ -44,7 +44,6 @@ class SidebarLeft extends ReactiveComponent {
         style={styles.sidebarToggle}
       >
         <span>
-          {/* <Icon name={'angle ' + (this.state.collapsed ? 'right' : 'left')} size='large' /> */}
           <Icon name={'angle ' + (this.state.collapsed ? 'right' : 'left')} />
         </span>
       </Menu.Item>

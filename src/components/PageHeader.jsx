@@ -53,7 +53,7 @@ class PageHeader extends ReactiveComponent {
 
       this.setState({registered: true})
       dropMessages()
-      addResponseMessage('So, you want to try Totem? Great! Just post your default address and I\'ll send you some funds - and then you can use it!')
+      addResponseMessage('So, you want to started with Totem? Great! Just ping your address using the Request Funds button and we\'ll send you some funds! Then you are good to go!')
       !isWidgetOpened() && toggleWidget()
     })
   }
@@ -96,7 +96,7 @@ class PageHeader extends ReactiveComponent {
           }}
           onChange={this.handleIdChange}
           value={this.state.id}
-          placeholder="Enter ID to register for chat"
+          placeholder="To begin create a unique ID."
           error={!!this.state.idError}
           style={{minWidth: 270}}
         />
@@ -130,7 +130,7 @@ class PageHeader extends ReactiveComponent {
             onChange={this.handleSelection}
           />
           <div>
-            Address Key: {address}&nbsp;&nbsp;
+            Accounting Ledger Public Address: {address}&nbsp;&nbsp;
             <Icon
               link
               title="Copy address"
@@ -145,7 +145,7 @@ class PageHeader extends ReactiveComponent {
 
             <If
               condition={this.state.registered && address}
-              then={<Button size="mini" onClick={() => this.handleFaucetRequest(address)}>Request Faucet</Button>}
+              then={<Button size="mini" onClick={() => this.handleFaucetRequest(address)}>Request Funds Now</Button>}
             />
             <If
               condition={this.state.faucetReqMsg.text}
