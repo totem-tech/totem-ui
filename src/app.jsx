@@ -41,6 +41,9 @@ export class App extends ReactiveComponent {
   constructor() {
     super([], { ensureRuntime: runtimeUp, secretStore: secretStore() });
 
+    // custom types
+		addCodecTransform('ClaimIndex', 'u64');
+
     // For debug only.
     window.runtime = runtime;
     window.secretStore = secretStore;
@@ -167,7 +170,7 @@ const sidebarItems = [
     active: false,
     content: <AddressBookView />
   },
-  { icon: "file alternate", title: "Invoice", subHeader: "" },
+  { icon: "file alternate", title: "Invoice", subHeader: "", active: false, content: <Invoice /> },
   { icon: "pen square", title: "Manage Invoices", subHeader: "" },
   { icon: "file alternate", title: "Credit Note", subHeader: "" },
   { icon: "tint", title: "Purchase Order", subHeader: "" },

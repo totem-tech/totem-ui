@@ -10,6 +10,16 @@ import {Pretty} from './Pretty';
 export class LedgerTransactionList extends ReactiveComponent {
 	constructor () {
 		super()
+
+		// custom types
+		// addCodecTransform('DocumentReference', 'Vec<u8>');
+		// addCodecTransform('AccountBalance', 'i64');
+
+		// temporary hack to workaround the incorrect codec.js issue
+		addCodecTransform('AccountBalance', 'u64');
+		
+		// addCodecTransform('ClaimIndex', 'u64');
+
 		this.officeWorldAccount = new Bond;			
 		this.bayerAccount = new Bond;		
 		this.cargillAccount = new Bond;
