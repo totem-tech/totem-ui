@@ -1,8 +1,9 @@
 import React from "react";
-import { Container, Menu, Sidebar } from "semantic-ui-react";
+import { Container, Menu, Sidebar, Label } from "semantic-ui-react";
 import { Bond } from "oo7";
 import { ReactiveComponent } from "oo7-react";
 import { calls, runtime, chain, runtimeUp, addressBook, secretStore } from "oo7-substrate";
+import {Pretty} from './Pretty';
 import SidebarLeft from "./components/SidebarLeft";
 import ContentSegment from "./components/ContentSegment";
 import PageHeader from "./components/PageHeader";
@@ -12,6 +13,9 @@ import AddressBookView from "./components/AddressBookView";
 import UtilitiesView from "./components/UtilitiesView";
 import SystemStatus from "./components/SystemStatus";
 import ChatWidget from './components/ChatWidget'
+import {LedgerTransactionList} from './LedgerTransactionList';
+import {Invoice} from './Invoice';
+// Images
 import TotemButtonLogo from'./assets/totem-button-grey.png';
 
 export class App extends ReactiveComponent {
@@ -47,10 +51,15 @@ export class App extends ReactiveComponent {
       isMobile: false,
       sidebarCollapsed: false,
       sidebarVisible: true
-    };
+	};
 
     this.handleSidebarToggle = this.handleSidebarToggle.bind(this);
     this.toggleMenuItem = this.toggleMenuItem.bind(this);
+  }
+
+  // hack to format as a currency. Needs to go in a seperate Display Formatting Utilities file.
+  round(value, decimals) {
+	return Number(Math.round(value +'e'+ decimals) +'e-'+ decimals).toFixed(decimals);
   }
 
   handleSidebarToggle(sidebarCollapsed, sidebarVisible) {
@@ -70,6 +79,34 @@ export class App extends ReactiveComponent {
   readyRender() {
     return (
       <React.Fragment>
+		 			<div>
+				<Label>Name <Label.Detail>
+					<Pretty className="value" value={"Totem "}/><Pretty className="value" value={"v 0.0.1"}/>
+				</Label.Detail></Label>
+				<Label>Chain <Label.Detail>
+					<Pretty className="value" value={system.chain}/>
+				</Label.Detail></Label>
+				<Label>Runtime <Label.Detail>
+					<Pretty className="value" value={" totem-node "}/><Pretty className="value" value={"v1"}/> (
+						<Pretty className="value" value={" Demo "}/>
+					) 
+				</Label.Detail></Label>
+				<Label>Height <Label.Detail>
+					<Pretty className="value" value={chain.height}/>
+				</Label.Detail></Label>
+				<Label>Authorities <Label.Detail>
+					<Rspan className="value">{
+						runtime.core.authorities.mapEach(a => <Identicon key={a} account={a} size={16}/>)
+					}</Rspan>
+				</Label.Detail></Label>
+				<Label>Last Claim Nr. <Label.Detail>
+					<Pretty className="value" value={runtime.totem.claimsCount}/>
+				</Label.Detail></Label>
+			</div> 
+
+
+
+
         <PageHeader logo={TotemButtonLogo} />
         <ChatWidget />
         <Sidebar.Pushable as={Container} fluid style={styles.pushable}>
@@ -103,7 +140,7 @@ export class App extends ReactiveComponent {
 }
 
 const sidebarItems = [
-  { icon: "object group outline", title: "Overview", subHeader: "", active: true, },
+  { icon: "object group outline", title: "Overview", subHeader: "", active: true, content: <LedgerTransactionList />},
   {
     icon: "sitemap", title: "Partners",
     header: "Vendors and Customers",
