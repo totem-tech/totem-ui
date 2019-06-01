@@ -1,8 +1,27 @@
+// TODO This needs to be cleaned up later. 
+
+// require('semantic-ui-css/semantic.min.css');
+// const { generateMnemonic } = require('bip39')
+import {Container, Menu, Sidebar, Icon, Image, List, Label, Header, Segment, Divider, Button, Grid, Input} from 'semantic-ui-react';
+import {Bond, TransformBond} from 'oo7';
+import {ReactiveComponent, If, Rspan} from 'oo7-react';
+import {calls, runtime, chain, system, runtimeUp, ss58Encode, ss58Decode, addressBook, secretStore} from 'oo7-substrate';
+import Identicon from 'polkadot-identicon';
+// import {AccountIdBond, SignerBond} from './AccountIdBond.jsx';
+// import {BalanceBond} from './BalanceBond.jsx';
+// import {InputBond} from './InputBond.jsx';
+// import {TransactButton} from './TransactButton.jsx';
+// import {FileUploadBond} from './FileUploadBond.jsx';
+// import {StakingStatusLabel} from './StakingStatusLabel';
+// import {WalletList, SecretItem} from './WalletList';
+// import {AddressBookList} from './AddressBookList';
+// import {TransformBondButton} from './TransformBondButton';
+
 import React from "react";
-import { Container, Menu, Sidebar, Label } from "semantic-ui-react";
-import { Bond } from "oo7";
-import { ReactiveComponent } from "oo7-react";
-import { calls, runtime, chain, runtimeUp, addressBook, secretStore } from "oo7-substrate";
+// import { Container, Menu, Sidebar, Label } from "semantic-ui-react";
+// import { Bond } from "oo7";
+// import { ReactiveComponent } from "oo7-react";
+// import { calls, runtime, chain, runtimeUp, addressBook, secretStore } from "oo7-substrate";
 import {Pretty} from './Pretty';
 import SidebarLeft from "./components/SidebarLeft";
 import ContentSegment from "./components/ContentSegment";
