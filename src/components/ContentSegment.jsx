@@ -1,7 +1,8 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import {ReactiveComponent, If} from 'oo7-react'
 import { runtimeUp } from 'oo7-substrate'
-import { Icon, Header, Placeholder, Segment } from 'semantic-ui-react'
+import { Button, Header, Icon, Placeholder, Rail, Segment } from 'semantic-ui-react'
 
 class ContentSegment extends ReactiveComponent {
   constructor(props) {
@@ -21,6 +22,15 @@ class ContentSegment extends ReactiveComponent {
     )
     const segment = (
       <Segment padded color={this.props.color} inverted={this.props.inverted}>
+        <Rail internal position='right' close style={styles.closeButtonRail}>
+            <Button
+              icon="close"
+              color="black"
+              title={'Close ' + headerText}
+              onClick={() => this.props.onClose(this.props.index)}
+            >
+            </Button>
+        </Rail>
         <If condition={!!headerText} then={header} />
         <div style={{ paddingBottom: '1em' }}>
           <If condition={!!this.props.content} then={this.props.content} else={placeholder} />
@@ -32,6 +42,20 @@ class ContentSegment extends ReactiveComponent {
 } 
 
 export default ContentSegment
+
+ContentSegment.propTypes = {
+  active: PropTypes.bool,
+  onClose: PropTypes.func.isRequired,
+  color: PropTypes.string,
+  content: PropTypes.node,
+  header: PropTypes.string,
+  headerInverted: PropTypes.bool,
+  icon:  PropTypes.string,
+  index: PropTypes.number.isRequired,
+  inverted:  PropTypes.bool,
+  subHeader: PropTypes.string,
+  title:  PropTypes.string
+}
 
 
 const placeholder = (
@@ -48,3 +72,11 @@ const placeholder = (
     </Placeholder.Paragraph>
   </Placeholder>
 )
+
+const styles = {
+  closeButtonRail: {
+    padding: 0,
+    fontSize: 30,
+    width: 38
+  }
+}

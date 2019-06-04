@@ -75,13 +75,14 @@ export class App extends ReactiveComponent {
       sidebarVisible: true
 	};
 
-    this.handleSidebarToggle = this.handleSidebarToggle.bind(this);
-    this.toggleMenuItem = this.toggleMenuItem.bind(this);
+    this.handleSidebarToggle = this.handleSidebarToggle.bind(this)
+    this.toggleMenuItem = this.toggleMenuItem.bind(this)
+    this.handleClose = this.handleClose.bind(this)
   }
 
   // hack to format as a currency. Needs to go in a seperate Display Formatting Utilities file.
   round(value, decimals) {
-	return Number(Math.round(value +'e'+ decimals) +'e-'+ decimals).toFixed(decimals);
+	  return Number(Math.round(value +'e'+ decimals) +'e-'+ decimals).toFixed(decimals);
   }
 
   handleSidebarToggle(sidebarCollapsed, sidebarVisible) {
@@ -96,6 +97,13 @@ export class App extends ReactiveComponent {
       // Scroll down to the content segment
       document.getElementById("main-content").scrollTo(0, items[index].elementRef.current.offsetTop);
     }, 100);
+  }
+
+  handleClose(index) {
+    const sidebarItems = this.state.sidebarItems
+    if (!sidebarItems[index]) return;
+    sidebarItems[index].active = false
+    this.setState({sidebarItems})
   }
 
   readyRender() {
@@ -151,7 +159,7 @@ export class App extends ReactiveComponent {
           >
             {this.state.sidebarItems.map((item, i) => (
               <div ref={item.elementRef} key={i} hidden={!item.active} style={styles.spaceBelow}>
-                <ContentSegment {...item} />
+                <ContentSegment {...item} onClose={this.handleClose} index={i} />
               </div>
             ))}
           </Sidebar.Pusher>
