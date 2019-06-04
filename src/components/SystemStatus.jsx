@@ -2,46 +2,70 @@ import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import { Header, Icon, List, Menu, Segment, Sidebar } from 'semantic-ui-react'
 import { Pretty } from '../Pretty'
-
-import { runtime, chain, system, runtimeUp } from 'oo7-substrate'
+import { runtime, chain, system, runtimeUp, pretty } from 'oo7-substrate'
+import { addWatcher } from '../services/data'
 
 class SystemStatus extends ReactiveComponent {
   constructor (props) {
     super(props, {
-      networkVersion: runtime.version.specVersion,
-      online: runtimeUp,
-      isSyncing: system.health.is_syncing,
-      bestBlock: chain.height,
+      // networkVersion: runtime.version.specVersion,
+      // online: runtimeUp,
+      // isSyncing: system.health.is_syncing,
+      // bestBlock: chain.height,
       lastFinalisedBlock: 0,
-      peers: system.health.peers
+      // peers: system.health.peers
     })
+  }
+
+  componentDidMount() {
+    [
+      'runtime_version_specVersion', // network version
+      'runtimeUp', // online/offline
+      'system_health_is_syncing',
+      'chain_height',
+      'system_health_peers'
+    ].forEach(key => addWatcher(key, (v, oV) => {
+      const data = {}
+      data[key] = v
+      this.setState(data)
+    }))
   }
 
   render() {
     const items = (
       <React.Fragment>
         <Menu.Item>
-            Totem Network Version V<Pretty className="value" value={this.state.networkVersion}/>
+            Totem Network Version V<Pretty className="value" value={this.state.runtime_version_specVersion}/>
           </Menu.Item>
           <Menu.Item>
-              <Icon name="circle" color={this.state.online ? 'green' : 'red'} /> 
-              {this.state.online ? 'On' : 'off'}line
+              <Icon name="circle" color={this.state.runtimeUp ? 'green' : 'red'} /> 
+              {this.state.runtimeUp ? 'On' : 'off'}line
           </Menu.Item>
           <Menu.Item style={this.props.sidebar ? {} : styles.spaceBelow}>
-              <Icon name="circle" color={this.state.isSyncing ? 'green' : 'yellow'} style={styles.listIcon} />
-              Syncing - <Pretty className="value" value={this.state.isSyncing ? 'Yes' : 'No'} />
+              <Icon 
+                name="circle"
+                color={this.state.system_health_is_syncing ? 'green' : 'yellow'}
+                style={styles.listIcon}
+              />
+              Syncing - 
+              <Pretty className="value" value={this.state.system_health_is_syncing ? 'Yes' : 'No'} />
           </Menu.Item>
           <Menu.Item>
               <Icon name="circle" color="green" style={styles.listIcon} />
-              Best Block #<Pretty className="value" value={this.state.bestBlock} />
+              Best Block #<Pretty className="value" value={this.state.chain_height} />
           </Menu.Item>
           <Menu.Item>
               <Icon name="circle" color={this.state.isSyncing ? 'green' : 'yellow'} style={styles.listIcon} />
               Last Finalised Block #<Pretty className="value" value={this.state.lastFinalisedBlock}/>
           </Menu.Item>
           <Menu.Item>
-              <Icon name="circle" color={this.state.peers > 0 ? 'green' : 'red'} style={styles.listIcon} />
-              Peers #<Pretty className="value" value={system.health.peers}/>
+              <Icon
+                name="circle"
+                color={this.state.peers > 0 ? 'green' : 'red'}
+                style={styles.listIcon}
+              />
+              Peers #
+              <Pretty className="value" value={this.state.system_health_peers}/>
           </Menu.Item>
       </React.Fragment>
     )

@@ -36,6 +36,7 @@ import {LedgerTransactionList} from './LedgerTransactionList';
 import {Invoice} from './Invoice';
 // Images
 import TotemButtonLogo from'./assets/totem-button-grey.png';
+import { addWatcher } from './services/data'
 
 export class App extends ReactiveComponent {
   constructor() {
@@ -51,6 +52,7 @@ export class App extends ReactiveComponent {
     window.chain = chain;
     window.calls = calls;
     window.that = this;
+    window.system = system
 
     this.source = new Bond();
     this.amount = new Bond();
@@ -71,9 +73,9 @@ export class App extends ReactiveComponent {
         return item;
       }),
       isMobile: false,
-      sidebarCollapsed: false,
+      sidebarCollapsed: true,
       sidebarVisible: true
-	};
+	  };
 
     this.handleSidebarToggle = this.handleSidebarToggle.bind(this)
     this.toggleMenuItem = this.toggleMenuItem.bind(this)
@@ -106,6 +108,19 @@ export class App extends ReactiveComponent {
     this.setState({sidebarItems})
   }
 
+  componentDidMount() {
+    [
+      'chain_height',
+      'system_chain',
+      'runtime_totem_claimsCount',
+      'runtime_core_authorities'
+    ].forEach(key => addWatcher(key, (v, oV) => {
+      const data = {}
+      data[key] = v
+      this.setState(data)
+    }))
+  }
+
   readyRender() {
     return (
       <React.Fragment>
@@ -114,7 +129,7 @@ export class App extends ReactiveComponent {
 					<Pretty className="value" value={"Totem "}/><Pretty className="value" value={"v 0.0.1"}/>
 				</Label.Detail></Label>
 				<Label>Chain <Label.Detail>
-					<Pretty className="value" value={system.chain}/>
+					<Pretty className="value" value={this.state.system_chain}/>
 				</Label.Detail></Label>
 				<Label>Runtime <Label.Detail>
 					<Pretty className="value" value={" totem-node "}/><Pretty className="value" value={"v1"}/> (
@@ -122,15 +137,15 @@ export class App extends ReactiveComponent {
 					) 
 				</Label.Detail></Label>
 				<Label>Height <Label.Detail>
-					<Pretty className="value" value={chain.height}/>
+					<Pretty className="value" value={this.state.chain_height}/>
 				</Label.Detail></Label>
 				<Label>Authorities <Label.Detail>
 					<Rspan className="value">{
-						runtime.core.authorities.mapEach(a => <Identicon key={a} account={a} size={16}/>)
+						this.state.runtime_core_authorities && this.state.runtime_core_authorities.map(a => <Identicon key={a} account={a} size={16}/>)
 					}</Rspan>
 				</Label.Detail></Label>
 				<Label>Last Claim Nr. <Label.Detail>
-					<Pretty className="value" value={runtime.totem.claimsCount}/>
+					<Pretty className="value" value={this.state.runtime_totem_claimsCount}/>
 				</Label.Detail></Label>
 			</div> 
 
