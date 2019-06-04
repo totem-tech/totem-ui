@@ -24,6 +24,8 @@ const isValidId = id => /^[a-z][a-z0-9]+$/.test(id);
 const idMaxLength = 16
 const msgMaxLength = 160
 const idMinLength = 3
+const maxFauceRequst = 5
+const maxFaucetRequestDuration = 60*60*1000 // milliseconds
 const findClientIndex = (user, clientId) => user.clientIds.findIndex(cid => cid === clientId)
 const findUserByClientId = clientId => {
   for (let [_, user] of users.entries()) {
@@ -33,6 +35,7 @@ const findUserByClientId = clientId => {
 
 // Error messages
 const errMsgs = {
+  fauceRequestLimitReached: `Maximum ${maxFauceRequst} requests allowed within 24 hour period`,
   idInvalid: `Only alpha-numeric characters allowed and must start with an alphabet`,
   idLength: `Must be between ${idMinLength} to ${idMaxLength} characters`,
   idExists: 'User ID already taken',
@@ -80,7 +83,8 @@ io.on('connection', client => {
       secret: secret,
       joined: new Date(),
       online: true,
-      clientIds: [client.id]
+      clientIds: [client.id],
+      faucetRequests: []
     }
     users.set(userId, newUser)
     clients.set(client.id, client)
@@ -106,12 +110,30 @@ io.on('connection', client => {
     emit()
   })
 
-  client.on('faucet-request', (address, amount, callback) => {
+  client.on('faucet-request', (address, callback) => {
     const doCb = isFn(callback)
     const sender = findUserByClientId(client.id)
     if (!sender) return doCb && callback(errMsgs.loginAgain)
-    console.info('faucet-request from @' + sender.id, address, amount)
-    emit([], 'faucet-request', [sender.id, address, amount])
+
+    sender.faucetRequests = sender.faucetRequests || []
+    const numReqs = sender.faucetRequests.length
+    let fifthTS = (sender.faucetRequests[numReqs - 5] || {}).timestamp
+    fifthTS = fifthTS && typeof(fifthTS) === 'string' ? Date.parse(fifthTS) : fifthTS
+    if (numReqs >= maxFauceRequst && Math.abs(new Date() - fifthTS) < maxFaucetRequestDuration) {
+      // prevents adding more than maximum number of requests within the given duration
+      return doCb && callback(errMsgs.fauceRequestLimitReached, fifthTS)
+    }
+
+    sender.faucetRequests.push({
+      address,
+      timestamp: new Date(),
+      funded: false
+    })
+
+    saveUsers()
+
+    console.info('faucet-request from @' + sender.id, address)
+    emit([], 'faucet-request', [sender.id, address])
     doCb && callback()
   })
 })
@@ -130,20 +152,9 @@ fs.readFile(usersFile, (err, data) => {
 });
 
 const saveUsers = () => {
-  const data = Array.from(users.entries()).map(u => [
-    u[0],
-    {
-      id: u[1].id,
-      secret: u[1].secret,
-      joined: u[1].joined,
-      // remove obsolete client IDs
-      clientIds: []
-    }
-  ])
-
   fs.writeFile(
     usersFile,
-    JSON.stringify(data),
+    JSON.stringify(Array.from(users.entries())),
     { flag: 'w' },
     err => err && console.log('Failed to save user data. ' + err)
   )

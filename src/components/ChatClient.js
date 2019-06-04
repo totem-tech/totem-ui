@@ -56,7 +56,7 @@ export class ChatClient {
         this.message = (msg, cb) => socket.emit('message', msg, cb)
         this.onMessage = cb => socket.on('message', cb)
         // Request funds
-        this.faucetRequest = (address, amount, cb) => socket.emit('faucet-request', address, amount, cb)
+        this.faucetRequest = (address, cb) => socket.emit('faucet-request', address, cb)
         // Funds received
         this.onFaucetRequest = cb => socket.on('faucet-request', cb)
     }

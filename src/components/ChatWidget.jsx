@@ -106,7 +106,7 @@ class ChatWidget extends ReactiveComponent {
     this.client.onFaucetRequest(this.addFaucetEntry)
   }
 
-  addFaucetEntry(userId, address, amount) {
+  addFaucetEntry(userId, address) {
     const fromMe = userId === this.state.userId
     const addArr = address.split('')
     const addressShort = addArr.slice(0, 4).join('') + '...' + addArr.slice(addArr.length - 4, addArr.length).join('') + ' '

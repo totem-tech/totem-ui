@@ -63,7 +63,7 @@ class PageHeader extends ReactiveComponent {
     setStateTimeout(this, 'copied', true, false, 2000)
   }
 
-  handleFaucetRequest(address, amount) {
+  handleFaucetRequest(address) {
     const client = getClient()
     if (!client.isConnected()) {
       const msg = {
@@ -73,7 +73,7 @@ class PageHeader extends ReactiveComponent {
       setStateTimeout(this, 'faucetReqMsg', msg, {}, 3000)
       return
     }
-    client.faucetRequest(address, amount, (err) => {
+    client.faucetRequest(address, (err, fifthTs) => {
       const msg = {
         text: err || 'Request sent!',
         error: !!err
