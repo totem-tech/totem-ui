@@ -7,6 +7,14 @@ import { Button, Header, Icon, Placeholder, Rail, Segment } from 'semantic-ui-re
 class ContentSegment extends ReactiveComponent {
   constructor(props) {
     super(props, {ensureRuntimeUp: runtimeUp})
+    this.state = {
+      showSubHeader: false
+    }
+    this.toggleSubHeader = this.toggleSubHeader.bind(this)
+  }
+
+  toggleSubHeader() {
+    this.setState({showSubHeader: !this.state.showSubHeader})
   }
 
   render() {
@@ -15,8 +23,11 @@ class ContentSegment extends ReactiveComponent {
       <Header as="h1" inverted={this.props.headerInverted}>
         <Icon name={this.props.icon} />
         <Header.Content>
-          <div>{headerText}</div>
-          {!!this.props.subHeader && <Header.Subheader>{this.props.subHeader}</Header.Subheader>}
+          <div>
+            {headerText} 
+            <Icon link name='help' size="mini" onClick={this.toggleSubHeader} />
+          </div>
+          {this.state.showSubHeader && <Header.Subheader>{this.props.subHeader}</Header.Subheader>}
         </Header.Content>
       </Header>
     )
