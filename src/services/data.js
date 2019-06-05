@@ -5,7 +5,7 @@ import uuid from 'uuid'
 
 const PREFIX = 'data-cache'
 const isFn = fn => typeof(fn) === 'function'
-const UPDATE_FREQUERY = 1000*30 //  milliseconds
+const UPDATE_FREQUENCY = 1000*30 //  milliseconds (30 Seconds)
 // In case of custom runtime or when bond is not immediately available
 const DEFER_DELAY = 10 * 1000
 const DEFER_MAX_TRIES = 10
@@ -21,7 +21,7 @@ const settings = {
     },
     runtime_totem_claimsCount: {
         bond: () => runtime.totem.claimsCount,
-        // deferred-ish mechanism is required as runtime.totem is not immediately availabe and causes error
+        // deferred-ish mechanism is required as runtime.totem is not immediately available and causes error
         bondIsAvailable: () => runtime.totem && runtime.totem.claimsCount,
         delay: 1000, //millisecond
         maxTries: 15
@@ -55,7 +55,7 @@ export const addWatcher = (key, callback, _callbackAdded) => {
         item.key = key
         item.onUpdateCallbacks = item.onUpdateCallbacks || new Map()
         item.onUpdateCallbacks.set(callbackId, callback)
-        item.updateFrequency = item.updateFrequency || UPDATE_FREQUERY
+        item.updateFrequency = item.updateFrequency || UPDATE_FREQUENCY
         _callbackAdded = true
     }
 
