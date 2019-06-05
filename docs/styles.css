@@ -69,9 +69,19 @@
 }
 
 i.icon {
-  font-size: 1em  !important;
+  /*font-size: 1em  !important;*/
   margin-right: 1rem  !important;
   margin-left: 0.25rem  !important;
+}
+
+
+.ui.header>.icon {
+  font-size: 1.2em !important;
+}
+
+
+div.ui.padded.segment {
+  padding-top: 0em; !important;
 }
 
 .angle.left.icon {
@@ -83,8 +93,8 @@ i.icon {
   margin-left: 0rem  !important;
 }
 
-  .ui.sidebar.left a span {
-      font-weight: normal;
+.ui.sidebar.left a span {
+  font-weight: normal;
 }
 
 /* Chat Message Customisation */

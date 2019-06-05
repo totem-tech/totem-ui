@@ -21,11 +21,11 @@ class ContentSegment extends ReactiveComponent {
     const headerText = this.props.header || this.props.title
     const header = (
       <Header as="h1" inverted={this.props.headerInverted}>
-        <Icon name={this.props.icon} />
+        <Icon name={this.props.icon} />        
         <Header.Content>
           <div>
             {headerText} 
-            <Icon link name='help' size="mini" onClick={this.toggleSubHeader} />
+            <Icon link name='question circle outline' size="small" onClick={this.toggleSubHeader} />
           </div>
           {this.state.showSubHeader && <Header.Subheader>{this.props.subHeader}</Header.Subheader>}
         </Header.Content>
@@ -35,8 +35,8 @@ class ContentSegment extends ReactiveComponent {
       <Segment padded color={this.props.color} inverted={this.props.inverted}>
         <Rail internal position='right' close style={styles.closeButtonRail}>
             <Button
-              icon="close"
-              color="black"
+              icon="times circle outline"
+              
               title={'Close ' + headerText}
               onClick={() => this.props.onClose(this.props.index)}
             >
@@ -86,8 +86,10 @@ const placeholder = (
 
 const styles = {
   closeButtonRail: {
+    marginTop: 0,
+    marginRight: 0,
     padding: 0,
-    fontSize: 30,
-    width: 38
+    fontSize: 50,
+    width: 43
   }
 }
