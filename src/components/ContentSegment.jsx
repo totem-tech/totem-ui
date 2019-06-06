@@ -27,8 +27,8 @@ class ContentSegment extends ReactiveComponent {
             {headerText} 
             <Icon link name='question circle outline' size="small" onClick={this.toggleSubHeader} />
           </div>
-          {this.state.showSubHeader && <Header.Subheader>{this.props.subHeader}</Header.Subheader>}
         </Header.Content>
+        {this.state.showSubHeader && <Header.Subheader>{this.props.subHeader}</Header.Subheader>}
       </Header>
     )
     const segment = (
