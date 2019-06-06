@@ -1,12 +1,12 @@
-import express from 'express';
+import express from 'express'
 
-const port = 8000;
-let app = express();
-app.use(express.static('dist'));
+const port = 8000
+let app = express()
+app.use(express.static('dist'))
 
 app.listen(port, () => {
-  console.log('Web server listening on port 8000');
-});
+  console.log('Web server listening on port 8000')
+})
 
 /*
  * Chat server
@@ -14,18 +14,20 @@ app.listen(port, () => {
 const http = require('http')
 const server = http.createServer(app)
 const io = require('socket.io').listen(server)
-const fs = require('fs');
-const usersFile = './users.json'
+const fs = require('fs')
 const wsPort = 3001
 const isFn = fn => typeof(fn) === 'function'
 let users = new Map()
-const clients = new Map();
-const isValidId = id => /^[a-z][a-z0-9]+$/.test(id);
+const usersFile = './users.json'
+const clients = new Map()
+const isValidId = id => /^[a-z][a-z0-9]+$/.test(id)
 const idMaxLength = 16
 const msgMaxLength = 160
 const idMinLength = 3
-const maxFauceRequst = 5
-const maxFaucetRequestDuration = 60*60*1000 // milliseconds
+let faucetRequests = new Map()
+const faucetRequestsFile = './faucet-requests.json'
+const fauceRequstLimit = 5
+const faucetRequestTimeLimit = 60*60*1000 // milliseconds
 const findClientIndex = (user, clientId) => user.clientIds.findIndex(cid => cid === clientId)
 const findUserByClientId = clientId => {
   for (let [_, user] of users.entries()) {
@@ -35,7 +37,7 @@ const findUserByClientId = clientId => {
 
 // Error messages
 const errMsgs = {
-  fauceRequestLimitReached: `Maximum ${maxFauceRequst} requests allowed within 24 hour period`,
+  fauceRequestLimitReached: `Maximum ${fauceRequstLimit} requests allowed within 24 hour period`,
   idInvalid: `Only alpha-numeric characters allowed and must start with an alphabet`,
   idLength: `Must be between ${idMinLength} to ${idMaxLength} characters`,
   idExists: 'User ID already taken',
@@ -83,8 +85,7 @@ io.on('connection', client => {
       secret: secret,
       joined: new Date(),
       online: true,
-      clientIds: [client.id],
-      faucetRequests: []
+      clientIds: [client.id]
     }
     users.set(userId, newUser)
     clients.set(client.id, client)
@@ -112,28 +113,35 @@ io.on('connection', client => {
 
   client.on('faucet-request', (address, callback) => {
     const doCb = isFn(callback)
-    const sender = findUserByClientId(client.id)
-    if (!sender) return doCb && callback(errMsgs.loginAgain)
+    const user = findUserByClientId(client.id)
+    if (!user) return doCb && callback(errMsgs.loginAgain)
 
-    sender.faucetRequests = sender.faucetRequests || []
-    const numReqs = sender.faucetRequests.length
-    let fifthTS = (sender.faucetRequests[numReqs - 5] || {}).timestamp
+    let userRequests = faucetRequests.get(user.id)
+
+    userRequests = userRequests || []
+    const numReqs = userRequests.length
+    let fifthTS = (userRequests[numReqs - 5] || {}).timestamp
     fifthTS = fifthTS && typeof(fifthTS) === 'string' ? Date.parse(fifthTS) : fifthTS
-    if (numReqs >= maxFauceRequst && Math.abs(new Date() - fifthTS) < maxFaucetRequestDuration) {
+    if (numReqs >= fauceRequstLimit && Math.abs(new Date() - fifthTS) < faucetRequestTimeLimit) {
       // prevents adding more than maximum number of requests within the given duration
       return doCb && callback(errMsgs.fauceRequestLimitReached, fifthTS)
     }
 
-    sender.faucetRequests.push({
+    userRequests.push({
       address,
       timestamp: new Date(),
       funded: false
     })
-
-    saveUsers()
-
-    console.info('faucet-request from @' + sender.id, address)
-    emit([], 'faucet-request', [sender.id, address])
+    
+    if (numReqs >= faucetRequestTimeLimit) {
+      userRequests = userRequests.slice(numReqs - faucetRequestTimeLimit)
+    }
+    faucetRequests.set(user.id, userRequests)
+    console.log(user.id, faucetRequests.get(user.id))
+    console.log('User Requests', userRequests)
+    saveFaucetRequests()
+    console.info('faucet-request from @' + user.id, address)
+    emit([], 'faucet-request', [user.id, address])
     doCb && callback()
   })
 })
@@ -149,17 +157,22 @@ fs.readFile(usersFile, (err, data) => {
   }
 
   server.listen(wsPort, () => console.log('Websocket listening on port ', wsPort))
-});
+})
 
-const saveUsers = () => {
-  fs.writeFile(
-    usersFile,
-    JSON.stringify(Array.from(users.entries())),
+const saveUsers = () => saveMapToFile(usersFile, users)
+const saveFaucetRequests = () => saveMapToFile(faucetRequestsFile, faucetRequests)
+const saveMapToFile = (file, map) => {
+  console.log(file)
+  console.log(Array.from(map.entries()))
+  file && fs.writeFile(
+    file,
+    JSON.stringify(Array.from(map.entries())),
     { flag: 'w' },
-    err => err && console.log('Failed to save user data. ' + err)
+    err => err && console.log(`Failed to save ${file}. ${err}`)
   )
 }
 
+// Broadcast message to all users except ignoreClientIds
 const emit = (ignoreClientIds, eventName, cbParams) => {
   ignoreClientIds = Array.isArray(ignoreClientIds) ? ignoreClientIds : [ignoreClientIds]
   cbParams = cbParams || []

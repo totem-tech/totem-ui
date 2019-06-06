@@ -2,3 +2,4 @@
 node_modules/.bin/*
 yarn-error.log
 users.json
+faucet-requests.json
