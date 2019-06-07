@@ -193,7 +193,7 @@ const sidebarItems = [
     active: false,
     content: <AddressBookView />
   },
-  { icon: "file alternate", title: "Invoice", subHeader: "", active: false, content: <Invoice /> },
+  { icon: "file alternate", title: "Invoice", subHeader: "This demo generates an invoice entry in customer, vendor, and tax jurisdiction accounting records.", active: false, content: <Invoice /> },
   { icon: "pen square", title: "Manage Invoices", subHeader: "" },
   { icon: "file alternate", title: "Credit Note", subHeader: "" },
   { icon: "tint", title: "Purchase Order", subHeader: "" },

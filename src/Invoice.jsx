@@ -154,12 +154,6 @@ export class Invoice extends ReactiveComponent {
 	readyRender () {
 		  
 		return (<React.Fragment>						    
-			  <Header as='h2'>
-			    <Header.Content>
-			      Create or Amend an Invoice
-			      <Header.Subheader>This demo generates an invoice entry in customer, vendor, and tax jurisdiction accounting records.</Header.Subheader>
-			    </Header.Content>
-			  </Header>
 			  <div style={{fontSize: '13px'}}>
 			  Normal ERP accounting systems only generate accounting entries in only one of these ledgers.
 			  </div>
