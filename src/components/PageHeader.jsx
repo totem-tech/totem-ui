@@ -198,7 +198,7 @@ const styles = {
     height: 154,
     width: 'calc(100% - 235px)',
     float: 'right',
-    padding: '10px 0px'
+    padding: '18px 0px'
   },
   dropdown: {
     background: 'none',
