@@ -25,7 +25,7 @@ class ContentSegment extends ReactiveComponent {
         <Header.Content>
           <div>
             {headerText} 
-            <Icon link name='question circle outline' size="small" onClick={this.toggleSubHeader} />
+            <Icon link name='question circle outline' color="grey" size="small" onClick={this.toggleSubHeader} />
           </div>
         </Header.Content>
         {this.state.showSubHeader && <Header.Subheader>{this.props.subHeader}</Header.Subheader>}
@@ -34,7 +34,7 @@ class ContentSegment extends ReactiveComponent {
     const segment = (
       <Segment padded color={this.props.color} inverted={this.props.inverted}>
         <Rail internal position='right' close style={styles.closeButtonRail}>
-            <Icon link name='times circle outline' size="mini" onClick={() => this.props.onClose(this.props.index)} />
+            <Icon link name='times circle outline' color="grey" size="mini" onClick={() => this.props.onClose(this.props.index)} />
         </Rail>
         <If condition={!!headerText} then={header} />
         <div style={{ paddingBottom: '1em' }}>
@@ -83,7 +83,7 @@ const styles = {
     marginTop: 0,
     marginRight: "-12px",
     padding: 0,
-    fontSize: 35,
-    width: 43
+    fontSize: 50,
+    width: 50
   }
 }

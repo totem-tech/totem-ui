@@ -64,7 +64,7 @@ class SidebarLeft extends ReactiveComponent {
         {/* show sidebar toggle when not on mobile */}
         <If condition={!this.props.isMobile} then={sidebarToggle} />
 
-        {/* menu items */
+        {// menu items 
         this.props.items.map((item, i) => (
           <Menu.Item
             as="a"
