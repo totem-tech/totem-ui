@@ -1,28 +1,40 @@
 import React from 'react'
-import { ReactiveComponent } from 'oo7-react'
-import { calls, runtime, runtimeUp } from 'oo7-substrate'
+import { Bond } from 'oo7'
+import { If, ReactiveComponent } from 'oo7-react'
+import { calls, runtime } from 'oo7-substrate'
 import { TransactButton } from '../TransactButton.jsx'
 import { FileUploadBond } from '../FileUploadBond.jsx'
 
 class UtilitiesView extends ReactiveComponent {
-  constructor() {
-    super([], {ensureRuntime: runtimeUp})
-  }
+	constructor() {
+		super()
+		this.conditionBond = runtime.metadata.map(m =>
+			m.modules && m.modules.some(o => o.name === 'sudo')
+			|| m.modules.some(o => o.name === 'upgrade_key')
+		)
+		this.runtime = new Bond
+	}
 
-  readyRender() {
-    return (
+  render() {
+    const contents = (
       <div style={{ paddingBottom: '1em' }}>
         <FileUploadBond bond={runtime} content="Select Runtime" />
         <TransactButton
-          content="Upgrade"
-          icon="warning"
-          tx={{
-            sender: runtime.sudo.key,
-            call: calls.sudo.sudo(calls.consensus.setCode(runtime))
-          }}
-        />
+					content="Upgrade"
+					icon="warning"
+					tx={{
+						sender: runtime.sudo
+							? runtime.sudo.key
+							: runtime.upgrade_key.key,
+						call: calls.sudo
+							? calls.sudo.sudo(calls.consensus.setCode(this.runtime))
+							: calls.upgrade_key.upgrade(this.runtime)
+					}}
+				/>
       </div>
     )
+    
+    return <If condition={this.conditionBond} then={contents} />
   }
 }
 

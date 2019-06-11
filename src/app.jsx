@@ -34,9 +34,9 @@ import SystemStatus from "./components/SystemStatus";
 import ChatWidget from './components/ChatWidget'
 import {LedgerTransactionList} from './LedgerTransactionList';
 import {Invoice} from './Invoice';
+import { addWatcher } from './services/data'
 // Images
 import TotemButtonLogo from'./assets/totem-button-grey.png';
-import { addWatcher } from './services/data'
 
 export class App extends ReactiveComponent {
   constructor() {
@@ -185,7 +185,7 @@ export class App extends ReactiveComponent {
 }
 
 const sidebarItems = [
-  { icon: "object group outline", title: "Overview", subHeader: "", active: true, content: <LedgerTransactionList />},
+  // { icon: "object group outline", title: "Overview", subHeader: "", active: true, content: <LedgerTransactionList />},
   {
     icon: "sitemap", title: "Partners",
     header: "Vendors and Customers",
@@ -193,7 +193,7 @@ const sidebarItems = [
     active: false,
     content: <AddressBookView />
   },
-  { icon: "file alternate", title: "Invoice", subHeader: "", active: false, content: <Invoice /> },
+  // { icon: "file alternate", title: "Invoice", subHeader: "", active: false, content: <Invoice /> },
   { icon: "pen square", title: "Manage Invoices", subHeader: "" },
   { icon: "file alternate", title: "Credit Note", subHeader: "" },
   { icon: "tint", title: "Purchase Order", subHeader: "" },

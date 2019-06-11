@@ -3,33 +3,28 @@ import { ReactiveComponent } from 'oo7-react'
 import { Header, Icon, List, Menu, Segment, Sidebar } from 'semantic-ui-react'
 import { Pretty } from '../Pretty'
 import { runtime, chain, system, runtimeUp, pretty } from 'oo7-substrate'
-import { addWatcher } from '../services/data'
+import { addMultiWatcherSetState, removeWatchers } from '../services/data'
 
 class SystemStatus extends ReactiveComponent {
   constructor (props) {
     super(props, {
-      // networkVersion: runtime.version.specVersion,
-      // online: runtimeUp,
-      // isSyncing: system.health.is_syncing,
-      // bestBlock: chain.height,
-      lastFinalisedBlock: 0,
-      // peers: system.health.peers
+      lastFinalisedBlock: 0
     })
   }
 
   componentDidMount() {
-    [
+    this.setState({watchers: addMultiWatcherSetState(this, [
       'runtime_version_specVersion', // network version
       'runtimeUp', // online/offline
-      'system_health_is_syncing',
+      // 'system_health_is_syncing',
       'chain_height',
       'system_health_peers'
-    ].forEach(key => addWatcher(key, (v, oV) => {
-      const data = {}
-      data[key] = v
-      this.setState(data)
-    }))
+    ])})
   }
+
+	componentWillUnmount() {
+		removeWatchers(this.state.watchers)
+	}	
 
   render() {
     const items = (
@@ -55,7 +50,7 @@ class SystemStatus extends ReactiveComponent {
               Best Block #<Pretty className="value" value={this.state.chain_height} />
           </Menu.Item>
           <Menu.Item>
-              <Icon name="circle" color={this.state.isSyncing ? 'green' : 'yellow'} style={styles.listIcon} />
+              <Icon name="circle" color={this.state.system_health_is_syncing ? 'green' : 'yellow'} style={styles.listIcon} />
               Last Finalised Block #<Pretty className="value" value={this.state.lastFinalisedBlock}/>
           </Menu.Item>
           <Menu.Item>
