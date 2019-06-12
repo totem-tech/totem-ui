@@ -20,27 +20,22 @@ class ContentSegment extends ReactiveComponent {
   render() {
     const headerText = this.props.header || this.props.title
     const header = (
-      <Header as="h1" inverted={this.props.headerInverted}>
+      <Header as="h2" inverted={this.props.headerInverted}>
         <Icon name={this.props.icon} />        
         <Header.Content>
           <div>
             {headerText} 
-            <Icon link name='question circle outline' size="small" onClick={this.toggleSubHeader} />
+            {/* <Icon link name='question circle outline' size="small" onClick={this.toggleSubHeader} /> */}
+            <Icon link name='question circle outline' color="grey" size="small" onClick={this.toggleSubHeader} />
           </div>
-          {this.state.showSubHeader && <Header.Subheader>{this.props.subHeader}</Header.Subheader>}
         </Header.Content>
+          {this.state.showSubHeader && <Header.Subheader>{this.props.subHeader}</Header.Subheader>}
       </Header>
     )
     const segment = (
       <Segment padded color={this.props.color} inverted={this.props.inverted}>
         <Rail internal position='right' close style={styles.closeButtonRail}>
-            <Button
-              icon="times circle outline"
-              
-              title={'Close ' + headerText}
-              onClick={() => this.props.onClose(this.props.index)}
-            >
-            </Button>
+        <Icon link name='times circle outline' color="grey" size="mini" onClick={() => this.props.onClose(this.props.index)} />
         </Rail>
         <If condition={!!headerText} then={header} />
         <div style={{ paddingBottom: '1em' }}>
@@ -87,9 +82,9 @@ const placeholder = (
 const styles = {
   closeButtonRail: {
     marginTop: 0,
-    marginRight: 0,
+    marginRight: -12,
     padding: 0,
     fontSize: 50,
-    width: 43
+    width: 50
   }
 }

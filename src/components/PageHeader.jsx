@@ -117,7 +117,7 @@ class PageHeader extends ReactiveComponent {
         <Container style={styles.content}>
           <Dropdown
             style={styles.dropdown}
-            icon={<Icon name="dropdown" size="big" style={styles.dropdownIcon} />}
+            icon={<Icon name="dropdown"  color="grey" size="big" style={styles.dropdownIcon} />}
             labeled
             selection
             options={this.state.secretStore.keys.map((key, i) => ({
@@ -152,8 +152,8 @@ class PageHeader extends ReactiveComponent {
               then={<Label basic color={this.state.faucetReqMsg.error ? 'red' : 'green'} pointing="left">{this.state.faucetReqMsg.text}</Label>}
             />
           </div>
-          <div>
-            <span style={{paddingRight: 10}}>ID:</span>
+          <div style={{paddingTop: 9}}>
+            <span style={{paddingRight: 8}}>ID:</span>
             <If
               condition={!this.state.registered} 
               then={userIdInput}
@@ -198,15 +198,15 @@ const styles = {
     height: 154,
     width: 'calc(100% - 235px)',
     float: 'right',
-    padding: '25px 50px'
+    padding: '18px 0px'
   },
   dropdown: {
     background: 'none',
     border: 'none',
     boxShadow: 'none',
     minHeight: 'auto',
-    fontSize: 40,
-    padding: '0 2.1em 5px 0',
+    fontSize: 35,
+    padding: '0 1.35em 10px 0',
     minWidth: 'auto'
   },
   dropdownIcon: {
