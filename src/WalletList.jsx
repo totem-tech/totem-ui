@@ -83,7 +83,7 @@ export class WalletList extends ReactiveComponent {
 		const draft = this.state.draft
 		if (!key) return this.handleEdit();
 		this.handleDelete(key)
-		secretStore().submit(key.phrase, draft)
+		secretStore().submit(key.uri, draft)
 	}
 
 	handleDelete(key) {
