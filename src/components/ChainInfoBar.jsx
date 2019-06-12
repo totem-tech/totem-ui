@@ -4,7 +4,7 @@ import { bytesToHex } from 'oo7-substrate'
 import Identicon from 'polkadot-identicon'
 import { Label } from 'semantic-ui-react'
 import { Pretty } from '../Pretty'
-import { addMultiWatcherSetState, removeWatchers } from '../services/data'
+import { subscribeAllNSetState, unsubscribeAll } from '../services/data'
 
 class ChainInfoBar extends ReactiveComponent {
 	constructor() {
@@ -16,7 +16,7 @@ class ChainInfoBar extends ReactiveComponent {
 	}
 
 	componentDidMount() {
-		this.setState({ watchers: addMultiWatcherSetState(this, [
+		this.setState({ watchers: subscribeAllNSetState(this, [
 			// the following state variables will be set once value is resolved
 			'chain_height',
 			'chain_lag',
@@ -36,7 +36,7 @@ class ChainInfoBar extends ReactiveComponent {
 	}
 
 	componentWillUnmount() {
-		removeWatchers(this.state.watchers)
+		unsubscribeAll(this.state.watchers)
 	}	
 
 	render() {
@@ -82,7 +82,7 @@ class ChainInfoBar extends ReactiveComponent {
 				<Label>
 					Height
 					<Label.Detail>
-						<Pretty className="value" value={this.state.chain_height} />
+						<Pretty className="value" value={this.state.chain_height || 0} />
 						&nbsp;(with <Pretty className="value" value={this.state.chain_lag || 0} /> lag)
 					</Label.Detail>
 				</Label>

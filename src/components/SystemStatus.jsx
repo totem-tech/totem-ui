@@ -3,7 +3,7 @@ import { ReactiveComponent } from 'oo7-react'
 import { Header, Icon, List, Menu, Segment, Sidebar } from 'semantic-ui-react'
 import { Pretty } from '../Pretty'
 import { runtime, chain, system, runtimeUp, pretty } from 'oo7-substrate'
-import { addMultiWatcherSetState, removeWatchers } from '../services/data'
+import { subscribeAllNSetState, unsubscribeAll } from '../services/data'
 
 class SystemStatus extends ReactiveComponent {
   constructor (props) {
@@ -13,7 +13,7 @@ class SystemStatus extends ReactiveComponent {
   }
 
   componentDidMount() {
-    this.setState({watchers: addMultiWatcherSetState(this, [
+    this.setState({watchers: subscribeAllNSetState(this, [
       'runtime_version_specVersion', // network version
       'runtimeUp', // online/offline
       // 'system_health_is_syncing',
@@ -23,7 +23,7 @@ class SystemStatus extends ReactiveComponent {
   }
 
 	componentWillUnmount() {
-		removeWatchers(this.state.watchers)
+		unsubscribeAll(this.state.watchers)
 	}	
 
   render() {

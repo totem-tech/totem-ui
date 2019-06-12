@@ -1,5 +1,5 @@
 
-import {calls, runtime, chain, nodeService, system, runtimeUp, ss58Encode, ss58Decode, addressBook, secretStore, pretty} from 'oo7-substrate'
+import {calls, runtime, chain, nodeService, system, runtimeUp, ss58Encode, ss58Decode, addressBook, secretStore} from 'oo7-substrate'
 import {Bond} from 'oo7'
 import uuid from 'uuid'
 
@@ -19,15 +19,18 @@ const settings = {
         bondIsAvailable: () => runtime.totem && runtime.totem.claimsCount,
         delay: 1000, //millisecond
         maxTries: 15
-        // Properties used
         // key: 'runtime_totem_claimsCount',
         // value: undefined,
         // valueOld: undefined,
         // lastUpdated: undefined,
-        // onUpdateCallbacks: undefined,
+        // callbacks: undefined,
         // notifyId: undefined
     },
-    runtime_balances_balance: { bond: () => runtime.balances.balance, requireArgs: 1},
+    runtime_balances_balance: { 
+        bond: () => runtime.balances.balance,
+        requireArgs: true,
+        // settings: new Map() // for each variation of argument(s)
+    },
     runtime_core_authorities: { bond: () => runtime.core.authorities },
     runtime_balances_totalIssuance: { bond: () => runtime.balances.totalIssuance},
     runtime_version_implName: { bond: () => runtime.version.implName},
@@ -42,7 +45,7 @@ const settings = {
     system_version: {bond: () => system.version}
 }
 
-// addWatcher adds an watcher for blockchain related data.
+// subscribe adds an watcher for blockchain related data.
 // Uses the Bond's notify functions and invokes the callback whenever value changes and minimum duration elapsed.
 //
 // Params:
@@ -50,106 +53,120 @@ const settings = {
 // @callback    function: function to be invoked 
 //                      Arguments supplied: newValue, oldValue
 // @args        Array   : array of agruments if bond() function returns a function rather than a Bond.
-// @_callbackAdded bool : FOR INTERNAL USE ONLY
+// @callbackId  string  : FOR INTERNAL USE ONLY
 //
 // Returns callbackId
-export const addWatcher = (key, callback, args, _callbackAdded) => {
+export const subscribe = (key, callback, args, callbackId) => {
     const item = settings[key]
-    const callbackId = uuid.v1()
+    args = args || []
+    callbackId = callbackId || uuid.v1()
     if (!item || !isFn(callback)) return; // not supported or invalid callback
 
-    if (!_callbackAdded) {
-        item.key = key
-        item.onUpdateCallbacks = item.onUpdateCallbacks || new Map()
-        item.onUpdateCallbacks.set(callbackId, callback)
-        item.updateFrequency = item.updateFrequency || UPDATE_FREQUENCY
-        _callbackAdded = true
-    }
-
+    // For Bonds that are not immediately available.
+    // Example: runtime.totem is a custom runtime and is not immediately available
     if (isFn(item.bondIsAvailable) && !item.bondIsAvailable()) {
         item.maxTries = item.maxTries === undefined ? DEFER_MAX_TRIES : item.maxTries--
         item.delay = item.delay || DEFER_DELAY
         // max retries reached, bond still not available
         if (item.maxTries === 0) return;
         // delay until bond is ready to be used
-        setTimeout(() => addWatcher(key, callback, args, _callbackAdded), item.delay)
+        setTimeout(() => subscribe(key, callback, args, callbackId), item.delay)
         return callbackId
     }
 
-    // First time setup notifier
-    if (!item.notifyId && item.bond() && isFn(item.bond().notify)) {
-        item.notifyId = item.bond().notify(() => {
-            let bond = item.bond()
-            if (typeof(bond) === 'function') {
-                // TODO: improvements required to handle different arguments supplied
-                //       --- register separate notifiers for each set of arguments
-                //       --- also remove them appropriately
-                args = args || []
-                bond = bond.apply(null, args)
-            }
-            const val = bond.use()._value
-            if (item.value === val || !bond.isReady()) return;
-            
-            item.valueOld = item.value
-            item.value = val
-            const triggerUpdate = !item.lastUpdated || Math.abs(new Date()-item.lastUpdated) >= item.updateFrequency
-            if (!triggerUpdate) return;
-
-            Array.from(item.onUpdateCallbacks.entries()).forEach(cbEntry => {
-                const cb = cbEntry[1]
-                isFn(cb) && cb(item.value, item.valueOld)
-            })
-            item.lastUpdated = new Date()
-        })
+    let bond = !item.requireArgs ? item.bond() : item.bond().apply(null, args)
+    const argsStr = JSON.stringify(args)
+    item.key = key
+    if (item.requireArgs) {
+        // variable bond
+        item.settings = item.settings || new Map()
+        const argsItem = item.settings.get(argsStr) || item.settings.set(argsStr, {}).get(argsStr)
+        argsItem.bond = () => bond
+        argsItem.callbacks = argsItem.callbacks || new Map().set(calblackId, callback)
+        argsItem.updateFrequency = argsItem.updateFrequency || UPDATE_FREQUENCY
+    } else {
+        // static bond
+        item.callbacks = item.callbacks || new Map()
+        item.callbacks.set(callbackId, callback)
+        item.updateFrequency = item.updateFrequency || UPDATE_FREQUENCY
     }
 
-    if (item.value !== undefined) {
-        callback(item.value, item.valueOld)
-    }
+    // setup notifier
+    const itemX = !item.requireArgs ? item : item.settings.get(argsStr)
+    itemX.notifierId = itemX.notifierId || setNotifier(bond, itemX)
+    itemX.value !== undefined && callback(itemX.value, itemX.valueOld)
 
     // return callbackId if needs to be removed in the future
     return callbackId
 }
 
-// addWatcherSetState adds a watcher for a specific data key and sets instance.state[key] to resolved value on callback
+const setNotifier = (bond, item) => bond.notify(() => notifierCallback(bond, item))
+const notifierCallback = (bond, item) => {
+    const val = bond.use()._value
+    if (item.value === val || !bond.isReady()) return;
+    
+    item.valueOld = item.value
+    item.value = val
+    const triggerUpdate = !item.lastUpdated || Math.abs(new Date()-item.lastUpdated) >= item.updateFrequency
+    if (!triggerUpdate) return;
+
+    Array.from(item.callbacks.entries()).forEach(cbEntry => {
+        const cb = cbEntry[1]
+        isFn(cb) && cb(item.value, item.valueOld)
+    })
+    item.lastUpdated = new Date()
+}
+
+// subscribeNSetState adds a watcher for a specific data key and sets instance.state[key] to resolved value on callback
 //
 // Params:
 // @instance    React.Component/ReactiveComponent
 // @key         string
-export const addWatcherSetState = (instance, key) => addWatcher(key, (value) => {
+export const subscribeNSetState = (instance, key) => subscribe(key, (value) => {
     const data = {}
-    data[key] = value
+    data[Array.isArray(key) ? key[1] : key] = value
     instance.setState(data)
 })
 
-// addWatcherSetState adds an array of watcher keys and sets instance.state[key] to resolved value on callback
+// subscribeAllNSetState adds an array of watcher keys and sets instance.state[key] to resolved value on callback
 //
 // Params:
 // @instance    React.Component/ReactiveComponent
 // @keys        Array
 //
 // Returns Map
-export const addMultiWatcherSetState = (instance, keys) => keys.map(key => [key, addWatcherSetState(instance, key)])
+export const subscribeAllNSetState = (instance, keys) => keys.map(key => [key, subscribeNSetState(instance, key)])
 
-// removeWatcher removes a data watcher callback. Also unsubscribes from notifier if it's the only callback
+// unsubscribe removes a data watcher callback. Also unsubscribes from notifier if it's the only callback
 //
 // Params: 
 // @key         string
 // @callbackId  string : the ID returned by the addWatcher() function
-export const removeWatcher = (key, callbackId) => {
+export const unsubscribe = (key, callbackId) => {
     const item = settings[key]
-    if (!item || !item.onUpdateCallbacks.get(callbackId)) return;
-    
-    item.onUpdateCallbacks.delete(callbackId)
-    if (item.onUpdateCallbacks.size === 0 && item.notifyId) {
+    if (!item) return;
+    let itemX;
+
+    if (item.requireArgs) {
+        const x = Array.from(item.settings.entries()).find(argsItem => {
+            return !!argsItem[1].callbacks.get(callbackId)
+        })
+        if (!x) return;
+        itemX = x[1]
+    } else {
+        itemX = item
+    }
+
+    itemX.callbacks.delete(callbackId)
+    if (itemX.callbacks.size === 0 && item.notifyId) {
         // no more callbacks available. remove bond notifier
-        item.bond().unnotify(item.notifyId)
-        item.notifyId = undefined
+        itemX.bond().unnotify(itemX.notifyId)
+        itemX.notifyId = undefined
     }
 }
 
-// removeWatchers removes multiple watchers
+// unsubscribeAll removes multiple watchers
 //
 // Params: 
 // @keyIdMap    Map
-export const removeWatchers = keyIdMap => Array.from(keyIdMap.entries()).forEach(ki => removeWatcher(ki[0], ki[1]))
+export const unsubscribeAll = keyIdMap => Array.from(keyIdMap.entries()).forEach(ki => unsubscribe(ki[0], ki[1]))
