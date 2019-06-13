@@ -10,9 +10,7 @@ class ChainInfoBar extends ReactiveComponent {
 	constructor() {
 		super([])
 
-		this.state = {
-			watchers: new Map()
-		}
+		this.state = { watchers: new Map() }
 	}
 
 	componentDidMount() {
@@ -51,12 +49,6 @@ class ChainInfoBar extends ReactiveComponent {
 		)
 		return (
 			<div>
-				<Label>
-					Connected
-					<Label.Detail>
-						<Pretty className="value" value={(this.state.nodeService_status||{}).connected} />			
-					</Label.Detail>
-				</Label>
 				<If condition={isConnected} then={connected} else={<Label>Not connected</Label>} />
 				<Label>
 					Name 
@@ -75,7 +67,7 @@ class ChainInfoBar extends ReactiveComponent {
 					<Label.Detail>
 						<Pretty className="value" value={this.state.runtime_version_specName} /> v
 						<Pretty className="value" value={this.state.runtime_version_specVersion} />
-						<Pretty className="value" value={this.state.runtime_version_implName} /> v
+						<Pretty className="value" value={this.state.runtime_version_implName} /> v&nbsp;
 						<Pretty className="value" value={this.state.runtime_version_implVersion} />
 					</Label.Detail>
 				</Label>
