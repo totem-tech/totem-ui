@@ -150,7 +150,6 @@ const sidebarItems = [
 	},
 	{ 
 	  active: true,
-	  headerDivider: true,
 	  icon: "wrench",
 	  title: "Utilities",
 	  subHeader: "Blockchain utilities",

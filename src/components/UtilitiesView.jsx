@@ -18,10 +18,11 @@ class UtilitiesView extends ReactiveComponent {
                     <ContentSegment 
                         {...item}
                         active={true}
+                        basic={true}
                         key={i}
-                        paddingBottom="0"
                         headerTag="h3"
-                        vertical={true}
+                        style={{padding:0}}
+                        // vertical={true}
                     />
                 )}
             </React.Fragment>

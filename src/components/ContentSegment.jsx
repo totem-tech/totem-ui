@@ -40,15 +40,17 @@ class ContentSegment extends ReactiveComponent {
 
     const segment = (
       <Segment
-      color={this.props.color}
+        basic={this.props.basic}
+        color={this.props.color}
         compact={!!this.props.compact}
         inverted={this.props.inverted}
         padded
+        style={this.props.style}
         vertical={this.props.vertical}>
         <If condition={typeof(this.props.onClose) === 'function'} then={closeBtn} />
         <If condition={!!headerText} then={header} />
         <If condition={!!headerText && !!this.props.headerDivider} then={<Divider />} />
-        <div style={{ paddingBottom: this.props.paddingBottom }}>
+        <div style={{ padding: this.props.contentPadding }}>
           <If condition={!!this.props.content} then={this.props.content} else={placeholder} />
         </div>
       </Segment>
@@ -61,9 +63,14 @@ export default ContentSegment
 
 ContentSegment.propTypes = {
   active: PropTypes.bool,
+  basic: PropTypes.bool,
   onClose: PropTypes.func,
   color: PropTypes.string,
   content: PropTypes.node,
+  contentPadding: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.number
+  ]),
   compact: PropTypes.bool,
   header: PropTypes.string,
   headerDivider: PropTypes.bool,
@@ -72,21 +79,20 @@ ContentSegment.propTypes = {
   icon:  PropTypes.string,
   index: PropTypes.number,
   inverted:  PropTypes.bool,
-  paddingBottom: PropTypes.oneOfType([
-    PropTypes.string,
-    PropTypes.number
-  ]),
   subHeader: PropTypes.string,
+  style: PropTypes.object,
   title:  PropTypes.string,
   vertical: PropTypes.bool
 }
 
 ContentSegment.defaultProps = {
+  basic: false,
   compact: false,
-  headerDivider: false,
+  contentPadding: '0 0 1em 0',
+  headerDivider: true,
   headerTag: 'h2',
   index: 0,
-  paddingBottom: '1em',
+  style: {},
   vertical: false
 }
 
