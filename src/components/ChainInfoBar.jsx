@@ -40,7 +40,7 @@ class ChainInfoBar extends ReactiveComponent {
 	render() {
 		const isConnected = !!(this.state.nodeService_status||{}).connected
 		const connected = (
-			<Label>
+			<Label color="black">
 				Connected
 				<Label.Detail>
 					<Pretty className="value" value={(this.state.nodeService_status||{}).connected} />
@@ -50,11 +50,12 @@ class ChainInfoBar extends ReactiveComponent {
 		return (
 			<div>
 				<If condition={isConnected} then={connected} else={<Label>Not connected</Label>} />
-				<Label>
+				<Label color="black">
 					Name 
 					<Label.Detail>
-						<Pretty className="value" value={this.state.system_name} /> v
-						<Pretty className="value" value={this.state.system_version} />
+					{this.state.system_name} v{this.state.system_version}
+						{/* <Pretty className="value" value={this.state.system_name} /> v */}
+						{/* <Pretty className="value" value={this.state.system_version} /> */}
 					</Label.Detail>
 				</Label>
 				<Label>

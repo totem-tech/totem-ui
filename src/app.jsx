@@ -8,7 +8,6 @@ import {
 } from 'oo7-substrate'
 // Components
 import AddressBookView from './components/AddressBookView'
-import ChainInfoBar from './components/ChainInfoBar'
 import ChatWidget from './components/ChatWidget'
 import ContentSegment from './components/ContentSegment'
 import PageHeader from './components/PageHeader'
@@ -78,7 +77,6 @@ export class App extends ReactiveComponent {
 	readyRender() {
 		return (
 			<React.Fragment>
-				<ChainInfoBar />
 				<PageHeader logo={TotemButtonLogo} />
         		<ChatWidget />
 
@@ -105,7 +103,6 @@ export class App extends ReactiveComponent {
 							<ContentSegment {...item} onClose={this.handleClose} index={i} />
 						</div>
 						))}
-						{/* <TransactionsSegment /> */}
 					</Sidebar.Pusher>
 				</Sidebar.Pushable>
 			</React.Fragment>
