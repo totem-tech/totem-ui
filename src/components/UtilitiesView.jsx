@@ -1,42 +1,54 @@
 import React from 'react'
-import { Bond } from 'oo7'
-import { If, ReactiveComponent } from 'oo7-react'
-import { calls, runtime } from 'oo7-substrate'
-import { TransactButton } from '../TransactButton.jsx'
-import { FileUploadBond } from '../FileUploadBond.jsx'
+import { ReactiveComponent } from 'oo7-react'
+import ContentSegment from './ContentSegment'
+import UpgradeView from './UpgradeView'
+import TransactionsView from './TransactionsView'
+import PokeView from './PokeView'
 
 class UtilitiesView extends ReactiveComponent {
-	constructor() {
-		super()
-		this.conditionBond = runtime.metadata.map(m =>
-			m.modules && m.modules.some(o => o.name === 'sudo')
-			|| m.modules.some(o => o.name === 'upgrade_key')
-		)
-		this.runtime = new Bond
-	}
+    constructor() {
+        super([])
+        console.log('UtilitiesView')
+    }
 
-  render() {
-    const contents = (
-      <div style={{ paddingBottom: '1em' }}>
-        <FileUploadBond bond={runtime} content="Select Runtime" />
-        <TransactButton
-					content="Upgrade"
-					icon="warning"
-					tx={{
-						sender: runtime.sudo
-							? runtime.sudo.key
-							: runtime.upgrade_key.key,
-						call: calls.sudo
-							? calls.sudo.sudo(calls.consensus.setCode(this.runtime))
-							: calls.upgrade_key.upgrade(this.runtime)
-					}}
-				/>
-      </div>
-    )
-    
-    return <If condition={this.conditionBond} then={contents} />
-  }
+    render() {
+        return (
+            <React.Fragment>
+                {subItems.map((item, i) => 
+                    <ContentSegment 
+                        {...item}
+                        active={true}
+                        key={i}
+                        paddingBottom="0"
+                        headerTag="h3"
+                        vertical={true}
+                    />
+                )}
+            </React.Fragment>
+        )
+    }
 }
 
-
 export default UtilitiesView
+
+
+const subItems = [
+    {
+        content: <UpgradeView />,
+        icon: 'wrench',
+        header: 'Upgrade',
+        subHeader: 'Upgrade the runtime using the UpgradeKey module'
+    },
+    {
+        content: <TransactionsView />,
+        icon: 'certificate',
+        header: 'Transactions',
+        subHeader: 'Send custom transactions'
+    },
+    {
+        content: <PokeView />,
+        icon: 'search',
+        header: 'Poke',
+        subHeader: 'Set a particular key of storage to a particular value'
+    }
+]
