@@ -116,7 +116,7 @@ const sidebarItems = [
 	  icon: "sitemap", title: "Partners",
 	  header: "Vendors and Customers",
 	  subHeader: "Inspect the status of any account and name it for later use",
-	  active: true,
+	  active: false,
 	  content: <AddressBookView />
 	},
 	// { icon: "file alternate", title: "Invoice", subHeader: "", active: false, content: <Invoice /> },
@@ -166,13 +166,13 @@ const styles = {
 	  overflow: 'hidden auto',
 	  maxHeight: '100%',
 	  scrollBehavior: 'smooth',
-	  padding: '0 50px'
+	  padding: '15px 15px'
 	},
 	mainContentCollapsed: {
 	  overflow: 'hidden auto',
 	  maxHeight: '100%',
 	  scrollBehavior: 'smooth',
-	  padding: '0 50px 52px'
+	  padding: '15px 15px 52px'
 	},
 	spaceBelow: {
 	  marginBottom: 15

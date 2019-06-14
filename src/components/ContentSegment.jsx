@@ -31,8 +31,8 @@ class ContentSegment extends ReactiveComponent {
           </Header.Content>
           {this.state.showSubHeader && (
             <React.Fragment>
-              <Header.Subheader>{this.props.subHeader}</Header.Subheader>
-              <h5 style={styles.subHeaderDetails}>{this.props.subHeaderDetails}</h5>
+              <Header.Subheader style={styles.subHeader}>{this.props.subHeader}</Header.Subheader>
+              <div style={styles.subHeaderDetails}>{this.props.subHeaderDetails}</div>
             </React.Fragment>
           )}
         </Header>
@@ -98,7 +98,9 @@ ContentSegment.defaultProps = {
   headerDivider: true,
   headerTag: 'h2',
   index: 0,
-  style: {},
+  style: {
+    borderRadius: 2 
+  },
   vertical: false
 }
 
@@ -126,8 +128,12 @@ const styles = {
     fontSize: 50,
     width: 50
   },
+  subHeader: {
+    marginTop: 10
+  },
   subHeaderDetails: {
     fontWeight: 'normal',
+    fontSize: 13,
     margin: 0
   }
 }

@@ -43,7 +43,8 @@ class SidebarLeft extends ReactiveComponent {
         style={styles.sidebarToggle}
       >
         <span>
-          <Icon name={'angle ' + (this.state.collapsed ? 'right' : 'left')} />
+          <Icon name={'arrow alternate circle ' + (this.state.collapsed ? 'right ' : 'left ') + 'outline'} />
+          {this.state.collapsed ? '' : ' Close sidebar'}
         </span>
       </div>
     )
@@ -138,7 +139,7 @@ const styles = {
     left: 0,
     height: 40,
     color: 'white',
-    background: '#1b1c1d',
+    background: '#4a4a4a',
     padding: '13px 18px',
     cursor: 'pointer',
     zIndex: 1,

@@ -181,7 +181,7 @@ export default PageHeader
 const styles = {
   headerContainer: {
     height: 154,
-    border: 'none'
+    borderBottom: '5px solid black'
   },
   logo: {
     width: 235,
@@ -194,7 +194,6 @@ const styles = {
     width: 'auto'
   },
   content: {
-    // backgroundColor: '#ddd0f5',
     height: 154,
     width: 'calc(100% - 235px)',
     float: 'right',
