@@ -35,9 +35,8 @@ class SidebarLeft extends ReactiveComponent {
 
   render() {
     const sidebarToggle = (
-      <Menu.Item
-        as="a"
-        className="sidebar-toggle"
+      <div
+        style={styles.sidebarToggle}
         onClick={this.toggleSidebar}
         position="right"
         title={this.state.collapsed ? 'Expand' : 'Collapse'}
@@ -46,7 +45,7 @@ class SidebarLeft extends ReactiveComponent {
         <span>
           <Icon name={'angle ' + (this.state.collapsed ? 'right' : 'left')} />
         </span>
-      </Menu.Item>
+      </div>
     )
 
     return (
@@ -62,7 +61,7 @@ class SidebarLeft extends ReactiveComponent {
         style={this.state.collapsed ? styles.collapsed : styles.expanded}
       >
         {/* show sidebar toggle when not on mobile */}
-        <If condition={!this.props.isMobile} then={sidebarToggle} />
+        <Menu.Item style={styles.sidebarToggleWrap}>{sidebarToggle}</Menu.Item>
 
         {/* menu items */
         this.props.items.map((item, i) => (
@@ -108,6 +107,7 @@ SidebarLeft.defaultProps = {
     //   title: 'No items available',
     //   header: 'Sample Header',
     //   subHeader: 'A sample',
+    //   subHeaderDetails: 'Sample text that extends subheader',
     //   content: 'This is a sample',
     //   active: true,
     //   elementRef: React.createRef()
@@ -126,7 +126,22 @@ const styles = {
   expanded: {
     width: 265
   },
+  sidebarToggleWrap: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    padding: 0
+  },
   sidebarToggle: {
+    position: 'sticky',
+    top: 0,
+    left: 0,
+    height: 40,
+    color: 'white',
+    background: '#1b1c1d',
+    padding: '13px 18px',
+    cursor: 'pointer',
+    zIndex: 1,
     textAlign: 'right'
   }
 }
