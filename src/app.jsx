@@ -150,6 +150,7 @@ const sidebarItems = [
 	  icon: "wrench",
 	  title: "Utilities",
 	  subHeader: "Blockchain utilities",
+	  subHeaderDetails: 'This is a sample detailed subheader',
 	  content: <UtilitiesView />
 	},
 	{ icon: "settings", title: "Settings", subHeader: "" }

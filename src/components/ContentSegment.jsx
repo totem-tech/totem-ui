@@ -20,18 +20,22 @@ class ContentSegment extends ReactiveComponent {
   render() {
     const headerText = this.props.header || this.props.title
     const header = (
-      <Header as={this.props.headerTag || 'h2'} inverted={this.props.headerInverted}>
-        <Icon name={this.props.icon} />        
-        <Header.Content>
-          <div>
-            {headerText} 
-            <Icon link name='question circle outline' color="grey" size="small" onClick={this.toggleSubHeader} />
-          </div>
-        </Header.Content>
-        <div>
-          {this.state.showSubHeader && <Header.Subheader>{this.props.subHeader}</Header.Subheader>}
-        </div>
-      </Header>
+      
+        <Header as={this.props.headerTag || 'h2'} inverted={this.props.headerInverted}>
+          <Icon name={this.props.icon} />        
+          <Header.Content>
+            <div>
+              {headerText} 
+              <Icon link name='question circle outline' color="grey" size="small" onClick={this.toggleSubHeader} />
+            </div>
+          </Header.Content>
+          {this.state.showSubHeader && (
+            <React.Fragment>
+              <Header.Subheader>{this.props.subHeader}</Header.Subheader>
+              <h5 style={styles.subHeaderDetails}>{this.props.subHeaderDetails}</h5>
+            </React.Fragment>
+          )}
+        </Header>
     )
 
     const closeBtn = (
@@ -121,5 +125,9 @@ const styles = {
     padding: 0,
     fontSize: 50,
     width: 50
+  },
+  subHeaderDetails: {
+    fontWeight: 'normal',
+    margin: 0
   }
 }
