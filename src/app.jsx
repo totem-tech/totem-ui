@@ -76,7 +76,7 @@ export class App extends ReactiveComponent {
 
 	readyRender() {
 		return (
-			<React.Fragment>
+			<Container fluid className={this.state.sidebarCollapsed ? 'sidebar-collapsed' : ''}>
 				<PageHeader logo={TotemButtonLogo} />
         		<ChatWidget />
 
@@ -105,7 +105,7 @@ export class App extends ReactiveComponent {
 						))}
 					</Sidebar.Pusher>
 				</Sidebar.Pushable>
-			</React.Fragment>
+			</Container>
 		)
 	}
 }
