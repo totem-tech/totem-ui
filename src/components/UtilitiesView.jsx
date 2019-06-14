@@ -8,7 +8,6 @@ import PokeView from './PokeView'
 class UtilitiesView extends ReactiveComponent {
     constructor() {
         super([])
-        console.log('UtilitiesView')
     }
 
     render() {

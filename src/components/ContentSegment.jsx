@@ -28,7 +28,9 @@ class ContentSegment extends ReactiveComponent {
             <Icon link name='question circle outline' color="grey" size="small" onClick={this.toggleSubHeader} />
           </div>
         </Header.Content>
+        <div>
           {this.state.showSubHeader && <Header.Subheader>{this.props.subHeader}</Header.Subheader>}
+        </div>
       </Header>
     )
 
