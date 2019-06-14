@@ -1,30 +1,54 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
-import { calls, runtime, runtimeUp } from 'oo7-substrate'
-import { TransactButton } from '../TransactButton.jsx'
-import { FileUploadBond } from '../FileUploadBond.jsx'
+import ContentSegment from './ContentSegment'
+import UpgradeView from './UpgradeView'
+import TransactionsView from './TransactionsView'
+import PokeView from './PokeView'
 
 class UtilitiesView extends ReactiveComponent {
-  constructor() {
-    super([], {ensureRuntime: runtimeUp})
-  }
+    constructor() {
+        super([])
+    }
 
-  readyRender() {
-    return (
-      <div style={{ paddingBottom: '1em' }}>
-        <FileUploadBond bond={runtime} content="Select Runtime" />
-        <TransactButton
-          content="Upgrade"
-          icon="warning"
-          tx={{
-            sender: runtime.sudo.key,
-            call: calls.sudo.sudo(calls.consensus.setCode(runtime))
-          }}
-        />
-      </div>
-    )
-  }
+    render() {
+        return (
+            <React.Fragment>
+                {subItems.map((item, i) => 
+                    <ContentSegment 
+                        {...item}
+                        active={true}
+                        basic={true}
+                        key={i}
+                        headerTag="h3"
+                        style={{padding:0}}
+                        // vertical={true}
+                    />
+                )}
+            </React.Fragment>
+        )
+    }
 }
 
-
 export default UtilitiesView
+
+
+const subItems = [
+    {
+        content: <UpgradeView />,
+        icon: 'wrench',
+        header: 'Upgrade',
+        subHeader: 'Upgrade the runtime using the UpgradeKey module'
+    },
+    {
+        content: <TransactionsView />,
+        icon: 'certificate',
+        header: 'Transactions',
+        subHeader: 'Send custom transactions'
+    },
+    {
+        content: <PokeView />,
+        icon: 'search',
+        header: 'Poke',
+        subHeader: 'Set a particular key of storage to a particular value'
+    }
+]

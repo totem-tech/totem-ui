@@ -60,13 +60,23 @@ class SendFundsView extends ReactiveComponent {
           <div style={{ fontSize: 'small' }}>amount</div>
           <BalanceBond bond={this.amount} />
         </div>
-        <TransactButton
+        {/* <TransactButton
           content="Send"
           icon="send"
           inverted
           tx={{
             sender: runtime.indices.tryIndex(this.source),
             call: calls.balances.transfer(this.destination, this.amount)
+          }}
+        /> */}
+        <TransactButton
+          content="Send"
+          icon="send"
+          tx={{
+            sender: runtime.indices.tryIndex(this.source),
+            call: calls.balances.transfer(runtime.indices.tryIndex(this.destination), this.amount),
+            compact: false,
+            longevity: true
           }}
         />
       </React.Fragment>

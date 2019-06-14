@@ -1,6 +1,6 @@
 import React from 'react'
 import { Label } from 'semantic-ui-react'
-import { ReactiveComponent, If } from 'oo7-react'
+import { If, ReactiveComponent, Rspan} from 'oo7-react'
 import { runtime, runtimeUp, addressBook } from 'oo7-substrate'
 import { InputBond } from '../InputBond'
 import { AccountIdBond } from '../AccountIdBond'
@@ -31,6 +31,13 @@ class AddressBookView extends ReactiveComponent {
             <Pretty value={runtime.system.accountNonce(this.lookup)} />
           </Label.Detail>
         </Label>
+				<If condition={runtime.indices.tryIndex(this.lookup, null).map(x => x !== null)} then={
+						<Label>Short-form
+							<Label.Detail>
+								<Rspan>{runtime.indices.tryIndex(this.lookup).map(i => ss58Encode(i) + ` (index ${i})`)}</Rspan>
+							</Label.Detail>
+						</Label>
+					} />
         <Label>
           Address
           <Label.Detail>

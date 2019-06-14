@@ -41,14 +41,8 @@
 /*
  * New styles
  */
- /* body {
-  overflow: hidden;
- } */
- #app {
+ #app, #app > div {
   height: 100%;
-  /* width: 100%; */
-  /* overflow: hidden; */
-  /* background-color: #aa9dd5; */
 }
 /* Main content width and positioning when sidebar is collapsed (icon-only mode) */
 .ui.visible.left.sidebar.very.thin ~ .pusher.main-content {
@@ -81,7 +75,7 @@ i.icon {
 
 
 div.ui.padded.segment {
-  padding-top: 0em; !important;
+  padding-top: 0em !important;
 }
 
 .angle.left.icon {
@@ -126,4 +120,12 @@ div.ui.padded.segment {
 
 .rcw-client {
   background-color:#177d2440  !important;
+}
+
+.rcw-widget-container {
+  transition: all 0.5s ease;
+}
+
+#app .sidebar-collapsed .rcw-widget-container {
+  margin-bottom: 73px;
 }
