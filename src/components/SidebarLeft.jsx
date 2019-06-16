@@ -7,30 +7,27 @@ import SystemStatus from './SystemStatus'
 class SidebarLeft extends ReactiveComponent {
   constructor(props) {
     super(props)
-    this.state = {
-      visible: props.visible,
-      collapsed: props.collapsed
-    }
     this.toggleSidebar = this.toggleSidebar.bind(this)
   }
 
   // Switch between narrow and wide when on non-mobile devices
   // OR visible and hidden when on mobile
   toggleSidebar() {
-    let collapsed = this.state.collapsed,
-        visible = this.state.visible
+    let collapsed = this.props.collapsed,
+        visible = this.props.visible
     if (!this.props.isMobile) {
       collapsed = !collapsed
-      this.setState({ collapsed })
     } else {
-      // TODO: handle mobile view
       visible = !visible
-      this.setState({ visible})
     }
 
     if (typeof this.props.onSidebarToggle === 'function') {
       this.props.onSidebarToggle(collapsed, visible)
     }
+  }
+
+  componentWillMount() {
+    this.props.onSidebarToggle(this.props.collapsed, this.props.visible)
   }
 
   render() {
@@ -39,12 +36,12 @@ class SidebarLeft extends ReactiveComponent {
         style={styles.sidebarToggle}
         onClick={this.toggleSidebar}
         position="right"
-        title={this.state.collapsed ? 'Expand' : 'Collapse'}
+        title={this.props.collapsed ? 'Expand' : 'Collapse'}
         style={styles.sidebarToggle}
       >
         <span>
-          <Icon name={'arrow alternate circle ' + (this.state.collapsed ? 'right ' : 'left ') + 'outline'} />
-          {this.state.collapsed ? '' : ' Close sidebar'}
+          <Icon name={'arrow alternate circle ' + (this.props.collapsed ? 'right ' : 'left ') + 'outline'} />
+          {this.props.collapsed ? '' : ' Close sidebar'}
         </span>
       </div>
     )
@@ -52,14 +49,15 @@ class SidebarLeft extends ReactiveComponent {
     return (
       <Sidebar
         as={Menu}
-        amination="push"
+        amination={this.props.animation}
         direction="left"
         vertical
-        visible={this.state.visible || !this.props.isMobile}
-        width={this.state.collapsed ? 'very thin' : 'wide'}
+        visible={this.props.visible}
+        width={this.props.collapsed ? 'very thin' : 'wide'}
+        onHide={() => this.props.isMobile && this.toggleSidebar()}
         color="black"
         inverted
-        style={this.state.collapsed ? styles.collapsed : styles.expanded}
+        style={this.props.isMobile ? (this.props.collapsed ? styles.collapsed : styles.expanded) : {}}
       >
         {/* show sidebar toggle when not on mobile */}
         <Menu.Item style={styles.sidebarToggleWrap}>{sidebarToggle}</Menu.Item>
@@ -70,20 +68,21 @@ class SidebarLeft extends ReactiveComponent {
             as="a"
             key={i}
             active={item.active}
-            title={this.state.collapsed ? item.title : ''}
+            title={this.props.collapsed ? item.title : ''}
             onClick={() => this.props.onMenuItemClick(i)}
+            style={i === 0 ? {marginTop: 40} : {}}
           >
             <span>
               <Icon
                 name={item.icon || 'folder'}
-                // size={this.state.collapsed ? 'big' : 'large'}
+                // size={this.props.collapsed ? 'big' : 'large'}
               />
-              <If condition={!this.state.collapsed} then={item.title} />
+              <If condition={!this.props.collapsed} then={item.title} />
             </span>
           </Menu.Item>
         ))}
 
-        <If condition={!this.state.collapsed} then={<SystemStatus  sidebar={false} />} />
+        <If condition={!this.props.collapsed} then={<SystemStatus  sidebar={false} />} />
       </Sidebar>
     )
   }
@@ -94,7 +93,7 @@ SidebarLeft.propTypes = {
   isMobile: PropTypes.bool,
   items: PropTypes.array,
   onMenuItemClick: PropTypes.func,
-  onSidebarToggle: PropTypes.func,
+  onSidebarToggle: PropTypes.func.isRequired,
   visible: PropTypes.bool
 }
 

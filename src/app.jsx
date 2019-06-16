@@ -1,11 +1,17 @@
 import React from 'react'
 require('semantic-ui-css/semantic.min.css')
-import { Container, Sidebar } from 'semantic-ui-react'
+import { Container, Dropdown, Icon, Image, Menu, Responsive, Sidebar } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
 import {
 	calls, runtime, chain, system, runtimeUp,
 	addressBook, secretStore, metadata
 } from 'oo7-substrate'
+import {
+  BrowserView,
+  MobileView,
+  isBrowser,
+  isMobile
+} from "react-device-detect"
 // Components
 import AddressBookView from './components/AddressBookView'
 import ChatWidget from './components/ChatWidget'
@@ -28,9 +34,8 @@ export class App extends ReactiveComponent {
 			  item.elementRef = React.createRef()
 			  return item
 			}),
-			isMobile: false,
 			sidebarCollapsed: false,
-			sidebarVisible: true
+			sidebarVisible: undefined
 		}
 
 		// For debug only.
@@ -54,7 +59,8 @@ export class App extends ReactiveComponent {
 	}
 
 	handleSidebarToggle(sidebarCollapsed, sidebarVisible) {
-	  this.setState({ sidebarCollapsed, sidebarVisible })
+    this.setState({ sidebarCollapsed, sidebarVisible })
+    console.log('sidebarVisible', sidebarVisible)
 	}
   
 	toggleMenuItem(index) {
@@ -72,40 +78,101 @@ export class App extends ReactiveComponent {
 	  if (!sidebarItems[index]) return;
 	  sidebarItems[index].active = false
 	  this.setState({sidebarItems})
-	}
+  }
 
 	readyRender() {
+    const mainContent = this.state.sidebarItems.map((item, i) => (
+      <div ref={item.elementRef} key={i} hidden={!item.active} style={styles.spaceBelow}>
+        <ContentSegment {...item} onClose={this.handleClose} index={i} />
+      </div>
+    ))
+
+    const collapsedClass = this.state.sidebarCollapsed ? ' sidebar-collapsed' : ''
 		return (
-			<Container fluid className={this.state.sidebarCollapsed ? 'sidebar-collapsed' : ''}>
-				<PageHeader logo={TotemButtonLogo} />
-        		<ChatWidget />
+			<React.Fragment>
+        {/* mobile view */}
+        <Responsive
+          maxWidth={isMobile ? 1e10 : Responsive.onlyMobile.maxWidth}
+          className={'mobile' + collapsedClass}>   
+          <ChatWidget />         
 
-				<Sidebar.Pushable as={Container} fluid style={styles.pushable}>
-					<SidebarLeft
-						items={this.state.sidebarItems}
-						isMobile={this.state.isMobile}
-						collapsed={this.state.sidebarCollapsed}
-						visible={this.state.sidebarVisible}
-						onSidebarToggle={this.handleSidebarToggle}
-						onMenuItemClick={this.toggleMenuItem}
-					/>
-					<SystemStatus sidebar={true} visible={this.state.sidebarCollapsed} />
+            <Sidebar.Pushable>   
+				<Menu fixed="top" inverted>
+					<Menu.Item onClick={() => this.handleSidebarToggle(false, !this.state.sidebarVisible)}>
+					<Icon name="sidebar" />
+					</Menu.Item>
+					<Menu.Item>
+					<Image size="mini" src={TotemButtonLogo} />
+					</Menu.Item>
+					<Menu.Menu position="right">
+						<Menu.Item as="a" content="Register" icon="sign-in" />
+						<Menu.Item>
+							<Dropdown defaultValue={0} options={[
+									{name: 'Address 1', address: '5DMdqWmxRg6FwSqLZyNojF9xfckRwZvgzJ743nCeoEjreMjg'},
+									{name: 'Address 2', address: '5Grp7UouLuTmqAQkxc4xJ8vq6LcMjLF7g5m1gqCrKeVxbVn6'}
+								].map((item, i) => ({
+								key: i,
+								text: item.name,
+								label: {content: item.address, position: 'right', description: 'test', inverted: true},
+								value: i
+							}))} />
+						</Menu.Item>
+					</Menu.Menu>
+				</Menu>           
+              <SidebarLeft
+                animation="overlay"
+                items={this.state.sidebarItems}
+                isMobile={true}
+                collapsed={false}
+                visible={this.state.sidebarVisible === undefined ? false : this.state.sidebarVisible}
+                onSidebarToggle={this.handleSidebarToggle}
+                onMenuItemClick={this.toggleMenuItem}
+              />
+              <Sidebar.Pusher
+                as={Container}
+                fluid
+                className="main-content"
+				id="main-content"
+				style={styles.mainContentMobile}
+              >
+                {mainContent}
+              </Sidebar.Pusher>
+            </Sidebar.Pushable>
+        </Responsive>
 
-					<Sidebar.Pusher
-						as={Container}
-						fluid
-						className="main-content"
-						id="main-content"
-						style={this.state.sidebarCollapsed? styles.mainContentCollapsed : styles.mainContent}
-					>
-						{this.state.sidebarItems.map((item, i) => (
-						<div ref={item.elementRef} key={i} hidden={!item.active} style={styles.spaceBelow}>
-							<ContentSegment {...item} onClose={this.handleClose} index={i} />
-						</div>
-						))}
-					</Sidebar.Pusher>
-				</Sidebar.Pushable>
-			</Container>
+        {/* desktop view */}
+        <Responsive
+          minWidth={isMobile ? 1e10 : Responsive.onlyMobile.maxWidth}
+          as={Container}
+          fluid
+          className={'desktop' + collapsedClass}>
+          <PageHeader logo={TotemButtonLogo} />
+          <ChatWidget />
+
+          <Sidebar.Pushable as={Container} fluid style={styles.pushable}>
+           <SidebarLeft
+                animation="push"
+                items={this.state.sidebarItems}
+                isMobile={false}
+                collapsed={this.state.sidebarCollapsed}
+                visible={this.state.sidebarVisible}
+                onSidebarToggle={this.handleSidebarToggle}
+                onMenuItemClick={this.toggleMenuItem}
+              />
+            <SystemStatus sidebar={true} visible={this.state.sidebarCollapsed} />	
+
+            <Sidebar.Pusher
+              as={Container}
+              fluid
+              className="main-content"
+              id="main-content"
+              style={this.state.sidebarCollapsed? styles.mainContentCollapsed : styles.mainContent}
+            >
+              {mainContent}
+            </Sidebar.Pusher>
+          </Sidebar.Pushable>
+        </Responsive>
+			</React.Fragment>
 		)
 	}
 }
@@ -116,7 +183,7 @@ const sidebarItems = [
 	  icon: "sitemap", title: "Partners",
 	  header: "Vendors and Customers",
 	  subHeader: "Inspect the status of any account and name it for later use",
-	  active: false,
+	  active: true,
 	  content: <AddressBookView />
 	},
 	// { icon: "file alternate", title: "Invoice", subHeader: "", active: false, content: <Invoice /> },
@@ -135,14 +202,14 @@ const sidebarItems = [
 	  title: "Payment",
 	  header: "Direct payments",
 	  subHeader: "Send funds from your account to another",
-	  active: false,
+	  active: true,
 	  content: <SendFundsView />
 	},
 	{
 	  icon: "money",
 	  title: "Wallet",
 	  subHeader: "Manage your secret keys",
-	  active: false,
+	  active: true,
 	  content: <WalletView />
 	},
 	{ 
@@ -161,6 +228,13 @@ const styles = {
 	  margin: 0,
 	  height: 'calc(100% - 155px)',
 	  overflow: 'hidden'
+	},
+	mainContentMobile: {
+	  overflow: 'hidden auto',
+	  maxHeight: '100%',
+	  scrollBehavior: 'smooth',
+	  padding: '15px 15px',
+	  paddingTop: 75
 	},
 	mainContent: {
 	  overflow: 'hidden auto',

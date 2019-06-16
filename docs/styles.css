@@ -57,9 +57,17 @@
   max-width: calc(100% - 235px) !important;
   margin-left: 0 !important;
 }
-
 .ui.black.inverted.vertical.ui.left.wide.visible.sidebar.menu {
   width: 235px !important;
+}
+
+.mobile .ui.sidebar.left {
+  width: 100% !important;
+  height: 100%;
+}
+.mobile .ui.visible.left.sidebar:not(.thin) ~ .pusher.main-content {
+  transform: 'none' !important;
+  max-width: 100%;
 }
 
 i.icon {
