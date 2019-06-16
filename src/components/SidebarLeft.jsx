@@ -54,7 +54,6 @@ class SidebarLeft extends ReactiveComponent {
         vertical
         visible={this.props.visible}
         width={this.props.collapsed ? 'very thin' : 'wide'}
-        onHide={() => this.props.isMobile && this.toggleSidebar()}
         color="black"
         inverted
         style={this.props.isMobile ? (this.props.collapsed ? styles.collapsed : styles.expanded) : {}}
