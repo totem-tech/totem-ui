@@ -16,7 +16,7 @@ class PageHeader extends ReactiveComponent {
     const user = getUser()
     this.state = {
       index: 0,
-      id: (user || {}).id,
+      id: user ? user.id : '',
       registered: !!user,
       loading: false,
       idValid: false,
