@@ -1,17 +1,11 @@
 import React from 'react'
-require('semantic-ui-css/semantic.min.css')
 import { Container, Dropdown, Icon, Image, Menu, Responsive, Sidebar } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
 import {
 	calls, runtime, chain, system, runtimeUp,
 	addressBook, secretStore, metadata
 } from 'oo7-substrate'
-import {
-  BrowserView,
-  MobileView,
-  isBrowser,
-  isMobile
-} from "react-device-detect"
+
 // Components
 import AddressBookView from './components/AddressBookView'
 import ChatWidget from './components/ChatWidget'
@@ -22,6 +16,7 @@ import SidebarLeft from './components/SidebarLeft'
 import SystemStatus from './components/SystemStatus'
 import UtilitiesView from './components/UtilitiesView'
 import WalletView from './components/WalletView'
+import MobileView from './MobileView'
 // Images
 import TotemButtonLogo from'./assets/totem-button-grey.png'
 
@@ -59,121 +54,113 @@ export class App extends ReactiveComponent {
 	}
 
 	handleSidebarToggle(sidebarCollapsed, sidebarVisible) {
-    this.setState({ sidebarCollapsed, sidebarVisible })
-    console.log('sidebarVisible', sidebarVisible)
+		this.setState({  sidebarCollapsed, sidebarVisible })
 	}
   
-	toggleMenuItem(index) {
-	  const items = [...this.state.sidebarItems]
-	  items[index].active = !items[index].active
-	  this.setState({ sidebarItems: items })
-	  items[index].active && setTimeout(() => {
-		// Scroll down to the content segment
-		document.getElementById('main-content').scrollTo(0, items[index].elementRef.current.offsetTop)
-	  }, 100)
+	toggleMenuItem(index, isMobile) {
+		const items = [...this.state.sidebarItems]
+		items[index].active = !items[index].active
+		this.setState({
+			sidebarItems: items,
+			isMobile,
+			sidebarVisible: isMobile ? false : this.state.sidebarVisible
+		})
+		items[index].active && setTimeout(() => {
+			// Scroll down to the content segment
+			document.getElementById('main-content')
+				.scrollTo(0, items[index].elementRef.current.offsetTop - (isMobile ? 75  : 0))
+		}, 100)
 	}
   
 	handleClose(index) {
-	  const sidebarItems = this.state.sidebarItems
-	  if (!sidebarItems[index]) return;
-	  sidebarItems[index].active = false
-	  this.setState({sidebarItems})
-  }
+		const sidebarItems = this.state.sidebarItems
+		if (!sidebarItems[index]) return;
+		sidebarItems[index].active = false
+		this.setState({sidebarItems})
+	}
 
 	readyRender() {
-    const mainContent = this.state.sidebarItems.map((item, i) => (
-      <div ref={item.elementRef} key={i} hidden={!item.active} style={styles.spaceBelow}>
-        <ContentSegment {...item} onClose={this.handleClose} index={i} />
-      </div>
-    ))
+		const mainContent = this.state.sidebarItems.map((item, i) => (
+			<div ref={item.elementRef} key={i} hidden={!item.active} style={styles.spaceBelow}>
+				<ContentSegment {...item} onClose={this.handleClose} index={i} />
+			</div>
+		))
 
-    const collapsedClass = this.state.sidebarCollapsed ? ' sidebar-collapsed' : ''
-		return (
-			<React.Fragment>
-        {/* mobile view */}
-        <Responsive
-          maxWidth={isMobile ? 1e10 : Responsive.onlyMobile.maxWidth}
-          className={'mobile' + collapsedClass}>   
-          <ChatWidget />         
+		return (<React.Fragment>
+			{/* mobile view */}
+			<Responsive
+				maxWidth={Responsive.onlyMobile.maxWidth}
+				className={'mobile' + (this.state.sidebarVisible ? ' sidebar-visible' : '')}>
+				<ChatWidget />  
+				<Sidebar.Pushable>
+					<PageHeader
+						logo={TotemButtonLogo}
+						isMobile={true}
+						onSidebarToggle={this.handleSidebarToggle}
+						sidebarVisible={this.state.sidebarVisible}
+					/>
+					<SidebarLeft
+						items={this.state.sidebarItems}
+						isMobile={true}
+						collapsed={false}
+						visible={this.state.sidebarVisible === undefined ? false : this.state.sidebarVisible}
+						onSidebarToggle={this.handleSidebarToggle}
+						onMenuItemClick={this.toggleMenuItem}
+					/>  
+					<Sidebar.Pusher
+						as={Container}
+						fluid
+						className="main-content"
+						id="main-content"
+						style={styles.mainContentMobile}
+					>
+						{mainContent}
+					</Sidebar.Pusher>
+				</Sidebar.Pushable>
+			</Responsive>
+			{/* <MobileView 
+				children={'test'}
+				logoSrc={TotemButtonLogo}
+				onSidebarToggle={this.handleSidebarToggle}
+				sidebarCollapsed={this.state.sidebarCollapsed}
+				sidebarItems={this.state.sidebarItems}
+				sidebarVisible={this.state.sidebarVisible || false}
+				toggleMenuItem={this.toggleMenuItem}
+			/> */}
 
-            <Sidebar.Pushable>   
-				<Menu fixed="top" inverted>
-					<Menu.Item onClick={() => this.handleSidebarToggle(false, !this.state.sidebarVisible)}>
-					<Icon name="sidebar" />
-					</Menu.Item>
-					<Menu.Item>
-					<Image size="mini" src={TotemButtonLogo} />
-					</Menu.Item>
-					<Menu.Menu position="right">
-						<Menu.Item as="a" content="Register" icon="sign-in" />
-						<Menu.Item>
-							<Dropdown defaultValue={0} options={[
-									{name: 'Address 1', address: '5DMdqWmxRg6FwSqLZyNojF9xfckRwZvgzJ743nCeoEjreMjg'},
-									{name: 'Address 2', address: '5Grp7UouLuTmqAQkxc4xJ8vq6LcMjLF7g5m1gqCrKeVxbVn6'}
-								].map((item, i) => ({
-								key: i,
-								text: item.name,
-								label: {content: item.address, position: 'right', description: 'test', inverted: true},
-								value: i
-							}))} />
-						</Menu.Item>
-					</Menu.Menu>
-				</Menu>           
-              <SidebarLeft
-                animation="overlay"
-                items={this.state.sidebarItems}
-                isMobile={true}
-                collapsed={false}
-                visible={this.state.sidebarVisible === undefined ? false : this.state.sidebarVisible}
-                onSidebarToggle={this.handleSidebarToggle}
-                onMenuItemClick={this.toggleMenuItem}
-              />
-              <Sidebar.Pusher
-                as={Container}
-                fluid
-                className="main-content"
-				id="main-content"
-				style={styles.mainContentMobile}
-              >
-                {mainContent}
-              </Sidebar.Pusher>
-            </Sidebar.Pushable>
-        </Responsive>
+			{/* desktop view */}
+			<Responsive
+				minWidth={Responsive.onlyMobile.maxWidth}
+				as={Container}
+				fluid
+				className={'desktop' + this.state.sidebarCollapsed ? ' sidebar-collapsed' : ''}
+			>
+			<PageHeader logo={TotemButtonLogo} />
+			<ChatWidget />
 
-        {/* desktop view */}
-        <Responsive
-          minWidth={isMobile ? 1e10 : Responsive.onlyMobile.maxWidth}
-          as={Container}
-          fluid
-          className={'desktop' + collapsedClass}>
-          <PageHeader logo={TotemButtonLogo} />
-          <ChatWidget />
+			<Sidebar.Pushable as={Container} fluid style={styles.pushable}>
+				<SidebarLeft
+					items={this.state.sidebarItems}
+					isMobile={false}
+					collapsed={this.state.sidebarCollapsed}
+					visible={this.state.sidebarVisible}
+					onSidebarToggle={this.handleSidebarToggle}
+					onMenuItemClick={this.toggleMenuItem}
+				/>
+				<SystemStatus sidebar={true} visible={this.state.sidebarCollapsed} />	
 
-          <Sidebar.Pushable as={Container} fluid style={styles.pushable}>
-           <SidebarLeft
-                animation="push"
-                items={this.state.sidebarItems}
-                isMobile={false}
-                collapsed={this.state.sidebarCollapsed}
-                visible={this.state.sidebarVisible}
-                onSidebarToggle={this.handleSidebarToggle}
-                onMenuItemClick={this.toggleMenuItem}
-              />
-            <SystemStatus sidebar={true} visible={this.state.sidebarCollapsed} />	
-
-            <Sidebar.Pusher
-              as={Container}
-              fluid
-              className="main-content"
-              id="main-content"
-              style={this.state.sidebarCollapsed? styles.mainContentCollapsed : styles.mainContent}
-            >
-              {mainContent}
-            </Sidebar.Pusher>
-          </Sidebar.Pushable>
-        </Responsive>
-			</React.Fragment>
-		)
+				<Sidebar.Pusher
+					as={Container}
+					fluid
+					className="main-content"
+					id="main-content"
+					style={this.state.sidebarCollapsed? styles.mainContentCollapsed : styles.mainContent}
+				>
+					{mainContent}
+				</Sidebar.Pusher>
+			</Sidebar.Pushable>
+			</Responsive>
+		</React.Fragment>)
 	}
 }
 
@@ -233,8 +220,7 @@ const styles = {
 	  overflow: 'hidden auto',
 	  maxHeight: '100%',
 	  scrollBehavior: 'smooth',
-	  padding: '15px 15px',
-	  paddingTop: 75
+	  padding: '75px 15px 15px'
 	},
 	mainContent: {
 	  overflow: 'hidden auto',

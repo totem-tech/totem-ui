@@ -2,16 +2,16 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { If, ReactiveComponent } from 'oo7-react'
 import { runtimeUp, secretStore } from 'oo7-substrate'
-import { Button, Container, Dropdown, Header, Icon, Image, Input, Label, Segment } from 'semantic-ui-react'
+import { Button, Container, Dropdown, Header, Icon, Image, Input, Label, Menu, Segment } from 'semantic-ui-react'
 import uuid from 'uuid'
-import {addResponseMessage, dropMessages, isWidgetOpened, toggleWidget} from 'react-chat-widget'
+import { addResponseMessage, dropMessages, isWidgetOpened, toggleWidget } from 'react-chat-widget'
 import { getUser, getClient } from './ChatClient'
 import { copyToClipboard, setStateTimeout } from './utils'
 const nameRegex = /^($|[a-z]|[a-z][a-z0-9]+)$/
 
 class PageHeader extends ReactiveComponent {
   constructor(props) {
-    super(props, {ensureRuntime: runtimeUp, secretStore: secretStore()})
+    super(props, { ensureRuntime: runtimeUp, secretStore: secretStore() })
 
     const user = getUser()
     this.state = {
@@ -20,7 +20,7 @@ class PageHeader extends ReactiveComponent {
       registered: !!user,
       loading: false,
       idValid: false,
-      faucetReqMsg: {error: false, text: ''}
+      faucetReqMsg: { error: false, text: '' }
     }
 
     this.handleSelection = this.handleSelection.bind(this)
@@ -32,7 +32,7 @@ class PageHeader extends ReactiveComponent {
   handleSelection(e, data) {
     const num = eval(data.value)
     const index = num < this.state.secretStore.keys.length ? num : 0
-    this.setState({index})
+    this.setState({ index })
   }
 
   handleIdChange(_, data) {
@@ -49,9 +49,9 @@ class PageHeader extends ReactiveComponent {
 
   handleRegister() {
     getClient().register(this.state.id, uuid.v1(), err => {
-      if (err) return this.setState({idError: err, idValid: false});
+      if (err) return this.setState({ idError: err, idValid: false });
 
-      this.setState({registered: true})
+      this.setState({ registered: true })
       dropMessages()
       addResponseMessage('So, you want to started with Totem? Great! Just ping your address using the Request Funds button and we\'ll send you some funds! Then you are good to go!')
       !isWidgetOpened() && toggleWidget()
@@ -98,9 +98,9 @@ class PageHeader extends ReactiveComponent {
           value={this.state.id}
           placeholder="To begin create a unique ID."
           error={!!this.state.idError}
-          style={{minWidth: 270}}
+          style={{ minWidth: 270 }}
         />
-        <If 
+        <If
           condition={this.state.idError}
           then={<Label basic color='red' pointing="left">{this.state.idError}</Label>}
         />
@@ -109,60 +109,85 @@ class PageHeader extends ReactiveComponent {
 
     const address = (this.state.secretStore.keys[this.state.index] || {}).address
     const index = this.state.index < this.state.secretStore.keys.length ? this.state.index : 0
-    return (
-      <Container fluid style={styles.headerContainer}>
-        <Container style={styles.logo}>
-          <Image src={this.props.logo} style={styles.logoImg} />
-        </Container>
-        <Container style={styles.content}>
-          <Dropdown
-            style={styles.dropdown}
-            icon={<Icon name="dropdown"  color="grey" size="big" style={styles.dropdownIcon} />}
-            labeled
-            selection
-            options={this.state.secretStore.keys.map((key, i) => ({
-              key: i,
-              text: key.name,
-              value: i
-            }))}
-            placeholder="Select an account"
-            value={index}
-            onChange={this.handleSelection}
-          />
-          <div>
-            Accounting Ledger Public Address: {address}&nbsp;&nbsp;
+    return this.props.isMobile ? (
+      <Menu fixed="top" inverted>
+        <Menu.Item onClick={() => this.props.onSidebarToggle(false, !this.props.sidebarVisible)}>
+          <Icon name="sidebar" />
+        </Menu.Item>
+        <Menu.Item>
+          <Image size="mini" src={this.props.logo} />
+        </Menu.Item>
+        <Menu.Menu position="right">
+          <Menu.Item as="a" content="Register" icon="sign-in" title="Replace with user ID once logged in" />
+          <Menu.Item>
+            <Dropdown defaultValue={0} options={this.state.secretStore.keys.map((key, i) => ({
+                key: i,
+                text: key.name,
+                lablel: {
+                    content: key.address,
+                    position: 'right', // not working!!
+                    description: 'test',
+                    inverted: true
+                },
+                value: i
+            }))} />
+          </Menu.Item>
+        </Menu.Menu>
+      </Menu>
+    ) : (
+        <Container fluid style={styles.headerContainer}>
+          <Container style={styles.logo}>
+            <Image src={this.props.logo} style={styles.logoImg} />
+          </Container>
+          <Container style={styles.content}>
+            <Dropdown
+              style={styles.dropdown}
+              icon={<Icon name="dropdown" color="grey" size="big" style={styles.dropdownIcon} />}
+              labeled
+              selection
+              options={this.state.secretStore.keys.map((key, i) => ({
+                key: i,
+                text: key.name,
+                value: i
+              }))}
+              placeholder="Select an account"
+              value={index}
+              onChange={this.handleSelection}
+            />
+            <div>
+              Accounting Ledger Public Address: {address}&nbsp;&nbsp;
             <Icon
-              link
-              title="Copy address"
-              name="copy outline"
-              onClick={() => this.handleCopy(address)}
-            />
+                link
+                title="Copy address"
+                name="copy outline"
+                onClick={() => this.handleCopy(address)}
+              />
 
-            <If
-              condition={this.state.copied}
-              then={<Label basic color="green" pointing="left">Address copied to clipboard!</Label>}
-            />
+              <If
+                condition={this.state.copied}
+                then={<Label basic color="green" pointing="left">Address copied to clipboard!</Label>}
+              />
 
-            <If
-              condition={this.state.registered && address}
-              then={<Button size="mini" onClick={() => this.handleFaucetRequest(address)}>Request Funds Now</Button>}
-            />
-            <If
-              condition={this.state.faucetReqMsg.text}
-              then={<Label basic color={this.state.faucetReqMsg.error ? 'red' : 'green'} pointing="left">{this.state.faucetReqMsg.text}</Label>}
-            />
-          </div>
-          <div style={{paddingTop: 9}}>
-            <span style={{paddingRight: 8}}>ID:</span>
-            <If
-              condition={!this.state.registered} 
-              then={userIdInput}
-              else={'@' + this.state.id}
-            />
-          </div>
+              <If
+                condition={this.state.registered && address}
+                then={<Button size="mini" onClick={() => this.handleFaucetRequest(address)}>Request Funds Now</Button>}
+              />
+              <If
+                condition={this.state.faucetReqMsg.text}
+                then={<Label basic color={this.state.faucetReqMsg.error ? 'red' : 'green'} pointing="left">{this.state.faucetReqMsg.text}</Label>}
+              />
+            </div>
+            <div style={{ paddingTop: 9 }}>
+              <span style={{ paddingRight: 8 }}>ID:</span>
+              <If
+                condition={!this.state.registered}
+                then={userIdInput}
+                else={'@' + this.state.id}
+              />
+            </div>
+          </Container>
         </Container>
-      </Container>
-    )
+      )
   }
 }
 

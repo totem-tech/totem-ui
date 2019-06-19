@@ -41,27 +41,30 @@
 /*
  * New styles
  */
- #app, #app > div {
+#app, #app > div {
   height: 100%;
 }
+.mobile .pusher.main-content {
+  margin: 0 !important;
+}
 /* Main content width and positioning when sidebar is collapsed (icon-only mode) */
-.ui.visible.left.sidebar.very.thin ~ .pusher.main-content {
+#app > :not(.mobile) .ui.visible.left.sidebar.very.thin ~ .pusher.main-content {
   -webkit-transform: translate3d(105px, 0, 0);
   transform: translate3d(70px, 0, 0);
   max-width: calc(100% - 70px) !important;
   margin-left: 0 !important;
 }
-.ui.visible.left.sidebar:not(.thin) ~ .pusher.main-content {
+#app > :not(.mobile) .ui.visible.left.sidebar:not(.thin) ~ .pusher.main-content {
   -webkit-transform: translate3d(300px, 0, 0);
   transform: translate3d(235px, 0, 0);
   max-width: calc(100% - 235px) !important;
   margin-left: 0 !important;
 }
-.ui.black.inverted.vertical.ui.left.wide.visible.sidebar.menu {
+#app > :not(.mobile) .ui.black.inverted.vertical.ui.left.wide.visible.sidebar.menu {
   width: 235px !important;
 }
 
-.mobile .ui.sidebar.left {
+.mobile .ui.sidebar.left.menu {
   width: 100% !important;
   height: 100%;
 }
@@ -133,7 +136,12 @@ div.ui.padded.segment {
 .rcw-widget-container {
   transition: all 0.5s ease;
 }
-
+/* pushes chat launcher icon up when bottom status bar is visible */
 #app .sidebar-collapsed .rcw-widget-container {
   margin-bottom: 73px;
+}
+
+/* hide when mobile fullscreen sidebar is open */
+.mobile.sidebar-visible .rcw-widget-container {
+  display: none;
 }

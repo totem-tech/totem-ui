@@ -1,5 +1,4 @@
 import React from 'react'
-require('semantic-ui-css/semantic.min.css')
 import { Bond } from 'oo7'
 import { If } from 'oo7-react'
 import { calls, runtime, hexToBytes } from 'oo7-substrate'

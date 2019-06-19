@@ -26,8 +26,8 @@ class SidebarLeft extends ReactiveComponent {
     }
   }
 
-  componentWillMount() {
-    this.props.onSidebarToggle(this.props.collapsed, this.props.visible)
+  componentWillUpdate() {
+    // this.props.onSidebarToggle(this.props.collapsed, this.props.visible, this.props.isMobile)
   }
 
   render() {
@@ -46,13 +46,15 @@ class SidebarLeft extends ReactiveComponent {
       </div>
     )
 
+    // force sidebar to be visible when in desktop mode
+    const visible = this.props.isMobile ? this.props.visible : true 
     return (
       <Sidebar
         as={Menu}
-        amination={this.props.animation}
+        animation={this.props.isMobile ? 'overlay' : 'push'}
         direction="left"
         vertical
-        visible={this.props.visible}
+        visible={visible}
         width={this.props.collapsed ? 'very thin' : 'wide'}
         color="black"
         inverted
@@ -68,7 +70,7 @@ class SidebarLeft extends ReactiveComponent {
             key={i}
             active={item.active}
             title={this.props.collapsed ? item.title : ''}
-            onClick={() => this.props.onMenuItemClick(i)}
+            onClick={() => this.props.onMenuItemClick(i, this.props.isMobile)}
             style={i === 0 ? {marginTop: 40} : {}}
           >
             <span>

@@ -1,5 +1,4 @@
 import React from 'react';
-require('semantic-ui-css/semantic.min.css');
 import {Icon, Image, List, Label, Header, Segment, Divider, Button, Grid, Input} from 'semantic-ui-react';
 import {Bond, TransformBond} from 'oo7';
 import {runtime, ss58Encode, ss58Decode, addCodecTransform, VecU8} from 'oo7-substrate';
