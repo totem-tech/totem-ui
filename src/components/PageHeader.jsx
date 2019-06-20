@@ -112,12 +112,12 @@ class PageHeader extends ReactiveComponent {
     return this.props.isMobile ? (
       <Menu fixed="top" inverted>
         <Menu.Item onClick={() => this.props.onSidebarToggle(false, !this.props.sidebarVisible)}>
-          <Icon name="sidebar" />
+          <Icon name="sidebar" size="large" />
         </Menu.Item>
         <Menu.Item>
           <Image size="mini" src={this.props.logo} />
         </Menu.Item>
-        <Menu.Menu position="right">
+        <Menu.Menu position="right" style={styles.menuRight}>
           <Menu.Item as="a" content="Register" icon="sign-in" title="Replace with user ID once logged in" />
           <Menu.Item>
             <Dropdown defaultValue={0} options={this.state.secretStore.keys.map((key, i) => ({
@@ -204,20 +204,6 @@ export default PageHeader
 
 
 const styles = {
-  headerContainer: {
-    height: 154,
-    borderBottom: '5px solid black'
-  },
-  logo: {
-    width: 235,
-    float: 'left',
-    padding: 15
-  },
-  logoImg: {
-    margin: 'auto',
-    maxHeight: 124,
-    width: 'auto'
-  },
   content: {
     height: 154,
     width: 'calc(100% - 235px)',
@@ -236,5 +222,22 @@ const styles = {
   },
   dropdownIcon: {
     padding: 0
+  },
+  headerContainer: {
+    height: 154,
+    borderBottom: '5px solid black'
+  },
+  logo: {
+    width: 235,
+    float: 'left',
+    padding: 15
+  },
+  logoImg: {
+    margin: 'auto',
+    maxHeight: 124,
+    width: 'auto'
+  },
+  menuRight: {
+    width: '100%'
   }
 }

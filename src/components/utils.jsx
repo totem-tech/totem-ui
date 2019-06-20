@@ -1,4 +1,5 @@
-// import React from 'react'
+import React from 'react'
+import { Responsive } from 'semantic-ui-react'
 
 // Copies supplied string to system clipboard
 export const copyToClipboard = str => {
@@ -12,6 +13,7 @@ export const copyToClipboard = str => {
   document.execCommand('copy');
   document.body.removeChild(el);
 }
+export const isFn = (fn) => typeof(fn) === 'function'
 
 export const isValidNumber = num => typeof(num) == 'number' && !isNaN(num)
 
@@ -30,13 +32,70 @@ Date.prototype.timeNow = function () {
 
 export const getNow = () => new Date().today() + " @ " + new Date().timeNow()
 
-export const setStateTimeout = (compInstance, key, dataBefore, dataAfter, delay) => {
+export function setStateTimeout(compInstance, key, dataBefore, dataAfter, delay){
   if (typeof(compInstance.setState) != 'function') return;
-  const data = {}
-  data[key] = dataBefore
-  compInstance.setState(data)
+  setState(compInstance, key, dataBefore)
   setTimeout(() => {
-    data[key] = dataAfter
-    compInstance.setState(data)
+    setState(compInstance, key, dataAfter)
   }, delay || 2000)
+}
+
+export function setState(compInstance, key, value){
+  const data = {}
+  data[key] = value
+  compInstance.setState(data)
+}
+
+// textEllipsis shortens string into 'abc...xyz' form
+// Params: 
+// @text    string
+// @maxLen  number: maximum length of the shortened text including dots
+// @numDots number: number of dots to be inserted in the middle. Default: 3
+//
+// Returns string
+export const textEllipsis = (text, maxLen, numDots) => {
+  text = typeof(text) != 'string' ? '' : text
+  maxLen = maxLen || text.length
+  if (text.length <= maxLen || !maxLen) return text;
+  numDots = numDots || 3
+  const textLen = maxLen - numDots
+  const partLen = Math.floor(textLen / 2)
+  const isEven = textLen % 2 === 0
+  const arr = text.split('')
+  const dots = new Array(numDots).fill('.').join('')
+  const left = arr.slice(0, partLen).join('')
+  const right = arr.slice(text.length - (isEven ? partLen : partLen + 1)).join('')
+  return left + dots + right
+}
+
+/*
+ * Components
+ */
+export function IfFn(props) {
+  const content = props.condition ? props.then : props.else
+  return (isFn(content) ? content() : content) || ''
+}
+
+// IfMobile component can be used to switch between content when on mobile and/or not
+export function IfMobile(props) {
+  const hasThen = props.then !== undefined
+  const hasElse = props.else !== undefined
+  return (
+    <React.Fragment>
+      {hasThen && (
+        <Responsive maxWidth={Responsive.onlyMobile.maxWidth}>
+          <IfFn condition={true} then={props.then} />
+        </Responsive>
+      )}
+      {hasElse && (
+        <Responsive minWidth={Responsive.onlyMobile.maxWidth}>
+          <IfFn condition={true} then={props.else} />
+        </Responsive>
+      )}
+    </React.Fragment>
+  )
+}
+
+export function IfNotMobile(props) {
+  return <IfMobile else={props.then} />
 }
