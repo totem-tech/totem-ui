@@ -113,6 +113,7 @@ export class App extends ReactiveComponent {
 						className="main-content"
 						id="main-content"
 						style={styles.mainContentMobile}
+						dimmed={this.state.sidebarVisible}
 					>
 						{mainContent}
 					</Sidebar.Pusher>

@@ -65,7 +65,7 @@
 }
 
 .mobile .ui.sidebar.left.menu {
-  width: 100% !important;
+  width: 62% !important;
   height: 100%;
 }
 .mobile .ui.visible.left.sidebar:not(.thin) ~ .pusher.main-content {
@@ -141,7 +141,7 @@ div.ui.padded.segment {
   margin-bottom: 73px;
 }
 
-/* hide when mobile fullscreen sidebar is open */
+/* hide when mobile sidebar is open */
 .mobile.sidebar-visible .rcw-widget-container {
   display: none;
 }
