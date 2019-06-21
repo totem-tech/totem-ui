@@ -64,8 +64,9 @@
   width: 235px !important;
 }
 
+/* Mobile sidebar */
 .mobile .ui.sidebar.left.menu {
-  width: 100% !important;
+  width: 62% !important;
   height: 100%;
 }
 .mobile .ui.visible.left.sidebar:not(.thin) ~ .pusher.main-content {
@@ -73,7 +74,11 @@
   max-width: 100%;
 }
 
-i.icon {
+.no-margin {
+  margin: 0 !important;
+}
+
+i.icon:not(.no-margin) {
   /*font-size: 1em  !important;*/
   margin-right: 1rem  !important;
   margin-left: 0.25rem  !important;
@@ -141,7 +146,7 @@ div.ui.padded.segment {
   margin-bottom: 73px;
 }
 
-/* hide when mobile fullscreen sidebar is open */
+/* hide when mobile sidebar is open */
 .mobile.sidebar-visible .rcw-widget-container {
   display: none;
 }

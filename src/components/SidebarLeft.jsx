@@ -8,6 +8,7 @@ class SidebarLeft extends ReactiveComponent {
   constructor(props) {
     super(props)
     this.toggleSidebar = this.toggleSidebar.bind(this)
+    this.handleHide = this.handleHide.bind(this)
   }
 
   // Switch between narrow and wide when on non-mobile devices
@@ -24,6 +25,11 @@ class SidebarLeft extends ReactiveComponent {
     if (typeof this.props.onSidebarToggle === 'function') {
       this.props.onSidebarToggle(collapsed, visible)
     }
+  }
+
+  handleHide() {
+    // this.setState({visible: false})
+    this.props.onSidebarToggle(this.state.collapsed, false)
   }
 
   componentWillUpdate() {
@@ -59,6 +65,7 @@ class SidebarLeft extends ReactiveComponent {
         color="black"
         inverted
         style={this.props.isMobile ? (this.props.collapsed ? styles.collapsed : styles.expanded) : {}}
+        onHide={this.handleHide}
       >
         {/* show sidebar toggle when not on mobile */}
         <Menu.Item style={styles.sidebarToggleWrap}>{sidebarToggle}</Menu.Item>
