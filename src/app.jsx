@@ -94,7 +94,7 @@ export class App extends ReactiveComponent {
 				<ChatWidget />  
 				<Sidebar.Pushable>
 					<PageHeader
-						logo={TotemButtonLogo}
+						logoSrc={TotemButtonLogo}
 						isMobile={true}
 						onSidebarToggle={this.handleSidebarToggle}
 						sidebarVisible={this.state.sidebarVisible}
@@ -136,7 +136,7 @@ export class App extends ReactiveComponent {
 				fluid
 				className={'desktop' + this.state.sidebarCollapsed ? ' sidebar-collapsed' : ''}
 			>
-			<PageHeader logo={TotemButtonLogo} />
+			<PageHeader logoSrc={TotemButtonLogo} />
 			<ChatWidget />
 
 			<Sidebar.Pushable as={Container} fluid style={styles.pushable}>

@@ -2,11 +2,11 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { If, ReactiveComponent } from 'oo7-react'
 import { runtimeUp, secretStore } from 'oo7-substrate'
-import { Button, Container, Dropdown, Header, Icon, Image, Input, Label, Menu, Segment } from 'semantic-ui-react'
+import { Button, Container, Divider, Dropdown, Header, Icon, Image, Input, Label, Menu, Segment } from 'semantic-ui-react'
 import uuid from 'uuid'
 import { addResponseMessage, dropMessages, isWidgetOpened, toggleWidget } from 'react-chat-widget'
 import { getUser, getClient } from './ChatClient'
-import { copyToClipboard, setStateTimeout } from './utils'
+import { copyToClipboard, IfFn, setState, setStateTimeout, textEllipsis } from './utils'
 const nameRegex = /^($|[a-z]|[a-z][a-z0-9]+)$/
 
 class PageHeader extends ReactiveComponent {
@@ -17,16 +17,17 @@ class PageHeader extends ReactiveComponent {
     this.state = {
       index: 0,
       id: user ? user.id : '',
-      registered: !!user,
-      loading: false,
-      idValid: false,
-      faucetReqMsg: { error: false, text: '' }
+      idDraft: '',
+      idValid: true,
+      message: { error: false, text: ''}
     }
 
-    this.handleSelection = this.handleSelection.bind(this)
-    this.handleIdChange = this.handleIdChange.bind(this)
-    this.handleRegister = this.handleRegister.bind(this)
+    this.getSeletectedAddress = () => (this.state.secretStore.keys[this.state.index || 0] || {}).address
+    this.handleCopy = this.handleCopy.bind(this)
     this.handleFaucetRequest = this.handleFaucetRequest.bind(this)
+    this.handleIdChange = this.handleIdChange.bind(this)
+    this.handleSelection = this.handleSelection.bind(this)
+    this.handleRegister = this.handleRegister.bind(this)
   }
 
   handleSelection(e, data) {
@@ -41,36 +42,48 @@ class PageHeader extends ReactiveComponent {
     if (!valid) return;
     const hasMin = val.length < 1 || val.length >= 3
     this.setState({
-      id: val,
-      idError: !hasMin && 'minimum 3 characters required',
-      idValid: hasMin
+      idDraft: val,
+      isValid: hasMin,
+      message: { 
+        error: !hasMin,
+        text: !hasMin ? 'minimum 3 characters required' : ''
+      }
     })
   }
 
   handleRegister() {
-    getClient().register(this.state.id, uuid.v1(), err => {
-      if (err) return this.setState({ idError: err, idValid: false });
+    const { idDraft } = this.state
+    getClient().register(idDraft, uuid.v1(), err => {
+      if (err) return this.setState({ idValid: false, message: {error: true, text: err} });
 
-      this.setState({ registered: true })
+      this.setState({ id: idDraft })
       dropMessages()
-      addResponseMessage('So, you want to started with Totem? Great! Just ping your address using the Request Funds button and we\'ll send you some funds! Then you are good to go!')
+      addResponseMessage(
+        'So, you want to started with Totem? Great! Just ping your address using the Request Funds ' +
+        'button and we\'ll send you some funds! Then you are good to go!'
+      )
       !isWidgetOpened() && toggleWidget()
     })
   }
 
-  handleCopy(address) {
+  handleCopy() {
+    const address = this.getSeletectedAddress()
+    if (!address) return;
     copyToClipboard(address)
-    setStateTimeout(this, 'copied', true, false, 2000)
+    const msg = { text: 'Address copied to clipboard', error: false}
+    setStateTimeout(this, 'message', msg, {}, 2000)
   }
 
-  handleFaucetRequest(address) {
+  handleFaucetRequest() {
+    const address = this.getSeletectedAddress()
+    if (!address) return;
     const client = getClient()
     if (!client.isConnected()) {
       const msg = {
         text: 'Connection failed!',
         error: true
       }
-      setStateTimeout(this, 'faucetReqMsg', msg, {}, 3000)
+      setStateTimeout(this, 'message', msg, {}, 3000)
       return
     }
     client.faucetRequest(address, (err, fifthTs) => {
@@ -78,129 +91,256 @@ class PageHeader extends ReactiveComponent {
         text: err || 'Request sent!',
         error: !!err
       }
-      setStateTimeout(this, 'faucetReqMsg', msg, 3000)
+      setStateTimeout(this, 'message', msg, 3000)
     })
   }
 
+  // componentWillUpdate() {
+  //   console.log('componentWillUpdate')
+  //   //this.state.index < this.state.secretStore.keys.length ? this.state.index : 0
+  // }
+
   render() {
-    const userIdInput = (
-      <React.Fragment>
-        <Input
+    const { id, idDraft, idValid, index, message, secretStore } = this.state
+    const { logoSrc, onSidebarToggle, sidebarVisible } = this.props
+    const { keys: wallets} = secretStore
+    const addressSelected = this.getSeletectedAddress()
+    const mobileProps = {
+      addressSelected,
+      id,
+      idDraft,
+      idValid,
+      logoSrc,
+      message,
+      onCopy: this.handleCopy,
+      onFaucetRequest: () => this.handleFaucetRequest(addressSelected),
+      onIdChange: this.handleIdChange,
+      onRegister: this.handleRegister,
+      onSelection: this.handleSelection,
+      onSidebarToggle,
+      selectedIndex: index,
+      sidebarVisible,
+      wallets
+    }
+    return this.props.isMobile ? <MobileHeader {...mobileProps} /> : <DesktopHeader {...mobileProps}/>
+  }
+}
+
+PageHeader.propTypes = {
+  logoSrc: PropTypes.string,
+  onSidebarToggle: PropTypes.func,
+  sidebarVisible: PropTypes.bool
+}
+
+PageHeader.defaultProps = {
+  logoSrc: 'https://react.semantic-ui.com/images/wireframe/image.png'
+}
+
+export default PageHeader
+
+class DesktopHeader extends ReactiveComponent {
+  constructor() {
+    super()
+  }
+
+  getIdInput(idDraft, idValid, onIdChange, onRegister) {
+    return (
+      <Input
           label="@"
           action={{
             color: 'black',
             icon: 'sign-in',
-            onClick: this.handleRegister,
-            loading: this.state.loading,
-            disabled: !this.state.idValid
+            onClick: onRegister,
+            disabled: !idValid
           }}
-          onChange={this.handleIdChange}
-          value={this.state.id}
+          onChange={onIdChange}
+          value={idDraft}
           placeholder="To begin create a unique ID."
-          error={!!this.state.idError}
+          error={!idValid}
           style={{ minWidth: 270 }}
-        />
-        <If
-          condition={this.state.idError}
-          then={<Label basic color='red' pointing="left">{this.state.idError}</Label>}
-        />
-      </React.Fragment>
+      />
     )
+  }
 
-    const address = (this.state.secretStore.keys[this.state.index] || {}).address
-    const index = this.state.index < this.state.secretStore.keys.length ? this.state.index : 0
-    return this.props.isMobile ? (
-      <Menu fixed="top" inverted>
-        <Menu.Item onClick={() => this.props.onSidebarToggle(false, !this.props.sidebarVisible)}>
-          <Icon name="sidebar" size="large" />
-        </Menu.Item>
-        <Menu.Item>
-          <Image size="mini" src={this.props.logo} />
-        </Menu.Item>
-        <Menu.Menu position="right" style={styles.menuRight}>
-          <Menu.Item as="a" content="Register" icon="sign-in" title="Replace with user ID once logged in" />
-          <Menu.Item>
-            <Dropdown defaultValue={0} options={this.state.secretStore.keys.map((key, i) => ({
-                key: i,
-                text: key.name,
-                lablel: {
-                    content: key.address,
-                    position: 'right', // not working!!
-                    description: 'test',
-                    inverted: true
-                },
-                value: i
-            }))} />
-          </Menu.Item>
-        </Menu.Menu>
-      </Menu>
-    ) : (
-        <Container fluid style={styles.headerContainer}>
-          <Container style={styles.logo}>
-            <Image src={this.props.logo} style={styles.logoImg} />
-          </Container>
-          <Container style={styles.content}>
-            <Dropdown
-              style={styles.dropdown}
-              icon={<Icon name="dropdown" color="grey" size="big" style={styles.dropdownIcon} />}
-              labeled
-              selection
-              options={this.state.secretStore.keys.map((key, i) => ({
-                key: i,
-                text: key.name,
-                value: i
-              }))}
-              placeholder="Select an account"
-              value={index}
-              onChange={this.handleSelection}
-            />
-            <div>
-              Accounting Ledger Public Address: {address}&nbsp;&nbsp;
+  render() {
+    const {
+      addressSelected,
+      id,
+      idDraft,
+      idValid,
+      logoSrc,
+      message,
+      onCopy,
+      onFaucetRequest,
+      onIdChange,
+      onRegister,
+      onSelection,
+      selectedIndex,
+      wallets
+    } = this.props
+    return (
+      <Container fluid style={styles.headerContainer}>
+        <Container style={styles.logo}>
+          <Image src={logoSrc} style={styles.logoImg} />
+        </Container>
+        <Container style={styles.content}>
+          <Dropdown
+            style={styles.dropdown}
+            icon={<Icon name="dropdown" color="grey" size="big" style={styles.dropdownIcon} />}
+            labeled
+            selection
+            noResultsMessage="No wallet avaible"
+            placeholder="Select an account"
+            value={selectedIndex}
+            onChange={onSelection}
+            options={wallets.map((wallet, i) => ({
+              key: i,
+              text: wallet.name,
+              value: i
+            }))}
+          />
+          <div>
+            Accounting Ledger Public Address: {textEllipsis(addressSelected, 23)}&nbsp;&nbsp;
             <Icon
                 link
                 title="Copy address"
                 name="copy outline"
-                onClick={() => this.handleCopy(address)}
-              />
+                onClick={onCopy}
+            />
+            <Button
+                title="Request faucet"
+                content="Request Faucet"
+                name="copy outline"
+                onClick={onFaucetRequest}
+            />
+          </div>
+          <div xstyle={{ paddingTop: 9 }}>
+            <span style={{ paddingRight: 8 }}>ID:</span>
+            <IfFn
+              condition={!id}
+              then={() => this.getIdInput(idDraft, idValid, onIdChange, onRegister)}
+              else={'@' + id}
+            />
+          </div>
 
-              <If
-                condition={this.state.copied}
-                then={<Label basic color="green" pointing="left">Address copied to clipboard!</Label>}
-              />
-
-              <If
-                condition={this.state.registered && address}
-                then={<Button size="mini" onClick={() => this.handleFaucetRequest(address)}>Request Funds Now</Button>}
-              />
-              <If
-                condition={this.state.faucetReqMsg.text}
-                then={<Label basic color={this.state.faucetReqMsg.error ? 'red' : 'green'} pointing="left">{this.state.faucetReqMsg.text}</Label>}
-              />
-            </div>
-            <div style={{ paddingTop: 9 }}>
-              <span style={{ paddingRight: 8 }}>ID:</span>
-              <If
-                condition={!this.state.registered}
-                then={userIdInput}
-                else={'@' + this.state.id}
-              />
-            </div>
-          </Container>
+          <IfFn
+            condition={message && message.text}
+            then={<Label basic color={message.error ? 'red' : 'green'} pointing="above" style={{zIndex: 1}}>{message.text}</Label>}
+          />
         </Container>
-      )
+      </Container>
+    )
   }
 }
 
+class MobileHeader extends ReactiveComponent {
+  constructor() {
+    super()
+    this.state = {
+      showTools: false
+    }
+  }
 
-PageHeader.propTypes = {
-  logo: PropTypes.string
+  render() {
+    const instance = this
+    const { showTools } = this.state
+    const {
+      // addressSelected,
+      id,
+      idDraft,
+      idValid,
+      logoSrc,
+      message,
+      onCopy,
+      onFaucetRequest,
+      onIdChange,
+      onRegister,
+      onSidebarToggle,
+      onSelection,
+      selectedIndex,
+      sidebarVisible,
+      wallets
+    } = this.props
+
+    return (
+      <div>
+        <Menu fixed="top" inverted>
+          <Menu.Item
+            icon={{name:'sidebar', size: 'big', className: 'no-margin'}}
+            onClick={() => onSidebarToggle(false, !sidebarVisible)} 
+          />
+          <Menu.Item>
+            <Image size="mini" src={logoSrc} />
+          </Menu.Item>
+          <Menu.Menu position="right">
+              {id ? (
+                <Menu.Item as="div" className="borderless" content={id} icon={{name: 'at', className: 'no-margin'}} />
+              ) : (
+                <Menu.Item as="a"  className="borderless" content="Register" icon="sign-in"/>
+              )}
+              <Menu.Item>
+                <Dropdown
+                  labeled
+                  value={selectedIndex || 0}
+                  noResultsMessage="No wallet avaible"
+                  placeholder="Select an account"
+                  onChange={onSelection}
+                  options={wallets.map((wallet, i) => ({
+                    key: i,
+                    text: (wallet.name || '').split('').slice(0, 16).join(''),
+                    description: textEllipsis(wallet.address, 15),
+                    value: i
+                  }))}
+                />
+              </Menu.Item>
+            </Menu.Menu>
+            <Menu.Menu fixed="right">
+              <Dropdown
+                  item
+                  icon={{ name: 'chevron circle ' + (showTools ? 'up' : 'down'), size: 'large', className: 'no-margin'}}
+                  onClick={() => setState(instance, 'showTools', !showTools)}
+                >
+                  <Dropdown.Menu className="left">
+                    <Dropdown.Item
+                      icon="copy"
+                      content="Copy Address"
+                      onClick={onCopy}
+                    />
+                    {id && [
+                      <Dropdown.Item
+                        key="0"
+                        icon="money"
+                        content="Request Faucet"
+                        onClick={onFaucetRequest}
+                      />,
+                      <Dropdown.Item
+                        key="1"
+                        icon="money"
+                        content="Show Balance"
+                        onClick={onFaucetRequest}
+                      />
+                    ]}
+                  </Dropdown.Menu>
+                </Dropdown>
+              </Menu.Menu>
+            
+        </Menu>
+        {message && message.text && (
+          <div>
+              <Label
+                basic
+                color={message.error ? 'red' : 'green'}
+                pointing="above"
+                style={styles.mobileLabel}
+              >
+                {message.text}
+              </Label>
+          </div>
+        )}
+      </div>
+    )
+  }
 }
-
-PageHeader.defaultProps = {
-  logo: 'https://react.semantic-ui.com/images/wireframe/image.png'
-}
-
-export default PageHeader
 
 
 const styles = {
@@ -216,7 +356,7 @@ const styles = {
     boxShadow: 'none',
     minHeight: 'auto',
     fontSize: 35,
-    padding: '0 1.35em 10px 0',
+    padding: '0 2em 10px 0',
     minWidth: 'auto'
 
   },
@@ -237,7 +377,9 @@ const styles = {
     maxHeight: 124,
     width: 'auto'
   },
-  menuRight: {
-    width: '100%'
+  mobileLabel: {
+    zIndex: 999,
+    margin: '68px 0 0 25%',
+    position: 'absolute'
   }
 }
