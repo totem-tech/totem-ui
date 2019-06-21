@@ -59,7 +59,7 @@ class PageHeader extends ReactiveComponent {
       this.setState({ id: idDraft })
       dropMessages()
       addResponseMessage(
-        'So, you want to started with Totem? Great! Just ping your address using the Request Funds ' +
+        'So, you want to get started with Totem? Great! Just ping your address using the Request Funds ' +
         'button and we\'ll send you some funds! Then you are good to go!'
       )
       !isWidgetOpened() && toggleWidget()
@@ -207,12 +207,12 @@ class DesktopHeader extends ReactiveComponent {
                 name="copy outline"
                 onClick={onCopy}
             />
-            <Button
+            {id && <Button
                 title="Request faucet"
                 content="Request Faucet"
                 name="copy outline"
                 onClick={onFaucetRequest}
-            />
+            />}
           </div>
           <div xstyle={{ paddingTop: 9 }}>
             <span style={{ paddingRight: 8 }}>ID:</span>

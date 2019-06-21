@@ -150,3 +150,8 @@ div.ui.padded.segment {
 .mobile.sidebar-visible .rcw-widget-container {
   display: none;
 }
+
+/* allow new lines in the chat subheader */
+.rcw-header > h4 + span {
+  white-space: pre-line;
+}

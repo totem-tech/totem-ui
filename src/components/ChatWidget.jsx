@@ -1,6 +1,6 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
-import { Icon } from 'semantic-ui-react'
+import { Button, Icon } from 'semantic-ui-react'
 import {
   Widget,
   // addResponseMessage,
@@ -17,10 +17,12 @@ import { addToHistory, getClient, getUser, getHistory, getHistoryLimit } from '.
 import { copyToClipboard, getNow } from './utils'
 import TotemLogoCircle from '../assets/totem-button-grey.png';
 
+const historyLimit = getHistoryLimit()
 const eventTypes = [
-  'red',   // error
-  'green', // success
-  'yellow' // warning
+  'red',    // error
+  'green',  // success
+  'yellow', // warning
+  'black'   // normal text
 ]
 
 // Show error, waring, connection status etc
@@ -140,7 +142,21 @@ class ChatWidget extends ReactiveComponent {
 
   login() {
     const user = getUser()
-    if (!user) return addEventMsg('First you have to create your ID (hint: see the header).');
+    if (!user) return addEventMsg(
+      <div>
+        Please&nbsp;
+        <Button
+          as="a"
+          href="javascript:;"
+          basic
+          size="tiny"
+          onClick={() => console.log('Register clicked')}
+        >
+          Register
+        </Button>
+        to continue with chat
+      </div>,
+      true);
 
     this.client.login(user.id, user.secret, err => {
       if (err) {
@@ -158,11 +174,16 @@ class ChatWidget extends ReactiveComponent {
   }
 
   render () {
+    const { userId } = this.state
+    const subtitle = [
+      userId ? <h5>Logged in as {'@' + userId}</h5> : '',
+      'Your chat history is not saved on the server. Up to ' + historyLimit + ' messages are saved locally.'
+    ]
     return (
       <Widget
         titleAvatar={TotemLogoCircle}
-        title="totem live chat"
-        subtitle={'Your chat history is not saved on the server. Up to ' + getHistoryLimit() + ' messages are saved locally.'}
+        title="Totem live chat"
+        subtitle={subtitle}
         senderPlaceHolder={"Let's chat totem..."}
         handleNewUserMessage={this.handleNewUserMessage}
         xbadge={this.state.unreadCount}
