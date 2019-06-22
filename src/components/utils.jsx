@@ -80,7 +80,7 @@ export const textEllipsis = (text, maxLen, numDots) => {
 }
 
 /*
- * Components
+ * Functional Components
  */
 export function IfFn(props) {
   const content = props.condition ? props.then : props.else
@@ -89,22 +89,9 @@ export function IfFn(props) {
 
 // IfMobile component can be used to switch between content when on mobile and/or not
 export function IfMobile(props) {
-  const hasThen = props.then !== undefined
-  const hasElse = props.else !== undefined
-  return (
-    <React.Fragment>
-      {hasThen && (
-        <Responsive maxWidth={Responsive.onlyMobile.maxWidth}>
-          <IfFn condition={true} then={props.then} />
-        </Responsive>
-      )}
-      {hasElse && (
-        <Responsive minWidth={Responsive.onlyMobile.maxWidth}>
-          <IfFn condition={true} then={props.else} />
-        </Responsive>
-      )}
-    </React.Fragment>
-  )
+  const isMobile = window.innerWidth <= Responsive.onlyMobile.maxWidth
+  const content = isMobile ? props.then : props.else 
+  return <IfFn condition={true} then={content} />
 }
 
 export function IfNotMobile(props) {

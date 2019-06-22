@@ -277,7 +277,7 @@ class MobileHeader extends ReactiveComponent {
               {id ? (
                 <Menu.Item as="div" className="borderless" content={id} icon={{name: 'at', className: 'no-margin'}} />
               ) : (
-                <FormRegister trigger={<Menu.Item as="a"  className="borderless" content="Register" icon="sign-in"/>}/>
+                <FormRegister modal={true} trigger={<Menu.Item as="a"  className="borderless" content="Register" icon="sign-in"/>}/>
               )}
               <Menu.Item>
                 <Dropdown

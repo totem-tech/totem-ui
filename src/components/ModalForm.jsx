@@ -1,8 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Button, Checkbox, Form, Header, Icon, Label, Message, Modal, Rail } from 'semantic-ui-react'
+import { Button, Checkbox, Form, Header, Icon, Input, Label, Message, Modal, Rail, Segment } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
-import { isFn } from './utils';
+import { isFn, IfMobile } from './utils';
 
 class ModalForm extends ReactiveComponent {
     constructor(props) {
@@ -38,12 +38,14 @@ class ModalForm extends ReactiveComponent {
             headerIcon,
             message,
             inputs,
+            modal, /// todo: if false return form without the modal to be used normally
             onCancel,
             onChange,
             onClose,
             onOpen,
             onSubmit,
             open,
+            size,
             subheader,
             submitText,
             success,
@@ -51,24 +53,23 @@ class ModalForm extends ReactiveComponent {
         } = this.props
 
         const msg = message || {}
-        return (
+        const closeIcon = mobile => () => (
+            <Rail internal position='right' close style={styles[mobile ? 'closeButtonRailMobile' : 'closeButtonRail']}>
+                <Icon link name='times circle outline' color="grey" size="mini" onClick={onClose} />
+            </Rail>
+        )
+        
+        return modal === false ? <h4>Placeholder for form</h4> : (
             <Modal
-                as={Form}
                 defaultOpen={defaultOpen}
                 dimmer={true}
-                error={msg.error}
-                onChange={this.handleChange }
                 onClose={onClose}
                 onOpen={onOpen}
-                onSubmit={onSubmit}
                 open={open}
-                success={success}
+                size={size}
                 trigger={trigger}
             >
-
-                <Rail internal position='right' close style={styles.closeButtonRail}>
-                    <Icon link name='times circle outline' color="grey" size="mini" onClick={onClose} />
-                </Rail>
+                <IfMobile then={closeIcon(true)} else={closeIcon(false)} />
                 {header && (
                     <Header as={Modal.Header}>
                         <Header.Content>
@@ -79,34 +80,15 @@ class ModalForm extends ReactiveComponent {
                     </Header>
                 )}
                 <Modal.Content>
-                    {Array.isArray(inputs) && inputs.map((item, i) => (
-                        <Form.Field key={i}>
-                            <label>
-                                {item.label}
-                                <input
-                                    className={'ui ' + (['checkbox', 'radio'].indexOf(item.type) >= 0 ? item.type : 'input')}
-                                    name={item.name || i}
-                                    minLength={item.minlength}
-                                    maxLength={item.maxLength}
-                                    min={item.min}
-                                    max={item.max}
-                                    onChange={(e) => isFn(item.onChange) && item.onChange(e.target.value)}
-                                    // pattern={item.pattern}
-                                    placeholder={item.placeholder}
-                                    required={item.required}
-                                    type={item.type || 'text'}
-                                />
-                                {item.labelAfter}
-                            </label>
-                            {item.message && (
-                                <Label
-                                    color={item.message.color || 'red'}
-                                    content={item.message.text}
-                                    icon={item.icon}
-                                />
-                            )}
-                        </Form.Field>
-                    ))}
+                    <Form 
+                        onChange={this.handleChange }
+                        error={msg.status === 'error'}
+                        success={success || msg.status === 'success'}
+                        onSubmit={onSubmit}
+                        warning={msg.status === 'warning'}
+                    >
+                        {Array.isArray(inputs) && inputs.map((input, i) => <FormInput key={i} {...input} />)}
+                    </Form>
                 </Modal.Content>
                 <Modal.Actions>
                     <Button
@@ -120,10 +102,21 @@ class ModalForm extends ReactiveComponent {
                         positive
                     />
                 </Modal.Actions>
-                <Modal.Content>
-                    <Message error header='Form Completed' content="You're all signed up for the newsletter" />
-                    <Message success header='Form Completed' content="You're all signed up for the newsletter" />
-                </Modal.Content>
+                {message && !!message.status && (
+                        <Message
+                            content={message.content}
+                            error={message.status==='error'}
+                            header={message.header}
+                            icon={message.icon}
+                            info={message.info}
+                            list={message.list}
+                            size={message.size}
+                            style={styles.formMessage}
+                            success={message.status==='success'}
+                            visible={!!message.status}
+                            warning={message.status==='warning'}
+                        />
+                )}
             </Modal>
         )
     }
@@ -140,12 +133,145 @@ ModalForm.propTypes = {
 
 export default ModalForm
 
+export const FormInput = (props) => {
+    let inputEl = ''
+    const message = props.message && (
+        <Message
+            content={props.message.content}
+            error={props.message.status==='error'}
+            header={props.message.header}
+            icon={props.message.icon}
+            info={props.message.info}
+            list={props.message.list}
+            size={props.message.size}
+            success={props.message.status==='success'}
+            visible={!!props.message.status}
+            warning={props.message.status==='warning'}
+        />
+    )
+
+    switch(props.type) {
+        case 'checkbox':
+        case 'radio':
+            const isRadio = props.type === 'radio'
+            inputEl = (
+                <Checkbox
+                    checked={props.checked}
+                    defaultChecked={props.defaultChecked}
+                    disabled={props.disabled}
+                    label={props.label}
+                    name={props.name || i}
+                    onChange={(e) => {e.persist(); isFn(props.onChange) && props.onChange(e)}}
+                    radio={isRadio}
+                    readOnly={props.readOnly}
+                    required={props.required}
+                    slider={props.slider}
+                    toggle={!isRadio && props.toggle}
+                    type="checkbox"
+                />
+            )
+            break;
+        case 'group':
+            // ToDO: test input group with multiple inputs
+            inputEl = props.inputs.map((subInput, i) => <FormInput key={i} {...subInput} />)
+            break;
+        default:
+            const msgError = message && message.status==='error'
+            inputEl =  ( 
+                <Form.Input
+                    action={props.action}
+                    actionPosition={props.actionPosition}
+                    disabled={props.disabled}
+                    focus={props.focus}
+                    error={props.error || msgError}
+                    icon={props.icon}
+                    iconPosition={props.iconPosition}
+                    label={props.label}
+                    minLength={props.minlength}
+                    maxLength={props.maxLength}
+                    min={props.min}
+                    max={props.max}
+                    name={props.name || i}
+                    onChange={(e) => {e.persist(); isFn(props.onChange) && props.onChange(e)}}
+                    // pattern={item.pattern}
+                    placeholder={props.placeholder}
+                    readOnly={props.readOnly}
+                    required={props.required}
+                    type={props.type}
+                    value={props.value}
+                    width={props.width}
+                />
+            )
+    }
+
+    return props.type !== 'group' ? (
+        <Form.Field>                             
+            {inputEl}
+            {message}
+        </Form.Field>
+    ) : (
+        <Form.Group>
+            {inputEl}
+        </Form.Group>
+    )
+}
+
+FormInput.propTypes = {
+    action: PropTypes.oneOfType([
+        PropTypes.object,
+        PropTypes.string
+    ]),
+    actionPosition: PropTypes.string,
+    checked: PropTypes.bool,
+    defaultChecked: PropTypes.bool,
+    icon: PropTypes.oneOfType([
+        PropTypes.object,
+        PropTypes.string
+    ]),
+    actionPosition: PropTypes.string,
+    disabled: PropTypes.bool,
+    error: PropTypes.bool,
+    focus: PropTypes.bool,
+    inputs: PropTypes.array,
+    message: PropTypes.object,
+    max: PropTypes.number,
+    maxLength: PropTypes.number,
+    min: PropTypes.number,
+    minLength: PropTypes.number,
+    name: PropTypes.string.isRequired,
+    label: PropTypes.string,
+    onChange: PropTypes.func,
+    placeholder: PropTypes.string,
+    readOnly: PropTypes.bool,
+    required: PropTypes.bool,
+    slider: PropTypes.bool, // For checkbox/radio
+    toggle: PropTypes.bool, // For checkbox/radio
+    type: PropTypes.string,
+    value: PropTypes.oneOfType([
+        PropTypes.bool,
+        PropTypes.number,
+        PropTypes.string,
+    ]),
+    width: PropTypes.number
+}
+
+FormInput.defaultProps = {
+    type: 'text',
+    width: 16
+}
+
 const styles = {
     closeButtonRail: {
-      marginTop: -35,
-      marginRight: -15,
-      padding: 0,
-      fontSize: 70,
-      width: 50
-    }
+        marginTop: 5,
+        marginRight: 10,
+        padding: 0,
+        fontSize: 70
+    },
+    closeButtonRailMobile: {
+        marginTop: -40,
+        marginRight: 0,
+        padding: 0,
+        fontSize: 70
+    },
+    formMessage: { marginTop: 0 }
 }

@@ -16,6 +16,7 @@ class Register extends ReactiveComponent {
             open: undefined,
             inputs: [
                 {
+                    fluid: true,
                     label: 'User ID',
                     name: 'userId',
                     minLength: 3,
@@ -27,7 +28,7 @@ class Register extends ReactiveComponent {
                     required: true
                 },
                 {
-                    labelAfter: ' I agree to the Totem Tech terms and condition',
+                    label: ' I agree to the Totem Tech terms and condition',
                     name: 'agree',
                     type: 'checkbox',
                     required: true
@@ -48,7 +49,8 @@ class Register extends ReactiveComponent {
         isFn(onClose) && onClose(e, d)
     }
 
-    handleIdChange(value) {
+    handleIdChange(e) {
+        const { value } = e.target
         // const valid = nameRegex.test(value) && value.length <= 16
         // const { inputs } = this.state
         // const hasMin = value.length < 1 || value.length >= 3
@@ -57,12 +59,13 @@ class Register extends ReactiveComponent {
         //     text: 'minimum 3 characters required'
         // }
         // if (!hasMin) return this.setState({inputs});
+        console.log(e)
         if (value.length < 3) return;
         const { inputs } = this.state
-        getClient().idExists(value, (exists) => {
+        getClient().idExists(value, exists => {
             inputs[0].message = {
-                color: exists ? 'red' : 'green',
-                text: 'ID `' + value + '`' + (exists ? 'already exists' : 'available')
+                status: exists ? 'error' : 'success',
+                content: 'ID `' + value + '` ' + (exists ? 'already exists' : 'is available')
             }
             this.setState({inputs})
         })
@@ -90,23 +93,26 @@ class Register extends ReactiveComponent {
     }
 
     render() {
-        const { trigger } = this.props
+        const { modal, size, trigger } = this.props
         const { inputs, open } = this.state
         return (
             <ModalForm
-                  trigger={trigger}
-                  header="Register an account"
-                  headerIcon="sign-in"
-                  inputs={inputs}
-                  onCancel={this.handleClose}
-                  onClose={this.handleClose}
-                  onOpen={this.handleOpen}
-                  onSubmit={this.handleSubmit}
-                  open={open}
-                  onSubmit={()=> console.log('Submit clicked', arguments)}
-                  subheader="To start chat and/or make faucet request"
-                  submitText={'Register'}
-                />
+                trigger={trigger}
+                header="Register an account"
+                headerIcon="sign-in"
+                inputs={inputs}
+                message={{status: 'warning', header: 'A message', icon: 'warning', content: 'A message description'}}
+                modal={modal}
+                onCancel={this.handleClose}
+                onClose={this.handleClose}
+                onOpen={this.handleOpen}
+                onSubmit={this.handleSubmit}
+                open={open}
+                onSubmit={()=> console.log('Submit clicked', arguments)}
+                size={size || 'mini'}
+                subheader="To start chat and/or make faucet request"
+                submitText={'Register'}
+            />
         )
     }
 }

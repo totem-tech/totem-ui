@@ -16,7 +16,6 @@ import SidebarLeft from './components/SidebarLeft'
 import SystemStatus from './components/SystemStatus'
 import UtilitiesView from './components/UtilitiesView'
 import WalletView from './components/WalletView'
-import MobileView from './MobileView'
 // Images
 import TotemButtonLogo from'./assets/totem-button-grey.png'
 
@@ -119,15 +118,6 @@ export class App extends ReactiveComponent {
 					</Sidebar.Pusher>
 				</Sidebar.Pushable>
 			</Responsive>
-			{/* <MobileView 
-				children={'test'}
-				logoSrc={TotemButtonLogo}
-				onSidebarToggle={this.handleSidebarToggle}
-				sidebarCollapsed={this.state.sidebarCollapsed}
-				sidebarItems={this.state.sidebarItems}
-				sidebarVisible={this.state.sidebarVisible || false}
-				toggleMenuItem={this.toggleMenuItem}
-			/> */}
 
 			{/* desktop view */}
 			<Responsive
