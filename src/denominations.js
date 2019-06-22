@@ -1,23 +1,12 @@
 const { setNetworkDefault, denominationInfo: { init } } = require('oo7-substrate')
-/*
 init({
 	denominations: {
-		bbq: 15,
+		Rock: 27,
+		Block: 18,
+		Chunk: 9,
+		Chip: 0,
 	},
-	primary: 'bbq',
-	unit: 'birch',
-	ticker: 'BBQ'
+	primary: 'Rock',
+	unit: 'Chip',
+	ticker: 'XEM'
 })
-*/
-setNetworkDefault(42)
-
-/*const denominationInfoDOT = {
-	denominations: {
-		dot: 15,
-		point: 12,
-		µdot: 9,
-	},
-	primary: 'dot',
-	unit: 'planck',
-	ticker: 'DOT'
-}*/
