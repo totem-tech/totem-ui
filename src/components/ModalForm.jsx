@@ -12,22 +12,28 @@ class ModalForm extends ReactiveComponent {
             values: {}
         }
 
-        // this.handleSubmit = this.handleSubmit.bind(this)
         this.handleChange = this.handleChange.bind(this)
+        this.handleSubmit = this.handleSubmit.bind(this)
     }
 
-    handleChange(e){
+    handleChange(e, input, checkbox){
+        const isCheckbox = [ 'checkbox', 'radio' ].indexOf(type) >= 0
+        const { name, onChange: onInputChange, type } = input
         const { onChange } = this.props
         const { values } = this.state
-        let { name, type, value } = e.target
-        if ([ 'checkbox', 'radio' ].indexOf(type) !== -1) {
-            // convert to boolean
-            value = value === 'on'
-        }
-
+        let { value } = isCheckbox ? checkbox : e.target
         values[name] = value
         this.setState({values})
-        isFn(onChange) && onChange(e, values)
+        isFn(onInputChange) && onInputChange(e, values)
+        isFn(onChange) && setTimeout(()=>onChange(e, values), 50)
+    }
+
+    handleSubmit(e) {
+        const { onSubmit } = this.props
+        const { values } = this.state
+        e.preventDefault()
+        if (!isFn(onSubmit)) return;
+        onSubmit(e, values)
     }
 
     render() {
@@ -49,7 +55,8 @@ class ModalForm extends ReactiveComponent {
             subheader,
             submitText,
             success,
-            trigger
+            trigger,
+            widths
         } = this.props
 
         const msg = message || {}
@@ -59,7 +66,29 @@ class ModalForm extends ReactiveComponent {
             </Rail>
         )
         
-        return modal === false ? <h4>Placeholder for form</h4> : (
+        const submitBtn = (
+            <Button
+                content={submitText || 'Submit'}
+                disabled={success || msg.error}
+                onClick={this.handleSubmit}
+                positive
+            />
+        )
+        const form = (
+            <Form 
+                // onChange={this.handleChange }
+                error={msg.status === 'error'}
+                success={success || msg.status === 'success'}
+                onSubmit={onSubmit}
+                warning={msg.status === 'warning'}
+                widths={widths}
+            >
+                {Array.isArray(inputs) && inputs.map((input, i) => <FormInput key={i} {...input} onChange={(e) => this.handleChange(e, input, i)} />)}
+                {!modal && submitBtn}
+            </Form>
+        )
+        
+        return !modal ? form : (
             <Modal
                 defaultOpen={defaultOpen}
                 dimmer={true}
@@ -80,15 +109,7 @@ class ModalForm extends ReactiveComponent {
                     </Header>
                 )}
                 <Modal.Content>
-                    <Form 
-                        onChange={this.handleChange }
-                        error={msg.status === 'error'}
-                        success={success || msg.status === 'success'}
-                        onSubmit={onSubmit}
-                        warning={msg.status === 'warning'}
-                    >
-                        {Array.isArray(inputs) && inputs.map((input, i) => <FormInput key={i} {...input} />)}
-                    </Form>
+                    {form}
                 </Modal.Content>
                 <Modal.Actions>
                     <Button
@@ -96,11 +117,7 @@ class ModalForm extends ReactiveComponent {
                         negative
                         onClick={(e) => { e.preventDefault(); onCancel && onCancel(); }}
                     />
-                    <Button
-                        content={submitText || 'Submit'}
-                        disabled={success || msg.error}
-                        positive
-                    />
+                    {submitBtn}
                 </Modal.Actions>
                 {message && !!message.status && (
                         <Message
@@ -155,19 +172,20 @@ export const FormInput = (props) => {
         case 'radio':
             const isRadio = props.type === 'radio'
             inputEl = (
-                <Checkbox
+                <Form.Checkbox
                     checked={props.checked}
                     defaultChecked={props.defaultChecked}
                     disabled={props.disabled}
                     label={props.label}
                     name={props.name || i}
-                    onChange={(e) => {e.persist(); isFn(props.onChange) && props.onChange(e)}}
+                    onChange={function(e, checkbox){e.persist(); isFn(props.onChange) && props.onChange(e, props, checkbox)}}
                     radio={isRadio}
                     readOnly={props.readOnly}
                     required={props.required}
                     slider={props.slider}
                     toggle={!isRadio && props.toggle}
                     type="checkbox"
+                    value={props.value}
                 />
             )
             break;
@@ -192,13 +210,11 @@ export const FormInput = (props) => {
                     min={props.min}
                     max={props.max}
                     name={props.name || i}
-                    onChange={(e) => {e.persist(); isFn(props.onChange) && props.onChange(e)}}
-                    // pattern={item.pattern}
+                    onChange={function(e){e.persist(); isFn(props.onChange) && props.onChange(e, props)}}
                     placeholder={props.placeholder}
                     readOnly={props.readOnly}
                     required={props.required}
                     type={props.type}
-                    value={props.value}
                     width={props.width}
                 />
             )
@@ -222,8 +238,8 @@ FormInput.propTypes = {
         PropTypes.string
     ]),
     actionPosition: PropTypes.string,
-    checked: PropTypes.bool,
-    defaultChecked: PropTypes.bool,
+    checked: PropTypes.bool,        // For checkbox/radio
+    defaultChecked: PropTypes.bool, // For checkbox/radio
     icon: PropTypes.oneOfType([
         PropTypes.object,
         PropTypes.string
@@ -244,13 +260,12 @@ FormInput.propTypes = {
     placeholder: PropTypes.string,
     readOnly: PropTypes.bool,
     required: PropTypes.bool,
-    slider: PropTypes.bool, // For checkbox/radio
-    toggle: PropTypes.bool, // For checkbox/radio
+    slider: PropTypes.bool,         // For checkbox/radio
+    toggle: PropTypes.bool,         // For checkbox/radio
     type: PropTypes.string,
-    value: PropTypes.oneOfType([
-        PropTypes.bool,
+    value: PropTypes.oneOfType([    // For checkbox/radio
         PropTypes.number,
-        PropTypes.string,
+        PropTypes.string
     ]),
     width: PropTypes.number
 }

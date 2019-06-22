@@ -1,10 +1,10 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
+import uuid from 'uuid'
+import { dropMessages, addResponseMessage, isWidgetOpened, toggleWidget } from 'react-chat-widget'
 import ModalForm from '../ModalForm'
-import { isFn } from '../utils'
+import { deferred, isFn } from '../utils'
 import { getClient } from '../ChatClient'
-import { deferred } from '../utils'
-import { Item } from 'semantic-ui-react';
 
 const nameRegex = /^($|[a-z]|[a-z][a-z0-9]+)$/
 
@@ -13,7 +13,6 @@ class Register extends ReactiveComponent {
         super(props)
 
         this.state = {
-            open: undefined,
             inputs: [
                 {
                     fluid: true,
@@ -31,9 +30,12 @@ class Register extends ReactiveComponent {
                     label: ' I agree to the Totem Tech terms and condition',
                     name: 'agree',
                     type: 'checkbox',
-                    required: true
+                    required: true,
+                    value: 'yes'
                 }
-            ]
+            ],
+            message: {},
+            open: false,
         }
 
         // this.handleCancel = this.handleCancel.bind(this)
@@ -50,22 +52,38 @@ class Register extends ReactiveComponent {
     }
 
     handleIdChange(e) {
-        const { value } = e.target
-        // const valid = nameRegex.test(value) && value.length <= 16
-        // const { inputs } = this.state
-        // const hasMin = value.length < 1 || value.length >= 3
-        // inputs[0].message = hasMin ? {} : { 
-        //     color: 'red',
-        //     text: 'minimum 3 characters required'
-        // }
-        // if (!hasMin) return this.setState({inputs});
-        console.log(e)
-        if (value.length < 3) return;
         const { inputs } = this.state
+        const index = 0
+        let value = e.target.value
+        if (value.length === 0) return;
+        const valid = nameRegex.test(value)
+        if (!valid) {
+            inputs[index].message = {
+                content: (
+                    <p>
+                        Only lowercase alpha-numeric characters allowed <br />
+                        Must start with an alphabet
+                    </p>
+                ),
+                header: 'Invalid ID',
+                status: 'error'
+            }
+            return this.setState({inputs})
+        }
+        const hasMin = value.length >= 3
+        if (!hasMin) {
+            inputs[index].message = hasMin ? {} : { 
+                content: 'minimum 3 characters required',
+                status: 'error'
+            }
+            return this.setState({inputs});
+        }
+        this.setState({inputs})
         getClient().idExists(value, exists => {
-            inputs[0].message = {
-                status: exists ? 'error' : 'success',
-                content: 'ID `' + value + '` ' + (exists ? 'already exists' : 'is available')
+            inputs[index].message = {
+                content: 'ID ' + (exists ? 'already exists' : 'is available'),
+                header: '@' + value,
+                status: exists ? 'error' : 'success'
             }
             this.setState({inputs})
         })
@@ -77,12 +95,25 @@ class Register extends ReactiveComponent {
         isFn(onOpen) && onOpen(e, d)
     }
 
-    handleSubmit() {
-        const { idDraft } = this.state
+    handleSubmit(e, values) {
+        const { open } = this.state
+        const { agree, userId: idDraft } = values
+        if (!agree) return this.setState({
+            message: {
+                content: 'You must agree to the terms and conditions',
+                status: 'error'
+            }
+        })
+        
         getClient().register(idDraft, uuid.v1(), err => {
-            if (err) return this.setState({ idValid: false, message: {error: true, text: err} });
-
-            this.setState({ id: idDraft })
+            const success  = !err
+            const message = {
+                content: err,
+                header: 'Registration ' + (success ? 'complete' : 'failed'),
+                status: success ? 'success' : 'error'
+            }
+            this.setState({message, success: success, open: success ? false : open})
+            if (!success) return;
             dropMessages()
             addResponseMessage(
                 'So, you want to get started with Totem? Great! Just ping your address using the Request Funds ' +
@@ -94,21 +125,20 @@ class Register extends ReactiveComponent {
 
     render() {
         const { modal, size, trigger } = this.props
-        const { inputs, open } = this.state
+        const { inputs, message, open } = this.state
         return (
             <ModalForm
                 trigger={trigger}
                 header="Register an account"
                 headerIcon="sign-in"
                 inputs={inputs}
-                message={{status: 'warning', header: 'A message', icon: 'warning', content: 'A message description'}}
+                message={message}
                 modal={modal}
                 onCancel={this.handleClose}
                 onClose={this.handleClose}
                 onOpen={this.handleOpen}
-                onSubmit={this.handleSubmit}
                 open={open}
-                onSubmit={()=> console.log('Submit clicked', arguments)}
+                onSubmit={this.handleSubmit}
                 size={size || 'mini'}
                 subheader="To start chat and/or make faucet request"
                 submitText={'Register'}

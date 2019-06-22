@@ -5,7 +5,7 @@ import { runtimeUp, secretStore } from 'oo7-substrate'
 import { Button, Container, Divider, Dropdown, Header, Icon, Image, Input, Label, Menu, Segment } from 'semantic-ui-react'
 import uuid from 'uuid'
 import { addResponseMessage, dropMessages, isWidgetOpened, toggleWidget } from 'react-chat-widget'
-import { getUser, getClient } from './ChatClient'
+import { getUser, getClient, onLogin } from './ChatClient'
 import { copyToClipboard, IfFn, setState, setStateTimeout, textEllipsis } from './utils'
 import { default as FormRegister } from './forms/Register'
 const nameRegex = /^($|[a-z]|[a-z][a-z0-9]+)$/
@@ -22,6 +22,9 @@ class PageHeader extends ReactiveComponent {
       idValid: true,
       message: { error: false, text: ''}
     }
+
+    // Update user ID after login/registration
+    onLogin(id => id && this.setState({id}))
 
     this.getSeletectedAddress = () => (this.state.secretStore.keys[this.state.index || 0] || {}).address
     this.handleCopy = this.handleCopy.bind(this)
@@ -274,10 +277,11 @@ class MobileHeader extends ReactiveComponent {
             <Image size="mini" src={logoSrc} />
           </Menu.Item>
           <Menu.Menu position="right">
-              {id ? (
-                <Menu.Item as="div" className="borderless" content={id} icon={{name: 'at', className: 'no-margin'}} />
-              ) : (
-                <FormRegister modal={true} trigger={<Menu.Item as="a"  className="borderless" content="Register" icon="sign-in"/>}/>
+              {!id && (
+                <FormRegister
+                  modal={true}
+                  trigger={<Menu.Item as="a"  className="borderless" content="Register" icon="sign-in"/>}
+                />
               )}
               <Menu.Item>
                 <Dropdown
