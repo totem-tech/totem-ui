@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { If, ReactiveComponent } from 'oo7-react'
 import { runtimeUp, secretStore } from 'oo7-substrate'
-import { Button, Container, Divider, Dropdown, Header, Icon, Image, Input, Label, Menu, Segment } from 'semantic-ui-react'
+import { Button, Container, Dropdown, Icon, Image, Input, Label, Menu, Message, } from 'semantic-ui-react'
 import uuid from 'uuid'
 import { addResponseMessage, dropMessages, isWidgetOpened, toggleWidget } from 'react-chat-widget'
 import { getUser, getClient, onLogin } from './ChatClient'
@@ -332,14 +332,11 @@ class MobileHeader extends ReactiveComponent {
         </Menu>
         {message && message.text && (
           <div>
-              <Label
-                basic
-                color={message.error ? 'red' : 'green'}
-                pointing="above"
-                style={styles.mobileLabel}
-              >
-                {message.text}
-              </Label>
+            <Message
+              content={message.text}
+              color={message.color || (message.error ? 'red' : 'green')}
+              style={styles.messageMobile}
+            />
           </div>
         )}
       </div>
@@ -382,9 +379,11 @@ const styles = {
     maxHeight: 124,
     width: 'auto'
   },
-  mobileLabel: {
-    zIndex: 999,
-    margin: '68px 0 0 25%',
-    position: 'absolute'
+  messageMobile: {
+    zIndex: 3,
+    margin: '61px 0px 0px 0',
+    position: 'absolute',
+    width: '100%',
+    textAlign: 'center'
   }
 }
