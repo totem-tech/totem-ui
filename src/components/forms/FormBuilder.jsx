@@ -2,9 +2,9 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Button, Checkbox, Form, Header, Icon, Input, Label, Message, Modal, Rail, Segment } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
-import { isFn, IfMobile } from './utils';
+import { isFn, IfMobile } from '../utils';
 
-class ModalForm extends ReactiveComponent {
+class FormBuilder extends ReactiveComponent {
     constructor(props) {
         super(props)
 
@@ -139,7 +139,7 @@ class ModalForm extends ReactiveComponent {
     }
 }
 
-ModalForm.propTypes = {
+FormBuilder.propTypes = {
     header: PropTypes.string,
     headerIcon: PropTypes.string,
     onSubmit: PropTypes.func,
@@ -148,7 +148,7 @@ ModalForm.propTypes = {
     trigger: PropTypes.element
 }
 
-export default ModalForm
+export default FormBuilder
 
 export const FormInput = (props) => {
     let inputEl = ''

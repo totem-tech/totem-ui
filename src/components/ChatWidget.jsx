@@ -16,7 +16,7 @@ import 'react-chat-widget/lib/styles.css'
 import { addToHistory, getClient, getUser, getHistory, getHistoryLimit } from './ChatClient'
 import { copyToClipboard, getNow } from './utils'
 import TotemLogoCircle from '../assets/totem-button-grey.png';
-import {default as FormRegister } from './forms/Register'
+import Register from './forms/Register'
 
 const historyLimit = getHistoryLimit()
 const eventTypes = [
@@ -146,7 +146,7 @@ class ChatWidget extends ReactiveComponent {
     if (!user) return addEventMsg(
       <div>
         Please&nbsp;
-        <FormRegister modal={true} trigger={<Button as="a" basic size="tiny" content="register" />}/>
+        <Register modal={true} trigger={<Button as="a" basic size="tiny" content="register" />}/>
         &nbsp;to continue with chat
       </div>,
       true);

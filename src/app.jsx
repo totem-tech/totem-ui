@@ -16,7 +16,6 @@ import SidebarLeft from './components/SidebarLeft'
 import SystemStatus from './components/SystemStatus'
 import UtilitiesView from './components/UtilitiesView'
 import WalletView from './components/WalletView'
-import {default as FormRegister} from './components/forms/Register'
 // Images
 import TotemButtonLogo from'./assets/totem-button-grey.png'
 
@@ -165,7 +164,6 @@ const sidebarItems = [
 	  active: false,
 	  content: <AddressBookView />
 	},
-	{icon: 'sign-in', title: 'register', active: true, content: <FormRegister />},
 	// { icon: "file alternate", title: "Invoice", subHeader: "", active: false, content: <Invoice /> },
 	{ icon: "pen square", title: "Manage Invoices", subHeader: "" },
 	{ icon: "file alternate", title: "Credit Note", subHeader: "" },

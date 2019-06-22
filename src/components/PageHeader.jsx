@@ -7,7 +7,7 @@ import uuid from 'uuid'
 import { addResponseMessage, dropMessages, isWidgetOpened, toggleWidget } from 'react-chat-widget'
 import { getUser, getClient, onLogin } from './ChatClient'
 import { copyToClipboard, IfFn, setState, setStateTimeout, textEllipsis } from './utils'
-import { default as FormRegister } from './forms/Register'
+import Register from './forms/Register'
 const nameRegex = /^($|[a-z]|[a-z][a-z0-9]+)$/
 
 class PageHeader extends ReactiveComponent {
@@ -278,7 +278,7 @@ class MobileHeader extends ReactiveComponent {
           </Menu.Item>
           <Menu.Menu position="right">
               {!id && (
-                <FormRegister
+                <Register
                   modal={true}
                   trigger={<Menu.Item as="a"  className="borderless" content="Register" icon="sign-in"/>}
                 />

@@ -2,13 +2,13 @@ import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import uuid from 'uuid'
 import { dropMessages, addResponseMessage, isWidgetOpened, toggleWidget } from 'react-chat-widget'
-import ModalForm from '../ModalForm'
+import FormBuilder from './FormBuilder'
 import { deferred, isFn } from '../utils'
 import { getClient } from '../ChatClient'
 
 const nameRegex = /^($|[a-z]|[a-z][a-z0-9]+)$/
 
-class Register extends ReactiveComponent {
+class FormRegister extends ReactiveComponent {
     constructor(props) {
         super(props)
 
@@ -114,12 +114,14 @@ class Register extends ReactiveComponent {
             }
             this.setState({message, success: success, open: success ? false : open})
             if (!success) return;
-            dropMessages()
-            addResponseMessage(
-                'So, you want to get started with Totem? Great! Just ping your address using the Request Funds ' +
-                'button and we\'ll send you some funds! Then you are good to go!'
-            )
-            !isWidgetOpened() && toggleWidget()
+            setTimeout(() => {
+                dropMessages()
+                addResponseMessage(
+                    'So, you want to get started with Totem? Great! Just ping your address using the Request Funds ' +
+                    'button and we\'ll send you some funds! Then you are good to go!'
+                )
+                !isWidgetOpened() && toggleWidget()
+            })
         })
     }
 
@@ -127,7 +129,7 @@ class Register extends ReactiveComponent {
         const { modal, size, trigger } = this.props
         const { inputs, message, open } = this.state
         return (
-            <ModalForm
+            <FormBuilder
                 trigger={trigger}
                 header="Register an account"
                 headerIcon="sign-in"
@@ -147,4 +149,4 @@ class Register extends ReactiveComponent {
     }
 }
 
-export default Register
+export default FormRegister
