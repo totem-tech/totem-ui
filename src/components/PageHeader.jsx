@@ -7,6 +7,7 @@ import uuid from 'uuid'
 import { addResponseMessage, dropMessages, isWidgetOpened, toggleWidget } from 'react-chat-widget'
 import { getUser, getClient } from './ChatClient'
 import { copyToClipboard, IfFn, setState, setStateTimeout, textEllipsis } from './utils'
+import { default as FormRegister } from './forms/Register'
 const nameRegex = /^($|[a-z]|[a-z][a-z0-9]+)$/
 
 class PageHeader extends ReactiveComponent {
@@ -276,7 +277,7 @@ class MobileHeader extends ReactiveComponent {
               {id ? (
                 <Menu.Item as="div" className="borderless" content={id} icon={{name: 'at', className: 'no-margin'}} />
               ) : (
-                <Menu.Item as="a"  className="borderless" content="Register" icon="sign-in"/>
+                <FormRegister trigger={<Menu.Item as="a"  className="borderless" content="Register" icon="sign-in"/>}/>
               )}
               <Menu.Item>
                 <Dropdown

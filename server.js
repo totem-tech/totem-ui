@@ -70,6 +70,12 @@ io.on('connection', client => {
     doCb && callback()
   })
 
+  client.on('id-exists', (userId, callback) => {
+    const exists = !!users.get(userId)
+    console.log('id-exists', userId, exists)
+    isFn(callback) && callback(exists, userId)
+  })
+
   client.on('register', (userId, secret, callback) => {
     const doCb = isFn(callback)
     if (users.get(userId)) {
@@ -137,10 +143,10 @@ io.on('connection', client => {
       userRequests = userRequests.slice(numReqs - faucetRequestTimeLimit)
     }
     faucetRequests.set(user.id, userRequests)
-    console.log(user.id, faucetRequests.get(user.id))
-    console.log('User Requests', userRequests)
+    // console.log(user.id, faucetRequests.get(user.id))
+    // console.log('User Requests', userRequests)
     saveFaucetRequests()
-    console.info('faucet-request from @' + user.id, address)
+    // console.info('faucet-request from @' + user.id, address)
     emit([], 'faucet-request', [user.id, address])
     doCb && callback()
   })

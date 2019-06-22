@@ -34,7 +34,7 @@ export const getNow = () => new Date().today() + " @ " + new Date().timeNow()
 
 export function setStateTimeout(compInstance, key, dataBefore, dataAfter, delay){
   if (typeof(compInstance.setState) != 'function') return;
-  setState(compInstance, key, dataBefore)
+  dataBefore !== undefined && setState(compInstance, key, dataBefore)
   setTimeout(() => {
     setState(compInstance, key, dataAfter)
   }, delay || 2000)
@@ -44,6 +44,17 @@ export function setState(compInstance, key, value){
   const data = {}
   data[key] = value
   compInstance.setState(data)
+}
+
+export function deferred(callback, delay, bindTo) {
+  let timeoutId;
+  return function(){
+    const args = arguments
+    if (timeoutId) clearTimeout(timeoutId);
+    timeoutId = setTimeout(function() {
+      callback.apply(bindTo, args);
+    }, delay)
+  }
 }
 
 // textEllipsis shortens string into 'abc...xyz' form
