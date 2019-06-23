@@ -8,7 +8,7 @@ import { addResponseMessage, dropMessages, isWidgetOpened, toggleWidget } from '
 import { getUser, getClient, onLogin } from './ChatClient'
 import { copyToClipboard, IfFn, setState, setStateTimeout, textEllipsis } from './utils'
 import Register from './forms/Register'
-import BalanceButton from './BalanceButton'
+// import BalanceButton from './BalanceButton'
 import { Pretty } from '../Pretty';
 
 const nameRegex = /^($|[a-z]|[a-z][a-z0-9]+)$/
@@ -104,14 +104,14 @@ class PageHeader extends ReactiveComponent {
   }
 
   // for mobile 
-  handleBalance() {
-    const addressSelected = this.getSeletectedAddress()
-    setStateTimeout(this, 'message', {
-      text: <BalanceButton address={addressSelected} persist={true} />,
-      error: false,
-      color: 'grey'
-    }, {}, 5000)
-  }
+  // handleBalance() {
+  //   const addressSelected = this.getSeletectedAddress()
+  //   setStateTimeout(this, 'message', {
+  //     text: <BalanceButton address={addressSelected} persist={true} />,
+  //     error: false,
+  //     color: 'grey'
+  //   }, {}, 5000)
+  // }
 
   // componentWillUpdate() {
   //   console.log('componentWillUpdate')
@@ -235,7 +235,7 @@ class DesktopHeader extends ReactiveComponent {
                 onClick={onFaucetRequest}
                 title="Request Funds"
               />,
-              <BalanceButton key={1} address={addressSelected} />
+              // <BalanceButton key={1} address={addressSelected} />
             ]}
 
           </div>
@@ -340,12 +340,12 @@ class MobileHeader extends ReactiveComponent {
                         content="Request Funds"
                         onClick={onFaucetRequest}
                       />,
-                      <Dropdown.Item
-                        key="1"
-                        icon="dollar"
-                        content="Show Balance"
-                        onClick={ onBalance }
-                      />
+                      // <Dropdown.Item
+                      //   key="1"
+                      //   icon="dollar"
+                      //   content="Show Balance"
+                      //   onClick={ onBalance }
+                      // />
                     ]}
                   </Dropdown.Menu>
                 </Dropdown>
