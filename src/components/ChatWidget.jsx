@@ -143,13 +143,10 @@ class ChatWidget extends ReactiveComponent {
 
   login() {
     const user = getUser()
-    if (!user) return addEventMsg(
-      <div>
-        Please&nbsp;
-        <Register modal={true} trigger={<Button as="a" basic size="tiny" content="register" />}/>
-        &nbsp;to continue with chat
-      </div>,
-      true);
+    if (!user) return;
+    //  addEventMsg(
+    //   <div>You haven't given yourself a user yet!</div>,
+    //   true);
 
     this.client.login(user.id, user.secret, err => {
       if (err) {
@@ -169,8 +166,8 @@ class ChatWidget extends ReactiveComponent {
   render () {
     const { userId } = this.state
     const subtitle = [
-      userId ? <h5>Logged in as {'@' + userId}</h5> : '',
-      'Your chat history is not saved on the server. Up to ' + historyLimit + ' messages are saved locally.'
+      userId ? <h5>Logged in as {'@' + userId}</h5> : <Register modal={true} trigger={<Button as="a" basic inverted size="tiny" content="Register chat user id" />}/>,
+      '\n Your chat history is not saved on the server. Up to ' + historyLimit + ' messages are saved locally.'
     ]
     return (
       <Widget

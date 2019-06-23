@@ -34,13 +34,14 @@ class BalanceButton extends ReactiveComponent {
                 disabled={disabled}
                 onClick={this.handleClick}
             />
-        ) : (
-            <Button
-                icon="dollar"
-                content="Balance"
-                label={pretty(balance)}
-                labelPosition="right"
-            />
+        ) : ( 
+            <div>{pretty(balance)}</div>
+            // <Button
+            //     icon="dollar"
+            //     content="Balance"
+            //     label={pretty(balance)}
+            //     labelPosition="right"
+            // />
         )
     }
   }

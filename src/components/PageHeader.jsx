@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
-import { runtimeUp, secretStore } from 'oo7-substrate'
+import { runtimeUp, secretStore, runtime, ss58Decode } from 'oo7-substrate'
 import { Button, Container, Dropdown, Icon, Image, Input, Label, Menu, Message, } from 'semantic-ui-react'
 import uuid from 'uuid'
 import { addResponseMessage, dropMessages, isWidgetOpened, toggleWidget } from 'react-chat-widget'
@@ -208,13 +208,14 @@ class DesktopHeader extends ReactiveComponent {
             icon={<Icon name="dropdown" color="grey" size="big" style={styles.dropdownIcon} />}
             labeled
             selection
-            noResultsMessage="No wallet avaible"
+            noResultsMessage="No wallet available"
             placeholder="Select an account"
             value={selectedIndex}
             onChange={onSelection}
             options={wallets.map((wallet, i) => ({
               key: i,
               text: wallet.name,
+              description: <Pretty value={runtime.balances.balance(ss58Decode(wallet.address))} />,
               value: i
             }))}
           />
@@ -228,24 +229,24 @@ class DesktopHeader extends ReactiveComponent {
             />
             {id && [
               <Button
-                content="Request Faucet"
+                content="Request Funds"
                 icon="gem"
                 key={0}
                 onClick={onFaucetRequest}
-                title="Request faucet"
+                title="Request Funds"
               />,
               <BalanceButton key={1} address={addressSelected} />
             ]}
 
           </div>
-          <div xstyle={{ paddingTop: 9 }}>
+          {/* <div xstyle={{ paddingTop: 9 }}>
             <span style={{ paddingRight: 8 }}>ID:</span>
             <IfFn
               condition={!id}
               then={() => this.getIdInput(idDraft, idValid, onIdChange, onRegister)}
               else={'@' + id}
             />
-          </div>
+          </div> */}
 
           <IfFn
             condition={message && message.text}
@@ -298,23 +299,23 @@ class MobileHeader extends ReactiveComponent {
             <Image size="mini" src={logoSrc} />
           </Menu.Item>
           <Menu.Menu position="right">
-              {!id && (
+              {/* {!id && (
                 <Register
                   modal={true}
-                  trigger={<Menu.Item as="a"  className="borderless" content="Register" icon="sign-in"/>}
+                  trigger={<Menu.Item as="a"  className="borderless" content="Create chat user" icon="sign-in"/>}
                 />
-              )}
+              )} */}
               <Menu.Item>
                 <Dropdown
                   labeled
                   value={selectedIndex || 0}
-                  noResultsMessage="No wallet avaible"
+                  noResultsMessage="No wallet available"
                   placeholder="Select an account"
                   onChange={onSelection}
                   options={wallets.map((wallet, i) => ({
                     key: i,
                     text: (wallet.name || '').split('').slice(0, 16).join(''),
-                    description: textEllipsis(wallet.address, 15),
+                    description: <Pretty value={runtime.balances.balance(ss58Decode(wallet.address))} />,
                     value: i
                   }))}
                 />
@@ -336,7 +337,7 @@ class MobileHeader extends ReactiveComponent {
                       <Dropdown.Item
                         key="0"
                         icon="gem"
-                        content="Request Faucet"
+                        content="Request Funds"
                         onClick={onFaucetRequest}
                       />,
                       <Dropdown.Item
@@ -380,7 +381,6 @@ const styles = {
     fontSize: 35,
     padding: '0 2em 10px 0',
     minWidth: 'auto'
-
   },
   dropdownIcon: {
     padding: 0
