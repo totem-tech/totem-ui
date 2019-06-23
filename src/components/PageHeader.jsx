@@ -35,7 +35,7 @@ class PageHeader extends ReactiveComponent {
     this.handleIdChange = this.handleIdChange.bind(this)
     this.handleSelection = this.handleSelection.bind(this)
     this.handleRegister = this.handleRegister.bind(this)
-    this.handleBalance = this.handleBalance.bind(this)
+    // this.handleBalance = this.handleBalance.bind(this)
   }
 
   handleSelection(e, data) {
