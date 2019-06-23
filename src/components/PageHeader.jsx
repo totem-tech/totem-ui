@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { If, ReactiveComponent } from 'oo7-react'
+import { ReactiveComponent } from 'oo7-react'
 import { runtimeUp, secretStore } from 'oo7-substrate'
 import { Button, Container, Dropdown, Icon, Image, Input, Label, Menu, Message, } from 'semantic-ui-react'
 import uuid from 'uuid'
@@ -8,6 +8,9 @@ import { addResponseMessage, dropMessages, isWidgetOpened, toggleWidget } from '
 import { getUser, getClient, onLogin } from './ChatClient'
 import { copyToClipboard, IfFn, setState, setStateTimeout, textEllipsis } from './utils'
 import Register from './forms/Register'
+import BalanceButton from './BalanceButton'
+import { Pretty } from '../Pretty';
+
 const nameRegex = /^($|[a-z]|[a-z][a-z0-9]+)$/
 
 class PageHeader extends ReactiveComponent {
@@ -32,6 +35,7 @@ class PageHeader extends ReactiveComponent {
     this.handleIdChange = this.handleIdChange.bind(this)
     this.handleSelection = this.handleSelection.bind(this)
     this.handleRegister = this.handleRegister.bind(this)
+    this.handleBalance = this.handleBalance.bind(this)
   }
 
   handleSelection(e, data) {
@@ -99,6 +103,16 @@ class PageHeader extends ReactiveComponent {
     })
   }
 
+  // for mobile 
+  handleBalance() {
+    const addressSelected = this.getSeletectedAddress()
+    setStateTimeout(this, 'message', {
+      text: <BalanceButton address={addressSelected} persist={true} />,
+      error: false,
+      color: 'grey'
+    }, {}, 5000)
+  }
+
   // componentWillUpdate() {
   //   console.log('componentWillUpdate')
   //   //this.state.index < this.state.secretStore.keys.length ? this.state.index : 0
@@ -116,6 +130,7 @@ class PageHeader extends ReactiveComponent {
       idValid,
       logoSrc,
       message,
+      onBalance: this.handleBalance,
       onCopy: this.handleCopy,
       onFaucetRequest: () => this.handleFaucetRequest(addressSelected),
       onIdChange: this.handleIdChange,
@@ -211,12 +226,17 @@ class DesktopHeader extends ReactiveComponent {
                 name="copy outline"
                 onClick={onCopy}
             />
-            {id && <Button
-                title="Request faucet"
+            {id && [
+              <Button
                 content="Request Faucet"
-                name="copy outline"
+                icon="gem"
+                key={0}
                 onClick={onFaucetRequest}
-            />}
+                title="Request faucet"
+              />,
+              <BalanceButton key={1} address={addressSelected} />
+            ]}
+
           </div>
           <div xstyle={{ paddingTop: 9 }}>
             <span style={{ paddingRight: 8 }}>ID:</span>
@@ -249,12 +269,13 @@ class MobileHeader extends ReactiveComponent {
     const instance = this
     const { showTools } = this.state
     const {
-      // addressSelected,
+      addressSelected,
       id,
       idDraft,
       idValid,
       logoSrc,
       message,
+      onBalance,
       onCopy,
       onFaucetRequest,
       onIdChange,
@@ -314,15 +335,15 @@ class MobileHeader extends ReactiveComponent {
                     {id && [
                       <Dropdown.Item
                         key="0"
-                        icon="money"
+                        icon="gem"
                         content="Request Faucet"
                         onClick={onFaucetRequest}
                       />,
                       <Dropdown.Item
                         key="1"
-                        icon="money"
+                        icon="dollar"
                         content="Show Balance"
-                        onClick={onFaucetRequest}
+                        onClick={ onBalance }
                       />
                     ]}
                   </Dropdown.Menu>
@@ -343,7 +364,6 @@ class MobileHeader extends ReactiveComponent {
     )
   }
 }
-
 
 const styles = {
   content: {
