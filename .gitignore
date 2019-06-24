@@ -9,4 +9,6 @@ faucet-requests.json
 # scripts
 start.sh
 
-docs/bundle.js
+dist/bundle.js
+# docs/sslcert
+*totem.live.*

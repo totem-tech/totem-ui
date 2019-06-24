@@ -11,10 +11,20 @@ app.listen(port, () => {
 /*
  * Chat server
  */
-const http = require('http')
-const server = http.createServer(app)
-const io = require('socket.io').listen(server)
+// const http = require('http')
+const https = require('https')
 const fs = require('fs')
+
+const options = {
+  cert: fs.readFileSync('./docs/sslcert/totem.live.crt'),
+  key: fs.readFileSync('./docs/sslcert/totem.live.key')
+};
+
+// const server = http.createServer(app)
+const server = https.createServer(options, app)
+
+const io = require('socket.io').listen(server)
+
 const wsPort = 3001
 const isFn = fn => typeof(fn) === 'function'
 let users = new Map()
