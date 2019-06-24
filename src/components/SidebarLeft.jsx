@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {ReactiveComponent} from 'oo7-react'
-import { Icon, Menu, Segment, Sidebar } from 'semantic-ui-react'
+import { Icon, Menu, Sidebar } from 'semantic-ui-react'
 import SystemStatus from './SystemStatus'
 import { IfFn } from './utils'
 
@@ -28,7 +28,7 @@ class SidebarLeft extends ReactiveComponent {
   }
   
   render() {
-    const { collapsed, isMobile, items, onMenuItemClick, onSidebarToggle, visible } = this.props
+    const { collapsed, isMobile, items, onMenuItemClick, visible } = this.props
     const { collapsed: sCollapsed, expanded, menuItem, sidebarToggleWrap } = styles
     const animation = isMobile ? 'overlay' : 'push'
     return (

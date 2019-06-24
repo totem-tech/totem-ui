@@ -1,8 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Button, Container, Checkbox, Form, Header, Icon, Input, Label, Message, Modal, Rail, Segment } from 'semantic-ui-react'
+import { Button, Form, Header, Icon, Message, Modal } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
-import { isFn, IfMobile } from '../utils';
+import { isFn } from '../utils';
 
 class FormBuilder extends ReactiveComponent {
     constructor(props) {

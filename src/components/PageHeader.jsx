@@ -2,9 +2,9 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { runtimeUp, secretStore, runtime, ss58Decode } from 'oo7-substrate'
-import { Button, Container, Dropdown, Icon, Image, Input, Label, Menu, Message, } from 'semantic-ui-react'
+import { Dropdown, Image, Menu, Message, } from 'semantic-ui-react'
 import { getUser, getClient, onLogin } from './ChatClient'
-import { copyToClipboard, IfFn, setState, setStateTimeout, textEllipsis } from './utils'
+import { copyToClipboard, setState, setStateTimeout } from './utils'
 import { Pretty } from '../Pretty';
 
 class PageHeader extends ReactiveComponent {

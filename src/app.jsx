@@ -16,6 +16,7 @@ import SidebarLeft from './components/SidebarLeft'
 import SystemStatus from './components/SystemStatus'
 import UtilitiesView from './components/UtilitiesView'
 import WalletView from './components/WalletView'
+import { IfFn } from './components/utils'
 // Images
 import TotemButtonLogo from'./assets/totem-button-grey.png'
 
@@ -84,11 +85,10 @@ export class App extends ReactiveComponent {
 	readyRender() {
 		const { sidebarCollapsed, sidebarItems, sidebarVisible } = this.state
 		const { handleClose, handleSidebarToggle, toggleMenuItem } = this
-		const { spaceBelow, mainContentMobile } = styles
+		const { spaceBelow, mainContent, mainContentCollapsed } = styles
 		const logoSrc = TotemButtonLogo
 		const isMobile = this.isMobile()
-		// const collapsed = isMobile ? sidebarCollapsed
-
+		const showStatusBar = sidebarCollapsed
 		const classNames = [
 			isMobile ? 'mobile' : '',
 			sidebarVisible ? 'sidebar-visible' : '',
@@ -97,7 +97,8 @@ export class App extends ReactiveComponent {
 
 		return (
 			<div className={classNames}>
-				<ChatWidget />  
+				<ChatWidget /> 
+				<IfFn condition={showStatusBar} then={()=> <SystemStatus sidebar={true} visible={true} />} />
 				<Sidebar.Pushable>
 					<SidebarLeft
 						collapsed={sidebarCollapsed}
@@ -106,22 +107,23 @@ export class App extends ReactiveComponent {
 						onMenuItemClick={toggleMenuItem}
 						onSidebarToggle={handleSidebarToggle}
 						visible={sidebarVisible}
-					/>  
+					/>
+
 					<Sidebar.Pusher
 						as={Container}
 						className="main-content"
 						dimmed={isMobile && sidebarVisible}
 						id="main-content"
 						fluid
-						style={mainContentMobile}
+						style={sidebarCollapsed ? mainContentCollapsed : mainContent}
 					>
-					<PageHeader
-						logoSrc={logoSrc}
-						isMobile={isMobile}
-						onSidebarToggle={handleSidebarToggle}
-						sidebarCollapsed={sidebarCollapsed}
-						sidebarVisible={sidebarVisible}
-					/>
+						<PageHeader
+							logoSrc={logoSrc}
+							isMobile={isMobile}
+							onSidebarToggle={handleSidebarToggle}
+							sidebarCollapsed={sidebarCollapsed}
+							sidebarVisible={sidebarVisible}
+						/>
 						{sidebarItems.map((item, i) => (
 							<div ref={item.elementRef} key={i} hidden={!item.active} style={spaceBelow}>
 								<ContentSegment {...item} onClose={handleClose} index={i} />
@@ -186,23 +188,17 @@ const styles = {
 	  height: 'calc(100% - 155px)',
 	  overflow: 'hidden'
 	},
-	mainContentMobile: {
+	mainContent: {
 	  overflow: 'hidden auto',
 	  maxHeight: '100%',
 	  scrollBehavior: 'smooth',
 	  padding: '75px 15px 15px'
 	},
-	mainContent: {
-	  overflow: 'hidden auto',
-	  maxHeight: '100%',
-	  scrollBehavior: 'smooth',
-	  padding: '15px 15px'
-	},
 	mainContentCollapsed: {
-	  overflow: 'hidden auto',
-	  maxHeight: '100%',
-	  scrollBehavior: 'smooth',
-	  padding: '15px 15px 52px'
+		overflow: 'hidden auto',
+		maxHeight: '100%',
+		scrollBehavior: 'smooth',
+		padding: '75px 15px 75px'
 	},
 	spaceBelow: {
 	  marginBottom: 15
