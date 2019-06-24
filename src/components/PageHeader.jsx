@@ -3,15 +3,9 @@ import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { runtimeUp, secretStore, runtime, ss58Decode } from 'oo7-substrate'
 import { Button, Container, Dropdown, Icon, Image, Input, Label, Menu, Message, } from 'semantic-ui-react'
-import uuid from 'uuid'
-import { addResponseMessage, dropMessages, isWidgetOpened, toggleWidget } from 'react-chat-widget'
 import { getUser, getClient, onLogin } from './ChatClient'
 import { copyToClipboard, IfFn, setState, setStateTimeout, textEllipsis } from './utils'
-import Register from './forms/Register'
-// import BalanceButton from './BalanceButton'
 import { Pretty } from '../Pretty';
-
-const nameRegex = /^($|[a-z]|[a-z][a-z0-9]+)$/
 
 class PageHeader extends ReactiveComponent {
   constructor(props) {
@@ -21,57 +15,22 @@ class PageHeader extends ReactiveComponent {
     this.state = {
       index: 0,
       id: user ? user.id : '',
-      idDraft: '',
-      idValid: true,
       message: { error: false, text: ''}
     }
 
-    // Update user ID after login/registration
-    onLogin(id => id && this.setState({id}))
+    // Update user ID after registration
+    !this.state.id && onLogin(id => id && this.setState({id}))
 
     this.getSeletectedAddress = () => (this.state.secretStore.keys[this.state.index || 0] || {}).address
     this.handleCopy = this.handleCopy.bind(this)
     this.handleFaucetRequest = this.handleFaucetRequest.bind(this)
-    this.handleIdChange = this.handleIdChange.bind(this)
     this.handleSelection = this.handleSelection.bind(this)
-    this.handleRegister = this.handleRegister.bind(this)
-    // this.handleBalance = this.handleBalance.bind(this)
   }
 
   handleSelection(e, data) {
     const num = eval(data.value)
     const index = num < this.state.secretStore.keys.length ? num : 0
     this.setState({ index })
-  }
-
-  handleIdChange(_, data) {
-    const val = data.value.trim()
-    const valid = nameRegex.test(val) && val.length <= 16
-    if (!valid) return;
-    const hasMin = val.length < 1 || val.length >= 3
-    this.setState({
-      idDraft: val,
-      isValid: hasMin,
-      message: { 
-        error: !hasMin,
-        text: !hasMin ? 'minimum 3 characters required' : ''
-      }
-    })
-  }
-
-  handleRegister() {
-    const { idDraft } = this.state
-    getClient().register(idDraft, uuid.v1(), err => {
-      if (err) return this.setState({ idValid: false, message: {error: true, text: err} });
-
-      this.setState({ id: idDraft })
-      dropMessages()
-      addResponseMessage(
-        'So, you want to get started with Totem? Great! Just ping your address using the Request Funds ' +
-        'button and we\'ll send you some funds! Then you are good to go!'
-      )
-      !isWidgetOpened() && toggleWidget()
-    })
   }
 
   handleCopy() {
@@ -103,45 +62,21 @@ class PageHeader extends ReactiveComponent {
     })
   }
 
-  // for mobile 
-  // handleBalance() {
-  //   const addressSelected = this.getSeletectedAddress()
-  //   setStateTimeout(this, 'message', {
-  //     text: <BalanceButton address={addressSelected} persist={true} />,
-  //     error: false,
-  //     color: 'grey'
-  //   }, {}, 5000)
-  // }
-
-  // componentWillUpdate() {
-  //   console.log('componentWillUpdate')
-  //   //this.state.index < this.state.secretStore.keys.length ? this.state.index : 0
-  // }
-
   render() {
-    const { id, idDraft, idValid, index, message, secretStore } = this.state
-    const { logoSrc, onSidebarToggle, sidebarVisible } = this.props
+    const { id, index, message, secretStore } = this.state
     const { keys: wallets} = secretStore
     const addressSelected = this.getSeletectedAddress()
-    const mobileProps = {
+    const viewProps = {
       addressSelected,
       id,
-      idDraft,
-      idValid,
-      logoSrc,
       message,
-      onBalance: this.handleBalance,
       onCopy: this.handleCopy,
       onFaucetRequest: () => this.handleFaucetRequest(addressSelected),
-      onIdChange: this.handleIdChange,
-      onRegister: this.handleRegister,
       onSelection: this.handleSelection,
-      onSidebarToggle,
       selectedIndex: index,
-      sidebarVisible,
       wallets
     }
-    return this.props.isMobile ? <MobileHeader {...mobileProps} /> : <DesktopHeader {...mobileProps}/>
+    return <MobileHeader {...this.props} {...viewProps} />
   }
 }
 
@@ -157,134 +92,34 @@ PageHeader.defaultProps = {
 
 export default PageHeader
 
-class DesktopHeader extends ReactiveComponent {
-  constructor() {
-    super()
-  }
-
-  getIdInput(idDraft, idValid, onIdChange, onRegister) {
-    return (
-      <Input
-          label="@"
-          action={{
-            color: 'black',
-            icon: 'sign-in',
-            onClick: onRegister,
-            disabled: !idValid
-          }}
-          onChange={onIdChange}
-          value={idDraft}
-          placeholder="To begin create a unique ID."
-          error={!idValid}
-          style={{ minWidth: 270 }}
-      />
-    )
-  }
-
-  render() {
-    const {
-      addressSelected,
-      id,
-      idDraft,
-      idValid,
-      logoSrc,
-      message,
-      onCopy,
-      onFaucetRequest,
-      onIdChange,
-      onRegister,
-      onSelection,
-      selectedIndex,
-      wallets
-    } = this.props
-    return (
-      <Container fluid style={styles.headerContainer}>
-        <Container style={styles.logo}>
-          <Image src={logoSrc} style={styles.logoImg} />
-        </Container>
-        <Container style={styles.content}>
-          <Dropdown
-            style={styles.dropdown}
-            icon={<Icon name="dropdown" color="grey" size="big" style={styles.dropdownIcon} />}
-            labeled
-            selection
-            noResultsMessage="No wallet available"
-            placeholder="Select an account"
-            value={selectedIndex}
-            onChange={onSelection}
-            options={wallets.map((wallet, i) => ({
-              key: i,
-              text: wallet.name,
-              description: <Pretty value={runtime.balances.balance(ss58Decode(wallet.address))} />,
-              value: i
-            }))}
-          />
-          <div>
-            Accounting Ledger Public Address: {textEllipsis(addressSelected, 23)}&nbsp;&nbsp;
-            <Icon
-                link
-                title="Copy address"
-                name="copy outline"
-                onClick={onCopy}
-            />
-            {id && [
-              <Button
-                content="Request Funds"
-                icon="gem"
-                key={0}
-                onClick={onFaucetRequest}
-                title="Request Funds"
-              />,
-              // <BalanceButton key={1} address={addressSelected} />
-            ]}
-
-          </div>
-          {/* <div xstyle={{ paddingTop: 9 }}>
-            <span style={{ paddingRight: 8 }}>ID:</span>
-            <IfFn
-              condition={!id}
-              then={() => this.getIdInput(idDraft, idValid, onIdChange, onRegister)}
-              else={'@' + id}
-            />
-          </div> */}
-
-          <IfFn
-            condition={message && message.text}
-            then={<Label basic color={message.error ? 'red' : 'green'} pointing="above" style={{zIndex: 1}}>{message.text}</Label>}
-          />
-        </Container>
-      </Container>
-    )
-  }
-}
-
 class MobileHeader extends ReactiveComponent {
   constructor() {
     super()
     this.state = {
       showTools: false
     }
+    this.handleToggle = this.handleToggle.bind(this)
+  }
+
+  handleToggle() {
+    let { sidebarCollapsed, isMobile, onSidebarToggle, sidebarVisible } = this.props
+    if (isMobile) {
+      return onSidebarToggle(!sidebarVisible, false)
+    }
+    onSidebarToggle(true, !sidebarCollapsed)
   }
 
   render() {
     const instance = this
     const { showTools } = this.state
     const {
-      addressSelected,
       id,
-      idDraft,
-      idValid,
       logoSrc,
       message,
-      onBalance,
       onCopy,
       onFaucetRequest,
-      onIdChange,
-      onRegister,
-      onSidebarToggle,
       onSelection,
       selectedIndex,
-      sidebarVisible,
       wallets
     } = this.props
 
@@ -293,18 +128,12 @@ class MobileHeader extends ReactiveComponent {
         <Menu fixed="top" inverted>
           <Menu.Item
             icon={{name:'sidebar', size: 'big', className: 'no-margin'}}
-            onClick={() => onSidebarToggle(false, !sidebarVisible)} 
+            onClick={this.handleToggle}
           />
           <Menu.Item>
             <Image size="mini" src={logoSrc} />
           </Menu.Item>
           <Menu.Menu position="right">
-              {/* {!id && (
-                <Register
-                  modal={true}
-                  trigger={<Menu.Item as="a"  className="borderless" content="Create chat user" icon="sign-in"/>}
-                />
-              )} */}
               <Menu.Item>
                 <Dropdown
                   labeled
@@ -339,13 +168,7 @@ class MobileHeader extends ReactiveComponent {
                         icon="gem"
                         content="Request Funds"
                         onClick={onFaucetRequest}
-                      />,
-                      // <Dropdown.Item
-                      //   key="1"
-                      //   icon="dollar"
-                      //   content="Show Balance"
-                      //   onClick={ onBalance }
-                      // />
+                      />
                     ]}
                   </Dropdown.Menu>
                 </Dropdown>
@@ -401,7 +224,7 @@ const styles = {
   },
   messageMobile: {
     zIndex: 3,
-    margin: '61px 0px 0px 0',
+    margin: -15,
     position: 'absolute',
     width: '100%',
     textAlign: 'center'

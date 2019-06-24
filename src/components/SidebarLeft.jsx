@@ -1,96 +1,88 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {ReactiveComponent, If} from 'oo7-react'
+import {ReactiveComponent} from 'oo7-react'
 import { Icon, Menu, Segment, Sidebar } from 'semantic-ui-react'
 import SystemStatus from './SystemStatus'
+import { IfFn } from './utils'
 
 class SidebarLeft extends ReactiveComponent {
   constructor(props) {
     super(props)
-    this.toggleSidebar = this.toggleSidebar.bind(this)
     this.handleHide = this.handleHide.bind(this)
-  }
-
-  // Switch between narrow and wide when on non-mobile devices
-  // OR visible and hidden when on mobile
-  toggleSidebar() {
-    let collapsed = this.props.collapsed,
-        visible = this.props.visible
-    if (!this.props.isMobile) {
-      collapsed = !collapsed
-    } else {
-      visible = !visible
-    }
-
-    if (typeof this.props.onSidebarToggle === 'function') {
-      this.props.onSidebarToggle(collapsed, visible)
-    }
+    this.handleToggle = this.handleToggle.bind(this)
   }
 
   handleHide() {
-    // this.setState({visible: false})
-    this.props.onSidebarToggle(this.state.collapsed, false)
+    const { isMobile, onSidebarToggle } = this.props
+    if (isMobile) {
+      return onSidebarToggle(false, false)
+    }
   }
 
-  componentWillUpdate() {
-    // this.props.onSidebarToggle(this.props.collapsed, this.props.visible, this.props.isMobile)
+  handleToggle() {
+    const { collapsed, isMobile, onSidebarToggle, visible } = this.props
+    if (isMobile) {
+      return onSidebarToggle(!visible, false)
+    }
+    onSidebarToggle(true, !collapsed)
   }
-
+  
   render() {
-    const sidebarToggle = (
-      <div
-        style={styles.sidebarToggle}
-        onClick={this.toggleSidebar}
-        position="right"
-        title={this.props.collapsed ? 'Expand' : 'Collapse'}
-        style={styles.sidebarToggle}
-      >
-        <span>
-          <Icon name={'arrow alternate circle ' + (this.props.collapsed ? 'right ' : 'left ') + 'outline'} />
-          {this.props.collapsed ? '' : ' Close sidebar'}
-        </span>
-      </div>
-    )
-
-    // force sidebar to be visible when in desktop mode
-    const visible = this.props.isMobile ? this.props.visible : true 
+    const { collapsed, isMobile, items, onMenuItemClick, onSidebarToggle, visible } = this.props
+    const { collapsed: sCollapsed, expanded, menuItem, sidebarToggleWrap } = styles
+    const animation = isMobile ? 'overlay' : 'push'
     return (
       <Sidebar
         as={Menu}
-        animation={this.props.isMobile ? 'overlay' : 'push'}
+        animation={animation}
         direction="left"
         vertical
         visible={visible}
-        width={this.props.collapsed ? 'very thin' : 'wide'}
+        width={collapsed ? 'very thin' : 'wide'}
         color="black"
         inverted
-        style={this.props.isMobile ? (this.props.collapsed ? styles.collapsed : styles.expanded) : {}}
+        style={isMobile ? (collapsed ? sCollapsed : expanded) : {}}
         onHide={this.handleHide}
       >
         {/* show sidebar toggle when not on mobile */}
-        <Menu.Item style={styles.sidebarToggleWrap}>{sidebarToggle}</Menu.Item>
+        <Menu.Item
+          style={sidebarToggleWrap}
+          onClick={this.handleToggle}>
+          <div
+            style={styles.sidebarToggle}
+            
+            position="right"
+            title={this.props.collapsed ? 'Expand' : 'Collapse'}
+            style={styles.sidebarToggle}
+          >
+            <span>
+              <Icon name={'arrow alternate circle ' + (collapsed ? 'right ' : 'left ') + 'outline'} />
+              {collapsed ? '' : ' Close sidebar'}
+            </span>
+          </div>
+        </Menu.Item>
 
         {// menu items 
-        this.props.items.map((item, i) => (
+        items.map((item, i) => (
           <Menu.Item
             as="a"
             key={i}
             active={item.active}
-            title={this.props.collapsed ? item.title : ''}
-            onClick={() => this.props.onMenuItemClick(i, this.props.isMobile)}
-            style={i === 0 ? {marginTop: 40} : {}}
+            title={collapsed ? item.title : ''}
+            onClick={() => onMenuItemClick(i, isMobile)}
+            style={i === 0 ? menuItem : {}}
           >
             <span>
               <Icon
                 name={item.icon || 'folder'}
-                // size={this.props.collapsed ? 'big' : 'large'}
+                // size={collapsed ? 'big' : 'large'}
               />
-              <If condition={!this.props.collapsed} then={item.title} />
+              {!collapsed && item.title}
             </span>
           </Menu.Item>
         ))}
 
-        <If condition={!this.props.collapsed} then={<SystemStatus  sidebar={false} />} />
+        <IfFn condition={!isMobile && !collapsed} then={()=> <SystemStatus sidebar={false} />} />
       </Sidebar>
     )
   }
@@ -133,6 +125,9 @@ const styles = {
   },
   expanded: {
     width: 265
+  },
+  menuItem: {
+    marginTop: 40
   },
   sidebarToggleWrap: {
     position: 'absolute',

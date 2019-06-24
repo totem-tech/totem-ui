@@ -22,14 +22,13 @@ import TotemButtonLogo from'./assets/totem-button-grey.png'
 export class App extends ReactiveComponent {
 	constructor() {
 		super([], { ensureRuntime: runtimeUp })
-
 		this.state = {
 			sidebarItems: [...sidebarItems].map(item => {
 			  item.elementRef = React.createRef()
 			  return item
 			}),
 			sidebarCollapsed: false,
-			sidebarVisible: undefined
+			sidebarVisible: !this.isMobile()
 		}
 
 		// For debug only.
@@ -47,13 +46,17 @@ export class App extends ReactiveComponent {
 		this.handleClose = this.handleClose.bind(this)
 	}
 
+	isMobile() {
+		return window.innerWidth <= Responsive.onlyMobile.maxWidth
+	}
+
 	// hack to format as a currency. Needs to go in a seperate Display Formatting Utilities file.
 	round(value, decimals) {
 		return Number(Math.round(value +'e'+ decimals) +'e-'+ decimals).toFixed(decimals)
 	}
 
-	handleSidebarToggle(sidebarCollapsed, sidebarVisible) {
-		this.setState({  sidebarCollapsed, sidebarVisible })
+	handleSidebarToggle(sidebarVisible, sidebarCollapsed) {
+		this.setState({sidebarVisible, sidebarCollapsed})
 	}
   
 	toggleMenuItem(index, isMobile) {
@@ -79,79 +82,55 @@ export class App extends ReactiveComponent {
 	}
 
 	readyRender() {
-		const mainContent = this.state.sidebarItems.map((item, i) => (
-			<div ref={item.elementRef} key={i} hidden={!item.active} style={styles.spaceBelow}>
-				<ContentSegment {...item} onClose={this.handleClose} index={i} />
-			</div>
-		))
+		const { sidebarCollapsed, sidebarItems, sidebarVisible } = this.state
+		const { handleClose, handleSidebarToggle, toggleMenuItem } = this
+		const { spaceBelow, mainContentMobile } = styles
+		const logoSrc = TotemButtonLogo
+		const isMobile = this.isMobile()
+		// const collapsed = isMobile ? sidebarCollapsed
 
-		return (<React.Fragment>
-			{/* mobile view */}
-			<Responsive
-				maxWidth={Responsive.onlyMobile.maxWidth}
-				className={'mobile' + (this.state.sidebarVisible ? ' sidebar-visible' : '')}>
+		const classNames = [
+			isMobile ? 'mobile' : '',
+			sidebarVisible ? 'sidebar-visible' : '',
+			sidebarCollapsed ? 'sidebar-collapsed' : ''
+		].join(' ')
+
+		return (
+			<div className={classNames}>
 				<ChatWidget />  
 				<Sidebar.Pushable>
-					<PageHeader
-						logoSrc={TotemButtonLogo}
-						isMobile={true}
-						onSidebarToggle={this.handleSidebarToggle}
-						sidebarVisible={this.state.sidebarVisible}
-					/>
 					<SidebarLeft
-						items={this.state.sidebarItems}
-						isMobile={true}
-						collapsed={false}
-						visible={this.state.sidebarVisible === undefined ? false : this.state.sidebarVisible}
-						onSidebarToggle={this.handleSidebarToggle}
-						onMenuItemClick={this.toggleMenuItem}
+						collapsed={sidebarCollapsed}
+						isMobile={isMobile}
+						items={sidebarItems}
+						onMenuItemClick={toggleMenuItem}
+						onSidebarToggle={handleSidebarToggle}
+						visible={sidebarVisible}
 					/>  
 					<Sidebar.Pusher
 						as={Container}
-						fluid
 						className="main-content"
+						dimmed={isMobile && sidebarVisible}
 						id="main-content"
-						style={styles.mainContentMobile}
-						dimmed={this.state.sidebarVisible}
+						fluid
+						style={mainContentMobile}
 					>
-						{mainContent}
+					<PageHeader
+						logoSrc={logoSrc}
+						isMobile={isMobile}
+						onSidebarToggle={handleSidebarToggle}
+						sidebarCollapsed={sidebarCollapsed}
+						sidebarVisible={sidebarVisible}
+					/>
+						{sidebarItems.map((item, i) => (
+							<div ref={item.elementRef} key={i} hidden={!item.active} style={spaceBelow}>
+								<ContentSegment {...item} onClose={handleClose} index={i} />
+							</div>
+						))}
 					</Sidebar.Pusher>
 				</Sidebar.Pushable>
-			</Responsive>
-
-			{/* desktop view */}
-			<Responsive
-				minWidth={Responsive.onlyMobile.maxWidth}
-				as={Container}
-				fluid
-				className={'desktop' + this.state.sidebarCollapsed ? ' sidebar-collapsed' : ''}
-			>
-			<PageHeader logoSrc={TotemButtonLogo} />
-			<ChatWidget />
-
-			<Sidebar.Pushable as={Container} fluid style={styles.pushable}>
-				<SidebarLeft
-					items={this.state.sidebarItems}
-					isMobile={false}
-					collapsed={this.state.sidebarCollapsed}
-					visible={this.state.sidebarVisible}
-					onSidebarToggle={this.handleSidebarToggle}
-					onMenuItemClick={this.toggleMenuItem}
-				/>
-				<SystemStatus sidebar={true} visible={this.state.sidebarCollapsed} />	
-
-				<Sidebar.Pusher
-					as={Container}
-					fluid
-					className="main-content"
-					id="main-content"
-					style={this.state.sidebarCollapsed? styles.mainContentCollapsed : styles.mainContent}
-				>
-					{mainContent}
-				</Sidebar.Pusher>
-			</Sidebar.Pushable>
-			</Responsive>
-		</React.Fragment>)
+			</div>
+	)
 	}
 }
 
