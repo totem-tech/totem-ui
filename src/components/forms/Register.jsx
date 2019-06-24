@@ -31,7 +31,7 @@ class FormRegister extends ReactiveComponent {
                     name: 'agree',
                     type: 'checkbox',
                     required: true,
-                    value: 'yes'
+                    value: true
                 }
             ],
             message: {},
@@ -96,8 +96,7 @@ class FormRegister extends ReactiveComponent {
     }
 
     handleSubmit(e, values) {
-        const { open } = this.state
-        const { agree, userId: idDraft } = values
+        const { agree, userId } =  values
         if (!agree) return this.setState({
             message: {
                 content: 'You must agree to the terms and conditions',
@@ -105,14 +104,14 @@ class FormRegister extends ReactiveComponent {
             }
         })
         
-        getClient().register(idDraft, uuid.v1(), err => {
+        getClient().register(userId, uuid.v1(), err => {
             const success  = !err
             const message = {
                 content: err,
                 header: 'Registration ' + (success ? 'complete' : 'failed'),
                 status: success ? 'success' : 'error'
             }
-            this.setState({message, success: success, open: success ? false : open})
+            this.setState({message, success: success, open: !success })
             if (!success) return;
             setTimeout(() => {
                 dropMessages()

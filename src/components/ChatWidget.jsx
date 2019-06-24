@@ -13,7 +13,7 @@ import {
   // toggleMsgLoader
 } from 'react-chat-widget'
 import 'react-chat-widget/lib/styles.css'
-import { addToHistory, getClient, getUser, getHistory, getHistoryLimit } from './ChatClient'
+import { addToHistory, getClient, getUser, getHistory, getHistoryLimit, onLogin } from './ChatClient'
 import { copyToClipboard, getNow } from './utils'
 import TotemLogoCircle from '../assets/totem-button-grey.png';
 import Register from './forms/Register'
@@ -77,6 +77,8 @@ class ChatWidget extends ReactiveComponent {
     this.login = this.login.bind(this)
     this.setupChatClient = this.setupChatClient.bind(this)
     this.addFaucetEntry = this.addFaucetEntry.bind(this)
+
+    onLogin( userId => this.setState({userId}))
   }
 
   componentDidMount() {
@@ -165,10 +167,17 @@ class ChatWidget extends ReactiveComponent {
 
   render () {
     const { userId } = this.state
-    const subtitle = [
-      userId ? <h5>Logged in as {'@' + userId}</h5> : <Register modal={true} trigger={<Button as="a" basic inverted size="tiny" content="Register chat user id" />}/>,
-      '\n Your chat history is not saved on the server. Up to ' + historyLimit + ' messages are saved locally.'
-    ]
+    const subtitle = (
+      <div>
+        {userId ? <h5>Logged in as {'@' + userId}</h5> : (
+          <Register
+            modal={true}
+            trigger={<Button as="a" basic inverted size="tiny" content="Register chat user id" />}
+          />
+        )}
+      <p>Your chat history is not saved on the server. Up to {historyLimit} messages are saved locally.</p>
+      </div>
+    )
     return (
       <Widget
         titleAvatar={TotemLogoCircle}

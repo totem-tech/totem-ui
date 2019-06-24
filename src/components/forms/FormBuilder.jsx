@@ -16,16 +16,19 @@ class FormBuilder extends ReactiveComponent {
         this.handleSubmit = this.handleSubmit.bind(this)
     }
 
-    handleChange(e, input, checkbox){
-        const isCheckbox = [ 'checkbox', 'radio' ].indexOf(type) >= 0
+    handleChange(e, input, checkbox, index){
         const { name, onChange: onInputChange, type } = input
-        const { onChange } = this.props
+        // Ignore any input that does not have a name
+        // if (name === undefined) return;
+        const { onChange: formOnChange } = this.props
         const { values } = this.state
-        let { value } = isCheckbox ? checkbox : e.target
-        values[name] = value
+        const isCheckbox = [ 'checkbox', 'radio' ].indexOf(type) >= 0
+        values[name] = !isCheckbox ? e.target.value : (checkbox.checked ? checkbox.value : undefined)
         this.setState({values})
-        isFn(onInputChange) && onInputChange(e, values)
-        isFn(onChange) && setTimeout(()=>onChange(e, values), 50)
+        // trigger input items's onchange callback
+        isFn(onInputChange) && onInputChange(e, values, index)
+        // trigger form's onchange callback
+        isFn(formOnChange) && setTimeout(()=>formOnChange(e, values, index), 50)
     }
 
     handleSubmit(e) {
@@ -76,14 +79,20 @@ class FormBuilder extends ReactiveComponent {
         )
         const form = (
             <Form 
-                // onChange={this.handleChange }
                 error={msg.status === 'error'}
                 success={success || msg.status === 'success'}
                 onSubmit={onSubmit}
                 warning={msg.status === 'warning'}
                 widths={widths}
             >
-                {Array.isArray(inputs) && inputs.map((input, i) => <FormInput key={i} {...input} onChange={(e) => this.handleChange(e, input, i)} />)}
+                {Array.isArray(inputs) && inputs.map((input, i) => (
+                    <FormInput
+                        key={i}
+                        {...input}
+                        onChange={(e, _, checkbox) => this.handleChange(e, input, checkbox, i)}
+                    />
+                ))}
+                {/* Include submit button if not a modal */}
                 {!modal && submitBtn}
             </Form>
         )
@@ -167,6 +176,23 @@ export const FormInput = (props) => {
         />
     )
 
+    const handleChange = (e, checkbox) => {
+        // Forces the synthetic event and it's value to persist
+        // Required for use with deferred function
+        e.persist();
+        if (!isFn(props.onChange)) return;
+        if ([ 'checkbox', 'radio'].indexOf(props.type) >= 0) {
+            // Sematic UI's Checkbox component only supports string and number as value
+            // This allows support for any value types
+            checkbox.value = props.value
+        }
+        // If input type is checkbox or radio event (e) won't have a value 
+        // as it's fired by label associated with it (blame Semantic UI)
+        // and the second parameter (checkbox) will be included.
+        // To prevent errors or mistakes, return empty object for other types
+        props.onChange(e, props, checkbox || {})
+    }
+
     switch(props.type) {
         case 'checkbox':
         case 'radio':
@@ -178,14 +204,14 @@ export const FormInput = (props) => {
                     disabled={props.disabled}
                     label={props.label}
                     name={props.name || i}
-                    onChange={function(e, checkbox){e.persist(); isFn(props.onChange) && props.onChange(e, props, checkbox)}}
+                    onChange={handleChange}
                     radio={isRadio}
                     readOnly={props.readOnly}
                     required={props.required}
                     slider={props.slider}
                     toggle={!isRadio && props.toggle}
                     type="checkbox"
-                    value={props.value}
+                    // value={props.value}
                 />
             )
             break;
@@ -210,7 +236,7 @@ export const FormInput = (props) => {
                     min={props.min}
                     max={props.max}
                     name={props.name || i}
-                    onChange={function(e){e.persist(); isFn(props.onChange) && props.onChange(e, props)}}
+                    onChange={handleChange}
                     placeholder={props.placeholder}
                     readOnly={props.readOnly}
                     required={props.required}
@@ -263,10 +289,7 @@ FormInput.propTypes = {
     slider: PropTypes.bool,         // For checkbox/radio
     toggle: PropTypes.bool,         // For checkbox/radio
     type: PropTypes.string,
-    value: PropTypes.oneOfType([    // For checkbox/radio
-        PropTypes.number,
-        PropTypes.string
-    ]),
+    value: PropTypes.any,           // For checkbox/radio
     width: PropTypes.number
 }
 
