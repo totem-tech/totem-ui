@@ -14,6 +14,8 @@ const options = {
   key: fs.readFileSync('./sslcert/privkey.pem')
 };
 
+console.log('fullchain : ', options.cert, "/n privkey : ", options.key)
+
 // http.createServer(app).listen(httpPort, () => console.log('App http web server listening on port ', httpPort))
 https.createServer(options, app).listen(httpsPort, () => console.log('App https web server listening on port ', httpsPort))
 
