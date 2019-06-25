@@ -1,30 +1,32 @@
 import express from 'express'
 
-const port = 8000
+const httpPort = 80
+const httpsPort = 443
 let app = express()
 app.use(express.static('dist'))
 
-app.listen(port, () => {
-  console.log('Web server listening on port 8000')
-})
+const http = require('http')
+const https = require('https-browserify')
+const fs = require('fs')
+
+const options = {
+  cert: fs.readFileSync('./sslcert/fullchain.pem'),
+  key: fs.readFileSync('./sslcert/privkey.pem')
+};
+
+http.createServer(app).listen(httpPort, () => console.log('App http web server listening on port ', httpPort))
+https.createServer(options, app).listen(httpsPort, () => console.log('App https web server listening on port ', httpsPort))
+
+// app.listen(httpPort, () => {
+//   console.log('Web server listening on port 80')
+// })
 
 /*
  * Chat server
  */
-// const http = require('http')
-const https = require('https')
-const fs = require('fs')
-
-const options = {
-  cert: fs.readFileSync('./docs/sslcert/totem.live.crt'),
-  key: fs.readFileSync('./docs/sslcert/totem.live.key')
-};
-
 // const server = http.createServer(app)
 const server = https.createServer(options, app)
-
 const io = require('socket.io').listen(server)
-
 const wsPort = 3001
 const isFn = fn => typeof(fn) === 'function'
 let users = new Map()
@@ -172,7 +174,7 @@ fs.readFile(usersFile, (err, data) => {
     users = new Map(JSON.parse(data))
   }
 
-  server.listen(wsPort, () => console.log('Websocket listening on port ', wsPort))
+  server.listen(wsPort, () => console.log('Chat app https Websocket listening on port ', wsPort))
 })
 
 const saveUsers = () => saveMapToFile(usersFile, users)

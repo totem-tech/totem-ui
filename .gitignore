@@ -10,5 +10,6 @@ faucet-requests.json
 start.sh
 
 dist/bundle.js
-# docs/sslcert
 *totem.live.*
+*fullchain.*
+*privkey.*
