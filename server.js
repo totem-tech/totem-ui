@@ -10,8 +10,8 @@ const https = require('https-browserify')
 const fs = require('fs')
 
 const options = {
-  cert: fs.readFileSync('./sslcert/fullchain.pem'),
-  key: fs.readFileSync('./sslcert/privkey.pem')
+  cert: fs.readFileSync('/etc/letsencrypt/live/totem.live/fullchain.pem'),
+  key: fs.readFileSync('/etc/letsencrypt/live/totem.live/privkey.pem')
 };
 
 console.log('fullchain : ', options.cert, "/n privkey : ", options.key)
