@@ -47,11 +47,18 @@
 .mobile .pusher.main-content {
   margin: 0 !important;
 }
+.ui.visible.sidebar.left {
+  transition: all 0.5s ease;
+}
+.ui.left.visible.sidebar > a {
+  white-space: nowrap;
+  overflow: hidden;
+}
 /* Main content width and positioning when sidebar is collapsed (icon-only mode) */
 #app > :not(.mobile) .ui.visible.left.sidebar.very.thin ~ .pusher.main-content {
-  -webkit-transform: translate3d(105px, 0, 0);
-  transform: translate3d(70px, 0, 0);
-  max-width: calc(100% - 70px) !important;
+  -webkit-transform: translate3d(60px, 0, 0);
+  transform: translate3d(60px, 0, 0);
+  max-width: calc(100% - 60px) !important;
   margin-left: 0 !important;
 }
 #app > :not(.mobile) .ui.visible.left.sidebar:not(.thin) ~ .pusher.main-content {

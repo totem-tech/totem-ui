@@ -1,8 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Button, Checkbox, Form, Header, Icon, Input, Label, Message, Modal, Rail, Segment } from 'semantic-ui-react'
+import { Button, Form, Header, Icon, Message, Modal } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
-import { isFn, IfMobile } from '../utils';
+import { isFn } from '../utils';
 
 class FormBuilder extends ReactiveComponent {
     constructor(props) {
@@ -63,11 +63,6 @@ class FormBuilder extends ReactiveComponent {
         } = this.props
 
         const msg = message || {}
-        const closeIcon = mobile => () => (
-            <Rail internal position='right' close style={styles[mobile ? 'closeButtonRailMobile' : 'closeButtonRail']}>
-                <Icon link name='times circle outline' color="grey" size="mini" onClick={onClose} />
-            </Rail>
-        )
         
         const submitBtn = (
             <Button
@@ -106,8 +101,17 @@ class FormBuilder extends ReactiveComponent {
                 open={open}
                 size={size}
                 trigger={trigger}
-            >
-                <IfMobile then={closeIcon(true)} else={closeIcon(false)} />
+            >        
+                <div style={styles.closeButton}>
+                    <Icon
+                        className="no-margin"
+                        color="grey" 
+                        link
+                        name='times circle outline'
+                        onClick={onClose}
+                        size="big"
+                    />
+                </div>
                 {header && (
                     <Header as={Modal.Header}>
                         <Header.Content>
@@ -129,19 +133,19 @@ class FormBuilder extends ReactiveComponent {
                     {submitBtn}
                 </Modal.Actions>
                 {message && !!message.status && (
-                        <Message
-                            content={message.content}
-                            error={message.status==='error'}
-                            header={message.header}
-                            icon={message.icon}
-                            info={message.info}
-                            list={message.list}
-                            size={message.size}
-                            style={styles.formMessage}
-                            success={message.status==='success'}
-                            visible={!!message.status}
-                            warning={message.status==='warning'}
-                        />
+                    <Message
+                        content={message.content}
+                        error={message.status==='error'}
+                        header={message.header}
+                        icon={message.icon}
+                        info={message.info}
+                        list={message.list}
+                        size={message.size}
+                        style={styles.formMessage}
+                        success={message.status==='success'}
+                        visible={!!message.status}
+                        warning={message.status==='warning'}
+                    />
                 )}
             </Modal>
         )
@@ -299,17 +303,12 @@ FormInput.defaultProps = {
 }
 
 const styles = {
-    closeButtonRail: {
-        marginTop: 5,
-        marginRight: 10,
-        padding: 0,
-        fontSize: 70
+    closeButton: {
+        position: 'absolute',
+        top: 5,
+        right: 5
     },
-    closeButtonRailMobile: {
-        marginTop: -40,
-        marginRight: 0,
-        padding: 0,
-        fontSize: 70
-    },
-    formMessage: { marginTop: 0 }
+    formMessage: {
+        marginTop: 0
+    }
 }

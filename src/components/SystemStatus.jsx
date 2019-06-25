@@ -4,7 +4,6 @@ import { bytesToHex } from 'oo7-substrate'
 import { Divider, Header, Icon, Label, Menu, Segment, Sidebar } from 'semantic-ui-react'
 import Identicon from 'polkadot-identicon'
 import { Pretty } from '../Pretty'
-import ChainInfoBar from './ChainInfoBar'
 import { subscribeAllNSetState, unsubscribeAll } from '../services/data'
 
 class SystemStatus extends ReactiveComponent {
@@ -37,7 +36,7 @@ class SystemStatus extends ReactiveComponent {
 
 	componentWillUnmount() {
 		unsubscribeAll(this.state.watchers)
-	}	
+	}
 
   render() {
     const status = this.state.nodeService_status || {}
@@ -119,6 +118,7 @@ class SystemStatus extends ReactiveComponent {
       <Sidebar
         as={Menu}
         animation='push'
+        fixed="bottom"
         direction='bottom'
         width="very thin"
         inverted
