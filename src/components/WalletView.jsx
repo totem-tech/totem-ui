@@ -7,7 +7,7 @@ import { runtimeUp, secretStore } from 'oo7-substrate'
 import { InputBond } from '../InputBond.jsx'
 import { TransformBondButton } from '../TransformBondButton'
 import Identicon from 'polkadot-identicon'
-import WalletItem from './WalletItem'
+import WalletList from './lists/WalletList'
 import { IfMobile } from './utils'
 
 class WalletView extends ReactiveComponent {
@@ -62,8 +62,6 @@ class WalletView extends ReactiveComponent {
       />
     )
 
-    const wallets = this.state.secretStore.keys
-    const allowDelete = wallets.length > 1
     return (
       <React.Fragment>
         <div style={{ paddingBottom: '1em' }}>
@@ -88,16 +86,7 @@ class WalletView extends ReactiveComponent {
             />
         </div>
         <div style={{ paddingBottom: '1em' }}>
-          {wallets.map((wallet, i) =>
-              <WalletItem
-                key={wallet.address}
-                fluid={true}
-                style={{margin: 0}}
-                wallet={wallet}
-                allowDelete={allowDelete}
-                onSave={newName => {wallet.name = newName }}
-              />
-          )}
+          <WalletList itemsPerRow={1} />
         </div>
       </React.Fragment>
     )

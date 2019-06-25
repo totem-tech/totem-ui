@@ -16,7 +16,7 @@ import SidebarLeft from './components/SidebarLeft'
 import SystemStatus from './components/SystemStatus'
 import UtilitiesView from './components/UtilitiesView'
 import WalletView from './components/WalletView'
-import { IfFn } from './components/utils'
+import { IfFn, IfMobile } from './components/utils'
 // Images
 import TotemButtonLogo from'./assets/totem-button-grey.png'
 
@@ -87,39 +87,37 @@ export class App extends ReactiveComponent {
 		const { handleClose, handleSidebarToggle, toggleMenuItem } = this
 		const { spaceBelow, mainContent, mainContentCollapsed } = styles
 		const logoSrc = TotemButtonLogo
-		const isMobile = this.isMobile()
 		const showStatusBar = sidebarCollapsed
 		const classNames = [
-			isMobile ? 'mobile' : '',
 			sidebarVisible ? 'sidebar-visible' : '',
 			sidebarCollapsed ? 'sidebar-collapsed' : ''
 		].join(' ')
 
-		return (
-			<div className={classNames}>
+		const getContent = (mobile) => () => (
+			<div className={(mobile ? 'mobile ': '') + classNames}>
 				<ChatWidget /> 
 				<IfFn condition={showStatusBar} then={()=> <SystemStatus sidebar={true} visible={true} />} />
 				<Sidebar.Pushable>
 					<SidebarLeft
-						collapsed={sidebarCollapsed}
-						isMobile={isMobile}
+						collapsed={mobile ? false : sidebarCollapsed}
+						isMobile={mobile}
 						items={sidebarItems}
 						onMenuItemClick={toggleMenuItem}
 						onSidebarToggle={handleSidebarToggle}
-						visible={sidebarVisible}
+						visible={mobile ? sidebarVisible : true}
 					/>
 
 					<Sidebar.Pusher
 						as={Container}
 						className="main-content"
-						dimmed={isMobile && sidebarVisible}
+						dimmed={mobile && sidebarVisible}
 						id="main-content"
 						fluid
 						style={sidebarCollapsed ? mainContentCollapsed : mainContent}
 					>
 						<PageHeader
 							logoSrc={logoSrc}
-							isMobile={isMobile}
+							isMobile={mobile}
 							onSidebarToggle={handleSidebarToggle}
 							sidebarCollapsed={sidebarCollapsed}
 							sidebarVisible={sidebarVisible}
@@ -132,7 +130,8 @@ export class App extends ReactiveComponent {
 					</Sidebar.Pusher>
 				</Sidebar.Pushable>
 			</div>
-	)
+		)
+		return <IfMobile then={getContent(true)} else={getContent(false)} />
 	}
 }
 

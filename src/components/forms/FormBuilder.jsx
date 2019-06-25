@@ -230,6 +230,7 @@ export const FormInput = (props) => {
                     action={props.action}
                     actionPosition={props.actionPosition}
                     disabled={props.disabled}
+                    defaultValue={props.defaultValue}
                     focus={props.focus}
                     error={props.error || msgError}
                     icon={props.icon}
@@ -246,6 +247,7 @@ export const FormInput = (props) => {
                     required={props.required}
                     type={props.type}
                     width={props.width}
+                    value={props.value}
                 />
             )
     }
@@ -270,6 +272,10 @@ FormInput.propTypes = {
     actionPosition: PropTypes.string,
     checked: PropTypes.bool,        // For checkbox/radio
     defaultChecked: PropTypes.bool, // For checkbox/radio
+    defaultValue: PropTypes.oneOfType([
+        PropTypes.number,
+        PropTypes.string
+    ]),
     icon: PropTypes.oneOfType([
         PropTypes.object,
         PropTypes.string
@@ -293,7 +299,10 @@ FormInput.propTypes = {
     slider: PropTypes.bool,         // For checkbox/radio
     toggle: PropTypes.bool,         // For checkbox/radio
     type: PropTypes.string,
-    value: PropTypes.any,           // For checkbox/radio
+    value: PropTypes.oneOfType([
+        PropTypes.number,
+        PropTypes.string
+    ]),
     width: PropTypes.number
 }
 

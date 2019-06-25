@@ -13,9 +13,14 @@ export const copyToClipboard = str => {
   document.execCommand('copy');
   document.body.removeChild(el);
 }
-export const isFn = (fn) => typeof(fn) === 'function'
 
+export const isArr = (a) => Array.isArray(o)
+export const isDefined = (x) => x !== undefined
+export const isFn = (fn) => typeof(fn) === 'function'
+export const isObj = (o) => o !== null && !isArr(o) && typeof(o) === 'object'
+export const isStr = (s) => typeof(s) === 'string'
 export const isValidNumber = num => typeof(num) == 'number' && !isNaN(num)
+export const isMobile = ()=> window.innerWidth <= Responsive.onlyMobile.maxWidth
 
 // Prepends 0 if number is less than 10
 const prepend0 = n => n < 10 ? '0' + n : n
