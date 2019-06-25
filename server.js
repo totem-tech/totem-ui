@@ -1,11 +1,11 @@
 import express from 'express'
 
-const httpPort = 80
+// const httpPort = 80
 const httpsPort = 443
 let app = express()
 app.use(express.static('dist'))
 
-const http = require('http')
+// const http = require('http')
 const https = require('https-browserify')
 const fs = require('fs')
 
@@ -14,7 +14,7 @@ const options = {
   key: fs.readFileSync('./sslcert/privkey.pem')
 };
 
-http.createServer(app).listen(httpPort, () => console.log('App http web server listening on port ', httpPort))
+// http.createServer(app).listen(httpPort, () => console.log('App http web server listening on port ', httpPort))
 https.createServer(options, app).listen(httpsPort, () => console.log('App https web server listening on port ', httpsPort))
 
 // app.listen(httpPort, () => {
