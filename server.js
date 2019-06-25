@@ -26,8 +26,8 @@ https.createServer(options, app).listen(httpsPort, () => console.log('App https 
 /*
  * Chat server
  */
-// const server = http.createServer(app)
-const server = https.createServer(options, app)
+const server = http.createServer(app)
+// const server = https.createServer(options, app)
 const io = require('socket.io').listen(server)
 const wsPort = 3001
 const isFn = fn => typeof(fn) === 'function'
