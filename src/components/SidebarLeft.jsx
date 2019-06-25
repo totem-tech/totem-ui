@@ -82,7 +82,7 @@ class SidebarLeft extends ReactiveComponent {
           </Menu.Item>
         ))}
 
-        <IfFn condition={!isMobile && !collapsed} then={()=> <SystemStatus sidebar={false} />} />
+        <IfFn condition={isMobile || !collapsed} then={()=> <SystemStatus sidebar={false} />} />
       </Sidebar>
     )
   }

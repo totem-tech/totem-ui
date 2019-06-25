@@ -94,9 +94,19 @@ export function IfFn(props) {
 
 // IfMobile component can be used to switch between content when on mobile and/or not
 export function IfMobile(props) {
-  const isMobile = window.innerWidth <= Responsive.onlyMobile.maxWidth
-  const content = isMobile ? props.then : props.else 
-  return <IfFn condition={true} then={content} />
+  return (
+    <React.Fragment>
+      {isDefined(props.then) && (
+        <Responsive as={IfFn} maxWidth={Responsive.onlyMobile.maxWidth} condition={true} then={props.then}>
+        </Responsive>
+      )}
+
+      {isDefined(props.else) && (
+        <Responsive as={IfFn} minWidth={Responsive.onlyMobile.maxWidth} condition={true} then={props.else} >
+        </Responsive>
+      )}
+    </React.Fragment>
+  )
 }
 
 export function IfNotMobile(props) {

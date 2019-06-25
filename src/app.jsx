@@ -87,7 +87,6 @@ export class App extends ReactiveComponent {
 		const { handleClose, handleSidebarToggle, toggleMenuItem } = this
 		const { spaceBelow, mainContent, mainContentCollapsed } = styles
 		const logoSrc = TotemButtonLogo
-		const showStatusBar = sidebarCollapsed
 		const classNames = [
 			sidebarVisible ? 'sidebar-visible' : '',
 			sidebarCollapsed ? 'sidebar-collapsed' : ''
@@ -96,7 +95,7 @@ export class App extends ReactiveComponent {
 		const getContent = (mobile) => () => (
 			<div className={(mobile ? 'mobile ': '') + classNames}>
 				<ChatWidget /> 
-				<IfFn condition={showStatusBar} then={()=> <SystemStatus sidebar={true} visible={true} />} />
+				<IfFn condition={!mobile && sidebarCollapsed} then={()=> <SystemStatus sidebar={true} visible={true} />} />
 				<Sidebar.Pushable>
 					<SidebarLeft
 						collapsed={mobile ? false : sidebarCollapsed}
