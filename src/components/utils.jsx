@@ -1,7 +1,9 @@
 import React from 'react'
 import { Responsive } from 'semantic-ui-react'
 
-// Copies supplied string to system clipboard
+/*
+ * Copies supplied string to system clipboard
+ */
 export const copyToClipboard = str => {
   const el = document.createElement('textarea');
   el.value = str;
@@ -14,16 +16,24 @@ export const copyToClipboard = str => {
   document.body.removeChild(el);
 }
 
-export const isArr = (a) => Array.isArray(o)
-export const isDefined = (x) => x !== undefined
-export const isFn = (fn) => typeof(fn) === 'function'
-export const isObj = (o) => o !== null && !isArr(o) && typeof(o) === 'object'
-export const isStr = (s) => typeof(s) === 'string'
-export const isValidNumber = num => typeof(num) == 'number' && !isNaN(num)
+/*
+ * Data validation
+ */
+export const isArr = x => Array.isArray(x)
+export const isDefined = x => x !== undefined
+export const isFn = x => typeof(x) === 'function'
+export const isObj = x => x !== null && !isArr(x) && typeof(x) === 'object'
+export const isStr = x => typeof(x) === 'string'
+export const isValidNumber = x => typeof(x) == 'number' && !isNaN(x)
+
 export const isMobile = ()=> window.innerWidth <= Responsive.onlyMobile.maxWidth
 
-// Prepends 0 if number is less than 10
-const prepend0 = n => n < 10 ? '0' + n : n
+
+/*
+ * Date formatting etc.
+ */
+// prepend0 prepends '0' if number is less than 10
+const prepend0 = n => (n < 10 ? '0' : '') + n 
 
 // For todays date;
 Date.prototype.today = function () { 
@@ -37,32 +47,67 @@ Date.prototype.timeNow = function () {
 
 export const getNow = () => new Date().today() + " @ " + new Date().timeNow()
 
-export function setStateTimeout(compInstance, key, dataBefore, dataAfter, delay){
-  if (typeof(compInstance.setState) != 'function') return;
-  dataBefore !== undefined && setState(compInstance, key, dataBefore)
-  setTimeout(() => {
-    setState(compInstance, key, dataAfter)
+/*
+ * State management
+ */
+// setStateTimeout sets state property value before and after timeout
+//
+// Params: 
+// @instance React component instance : state of the instance that will be changed
+//                        Make sure the component is ready beforehand
+// @key         string  : state property name to be manipulated
+// @dataBefore  any     : value to be applied immediately & before timeout
+// @dataAfter   any     : value to be applied after timeout
+// @delay       number  : duration in miliseconds.
+//                        Default value: 2000
+//
+// Returns:
+// @timeoutId   number  : Use this to cancel timeout. Handy when component is about to unmount
+export function setStateTimeout(instance, key, dataBefore, dataAfter, delay){
+  if (typeof(instance.setState) != 'function') return;
+  dataBefore !== undefined && setState(instance, key, dataBefore)
+  return setTimeout(() => {
+    setState(instance, key, dataAfter)
   }, delay || 2000)
 }
 
-export function setState(compInstance, key, value){
+// setState changes state property value immediately
+//
+// Params: 
+// @instance React component instance : state of the instance that will be changed
+//                        Make sure the component is ready beforehand
+// @key         string  : state property name to be manipulated
+// @value       any     : value to be applied immediately
+//
+// Returns void
+export function setState(instance, key, value){
   const data = {}
   data[key] = value
-  compInstance.setState(data)
+  instance.setState(data)
 }
 
+// deferred returns a function that invokes the callback function after certain delay/timeout
+// If the returned function is invoked again before timeout,
+// the invokation will be deferred further with the duration supplied in @delay
+//
+// Params:
+// @callback  function  : function to be invoked after deferred delay
+// @delay     number    : number of milliseconds to be delayed.
+//                        Default value: 50
+// @bindTo    object    : optional, makes sure callback is bounded to supplied object 
 export function deferred(callback, delay, bindTo) {
   let timeoutId;
   return function(){
     const args = arguments
     if (timeoutId) clearTimeout(timeoutId);
     timeoutId = setTimeout(function() {
-      callback.apply(bindTo, args);
-    }, delay)
+      isFn(callback) && callback.apply(bindTo, args);
+    }, delay || 50)
   }
 }
 
 // textEllipsis shortens string into 'abc...xyz' form
+//
 // Params: 
 // @text    string
 // @maxLen  number: maximum length of the shortened text including dots
@@ -97,12 +142,14 @@ export function IfMobile(props) {
   return (
     <React.Fragment>
       {isDefined(props.then) && (
-        <Responsive as={IfFn} maxWidth={Responsive.onlyMobile.maxWidth} condition={true} then={props.then}>
+        <Responsive maxWidth={Responsive.onlyMobile.maxWidth}>
+          <IfFn condition={true} then={props.then} />
         </Responsive>
       )}
 
       {isDefined(props.else) && (
-        <Responsive as={IfFn} minWidth={Responsive.onlyMobile.maxWidth} condition={true} then={props.else} >
+        <Responsive minWidth={Responsive.onlyMobile.maxWidth}>
+          <IfFn condition={true} then={props.else} />
         </Responsive>
       )}
     </React.Fragment>

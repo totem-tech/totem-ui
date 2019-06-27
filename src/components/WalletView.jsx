@@ -7,7 +7,7 @@ import { runtimeUp, secretStore } from 'oo7-substrate'
 import { InputBond } from '../InputBond.jsx'
 import { TransformBondButton } from '../TransformBondButton'
 import Identicon from 'polkadot-identicon'
-import WalletList from './lists/WalletList'
+import WalletList, { WalletItem } from './lists/WalletList'
 import { IfMobile } from './utils'
 
 class WalletView extends ReactiveComponent {

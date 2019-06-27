@@ -4,19 +4,20 @@ import { ReactiveComponent } from 'oo7-react'
 import {runtime, secretStore} from 'oo7-substrate'
 import Identicon from 'polkadot-identicon'
 import { Label } from 'semantic-ui-react'
-import { copyToClipboard, IfMobile, IfNotMobile, setState, setStateTimeout, textEllipsis } from '../utils'
+import { copyToClipboard, IfMobile, IfNotMobile, isObj, setState, setStateTimeout, textEllipsis } from '../utils'
 import ListFactory, { CardListItem} from './ListFactory'
 
-class WalletItem extends ReactiveComponent {
+export class WalletItem extends ReactiveComponent {
     constructor(props) {
+        const validWallet = isObj(props.wallet) && props.wallet.address
         super(props, {
-            shortForm: props.wallet ? runtime.indices.ss58Encode(runtime.indices.tryIndex(props.wallet.account)) : ''
+            shortForm: validWallet ? runtime.indices.ss58Encode(runtime.indices.tryIndex(props.wallet.account)) : ''
         })
 
         this.state = {
             edit: false,
-            draft: props.wallet ? props.wallet.name : '',
-            showMenu: false,
+            draft: validWallet ? props.wallet.name : '',
+            actionsVisible: false,
             showSecret: false
         }
         
@@ -44,18 +45,19 @@ class WalletItem extends ReactiveComponent {
     }
     
     render() {
-        const { allowDelete, fluid, style, wallet } = this.props
+        const { addressLength, allowDelete, fluid, style, wallet } = this.props
         if (!wallet) return '';
         const { handleSave } = this
-        const { draft, edit, shortForm, showMenu, showSecret } = this.state
+        const { draft, edit, shortForm, actionsVisible, showSecret } = this.state
+        const addr = (shortForm || '').length <= 10 ? shortForm : textEllipsis(shortForm, addressLength)
         const walletType = ['ed25519', 'sr25519'].indexOf(wallet.type) >= 0 ? wallet.type : '???'
         const header = {
             icon: [{
                 color: 'grey',
                 className: 'circular',
                 link: true,
-                name: 'angle ' + (showMenu ? 'up' : 'down'),
-                onClick: ()=> setState(this, 'showMenu', !showMenu)
+                name: 'angle ' + (actionsVisible ? 'up' : 'down'),
+                onClick: ()=> setState(this, 'actionsVisible', !actionsVisible)
             }],
             content: wallet.name,
             image: <Identicon account={ wallet.account } />,
@@ -72,8 +74,8 @@ class WalletItem extends ReactiveComponent {
                 value: draft
             },
             inputVisible: edit,
-            onClick: ()=> setState(this, 'showMenu', !showMenu),
-            subheader: <IfMobile then={() => textEllipsis(shortForm, 25, 5)} else={shortForm} />
+            onClick: ()=> setState(this, 'actionsVisible', !actionsVisible),
+            subheader: <IfMobile then={() => textEllipsis(addr, 25, 5)} else={addr} />
         }
 
         const menu = [
@@ -101,10 +103,11 @@ class WalletItem extends ReactiveComponent {
             }
         ]
 
+        // ToDo: remove dependency on CardListItem so that can be changed to any list type supported by ListFactory
         return (
             <CardListItem
                 actions={menu}
-                actionsVisible={showMenu}
+                actionsVisible={actionsVisible}
                 fluid={fluid}
                 header={header}
                 style={style}
@@ -154,11 +157,13 @@ class WalletList extends ReactiveComponent {
     }
 
     render() {
-        const {type, itemsPerRow} = this.props
+        const {itemsPerRow, type} = this.props
         const wallets = this.state.secretStore.keys
         const allowDelete = wallets.length > 1
+        const numItemsPerRow = itemsPerRow || 1
         const walletItems = wallets.map((wallet, i) => (
             <WalletItem
+                addressLength={numItemsPerRow > 1 && 15}
                 allowDelete={allowDelete}
                 key={wallet.address}
                 fluid={true}
@@ -166,16 +171,19 @@ class WalletList extends ReactiveComponent {
                 wallet={wallet}
             />
         ))
-        return (
+
+        const getList = mobile => () => (
             <ListFactory
                 type={ type || 'cardlist'}
                 items={walletItems}
                 fluid={true}
-                itemsPerRow={itemsPerRow || 1}
-                style={itemsPerRow === 1 ? {marginTop : 15} : {}}
+                itemsPerRow={mobile ? 1 : numItemsPerRow}
+                style={!mobile && numItemsPerRow === 1 ? {marginTop : 15} : {}}
             />
+        )
+        return (
+            <IfMobile then={getList(true)} else={getList(false)} />
         )
     }
 }
-
 export default WalletList
