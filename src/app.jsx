@@ -11,6 +11,7 @@ import AddressBookView from './components/AddressBookView'
 import ChatWidget from './components/ChatWidget'
 import ContentSegment from './components/ContentSegment'
 import PageHeader from './components/PageHeader'
+import ProjectList from './components/lists/ProjectList'
 import SendFundsView from './components/SendFundsView'
 import SidebarLeft from './components/SidebarLeft'
 import SystemStatus from './components/SystemStatus'
@@ -87,7 +88,6 @@ export class App extends ReactiveComponent {
 		const { handleClose, handleSidebarToggle, toggleMenuItem } = this
 		const { spaceBelow, mainContent, mainContentCollapsed } = styles
 		const logoSrc = TotemButtonLogo
-		const showStatusBar = sidebarCollapsed
 		const classNames = [
 			sidebarVisible ? 'sidebar-visible' : '',
 			sidebarCollapsed ? 'sidebar-collapsed' : ''
@@ -96,7 +96,7 @@ export class App extends ReactiveComponent {
 		const getContent = (mobile) => () => (
 			<div className={(mobile ? 'mobile ': '') + classNames}>
 				<ChatWidget /> 
-				<IfFn condition={showStatusBar} then={()=> <SystemStatus sidebar={true} visible={true} />} />
+				<IfFn condition={!mobile && sidebarCollapsed} then={()=> <SystemStatus sidebar={true} visible={true} />} />
 				<Sidebar.Pushable>
 					<SidebarLeft
 						collapsed={mobile ? false : sidebarCollapsed}
@@ -152,7 +152,14 @@ const sidebarItems = [
 	{ icon: "file alternate", title: "Expense", subHeader: "" },
 	{ icon: "bug", title: "Disputed Items", subHeader: "" },
 	{ icon: "crop", title: "Account Adjustments", subHeader: "" },
-	{ icon: "barcode", title: "Projects", subHeader: "" },  
+	{
+		active: true,
+		content: <ProjectList />,
+		xheaderDivider: false,
+		icon: "barcode",
+		title: "Projects",
+		subHeader: "View and/or manage your projects"
+	},  
 	{ icon: "file alternate", title: "Timekeeping", subHeader: "" },
 	{ icon: "barcode", title: "Products", subHeader: "" },
 	{
@@ -160,14 +167,14 @@ const sidebarItems = [
 	  title: "Payment",
 	  header: "Direct payments",
 	  subHeader: "Send funds from your account to another",
-	  active: true,
+	  active: false,
 	  content: <SendFundsView />
 	},
 	{
 	  icon: "money",
 	  title: "Wallet",
 	  subHeader: "Manage your secret keys",
-	  active: false,
+	  active: true,
 	  content: <WalletView />
 	},
 	{ 

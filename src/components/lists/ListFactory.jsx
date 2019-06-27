@@ -33,11 +33,10 @@ export class CardList extends ReactiveComponent {
     render() {
         let { items, itemsPerRow, style} = this.props
         itemsPerRow = itemsPerRow || 1
-        const isCardListEl = (card) => typeof(card) === CardListItem
         return (
             <Card.Group style={style} itemsPerRow={itemsPerRow || 1}>
                 {items.map((card, i) => (
-                    isCardListEl ? card : <CardListItem {...card} key={i} />
+                    React.isValidElement(card) ? card : <CardListItem {...card} key={i} />
                 ))}
             </Card.Group>
         )
@@ -63,16 +62,22 @@ export class CardListItem extends ReactiveComponent {
             style
         } = this.props
 
-        const menuItems = actions.map((item, i) => {
+        const menuItems = (actions || []).map((item, i) => {
             item.key = isDefined(item.key) ? item.key : i
             item.as = !isDefined(item.as) || isFn(item.onClick) ? Button : 'div'
             return item
         }).filter(item => !item.hide)
+
+        const actionsEl = actions && actionsVisible && (
+            <Card.Content extra>
+                <Menu items={menuItems} widths={menuItems.length} />
+            </Card.Content>
+        )
+        const headerEl = React.isValidElement(header) ? header : <CardHeader {...header} />
         return (
             <Card fluid={fluid} style={style}>
-                <Card.Content content={React.isValidElement(header) ? header : <CardHeader {...header} />} />
-                {description  && <Card.Description content={description} />}
-                {actionsVisible && <Card.Content extra content={<Menu items={menuItems} widths={menuItems.length} />} />}
+                <Card.Content header={headerEl} description={description} />
+                {actionsEl}
             </Card>
         )
     }

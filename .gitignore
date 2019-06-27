@@ -9,6 +9,7 @@ faucet-requests.json
 # scripts
 start.sh
 
-docs/bundle.js
+dist/bundle.js
+*totem.live.*
 *fullchain.*
 *privkey.*
