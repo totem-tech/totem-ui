@@ -10,3 +10,5 @@ faucet-requests.json
 start.sh
 
 docs/bundle.js
+*fullchain.*
+*privkey.*
