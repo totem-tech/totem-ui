@@ -1,22 +1,35 @@
 import express from 'express'
 
-// const httpPort = 80
+const httpPort = 80
 const httpsPort = 443
-let app = express()
-app.use(express.static('dist'))
-
 const http = require('http')
 const https = require('https')
 const fs = require('fs')
+
+let app = express()
+
+// set up plain http server and have it listen on port 80 to redirect to https 
+http.createServer(function (req, res) {
+  res.writeHead(307, { "Location": "https://" + req.headers['host'] + req.url });
+  res.end();
+}).listen(httpPort, () => console.log('App http to https redirection listening on port ', httpPort));
+
+app.use(express.static('dist'))
+
+// The following code is a workaround for webpack mode which is currently broken
+// Webpack mode would determine the development or production execution.
+// Instead we are having to interrogate the execution script to determine which was called
 let environment = JSON.parse(process.env.npm_config_argv)
 const isRunningInDevMode = environment.original[1] === 'dev'
 
 isRunningInDevMode ? console.log('Totem UI starting in Development Mode') : console.log('Totem UI starting in Production Mode')
 
+// Handle https certificate and key
 const certFileName = 'fullchain.pem'
 const keyFileName = 'privkey.pem'
 
 const devModeCertBasePath = './sslcert/'
+// Todo make this dynamic for the host
 const prodModeCertBasePath = '/etc/letsencrypt/live/totem.live/'
 
 let certPath = devModeCertBasePath
@@ -33,19 +46,13 @@ keyPath = keyPath + keyFileName
 const options = {
   cert: fs.readFileSync(certPath),
   key: fs.readFileSync(keyPath)
-};
+}
 
-// http.createServer(app).listen(httpPort, () => console.log('App http web server listening on port ', httpPort))
+// create main https app server
 https.createServer(options, app).listen(httpsPort, () => console.log('App https web server listening on port ', httpsPort))
 
-// app.listen(httpPort, () => {
-//   console.log('Web server listening on port 80')
-// })
+// Chat server also running on https
 
-/*
- * Chat server
- */
-// const server = http.createServer(app)
 const server = https.createServer(options, app)
 const io = require('socket.io').listen(server)
 const wsPort = 3001
