@@ -8,10 +8,31 @@ app.use(express.static('dist'))
 const http = require('http')
 const https = require('https')
 const fs = require('fs')
+let environment = JSON.parse(process.env.npm_config_argv)
+const isRunningInDevMode = environment.original[1] === 'dev'
+
+isRunningInDevMode ? console.log('Totem UI starting in Development Mode') : console.log('Totem UI starting in Production Mode')
+
+const certFileName = 'fullchain.pem'
+const keyFileName = 'privkey.pem'
+
+const devModeCertBasePath = './sslcert/'
+const prodModeCertBasePath = '/etc/letsencrypt/live/totem.live/'
+
+let certPath = devModeCertBasePath
+let keyPath = devModeCertBasePath
+
+if (!isRunningInDevMode) {
+  certPath = prodModeCertBasePath
+  keyPath = prodModeCertBasePath
+}
+
+certPath = certPath + certFileName
+keyPath = keyPath + keyFileName
 
 const options = {
-  cert: fs.readFileSync('./sslcert/fullchain.pem'),
-  key: fs.readFileSync('./sslcert/privkey.pem')
+  cert: fs.readFileSync(certPath),
+  key: fs.readFileSync(keyPath)
 };
 
 // http.createServer(app).listen(httpPort, () => console.log('App http web server listening on port ', httpPort))
