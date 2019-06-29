@@ -17,6 +17,7 @@ import SidebarLeft from './components/SidebarLeft'
 import SystemStatus from './components/SystemStatus'
 import UtilitiesView from './components/UtilitiesView'
 import WalletView from './components/WalletView'
+import { DataTable } from './components/lists/ListFactory'
 import { IfFn, IfMobile } from './components/utils'
 // Images
 import TotemButtonLogo from'./assets/totem-button-grey.png'
@@ -138,11 +139,11 @@ export class App extends ReactiveComponent {
 const sidebarItems = [
 	// { icon: "object group outline", title: "Overview", subHeader: "", active: true, content: <LedgerTransactionList />},
 	{
-	  icon: "sitemap", title: "Partners",
-	  header: "Vendors and Customers",
-	  subHeader: "Inspect the status of any account and name it for later use",
-	  active: false,
-	  content: <AddressBookView />
+		icon: "sitemap", title: "Partners",
+		header: "Vendors and Customers",
+		subHeader: "Inspect the status of any account and name it for later use",
+		active: false,
+		content: <AddressBookView />
 	},
 	// { icon: "file alternate", title: "Invoice", subHeader: "", active: false, content: <Invoice /> },
 	{ icon: "pen square", title: "Manage Invoices", subHeader: "" },
@@ -155,7 +156,7 @@ const sidebarItems = [
 	{
 		active: true,
 		content: <ProjectList />,
-		xheaderDivider: false,
+		headerDividerHidden: true,
 		icon: "barcode",
 		title: "Projects",
 		subHeader: "View and/or manage your projects"

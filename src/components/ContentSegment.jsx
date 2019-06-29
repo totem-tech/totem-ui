@@ -55,7 +55,7 @@ class ContentSegment extends ReactiveComponent {
         vertical={this.props.vertical}>
         <If condition={typeof(this.props.onClose) === 'function'} then={closeBtn} />
         <If condition={!!headerText} then={header} />
-        <If condition={!!headerText && !!this.props.headerDivider} then={<Divider />} />
+        <If condition={!!headerText && !!this.props.headerDivider} then={<Divider hidden={!!this.props.headerDividerHidden} />} />
         <div style={{ padding: this.props.contentPadding }}>
           <If condition={!!this.props.content} then={this.props.content} else={placeholder} />
         </div>
@@ -80,6 +80,7 @@ ContentSegment.propTypes = {
   compact: PropTypes.bool,
   header: PropTypes.string,
   headerDivider: PropTypes.bool,
+  headerDividerHidden: PropTypes.bool,
   headerInverted: PropTypes.bool,
   headerTag: PropTypes.string,
   icon:  PropTypes.string,

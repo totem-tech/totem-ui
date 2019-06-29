@@ -1,4 +1,5 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import uuid from 'uuid'
 import { dropMessages, addResponseMessage, isWidgetOpened, toggleWidget } from 'react-chat-widget'
@@ -54,7 +55,7 @@ class FormRegister extends ReactiveComponent {
     handleIdChange(e) {
         const { inputs } = this.state
         const index = 0
-        let value = e.target.value
+        let { value } = e.target
         if (value.length === 0) return;
         const valid = nameRegex.test(value)
         if (!valid) {
@@ -147,5 +148,14 @@ class FormRegister extends ReactiveComponent {
         )
     }
 }
+FormRegister.propTypes = {
+    modal: PropTypes.bool,
+    onClose: PropTypes.func,
+    onOpen: PropTypes.func,
+    size: PropTypes.string,
+    trigger: PropTypes.element
+}
+FormRegister.defaultProps = {
 
+}
 export default FormRegister

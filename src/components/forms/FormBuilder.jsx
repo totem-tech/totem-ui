@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Button, Form, Header, Icon, Message, Modal } from 'semantic-ui-react'
+import { Button, Dropdown, Form, Header, Icon, Message, Modal } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
 import { isFn } from '../utils';
 
@@ -219,6 +219,10 @@ export const FormInput = (props) => {
                 />
             )
             break;
+        case 'dropdown':
+            const dd = <Dropdown {...props} onChange={handleChange} />
+            inputEl = props.label ? <label>{props.label} {dd}</label> : dd
+            break;
         case 'group':
             // ToDO: test input group with multiple inputs
             inputEl = props.inputs.map((subInput, i) => <FormInput key={i} {...subInput} />)
@@ -299,10 +303,7 @@ FormInput.propTypes = {
     slider: PropTypes.bool,         // For checkbox/radio
     toggle: PropTypes.bool,         // For checkbox/radio
     type: PropTypes.string,
-    value: PropTypes.oneOfType([
-        PropTypes.number,
-        PropTypes.string
-    ]),
+    value: PropTypes.any,
     width: PropTypes.number
 }
 

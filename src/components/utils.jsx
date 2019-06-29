@@ -28,7 +28,30 @@ export const isValidNumber = x => typeof(x) == 'number' && !isNaN(x)
 
 export const isMobile = ()=> window.innerWidth <= Responsive.onlyMobile.maxWidth
 
-
+// arrMapSlice mimics the behaviour of Array.prototype.map() with the
+// convenience of only executing callback on range of indexes
+//
+// Params:
+// @arr         array
+// @startIndex  number
+// @endIndex    number    : inclusive
+// @callback    function  : callback to be executed on each item within the set range
+//              Params:
+//              @currentValue
+//              @currentIndex
+//              @array
+//
+// Returns array of items all returned by @callback
+export const arrMapSlice = (arr, startIndex, endIndex, callback) => {
+  if (!Array.isArray(arr)) return [];
+  startIndex = startIndex || 0
+  endIndex = !endIndex || endIndex >= arr.length ? arr.length - 1 : endIndex
+  let result = []
+  for (var i = startIndex; i <= endIndex; i++) {
+    result.push(callback(arr[i], i, arr))
+  }
+  return result
+}
 /*
  * Date formatting etc.
  */
