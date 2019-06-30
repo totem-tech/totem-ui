@@ -52,6 +52,16 @@ export const arrMapSlice = (arr, startIndex, endIndex, callback) => {
   }
   return result
 }
+
+// objCopy copies top level properties and returns a new object
+//
+// Params:
+// @source  object
+// @dest    object (optional)
+export const objCopy = (source, dest) => Object.keys(source).reduce((obj, key) => {
+  obj[key] = source[key]
+  return obj
+}, dest || {})
 /*
  * Date formatting etc.
  */

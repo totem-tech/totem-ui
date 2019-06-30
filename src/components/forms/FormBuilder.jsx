@@ -1,9 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Button, Dropdown, Form, Header, Icon, Message, Modal } from 'semantic-ui-react'
+import { Button, Dropdown, Form, Header, Icon, Input, Message, Modal, TextArea } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
-import { isFn } from '../utils';
+import { isDefined, isFn, objCopy } from '../utils';
 
+// ToDo: automate validation process by checking for data on input change
+//       and prevent submission of form if data is invalid and/or required field in empty
 class FormBuilder extends ReactiveComponent {
     constructor(props) {
         super(props)
@@ -47,7 +49,7 @@ class FormBuilder extends ReactiveComponent {
             headerIcon,
             message,
             inputs,
-            modal, /// todo: if false return form without the modal to be used normally
+            modal,
             onCancel,
             onChange,
             onClose,
@@ -56,28 +58,27 @@ class FormBuilder extends ReactiveComponent {
             open,
             size,
             subheader,
+            submitDisabled,
             submitText,
             success,
             trigger,
             widths
         } = this.props
-
-        const msg = message || {}
         
         const submitBtn = (
             <Button
                 content={submitText || 'Submit'}
-                disabled={success || msg.error}
+                disabled={submitDisabled || success || message.error}
                 onClick={this.handleSubmit}
                 positive
             />
         )
         const form = (
             <Form 
-                error={msg.status === 'error'}
-                success={success || msg.status === 'success'}
+                error={message.status === 'error'}
+                success={success || message.status === 'success'}
                 onSubmit={onSubmit}
-                warning={msg.status === 'warning'}
+                warning={message.status === 'warning'}
                 widths={widths}
             >
                 {Array.isArray(inputs) && inputs.map((input, i) => (
@@ -155,16 +156,20 @@ class FormBuilder extends ReactiveComponent {
 FormBuilder.propTypes = {
     header: PropTypes.string,
     headerIcon: PropTypes.string,
+    message: PropTypes.object,
     onSubmit: PropTypes.func,
     open: PropTypes.bool,
     subheader: PropTypes.string,
     trigger: PropTypes.element
 }
-
+FormBuilder.defaultProps = {
+    message: {}
+}
 export default FormBuilder
 
-export const FormInput = (props) => {
+export const FormInput = (propsOriginal) => {
     let inputEl = ''
+    const props = objCopy(propsOriginal)
     const message = props.message && (
         <Message
             content={props.message.content}
@@ -188,7 +193,11 @@ export const FormInput = (props) => {
         if ([ 'checkbox', 'radio'].indexOf(props.type) >= 0) {
             // Sematic UI's Checkbox component only supports string and number as value
             // This allows support for any value types
-            checkbox.value = props.value
+            checkbox.value = checkbox.checked ? (
+                isDefined(props.trueValue) ? props.trueValue : true
+            ) : (
+                isDefined(props.falseValue) ? props.falseValue : false   
+            )
         }
         // If input type is checkbox or radio event (e) won't have a value 
         // as it's fired by label associated with it (blame Semantic UI)
@@ -227,43 +236,56 @@ export const FormInput = (props) => {
             // ToDO: test input group with multiple inputs
             inputEl = props.inputs.map((subInput, i) => <FormInput key={i} {...subInput} />)
             break;
+        case 'textarea':
+            // ToDO: test input group with multiple inputs
+            const hasLabel = !!props.label
+            const ta = <TextArea {...props} />
+            inputEl = (
+                <React.Fragment>
+                   {hasLabel && <label>{props.label}</label>}
+                   {ta}
+                </React.Fragment>
+            )
+            break;
         default:
             const msgError = message && message.status==='error'
-            inputEl =  ( 
-                <Form.Input
-                    action={props.action}
-                    actionPosition={props.actionPosition}
-                    disabled={props.disabled}
-                    defaultValue={props.defaultValue}
-                    focus={props.focus}
-                    error={props.error || msgError}
-                    icon={props.icon}
-                    iconPosition={props.iconPosition}
-                    label={props.label}
-                    minLength={props.minlength}
-                    maxLength={props.maxLength}
-                    min={props.min}
-                    max={props.max}
-                    name={props.name || i}
-                    onChange={handleChange}
-                    placeholder={props.placeholder}
-                    readOnly={props.readOnly}
-                    required={props.required}
-                    type={props.type}
-                    width={props.width}
-                    value={props.value}
-                />
-            )
+            const inputProps = {
+                action: props.action,
+                actionPosition: props.actionPosition,
+                disabled: props.disabled,
+                defaultValue: props.defaultValue,
+                fluid: !props.useInput ? undefined : props.fluid,
+                focus: props.focus,
+                error: props.error || msgError,
+                icon: props.icon,
+                iconPosition: props.iconPosition,
+                label: props.label,
+                minLength: props.minlength,
+                maxLength: props.maxLength,
+                min: props.min,
+                max: props.max,
+                name: props.name || i,
+                onChange: handleChange,
+                placeholder: props.placeholder,
+                readOnly: props.readOnly,
+                required: props.required,
+                type: props.type,
+                width: props.width,
+                value: props.value
+            }
+    
+            inputEl = !props.useInput ? <Form.Input {...inputProps} /> : <Input {...inputProps} />
     }
 
     return props.type !== 'group' ? (
-        <Form.Field>                             
+        <Form.Field inline={props.inline}>                             
             {inputEl}
             {message}
         </Form.Field>
     ) : (
         <Form.Group>
             {inputEl}
+            {message}
         </Form.Group>
     )
 }
@@ -287,8 +309,12 @@ FormInput.propTypes = {
     actionPosition: PropTypes.string,
     disabled: PropTypes.bool,
     error: PropTypes.bool,
+    fluid: PropTypes.bool,
     focus: PropTypes.bool,
     inputs: PropTypes.array,
+    // Whether to use Semantic UI's Form.Input or Input component. Truthy => Input, Falsy (default) => Form.Input
+    // Cannot use bool as it throws error on other inputs due to mass props passthrough
+    useInput: PropTypes.string,
     message: PropTypes.object,
     max: PropTypes.number,
     maxLength: PropTypes.number,

@@ -16,7 +16,6 @@ class FormRegister extends ReactiveComponent {
         this.state = {
             inputs: [
                 {
-                    fluid: true,
                     label: 'User ID',
                     name: 'userId',
                     minLength: 3,
@@ -31,8 +30,7 @@ class FormRegister extends ReactiveComponent {
                     label: ' I agree to the Totem Tech terms and condition',
                     name: 'agree',
                     type: 'checkbox',
-                    required: true,
-                    value: true
+                    required: true
                 }
             ],
             message: {},

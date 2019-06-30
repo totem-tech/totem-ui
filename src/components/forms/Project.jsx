@@ -18,7 +18,7 @@ class Project extends ReactiveComponent {
 
         this.inputs = [
             {
-                fluid: true,
+                inlne: true,
                 label: 'Project Name',
                 name: 'name',
                 minLength: 3,
@@ -28,17 +28,19 @@ class Project extends ReactiveComponent {
                 required: true
             },
             {
+                inlne: true,
                 icon: {
                     name: 'plus',
-                    onClick: ()=> alert('To be implemented')
+                    onClick: ()=> alert('To be implemented: \n select from wallets or addressbook?')
                 },
-                label: 'Address',
+                label: 'Project Address',
                 name: 'address',
                 type: 'text',
                 placeholder: '',
                 required: true,
             },
             {
+                inlne: true,
                 fluid: true,
                 label: 'Owner',
                 name: 'ownerAddress',
@@ -54,10 +56,12 @@ class Project extends ReactiveComponent {
                 // value: true
             },
             {
+                inlne: true,
                 label: 'Description',
                 name: 'description',
+                maxLength: 160,
                 type: 'textarea',
-                placeholder: 'Select owner',
+                placeholder: 'Enter short description.... (max 160 characters)',
                 required: true,
                 // value: true
             }
@@ -102,7 +106,7 @@ class Project extends ReactiveComponent {
                 onOpen={this.handleOpen}
                 open={open}
                 onSubmit={this.handleSubmit}
-                size={size || 'mini'}
+                size={size || 'tiny'}
                 submitText={'Submit'}
             />
         )
