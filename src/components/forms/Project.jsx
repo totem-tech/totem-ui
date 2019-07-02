@@ -18,7 +18,6 @@ class Project extends ReactiveComponent {
 
         this.inputs = [
             {
-                inlne: true,
                 label: 'Project Name',
                 name: 'name',
                 minLength: 3,
@@ -28,19 +27,22 @@ class Project extends ReactiveComponent {
                 required: true
             },
             {
-                inlne: true,
-                icon: {
-                    name: 'plus',
-                    onClick: ()=> alert('To be implemented: \n select from wallets or addressbook?')
-                },
+                // additionLabel: <p>Create new wallet with name:</p>,
+                // allowAdditions: true,
                 label: 'Project Address',
                 name: 'address',
-                type: 'text',
-                placeholder: '',
-                required: true,
+                options: Array(10).fill(0).map((_, i) => ({
+                    key: 'wallet_'+i,
+                    text: 'wallet_'+i,
+                    value: 'wallet_'+i
+                })),
+                placeholder: 'Select a wallet',
+                selection: true,
+                search: true,
+                type: 'dropdown',
+                required: true
             },
             {
-                inlne: true,
                 fluid: true,
                 label: 'Owner',
                 name: 'ownerAddress',
@@ -56,7 +58,6 @@ class Project extends ReactiveComponent {
                 // value: true
             },
             {
-                inlne: true,
                 label: 'Description',
                 name: 'description',
                 maxLength: 160,

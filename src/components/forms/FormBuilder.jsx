@@ -167,127 +167,102 @@ FormBuilder.defaultProps = {
 }
 export default FormBuilder
 
-export const FormInput = (propsOriginal) => {
-    let inputEl = ''
-    const props = objCopy(propsOriginal)
-    const message = props.message && (
-        <Message
-            content={props.message.content}
-            error={props.message.status==='error'}
-            header={props.message.header}
-            icon={props.message.icon}
-            info={props.message.info}
-            list={props.message.list}
-            size={props.message.size}
-            success={props.message.status==='success'}
-            visible={!!props.message.status}
-            warning={props.message.status==='warning'}
-        />
-    )
+export class FormInput extends ReactiveComponent {
+    constructor(props) {
+        super(props)
 
-    const handleChange = (e, checkbox) => {
+        this.handleChange = this.handleChange.bind(this)
+    }
+
+    handleChange(e, checkbox) {
+        const { onChange, falseValue, trueValue, type } = this.props
         // Forces the synthetic event and it's value to persist
         // Required for use with deferred function
         e.persist();
-        if (!isFn(props.onChange)) return;
-        if ([ 'checkbox', 'radio'].indexOf(props.type) >= 0) {
+        if (!isFn(onChange)) return;
+        if ([ 'checkbox', 'radio'].indexOf(type) >= 0) {
             // Sematic UI's Checkbox component only supports string and number as value
             // This allows support for any value types
             checkbox.value = checkbox.checked ? (
-                isDefined(props.trueValue) ? props.trueValue : true
+                isDefined(trueValue) ? trueValue : true
             ) : (
-                isDefined(props.falseValue) ? props.falseValue : false   
+                isDefined(falseValue) ? falseValue : false   
             )
         }
         // If input type is checkbox or radio event (e) won't have a value 
         // as it's fired by label associated with it (blame Semantic UI)
         // and the second parameter (checkbox) will be included.
         // To prevent errors or mistakes, return empty object for other types
-        props.onChange(e, props, checkbox || {})
+        onChange(e, this.props, checkbox || {})
     }
 
-    switch(props.type) {
-        case 'checkbox':
-        case 'radio':
-            const isRadio = props.type === 'radio'
-            inputEl = (
-                <Form.Checkbox
-                    checked={props.checked}
-                    defaultChecked={props.defaultChecked}
-                    disabled={props.disabled}
-                    label={props.label}
-                    name={props.name || i}
-                    onChange={handleChange}
-                    radio={isRadio}
-                    readOnly={props.readOnly}
-                    required={props.required}
-                    slider={props.slider}
-                    toggle={!isRadio && props.toggle}
-                    type="checkbox"
-                    // value={props.value}
-                />
-            )
-            break;
-        case 'dropdown':
-            const dd = <Dropdown {...props} onChange={handleChange} />
-            inputEl = props.label ? <label>{props.label} {dd}</label> : dd
-            break;
-        case 'group':
-            // ToDO: test input group with multiple inputs
-            inputEl = props.inputs.map((subInput, i) => <FormInput key={i} {...subInput} />)
-            break;
-        case 'textarea':
-            // ToDO: test input group with multiple inputs
-            const hasLabel = !!props.label
-            const ta = <TextArea {...props} />
-            inputEl = (
-                <React.Fragment>
-                   {hasLabel && <label>{props.label}</label>}
-                   {ta}
-                </React.Fragment>
-            )
-            break;
-        default:
-            const msgError = message && message.status==='error'
-            const inputProps = {
-                action: props.action,
-                actionPosition: props.actionPosition,
-                disabled: props.disabled,
-                defaultValue: props.defaultValue,
-                fluid: !props.useInput ? undefined : props.fluid,
-                focus: props.focus,
-                error: props.error || msgError,
-                icon: props.icon,
-                iconPosition: props.iconPosition,
-                label: props.label,
-                minLength: props.minlength,
-                maxLength: props.maxLength,
-                min: props.min,
-                max: props.max,
-                name: props.name || i,
-                onChange: handleChange,
-                placeholder: props.placeholder,
-                readOnly: props.readOnly,
-                required: props.required,
-                type: props.type,
-                width: props.width,
-                value: props.value
-            }
-    
-            inputEl = !props.useInput ? <Form.Input {...inputProps} /> : <Input {...inputProps} />
-    }
+    render() {
+        const { handleChange } = this
+        const { inline, label, message, required, type, useInput, width } = this.props
+        let inputEl = ''
+        let attrs = objCopy(this.props)
+        const msg = message && (message.content || message.list || message.header) ? message : undefined
+        // Remove attributes that shouldn't be used or may cause error when using with inputEl
+        const nonAttrs = [ 'inline', 'label', 'useInput' ]
+        nonAttrs.forEach(key => isDefined(attrs[key])  && delete attrs[key])
+        attrs.onChange = handleChange
+        attrs.name = attrs.name || i
+        const messageEl = !msg ? '' : (
+            <Message
+                content={msg.content}
+                error={msg.status==='error'}
+                header={msg.header}
+                icon={msg.icon}
+                info={msg.info}
+                list={msg.list}
+                size={msg.size}
+                success={msg.status==='success'}
+                visible={!!msg.status}
+                warning={msg.status==='warning'}
+            />
+        )
 
-    return props.type !== 'group' ? (
-        <Form.Field inline={props.inline}>                             
-            {inputEl}
-            {message}
-        </Form.Field>
-    ) : (
-        <Form.Group>
-            {inputEl}
-            {message}
-        </Form.Group>
-    )
+        switch(type) {
+            case 'button':
+                inputEl = <Button {...attrs} />
+                break;
+            case 'checkbox':
+            case 'radio':
+                const isRadio = type === 'radio'
+                attrs.toggle = !isRadio && attrs.toggle
+                attrs.type = "checkbox"
+                inputEl = <Form.Checkbox {...attrs} />
+                break;
+            case 'dropdown':
+                inputEl = <Dropdown {...attrs}/>
+                break;
+            case 'group':
+                // ToDO: test input group with multiple inputs
+                inputEl = attrs.inputs.map((subInput, i) => <FormInput key={i} {...subInput} />)
+                break;
+            case 'textarea':
+                // ToDO: test input group with multiple inputs
+                inputEl = <TextArea {...attrs} />
+                break;
+            default:
+                attrs.error = attrs.error || (msg && msg.status==='error')
+                attrs.fluid = !useInput ? undefined : attrs.fluid
+                inputEl = !useInput ? <Form.Input {...attrs} /> : <Input {...attrs} />
+        }
+
+        return type !== 'group' ? (
+            <Form.Field inline={inline} width={width} required={required}> 
+                {label && <label>{label}</label>}
+                {inputEl}
+                {messageEl}
+            </Form.Field>
+        ) : (
+            <Form.Group inline={inline} widths={attrs.widths}>
+                {inputEl}
+                {messageEl}
+            </Form.Group>
+        )
+    }
 }
 
 FormInput.propTypes = {
@@ -312,9 +287,8 @@ FormInput.propTypes = {
     fluid: PropTypes.bool,
     focus: PropTypes.bool,
     inputs: PropTypes.array,
-    // Whether to use Semantic UI's Form.Input or Input component. Truthy => Input, Falsy (default) => Form.Input
-    // Cannot use bool as it throws error on other inputs due to mass props passthrough
-    useInput: PropTypes.string,
+    // Whether to use Semantic UI's Input or Form.Input component. Truthy => Input, Falsy (default) => Form.Input
+    useInput: PropTypes.bool,
     message: PropTypes.object,
     max: PropTypes.number,
     maxLength: PropTypes.number,
