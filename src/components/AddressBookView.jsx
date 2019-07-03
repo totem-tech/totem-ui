@@ -8,6 +8,7 @@ import { Pretty } from '../Pretty'
 import { AddressBookList } from '../AddressBookList'
 import { TransformBondButton } from '../TransformBondButton'
 import { Bond } from 'oo7'
+import addressbook from '../services/addressbook'
 
 class AddressBookView extends ReactiveComponent {
   constructor() {
