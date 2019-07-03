@@ -1,22 +1,32 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
+import { addressBook, secretStore } from 'oo7-substrate'
 import uuid from 'uuid'
 import { dropMessages, addResponseMessage, isWidgetOpened, toggleWidget } from 'react-chat-widget'
-import FormBuilder from './FormBuilder'
-import { deferred, isDefined, isFn } from '../utils'
+import FormBuilder, { fillValues } from './FormBuilder'
+import { sortArr, deferred, isDefined, isFn, isObj, textEllipsis } from '../utils'
 import { getClient } from '../ChatClient'
+import { confirm } from '../../services/modal'
 
 class Project extends ReactiveComponent {
     constructor(props) {
-        super(props)
+        super(props, {
+            secretStore: secretStore(),
+            addressBook: addressBook()
+        })
+
+        this.handleClose = this.handleClose.bind(this)
+        this.handleOpen = this.handleOpen.bind(this)
+        this.handleSubmit = this.handleSubmit.bind(this)
+        this.handleAddressChange = this.handleAddressChange.bind(this)
 
         this.state = {
             message: {},
-            open: isDefined(props.open) ? props.open : false,
+            open: props.open,
         }
 
-        this.inputs = [
+        this.state.inputs = [
             {
                 label: 'Project Name',
                 name: 'name',
@@ -27,35 +37,24 @@ class Project extends ReactiveComponent {
                 required: true
             },
             {
-                // additionLabel: <p>Create new wallet with name:</p>,
+                // additionLabel: 'Create new wallet: ',
                 // allowAdditions: true,
                 label: 'Project Address',
                 name: 'address',
-                options: Array(10).fill(0).map((_, i) => ({
-                    key: 'wallet_'+i,
-                    text: 'wallet_'+i,
-                    value: 'wallet_'+i
-                })),
+                onChange: this.handleAddressChange,
                 placeholder: 'Select a wallet',
                 selection: true,
-                search: true,
+                // search: true,
                 type: 'dropdown',
                 required: true
             },
             {
-                fluid: true,
-                label: 'Owner',
+                label: 'Owner Address',
                 name: 'ownerAddress',
+                placeholder: 'Enter owner',
                 type: 'dropdown',
-                options: Array(10).fill(0).map((_, i) => ({
-                    key: 'Owner_Address_'+i,
-                    text: 'Owner_Address_'+i,
-                    value: 'Owner_Address_'+i
-                })),
-                placeholder: 'Select owner',
+                selection: true,
                 required: true,
-                selection: true
-                // value: true
             },
             {
                 label: 'Description',
@@ -64,14 +63,8 @@ class Project extends ReactiveComponent {
                 type: 'textarea',
                 placeholder: 'Enter short description.... (max 160 characters)',
                 required: true,
-                // value: true
             }
         ]
-
-        // this.handleCancel = this.handleCancel.bind(this)
-        this.handleClose = this.handleClose.bind(this)
-        this.handleOpen = this.handleOpen.bind(this)
-        this.handleSubmit = this.handleSubmit.bind(this)
     }
 
     handleClose(e, d) {
@@ -88,12 +81,79 @@ class Project extends ReactiveComponent {
 
     handleSubmit(e, values) {
         alert('Not implemented')
+        console.log('values', values)
+    }
+
+    handleAddressChange(e, data, i) {
+        const { project } = this.props
+        const { inputs } = this.state
+        if (!isObj(project)) return;
+        // attach a confirm dialog on change
+        if (project.address !== data.value) {
+            confirm({
+                cancelButton: {
+                    content: 'Cancel and revert change',
+                    color: 'green'
+                },
+                confirmButton: {
+                    content: 'Proceed',
+                    color: 'red',
+                    primary: false
+                },
+                content: 'You are about to re-assign owner of this project.',
+                header: 'Re-assign owner?',
+                onCancel: ()=> {
+                    inputs[i].value = project.address
+                    this.setState({inputs})
+                    console.log('selected address', data.value)
+                    console.log('original address', project.address)
+                },
+                size: 'tiny'
+            })
+        }
     }
 
     render() {
-        const { header, headerIcon, modal, project, size, subheader, trigger } = this.props
-        const { message, open } = this.state
-        const { inputs } = this
+        const { header, headerIcon, modal, open: propsOpen, project, size, subheader, trigger } = this.props
+        const { addressBook, inputs, message, open, secretStore } = this.state
+        const abAddresses = addressBook && addressBook.accounts || []
+        const isOpenControlled = modal && !trigger && isDefined(propsOpen)
+        const openModal = isOpenControlled ? propsOpen : open
+        const addressDD = inputs.find(input => input.name === 'address')
+        const ownerDD = inputs.find(input => input.name === 'ownerAddress')
+        addressDD.options = sortArr(secretStore && secretStore.keys || [] , 'name').map((wallet, i) => ({
+            key: 'wallet' + wallet.address,
+            text: wallet.name,
+            description: textEllipsis(wallet.address, 25, 5),
+            value: wallet.address
+        }))
+
+        // add wallet items to owner address dropdown
+        ownerDD.options = [{
+            key: 0,
+            style: styles.itemHeader,
+            text: 'Wallets',
+        }].concat(addressDD.options)
+        // Add addressbook items if available
+        if (abAddresses.length > 0) {
+            ownerDD.options = ownerDD.options.concat([{
+                key: 1,
+                style: styles.itemHeader,
+                text: 'Addressbook'
+            }])
+            .concat(sortArr(abAddresses, 'name').map( item => ({
+                key: 'addressbook' + item.address,
+                text: item.name,
+                description: textEllipsis(item.address, 25, 5),
+                value: item.address
+            })))
+        }
+        
+        if ( isObj(project) ) {
+            // prefill values if needed
+            fillValues(inputs, project, false)
+            
+        }
         return (
             <FormBuilder
                 trigger={trigger}
@@ -105,9 +165,10 @@ class Project extends ReactiveComponent {
                 onCancel={this.handleClose}
                 onClose={this.handleClose}
                 onOpen={this.handleOpen}
-                open={open}
+                open={openModal}
                 onSubmit={this.handleSubmit}
                 size={size || 'tiny'}
+                subheader={subheader}
                 submitText={'Submit'}
             />
         )
@@ -125,3 +186,12 @@ Project.defaultProps = {
 
 }
 export default Project
+
+const styles = {
+    itemHeader: { 
+        background: 'grey', 
+        color: 'white', 
+        fontWeight: 'bold', 
+        fontSize: '1.5em'
+    }
+}

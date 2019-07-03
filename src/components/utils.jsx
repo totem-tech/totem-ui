@@ -53,6 +53,8 @@ export const arrMapSlice = (arr, startIndex, endIndex, callback) => {
   return result
 }
 
+export const sortArr = (arr, key) => arr.sort((a, b) => a[key] > b[key] ? 1 : -1)
+
 // objCopy copies top level properties and returns a new object
 //
 // Params:

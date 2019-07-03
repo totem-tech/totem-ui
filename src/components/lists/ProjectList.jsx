@@ -13,9 +13,8 @@ class ProjectList extends ReactiveComponent {
         super()
         this.state = {
             actionsIndex: -1,
-            draftName: '',
-            editIndex: -1,
             pageNo: 1,
+            projectEdit: undefined,
             secretIndex: -1
         }
 
@@ -25,7 +24,7 @@ class ProjectList extends ReactiveComponent {
     }
 
     getActions(project, i, mobile) {
-        const { editIndex, secretIndex } = this.state
+        const { secretIndex } = this.state
 
         return [
             {
@@ -39,16 +38,18 @@ class ProjectList extends ReactiveComponent {
                 onClick: () => copyToClipboard(project.address)
             },
             {
-                // content: mobile ? '' : (editIndex !== i ? 'Edit' : 'Cancel'),
-                // icon: editIndex !== i ? 'edit' : 'reply',
-                content: (
-                    <ProjectForm
-                        project={project}
-                        modal={true}
-                        trigger={<span><Icon name="edit" />{!mobile && 'Edit'}</span>}
-                    />
-                ),
-                onClick: ()=> new ProjectForm({open: true})//this.setState({ editIndex: editIndex === i ? -1 : i})
+                // content: (
+                //     <ProjectForm
+                //         project={project}
+                //         modal={true}
+                //         trigger={<span><Icon name="edit" />{!mobile && 'Edit'}</span>}
+                //     />
+                // ),
+                icon: 'edit',
+                onClick: ()=> this.setState({
+                    projectEdit: project,
+                    showEditModal: true
+                })
             },
             {
                 content: mobile ? '' : 'Delete',
@@ -59,11 +60,10 @@ class ProjectList extends ReactiveComponent {
     }
 
     getCardHeader(project, i) {
-        const { actionsIndex, draftName, editIndex } = this.state
+        const { actionsIndex } = this.state
         const toggleOnClick = ()=> {
             this.setState({
-                actionsIndex: actionsIndex === i ? -1 : i,
-                draftName: editIndex === i ? '' : project.name
+                actionsIndex: actionsIndex === i ? -1 : i
             })
         }
         return {
@@ -75,19 +75,6 @@ class ProjectList extends ReactiveComponent {
                 name: 'angle ' + (actionsIndex === i ? 'up' : 'down'),
                 onClick: toggleOnClick
             },
-            // input: {
-            //     action: {
-            //         color: 'black',
-            //         icon: 'save',
-            //         onClick: toBeImplemented,
-            //         size: 'tiny'
-            //     },
-            //     name: 'projectName',
-            //     onChange: (e)=> this.setState({draftName: e.target.value}),
-            //     size: 'mini',
-            //     value: draftName
-            // },
-            // inputVisible: editIndex === i,
             image: <Icon name="flask" size="big" />,
             subheader: textEllipsis(project.address, 23)
         }
@@ -96,10 +83,9 @@ class ProjectList extends ReactiveComponent {
     getContent(mobile) {
         return () => {
             const { projects, itemsPerRow, type } = this.props
-            const { actionsIndex, draftName, editIndex, secretIndex } = this.state
-            const { getActions, getAssigneList, getCardHeader } = this
+            const { actionsIndex, projectEdit, showEditModal } = this.state
+            const { getActions, getCardHeader } = this
             const listType = mobile ? 'cardlist' : type || 'datatable'
-
             const listProps = {
                 perPage: 10,
                 pageNo: 1,
@@ -151,7 +137,12 @@ class ProjectList extends ReactiveComponent {
                     listProps.float = 'right'
                     break;
             }
-            return <ListFactory {...listProps} />
+            return (
+                <React.Fragment>
+                    <ListFactory {...listProps} />
+                    {showEditModal && <ProjectForm modal={true} open={showEditModal} onClose={()=> this.setState({showEditModal: false})} project={projectEdit} />}
+                </React.Fragment>
+            )
         }
     }
 
@@ -169,8 +160,8 @@ ProjectList.defaultProps = {
         {
             name: 'Project ' + i,
             // only save address to server. Save to addressbook as well?
-            address: '5EJTCCb2rnyk3SNocZTG3M4gwmfigi8f4QdzvA9AhUt2HT3R' + i,
-            ownerAddress: '5EHvFvPmoAHvWJ8f5VuHqQA5Rb2Noqx4ZsdR4rM2N89BxLU3' + i,
+            address: '5EJTCCb2rnyk3SNocZTG3M4gwmfigi8f4QdzvA9AhUt2HT3R',
+            ownerAddress: '5EHvFvPmoAHvWJ8f5VuHqQA5Rb2Noqx4ZsdR4rM2N89BxLU3',
             // 160 chars max. use textfield ??
             description: 'This is a sample project ' + i
         }

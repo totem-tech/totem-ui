@@ -134,7 +134,6 @@ class FormRegister extends ReactiveComponent {
                 inputs={inputs}
                 message={message}
                 modal={modal}
-                onCancel={this.handleClose}
                 onClose={this.handleClose}
                 onOpen={this.handleOpen}
                 open={open}

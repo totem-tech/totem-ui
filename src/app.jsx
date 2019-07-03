@@ -17,7 +17,7 @@ import SidebarLeft from './components/SidebarLeft'
 import SystemStatus from './components/SystemStatus'
 import UtilitiesView from './components/UtilitiesView'
 import WalletView from './components/WalletView'
-import { DataTable } from './components/lists/ListFactory'
+import ModalService, {confirm } from './services/modal'
 import { IfFn, IfMobile } from './components/utils'
 // Images
 import TotemButtonLogo from'./assets/totem-button-grey.png'
@@ -96,7 +96,8 @@ export class App extends ReactiveComponent {
 
 		const getContent = (mobile) => () => (
 			<div className={(mobile ? 'mobile ': '') + classNames}>
-				<ChatWidget /> 
+				<ChatWidget />
+				<ModalService />
 				<IfFn condition={!mobile && sidebarCollapsed} then={()=> <SystemStatus sidebar={true} visible={true} />} />
 				<Sidebar.Pushable>
 					<SidebarLeft
