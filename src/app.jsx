@@ -11,12 +11,14 @@ import AddressBookView from './components/AddressBookView'
 import ChatWidget from './components/ChatWidget'
 import ContentSegment from './components/ContentSegment'
 import PageHeader from './components/PageHeader'
+import ProjectList from './components/lists/ProjectList'
 import SendFundsView from './components/SendFundsView'
 import SidebarLeft from './components/SidebarLeft'
 import SystemStatus from './components/SystemStatus'
 import UtilitiesView from './components/UtilitiesView'
 import WalletView from './components/WalletView'
-import { IfFn } from './components/utils'
+import ModalService, {confirm } from './services/modal'
+import { IfFn, IfMobile } from './components/utils'
 // Images
 import TotemButtonLogo from'./assets/totem-button-grey.png'
 
@@ -87,39 +89,37 @@ export class App extends ReactiveComponent {
 		const { handleClose, handleSidebarToggle, toggleMenuItem } = this
 		const { spaceBelow, mainContent, mainContentCollapsed } = styles
 		const logoSrc = TotemButtonLogo
-		const isMobile = this.isMobile()
-		const showStatusBar = sidebarCollapsed
 		const classNames = [
-			isMobile ? 'mobile' : '',
 			sidebarVisible ? 'sidebar-visible' : '',
 			sidebarCollapsed ? 'sidebar-collapsed' : ''
 		].join(' ')
 
-		return (
-			<div className={classNames}>
-				<ChatWidget /> 
-				<IfFn condition={showStatusBar} then={()=> <SystemStatus sidebar={true} visible={true} />} />
+		const getContent = (mobile) => () => (
+			<div className={(mobile ? 'mobile ': '') + classNames}>
+				<ChatWidget />
+				<ModalService />
+				<IfFn condition={!mobile && sidebarCollapsed} then={()=> <SystemStatus sidebar={true} visible={true} />} />
 				<Sidebar.Pushable>
 					<SidebarLeft
-						collapsed={sidebarCollapsed}
-						isMobile={isMobile}
+						collapsed={mobile ? false : sidebarCollapsed}
+						isMobile={mobile}
 						items={sidebarItems}
 						onMenuItemClick={toggleMenuItem}
 						onSidebarToggle={handleSidebarToggle}
-						visible={sidebarVisible}
+						visible={mobile ? sidebarVisible : true}
 					/>
 
 					<Sidebar.Pusher
 						as={Container}
 						className="main-content"
-						dimmed={isMobile && sidebarVisible}
+						dimmed={mobile && sidebarVisible}
 						id="main-content"
 						fluid
 						style={sidebarCollapsed ? mainContentCollapsed : mainContent}
 					>
 						<PageHeader
 							logoSrc={logoSrc}
-							isMobile={isMobile}
+							isMobile={mobile}
 							onSidebarToggle={handleSidebarToggle}
 							sidebarCollapsed={sidebarCollapsed}
 							sidebarVisible={sidebarVisible}
@@ -132,18 +132,19 @@ export class App extends ReactiveComponent {
 					</Sidebar.Pusher>
 				</Sidebar.Pushable>
 			</div>
-	)
+		)
+		return <IfMobile then={getContent(true)} else={getContent(false)} />
 	}
 }
 
 const sidebarItems = [
 	// { icon: "object group outline", title: "Overview", subHeader: "", active: true, content: <LedgerTransactionList />},
 	{
-	  icon: "sitemap", title: "Partners",
-	  header: "Vendors and Customers",
-	  subHeader: "Inspect the status of any account and name it for later use",
-	  active: false,
-	  content: <AddressBookView />
+		icon: "sitemap", title: "Partners",
+		header: "Vendors and Customers",
+		subHeader: "Inspect the status of any account and name it for later use",
+		active: false,
+		content: <AddressBookView />
 	},
 	// { icon: "file alternate", title: "Invoice", subHeader: "", active: false, content: <Invoice /> },
 	{ icon: "pen square", title: "Manage Invoices", subHeader: "" },
@@ -153,7 +154,14 @@ const sidebarItems = [
 	{ icon: "file alternate", title: "Expense", subHeader: "" },
 	{ icon: "bug", title: "Disputed Items", subHeader: "" },
 	{ icon: "crop", title: "Account Adjustments", subHeader: "" },
-	{ icon: "barcode", title: "Projects", subHeader: "" },  
+	{
+		active: true,
+		content: <ProjectList />,
+		headerDividerHidden: true,
+		icon: "barcode",
+		title: "Projects",
+		subHeader: "View and/or manage your projects"
+	},  
 	{ icon: "file alternate", title: "Timekeeping", subHeader: "" },
 	{ icon: "barcode", title: "Products", subHeader: "" },
 	{
@@ -161,14 +169,14 @@ const sidebarItems = [
 	  title: "Payment",
 	  header: "Direct payments",
 	  subHeader: "Send funds from your account to another",
-	  active: true,
+	  active: false,
 	  content: <SendFundsView />
 	},
 	{
 	  icon: "money",
 	  title: "Wallet",
 	  subHeader: "Manage your secret keys",
-	  active: false,
+	  active: true,
 	  content: <WalletView />
 	},
 	{ 

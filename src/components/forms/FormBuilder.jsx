@@ -1,34 +1,49 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Button, Form, Header, Icon, Message, Modal } from 'semantic-ui-react'
+import { Button, Dropdown, Form, Header, Icon, Input, Message, Modal, TextArea } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
-import { isFn } from '../utils';
+import { isDefined, isFn, isObj, objCopy } from '../utils';
 
+// ToDo: automate validation process by checking for data on input change
+//       and prevent submission of form if data is invalid and/or required field in empty
 class FormBuilder extends ReactiveComponent {
     constructor(props) {
         super(props)
 
         this.state = {
+            inputs: props.inputs,
+            open: props.open,
             values: {}
         }
 
         this.handleChange = this.handleChange.bind(this)
+        this.handleClose = this.handleClose.bind(this)
         this.handleSubmit = this.handleSubmit.bind(this)
     }
 
-    handleChange(e, input, checkbox, index){
-        const { name, onChange: onInputChange, type } = input
-        // Ignore any input that does not have a name
-        // if (name === undefined) return;
+    handleChange(e, data, index, input){
+        const { name, onChange: onInputChange } = input
+        const { inputs } = this.state
         const { onChange: formOnChange } = this.props
         const { values } = this.state
-        const isCheckbox = [ 'checkbox', 'radio' ].indexOf(type) >= 0
-        values[name] = !isCheckbox ? e.target.value : (checkbox.checked ? checkbox.value : undefined)
-        this.setState({values})
+        const { value} = data
+        values[name] = value
+        if (input.hasOwnProperty('value')) {
+            // controlled input
+            inputs[index].value = value
+        }
+        this.setState({inputs, values})
+        
         // trigger input items's onchange callback
         isFn(onInputChange) && onInputChange(e, values, index)
         // trigger form's onchange callback
-        isFn(formOnChange) && setTimeout(()=>formOnChange(e, values, index), 50)
+        isFn(formOnChange) && formOnChange(e, values, index)
+    }
+
+    handleClose() {
+        const { onClose } = this.props
+        if (isFn(onClose)) return onClose();
+        this.setState({open: !this.state.open})
     }
 
     handleSubmit(e) {
@@ -46,45 +61,45 @@ class FormBuilder extends ReactiveComponent {
             header,
             headerIcon,
             message,
-            inputs,
-            modal, /// todo: if false return form without the modal to be used normally
-            onCancel,
-            onChange,
+            modal,
             onClose,
             onOpen,
             onSubmit,
             open,
             size,
             subheader,
+            submitDisabled,
             submitText,
             success,
             trigger,
             widths
         } = this.props
-
-        const msg = message || {}
+        const { handleClose } = this
+        const { inputs, open: sOpen } = this.state
+        // whether the 'open' status is controlled or uncontrolled
+        const modalOpen = isFn(onClose) ? open : sOpen
         
         const submitBtn = (
             <Button
                 content={submitText || 'Submit'}
-                disabled={success || msg.error}
+                disabled={submitDisabled || success || message.error}
                 onClick={this.handleSubmit}
                 positive
             />
         )
         const form = (
             <Form 
-                error={msg.status === 'error'}
-                success={success || msg.status === 'success'}
+                error={message.status === 'error'}
+                success={success || message.status === 'success'}
                 onSubmit={onSubmit}
-                warning={msg.status === 'warning'}
+                warning={message.status === 'warning'}
                 widths={widths}
             >
                 {Array.isArray(inputs) && inputs.map((input, i) => (
                     <FormInput
                         key={i}
                         {...input}
-                        onChange={(e, _, checkbox) => this.handleChange(e, input, checkbox, i)}
+                        onChange={(e, data) => this.handleChange(e, data, i, input)}
                     />
                 ))}
                 {/* Include submit button if not a modal */}
@@ -96,9 +111,9 @@ class FormBuilder extends ReactiveComponent {
             <Modal
                 defaultOpen={defaultOpen}
                 dimmer={true}
-                onClose={onClose}
+                onClose={handleClose}
                 onOpen={onOpen}
-                open={open}
+                open={modalOpen}
                 size={size}
                 trigger={trigger}
             >        
@@ -108,7 +123,7 @@ class FormBuilder extends ReactiveComponent {
                         color="grey" 
                         link
                         name='times circle outline'
-                        onClick={onClose}
+                        onClick={handleClose}
                         size="big"
                     />
                 </div>
@@ -128,7 +143,7 @@ class FormBuilder extends ReactiveComponent {
                     <Button
                         content={closeText || 'Cancel'}
                         negative
-                        onClick={(e) => { e.preventDefault(); onCancel && onCancel(); }}
+                        onClick={handleClose}
                     />
                     {submitBtn}
                 </Modal.Actions>
@@ -155,111 +170,111 @@ class FormBuilder extends ReactiveComponent {
 FormBuilder.propTypes = {
     header: PropTypes.string,
     headerIcon: PropTypes.string,
+    message: PropTypes.object,
     onSubmit: PropTypes.func,
     open: PropTypes.bool,
     subheader: PropTypes.string,
     trigger: PropTypes.element
 }
-
+FormBuilder.defaultProps = {
+    message: {}
+}
 export default FormBuilder
 
-export const FormInput = (props) => {
-    let inputEl = ''
-    const message = props.message && (
-        <Message
-            content={props.message.content}
-            error={props.message.status==='error'}
-            header={props.message.header}
-            icon={props.message.icon}
-            info={props.message.info}
-            list={props.message.list}
-            size={props.message.size}
-            success={props.message.status==='success'}
-            visible={!!props.message.status}
-            warning={props.message.status==='warning'}
-        />
-    )
+export class FormInput extends ReactiveComponent {
+    constructor(props) {
+        super(props)
 
-    const handleChange = (e, checkbox) => {
+        this.handleChange = this.handleChange.bind(this)
+    }
+
+    handleChange(event, data) {
+        const { onChange, falseValue, trueValue, type } = this.props
         // Forces the synthetic event and it's value to persist
         // Required for use with deferred function
-        e.persist();
-        if (!isFn(props.onChange)) return;
-        if ([ 'checkbox', 'radio'].indexOf(props.type) >= 0) {
+        event.persist();
+        if (!isFn(onChange)) return;
+        if ([ 'checkbox', 'radio'].indexOf(type) >= 0) {
             // Sematic UI's Checkbox component only supports string and number as value
             // This allows support for any value types
-            checkbox.value = props.value
+            data.value = data.checked ? (
+                isDefined(trueValue) ? trueValue : true
+            ) : (
+                isDefined(falseValue) ? falseValue : false   
+            )
         }
-        // If input type is checkbox or radio event (e) won't have a value 
-        // as it's fired by label associated with it (blame Semantic UI)
-        // and the second parameter (checkbox) will be included.
-        // To prevent errors or mistakes, return empty object for other types
-        props.onChange(e, props, checkbox || {})
+
+        onChange(event, data || {}, this.props)
     }
 
-    switch(props.type) {
-        case 'checkbox':
-        case 'radio':
-            const isRadio = props.type === 'radio'
-            inputEl = (
-                <Form.Checkbox
-                    checked={props.checked}
-                    defaultChecked={props.defaultChecked}
-                    disabled={props.disabled}
-                    label={props.label}
-                    name={props.name || i}
-                    onChange={handleChange}
-                    radio={isRadio}
-                    readOnly={props.readOnly}
-                    required={props.required}
-                    slider={props.slider}
-                    toggle={!isRadio && props.toggle}
-                    type="checkbox"
-                    // value={props.value}
-                />
-            )
-            break;
-        case 'group':
-            // ToDO: test input group with multiple inputs
-            inputEl = props.inputs.map((subInput, i) => <FormInput key={i} {...subInput} />)
-            break;
-        default:
-            const msgError = message && message.status==='error'
-            inputEl =  ( 
-                <Form.Input
-                    action={props.action}
-                    actionPosition={props.actionPosition}
-                    disabled={props.disabled}
-                    focus={props.focus}
-                    error={props.error || msgError}
-                    icon={props.icon}
-                    iconPosition={props.iconPosition}
-                    label={props.label}
-                    minLength={props.minlength}
-                    maxLength={props.maxLength}
-                    min={props.min}
-                    max={props.max}
-                    name={props.name || i}
-                    onChange={handleChange}
-                    placeholder={props.placeholder}
-                    readOnly={props.readOnly}
-                    required={props.required}
-                    type={props.type}
-                    width={props.width}
-                />
-            )
-    }
+    render() {
+        const { handleChange } = this
+        const { inline, label, message, required, type, useInput, width } = this.props
+        let hideLabel = false
+        let inputEl = ''
+        let attrs = objCopy(this.props)
+        const msg = message && (message.content || message.list || message.header) ? message : undefined
+        // Remove attributes that shouldn't be used or may cause error when using with inputEl
+        const nonAttrs = [ 'inline', 'label', 'useInput' ]
+        nonAttrs.forEach(key => isDefined(attrs[key])  && delete attrs[key])
+        attrs.onChange = handleChange
+        const messageEl = !msg ? '' : (
+            <Message
+                content={msg.content}
+                error={msg.status==='error'}
+                header={msg.header}
+                icon={msg.icon}
+                info={msg.info}
+                list={msg.list}
+                size={msg.size}
+                success={msg.status==='success'}
+                visible={!!msg.status}
+                warning={msg.status==='warning'}
+            />
+        )
 
-    return props.type !== 'group' ? (
-        <Form.Field>                             
-            {inputEl}
-            {message}
-        </Form.Field>
-    ) : (
-        <Form.Group>
-            {inputEl}
-        </Form.Group>
-    )
+        switch(type.toLowerCase()) {
+            case 'button':
+                inputEl = <Button {...attrs} />
+                break;
+            case 'checkbox':
+            case 'radio':
+                const isRadio = type === 'radio'
+                attrs.toggle = !isRadio && attrs.toggle
+                attrs.type = "checkbox"
+                hideLabel = true
+                inputEl = <Form.Checkbox {...attrs} label={label}/>
+                break;
+            case 'dropdown':
+                inputEl = <Dropdown {...attrs} />
+                break;
+            case 'group':
+                // ToDO: test input group with multiple inputs
+                inputEl = attrs.inputs.map((subInput, i) => <FormInput key={i} {...subInput} />)
+                break;
+            case 'textarea':
+                // ToDO: test input group with multiple inputs
+                inputEl = <TextArea {...attrs} />
+                break;
+            default:
+                attrs.error = attrs.error || (msg && msg.status==='error')
+                attrs.fluid = !useInput ? undefined : attrs.fluid
+                inputEl = !useInput ? <Form.Input {...attrs} /> : <Input {...attrs} />
+        }
+
+        return type !== 'group' ? (
+            <Form.Field inline={inline} width={width} required={required}> 
+                {!hideLabel && label && <label>{label}</label>}
+                {inputEl}
+                {messageEl}
+            </Form.Field>
+        ) : (
+            <Form.Group inline={inline} widths={attrs.widths}>
+                {inputEl}
+                {messageEl}
+            </Form.Group>
+        )
+    }
 }
 
 FormInput.propTypes = {
@@ -270,6 +285,10 @@ FormInput.propTypes = {
     actionPosition: PropTypes.string,
     checked: PropTypes.bool,        // For checkbox/radio
     defaultChecked: PropTypes.bool, // For checkbox/radio
+    defaultValue: PropTypes.oneOfType([
+        PropTypes.number,
+        PropTypes.string
+    ]),
     icon: PropTypes.oneOfType([
         PropTypes.object,
         PropTypes.string
@@ -277,8 +296,11 @@ FormInput.propTypes = {
     actionPosition: PropTypes.string,
     disabled: PropTypes.bool,
     error: PropTypes.bool,
+    fluid: PropTypes.bool,
     focus: PropTypes.bool,
     inputs: PropTypes.array,
+    // Whether to use Semantic UI's Input or Form.Input component. Truthy => Input, Falsy (default) => Form.Input
+    useInput: PropTypes.bool,
     message: PropTypes.object,
     max: PropTypes.number,
     maxLength: PropTypes.number,
@@ -293,13 +315,21 @@ FormInput.propTypes = {
     slider: PropTypes.bool,         // For checkbox/radio
     toggle: PropTypes.bool,         // For checkbox/radio
     type: PropTypes.string,
-    value: PropTypes.any,           // For checkbox/radio
+    value: PropTypes.any,
     width: PropTypes.number
 }
 
 FormInput.defaultProps = {
     type: 'text',
     width: 16
+}
+
+export const fillValues = (inputs, obj, forceFill) => {
+    if (!isObj(obj)) return;
+    inputs.forEach(input => {
+        if (!input.hasOwnProperty('name') || !obj.hasOwnProperty(input.name) || (!forceFill && isDefined(input.value))) return;
+        input.value = obj[input.name]
+    })
 }
 
 const styles = {

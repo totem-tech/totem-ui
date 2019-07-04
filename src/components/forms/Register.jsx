@@ -1,4 +1,5 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import uuid from 'uuid'
 import { dropMessages, addResponseMessage, isWidgetOpened, toggleWidget } from 'react-chat-widget'
@@ -15,7 +16,6 @@ class FormRegister extends ReactiveComponent {
         this.state = {
             inputs: [
                 {
-                    fluid: true,
                     label: 'User ID',
                     name: 'userId',
                     minLength: 3,
@@ -30,8 +30,7 @@ class FormRegister extends ReactiveComponent {
                     label: ' I agree to the Totem Tech terms and condition',
                     name: 'agree',
                     type: 'checkbox',
-                    required: true,
-                    value: true
+                    required: true
                 }
             ],
             message: {},
@@ -54,7 +53,7 @@ class FormRegister extends ReactiveComponent {
     handleIdChange(e) {
         const { inputs } = this.state
         const index = 0
-        let value = e.target.value
+        let { value } = e.target
         if (value.length === 0) return;
         const valid = nameRegex.test(value)
         if (!valid) {
@@ -135,7 +134,6 @@ class FormRegister extends ReactiveComponent {
                 inputs={inputs}
                 message={message}
                 modal={modal}
-                onCancel={this.handleClose}
                 onClose={this.handleClose}
                 onOpen={this.handleOpen}
                 open={open}
@@ -147,5 +145,14 @@ class FormRegister extends ReactiveComponent {
         )
     }
 }
+FormRegister.propTypes = {
+    modal: PropTypes.bool,
+    onClose: PropTypes.func,
+    onOpen: PropTypes.func,
+    size: PropTypes.string,
+    trigger: PropTypes.element
+}
+FormRegister.defaultProps = {
 
+}
 export default FormRegister

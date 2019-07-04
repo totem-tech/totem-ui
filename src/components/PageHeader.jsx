@@ -114,6 +114,7 @@ class MobileHeader extends ReactiveComponent {
     const { showTools } = this.state
     const {
       id,
+      isMobile,
       logoSrc,
       message,
       onCopy,
@@ -126,10 +127,10 @@ class MobileHeader extends ReactiveComponent {
     return (
       <div>
         <Menu fixed="top" inverted>
-          <Menu.Item
+          {isMobile && <Menu.Item
             icon={{name:'sidebar', size: 'big', className: 'no-margin'}}
             onClick={this.handleToggle}
-          />
+          />}
           <Menu.Item>
             <Image size="mini" src={logoSrc} />
           </Menu.Item>
