@@ -1,5 +1,6 @@
 import React from 'react'
 import { Container, Dropdown, Icon, Image, Menu, Responsive, Sidebar } from 'semantic-ui-react'
+import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import {
 	calls, runtime, chain, system, runtimeUp,
@@ -43,6 +44,7 @@ export class App extends ReactiveComponent {
 		window.system = system
 		window.that = this
 		window.metadata = metadata
+		window.Bond = Bond
 
 		this.handleSidebarToggle = this.handleSidebarToggle.bind(this)
 		this.toggleMenuItem = this.toggleMenuItem.bind(this)
@@ -143,7 +145,7 @@ const sidebarItems = [
 		icon: "sitemap", title: "Partners",
 		header: "Vendors and Customers",
 		subHeader: "Inspect the status of any account and name it for later use",
-		active: false,
+		active: true,
 		content: <AddressBookView />
 	},
 	// { icon: "file alternate", title: "Invoice", subHeader: "", active: false, content: <Invoice /> },

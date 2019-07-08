@@ -5,14 +5,14 @@ import { runtime, runtimeUp, addressBook } from 'oo7-substrate'
 import { InputBond } from '../InputBond'
 import { AccountIdBond } from '../AccountIdBond'
 import { Pretty } from '../Pretty'
-import { AddressBookList } from '../AddressBookList'
+import { AddressBookList } from './AddressBookList'
 import { TransformBondButton } from '../TransformBondButton'
 import { Bond } from 'oo7'
 import addressbook from '../services/addressbook'
 
 class AddressBookView extends ReactiveComponent {
   constructor() {
-    super([], {ensureRuntime: runtimeUp})
+    super([], {ensureRuntime: runtimeUp, bond: addressbook.getBond()})
     this.nick = new Bond()
     this.lookup = new Bond()
   }
@@ -51,7 +51,7 @@ class AddressBookView extends ReactiveComponent {
     const transformBondBtn = (
       <TransformBondButton
         content="Add"
-        transform={(name, account) => { addressBook().submit(account, name); return true}}
+        transform={(name, account) => { /*addressBook().submit(account, name);*/ addressbook.add(name, account); return true}}
         args={[this.nick, this.lookup]}
         immediate
       />
@@ -69,7 +69,7 @@ class AddressBookView extends ReactiveComponent {
           <InputBond
             bond={this.nick}
             placeholder="A name for this address"
-            validator={n => n ? addressBook().map(ss => (ss.byName[n] ? null : n)) : null}
+            validator={name => name ? (addressbook.getByName(name) ? null : name) : null} //addressBook().map(ss => (ss.byName[name] ? null : name))
             action={transformBondBtn}
           />
         </div>
