@@ -31,6 +31,7 @@ export const add = (name, address, short, tags) => {
     // prevent adding multiple items with same name
     if (getIndex(name, address, adrs) >= 0) return;
     _save(adrs.concat([{
+        account: address,
         address: pretty(address),
         name, 
         // short: short || '',
@@ -40,6 +41,8 @@ export const add = (name, address, short, tags) => {
 }
 
 export const getAll = () => JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '[]')
+
+export const getByAddress = (address, _addresses) => (_addresses || getAll()).find(item => item.address === address)
 
 export const getByName = (name, _addresses) => (_addresses || getAll()).find(item => item.name === name)
 
@@ -77,6 +80,7 @@ const addressbook = {
     add,
     getAll,
     getBond: ()=> bond,
+    getByAddress,
     getByName,
     getByTag,
     getIndex,

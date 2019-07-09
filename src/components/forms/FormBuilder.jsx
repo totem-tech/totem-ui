@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import { Button, Dropdown, Form, Header, Icon, Input, Message, Modal, TextArea } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
 import { isDefined, isFn, isObj, objCopy } from '../utils';
+import { InputBond } from '../../InputBond'
 
 // ToDo: automate validation process by checking for data on input change
 //       and prevent submission of form if data is invalid and/or required field in empty
@@ -60,6 +61,7 @@ class FormBuilder extends ReactiveComponent {
             defaultOpen,
             header,
             headerIcon,
+            hideFooter,
             message,
             modal,
             onClose,
@@ -67,6 +69,7 @@ class FormBuilder extends ReactiveComponent {
             onSubmit,
             open,
             size,
+            style,
             subheader,
             submitDisabled,
             submitText,
@@ -92,6 +95,7 @@ class FormBuilder extends ReactiveComponent {
                 error={message.status === 'error'}
                 success={success || message.status === 'success'}
                 onSubmit={onSubmit}
+                style={style}
                 warning={message.status === 'warning'}
                 widths={widths}
             >
@@ -103,7 +107,7 @@ class FormBuilder extends ReactiveComponent {
                     />
                 ))}
                 {/* Include submit button if not a modal */}
-                {!modal && submitBtn}
+                {!modal && !hideFooter && submitBtn}
             </Form>
         )
         
@@ -139,14 +143,16 @@ class FormBuilder extends ReactiveComponent {
                 <Modal.Content>
                     {form}
                 </Modal.Content>
-                <Modal.Actions>
-                    <Button
-                        content={closeText || 'Cancel'}
-                        negative
-                        onClick={handleClose}
-                    />
-                    {submitBtn}
-                </Modal.Actions>
+                {!hideFooter && (
+                    <Modal.Actions>
+                        <Button
+                            content={closeText || 'Cancel'}
+                            negative
+                            onClick={handleClose}
+                        />
+                        {submitBtn}
+                    </Modal.Actions> 
+                )}
                 {message && !!message.status && (
                     <Message
                         content={message.content}
@@ -252,6 +258,12 @@ export class FormInput extends ReactiveComponent {
                 // ToDO: test input group with multiple inputs
                 inputEl = attrs.inputs.map((subInput, i) => <FormInput key={i} {...subInput} />)
                 break;
+            case 'inputbond':
+                if (isDefined(attrs.value)) {
+                    attrs.defaultValue = attrs.value
+                }
+                inputEl = <InputBond {...attrs} />
+                break;
             case 'textarea':
                 // ToDO: test input group with multiple inputs
                 inputEl = <TextArea {...attrs} />
@@ -293,7 +305,7 @@ FormInput.propTypes = {
         PropTypes.object,
         PropTypes.string
     ]),
-    actionPosition: PropTypes.string,
+    iconPosition: PropTypes.string,
     disabled: PropTypes.bool,
     error: PropTypes.bool,
     fluid: PropTypes.bool,
@@ -316,6 +328,7 @@ FormInput.propTypes = {
     toggle: PropTypes.bool,         // For checkbox/radio
     type: PropTypes.string,
     value: PropTypes.any,
+    onValidate: PropTypes.func,
     width: PropTypes.number
 }
 

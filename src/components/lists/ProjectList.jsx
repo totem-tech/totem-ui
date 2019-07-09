@@ -5,12 +5,13 @@ import { Button, Icon, Menu } from 'semantic-ui-react'
 import ListFactory from './ListFactory'
 import ProjectForm from '../forms/Project'
 import { copyToClipboard, IfMobile, textEllipsis } from '../utils'
+import WalletForm from '../forms/Wallet'
 
 const toBeImplemented = ()=> alert('To be implemented')
 
 class ProjectList extends ReactiveComponent {
     constructor() {
-        super()
+        super(['projects'])
         this.state = {
             actionsIndex: -1,
             pageNo: 1,
@@ -38,13 +39,6 @@ class ProjectList extends ReactiveComponent {
                 onClick: () => copyToClipboard(project.address)
             },
             {
-                // content: (
-                //     <ProjectForm
-                //         project={project}
-                //         modal={true}
-                //         trigger={<span><Icon name="edit" />{!mobile && 'Edit'}</span>}
-                //     />
-                // ),
                 icon: 'edit',
                 onClick: ()=> this.setState({
                     projectEdit: project,
@@ -82,8 +76,8 @@ class ProjectList extends ReactiveComponent {
 
     getContent(mobile) {
         return () => {
-            const { projects, itemsPerRow, type } = this.props
-            const { actionsIndex, projectEdit, showEditModal } = this.state
+            const { itemsPerRow, type } = this.props
+            const { actionsIndex, projectEdit, projects, showEditModal } = this.state
             const { getActions, getCardHeader } = this
             const listType = mobile ? 'cardlist' : type || 'datatable'
             const listProps = {
@@ -140,7 +134,16 @@ class ProjectList extends ReactiveComponent {
             return (
                 <React.Fragment>
                     <ListFactory {...listProps} />
-                    {showEditModal && <ProjectForm modal={true} open={showEditModal} onClose={()=> this.setState({showEditModal: false})} project={projectEdit} />}
+                    {showEditModal && (
+                        <ProjectForm
+                            modal={true}
+                            open={showEditModal}
+                            onClose={()=> this.setState({showEditModal: false})}
+                            // FOR DEMO ONLY
+                            onSubmit={(e, newProject) => this.setState({projects: this.state.project.concat([newProject])})}
+                            project={projectEdit} 
+                        />
+                    )}
                 </React.Fragment>
             )
         }

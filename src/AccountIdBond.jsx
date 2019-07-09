@@ -6,6 +6,7 @@ const {Label, Input} = require('semantic-ui-react');
 const {InputBond} = require('./InputBond');
 const nacl = require('tweetnacl');
 const {stringToSeed, hexToBytes, bytesToHex, runtime, secretStore, addressBook, ss58Decode, AccountId} = require('oo7-substrate');
+import addressbook from './services/addressbook'
 
 class AccountIdBond extends InputBond {
 	constructor () { super() }
@@ -35,7 +36,7 @@ AccountIdBond.defaultProps = {
 		if (y) {
 			return { external: y.account, internal: a, ok: true, extra: { knowSecret: true } };
 		}
-		let z = addressBook().find(a);
+		let z = addressbook.getByAddress(a) || addressbook.getByName(a);
 		if (z) {
 			return { external: z.account, internal: a, ok: true, extra: { knowSecret: false } };
 		}

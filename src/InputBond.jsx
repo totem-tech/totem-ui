@@ -149,7 +149,7 @@ class InputBond extends ReactiveComponent {
 			value={this.state.display != null ? this.state.display : this.state.defaultValue != null ? this.state.defaultValue : ''}
 			error={!this.state.ok}
 			onKeyDown={this.props.onKeyDown}
-			onChange={(e, v) => this.handleEdit(v.value)}
+			onChange={(e, v) => this.handleEdit(v.value) | (this.props.onChange && this.props.onChange(e, v))}
 			onBlur={() => this.handleBlur()}
 			action={this.makeAction ? this.makeAction() : this.props.action}
 			label={this.makeLabel ? this.makeLabel() : this.props.label}

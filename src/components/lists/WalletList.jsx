@@ -165,7 +165,7 @@ class WalletList extends ReactiveComponent {
             <WalletItem
                 addressLength={numItemsPerRow > 1 && 15}
                 allowDelete={allowDelete}
-                key={wallet.address}
+                key={i+wallet.name+wallet.address}
                 fluid={true}
                 style={ itemsPerRow === 1 ? {margin: 0} : undefined }
                 wallet={wallet}

@@ -38,7 +38,7 @@ export class App extends ReactiveComponent {
 		// For debug only.
 		window.runtime = runtime
 		window.secretStore = secretStore
-		window.addressBook = addressBook
+		window.addressBook = addressBook // deprecated
 		window.chain = chain
 		window.calls = calls
 		window.system = system

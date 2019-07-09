@@ -1,5 +1,5 @@
 
-import {calls, runtime, chain, nodeService, system, runtimeUp, ss58Encode, ss58Decode, addressBook, secretStore} from 'oo7-substrate'
+import {calls, runtime, chain, nodeService, system, runtimeUp, ss58Encode, ss58Decode, secretStore} from 'oo7-substrate'
 import {Bond} from 'oo7'
 import uuid from 'uuid'
 

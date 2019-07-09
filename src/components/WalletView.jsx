@@ -7,8 +7,9 @@ import { runtimeUp, secretStore } from 'oo7-substrate'
 import { InputBond } from '../InputBond.jsx'
 import { TransformBondButton } from '../TransformBondButton'
 import Identicon from 'polkadot-identicon'
-import WalletList, { WalletItem } from './lists/WalletList'
+import WalletList from './lists/WalletList'
 import { IfMobile } from './utils'
+import WalletForm from './forms/Wallet'
 
 class WalletView extends ReactiveComponent {
   constructor() {
@@ -64,7 +65,7 @@ class WalletView extends ReactiveComponent {
 
     return (
       <React.Fragment>
-        <div style={{ paddingBottom: '1em' }}>
+        {/* <div style={{ paddingBottom: '1em' }}>
             <div style={{ fontSize: 'small' }}>Seed</div>
             <ResponsiveInputBond
               bond={this.seed}
@@ -84,7 +85,8 @@ class WalletView extends ReactiveComponent {
               validator={n =>n ? secretStore().map(ss => (ss.byName[n] ? null : n)) : null}
               action={transformBondBtn}
             />
-        </div>
+        </div> */}
+        <WalletForm />
         <div style={{ paddingBottom: '1em' }}>
           <WalletList itemsPerRow={1} />
         </div>

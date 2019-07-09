@@ -29,7 +29,7 @@ const add = (id, element) => {
     return id
 }
 
-const remove = id => modals.delete(id) | trigger.changed(modals.size)
+export const remove = id => modals.delete(id) | trigger.changed(modals.size)
 
 // confirm opens a confirm dialog
 //
@@ -52,3 +52,19 @@ export const confirm = (confirmProps) => {
 }
 
 // ToDo: add function to show modal forms from the forms directory
+export const showForm = (FormClass, props) => {
+    const id = uuid.v1()
+    props = props || {}
+    return add(
+        id,
+        <FormClass
+            {...props}
+            modal={true}
+            open={true}
+            onClose={(e, d)=> {
+                remove(id)
+                isFn(props.onClose) && props.onClose(e, d)
+            }}
+        />
+    )
+}

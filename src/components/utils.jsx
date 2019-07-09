@@ -64,6 +64,7 @@ export const objCopy = (source, dest) => Object.keys(source).reduce((obj, key) =
   obj[key] = source[key]
   return obj
 }, dest || {})
+
 /*
  * Date formatting etc.
  */
