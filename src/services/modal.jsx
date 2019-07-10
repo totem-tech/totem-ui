@@ -29,7 +29,7 @@ const add = (id, element) => {
     return id
 }
 
-export const remove = id => modals.delete(id) | trigger.changed(modals.size)
+export const closeModal = id => modals.delete(id) | trigger.changed(modals.size)
 
 // confirm opens a confirm dialog
 //
@@ -45,8 +45,8 @@ export const confirm = (confirmProps) => {
         <Confirm
           {...confirmProps}
           open={isDefined(confirmProps.open) ? confirmProps.open : true}
-          onCancel={(e, d) => {remove(id); isFn(confirmProps.onCancel) && confirmProps.onCancel(e, d)}}
-          onConfirm={(e, d) => {remove(id); isFn(confirmProps.onConfirm) && confirmProps.onConfirm(e, d)}}
+          onCancel={(e, d) => {closeModal(id); isFn(confirmProps.onCancel) && confirmProps.onCancel(e, d)}}
+          onConfirm={(e, d) => {closeModal(id); isFn(confirmProps.onConfirm) && confirmProps.onConfirm(e, d)}}
         />
     )
 }
@@ -62,7 +62,7 @@ export const showForm = (FormClass, props) => {
             modal={true}
             open={true}
             onClose={(e, d)=> {
-                remove(id)
+                closeModal(id)
                 isFn(props.onClose) && props.onClose(e, d)
             }}
         />

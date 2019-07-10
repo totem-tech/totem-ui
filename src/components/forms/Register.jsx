@@ -13,15 +13,21 @@ class FormRegister extends ReactiveComponent {
     constructor(props) {
         super(props)
 
+        this.handleClose = this.handleClose.bind(this)
+        this.handleIdChange = this.handleIdChange.bind(this)
+        this.handleOpen = this.handleOpen.bind(this)
+        this.handleSubmit = this.handleSubmit.bind(this)
+
+
         this.state = {
             inputs: [
                 {
+                    deferred: 300,
                     label: 'User ID',
                     name: 'userId',
                     minLength: 3,
                     maxLength: 16,
-                    onChange: deferred(this.handleIdChange, 300, this),
-                    pattern: '^($|[a-z]|[a-z][a-z0-9]+)$',
+                    onChange: deferred(this.handleIdChange, 300),
                     placeholder: 'Enter your ID',
                     type: 'text',
                     required: true
@@ -35,13 +41,8 @@ class FormRegister extends ReactiveComponent {
             ],
             message: {},
             open: false,
+            submitDisabled: true
         }
-
-        // this.handleCancel = this.handleCancel.bind(this)
-        this.handleClose = this.handleClose.bind(this)
-        this.handleIdChange = this.handleIdChange.bind(this)
-        this.handleOpen = this.handleOpen.bind(this)
-        this.handleSubmit = this.handleSubmit.bind(this)
     }
 
     handleClose(e, d) {
@@ -50,15 +51,16 @@ class FormRegister extends ReactiveComponent {
         isFn(onClose) && onClose(e, d)
     }
 
-    handleIdChange(e) {
+    handleIdChange(e, values, index) {
         const { inputs } = this.state
-        const index = 0
         let { value } = e.target
-        if (value.length === 0) return;
-        const valid = nameRegex.test(value)
+        const hasMin = value.length >= 3
+        const valid = nameRegex.test(value) && hasMin
+        inputs[index].invalid = !valid
+        // console.log('valid', valid, inputs)
         if (!valid) {
             inputs[index].message = {
-                content: (
+                content: !hasMin ? 'minimum 3 characters required' : (
                     <p>
                         Only lowercase alpha-numeric characters allowed <br />
                         Must start with an alphabet
@@ -69,14 +71,7 @@ class FormRegister extends ReactiveComponent {
             }
             return this.setState({inputs})
         }
-        const hasMin = value.length >= 3
-        if (!hasMin) {
-            inputs[index].message = hasMin ? {} : { 
-                content: 'minimum 3 characters required',
-                status: 'error'
-            }
-            return this.setState({inputs});
-        }
+
         this.setState({inputs})
         getClient().idExists(value, exists => {
             inputs[index].message = {
@@ -84,7 +79,8 @@ class FormRegister extends ReactiveComponent {
                 header: '@' + value,
                 status: exists ? 'error' : 'success'
             }
-            this.setState({inputs})
+            // console.log('exists', exists, inputs)
+            this.setState({inputs, submitDisabled: exists})
         })
     }
 
@@ -94,7 +90,7 @@ class FormRegister extends ReactiveComponent {
         isFn(onOpen) && onOpen(e, d)
     }
 
-    handleSubmit(e, values) {
+    handleSubmit(_, values) {
         const { agree, userId } =  values
         if (!agree) return this.setState({
             message: {
@@ -125,7 +121,7 @@ class FormRegister extends ReactiveComponent {
 
     render() {
         const { modal, size, trigger } = this.props
-        const { inputs, message, open } = this.state
+        const { inputs, message, open, submitDisabled } = this.state
         return (
             <FormBuilder
                 trigger={trigger}
@@ -138,8 +134,9 @@ class FormRegister extends ReactiveComponent {
                 onOpen={this.handleOpen}
                 open={open}
                 onSubmit={this.handleSubmit}
-                size={size || 'mini'}
+                size={size}
                 subheader="To start chat and/or make faucet request"
+                submitDisabled={submitDisabled}
                 submitText={'Register'}
             />
         )
@@ -153,6 +150,6 @@ FormRegister.propTypes = {
     trigger: PropTypes.element
 }
 FormRegister.defaultProps = {
-
+    size: 'mini'
 }
 export default FormRegister

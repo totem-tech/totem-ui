@@ -130,14 +130,14 @@ export function setState(instance, key, value) {
 // @callback  function  : function to be invoked after deferred delay
 // @delay     number    : number of milliseconds to be delayed.
 //                        Default value: 50
-// @bindTo    object    : optional, makes sure callback is bounded to supplied object 
-export function deferred(callback, delay, bindTo) {
+// @thisArg    object   : optional, makes sure callback is bounded to supplied object 
+export function deferred(callback, delay, thisArg) {
 	let timeoutId;
 	return function () {
 		const args = arguments
 		if (timeoutId) clearTimeout(timeoutId);
 		timeoutId = setTimeout(function () {
-			isFn(callback) && callback.apply(bindTo, args);
+			isFn(callback) && callback.apply(thisArg, args);
 		}, delay || 50)
 	}
 }

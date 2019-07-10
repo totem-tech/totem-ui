@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Button, Dropdown, Form, Header, Icon, Input, Message, Modal, TextArea } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
-import { isDefined, isFn, isObj, objCopy } from '../utils';
+import { isDefined, isFn, isObj, objCopy, deferred } from '../utils';
 import { InputBond } from '../../InputBond'
 
 // ToDo: automate validation process by checking for data on input change
@@ -13,6 +13,7 @@ class FormBuilder extends ReactiveComponent {
 
         this.state = {
             inputs: props.inputs,
+            // invalid: true,
             open: props.open,
             values: {}
         }
@@ -22,23 +23,28 @@ class FormBuilder extends ReactiveComponent {
         this.handleSubmit = this.handleSubmit.bind(this)
     }
 
-    handleChange(e, data, index, input){
+    handleChange(e, data, index, input) {
         const { name, onChange: onInputChange } = input
-        const { inputs } = this.state
+        let { inputs } = this.state
         const { onChange: formOnChange } = this.props
-        const { values } = this.state
+        let { values } = this.state
         const { value } = data
         values[name] = value
-        if (input.hasOwnProperty('value')) {
-            // controlled input
-            inputs[index].value = value
-        }
-        this.setState({inputs, values})
-        
+        inputs[index].value = value
+        // update values of other inputs
+        values = inputs.reduce((values, input, i) => {
+            if (!isDefined(input.name) || i === index) return values;
+            let { value } = values
+            value = !isDefined(value) ? input.value : value
+            values[input.name] = value
+            return values
+        }, values)
+                
         // trigger input items's onchange callback
         isFn(onInputChange) && onInputChange(e, values, index)
         // trigger form's onchange callback
         isFn(formOnChange) && formOnChange(e, values, index)
+        this.setState({inputs, values})
     }
 
     handleClose() {
@@ -78,18 +84,18 @@ class FormBuilder extends ReactiveComponent {
             widths
         } = this.props
         const { handleClose } = this
-        const { inputs, open: sOpen } = this.state
+        const { inputs, open: sOpen, values } = this.state
         // whether the 'open' status is controlled or uncontrolled
         const modalOpen = isFn(onClose) ? open : sOpen
-        
         const submitBtn = (
             <Button
-                content={submitText || 'Submit'}
-                disabled={submitDisabled || success || message.error}
+                content={submitText}
+                disabled={isFormInvalid(inputs, values) || submitDisabled || message.error || success}
                 onClick={this.handleSubmit}
                 positive
             />
         )
+
         const form = (
             <Form 
                 error={message.status === 'error'}
@@ -146,7 +152,7 @@ class FormBuilder extends ReactiveComponent {
                 {!hideFooter && (
                     <Modal.Actions>
                         <Button
-                            content={closeText || 'Cancel'}
+                            content={closeText}
                             negative
                             onClick={handleClose}
                         />
@@ -155,13 +161,10 @@ class FormBuilder extends ReactiveComponent {
                 )}
                 {message && !!message.status && (
                     <Message
+                        {...message}
                         content={message.content}
+                        content={message.header}
                         error={message.status==='error'}
-                        header={message.header}
-                        icon={message.icon}
-                        info={message.info}
-                        list={message.list}
-                        size={message.size}
                         style={styles.formMessage}
                         success={message.status==='success'}
                         visible={!!message.status}
@@ -174,16 +177,35 @@ class FormBuilder extends ReactiveComponent {
 }
 
 FormBuilder.propTypes = {
+    closeText: PropTypes.string,
+    defaultOpen: PropTypes.bool,
     header: PropTypes.string,
     headerIcon: PropTypes.string,
+    hideFooter: PropTypes.bool,
     message: PropTypes.object,
+    modal: PropTypes.bool,
+    onClose: PropTypes.func,
+    onOpen: PropTypes.func,
     onSubmit: PropTypes.func,
     open: PropTypes.bool,
+    size: PropTypes.string,
+    style: PropTypes.object,
     subheader: PropTypes.string,
-    trigger: PropTypes.element
+    submitDisabled: PropTypes.bool,
+    submitText: PropTypes.string,
+    success: PropTypes.bool,
+    trigger: PropTypes.element,
+    widths: PropTypes.string
 }
 FormBuilder.defaultProps = {
-    message: {}
+    closeText: 'Cancel',
+    message: {
+        // Status controls visibility and style of the message
+        // Supported values: error, warning, success
+        status: '', 
+        // see https://react.semantic-ui.com/collections/message/ for more options
+    },
+    submitText: 'Submit'
 }
 export default FormBuilder
 
@@ -198,7 +220,7 @@ export class FormInput extends ReactiveComponent {
         const { onChange, falseValue, trueValue, type } = this.props
         // Forces the synthetic event and it's value to persist
         // Required for use with deferred function
-        event.persist();
+        isFn(event.persist) && event.persist();
         if (!isFn(onChange)) return;
         if ([ 'checkbox', 'radio'].indexOf(type) >= 0) {
             // Sematic UI's Checkbox component only supports string and number as value
@@ -220,8 +242,9 @@ export class FormInput extends ReactiveComponent {
         let inputEl = ''
         let attrs = objCopy(this.props)
         const msg = message && (message.content || message.list || message.header) ? message : undefined
-        // Remove attributes that shouldn't be used or may cause error when using with inputEl
-        const nonAttrs = [ 'inline', 'label', 'useInput' ]
+        // Remove attributes that are used by the form or Form.Field but
+        // shouldn't be used or may cause error when using with inputEl
+        const nonAttrs = [ 'deferred', 'inline', 'invalid', 'label', 'useInput' ]
         nonAttrs.forEach(key => isDefined(attrs[key])  && delete attrs[key])
         attrs.onChange = handleChange
         const messageEl = !msg ? '' : (
@@ -255,7 +278,6 @@ export class FormInput extends ReactiveComponent {
                 inputEl = <Dropdown {...attrs} />
                 break;
             case 'group':
-                // ToDO: test input group with multiple inputs
                 inputEl = attrs.inputs.map((subInput, i) => <FormInput key={i} {...subInput} />)
                 break;
             case 'inputbond':
@@ -265,7 +287,6 @@ export class FormInput extends ReactiveComponent {
                 inputEl = <InputBond {...attrs} />
                 break;
             case 'textarea':
-                // ToDO: test input group with multiple inputs
                 inputEl = <TextArea {...attrs} />
                 break;
             default:
@@ -288,7 +309,6 @@ export class FormInput extends ReactiveComponent {
         )
     }
 }
-
 FormInput.propTypes = {
     action: PropTypes.oneOfType([
         PropTypes.object,
@@ -301,6 +321,8 @@ FormInput.propTypes = {
         PropTypes.number,
         PropTypes.string
     ]),
+    // Delay, in miliseconds, to precess input value change
+    deferred: PropTypes.number,
     icon: PropTypes.oneOfType([
         PropTypes.object,
         PropTypes.string
@@ -311,7 +333,8 @@ FormInput.propTypes = {
     fluid: PropTypes.bool,
     focus: PropTypes.bool,
     inputs: PropTypes.array,
-    // Whether to use Semantic UI's Input or Form.Input component. Truthy => Input, Falsy (default) => Form.Input
+    // Whether to use Semantic UI's Input or Form.Input component.
+    // Truthy => Input, Falsy (default) => Form.Input
     useInput: PropTypes.bool,
     message: PropTypes.object,
     max: PropTypes.number,
@@ -331,7 +354,6 @@ FormInput.propTypes = {
     onValidate: PropTypes.func,
     width: PropTypes.number
 }
-
 FormInput.defaultProps = {
     type: 'text',
     width: 16
@@ -344,6 +366,17 @@ export const fillValues = (inputs, obj, forceFill) => {
         input.value = obj[input.name]
     })
 }
+
+export const isFormInvalid = (inputs, values) => (inputs || []).reduce((invalid, input) => {
+    if (invalid || !input.required || ['button'].indexOf(input.type) >= 0) return invalid;
+    // Use recursion to validate input groups
+    if (input.type === 'group') return isFormInvalid(input.inputs);
+    if (input.invalid) return true;
+    values = values || {}
+    const value = isDefined(values[input.name]) ? values[input.name] : input.value
+    if (['number'].indexOf(input.type.toLowerCase()) >= 0) return !isDefined(value);
+    return !value;
+}, false)
 
 const styles = {
     closeButton: {

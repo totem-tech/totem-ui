@@ -17,34 +17,32 @@ class Project extends ReactiveComponent {
         })
 
         this.handleClose = this.handleClose.bind(this)
-        this.handleFormChange = this.handleFormChange.bind(this)
         this.handleOpen = this.handleOpen.bind(this)
         this.handleOwnerChange = this.handleOwnerChange.bind(this)
         this.handleSubmit = this.handleSubmit.bind(this)
         this.handleWalletCreate = this.handleWalletCreate.bind(this)
 
         this.state = {
-            submitDisabled: true,
             message: {},
-            name: '',
             open: props.open,
+            success: false,
             inputs: [
                 {
                     label: 'Project Name',
                     name: 'name',
                     minLength: 3,
                     maxLength: 16,
-                    onChange: (_, data) => this.setState({ name: data.value}),
                     placeholder: 'Enter project name',
                     type: 'text',
                     required: true,
                     value: ''
                 },
                 {
-                    readOnly: true,
+                    action: <Button icon="plus" content="New" onClick={ this.handleWalletCreate }/>,
                     label: 'Project Address',
                     name: 'address',
                     placeholder: 'Generate a new address',
+                    readOnly: true,
                     type: 'text',
                     required: true,
                     value: ''
@@ -52,7 +50,7 @@ class Project extends ReactiveComponent {
                 {
                     label: 'Owner Address',
                     name: 'ownerAddress',
-                    placeholder: 'Enter owner',
+                    placeholder: 'Select owner',
                     type: 'dropdown',
                     selection: true,
                     required: true,
@@ -75,15 +73,6 @@ class Project extends ReactiveComponent {
         isFn(onClose) && onClose(e, d)
     }
 
-    handleFormChange(e, values) {
-        const { inputs } = this.state
-        const submitDisabled = inputs.reduce((invalid, input) => (
-            invalid || (input.required && !isDefined(input.value) && !isDefined(values[input.name])))
-        , false)
-        console.log(submitDisabled)
-        this.setState({submitDisabled})
-    }
-
     handleOpen(e, d) {
         const { onOpen } = this.props
         this.setState({open: true})
@@ -92,8 +81,10 @@ class Project extends ReactiveComponent {
 
     handleSubmit(e, values) {
         const { onSubmit } = this.props
-        isFn(onSubmit) && onSubmit(e, values)
-        alert('Adding project to the table for demo purpose only!')
+        const success = true
+        isFn(onSubmit) && onSubmit(e, values, success)
+        this.setState({success})
+        alert('Not implemented')
     }
 
     handleOwnerChange(e, data, i) {
@@ -125,17 +116,15 @@ class Project extends ReactiveComponent {
 
     handleWalletCreate(e) {
         e.preventDefault()
-        const { inputs, name: projectName } = this.state
+        const { inputs } = this.state
         showForm( WalletForm, {
             modal: true,
             closeOnSubmit: true,
             onSubmit: (values) => {
                 const newWallet = secretStore().find(values.name)
                 inputs.find(x => x.name === 'address').value = newWallet.address
-                inputs.find(x => x.name === 'name').value = projectName || values.name
                 this.setState({inputs})
-            },
-            wallet: { name: projectName || '' }, // Prefill not working with InputBond!!!
+            }
         })
     }
 
@@ -151,7 +140,7 @@ class Project extends ReactiveComponent {
             submitText,
             trigger
         } = this.props
-        const { inputs, message, open, secretStore, submitDisabled } = this.state
+        const { inputs, message, open, secretStore, success } = this.state
         const addrs = addressbook.getAll()
         const isOpenControlled = modal && !trigger && isDefined(propsOpen)
         const openModal = isOpenControlled ? propsOpen : open
@@ -162,7 +151,8 @@ class Project extends ReactiveComponent {
         ownerDD.options = [{
             key: 0,
             style: styles.itemHeader,
-            text: 'Wallets'
+            text: 'Wallets',
+            value: '' // keep
         }]
         // add wallet items to owner address dropdown
         .concat(sortArr(secretStore && secretStore.keys || [] , 'name').map((wallet, i) => ({
@@ -176,7 +166,8 @@ class Project extends ReactiveComponent {
             ownerDD.options = ownerDD.options.concat([{
                 key: 1,
                 style: styles.itemHeader,
-                text: 'Addressbook'
+                text: 'Addressbook',
+                value: '' // keep
             }])
             // Add addressbook items
             .concat(sortArr(addrs, 'name').map((item, i) => ({
@@ -192,8 +183,6 @@ class Project extends ReactiveComponent {
             fillValues(inputs, project, true)
             ownerDD.onChange = this.handleOwnerChange
             addressInput.disabled = true
-        } else {
-            addressInput.action = <Button icon="plus" content="New" onClick={ this.handleWalletCreate }/>
         }
 
         return (
@@ -205,15 +194,14 @@ class Project extends ReactiveComponent {
                 message={message}
                 modal={modal}
                 onCancel={this.handleClose}
-                onChange={this.handleFormChange}
                 onClose={this.handleClose}
                 onOpen={this.handleOpen}
                 open={openModal}
                 onSubmit={this.handleSubmit}
                 size={size}
                 subheader={subheader}
-                submitDisabled={submitDisabled}
-                submitText={submitText || 'Submit'}
+                submitText={submitText}
+                success={success}
             />
         )
     }

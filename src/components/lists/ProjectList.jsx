@@ -5,7 +5,7 @@ import { Button, Icon, Menu } from 'semantic-ui-react'
 import ListFactory from './ListFactory'
 import ProjectForm from '../forms/Project'
 import { copyToClipboard, IfMobile, textEllipsis } from '../utils'
-import WalletForm from '../forms/Wallet'
+import { confirm, showForm, closeModal } from '../../services/modal'
 
 const toBeImplemented = ()=> alert('To be implemented')
 
@@ -13,10 +13,7 @@ class ProjectList extends ReactiveComponent {
     constructor() {
         super(['projects'])
         this.state = {
-            actionsIndex: -1,
-            pageNo: 1,
-            projectEdit: undefined,
-            secretIndex: -1
+            actionsIndex: -1
         }
 
         this.getActions = this.getActions.bind(this)
@@ -25,13 +22,19 @@ class ProjectList extends ReactiveComponent {
     }
 
     getActions(project, i, mobile) {
-        const { secretIndex } = this.state
-
         return [
             {
-                content: mobile ? '' : (secretIndex === i ? 'Hide' : 'Show') + ' Seed',
-                icon: 'eye' + (secretIndex === i ? ' slash' : ''),
-                onClick: toBeImplemented 
+                content: mobile ? '' : 'Show Seed',
+                icon: 'eye',
+                onClick: ()=> {
+                    const id = confirm({
+                        cancelButton: null,
+                        content: 'Seed goes here',
+                        header: project.name + ' : Seed',
+                        size: 'tiny'
+                    })
+                    setTimeout(() => closeModal(id), 5000)
+                } 
             },
             {
                 content: mobile ? '' : 'Copy',
@@ -40,9 +43,10 @@ class ProjectList extends ReactiveComponent {
             },
             {
                 icon: 'edit',
-                onClick: ()=> this.setState({
-                    projectEdit: project,
-                    showEditModal: true
+                onClick: ()=> showForm(ProjectForm, {
+                    modal: true,
+                    onSubmit: this.refresh,
+                    project
                 })
             },
             {
@@ -74,10 +78,14 @@ class ProjectList extends ReactiveComponent {
         }
     }
 
+    refresh() {
+        console.info('ToDo: update project list')
+    }
+
     getContent(mobile) {
         return () => {
             const { itemsPerRow, type } = this.props
-            const { actionsIndex, projectEdit, projects, showEditModal } = this.state
+            const { actionsIndex, projects } = this.state
             const { getActions, getCardHeader } = this
             const listType = mobile ? 'cardlist' : type || 'datatable'
             const listProps = {
@@ -127,25 +135,23 @@ class ProjectList extends ReactiveComponent {
                             title: 'Actions'
                         }
                     ]
-                    listProps.footerContent = <ProjectForm modal={true} trigger={<Button icon="plus" content="Create" />} />
+                    listProps.footerContent = (
+                        <Button 
+                            icon="plus" 
+                            content="Create" 
+                            onClick={() => showForm(
+                                ProjectForm,
+                                {
+                                    modal: true,
+                                    onSubmit: this.refresh
+                                }
+                            )} 
+                        />
+                    )
                     listProps.float = 'right'
                     break;
             }
-            return (
-                <React.Fragment>
-                    <ListFactory {...listProps} />
-                    {showEditModal && (
-                        <ProjectForm
-                            modal={true}
-                            open={showEditModal}
-                            onClose={()=> this.setState({showEditModal: false})}
-                            // FOR DEMO ONLY
-                            onSubmit={(e, newProject) => this.setState({projects: this.state.project.concat([newProject])})}
-                            project={projectEdit} 
-                        />
-                    )}
-                </React.Fragment>
-            )
+            return <ListFactory {...listProps} />
         }
     }
 
