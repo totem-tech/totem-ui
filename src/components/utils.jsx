@@ -5,15 +5,15 @@ import { Responsive } from 'semantic-ui-react'
  * Copies supplied string to system clipboard
  */
 export const copyToClipboard = str => {
-  const el = document.createElement('textarea');
-  el.value = str;
-  el.setAttribute('readonly', '');
-  el.style.position = 'absolute';
-  el.style.left = '-9999px';
-  document.body.appendChild(el);
-  el.select();
-  document.execCommand('copy');
-  document.body.removeChild(el);
+	const el = document.createElement('textarea');
+	el.value = str;
+	el.setAttribute('readonly', '');
+	el.style.position = 'absolute';
+	el.style.left = '-9999px';
+	document.body.appendChild(el);
+	el.select();
+	document.execCommand('copy');
+	document.body.removeChild(el);
 }
 
 /*
@@ -21,12 +21,12 @@ export const copyToClipboard = str => {
  */
 export const isArr = x => Array.isArray(x)
 export const isDefined = x => x !== undefined
-export const isFn = x => typeof(x) === 'function'
-export const isObj = x => x !== null && !isArr(x) && typeof(x) === 'object'
-export const isStr = x => typeof(x) === 'string'
-export const isValidNumber = x => typeof(x) == 'number' && !isNaN(x)
+export const isFn = x => typeof (x) === 'function'
+export const isObj = x => x !== null && !isArr(x) && typeof (x) === 'object'
+export const isStr = x => typeof (x) === 'string'
+export const isValidNumber = x => typeof (x) == 'number' && !isNaN(x)
 
-export const isMobile = ()=> window.innerWidth <= Responsive.onlyMobile.maxWidth
+export const isMobile = () => window.innerWidth <= Responsive.onlyMobile.maxWidth
 
 // arrMapSlice mimics the behaviour of Array.prototype.map() with the
 // convenience of only executing callback on range of indexes
@@ -43,42 +43,42 @@ export const isMobile = ()=> window.innerWidth <= Responsive.onlyMobile.maxWidth
 //
 // Returns array of items all returned by @callback
 export const arrMapSlice = (arr, startIndex, endIndex, callback) => {
-  if (!Array.isArray(arr)) return [];
-  startIndex = startIndex || 0
-  endIndex = !endIndex || endIndex >= arr.length ? arr.length - 1 : endIndex
-  let result = []
-  for (var i = startIndex; i <= endIndex; i++) {
-    result.push(callback(arr[i], i, arr))
-  }
-  return result
+	if (!Array.isArray(arr)) return [];
+	startIndex = startIndex || 0
+	endIndex = !endIndex || endIndex >= arr.length ? arr.length - 1 : endIndex
+	let result = []
+	for (var i = startIndex; i <= endIndex; i++) {
+		result.push(callback(arr[i], i, arr))
+	}
+	return result
 }
 
 export const sortArr = (arr, key) => arr.sort((a, b) => a[key] > b[key] ? 1 : -1)
 
-// objCopy copies top level properties and returns a new object
+// objCopy copies top level properties and returns another object
 //
 // Params:
 // @source  object
 // @dest    object (optional)
 export const objCopy = (source, dest) => Object.keys(source).reduce((obj, key) => {
-  obj[key] = source[key]
-  return obj
+	obj[key] = source[key]
+	return obj
 }, dest || {})
 
 /*
  * Date formatting etc.
  */
 // prepend0 prepends '0' if number is less than 10
-const prepend0 = n => (n < 10 ? '0' : '') + n 
+const prepend0 = n => (n < 10 ? '0' : '') + n
 
 // For todays date;
-Date.prototype.today = function () { 
-  return prepend0(this.getDate()) +"/"+ prepend0(this.getMonth()+1) +"/"+ this.getFullYear();
+Date.prototype.today = function () {
+	return prepend0(this.getDate()) + "/" + prepend0(this.getMonth() + 1) + "/" + this.getFullYear();
 }
 
 // For the time now
 Date.prototype.timeNow = function () {
-  return prepend0(this.getHours()) + ":"+ prepend0(this.getMinutes()) +":"+ prepend0(this.getSeconds())
+	return prepend0(this.getHours()) + ":" + prepend0(this.getMinutes()) + ":" + prepend0(this.getSeconds())
 }
 
 export const getNow = () => new Date().today() + " @ " + new Date().timeNow()
@@ -99,12 +99,12 @@ export const getNow = () => new Date().today() + " @ " + new Date().timeNow()
 //
 // Returns:
 // @timeoutId   number  : Use this to cancel timeout. Handy when component is about to unmount
-export function setStateTimeout(instance, key, dataBefore, dataAfter, delay){
-  if (typeof(instance.setState) != 'function') return;
-  dataBefore !== undefined && setState(instance, key, dataBefore)
-  return setTimeout(() => {
-    setState(instance, key, dataAfter)
-  }, delay || 2000)
+export function setStateTimeout(instance, key, dataBefore, dataAfter, delay) {
+	if (!isFn(instance.setState)) return;
+	dataBefore !== undefined && setState(instance, key, dataBefore)
+	return setTimeout(() => {
+		setState(instance, key, dataAfter)
+	}, delay || 2000)
 }
 
 // setState changes state property value immediately
@@ -116,10 +116,10 @@ export function setStateTimeout(instance, key, dataBefore, dataAfter, delay){
 // @value       any     : value to be applied immediately
 //
 // Returns void
-export function setState(instance, key, value){
-  const data = {}
-  data[key] = value
-  instance.setState(data)
+export function setState(instance, key, value) {
+	const data = {}
+	data[key] = value
+	instance.setState(data)
 }
 
 // deferred returns a function that invokes the callback function after certain delay/timeout
@@ -132,14 +132,14 @@ export function setState(instance, key, value){
 //                        Default value: 50
 // @bindTo    object    : optional, makes sure callback is bounded to supplied object 
 export function deferred(callback, delay, bindTo) {
-  let timeoutId;
-  return function(){
-    const args = arguments
-    if (timeoutId) clearTimeout(timeoutId);
-    timeoutId = setTimeout(function() {
-      isFn(callback) && callback.apply(bindTo, args);
-    }, delay || 50)
-  }
+	let timeoutId;
+	return function () {
+		const args = arguments
+		if (timeoutId) clearTimeout(timeoutId);
+		timeoutId = setTimeout(function () {
+			isFn(callback) && callback.apply(bindTo, args);
+		}, delay || 50)
+	}
 }
 
 // textEllipsis shortens string into 'abc...xyz' form
@@ -151,47 +151,47 @@ export function deferred(callback, delay, bindTo) {
 //
 // Returns string
 export const textEllipsis = (text, maxLen, numDots) => {
-  text = typeof(text) != 'string' ? '' : text
-  maxLen = maxLen || text.length
-  if (text.length <= maxLen || !maxLen) return text;
-  numDots = numDots || 3
-  const textLen = maxLen - numDots
-  const partLen = Math.floor(textLen / 2)
-  const isEven = textLen % 2 === 0
-  const arr = text.split('')
-  const dots = new Array(numDots).fill('.').join('')
-  const left = arr.slice(0, partLen).join('')
-  const right = arr.slice(text.length - (isEven ? partLen : partLen + 1)).join('')
-  return left + dots + right
+	text = !isStr(text) ? '' : text
+	maxLen = maxLen || text.length
+	if (text.length <= maxLen || !maxLen) return text;
+	numDots = numDots || 3
+	const textLen = maxLen - numDots
+	const partLen = Math.floor(textLen / 2)
+	const isEven = textLen % 2 === 0
+	const arr = text.split('')
+	const dots = new Array(numDots).fill('.').join('')
+	const left = arr.slice(0, partLen).join('')
+	const right = arr.slice(text.length - (isEven ? partLen : partLen + 1)).join('')
+	return left + dots + right
 }
 
 /*
  * Functional Components
  */
 export function IfFn(props) {
-  const content = props.condition ? props.then : props.else
-  return (isFn(content) ? content() : content) || ''
+	const content = props.condition ? props.then : props.else
+	return (isFn(content) ? content() : content) || ''
 }
 
 // IfMobile component can be used to switch between content when on mobile and/or not
 export function IfMobile(props) {
-  return (
-    <React.Fragment>
-      {isDefined(props.then) && (
-        <Responsive maxWidth={Responsive.onlyMobile.maxWidth}>
-          <IfFn condition={true} then={props.then} />
-        </Responsive>
-      )}
+	return (
+		<React.Fragment>
+			{isDefined(props.then) && (
+				<Responsive maxWidth={Responsive.onlyMobile.maxWidth}>
+					<IfFn condition={true} then={props.then} />
+				</Responsive>
+			)}
 
-      {isDefined(props.else) && (
-        <Responsive minWidth={Responsive.onlyMobile.maxWidth}>
-          <IfFn condition={true} then={props.else} />
-        </Responsive>
-      )}
-    </React.Fragment>
-  )
+			{isDefined(props.else) && (
+				<Responsive minWidth={Responsive.onlyMobile.maxWidth}>
+					<IfFn condition={true} then={props.else} />
+				</Responsive>
+			)}
+		</React.Fragment>
+	)
 }
 
 export function IfNotMobile(props) {
-  return <IfMobile else={props.then} />
+	return <IfMobile else={props.then} />
 }

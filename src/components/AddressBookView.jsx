@@ -11,74 +11,84 @@ import { Bond } from 'oo7'
 import addressbook from '../services/addressbook'
 
 class AddressBookView extends ReactiveComponent {
-  constructor() {
-    super([], {ensureRuntime: runtimeUp, bond: addressbook.getBond()})
-    this.nick = new Bond()
-    this.lookup = new Bond()
-  }
+	constructor() {
+		super([], {ensureRuntime: runtimeUp, bond: addressbook.getBond()})
+		this.nick = new Bond()
+		this.lookup = new Bond()
 
-  readyRender() {
-    const addressDetails = (
-      <div>
-        <Label>
-          Balance
-          <Label.Detail>
-            <Pretty value={runtime.balances.balance(this.lookup)} />
-          </Label.Detail>
-        </Label>
-        <Label>
-          Nonce
-          <Label.Detail>
-            <Pretty value={runtime.system.accountNonce(this.lookup)} />
-          </Label.Detail>
-        </Label>
-				<If condition={runtime.indices.tryIndex(this.lookup, null).map(x => x !== null)} then={
-						<Label>Short-form
+		this.getAddressDetails = this.getAddressDetails.bind(this)
+	}
+
+	getAddressDetails() {
+		return (
+			<div>
+				<Label>
+					Balance
+					<Label.Detail>
+						<Pretty value={runtime.balances.balance(this.lookup)} />
+					</Label.Detail>
+				</Label>
+				<Label>
+					Nonce
+					<Label.Detail>
+						<Pretty value={runtime.system.accountNonce(this.lookup)} />
+					</Label.Detail>
+				</Label>
+				<If
+					condition={runtime.indices.tryIndex(this.lookup, null).map(x => x !== null)}
+					then={
+						<Label>
+							Short-form
 							<Label.Detail>
-								<Rspan>{runtime.indices.tryIndex(this.lookup).map(i => ss58Encode(i) + ` (index ${i})`)}</Rspan>
+								<Rspan>
+									{runtime.indices.tryIndex(this.lookup).map(i => ss58Encode(i) + ` (index ${i})`)}
+								</Rspan>
 							</Label.Detail>
 						</Label>
-					} />
-        <Label>
-          Address
-          <Label.Detail>
-            <Pretty value={this.lookup} />
-          </Label.Detail>
-        </Label>
-      </div>
-    )
+					}
+				/>
+				<Label>
+					Address
+					<Label.Detail>
+						<Pretty value={this.lookup} />
+					</Label.Detail>
+				</Label>
+			</div>
+		)
+	}
 
-    const transformBondBtn = (
-      <TransformBondButton
-        content="Add"
-        transform={(name, account) => { /*addressBook().submit(account, name);*/ addressbook.add(name, account); return true}}
-        args={[this.nick, this.lookup]}
-        immediate
-      />
-    )
+	readyRender() {
+		const transformBondBtn = (
+			<TransformBondButton
+				content="Add"
+				transform={(name, account) => { addressbook.add(name, account); return true}}
+				args={[this.nick, this.lookup]}
+				immediate
+			/>
+		)
 
-    return (
-      <React.Fragment>
-        <div style={{ paddingBottom: '1em' }}>
-          <div style={{ fontSize: 'small' }}>lookup account</div>
-          <AccountIdBond bond={this.lookup} />
-          <If condition={this.lookup.ready()} then={addressDetails} />
-        </div>
-        <div style={{ paddingBottom: '1em' }}>
-          <div style={{ fontSize: 'small' }}>name</div>
-          <InputBond
-            bond={this.nick}
-            placeholder="A name for this address"
-            validator={name => name ? (addressbook.getByName(name) ? null : name) : null} //addressBook().map(ss => (ss.byName[name] ? null : name))
-            action={transformBondBtn}
-          />
-        </div>
-        <div style={{ paddingBottom: '1em' }}>
-          <AddressBookList />
-        </div>
-      </React.Fragment>
-    )
-  }
+		return (
+			<React.Fragment>
+				<div style={{ paddingBottom: '1em' }}>
+					<div style={{ fontSize: 'small' }}>lookup account</div>
+					<AccountIdBond bond={this.lookup} />
+					<If condition={this.lookup.ready()} then={this.getAddressDetails()} />
+				</div>
+				<div style={{ paddingBottom: '1em' }}>
+					<div style={{ fontSize: 'small' }}>name</div>
+					<InputBond
+						bond={this.nick}
+						placeholder="A name for this address"
+						validator={name => name ? (addressbook.getByName(name) ? null : name) : null}
+						action={transformBondBtn}
+					/>
+				</div>
+				<div style={{ paddingBottom: '1em' }}>
+					<AddressBookList />
+				</div>
+			</React.Fragment>
+		)
+	}
 }
 
 export default AddressBookView

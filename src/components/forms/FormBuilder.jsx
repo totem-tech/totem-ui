@@ -27,7 +27,7 @@ class FormBuilder extends ReactiveComponent {
         const { inputs } = this.state
         const { onChange: formOnChange } = this.props
         const { values } = this.state
-        const { value} = data
+        const { value } = data
         values[name] = value
         if (input.hasOwnProperty('value')) {
             // controlled input

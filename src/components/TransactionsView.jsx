@@ -11,17 +11,17 @@ class TransactionsView extends ReactiveComponent {
 		this.txhex = new Bond
 	}
 
-  render() {
-    return (
-        <div>
-            <div style={{paddingBottom: '1em'}}>
-                <div style={{fontSize: 'small'}}>Custom Transaction Data</div>
-                <InputBond bond={this.txhex}/>
-            </div>
-            <TransactButton tx={this.txhex.map(hexToBytes)} content="Publish" icon="sign in" />
-        </div>
-	)
-  }
+	render() {
+		return (
+			<div>
+				<div style={{ paddingBottom: '1em' }}>
+					<div style={{ fontSize: 'small' }}>Custom Transaction Data</div>
+					<InputBond bond={this.txhex} />
+				</div>
+				<TransactButton tx={this.txhex.map(hexToBytes)} content="Publish" icon="sign in" />
+			</div>
+		)
+	}
 }
 
 export default TransactionsView
