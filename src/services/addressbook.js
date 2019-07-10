@@ -8,24 +8,7 @@ const _save = entries => localStorage.setItem(
     JSON.stringify(entries || [])
 ) | updateBond()
 
-// const _processAddress = (name, address) => {
-//     const bond = new Bond()
-//     bond.changed(address)
-//     const lookup = runtime.indices.ss58Decode(bond).map(x => ({
-//         address: x ? pretty(x) : address,
-//         short: !x ? '' : address
-//     }))
-//     const notifyId = lookup.notify(()=> {
-//         const value = lookup._value
-//         const adrs = getAll()
-//         const index = getIndex(name, address, adrs)
-//         console.log('processaddress', value)
-//         updateByIndex(index, name, value.address, value.short)
-//         lookup.unnotify(notifyId)
-//     })
-// }
-
-export const add = (name, address, short, tags) => {
+export const add = (name, address, tags) => {
     if (!name || !address) return;
     const adrs = getAll()
     // prevent adding multiple items with same name
@@ -35,7 +18,6 @@ export const add = (name, address, short, tags) => {
         name, 
         tags: tags || []
     }]))
-    // _processAddress(name, address)
 }
 
 export const getAll = () => JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '[]')

@@ -51,13 +51,12 @@ export const confirm = (confirmProps) => {
     )
 }
 
-// ToDo: add function to show modal forms from the forms directory
-export const showForm = (FormClass, props) => {
+export const showForm = (FormComponent, props) => {
     const id = uuid.v1()
     props = props || {}
     return add(
         id,
-        <FormClass
+        <FormComponent
             {...props}
             modal={true}
             open={true}

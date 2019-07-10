@@ -16,11 +16,8 @@ class Project extends ReactiveComponent {
             _: addressbook.getBond()
         })
 
-        this.handleClose = this.handleClose.bind(this)
-        this.handleOpen = this.handleOpen.bind(this)
         this.handleOwnerChange = this.handleOwnerChange.bind(this)
         this.handleSubmit = this.handleSubmit.bind(this)
-        this.handleWalletCreate = this.handleWalletCreate.bind(this)
 
         this.state = {
             message: {},
@@ -38,7 +35,7 @@ class Project extends ReactiveComponent {
                     value: ''
                 },
                 {
-                    action: <Button icon="plus" content="New" onClick={ this.handleWalletCreate }/>,
+                    action: <Button icon="plus" content="New" onClick={ this.handleWalletCreate.bind(this) }/>,
                     label: 'Project Address',
                     name: 'address',
                     placeholder: 'Generate a new address',
@@ -65,18 +62,6 @@ class Project extends ReactiveComponent {
                 }
             ]
         }
-    }
-
-    handleClose(e, d) {
-        const { onClose } = this.props
-        this.setState({open: false})
-        isFn(onClose) && onClose(e, d)
-    }
-
-    handleOpen(e, d) {
-        const { onOpen } = this.props
-        this.setState({open: true})
-        isFn(onOpen) && onOpen(e, d)
     }
 
     handleSubmit(e, values) {
@@ -133,6 +118,8 @@ class Project extends ReactiveComponent {
             header,
             headerIcon,
             modal,
+            onOpen,
+            onClose,
             open: propsOpen,
             project, 
             size,
@@ -193,9 +180,9 @@ class Project extends ReactiveComponent {
                 inputs={inputs}
                 message={message}
                 modal={modal}
-                onCancel={this.handleClose}
-                onClose={this.handleClose}
-                onOpen={this.handleOpen}
+                onCancel={onClose}
+                onClose={onClose}
+                onOpen={onOpen}
                 open={openModal}
                 onSubmit={this.handleSubmit}
                 size={size}

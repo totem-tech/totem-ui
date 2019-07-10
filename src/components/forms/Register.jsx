@@ -30,7 +30,8 @@ class FormRegister extends ReactiveComponent {
                     onChange: deferred(this.handleIdChange, 300),
                     placeholder: 'Enter your ID',
                     type: 'text',
-                    required: true
+                    required: true,
+                    value: ''
                 },
                 {
                     label: ' I agree to the Totem Tech terms and condition',

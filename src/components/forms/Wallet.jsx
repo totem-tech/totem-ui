@@ -19,16 +19,14 @@ class Wallet extends ReactiveComponent {
         this.lastSeed = null
         this.seedAccount = this.seed.map(s => s ? secretStore().accountFromPhrase(s) : undefined)
         this.seedAccount.use()
-
-        this.handleClose = this.handleClose.bind(this)
-        this.handleOpen = this.handleOpen.bind(this)
+    
         this.handleSubmit = this.handleSubmit.bind(this)
-        this.handleGenerate = this.handleGenerate.bind(this)
 
         this.state = {
+            success: false,
             inputs: [
                 {
-                    action: <Button content="Generate" onClick={this.handleGenerate} />,
+                    action: <Button content="Generate" onClick={this.handleGenerate.bind(this)} />,
                     bond: this.seed,
                     icon: (
                         <i style={{ opacity: 1 }} className="icon">
@@ -71,26 +69,13 @@ class Wallet extends ReactiveComponent {
         }
     }
 
-
-    handleClose(e, d) {
-        const { onClose } = this.props
-        this.setState({open: false})
-        isFn(onClose) && onClose(e, d)
-    }
-
-    handleOpen(e, d) {
-        const { onOpen } = this.props
-        this.setState({open: true})
-        isFn(onOpen) && onOpen(e, d)
-    }
-
     handleSubmit(name, seed) {
-        const { closeOnSubmit, onSubmit, modal } = this.props
+        const { onSubmit } = this.props
         // generate a new seed to make sure there are no duplicate addresses
         setTimeout(this.handleGenerate, 50)
         isFn(onSubmit) && setTimeout(() => {
             onSubmit({ seed, name })
-            modal && closeOnSubmit && this.handleClose()
+            this.setState({success: true})
         }, 100)
         return secretStore().submit(seed, name)
     }
@@ -105,31 +90,31 @@ class Wallet extends ReactiveComponent {
             header,
             headerIcon,
             modal,
-            open: propsOpen,
+            onOpen,
+            onClose,
+            open,
             size,
             subheader,
             trigger,
             wallet
         } = this.props
-        const { inputs, message, open } = this.state
-        const { handleClose, handleOpen } = this
-        const isOpenControlled = modal && !trigger && isDefined(propsOpen)
-        const openModal = isOpenControlled ? propsOpen : open
+        const { inputs, message, success } = this.state
         const getForm = mobile => () => (
             <FormBuilder
+                closeOnSubmit={closeOnSubmit}
                 header={header}
                 headerIcon={headerIcon}
                 hideFooter={true}
                 inputs={inputs.map(input => { input.width = mobile || modal ? 16 : 8; return input})}
                 message={message}
                 modal={modal}
-                onCancel={handleClose}
-                onClose={handleClose}
-                onOpen={handleOpen}
-                open={openModal}
+                onClose={onClose}
+                onOpen={onOpen}
+                open={open}
                 size={size}
                 style={mobile && !modal ? {marginBottom : 30} : {}}
                 subheader={subheader}
+                success={success}
                 trigger={trigger}
             />
         )

@@ -4,6 +4,7 @@ import { Button, Dropdown, Form, Header, Icon, Input, Message, Modal, TextArea }
 import { ReactiveComponent } from 'oo7-react'
 import { isDefined, isFn, isObj, objCopy, deferred } from '../utils';
 import { InputBond } from '../../InputBond'
+import { AccountIdBond } from '../../AccountIdBond'
 
 // ToDo: automate validation process by checking for data on input change
 //       and prevent submission of form if data is invalid and/or required field in empty
@@ -63,6 +64,7 @@ class FormBuilder extends ReactiveComponent {
 
     render() {
         const {
+            closeOnSubmit,
             closeText,
             defaultOpen,
             header,
@@ -86,7 +88,10 @@ class FormBuilder extends ReactiveComponent {
         const { handleClose } = this
         const { inputs, open: sOpen, values } = this.state
         // whether the 'open' status is controlled or uncontrolled
-        const modalOpen = isFn(onClose) ? open : sOpen
+        let modalOpen = isFn(onClose) ? open : sOpen
+        if (success && closeOnSubmit) {
+            modalOpen = false
+        }
         const submitBtn = (
             <Button
                 content={submitText}
@@ -177,6 +182,7 @@ class FormBuilder extends ReactiveComponent {
 }
 
 FormBuilder.propTypes = {
+    closeOnSubmit: PropTypes.bool,
     closeText: PropTypes.string,
     defaultOpen: PropTypes.bool,
     header: PropTypes.string,
@@ -184,6 +190,7 @@ FormBuilder.propTypes = {
     hideFooter: PropTypes.bool,
     message: PropTypes.object,
     modal: PropTypes.bool,
+    // If modal=true and onClose is defined, 'open' is expected to be controlled externally
     onClose: PropTypes.func,
     onOpen: PropTypes.func,
     onSubmit: PropTypes.func,
@@ -249,6 +256,7 @@ export class FormInput extends ReactiveComponent {
         attrs.onChange = handleChange
         const messageEl = !msg ? '' : (
             <Message
+                {...msg}
                 content={msg.content}
                 error={msg.status==='error'}
                 header={msg.header}
@@ -263,6 +271,9 @@ export class FormInput extends ReactiveComponent {
         )
 
         switch(type.toLowerCase()) {
+            case 'accountidbond': 
+                inputEl = <AccountIdBond {...attrs} />
+                break;
             case 'button':
                 inputEl = <Button {...attrs} />
                 break;
@@ -271,6 +282,7 @@ export class FormInput extends ReactiveComponent {
                 const isRadio = type === 'radio'
                 attrs.toggle = !isRadio && attrs.toggle
                 attrs.type = "checkbox"
+                delete attrs.value;
                 hideLabel = true
                 inputEl = <Form.Checkbox {...attrs} label={label}/>
                 break;
@@ -279,6 +291,9 @@ export class FormInput extends ReactiveComponent {
                 break;
             case 'group':
                 inputEl = attrs.inputs.map((subInput, i) => <FormInput key={i} {...subInput} />)
+                break;
+            case 'hidden':
+                hideLabel = true
                 break;
             case 'inputbond':
                 if (isDefined(attrs.value)) {
