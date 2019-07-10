@@ -31,10 +31,8 @@ export const add = (name, address, short, tags) => {
     // prevent adding multiple items with same name
     if (getIndex(name, address, adrs) >= 0) return;
     _save(adrs.concat([{
-        account: address,
         address: pretty(address),
         name, 
-        // short: short || '',
         tags: tags || []
     }]))
     // _processAddress(name, address)
