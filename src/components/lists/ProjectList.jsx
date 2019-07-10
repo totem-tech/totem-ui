@@ -6,12 +6,18 @@ import ListFactory from './ListFactory'
 import ProjectForm from '../forms/Project'
 import { copyToClipboard, IfMobile, textEllipsis } from '../utils'
 import { confirm, showForm, closeModal } from '../../services/modal'
+import AddressbookEntryForm from '../forms/AddressbookEntry'
+import addressbook from '../../services/addressbook'
+import { secretStore } from 'oo7-substrate'
 
 const toBeImplemented = ()=> alert('To be implemented')
 
 class ProjectList extends ReactiveComponent {
     constructor() {
-        super(['projects'])
+        super(['projects'], {
+            _: addressbook.getBond(),
+            secretStore: secretStore()
+        })
         this.state = {
             actionsIndex: -1
         }
@@ -82,6 +88,17 @@ class ProjectList extends ReactiveComponent {
         console.info('ToDo: update project list')
     }
 
+    getOwner(project) {
+        const {ownerAddress} = project
+        const entry = addressbook.getByAddress(ownerAddress) || secretStore().find(ownerAddress)
+        if (entry) return entry.name;
+        console.log('entry', entry)
+        return <Button content="Add Partner" onClick={ () => showForm(AddressbookEntryForm, {
+            modal: true,
+            preFillValues: {address: ownerAddress}
+        })} />
+    }
+
     getContent(mobile) {
         return () => {
             const { itemsPerRow, type } = this.props
@@ -96,18 +113,18 @@ class ProjectList extends ReactiveComponent {
             switch(listType.toLowerCase()) {
                 case 'cardlist' :
                     const perRow = mobile ? 1 : itemsPerRow || 1
-                    listProps.items = projects.map((projects, i) => ({
-                        actions: getActions(projects, i, mobile),
+                    listProps.items = projects.map((project, i) => ({
+                        actions: getActions(project, i, mobile),
                         actionsVisible: actionsIndex === i,
                         description: (
                             <div>
-                                <p><b>Owner Address:</b></p>
-                                <p>{textEllipsis(projects.ownerAddress, 28)}</p>
+                                <p><b>Owner:</b></p>
+                                <p>{this.getOwner(project)}</p>
                                 <p><b>Description:</b></p>
-                                <p>{projects.description}</p>
+                                <p>{project.description}</p>
                             </div>
                         ),
-                        header: getCardHeader(projects, i),
+                        header: getCardHeader(project, i),
                         style: perRow === 1 ? {margin: 0} : undefined
                     }))
                     listProps.itemsPerRow = perRow
@@ -124,7 +141,7 @@ class ProjectList extends ReactiveComponent {
                         { 
                             key: 'ownerAddress', 
                             title: 'Owner', 
-                            content: item => textEllipsis(item.ownerAddress, 12)
+                            content: this.getOwner
                         },
                         { key: 'description', title: 'Description'},
                         {
@@ -165,12 +182,12 @@ ProjectList.propTypes = {
     type: PropTypes.string
 }
 ProjectList.defaultProps = {
-    projects: Array(100).fill(0).map((_, i) => (
+    projects: Array(10).fill(0).map((_, i) => (
         {
             name: 'Project ' + i,
             // only save address to server. Save to addressbook as well?
-            address: '5EJTCCb2rnyk3SNocZTG3M4gwmfigi8f4QdzvA9AhUt2HT3R',
-            ownerAddress: '5EHvFvPmoAHvWJ8f5VuHqQA5Rb2Noqx4ZsdR4rM2N89BxLU3',
+            address: '5EHvFvPmoAHvWJ8f5VuHqQA5Rb2Noqx4ZsdR4rM2N89BxLU3',
+            ownerAddress: '5CwkLTVyzjHvoeArWQbas6v9StrBo3zaKN9ZGuEVfKJRUevA',
             // 160 chars max. use textfield ??
             description: 'This is a sample project ' + i
         }

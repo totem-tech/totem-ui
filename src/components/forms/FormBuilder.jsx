@@ -378,7 +378,11 @@ export const fillValues = (inputs, obj, forceFill) => {
     if (!isObj(obj)) return;
     inputs.forEach(input => {
         if (!input.hasOwnProperty('name') || !obj.hasOwnProperty(input.name) || (!forceFill && isDefined(input.value))) return;
-        input.value = obj[input.name]
+        if(['accountidbond', 'inputbond'].indexOf(input.type.toLowerCase()) >= 0) {
+            input.defaultValue = obj[input.name]
+        } else {
+            input.value = obj[input.name]
+        }
     })
 }
 

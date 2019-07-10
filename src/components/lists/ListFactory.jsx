@@ -155,7 +155,7 @@ CardHeader.propTypes = {
  * Data Table
  */
 
-const setItemsByPage = (data, pageNo, perPage, callback) => {
+const mapItemsByPage = (data, pageNo, perPage, callback) => {
     const start = pageNo * perPage - perPage
     const end = start + perPage - 1
     return arrMapSlice(data, start, end, callback)
@@ -174,7 +174,7 @@ export class DataTable extends ReactiveComponent {
         const { pageNo } = this.state
         const totalPages = Math.ceil(data.length / perPage)
         const headers = dataKeys.map((x, i) => <Table.HeaderCell key={i} textAlign={x.textAlign || 'center'}>{x.title}</Table.HeaderCell>)
-        const rows = setItemsByPage(data, pageNo, perPage, (item, i) => (
+        const rows = mapItemsByPage(data, pageNo, perPage, (item, i) => (
             <Table.Row key={i}>
                 {dataKeys.map((x, j) => (
                     <Table.Cell collapsing={x.collapsing} key={j} textAlign={x.textAlign || 'center'} verticalAlign={x.verticalAlign} style={x.style}>

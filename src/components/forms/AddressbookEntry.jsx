@@ -3,9 +3,9 @@ import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import { ReactiveComponent} from 'oo7-react'
 import { TransformBondButton } from '../../TransformBondButton'
-import { deferred, IfMobile, isFn } from '../utils'
+import { deferred, IfMobile, isFn, isObj } from '../utils'
 import addressbook from '../../services/addressbook'
-import FormBuilder from './FormBuilder'
+import FormBuilder, { fillValues } from './FormBuilder'
 import AddressLookup from '../AddressLookup'
 
 class AddressbookEntry extends ReactiveComponent {
@@ -66,6 +66,10 @@ class AddressbookEntry extends ReactiveComponent {
                 }
             ]
         }
+
+        if (isObj(props.preFillValues)) { 
+            fillValues(this.state.inputs, props.preFillValues, true)
+        }
     }
 
     handleAddTag(_, data) {
@@ -96,22 +100,31 @@ class AddressbookEntry extends ReactiveComponent {
         const { tags } = this.state
         addressbook.add(name, account, tags)
         this.setState({success: true})
-        setTimeout(()=> {
-            isFn(onSubmit) && onSubmit({name, account, tags})
-        })
+        setTimeout(()=> isFn(onSubmit) && onSubmit({name, account, tags}))
         return true
     }
 
     render() {
-        const { closeOnSubmit, header, headerIcon, subheader, modal, open, size, trigger } = this.props
+        const { 
+            closeOnSubmit,
+            header,
+            headerIcon,
+            subheader,
+            modal,
+            open,
+            size,
+            trigger
+        } = this.props
+        
         const { inputs, success } = this.state
+
         const getForm = (mobile) => () => (
             <FormBuilder {...{
                 closeOnSubmit,
                 header,
                 headerIcon,
                 hideFooter: true,
-                inputs: mobile || modal ? inputs : inputs.map(x => {x.width = 10; return x;}), 
+                inputs: mobile || modal ? inputs : inputs.map(x => {x.width = 8; return x;}), 
                 modal, 
                 open, 
                 size,
@@ -125,6 +138,8 @@ class AddressbookEntry extends ReactiveComponent {
 }
 AddressbookEntry.propTypes = {
     closeOnSubmit: PropTypes.bool,
+    // values to be prefilled into inputs
+    preFillValues: PropTypes.object,
     header: PropTypes.string,
     subheader: PropTypes.string,
     modal: PropTypes.bool,
