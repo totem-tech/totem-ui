@@ -30,17 +30,38 @@ export default ListFactory
 export class CardList extends ReactiveComponent {
     constructor(props) {
         super(props)
+
+        this.state = {
+            pageNo: props.pageNo || 1,
+            perPage: props.perPage || 10
+        }
     }
 
     render() {
-        let { items, itemsPerRow, style} = this.props
+        let { items, itemsPerRow, navLimit, pageOnSelect, style} = this.props
+        const { pageNo, perPage } = this.state
+        const totalPages = Math.ceil(items.length / perPage)
         itemsPerRow = itemsPerRow || 1
+        const showPaginator = items.length > perPage
         return (
-            <Card.Group style={style} itemsPerRow={itemsPerRow || 1}>
-                {items.map((card, i) => (
-                    React.isValidElement(card) ? card : <CardListItem {...card} key={i} />
-                ))}
-            </Card.Group>
+            <React.Fragment>
+                {showPaginator && (
+                    <div style={{textAlign: 'center', margin: 30}}>
+                        <Paginator
+                            total={totalPages}
+                            current={pageNo}
+                            navLimit={navLimit || 3}
+                            onSelect={pageNo => {this.setState({pageNo}); isFn(pageOnSelect) && pageOnSelect(pageNo); }}
+                        />
+                    </div>
+                    
+                )}
+                <Card.Group style={style} itemsPerRow={itemsPerRow || 1}>
+                    {mapItemsByPage(items, pageNo, perPage, (card, i) => (
+                        React.isValidElement(card) ? card : <CardListItem {...card} key={i} />
+                    ))}
+                </Card.Group>
+            </React.Fragment>
         )
     }
 }
@@ -268,8 +289,13 @@ export class Paginator extends ReactiveComponent {
         const { getItems, handleClick } = this
         const next = current + 1
         const prev = current - 1
+
+        const menuProps = {pagination: true}
+        if (isDefined(float)) {
+            menuProps.floated = float
+        }
         return (
-            <Menu floated={float} pagination>
+            <Menu {...menuProps}>
                 <Menu.Item
                     as="a"
                     icon

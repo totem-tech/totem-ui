@@ -182,7 +182,7 @@ ProjectList.propTypes = {
     type: PropTypes.string
 }
 ProjectList.defaultProps = {
-    projects: Array(10).fill(0).map((_, i) => (
+    projects: Array(100).fill(0).map((_, i) => (
         {
             name: 'Project ' + i,
             // only save address to server. Save to addressbook as well?
