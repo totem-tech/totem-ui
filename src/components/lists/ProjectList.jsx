@@ -134,9 +134,9 @@ class ProjectList extends ReactiveComponent {
                     listProps.dataKeys = [
                         { key:'name', title: 'Name'},
                         { 
-                            key: 'address', 
-                            title: 'Address', 
-                            content: item => textEllipsis(item.address, 12)
+                            key: 'totalTime', 
+                            title: 'Total Time', 
+                            content: (project) => project.totalTime + ' blocks' 
                         },
                         { 
                             key: 'ownerAddress', 
@@ -186,7 +186,7 @@ ProjectList.defaultProps = {
         {
             name: 'Project ' + i,
             // only save address to server. Save to addressbook as well?
-            address: '5EHvFvPmoAHvWJ8f5VuHqQA5Rb2Noqx4ZsdR4rM2N89BxLU3',
+            totalTime: 1000 + i,
             ownerAddress: '5CwkLTVyzjHvoeArWQbas6v9StrBo3zaKN9ZGuEVfKJRUevA',
             // 160 chars max. use textfield ??
             description: 'This is a sample project ' + i

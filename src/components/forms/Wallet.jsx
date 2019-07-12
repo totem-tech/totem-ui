@@ -8,7 +8,7 @@ const { generateMnemonic } = require('bip39')
 import { Button } from 'semantic-ui-react'
 import FormBuilder, { fillValues } from './FormBuilder'
 import { TransformBondButton } from '../../TransformBondButton'
-import { IfMobile, isDefined, isFn, isObj } from '../utils'
+import { IfMobile, isFn, isObj } from '../utils'
 
 class Wallet extends ReactiveComponent {
     constructor(props) {
@@ -71,8 +71,6 @@ class Wallet extends ReactiveComponent {
 
     handleSubmit(name, seed) {
         const { onSubmit } = this.props
-        // generate a new seed to make sure there are no duplicate addresses
-        setTimeout(this.handleGenerate, 50)
         isFn(onSubmit) && setTimeout(() => {
             onSubmit({ seed, name })
             this.setState({success: true})

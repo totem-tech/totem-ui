@@ -2,12 +2,11 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { secretStore } from 'oo7-substrate'
-import { Button } from 'semantic-ui-react'
+import createHash from 'create-hash'
 import FormBuilder, { fillValues } from './FormBuilder'
-import { sortArr, deferred, isDefined, isFn, isObj, textEllipsis } from '../utils'
-import { confirm, showForm } from '../../services/modal'
+import { sortArr, isDefined, isFn, isObj, textEllipsis } from '../utils'
+import { confirm } from '../../services/modal'
 import addressbook  from '../../services/addressbook'
-import WalletForm from './Wallet'
 
 class Project extends ReactiveComponent {
     constructor(props) {
@@ -20,6 +19,7 @@ class Project extends ReactiveComponent {
         this.handleSubmit = this.handleSubmit.bind(this)
 
         this.state = {
+            closeText: 'Cancel',
             message: {},
             open: props.open,
             success: false,
@@ -28,18 +28,7 @@ class Project extends ReactiveComponent {
                     label: 'Project Name',
                     name: 'name',
                     minLength: 3,
-                    maxLength: 16,
                     placeholder: 'Enter project name',
-                    type: 'text',
-                    required: true,
-                    value: ''
-                },
-                {
-                    action: <Button icon="plus" content="New" onClick={ this.handleWalletCreate.bind(this) }/>,
-                    label: 'Project Address',
-                    name: 'address',
-                    placeholder: 'Generate a new address',
-                    readOnly: true,
                     type: 'text',
                     required: true,
                     value: ''
@@ -64,18 +53,10 @@ class Project extends ReactiveComponent {
         }
     }
 
-    handleSubmit(e, values) {
-        const { onSubmit } = this.props
-        const success = true
-        isFn(onSubmit) && onSubmit(e, values, success)
-        this.setState({success})
-        alert('Not implemented')
-    }
-
     handleOwnerChange(e, data, i) {
         const { project } = this.props
         const { inputs } = this.state
-        if (!isObj(project)) return;
+        if (!isObj(project) || !project.ownerAddress) return;
         // attach a confirm dialog on change
         if (project.ownerAddress === data.value) return;
         confirm({
@@ -99,18 +80,17 @@ class Project extends ReactiveComponent {
         })
     }
 
-    handleWalletCreate(e) {
-        e.preventDefault()
-        const { inputs } = this.state
-        showForm( WalletForm, {
-            modal: true,
-            closeOnSubmit: true,
-            onSubmit: (values) => {
-                const newWallet = secretStore().find(values.name)
-                inputs.find(x => x.name === 'address').value = newWallet.address
-                this.setState({inputs})
-            }
-        })
+    handleSubmit(e, values) {
+        const { onSubmit, project } = this.props
+        const success = true
+        isFn(onSubmit) && onSubmit(e, values, success)
+        values.hash = createHash('sha256')
+
+        const message = {
+            header: `Project ${isObj(project) ? 'updated' : 'created'} successfully`,
+            status: 'success'
+        }
+        this.setState({closeText: 'Close', message, success})
     }
 
     render() {
@@ -127,12 +107,11 @@ class Project extends ReactiveComponent {
             submitText,
             trigger
         } = this.props
-        const { inputs, message, open, secretStore, success } = this.state
+        const { closeText, inputs, message, open, secretStore, success } = this.state
         const addrs = addressbook.getAll()
         const isOpenControlled = modal && !trigger && isDefined(propsOpen)
         const openModal = isOpenControlled ? propsOpen : open
         const ownerDD = inputs.find(x => x.name === 'ownerAddress')
-        const addressInput = inputs.find(x => x.name === 'address')
 
         // add tittle item
         ownerDD.options = [{
@@ -149,7 +128,7 @@ class Project extends ReactiveComponent {
             value: wallet.address
         })))
         if (addrs.length > 0) {
-            // add tittle item
+            // add title item
             ownerDD.options = ownerDD.options.concat([{
                 key: 1,
                 style: styles.itemHeader,
@@ -169,12 +148,11 @@ class Project extends ReactiveComponent {
             // prefill values if needed
             fillValues(inputs, project, true)
             ownerDD.onChange = this.handleOwnerChange
-            addressInput.disabled = true
         }
 
         return (
             <FormBuilder
-                trigger={trigger}
+                closeText={closeText}
                 header={header || (project ? 'Edit ' + project.name : 'Create a new project')}
                 headerIcon={headerIcon || (project ? 'edit' : 'plus')}
                 inputs={inputs}
@@ -189,6 +167,7 @@ class Project extends ReactiveComponent {
                 subheader={subheader}
                 submitText={submitText}
                 success={success}
+                trigger={trigger}
             />
         )
     }

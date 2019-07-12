@@ -14,7 +14,6 @@ class FormBuilder extends ReactiveComponent {
 
         this.state = {
             inputs: props.inputs,
-            // invalid: true,
             open: props.open,
             values: {}
         }
@@ -168,9 +167,12 @@ class FormBuilder extends ReactiveComponent {
                     <Message
                         {...message}
                         content={message.content}
-                        content={message.header}
+                        header={message.header}
                         error={message.status==='error'}
-                        style={styles.formMessage}
+                        style={objCopy(
+                            styles.formMessage,
+                            message.style || {textAlign: !message.header || !message.content ? 'center' : 'left'}
+                        )}
                         success={message.status==='success'}
                         visible={!!message.status}
                         warning={message.status==='warning'}
@@ -386,6 +388,8 @@ export const fillValues = (inputs, obj, forceFill) => {
     })
 }
 
+export const resetValues = inputs => inputs.map(input => { input.value = undefined; return input})
+
 export const isFormInvalid = (inputs, values) => (inputs || []).reduce((invalid, input) => {
     if (invalid || !input.required || ['button'].indexOf(input.type) >= 0) return invalid;
     // Use recursion to validate input groups
@@ -404,6 +408,6 @@ const styles = {
         right: 5
     },
     formMessage: {
-        marginTop: 0
+        margin: 1
     }
 }
