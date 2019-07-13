@@ -55,12 +55,11 @@ class Project extends ReactiveComponent {
         }
     }
 
-    handleOwnerChange(e, data, i) {
+    handleOwnerChange(e, values, i) {
         const { project } = this.props
-        const { inputs } = this.state
         if (!isObj(project) || !project.ownerAddress) return;
         // attach a confirm dialog on change
-        if (project.ownerAddress === data.value) return;
+        if (project.ownerAddress === values.ownerAddress) return;
         confirm({
             cancelButton: {
                 content: 'Cancel',
@@ -74,6 +73,7 @@ class Project extends ReactiveComponent {
             content: 'You are about to re-assign owner of this project. You will no longer be able to update this project. Are you sure?',
             header: 'Re-assign owner?',
             onCancel: ()=> {
+                const { inputs } = this.state
                 // revert to original address
                 inputs[i].value = project.ownerAddress
                 this.setState({inputs})

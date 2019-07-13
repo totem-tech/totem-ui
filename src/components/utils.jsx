@@ -1,5 +1,6 @@
 import React from 'react'
 import { Responsive } from 'semantic-ui-react'
+import { Bond } from 'oo7'
 import createHash from 'create-hash/browser'
 import { bytesToHex } from 'oo7-substrate/src/utils'
 
@@ -34,6 +35,7 @@ export const generateHash = (seed, algo, asBytes) => {
  * Data validation
  */
 export const isArr = x => Array.isArray(x)
+export const isBond = x => x instanceof Bond
 export const isDefined = x => x !== undefined
 export const isFn = x => typeof (x) === 'function'
 export const isMap = x => x instanceof Map
@@ -84,10 +86,12 @@ export const sortArr = (arr, key) => arr.sort((a, b) => a[key] > b[key] ? 1 : -1
 // Params:
 // @source  object
 // @dest    object (optional)
-export const objCopy = (source, dest) => Object.keys(source).reduce((obj, key) => {
-	obj[key] = source[key]
-	return obj
-}, dest || {})
+export const objCopy = (source, dest) => !isObj(source) ? dest || {} : (
+	Object.keys(source).reduce((obj, key) => {
+		obj[key] = source[key]
+		return obj
+	}, dest || {})
+)
 
 // objClean produces a new object with supplied keys and values from supplied object
 //
@@ -102,6 +106,23 @@ export const objClean = (obj, keys) => !isObj(obj) || !isArr(keys) ? {} : keys.r
 	}
 	return cleanObj
 }, {})
+
+
+// objWithoutKeys creates a new object excluding specified keys
+// 
+// Params:
+// @obj		object
+// @keys	array
+//
+// Returns object
+export const objWithoutKeys = (obj, keys) => !isObj(obj) || !isArr(keys) ? {} : (
+	Object.keys(obj).reduce((result, key) => {
+		if (keys.indexOf(key) === -1) {
+			result[key] = obj[key]
+		}
+		return result
+	}, {})
+)
 
 /*
  * Date formatting etc.

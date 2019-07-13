@@ -1,8 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Button, Dropdown, Form, Header, Icon, Input, Message, Modal, TextArea } from 'semantic-ui-react'
+import { Button, Checkbox, Dropdown, Form, Header, Icon, Input, Message, Modal, TextArea } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
-import { isDefined, isFn, isObj, objCopy, deferred } from '../utils';
+import { isDefined, isArr, isBond, isFn, isObj, objCopy, objWithoutKeys, deferred } from '../utils';
 import { InputBond } from '../../InputBond'
 import { AccountIdBond } from '../../AccountIdBond'
 
@@ -28,6 +28,9 @@ class FormBuilder extends ReactiveComponent {
             if (!isDefined(input.name) || i === excludeIndex) return values;
             let { value } = values
             value = !isDefined(value) ? input.value : value
+            if (['accountidbond', 'inputbond'].indexOf(input.type.toLowerCase()) >= 0 && isBond(input.bond)) {
+                value = input.bond._value
+            }
             values[input.name] = value
             return values
         }, values || {})
@@ -42,7 +45,7 @@ class FormBuilder extends ReactiveComponent {
         values[name] = value
         inputs[index].value = value
         // update values of other inputs
-        values = this.getValues(inputs, index, values)
+        values = this.getValues(inputs, -1, values)
                 
         // trigger input items's onchange callback
         isFn(onInputChange) && onInputChange(e, values, index)
@@ -257,12 +260,11 @@ export class FormInput extends ReactiveComponent {
         const { inline, label, message, required, type, useInput, width } = this.props
         let hideLabel = false
         let inputEl = ''
-        let attrs = objCopy(this.props)
         const msg = message && (message.content || message.list || message.header) ? message : undefined
         // Remove attributes that are used by the form or Form.Field but
         // shouldn't be used or may cause error when using with inputEl
         const nonAttrs = [ 'deferred', 'inline', 'invalid', 'label', 'useInput' ]
-        nonAttrs.forEach(key => isDefined(attrs[key])  && delete attrs[key])
+        let attrs = objWithoutKeys(this.props, nonAttrs) //objCopy(this.props)
         attrs.onChange = handleChange
         const messageEl = !msg ? '' : (
             <Message
@@ -289,12 +291,21 @@ export class FormInput extends ReactiveComponent {
                 break;
             case 'checkbox':
             case 'radio':
-                const isRadio = type === 'radio'
-                attrs.toggle = !isRadio && attrs.toggle
+                attrs.toggle = type.toLowerCase() !== 'radio' && attrs.toggle
                 attrs.type = "checkbox"
                 delete attrs.value;
                 hideLabel = true
                 inputEl = <Form.Checkbox {...attrs} label={label}/>
+                break;
+            case 'checkbox-group':
+            case 'radio-group':
+                attrs.inline = inline
+                inputEl = (
+                    <CheckboxGroup 
+                        {...attrs} 
+                        radio={type.toLowerCase() === 'radio-group' ? true : attrs.radio} 
+                    />
+                )
                 break;
             case 'dropdown':
                 inputEl = <Dropdown {...attrs} />
@@ -320,8 +331,8 @@ export class FormInput extends ReactiveComponent {
                 inputEl = !useInput ? <Form.Input {...attrs} /> : <Input {...attrs} />
         }
 
-        return type !== 'group' ? (
-            <Form.Field inline={inline} width={width} required={required}> 
+        return ['group'].indexOf(type.toLowerCase() < 0) ? (
+            <Form.Field width={width} required={required}> 
                 {!hideLabel && label && <label>{label}</label>}
                 {inputEl}
                 {messageEl}
@@ -374,7 +385,7 @@ FormInput.propTypes = {
     required: PropTypes.bool,
     slider: PropTypes.bool,         // For checkbox/radio
     toggle: PropTypes.bool,         // For checkbox/radio
-    type: PropTypes.string,
+    type: PropTypes.string.isRequired,
     value: PropTypes.any,
     onValidate: PropTypes.func,
     width: PropTypes.number
@@ -382,6 +393,60 @@ FormInput.propTypes = {
 FormInput.defaultProps = {
     type: 'text',
     width: 16
+}
+
+class CheckboxGroup extends ReactiveComponent {
+    constructor(props) {
+        super(props)
+        const allowMultiple = !props.radio && props.multiple
+        this.state = {
+            allowMultiple,
+            value: props.value || (allowMultiple ? [] : undefined)
+        }
+        this.handleChange = this.handleChange.bind(this)
+    }
+
+    handleChange(e, data) {
+        isObj(e) && isFn(e.persist) && e.persist()
+        const { onChange } = this.props
+        let { allowMultiple, value } = this.state
+        const {checked, value: val} = data
+        if (!allowMultiple) {
+            value = checked ? val : undefined
+        } else {
+            checked ? value.push(val) : value.splice(value.indexOf(val), 1)
+        }
+        data.value = value
+
+        this.setState({value})
+        isFn(onChange) && onChange(e, data)
+    }
+
+    render() {
+        const { inline, name, options, style, type } = this.props
+        const { allowMultiple, value } = this.state
+        const excludeKeys = ['inline', 'multiple', 'name', 'required', 'type', 'value', 'width']
+        const commonProps = objWithoutKeys(this.props, excludeKeys)
+        return (
+            <div>
+                {!isArr(options) ? '' : options.map((option, i) => (
+                    <Checkbox
+                        key={i} 
+                        {...commonProps}
+                        checked={allowMultiple ? value.indexOf(option.value) >= 0 : value === option.value}
+                        className={(inline ? '' : 'sixteen wide ') + option.className || ''}
+                        label={option.label}
+                        name={name + (allowMultiple ? i : '')}
+                        onChange={this.handleChange}
+                        required={false}
+                        style={objCopy(style, {margin: '0 5px'})}
+                        type="checkbox"
+                        value={option.value}
+                    />
+                ))}
+            </div>
+        )
+    }
 }
 
 export const fillValues = (inputs, obj, forceFill) => {

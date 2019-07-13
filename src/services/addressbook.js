@@ -8,7 +8,7 @@ const _save = entries => localStorage.setItem(
     JSON.stringify(entries || [])
 ) | updateBond()
 
-export const add = (name, address, tags) => {
+export const add = (name, address, tags, type, visibility) => {
     if (!name || !address) return;
     const adrs = getAll()
     // prevent adding multiple items with same name
@@ -16,7 +16,9 @@ export const add = (name, address, tags) => {
     _save(adrs.concat([{
         address: pretty(address),
         name, 
-        tags: tags || []
+        tags: tags || [],
+        type,
+        visibility
     }]))
 }
 
