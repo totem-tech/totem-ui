@@ -222,13 +222,13 @@ export class DataTable extends ReactiveComponent {
                         <Table.Row>
                             <Table.HeaderCell colSpan={dataKeys.length}>
                                 {footerContent && <div style={{float: 'left'}}>{footerContent}</div>}
-                                <Paginator
+                                {totalPages <= 1 ? '' : <Paginator
                                     total={totalPages}
                                     current={pageNo}
                                     navLimit={navLimit || 5}
                                     float="right"
                                     onSelect={pageNo => {this.setState({pageNo}); isFn(pageOnSelect) && pageOnSelect(pageNo); }}
-                                />
+                                />}
                             </Table.HeaderCell>
                         </Table.Row>
                     </Table.Footer>

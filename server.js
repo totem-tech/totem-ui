@@ -202,10 +202,7 @@ io.on('connection', client => {
 			userRequests = userRequests.slice(numReqs - faucetRequestTimeLimit)
 		}
 		faucetRequests.set(user.id, userRequests)
-		// console.log(user.id, faucetRequests.get(user.id))
-		// console.log('User Requests', userRequests)
 		saveFaucetRequests()
-		// console.info('faucet-request from @' + user.id, address)
 		emit([], 'faucet-request', [user.id, address])
 		doCb && callback()
 	})
@@ -214,7 +211,7 @@ io.on('connection', client => {
 	client.on('project', (hash, project, callback) => {
 		const doCb = isFn(callback)
 		const requiredKeys = ['name', 'ownerAddress', 'description']
-		const user = findUserByClientId(client.id) || {}
+		const user = findUserByClientId(client.id)
 		// Require login
 		if (!user) return doCb && callback(errMsgs.loginOrRegister)
 
@@ -273,7 +270,7 @@ fs.readFile(usersFile, (err, data) => {
 
 const saveUsers = () => saveMapToFile(usersFile, users)
 const saveFaucetRequests = () => saveMapToFile(faucetRequestsFile, faucetRequests)
-const saveProjects = () => saveMapToFile(projectsFile, projects) | console.log(projects)
+const saveProjects = () => saveMapToFile(projectsFile, projects)
 const saveMapToFile = (file, map) => {
 	file && fs.writeFile(
 		file,
