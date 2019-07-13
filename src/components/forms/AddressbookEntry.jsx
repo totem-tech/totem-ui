@@ -16,6 +16,7 @@ class AddressbookEntry extends ReactiveComponent {
         this.lookup = new Bond()
 
         this.state = {
+            message: {},
             tags: ['partner'],
             success: false,
             inputs: [
@@ -23,10 +24,21 @@ class AddressbookEntry extends ReactiveComponent {
                     bond: this.lookup,
                     label: 'Lookup account',
                     name: 'address',
-                    onChange: deferred(this.handleAddressChange, 300, this),
+                    // onChange: deferred(this.handleAddressChange, 300, this),
                     placeholder: 'Name or address',
                     type: 'AccountIdBond',
-                    required: true
+                    required: true,
+                    validator: address => {
+                        const { inputs } = this.state
+                        const exists = addressbook.getByAddress(address)
+                        inputs.find(x => x.name === 'address').message = !exists ? {} : {
+                            content: 'Address already exists with name: "' + exists.name + '"',
+                            status: 'error'
+                        }
+                        inputs.find(x => x.name === 'name').disabled = address ? !!exists : false
+                        this.setState({inputs})
+                        return address
+                    }
                 },
                 {
                     allowAdditions: true,
@@ -42,7 +54,7 @@ class AddressbookEntry extends ReactiveComponent {
                         value: 'partner'
                     }],
                     placeholder: 'Enter tags',
-                    type: 'DropDown',
+                    type: 'hidden',
                     search: true,
                     selection: true,
                     value: ['partner']
@@ -62,7 +74,18 @@ class AddressbookEntry extends ReactiveComponent {
                     placeholder: 'A name for this address',
                     required: true,
                     type: 'InputBond',
-                    validator: name => name ? (addressbook.getByName(name) ? null : name) : null
+                    validator: name => {
+                        const { inputs } = this.state
+                        const nameExists = addressbook.getByName(name)
+                        const address = this.lookup._value
+                        const addressExists = addressbook.getByAddress(address)
+                        inputs.find(x => x.name === 'name').message = !nameExists ? {} : {
+                            content: 'Please choose an unique name',
+                            status: 'error'
+                        }
+                        this.setState({inputs})
+                        return name && !nameExists && address && !addressExists ? name : null
+                    }
                 }
             ]
         }
@@ -82,14 +105,14 @@ class AddressbookEntry extends ReactiveComponent {
         this.setState({inputs})
     }
 
-    handleAddressChange(e, values, index) {
-        const { inputs } = this.state
-        inputs[index].message = {
-            compact: true,
-            content: <AddressLookup address={this.lookup} />
-        }
-        this.setState({inputs})
-    }
+    // handleAddressChange(e, values, index) {
+    //     const { inputs } = this.state
+    //     inputs[index].message = {
+    //         compact: true,
+    //         content: <AddressLookup address={this.lookup} />
+    //     }
+    //     this.setState({inputs})
+    // }
 
     handleTagChange(_, values) {
         this.setState({tags: values.tags})
