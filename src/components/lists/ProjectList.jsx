@@ -53,7 +53,7 @@ class ProjectList extends ReactiveComponent {
                 active: false,
                 content: mobile ? '' : 'Copy',
                 icon: 'copy',
-                onClick: () => copyToClipboard(project.address)
+                onClick: () => copyToClipboard(project.ownerAddress)
             },
             {
                 active: false,
@@ -69,11 +69,11 @@ class ProjectList extends ReactiveComponent {
         ].map((x, i) => {x.key = i; return x})
     }
 
-    getCardHeader(project, i) {
+    getCardHeader(project, id) {
         const { actionsIndex } = this.state
         const toggleOnClick = ()=> {
             this.setState({
-                actionsIndex: actionsIndex === i ? -1 : i
+                actionsIndex: actionsIndex === id ? -1 : id
             })
         }
         return {
@@ -82,7 +82,7 @@ class ProjectList extends ReactiveComponent {
                 color: 'grey',
                 className: 'circular',
                 link: true,
-                name: 'angle ' + (actionsIndex === i ? 'up' : 'down'),
+                name: 'angle ' + (actionsIndex === id ? 'up' : 'down'),
                 onClick: toggleOnClick
             },
             image: <Icon name="flask" size="big" />,
@@ -115,20 +115,26 @@ class ProjectList extends ReactiveComponent {
             switch(listType.toLowerCase()) {
                 case 'cardlist' :
                     const perRow = mobile ? 1 : itemsPerRow || 1
-                    listProps.items = projects.map((project, i) => ({
-                        actions: getActions(project, i, mobile),
-                        actionsVisible: actionsIndex === i,
-                        description: (
-                            <div>
-                                <p><b>Owner:</b></p>
-                                <p>{this.getOwner(project)}</p>
-                                <p><b>Description:</b></p>
-                                <p>{project.description}</p>
-                            </div>
-                        ),
-                        header: getCardHeader(project, i),
-                        style: perRow === 1 ? {margin: 0} : undefined
-                    }))
+                    listProps.items = Array.from(projects).map(item => {
+                        const id = item[0]
+                        const project = item[1]
+                        return {
+                            actions: getActions(project, id, mobile),
+                            actionsVisible: actionsIndex === id,
+                            description: (
+                                <div>
+                                    <p><b>Owner:</b></p>
+                                    <p>{this.getOwner(project)}</p>
+                                    <p><b>Description:</b></p>
+                                    <p>{project.description}</p>
+                                    <p><b>Total Time:</b></p>
+                                    <p>{(project.totalTime || 0) + ' blocks'}</p>
+                                </div>
+                            ),
+                            header: getCardHeader(project, id),
+                            style: perRow === 1 ? {margin: 0} : undefined
+                        }
+                    })
                     listProps.itemsPerRow = perRow
                 case 'datatable':
                 default:
