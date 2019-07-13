@@ -9,27 +9,34 @@ import { confirm, showForm, closeModal } from '../../services/modal'
 import AddressbookEntryForm from '../forms/AddressbookEntry'
 import addressbook from '../../services/addressbook'
 import { secretStore } from 'oo7-substrate'
+import client from '../ChatClient'
 
 const toBeImplemented = ()=> alert('To be implemented')
 
 class ProjectList extends ReactiveComponent {
-    constructor() {
-        super(['projects'], {
+    constructor(props) {
+        super(props, {
             _: addressbook.getBond(),
             secretStore: secretStore()
         })
         this.state = {
-            actionsIndex: -1
+            actionsIndex: -1,
+            projects: new Map()
         }
 
         this.getActions = this.getActions.bind(this)
         this.getContent = this.getContent.bind(this)
         this.getCardHeader = this.getCardHeader.bind(this)
+
+        // Request projects
+        setTimeout(()=> client.projects((_, projects) => this.setState({projects})))
+        client.onProjects(projects => this.setState({projects}))
     }
 
-    getActions(project, i, mobile) {
+    getActions(project, id, mobile) {
         return [
             {
+                active: false,
                 content: mobile ? '' : 'Show Seed',
                 icon: 'eye',
                 onClick: ()=> {
@@ -43,19 +50,18 @@ class ProjectList extends ReactiveComponent {
                 } 
             },
             {
+                active: false,
                 content: mobile ? '' : 'Copy',
                 icon: 'copy',
                 onClick: () => copyToClipboard(project.address)
             },
             {
+                active: false,
                 icon: 'edit',
-                onClick: ()=> showForm(ProjectForm, {
-                    modal: true,
-                    onSubmit: this.refresh,
-                    project
-                })
+                onClick: ()=> showForm(ProjectForm, { modal: true, project, id })
             },
             {
+                active: false,
                 content: mobile ? '' : 'Delete',
                 icon: 'trash alternate',
                 onClick: toBeImplemented
@@ -84,10 +90,6 @@ class ProjectList extends ReactiveComponent {
         }
     }
 
-    refresh() {
-        console.info('ToDo: update project list')
-    }
-
     getOwner(project) {
         const {ownerAddress} = project
         const entry = addressbook.getByAddress(ownerAddress) || secretStore().find(ownerAddress)
@@ -104,7 +106,7 @@ class ProjectList extends ReactiveComponent {
             const { itemsPerRow, type } = this.props
             const { actionsIndex, projects } = this.state
             const { getActions, getCardHeader } = this
-            const listType = mobile ? 'cardlist' : type || 'datatable'
+            const listType = type || (mobile ? 'cardlist' : 'datatable')
             const listProps = {
                 perPage: 10,
                 pageNo: 1,
@@ -134,19 +136,21 @@ class ProjectList extends ReactiveComponent {
                     listProps.dataKeys = [
                         { key:'name', title: 'Name'},
                         { 
-                            key: 'totalTime', 
+                            key: 'totalTime',
+                            textAlign: 'center',
                             title: 'Total Time', 
-                            content: (project) => project.totalTime + ' blocks' 
+                            content: project => (project.totalTime || 0) + ' blocks' 
                         },
                         { 
                             key: 'ownerAddress', 
+                            textAlign: 'center',
                             title: 'Owner', 
                             content: this.getOwner
                         },
                         { key: 'description', title: 'Description'},
                         {
                             // No key required
-                            content: (project, i) => <Menu items={getActions(project, i, true)}  compact fluid />,
+                            content: (project, id) => <Menu items={getActions(project, id, true)}  compact fluid />,
                             collapsing: true,
                             style: { padding : 0},
                             title: 'Actions'
@@ -156,13 +160,7 @@ class ProjectList extends ReactiveComponent {
                         <Button 
                             icon="plus" 
                             content="Create" 
-                            onClick={() => showForm(
-                                ProjectForm,
-                                {
-                                    modal: true,
-                                    onSubmit: this.refresh
-                                }
-                            )} 
+                            onClick={() => showForm(ProjectForm, { modal: true } )} 
                         />
                     )
                     listProps.float = 'right'

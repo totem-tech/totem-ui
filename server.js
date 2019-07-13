@@ -1,4 +1,6 @@
 import express from 'express'
+import { resolve } from 'url';
+import { isFn, isStr, isObj, objClean } from './src/components/utils'
 
 const httpPort = 80
 const httpsPort = 443
@@ -52,11 +54,9 @@ const options = {
 https.createServer(options, app).listen(httpsPort, () => console.log('App https web server listening on port ', httpsPort))
 
 // Chat server also running on https
-
 const server = https.createServer(options, app)
 const io = require('socket.io').listen(server)
 const wsPort = 3001
-const isFn = fn => typeof (fn) === 'function'
 let users = new Map()
 const usersFile = './users.json'
 const clients = new Map()
@@ -75,6 +75,26 @@ const findUserByClientId = clientId => {
 	}
 }
 
+const projectsFile = './projects.json'
+let projects = new Map()
+// mapFindByKey finds a specific object by supplied key and value 
+const mapFindByKey = (map, key, value) => {
+	for (let [_, item] of map.entries()) {
+		if (item[key] === value) return item;
+	}
+}
+// Simple full-text style partial search
+const mapSearchByKey = (map, key, keyword) => {
+	const result = new Map()
+	for (let [itemKey, item] of map.entries()) {
+		const value =  item[key]
+		if (isStr(value) || isObj(value) ? value.indexOf(keyword) >= 0 : value === keyword) {
+			result.set(itemKey, item)
+		}
+	}
+	return result
+}
+
 // Error messages
 const errMsgs = {
 	fauceRequestLimitReached: `Maximum ${fauceRequstLimit} requests allowed within 24 hour period`,
@@ -83,7 +103,7 @@ const errMsgs = {
 	idExists: 'User ID already taken',
 	msgLengthExceeds: `Maximum ${msgMaxLength} characters allowed`,
 	loginFailed: 'Credentials do not match',
-	loginAgain: 'Registration/login required'
+	loginOrRegister: 'Login/registration required'
 }
 
 io.on('connection', client => {
@@ -105,7 +125,7 @@ io.on('connection', client => {
 
 		const sender = findUserByClientId(client.id)
 		// Ignore message from logged out users
-		if (!sender) return doCb && callback(errMsgs.loginAgain);
+		if (!sender) return doCb && callback(errMsgs.loginOrRegister);
 		emit(client.id, 'message', [msg, sender.id])
 		doCb && callback()
 	})
@@ -154,13 +174,12 @@ io.on('connection', client => {
 
 		console.info('Login ' + (err ? 'failed' : 'success') + ' | ID:', userId, '| Client ID: ', client.id)
 		isFn(callback) && callback(err)
-		emit()
 	})
 
 	client.on('faucet-request', (address, callback) => {
 		const doCb = isFn(callback)
 		const user = findUserByClientId(client.id)
-		if (!user) return doCb && callback(errMsgs.loginAgain)
+		if (!user) return doCb && callback(errMsgs.loginOrRegister)
 
 		let userRequests = faucetRequests.get(user.id)
 
@@ -190,12 +209,59 @@ io.on('connection', client => {
 		emit([], 'faucet-request', [user.id, address])
 		doCb && callback()
 	})
+
+	// Create/update project
+	client.on('project', (hash, project, callback) => {
+		const doCb = isFn(callback)
+		const requiredKeys = ['name', 'ownerAddress', 'description']
+		const user = findUserByClientId(client.id) || {}
+		// Require login
+		if (!user) return doCb && callback(errMsgs.loginOrRegister)
+
+		// check if project contains all the required properties
+		const invalid = !hash || !project || requiredKeys.reduce((invalid, key) => invalid || !project[key], false)
+		if (invalid) return doCb && callback(
+			'Project must contain all of the following properties: ' + 
+			requiredKeys.join() + ' and an unique hash'
+		)
+		if (project.description.length > 160) {
+			doCb && callback('Project description must not be more than 160 characters')
+		}
+		// exclude any unwanted data 
+		project = objClean(project, requiredKeys)
+		project.userId = user.id
+		const existingProject = projects.get(hash)
+		if(existingProject && existingProject.userId != user.id) {
+			return doCb && callback('You are not allowed to update an existing project not owned by you')
+		}
+		projects.set(hash, project)
+		saveProjects()
+		doCb && callback(null, !!existingProject)
+		client.emit('projects', mapSearchByKey(projects, 'userId', user.id))
+	})
+
+	// user projects
+	client.on('projects', callback => {
+		if (!isFn(callback)) return
+		const user = findUserByClientId(client.id)
+		if (!user) return callback(errMsgs.loginOrRegister)
+		callback(null, mapSearchByKey(projects, 'userId', user.id))
+	})
+
+	// search all projects
+	client.on('project-search', (keyword, key, callback) => {
+		if (!isFn(callback)) return
+		callback('Not implemented')
+		// const user = findUserByClientId(client.id)
+		// if (!user) return callback(errMsgs.loginOrRegister)
+		// callback('', mapSearchByKey(projects, key, keyword))
+	})
 })
 
 // Load user data from json file
 fs.readFile(usersFile, (err, data) => {
+	// File doesn't exists. Create new file
 	if (err) {
-		// File doesn't exists. Create new file
 		saveUsers()
 	} else {
 		// Load existing user list
@@ -207,6 +273,7 @@ fs.readFile(usersFile, (err, data) => {
 
 const saveUsers = () => saveMapToFile(usersFile, users)
 const saveFaucetRequests = () => saveMapToFile(faucetRequestsFile, faucetRequests)
+const saveProjects = () => saveMapToFile(projectsFile, projects) | console.log(projects)
 const saveMapToFile = (file, map) => {
 	file && fs.writeFile(
 		file,
@@ -217,13 +284,46 @@ const saveMapToFile = (file, map) => {
 }
 
 // Broadcast message to all users except ignoreClientIds
-const emit = (ignoreClientIds, eventName, cbParams) => {
+const emit = (ignoreClientIds, eventName, params) => {
+	if (!isStr(eventName)) return;
 	ignoreClientIds = Array.isArray(ignoreClientIds) ? ignoreClientIds : [ignoreClientIds]
-	cbParams = cbParams || []
-	cbParams.splice(0, 0, eventName)
+	params = params || []
+	params.splice(0, 0, eventName)
 	for (const [_, iClient] of clients) {
 		if (ignoreClientIds.indexOf(iClient.id) >= 0) continue; // ignore sender client
 		// iClient.emit('message', msg, sender.id)
-		iClient.emit.apply(iClient, cbParams)
+		iClient.emit.apply(iClient, params)
 	}
 }
+
+
+// load all files required
+var promises = [
+	{type: 'users', path: usersFile, saveFn: saveUsers},
+	{type: 'faucetRequests', path: faucetRequestsFile, saveFn: saveFaucetRequests},
+	{type: 'projects', path: projectsFile, saveFn: saveProjects},
+].map(item => new Promise((_, resove, reject) => {
+	const { type, path, saveFn } = item
+	fs.readFile(path, 'utf8', (err, data) => {
+		console.info('Reading file', path)
+		// Create empty file if does already not exists 
+		if(err) return resolve(saveFn())
+		const map = new Map(JSON.parse(data || '[]'))
+		switch(type) {
+			case 'users':
+				users = map
+				break
+			case 'faucetRequests':
+				faucetRequests = map
+				break
+			case 'projects':
+				projects = map
+				break
+		}
+		resove(true)
+	})
+}))
+// Start chat server
+Promise.all(promises).then(function(results){
+	server.listen(wsPort, () => console.log('Chat app https Websocket listening on port ', wsPort))
+}, (er)=> {}) 

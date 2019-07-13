@@ -1,5 +1,7 @@
 import React from 'react'
 import { Responsive } from 'semantic-ui-react'
+import createHash from 'create-hash/browser'
+import { bytesToHex } from 'oo7-substrate/src/utils'
 
 /*
  * Copies supplied string to system clipboard
@@ -16,12 +18,25 @@ export const copyToClipboard = str => {
 	document.body.removeChild(el);
 }
 
+// generateHash generates a 
+export const generateHash = (seed, algo, asBytes) => {
+	var hash = createHash(algo || 'sha256')
+	hash.update(seed) // optional encoding parameter
+	hash.digest() // synchronously get result with optional encoding parameter
+
+	hash.write('write to it as a stream')
+	hash.end()
+	const bytesArr = hash.read()
+	return asBytes ? bytesArr : bytesToHex(bytesArr)
+}
+
 /*
  * Data validation
  */
 export const isArr = x => Array.isArray(x)
 export const isDefined = x => x !== undefined
 export const isFn = x => typeof (x) === 'function'
+export const isMap = x => x instanceof Map
 export const isObj = x => x !== null && !isArr(x) && typeof (x) === 'object'
 export const isStr = x => typeof (x) === 'string'
 export const isValidNumber = x => typeof (x) == 'number' && !isNaN(x)
@@ -42,13 +57,22 @@ export const isMobile = () => window.innerWidth <= Responsive.onlyMobile.maxWidt
 //              @array
 //
 // Returns array of items all returned by @callback
-export const arrMapSlice = (arr, startIndex, endIndex, callback) => {
-	if (!Array.isArray(arr)) return [];
+export const arrMapSlice = (data, startIndex, endIndex, callback) => {
+	const isAMap = isMap(data)
+	if (!isArr(data) && !isAMap) return [];
+	const len = isAMap ? data.size : data.length
+	// if (len === 0) return [];
+	data = isAMap ? Array.from(data) : data
 	startIndex = startIndex || 0
-	endIndex = !endIndex || endIndex >= arr.length ? arr.length - 1 : endIndex
+	endIndex = !endIndex || endIndex >= len ? len - 1 : endIndex
 	let result = []
 	for (var i = startIndex; i <= endIndex; i++) {
-		result.push(callback(arr[i], i, arr))
+		let key = i, value = data[i]
+		if (isAMap) {
+			key = data[i][0]
+			value = data[i][1]
+		}
+		result.push(callback( value, key, data, isAMap))
 	}
 	return result
 }
@@ -64,6 +88,20 @@ export const objCopy = (source, dest) => Object.keys(source).reduce((obj, key) =
 	obj[key] = source[key]
 	return obj
 }, dest || {})
+
+// objClean produces a new object with supplied keys and values from supplied object
+//
+// Params:
+// @obj		object
+// @keys	array : if empty/not array, an empty object will be returned
+//
+// Returns object
+export const objClean = (obj, keys) => !isObj(obj) || !isArr(keys) ? {} : keys.reduce((cleanObj, key) => {
+	if (obj.hasOwnProperty(key)) {
+		cleanObj[key] = obj[key]
+	}
+	return cleanObj
+}, {})
 
 /*
  * Date formatting etc.

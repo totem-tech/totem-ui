@@ -2,11 +2,11 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { secretStore } from 'oo7-substrate'
-import createHash from 'create-hash'
 import FormBuilder, { fillValues } from './FormBuilder'
-import { sortArr, isDefined, isFn, isObj, textEllipsis } from '../utils'
+import { generateHash, isDefined, isFn, isObj, sortArr, textEllipsis } from '../utils'
 import { confirm } from '../../services/modal'
 import addressbook  from '../../services/addressbook'
+import client from '../ChatClient'
 
 class Project extends ReactiveComponent {
     constructor(props) {
@@ -20,6 +20,7 @@ class Project extends ReactiveComponent {
 
         this.state = {
             closeText: 'Cancel',
+            loading: false,
             message: {},
             open: props.open,
             success: false,
@@ -38,6 +39,7 @@ class Project extends ReactiveComponent {
                     name: 'ownerAddress',
                     placeholder: 'Select owner',
                     type: 'dropdown',
+                    search: true,
                     selection: true,
                     required: true,
                 },
@@ -69,7 +71,7 @@ class Project extends ReactiveComponent {
                 color: 'red',
                 primary: false
             },
-            content: 'You are about to re-assign owner of this project.',
+            content: 'You are about to re-assign owner of this project. You will no longer be able to update this project. Are you sure?',
             header: 'Re-assign owner?',
             onCancel: ()=> {
                 // revert to original address
@@ -81,22 +83,34 @@ class Project extends ReactiveComponent {
     }
 
     handleSubmit(e, values) {
-        const { onSubmit, project } = this.props
-        const success = true
-        isFn(onSubmit) && onSubmit(e, values, success)
-        values.hash = createHash('sha256')
-
-        const message = {
-            header: `Project ${isObj(project) ? 'updated' : 'created'} successfully`,
-            status: 'success'
-        }
-        this.setState({closeText: 'Close', message, success})
+        const { onSubmit, id } = this.props
+        this.setState({loading: true})
+        const hash = id || generateHash(JSON.stringify(values))
+        client.project(hash, values, (err) => {
+            const success = !err
+            isFn(onSubmit) && onSubmit(e, values, success)
+            const message = !success ? {
+                content: err,
+                header: 'Failed to create project',
+                status: 'error'
+            } : {
+                header: `Project ${!!id ? 'updated' : 'created'} successfully`,
+                status: 'success'
+            }
+            this.setState({
+                closeText: success ? 'Close' : 'Cancel', 
+                loading: false,
+                message, 
+                success
+            })
+        })
     }
 
     render() {
         const {
             header,
             headerIcon,
+            id,
             modal,
             onOpen,
             onClose,
@@ -104,10 +118,9 @@ class Project extends ReactiveComponent {
             project, 
             size,
             subheader,
-            submitText,
             trigger
         } = this.props
-        const { closeText, inputs, message, open, secretStore, success } = this.state
+        const { closeText, inputs, loading, message, open, secretStore, success } = this.state
         const addrs = addressbook.getAll()
         const isOpenControlled = modal && !trigger && isDefined(propsOpen)
         const openModal = isOpenControlled ? propsOpen : open
@@ -150,41 +163,42 @@ class Project extends ReactiveComponent {
             ownerDD.onChange = this.handleOwnerChange
         }
 
-        return (
-            <FormBuilder
-                closeText={closeText}
-                header={header || (project ? 'Edit ' + project.name : 'Create a new project')}
-                headerIcon={headerIcon || (project ? 'edit' : 'plus')}
-                inputs={inputs}
-                message={message}
-                modal={modal}
-                onCancel={onClose}
-                onClose={onClose}
-                onOpen={onOpen}
-                open={openModal}
-                onSubmit={this.handleSubmit}
-                size={size}
-                subheader={subheader}
-                submitText={submitText}
-                success={success}
-                trigger={trigger}
-            />
-        )
+        const formProps = {
+            closeText,
+            header: header || (project ? 'Edit ' + project.name : 'Create a new project'),
+            headerIcon: headerIcon || (project ? 'edit' : 'plus'),
+            inputs,
+            loading,
+            message,
+            modal,
+            onClose,
+            onOpen,
+            open: openModal,
+            onSubmit: this.handleSubmit,
+            size,
+            subheader,
+            submitText : !!id ? 'Update' : 'Create',
+            success,
+            trigger,
+        }
+
+        return <FormBuilder {...formProps}/>
     }
 }
 Project.propTypes = {
+    // Project ID/hash
+    id: PropTypes.string,
     modal: PropTypes.bool,
     onClose: PropTypes.func,
     onOpen: PropTypes.func,
     project: PropTypes.object, // if supplied prefill form
     size: PropTypes.string,
-    submitText: PropTypes.string,
+    // Element to 'trigger'/open the modal, modal=true required
     trigger: PropTypes.element
 }
 Project.defaultProps = {
     modal: false,
-    size: 'tiny',
-    submitText: 'Submit'
+    size: 'tiny'
 }
 export default Project
 

@@ -15,12 +15,22 @@ class FormBuilder extends ReactiveComponent {
         this.state = {
             inputs: props.inputs,
             open: props.open,
-            values: {}
+            values: this.getValues(props.inputs)
         }
 
         this.handleChange = this.handleChange.bind(this)
         this.handleClose = this.handleClose.bind(this)
         this.handleSubmit = this.handleSubmit.bind(this)
+    }
+
+    getValues(inputs, excludeIndex, values) {
+        return inputs.reduce((values, input, i) => {
+            if (!isDefined(input.name) || i === excludeIndex) return values;
+            let { value } = values
+            value = !isDefined(value) ? input.value : value
+            values[input.name] = value
+            return values
+        }, values || {})
     }
 
     handleChange(e, data, index, input) {
@@ -32,13 +42,7 @@ class FormBuilder extends ReactiveComponent {
         values[name] = value
         inputs[index].value = value
         // update values of other inputs
-        values = inputs.reduce((values, input, i) => {
-            if (!isDefined(input.name) || i === index) return values;
-            let { value } = values
-            value = !isDefined(value) ? input.value : value
-            values[input.name] = value
-            return values
-        }, values)
+        values = this.getValues(inputs, index, values)
                 
         // trigger input items's onchange callback
         isFn(onInputChange) && onInputChange(e, values, index)
@@ -69,6 +73,7 @@ class FormBuilder extends ReactiveComponent {
             header,
             headerIcon,
             hideFooter,
+            loading,
             message,
             modal,
             onClose,
@@ -103,9 +108,10 @@ class FormBuilder extends ReactiveComponent {
         const form = (
             <Form 
                 error={message.status === 'error'}
-                success={success || message.status === 'success'}
+                loading={loading}
                 onSubmit={onSubmit}
                 style={style}
+                success={success || message.status === 'success'}
                 warning={message.status === 'warning'}
                 widths={widths}
             >
@@ -191,6 +197,8 @@ FormBuilder.propTypes = {
     headerIcon: PropTypes.string,
     hideFooter: PropTypes.bool,
     message: PropTypes.object,
+    // show loading spinner
+    loading: PropTypes.bool, 
     modal: PropTypes.bool,
     // If modal=true and onClose is defined, 'open' is expected to be controlled externally
     onClose: PropTypes.func,

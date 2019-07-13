@@ -1,4 +1,5 @@
 import io from 'socket.io-client'
+import { isFn, isArr } from './utils'
 const port = 3001
 let instance, socket;
 const postLoginCallbacks = []
@@ -21,7 +22,6 @@ export const addToHistory = (message, id) => {
         JSON.stringify(history.slice(history.length - historyLimit, history.length))
     )
 }
-const isFn = fn => typeof(fn) === 'function'
 // Adds callback to be executed after login is successful
 export const onLogin = cb => isFn(cb) && postLoginCallbacks.push(cb)
 // Executes all callbacks added by onLogin()
@@ -31,11 +31,11 @@ const _execOnLogin = (userId) => {
     }
 }
 
-// Returns a single singleton instance of the websocket client
+// Returns a singleton instance of the websocket client
 // Instantiates the client if not already done
-export const getClient = url => {
+export const getClient = () => {
     if (!instance || !socket.connected) {
-        instance = new ChatClient(url)
+        instance = new ChatClient()
     }
     return instance
 }
@@ -61,6 +61,19 @@ export class ChatClient {
         this.onFaucetRequest = cb => socket.on('faucet-request', cb)
         // Check if User ID Exists
         this.idExists = (userId, cb) => socket.emit('id-exists', userId, cb)
+
+        // add/update project
+        this.project = (hash, project, cb) => socket.emit('project', hash, project, cb)
+
+        // request user projects
+        // @cb function : params =>
+        //                @err             string/null : error message or null if success
+        //                @result    Map         : Map of user projects with project hash as key
+        this.projects = cb => socket.emit('projects', (err, result) => isFn(cb) && cb(err, new Map(result)))
+        // user projects received
+        // @cb function : params =>
+        //                @result    Map         : Map of user projects with project hash as key
+        this.onProjects = cb => socket.on('projects', (result) => isFn(cb) && cb(new Map(result)))
     }
 
     register(id, secret, cb) {
@@ -80,4 +93,4 @@ export class ChatClient {
         })
     }
 }
-// export default ChatClient
+export default getClient()
