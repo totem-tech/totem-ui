@@ -84,19 +84,34 @@ class Project extends ReactiveComponent {
 
     handleSubmit(e, values) {
         const { onSubmit, id } = this.props
-        this.setState({loading: true})
+        this.setState({loading: true, success: true})
         const hash = id || generateHash(JSON.stringify(values))
-        client.project(hash, values, (err) => {
+        client.project(hash, values, (err, exists) => {
             const success = !err
             isFn(onSubmit) && onSubmit(e, values, success)
-            const message = !success ? {
-                content: err,
-                header: 'Failed to create project',
-                status: 'error'
-            } : {
-                header: `Project ${!!id ? 'updated' : 'created'} successfully`,
-                status: 'success'
+            let message = {}
+            if(!success) {
+                // Error
+                message = {
+                    content: err,
+                    header: 'Failed to create project',
+                    status: 'error'
+                }
+            } else if (!id && exists) {
+                // Attempt to create a new project with exact same details of an existing project
+                message = {
+                    content: 'Please use a different address/name',
+                    header: 'Project already exists',
+                    status: 'error'
+                }
+            } else {
+                // success
+                message = {
+                    header: `Project ${!!exists ? 'updated' : 'created'} successfully`,
+                    status: 'success'
+                }
             }
+            
             this.setState({
                 closeText: success ? 'Close' : 'Cancel', 
                 loading: false,

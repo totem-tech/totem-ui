@@ -1,6 +1,6 @@
 import express from 'express'
 import { resolve } from 'url';
-import { isFn, isStr, isObj, objClean } from './src/components/utils'
+import { isFn, isStr, isObj, objClean, objCopy } from './src/components/utils'
 
 const httpPort = 80
 const httpsPort = 443
@@ -231,7 +231,9 @@ io.on('connection', client => {
 		if(existingProject && existingProject.userId != user.id) {
 			return doCb && callback('You are not allowed to update an existing project not owned by you')
 		}
-		projects.set(hash, project)
+		
+		// Add/update project
+		projects.set(hash, objCopy(project, existingProject))
 		saveProjects()
 		doCb && callback(null, !!existingProject)
 		client.emit('projects', mapSearchByKey(projects, 'userId', user.id))
