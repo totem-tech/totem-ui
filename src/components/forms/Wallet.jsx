@@ -26,7 +26,7 @@ class Wallet extends ReactiveComponent {
             success: false,
             inputs: [
                 {
-                    action: <Button content="Generate" onClick={this.handleGenerate.bind(this)} />,
+                    action: <Button content="Generate new seed or restore backup" onClick={this.handleGenerate.bind(this)} />,
                     bond: this.seed,
                     icon: (
                         <i style={{ opacity: 1 }} className="icon">
