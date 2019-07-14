@@ -87,7 +87,7 @@ class Project extends ReactiveComponent {
         this.setState({loading: true, success: true})
         const hash = id || generateHash(JSON.stringify(values))
         client.project(hash, values, (err, exists) => {
-            const success = !err
+            let success = !err
             isFn(onSubmit) && onSubmit(e, values, success)
             let message = {}
             if(!success) {
@@ -99,6 +99,7 @@ class Project extends ReactiveComponent {
                 }
             } else if (!id && exists) {
                 // Attempt to create a new project with exact same details of an existing project
+                success = false
                 message = {
                     content: 'Please use a different address/name',
                     header: 'Project already exists',
@@ -111,7 +112,7 @@ class Project extends ReactiveComponent {
                     status: 'success'
                 }
             }
-            
+
             this.setState({
                 closeText: success ? 'Close' : 'Cancel', 
                 loading: false,
