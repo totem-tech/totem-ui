@@ -15,7 +15,6 @@ class Project extends ReactiveComponent {
             _: addressbook.getBond()
         })
 
-        this.handleOwnerChange = this.handleOwnerChange.bind(this)
         this.handleSubmit = this.handleSubmit.bind(this)
 
         this.state = {
@@ -37,6 +36,7 @@ class Project extends ReactiveComponent {
                 {
                     label: 'Owner Address',
                     name: 'ownerAddress',
+                    onChange: this.handleOwnerChange.bind(this),
                     placeholder: 'Select owner',
                     type: 'dropdown',
                     search: true,
@@ -57,25 +57,20 @@ class Project extends ReactiveComponent {
 
     handleOwnerChange(e, values, i) {
         const { project } = this.props
-        if (!isObj(project) || !project.ownerAddress) return;
-        // attach a confirm dialog on change
-        if (project.ownerAddress === values.ownerAddress) return;
+        const walletAddrs = this.state.secretStore.keys.map(x => x.address)
+        const { ownerAddress } = values
+        // Confirm if selected owner address is not owned by user
+        if (!ownerAddress || walletAddrs.indexOf(ownerAddress) >= 0) return;
         confirm({
-            cancelButton: {
-                content: 'Cancel',
-                color: 'green'
-            },
-            confirmButton: {
-                content: 'Proceed',
-                color: 'red',
-                primary: false
-            },
-            content: 'You are about to re-assign owner of this project. You will no longer be able to update this project. Are you sure?',
-            header: 'Re-assign owner?',
+            cancelButton: { content: 'Cancel', color: 'green' },
+            confirmButton: { content: 'Proceed', color: 'red', primary: false },
+            content: 'You are about to assign owner of this project to an address that does not belong to you.'
+                + ' If you continue, you will no longer be able to update this project.',
+            header: 'Are you sure?',
             onCancel: ()=> {
                 const { inputs } = this.state
                 // revert to original address
-                inputs[i].value = project.ownerAddress
+                inputs[i].value = (project || {}).ownerAddress
                 this.setState({inputs})
             },
             size: 'tiny'
@@ -85,32 +80,20 @@ class Project extends ReactiveComponent {
     handleSubmit(e, values) {
         const { onSubmit, id } = this.props
         this.setState({loading: true, success: true})
+        const create = !id
         const hash = id || generateHash(JSON.stringify(values))
-        client.project(hash, values, (err, exists) => {
+
+        client.project(hash, values, create, (err, exists) => {
             let success = !err
             isFn(onSubmit) && onSubmit(e, values, success)
-            let message = {}
-            if(!success) {
+            let message = success ? {
+                header: `Project ${!!exists ? 'updated' : 'created'} successfully`,
+                status: 'success'
+            } : {
                 // Error
-                message = {
-                    content: err,
-                    header: 'Failed to create project',
-                    status: 'error'
-                }
-            } else if (!id && exists) {
-                // Attempt to create a new project with exact same details of an existing project
-                success = false
-                message = {
-                    content: 'Please use a different address/name',
-                    header: 'Project already exists',
-                    status: 'error'
-                }
-            } else {
-                // success
-                message = {
-                    header: `Project ${!!exists ? 'updated' : 'created'} successfully`,
-                    status: 'success'
-                }
+                content: err,
+                header: 'Failed to create project',
+                status: 'error'
             }
 
             this.setState({
@@ -176,7 +159,6 @@ class Project extends ReactiveComponent {
         if ( isObj(project) ) {
             // prefill values if needed
             fillValues(inputs, project, true)
-            ownerDD.onChange = this.handleOwnerChange
         }
 
         const formProps = {

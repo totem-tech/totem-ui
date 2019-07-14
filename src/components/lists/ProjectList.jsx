@@ -27,10 +27,16 @@ class ProjectList extends ReactiveComponent {
         this.getActions = this.getActions.bind(this)
         this.getContent = this.getContent.bind(this)
         this.getCardHeader = this.getCardHeader.bind(this)
+        this.loadProjects = this.loadProjects.bind(this)
 
         // Request projects
-        setTimeout(()=> client.projects((_, projects) => this.setState({projects})))
+        setTimeout(this.loadProjects)
         client.onProjects(projects => this.setState({projects}))
+    }
+
+    loadProjects() {
+        const walletAddrs = this.state.secretStore.keys.map(x => x.address)
+        client.projects( walletAddrs, (_, projects) => this.setState({projects}))
     }
 
     getActions(project, id, mobile) {
@@ -58,7 +64,14 @@ class ProjectList extends ReactiveComponent {
             {
                 active: false,
                 icon: 'edit',
-                onClick: ()=> showForm(ProjectForm, { modal: true, project, id })
+                onClick: ()=> showForm(
+                    ProjectForm,
+                    { 
+                        modal: true,
+                        project,
+                        id,
+                        onSubmit: (e, v, success) => success && this.loadProjects() 
+                    })
             },
             {
                 active: false,
@@ -166,7 +179,10 @@ class ProjectList extends ReactiveComponent {
                         <Button 
                             icon="plus" 
                             content="Create" 
-                            onClick={() => showForm(ProjectForm, { modal: true } )} 
+                            onClick={() => showForm(
+                                ProjectForm,
+                                { modal: true, onSubmit: (e, v, success) => success && this.loadProjects() }
+                            )} 
                         />
                     )
                     listProps.float = 'right'

@@ -63,13 +63,17 @@ export class ChatClient {
         this.idExists = (userId, cb) => socket.emit('id-exists', userId, cb)
 
         // add/update project
-        this.project = (hash, project, cb) => socket.emit('project', hash, project, cb)
+        this.project = (hash, project, create, cb) => socket.emit('project', hash, project, create, cb)
 
         // request user projects
         // @cb function : params =>
         //                @err             string/null : error message or null if success
         //                @result    Map         : Map of user projects with project hash as key
-        this.projects = cb => socket.emit('projects', (err, result) => isFn(cb) && cb(err, new Map(result)))
+        this.projects = (walletAddrs, cb) => socket.emit(
+            'projects',
+            walletAddrs,
+            (err, result) => isFn(cb) && cb(err, new Map(result))
+        )
         // user projects received
         // @cb function : params =>
         //                @result    Map         : Map of user projects with project hash as key

@@ -1,6 +1,6 @@
 import express from 'express'
 import { resolve } from 'url';
-import { isFn, isStr, isObj, objClean, objCopy } from './src/components/utils'
+import { isArr, isFn, isStr, mapCopy, objClean, objCopy } from './src/components/utils'
 
 const httpPort = 80
 const httpsPort = 443
@@ -88,12 +88,12 @@ const mapSearchByKey = (map, key, keyword) => {
 	const result = new Map()
 	for (let [itemKey, item] of map.entries()) {
 		const value =  item[key]
-		if (isStr(value) || isObj(value) ? value.indexOf(keyword) >= 0 : value === keyword) {
+		if (isStr(value) || isArr(value) ? value.indexOf(keyword) >= 0 : value === keyword) {
 			result.set(itemKey, item)
 		}
 	}
 	return result
-}
+} 
 
 // Error messages
 const errMsgs = {
@@ -208,14 +208,15 @@ io.on('connection', client => {
 	})
 
 	// Create/update project
-	client.on('project', (hash, project, callback) => {
+	client.on('project', (hash, project, create, callback) => {
 		const doCb = isFn(callback)
-		const requiredKeys = ['name', 'ownerAddress', 'description']
-		const user = findUserByClientId(client.id)
-		// Require login
-		if (!user) return doCb && callback(errMsgs.loginOrRegister)
+		const existingProject = projects.get(hash)
+		if(create && !!existingProject) {
+			return doCb && callback('Project already exists. Please use a different owner address')
+		}
 
 		// check if project contains all the required properties
+		const requiredKeys = ['name', 'ownerAddress', 'description']
 		const invalid = !hash || !project || requiredKeys.reduce((invalid, key) => invalid || !project[key], false)
 		if (invalid) return doCb && callback(
 			'Project must contain all of the following properties: ' + 
@@ -225,26 +226,29 @@ io.on('connection', client => {
 			doCb && callback('Project description must not be more than 160 characters')
 		}
 		// exclude any unwanted data 
-		project = objClean(project, requiredKeys)
-		project.userId = user.id
-		const existingProject = projects.get(hash)
-		if(existingProject && existingProject.userId != user.id) {
-			return doCb && callback('You are not allowed to update an existing project not owned by you')
-		}
+		project = objCopy(objClean(project, requiredKeys), existingProject)
 		
 		// Add/update project
-		projects.set(hash, objCopy(project, existingProject))
+		projects.set(hash, project)
 		saveProjects()
-		doCb && callback(null, !!existingProject)
-		client.emit('projects', mapSearchByKey(projects, 'userId', user.id))
+		doCb && callback(null)
 	})
 
 	// user projects
-	client.on('projects', callback => {
-		if (!isFn(callback)) return
-		const user = findUserByClientId(client.id)
-		if (!user) return callback(errMsgs.loginOrRegister)
-		callback(null, mapSearchByKey(projects, 'userId', user.id))
+	// Params
+	// @walletAddrs	array
+	// @callback	function: 
+	//						Params:
+	//						@err	string, 
+	//						@result map, 
+	client.on('projects', (walletAddrs, callback) => {
+		if (!isFn(callback)) return;
+		if (!isArr(walletAddrs) ) return callback('Array of wallet addresses required')
+		// Find all projects by supplied addresses and return Map
+		const result = walletAddrs.reduce((res, address) => (
+			mapCopy(mapSearchByKey(projects, 'ownerAddress', address), res)
+		), new Map())
+		callback(null, result)
 	})
 
 	// search all projects

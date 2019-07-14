@@ -124,6 +124,14 @@ export const objWithoutKeys = (obj, keys) => !isObj(obj) || !isArr(keys) ? {} : 
 	}, {})
 )
 
+
+// mapCopy copies items from @source Map to @dest Map (overrides if already exists)
+export const mapCopy = (source, dest) => !isMap(source) ? (
+	!isMap(dest) ? new Map() : dest
+) : (
+	Array.from(source).reduce((dest, x) => dest.set(x[0], x[1]), dest)
+)
+
 /*
  * Date formatting etc.
  */
