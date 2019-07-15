@@ -1,5 +1,5 @@
 import express from 'express'
-import { resolve } from 'url';
+// import { resolve } from 'url';
 import { isArr, isFn, isStr, mapCopy, objClean, objCopy } from './src/components/utils'
 
 const httpPort = 80
@@ -14,7 +14,7 @@ let app = express()
 http.createServer(function (req, res) {
 	res.writeHead(307, { "Location": "https://" + req.headers['host'] + req.url });
 	res.end();
-}).listen(httpPort, () => console.log('App http to https redirection listening on port ', httpPort));
+}).listen(httpPort, () => console.log('\nApp http to https redirection listening on port ', httpPort));
 
 app.use(express.static('dist'))
 
@@ -51,7 +51,7 @@ const options = {
 }
 
 // create main https app server
-https.createServer(options, app).listen(httpsPort, () => console.log('App https web server listening on port ', httpsPort))
+https.createServer(options, app).listen(httpsPort, () => console.log('\nApp https web server listening on port ', httpsPort))
 
 // Chat server also running on https
 const server = https.createServer(options, app)
@@ -261,28 +261,16 @@ io.on('connection', client => {
 	})
 })
 
-// Load user data from json file
-fs.readFile(usersFile, (err, data) => {
-	// File doesn't exists. Create new file
-	if (err) {
-		saveUsers()
-	} else {
-		// Load existing user list
-		users = new Map(JSON.parse(data))
-	}
-
-	server.listen(wsPort, () => console.log('Chat app https Websocket listening on port ', wsPort))
-})
-
 const saveUsers = () => saveMapToFile(usersFile, users)
 const saveFaucetRequests = () => saveMapToFile(faucetRequestsFile, faucetRequests)
 const saveProjects = () => saveMapToFile(projectsFile, projects)
-const saveMapToFile = (file, map) => {
-	file && fs.writeFile(
-		file,
+const saveMapToFile = (filepath, map) => {
+	if (!isStr(filepath)) return console.log('Invalid file path', filepath);
+	filepath && fs.writeFile(
+		filepath,
 		JSON.stringify(Array.from(map.entries())),
 		{ flag: 'w' },
-		err => err && console.log(`Failed to save ${file}. ${err}`)
+		err => err && console.log(`Failed to save ${filepath}. ${err}`)
 	)
 }
 
@@ -299,34 +287,50 @@ const emit = (ignoreClientIds, eventName, params) => {
 	}
 }
 
+// // Load user data from json file
+// fs.readFile(usersFile, (err, data) => {
+// 	// File doesn't exists. Create new file
+// 	if (err) {
+// 		saveUsers()
+// 	} else {
+// 		// Load existing user list
+// 		users = new Map(JSON.parse(data))
+// 	}
 
+// 	server.listen(wsPort, () => console.log('Chat app https Websocket listening on port ', wsPort))
+// })
 // load all files required
 var promises = [
 	{type: 'users', path: usersFile, saveFn: saveUsers},
 	{type: 'faucetRequests', path: faucetRequestsFile, saveFn: saveFaucetRequests},
 	{type: 'projects', path: projectsFile, saveFn: saveProjects},
-].map(item => new Promise((_, resove, reject) => {
+].map(item => new Promise((resolve, reject) => {
 	const { type, path, saveFn } = item
-	fs.readFile(path, 'utf8', (err, data) => {
-		console.info('Reading file', path)
+	if (!isStr(path)) return console.log('Invalid file path', path);
+	console.info('Reading file', path)
+	return fs.readFile(path, 'utf8', (err, data) => {
 		// Create empty file if does already not exists 
-		if(err) return resolve(saveFn())
-		const map = new Map(JSON.parse(data || '[]'))
-		switch(type) {
-			case 'users':
-				users = map
-				break
-			case 'faucetRequests':
-				faucetRequests = map
-				break
-			case 'projects':
-				projects = map
-				break
+		if(!!err) {
+			console.log(path, 'file does not exist. Creating new file.')
+			setTimeout(saveFn)
+		} else {
+			const map = new Map(JSON.parse(data || '[]'))
+			switch(type) {
+				case 'users':
+					users = map
+					break
+				case 'faucetRequests':
+					faucetRequests = map
+					break
+				case 'projects':
+					projects = map
+					break
+			}
 		}
-		resove(true)
+		resolve(true)
 	})
 }))
 // Start chat server
 Promise.all(promises).then(function(results){
-	server.listen(wsPort, () => console.log('Chat app https Websocket listening on port ', wsPort))
-}, (er)=> {}) 
+	server.listen(wsPort, () => console.log('\nChat app https Websocket listening on port ', wsPort))
+}).catch(err=> err && console.log('Promise error:', err)) 
