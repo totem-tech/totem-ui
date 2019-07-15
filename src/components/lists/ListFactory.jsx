@@ -193,13 +193,13 @@ export class DataTable extends ReactiveComponent {
     render() {
         let { data, dataKeys, footerContent, navLimit, pageOnSelect, perPage } = this.props
         const { pageNo } = this.state
-        const totalPages = Math.ceil(data.length / perPage)
+        const totalPages = Math.ceil((data.length || data.size) / perPage)
         const headers = dataKeys.map((x, i) => <Table.HeaderCell key={i} textAlign={x.textAlign || 'center'}>{x.title}</Table.HeaderCell>)
-        const rows = mapItemsByPage(data, pageNo, perPage, (item, i) => (
-            <Table.Row key={i}>
+        const rows = mapItemsByPage(data, pageNo, perPage, (item, key, items, isMap) => (
+            <Table.Row key={key}>
                 {dataKeys.map((x, j) => (
-                    <Table.Cell collapsing={x.collapsing} key={j} textAlign={x.textAlign || 'center'} verticalAlign={x.verticalAlign} style={x.style}>
-                        {!x.content ? item[x.key] : (isFn(x.content) ? x.content(item, i) : x.content)}
+                    <Table.Cell collapsing={x.collapsing} key={j} textAlign={x.textAlign || 'left'} verticalAlign={x.verticalAlign} style={x.style}>
+                        {!x.content ? item[x.key] : (isFn(x.content) ? x.content(item, key, items, isMap) : x.content)}
                     </Table.Cell>
                 ))}
             </Table.Row>
@@ -222,13 +222,13 @@ export class DataTable extends ReactiveComponent {
                         <Table.Row>
                             <Table.HeaderCell colSpan={dataKeys.length}>
                                 {footerContent && <div style={{float: 'left'}}>{footerContent}</div>}
-                                <Paginator
+                                {totalPages <= 1 ? '' : <Paginator
                                     total={totalPages}
                                     current={pageNo}
                                     navLimit={navLimit || 5}
                                     float="right"
                                     onSelect={pageNo => {this.setState({pageNo}); isFn(pageOnSelect) && pageOnSelect(pageNo); }}
-                                />
+                                />}
                             </Table.HeaderCell>
                         </Table.Row>
                     </Table.Footer>
@@ -238,7 +238,10 @@ export class DataTable extends ReactiveComponent {
     }
 }
 DataTable.propTypes = {
-    data: PropTypes.array.isRequired,
+    // data: PropTypes.oneOf([
+    //     PropTypes.array,
+    //     PropTypes.instanceOf(Map),
+    // ]).isRequired,
     dataKeys: PropTypes.arrayOf(
         PropTypes.shape({
             content: PropTypes.any,

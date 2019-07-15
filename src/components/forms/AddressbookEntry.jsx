@@ -15,7 +15,10 @@ class AddressbookEntry extends ReactiveComponent {
         this.nick = new Bond()
         this.lookup = new Bond()
 
+        this.handleChange = this.handleChange.bind(this)
+
         this.state = {
+            message: {},
             tags: ['partner'],
             success: false,
             inputs: [
@@ -23,29 +26,66 @@ class AddressbookEntry extends ReactiveComponent {
                     bond: this.lookup,
                     label: 'Lookup account',
                     name: 'address',
-                    onChange: deferred(this.handleAddressChange, 300, this),
+                    // onChange: deferred(this.handleAddressChange, 300, this),
                     placeholder: 'Name or address',
                     type: 'AccountIdBond',
-                    required: true
+                    required: true,
+                    validator: address => {
+                        const { inputs } = this.state
+                        const exists = addressbook.getByAddress(address)
+                        inputs.find(x => x.name === 'address').message = !exists ? {} : {
+                            content: 'Address already exists with name: "' + exists.name + '"',
+                            status: 'error'
+                        }
+                        inputs.find(x => x.name === 'name').disabled = address ? !!exists : false
+                        this.setState({inputs})
+                        return address
+                    }
                 },
                 {
-                    allowAdditions: true,
+                    // allowAdditions: true,
                     label: 'Tags',
                     name: 'tags',
-                    noResultsMessage: 'Type tag and press enter to add',
-                    multiple: true,
-                    onAddItem: this.handleAddTag.bind(this),
-                    onChange: this.handleTagChange.bind(this),
-                    options: [{
-                        key: 'partner',
-                        text: 'partner',
-                        value: 'partner'
-                    }],
+                    // noResultsMessage: 'Type tag and press enter to add',
+                    // multiple: true,
+                    // onAddItem: this.handleAddTag.bind(this),
+                    // onChange: this.handleTagChange.bind(this),
+                    // options: [{
+                    //     key: 'partner',
+                    //     text: 'partner',
+                    //     value: 'partner'
+                    // }],
                     placeholder: 'Enter tags',
-                    type: 'DropDown',
-                    search: true,
-                    selection: true,
+                    type: 'hidden',
+                    // search: true,
+                    // selection: true,
                     value: ['partner']
+                },
+                {
+                    inline: true,
+                    label: 'Type Of Partner',
+                    name: 'type',
+                    options: [
+                        { label: 'Personal Contact', value: 'personal' },
+                        { label: 'Business Contact', value: 'business' }
+                    ],
+                    radio: true,
+                    required: true,
+                    type:'checkbox-group',
+                    value: 'personal'
+                },
+                {
+                    inline: true,
+                    label: 'Partner Visibility',
+                    name: 'visibility',
+                    options: [
+                        { label: 'Make Partner Private', value: 'private' },
+                        { label: 'Make Partner Public', value: 'public' }
+                    ],
+                    radio: true,
+                    required: true,
+                    type:'checkbox-group',
+                    value: 'private'
                 },
                 {
                     action: (
@@ -62,7 +102,18 @@ class AddressbookEntry extends ReactiveComponent {
                     placeholder: 'A name for this address',
                     required: true,
                     type: 'InputBond',
-                    validator: name => name ? (addressbook.getByName(name) ? null : name) : null
+                    validator: name => {
+                        const { inputs } = this.state
+                        const nameExists = addressbook.getByName(name)
+                        const address = this.lookup._value
+                        const addressExists = addressbook.getByAddress(address)
+                        inputs.find(x => x.name === 'name').message = !nameExists ? {} : {
+                            content: 'Please choose an unique name',
+                            status: 'error'
+                        }
+                        this.setState({inputs})
+                        return name && !nameExists && address && !addressExists ? name : null
+                    }
                 }
             ]
         }
@@ -72,35 +123,40 @@ class AddressbookEntry extends ReactiveComponent {
         }
     }
 
-    handleAddTag(_, data) {
-        const { inputs } = this.state
-        inputs.find(x => x.name === 'tags').options.push({
-            key: data.value,
-            text: data.value,
-            value: data.value
-        })
-        this.setState({inputs})
+    // handleAddTag(_, data) {
+    //     const { inputs } = this.state
+    //     inputs.find(x => x.name === 'tags').options.push({
+    //         key: data.value,
+    //         text: data.value,
+    //         value: data.value
+    //     })
+    //     this.setState({inputs})
+    // }
+
+    // handleAddressChange(e, values, index) {
+    //     const { inputs } = this.state
+    //     inputs[index].message = {
+    //         compact: true,
+    //         content: <AddressLookup address={this.lookup} />
+    //     }
+    //     this.setState({inputs})
+    // }
+
+    // handleTagChange(_, values) {
+    //     this.setState({tags: values.tags})
+    // }
+
+    handleChange(_, values) {
+        this.setState({values})
     }
 
-    handleAddressChange(e, values, index) {
-        const { inputs } = this.state
-        inputs[index].message = {
-            compact: true,
-            content: <AddressLookup address={this.lookup} />
-        }
-        this.setState({inputs})
-    }
-
-    handleTagChange(_, values) {
-        this.setState({tags: values.tags})
-    }
-
-    handleSubmit(name, account) {
+    handleSubmit(xname, xaccount) {
         const { onSubmit } = this.props
-        const { tags } = this.state
-        addressbook.add(name, account, tags)
+        const { values } = this.state
+        const {name, address, tags, type, visibility} = values
+        addressbook.add(name, address, tags, type, visibility)
         this.setState({success: true})
-        setTimeout(()=> isFn(onSubmit) && onSubmit({name, account, tags}))
+        setTimeout(()=> isFn(onSubmit) && onSubmit(values))
         return true
     }
 
@@ -125,7 +181,8 @@ class AddressbookEntry extends ReactiveComponent {
                 headerIcon,
                 hideFooter: true,
                 inputs: mobile || modal ? inputs : inputs.map(x => {x.width = 8; return x;}), 
-                modal, 
+                modal,
+                onChange: this.handleChange,
                 open, 
                 size,
                 subheader,

@@ -2,12 +2,11 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { secretStore } from 'oo7-substrate'
-import { Button } from 'semantic-ui-react'
 import FormBuilder, { fillValues } from './FormBuilder'
-import { sortArr, deferred, isDefined, isFn, isObj, textEllipsis } from '../utils'
-import { confirm, showForm } from '../../services/modal'
+import { generateHash, isDefined, isFn, isObj, sortArr, textEllipsis } from '../utils'
+import { confirm } from '../../services/modal'
 import addressbook  from '../../services/addressbook'
-import WalletForm from './Wallet'
+import client from '../ChatClient'
 
 class Project extends ReactiveComponent {
     constructor(props) {
@@ -16,10 +15,11 @@ class Project extends ReactiveComponent {
             _: addressbook.getBond()
         })
 
-        this.handleOwnerChange = this.handleOwnerChange.bind(this)
         this.handleSubmit = this.handleSubmit.bind(this)
 
         this.state = {
+            closeText: 'Cancel',
+            loading: false,
             message: {},
             open: props.open,
             success: false,
@@ -28,18 +28,7 @@ class Project extends ReactiveComponent {
                     label: 'Project Name',
                     name: 'name',
                     minLength: 3,
-                    maxLength: 16,
                     placeholder: 'Enter project name',
-                    type: 'text',
-                    required: true,
-                    value: ''
-                },
-                {
-                    action: <Button icon="plus" content="New" onClick={ this.handleWalletCreate.bind(this) }/>,
-                    label: 'Project Address',
-                    name: 'address',
-                    placeholder: 'Generate a new address',
-                    readOnly: true,
                     type: 'text',
                     required: true,
                     value: ''
@@ -47,8 +36,10 @@ class Project extends ReactiveComponent {
                 {
                     label: 'Owner Address',
                     name: 'ownerAddress',
+                    onChange: this.handleOwnerChange.bind(this),
                     placeholder: 'Select owner',
                     type: 'dropdown',
+                    search: true,
                     selection: true,
                     required: true,
                 },
@@ -64,52 +55,53 @@ class Project extends ReactiveComponent {
         }
     }
 
-    handleSubmit(e, values) {
-        const { onSubmit } = this.props
-        const success = true
-        isFn(onSubmit) && onSubmit(e, values, success)
-        this.setState({success})
-        alert('Not implemented')
-    }
-
-    handleOwnerChange(e, data, i) {
+    handleOwnerChange(e, values, i) {
         const { project } = this.props
-        const { inputs } = this.state
-        if (!isObj(project)) return;
-        // attach a confirm dialog on change
-        if (project.ownerAddress === data.value) return;
+        const walletAddrs = this.state.secretStore.keys.map(x => x.address)
+        const { ownerAddress } = values
+        // Confirm if selected owner address is not owned by user
+        if (!ownerAddress || walletAddrs.indexOf(ownerAddress) >= 0) return;
         confirm({
-            cancelButton: {
-                content: 'Cancel',
-                color: 'green'
-            },
-            confirmButton: {
-                content: 'Proceed',
-                color: 'red',
-                primary: false
-            },
-            content: 'You are about to re-assign owner of this project.',
-            header: 'Re-assign owner?',
+            cancelButton: { content: 'Cancel', color: 'green' },
+            confirmButton: { content: 'Proceed', color: 'red', primary: false },
+            content: 'You are about to assign owner of this project to an address that does not belong to you.'
+                + ' If you continue, you will no longer be able to update this project.',
+            header: 'Are you sure?',
             onCancel: ()=> {
+                const { inputs } = this.state
                 // revert to original address
-                inputs[i].value = project.ownerAddress
+                inputs[i].value = (project || {}).ownerAddress
                 this.setState({inputs})
             },
             size: 'tiny'
         })
     }
 
-    handleWalletCreate(e) {
-        e.preventDefault()
-        const { inputs } = this.state
-        showForm( WalletForm, {
-            modal: true,
-            closeOnSubmit: true,
-            onSubmit: (values) => {
-                const newWallet = secretStore().find(values.name)
-                inputs.find(x => x.name === 'address').value = newWallet.address
-                this.setState({inputs})
+    handleSubmit(e, values) {
+        const { onSubmit, id } = this.props
+        this.setState({loading: true, success: true})
+        const create = !id
+        const hash = id || generateHash(JSON.stringify(values))
+
+        client.project(hash, values, create, (err, exists) => {
+            let success = !err
+            isFn(onSubmit) && onSubmit(e, values, success)
+            let message = success ? {
+                header: `Project ${!!exists ? 'updated' : 'created'} successfully`,
+                status: 'success'
+            } : {
+                // Error
+                content: err,
+                header: 'Failed to create project',
+                status: 'error'
             }
+
+            this.setState({
+                closeText: success ? 'Close' : 'Cancel', 
+                loading: false,
+                message, 
+                success
+            })
         })
     }
 
@@ -117,6 +109,7 @@ class Project extends ReactiveComponent {
         const {
             header,
             headerIcon,
+            id,
             modal,
             onOpen,
             onClose,
@@ -124,15 +117,13 @@ class Project extends ReactiveComponent {
             project, 
             size,
             subheader,
-            submitText,
             trigger
         } = this.props
-        const { inputs, message, open, secretStore, success } = this.state
+        const { closeText, inputs, loading, message, open, secretStore, success } = this.state
         const addrs = addressbook.getAll()
         const isOpenControlled = modal && !trigger && isDefined(propsOpen)
         const openModal = isOpenControlled ? propsOpen : open
         const ownerDD = inputs.find(x => x.name === 'ownerAddress')
-        const addressInput = inputs.find(x => x.name === 'address')
 
         // add tittle item
         ownerDD.options = [{
@@ -149,7 +140,7 @@ class Project extends ReactiveComponent {
             value: wallet.address
         })))
         if (addrs.length > 0) {
-            // add tittle item
+            // add title item
             ownerDD.options = ownerDD.options.concat([{
                 key: 1,
                 style: styles.itemHeader,
@@ -168,44 +159,44 @@ class Project extends ReactiveComponent {
         if ( isObj(project) ) {
             // prefill values if needed
             fillValues(inputs, project, true)
-            ownerDD.onChange = this.handleOwnerChange
-            addressInput.disabled = true
         }
 
-        return (
-            <FormBuilder
-                trigger={trigger}
-                header={header || (project ? 'Edit ' + project.name : 'Create a new project')}
-                headerIcon={headerIcon || (project ? 'edit' : 'plus')}
-                inputs={inputs}
-                message={message}
-                modal={modal}
-                onCancel={onClose}
-                onClose={onClose}
-                onOpen={onOpen}
-                open={openModal}
-                onSubmit={this.handleSubmit}
-                size={size}
-                subheader={subheader}
-                submitText={submitText}
-                success={success}
-            />
-        )
+        const formProps = {
+            closeText,
+            header: header || (project ? 'Edit ' + project.name : 'Create a new project'),
+            headerIcon: headerIcon || (project ? 'edit' : 'plus'),
+            inputs,
+            loading,
+            message,
+            modal,
+            onClose,
+            onOpen,
+            open: openModal,
+            onSubmit: this.handleSubmit,
+            size,
+            subheader,
+            submitText : !!id ? 'Update' : 'Create',
+            success,
+            trigger,
+        }
+
+        return <FormBuilder {...formProps}/>
     }
 }
 Project.propTypes = {
+    // Project ID/hash
+    id: PropTypes.string,
     modal: PropTypes.bool,
     onClose: PropTypes.func,
     onOpen: PropTypes.func,
     project: PropTypes.object, // if supplied prefill form
     size: PropTypes.string,
-    submitText: PropTypes.string,
+    // Element to 'trigger'/open the modal, modal=true required
     trigger: PropTypes.element
 }
 Project.defaultProps = {
     modal: false,
-    size: 'tiny',
-    submitText: 'Submit'
+    size: 'tiny'
 }
 export default Project
 
