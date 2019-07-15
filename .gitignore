@@ -5,6 +5,7 @@ yarn-error.log
 # data files
 users.json
 faucet-requests.json
+projects.json
 
 # scripts
 start.sh
