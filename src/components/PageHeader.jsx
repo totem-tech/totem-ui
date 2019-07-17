@@ -6,8 +6,8 @@ import { Dropdown, Image, Menu, Message, } from 'semantic-ui-react'
 import { getUser, getClient, onLogin } from './ChatClient'
 import { copyToClipboard, setState, setStateTimeout } from './utils'
 import { Pretty } from '../Pretty'
-import AddressbookEntryForm from './forms/AddressbookEntry'
-import { showForm } from '../services/modal'
+import FormBuilder from './forms/FormBuilder'
+import { showForm, closeModal } from '../services/modal'
 
 class PageHeader extends ReactiveComponent {
 	constructor(props) {
@@ -25,11 +25,12 @@ class PageHeader extends ReactiveComponent {
 
 		this.getSeletectedAddress = () => (this.state.secretStore.keys[this.state.index || 0] || {}).address
 		this.handleCopy = this.handleCopy.bind(this)
+		this.handleEdit = this.handleEdit.bind(this)
 		this.handleFaucetRequest = this.handleFaucetRequest.bind(this)
 		this.handleSelection = this.handleSelection.bind(this)
 	}
 
-	handleSelection(e, data) {
+	handleSelection(_, data) {
 		const num = eval(data.value)
 		const index = num < this.state.secretStore.keys.length ? num : 0
 		this.setState({ index })
@@ -41,6 +42,37 @@ class PageHeader extends ReactiveComponent {
 		copyToClipboard(address)
 		const msg = { text: 'Address copied to clipboard', error: false}
 		setStateTimeout(this, 'message', msg, {}, 2000)
+	}
+
+	handleEdit() {
+		const { index, secretStore: ss } = this.state
+		const wallet = (ss.keys[index || 0])
+		// Create a modal form on-the-fly!
+		const inputs = [
+			{
+				label: 'Name',
+				name: 'name',
+				placeholder: 'Enter new name',
+				required: true,
+				type: 'text',
+				value: wallet.name
+			}
+		]
+
+		const formId = showForm(FormBuilder, {
+			header: 'Update wallet name',
+			inputs,
+			onSubmit: (e, values) => {
+				const newIndex = ss.keys.length
+				secretStore().forget(wallet)
+				secretStore().submit(wallet.uri, values.name)
+				this.handleSelection(null, {value: newIndex})
+				closeModal(formId)
+			},
+			size: 'tiny',
+			submitText: 'Update'
+		})
+
 	}
 
 	handleFaucetRequest() {
@@ -73,6 +105,7 @@ class PageHeader extends ReactiveComponent {
 			id,
 			message,
 			onCopy: this.handleCopy,
+			onEdit: this.handleEdit,
 			onFaucetRequest: () => this.handleFaucetRequest(addressSelected),
 			onSelection: this.handleSelection,
 			selectedIndex: index,
@@ -117,6 +150,7 @@ class MobileHeader extends ReactiveComponent {
 		logoSrc,
 		message,
 		onCopy,
+		onEdit,
 		onFaucetRequest,
 		onSelection,
 		selectedIndex,
@@ -165,8 +199,8 @@ class MobileHeader extends ReactiveComponent {
 							<Dropdown.Menu className="left">
 								<Dropdown.Item
 									icon="pencil"
-									content="Edit Address"
-									onClick={onCopy}
+									content="Edit Address Name"
+									onClick={onEdit}
 								/>
 								<Dropdown.Item
 									icon="copy"
