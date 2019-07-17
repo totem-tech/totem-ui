@@ -47,6 +47,15 @@
 .mobile .pusher.main-content {
   margin: 0 !important;
 }
+/* Fixes the dimmer height being limited due to the use of scrollbar */ 
+.mobile.sidebar-visible .main-content.pusher.container:after {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+}
 .ui.visible.sidebar.left {
   transition: all 0.5s ease;
 }

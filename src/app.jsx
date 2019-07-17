@@ -49,6 +49,7 @@ export class App extends ReactiveComponent {
 		this.handleSidebarToggle = this.handleSidebarToggle.bind(this)
 		this.toggleMenuItem = this.toggleMenuItem.bind(this)
 		this.handleClose = this.handleClose.bind(this)
+		this.getContent = this.getContent.bind(this)
 	}
 
 	isMobile() {
@@ -86,18 +87,14 @@ export class App extends ReactiveComponent {
 		this.setState({sidebarItems})
 	}
 
-	readyRender() {
+	getContent(mobile) {
 		const { sidebarCollapsed, sidebarItems, sidebarVisible } = this.state
 		const { handleClose, handleSidebarToggle, toggleMenuItem } = this
 		const { spaceBelow, mainContent, mainContentCollapsed } = styles
 		const logoSrc = TotemButtonLogo
-		const classNames = [
-			sidebarVisible ? 'sidebar-visible' : '',
-			sidebarCollapsed ? 'sidebar-collapsed' : ''
-		].join(' ')
 
-		const getContent = (mobile) => () => (
-			<div className={(mobile ? 'mobile ': '') + classNames}>
+		return (
+			<React.Fragment>
 				<ChatWidget />
 				<ModalService />
 				<IfFn condition={!mobile && sidebarCollapsed} then={()=> <SystemStatus sidebar={true} visible={true} />} />
@@ -133,9 +130,25 @@ export class App extends ReactiveComponent {
 						))}
 					</Sidebar.Pusher>
 				</Sidebar.Pushable>
-			</div>
+			</React.Fragment>
 		)
-		return <IfMobile then={getContent(true)} else={getContent(false)} />
+	}
+
+	readyRender() {
+		const { sidebarCollapsed, sidebarVisible } = this.state
+		const classNames = [
+			sidebarVisible ? 'sidebar-visible' : '',
+			sidebarCollapsed ? 'sidebar-collapsed' : ''
+		].join(' ')
+
+		return (
+			<IfMobile
+				then={this.getContent(true)}
+				thenClassName={'mobile ' + classNames}
+				else={this.getContent(false)}
+				elseClassName={classNames}
+			/>
+		)
 	}
 }
 
