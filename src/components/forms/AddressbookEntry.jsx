@@ -6,7 +6,7 @@ import { TransformBondButton } from '../../TransformBondButton'
 import { deferred, IfMobile, isFn, isObj } from '../utils'
 import addressbook from '../../services/addressbook'
 import FormBuilder, { fillValues } from './FormBuilder'
-import AddressLookup from '../AddressLookup'
+// import AddressLookup from '../AddressLookup'
 
 class AddressbookEntry extends ReactiveComponent {
     constructor(props) {
@@ -16,14 +16,19 @@ class AddressbookEntry extends ReactiveComponent {
         this.lookup = new Bond()
 
         this.handleChange = this.handleChange.bind(this)
+        this.handleSubmit = this.handleSubmit.bind(this)
+        const doUpdate = props.index >= 0
 
         this.state = {
+            doUpdate,
             message: {},
             tags: ['partner'],
             success: false,
+            values: doUpdate && isObj(props.values) ? props.values : {},
             inputs: [
                 {
                     bond: this.lookup,
+                    disabled: doUpdate,
                     label: 'Lookup account',
                     name: 'address',
                     // onChange: deferred(this.handleAddressChange, 300, this),
@@ -31,6 +36,8 @@ class AddressbookEntry extends ReactiveComponent {
                     type: 'AccountIdBond',
                     required: true,
                     validator: address => {
+                        const { values: oldValues } = this.props
+                        if (doUpdate && isObj(oldValues) && oldValues.address === address) return address;
                         const { inputs } = this.state
                         const exists = addressbook.getByAddress(address)
                         inputs.find(x => x.name === 'address').message = !exists ? {} : {
@@ -79,8 +86,8 @@ class AddressbookEntry extends ReactiveComponent {
                     label: 'Partner Visibility',
                     name: 'visibility',
                     options: [
-                        { label: 'Make Partner Private', value: 'private' },
-                        { label: 'Make Partner Public', value: 'public' }
+                        { label: 'Private', value: 'private' },
+                        { label: 'Public', value: 'public' }
                     ],
                     radio: true,
                     required: true,
@@ -88,9 +95,9 @@ class AddressbookEntry extends ReactiveComponent {
                     value: 'private'
                 },
                 {
-                    action: (
+                    action: props.modal ? undefined : (
                         <TransformBondButton
-                            content="Add"
+                            content={doUpdate ? 'Update' : 'Add' }
                             transform={this.handleSubmit.bind(this)}
                             args={[this.nick, this.lookup]}
                             immediate
@@ -103,10 +110,12 @@ class AddressbookEntry extends ReactiveComponent {
                     required: true,
                     type: 'InputBond',
                     validator: name => {
+                        const { values: oldValues } = this.props
+                        if (doUpdate && isObj(oldValues) && oldValues.name === name) return name;
                         const { inputs } = this.state
                         const nameExists = addressbook.getByName(name)
                         const address = this.lookup._value
-                        const addressExists = addressbook.getByAddress(address)
+                        const addressExists = !doUpdate && addressbook.getByAddress(address)
                         inputs.find(x => x.name === 'name').message = !nameExists ? {} : {
                             content: 'Please choose an unique name',
                             status: 'error'
@@ -118,8 +127,8 @@ class AddressbookEntry extends ReactiveComponent {
             ]
         }
 
-        if (isObj(props.preFillValues)) { 
-            fillValues(this.state.inputs, props.preFillValues, true)
+        if (isObj(props.values)) { 
+            fillValues(this.state.inputs, props.values, true)
         }
     }
 
@@ -150,13 +159,24 @@ class AddressbookEntry extends ReactiveComponent {
         this.setState({values})
     }
 
-    handleSubmit(xname, xaccount) {
-        const { onSubmit } = this.props
-        const { values } = this.state
-        const {name, address, tags, type, visibility} = values
-        addressbook.add(name, address, tags, type, visibility)
-        this.setState({success: true})
-        setTimeout(()=> isFn(onSubmit) && onSubmit(values))
+    handleSubmit() {
+        const { closeOnSubmit, index, onSubmit, values: oldValues } = this.props
+        const { values: newValues } = this.state
+        const {name, address, tags, type, visibility} = newValues
+        const doUpdate = index >= 0 && isObj(oldValues)
+        if (doUpdate) {
+            addressbook.updateByIndex(index, name, address, tags, type, visibility)
+        } else {
+            addressbook.add(name, address, tags, type, visibility)
+        }
+
+        this.setState({
+            success: true,
+            message: closeOnSubmit ? {} : {
+                content: `Partner ${doUpdate ? 'updated' : 'created'} successfully`
+            }
+        })
+        setTimeout(()=> isFn(onSubmit) && onSubmit(newValues, index))
         return true
     }
 
@@ -165,6 +185,7 @@ class AddressbookEntry extends ReactiveComponent {
             closeOnSubmit,
             header,
             headerIcon,
+            index,
             subheader,
             modal,
             open,
@@ -172,20 +193,23 @@ class AddressbookEntry extends ReactiveComponent {
             trigger
         } = this.props
         
-        const { inputs, success } = this.state
+        const { doUpdate, inputs, message, success } = this.state
 
         const getForm = (mobile) => () => (
             <FormBuilder {...{
                 closeOnSubmit,
                 header,
                 headerIcon,
-                hideFooter: true,
+                hideFooter: !modal,
                 inputs: mobile || modal ? inputs : inputs.map(x => {x.width = 8; return x;}), 
+                message,
                 modal,
                 onChange: this.handleChange,
+                onSubmit: this.handleSubmit,
                 open, 
                 size,
-                subheader,
+                header: `${index >= 0 ? 'Add' : 'Update'} partner`,
+                submitText : `${doUpdate ? 'Update' : 'Add'} partner`,
                 success,
                 trigger
             }} />
@@ -195,18 +219,20 @@ class AddressbookEntry extends ReactiveComponent {
 }
 AddressbookEntry.propTypes = {
     closeOnSubmit: PropTypes.bool,
-    // values to be prefilled into inputs
-    preFillValues: PropTypes.object,
     header: PropTypes.string,
-    subheader: PropTypes.string,
+    // index number in the addressbook list
+    // determines whether to create or update
+    index: PropTypes.number,
     modal: PropTypes.bool,
     onSubmit: PropTypes.func,
     open: PropTypes.bool,
-    size: PropTypes.string
+    size: PropTypes.string,
+    subheader: PropTypes.string,
+    // values to be prefilled into inputs
+    values: PropTypes.object,
 }
 AddressbookEntry.defaultProps = {
     closeOnSubmit: true,
-    header: 'Add partner',
     size: 'tiny'
 }
 export default AddressbookEntry

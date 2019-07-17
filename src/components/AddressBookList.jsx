@@ -4,6 +4,8 @@ import {ReactiveComponent} from 'oo7-react';
 import { AccountId, runtime, addressBook, pretty} from 'oo7-substrate';
 import Identicon from 'polkadot-identicon';
 import addressbook from '../services/addressbook'
+import AddressBookEntryForm from './forms/AddressbookEntry'
+import { showForm } from '../services/modal'
 
 export class AddressBookList extends ReactiveComponent {
 	constructor () {
@@ -23,6 +25,12 @@ export class AddressBookList extends ReactiveComponent {
 				{this.state.addressbook.map((item, i) => (
 					<List.Item key={i+item.name}>
 						<List.Content floated='right'>
+							<Button
+								size='small'
+								onClick={() => showForm(AddressBookEntryForm, {index: i, open: true, values: item})}
+							>
+								Update
+							</Button>
 							<Button size='small' onClick={() => addressbook.remove(item.name, item.address)}>Delete</Button>
 						</List.Content>
 						<span className='ui avatar image' style={{minWidth: '36px'}}>

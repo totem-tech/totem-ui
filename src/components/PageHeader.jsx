@@ -5,7 +5,9 @@ import { runtimeUp, secretStore, runtime, ss58Decode } from 'oo7-substrate'
 import { Dropdown, Image, Menu, Message, } from 'semantic-ui-react'
 import { getUser, getClient, onLogin } from './ChatClient'
 import { copyToClipboard, setState, setStateTimeout } from './utils'
-import { Pretty } from '../Pretty';
+import { Pretty } from '../Pretty'
+import AddressbookEntryForm from './forms/AddressbookEntry'
+import { showForm } from '../services/modal'
 
 class PageHeader extends ReactiveComponent {
 	constructor(props) {
@@ -161,6 +163,11 @@ class MobileHeader extends ReactiveComponent {
 							onClick={() => setState(instance, 'showTools', !showTools)}
 						>
 							<Dropdown.Menu className="left">
+								<Dropdown.Item
+									icon="pencil"
+									content="Edit Address"
+									onClick={onCopy}
+								/>
 								<Dropdown.Item
 									icon="copy"
 									content="Copy Address"
