@@ -12,7 +12,12 @@ import storageService from '../services/storage'
 
 class PageHeader extends ReactiveComponent {
 	constructor(props) {
-		super(props, { ensureRuntime: runtimeUp, secretStore: secretStore() })
+		super(props, {
+			ensureRuntime: runtimeUp,
+			secretStore: secretStore(),
+			// keep UI updated when selected wallet changed
+			_: storageService.walletIndexBond
+		})
 
 		const user = getUser()
 		this.state = {
@@ -75,7 +80,6 @@ class PageHeader extends ReactiveComponent {
 			size: 'tiny',
 			submitText: 'Update'
 		})
-
 	}
 
 	handleFaucetRequest() {
@@ -131,8 +135,8 @@ PageHeader.defaultProps = {
 export default PageHeader
 
 class MobileHeader extends ReactiveComponent {
-	constructor() {
-		super()
+	constructor(props) {
+		super(props)
 		this.state = {
 			showTools: false
 		}
@@ -156,7 +160,6 @@ class MobileHeader extends ReactiveComponent {
 		onEdit,
 		onFaucetRequest,
 		onSelection,
-		selectedIndex,
 		wallets
 	} = this.props
 
@@ -176,7 +179,7 @@ class MobileHeader extends ReactiveComponent {
 						<Menu.Item>
 						<Dropdown
 							labeled
-							value={selectedIndex || 0}
+							value={storageService.walletIndex()}
 							noResultsMessage="No wallet available"
 							placeholder="Select an account"
 							onChange={onSelection}

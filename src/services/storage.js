@@ -2,7 +2,8 @@
  * Storage Service: to handle all interactions with browser's localStorage.
  * Typically this should be used by other services
  */
-import { isArr, isDefined, isStr, isValidNumber } from '../components/utils'
+import { Bond } from 'oo7'
+import { isArr, isDefined, isStr, isValidNumber, isBond } from '../components/utils'
 // Local Storage item key prefix for all items
 const PREFIX = 'totem_'
 const storage = {}
@@ -46,7 +47,11 @@ storage.chatUser = (id, secret) => {
 // Returns  undefined or number
 storage.walletIndex = index => {
     const key = 'wallet-index'
-    return isValidNumber(index) ? setItem(key, index) : getItem(key) || 0
+    return isValidNumber(index) ? setItem(key, index) | storage.walletIndexBond.changed(index) : getItem(key) || 0
 }
+// Bond to keep components updated 
+storage.walletIndexBond = new Bond()
+// Update immediately
+storage.walletIndexBond.changed(storage.walletIndex())
 
 export default storage
