@@ -13,7 +13,7 @@ import {
 	// toggleMsgLoader
 } from 'react-chat-widget'
 import 'react-chat-widget/lib/styles.css'
-import { addToHistory, getClient, getUser, getHistory, getHistoryLimit, onLogin } from './ChatClient'
+import { addToHistory, getClient, getUser, getHistory, getHistoryLimit, onLogin } from '../services/ChatClient'
 import { copyToClipboard, getNow, objCopy } from './utils'
 import TotemLogoCircle from '../assets/totem-button-grey.png';
 import Register from './forms/Register'
@@ -145,9 +145,7 @@ class ChatWidget extends ReactiveComponent {
 		if (!user) return;
 
 		this.client.login(user.id, user.secret, err => {
-			if (err) {
-				return addEventMsg(<div>Login failed: <pre>{err}</pre></div>)
-			}
+			if (err) return addEventMsg(<div>Login failed: <pre>{err}</pre></div>);
 			if (!this.state.historyAdded) {
 				getHistory().forEach(e => {
 					e.id === user.id ? addUserMessage(e.message) : addResponseWithId(e.message, e.id)

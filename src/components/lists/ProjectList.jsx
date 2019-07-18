@@ -9,7 +9,7 @@ import { confirm, showForm, closeModal } from '../../services/modal'
 import AddressbookEntryForm from '../forms/AddressbookEntry'
 import addressbook from '../../services/addressbook'
 import { secretStore } from 'oo7-substrate'
-import client from '../ChatClient'
+import client from '../../services/ChatClient'
 
 const toBeImplemented = ()=> alert('To be implemented')
 

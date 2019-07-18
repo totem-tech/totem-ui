@@ -1,6 +1,6 @@
 import io from 'socket.io-client'
-import { isFn, isArr } from './utils'
-import storageService from '../services/storage'
+import { isFn, isArr } from '../components/utils'
+import storageService from './storage'
 
 const port = 3001
 let instance, socket;

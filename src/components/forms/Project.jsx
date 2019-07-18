@@ -6,7 +6,7 @@ import FormBuilder, { fillValues } from './FormBuilder'
 import { generateHash, isDefined, isFn, isObj, sortArr, textEllipsis } from '../utils'
 import { confirm } from '../../services/modal'
 import addressbook  from '../../services/addressbook'
-import client from '../ChatClient'
+import client from '../../services/ChatClient'
 
 class Project extends ReactiveComponent {
     constructor(props) {

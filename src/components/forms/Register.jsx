@@ -5,7 +5,7 @@ import uuid from 'uuid'
 import { dropMessages, addResponseMessage, isWidgetOpened, toggleWidget } from 'react-chat-widget'
 import FormBuilder from './FormBuilder'
 import { deferred, isFn } from '../utils'
-import { getClient } from '../ChatClient'
+import { getClient } from '../../services/ChatClient'
 
 const nameRegex = /^($|[a-z]|[a-z][a-z0-9]+)$/
 
