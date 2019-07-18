@@ -1,19 +1,16 @@
 import { Bond } from 'oo7'
-import { runtime, pretty } from 'oo7-substrate'
-const LOCAL_STORAGE_KEY = 'totem_addressbook'
-const bond = new Bond()
+import { pretty } from 'oo7-substrate'
+import storageService from './storage'
 
-const _save = entries => localStorage.setItem(
-    LOCAL_STORAGE_KEY,
-    JSON.stringify(entries || [])
-) | updateBond()
+const bond = new Bond()
+const _save = entries => storageService.addressbook(entries) | bond.changed(entries)
 
 export const add = (name, address, tags, type, visibility) => {
     if (!name || !address) return;
-    const adrs = getAll()
+    const addresses = getAll()
     // prevent adding multiple items with same name
-    if (getIndex(name, address, adrs) >= 0) return;
-    _save(adrs.concat([{
+    if (getIndex(name, address, addresses) >= 0) return;
+    _save(addresses.concat([{
         address: pretty(address),
         name, 
         tags: tags || [],
@@ -22,7 +19,7 @@ export const add = (name, address, tags, type, visibility) => {
     }]))
 }
 
-export const getAll = () => JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '[]')
+export const getAll = () => storageService.addressbook()
 
 export const getByAddress = (address, _addresses) => (_addresses || getAll()).find(item => item.address === address)
 
@@ -58,9 +55,6 @@ export const updateByIndex = (index, name, address, tags, type, visibility) => {
     _save(addresses)
 }
 
-const updateBond = () => bond.changed(getAll())
-updateBond()
-
 const addressbook = {
     add,
     getAll,
@@ -73,5 +67,6 @@ const addressbook = {
     removeByIndex,
     updateByIndex
 }
-
+// Pre-load addressbook into bond
+bond.changed(getAll())
 export default addressbook

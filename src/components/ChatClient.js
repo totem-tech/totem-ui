@@ -1,26 +1,20 @@
 import io from 'socket.io-client'
 import { isFn, isArr } from './utils'
+import storageService from '../services/storage'
+
 const port = 3001
 let instance, socket;
 const postLoginCallbacks = []
-// Local Storage Keys
-const USER_KEY = 'chat-user'
-const HISTORY_KEY = 'chat-history'
-const historyLimit = 100
-// Saves user credentails to local storage
-const saveUser = (id, secret) => localStorage.setItem(USER_KEY, JSON.stringify({id, secret}))
+const HISTORY_LIMIT = 100
 // retrieves user credentails from local storage
-export const getUser = () => JSON.parse(localStorage.getItem(USER_KEY))
+export const getUser = () => storageService.chatUser()
 // Retrieves chat history from local storage
-export const getHistory = () => JSON.parse(localStorage.getItem(HISTORY_KEY)) || []
-export const getHistoryLimit = () => historyLimit
+export const getHistory = () => storageService.chatHistory()
+export const getHistoryLimit = () => HISTORY_LIMIT
 export const addToHistory = (message, id) => {
-    const history = getHistory() || []
+    const history = getHistory()
     history.push({message, id})
-    localStorage.setItem(
-        HISTORY_KEY,
-        JSON.stringify(history.slice(history.length - historyLimit, history.length))
-    )
+    storageService.chatHistory(history.slice(history.length - HISTORY_LIMIT, history.length))
 }
 // Adds callback to be executed after login is successful
 export const onLogin = cb => isFn(cb) && postLoginCallbacks.push(cb)
@@ -83,7 +77,7 @@ export class ChatClient {
     register(id, secret, cb) {
         socket.emit('register', id, secret, err => {
             if (!err) {
-                saveUser(id, secret)
+                storageService.chatUser(id, secret)
                 setTimeout(() => _execOnLogin(id))
             }
             isFn(cb) && cb(err)

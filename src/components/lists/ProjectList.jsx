@@ -29,13 +29,12 @@ class ProjectList extends ReactiveComponent {
         this.getCardHeader = this.getCardHeader.bind(this)
         this.loadProjects = this.loadProjects.bind(this)
 
-        // Request projects
-        setTimeout(this.loadProjects)
         client.onProjects(projects => this.setState({projects}))
     }
 
     loadProjects() {
-        const walletAddrs = this.state.secretStore.keys.map(x => x.address)
+        const { secretStore } = this.state
+        const walletAddrs = secretStore.keys.map(x => x.address)
         client.projects( walletAddrs, (_, projects) => this.setState({projects}))
     }
 
@@ -70,7 +69,7 @@ class ProjectList extends ReactiveComponent {
                         modal: true,
                         project,
                         id,
-                        onSubmit: (e, v, success) => success && this.loadProjects() 
+                        // onSubmit: (e, v, success) => success && this.loadProjects() 
                     })
             },
             {
@@ -116,7 +115,7 @@ class ProjectList extends ReactiveComponent {
     getContent(mobile) {
         return () => {
             const { itemsPerRow, type } = this.props
-            const { actionsIndex, projects } = this.state
+            const { actionsIndex, projects, secretStore } = this.state
             const { getActions, getCardHeader } = this
             const listType = type || (mobile ? 'cardlist' : 'datatable')
             const listProps = {
@@ -124,6 +123,7 @@ class ProjectList extends ReactiveComponent {
                 pageNo: 1,
                 type: listType,
             }
+            if (projects.size === 0 && secretStore) this.loadProjects();
             switch(listType.toLowerCase()) {
                 case 'cardlist' :
                     const perRow = mobile ? 1 : itemsPerRow || 1
@@ -180,7 +180,7 @@ class ProjectList extends ReactiveComponent {
                             content="Create" 
                             onClick={() => showForm(
                                 ProjectForm,
-                                { modal: true, onSubmit: (e, v, success) => success && this.loadProjects() }
+                                // { modal: true, onSubmit: (e, v, success) => success && this.loadProjects() }
                             )} 
                         />
                     )
