@@ -8,6 +8,7 @@ import { copyToClipboard, setState, setStateTimeout } from './utils'
 import { Pretty } from '../Pretty'
 import FormBuilder from './forms/FormBuilder'
 import { showForm, closeModal } from '../services/modal'
+import storageService from '../services/storage'
 
 class PageHeader extends ReactiveComponent {
 	constructor(props) {
@@ -15,7 +16,7 @@ class PageHeader extends ReactiveComponent {
 
 		const user = getUser()
 		this.state = {
-			index: 0,
+			index: storageService.walletIndex(),
 			id: user ? user.id : '',
 			message: { error: false, text: ''}
 		}
@@ -31,9 +32,11 @@ class PageHeader extends ReactiveComponent {
 	}
 
 	handleSelection(_, data) {
+		const { secretStore } = this.state
 		const num = eval(data.value)
-		const index = num < this.state.secretStore.keys.length ? num : 0
+		const index = num < secretStore.keys.length ? num : 0
 		this.setState({ index })
+		storageService.walletIndex(index)
 	}
 
 	handleCopy() {
