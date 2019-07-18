@@ -127,9 +127,7 @@ class AddressbookEntry extends ReactiveComponent {
             ]
         }
 
-        if (isObj(props.values)) { 
-            fillValues(this.state.inputs, props.values, true)
-        }
+        isObj(props.values) && fillValues(this.state.inputs, props.values, true)
     }
 
     // handleAddTag(_, data) {
@@ -160,8 +158,8 @@ class AddressbookEntry extends ReactiveComponent {
     }
 
     handleSubmit() {
-        const { closeOnSubmit, index, onSubmit, values: oldValues } = this.props
-        const { values: newValues } = this.state
+        const { closeOnSubmit, index, modal, onSubmit, values: oldValues } = this.props
+        const { inputs, values: newValues } = this.state
         const {name, address, tags, type, visibility} = newValues
         const doUpdate = index >= 0 && isObj(oldValues)
         if (doUpdate) {
@@ -170,11 +168,15 @@ class AddressbookEntry extends ReactiveComponent {
             addressbook.add(name, address, tags, type, visibility)
         }
 
+        // clear inputs
+        !modal && fillValues(inputs, {}, true)
+
         this.setState({
-            success: true,
+            inputs,
             message: closeOnSubmit ? {} : {
                 content: `Partner ${doUpdate ? 'updated' : 'created'} successfully`
-            }
+            },
+            success: true,
         })
         setTimeout(()=> isFn(onSubmit) && onSubmit(newValues, index))
         return true

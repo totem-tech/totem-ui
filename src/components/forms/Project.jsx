@@ -6,7 +6,7 @@ import FormBuilder, { fillValues } from './FormBuilder'
 import { generateHash, isDefined, isFn, isObj, sortArr, textEllipsis } from '../utils'
 import { confirm } from '../../services/modal'
 import addressbook  from '../../services/addressbook'
-import client from '../ChatClient'
+import client from '../../services/ChatClient'
 
 class Project extends ReactiveComponent {
     constructor(props) {
@@ -53,6 +53,10 @@ class Project extends ReactiveComponent {
                 }
             ]
         }
+
+        // prefill values if needed
+        isObj(props.project) && fillValues(this.state.inputs, props.project, true)         
+        
     }
 
     handleOwnerChange(e, values, i) {
@@ -85,7 +89,6 @@ class Project extends ReactiveComponent {
 
         client.project(hash, values, create, (err, exists) => {
             let success = !err
-            isFn(onSubmit) && onSubmit(e, values, success)
             let message = success ? {
                 header: `Project ${!!exists ? 'updated' : 'created'} successfully`,
                 status: 'success'
@@ -102,6 +105,7 @@ class Project extends ReactiveComponent {
                 message, 
                 success
             })
+            isFn(onSubmit) && onSubmit(e, values, success)
         })
     }
 
@@ -154,11 +158,6 @@ class Project extends ReactiveComponent {
                 description: textEllipsis(item.address, 25, 5),
                 value: item.address
             })))
-        }
-        
-        if ( isObj(project) ) {
-            // prefill values if needed
-            fillValues(inputs, project, true)
         }
 
         const formProps = {

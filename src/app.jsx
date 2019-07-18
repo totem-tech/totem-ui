@@ -209,18 +209,21 @@ const styles = {
 	pushable: {
 	  margin: 0,
 	  height: 'calc(100% - 155px)',
-	  overflow: 'hidden'
+	  overflow: 'hidden',
+	  WebkitOverflow: 'hidden',
 	},
 	mainContent: {
 	  overflow: 'hidden auto',
-	  maxHeight: '100%',
+	  WebkitOverflow: 'hidden auto',
+	  height: '100%',
 	  scrollBehavior: 'smooth',
 	  padding: '75px 15px 15px'
 	},
 	mainContentCollapsed: {
 		overflow: 'hidden auto',
-		maxHeight: '100%',
-		scrollBehavior: 'smooth',
+		WebkitOverflow: 'hidden auto',
+		height: '100%',
+		// scrollBehavior: 'smooth',
 		padding: '75px 15px 75px'
 	},
 	spaceBelow: {
