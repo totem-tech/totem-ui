@@ -215,7 +215,7 @@ const styles = {
 	mainContent: {
 	  overflow: 'hidden auto',
 	  WebkitOverflow: 'hidden auto',
-	  maxHeight: '100%',
+	  height: '100%',
 	  scrollBehavior: 'smooth',
 	  padding: '75px 15px 15px'
 	},
