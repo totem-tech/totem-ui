@@ -38,7 +38,11 @@ export class WalletItem extends ReactiveComponent {
         if (!isSelected && !isOnlyItem) {
             // If "to be deleted" index is lower than the selected index, adjust the selected index to keep the same wallet selected
             if (index < selectedIndex) storageService.walletIndex(selectedIndex -1);
-            return secretStore().forget(wallet);
+            return confirm({
+                header: 'Delete wallet?',
+                onConfirm: () => secretStore().forget(wallet),
+                size: 'mini'
+            })
         }
         
         return confirm({
