@@ -2,6 +2,8 @@ import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import WalletList from './lists/WalletList'
 import WalletForm from './forms/Wallet'
+// import CompanyForm from './forms/Company'
+// import { showForm } from '../services/modal'
 
 class WalletView extends ReactiveComponent {
 	constructor() {
@@ -15,6 +17,11 @@ class WalletView extends ReactiveComponent {
 				<div style={{ paddingBottom: '1em' }}>
 					<WalletList itemsPerRow={1} />
 				</div>
+
+
+				{/* <button onClick={()=>showForm(CompanyForm, {
+					modal: true
+				})}>Add Company</button> */}
 			</React.Fragment>
 		)
 	}

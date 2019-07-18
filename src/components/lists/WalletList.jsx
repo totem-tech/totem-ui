@@ -9,6 +9,7 @@ import ListFactory, { CardListItem} from './ListFactory'
 import storageService from '../../services/storage'
 import { confirm } from '../../services/modal'
 
+
 export class WalletItem extends ReactiveComponent {
     constructor(props) {
         const validWallet = isObj(props.wallet) && props.wallet.address
@@ -200,6 +201,7 @@ class WalletList extends ReactiveComponent {
                 style={!mobile && numItemsPerRow === 1 ? {marginTop : 15} : {}}
             />
         )
+
         return (
             <IfMobile then={getList(true)} else={getList(false)} />
         )

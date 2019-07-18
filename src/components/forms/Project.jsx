@@ -126,7 +126,6 @@ class Project extends ReactiveComponent {
         const { closeText, inputs, loading, message, open, secretStore, success } = this.state
         const addrs = addressbook.getAll()
         const isOpenControlled = modal && !trigger && isDefined(propsOpen)
-        const openModal = isOpenControlled ? propsOpen : open
         const ownerDD = inputs.find(x => x.name === 'ownerAddress')
 
         // add tittle item
@@ -170,7 +169,7 @@ class Project extends ReactiveComponent {
             modal,
             onClose,
             onOpen,
-            open: openModal,
+            open: isOpenControlled ? propsOpen : open,
             onSubmit: this.handleSubmit,
             size,
             subheader,
