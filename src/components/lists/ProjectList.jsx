@@ -69,7 +69,7 @@ class ProjectList extends ReactiveComponent {
                         modal: true,
                         project,
                         id,
-                        // onSubmit: (e, v, success) => success && this.loadProjects() 
+                        onSubmit: (e, v, success) => success && setTimeout(this.loadProjects(), 2000)
                     })
             },
             {
@@ -180,7 +180,7 @@ class ProjectList extends ReactiveComponent {
                             content="Create" 
                             onClick={() => showForm(
                                 ProjectForm,
-                                // { modal: true, onSubmit: (e, v, success) => success && this.loadProjects() }
+                                { modal: true, onSubmit: (e, v, success) => success && this.loadProjects() }
                             )} 
                         />
                     )
