@@ -6,6 +6,8 @@ import Identicon from 'polkadot-identicon'
 import { Label } from 'semantic-ui-react'
 import { copyToClipboard, IfMobile, IfNotMobile, isObj, setState, setStateTimeout, textEllipsis } from '../utils'
 import ListFactory, { CardListItem} from './ListFactory'
+import storageService from '../../services/storage'
+import { confirm } from '../../services/modal'
 
 export class WalletItem extends ReactiveComponent {
     constructor(props) {
@@ -27,7 +29,20 @@ export class WalletItem extends ReactiveComponent {
     }
 
     handleDelete() {
-        this.props.allowDelete && secretStore().forget(this.props.wallet)
+        const { index, total, wallet } = this.props
+        // Prevent selected wallet to from being deleted
+        const isSelected = storageService.walletIndex() === index
+        const isOnlyItem = index === total - 1
+        if (!isSelected && isOnlyItem) return secretStore().forget(wallet);
+        
+        return confirm({
+            cancelButton: null,
+            content: 'You cannot delete ' + (
+                isOnlyItem ? 'your only wallet.' : 'selected wallet. Please select a different wallet at the top-right.'
+            ),
+            header: 'Cannot delete wallet!',
+            size: 'mini'
+        })
     }
     
     handleEdit() {
@@ -45,7 +60,7 @@ export class WalletItem extends ReactiveComponent {
     }
     
     render() {
-        const { addressLength, allowDelete, fluid, style, wallet } = this.props
+        const { addressLength, fluid, style, wallet } = this.props
         if (!wallet) return '';
         const { handleSave } = this
         const { draft, edit, shortForm, actionsVisible, showSecret } = this.state
@@ -96,7 +111,6 @@ export class WalletItem extends ReactiveComponent {
                 content: <IfNotMobile then={!edit ? 'Edit' : 'Cancel'} />
             },
             {
-                disabled: !allowDelete,
                 onClick: this.handleDelete,
                 icon: 'trash alternate',
                 content: <IfNotMobile then={'Delete'} />
@@ -158,16 +172,16 @@ class WalletList extends ReactiveComponent {
 
     render() {
         const {itemsPerRow, type} = this.props
-        const wallets = this.state.secretStore.keys
-        const allowDelete = wallets.length > 1
+        const wallets = this.state.secretStore.keys || []
         const numItemsPerRow = itemsPerRow || 1
         const walletItems = wallets.map((wallet, i) => (
             <WalletItem
                 addressLength={numItemsPerRow > 1 && 15}
-                allowDelete={allowDelete}
+                index={i}
                 key={i+wallet.name+wallet.address}
                 fluid={true}
                 style={ itemsPerRow === 1 ? {margin: 0} : undefined }
+                total={wallets.length}
                 wallet={wallet}
             />
         ))

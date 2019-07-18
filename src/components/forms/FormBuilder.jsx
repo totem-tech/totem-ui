@@ -99,7 +99,8 @@ class FormBuilder extends ReactiveComponent {
         if (success && closeOnSubmit) {
             modalOpen = false
         }
-        const submitBtn = (
+
+        const submitBtn = React.isValidElement(submitText) || submitText === null ? submitText : (
             <Button
                 content={submitText}
                 disabled={isFormInvalid(inputs, values) || submitDisabled || message.error || success}
@@ -455,6 +456,8 @@ export const fillValues = (inputs, obj, forceFill) => {
         if (!input.hasOwnProperty('name') || !obj.hasOwnProperty(input.name) || (!forceFill && isDefined(input.value))) return;
         if(['accountidbond', 'inputbond'].indexOf(input.type.toLowerCase()) >= 0) {
             input.defaultValue = obj[input.name]
+            // make sure Bond is also updated
+            isBond(input.bond) && input.bond.changed(input.defaultValue)
         } else {
             input.value = obj[input.name]
         }

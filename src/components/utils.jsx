@@ -245,13 +245,21 @@ export function IfMobile(props) {
 	return (
 		<React.Fragment>
 			{isDefined(props.then) && (
-				<Responsive maxWidth={Responsive.onlyMobile.maxWidth}>
+				<Responsive 
+					maxWidth={Responsive.onlyMobile.maxWidth} 
+					onUpdate={props.onUpdate}
+					className={props.thenClassName}
+				>
 					<IfFn condition={true} then={props.then} />
 				</Responsive>
 			)}
 
 			{isDefined(props.else) && (
-				<Responsive minWidth={Responsive.onlyMobile.maxWidth}>
+				<Responsive
+					minWidth={Responsive.onlyMobile.maxWidth}
+					onUpdate={props.then ? undefined : props.onUpdate}
+					className={props.elseClassName}
+				>
 					<IfFn condition={true} then={props.else} />
 				</Responsive>
 			)}
@@ -260,5 +268,5 @@ export function IfMobile(props) {
 }
 
 export function IfNotMobile(props) {
-	return <IfMobile else={props.then} />
+	return <IfMobile else={props.then} elseClassName={props.thenClassName} onUpdate={props.onUpdate} />
 }

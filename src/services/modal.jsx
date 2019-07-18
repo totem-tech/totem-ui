@@ -3,7 +3,7 @@ import uuid from 'uuid'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { Confirm } from 'semantic-ui-react'
-import { isDefined, isFn } from '../components/utils'
+import { isDefined, isFn, isStr } from '../components/utils'
 const modals = new Map()
 // Use Bond as a way to trigger update to the ModalService component
 const trigger = new Bond()
@@ -52,6 +52,8 @@ export const confirm = (confirmProps) => {
 }
 
 export const showForm = (FormComponent, props) => {
+    // Invalid component supplied
+    if (!isFn(FormComponent) && !isStr(FormComponent)) return;
     const id = uuid.v1()
     props = props || {}
     return add(

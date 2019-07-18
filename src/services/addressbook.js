@@ -46,13 +46,16 @@ export const removeByIndex = (index, _addresses) => {
     _save(_addresses)
 }
 
-export const updateByIndex = (index, name, address, short) => {
-    const addrs = getAll()
+export const updateByIndex = (index, name, address, tags, type, visibility) => {
+    const addresses = getAll()
     if (index >= 0) {
-        addrs[index].name = name
-        addrs[index].address = address
-        addrs[index].short = short
+        addresses[index].name = name
+        addresses[index].address = address
+        addresses[index].tags = tags
+        addresses[index].type = type
+        addresses[index].visibility = visibility
     }
+    _save(addresses)
 }
 
 const updateBond = () => bond.changed(getAll())
@@ -67,7 +70,8 @@ const addressbook = {
     getByTag,
     getIndex,
     remove,
-    removeByIndex
+    removeByIndex,
+    updateByIndex
 }
 
 export default addressbook

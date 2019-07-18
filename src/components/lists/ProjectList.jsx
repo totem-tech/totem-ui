@@ -107,10 +107,9 @@ class ProjectList extends ReactiveComponent {
         const {ownerAddress} = project
         const entry = addressbook.getByAddress(ownerAddress) || secretStore().find(ownerAddress)
         if (entry) return entry.name;
-        console.log('entry', entry)
         return <Button content="Add Partner" onClick={ () => showForm(AddressbookEntryForm, {
             modal: true,
-            preFillValues: {address: ownerAddress}
+            values: {address: ownerAddress}
         })} />
     }
 
