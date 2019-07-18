@@ -32,8 +32,8 @@ export class WalletItem extends ReactiveComponent {
         const { index, total, wallet } = this.props
         // Prevent selected wallet to from being deleted
         const isSelected = storageService.walletIndex() === index
-        const isOnlyItem = index === total - 1
-        if (!isSelected && isOnlyItem) return secretStore().forget(wallet);
+        const isOnlyItem = total === 1
+        if (!isSelected && !isOnlyItem) return secretStore().forget(wallet);
         
         return confirm({
             cancelButton: null,
