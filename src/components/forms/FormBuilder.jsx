@@ -148,7 +148,7 @@ class FormBuilder extends ReactiveComponent {
                         link
                         name='times circle outline'
                         onClick={handleClose}
-                        size="big"
+                        size="large"
                     />
                 </div>
                 {header && (
@@ -480,8 +480,8 @@ export const isFormInvalid = (inputs, values) => (inputs || []).reduce((invalid,
 const styles = {
     closeButton: {
         position: 'absolute',
-        top: 5,
-        right: 5
+        top: 15,
+        right: 15
     },
     formMessage: {
         margin: 1

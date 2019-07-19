@@ -198,7 +198,12 @@ export class DataTable extends ReactiveComponent {
         const rows = mapItemsByPage(data, pageNo, perPage, (item, key, items, isMap) => (
             <Table.Row key={key}>
                 {dataKeys.map((x, j) => (
-                    <Table.Cell collapsing={x.collapsing} key={j} textAlign={x.textAlign || 'left'} verticalAlign={x.verticalAlign} style={x.style}>
+                    <Table.Cell 
+                        collapsing={x.collapsing} 
+                        key={j} 
+                        textAlign={x.textAlign || 'left'} 
+                        verticalAlign={x.verticalAlign} 
+                        style={x.style}>
                         {!x.content ? item[x.key] : (isFn(x.content) ? x.content(item, key, items, isMap) : x.content)}
                     </Table.Cell>
                 ))}
@@ -207,7 +212,7 @@ export class DataTable extends ReactiveComponent {
         
         return (
             <div style={{overflowX: 'auto'}}>
-                <Table celled>
+                <Table celled selectable stackable>
                     <Table.Header>
                         <Table.Row>
                             {headers}
