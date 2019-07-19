@@ -49,7 +49,6 @@ export class AddressBookList extends ReactiveComponent {
 										onSubmit: (e, v, success) => success && addressbook.setPublic(i, true)
 									})}
 									size="small"
-									title="Add a company with the address"
 								>
 									Make Public
 								</Button>

@@ -244,7 +244,7 @@ class AddressbookEntry extends ReactiveComponent {
         const getForm = (mobile) => () => (
             <FormBuilder {...{
                 closeOnSubmit,
-                header: header || `${index >= 0 ? 'Add' : 'Update'} partner`,
+                header: header || `${doUpdate ? 'Update' : 'Add'} partner`,
                 headerIcon,
                 hideFooter: !modal,
                 inputs: mobile || modal ? inputs : inputs.map(x => {x.width = 8; return x;}), 
