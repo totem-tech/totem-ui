@@ -2,8 +2,6 @@ import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import WalletList from './lists/WalletList'
 import WalletForm from './forms/Wallet'
-// import CompanyForm from './forms/Company'
-// import { showForm } from '../services/modal'
 
 class WalletView extends ReactiveComponent {
 	constructor() {

@@ -15,7 +15,8 @@ export const add = (name, address, tags, type, visibility) => {
         name, 
         tags: tags || [],
         type,
-        visibility
+        visibility,
+        isPublic: false
     }]))
 }
 
@@ -55,6 +56,14 @@ export const updateByIndex = (index, name, address, tags, type, visibility) => {
     _save(addresses)
 }
 
+// Set partner as public
+export const setPublic = (index, isPublic) => {
+    const addresses = getAll()
+    if (index < 0 || index >= addresses.length) return;
+    addresses[index].isPublic = isPublic
+    _save(addresses)
+}
+
 const addressbook = {
     add,
     getAll,
@@ -65,6 +74,7 @@ const addressbook = {
     getIndex,
     remove,
     removeByIndex,
+    setPublic,
     updateByIndex
 }
 // Pre-load addressbook into bond

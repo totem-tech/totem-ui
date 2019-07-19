@@ -1,41 +1,45 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
-import { secretStore } from 'oo7-substrate'
 import FormBuilder from './FormBuilder'
 import faker from 'faker'
-import { isDefined } from '../utils';
+import { isDefined, isFn } from '../utils';
+import client from '../../services/ChatClient'
 
 class Company extends ReactiveComponent {
     constructor(props) {
-        super(props, {secretStore: secretStore()})
+        super(props)
 
         this.handleSubmit = this.handleSubmit.bind(this)
 
         const countries = faker.definitions.address.country
         this.state = {
-            message: {},
+            message: props.message || {},
             open: props.open,
             success: false,
             inputs: [
                 {
-                    label: 'Company Name',
-                    name: 'name',
-                    required: true,
-                    type: 'text'
-                },
-                {
                     label: 'Company Wallet',
                     name: 'walletAddress',
+                    readOnly: true,
+                    type: 'text',
+                    value: props.walletAddress
+                },
+                {
+                    label: 'Company Name',
+                    name: 'name',
+                    placeholder: 'Enter company name',
                     required: true,
-                    selection: true,
-                    search: true,
-                    type: 'dropdown'
+                    type: 'text',
+                    value: ''
                 },
                 {
                     label: 'Registration Number',
-                    name: 'regNumber',
+                    name: 'registrationNumber',
+                    placeholder: 'Enter registration number',
                     required: true,
-                    type: 'text'
+                    type: 'text',
+                    value: ''
                 },
                 {
                     label: 'Country',
@@ -45,6 +49,7 @@ class Company extends ReactiveComponent {
                         text: country,
                         value: country
                     })),
+                    placeholder: 'Select a country',
                     required: true,
                     selection: true,
                     search: true,
@@ -55,40 +60,45 @@ class Company extends ReactiveComponent {
     }
 
     handleSubmit(e, values) {
-        const { onSubmit } = this.props
+        const { onSubmit, walletAddress } = this.props
         console.log(values)
+        client.company(walletAddress, values, err => {
+            const success = !err
+            const message = {
+                header: success ? 'Company added successfully' : err,
+                status: success ? 'success' : 'error'
+            }
+            this.setState({success, message})
+
+            isFn(onSubmit) && onSubmit(e, values, success)
+        })
     }
 
     render() {
-        const { inputs, message, open, secretStore, success } = this.state
-        const { modal, open: propsOpen, size } = this.props
-        const isOpenControlled = modal && isDefined(propsOpen)
-
-        // add wallet address options
-        inputs.find(x => x.name === 'walletAddress')
-            .options = secretStore && secretStore.keys.map((wallet, key) => ({
-                key,
-                text: wallet.name,
-                value: wallet.address
-            }))
+        const { inputs, message, open, success } = this.state
+        const { header, modal, open: propsOpen, size, subheader } = this.props
 
         return (
             <FormBuilder {...{
+                header,
                 inputs,
                 message,
                 modal,
-                open: isOpenControlled ? propsOpen : open,
+                onSubmit: this.handleSubmit,
+                open: modal && isDefined(propsOpen) ? propsOpen : open,
                 success,
                 size,
+                subheader
             }} />
         )
     }
 }
 Company.propTypes = {
-    
+    walletAddress: PropTypes.string.isRequired
 }
 Company.defaultProps = {
-    header: 'Publish company',
-    size: 'tiny'
+    header: 'Add company',
+    size: 'tiny',
+    subheader: 'Add your or a third-party company that is publicly visible'
 }
 export default Company

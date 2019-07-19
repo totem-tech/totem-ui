@@ -1,6 +1,5 @@
 import express from 'express'
-// import { resolve } from 'url';
-import { isArr, isFn, isStr, mapCopy, objClean, objCopy } from './src/components/utils'
+import { isArr, isFn, isObj, isStr, hasValue, mapCopy, mapFindByKey, mapSearch, objClean, objCopy } from './src/components/utils'
 
 const httpPort = 80
 const httpsPort = 443
@@ -68,32 +67,13 @@ let faucetRequests = new Map()
 const faucetRequestsFile = './faucet-requests.json'
 const fauceRequstLimit = 5
 const faucetRequestTimeLimit = 60 * 60 * 1000 // milliseconds
-const findClientIndex = (user, clientId) => user.clientIds.findIndex(cid => cid === clientId)
-const findUserByClientId = clientId => {
-	for (let [_, user] of users.entries()) {
-		if (user.clientIds.indexOf(clientId) >= 0) return user;
-	}
-}
-
 const projectsFile = './projects.json'
 let projects = new Map()
-// mapFindByKey finds a specific object by supplied key and value 
-const mapFindByKey = (map, key, value) => {
-	for (let [_, item] of map.entries()) {
-		if (item[key] === value) return item;
-	}
-}
-// Simple full-text style partial search
-const mapSearchByKey = (map, key, keyword) => {
-	const result = new Map()
-	for (let [itemKey, item] of map.entries()) {
-		const value =  item[key]
-		if (isStr(value) || isArr(value) ? value.indexOf(keyword) >= 0 : value === keyword) {
-			result.set(itemKey, item)
-		}
-	}
-	return result
-} 
+const companiesFile = './companies.json'
+let companies = new Map()
+
+const findUserByClientId = clientId => mapFindByKey(users, 'clientIds', clientId)
+
 
 // Error messages
 const errMsgs = {
@@ -111,7 +91,8 @@ io.on('connection', client => {
 		clients.delete(client.id)
 		const user = findUserByClientId(client.id)
 		if (!user) return;
-		user.clientIds.splice(findClientIndex(user, client.id), 1)
+		const clientIdIndex = user.clientIds.findIndex(cid => cid === client.id)
+		user.clientIds.splice(clientIdIndex, 1)
 		user.online = false
 		console.info('Client disconnected: ', client.id)
 	})
@@ -246,7 +227,7 @@ io.on('connection', client => {
 		if (!isArr(walletAddrs) ) return callback('Array of wallet addresses required')
 		// Find all projects by supplied addresses and return Map
 		const result = walletAddrs.reduce((res, address) => (
-			mapCopy(mapSearchByKey(projects, 'ownerAddress', address), res)
+			mapCopy(mapSearch(projects, {ownerAddress: address}), res)
 		), new Map())
 		callback(null, result)
 	})
@@ -257,16 +238,60 @@ io.on('connection', client => {
 		callback('Not implemented')
 		// const user = findUserByClientId(client.id)
 		// if (!user) return callback(errMsgs.loginOrRegister)
-		// callback('', mapSearchByKey(projects, key, keyword))
+		// callback('', mapSearch(projects, ....))
+	})
+
+	// add/get company by walletAddress
+	client.on('company', (walletAddress, company, callback) => {
+		if(!isFn(callback)) return console.log('no callback');
+		if (!isObj(company)) {
+			company = companies.get(walletAddress)
+			return callback(!company ? 'Company not found' : company)
+		}
+		// required keys
+		const keys = [ 'country', 'name', 'registrationNumber', 'walletAddress' ]
+		// make sure all the required keys are supplied
+		if (keys.reduce((invalid, key) => invalid || !hasValue(company[key]), !walletAddress)) {
+			return callback('Company must be a valid object and contain the following: ' + keys.join()) 
+		}
+		const { country, name, registrationNumber } = company
+		// Check if company with wallet address already exists
+		if (!!companies.get(walletAddress)) {
+			return callback('Wallet address is already associated with a company')
+		}
+		// check if company with combination of name, registration number and country already exists
+		// PS: same company name can have different registration number in different countries
+		if (mapSearch(companies, {name, registrationNumber, country}, true, true, true).size > 0) {
+			return callback('Company already exists')
+		}
+
+		console.log('Company created: ', JSON.stringify(company))
+		delete company.walletAddress;
+		companies.set(walletAddress, company)
+		callback()
+		saveCompanies()
+	})
+
+	// Find companies by key-value pair(s)
+	client.on('company-search', (keyValues, callback) => {
+		if(!isFn(callback)) return;
+		const keys = [ 'name', 'walletAddress', 'registrationNumber', 'country' ]
+		keyValues = objClean(keyValues, keys)
+		if (Object.keys(keyValues).length === 0) {
+			return callback('Please supply one or more of the following keys: ' + keys.join())
+		}
+
+		callback(null, mapSearch(companies, keyValues))
 	})
 })
 
-const saveUsers = () => saveMapToFile(usersFile, users)
+const saveCompanies = () => saveMapToFile(companiesFile, companies)
 const saveFaucetRequests = () => saveMapToFile(faucetRequestsFile, faucetRequests)
 const saveProjects = () => saveMapToFile(projectsFile, projects)
+const saveUsers = () => saveMapToFile(usersFile, users)
 const saveMapToFile = (filepath, map) => {
 	if (!isStr(filepath)) return console.log('Invalid file path', filepath);
-	filepath && fs.writeFile(
+	return fs.writeFile(
 		filepath,
 		JSON.stringify(Array.from(map.entries())),
 		{ flag: 'w' },
@@ -287,23 +312,12 @@ const emit = (ignoreClientIds, eventName, params) => {
 	}
 }
 
-// // Load user data from json file
-// fs.readFile(usersFile, (err, data) => {
-// 	// File doesn't exists. Create new file
-// 	if (err) {
-// 		saveUsers()
-// 	} else {
-// 		// Load existing user list
-// 		users = new Map(JSON.parse(data))
-// 	}
-
-// 	server.listen(wsPort, () => console.log('Chat app https Websocket listening on port ', wsPort))
-// })
 // load all files required
 var promises = [
-	{type: 'users', path: usersFile, saveFn: saveUsers},
+	{type: 'companies', path: companiesFile, saveFn: saveCompanies},
 	{type: 'faucetRequests', path: faucetRequestsFile, saveFn: saveFaucetRequests},
 	{type: 'projects', path: projectsFile, saveFn: saveProjects},
+	{type: 'users', path: usersFile, saveFn: saveUsers},
 ].map(item => new Promise((resolve, reject) => {
 	const { type, path, saveFn } = item
 	if (!isStr(path)) return console.log('Invalid file path', path);
@@ -316,14 +330,17 @@ var promises = [
 		} else {
 			const map = new Map(JSON.parse(data || '[]'))
 			switch(type) {
-				case 'users':
-					users = map
+				case 'companies':
+					companies = map
 					break
 				case 'faucetRequests':
 					faucetRequests = map
 					break
 				case 'projects':
 					projects = map
+					break
+				case 'users':
+					users = map
 					break
 			}
 		}

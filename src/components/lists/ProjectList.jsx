@@ -29,7 +29,7 @@ class ProjectList extends ReactiveComponent {
         this.getCardHeader = this.getCardHeader.bind(this)
         this.loadProjects = this.loadProjects.bind(this)
 
-        client.onProjects(projects => this.setState({projects}))
+        // client.onProjects(projects => this.setState({projects}))
     }
 
     loadProjects() {

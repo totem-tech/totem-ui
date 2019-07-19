@@ -4,8 +4,11 @@ import { Bond } from 'oo7'
 import { ReactiveComponent} from 'oo7-react'
 import { TransformBondButton } from '../../TransformBondButton'
 import { deferred, IfMobile, isFn, isObj } from '../utils'
-import addressbook from '../../services/addressbook'
+import addressbook, { setPublic } from '../../services/addressbook'
 import FormBuilder, { fillValues } from './FormBuilder'
+import client from '../../services/ChatClient'
+import {showForm} from '../../services/modal'
+import CompanyForm from './Company'
 // import AddressLookup from '../AddressLookup'
 
 class AddressbookEntry extends ReactiveComponent {
@@ -16,15 +19,16 @@ class AddressbookEntry extends ReactiveComponent {
         this.lookup = new Bond()
 
         this.handleChange = this.handleChange.bind(this)
+        this.checkVisibility = this.checkVisibility.bind(this)
         this.handleSubmit = this.handleSubmit.bind(this)
         const doUpdate = props.index >= 0
-
+        const values = doUpdate && isObj(props.values) ? props.values : {}
         this.state = {
             doUpdate,
             message: {},
             tags: ['partner'],
             success: false,
-            values: doUpdate && isObj(props.values) ? props.values : {},
+            values,
             inputs: [
                 {
                     bond: this.lookup,
@@ -32,6 +36,7 @@ class AddressbookEntry extends ReactiveComponent {
                     label: 'Lookup account',
                     name: 'address',
                     // onChange: deferred(this.handleAddressChange, 300, this),
+                    onChange: (e, values) => this.checkVisibility(values.address),
                     placeholder: 'Name or address',
                     type: 'AccountIdBond',
                     required: true,
@@ -82,6 +87,7 @@ class AddressbookEntry extends ReactiveComponent {
                     value: 'personal'
                 },
                 {
+                    bond: new Bond(),
                     inline: true,
                     label: 'Partner Visibility',
                     name: 'visibility',
@@ -128,6 +134,26 @@ class AddressbookEntry extends ReactiveComponent {
         }
 
         isObj(props.values) && fillValues(this.state.inputs, props.values, true)
+        doUpdate && values.address && this.checkVisibility(values.address)
+    }
+
+    checkVisibility(address) {
+        // check if address is aleady public
+        client.company(address, null, company => {
+            const { doUpdate, inputs } = this.state
+            const { index } = this.props
+            const isPublic = isObj(company)
+            const visibility = inputs.find(x => x.name === 'visibility')
+            visibility.disabled = isPublic
+            visibility.bond.changed(isPublic ? 'public' : 'private')
+            visibility.message = !isPublic ? null : {
+                content: 'Address is already publicly shared with company named: ' + company.name,
+                status: 'warning'  
+            }
+            // make sure addressbook is also updated
+            doUpdate && addressbook.setPublic(index, isPublic)
+            this.setState({inputs})
+        })
     }
 
     // handleAddTag(_, data) {
@@ -178,7 +204,22 @@ class AddressbookEntry extends ReactiveComponent {
             },
             success: true,
         })
-        setTimeout(()=> isFn(onSubmit) && onSubmit(newValues, index))
+        // Open add partner form
+        isFn(onSubmit) && onSubmit(newValues, index)
+        const addCompany = newValues.visibility === 'public' && !inputs.find(x => x.name === 'visibility').disabled
+        addCompany && showForm(CompanyForm, {
+            message: {
+                header: 'Partner added successfully',
+                content: 'You have chosen to make your partner public. Please fill up the form to proceed or click cancel to return.',
+                status: 'success'
+            },
+            onSubmit: (e, v, success) => success && addressbook.setPublic(
+                addressbook.getIndex(name, address),
+                true
+            ),
+            walletAddress: address,
+        })
+
         return true
     }
 

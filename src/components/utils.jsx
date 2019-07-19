@@ -36,12 +36,13 @@ export const generateHash = (seed, algo, asBytes) => {
  */
 export const isArr = x => Array.isArray(x)
 export const isBond = x => x instanceof Bond
-export const isDefined = x => x !== undefined
+export const isDefined = x => x !== undefined && x !== null
 export const isFn = x => typeof (x) === 'function'
 export const isMap = x => x instanceof Map
-export const isObj = x => x !== null && !isArr(x) && typeof (x) === 'object'
+export const isObj = x => x !== null && !isArr(x) && typeof(x) === 'object'
 export const isStr = x => typeof (x) === 'string'
-export const isValidNumber = x => typeof (x) == 'number' && !isNaN(x)
+export const isValidNumber = x => typeof (x) == 'number' && !isNaN(x) && isFinite(x)
+export const hasValue = x => isDefined(x) && (isValidNumber(x) || (isStr(x) && !!x))
 
 export const isMobile = () => window.innerWidth <= Responsive.onlyMobile.maxWidth
 
@@ -131,6 +132,72 @@ export const mapCopy = (source, dest) => !isMap(source) ? (
 ) : (
 	Array.from(source).reduce((dest, x) => dest.set(x[0], x[1]), dest)
 )
+
+// mapFindByKey finds a specific object by supplied key and value (partial match for string)
+//
+// Params:
+// @map		Map: Map of objects
+// @key		any: object key to match
+// @value	any
+//
+// Returns Object: first item partial/fully matching @value with supplied @key
+export const mapFindByKey = (map, key, value) => {
+	for (let [_, item] of map.entries()) {
+		const val = item[key]
+		if (isStr(val) || isArr(val) ? val.indexOf(value) >= 0 : val === value) return item;
+	}
+}
+
+// mapSearch search for objects by key-value pairs (partial match for strings)
+//
+// Params:
+// @map			Map
+// @keyValues	Object	: key-value pairs
+// @matchAll	bool 	: match all supplied key-value pairs
+// @ignoreCase	bool	: case-insensitive search for strings
+//
+// Returns Map
+export const mapSearch = (map, keyValues, matchExact, matchAll, ignoreCase) => {
+	const result = new Map()
+	if (!isObj(keyValues) || !isMap(map)) return result;
+	const keys = Object.keys(keyValues)
+	for (let [itemKey, item] of map.entries()) {
+		let matched = false
+		for (const i in keys) {
+			const key = keys[i]
+			let keyword = keyValues[key]
+			let value =  item[key]
+
+			if (ignoreCase && isStr(value)) {
+				value = value.toLowerCase()
+				keyword = isStr(keyword) ? keyword.toLowerCase() : keyword
+			}
+			
+			matched = !matchExact && (isStr(value) || isArr(value)) ? value.indexOf(keyword) >= 0 : value === keyword
+			if ((matchAll && !matched) || (!matchAll && matched)) break
+		}
+		matched && result.set(itemKey, item)
+	}
+	return result
+}
+// // Simple full-text style partial search with single key and value (partial match for string)
+// //
+// // Params:
+// // @map		Map: Map of objects
+// // @key		any: object key to match
+// // @value	any
+// //
+// // Returns Map
+// export const mapSearchByKey = (map, key, value) => {
+// 	const result = new Map()
+// 	for (let [itemKey, item] of map.entries()) {
+// 		const val =  item[key]
+// 		if (isStr(val) || isArr(val) ? val.indexOf(value) >= 0 : val === value) {
+// 			result.set(itemKey, item)
+// 		}
+// 	}
+// 	return result
+// }
 
 /*
  * Date formatting etc.

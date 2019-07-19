@@ -165,11 +165,13 @@ class FormBuilder extends ReactiveComponent {
                 </Modal.Content>
                 {!hideFooter && (
                     <Modal.Actions>
-                        <Button
-                            content={closeText}
-                            negative
-                            onClick={handleClose}
-                        />
+                        {React.isValidElement(closeText) ? closeText : (
+                            <Button
+                                content={closeText || (success ? 'Close' : 'Cancel')}
+                                negative
+                                onClick={handleClose}
+                            />
+                        )}
                         {submitBtn}
                     </Modal.Actions> 
                 )}
@@ -195,7 +197,10 @@ class FormBuilder extends ReactiveComponent {
 
 FormBuilder.propTypes = {
     closeOnSubmit: PropTypes.bool,
-    closeText: PropTypes.string,
+    closeText: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.element
+    ]),
     defaultOpen: PropTypes.bool,
     header: PropTypes.string,
     headerIcon: PropTypes.string,
@@ -213,13 +218,15 @@ FormBuilder.propTypes = {
     style: PropTypes.object,
     subheader: PropTypes.string,
     submitDisabled: PropTypes.bool,
-    submitText: PropTypes.string,
+    submitText: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.element
+    ]),
     success: PropTypes.bool,
     trigger: PropTypes.element,
     widths: PropTypes.string
 }
 FormBuilder.defaultProps = {
-    closeText: 'Cancel',
     message: {
         // Status controls visibility and style of the message
         // Supported values: error, warning, success
@@ -398,13 +405,16 @@ FormInput.defaultProps = {
 
 class CheckboxGroup extends ReactiveComponent {
     constructor(props) {
-        super(props)
+        super(props, {bond: props.bond})
         const allowMultiple = !props.radio && props.multiple
+        const hasBond = isBond(props.bond)
+        const value = props.value || (hasBond && props.bond._value) || (allowMultiple ? [] : undefined)
         this.state = {
             allowMultiple,
-            value: props.value || (allowMultiple ? [] : undefined)
+            value
         }
         this.handleChange = this.handleChange.bind(this)
+        hasBond && props.bond.notify(() => this.setState({value: props.bond._value}))
     }
 
     handleChange(e, data) {
@@ -424,9 +434,9 @@ class CheckboxGroup extends ReactiveComponent {
     }
 
     render() {
-        const { inline, name, options, style, type } = this.props
+        const { inline, name, options, style } = this.props
         const { allowMultiple, value } = this.state
-        const excludeKeys = ['inline', 'multiple', 'name', 'required', 'type', 'value', 'width']
+        const excludeKeys = ['bond', 'inline', 'multiple', 'name', 'required', 'type', 'value', 'width']
         const commonProps = objWithoutKeys(this.props, excludeKeys)
         return (
             <div>
