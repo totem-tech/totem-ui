@@ -61,7 +61,6 @@ class Company extends ReactiveComponent {
 
     handleSubmit(e, values) {
         const { onSubmit, walletAddress } = this.props
-        console.log(values)
         client.company(walletAddress, values, err => {
             const success = !err
             const message = {

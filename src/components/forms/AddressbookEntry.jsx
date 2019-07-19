@@ -206,10 +206,13 @@ class AddressbookEntry extends ReactiveComponent {
         })
         // Open add partner form
         isFn(onSubmit) && onSubmit(newValues, index)
+        //clear form
+        this.nick.changed('')
+        this.lookup.changed('')
         const addCompany = newValues.visibility === 'public' && !inputs.find(x => x.name === 'visibility').disabled
         addCompany && showForm(CompanyForm, {
             message: {
-                header: 'Partner added successfully',
+                header: `Partner ${doUpdate ? 'updated' : 'added'} successfully`,
                 content: 'You have chosen to make your partner public. Please fill up the form to proceed or click cancel to return.',
                 status: 'success'
             },
@@ -241,17 +244,17 @@ class AddressbookEntry extends ReactiveComponent {
         const getForm = (mobile) => () => (
             <FormBuilder {...{
                 closeOnSubmit,
-                header,
+                header: header || `${index >= 0 ? 'Add' : 'Update'} partner`,
                 headerIcon,
                 hideFooter: !modal,
                 inputs: mobile || modal ? inputs : inputs.map(x => {x.width = 8; return x;}), 
                 message,
                 modal,
                 onChange: this.handleChange,
-                onSubmit: this.handleSubmit,
+                onSubmit: modal ? this.handleSubmit : undefined,
                 open, 
                 size,
-                header: `${index >= 0 ? 'Add' : 'Update'} partner`,
+                subheader,
                 submitText : `${doUpdate ? 'Update' : 'Add'} partner`,
                 success,
                 trigger
