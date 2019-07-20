@@ -46,6 +46,13 @@ export const hasValue = x => isDefined(x) && (isValidNumber(x) || (isStr(x) && !
 
 export const isMobile = () => window.innerWidth <= Responsive.onlyMobile.maxWidth
 
+// getKeys returns an array of keys or indexes depending on object type
+export const getKeys = source => {
+	if (isArr(source)) return source.map((_, i) => i)
+	if (isMap(source)) return Array.from(source).map(x => x[0])
+	if (isObj(source)) return Object.keys(source)
+	return []
+}
 // arrMapSlice mimics the behaviour of Array.prototype.map() with the
 // convenience of only executing callback on range of indexes
 //

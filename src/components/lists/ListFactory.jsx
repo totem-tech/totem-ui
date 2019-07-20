@@ -1,8 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
-import { Button, Card, Container, Icon, Image, Menu, Label, Table } from 'semantic-ui-react'
-import { arrMapSlice, isDefined, isFn } from '../utils'
+import { Button, Card, Container, Grid, Icon, Image, Input, Menu, Label, Segment, Table } from 'semantic-ui-react'
+import { arrMapSlice, getKeys, isDefined, isFn, objWithoutKeys } from '../utils'
 import { FormInput } from '../forms/FormBuilder'
 
 class ListFactory extends ReactiveComponent {
@@ -186,58 +186,139 @@ export class DataTable extends ReactiveComponent {
         super(props)
 
         this.state = {
-            pageNo: props.pageNo || 1
+            pageNo: props.pageNo || 1,
+            selectedIndexes: []
         }
+
+    }
+
+    handleRowSelect(key) {
+        const { rowOnSelect } = this.props
+        let { selectedIndexes } = this.state
+        const index = selectedIndexes.indexOf(key)
+        if (index < 0) {
+            selectedIndexes.push(key)
+        } else {
+            selectedIndexes.splice(index, 1)
+        }
+        isFn(rowOnSelect) && rowOnSelect(selectedIndexes, key)
+        this.setState({selectedIndexes})
+    }
+
+    handleAllSelect() {
+        const { data, rowOnSelect } = this.props
+        let { selectedIndexes } = this.state
+        const total = data.size || data.length
+        const totalSelected = selectedIndexes.length
+        selectedIndexes = total === totalSelected ? [] : getKeys(data)
+        isFn(rowOnSelect) && rowOnSelect(selectedIndexes)
+        this.setState({selectedIndexes})
     }
 
     render() {
-        let { data, dataKeys, footerContent, navLimit, pageOnSelect, perPage } = this.props
-        const { pageNo } = this.state
-        const totalPages = Math.ceil((data.length || data.size) / perPage)
-        const headers = dataKeys.map((x, i) => <Table.HeaderCell key={i} textAlign={x.textAlign || 'center'}>{x.title}</Table.HeaderCell>)
+        let { data, dataKeys, footerContent, navLimit, pageOnSelect, perPage, selectable, topLeftMenu, topRightMenu } = this.props
+        const { pageNo, selectedIndexes } = this.state
+        const totalRows = data.length || data.size
+        const totalPages = Math.ceil(totalRows / perPage)
+        const headers = dataKeys.map((x, i) => (
+            <Table.HeaderCell key={i} textAlign={x.textAlign || 'center'}>
+                {x.title}
+            </Table.HeaderCell>
+        ))
+
+        if (selectable) {
+            const n = selectedIndexes.length
+            const iconName = `${n > 0 ? 'check ' : ''}square${n === 0 || n != totalRows ? ' outline' : ''}`
+            headers.splice(0, 0, (
+                <Table.HeaderCell
+                    key="checkbox"
+                    onClick={() => this.handleAllSelect()}
+                    style={styles.checkbox}
+                    title={`${n === totalRows ? 'Deselect' : 'Select'} all`}
+                >
+                    <Icon name={iconName} size="large" />
+                </Table.HeaderCell>
+            ))
+        }
         const rows = mapItemsByPage(data, pageNo, perPage, (item, key, items, isMap) => (
             <Table.Row key={key}>
-                {dataKeys.map((x, j) => (
+                { selectable && (
+                    <Table.Cell onClick={() => this.handleRowSelect(key)}>
+                        <Icon name={(selectedIndexes.indexOf(key) >= 0 ? 'check ' : '') +'square outline'} size="large" />
+                    </Table.Cell>
+                )}
+                {dataKeys.map((cell, j) => (
                     <Table.Cell 
-                        collapsing={x.collapsing} 
+                        {...objWithoutKeys(cell, ['content'])}
                         key={j} 
-                        textAlign={x.textAlign || 'left'} 
-                        verticalAlign={x.verticalAlign} 
-                        style={x.style}>
-                        {!x.content ? item[x.key] : (isFn(x.content) ? x.content(item, key, items, isMap) : x.content)}
+                        content={undefined}
+                        textAlign={cell.textAlign || 'left'}
+                    >
+                        {!cell.content ? item[cell.key] : (isFn(cell.content) ? cell.content(item, key, items, isMap) : cell.content)}
                     </Table.Cell>
                 ))}
             </Table.Row>
         ))
         
         return (
-            <div style={{overflowX: 'auto'}}>
-                <Table celled selectable stackable>
-                    <Table.Header>
-                        <Table.Row>
-                            {headers}
-                        </Table.Row>
-                    </Table.Header>
+            <div style={{overflowX: 'auto', overflow: 'hidden'}}>
+                <Grid columns={3} style={{margin: '-1rem 0'}}>
+                    <Grid.Row>
+                        <Grid.Column tablet={16} computer={6} style={{padding: 0}}>
+                            <Menu compact icon items={topLeftMenu}/>
+                        </Grid.Column>
+                        {totalRows > 0 && ([
+                            <Grid.Column key="0" tablet={16} computer={5} style={{padding: 0}}>
+                                <Input
+                                    type="text"
+                                    placeholder="Search"
+                                    action={{
+                                        icon:'search',
+                                        position:'right'
+                                    }}
+                                />
+                            </Grid.Column>,
+                            <Grid.Column key="1" tablet={16} computer={5} style={{padding: 0}}>
+                                <Menu floated="right" icon>
+                                    {(topRightMenu || []).map((item, i) => (
+                                        <Menu.Item
+                                            {...item}
+                                            key={i}
+                                            onClick={() => isFn(item.onClick) && item.onClick(selectedIndexes) }
+                                        />
+                                    ))}
+                                </Menu>
+                            </Grid.Column>
+                        ])}
+                    </Grid.Row>
+                </Grid>
+                {totalRows > 0 && (
+                    <Table celled selectable unstackable singleLine>
+                        <Table.Header>
+                            <Table.Row>
+                                {headers}
+                            </Table.Row>
+                        </Table.Header>
 
-                    <Table.Body>
-                        {rows}
-                    </Table.Body>
-
-                    <Table.Footer>
-                        <Table.Row>
-                            <Table.HeaderCell colSpan={dataKeys.length}>
-                                {footerContent && <div style={{float: 'left'}}>{footerContent}</div>}
-                                {totalPages <= 1 ? '' : <Paginator
-                                    total={totalPages}
-                                    current={pageNo}
-                                    navLimit={navLimit || 5}
-                                    float="right"
-                                    onSelect={pageNo => {this.setState({pageNo}); isFn(pageOnSelect) && pageOnSelect(pageNo); }}
-                                />}
-                            </Table.HeaderCell>
-                        </Table.Row>
-                    </Table.Footer>
-                </Table>
+                        <Table.Body>
+                            {rows}
+                        </Table.Body>
+                        <Table.Footer>
+                            <Table.Row>
+                                <Table.HeaderCell colSpan={dataKeys.length}>
+                                    {footerContent && <div style={{float: 'left'}}>{footerContent}</div>}
+                                    {totalPages <= 1 ? '' : <Paginator
+                                        total={totalPages}
+                                        current={pageNo}
+                                        navLimit={navLimit || 5}
+                                        float="right"
+                                        onSelect={pageNo => {this.setState({pageNo}); isFn(pageOnSelect) && pageOnSelect(pageNo); }}
+                                    />}
+                                </Table.HeaderCell>
+                            </Table.Row>
+                        </Table.Footer>
+                    </Table>
+                )}
             </div>
         )
     }
@@ -255,7 +336,12 @@ DataTable.propTypes = {
         })
     ),
     footerContent: PropTypes.any,
-    perPage: PropTypes.number.isRequired
+    perPage: PropTypes.number,
+    topLeftMenu: PropTypes.arrayOf(PropTypes.object),
+    topRightMenu: PropTypes.arrayOf(PropTypes.object)
+}
+DataTable.defaultProps = {
+    perPage: 10,
 }
 export class Paginator extends ReactiveComponent {
     constructor(props) {
@@ -331,4 +417,13 @@ Paginator.propTypes = {
     // maximum number of page numbers to show
     navLimit: PropTypes.number,
     onSelect: PropTypes.func.isRequired
+}
+
+const styles = {
+    checkbox: {
+        padding: 0,
+        margin: 0,
+        width: 20,
+        cursor: 'pointer',
+    }
 }

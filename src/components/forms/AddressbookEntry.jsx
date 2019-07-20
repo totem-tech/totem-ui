@@ -147,7 +147,7 @@ class AddressbookEntry extends ReactiveComponent {
             visibility.disabled = isPublic
             visibility.bond.changed(isPublic ? 'public' : 'private')
             visibility.message = !isPublic ? null : {
-                content: 'Address is already publicly shared with company named: ' + company.name,
+                content: 'Address is already publicly shared as company named: ' + company.name,
                 status: 'warning'  
             }
             // make sure addressbook is also updated
