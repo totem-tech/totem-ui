@@ -27,18 +27,22 @@ class ProjectList extends ReactiveComponent {
                     active: false,
                     content: 'Create',
                     icon: 'plus',
-                    key: 1,
-                    onClick: () => showForm(
+                    onClick: (selectedIndexes) => showForm(
                         ProjectForm,
                         { modal: true, onSubmit: (e, v, success) => success && this.loadProjects() }
                     )
                 },
                 {
                     active: false,
+                    content: 'Assign',
+                    icon: 'mail forward',
+                    onClick: toBeImplemented
+                },
+                {
+                    active: false,
                     content: 'Export',
                     icon: 'file excel',
-                    key: 2,
-                    onClick: () => alert('Not implemented')
+                    onClick: toBeImplemented
                 }
             ],
             topRightMenu: [
@@ -48,7 +52,6 @@ class ProjectList extends ReactiveComponent {
                     content: 'Close',
                     disabled: true,
                     icon: 'toggle off',
-                    key: 1,
                     onClick: toBeImplemented
                 },
                 {
@@ -57,7 +60,6 @@ class ProjectList extends ReactiveComponent {
                     content: 'Edit',
                     disabled: true,
                     icon: 'pencil',
-                    key: 2,
                     onClick: (selectedIndexes) => selectedIndexes.length !== 1 ? '' : showForm(
                         ProjectForm,
                         { 
@@ -65,7 +67,9 @@ class ProjectList extends ReactiveComponent {
                             project: this.state.projects.get(selectedIndexes[0]),
                             id: selectedIndexes[0],
                             onSubmit: (e, v, success) => success && setTimeout(this.loadProjects(), 2000)
-                        })
+                        }
+                    ),
+                    title: 'Only one project can be edited at a time'
                 },
                 {
                     active: false,
@@ -73,13 +77,12 @@ class ProjectList extends ReactiveComponent {
                     content: 'Delete',
                     disabled: true,
                     icon: 'trash alternate',
-                    key: 3,
                     onClick: toBeImplemented
                 },
             ]
         }
 
-        this.getActions = this.getActions.bind(this)
+        // this.getActions = this.getActions.bind(this)
         this.getContent = this.getContent.bind(this)
         // this.getCardHeader = this.getCardHeader.bind(this)
         this.loadProjects = this.loadProjects.bind(this)
@@ -91,53 +94,63 @@ class ProjectList extends ReactiveComponent {
     }
 
     loadProjects() {
-        const walletAddrs = secretStore()._value.keys.map(x => x.address)
-        setTimeout( ()=> client.projects( walletAddrs, (_, projects) => this.setState({projects})))
+        const {secretStore: ss} = this.state
+        const wallets = ss ? ss.keys : secretStore()._value.keys // force if not ready
+        const walletAddrs = wallets.map(x => x.address)
+        client.projects( walletAddrs, (_, projects) => {
+            // attach project owner address name if available
+            for (let [key, project] of projects) {
+                const {ownerAddress} = project
+                const entry = wallets.find(x => x.address === ownerAddress) || addressbook.getByAddress(ownerAddress) || {}
+                project._ownerName = entry.name
+            }
+            this.setState({projects})
+        })
     }
 
-    getActions(project, id, mobile) {
-        return [
-            // {
-            //     active: false,
-            //     content: mobile ? '' : 'Show Seed',
-            //     icon: 'eye',
-            //     onClick: ()=> {
-            //         const id = confirm({
-            //             cancelButton: null,
-            //             content: 'Seed goes here',
-            //             header: project.name + ' : Seed',
-            //             size: 'tiny'
-            //         })
-            //         setTimeout(() => closeModal(id), 5000)
-            //     } 
-            // },
-            // {
-            //     active: false,
-            //     content: mobile ? '' : 'Copy',
-            //     icon: 'copy',
-            //     onClick: () => copyToClipboard(project.ownerAddress)
-            // },
-            // {
-            //     active: false,
-            //     icon: 'edit',
-            //     onClick: ()=> showForm(
-            //         ProjectForm,
-            //         { 
-            //             modal: true,
-            //             project,
-            //             id,
-            //             onSubmit: (e, v, success) => success && setTimeout(this.loadProjects(), 2000)
-            //         })
-            // },
-            // {
-            //     active: false,
-            //     content: mobile ? '' : 'Delete',
-            //     icon: 'trash alternate',
-            //     onClick: toBeImplemented
-            // }
-        ].map((x, i) => {x.key = i; return x})
-    }
-
+    // getActions(project, id, mobile) {
+    //     return [
+    //         {
+    //             active: false,
+    //             content: mobile ? '' : 'Show Seed',
+    //             icon: 'eye',
+    //             onClick: ()=> {
+    //                 const id = confirm({
+    //                     cancelButton: null,
+    //                     content: 'Seed goes here',
+    //                     header: project.name + ' : Seed',
+    //                     size: 'tiny'
+    //                 })
+    //                 setTimeout(() => closeModal(id), 5000)
+    //             } 
+    //         },
+    //         {
+    //             active: false,
+    //             content: mobile ? '' : 'Copy',
+    //             icon: 'copy',
+    //             onClick: () => copyToClipboard(project.ownerAddress)
+    //         },
+    //         {
+    //             active: false,
+    //             icon: 'edit',
+    //             onClick: ()=> showForm(
+    //                 ProjectForm,
+    //                 { 
+    //                     modal: true,
+    //                     project,
+    //                     id,
+    //                     onSubmit: (e, v, success) => success && setTimeout(this.loadProjects(), 2000)
+    //                 })
+    //         },
+    //         {
+    //             active: false,
+    //             content: mobile ? '' : 'Delete',
+    //             icon: 'trash alternate',
+    //             onClick: toBeImplemented
+    //         }
+    //     ].map((x, i) => {x.key = i; return x})
+    // }
+    // 
     // getCardHeader(project, id) {
     //     const { actionsIndex } = this.state
     //     const toggleOnClick = ()=> {
@@ -158,34 +171,34 @@ class ProjectList extends ReactiveComponent {
     //         subheader: textEllipsis(project.address, 23)
     //     }
     // }
-
-    getOwner(project) {
-        const {ownerAddress} = project
-        const entry = addressbook.getByAddress(ownerAddress) || secretStore().find(ownerAddress)
-        if (entry) return entry.name;
-        return <Button content="Add Partner" onClick={ () => showForm(AddressbookEntryForm, {
-            modal: true,
-            values: {address: ownerAddress}
-        })} />
-    }
+    // 
+    // getOwner(project) {
+    //     const { ownerAddress, _ownerName } = project
+    //     if(_ownerName) return _ownerName;
+    //     // Add a button to add address as a partner to the addressbook
+    //     return <Button content="Add Partner" onClick={ () => showForm(AddressbookEntryForm, {
+    //         modal: true,
+    //         values: {address: ownerAddress}
+    //     })} />
+    // }
 
     handleSelection(selectedIndexes) {
         const { projects, topRightMenu } = this.state
         const len = selectedIndexes.length
-        if (len <= 1) {
-            return this.setState({topRightMenu: topRightMenu.map(x => {x.disabled = len !== 1; return x})})
-        }
+        topRightMenu.forEach(x => {x.disabled = len === 0; return x})
+        if (len <= 1) return this.setState({topRightMenu})
         // more than one selected
-        // Disable edit button
+        // Disable edit button, otherwise it will require multiple modals to be opened
         const editBtn = topRightMenu.find(x => x.name === 'edit')
         editBtn.disabled = true
 
+        // If every selected project's status is 'open' change action to 'Close', otherwise 'Re-open'
         const closeBtn = topRightMenu.find(x => x.name === 'close')
-        const doClose = selectedIndexes.reduce((close, key) => close || projects.get(key).status !== 'closed', false)
+        const doClose = selectedIndexes.every(key => projects.get(key).status !== 'open')
         closeBtn.content = doClose ? 'Close' : 'Re-open'
         closeBtn.icon = `toggle ${doClose ? 'off' : 'on'}`
         this.setState({topRightMenu})
-    } 
+    }
 
     getContent(mobile) {
         return () => {
@@ -198,7 +211,7 @@ class ProjectList extends ReactiveComponent {
                 type: listType,
             }
             switch(listType.toLowerCase()) {
-                case 'cardlist' :
+                // case 'cardlist' :
                     // const perRow = mobile ? 1 : itemsPerRow || 1
                     // listProps.items = Array.from(projects).map(item => {
                     //     const id = item[0]
@@ -225,38 +238,52 @@ class ProjectList extends ReactiveComponent {
                 default:
                     listProps.data = projects
                     listProps.dataKeys = [
-                        { key:'name', title: 'Name'},
                         { 
+                            key:'name',
+                            title: 'Name'
+                        },
+                        { 
+                            collapsing: true,
                             key: 'totalTime',
                             textAlign: 'center',
                             title: 'Total Time', 
                             content: project => (project.totalTime || 0) + ' blocks' 
                         },
-                        { 
-                            key: 'ownerAddress', 
+                        mobile ? null : {
+                            content: this.getOwner,
+                            key: '_ownerName', 
                             textAlign: 'center',
-                            title: 'Owner', 
-                            content: this.getOwner
+                            title: 'Owner',
                         },
-                        { key: 'description', title: 'Description'},
-                        // {
-                        //     // No key required
-                        //     content: (project, id) => <Menu items={this.getActions(project, id, true)}  compact fluid />,
-                        //     collapsing: true,
-                        //     style: { padding : 0},
-                        //     title: 'Actions'
-                        // },
+                        mobile ? null : {
+                            key: 'description',
+                            title: 'Description'
+                        },
                         {
-                            content: <Button onClick={toBeImplemented} content="Details" icon="eye" />,
+                            // No key required
                             collapsing: true,
+                            content: (
+                                <Button 
+                                    onClick={toBeImplemented}
+                                    content={mobile ? '' : 'Details'} 
+                                    icon={{
+                                        className: mobile? 'no-margin' : '',
+                                        name: 'eye'
+                                    }}
+                                    style={{margin: 0}} 
+                                />
+                            ),
+                            textAlign: 'center',
                             title: 'Details'
                         }
                     ]
                     listProps.float = 'right'
+                    listProps.perPage = 5
                     listProps.topLeftMenu = topLeftMenu
                     listProps.topRightMenu = topRightMenu
+                    listProps.searchExtraKeys = ['ownerAddress', 'status']
                     listProps.selectable = true
-                    listProps.rowOnSelect = this.handleSelection.bind(this)
+                    listProps.onRowSelect = this.handleSelection.bind(this)
                     break;
             }
             return <ListFactory {...listProps} />

@@ -208,6 +208,7 @@ io.on('connection', client => {
 		}
 		// exclude any unwanted data 
 		project = objCopy(objClean(project, requiredKeys), existingProject)
+		project.status = project.status || 'open'
 		
 		// Add/update project
 		projects.set(hash, project)

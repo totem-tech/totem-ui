@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { secretStore } from 'oo7-substrate'
 import FormBuilder, { fillValues } from './FormBuilder'
-import { generateHash, isDefined, isFn, isObj, sortArr, textEllipsis } from '../utils'
+import { generateHash, isDefined, isFn, isObj, arrSort, textEllipsis } from '../utils'
 import { confirm } from '../../services/modal'
 import addressbook  from '../../services/addressbook'
 import client from '../../services/ChatClient'
@@ -136,7 +136,7 @@ class Project extends ReactiveComponent {
             value: '' // keep
         }]
         // add wallet items to owner address dropdown
-        .concat(sortArr(secretStore && secretStore.keys || [] , 'name').map((wallet, i) => ({
+        .concat(arrSort(secretStore && secretStore.keys || [] , 'name').map((wallet, i) => ({
             key: 'wallet-'+i+ wallet.address,
             text: wallet.name,
             description: textEllipsis(wallet.address, 25, 5),
@@ -151,7 +151,7 @@ class Project extends ReactiveComponent {
                 value: '' // keep
             }])
             // Add addressbook items
-            .concat(sortArr(addrs, 'name').map((item, i) => ({
+            .concat(arrSort(addrs, 'name').map((item, i) => ({
                 key: 'addressbook-' + i + item.address,
                 text: item.name,
                 description: textEllipsis(item.address, 25, 5),
