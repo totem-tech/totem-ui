@@ -15,6 +15,11 @@ class WalletView extends ReactiveComponent {
 				<div style={{ paddingBottom: '1em' }}>
 					<WalletList itemsPerRow={1} />
 				</div>
+
+
+				{/* <button onClick={()=>showForm(CompanyForm, {
+					modal: true
+				})}>Add Company</button> */}
 			</React.Fragment>
 		)
 	}

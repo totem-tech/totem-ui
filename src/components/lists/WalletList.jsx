@@ -9,6 +9,7 @@ import ListFactory, { CardListItem} from './ListFactory'
 import storageService from '../../services/storage'
 import { confirm } from '../../services/modal'
 
+
 export class WalletItem extends ReactiveComponent {
     constructor(props) {
         const validWallet = isObj(props.wallet) && props.wallet.address
@@ -35,9 +36,16 @@ export class WalletItem extends ReactiveComponent {
         const isSelected = selectedIndex === index
         const isOnlyItem = total === 1
         if (!isSelected && !isOnlyItem) {
-            // If "to be deleted" index is lower than the selected index, adjust the selected index to keep the same wallet selected
-            if (index < selectedIndex) storageService.walletIndex(selectedIndex -1);
-            return secretStore().forget(wallet);
+            return confirm({
+                header: 'Delete wallet?',
+                onConfirm: () => {
+                    // If "to be deleted" index is lower than the selected index,
+                    // adjust the selected index to keep the same wallet selected
+                    if (index < selectedIndex) storageService.walletIndex(selectedIndex -1);
+                    secretStore().forget(wallet)
+                },
+                size: 'mini'
+            })
         }
         
         return confirm({
@@ -200,6 +208,7 @@ class WalletList extends ReactiveComponent {
                 style={!mobile && numItemsPerRow === 1 ? {marginTop : 15} : {}}
             />
         )
+
         return (
             <IfMobile then={getList(true)} else={getList(false)} />
         )

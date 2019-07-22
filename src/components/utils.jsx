@@ -36,14 +36,23 @@ export const generateHash = (seed, algo, asBytes) => {
  */
 export const isArr = x => Array.isArray(x)
 export const isBond = x => x instanceof Bond
-export const isDefined = x => x !== undefined
+export const isDefined = x => x !== undefined && x !== null
 export const isFn = x => typeof (x) === 'function'
 export const isMap = x => x instanceof Map
-export const isObj = x => x !== null && !isArr(x) && typeof (x) === 'object'
+export const isObj = x => x !== null && !isArr(x) && typeof(x) === 'object'
 export const isStr = x => typeof (x) === 'string'
-export const isValidNumber = x => typeof (x) == 'number' && !isNaN(x)
+export const isValidNumber = x => typeof (x) == 'number' && !isNaN(x) && isFinite(x)
+export const hasValue = x => isDefined(x) && (isValidNumber(x) || (isStr(x) && !!x))
 
 export const isMobile = () => window.innerWidth <= Responsive.onlyMobile.maxWidth
+
+// getKeys returns an array of keys or indexes depending on object type
+export const getKeys = source => {
+	if (isArr(source)) return source.map((_, i) => i)
+	if (isMap(source)) return Array.from(source).map(x => x[0])
+	if (isObj(source)) return Object.keys(source)
+	return []
+}
 
 // arrMapSlice mimics the behaviour of Array.prototype.map() with the
 // convenience of only executing callback on range of indexes
@@ -79,7 +88,41 @@ export const arrMapSlice = (data, startIndex, endIndex, callback) => {
 	return result
 }
 
-export const sortArr = (arr, key) => arr.sort((a, b) => a[key] > b[key] ? 1 : -1)
+// arrSearch search for objects by key-value pairs
+//
+// Params:
+// @map			Map
+// @keyValues	Object	: key-value pairs
+// @matchAll	bool 	: match all supplied key-value pairs
+// @ignoreCase	bool	: case-insensitive search for strings
+//
+// Returns Map (key = original index) or Array (index not preserved) if @returnArr == true
+export const arrSearch = (arr, keyValues, matchExact, matchAll, ignoreCase, returnArr) => {
+	const result = returnArr ? new Array() : new Map()
+	if (!isObj(keyValues) || !isMap(arr)) return result;
+	const keys = Object.keys(keyValues)
+	for (var index = 0; index < arr.length; i++) {
+		let matched = false
+		const item = arr[index]
+		for (const i in keys) {
+			const key = keys[i]
+			let keyword = keyValues[key]
+			let value =  item[key]
+
+			if (ignoreCase && isStr(value)) {
+				value = value.toLowerCase()
+				keyword = isStr(keyword) ? keyword.toLowerCase() : keyword
+			}
+			
+			matched = !matchExact && (isStr(value) || isArr(value)) ? value.indexOf(keyword) >= 0 : value === keyword
+			if ((matchAll && !matched) || (!matchAll && matched)) break
+		}
+		matched && (returnArr ? result.push(item) : result.set(index, item))
+	}
+	return result
+}
+
+export const arrSort = (arr, key) => arr.sort((a, b) => a[key] > b[key] ? 1 : -1)
 
 // objCopy copies top level properties and returns another object
 //
@@ -131,6 +174,64 @@ export const mapCopy = (source, dest) => !isMap(source) ? (
 ) : (
 	Array.from(source).reduce((dest, x) => dest.set(x[0], x[1]), dest)
 )
+
+// mapFindByKey finds a specific object by supplied key and value
+//
+// Params:
+// @map		Map: Map of objects
+// @key		any: object key to match
+// @value	any
+//
+// Returns Object: first item partial/fully matching @value with supplied @key
+export const mapFindByKey = (map, key, value, matchExact) => {
+	for (let [_, item] of map.entries()) {
+		const val = item[key]
+		if (!matchExact && (isStr(val) || isArr(val)) ? val.indexOf(value) >= 0 : val === value) return item;
+	}
+}
+
+// mapSearch search for objects by key-value pairs
+//
+// Params:
+// @map			Map
+// @keyValues	Object	: key-value pairs
+// @matchAll	bool 	: match all supplied key-value pairs
+// @ignoreCase	bool	: case-insensitive search for strings
+//
+// Returns Map
+export const mapSearch = (map, keyValues, matchExact, matchAll, ignoreCase) => {
+	const result = new Map()
+	if (!isObj(keyValues) || !isMap(map)) return result;
+	const keys = Object.keys(keyValues)
+	for (let [itemKey, item] of map.entries()) {
+		let matched = false
+		for (const i in keys) {
+			const key = keys[i]
+			let keyword = keyValues[key]
+			let value =  item[key]
+
+			if (ignoreCase && isStr(value)) {
+				value = value.toLowerCase()
+				keyword = isStr(keyword) ? keyword.toLowerCase() : keyword
+			}
+			
+			matched = !matchExact && (isStr(value) || isArr(value)) ? value.indexOf(keyword) >= 0 : value === keyword
+			if ((matchAll && !matched) || (!matchAll && matched)) break
+		}
+		matched && result.set(itemKey, item)
+	}
+	return result
+}
+
+export const search = (data, keywords, keys) => {
+	if (!keywords || keywords.length === 0 || !(isArr(data) || isMap(data))) return data;
+	const fn = isMap(data) ? mapSearch : arrSearch
+	const keyValues = keys.reduce((obj, key) => {
+		obj[key] = keywords
+		return obj
+	}, {})
+	return fn(data, keyValues, false, false, true, false)
+}
 
 /*
  * Date formatting etc.

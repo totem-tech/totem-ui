@@ -1,10 +1,11 @@
-import React from 'react';
-import {List, Button} from 'semantic-ui-react';
-import {ReactiveComponent} from 'oo7-react';
-import { AccountId, runtime, addressBook, pretty} from 'oo7-substrate';
-import Identicon from 'polkadot-identicon';
+import React from 'react'
+import {List, Button} from 'semantic-ui-react'
+import {ReactiveComponent} from 'oo7-react'
+import { runtime } from 'oo7-substrate'
+import Identicon from 'polkadot-identicon'
 import addressbook from '../services/addressbook'
 import AddressBookEntryForm from './forms/AddressbookEntry'
+import CompanyForm from './forms/Company'
 import { showForm } from '../services/modal'
 
 export class AddressBookList extends ReactiveComponent {
@@ -17,23 +18,44 @@ export class AddressBookList extends ReactiveComponent {
 				return r
 			})
 		})
+
+		// const form = new CompanyForm({})
+		// form.props = {walletAddress: '5Eq545EpReo2NhEnQ3QqiRigfHSTDgjrNWx8m7EbmPLXRKqi'}
+		// form.handleSubmit({}, {
+		// 	name: 'test company',
+		// 	walletAddress: '5Eq545EpReo2NhEnQ3QqiRigfHSTDgjrNWx8m7EbmPLXRKqi',
+		// 	registrationNumber: '123123432',
+		// 	country: 'Bangladesh'
+
+		// })
 	}
 
 	readyRender () {
 		return (
-			<List divided verticalAlign='bottom' style={styles.list}>
+			<List divided verticalAlign="bottom" style={styles.list}>
 				{this.state.addressbook.map((item, i) => (
 					<List.Item key={i+item.name}>
-						<List.Content floated='right'>
+						<List.Content floated="right">
 							<Button
-								size='small'
+								size="small"
 								onClick={() => showForm(AddressBookEntryForm, {index: i, open: true, values: item})}
 							>
 								Update
 							</Button>
-							<Button size='small' onClick={() => addressbook.remove(item.name, item.address)}>Delete</Button>
+							{!item.isPublic && (
+								<Button
+									onClick={() => showForm(CompanyForm, {
+										walletAddress: item.address,
+										onSubmit: (e, v, success) => success && addressbook.setPublic(i, true)
+									})}
+									size="small"
+								>
+									Make Public
+								</Button>
+							)}
+							<Button size="small" onClick={() => addressbook.remove(item.name, item.address)}>Delete</Button>
 						</List.Content>
-						<span className='ui avatar image' style={{minWidth: '36px'}}>
+						<span className="ui avatar image" style={{minWidth: '36px'}}>
 							<Identicon account={item.address} />
 						</span>
 						<List.Content>

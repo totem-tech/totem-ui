@@ -35,11 +35,12 @@ export const closeModal = id => modals.delete(id) | trigger.changed(modals.size)
 //
 // Params: 
 // @confirmProps    object: properties to be supplied to the Confirm component
+// @id              string: if supplied and any modal with this ID will be replaced
 //
 // returns
 // @id              string : random id assigned to the modal. Can be used to remove using the remove function
-export const confirm = (confirmProps) => {
-    const id = uuid.v1()
+export const confirm = (confirmProps, id) => {
+    id = id || uuid.v1()
     return add(
         id,
         <Confirm
@@ -50,11 +51,18 @@ export const confirm = (confirmProps) => {
         />
     )
 }
-
-export const showForm = (FormComponent, props) => {
+// showForm opens form in a modal dialog
+//
+// Params: 
+// @FormComponent   function/class  : FormBuilder or any other form that uses FormBuilder component (not element) class 
+// @id              string          : if supplied and any modal with this ID will be replaced
+//
+// returns
+// @id              string : random id assigned to the modal. Can be used to remove using the remove function
+export const showForm = (FormComponent, props, id) => {
     // Invalid component supplied
-    if (!isFn(FormComponent) && !isStr(FormComponent)) return;
-    const id = uuid.v1()
+    if (!isFn(FormComponent)) return;
+    id = id || uuid.v1()
     props = props || {}
     return add(
         id,

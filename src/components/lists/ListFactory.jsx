@@ -1,8 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
-import { Button, Card, Container, Icon, Image, Menu, Label, Table } from 'semantic-ui-react'
-import { arrMapSlice, isDefined, isFn } from '../utils'
+import { Button, Card, Dropdown, Grid, Icon, Image, Input, Menu, Table } from 'semantic-ui-react'
+import { arrMapSlice, getKeys, IfMobile, isArr, isDefined, isFn, objWithoutKeys, objCopy, search } from '../utils'
 import { FormInput } from '../forms/FormBuilder'
 
 class ListFactory extends ReactiveComponent {
@@ -186,53 +186,252 @@ export class DataTable extends ReactiveComponent {
         super(props)
 
         this.state = {
-            pageNo: props.pageNo || 1
+            pageNo: props.pageNo || 1,
+            keywords: '',
+            selectedIndexes: []
         }
     }
 
-    render() {
-        let { data, dataKeys, footerContent, navLimit, pageOnSelect, perPage } = this.props
-        const { pageNo } = this.state
-        const totalPages = Math.ceil((data.length || data.size) / perPage)
-        const headers = dataKeys.map((x, i) => <Table.HeaderCell key={i} textAlign={x.textAlign || 'center'}>{x.title}</Table.HeaderCell>)
-        const rows = mapItemsByPage(data, pageNo, perPage, (item, key, items, isMap) => (
+    handleRowSelect(key) {
+        const { onRowSelect } = this.props
+        let { selectedIndexes } = this.state
+        const index = selectedIndexes.indexOf(key)
+        if (index < 0) {
+            selectedIndexes.push(key)
+        } else {
+            selectedIndexes.splice(index, 1)
+        }
+        isFn(onRowSelect) && onRowSelect(selectedIndexes, key)
+        this.setState({selectedIndexes})
+    }
+
+    handleAllSelect() {
+        const { data, onRowSelect } = this.props
+        let { selectedIndexes } = this.state
+        const total = data.size || data.length
+        const totalSelected = selectedIndexes.length
+        selectedIndexes = total === totalSelected ? [] : getKeys(data)
+        isFn(onRowSelect) && onRowSelect(selectedIndexes)
+        this.setState({selectedIndexes})
+    }
+
+    getTopContent(mobile, totalRows) {
+        let { topLeftMenu, topRightMenu } = this.props
+        const { keywords, selectedIndexes } = this.state
+  
+        const searchCol = (
+            <Grid.Column key="0" tablet={16} computer={5} style={{padding: 0}}>
+                <Input
+                    action={{
+                        icon:'search',
+                        position:'right'
+                    }}
+                    onChange={(e, d) => this.setState({keywords: d.value})}
+                    placeholder="Search"
+                    style={!mobile ? undefined : { margin: '15px 0', width: '100%' }}
+                    type="text"
+                    value={keywords}
+                />
+            </Grid.Column>
+        )
+
+        const right = (
+            <Grid.Column floated="right" key="1" tablet={16} computer={3} style={{padding: 0}}>
+                {/* { !mobile ? (
+                    <Menu
+                        compact
+                        floated={mobile? undefined : 'right'}
+                        size="tiny"
+                        style={!mobile? undefined : {marginTop: 5}}
+                    >
+                        {(topRightMenu || []).map((item, i) => (
+                            <Menu.Item
+                                {...item}
+                                key={i}
+                                onClick={() => isFn(item.onClick) && item.onClick(selectedIndexes) }
+                            />
+                        ))}
+                    </Menu>
+                ) : (
+                    <Dropdown text='Actions' button fluid style={{textAlign: 'center'}} disabled={selectedIndexes.length === 0}>
+                        <Dropdown.Menu direction="left" style={{minWidth: 'auto'}}>
+                            {(topRightMenu || []).map((item, i) => (
+                                <Dropdown.Item
+                                    {...item}
+                                    key={i}
+                                    onClick={() => isFn(item.onClick) && item.onClick(selectedIndexes) }
+                                />
+                            ))}
+                        </Dropdown.Menu>
+                    </Dropdown>
+                )} */}
+                {
+                    <Dropdown text='Actions' button fluid style={{textAlign: 'center'}} disabled={selectedIndexes.length === 0}>
+                    <Dropdown.Menu direction="left" style={{minWidth: 'auto'}}>
+                        {(topRightMenu || []).map((item, i) => (
+                            <Dropdown.Item
+                                {...item}
+                                key={i}
+                                onClick={() => isFn(item.onClick) && item.onClick(selectedIndexes) }
+                            />
+                        ))}
+                    </Dropdown.Menu>
+                </Dropdown>
+                }
+            </Grid.Column>
+        )
+
+        return (
+            <Grid columns={3} style={{margin: '-1rem 0', paddingBottom: '15px'}}>
+                <Grid.Row>
+                    <Grid.Column tablet={16} computer={6} style={{padding: 0}}>
+                        {(topLeftMenu || []).map((item, i) => (
+                            <Button
+                                {...item}
+                                fluid={mobile}
+                                key={i}
+                                onClick={() => isFn(item.onClick) && item.onClick(selectedIndexes) }
+                                style={ !mobile ? item.style : objCopy({marginBottom: 5}, item.style)}
+                            />
+                        ))}
+                    </Grid.Column>
+                    {(keywords || totalRows > 0) && (
+                        mobile ? [right, searchCol] : [searchCol, right]
+                    )}
+                </Grid.Row>
+            </Grid>
+        )
+    }
+
+    getRows(filteredData, dataKeys) {
+        let { perPage, selectable } = this.props
+        const { pageNo, selectedIndexes } = this.state
+
+        return mapItemsByPage(filteredData, pageNo, perPage, (item, key, items, isMap) => (
             <Table.Row key={key}>
-                {dataKeys.map((x, j) => (
-                    <Table.Cell collapsing={x.collapsing} key={j} textAlign={x.textAlign || 'left'} verticalAlign={x.verticalAlign} style={x.style}>
-                        {!x.content ? item[x.key] : (isFn(x.content) ? x.content(item, key, items, isMap) : x.content)}
+                { selectable && ( /* include checkbox to select items */
+                    <Table.Cell onClick={() => this.handleRowSelect(key)} style={styles.checkboxCell}>
+                        <Icon 
+                            name={(selectedIndexes.indexOf(key) >= 0 ? 'check ' : '') +'square outline'}
+                            size="large"
+                            className="no-margin"
+                        />
+                    </Table.Cell>
+                )}
+                {dataKeys.map((cell, j) => (
+                    <Table.Cell 
+                        {...objWithoutKeys(cell, ['content', 'style'])}
+                        key={j} 
+                        content={undefined}
+                        textAlign={cell.textAlign || 'left'}
+                        style={objCopy(cell.style, {padding: cell.collapsing ? '0 5px' : undefined})}
+                    >
+                        {!cell.content ? item[cell.key] : (isFn(cell.content) ? cell.content(item, key, items, isMap) : cell.content)}
                     </Table.Cell>
                 ))}
             </Table.Row>
         ))
-        
+    }
+
+    getHeaders(totalRows, dataKeys) {
+        let { selectable } = this.props
+        const { selectedIndexes } = this.state
+
+        const headers = dataKeys.map((x, i) => (
+            <Table.HeaderCell key={i} textAlign={x.textAlign || 'center'}>
+                {x.title}
+            </Table.HeaderCell>
+        ))
+
+        if (selectable) {
+            // include checkbox to select items
+            const n = selectedIndexes.length
+            const iconName = `${n > 0 ? 'check ' : ''}square${n === 0 || n != totalRows ? ' outline' : ''}`
+            headers.splice(0, 0, (
+                <Table.HeaderCell
+                    key="checkbox"
+                    onClick={() => this.handleAllSelect()}
+                    style={styles.checkboxCell}
+                    title={`${n === totalRows ? 'Deselect' : 'Select'} all`}
+                >
+                    <Icon
+                        name={iconName}
+                        size="large"
+                        className="no-margin"
+                    />
+                </Table.HeaderCell>
+            ))
+        }
+        return headers
+    }
+
+    getFooter(mobile, totalPages) {
+        return () => {
+            let {  footerContent, navLimit, pageOnSelect } = this.props
+            const { pageNo } = this.state
+            return (
+                <React.Fragment>
+                    {footerContent && <div style={{float: 'left', width: mobile ? '100%' : ''}}>{footerContent}</div>}
+                    {totalPages <= 1 ? '' : (
+                        <Paginator
+                            total={totalPages}
+                            current={pageNo}
+                            navLimit={navLimit || 5}
+                            float={mobile ? undefined : 'right'}
+                            onSelect={pageNo => {this.setState({pageNo}); isFn(pageOnSelect) && pageOnSelect(pageNo); }}
+                        />
+                    )}
+                </React.Fragment>
+            )
+        }
+    }
+
+    render() {
+        let {  data, dataKeys: dataKeysOriginal, footerContent, perPage, searchExtraKeys } = this.props
+        const { keywords } = this.state
+        const dataKeys = dataKeysOriginal.filter(x => !!x)
+        const keys = dataKeys.filter(x => !!x.key).map(x => x.key)
+        // Include extra searcheable keys that are not visibile on the table
+        if(isArr(searchExtraKeys)) {
+            searchExtraKeys.forEach(key => keys.indexOf(key) === -1 & keys.push(key))
+        }
+        const filteredData = search(data, keywords, keys)
+        const totalRows = filteredData.length || filteredData.size
+        const totalPages = Math.ceil(totalRows / perPage)
+        const headers = this.getHeaders(totalRows, dataKeys)
+        const rows = this.getRows(filteredData, dataKeys)
+
         return (
-            <div style={{overflowX: 'auto'}}>
-                <Table celled>
-                    <Table.Header>
-                        <Table.Row>
-                            {headers}
-                        </Table.Row>
-                    </Table.Header>
+            <div>
+                <IfMobile then={this.getTopContent(true, totalRows)} else={this.getTopContent(false, totalRows)} />
+                {totalRows > 0 && (
+                    <div style={{overflowX: 'auto'}}>
+                        <Table celled selectable unstackable singleLine>
+                            <Table.Header>
+                                <Table.Row>
+                                    {headers}
+                                </Table.Row>
+                            </Table.Header>
 
-                    <Table.Body>
-                        {rows}
-                    </Table.Body>
+                            <Table.Body>
+                                {rows}
+                            </Table.Body>
 
-                    <Table.Footer>
-                        <Table.Row>
-                            <Table.HeaderCell colSpan={dataKeys.length}>
-                                {footerContent && <div style={{float: 'left'}}>{footerContent}</div>}
-                                {totalPages <= 1 ? '' : <Paginator
-                                    total={totalPages}
-                                    current={pageNo}
-                                    navLimit={navLimit || 5}
-                                    float="right"
-                                    onSelect={pageNo => {this.setState({pageNo}); isFn(pageOnSelect) && pageOnSelect(pageNo); }}
-                                />}
-                            </Table.HeaderCell>
-                        </Table.Row>
-                    </Table.Footer>
-                </Table>
+                            {!footerContent && totalPages <= 1? '' : (
+                                <Table.Footer>
+                                    <Table.Row>
+                                        <Table.HeaderCell colSpan={dataKeys.length + 1}>
+                                            <IfMobile
+                                                then={this.getFooter(true, totalPages)}
+                                                else={this.getFooter(false, totalPages)}
+                                            />
+                                        </Table.HeaderCell>
+                                    </Table.Row>
+                                </Table.Footer>
+                            )}
+                        </Table>
+                    </div>
+                )}
             </div>
         )
     }
@@ -250,7 +449,13 @@ DataTable.propTypes = {
         })
     ),
     footerContent: PropTypes.any,
-    perPage: PropTypes.number.isRequired
+    perPage: PropTypes.number,
+    searchExtraKeys: PropTypes.array,
+    topLeftMenu: PropTypes.arrayOf(PropTypes.object),
+    topRightMenu: PropTypes.arrayOf(PropTypes.object)
+}
+DataTable.defaultProps = {
+    perPage: 10,
 }
 export class Paginator extends ReactiveComponent {
     constructor(props) {
@@ -320,10 +525,19 @@ export class Paginator extends ReactiveComponent {
        )
     }
 }
+
 Paginator.propTypes = {
     current: PropTypes.number,
     float: PropTypes.string,
     // maximum number of page numbers to show
     navLimit: PropTypes.number,
     onSelect: PropTypes.func.isRequired
+}
+
+const styles = {
+    checkboxCell: {
+        padding: '0px 5px',
+        width: 25,
+        cursor: 'pointer',
+    }
 }
