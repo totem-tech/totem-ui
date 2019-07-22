@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { Button, Card, Dropdown, Grid, Icon, Image, Input, Menu, Table } from 'semantic-ui-react'
-import { arrMapSlice, getKeys, IfMobile, isArr, isDefined, isFn, objWithoutKeys, objCopy, search } from '../utils'
+import { arrMapSlice, getKeys, IfMobile, isArr, isDefined, isFn, objWithoutKeys, objCopy, search, sort } from '../utils'
 import { FormInput } from '../forms/FormBuilder'
 
 class ListFactory extends ReactiveComponent {
@@ -181,6 +181,7 @@ const mapItemsByPage = (data, pageNo, perPage, callback) => {
     const end = start + perPage - 1
     return arrMapSlice(data, start, end, callback)
 }
+
 export class DataTable extends ReactiveComponent {
     constructor(props) {
         super(props)
@@ -188,7 +189,9 @@ export class DataTable extends ReactiveComponent {
         this.state = {
             pageNo: props.pageNo || 1,
             keywords: '',
-            selectedIndexes: []
+            selectedIndexes: [],
+            sortAsc: true, // ascending/descending sort
+            sortBy: props.defaultSort || ((props.dataKeys || []).find(x => !!x.key) || {}).key,
         }
     }
 
@@ -335,10 +338,15 @@ export class DataTable extends ReactiveComponent {
 
     getHeaders(totalRows, dataKeys) {
         let { selectable } = this.props
-        const { selectedIndexes } = this.state
+        const { selectedIndexes, sortAsc, sortBy } = this.state
 
         const headers = dataKeys.map((x, i) => (
-            <Table.HeaderCell key={i} textAlign={x.textAlign || 'center'}>
+            <Table.HeaderCell 
+                key={i} 
+                onClick={() => x.key && this.setState({sortBy: x.key, sortAsc: sortBy === x.key ? !sortAsc : true})}
+                sorted={sortBy !== x.key ? null : (sortAsc ? 'ascending' : 'descending')}
+                textAlign={x.textAlign || 'center'}
+            >
                 {x.title}
             </Table.HeaderCell>
         ))
@@ -388,14 +396,14 @@ export class DataTable extends ReactiveComponent {
 
     render() {
         let {  data, dataKeys: dataKeysOriginal, footerContent, perPage, searchExtraKeys } = this.props
-        const { keywords } = this.state
+        const { keywords, sortAsc, sortBy } = this.state
         const dataKeys = dataKeysOriginal.filter(x => !!x)
         const keys = dataKeys.filter(x => !!x.key).map(x => x.key)
         // Include extra searcheable keys that are not visibile on the table
         if(isArr(searchExtraKeys)) {
             searchExtraKeys.forEach(key => keys.indexOf(key) === -1 & keys.push(key))
         }
-        const filteredData = search(data, keywords, keys)
+        const filteredData = sort(search(data, keywords, keys), sortBy, !sortAsc)
         const totalRows = filteredData.length || filteredData.size
         const totalPages = Math.ceil(totalRows / perPage)
         const headers = this.getHeaders(totalRows, dataKeys)
@@ -406,7 +414,7 @@ export class DataTable extends ReactiveComponent {
                 <IfMobile then={this.getTopContent(true, totalRows)} else={this.getTopContent(false, totalRows)} />
                 {totalRows > 0 && (
                     <div style={{overflowX: 'auto'}}>
-                        <Table celled selectable unstackable singleLine>
+                        <Table celled selectable sortable unstackable singleLine>
                             <Table.Header>
                                 <Table.Row>
                                     {headers}
@@ -448,6 +456,8 @@ DataTable.propTypes = {
             title: PropTypes.string.isRequired
         })
     ),
+    // Object key to set initial sort by
+    defaultSort: PropTypes.string,
     footerContent: PropTypes.any,
     perPage: PropTypes.number,
     searchExtraKeys: PropTypes.array,
