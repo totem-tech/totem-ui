@@ -27,6 +27,7 @@ class ProjectList extends ReactiveComponent {
                     active: false,
                     content: 'Create',
                     icon: 'plus',
+                    name: 'create',
                     onClick: (selectedIndexes) => showForm(
                         ProjectForm,
                         { modal: true, onSubmit: (e, v, success) => success && this.loadProjects() }
@@ -36,12 +37,14 @@ class ProjectList extends ReactiveComponent {
                     active: false,
                     content: 'Assign',
                     icon: 'mail forward',
+                    name: 'assign',
                     onClick: toBeImplemented
                 },
                 {
                     active: false,
                     content: 'Export',
                     icon: 'file excel',
+                    name: 'export',
                     onClick: toBeImplemented
                 }
             ],
@@ -279,7 +282,7 @@ class ProjectList extends ReactiveComponent {
                     ]
                     listProps.float = 'right'
                     listProps.perPage = 5
-                    listProps.topLeftMenu = topLeftMenu
+                    listProps.topLeftMenu = projects.size > 0 ? topLeftMenu : topLeftMenu.filter(x => x.name === 'create')
                     listProps.topRightMenu = topRightMenu
                     listProps.searchExtraKeys = ['ownerAddress', 'status']
                     listProps.selectable = true

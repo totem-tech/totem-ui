@@ -353,28 +353,29 @@ export class DataTable extends ReactiveComponent {
     }
 
     getFooter(mobile, totalPages) {
-        let {  footerContent, navLimit, pageOnSelect } = this.props
-        const { pageNo } = this.state
-        return (
-            <React.Fragment>
-                {footerContent && <div style={{float: 'left', width: mobile ? '100%' : ''}}>{footerContent}</div>}
-                {totalPages <= 1 ? '' : (
-                    <Paginator
-                        total={totalPages}
-                        current={pageNo}
-                        navLimit={navLimit || 5}
-                        float={mobile ? undefined : 'right'}
-                        onSelect={pageNo => {this.setState({pageNo}); isFn(pageOnSelect) && pageOnSelect(pageNo); }}
-                    />
-                )}
-            </React.Fragment>
-        )
-        
+        return () => {
+            let {  footerContent, navLimit, pageOnSelect } = this.props
+            const { pageNo } = this.state
+            return (
+                <React.Fragment>
+                    {footerContent && <div style={{float: 'left', width: mobile ? '100%' : ''}}>{footerContent}</div>}
+                    {totalPages <= 1 ? '' : (
+                        <Paginator
+                            total={totalPages}
+                            current={pageNo}
+                            navLimit={navLimit || 5}
+                            float={mobile ? undefined : 'right'}
+                            onSelect={pageNo => {this.setState({pageNo}); isFn(pageOnSelect) && pageOnSelect(pageNo); }}
+                        />
+                    )}
+                </React.Fragment>
+            )
+        }
     }
 
     render() {
-        let {  data, dataKeys: dataKeysOriginal, perPage, searchExtraKeys } = this.props
-        const { pageNo, keywords } = this.state
+        let {  data, dataKeys: dataKeysOriginal, footerContent, perPage, searchExtraKeys } = this.props
+        const { keywords } = this.state
         const dataKeys = dataKeysOriginal.filter(x => !!x)
         const keys = dataKeys.filter(x => !!x.key).map(x => x.key)
         // Include extra searcheable keys that are not visibile on the table
@@ -403,16 +404,18 @@ export class DataTable extends ReactiveComponent {
                                 {rows}
                             </Table.Body>
 
-                            <Table.Footer>
-                                <Table.Row>
-                                    <Table.HeaderCell colSpan={dataKeys.length + 1}>
-                                        <IfMobile
-                                            then={this.getFooter(true, totalPages)}
-                                            else={this.getFooter(false, totalPages)}
-                                        />
-                                    </Table.HeaderCell>
-                                </Table.Row>
-                            </Table.Footer>
+                            {!footerContent && totalPages <= 1? '' : (
+                                <Table.Footer>
+                                    <Table.Row>
+                                        <Table.HeaderCell colSpan={dataKeys.length + 1}>
+                                            <IfMobile
+                                                then={this.getFooter(true, totalPages)}
+                                                else={this.getFooter(false, totalPages)}
+                                            />
+                                        </Table.HeaderCell>
+                                    </Table.Row>
+                                </Table.Footer>
+                            )}
                         </Table>
                     </div>
                 )}
