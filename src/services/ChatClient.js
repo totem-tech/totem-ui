@@ -60,7 +60,7 @@ export class ChatClient {
         // add/update project
         //
         // Params:
-        // @hash    string
+        // @hash    string: A hash string generated using the project details as seed. Will be used as ID/key.
         // @project object
         // @create  bool    : whether to create or update project
         // @cb      function

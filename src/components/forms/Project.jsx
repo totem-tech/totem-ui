@@ -6,6 +6,7 @@ import FormBuilder, { fillValues } from './FormBuilder'
 import { generateHash, isDefined, isFn, isObj, arrSort, textEllipsis } from '../utils'
 import { confirm } from '../../services/modal'
 import addressbook  from '../../services/addressbook'
+import storageService  from '../../services/storage'
 import client from '../../services/ChatClient'
 
 class Project extends ReactiveComponent {
@@ -42,6 +43,7 @@ class Project extends ReactiveComponent {
                     search: true,
                     selection: true,
                     required: true,
+                    value: props.id ? undefined : secretStore().use()._value.keys[storageService.walletIndex()].address
                 },
                 {
                     label: 'Description',
@@ -55,8 +57,7 @@ class Project extends ReactiveComponent {
         }
 
         // prefill values if needed
-        isObj(props.project) && fillValues(this.state.inputs, props.project, true)         
-        
+        isObj(props.project) && fillValues(this.state.inputs, props.project, true)
     }
 
     handleOwnerChange(e, values, i) {
@@ -142,7 +143,8 @@ class Project extends ReactiveComponent {
             description: textEllipsis(wallet.address, 25, 5),
             value: wallet.address
         })))
-        if (addrs.length > 0) {
+        // Add addressbook items only when updating the project
+        if (!!id && addrs.length > 0) {
             // add title item
             ownerDD.options = ownerDD.options.concat([{
                 key: 1,
