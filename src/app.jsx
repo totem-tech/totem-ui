@@ -158,7 +158,7 @@ const sidebarItems = [
 		icon: "sitemap", title: "Partners",
 		header: "Vendors and Customers",
 		subHeader: "Inspect the status of any account and name it for later use",
-		active: true,
+		active: false,
 		content: <AddressBookView />
 	},
 	// { icon: "file alternate", title: "Invoice", subHeader: "", active: false, content: <Invoice /> },
@@ -191,7 +191,7 @@ const sidebarItems = [
 	  icon: "money",
 	  title: "Wallet",
 	  subHeader: "Manage your secret keys",
-	  active: true,
+	  active: false,
 	  content: <WalletView />
 	},
 	{ 

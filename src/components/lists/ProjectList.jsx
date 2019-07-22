@@ -32,29 +32,22 @@ class ProjectList extends ReactiveComponent {
                         ProjectForm,
                         { modal: true, onSubmit: (e, v, success) => success && this.loadProjects() }
                     )
-                },
-                {
-                    active: false,
-                    content: 'Assign',
-                    icon: 'mail forward',
-                    name: 'assign',
-                    onClick: toBeImplemented
-                },
-                {
-                    active: false,
-                    content: 'Export',
-                    icon: 'file excel',
-                    name: 'export',
-                    onClick: toBeImplemented
                 }
             ],
             topRightMenu: [
                 {
                     active: false,
                     name: 'close',
-                    content: 'Close',
+                    content: 'Close project',
                     disabled: true,
                     icon: 'toggle off',
+                    onClick: toBeImplemented
+                },
+                {
+                    active: false,
+                    content: 'Reassign owner',
+                    icon: 'mail forward',
+                    name: 'assign',
                     onClick: toBeImplemented
                 },
                 {
@@ -73,6 +66,13 @@ class ProjectList extends ReactiveComponent {
                         }
                     ),
                     title: 'Only one project can be edited at a time'
+                },
+                {
+                    active: false,
+                    content: 'Export',
+                    icon: 'file excel',
+                    name: 'export',
+                    onClick: toBeImplemented
                 },
                 {
                     active: false,
@@ -268,7 +268,7 @@ class ProjectList extends ReactiveComponent {
                             content: (
                                 <Button 
                                     onClick={toBeImplemented}
-                                    content={mobile ? '' : 'Details'} 
+                                    // content={mobile ? '' : 'Details'} 
                                     icon={{
                                         className: mobile? 'no-margin' : '',
                                         name: 'eye'

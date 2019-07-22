@@ -236,8 +236,8 @@ export class DataTable extends ReactiveComponent {
         )
 
         const right = (
-            <Grid.Column key="1" tablet={16} computer={5} style={{padding: 0}}>
-                { !mobile ? (
+            <Grid.Column floated="right" key="1" tablet={16} computer={3} style={{padding: 0}}>
+                {/* { !mobile ? (
                     <Menu
                         compact
                         floated={mobile? undefined : 'right'}
@@ -264,12 +264,25 @@ export class DataTable extends ReactiveComponent {
                             ))}
                         </Dropdown.Menu>
                     </Dropdown>
-                )}
+                )} */}
+                {
+                    <Dropdown text='Actions' button fluid style={{textAlign: 'center'}} disabled={selectedIndexes.length === 0}>
+                    <Dropdown.Menu direction="left" style={{minWidth: 'auto'}}>
+                        {(topRightMenu || []).map((item, i) => (
+                            <Dropdown.Item
+                                {...item}
+                                key={i}
+                                onClick={() => isFn(item.onClick) && item.onClick(selectedIndexes) }
+                            />
+                        ))}
+                    </Dropdown.Menu>
+                </Dropdown>
+                }
             </Grid.Column>
         )
 
         return (
-            <Grid columns={3} style={{margin: '-1rem 0'}}>
+            <Grid columns={3} style={{margin: '-1rem 0', paddingBottom: '15px'}}>
                 <Grid.Row>
                     <Grid.Column tablet={16} computer={6} style={{padding: 0}}>
                         {(topLeftMenu || []).map((item, i) => (
