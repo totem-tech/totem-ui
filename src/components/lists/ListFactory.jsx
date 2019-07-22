@@ -379,8 +379,8 @@ export class DataTable extends ReactiveComponent {
             const { pageNo } = this.state
             return (
                 <React.Fragment>
-                    {footerContent && <div style={{float: 'left', width: mobile ? '100%' : ''}}>{footerContent}</div>}
-                    {totalPages <= 1 ? '' : (
+                    {footerContent && <div style={{float: 'left', width: mobile ? '100%' : undefined}}>{footerContent}</div>}
+                    {totalPages <= 1 ? undefined : (
                         <Paginator
                             total={totalPages}
                             current={pageNo}
@@ -425,7 +425,7 @@ export class DataTable extends ReactiveComponent {
                                 {rows}
                             </Table.Body>
 
-                            {!footerContent && totalPages <= 1? '' : (
+                            {!footerContent && totalPages <= 1? undefined : (
                                 <Table.Footer>
                                     <Table.Row>
                                         <Table.HeaderCell colSpan={dataKeys.length + 1}>
