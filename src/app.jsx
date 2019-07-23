@@ -1,10 +1,10 @@
 import React from 'react'
-import { Container, Dropdown, Icon, Image, Menu, Responsive, Sidebar } from 'semantic-ui-react'
+import { Container, Dimmer, Loader, Responsive, Sidebar } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import {
 	calls, runtime, chain, system, runtimeUp,
-	addressBook, secretStore, metadata
+	addressBook, secretStore, metadata, nodeService
 } from 'oo7-substrate'
 
 // Components
@@ -20,6 +20,7 @@ import UtilitiesView from './components/UtilitiesView'
 import WalletView from './components/WalletView'
 import ModalService, {confirm } from './services/modal'
 import { IfFn, IfMobile } from './components/utils'
+import { ProjectCreateSegment, ProjectDeleteSegment, ProjectReassignSegment } from './tempProject'
 // Images
 import TotemButtonLogo from'./assets/totem-button-grey.png'
 
@@ -32,8 +33,11 @@ export class App extends ReactiveComponent {
 			  return item
 			}),
 			sidebarCollapsed: false,
-			sidebarVisible: !this.isMobile()
+			sidebarVisible: !this.isMobile(),
+			status: {}
 		}
+
+		nodeService().status.notify(() => this.setState({status: nodeService().status._value})|console.log('status changed'))
 
 		// For debug only.
 		window.runtime = runtime
@@ -123,6 +127,9 @@ export class App extends ReactiveComponent {
 							sidebarCollapsed={sidebarCollapsed}
 							sidebarVisible={sidebarVisible}
 						/>
+						<ProjectCreateSegment />
+						<ProjectReassignSegment />
+						<ProjectDeleteSegment />
 						{sidebarItems.map((item, i) => (
 							<div ref={item.elementRef} key={i} hidden={!item.active} style={spaceBelow}>
 								<ContentSegment {...item} onClose={handleClose} index={i} />
@@ -134,14 +141,18 @@ export class App extends ReactiveComponent {
 		)
 	}
 
-	readyRender() {
-		const { sidebarCollapsed, sidebarVisible } = this.state
+	render() {
+		const { sidebarCollapsed, sidebarVisible, status } = this.state
 		const classNames = [
 			sidebarVisible ? 'sidebar-visible' : '',
 			sidebarCollapsed ? 'sidebar-collapsed' : ''
 		].join(' ')
 
-		return (
+		return !this.ready() ? (
+			<Dimmer active style={{height: '100%', position: 'fixed'}}>
+				{!!status.error ? 'Connection failed!':  <Loader indeterminate>Connecting to blockchain...</Loader>}
+			</Dimmer>
+		) : (
 			<IfMobile
 				then={this.getContent(true)}
 				thenClassName={'mobile ' + classNames}
