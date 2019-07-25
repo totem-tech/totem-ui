@@ -1,13 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
-import { secretStore } from 'oo7-substrate'
+import { addCodecTransform, secretStore } from 'oo7-substrate'
 import FormBuilder, { fillValues } from './FormBuilder'
-import { generateHash, isDefined, isFn, isObj, arrSort, textEllipsis } from '../utils'
+import { arrSort, generateHash, isDefined, isFn, isObj, textEllipsis } from '../utils'
 import { confirm } from '../../services/modal'
 import addressbook  from '../../services/addressbook'
 import storageService  from '../../services/storage'
 import client from '../../services/ChatClient'
+import { addNewProject } from '../../services/project'
 
 class Project extends ReactiveComponent {
     constructor(props) {
@@ -15,6 +17,9 @@ class Project extends ReactiveComponent {
             secretStore: secretStore(),
             _: addressbook.getBond()
         })
+        
+        // Tells the blockchain to to handle custom runtime function??
+        addCodecTransform('ProjectHash', 'Hash')
 
         this.handleSubmit = this.handleSubmit.bind(this)
 
@@ -22,6 +27,7 @@ class Project extends ReactiveComponent {
             closeText: 'Cancel',
             loading: false,
             message: {},
+            keepOpen: false,
             open: props.open,
             success: false,
             inputs: [
@@ -84,29 +90,73 @@ class Project extends ReactiveComponent {
 
     handleSubmit(e, values) {
         const { onSubmit, id } = this.props
-        this.setState({loading: true, success: true})
         const create = !id
-        const hash = id || generateHash(JSON.stringify(values))
-
+        const hash = id || generateHash(values)
+        const successIcon = 'check circle outline'
+        const errIcon = 'exclamation circle'
+        // prevent modal from being closed
+        let keepOpen = true
+        let message = {
+            header: {
+                content: 'Creating project'
+            },
+            icon: { name: 'circle notched', loading: true },
+            status: 'warning'
+        }
+        this.setState({loading: true, success: true, message, keepOpen})
         client.project(hash, values, create, (err, exists) => {
             let success = !err
-            let message = success ? {
-                header: `Project ${!!exists ? 'updated' : 'created'} successfully`,
-                status: 'success'
-            } : {
-                // Error
-                content: err,
-                header: 'Failed to create project',
-                status: 'error'
-            }
-
-            this.setState({
-                closeText: success ? 'Close' : 'Cancel', 
-                loading: false,
-                message, 
-                success
-            })
             isFn(onSubmit) && onSubmit(e, values, success)
+            if (!success || !create) {
+                // fail or update success
+                message = {
+                    content: err,
+                    header: !success ? (
+                        `Failed to ${create ? 'create' : 'update'} project`
+                     ) : 'Project updated successfully',
+                    icon: !success  ? errIcon : successIcon,
+                    status: success ? 'success' : 'error'
+                }
+                return this.setState({ 
+                    closeText: success ? 'Close' : 'Cancel',
+                    loading: false,
+                    message,
+                    keepOpen: false,
+                    success
+                })
+            }
+            // Project created
+            message.header.content = 'Storing project on blockchain'
+            message.content = 'Hold tight. This will take a moment.'
+            this.setState({message})
+
+            // Send to blockchain
+            const bond = addNewProject(values.ownerAddress, hash).tie((result, tieId) => {
+                if (!isObj(result)) return;
+                const { failed, finalized, sending, signing } = result
+                message.header = finalized ? 'Project created successfully' : (
+                    signing ? 'Signing transaction' : (
+                        sending ? 'Sending transaction' : 'Error!'
+                    )
+                )
+
+                if (finalized || failed) {
+                    message.content = !failed ? 'You may close the dialog now' : (
+                        `Error Code: ${failed.code}. Message: ${failed.message}`
+                    )
+                    message.icon = failed ? errIcon : successIcon
+                    message.status = failed ? 'error' : 'success'
+                    keepOpen = false
+                    bond.untie(tieId)
+                }
+                this.setState({
+                    loading: !finalized,
+                    message,
+                    closeText: finalized ? 'Close' : null,
+                    keepOpen,
+                    status: finalized ? 'warning' : 'success'
+                })
+            })
         })
     }
 
@@ -124,7 +174,7 @@ class Project extends ReactiveComponent {
             subheader,
             trigger
         } = this.props
-        const { closeText, inputs, loading, message, open, secretStore, success } = this.state
+        const { closeText, inputs, keepOpen, loading, message, open, secretStore, success } = this.state
         const addrs = addressbook.getAll()
         const isOpenControlled = modal && !trigger && isDefined(propsOpen)
         const ownerDD = inputs.find(x => x.name === 'ownerAddress')
@@ -169,7 +219,8 @@ class Project extends ReactiveComponent {
             loading,
             message,
             modal,
-            onClose,
+            // Prevent closing by passing an empty function
+            onClose: keepOpen ? () => {} : onClose,
             onOpen,
             open: isOpenControlled ? propsOpen : open,
             onSubmit: this.handleSubmit,

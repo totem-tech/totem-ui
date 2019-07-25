@@ -22,8 +22,11 @@ export const copyToClipboard = str => {
 // generateHash generates a 
 export const generateHash = (seed, algo, asBytes) => {
 	var hash = createHash(algo || 'sha256')
-	hash.update(seed) // optional encoding parameter
-	hash.digest() // synchronously get result with optional encoding parameter
+	seed = !isDefined(seed) || isStr(seed) ? seed : JSON.stringify(seed)
+	if (seed) {
+		hash.update(seed) // optional encoding parameter
+		hash.digest() // synchronously get result with optional encoding parameter
+	}
 
 	hash.write('write to it as a stream')
 	hash.end()

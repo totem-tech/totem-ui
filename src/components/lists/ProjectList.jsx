@@ -265,9 +265,9 @@ class ProjectList extends ReactiveComponent {
                         {
                             // No key required
                             collapsing: true,
-                            content: (
+                            content: (project, hash) => (
                                 <Button 
-                                    onClick={toBeImplemented}
+                                    onClick={() => console.log(project, hash) | toBeImplemented()}
                                     // content={mobile ? '' : 'Details'} 
                                     icon={{
                                         className: mobile? 'no-margin' : '',
@@ -303,15 +303,15 @@ ProjectList.propTypes = {
     type: PropTypes.string
 }
 ProjectList.defaultProps = {
-    projects: Array(100).fill(0).map((_, i) => (
-        {
-            name: 'Project ' + i,
-            // only save address to server. Save to addressbook as well?
-            totalTime: 1000 + i,
-            ownerAddress: '5CwkLTVyzjHvoeArWQbas6v9StrBo3zaKN9ZGuEVfKJRUevA',
-            // 160 chars max. use textfield ??
-            description: 'This is a sample project ' + i
-        }
-    ))
+    // projects: Array(100).fill(0).map((_, i) => (
+    //     {
+    //         name: 'Project ' + i,
+    //         // only save address to server. Save to addressbook as well?
+    //         totalTime: 1000 + i,
+    //         ownerAddress: '5CwkLTVyzjHvoeArWQbas6v9StrBo3zaKN9ZGuEVfKJRUevA',
+    //         // 160 chars max. use textfield ??
+    //         description: 'This is a sample project ' + i
+    //     }
+    // ))
 }
 export default ProjectList

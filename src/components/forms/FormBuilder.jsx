@@ -42,10 +42,12 @@ class FormBuilder extends ReactiveComponent {
         const { onChange: formOnChange } = this.props
         let { values } = this.state
         const { value } = data
+        const updateBond = isBond(input.bond) && input.type.toLowerCase() !== 'checkbox-group'
         values[name] = value
         inputs[index].value = value
         // update values of other inputs
         values = this.getValues(inputs, -1, values)
+        updateBond && input.bond.changed(value)
                 
         // trigger input items's onchange callback
         isFn(onInputChange) && onInputChange(e, values, index)
@@ -54,7 +56,8 @@ class FormBuilder extends ReactiveComponent {
         this.setState({inputs, values})
     }
 
-    handleClose() {
+    handleClose(e) {
+        e.preventDefault()
         const { onClose } = this.props
         if (isFn(onClose)) return onClose();
         this.setState({open: !this.state.open})
@@ -183,7 +186,9 @@ class FormBuilder extends ReactiveComponent {
                         error={message.status==='error'}
                         style={objCopy(
                             styles.formMessage,
-                            message.style || {textAlign: !message.header || !message.content ? 'center' : 'left'}
+                            message.style || {
+                                textAlign: !message.header || !message.content ? 'center' : 'left'
+                            }
                         )}
                         success={message.status==='success'}
                         visible={!!message.status}

@@ -329,7 +329,9 @@ export class DataTable extends ReactiveComponent {
                         textAlign={cell.textAlign || 'left'}
                         style={objCopy(cell.style, {padding: cell.collapsing ? '0 5px' : undefined})}
                     >
-                        {!cell.content ? item[cell.key] : (isFn(cell.content) ? cell.content(item, key, items, isMap) : cell.content)}
+                        {!cell.content ? item[cell.key] : (
+                            isFn(cell.content) ? cell.content(item, key, items, isMap) : cell.content
+                        )}
                     </Table.Cell>
                 ))}
             </Table.Row>
