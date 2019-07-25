@@ -20,7 +20,6 @@ import UtilitiesView from './components/UtilitiesView'
 import WalletView from './components/WalletView'
 import ModalService, {confirm } from './services/modal'
 import { IfFn, IfMobile } from './components/utils'
-import { ProjectCreateSegment, ProjectDeleteSegment, ProjectReassignSegment } from './tempProject'
 // Images
 import TotemButtonLogo from'./assets/totem-button-grey.png'
 
@@ -127,9 +126,6 @@ export class App extends ReactiveComponent {
 							sidebarCollapsed={sidebarCollapsed}
 							sidebarVisible={sidebarVisible}
 						/>
-						{/* <ProjectCreateSegment />
-						<ProjectReassignSegment />
-						<ProjectDeleteSegment /> */}
 						{sidebarItems.map((item, i) => (
 							<div ref={item.elementRef} key={i} hidden={!item.active} style={spaceBelow}>
 								<ContentSegment {...item} onClose={handleClose} index={i} />

@@ -233,7 +233,7 @@ io.on('connection', client => {
 		doCb && callback()
 	})
 
-	// user projects
+	// user projects by list of wallet addresses
 	// Params
 	// @walletAddrs	array
 	// @callback	function: 
@@ -247,6 +247,25 @@ io.on('connection', client => {
 		const result = walletAddrs.reduce((res, address) => (
 			mapCopy(mapSearch(projects, {ownerAddress: address}), res)
 		), new Map())
+		callback(null, result)
+	})
+
+	// user projects by list of project hashes
+	// Params
+	// @hashArr	array
+	// @callback	function: 
+	//						Params:
+	//						@err	string, 
+	//						@result map, 
+	client.on('projects-by-hashes', (hashArr, callback) => {
+		if (!isFn(callback)) return;
+		if (!isArr(hashArr) ) return callback('Array of project hashes required')
+		// Find all projects by supplied hash and return Map
+		const result = hashArr.reduce((res, hash) => {
+			const project = projects.get(hash)
+			if (project) res.set(hash, project)
+			return res
+		}, new Map())
 		callback(null, result)
 	})
 

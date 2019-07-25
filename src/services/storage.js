@@ -48,8 +48,8 @@ storage.chatUser = (id, secret) => {
 storage.walletIndex = index => {
     const key = 'wallet-index'
     if (isValidNumber(index)) {
-        storage.walletIndexBond.changed(index)
-        return setItem(key, index)
+        setItem(key, index)
+        return storage.walletIndexBond.changed(index)
      }
      return parseInt(getItem(key) || 0)
 }

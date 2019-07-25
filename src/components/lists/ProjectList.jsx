@@ -4,12 +4,14 @@ import { ReactiveComponent } from 'oo7-react'
 import { Button, Icon, Menu } from 'semantic-ui-react'
 import ListFactory from './ListFactory'
 import ProjectForm from '../forms/Project'
-import { copyToClipboard, IfMobile, textEllipsis } from '../utils'
+import { isArr, copyToClipboard, IfMobile, textEllipsis } from '../utils'
 import { confirm, showForm, closeModal } from '../../services/modal'
 import AddressbookEntryForm from '../forms/AddressbookEntry'
 import addressbook from '../../services/addressbook'
-import { secretStore } from 'oo7-substrate'
+import { bytesToHex, secretStore } from 'oo7-substrate'
 import client from '../../services/ChatClient'
+import storageService from '../../services/storage'
+import { ownerProjectsList } from '../../services/project'
 
 const toBeImplemented = ()=> alert('To be implemented')
 
@@ -17,8 +19,11 @@ class ProjectList extends ReactiveComponent {
     constructor(props) {
         super(props, {
             _: addressbook.getBond(),
-            secretStore: secretStore()
+            secretStore: secretStore(),
+            // update projects whenever selected wallet changes
+            // walletIndex: storageService.walletIndexBond.map(() => this.loadProjects())
         })
+
         this.state = {
             actionsIndex: -1,
             projects: new Map(),
@@ -90,8 +95,8 @@ class ProjectList extends ReactiveComponent {
         // this.getCardHeader = this.getCardHeader.bind(this)
         this.loadProjects = this.loadProjects.bind(this)
 
-        // Update projects whenever wallets changes
-        secretStore().notify(() => {
+        // Update projects whenever selected wallet changes
+        storageService.walletIndexBond.notify(() => {
             this.loadProjects()
         })
     }
@@ -99,17 +104,25 @@ class ProjectList extends ReactiveComponent {
     loadProjects() {
         const {secretStore: ss} = this.state
         const wallets = ss ? ss.keys : secretStore()._value.keys // force if not ready
-        const walletAddrs = wallets.map(x => x.address)
-        client.projects( walletAddrs, (_, projects) => {
-            // attach project owner address name if available
-            for (let [key, project] of projects) {
-                const {ownerAddress} = project
-                const entry = wallets.find(x => x.address === ownerAddress) || addressbook.getByAddress(ownerAddress) || {}
-                project._ownerName = entry.name
-                const statuses = ['pending', 'open', 'closed']
-                project._statusText = statuses[project.status]
-            }
-            this.setState({projects})
+        const address = wallets[storageService.walletIndex()].address
+        ownerProjectsList(address).then( hashArr => {
+            if (!isArr(hashArr) || hashArr.length === 0) return this.setState({projects: new Map()});
+            // convert to string
+            hashArr = hashArr.map(bytesToHex)
+            // remove duplicates, if any
+            hashArr = Object.keys(hashArr.reduce((obj, address) => { obj[address] = 1; return obj}, {}))
+            client.projectsByHashes( hashArr, (_, projects) => {
+                // attach project owner address name if available
+                for (let [hash, project] of projects) {
+                    const {ownerAddress} = project
+                    const entry = wallets.find(x => x.address === ownerAddress) || addressbook.getByAddress(ownerAddress) || {}
+                    const statuses = ['unknown', 'open', 'closed']
+                    project._ownerName = entry.name
+                    project._hash = hash
+                    project._statusText = statuses[project.status || 0]
+                }
+                this.setState({projects})
+            })
         })
     }
 
