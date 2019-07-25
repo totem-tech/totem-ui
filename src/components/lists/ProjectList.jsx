@@ -8,7 +8,7 @@ import { isArr, copyToClipboard, IfMobile, textEllipsis } from '../utils'
 import { confirm, showForm, closeModal } from '../../services/modal'
 import AddressbookEntryForm from '../forms/AddressbookEntry'
 import addressbook from '../../services/addressbook'
-import { bytesToHex, secretStore } from 'oo7-substrate'
+import { bytesToHex, pretty, secretStore } from 'oo7-substrate'
 import client from '../../services/ChatClient'
 import storageService from '../../services/storage'
 import { ownerProjectsList } from '../../services/project'
@@ -108,7 +108,7 @@ class ProjectList extends ReactiveComponent {
         ownerProjectsList(address).then( hashArr => {
             if (!isArr(hashArr) || hashArr.length === 0) return this.setState({projects: new Map()});
             // convert to string and add 0x prefix
-            hashArr = hashArr.map(bytesToHex).map(h => '0x' + h)
+            hashArr = hashArr.map( hash => pretty(hash) )
             // remove duplicates, if any
             hashArr = Object.keys(hashArr.reduce((obj, address) => { obj[address] = 1; return obj}, {}))
             client.projectsByHashes( hashArr, (_, projects) => {
