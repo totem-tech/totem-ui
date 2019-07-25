@@ -71,24 +71,25 @@ class Project extends ReactiveComponent {
         // prefill values if needed
         if (isObj(props.project)) fillValues(this.state.inputs, props.project, true)
         setTimeout(() => {
-            const index = this.state.inputs.findIndex(x => x.name === 'ownerAddress')
-            // Trigger on change to check balance
-            this.checkBalance(props.project || {ownerAddress: selectedWallet}, index)
+            // Check if wallet has balance
+            this.checkOwnerBalance(props.project || {ownerAddress: selectedWallet})
         })
     }
-    checkBalance(values, i) {
+
+    checkOwnerBalance(values) {
         const { hash, project } = this.props
         const { ownerAddress } = values
         const { inputs } = this.state
         const isCreate = !hash
+        const index = this.state.inputs.findIndex(x => x.name === 'ownerAddress')
         // minimum balance required
         const minBalance = 500
         const signer = isCreate ? values.ownerAddress : project.ownerAddress
         // do not check if owner address has not been changed
         if (!signer || (!isCreate && ownerAddress === project.ownerAddress)) return;
         // keep input field in invalid state until verified
-        inputs[i].invalid = true
-        inputs[i].message = {
+        inputs[index].invalid = true
+        inputs[index].message = {
             content: 'Checking balance....',
             icon: loadingIcon,
             status: 'warning'
@@ -97,9 +98,9 @@ class Project extends ReactiveComponent {
         // check if singing address has enough funds
         runtime.balances.balance(signer).then(balance => {
             const notEnought = balance <= minBalance
-            inputs[i].invalid = notEnought
-            inputs[i].message = !notEnought ? {} : {
-                content: `You must have more than ${minBalance} rockets balance 
+            inputs[index].invalid = notEnought
+            inputs[index].message = !notEnought ? {} : {
+                content: `You must have more than ${minBalance} Blip balance 
                         in the wallet named "${secretStore().find(signer).name}". 
                         This is requied to create a blockchain transaction.`,
                 header: 'Insufficient balance',
@@ -109,16 +110,15 @@ class Project extends ReactiveComponent {
             this.setState({inputs});
         })
     }
+
     handleOwnerChange(_, values, i) {
-        const { hash, project } = this.props
+        const { project } = this.props
         const walletAddrs = this.state.secretStore.keys.map(x => x.address)
         const { ownerAddress } = values
-        const { inputs } = this.state
-        const isCreate = !hash
         // Confirm if selected owner address is not owned by user
         const doConfirm = !ownerAddress || walletAddrs.indexOf(ownerAddress) < 0
         
-        !doConfirm ? this.checkBalance(values, i) : confirm({
+        !doConfirm ? this.checkOwnerBalance(values) : confirm({
             cancelButton: { content: 'Cancel', color: 'green' },
             confirmButton: { content: 'Proceed', color: 'red', primary: false },
             content: 'You are about to assign owner of this project to an address that does not belong to you.'
@@ -130,7 +130,7 @@ class Project extends ReactiveComponent {
                 inputs[i].value = (project || {}).ownerAddress
                 this.setState({inputs})
             },
-            onConfirm: () => this.checkBalance(values, i),
+            onConfirm: () => this.checkOwnerBalance(values),
             size: 'tiny'
         })
     }

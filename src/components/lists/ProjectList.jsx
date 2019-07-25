@@ -1,14 +1,13 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
-import { Button, Icon, Menu } from 'semantic-ui-react'
+import { Button } from 'semantic-ui-react'
 import ListFactory from './ListFactory'
 import ProjectForm from '../forms/Project'
-import { isArr, copyToClipboard, IfMobile, textEllipsis } from '../utils'
-import { confirm, showForm, closeModal } from '../../services/modal'
-import AddressbookEntryForm from '../forms/AddressbookEntry'
+import { isArr, IfMobile } from '../utils'
+import { showForm } from '../../services/modal'
 import addressbook from '../../services/addressbook'
-import { bytesToHex, pretty, secretStore } from 'oo7-substrate'
+import { pretty, secretStore } from 'oo7-substrate'
 import client from '../../services/ChatClient'
 import storageService from '../../services/storage'
 import { ownerProjectsList } from '../../services/project'
@@ -19,9 +18,7 @@ class ProjectList extends ReactiveComponent {
     constructor(props) {
         super(props, {
             _: addressbook.getBond(),
-            secretStore: secretStore(),
-            // update projects whenever selected wallet changes
-            // walletIndex: storageService.walletIndexBond.map(() => this.loadProjects())
+            secretStore: secretStore()
         })
 
         this.state = {
@@ -90,9 +87,7 @@ class ProjectList extends ReactiveComponent {
             ]
         }
 
-        // this.getActions = this.getActions.bind(this)
         this.getContent = this.getContent.bind(this)
-        // this.getCardHeader = this.getCardHeader.bind(this)
         this.loadProjects = this.loadProjects.bind(this)
 
         // Update projects whenever selected wallet changes
@@ -111,6 +106,7 @@ class ProjectList extends ReactiveComponent {
             hashArr = hashArr.map( hash => pretty(hash) )
             // remove duplicates, if any
             hashArr = Object.keys(hashArr.reduce((obj, address) => { obj[address] = 1; return obj}, {}))
+            // Get project data from web storage
             client.projectsByHashes( hashArr, (_, projects) => {
                 // attach project owner address name if available
                 for (let [hash, project] of projects) {
@@ -125,80 +121,6 @@ class ProjectList extends ReactiveComponent {
             })
         })
     }
-
-    // getActions(project, id, mobile) {
-    //     return [
-    //         {
-    //             active: false,
-    //             content: mobile ? '' : 'Show Seed',
-    //             icon: 'eye',
-    //             onClick: ()=> {
-    //                 const id = confirm({
-    //                     cancelButton: null,
-    //                     content: 'Seed goes here',
-    //                     header: project.name + ' : Seed',
-    //                     size: 'tiny'
-    //                 })
-    //                 setTimeout(() => closeModal(id), 5000)
-    //             } 
-    //         },
-    //         {
-    //             active: false,
-    //             content: mobile ? '' : 'Copy',
-    //             icon: 'copy',
-    //             onClick: () => copyToClipboard(project.ownerAddress)
-    //         },
-    //         {
-    //             active: false,
-    //             icon: 'edit',
-    //             onClick: ()=> showForm(
-    //                 ProjectForm,
-    //                 { 
-    //                     modal: true,
-    //                     project,
-    //                     id,
-    //                     onSubmit: (e, v, success) => success && setTimeout(this.loadProjects(), 2000)
-    //                 })
-    //         },
-    //         {
-    //             active: false,
-    //             content: mobile ? '' : 'Delete',
-    //             icon: 'trash alternate',
-    //             onClick: toBeImplemented
-    //         }
-    //     ].map((x, i) => {x.key = i; return x})
-    // }
-    // 
-    // getCardHeader(project, id) {
-    //     const { actionsIndex } = this.state
-    //     const toggleOnClick = ()=> {
-    //         this.setState({
-    //             actionsIndex: actionsIndex === id ? -1 : id
-    //         })
-    //     }
-    //     return {
-    //         content: project.name,
-    //         icon: {
-    //             color: 'grey',
-    //             className: 'circular',
-    //             link: true,
-    //             name: 'angle ' + (actionsIndex === id ? 'up' : 'down'),
-    //             onClick: toggleOnClick
-    //         },
-    //         image: <Icon name="flask" size="big" />,
-    //         subheader: textEllipsis(project.address, 23)
-    //     }
-    // }
-    // 
-    // getOwner(project) {
-    //     const { ownerAddress, _ownerName } = project
-    //     if(_ownerName) return _ownerName;
-    //     // Add a button to add address as a partner to the addressbook
-    //     return <Button content="Add Partner" onClick={ () => showForm(AddressbookEntryForm, {
-    //         modal: true,
-    //         values: {address: ownerAddress}
-    //     })} />
-    // }
 
     handleSelection(selectedIndexes) {
         const { projects, topRightMenu } = this.state
@@ -220,95 +142,66 @@ class ProjectList extends ReactiveComponent {
 
     getContent(mobile) {
         return () => {
-            // const { itemsPerRow, type } = this.props
-            const { actionsIndex, projects, topRightMenu, topLeftMenu } = this.state
-            const listType = 'datatable'
+            const { projects, topRightMenu, topLeftMenu } = this.state
             const listProps = {
                 perPage: 10,
                 pageNo: 1,
-                type: listType,
+                type: 'datatable',
+                data: projects,
+                float: 'right',
+                perPage: 5,
+                topLeftMenu: projects.size > 0 ? topLeftMenu : topLeftMenu.filter(x => x.name === 'create'),
+                topRightMenu: topRightMenu,
+                searchExtraKeys: ['ownerAddress', 'status', '_statusText'],
+                selectable: true,
+                defaultSort: 'status',
+                onRowSelect: this.handleSelection.bind(this),
             }
-            switch(listType.toLowerCase()) {
-                // case 'cardlist' :
-                    // const perRow = mobile ? 1 : itemsPerRow || 1
-                    // listProps.items = Array.from(projects).map(item => {
-                    //     const id = item[0]
-                    //     const project = item[1]
-                    //     return {
-                    //         actions: getActions(project, id, mobile),
-                    //         actionsVisible: actionsIndex === id,
-                    //         description: (
-                    //             <div>
-                    //                 <p><b>Owner:</b></p>
-                    //                 <p>{this.getOwner(project)}</p>
-                    //                 <p><b>Description:</b></p>
-                    //                 <p>{project.description}</p>
-                    //                 <p><b>Total Time:</b></p>
-                    //                 <p>{(project.totalTime || 0) + ' blocks'}</p>
-                    //             </div>
-                    //         ),
-                    //         header: getCardHeader(project, id),
-                    //         style: perRow === 1 ? {margin: 0} : undefined
-                    //     }
-                    // })
-                    // listProps.itemsPerRow = perRow
-                case 'datatable':
-                default:
-                    listProps.data = projects
-                    listProps.dataKeys = [
-                        { 
-                            key:'name',
-                            title: 'Name'
-                        },
-                        { 
-                            collapsing: true,
-                            key: 'totalTime',
-                            title: 'Total Time', 
-                            content: project => (project.totalTime || 0) + ' blocks' 
-                        },
-                        mobile ? null : {
-                            collapsing: true,
-                            content: this.getOwner,
-                            key: '_ownerName', 
-                            title: 'Owner',
-                        },
-                        mobile ? null : {
-                            key: 'description',
-                            title: 'Description'
-                        },
-                        {
-                            collapsing: true,
-                            key: '_statusText',
-                            title: 'Status'
-                        },
-                        {
-                            // No key required
-                            collapsing: true,
-                            content: (project, hash) => (
-                                <Button 
-                                    onClick={() => console.log(project, hash) | toBeImplemented()}
-                                    // content={mobile ? '' : 'Details'} 
-                                    icon={{
-                                        className: mobile? 'no-margin' : '',
-                                        name: 'eye'
-                                    }}
-                                    style={{margin: 0}} 
-                                />
-                            ),
-                            textAlign: 'center',
-                            title: 'Details'
-                        }
-                    ]
-                    listProps.float = 'right'
-                    listProps.perPage = 5
-                    listProps.topLeftMenu = projects.size > 0 ? topLeftMenu : topLeftMenu.filter(x => x.name === 'create')
-                    listProps.topRightMenu = topRightMenu
-                    listProps.searchExtraKeys = ['ownerAddress', 'status', '_statusText']
-                    listProps.selectable = true
-                    listProps.defaultSort = 'status'
-                    listProps.onRowSelect = this.handleSelection.bind(this)
-                    break;
-            }
+            
+            listProps.columns = [
+                { 
+                    key:'name',
+                    title: 'Name'
+                },
+                { 
+                    collapsing: true,
+                    key: 'totalTime',
+                    title: 'Total Time', 
+                    content: project => (project.totalTime || 0) + ' blocks' 
+                },
+                mobile ? null : {
+                    collapsing: true,
+                    content: this.getOwner,
+                    key: '_ownerName', 
+                    title: 'Owner',
+                },
+                mobile ? null : {
+                    key: 'description',
+                    title: 'Description'
+                },
+                {
+                    collapsing: true,
+                    key: '_statusText',
+                    title: 'Status'
+                },
+                {
+                    // No key required
+                    collapsing: true,
+                    content: (project, hash) => (
+                        <Button 
+                            onClick={() => console.log(project, hash) | toBeImplemented()}
+                            // content={mobile ? '' : 'Details'} 
+                            icon={{
+                                className: mobile? 'no-margin' : '',
+                                name: 'eye'
+                            }}
+                            style={{margin: 0}} 
+                        />
+                    ),
+                    textAlign: 'center',
+                    title: 'Details'
+                }
+            ]
             return <ListFactory {...listProps} />
         }
     }
@@ -317,21 +210,8 @@ class ProjectList extends ReactiveComponent {
         return <IfMobile then={this.getContent(true)} else={this.getContent(false)} />
     }
 }
+
 ProjectList.propTypes = {
     projects: PropTypes.arrayOf(PropTypes.object),
-    itemsPerRow: PropTypes.number,
-    type: PropTypes.string
-}
-ProjectList.defaultProps = {
-    // projects: Array(100).fill(0).map((_, i) => (
-    //     {
-    //         name: 'Project ' + i,
-    //         // only save address to server. Save to addressbook as well?
-    //         totalTime: 1000 + i,
-    //         ownerAddress: '5CwkLTVyzjHvoeArWQbas6v9StrBo3zaKN9ZGuEVfKJRUevA',
-    //         // 160 chars max. use textfield ??
-    //         description: 'This is a sample project ' + i
-    //     }
-    // ))
 }
 export default ProjectList

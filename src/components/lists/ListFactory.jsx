@@ -191,7 +191,7 @@ export class DataTable extends ReactiveComponent {
             keywords: '',
             selectedIndexes: [],
             sortAsc: true, // ascending/descending sort
-            sortBy: props.defaultSort || ((props.dataKeys || []).find(x => !!x.key) || {}).key,
+            sortBy: props.defaultSort || ((props.columns || []).find(x => !!x.key) || {}).key,
         }
     }
 
@@ -240,36 +240,7 @@ export class DataTable extends ReactiveComponent {
 
         const right = (
             <Grid.Column floated="right" key="1" tablet={16} computer={3} style={{padding: 0}}>
-                {/* { !mobile ? (
-                    <Menu
-                        compact
-                        floated={mobile? undefined : 'right'}
-                        size="tiny"
-                        style={!mobile? undefined : {marginTop: 5}}
-                    >
-                        {(topRightMenu || []).map((item, i) => (
-                            <Menu.Item
-                                {...item}
-                                key={i}
-                                onClick={() => isFn(item.onClick) && item.onClick(selectedIndexes) }
-                            />
-                        ))}
-                    </Menu>
-                ) : (
-                    <Dropdown text='Actions' button fluid style={{textAlign: 'center'}} disabled={selectedIndexes.length === 0}>
-                        <Dropdown.Menu direction="left" style={{minWidth: 'auto'}}>
-                            {(topRightMenu || []).map((item, i) => (
-                                <Dropdown.Item
-                                    {...item}
-                                    key={i}
-                                    onClick={() => isFn(item.onClick) && item.onClick(selectedIndexes) }
-                                />
-                            ))}
-                        </Dropdown.Menu>
-                    </Dropdown>
-                )} */}
-                {
-                    <Dropdown text='Actions' button fluid style={{textAlign: 'center'}} disabled={selectedIndexes.length === 0}>
+                <Dropdown text='Actions' button fluid style={{textAlign: 'center'}} disabled={selectedIndexes.length === 0}>
                     <Dropdown.Menu direction="left" style={{minWidth: 'auto'}}>
                         {(topRightMenu || []).map((item, i) => (
                             <Dropdown.Item
@@ -280,7 +251,6 @@ export class DataTable extends ReactiveComponent {
                         ))}
                     </Dropdown.Menu>
                 </Dropdown>
-                }
             </Grid.Column>
         )
 
@@ -306,7 +276,7 @@ export class DataTable extends ReactiveComponent {
         )
     }
 
-    getRows(filteredData, dataKeys) {
+    getRows(filteredData, columns) {
         let { perPage, selectable } = this.props
         const { pageNo, selectedIndexes } = this.state
 
@@ -321,7 +291,7 @@ export class DataTable extends ReactiveComponent {
                         />
                     </Table.Cell>
                 )}
-                {dataKeys.map((cell, j) => (
+                {columns.map((cell, j) => (
                     <Table.Cell 
                         {...objWithoutKeys(cell, ['content', 'style'])}
                         key={j} 
@@ -338,11 +308,11 @@ export class DataTable extends ReactiveComponent {
         ))
     }
 
-    getHeaders(totalRows, dataKeys) {
+    getHeaders(totalRows, columns) {
         let { selectable } = this.props
         const { selectedIndexes, sortAsc, sortBy } = this.state
 
-        const headers = dataKeys.map((x, i) => (
+        const headers = columns.map((x, i) => (
             <Table.HeaderCell 
                 key={i} 
                 onClick={() => x.key && this.setState({sortBy: x.key, sortAsc: sortBy === x.key ? !sortAsc : true})}
@@ -397,10 +367,10 @@ export class DataTable extends ReactiveComponent {
     }
 
     render() {
-        let {  data, dataKeys: dataKeysOriginal, footerContent, perPage, searchExtraKeys } = this.props
+        let {  data, columns: columnsOriginal, footerContent, perPage, searchExtraKeys } = this.props
         const { keywords, sortAsc, sortBy } = this.state
-        const dataKeys = dataKeysOriginal.filter(x => !!x)
-        const keys = dataKeys.filter(x => !!x.key).map(x => x.key)
+        const columns = columnsOriginal.filter(x => !!x)
+        const keys = columns.filter(x => !!x.key).map(x => x.key)
         // Include extra searcheable keys that are not visibile on the table
         if(isArr(searchExtraKeys)) {
             searchExtraKeys.forEach(key => keys.indexOf(key) === -1 & keys.push(key))
@@ -408,8 +378,8 @@ export class DataTable extends ReactiveComponent {
         const filteredData = sort(search(data, keywords, keys), sortBy, !sortAsc)
         const totalRows = filteredData.length || filteredData.size
         const totalPages = Math.ceil(totalRows / perPage)
-        const headers = this.getHeaders(totalRows, dataKeys)
-        const rows = this.getRows(filteredData, dataKeys)
+        const headers = this.getHeaders(totalRows, columns)
+        const rows = this.getRows(filteredData, columns)
 
         return (
             <div>
@@ -430,7 +400,7 @@ export class DataTable extends ReactiveComponent {
                             {!footerContent && totalPages <= 1? undefined : (
                                 <Table.Footer>
                                     <Table.Row>
-                                        <Table.HeaderCell colSpan={dataKeys.length + 1}>
+                                        <Table.HeaderCell colSpan={columns.length + 1}>
                                             <IfMobile
                                                 then={this.getFooter(true, totalPages)}
                                                 else={this.getFooter(false, totalPages)}
@@ -450,8 +420,8 @@ DataTable.propTypes = {
     // data: PropTypes.oneOf([
     //     PropTypes.array,
     //     PropTypes.instanceOf(Map),
-    // ]).isRequired,
-    dataKeys: PropTypes.arrayOf(
+    // ]),
+    columns: PropTypes.arrayOf(
         PropTypes.shape({
             content: PropTypes.any,
             key: PropTypes.string,
@@ -469,6 +439,7 @@ DataTable.propTypes = {
 DataTable.defaultProps = {
     perPage: 10,
 }
+
 export class Paginator extends ReactiveComponent {
     constructor(props) {
         super(props)
