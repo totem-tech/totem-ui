@@ -88,10 +88,93 @@ class Project extends ReactiveComponent {
         })
 
         // check if singing address has enough funds
-        const signer = isObj 
+        // const signer = isObj 
     }
 
     handleSubmit(e, values) {
+        const { onSubmit, hash: existingHash } = this.props
+        const create = !existingHash
+        const hash = existingHash || generateHash(values)
+        const successIcon = 'check circle outline'
+        const errIcon = 'exclamation circle'
+        const warningIcon = 'circle notched'
+        // prevent modal from being closed
+        let keepOpen = true
+        let loading = true
+        let closeText = null
+        let message = {
+            content: 'Hold tight. This will take a moment.',
+            header: 'Creating blockchain transaction',
+            icon: { name: warningIcon, loading: true },
+            status: 'warning'
+        }
+        
+        this.setState({closeText, loading, message, success: true, keepOpen})
+
+        const saveData = ()=> client.project(hash, values, create, (err, exists) => {
+            let success = !err
+            // fail or update success
+            isFn(onSubmit) && onSubmit(e, values, success)
+            const actionText = create ? 'create' : 'update'
+            message = success ? {
+                content: 'You may close the dialog now',
+                header: `Project ${actionText}d successfully`, 
+                icon: successIcon,
+                status: 'success'
+            } : {
+                content: err,
+                header:`Failed to ${actionText} project`,
+                icon: errIcon,
+                status: 'error'
+            }
+            return this.setState({ 
+                closeText: success ? 'Close' : 'Cancel',
+                loading: false,
+                message,
+                keepOpen: false,
+                success
+            })
+        })
+
+        if (!create) return saveData();
+
+        // Send to blockchain
+        const bond = addNewProject(values.ownerAddress, hash)
+        bond.tie((result, tieId) => {
+            if (!isObj(result)) return;
+            const { failed, finalized, sending, signing } = result
+            const done = finalized || failed
+            message.header = finalized ? 'Storing project data' : (
+                signing ? 'Signing transaction' : (
+                    sending ? 'Sending transaction' : `Error: ${failed && failed.code}`
+                )
+            )
+
+            if (failed) {
+                message.content = `${failed.message}. Make sure you have enough funds in your wallet`
+                message.icon = errIcon
+                message.status = 'error'
+                keepOpen = false
+                loading = false
+                closeText = 'Cancel'
+            }
+
+            // Remove callback from bond
+            if (done) bond.untie(tieId)
+
+            this.setState({
+                closeText,
+                keepOpen,
+                loading,
+                message,
+                success: !failed
+            })
+            // update project status to 1/open
+            finalized && saveData()
+        })
+    }
+
+    handleSubmitOld(e, values) {
         const { onSubmit, hash: existingHash } = this.props
         const create = !existingHash
         const hash = existingHash || generateHash(values)
