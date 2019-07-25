@@ -1,12 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
-import { secretStore } from 'oo7-substrate'
+import { addCodecTransform, secretStore } from 'oo7-substrate'
 import FormBuilder, { fillValues } from './FormBuilder'
-import { generateHash, isDefined, isFn, isObj, arrSort, textEllipsis } from '../utils'
+import { arrSort, generateHash, isDefined, isFn, isObj, textEllipsis } from '../utils'
 import { confirm } from '../../services/modal'
 import addressbook  from '../../services/addressbook'
+import storageService  from '../../services/storage'
 import client from '../../services/ChatClient'
+import { addNewProject } from '../../services/project'
 
 class Project extends ReactiveComponent {
     constructor(props) {
@@ -14,6 +17,9 @@ class Project extends ReactiveComponent {
             secretStore: secretStore(),
             _: addressbook.getBond()
         })
+        
+        // Tells the blockchain to to handle custom runtime function??
+        addCodecTransform('ProjectHash', 'Hash')
 
         this.handleSubmit = this.handleSubmit.bind(this)
 
@@ -21,6 +27,7 @@ class Project extends ReactiveComponent {
             closeText: 'Cancel',
             loading: false,
             message: {},
+            keepOpen: false,
             open: props.open,
             success: false,
             inputs: [
@@ -42,6 +49,7 @@ class Project extends ReactiveComponent {
                     search: true,
                     selection: true,
                     required: true,
+                    value: props.hash ? undefined : secretStore().use()._value.keys[storageService.walletIndex()].address
                 },
                 {
                     label: 'Description',
@@ -55,8 +63,7 @@ class Project extends ReactiveComponent {
         }
 
         // prefill values if needed
-        isObj(props.project) && fillValues(this.state.inputs, props.project, true)         
-        
+        isObj(props.project) && fillValues(this.state.inputs, props.project, true)
     }
 
     handleOwnerChange(e, values, i) {
@@ -79,33 +86,86 @@ class Project extends ReactiveComponent {
             },
             size: 'tiny'
         })
+
+        // check if singing address has enough funds
+        const signer = isObj 
     }
 
     handleSubmit(e, values) {
-        const { onSubmit, id } = this.props
-        this.setState({loading: true, success: true})
-        const create = !id
-        const hash = id || generateHash(JSON.stringify(values))
-
+        const { onSubmit, hash: existingHash } = this.props
+        const create = !existingHash
+        const hash = existingHash || generateHash(values)
+        const successIcon = 'check circle outline'
+        const errIcon = 'exclamation circle'
+        // prevent modal from being closed
+        let keepOpen = true
+        let loading = true
+        let message = {
+            header: {
+                content: 'Creating project'
+            },
+            icon: { name: 'circle notched', loading: true },
+            status: 'warning'
+        }
+        this.setState({loading, success: true, message, keepOpen})
         client.project(hash, values, create, (err, exists) => {
             let success = !err
-            let message = success ? {
-                header: `Project ${!!exists ? 'updated' : 'created'} successfully`,
-                status: 'success'
-            } : {
-                // Error
-                content: err,
-                header: 'Failed to create project',
-                status: 'error'
+            if (!success || !create) {
+                // fail or update success
+                isFn(onSubmit) && onSubmit(e, values, success)
+                message = {
+                    content: err,
+                    header: !success ? (
+                        `Failed to ${create ? 'create' : 'update'} project`
+                     ) : 'Project updated successfully',
+                    icon: !success  ? errIcon : successIcon,
+                    status: success ? 'success' : 'error'
+                }
+                return this.setState({ 
+                    closeText: success ? 'Close' : 'Cancel',
+                    loading: false,
+                    message,
+                    keepOpen: false,
+                    success
+                })
             }
+            // Project created
+            message.header.content = 'Storing project on blockchain'
+            message.content = 'Hold tight. This will take a moment.'
+            this.setState({message})
 
-            this.setState({
-                closeText: success ? 'Close' : 'Cancel', 
-                loading: false,
-                message, 
-                success
+            // Send to blockchain
+            const bond = addNewProject(values.ownerAddress, hash)
+            bond.tie((result, tieId) => {
+                if (!isObj(result)) return;
+                const { failed, finalized, sending, signing } = result
+                message.header = finalized ? 'Project created successfully' : (
+                    signing ? 'Signing transaction' : (
+                        sending ? 'Sending transaction' : 'Error: ' + (failed && failed.code)
+                    )
+                )
+
+                if (finalized || failed) {
+                    message.content = !failed ? 'You may close the dialog now' : failed.message
+                    message.icon = failed ? errIcon : successIcon
+                    message.status = failed ? 'error' : 'success'
+                    keepOpen = false
+                    loading = false
+                    bond.untie(tieId)
+                }
+                this.setState({
+                    loading,
+                    message,
+                    closeText: finalized ? 'Close' : 'Cancel',
+                    keepOpen,
+                    status: finalized ? 'warning' : 'success'
+                })
+
+                // update project status to 1/open
+                finalized && client.projectStatus(hash, 1, (err) => {
+                    isFn(onSubmit) && onSubmit(e, values, success)
+                })
             })
-            isFn(onSubmit) && onSubmit(e, values, success)
         })
     }
 
@@ -113,7 +173,7 @@ class Project extends ReactiveComponent {
         const {
             header,
             headerIcon,
-            id,
+            hash,
             modal,
             onOpen,
             onClose,
@@ -123,7 +183,7 @@ class Project extends ReactiveComponent {
             subheader,
             trigger
         } = this.props
-        const { closeText, inputs, loading, message, open, secretStore, success } = this.state
+        const { closeText, inputs, keepOpen, loading, message, open, secretStore, success } = this.state
         const addrs = addressbook.getAll()
         const isOpenControlled = modal && !trigger && isDefined(propsOpen)
         const ownerDD = inputs.find(x => x.name === 'ownerAddress')
@@ -142,7 +202,8 @@ class Project extends ReactiveComponent {
             description: textEllipsis(wallet.address, 25, 5),
             value: wallet.address
         })))
-        if (addrs.length > 0) {
+        // Add addressbook items only when updating the project
+        if (!!hash && addrs.length > 0) {
             // add title item
             ownerDD.options = ownerDD.options.concat([{
                 key: 1,
@@ -167,13 +228,14 @@ class Project extends ReactiveComponent {
             loading,
             message,
             modal,
-            onClose,
+            // Prevent closing by passing an empty function
+            onClose: keepOpen ? () => {} : onClose,
             onOpen,
             open: isOpenControlled ? propsOpen : open,
             onSubmit: this.handleSubmit,
             size,
             subheader,
-            submitText : !!id ? 'Update' : 'Create',
+            submitText : !!hash ? 'Update' : 'Create',
             success,
             trigger,
         }
@@ -182,8 +244,8 @@ class Project extends ReactiveComponent {
     }
 }
 Project.propTypes = {
-    // Project ID/hash
-    id: PropTypes.string,
+    // Project hash
+    hash: PropTypes.string,
     modal: PropTypes.bool,
     onClose: PropTypes.func,
     onOpen: PropTypes.func,

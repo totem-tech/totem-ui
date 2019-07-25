@@ -60,11 +60,13 @@ export class ChatClient {
         // add/update project
         //
         // Params:
-        // @hash    string
+        // @hash    string: A hash string generated using the project details as seed. Will be used as ID/key.
         // @project object
         // @create  bool    : whether to create or update project
         // @cb      function
         this.project = (hash, project, create, cb) => socket.emit('project', hash, project, create, cb)
+        // Set project status
+        this.projectStatus = (hash, status, cb) => socket.emit('project-status', hash, status, cb)
         // request user projects
         //
         // Params:

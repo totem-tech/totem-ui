@@ -22,8 +22,11 @@ export const copyToClipboard = str => {
 // generateHash generates a 
 export const generateHash = (seed, algo, asBytes) => {
 	var hash = createHash(algo || 'sha256')
-	hash.update(seed) // optional encoding parameter
-	hash.digest() // synchronously get result with optional encoding parameter
+	seed = !isDefined(seed) || isStr(seed) ? seed : JSON.stringify(seed)
+	if (seed) {
+		hash.update(seed) // optional encoding parameter
+		hash.digest() // synchronously get result with optional encoding parameter
+	}
 
 	hash.write('write to it as a stream')
 	hash.end()
@@ -40,6 +43,10 @@ export const isDefined = x => x !== undefined && x !== null
 export const isFn = x => typeof (x) === 'function'
 export const isMap = x => x instanceof Map
 export const isObj = x => x !== null && !isArr(x) && typeof(x) === 'object'
+// Checks if argument is an Array of Objects. Each element type must be object, otherwise will return false.
+export const isObjArr = x => !isArr(x) ? false : !x.reduce((no, item) => no || !isObj(item), false)
+// Checks if argument is an Map of Objects. Each element type must be object, otherwise will return false.
+export const isObjMap = x => !isMap(x) ? false : !Array.from(x).reduce((no, item) => no || !isObj(item[1]), false)
 export const isStr = x => typeof (x) === 'string'
 export const isValidNumber = x => typeof (x) == 'number' && !isNaN(x) && isFinite(x)
 export const hasValue = x => isDefined(x) && (isValidNumber(x) || (isStr(x) && !!x))
@@ -122,7 +129,9 @@ export const arrSearch = (arr, keyValues, matchExact, matchAll, ignoreCase, retu
 	return result
 }
 
-export const arrSort = (arr, key) => arr.sort((a, b) => a[key] > b[key] ? 1 : -1)
+export const arrSort = (arr, key, reverse) => !isObjArr(arr) ? arr : arrReverse(arr.sort((a, b) => a[key] > b[key] ? 1 : -1), reverse)
+
+export const arrReverse = (arr, reverse) => reverse ? arr.reverse() : arr
 
 // objCopy copies top level properties and returns another object
 //
@@ -223,6 +232,13 @@ export const mapSearch = (map, keyValues, matchExact, matchAll, ignoreCase) => {
 	return result
 }
 
+// Returns a new map sorted by key. Must be a map obects
+export const mapSort = (map, key, reverse) => !isObjMap(map) ? map : new Map(arrReverse(
+	Array.from(map).sort((a, b) => a[1][key] > b[1][key] ? 1 : -1),
+	reverse
+))
+
+// Search Array or Map
 export const search = (data, keywords, keys) => {
 	if (!keywords || keywords.length === 0 || !(isArr(data) || isMap(data))) return data;
 	const fn = isMap(data) ? mapSearch : arrSearch
@@ -232,6 +248,11 @@ export const search = (data, keywords, keys) => {
 	}, {})
 	return fn(data, keyValues, false, false, true, false)
 }
+
+// Sort Array or Map
+export const sort = (data, key, reverse) => isArr(data) ? arrSort(data, key, reverse) : (
+	isMap(data) ? mapSort(data, key, reverse) : data
+)
 
 /*
  * Date formatting etc.
