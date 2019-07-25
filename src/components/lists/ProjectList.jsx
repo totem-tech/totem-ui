@@ -96,7 +96,7 @@ class ProjectList extends ReactiveComponent {
         this.loadProjects = this.loadProjects.bind(this)
 
         // Update projects whenever selected wallet changes
-        storageService.walletIndexBond.notify(() => {
+        storageService.walletIndexBond.tie(index => {
             this.loadProjects()
         })
     }
@@ -107,8 +107,8 @@ class ProjectList extends ReactiveComponent {
         const address = wallets[storageService.walletIndex()].address
         ownerProjectsList(address).then( hashArr => {
             if (!isArr(hashArr) || hashArr.length === 0) return this.setState({projects: new Map()});
-            // convert to string
-            hashArr = hashArr.map(bytesToHex)
+            // convert to string and add 0x prefix
+            hashArr = hashArr.map(bytesToHex).map(h => '0x' + h)
             // remove duplicates, if any
             hashArr = Object.keys(hashArr.reduce((obj, address) => { obj[address] = 1; return obj}, {}))
             client.projectsByHashes( hashArr, (_, projects) => {
