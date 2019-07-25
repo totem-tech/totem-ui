@@ -244,25 +244,30 @@ class ProjectList extends ReactiveComponent {
                     listProps.data = projects
                     listProps.dataKeys = [
                         { 
+                            collapsing: true,
                             key:'name',
                             title: 'Name'
                         },
                         { 
                             collapsing: true,
                             key: 'totalTime',
-                            textAlign: 'center',
                             title: 'Total Time', 
                             content: project => (project.totalTime || 0) + ' blocks' 
                         },
                         mobile ? null : {
+                            collapsing: true,
                             content: this.getOwner,
                             key: '_ownerName', 
-                            textAlign: 'center',
                             title: 'Owner',
                         },
                         mobile ? null : {
                             key: 'description',
                             title: 'Description'
+                        },
+                        {
+                            collapsing: true,
+                            key: '_statusText',
+                            title: 'Status'
                         },
                         {
                             // No key required

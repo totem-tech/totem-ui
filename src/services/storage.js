@@ -47,7 +47,11 @@ storage.chatUser = (id, secret) => {
 // Returns  undefined or number
 storage.walletIndex = index => {
     const key = 'wallet-index'
-    return isValidNumber(index) ? setItem(key, index) | storage.walletIndexBond.changed(index) : getItem(key) || 0
+    if (isValidNumber(index)) {
+        storage.walletIndexBond.changed(index)
+        return setItem(key, index)
+     }
+     return parseInt(getItem(key) || 0)
 }
 // Bond to keep components updated 
 storage.walletIndexBond = new Bond()
