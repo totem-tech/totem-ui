@@ -244,7 +244,6 @@ class ProjectList extends ReactiveComponent {
                     listProps.data = projects
                     listProps.dataKeys = [
                         { 
-                            collapsing: true,
                             key:'name',
                             title: 'Name'
                         },
