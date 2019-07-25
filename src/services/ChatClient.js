@@ -65,6 +65,8 @@ export class ChatClient {
         // @create  bool    : whether to create or update project
         // @cb      function
         this.project = (hash, project, create, cb) => socket.emit('project', hash, project, create, cb)
+        // Set project status
+        this.projectStatus = (hash, status, cb) => socket.emit('project-status', hash, status, cb)
         // request user projects
         //
         // Params:

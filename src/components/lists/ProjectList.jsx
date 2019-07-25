@@ -61,7 +61,7 @@ class ProjectList extends ReactiveComponent {
                         { 
                             modal: true,
                             project: this.state.projects.get(selectedIndexes[0]),
-                            id: selectedIndexes[0],
+                            hash: selectedIndexes[0],
                             onSubmit: (e, v, success) => success && setTimeout(this.loadProjects(), 2000)
                         }
                     ),
@@ -106,6 +106,8 @@ class ProjectList extends ReactiveComponent {
                 const {ownerAddress} = project
                 const entry = wallets.find(x => x.address === ownerAddress) || addressbook.getByAddress(ownerAddress) || {}
                 project._ownerName = entry.name
+                const statuses = ['pending', 'open', 'closed']
+                project._statusText = statuses[project.status]
             }
             this.setState({projects})
         })
@@ -284,8 +286,9 @@ class ProjectList extends ReactiveComponent {
                     listProps.perPage = 5
                     listProps.topLeftMenu = projects.size > 0 ? topLeftMenu : topLeftMenu.filter(x => x.name === 'create')
                     listProps.topRightMenu = topRightMenu
-                    listProps.searchExtraKeys = ['ownerAddress', 'status']
+                    listProps.searchExtraKeys = ['ownerAddress', 'status', '_statusText']
                     listProps.selectable = true
+                    listProps.defaultSort = 'status'
                     listProps.onRowSelect = this.handleSelection.bind(this)
                     break;
             }

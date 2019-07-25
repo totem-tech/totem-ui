@@ -187,7 +187,7 @@ class FormBuilder extends ReactiveComponent {
                         style={objCopy(
                             styles.formMessage,
                             message.style || {
-                                textAlign: !message.header || !message.content ? 'center' : 'left'
+                                textAlign: !message.icon && (!message.header || !message.content) ? 'center' : 'left'
                             }
                         )}
                         success={message.status==='success'}

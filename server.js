@@ -1,5 +1,5 @@
 import express from 'express'
-import { isArr, isFn, isObj, isStr, hasValue, mapCopy, mapFindByKey, mapSearch, objClean, objCopy } from './src/components/utils'
+import { isArr, isFn, isObj, isStr, isValidNumber, hasValue, mapCopy, mapFindByKey, mapSearch, objClean, objCopy } from './src/components/utils'
 
 const httpPort = 80
 const httpsPort = 443
@@ -208,12 +208,29 @@ io.on('connection', client => {
 		}
 		// exclude any unwanted data 
 		project = objCopy(objClean(project, requiredKeys), existingProject)
-		project.status = project.status || 'open'
+		project.status = create ? 0 : (
+			isValidNumber(project.status) ? project.status : 1
+		)
 		
 		// Add/update project
 		projects.set(hash, project)
 		saveProjects()
 		doCb && callback(null)
+	})
+
+	// update project status
+	// Statuses:
+	// 0 : pending blockchain entry
+	// 1 : open
+	// 2 : closed
+	client.on('project-status', (hash, status, callback) => {
+		const doCb = isFn(callback)
+		const project = projects.get(hash)
+		if (!project) return doCb && callback('Project not found');
+		project.status = status
+		projects.set(hash, project)
+		saveProjects
+		doCb && callback()
 	})
 
 	// user projects

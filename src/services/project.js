@@ -20,7 +20,6 @@ export const addNewProject = (address, hash) => {
     if (hash.slice(0, 2) !== '0x') {
         hash = '0x' + hash
     }
-    console.log('hexToBytes(hash)', hexToBytes(hash))
     return post({
         sender: runtime.indices.tryIndex(address),
         call: calls.projects.addNewProject(hash),

@@ -49,7 +49,7 @@ class Project extends ReactiveComponent {
                     search: true,
                     selection: true,
                     required: true,
-                    value: props.id ? undefined : secretStore().use()._value.keys[storageService.walletIndex()].address
+                    value: props.hash ? undefined : secretStore().use()._value.keys[storageService.walletIndex()].address
                 },
                 {
                     label: 'Description',
@@ -86,16 +86,20 @@ class Project extends ReactiveComponent {
             },
             size: 'tiny'
         })
+
+        // check if singing address has enough funds
+        const signer = isObj 
     }
 
     handleSubmit(e, values) {
-        const { onSubmit, id } = this.props
-        const create = !id
-        const hash = id || generateHash(values)
+        const { onSubmit, hash: existingHash } = this.props
+        const create = !existingHash
+        const hash = existingHash || generateHash(values)
         const successIcon = 'check circle outline'
         const errIcon = 'exclamation circle'
         // prevent modal from being closed
         let keepOpen = true
+        let loading = true
         let message = {
             header: {
                 content: 'Creating project'
@@ -103,12 +107,12 @@ class Project extends ReactiveComponent {
             icon: { name: 'circle notched', loading: true },
             status: 'warning'
         }
-        this.setState({loading: true, success: true, message, keepOpen})
+        this.setState({loading, success: true, message, keepOpen})
         client.project(hash, values, create, (err, exists) => {
             let success = !err
-            isFn(onSubmit) && onSubmit(e, values, success)
             if (!success || !create) {
                 // fail or update success
+                isFn(onSubmit) && onSubmit(e, values, success)
                 message = {
                     content: err,
                     header: !success ? (
@@ -131,30 +135,35 @@ class Project extends ReactiveComponent {
             this.setState({message})
 
             // Send to blockchain
-            const bond = addNewProject(values.ownerAddress, hash).tie((result, tieId) => {
+            const bond = addNewProject(values.ownerAddress, hash)
+            bond.tie((result, tieId) => {
                 if (!isObj(result)) return;
                 const { failed, finalized, sending, signing } = result
                 message.header = finalized ? 'Project created successfully' : (
                     signing ? 'Signing transaction' : (
-                        sending ? 'Sending transaction' : 'Error!'
+                        sending ? 'Sending transaction' : 'Error: ' + (failed && failed.code)
                     )
                 )
 
                 if (finalized || failed) {
-                    message.content = !failed ? 'You may close the dialog now' : (
-                        `Error Code: ${failed.code}. Message: ${failed.message}`
-                    )
+                    message.content = !failed ? 'You may close the dialog now' : failed.message
                     message.icon = failed ? errIcon : successIcon
                     message.status = failed ? 'error' : 'success'
                     keepOpen = false
+                    loading = false
                     bond.untie(tieId)
                 }
                 this.setState({
-                    loading: !finalized,
+                    loading,
                     message,
-                    closeText: finalized ? 'Close' : null,
+                    closeText: finalized ? 'Close' : 'Cancel',
                     keepOpen,
                     status: finalized ? 'warning' : 'success'
+                })
+
+                // update project status to 1/open
+                finalized && client.projectStatus(hash, 1, (err) => {
+                    isFn(onSubmit) && onSubmit(e, values, success)
                 })
             })
         })
@@ -164,7 +173,7 @@ class Project extends ReactiveComponent {
         const {
             header,
             headerIcon,
-            id,
+            hash,
             modal,
             onOpen,
             onClose,
@@ -194,7 +203,7 @@ class Project extends ReactiveComponent {
             value: wallet.address
         })))
         // Add addressbook items only when updating the project
-        if (!!id && addrs.length > 0) {
+        if (!!hash && addrs.length > 0) {
             // add title item
             ownerDD.options = ownerDD.options.concat([{
                 key: 1,
@@ -226,7 +235,7 @@ class Project extends ReactiveComponent {
             onSubmit: this.handleSubmit,
             size,
             subheader,
-            submitText : !!id ? 'Update' : 'Create',
+            submitText : !!hash ? 'Update' : 'Create',
             success,
             trigger,
         }
@@ -235,8 +244,8 @@ class Project extends ReactiveComponent {
     }
 }
 Project.propTypes = {
-    // Project ID/hash
-    id: PropTypes.string,
+    // Project hash
+    hash: PropTypes.string,
     modal: PropTypes.bool,
     onClose: PropTypes.func,
     onOpen: PropTypes.func,

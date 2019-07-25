@@ -16,22 +16,22 @@ export class ProjectCreateSegment extends React.Component {
 		this.source = new Bond;
 		this.txhex = new Bond;
 
-		this.source.changed('5Fk6Ek9BuoyqPrDA54P54PpXdGmWFpMRSd8Ghsz7FsF8XHcH')
-		this.txhex.changed('0xd725e4e582a88497c9ec42236f37d67e044c01492b828946fca9eb606275876d')
+		// this.source.changed('5Fk6Ek9BuoyqPrDA54P54PpXdGmWFpMRSd8Ghsz7FsF8XHcH')
+		// this.txhex.changed('0xd725e4e582a88497c9ec42236f37d67e044c01492b828946fca9eb606275876d')
 		
-		addCodecTransform('ProjectHash', 'Hash');
-		this.posted = new Bond()
-		this.posted.tie((result, tieId) => {
-			console.log('result', result)
-		})
-		this.post = () => {
-			this.posted = post({
-				sender: runtime.indices.tryIndex(this.source),
-				call: calls.projects.addNewProject(this.txhex.map(hexToBytes)),
-				compact: false,
-				longevity: true
-			})
-		}
+		// addCodecTransform('ProjectHash', 'Hash');
+		// this.posted = new Bond()
+		// this.posted.tie((result, tieId) => {
+		// 	console.log('result', result)
+		// })
+		// this.post = () => {
+		// 	this.posted = post({
+		// 		sender: runtime.indices.tryIndex(this.source),
+		// 		call: calls.projects.addNewProject(this.txhex.map(hexToBytes)),
+		// 		compact: false,
+		// 		longevity: true
+		// 	})
+		// }
 	}
 
 	render () {
@@ -45,7 +45,7 @@ export class ProjectCreateSegment extends React.Component {
 			</Header>
 
 			<Button content="Post" onClick={() => this.post()} />
-			{/* <div style={{ paddingBottom: '1em' }}>
+			<div style={{ paddingBottom: '1em' }}>
 				<div style={{ fontSize: 'small' }}>from</div>
 				<SignerBond bond={this.source} /> 
 				<If condition={this.source.ready()} then={<span>
@@ -77,7 +77,7 @@ export class ProjectCreateSegment extends React.Component {
 						longevity: true
 					}}
 					/>
-			</div> */}
+			</div>
 			<div>Owner of this Project "0x1358970141edf6793391a0c20e4ad3cb11b7c10459fff9546dcd9bd122716012" is address : </div>
 			<Pretty value={runtime.projects.projectHashOwner('0x1358970141edf6793391a0c20e4ad3cb11b7c10459fff9546dcd9bd122716012')}/>
 			{/*0xeb8ff41de69667b5c39e802074fb7d19874c42dd056be513bf3141e21c995b88 */}

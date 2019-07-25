@@ -127,9 +127,9 @@ export class App extends ReactiveComponent {
 							sidebarCollapsed={sidebarCollapsed}
 							sidebarVisible={sidebarVisible}
 						/>
-						<ProjectCreateSegment />
+						{/* <ProjectCreateSegment />
 						<ProjectReassignSegment />
-						<ProjectDeleteSegment />
+						<ProjectDeleteSegment /> */}
 						{sidebarItems.map((item, i) => (
 							<div ref={item.elementRef} key={i} hidden={!item.active} style={spaceBelow}>
 								<ContentSegment {...item} onClose={handleClose} index={i} />
