@@ -1,5 +1,5 @@
 import { Bond } from 'oo7'
-import { addCodecTransform, hexToBytes, calls, post, runtime } from 'oo7-substrate'
+import { addCodecTransform, hexToBytes, calls, post, runtime, ss58Decode } from 'oo7-substrate'
 import { isBond, isStr } from '../components/utils'
 
 addCodecTransform('ProjectHash', 'Hash')
@@ -17,9 +17,6 @@ addCodecTransform('ProjectHash', 'Hash')
 //              4. {finalized: 'TXID'}
 //              5. {failed: {code: xxx, message: 'error message'}}
 export const addNewProject = (address, hash) => {
-    if (hash.slice(0, 2) !== '0x') {
-        hash = '0x' + hash
-    }
     return post({
         sender: runtime.indices.tryIndex(address),
         call: calls.projects.addNewProject(hash),
@@ -27,3 +24,8 @@ export const addNewProject = (address, hash) => {
         longevity: true
     })
 }
+
+// ownerProjectsList retrieves a list of project hashes owned by @address
+//
+// Returns Bond
+export const ownerProjectsList = address => runtime.projects.ownerProjectsList(ss58Decode(address))

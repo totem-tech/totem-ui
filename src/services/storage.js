@@ -3,7 +3,7 @@
  * Typically this should be used by other services
  */
 import { Bond } from 'oo7'
-import { isArr, isDefined, isStr, isValidNumber, isBond } from '../components/utils'
+import { isArr, isStr, isValidNumber } from '../components/utils'
 // Local Storage item key prefix for all items
 const PREFIX = 'totem_'
 const storage = {}
@@ -47,7 +47,11 @@ storage.chatUser = (id, secret) => {
 // Returns  undefined or number
 storage.walletIndex = index => {
     const key = 'wallet-index'
-    return isValidNumber(index) ? setItem(key, index) | storage.walletIndexBond.changed(index) : getItem(key) || 0
+    if (isValidNumber(index)) {
+        setItem(key, index)
+        return storage.walletIndexBond.changed(index)
+     }
+     return parseInt(getItem(key) || 0)
 }
 // Bond to keep components updated 
 storage.walletIndexBond = new Bond()

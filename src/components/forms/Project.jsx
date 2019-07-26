@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
-import { addCodecTransform, secretStore } from 'oo7-substrate'
+import { addCodecTransform, runtime, secretStore } from 'oo7-substrate'
 import FormBuilder, { fillValues } from './FormBuilder'
 import { arrSort, generateHash, isDefined, isFn, isObj, textEllipsis } from '../utils'
 import { confirm } from '../../services/modal'
@@ -10,6 +10,11 @@ import addressbook  from '../../services/addressbook'
 import storageService  from '../../services/storage'
 import client from '../../services/ChatClient'
 import { addNewProject } from '../../services/project'
+
+// message icons
+const successIcon = 'check circle outline'
+const errIcon = 'exclamation circle'
+const loadingIcon = { name: 'circle notched', loading: true }
 
 class Project extends ReactiveComponent {
     constructor(props) {
@@ -22,6 +27,7 @@ class Project extends ReactiveComponent {
         addCodecTransform('ProjectHash', 'Hash')
 
         this.handleSubmit = this.handleSubmit.bind(this)
+        const selectedWallet = secretStore().use()._value.keys[storageService.walletIndex()].address
 
         this.state = {
             closeText: 'Cancel',
@@ -49,7 +55,7 @@ class Project extends ReactiveComponent {
                     search: true,
                     selection: true,
                     required: true,
-                    value: props.hash ? undefined : secretStore().use()._value.keys[storageService.walletIndex()].address
+                    value: props.hash ? undefined : selectedWallet
                 },
                 {
                     label: 'Description',
@@ -63,16 +69,56 @@ class Project extends ReactiveComponent {
         }
 
         // prefill values if needed
-        isObj(props.project) && fillValues(this.state.inputs, props.project, true)
+        if (isObj(props.project)) fillValues(this.state.inputs, props.project, true)
+        setTimeout(() => {
+            // Check if wallet has balance
+            this.checkOwnerBalance(props.project || {ownerAddress: selectedWallet})
+        })
     }
 
-    handleOwnerChange(e, values, i) {
+    checkOwnerBalance(values) {
+        const { hash, project } = this.props
+        const { ownerAddress } = values
+        const { inputs } = this.state
+        const isCreate = !hash
+        const index = this.state.inputs.findIndex(x => x.name === 'ownerAddress')
+        // minimum balance required
+        const minBalance = 500
+        const signer = isCreate ? values.ownerAddress : project.ownerAddress
+        // do not check if owner address has not been changed
+        if (!signer || (!isCreate && ownerAddress === project.ownerAddress)) return;
+        // keep input field in invalid state until verified
+        inputs[index].invalid = true
+        inputs[index].message = {
+            content: 'Checking balance....',
+            icon: loadingIcon,
+            status: 'warning'
+        }
+        this.setState({inputs})
+        // check if singing address has enough funds
+        runtime.balances.balance(signer).then(balance => {
+            const notEnought = balance <= minBalance
+            inputs[index].invalid = notEnought
+            inputs[index].message = !notEnought ? {} : {
+                content: `You must have more than ${minBalance} Blip balance 
+                        in the wallet named "${secretStore().find(signer).name}". 
+                        This is requied to create a blockchain transaction.`,
+                header: 'Insufficient balance',
+                status: 'error',
+                icon: errIcon
+            }
+            this.setState({inputs});
+        })
+    }
+
+    handleOwnerChange(_, values, i) {
         const { project } = this.props
         const walletAddrs = this.state.secretStore.keys.map(x => x.address)
         const { ownerAddress } = values
         // Confirm if selected owner address is not owned by user
-        if (!ownerAddress || walletAddrs.indexOf(ownerAddress) >= 0) return;
-        confirm({
+        const doConfirm = !ownerAddress || walletAddrs.indexOf(ownerAddress) < 0
+        
+        !doConfirm ? this.checkOwnerBalance(values) : confirm({
             cancelButton: { content: 'Cancel', color: 'green' },
             confirmButton: { content: 'Proceed', color: 'red', primary: false },
             content: 'You are about to assign owner of this project to an address that does not belong to you.'
@@ -84,14 +130,92 @@ class Project extends ReactiveComponent {
                 inputs[i].value = (project || {}).ownerAddress
                 this.setState({inputs})
             },
+            onConfirm: () => this.checkOwnerBalance(values),
             size: 'tiny'
         })
-
-        // check if singing address has enough funds
-        const signer = isObj 
     }
 
     handleSubmit(e, values) {
+        const { onSubmit, hash: existingHash } = this.props
+        const create = !existingHash
+        const hash = existingHash || generateHash(values)
+        // prevent modal from being closed
+        let keepOpen = true
+        let loading = true
+        let closeText = null
+        let message = {
+            content: 'Hold tight. This will take a moment.',
+            header: 'Creating blockchain transaction',
+            icon: loadingIcon,
+            status: 'warning'
+        }
+        
+        this.setState({closeText, loading, message, success: true, keepOpen})
+
+        const saveData = ()=> client.project(hash, values, create, (err, exists) => {
+            let success = !err
+            // fail or update success
+            isFn(onSubmit) && onSubmit(e, values, success)
+            const actionText = create ? 'create' : 'update'
+            message = success ? {
+                content: 'You may close the dialog now',
+                header: `Project ${actionText}d successfully`, 
+                icon: successIcon,
+                status: 'success'
+            } : {
+                content: err,
+                header:`Failed to ${actionText} project`,
+                icon: errIcon,
+                status: 'error'
+            }
+            return this.setState({ 
+                closeText: success ? 'Close' : 'Cancel',
+                loading: false,
+                message,
+                keepOpen: false,
+                success
+            })
+        })
+
+        if (!create) return saveData();
+
+        // Send to blockchain
+        const bond = addNewProject(values.ownerAddress, hash)
+        bond.tie((result, tieId) => {
+            if (!isObj(result)) return;
+            const { failed, finalized, sending, signing } = result
+            const done = finalized || failed
+            message.header = finalized ? 'Storing project data' : (
+                signing ? 'Signing transaction' : (
+                    sending ? 'Sending transaction' : `Error: ${failed && failed.code}`
+                )
+            )
+
+            if (failed) {
+                message.content = `${failed.message}. Make sure you have enough funds in your wallet`
+                message.icon = errIcon
+                message.status = 'error'
+                keepOpen = false
+                loading = false
+                closeText = 'Cancel'
+            }
+
+            // Remove callback from bond
+            if (done) bond.untie(tieId)
+
+            this.setState({
+                closeText,
+                keepOpen,
+                loading,
+                message,
+                success: !failed
+            })
+            // update project status to 1/open
+            finalized && saveData()
+        })
+    }
+
+    handleSubmitOld(e, values) {
         const { onSubmit, hash: existingHash } = this.props
         const create = !existingHash
         const hash = existingHash || generateHash(values)
@@ -199,7 +323,7 @@ class Project extends ReactiveComponent {
         .concat(arrSort(secretStore && secretStore.keys || [] , 'name').map((wallet, i) => ({
             key: 'wallet-'+i+ wallet.address,
             text: wallet.name,
-            description: textEllipsis(wallet.address, 25, 5),
+            description: textEllipsis(wallet.address, 15),
             value: wallet.address
         })))
         // Add addressbook items only when updating the project
@@ -215,7 +339,7 @@ class Project extends ReactiveComponent {
             .concat(arrSort(addrs, 'name').map((item, i) => ({
                 key: 'addressbook-' + i + item.address,
                 text: item.name,
-                description: textEllipsis(item.address, 25, 5),
+                description: textEllipsis(item.address, 15),
                 value: item.address
             })))
         }

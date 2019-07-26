@@ -31,7 +31,7 @@ export const generateHash = (seed, algo, asBytes) => {
 	hash.write('write to it as a stream')
 	hash.end()
 	const bytesArr = hash.read()
-	return asBytes ? bytesArr : bytesToHex(bytesArr)
+	return asBytes ? bytesArr : '0x' + bytesToHex(bytesArr)
 }
 
 /*
