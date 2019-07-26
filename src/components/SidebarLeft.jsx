@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {ReactiveComponent} from 'oo7-react'
 import { Icon, Menu, Sidebar } from 'semantic-ui-react'
-import SystemStatus from './SystemStatus'
+// import SystemStatus from './SystemStatus'
 import { IfFn } from './utils'
 
 class SidebarLeft extends ReactiveComponent {
@@ -78,8 +78,7 @@ class SidebarLeft extends ReactiveComponent {
 						</span>
 					</Menu.Item>
 				))}
-
-				<IfFn condition={isMobile || !collapsed} then={()=> <SystemStatus sidebar={false} />} />
+				{/* <IfFn condition={isMobile || !collapsed} then={()=> <SystemStatus sidebar={false} />} /> */}
 			</Sidebar>
 		)
 	}

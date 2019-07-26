@@ -15,7 +15,6 @@ import PageHeader from './components/PageHeader'
 import ProjectList from './components/lists/ProjectList'
 import SendFundsView from './components/SendFundsView'
 import SidebarLeft from './components/SidebarLeft'
-import SystemStatus from './components/SystemStatus'
 import UtilitiesView from './components/UtilitiesView'
 import WalletView from './components/WalletView'
 import ModalService, {confirm } from './services/modal'
@@ -100,7 +99,7 @@ export class App extends ReactiveComponent {
 			<React.Fragment>
 				<ChatWidget />
 				<ModalService />
-				<IfFn condition={!mobile && sidebarCollapsed} then={()=> <SystemStatus sidebar={true} visible={true} />} />
+				{/* <IfFn condition={!mobile && sidebarCollapsed} then={()=> <SystemStatus sidebar={true} visible={true} />} /> */}
 				<Sidebar.Pushable>
 					<SidebarLeft
 						collapsed={mobile ? false : sidebarCollapsed}
@@ -146,7 +145,7 @@ export class App extends ReactiveComponent {
 
 		return !this.ready() ? (
 			<Dimmer active style={{height: '100%', position: 'fixed'}}>
-				{!!status.error ? 'Connection failed!':  <Loader indeterminate>Connecting to blockchain...</Loader>}
+				{!!status.error ? 'Connection failed! Please check your internet connection.':  <Loader indeterminate>Connecting to Totem blockchain network...</Loader>}
 			</Dimmer>
 		) : (
 			<IfMobile

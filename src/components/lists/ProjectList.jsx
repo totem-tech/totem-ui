@@ -112,7 +112,8 @@ class ProjectList extends ReactiveComponent {
                 for (let [hash, project] of projects) {
                     const {ownerAddress} = project
                     const entry = wallets.find(x => x.address === ownerAddress) || addressbook.getByAddress(ownerAddress) || {}
-                    const statuses = ['unknown', 'open', 'closed']
+                    // Status codes on blockchain are 0:Open, 1:Reopened, 2:Closed, 99: Deleted
+                    const statuses = ['unknown', 'open', 'closed', 'reopened', 'deleted']
                     project._ownerName = entry.name
                     project._hash = hash
                     project._statusText = statuses[project.status || 0]
