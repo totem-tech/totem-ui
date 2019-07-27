@@ -17,12 +17,16 @@ const toBeImplemented = ()=> alert('To be implemented')
 class ProjectList extends ReactiveComponent {
     constructor(props) {
         super(props, {
-            _: addressbook.getBond(),
             secretStore: secretStore()
         })
 
         this.state = {
             actionsIndex: -1,
+            bonds: [
+                addressbook.getBond(),
+                secretStore(),
+                storageService.walletIndexBond,
+            ],
             projects: new Map(),
             topLeftMenu : [
                 {
@@ -89,18 +93,23 @@ class ProjectList extends ReactiveComponent {
 
         this.getContent = this.getContent.bind(this)
         this.loadProjects = this.loadProjects.bind(this)
+    }
 
-        // Update projects whenever selected wallet changes
-        storageService.walletIndexBond.tie(index => {
-            this.loadProjects()
-        })
+    componentWillMount() {
+        // reload projects whenever 
+        this.state.bonds.map(bond => bond.__tieId = bond.tie(() => this.loadProjects()) )
+    }
+
+    componentWillUnmount() {
+        // unsubscribe from updates
+        this.state.bonds.map(bond => bond.untie(bond.__tieId) )
     }
 
     loadProjects() {
         const {secretStore: ss} = this.state
         const wallets = ss ? ss.keys : secretStore()._value.keys // force if not ready
-        const address = wallets[storageService.walletIndex()].address
-        ownerProjectsList(address).then( hashArr => {
+        const { address } = wallets[storageService.walletIndex()] || {}
+        address && ownerProjectsList(address).then( hashArr => {
             if (!isArr(hashArr) || hashArr.length === 0) return this.setState({projects: new Map()});
             // convert to string and add 0x prefix
             hashArr = hashArr.map( hash => pretty(hash) )

@@ -64,12 +64,16 @@ export class WalletItem extends ReactiveComponent {
     }
 
     handleSave(e) {
-        const { wallet } = this.props
+        const { wallet, index, total } = this.props
         const { draft } = this.state
         if (!draft || draft.trim() === '') return;
 		secretStore().forget(wallet)
         secretStore().submit(wallet.uri, draft)
         this.handleEdit()
+        // If modified wallet is also the selected wallet in the page header, update selected index appropriately
+        if (storageService.walletIndex() === index) {
+            storageService.walletIndex(total - 1)
+        }
     }
     
     render() {
