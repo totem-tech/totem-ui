@@ -129,7 +129,12 @@ export const arrSearch = (arr, keyValues, matchExact, matchAll, ignoreCase, retu
 	return result
 }
 
-export const arrSort = (arr, key, reverse) => !isObjArr(arr) ? arr : arrReverse(arr.sort((a, b) => a[key] > b[key] ? 1 : -1), reverse)
+// Returns new array sorted by key. If sortOriginal is 'truty', existing array will be sorted and returned.
+export const arrSort = (arr, key, reverse, sortOriginal) => {
+	if (!isObjArr(arr)) return [];
+	const sortedArr = sortOriginal ? arr : arr.map(x => objCopy(x, {}))
+	return  arrReverse(sortedArr.sort((a, b) => a[key] > b[key] ? 1 : -1), reverse)
+}
 
 export const arrReverse = (arr, reverse) => reverse ? arr.reverse() : arr
 
