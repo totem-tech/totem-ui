@@ -8,6 +8,7 @@ import {
 } from 'oo7-substrate'
 
 // Components
+import ErrorBoundary from './components/CatchReactErrors'
 import AddressBookView from './components/AddressBookView'
 import ChatWidget from './components/ChatWidget'
 import ContentSegment from './components/ContentSegment'
@@ -117,14 +118,17 @@ export class App extends ReactiveComponent {
 						id="main-content"
 						fluid
 						style={sidebarCollapsed ? mainContentCollapsed : mainContent}
-					>
+					>	
+					<ErrorBoundary>
 						<PageHeader
-							logoSrc={logoSrc}
-							isMobile={mobile}
-							onSidebarToggle={handleSidebarToggle}
-							sidebarCollapsed={sidebarCollapsed}
-							sidebarVisible={sidebarVisible}
-						/>
+								logoSrc={logoSrc}
+								isMobile={mobile}
+								onSidebarToggle={handleSidebarToggle}
+								sidebarCollapsed={sidebarCollapsed}
+								sidebarVisible={sidebarVisible}
+							/>
+					</ErrorBoundary>
+						
 						{sidebarItems.map((item, i) => (
 							<div ref={item.elementRef} key={i} hidden={!item.active} style={spaceBelow}>
 								<ContentSegment {...item} onClose={handleClose} index={i} />
