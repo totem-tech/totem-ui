@@ -1,5 +1,5 @@
 import React from 'react'
-import { Responsive } from 'semantic-ui-react'
+import { Icon, Message, Responsive } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import createHash from 'create-hash/browser'
 import { bytesToHex } from 'oo7-substrate/src/utils'
@@ -143,11 +143,11 @@ export const arrReverse = (arr, reverse) => reverse ? arr.reverse() : arr
 // Params:
 // @source  object
 // @dest    object (optional)
-export const objCopy = (source, dest) => !isObj(source) ? dest || {} : (
+export const objCopy = (source, dest, force) => !isObj(source) ? dest || {} : (
 	Object.keys(source).reduce((obj, key) => {
 		obj[key] = source[key]
 		return obj
-	}, dest || {})
+	}, !force ? (dest || {}) : objCopy(dest, {}))
 )
 
 // objClean produces a new object with supplied keys and values from supplied object
@@ -180,7 +180,6 @@ export const objWithoutKeys = (obj, keys) => !isObj(obj) || !isArr(keys) ? {} : 
 		return result
 	}, {})
 )
-
 
 // mapCopy copies items from @source Map to @dest Map (overrides if already exists)
 export const mapCopy = (source, dest) => !isMap(source) ? (
@@ -357,6 +356,41 @@ export const textEllipsis = (text, maxLen, numDots) => {
 	const left = arr.slice(0, partLen).join('')
 	const right = arr.slice(text.length - (isEven ? partLen : partLen + 1)).join('')
 	return left + dots + right
+}
+
+export const icons = {
+    error: 'exclamation circle',
+    loading: { name: 'circle notched', loading: true },
+    info: 'info',
+    success: 'check circle outline',
+    warning: 'lightning'
+}
+
+// valid statuses: error, info, loading, success
+export const newMessage = message => {
+	if (!isObj(message)) return;
+	let { icon, showIcon, status } = message
+	status = status || 'info'
+    if (showIcon) {
+        icon = icons[status]
+    }
+
+    if (isStr(icon)) {
+        icon = { name: icon }
+	}
+
+    return (
+        <Message
+            {...(objWithoutKeys(message, ['showIcon']))}
+            error={status==='error'}
+            icon={React.isValidElement(icon) ? icon : (
+                <Icon {...icon} style={objCopy({width: 42}, icon.style, true)} />
+            )}
+            success={status==='success'}
+            visible={!!status}
+            warning={['warning', 'loading'].indexOf(status) >= 0}
+        />
+    )
 }
 
 /*

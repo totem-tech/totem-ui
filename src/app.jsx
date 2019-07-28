@@ -1,5 +1,5 @@
 import React from 'react'
-import { Container, Dimmer, Loader, Responsive, Sidebar } from 'semantic-ui-react'
+import { Icon, Container, Dimmer, Loader, Responsive, Sidebar } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import {
@@ -18,7 +18,8 @@ import SendFundsView from './components/SendFundsView'
 import SidebarLeft from './components/SidebarLeft'
 import UtilitiesView from './components/UtilitiesView'
 import WalletView from './components/WalletView'
-import ModalService, {confirm } from './services/modal'
+import ModalService from './services/modal'
+import ToastService from './services/toast'
 import { IfFn, IfMobile } from './components/utils'
 // Images
 import TotemButtonLogo from'./assets/totem-button-grey.png'
@@ -100,6 +101,7 @@ export class App extends ReactiveComponent {
 			<React.Fragment>
 				<ChatWidget />
 				<ModalService />
+				<ToastService hidden={mobile && sidebarVisible} />
 				{/* <IfFn condition={!mobile && sidebarCollapsed} then={()=> <SystemStatus sidebar={true} visible={true} />} /> */}
 				<Sidebar.Pushable>
 					<SidebarLeft
