@@ -6,11 +6,12 @@ yarn-error.log
 users.json
 faucet-requests.json
 projects.json
+companies.json
 
 # scripts
 start.sh
 
-dist/bundle.js
+docs/bundle.js
 *totem.live.*
 *fullchain.*
 *privkey.*
