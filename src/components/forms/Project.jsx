@@ -10,6 +10,7 @@ import addressbook  from '../../services/addressbook'
 import storageService  from '../../services/storage'
 import client from '../../services/ChatClient'
 import { addNewProject } from '../../services/project'
+import { Pretty } from '../../Pretty'
 
 // message icons
 const successIcon = 'check circle outline'
@@ -323,7 +324,8 @@ class Project extends ReactiveComponent {
         .concat(arrSort(secretStore && secretStore.keys || [] , 'name').map((wallet, i) => ({
             key: 'wallet-'+i+ wallet.address,
             text: wallet.name,
-            description: textEllipsis(wallet.address, 15),
+            // description: textEllipsis(wallet.address, 15),
+            description: <Pretty value={runtime.balances.balance(ss58Decode(wallet.address))} />,
             value: wallet.address
         })))
         // Add addressbook items only when updating the project
@@ -389,6 +391,6 @@ const styles = {
         background: 'grey', 
         color: 'white', 
         fontWeight: 'bold', 
-        fontSize: '1.5em'
+        fontSize: '1em'
     }
 }
