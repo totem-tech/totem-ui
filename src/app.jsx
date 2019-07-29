@@ -18,8 +18,8 @@ import SendFundsView from './components/SendFundsView'
 import SidebarLeft from './components/SidebarLeft'
 import UtilitiesView from './components/UtilitiesView'
 import WalletView from './components/WalletView'
-import ModalService from './services/modal'
-import ToastService from './services/toast'
+import ModalService, {confirm } from './services/modal'
+import ToastService, { setToast, removeToast } from './services/toast'
 import { IfFn, IfMobile } from './components/utils'
 // Images
 import TotemButtonLogo from'./assets/totem-button-grey.png'
@@ -54,6 +54,21 @@ export class App extends ReactiveComponent {
 		this.toggleMenuItem = this.toggleMenuItem.bind(this)
 		this.handleClose = this.handleClose.bind(this)
 		this.getContent = this.getContent.bind(this)
+		const statuses = ['info', 'error', 'success', 'warning', 'loading']
+
+		const messages = new Array(5).fill(0).map((_, i) => ({
+			showIcon: true,
+			header: statuses[i],
+			content: 'Some content for the toast Some content for the toast Some content for the toast ',
+			status: statuses[i%5]
+		}))
+		const ids = messages.map((m, i) => setToast(m, 0) )
+
+		// setTimeout(() => {
+		// 	messages[4].status = 'success'
+		// 	setToast(messages[4], 0, ids[4])
+		// 	setTimeout(() => removeToast(ids[4]), 10000)
+		// }, 10000)
 	}
 
 	isMobile() {

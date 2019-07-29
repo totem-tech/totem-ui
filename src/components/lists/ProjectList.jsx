@@ -10,7 +10,7 @@ import addressbook from '../../services/addressbook'
 import { pretty, secretStore } from 'oo7-substrate'
 import client from '../../services/ChatClient'
 import storageService from '../../services/storage'
-import { ownerProjectsList } from '../../services/project'
+import { ownerProjectsList } from '../../services/blockchain'
 
 const toBeImplemented = ()=> alert('To be implemented')
 

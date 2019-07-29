@@ -35,6 +35,7 @@ class TransactButton extends ReactiveComponent {
 				? t()
 				: post(t);
 			s.status.tie((x, i) => {
+				console.log('TransactButton', x)
 				if (this.props.order ? this.props.causal ? x.confirmed || x.scheduled : x.signed : x.requested) {
 					this.execNext();
 					s.status.untie(i);

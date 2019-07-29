@@ -9,7 +9,7 @@ import { confirm } from '../../services/modal'
 import addressbook  from '../../services/addressbook'
 import storageService  from '../../services/storage'
 import client from '../../services/ChatClient'
-import { addNewProject } from '../../services/project'
+import { addNewProject } from '../../services/blockchain'
 import { Pretty } from '../../Pretty'
 
 // message icons

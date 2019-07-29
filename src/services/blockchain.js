@@ -29,3 +29,9 @@ export const addNewProject = (address, hash) => {
 //
 // Returns Bond
 export const ownerProjectsList = address => runtime.projects.ownerProjectsList(ss58Decode(address))
+
+
+export default {
+    addNewProject,
+    ownerProjectsList
+}
