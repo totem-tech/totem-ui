@@ -10,6 +10,8 @@ const DURATION = 5000
 const toasts = new Map()
 // Use Bond as a way to trigger update to the ToastService component
 const trigger = new Bond()
+// store timeout IDs so that they can be cancelled if needed
+const timeoutIds = new Map()
 
 class ToastService extends ReactiveComponent {
     constructor(props) {
@@ -41,7 +43,12 @@ export const removeToast = id => toasts.delete(id) | trigger.trigger(uuid.v1())
 export const setToast = (message, duration, id) => {
     if (!isObj(message) || (!message.header && !message.content)) return;
     const autoClose = duration !== 0
+    const timeoutId = timeoutIds.get(id)
     id = id || uuid.v1()
+    if (timeoutId) {
+        // clear existing timeout
+        clearTimeout(timeoutId)
+    }
     const handleClose = () => removeToast(id)
     const messageEl = newMessage(objCopy(
         {
@@ -54,7 +61,9 @@ export const setToast = (message, duration, id) => {
     ))
     toasts.set( id, messageEl )
     trigger.trigger(uuid.v1())
-    autoClose && setTimeout( () => removeToast(id), duration || DURATION)
+    if (autoClose) {
+        timeoutIds.set(id, setTimeout( () => removeToast(id), duration || DURATION))        
+    }
     return id
 }
 

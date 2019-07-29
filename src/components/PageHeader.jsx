@@ -2,13 +2,14 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { runtimeUp, secretStore, runtime, ss58Decode } from 'oo7-substrate'
-import { Dropdown, Image, Menu, Message, } from 'semantic-ui-react'
+import { Dropdown, Image, Menu } from 'semantic-ui-react'
 import { getUser, getClient, onLogin } from '../services/ChatClient'
 import { copyToClipboard, setState, setStateTimeout } from './utils'
 import { Pretty } from '../Pretty'
 import FormBuilder from './forms/FormBuilder'
 import { showForm, closeModal } from '../services/modal'
 import storageService from '../services/storage'
+import { setToast } from '../services/toast'
 
 class PageHeader extends ReactiveComponent {
 	constructor(props) {
@@ -23,7 +24,6 @@ class PageHeader extends ReactiveComponent {
 		this.state = {
 			index: storageService.walletIndex(),
 			id: user ? user.id : '',
-			message: { error: false, text: ''}
 		}
 
 		// Update user ID after registration
@@ -48,8 +48,8 @@ class PageHeader extends ReactiveComponent {
 		const address = this.getSeletectedAddress()
 		if (!address) return;
 		copyToClipboard(address)
-		const msg = { text: 'Address copied to clipboard', error: false}
-		setStateTimeout(this, 'message', msg, {}, 2000)
+		const msg = { content: 'Address copied to clipboard', status: 'success'}
+		this.copiedMsgId = setToast(msg, 2000, this.copiedMsgId)
 	}
 
 	handleEdit() {
@@ -88,29 +88,28 @@ class PageHeader extends ReactiveComponent {
 		const client = getClient()
 		if (!client.isConnected()) {
 			const msg = {
-			text: 'Connection failed!',
-			error: true
+				content: 'Connection failed!',
+				status: 'error'
 			}
-			setStateTimeout(this, 'message', msg, {}, 3000)
+			this.faucetMsgId = setToast(msg, 3000, this.faucetMsgId)
 			return
 		}
 		client.faucetRequest(address, (err, fifthTs) => {
 			const msg = {
-				text: err || 'Request sent!',
-				error: !!err
+				content: err || 'Request sent!',
+				status: !!err ? 'error' : 'success'
 			}
-			setStateTimeout(this, 'message', msg, 3000)
+			this.faucetMsgId = setToast(msg, 3000, this.faucetMsgId)
 		})
 	}
 
 	render() {
-		const { id, index, message, secretStore } = this.state
+		const { id, index, secretStore } = this.state
 		const { keys: wallets} = secretStore
 		const addressSelected = this.getSeletectedAddress()
 		const viewProps = {
 			addressSelected,
 			id,
-			message,
 			onCopy: this.handleCopy,
 			onEdit: this.handleEdit,
 			onFaucetRequest: () => this.handleFaucetRequest(addressSelected),
@@ -155,7 +154,6 @@ class MobileHeader extends ReactiveComponent {
 		id,
 		isMobile,
 		logoSrc,
-		message,
 		onCopy,
 		onEdit,
 		onFaucetRequest,
@@ -225,58 +223,7 @@ class MobileHeader extends ReactiveComponent {
 						</Dropdown>
 					</Menu.Menu>
 				</Menu>
-				{message && message.text && (
-					<div>
-						<Message
-							content={message.text}
-							color={message.color || (message.error ? 'red' : 'green')}
-							style={styles.messageMobile}
-						/>
-					</div>
-				)}
 			</div>
 		)
-	}
-}
-
-const styles = {
-	content: {
-		height: 154,
-		width: 'calc(100% - 235px)',
-		float: 'right',
-		padding: '18px 0px'
-	},
-	dropdown: {
-		background: 'none',
-		border: 'none',
-		boxShadow: 'none',
-		minHeight: 'auto',
-		fontSize: 35,
-		padding: '0 2em 10px 0',
-		minWidth: 'auto'
-	},
-	dropdownIcon: {
-		padding: 0
-	},
-	headerContainer: {
-		height: 154,
-		borderBottom: '5px solid black'
-	},
-	logo: {
-		width: 235,
-		float: 'left',
-		padding: 15
-	},
-	logoImg: {
-		margin: 'auto',
-		maxHeight: 124,
-		width: 'auto'
-	},
-	messageMobile: {
-		zIndex: 3,
-		margin: -15,
-		position: 'absolute',
-		width: '100%',
-		textAlign: 'center'
 	}
 }
