@@ -20,6 +20,7 @@ import UtilitiesView from './components/UtilitiesView'
 import WalletView from './components/WalletView'
 import ModalService, {confirm } from './services/modal'
 import ToastService, { setToast, removeToast } from './services/toast'
+import { resumeQueue } from './services/queue'
 import { IfFn, IfMobile } from './components/utils'
 // Images
 import TotemButtonLogo from'./assets/totem-button-grey.png'
@@ -144,18 +145,27 @@ export class App extends ReactiveComponent {
 		)
 	}
 
-	render() {
-		const { sidebarCollapsed, sidebarVisible, status } = this.state
+	unreadyRender() {
+		const { status } = this.state
+		return (
+			<Dimmer active style={{height: '100%', position: 'fixed'}}>
+				{!!status.error ? 'Connection failed! Please check your internet connection.':  <Loader indeterminate>Connecting to Totem blockchain network...</Loader>}
+			</Dimmer>
+		)
+	}
+
+	readyRender() {
+		const { sidebarCollapsed, sidebarVisible } = this.state
 		const classNames = [
 			sidebarVisible ? 'sidebar-visible' : '',
 			sidebarCollapsed ? 'sidebar-collapsed' : ''
 		].join(' ')
+		if (!this.resumed) {
+			this.resumed = true
+			resumeQueue()
+		}
 
-		return !this.ready() ? (
-			<Dimmer active style={{height: '100%', position: 'fixed'}}>
-				{!!status.error ? 'Connection failed! Please check your internet connection.':  <Loader indeterminate>Connecting to Totem blockchain network...</Loader>}
-			</Dimmer>
-		) : (
+		return (
 			<IfMobile
 				then={this.getContent(true)}
 				thenClassName={'mobile ' + classNames}

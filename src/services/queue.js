@@ -9,18 +9,18 @@ import storageService from './storage'
 import { setToast } from './toast'
 import { isArr, isFn, isObj, objClean } from '../components/utils'
 
-const queue = new Map()
+const queue = storageService.queue()
 
 export const addToQueue = (queueItem) => {
     const id = uuid.v1()
     const validKeys = [
-        'type',// blockchain, websocket
-        'args',// arguments supplied to func
-        'func',// @func must return an instance of Bond if tx
-        'title',// operation title. Eg: 'Create project'
-        'description',// short description about the operation. Eg: project name etc...
-        'keepToast',// if falsy, will autohide toast
-        'next',// next operation in this series of queue
+        'type',         // @type        string : eg: blockchain, websocket
+        'args',         // @args        array  : arguments supplied to func
+        'func',         // @func        string : must return an instance of Bond if tx
+        'title',        // !title       string : operation title. Eg: 'Create project'
+        'description',  // @description string : short description about the operation. Eg: project name etc...
+        'keepToast',    // @keepToast   bool   : if falsy, will autohide toast
+        'next',         // @next        object : next operation in this series of queue. Same keys as @validKeys
     ]
 
     queueItem = objClean(queueItem, validKeys)
@@ -32,15 +32,18 @@ export const addToQueue = (queueItem) => {
 
 // save to localStorage
 const _save = ()=> storageService.queue(queue)
+export const resumeQueue = ()=> queue.size > 0 && Array.from(queue).forEach(x => _processItem(x[1], x[0])) | console.log('Resuming', queue.size, 'queue items')
 
 const _processItem = (queueItem, id, msgId) => {
-    if (!isObj(queueItem) || ['error', 'success'].indexOf(queueItem.status) >=0 ) return queue.delete(id) | _save();
+    if (!isObj(queueItem) || queueItem.status === 'error') return queue.delete(id) | _save();
     const next = queueItem.next
     if ('success' === queueItem.status) {
         if (!isObj(next)) {
             // success or faild => remove item from queue
             return queue.delete(id) | _save()
         }
+
+        return _processItem(next, id, msgId)
     }
 
     // Go to next operation
