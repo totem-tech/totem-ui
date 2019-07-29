@@ -159,7 +159,7 @@ class Project extends ReactiveComponent {
             title: 'Create project',
             description: 'Name: ' + values.name,
             next: {
-                type: 'websocket',
+                type: 'ChatClient',
                 func: 'project',
                 args: [
                     hash,

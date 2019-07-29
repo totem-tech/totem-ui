@@ -14,10 +14,15 @@ const queue = storageService.queue()
 export const addToQueue = (queueItem) => {
     const id = uuid.v1()
     const validKeys = [
-        'type',         // @type        string : eg: blockchain, websocket
+        'type',         // @type        string : name of the service. Currently supported: blockchain, chatclient
         'args',         // @args        array  : arguments supplied to func
-        'func',         // @func        string : must return an instance of Bond if tx
-        'title',        // !title       string : operation title. Eg: 'Create project'
+        'func',         // @func        string : name of the function within the service.
+                        //                      - For blockchain service, must return an instance of Bond returned by substrate package's post() function
+                        //                      - For ChatClient, the callback must be the last item in the @args array
+                        //                              AND the first argument to the callback must be:
+                        //                                  - a string with error message to indicate request failure.
+                        //                                  - OR, falsy to indicate request success
+        'title',        // @title       string : operation title. Eg: 'Create project'
         'description',  // @description string : short description about the operation. Eg: project name etc...
         'keepToast',    // @keepToast   bool   : if falsy, will autohide toast
         'next',         // @next        object : next operation in this series of queue. Same keys as @validKeys
@@ -54,7 +59,7 @@ const _processItem = (queueItem, id, msgId) => {
     let func = null
     const msgDuration = queue.get(id).keepToast ? 0 : null
     // Execute current operation
-    switch(queueItem.type) {
+    switch((queueItem.type || '').toLowerCase()) {
         case 'blockchain':
             func = blockchain[queueItem.func]
             if (!func) return queue.delete(id) | _save();
@@ -82,7 +87,7 @@ const _processItem = (queueItem, id, msgId) => {
                 if (finalized) return next ? _processItem(next, id, msgId) : queue.delete(id)
             })
             break;
-        case 'websocket':
+        case 'chatclient':
             func = client[queueItem.func]
             if (!func) return queue.delete(id) | _save();
             // assume last item is the callback
@@ -102,7 +107,7 @@ const _processItem = (queueItem, id, msgId) => {
                 return _processItem(next, id, msgId)
             }
             args[args.length === 0 ? 0 : args.length-1] = interceptCb
-            // initiate websocket request
+            // initiate request
             func.apply({}, args)
             break;
         default: 
