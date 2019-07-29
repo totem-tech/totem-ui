@@ -54,21 +54,6 @@ export class App extends ReactiveComponent {
 		this.toggleMenuItem = this.toggleMenuItem.bind(this)
 		this.handleClose = this.handleClose.bind(this)
 		this.getContent = this.getContent.bind(this)
-		const statuses = ['info', 'error', 'success', 'warning', 'loading']
-
-		const messages = new Array(5).fill(0).map((_, i) => ({
-			showIcon: true,
-			header: statuses[i],
-			content: 'Some content for the toast Some content for the toast Some content for the toast ',
-			status: statuses[i%5]
-		}))
-		const ids = messages.map((m, i) => setToast(m, 0) )
-
-		// setTimeout(() => {
-		// 	messages[4].status = 'success'
-		// 	setToast(messages[4], 0, ids[4])
-		// 	setTimeout(() => removeToast(ids[4]), 10000)
-		// }, 10000)
 	}
 
 	isMobile() {
@@ -116,7 +101,6 @@ export class App extends ReactiveComponent {
 			<React.Fragment>
 				<ChatWidget />
 				<ModalService />
-				<ToastService hidden={mobile && sidebarVisible} />
 				{/* <IfFn condition={!mobile && sidebarCollapsed} then={()=> <SystemStatus sidebar={true} visible={true} />} /> */}
 				<Sidebar.Pushable>
 					<SidebarLeft
@@ -136,16 +120,19 @@ export class App extends ReactiveComponent {
 						fluid
 						style={sidebarCollapsed ? mainContentCollapsed : mainContent}
 					>	
-					<ErrorBoundary>
-						<PageHeader
-								logoSrc={logoSrc}
-								isMobile={mobile}
-								onSidebarToggle={handleSidebarToggle}
-								sidebarCollapsed={sidebarCollapsed}
-								sidebarVisible={sidebarVisible}
-							/>
-					</ErrorBoundary>
-						
+						<ErrorBoundary>
+							<PageHeader
+									logoSrc={logoSrc}
+									isMobile={mobile}
+									onSidebarToggle={handleSidebarToggle}
+									sidebarCollapsed={sidebarCollapsed}
+									sidebarVisible={sidebarVisible}
+								/>
+						</ErrorBoundary>
+
+
+						<ToastService fullWidth={true} hidden={mobile && sidebarVisible} />
+
 						{sidebarItems.map((item, i) => (
 							<div ref={item.elementRef} key={i} hidden={!item.active} style={spaceBelow}>
 								<ContentSegment {...item} onClose={handleClose} index={i} />

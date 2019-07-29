@@ -16,9 +16,13 @@ class ToastService extends ReactiveComponent {
         super(props, {trigger})
     }
     render() {
-        const { hidden } = this.props
+        const { hidden, fullWidth } = this.props
+        let style = styles.toastService
+        if (fullWidth) {
+            style = objCopy({maxWidth: '100%', width: '100%'}, style, true)
+        }
         return !hidden && (
-            <div className="toast-service" style={styles.toastService}>
+            <div className="toast-service" style={style}>
                 {Array.from(toasts).map(item => item[1])}
             </div>
         )

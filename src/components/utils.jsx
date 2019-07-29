@@ -369,8 +369,9 @@ export const icons = {
 // valid statuses: error, info, loading, success
 export const newMessage = message => {
 	if (!isObj(message)) return;
-	let { icon, showIcon, status } = message
+	let { icon, showIcon, status, style } = message
 	status = status || 'info'
+	icon = React.isValidElement(icon) ? icon.props : icon
     if (showIcon) {
         icon = icons[status]
     }
@@ -383,9 +384,8 @@ export const newMessage = message => {
         <Message
             {...(objWithoutKeys(message, ['showIcon']))}
             error={status==='error'}
-            icon={React.isValidElement(icon) ? icon : (
-                <Icon {...icon} style={objCopy({width: 42}, icon.style, true)} />
-            )}
+			icon={icon && <Icon {...icon} style={objCopy({width: 42}, icon.style, true)} />}
+			style={objCopy(!icon && {textAlign: 'center', width: '100%'}, style)}
             success={status==='success'}
             visible={!!status}
             warning={['warning', 'loading'].indexOf(status) >= 0}
