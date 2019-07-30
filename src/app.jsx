@@ -7,9 +7,12 @@ import {
 	addressBook, secretStore, metadata, nodeService
 } from 'oo7-substrate'
 
-// Components
+// Debugging
 import ErrorBoundary from './components/CatchReactErrors'
+
+// Components
 import AddressBookView from './components/AddressBookView'
+import GettingStarted from './components/GettingStartedView'
 import ChatWidget from './components/ChatWidget'
 import ContentSegment from './components/ContentSegment'
 import PageHeader from './components/PageHeader'
@@ -163,6 +166,14 @@ export class App extends ReactiveComponent {
 }
 
 const sidebarItems = [
+	{
+		active: true,
+		content: <GettingStarted />,
+		headerDividerHidden: true,
+		icon: "barcode",
+		title: "Getting Started",
+		// subHeader: "View and/or manage your projects"
+	},
 	// { icon: "object group outline", title: "Overview", subHeader: "", active: true, content: <LedgerTransactionList />},
 	{
 		icon: "sitemap", title: "Partners",
