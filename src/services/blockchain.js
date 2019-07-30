@@ -17,8 +17,10 @@ addCodecTransform('ProjectHash', 'Hash')
 //              4. {finalized: 'TXID'}
 //              5. {failed: {code: xxx, message: 'error message'}}
 export const addNewProject = (address, hash) => {
+    address = isBond(address) ? address : new Bond().defaultTo(address)
+    hash = isBond(hash) ? hash : new Bond().defaultTo(hash)
     return post({
-        sender: runtime.indices.tryIndex(address),
+        sender: address,
         call: calls.projects.addNewProject(hash),
         compact: false,
         longevity: true
