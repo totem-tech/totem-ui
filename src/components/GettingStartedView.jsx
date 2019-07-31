@@ -1,6 +1,6 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
-import { Button } from 'semantic-ui-react'
+import { Button, Step } from 'semantic-ui-react'
 import Register from './forms/Register'
 import FormBuilder from './forms/FormBuilder'
 import { showForm, closeModal } from '../services/modal'
@@ -9,18 +9,54 @@ import storageService from '../services/storage'
 export default class GetingStarted extends ReactiveComponent {
     constructor() {
 		super([])
-    }
+		this.state = {}
+		this.handleClick = this.handleClick.bind(this)
+	}
+	
+	handleClick() {
+		 alert("Hello there!");
+	}
 
     render () {
-        return (
+		const { active } = this.state	
+		return (
 			<React.Fragment>
 				<div>
-				<h3>Here's a quick guide to getting started with Totem Live Accounting!</h3>
-					<h4>Totem is a globally connected real-time accounting ledger for everyone</h4>
+				<h3>Here's a quick guide to getting started with Totem Live Accounting.</h3>
 						<p>
-							We want every small medium and large business on the planet to connect to Totem and use it to account for everything. It's private and secure, and hopefully easy to use. <br/> Lost a receipt? No problem, Totem keeps everything forever. Need to calculate you taxes? No problem Totem knows this even before you do. Accurate, compliant and available across the globe. All thanks to a simple idea: all accounting entries should be connected together, and thanks to Totem's connected blockchain network, they are.
+						It's basically free for small businesses and personal use. Totem is private and secure, and easy to use.
+						<br/>
+						We want every small, medium and large business on the planet to use Totem. 	
 						</p>
-					<h4>So, let's get you started! Give your account a name.</h4>
+					<h4>There are 3 quick steps to get you started...</h4>
+					<div>
+					<Step.Group ordered>
+ 		<Step
+		  active={true}
+          link
+          onClick={this.handleClick}
+        //   title='Edit Account Name'
+		  />
+		  <Step.Content>
+        <Step.Title>Edit Account Name</Step.Title>
+		  <Step.Description>Choose a better account name. <br/>This name is only known to you.<br/>Change it at any time, in the wallet.'
+		  </Step.Description>  
+      </Step.Content>
+    <Step disabled>
+      <Step.Content>
+        <Step.Title>Create chat user</Step.Title>
+        <Step.Description>Chat is how you communicate with  <br/>other Totem users, and request  <br/>transaction funding.</Step.Description>
+      </Step.Content>
+    </Step>
+
+    <Step disabled>
+      <Step.Content>
+        <Step.Title>Request transaction funding!</Step.Title>
+		<Step.Description>As soon as your account has <br/> funds you can use Totem.</Step.Description>
+      </Step.Content>
+    </Step>
+  </Step.Group>
+  </div>
 						<p>
 							To use Totem, you need to spend transaction credits. We call them TTXs for short. Generally it will cost you 1 ttx per transaction - but don't worry, we are nice open source people, and we'll give you enough to get you started, because after all, we want you to use Totem!	
 						</p>
