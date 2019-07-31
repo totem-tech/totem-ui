@@ -73,6 +73,8 @@ class FormBuilder extends ReactiveComponent {
 
     render() {
         const {
+            closeOnEscape,
+            closeOnDimmerClick,
             closeOnSubmit,
             closeText,
             defaultOpen,
@@ -136,6 +138,8 @@ class FormBuilder extends ReactiveComponent {
         
         return !modal ? form : (
             <Modal
+                closeOnEscape={!!closeOnEscape}
+                closeOnDimmerClick={!!closeOnDimmerClick}
                 defaultOpen={defaultOpen}
                 dimmer={true}
                 onClose={handleClose}
@@ -201,6 +205,8 @@ class FormBuilder extends ReactiveComponent {
 }
 
 FormBuilder.propTypes = {
+    closeOnEscape: PropTypes.bool,
+    closeOnDimmerClick: PropTypes.bool,
     closeOnSubmit: PropTypes.bool,
     closeText: PropTypes.oneOfType([
         PropTypes.string,
@@ -232,6 +238,8 @@ FormBuilder.propTypes = {
     widths: PropTypes.string
 }
 FormBuilder.defaultProps = {
+    closeOnEscape: false,
+    closeOnDimmerClick: false,
     message: {
         // Status controls visibility and style of the message
         // Supported values: error, warning, success

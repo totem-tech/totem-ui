@@ -209,7 +209,7 @@ io.on('connection', client => {
 		// exclude any unwanted data 
 		project = objCopy(objClean(project, requiredKeys), existingProject)
 		project.status = create ? 0 : (
-			isValidNumber(project.status) ? project.status : 1
+			isValidNumber(project.status) ? project.status : 0
 		)
 		
 		// Add/update project

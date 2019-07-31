@@ -34,6 +34,7 @@ export const getClient = () => {
     return instance
 }
 
+// Make sure to always keep the callback as the last argument
 export class ChatClient {
     constructor(url) {
         this.url = url || `${window.location.hostname}:${port}`

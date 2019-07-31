@@ -3,7 +3,7 @@
  * Typically this should be used by other services
  */
 import { Bond } from 'oo7'
-import { isArr, isStr, isValidNumber } from '../components/utils'
+import { isArr, isObjMap, isStr, isValidNumber } from '../components/utils'
 // Local Storage item key prefix for all items
 const PREFIX = 'totem_'
 const storage = {}
@@ -37,6 +37,12 @@ storage.chatHistory = history => {
 storage.chatUser = (id, secret) => {
     const key = 'chat-user'
     return isStr(id) && isStr(secret) ? setItem(key, { id, secret }) : getItem(key)
+}
+
+storage.queue = queueMap => {
+    const key = 'queue-data'
+    return !isObjMap(queueMap) ? new Map(getItem(key)) : setItem(key, Array.from(queueMap))
+
 }
 
 // walletIndex gets/sets selected wallet index number

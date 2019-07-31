@@ -1,5 +1,5 @@
 import React from 'react'
-import { Container, Dimmer, Loader, Responsive, Sidebar } from 'semantic-ui-react'
+import { Icon, Container, Dimmer, Loader, Responsive, Sidebar } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import {
@@ -22,6 +22,8 @@ import SidebarLeft from './components/SidebarLeft'
 import UtilitiesView from './components/UtilitiesView'
 import WalletView from './components/WalletView'
 import ModalService, {confirm } from './services/modal'
+import ToastService, { setToast, removeToast } from './services/toast'
+import { resumeQueue } from './services/queue'
 import { IfFn, IfMobile } from './components/utils'
 // Images
 import TotemButtonLogo from'./assets/totem-button-grey.png'
@@ -122,16 +124,19 @@ export class App extends ReactiveComponent {
 						fluid
 						style={sidebarCollapsed ? mainContentCollapsed : mainContent}
 					>	
-					<ErrorBoundary>
-						<PageHeader
-								logoSrc={logoSrc}
-								isMobile={mobile}
-								onSidebarToggle={handleSidebarToggle}
-								sidebarCollapsed={sidebarCollapsed}
-								sidebarVisible={sidebarVisible}
-							/>
-					</ErrorBoundary>
-						
+						<ErrorBoundary>
+							<PageHeader
+									logoSrc={logoSrc}
+									isMobile={mobile}
+									onSidebarToggle={handleSidebarToggle}
+									sidebarCollapsed={sidebarCollapsed}
+									sidebarVisible={sidebarVisible}
+								/>
+						</ErrorBoundary>
+
+
+						<ToastService fullWidth={true} hidden={mobile && sidebarVisible} />
+
 						{sidebarItems.map((item, i) => (
 							<div ref={item.elementRef} key={i} hidden={!item.active} style={spaceBelow}>
 								<ContentSegment {...item} onClose={handleClose} index={i} />
@@ -143,18 +148,27 @@ export class App extends ReactiveComponent {
 		)
 	}
 
-	render() {
-		const { sidebarCollapsed, sidebarVisible, status } = this.state
+	unreadyRender() {
+		const { status } = this.state
+		return (
+			<Dimmer active style={{height: '100%', position: 'fixed'}}>
+				{!!status.error ? 'Connection failed! Please check your internet connection.':  <Loader indeterminate>Connecting to Totem blockchain network...</Loader>}
+			</Dimmer>
+		)
+	}
+
+	readyRender() {
+		const { sidebarCollapsed, sidebarVisible } = this.state
 		const classNames = [
 			sidebarVisible ? 'sidebar-visible' : '',
 			sidebarCollapsed ? 'sidebar-collapsed' : ''
 		].join(' ')
+		if (!this.resumed) {
+			this.resumed = true
+			resumeQueue()
+		}
 
-		return !this.ready() ? (
-			<Dimmer active style={{height: '100%', position: 'fixed'}}>
-				{!!status.error ? 'Connection failed! Please check your internet connection.':  <Loader indeterminate>Connecting to Totem blockchain network...</Loader>}
-			</Dimmer>
-		) : (
+		return (
 			<IfMobile
 				then={this.getContent(true)}
 				thenClassName={'mobile ' + classNames}

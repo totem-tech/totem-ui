@@ -10,7 +10,7 @@ import addressbook from '../../services/addressbook'
 import { pretty, secretStore } from 'oo7-substrate'
 import client from '../../services/ChatClient'
 import storageService from '../../services/storage'
-import { ownerProjectsList } from '../../services/project'
+import { ownerProjectsList } from '../../services/blockchain'
 
 const toBeImplemented = ()=> alert('To be implemented')
 
@@ -122,10 +122,11 @@ class ProjectList extends ReactiveComponent {
                     const {ownerAddress} = project
                     const entry = wallets.find(x => x.address === ownerAddress) || addressbook.getByAddress(ownerAddress) || {}
                     // Status codes on blockchain are 0:Open, 1:Reopened, 2:Closed, 99: Deleted
-                    const statuses = ['unknown', 'open', 'closed', 'reopened', 'deleted']
+                    const statuses = ['Open', 'Reopened', 'Closed', 'reopened']
+                    statuses[99] = 'Deleted'
                     project._ownerName = entry.name
                     project._hash = hash
-                    project._statusText = statuses[project.status || 0]
+                    project._statusText = statuses[project.status] || 'Unknown'
                 }
                 this.setState({projects})
             })
@@ -144,7 +145,7 @@ class ProjectList extends ReactiveComponent {
 
         // If every selected project's status is 'open' change action to 'Close', otherwise 'Re-open'
         const closeBtn = topRightMenu.find(x => x.name === 'close')
-        const doClose = selectedIndexes.every(key => projects.get(key).status !== 'open')
+        const doClose = selectedIndexes.every(key => projects.get(key).status === 0)
         closeBtn.content = doClose ? 'Close' : 'Re-open'
         closeBtn.icon = `toggle ${doClose ? 'off' : 'on'}`
         this.setState({topRightMenu})
