@@ -56,6 +56,7 @@ class Project extends ReactiveComponent {
                     value: ''
                 },
                 {
+                    disabled: !!props.hash,
                     label: 'Owner Address',
                     name: 'ownerAddress',
                     onChange: this.handleOwnerChange.bind(this),
@@ -84,6 +85,7 @@ class Project extends ReactiveComponent {
             this.checkOwnerBalance(props.project || {ownerAddress: selectedWallet})
         })
     }
+
     debugValues() {
 		let that = this;
 		console.log(
@@ -160,9 +162,6 @@ class Project extends ReactiveComponent {
         console.log('Original Hash : ', hash)
         this.txHash.changed(hash)
         console.log('Bond Hash : ', this.txHash)
-        
-        // prevent modal from being closed
-        let closeText = 'Close'
         let message = {
             content: `Your project will be created shortly. 
                 You will received toast messages notifying you of progress. 
@@ -171,28 +170,36 @@ class Project extends ReactiveComponent {
             status: 'success'
         }
         
-        this.setState({closeText, message, success: true})
+        this.setState({closeText: 'Close', message, success: true})
         
         this.debugValues()
 
-        addToQueue({
+        // Add or update project to web storage
+        const clientTask = {
+            type: 'ChatClient',
+            func: 'project',
+            args: [
+                hash,
+                values,
+                create,
+                (err, exists) => isFn(onSubmit) && onSubmit(e, values, !err)
+            ],
+            title: `${create ? 'Create' : 'Update'} project`,
+            description: 'Name: ' + values.name,
+        }
+
+        // Send transaction to blockchain first, then add to web storage
+        const blockchainTask = {
             type: 'blockchain',
             func: 'addNewProject',
             // args: [values.ownerAddress, hash],
             args: [this.txAddress, this.txHash],
             title: 'Create project',
             description: 'Name: ' + values.name,
-            next: {
-                type: 'ChatClient',
-                func: 'project',
-                args: [
-                    hash,
-                    values,
-                    create,
-                    (err, exists) => isFn(onSubmit) && onSubmit(e, values, !err)
-                ]
-            }
-        })
+            next: clientTask
+        }
+
+        addToQueue(create ? blockchainTask : clientTask)
     }
 
     render() {
