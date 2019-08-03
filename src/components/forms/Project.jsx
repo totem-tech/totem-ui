@@ -25,6 +25,14 @@ class Project extends ReactiveComponent {
             _: addressbook.getBond()
         })
         
+        // Transaction Bonds
+		this.txAddress = new Bond; 
+        this.txHash = new Bond; 
+        
+        this.txAddress.changed(ss58Decode(secretStore().use()._value.keys[storageService.walletIndex()].address));
+
+        this.debugValues = this.debugValues.bind(this)
+
         // Tells the blockchain to to handle custom runtime function??
         addCodecTransform('ProjectHash', 'Hash')
 
@@ -76,6 +84,15 @@ class Project extends ReactiveComponent {
             this.checkOwnerBalance(props.project || {ownerAddress: selectedWallet})
         })
     }
+    debugValues() {
+		let that = this;
+		console.log(
+			 "this.txAddress: ", 
+			 this.txAddress,  "is ready?: ", this.txAddress.isReady(), 
+			 "\n  this.txHash: ", 
+			 this.txHash, "is ready?: ", this.txHash.isReady()
+			)
+	}
 
     checkOwnerBalance(values) {
         const { hash, project } = this.props
@@ -140,6 +157,10 @@ class Project extends ReactiveComponent {
         const { onSubmit, hash: existingHash } = this.props
         const create = !existingHash
         const hash = existingHash || generateHash(values)
+        console.log('Original Hash : ', hash)
+        this.txHash.changed(hash)
+        console.log('Bond Hash : ', this.txHash)
+        
         // prevent modal from being closed
         let closeText = 'Close'
         let message = {
@@ -151,11 +172,14 @@ class Project extends ReactiveComponent {
         }
         
         this.setState({closeText, message, success: true})
+        
+        this.debugValues()
 
         addToQueue({
             type: 'blockchain',
             func: 'addNewProject',
-            args: [values.ownerAddress, hash],
+            // args: [values.ownerAddress, hash],
+            args: [this.txAddress, this.txHash],
             title: 'Create project',
             description: 'Name: ' + values.name,
             next: {
