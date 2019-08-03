@@ -68,7 +68,7 @@ const _processItem = (queueItem, id, msgId) => {
             queueItem.status = 'loading'
             setTimeout(() => _save())
 
-            bond.tie((result, tieId) => {
+            const tieId = bond.tie(result => {
                 if(!isObj(result)) return;
                 const { failed, finalized, sending, signing } = result
                 const done = failed || finalized
