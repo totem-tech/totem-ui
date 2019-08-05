@@ -1,13 +1,14 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
+import { pretty, secretStore } from 'oo7-substrate'
 import { Button } from 'semantic-ui-react'
 import ListFactory from './ListFactory'
+import FormBuilder from '../forms/FormBuilder'
 import ProjectForm from '../forms/Project'
-import { isArr, IfMobile } from '../utils'
+import { isArr, IfMobile, objCopy } from '../utils'
 import { showForm } from '../../services/modal'
 import addressbook from '../../services/addressbook'
-import { pretty, secretStore } from 'oo7-substrate'
 import client from '../../services/ChatClient'
 import storageService from '../../services/storage'
 import { ownerProjectsList } from '../../services/blockchain'
@@ -156,6 +157,36 @@ class ProjectList extends ReactiveComponent {
         this.setState({topRightMenu})
     }
 
+    showDetails(project, hash) {
+        project = objCopy(project)
+        project.hash = hash
+        const labels = {
+            name: 'Name',
+            _ownerName: 'Owner Name',
+            ownerAddress: 'Owner Address',
+            description: 'Description',
+            status: 'Status Code',
+            _statusText: 'Status',
+            hash: 'Hash',
+        }
+        // Create a form on the fly and display data a read-only input fields
+        showForm(FormBuilder, {
+            closeOnEscape: true,
+            closeOnDimmerClick: true,
+            closeText: 'Close',
+            header: 'Project Details',
+            inputs: Object.keys(labels).map((key, i, keys) => ({
+                label: labels[key],
+                name: key,
+                readOnly: true,
+                type: key === 'description' ? 'textarea' : 'text',
+                value: project[key]
+            })),
+            size: 'tiny',
+            submitText: null
+        })
+    }
+
     getContent(mobile) {
         return () => {
             const { projects, topRightMenu, topLeftMenu } = this.state
@@ -205,7 +236,7 @@ class ProjectList extends ReactiveComponent {
                     collapsing: true,
                     content: (project, hash) => (
                         <Button 
-                            onClick={() => console.log(project, hash) | toBeImplemented()}
+                            onClick={() => this.showDetails(project, hash)}
                             // content={mobile ? '' : 'Details'} 
                             icon={{
                                 className: mobile? 'no-margin' : '',
