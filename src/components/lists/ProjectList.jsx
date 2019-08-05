@@ -137,6 +137,11 @@ class ProjectList extends ReactiveComponent {
         const { projects, topRightMenu } = this.state
         const len = selectedIndexes.length
         topRightMenu.forEach(x => {x.disabled = len === 0; return x})
+
+        // Enable export button only when all projects are selected
+        const exportBtn = topRightMenu.find(x => x.name === 'export')
+        exportBtn.disabled = len !== projects.size
+
         if (len <= 1) return this.setState({topRightMenu})
         // more than one selected
         // Disable edit button, otherwise it will require multiple modals to be opened
