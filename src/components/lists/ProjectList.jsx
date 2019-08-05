@@ -24,6 +24,7 @@ class ProjectList extends ReactiveComponent {
         this.state = {
             actionsIndex: -1,
             bonds: [
+                this.getSelectedHashesBond(), // keep at index 0
                 addressbook.getBond(),
                 secretStore(),
                 storageService.walletIndexBond,
@@ -96,20 +97,37 @@ class ProjectList extends ReactiveComponent {
         this.loadProjects = this.loadProjects.bind(this)
     }
 
+    getSelectedHashesBond() {//selectedWalletProjecthashes
+        const { secretStore: ss } = this.state
+        const wallets = ss ? ss.keys : secretStore()._value.keys // force if not ready
+        const selectedWallet = wallets[storageService.walletIndex()]
+        return !selectedWallet ? {} : ownerProjectsList(selectedWallet.address)
+    }
+
     componentWillMount() {
-        // reload projects whenever 
-        this.state.bonds.map(bond => bond.__tieId = bond.tie(() => this.loadProjects()) )
+        const cb = () => this.loadProjects()
+        // reload projects whenever any of the bond's value updates
+        this.state.bonds.map(bond => bond.__tieId = bond.tie(cb) )
+
+        // Update project hashes bond whenever selected wallet changes
+        storageService.walletIndexBond.tie(()=> {
+            const { bonds } = this.state
+            bonds[0].untie(bonds[0].__tieId)
+            bonds[0] = this.getSelectedHashesBond()
+            bonds[0].__tieId = bonds[0].tie(cb)
+            this.setState({bonds})
+        })
     }
 
     componentWillUnmount() {
         // unsubscribe from updates
-        this.state.bonds.map(bond => bond.untie(bond.__tieId) )
+        this.state.bonds.map(bond => bond.untie(bond.__tieId))
     }
 
     loadProjects() {
         const {secretStore: ss} = this.state
         const wallets = ss ? ss.keys : secretStore()._value.keys // force if not ready
-        const { address } = wallets[storageService.walletIndex()] || {}
+        const { address } = wallets[storageService.walletIndex()]
         address && ownerProjectsList(address).then( hashArr => {
             if (!isArr(hashArr) || hashArr.length === 0) return this.setState({projects: new Map()});
             // convert to string and add 0x prefix
