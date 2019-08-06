@@ -1,8 +1,6 @@
 // import { Bond } from 'oo7'
-import { addCodecTransform, hexToBytes, calls, post, runtime, ss58Decode } from 'oo7-substrate'
-// import { isBond, isStr } from '../components/utils'
-
-addCodecTransform('ProjectHash', 'Hash')
+import { addCodecTransform, calls, post, runtime, ss58Decode } from 'oo7-substrate'
+import { isBond } from '../components/utils'
 
 // addNewProject registers a hash against a wallet into the blockchain
 //
@@ -17,8 +15,11 @@ addCodecTransform('ProjectHash', 'Hash')
 //              4. {finalized: 'TXID'}
 //              5. {failed: {code: xxx, message: 'error message'}}
 export const addNewProject = (address, hash) => {
-    // address = isBond(address) ? address : new Bond().defaultTo(address)
-    // hash = isBond(hash) ? hash : new Bond().defaultTo(hash)
+    addCodecTransform('ProjectHash', 'Hash')
+    address = new Bond().defaultTo(ss58Decode(
+        isBond(address) ? address._value : address
+    ))
+    hash = isBond(hash) ? hash : new Bond().defaultTo(hash)
 
     return post({
         sender: address,
@@ -31,13 +32,13 @@ export const addNewProject = (address, hash) => {
 // ownerProjectsList retrieves a list of project hashes owned by @address
 //
 // Returns Bond
-export const ownerProjectsList = address => runtime.projects.ownerProjectsList(ss58Decode(address))
+export const ownerProjectsList = address => {
+    addCodecTransform('ProjectHash', 'Hash')
+    return runtime.projects.ownerProjectsList(ss58Decode(address))
+}
 
 
 export default {
     addNewProject,
     ownerProjectsList
 }
-
-// Testing
-// post({sender: runtime.indices.ss58Decode('5GpPfDfAGpQjqYy3CKAFDHnfkQ6ooaiwvpa5ydibe6ghY9Kh'),call: calls.projects.addNewProject('0x3e4832820e600eef3c1c647789276c2c4bd4fbfefb0f2d98a5300c1cd08a91e9'),}).tie(console.log)
