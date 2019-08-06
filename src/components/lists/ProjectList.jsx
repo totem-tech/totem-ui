@@ -5,9 +5,9 @@ import { pretty, secretStore } from 'oo7-substrate'
 import { Button } from 'semantic-ui-react'
 import ListFactory from './ListFactory'
 import FormBuilder from '../forms/FormBuilder'
-import ProjectForm from '../forms/Project'
+import ProjectForm, { ReassignProjectForm } from '../forms/Project'
 import { isArr, IfMobile, objCopy } from '../utils'
-import { showForm } from '../../services/modal'
+import { confirm, showForm } from '../../services/modal'
 import addressbook from '../../services/addressbook'
 import client from '../../services/ChatClient'
 import storageService from '../../services/storage'
@@ -53,10 +53,13 @@ class ProjectList extends ReactiveComponent {
                 },
                 {
                     active: false,
-                    content: 'Reassign owner',
+                    content: 'Re-assign owner',
                     icon: 'mail forward',
-                    name: 'assign',
-                    onClick: toBeImplemented
+                    name: 're-assign',
+                    onClick: (selectedIndexes)=> {
+                        const project = this.state.projects.get(selectedIndexes[0])
+                        showForm(ReassignProjectForm, {hash: selectedIndexes[0], project, size: 'tiny'})
+                    }
                 },
                 {
                     active: false,
@@ -64,7 +67,7 @@ class ProjectList extends ReactiveComponent {
                     content: 'Edit',
                     disabled: true,
                     icon: 'pencil',
-                    onClick: (selectedIndexes) => selectedIndexes.length !== 1 ? '' : showForm(
+                    onClick: (selectedIndexes) => selectedIndexes.length > 0 && showForm(
                         ProjectForm,
                         { 
                             modal: true,
@@ -173,6 +176,9 @@ class ProjectList extends ReactiveComponent {
         const doClose = selectedIndexes.every(key => projects.get(key).status === 0)
         closeBtn.content = doClose ? 'Close' : 'Re-open'
         closeBtn.icon = `toggle ${doClose ? 'off' : 'on'}`
+
+        const reAssignBtn = topRightMenu.find(x => x.name === 're-assign')
+        reAssignBtn.disabled = len !== 1
         this.setState({topRightMenu})
     }
 

@@ -3,11 +3,14 @@ import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { runtime, secretStore } from 'oo7-substrate'
 import FormBuilder, { fillValues } from './FormBuilder'
-import { arrSort, generateHash, isDefined, isFn, isObj } from '../utils'
+import { arrSort, generateHash, isDefined, isFn, isObj, objCopy } from '../utils'
 import storageService  from '../../services/storage'
 import { addToQueue } from '../../services/queue'
 import { Pretty } from '../../Pretty'
+import addressbook from '../../services/addressbook';
+import { confirm } from '../../services/modal'
 
+// Create or update project form
 class Project extends ReactiveComponent {
     constructor(props) {
         super(props, {
@@ -15,6 +18,7 @@ class Project extends ReactiveComponent {
         })
 
         this.handleSubmit = this.handleSubmit.bind(this)
+        this.checkOwnerBalance = checkBalance.bind(this)
         const selectedWallet = secretStore().use()._value.keys[storageService.walletIndex()].address
 
         this.state = {
@@ -37,7 +41,14 @@ class Project extends ReactiveComponent {
                     disabled: !!props.hash,
                     label: 'Owner Address',
                     name: 'ownerAddress',
-                    onChange: (_, values) => this.checkOwnerBalance(values),
+                    onChange: (_, values) => {
+                        const { hash, project } = this.props
+                        const isCreate  = !hash
+                        const signerAddress = isCreate ? values.ownerAddress : project.ownerAddress
+                        // do not check if owner address has not been changed
+                        if (!signerAddress) return;
+                        this.checkOwnerBalance(signerAddress, 'ownerAddress')
+                    },
                     placeholder: 'Select owner',
                     type: 'dropdown',
                     search: true,
@@ -60,42 +71,7 @@ class Project extends ReactiveComponent {
         if (isObj(props.project)) fillValues(this.state.inputs, props.project, true)
         setTimeout(() => {
             // Check if wallet has balance
-            this.checkOwnerBalance(props.project || {ownerAddress: selectedWallet})
-        })
-    }
-
-    checkOwnerBalance(values) {
-        const { hash, project } = this.props
-        const { ownerAddress } = values
-        const { inputs } = this.state
-        const isCreate = !hash
-        const index = this.state.inputs.findIndex(x => x.name === 'ownerAddress')
-        // minimum balance required
-        const minBalance = 500
-        const signer = isCreate ? ownerAddress : project.ownerAddress
-        // do not check if owner address has not been changed
-        if (!signer || (!isCreate && ownerAddress === project.ownerAddress)) return;
-        // keep input field in invalid state until verified
-        inputs[index].invalid = true
-        inputs[index].message = {
-            content: 'Checking balance....',
-            showIcon: true,
-            status: 'loading'
-        }
-        this.setState({inputs})
-        // check if singing address has enough funds
-        runtime.balances.balance(signer).then(balance => {
-            const notEnought = balance <= minBalance
-            inputs[index].invalid = notEnought
-            inputs[index].message = !notEnought ? {} : {
-                content: `You must have more than ${minBalance} Blip balance 
-                        in the wallet named "${secretStore().find(signer).name}". 
-                        This is requied to create a blockchain transaction.`,
-                header: 'Insufficient balance',
-                status: 'error',
-                showIcon: true
-            }
-            this.setState({inputs});
+            this.checkOwnerBalance(props.project ? props.project.ownerAddress : selectedWallet, 'ownerAddress')
         })
     }
 
@@ -219,7 +195,200 @@ const styles = {
     itemHeader: { 
         background: 'grey', 
         color: 'white', 
-        fontWeight: 'bold', 
+        fontWeight: 'bold',
         fontSize: '1em'
+    }
+}
+
+function checkBalance(address, inputName) {
+    const { inputs } = this.state
+    const index = this.state.inputs.findIndex(x => x.name === inputName)
+    const wallet = secretStore().find(address)
+    // minimum balance required
+    const minBalance = 500
+    // keep input field in invalid state until verified
+    inputs[index].invalid = true
+
+    if (!wallet) {
+        inputs[index].message = {
+            header: 'Address does not belong to you!',
+            showIcon: true,
+            status: 'error'
+        }
+
+        return this.setState({inputs})
+    }
+    inputs[index].message = {
+        content: 'Checking balance....',
+        showIcon: true,
+        status: 'loading'
+    }
+    this.setState({inputs})
+    // check if singing address has enough funds
+    runtime.balances.balance(address).then(balance => {
+        const notEnought = balance <= minBalance
+        inputs[index].invalid = notEnought
+        inputs[index].message = !notEnought ? {} : {
+            content: `You must have more than ${minBalance} Blip balance 
+                    in the wallet named "${wallet.name}". 
+                    This is requied to create a blockchain transaction.`,
+            header: 'Insufficient balance',
+            status: 'error',
+            showIcon: true
+        }
+        this.setState({inputs});
+    })
+}
+
+export class ReassignProjectForm extends ReactiveComponent {
+    constructor(props) {
+        super(props)
+
+        this.handleSubmit = this.handleSubmit.bind(this)
+        this.checkOwnerBalance = checkBalance.bind(this)
+
+        this.state = {
+            message: {},
+            success: false,
+            inputs: [
+                {
+                    label: 'Project Name',
+                    name: 'name',
+                    readOnly: true,
+                    required: true,
+                    type: 'text',
+                    value: props.project.name
+                },
+                {
+                    label: 'Project Hash',
+                    name: 'hash',
+                    readOnly: true,
+                    required: true,
+                    type: 'text',
+                    value: props.hash
+                },
+                {
+                    disabled: true,
+                    label: 'Current Owner',
+                    name: 'ownerAddress',
+                    required: true,
+                    search: true,
+                    selection: true,
+                    type: 'dropdown',
+                    value: props.project.ownerAddress
+                },
+                {
+                    label: 'New Owner',
+                    name: 'newOwnerAddress',
+                    onChange: this.handleNewOwnerChange,
+                    placeholder: 'Select owner',
+                    search: true,
+                    selection: true,
+                    required: true,
+                    type: 'dropdown',
+
+                }
+            ]
+        }
+    }
+
+    componentWillMount() {
+        const { ownerAddress } = this.props.project || {}
+        this.checkOwnerBalance(ownerAddress, 'ownerAddress')
+    }
+
+    handleSubmit(e, values) {
+        const { project, onSubmit } = this.props
+        const { hash, name, ownerAddress, newOwnerAddress } = values
+        const walletExists = secretStore().find(newOwnerAddress)
+        const task = {
+            type: 'blockchain',
+            func: 'reassignProject',
+            args: [ownerAddress, newOwnerAddress, hash],
+            title: 'Re-assign project owner',
+            description: 'Project Name: ' + name,
+            next: {
+                type: 'chatclient',
+                func: 'project',
+                args: [
+                    hash,
+                    objCopy({ownerAddress: newOwnerAddress}, project, true),
+                    false,
+                    (err)=> isFn(onSubmit) && onSubmit(values, !err)
+                ]
+            }
+        }
+        const setMsg = ()=> this.setState({
+            message: {
+                header: 'Re-assign request added to queue',
+                content: 'Your request has been added to queue. ',
+                status: 'success',
+                showIcon: true
+            },
+            success: true
+        })
+
+        !!walletExists ? addToQueue(task) | setMsg() : confirm({
+            cancelButton: { content: 'Cancel', color: 'green' },
+            confirmButton: { content: 'Proceed', color: 'red', primary: false },
+            content: 'You are about to assign owner of this project to an address that does not belong to you.'
+                + ' If you proceed, you will no longer be able to update this project.',
+            header: 'Are you sure?',
+            onConfirm: () => addToQueue(task) | setMsg(),
+            size: 'tiny'
+        })
+    }
+
+    render() {
+        const { header, modal, onClose, open, size, subheader } = this.props
+        const { closeText, inputs, message, success } = this.state
+        const wallets = secretStore()._value.keys || []
+        const partners = addressbook.getAll()
+        let options = [{
+            key: 0,
+            style: styles.itemHeader,
+            text: 'Wallets',
+            value: '' // keep
+        }]
+        // add wallet items to owner address dropdown
+        .concat(arrSort(wallets, 'name').map((wallet, i) => ({
+            key: 'wallet-'+i+ wallet.address,
+            text: wallet.name,
+            description: <Pretty value={runtime.balances.balance(ss58Decode(wallet.address))} />,
+            value: wallet.address
+        })))
+
+        if (partners.length > 0) {
+            options = options.concat({
+                key: 1,
+                style: styles.itemHeader,
+                text: 'Partners',
+                value: '' // keep
+            })
+            .concat(arrSort(partners, 'name').map((partner, i) => ({
+                key: 'partner-'+i+ partner.address,
+                text: partner.name,
+                description: <Pretty value={runtime.balances.balance(ss58Decode(partner.address))} />,
+                value: partner.address
+            })))
+        }
+
+        inputs.filter(x => x.type.toLowerCase() === 'dropdown').forEach(input => input.options = options)
+
+        return (
+            <FormBuilder {...{
+                closeText,
+                header: header || 'Re-assign Project Owner',
+                subheader,
+                inputs,
+                message,
+                modal, 
+                onClose,
+                onSubmit: this.handleSubmit,
+                open,
+                size,
+                success
+            }} />
+        )
     }
 }

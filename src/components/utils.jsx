@@ -143,6 +143,7 @@ export const arrReverse = (arr, reverse) => reverse ? arr.reverse() : arr
 // Params:
 // @source  object
 // @dest    object (optional)
+// @force	bool (optional) force create new object
 export const objCopy = (source, dest, force) => !isObj(source) ? dest || {} : (
 	Object.keys(source).reduce((obj, key) => {
 		obj[key] = source[key]

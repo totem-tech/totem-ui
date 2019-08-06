@@ -1,7 +1,10 @@
 // import { Bond } from 'oo7'
-import { addCodecTransform, calls, post, runtime, ss58Decode } from 'oo7-substrate'
+import { addCodecTransform, calls, hexToBytes, post, runtime, ss58Decode } from 'oo7-substrate'
 import { isBond } from '../components/utils'
 
+const validatedAddress = address => runtime.indices.tryIndex(
+    new Bond().defaultTo(ss58Decode(isBond(address) ? address._value : address)
+))
 // addNewProject registers a hash against a wallet into the blockchain
 //
 // Params:
@@ -14,16 +17,12 @@ import { isBond } from '../components/utils'
 //              3. 'ready'
 //              4. {finalized: 'TXID'}
 //              5. {failed: {code: xxx, message: 'error message'}}
-export const addNewProject = (address, hash) => {
+export const addNewProject = (ownerAddress, hash) => {
     addCodecTransform('ProjectHash', 'Hash')
-    address = new Bond().defaultTo(ss58Decode(
-        isBond(address) ? address._value : address
-    ))
-    hash = isBond(hash) ? hash : new Bond().defaultTo(hash)
 
     return post({
-        sender: address,
-        call: calls.projects.addNewProject(hash),
+        sender: validatedAddress(ownerAddress),
+        call: calls.projects.addNewProject(hexToBytes(hash)),
         compact: false,
         longevity: true
     })
@@ -37,8 +36,19 @@ export const ownerProjectsList = address => {
     return runtime.projects.ownerProjectsList(ss58Decode(address))
 }
 
+export const reassignProject = (ownerAddress, newOwnerAddress, hash) => {
+    addCodecTransform('ProjectHash', 'Hash')
+    return post({
+        sender: validatedAddress(ownerAddress),
+        call: calls.projects.reassignProject(newOwnerAddress, hexToBytes(hash)),
+        compact: false,
+        longevity: true
+    })
+}
+
 
 export default {
     addNewProject,
-    ownerProjectsList
+    ownerProjectsList,
+    reassignProject
 }
