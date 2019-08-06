@@ -368,7 +368,7 @@ export const icons = {
 
 // valid statuses: error, info, loading, success
 export const newMessage = message => {
-	if (!isObj(message)) return;
+	if (!isObj(message) || (!message.content && !message.list && !message.header)) return;
 	let { icon, showIcon, status, style } = message
 	status = status || 'info'
 	icon = React.isValidElement(icon) ? icon.props : icon

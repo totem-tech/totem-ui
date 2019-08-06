@@ -82,9 +82,10 @@ const _processItem = (queueItem, id, msgId) => {
                 const header = !title ? statusText : `${title}: ${statusText}`
                 msgId = setToast( {header, content, status}, msgDuration, msgId )
                 queueItem.status = status
-                if (done) _save() | bond.untie(tieId);
-
-                if (finalized) return next ? _processItem(next, id, msgId) : queue.delete(id)
+                _save()
+                if (!done) return;
+                bond.untie(tieId)
+                if (finalized) next ? _processItem(next, id, msgId) : queue.delete(id) | _save();
             })
             break;
         case 'chatclient':

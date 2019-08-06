@@ -97,11 +97,12 @@ class ProjectList extends ReactiveComponent {
         this.loadProjects = this.loadProjects.bind(this)
     }
 
-    getSelectedHashesBond() {//selectedWalletProjecthashes
+    // Selected wallet hashes bond
+    getSelectedHashesBond() {
         const { secretStore: ss } = this.state
         const wallets = ss ? ss.keys : secretStore()._value.keys // force if not ready
         const selectedWallet = wallets[storageService.walletIndex()]
-        return !selectedWallet ? {} : ownerProjectsList(selectedWallet.address)
+        return ownerProjectsList(selectedWallet.address)
     }
 
     componentWillMount() {
@@ -128,7 +129,7 @@ class ProjectList extends ReactiveComponent {
         const {secretStore: ss} = this.state
         const wallets = ss ? ss.keys : secretStore()._value.keys // force if not ready
         const { address } = wallets[storageService.walletIndex()]
-        address && ownerProjectsList(address).then( hashArr => {
+        ownerProjectsList(address).then( hashArr => {
             if (!isArr(hashArr) || hashArr.length === 0) return this.setState({projects: new Map()});
             // convert to string and add 0x prefix
             hashArr = hashArr.map( hash => pretty(hash) )
