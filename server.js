@@ -220,9 +220,10 @@ io.on('connection', client => {
 
 	// update project status
 	// Statuses:
-	// 0 : pending blockchain entry
-	// 1 : open
+	// 0 : open
+	// 1 : reopened
 	// 2 : closed
+	// 99: deleted
 	client.on('project-status', (hash, status, callback) => {
 		const doCb = isFn(callback)
 		const project = projects.get(hash)
