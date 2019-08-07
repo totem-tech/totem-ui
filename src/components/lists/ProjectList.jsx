@@ -57,6 +57,8 @@ class ProjectList extends ReactiveComponent {
                     icon: 'mail forward',
                     name: 're-assign',
                     onClick: (selectedIndexes)=> {
+                        if (selectedIndexes.length === 0) return;
+                        if (selectedIndexes.length > 1) return toBeImplemented();
                         const project = this.state.projects.get(selectedIndexes[0])
                         showForm(ReassignProjectForm, {hash: selectedIndexes[0], project, size: 'tiny'})
                     }
@@ -176,10 +178,6 @@ class ProjectList extends ReactiveComponent {
         const doClose = selectedIndexes.every(key => projects.get(key).status === 0)
         closeBtn.content = doClose ? 'Close' : 'Re-open'
         closeBtn.icon = `toggle ${doClose ? 'off' : 'on'}`
-
-        const reAssignBtn = topRightMenu.find(x => x.name === 're-assign')
-        reAssignBtn.disabled = len !== 1
-        this.setState({topRightMenu})
     }
 
     showDetails(project, hash) {
