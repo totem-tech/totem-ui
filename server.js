@@ -198,6 +198,8 @@ io.on('connection', client => {
 
 		// check if project contains all the required properties
 		const requiredKeys = ['name', 'ownerAddress', 'description']
+		// All the acceptable keys
+		const validKeys = [...requiredKeys, 'status']
 		const invalid = !hash || !project || requiredKeys.reduce((invalid, key) => invalid || !project[key], false)
 		if (invalid) return doCb && callback(
 			'Project must contain all of the following properties: ' + 
@@ -207,10 +209,11 @@ io.on('connection', client => {
 			doCb && callback('Project description must not exceed 160 characters')
 		}
 		// exclude any unwanted data 
-		project = objCopy(objClean(project, requiredKeys), existingProject)
+		project = objCopy(objClean(project, validKeys), existingProject, true)
 		project.status = create ? 0 : (
 			isValidNumber(project.status) ? project.status : 0
 		)
+
 		
 		// Add/update project
 		projects.set(hash, project)

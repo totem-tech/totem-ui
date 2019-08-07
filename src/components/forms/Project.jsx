@@ -110,6 +110,7 @@ class Project extends ReactiveComponent {
             type: 'blockchain',
             func: 'addNewProject',
             args: [ownerAddress, hash],
+            address: ownerAddress,
             title: 'Create project',
             description: 'Name: ' + projectName,
             next: clientTask
@@ -305,6 +306,7 @@ export class ReassignProjectForm extends ReactiveComponent {
             type: 'blockchain',
             func: 'reassignProject',
             args: [ownerAddress, newOwnerAddress, hash],
+            address: ownerAddress,
             title: 'Re-assign project owner',
             description: 'Project Name: ' + name,
             next: {
