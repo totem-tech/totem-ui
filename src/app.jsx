@@ -162,7 +162,7 @@ export class App extends ReactiveComponent {
 		].join(' ')
 		if (!this.resumed) {
 			this.resumed = true
-			resumeQueue()
+			setTimeout(()=> resumeQueue(), 1000)
 		}
 
 		return (
