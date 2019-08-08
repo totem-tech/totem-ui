@@ -143,6 +143,7 @@ export const arrReverse = (arr, reverse) => reverse ? arr.reverse() : arr
 // Params:
 // @source  object
 // @dest    object (optional)
+// @force	bool (optional) force create new object
 export const objCopy = (source, dest, force) => !isObj(source) ? dest || {} : (
 	Object.keys(source).reduce((obj, key) => {
 		obj[key] = source[key]
@@ -368,7 +369,7 @@ export const icons = {
 
 // valid statuses: error, info, loading, success
 export const newMessage = message => {
-	if (!isObj(message)) return;
+	if (!isObj(message) || (!message.content && !message.list && !message.header)) return;
 	let { icon, showIcon, status, style } = message
 	status = status || 'info'
 	icon = React.isValidElement(icon) ? icon.props : icon

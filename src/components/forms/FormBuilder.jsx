@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Button, Checkbox, Dropdown, Form, Header, Icon, Input, Message, Modal, TextArea } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
-import { isDefined, isArr, isBond, isFn, isObj, objCopy, objWithoutKeys, deferred } from '../utils';
+import { isDefined, isArr, isBond, isFn, isObj, objCopy, objWithoutKeys, newMessage } from '../utils';
 import { InputBond } from '../../InputBond'
 import { AccountIdBond } from '../../AccountIdBond'
 
@@ -182,7 +182,7 @@ class FormBuilder extends ReactiveComponent {
                         {submitBtn}
                     </Modal.Actions> 
                 )}
-                {message && !!message.status && (
+                {/* {message && !!message.status && (
                     <Message
                         {...message}
                         content={message.content}
@@ -198,7 +198,8 @@ class FormBuilder extends ReactiveComponent {
                         visible={!!message.status}
                         warning={message.status==='warning'}
                     />
-                )}
+                )} */}
+                {newMessage(message)}
             </Modal>
         )
     }
@@ -281,27 +282,12 @@ export class FormInput extends ReactiveComponent {
         const { inline, label, message, required, type, useInput, width } = this.props
         let hideLabel = false
         let inputEl = ''
-        const msg = message && (message.content || message.list || message.header) ? message : undefined
         // Remove attributes that are used by the form or Form.Field but
         // shouldn't be used or may cause error when using with inputEl
         const nonAttrs = [ 'deferred', 'inline', 'invalid', 'label', 'useInput' ]
-        let attrs = objWithoutKeys(this.props, nonAttrs) //objCopy(this.props)
+        let attrs = objWithoutKeys(this.props, nonAttrs)
         attrs.onChange = handleChange
-        const messageEl = !msg ? '' : (
-            <Message
-                {...msg}
-                content={msg.content}
-                error={msg.status==='error'}
-                header={msg.header}
-                icon={msg.icon}
-                info={msg.info}
-                list={msg.list}
-                size={msg.size}
-                success={msg.status==='success'}
-                visible={!!msg.status}
-                warning={msg.status==='warning'}
-            />
-        )
+        const messageEl = newMessage(message)
 
         switch(type.toLowerCase()) {
             case 'accountidbond': 
@@ -347,7 +333,7 @@ export class FormInput extends ReactiveComponent {
                 inputEl = <TextArea {...attrs} />
                 break;
             default:
-                attrs.error = attrs.error || (msg && msg.status==='error')
+                attrs.error = attrs.error || (message && message.status==='error')
                 attrs.fluid = !useInput ? undefined : attrs.fluid
                 inputEl = !useInput ? <Form.Input {...attrs} /> : <Input {...attrs} />
         }

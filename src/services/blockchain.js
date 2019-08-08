@@ -1,8 +1,11 @@
 // import { Bond } from 'oo7'
-import { addCodecTransform, hexToBytes, calls, post, runtime, ss58Decode } from 'oo7-substrate'
-// import { isBond, isStr } from '../components/utils'
+import { addCodecTransform, calls, hexToBytes, post, runtime, ss58Decode } from 'oo7-substrate'
+import { isBond } from '../components/utils'
 
-addCodecTransform('ProjectHash', 'Hash')
+const validatedAddress = address => runtime.indices.tryIndex(
+    new Bond().defaultTo(ss58Decode(isBond(address) ? address._value : address)
+))
+const hashHexToBytes = hash => hexToBytes(isBond(hash) ? hash._value : hash)
 
 // addNewProject registers a hash against a wallet into the blockchain
 //
@@ -16,13 +19,12 @@ addCodecTransform('ProjectHash', 'Hash')
 //              3. 'ready'
 //              4. {finalized: 'TXID'}
 //              5. {failed: {code: xxx, message: 'error message'}}
-export const addNewProject = (address, hash) => {
-    // address = isBond(address) ? address : new Bond().defaultTo(address)
-    // hash = isBond(hash) ? hash : new Bond().defaultTo(hash)
+export const addNewProject = (ownerAddress, hash) => {
+    addCodecTransform('ProjectHash', 'Hash')
 
     return post({
-        sender: address,
-        call: calls.projects.addNewProject(hash),
+        sender: validatedAddress(ownerAddress),
+        call: calls.projects.addNewProject(hashHexToBytes(hash)),
         compact: false,
         longevity: true
     })
@@ -31,13 +33,107 @@ export const addNewProject = (address, hash) => {
 // ownerProjectsList retrieves a list of project hashes owned by @address
 //
 // Returns Bond
-export const ownerProjectsList = address => runtime.projects.ownerProjectsList(ss58Decode(address))
-
-
-export default {
-    addNewProject,
-    ownerProjectsList
+export const ownerProjectsList = address => {
+    addCodecTransform('ProjectHash', 'Hash')
+    return runtime.projects.ownerProjectsList(ss58Decode(address))
 }
 
-// Testing
-// post({sender: runtime.indices.ss58Decode('5GpPfDfAGpQjqYy3CKAFDHnfkQ6ooaiwvpa5ydibe6ghY9Kh'),call: calls.projects.addNewProject('0x3e4832820e600eef3c1c647789276c2c4bd4fbfefb0f2d98a5300c1cd08a91e9'),}).tie(console.log)
+// reassignProject transfers ownership of a project to a new owner address 
+//
+// Params:
+// @ownerAddress    string/Bond: current owner of the project
+// @newOwnerAddress string/Bond: address which will be the new owner
+// @hash            string     : unique hash/ID of the project
+//
+// Returns Bond : expected values from returned bond =>
+//              1. {signing: true/false}
+//              2. {sending: true/false}
+//              3. 'ready'
+//              4. {finalized: 'TXID'}
+//              5. {failed: {code: xxx, message: 'error message'}}
+export const reassignProject = (ownerAddress, newOwnerAddress, hash) => {
+    addCodecTransform('ProjectHash', 'Hash')
+    return post({
+        sender: validatedAddress(ownerAddress),
+        call: calls.projects.reassignProject(newOwnerAddress, hashHexToBytes(hash)),
+        compact: false,
+        longevity: true
+    })
+}
+
+// removeProject removes project
+//
+// Params:
+// @ownerAddress    string/Bond: current owner of the project
+// @hash            string     : unique hash/ID of the project
+//
+// Returns Bond : expected values from returned bond =>
+//              1. {signing: true/false}
+//              2. {sending: true/false}
+//              3. 'ready'
+//              4. {finalized: 'TXID'}
+//              5. {failed: {code: xxx, message: 'error message'}}
+export const removeProject = (ownerAddress, hash) => {
+    addCodecTransform('ProjectHash', 'Hash')
+    return post({
+        sender: validatedAddress(ownerAddress),
+        call: calls.projects.removeProject(hashHexToBytes(hash)),
+        compact: false,
+        longevity: true
+    })
+}
+
+
+// closeProject removes project
+//
+// Params:
+// @ownerAddress    string/Bond: current owner of the project
+// @hash            string     : unique hash/ID of the project
+//
+// Returns Bond : expected values from returned bond =>
+//              1. {signing: true/false}
+//              2. {sending: true/false}
+//              3. 'ready'
+//              4. {finalized: 'TXID'}
+//              5. {failed: {code: xxx, message: 'error message'}}
+export const closeProject = (ownerAddress, hash) => {
+    addCodecTransform('ProjectHash', 'Hash')
+    return post({
+        sender: validatedAddress(ownerAddress),
+        call: calls.projects.closeProject(hashHexToBytes(hash)),
+        compact: false,
+        longevity: true
+    })
+}
+
+
+// reopenProject removes project
+//
+// Params:
+// @ownerAddress    string/Bond: current owner of the project
+// @hash            string     : unique hash/ID of the project
+//
+// Returns Bond : expected values from returned bond =>
+//              1. {signing: true/false}
+//              2. {sending: true/false}
+//              3. 'ready'
+//              4. {finalized: 'TXID'}
+//              5. {failed: {code: xxx, message: 'error message'}}
+export const reopenProject = (ownerAddress, hash) => {
+    addCodecTransform('ProjectHash', 'Hash')
+    return post({
+        sender: validatedAddress(ownerAddress),
+        call: calls.projects.reopenProject(hashHexToBytes(hash)),
+        compact: false,
+        longevity: true
+    })
+}
+
+// Include all functions here that will be used by Queue Service
+export default {
+    addNewProject,
+    reassignProject,
+    removeProject,
+    closeProject,
+    reopenProject,
+}

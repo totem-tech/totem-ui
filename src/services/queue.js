@@ -3,14 +3,18 @@
  */
 import React from 'react'
 import uuid from 'uuid'
+import { runtime, secretStore } from 'oo7-substrate'
 import client from'./ChatClient'
 import blockchain from './blockchain'
 import storageService from './storage'
-import { setToast } from './toast'
+import { removeToast, setToast } from './toast'
 import { isArr, isFn, isObj, objClean } from '../components/utils'
 
 const queue = storageService.queue()
-
+// Minimum balance required to make a transaction
+const MIN_BALANCE = 500
+let txInProgress = false
+const txQueue = []
 export const addToQueue = (queueItem) => {
     const id = uuid.v1()
     const validKeys = [
@@ -22,6 +26,7 @@ export const addToQueue = (queueItem) => {
                         //                              AND the first argument to the callback must be:
                         //                                  - a string with error message to indicate request failure.
                         //                                  - OR, falsy to indicate request success
+        'address',      // @address     string/bond: optionally for blockchain @type, include source address to check balance before making blockchain call
         'title',        // @title       string : operation title. Eg: 'Create project'
         'description',  // @description string : short description about the operation. Eg: project name etc...
         'keepToast',    // @keepToast   bool   : if falsy, will autohide toast
@@ -37,7 +42,15 @@ export const addToQueue = (queueItem) => {
 
 // save to localStorage
 const _save = ()=> storageService.queue(queue)
-export const resumeQueue = ()=> queue.size > 0 && Array.from(queue).forEach(x => _processItem(x[1], x[0])) | console.log('Resuming', queue.size, 'queue items')
+
+export const resumeQueue = ()=> queue.size > 0 && Array.from(queue).forEach((x, i) => setTimeout(()=>_processItem(x[1], x[0])))
+
+const _processNextTxItem = ()=> {
+    txInProgress = false
+    if (txQueue.length === 0) return;
+    const {queueItem, id, msgId} = txQueue.pop()
+    setTimeout(()=>_processItem(queueItem, id, msgId))
+}
 
 const _processItem = (queueItem, id, msgId) => {
     if (!isObj(queueItem) || queueItem.status === 'error') return queue.delete(id) | _save();
@@ -47,44 +60,102 @@ const _processItem = (queueItem, id, msgId) => {
             // success or faild => remove item from queue
             return queue.delete(id) | _save()
         }
-
+        // Go to next task
         return _processItem(next, id, msgId)
     }
 
-    // Go to next operation
+    // Execute current task
     queueItem.title = queueItem.title || queue.get(id).title
     queueItem.description = queueItem.description || queue.get(id).description
     const args = isArr(queueItem.args) ? queueItem.args : [queueItem.args]
     const { title, description } = queueItem
     let func = null
     const msgDuration = queue.get(id).keepToast ? 0 : null
-    // Execute current operation
     switch((queueItem.type || '').toLowerCase()) {
         case 'blockchain':
-            func = blockchain[queueItem.func]
-            if (!func) return queue.delete(id) | _save();
-            // initiate transactional request
-            const bond = func.apply({}, args)
-            queueItem.status = 'loading'
-            setTimeout(() => _save())
+            // defer tx task to avoid errors
+            if (txInProgress) return txQueue.push({queueItem, id, msgId});
+            const handlePost = ()=> {
+                txInProgress = true
+                func = blockchain[queueItem.func]
+                if (!func) return queue.delete(id) | _save();
+                // initiate transactional request
+                const bond = func.apply({}, args)
+                queueItem.status = 'loading'
+                setTimeout(() => _save())
 
-            bond.tie((result, tieId) => {
-                if(!isObj(result)) return;
-                const { failed, finalized, sending, signing } = result
-                const done = failed || finalized
-                const status = !done ? 'loading' : (finalized ? 'success' : 'error')
-                const statusText = finalized ? 'Transaction successful' : (
-                    signing ? 'Signing transaction' : (
-                        sending ? 'Sending transaction' : 'Transaction failed'
+                const tieId = bond.tie(result => {
+                    if(!isObj(result)) return;
+                    const { failed, finalized, sending, signing } = result
+                    const done = failed || finalized
+                    const status = !done ? 'loading' : (finalized ? 'success' : 'error')
+                    const statusText = finalized ? 'Transaction successful' : (
+                        signing ? 'Signing transaction' : (
+                            sending ? 'Sending transaction' : 'Transaction failed'
+                        )
                     )
-                )
-                const content = (failed ? <p>Error {failed.code}: {failed.message} <br /></p> : description)
-                const header = !title ? statusText : `${title}: ${statusText}`
-                msgId = setToast( {header, content, status}, msgDuration, msgId )
-                queueItem.status = status
-                if (done) _save() | bond.untie(tieId);
+                    const content = <p>{description}<br /> {failed && (`Error ${failed.code}: ${failed.message}`)}</p>
+                    const header = !title ? statusText : `${title}: ${statusText}`
+                    msgId = setToast( {header, content, status}, msgDuration, msgId )
+                    queueItem.status = status
+                    _save()
+                    if (!done) return;
+                    _processNextTxItem()
+                    bond.untie(tieId)
+                    if (finalized) next ? _processItem(next, id, msgId) : queue.delete(id) | _save();
+                })
+            }
+            const { address } = queueItem
+            if (!address) return handlePost();
+            const wallet = secretStore().find(address)
+            if (!wallet) {
+                setToast( {
+                    content: `Cannot create a transaction from an address that does not belong to you! Supplied address: ${address}`,
+                    header: `${title}: transaction aborted`,
+                    status: 'error'
+                }, 0, msgId )
+                queue.delete(id)
+                return
+            }
+            msgId = setToast({
+                header: `${title}: checking balance`,
+                content: description,
+                status: 'loading'
+            }, msgDuration, msgId)
 
-                if (finalized) return next ? _processItem(next, id, msgId) : queue.delete(id)
+            txInProgress = true
+            runtime.balances.balance(address).then(balance => {
+                const hasEnough = balance >= MIN_BALANCE
+                if (hasEnough) return handlePost();
+                const continueBtn = (
+                    <button
+                        className="ui button basic mini"
+                        onClick={()=> _processItem(queueItem, id, msgId)}
+                    >
+                        click here
+                    </button>
+                )
+                const cancelBtn = (
+                    <button
+                        className="ui button basic mini"
+                        onClick={()=> queue.delete(id) | _save() | removeToast(msgId)}
+                    >
+                        cancel request
+                    </button>
+                )
+                msgId = setToast({
+                    content: (
+                        <p>
+                            {description} <br />
+                            You must have at least {MIN_BALANCE} Blip balance in the wallet named "{wallet.name}". 
+                            This is requied to create a blockchain transaction.
+                            Once you have enough balance {continueBtn} or reload page to continue or {cancelBtn}
+                        </p>
+                    ),
+                    header: `${title}: Insufficient balance`,
+                    status: 'error',
+                }, 0, msgId)
+                _processNextTxItem()
             })
             break;
         case 'chatclient':

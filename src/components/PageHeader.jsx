@@ -22,14 +22,14 @@ class PageHeader extends ReactiveComponent {
 
 		const user = getUser()
 		this.state = {
-			index: storageService.walletIndex(),
+			// index: storageService.walletIndex(),
 			id: user ? user.id : '',
 		}
 
 		// Update user ID after registration
 		!this.state.id && onLogin(id => id && this.setState({id}))
 
-		this.getSeletectedAddress = () => (this.state.secretStore.keys[this.state.index || 0] || {}).address
+		this.getSeletectedAddress = () => (this.state.secretStore.keys[storageService.walletIndex()] || {}).address
 		this.handleCopy = this.handleCopy.bind(this)
 		this.handleEdit = this.handleEdit.bind(this)
 		this.handleFaucetRequest = this.handleFaucetRequest.bind(this)
@@ -40,7 +40,7 @@ class PageHeader extends ReactiveComponent {
 		const { secretStore } = this.state
 		const num = eval(data.value)
 		const index = num < secretStore.keys.length ? num : 0
-		this.setState({ index })
+		// this.setState({ index })
 		storageService.walletIndex(index)
 	}
 
@@ -53,8 +53,9 @@ class PageHeader extends ReactiveComponent {
 	}
 
 	handleEdit() {
-		const { index, secretStore: ss } = this.state
-		const wallet = (ss.keys[index || 0])
+		const { secretStore: ss } = this.state
+		const index = storageService.walletIndex()
+		const wallet = ss.keys[index]
 		// Create a modal form on-the-fly!
 		const inputs = [
 			{
@@ -71,10 +72,8 @@ class PageHeader extends ReactiveComponent {
 			header: 'Update wallet name',
 			inputs,
 			onSubmit: (e, values) => {
-				const newIndex = ss.keys.length
-				secretStore().forget(wallet)
-				secretStore().submit(wallet.uri, values.name)
-				this.handleSelection(null, {value: newIndex})
+				wallet.name = values.name
+				secretStore()._sync()
 				closeModal(formId)
 			},
 			size: 'tiny',

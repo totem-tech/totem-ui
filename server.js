@@ -193,24 +193,27 @@ io.on('connection', client => {
 		const doCb = isFn(callback)
 		const existingProject = projects.get(hash)
 		if(create && !!existingProject) {
-			return doCb && callback('Project already exists. Please use a different owner address')
+			return doCb && callback('Project already exists. Please use a different owner address and/or name')
 		}
 
 		// check if project contains all the required properties
 		const requiredKeys = ['name', 'ownerAddress', 'description']
+		// All the acceptable keys
+		const validKeys = [...requiredKeys, 'status']
 		const invalid = !hash || !project || requiredKeys.reduce((invalid, key) => invalid || !project[key], false)
 		if (invalid) return doCb && callback(
 			'Project must contain all of the following properties: ' + 
 			requiredKeys.join() + ' and an unique hash'
 		)
 		if (project.description.length > 160) {
-			doCb && callback('Project description must not be more than 160 characters')
+			doCb && callback('Project description must not exceed 160 characters')
 		}
 		// exclude any unwanted data 
-		project = objCopy(objClean(project, requiredKeys), existingProject)
+		project = objCopy(objClean(project, validKeys), existingProject, true)
 		project.status = create ? 0 : (
 			isValidNumber(project.status) ? project.status : 0
 		)
+
 		
 		// Add/update project
 		projects.set(hash, project)
@@ -220,9 +223,10 @@ io.on('connection', client => {
 
 	// update project status
 	// Statuses:
-	// 0 : pending blockchain entry
-	// 1 : open
+	// 0 : open
+	// 1 : reopened
 	// 2 : closed
+	// 99: deleted
 	client.on('project-status', (hash, status, callback) => {
 		const doCb = isFn(callback)
 		const project = projects.get(hash)
