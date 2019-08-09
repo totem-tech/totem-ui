@@ -176,7 +176,7 @@ class ProjectList extends ReactiveComponent {
     }
 
     // Reload project list whenever status of any of the projects changes
-    setToUpdateOnStatusChange(hashes) {
+    setStatusBond(hashes) {
         // return if all the hashes are the same as the ones from previous call
         if (JSON.stringify(this.hashes) === JSON.stringify(hashes)) return;
         this.hashes = hashes
@@ -184,12 +184,51 @@ class ProjectList extends ReactiveComponent {
         if (this.statusBond && this.statusTieId) this.statusBond.untie(this.statusTieId);
         this.statusBond = Bond.all(this.hashes.map(hash => projectHashStatus(hash)))
         this.statusTieId = this.statusBond.tie((statusCodes)=> {
-            // return if all status codes received are exactly same al previously set ones
+            // return if all status codes received are exactly same as previously set ones
             if (JSON.stringify(this.statusCodes) === JSON.stringify(statusCodes))
             this.statusCodes = statusCodes
-            window.statusCodes = statusCodes
             this.loadProjects()
-            console.log('Status updated', statusCodes)
+        })
+    }
+
+    syncStatus(hash, project) {
+        setTimeout(()=> {
+            projectHashStatus(hash).then(status => {
+                if (status === project.status) return;
+                const updateTask = {
+                    type: 'chatclient',
+                    func: 'projectStatus',
+                    args: [
+                        hash,
+                        status,
+                        err => !err && this.loadProjects()
+                    ],
+                    silent: true
+                }
+
+                const createTask = {
+                    type: 'chatclient',
+                    func: 'project',
+                    args: [
+                        hash,
+                        objCopy({status}, project, true),
+                        true,
+                        err => !err && this.loadProjects()
+                    ],
+                    silent: true
+                }
+                // status in the web storage is not the same as blockchain status
+                client.projectsByHashes([hash], (_, projects) => {
+                    // create if not already exists in the web storage, otherwise update status
+                    const create = projects.size === 0
+                    project = create ? project : projects.get(hash)
+                    if (status === project.status) return;
+                    // Hack to prevent same task being executed multiple times
+                    const id = hash+project.status+status+create
+                    addToQueue( create ? createTask : updateTask, id)
+                })
+                
+            })
         })
     }
 
@@ -203,10 +242,15 @@ class ProjectList extends ReactiveComponent {
             hashArr = hashArr.map( hash => pretty(hash) )
             // remove duplicates, if any
             hashArr = Object.keys(hashArr.reduce((obj, address) => { obj[address] = 1; return obj}, {}))
-            this.setToUpdateOnStatusChange(hashArr)
+            this.setStatusBond(hashArr)
             // Get project data from web storage
             client.projectsByHashes( hashArr, (_, projects, notFoundHashes) => {
-                (notFoundHashes || []).forEach(hash => projects.set(hash, {ownerAddress: address, name: 'Unnamed', description: 'N/A'}))
+                (notFoundHashes || []).forEach(hash => projects.set(hash, {
+                    ownerAddress: address,
+                    name: 'Unnamed',
+                    description: 'N/A',
+                    status: -1
+                }))
                 // attach project owner address name if available
                 for (let [hash, project] of projects) {
                     const {ownerAddress} = project
@@ -214,6 +258,7 @@ class ProjectList extends ReactiveComponent {
                     project._ownerName = entry.name
                     project._hash = hash
                     project._statusText = PROJECT_STATUSES[project.status] || 'Unknown'
+                    this.syncStatus(hash, project)
                 }
                 this.setState({projects})
             })

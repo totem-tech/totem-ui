@@ -210,15 +210,13 @@ io.on('connection', client => {
 		}
 		// exclude any unwanted data 
 		project = objCopy(objClean(project, validKeys), existingProject, true)
-		project.status = create ? 0 : (
-			isValidNumber(project.status) ? project.status : 0
-		)
+		project.status = isValidNumber(project.status) ? project.status : 0
 
-		
 		// Add/update project
 		projects.set(hash, project)
 		saveProjects()
 		doCb && callback(null)
+		console.log(`Project ${create ? 'created' : 'updated'}: ${hash}`)
 	})
 
 	// update project status
@@ -228,13 +226,14 @@ io.on('connection', client => {
 	// 2 : closed
 	// 99: deleted
 	client.on('project-status', (hash, status, callback) => {
-		const doCb = isFn(callback)
+		if(!isFn(callback)) return;
 		const project = projects.get(hash)
-		if (!project) return doCb && callback('Project not found');
+		if (!project) return callback('Project not found');
+		console.log('Status update: ', hash, project.status, '>>', status)
 		project.status = status
 		projects.set(hash, project)
-		saveProjects
-		doCb && callback()
+		saveProjects()
+		callback()
 	})
 
 	// user projects by list of wallet addresses
