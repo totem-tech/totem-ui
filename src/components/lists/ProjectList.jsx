@@ -159,11 +159,11 @@ class ProjectList extends ReactiveComponent {
     componentWillMount() {
         const { secretStore: ss } = this.state
         const wallets = ss ? ss.keys : secretStore()._value.keys // force if not ready
-        const selectedWallet = wallets[storageService.walletIndex()]
+        const { address } = wallets[storageService.walletIndex()]
         this.triggerBond = Bond.all([  
             secretStore(),
             storageService.walletIndexBond,
-            ownerProjectsList(selectedWallet.address)
+            ownerProjectsList(address)
         ])
         // reload projects whenever any of the bond's value updates
         this.notifyId =  this.triggerBond.notify(() => this.loadProjects())
@@ -175,11 +175,22 @@ class ProjectList extends ReactiveComponent {
         if (this.statusBond && this.statusTieId) this.statusBond.untie(this.statusTieId);
     }
 
-    setToUpdateOnStatusChange() {
-        if (!this.hashes) return;
+    // Reload project list whenever status of any of the projects changes
+    setToUpdateOnStatusChange(hashes) {
+        // return if all the hashes are the same as the ones from previous call
+        if (JSON.stringify(this.hashes) === JSON.stringify(hashes)) return;
+        this.hashes = hashes
+        // untie existing bond
         if (this.statusBond && this.statusTieId) this.statusBond.untie(this.statusTieId);
         this.statusBond = Bond.all(this.hashes.map(hash => projectHashStatus(hash)))
-        this.statusTieId = this.statusBond.tie(()=> this.loadProjects())
+        this.statusTieId = this.statusBond.tie((statusCodes)=> {
+            // return if all status codes received are exactly same al previously set ones
+            if (JSON.stringify(this.statusCodes) === JSON.stringify(statusCodes))
+            this.statusCodes = statusCodes
+            window.statusCodes = statusCodes
+            this.loadProjects()
+            console.log('Status updated', statusCodes)
+        })
     }
 
     loadProjects() {
@@ -192,8 +203,7 @@ class ProjectList extends ReactiveComponent {
             hashArr = hashArr.map( hash => pretty(hash) )
             // remove duplicates, if any
             hashArr = Object.keys(hashArr.reduce((obj, address) => { obj[address] = 1; return obj}, {}))
-            this.hashes = hashArr
-            this.setToUpdateOnStatusChange()
+            this.setToUpdateOnStatusChange(hashArr)
             // Get project data from web storage
             client.projectsByHashes( hashArr, (_, projects, notFoundHashes) => {
                 (notFoundHashes || []).forEach(hash => projects.set(hash, {ownerAddress: address, name: 'Unnamed', description: 'N/A'}))
