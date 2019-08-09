@@ -14,9 +14,9 @@ import {
 } from 'react-chat-widget'
 import 'react-chat-widget/lib/styles.css'
 import { addToHistory, getClient, getUser, getHistory, getHistoryLimit, onLogin } from '../services/ChatClient'
-import { copyToClipboard, getNow, objCopy } from './utils'
+import { copyToClipboard, getNow, objCopy } from '../utils/utils'
 import TotemLogoCircle from '../assets/totem-button-grey.png';
-import Register from './forms/Register'
+import Register from '../forms/Register'
 
 const historyLimit = getHistoryLimit()
 const eventTypes = [

@@ -2,9 +2,9 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Button, Checkbox, Dropdown, Form, Header, Icon, Input, Message, Modal, TextArea } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
-import { isDefined, isArr, isBond, isFn, isObj, objCopy, objWithoutKeys, newMessage } from '../utils';
-import { InputBond } from '../../InputBond'
-import { AccountIdBond } from '../../AccountIdBond'
+import { isDefined, isArr, isBond, isFn, isObj, objCopy, objWithoutKeys, newMessage } from '../utils/utils';
+import { InputBond } from '../InputBond'
+import { AccountIdBond } from '../AccountIdBond'
 
 // ToDo: automate validation process by checking for data on input change
 //       and prevent submission of form if data is invalid and/or required field in empty

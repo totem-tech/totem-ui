@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import {ReactiveComponent} from 'oo7-react'
 import { Icon, Menu, Sidebar } from 'semantic-ui-react'
 // import SystemStatus from './SystemStatus'
-import { IfFn } from './utils'
+import { IfFn } from '../utils/utils'
 
 class SidebarLeft extends ReactiveComponent {
 	constructor(props) {

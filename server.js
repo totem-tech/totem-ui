@@ -1,5 +1,5 @@
 import express from 'express'
-import { isArr, isFn, isObj, isStr, isValidNumber, hasValue, mapCopy, mapFindByKey, mapSearch, objClean, objCopy } from './src/components/utils'
+import { isArr, isFn, isObj, isStr, isValidNumber, hasValue, mapCopy, mapFindByKey, mapSearch, objClean, objCopy } from './src/utils/utils'
 
 const httpPort = 80
 const httpsPort = 443

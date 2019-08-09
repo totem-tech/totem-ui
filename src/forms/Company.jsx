@@ -1,10 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
-import FormBuilder from './FormBuilder'
+import FormBuilder from '../components/FormBuilder'
 import faker from 'faker'
-import { isDefined, isFn } from '../utils';
-import client from '../../services/ChatClient'
+import { isDefined, isFn } from '../utils/utils'
+import client from '../services/ChatClient'
 
 class Company extends ReactiveComponent {
     constructor(props) {

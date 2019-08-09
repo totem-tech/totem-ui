@@ -1,10 +1,10 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
-import ContentSegment from './ContentSegment'
+import ContentSegment from '../components/ContentSegment'
 import UpgradeView from './UpgradeView'
 import TransactionsView from './TransactionsView'
 import PokeView from './PokeView'
-import SystemStatus from './SystemStatus'
+import SystemStatus from '../components/SystemStatus'
 
 class UtilitiesView extends ReactiveComponent {
     constructor() {

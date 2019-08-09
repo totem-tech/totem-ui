@@ -2,7 +2,7 @@ import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import { pretty, runtime, ss58Decode } from 'oo7-substrate'
 import { Button } from 'semantic-ui-react'
-import { setState, setStateTimeout } from './utils'
+import { setState, setStateTimeout } from '../utils/utils'
 
 class BalanceButton extends ReactiveComponent {
     constructor(props) {

@@ -1,5 +1,5 @@
 import io from 'socket.io-client'
-import { isFn, isArr } from '../components/utils'
+import { isFn, isArr } from '../utils/utils'
 import storageService from './storage'
 
 const port = 3001

@@ -1,11 +1,11 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import { runtimeUp } from 'oo7-substrate'
-import { AddressBookList } from './AddressBookList'
+import { PartnerList } from '../lists/PartnerList'
 import addressbook from '../services/addressbook'
-import AddressbookEntryForm from './forms/AddressbookEntry'
+import PartnerForm from '../forms/Partner'
 
-class AddressBookView extends ReactiveComponent {
+class PartnerView extends ReactiveComponent {
 	constructor() {
 		super([], {ensureRuntime: runtimeUp, bond: addressbook.getBond()})
 	}
@@ -14,11 +14,11 @@ class AddressBookView extends ReactiveComponent {
 
 		return (
 			<div style={{ paddingBottom: '1em' }}>
-				<AddressbookEntryForm />
-				<AddressBookList />
+				<PartnerForm />
+				<PartnerList />
 			</div>
 		)
 	}
 }
 
-export default AddressBookView
+export default PartnerView

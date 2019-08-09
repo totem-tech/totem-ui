@@ -2,8 +2,8 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { Button, Card, Dropdown, Grid, Icon, Image, Input, Menu, Table } from 'semantic-ui-react'
-import { arrMapSlice, getKeys, IfMobile, isArr, isDefined, isFn, objWithoutKeys, objCopy, search, sort } from '../utils'
-import { FormInput } from '../forms/FormBuilder'
+import { arrMapSlice, getKeys, IfMobile, isArr, isDefined, isFn, objWithoutKeys, objCopy, search, sort } from '../utils/utils'
+import { FormInput } from '../components/FormBuilder'
 
 class ListFactory extends ReactiveComponent {
     constructor(props) {

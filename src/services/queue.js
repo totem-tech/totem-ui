@@ -8,7 +8,7 @@ import client from'./ChatClient'
 import blockchain from './blockchain'
 import storageService from './storage'
 import { removeToast, setToast } from './toast'
-import { isArr, isFn, isObj, objClean } from '../components/utils'
+import { isArr, isFn, isObj, objClean } from '../utils/utils'
 
 const queue = storageService.queue()
 // Minimum balance required to make a transaction

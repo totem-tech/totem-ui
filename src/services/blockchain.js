@@ -1,6 +1,6 @@
 // import { Bond } from 'oo7'
 import { addCodecTransform, calls, hexToBytes, post, runtime, ss58Decode } from 'oo7-substrate'
-import { isBond } from '../components/utils'
+import { isBond } from '../utils/utils'
 
 const validatedAddress = address => runtime.indices.tryIndex(
     new Bond().defaultTo(ss58Decode(isBond(address) ? address._value : address)

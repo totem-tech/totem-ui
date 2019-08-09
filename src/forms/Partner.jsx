@@ -2,16 +2,16 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import { ReactiveComponent} from 'oo7-react'
-import { TransformBondButton } from '../../TransformBondButton'
-import { deferred, IfMobile, isFn, isObj } from '../utils'
-import addressbook, { setPublic } from '../../services/addressbook'
-import FormBuilder, { fillValues } from './FormBuilder'
-import client from '../../services/ChatClient'
-import {showForm} from '../../services/modal'
+import { TransformBondButton } from '../TransformBondButton'
+import { deferred, IfMobile, isFn, isObj } from '../utils/utils'
+import addressbook, { setPublic } from '../services/addressbook'
+import FormBuilder, { fillValues } from '../components/FormBuilder'
+import client from '../services/ChatClient'
+import {showForm} from '../services/modal'
 import CompanyForm from './Company'
 // import AddressLookup from '../AddressLookup'
 
-class AddressbookEntry extends ReactiveComponent {
+class Partner extends ReactiveComponent {
     constructor(props) {
         super(props)
 
@@ -263,7 +263,7 @@ class AddressbookEntry extends ReactiveComponent {
         return <IfMobile then={getForm(true)} else={getForm(false)} />
     }
 }
-AddressbookEntry.propTypes = {
+Partner.propTypes = {
     closeOnSubmit: PropTypes.bool,
     header: PropTypes.string,
     // index number in the addressbook list
@@ -277,8 +277,8 @@ AddressbookEntry.propTypes = {
     // values to be prefilled into inputs
     values: PropTypes.object,
 }
-AddressbookEntry.defaultProps = {
+Partner.defaultProps = {
     closeOnSubmit: true,
     size: 'tiny'
 }
-export default AddressbookEntry
+export default Partner

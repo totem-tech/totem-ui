@@ -2,13 +2,13 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { runtime, secretStore } from 'oo7-substrate'
-import FormBuilder, { fillValues } from './FormBuilder'
-import { arrSort, generateHash, isDefined, isFn, isObj, objCopy } from '../utils'
-import storageService  from '../../services/storage'
-import { addToQueue } from '../../services/queue'
-import { Pretty } from '../../Pretty'
-import addressbook from '../../services/addressbook';
-import { confirm } from '../../services/modal'
+import FormBuilder, { fillValues } from '../components/FormBuilder'
+import { arrSort, generateHash, isDefined, isFn, isObj, objCopy } from '../utils/utils'
+import storageService  from '../services/storage'
+import { addToQueue } from '../services/queue'
+import { Pretty } from '../Pretty'
+import addressbook from '../services/addressbook';
+import { confirm } from '../services/modal'
 
 // Create or update project form
 class Project extends ReactiveComponent {
@@ -320,7 +320,7 @@ export class ReassignProjectForm extends ReactiveComponent {
                 ]
             }
         }
-        const setMsg = ()=> this.setState({
+        const proceed = ()=> addToQueue(task) | this.setState({
             message: {
                 header: 'Re-assign request added to queue',
                 content: 'Your request has been added to queue. ',
@@ -330,13 +330,13 @@ export class ReassignProjectForm extends ReactiveComponent {
             success: true
         })
 
-        !!walletExists ? addToQueue(task) | setMsg() : confirm({
+        !!walletExists ? proceed() : confirm({
             cancelButton: { content: 'Cancel', color: 'green' },
-            confirmButton: { content: 'Proceed', color: 'red', primary: false },
+            confirmButton: { content: 'Proceed', negative: true },
             content: 'You are about to assign owner of this project to an address that does not belong to you.'
                 + ' If you proceed, you will no longer be able to update this project.',
             header: 'Are you sure?',
-            onConfirm: () => addToQueue(task) | setMsg(),
+            onConfirm: () => proceed(),
             size: 'tiny'
         })
     }

@@ -8,20 +8,20 @@ import {
 } from 'oo7-substrate'
 
 // Components
+import PartnerView from './views/PartnerView'
+import SendFundsView from './views/SendFundsView'
+import UtilitiesView from './views/UtilitiesView'
+import WalletView from './views/WalletView'
 import ErrorBoundary from './components/CatchReactErrors'
-import AddressBookView from './components/AddressBookView'
 import ChatWidget from './components/ChatWidget'
 import ContentSegment from './components/ContentSegment'
 import PageHeader from './components/PageHeader'
-import ProjectList from './components/lists/ProjectList'
-import SendFundsView from './components/SendFundsView'
+import ProjectList from './lists/ProjectList'
 import SidebarLeft from './components/SidebarLeft'
-import UtilitiesView from './components/UtilitiesView'
-import WalletView from './components/WalletView'
-import ModalService, {confirm } from './services/modal'
-import ToastService, { setToast, removeToast } from './services/toast'
+import ModalService from './services/modal'
+import ToastService from './services/toast'
 import { resumeQueue } from './services/queue'
-import { IfFn, IfMobile } from './components/utils'
+import { IfMobile } from './utils/utils'
 // Images
 import TotemButtonLogo from'./assets/totem-button-grey.png'
 
@@ -183,7 +183,7 @@ const sidebarItems = [
 		header: "Vendors and Customers",
 		subHeader: "Inspect the status of any account and name it for later use",
 		active: false,
-		content: <AddressBookView />
+		content: <PartnerView />
 	},
 	// { icon: "file alternate", title: "Invoice", subHeader: "", active: false, content: <Invoice /> },
 	{ icon: "pen square", title: "Manage Invoices", subHeader: "" },
