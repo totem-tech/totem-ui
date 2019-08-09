@@ -264,13 +264,14 @@ io.on('connection', client => {
 	client.on('projects-by-hashes', (hashArr, callback) => {
 		if (!isFn(callback)) return;
 		if (!isArr(hashArr) ) return callback('Array of project hashes required')
+		const hashesNotFound = new Array()
 		// Find all projects by supplied hash and return Map
 		const result = hashArr.reduce((res, hash) => {
 			const project = projects.get(hash)
-			if (project) res.set(hash, project)
+			!!project ? res.set(hash, project) : hashesNotFound.push(hash)
 			return res
 		}, new Map())
-		callback(null, result)
+		callback(null, result, hashesNotFound)
 	})
 
 	// search all projects

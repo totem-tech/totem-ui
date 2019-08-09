@@ -72,7 +72,7 @@ class ProjectList extends ReactiveComponent {
                 {
                     active: false,
                     name: 'close',
-                    content: 'Close',
+                    content: 'Close', //Close/Reopen
                     disabled: true,
                     icon: 'toggle off',
                     onClick: (selectedHashes) => {
@@ -93,11 +93,10 @@ class ProjectList extends ReactiveComponent {
                                 description: `Name: ${name}`,
                                 next: {
                                     type: 'chatclient',
-                                    func: 'project',
+                                    func: 'projectStatus',
                                     args: [
                                         hash,
-                                        objCopy({status: targetStatus}, projects.get(hash), true),
-                                        false,
+                                        targetStatus,
                                         err => !err && this.loadProjects()
                                     ]
                                 }
@@ -199,12 +198,13 @@ class ProjectList extends ReactiveComponent {
         const { address } = wallets[storageService.walletIndex()]
         return ownerProjectsList(address).then( hashArr => {
             if (!isArr(hashArr) || hashArr.length === 0) return this.setState({projects: new Map()});
-            // convert to string and add 0x prefix
+            // convert to string
             hashArr = hashArr.map( hash => pretty(hash) )
             // remove duplicates, if any
             hashArr = Object.keys(hashArr.reduce((obj, address) => { obj[address] = 1; return obj}, {}))
             // Get project data from web storage
-            client.projectsByHashes( hashArr, (_, projects) => {
+            client.projectsByHashes( hashArr, (_, projects, notFoundHashes) => {
+                (notFoundHashes || []).forEach(hash => projects.set(hash, {ownerAddress: address, name: 'Unnamed'}))
                 // attach project owner address name if available
                 for (let [hash, project] of projects) {
                     const {ownerAddress} = project
@@ -321,7 +321,6 @@ class ProjectList extends ReactiveComponent {
                     content: (project, hash) => (
                         <Button 
                             onClick={() => this.showDetails(project, hash)}
-                            // content={mobile ? '' : 'Details'} 
                             icon={{
                                 className: mobile? 'no-margin' : '',
                                 name: 'eye'
