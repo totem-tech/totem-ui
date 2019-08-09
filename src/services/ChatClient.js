@@ -79,7 +79,7 @@ export class ChatClient {
             'projects', walletAddrs, (err, res) => cb(err, new Map(res))
         )
         this.projectsByHashes = (hashArr, cb) => isFn(cb) && socket.emit(
-            'projects-by-hashes', hashArr, (err, res, notFoundHashed) => cb(err, new Map(res), notFoundHashed)
+            'projects-by-hashes', hashArr, (err, res, notFoundHashes) => cb(err, new Map(res), notFoundHashes)
         )
         // user projects received
         // @cb function : params =>

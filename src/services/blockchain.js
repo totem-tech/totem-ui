@@ -38,6 +38,12 @@ export const ownerProjectsList = address => {
     return runtime.projects.ownerProjectsList(ss58Decode(address))
 }
 
+//
+export const projectHashStatus = hash => {
+    addCodecTransform('ProjectStatus', 'u16')
+    return runtime.projects.projectHashStatus(hashHexToBytes(hash))
+}
+
 // reassignProject transfers ownership of a project to a new owner address 
 //
 // Params:

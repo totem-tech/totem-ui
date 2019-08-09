@@ -1,5 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { pretty, secretStore } from 'oo7-substrate'
 import { Button } from 'semantic-ui-react'
@@ -8,10 +9,9 @@ import FormBuilder from '../forms/FormBuilder'
 import ProjectForm, { ReassignProjectForm } from '../forms/Project'
 import { deferred, isArr, IfMobile, objCopy } from '../utils'
 import { confirm, showForm } from '../../services/modal'
-import addressbook from '../../services/addressbook'
 import client from '../../services/ChatClient'
 import storageService from '../../services/storage'
-import { ownerProjectsList } from '../../services/blockchain'
+import { ownerProjectsList, projectHashStatus } from '../../services/blockchain'
 import { addToQueue } from '../../services/queue'
 
 const toBeImplemented = ()=> alert('To be implemented')
@@ -26,15 +26,8 @@ class ProjectList extends ReactiveComponent {
 
         this.getContent = this.getContent.bind(this)
         this.loadProjects = deferred(this.loadProjects, 100, this)
-
         this.state = {
             actionsIndex: -1,
-            bonds: [
-                this.getSelectedHashesBond(), // keep at index 0
-                addressbook.getBond(),
-                secretStore(),
-                storageService.walletIndexBond,
-            ],
             projects: new Map(),
             topLeftMenu : [
                 {
@@ -97,7 +90,7 @@ class ProjectList extends ReactiveComponent {
                                     args: [
                                         hash,
                                         targetStatus,
-                                        err => !err && this.loadProjects()
+                                        err => !err //&& this.loadProjects()
                                     ]
                                 }
                             })
@@ -129,12 +122,11 @@ class ProjectList extends ReactiveComponent {
                                 description: `Name: ${name}`,
                                 next: {
                                     type: 'chatclient',
-                                    func: 'project',
+                                    func: 'projectStatus',
                                     args: [
                                         hash,
-                                        objCopy({status: targetStatus}, projects.get(hash), true),
-                                        false,
-                                        err => !err && this.loadProjects()
+                                        targetStatus,
+                                        () => {} // placeholder callback. required for data service
                                     ]
                                 }
                             })
@@ -164,32 +156,30 @@ class ProjectList extends ReactiveComponent {
         }
     }
 
-    // Selected wallet hashes bond
-    getSelectedHashesBond() {
+    componentWillMount() {
         const { secretStore: ss } = this.state
         const wallets = ss ? ss.keys : secretStore()._value.keys // force if not ready
         const selectedWallet = wallets[storageService.walletIndex()]
-        return ownerProjectsList(selectedWallet.address)
-    }
-
-    componentWillMount() {
-        const cb = () => this.loadProjects()
+        this.triggerBond = Bond.all([  
+            secretStore(),
+            storageService.walletIndexBond,
+            ownerProjectsList(selectedWallet.address)
+        ])
         // reload projects whenever any of the bond's value updates
-        this.state.bonds.map(bond => bond.__tieId = bond.tie(cb) )
-
-        // Update project hashes bond whenever selected wallet changes
-        storageService.walletIndexBond.tie(()=> {
-            const { bonds } = this.state
-            bonds[0].untie(bonds[0].__tieId)
-            bonds[0] = this.getSelectedHashesBond()
-            bonds[0].__tieId = bonds[0].tie(cb)
-            this.setState({bonds})
-        })
+        this.notifyId =  this.triggerBond.notify(() => this.loadProjects())
     }
 
     componentWillUnmount() {
         // unsubscribe from updates
-        this.state.bonds.map(bond => bond.untie(bond.__tieId))
+        this.triggerBond.unnotify(this.notifyId)
+        if (this.statusBond && this.statusTieId) this.statusBond.untie(this.statusTieId);
+    }
+
+    setToUpdateOnStatusChange() {
+        if (!this.hashes) return;
+        if (this.statusBond && this.statusTieId) this.statusBond.untie(this.statusTieId);
+        this.statusBond = Bond.all(this.hashes.map(hash => projectHashStatus(hash)))
+        this.statusTieId = this.statusBond.tie(()=> this.loadProjects())
     }
 
     loadProjects() {
@@ -202,13 +192,15 @@ class ProjectList extends ReactiveComponent {
             hashArr = hashArr.map( hash => pretty(hash) )
             // remove duplicates, if any
             hashArr = Object.keys(hashArr.reduce((obj, address) => { obj[address] = 1; return obj}, {}))
+            this.hashes = hashArr
+            this.setToUpdateOnStatusChange()
             // Get project data from web storage
             client.projectsByHashes( hashArr, (_, projects, notFoundHashes) => {
-                (notFoundHashes || []).forEach(hash => projects.set(hash, {ownerAddress: address, name: 'Unnamed'}))
+                (notFoundHashes || []).forEach(hash => projects.set(hash, {ownerAddress: address, name: 'Unnamed', description: 'N/A'}))
                 // attach project owner address name if available
                 for (let [hash, project] of projects) {
                     const {ownerAddress} = project
-                    const entry = wallets.find(x => x.address === ownerAddress) || addressbook.getByAddress(ownerAddress) || {}
+                    const entry = wallets.find(x => x.address === ownerAddress) || {}
                     project._ownerName = entry.name
                     project._hash = hash
                     project._statusText = PROJECT_STATUSES[project.status] || 'Unknown'
