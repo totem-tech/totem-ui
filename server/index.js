@@ -93,8 +93,8 @@ io.on('connection', client => {
 		if (!user) return;
 		const clientIdIndex = user.clientIds.findIndex(cid => cid === client.id)
 		user.clientIds.splice(clientIdIndex, 1)
-		user.online = false
 		console.info('Client disconnected: ', client.id)
+		saveUsers()
 	})
 
 	client.on('message', (msg, callback) => {
@@ -130,8 +130,6 @@ io.on('connection', client => {
 		const newUser = {
 			id: userId,
 			secret: secret,
-			joined: new Date(),
-			online: true,
 			clientIds: [client.id]
 		}
 		users.set(userId, newUser)
@@ -147,7 +145,6 @@ io.on('connection', client => {
 		let err;
 		if (valid) {
 			user.clientIds.push(client.id)
-			user.online = true
 			clients.set(client.id, client)
 		} else {
 			err = errMsgs.loginFailed
