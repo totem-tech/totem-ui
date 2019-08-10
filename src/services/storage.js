@@ -3,7 +3,7 @@
  * Typically this should be used by other services
  */
 import { Bond } from 'oo7'
-import { isArr, isObjMap, isStr, isValidNumber } from '../components/utils'
+import { isArr, isObjMap, isStr, isValidNumber } from '../utils/utils'
 // Local Storage item key prefix for all items
 const PREFIX = 'totem_'
 const storage = {}

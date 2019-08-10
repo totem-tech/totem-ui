@@ -4,10 +4,10 @@ import { ReactiveComponent } from 'oo7-react'
 import {runtime, secretStore} from 'oo7-substrate'
 import Identicon from 'polkadot-identicon'
 import { Label } from 'semantic-ui-react'
-import { copyToClipboard, IfMobile, IfNotMobile, isObj, setState, setStateTimeout, textEllipsis } from '../utils'
-import ListFactory, { CardListItem} from './ListFactory'
-import storageService from '../../services/storage'
-import { confirm } from '../../services/modal'
+import { copyToClipboard, IfMobile, IfNotMobile, isObj, setState, setStateTimeout, textEllipsis } from '../utils/utils'
+import ListFactory, { CardListItem} from '../components/ListFactory'
+import storageService from '../services/storage'
+import { confirm } from '../services/modal'
 
 
 export class WalletItem extends ReactiveComponent {
@@ -37,6 +37,7 @@ export class WalletItem extends ReactiveComponent {
         const isOnlyItem = total === 1
         if (!isSelected && !isOnlyItem) {
             return confirm({
+                confirmButton: {content: 'Delete', negative: true},
                 header: 'Delete wallet?',
                 onConfirm: () => {
                     // If "to be deleted" index is lower than the selected index,

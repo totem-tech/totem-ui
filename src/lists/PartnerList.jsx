@@ -4,11 +4,11 @@ import {ReactiveComponent} from 'oo7-react'
 import { runtime } from 'oo7-substrate'
 import Identicon from 'polkadot-identicon'
 import addressbook from '../services/addressbook'
-import AddressBookEntryForm from './forms/AddressbookEntry'
-import CompanyForm from './forms/Company'
+import PartnerForm from '../forms/Partner'
+import CompanyForm from '../forms/Company'
 import { showForm } from '../services/modal'
 
-export class AddressBookList extends ReactiveComponent {
+export class PartnerList extends ReactiveComponent {
 	constructor () {
 		super([], {
 			addressbook: addressbook.getBond(),
@@ -18,16 +18,6 @@ export class AddressBookList extends ReactiveComponent {
 				return r
 			})
 		})
-
-		// const form = new CompanyForm({})
-		// form.props = {walletAddress: '5Eq545EpReo2NhEnQ3QqiRigfHSTDgjrNWx8m7EbmPLXRKqi'}
-		// form.handleSubmit({}, {
-		// 	name: 'test company',
-		// 	walletAddress: '5Eq545EpReo2NhEnQ3QqiRigfHSTDgjrNWx8m7EbmPLXRKqi',
-		// 	registrationNumber: '123123432',
-		// 	country: 'Bangladesh'
-
-		// })
 	}
 
 	readyRender () {
@@ -38,7 +28,7 @@ export class AddressBookList extends ReactiveComponent {
 						<List.Content floated="right">
 							<Button
 								size="small"
-								onClick={() => showForm(AddressBookEntryForm, {index: i, open: true, values: item})}
+								onClick={() => showForm(PartnerForm, {index: i, open: true, values: item})}
 							>
 								Update
 							</Button>

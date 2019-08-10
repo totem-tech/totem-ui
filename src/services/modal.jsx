@@ -3,7 +3,7 @@ import uuid from 'uuid'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { Confirm } from 'semantic-ui-react'
-import { isDefined, isFn, isStr } from '../components/utils'
+import { isDefined, isFn, isStr } from '../utils/utils'
 const modals = new Map()
 // Use Bond as a way to trigger update to the ModalService component
 const trigger = new Bond()

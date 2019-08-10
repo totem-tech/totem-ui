@@ -2,8 +2,8 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { Button, Card, Dropdown, Grid, Icon, Image, Input, Menu, Table } from 'semantic-ui-react'
-import { arrMapSlice, getKeys, IfMobile, isArr, isDefined, isFn, objWithoutKeys, objCopy, search, sort } from '../utils'
-import { FormInput } from '../forms/FormBuilder'
+import { arrMapSlice, getKeys, IfMobile, isArr, isDefined, isFn, objWithoutKeys, objCopy, search, sort } from '../utils/utils'
+import { FormInput } from '../components/FormBuilder'
 
 class ListFactory extends ReactiveComponent {
     constructor(props) {
@@ -195,9 +195,8 @@ export class DataTable extends ReactiveComponent {
         }
     }
 
-    handleRowSelect(key) {
+    handleRowSelect(key, selectedIndexes) {
         const { onRowSelect } = this.props
-        let { selectedIndexes } = this.state
         const index = selectedIndexes.indexOf(key)
         if (index < 0) {
             selectedIndexes.push(key)
@@ -208,9 +207,8 @@ export class DataTable extends ReactiveComponent {
         this.setState({selectedIndexes})
     }
 
-    handleAllSelect() {
+    handleAllSelect(selectedIndexes) {
         const { data, onRowSelect } = this.props
-        let { selectedIndexes } = this.state
         const total = data.size || data.length
         const totalSelected = selectedIndexes.length
         selectedIndexes = total === totalSelected ? [] : getKeys(data)
@@ -218,9 +216,9 @@ export class DataTable extends ReactiveComponent {
         this.setState({selectedIndexes})
     }
 
-    getTopContent(mobile, totalRows) {
+    getTopContent(mobile, totalRows, selectedIndexes) {
         let { topLeftMenu, topRightMenu } = this.props
-        const { keywords, selectedIndexes } = this.state
+        const { keywords } = this.state
   
         const searchCol = (
             <Grid.Column key="0" tablet={16} computer={5} style={{padding: 0}}>
@@ -276,14 +274,14 @@ export class DataTable extends ReactiveComponent {
         )
     }
 
-    getRows(filteredData, columns) {
+    getRows(filteredData, columns, selectedIndexes) {
         let { perPage, selectable } = this.props
-        const { pageNo, selectedIndexes } = this.state
+        const { pageNo } = this.state
 
         return mapItemsByPage(filteredData, pageNo, perPage, (item, key, items, isMap) => (
             <Table.Row key={key}>
                 { selectable && ( /* include checkbox to select items */
-                    <Table.Cell onClick={() => this.handleRowSelect(key)} style={styles.checkboxCell}>
+                    <Table.Cell onClick={() => this.handleRowSelect(key, selectedIndexes)} style={styles.checkboxCell}>
                         <Icon 
                             name={(selectedIndexes.indexOf(key) >= 0 ? 'check ' : '') +'square outline'}
                             size="large"
@@ -308,9 +306,9 @@ export class DataTable extends ReactiveComponent {
         ))
     }
 
-    getHeaders(totalRows, columns) {
+    getHeaders(totalRows, columns, selectedIndexes) {
         let { selectable } = this.props
-        const { selectedIndexes, sortAsc, sortBy } = this.state
+        const { sortAsc, sortBy } = this.state
 
         const headers = columns.map((x, i) => (
             <Table.HeaderCell 
@@ -330,7 +328,7 @@ export class DataTable extends ReactiveComponent {
             headers.splice(0, 0, (
                 <Table.HeaderCell
                     key="checkbox"
-                    onClick={() => this.handleAllSelect()}
+                    onClick={() => this.handleAllSelect(selectedIndexes)}
                     style={styles.checkboxCell}
                     title={`${n === totalRows ? 'Deselect' : 'Select'} all`}
                 >
@@ -368,7 +366,8 @@ export class DataTable extends ReactiveComponent {
 
     render() {
         let {  data, columns: columnsOriginal, footerContent, perPage, searchExtraKeys } = this.props
-        const { keywords, sortAsc, sortBy } = this.state
+        let { keywords, selectedIndexes, sortAsc, sortBy } = this.state
+        data = data || []
         const columns = columnsOriginal.filter(x => !!x)
         const keys = columns.filter(x => !!x.key).map(x => x.key)
         // Include extra searcheable keys that are not visibile on the table
@@ -376,14 +375,15 @@ export class DataTable extends ReactiveComponent {
             searchExtraKeys.forEach(key => keys.indexOf(key) === -1 & keys.push(key))
         }
         const filteredData = sort(search(data, keywords, keys), sortBy, !sortAsc)
+        selectedIndexes = selectedIndexes.filter(index => !!(isArr(data) ? data[index] : data.get(index)))
         const totalRows = filteredData.length || filteredData.size
         const totalPages = Math.ceil(totalRows / perPage)
-        const headers = this.getHeaders(totalRows, columns)
-        const rows = this.getRows(filteredData, columns)
+        const headers = this.getHeaders(totalRows, columns, selectedIndexes)
+        const rows = this.getRows(filteredData, columns, selectedIndexes)
 
         return (
             <div>
-                <IfMobile then={this.getTopContent(true, totalRows)} else={this.getTopContent(false, totalRows)} />
+                <IfMobile then={this.getTopContent(true, totalRows, selectedIndexes)} else={this.getTopContent(false, totalRows, selectedIndexes)} />
                 {totalRows > 0 && (
                     <div style={{overflowX: 'auto'}}>
                         <Table celled selectable sortable unstackable singleLine>

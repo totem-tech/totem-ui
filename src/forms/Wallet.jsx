@@ -6,9 +6,9 @@ import { runtimeUp, secretStore } from 'oo7-substrate'
 import Identicon from 'polkadot-identicon'
 const { generateMnemonic } = require('bip39')
 import { Button } from 'semantic-ui-react'
-import FormBuilder, { fillValues } from './FormBuilder'
-import { TransformBondButton } from '../../TransformBondButton'
-import { IfMobile, isFn, isObj } from '../utils'
+import FormBuilder, { fillValues } from '../components/FormBuilder'
+import { TransformBondButton } from '../TransformBondButton'
+import { IfMobile, isFn, isObj } from '../utils/utils'
 
 class Wallet extends ReactiveComponent {
     constructor(props) {

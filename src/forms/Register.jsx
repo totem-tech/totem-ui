@@ -3,9 +3,9 @@ import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import uuid from 'uuid'
 import { dropMessages, addResponseMessage, isWidgetOpened, toggleWidget } from 'react-chat-widget'
-import FormBuilder from './FormBuilder'
-import { deferred, isFn } from '../utils'
-import { getClient } from '../../services/ChatClient'
+import FormBuilder from '../components/FormBuilder'
+import { deferred, isFn } from '../utils/utils'
+import { getClient } from '../services/ChatClient'
 
 const nameRegex = /^($|[a-z]|[a-z][a-z0-9]+)$/
 

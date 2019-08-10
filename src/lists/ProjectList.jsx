@@ -1,18 +1,18 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { pretty, secretStore } from 'oo7-substrate'
 import { Button } from 'semantic-ui-react'
-import ListFactory from './ListFactory'
-import FormBuilder from '../forms/FormBuilder'
+import ListFactory from '../components/ListFactory'
+import FormBuilder from '../components/FormBuilder'
 import ProjectForm, { ReassignProjectForm } from '../forms/Project'
-import { deferred, isArr, IfMobile, objCopy } from '../utils'
-import { confirm, showForm } from '../../services/modal'
-import addressbook from '../../services/addressbook'
-import client from '../../services/ChatClient'
-import storageService from '../../services/storage'
-import { ownerProjectsList } from '../../services/blockchain'
-import { addToQueue } from '../../services/queue'
+import { deferred, isArr, IfMobile, objCopy } from '../utils/utils'
+import { confirm, showForm } from '../services/modal'
+import client from '../services/ChatClient'
+import storageService from '../services/storage'
+import { ownerProjectsList, projectHashStatus } from '../services/blockchain'
+import { addToQueue } from '../services/queue'
 
 const toBeImplemented = ()=> alert('To be implemented')
 
@@ -26,15 +26,8 @@ class ProjectList extends ReactiveComponent {
 
         this.getContent = this.getContent.bind(this)
         this.loadProjects = deferred(this.loadProjects, 100, this)
-
         this.state = {
             actionsIndex: -1,
-            bonds: [
-                this.getSelectedHashesBond(), // keep at index 0
-                addressbook.getBond(),
-                secretStore(),
-                storageService.walletIndexBond,
-            ],
             projects: new Map(),
             topLeftMenu : [
                 {
@@ -72,7 +65,7 @@ class ProjectList extends ReactiveComponent {
                 {
                     active: false,
                     name: 'close',
-                    content: 'Close',
+                    content: 'Close', //Close/Reopen
                     disabled: true,
                     icon: 'toggle off',
                     onClick: (selectedHashes) => {
@@ -93,12 +86,11 @@ class ProjectList extends ReactiveComponent {
                                 description: `Name: ${name}`,
                                 next: {
                                     type: 'chatclient',
-                                    func: 'project',
+                                    func: 'projectStatus',
                                     args: [
                                         hash,
-                                        objCopy({status: targetStatus}, projects.get(hash), true),
-                                        false,
-                                        err => !err && this.loadProjects()
+                                        targetStatus,
+                                        err => !err //&& this.loadProjects()
                                     ]
                                 }
                             })
@@ -130,12 +122,11 @@ class ProjectList extends ReactiveComponent {
                                 description: `Name: ${name}`,
                                 next: {
                                     type: 'chatclient',
-                                    func: 'project',
+                                    func: 'projectStatus',
                                     args: [
                                         hash,
-                                        objCopy({status: targetStatus}, projects.get(hash), true),
-                                        false,
-                                        err => !err && this.loadProjects()
+                                        targetStatus,
+                                        () => {} // placeholder callback. required for data service
                                     ]
                                 }
                             })
@@ -165,32 +156,80 @@ class ProjectList extends ReactiveComponent {
         }
     }
 
-    // Selected wallet hashes bond
-    getSelectedHashesBond() {
+    componentWillMount() {
         const { secretStore: ss } = this.state
         const wallets = ss ? ss.keys : secretStore()._value.keys // force if not ready
-        const selectedWallet = wallets[storageService.walletIndex()]
-        return ownerProjectsList(selectedWallet.address)
-    }
-
-    componentWillMount() {
-        const cb = () => this.loadProjects()
+        const { address } = wallets[storageService.walletIndex()]
+        this.triggerBond = Bond.all([  
+            secretStore(),
+            storageService.walletIndexBond,
+            ownerProjectsList(address)
+        ])
         // reload projects whenever any of the bond's value updates
-        this.state.bonds.map(bond => bond.__tieId = bond.tie(cb) )
-
-        // Update project hashes bond whenever selected wallet changes
-        storageService.walletIndexBond.tie(()=> {
-            const { bonds } = this.state
-            bonds[0].untie(bonds[0].__tieId)
-            bonds[0] = this.getSelectedHashesBond()
-            bonds[0].__tieId = bonds[0].tie(cb)
-            this.setState({bonds})
-        })
+        this.notifyId =  this.triggerBond.notify(() => this.loadProjects())
     }
 
     componentWillUnmount() {
         // unsubscribe from updates
-        this.state.bonds.map(bond => bond.untie(bond.__tieId))
+        this.triggerBond.unnotify(this.notifyId)
+        if (this.statusBond && this.statusTieId) this.statusBond.untie(this.statusTieId);
+    }
+
+    // Reload project list whenever status of any of the projects changes
+    setStatusBond(hashes) {
+        // return if all the hashes are the same as the ones from previous call
+        if (JSON.stringify(this.hashes) === JSON.stringify(hashes)) return;
+        this.hashes = hashes
+        // untie existing bond
+        if (this.statusBond && this.statusTieId) this.statusBond.untie(this.statusTieId);
+        this.statusBond = Bond.all(this.hashes.map(hash => projectHashStatus(hash)))
+        this.statusTieId = this.statusBond.tie((statusCodes)=> {
+            // return if all status codes received are exactly same as previously set ones
+            if (JSON.stringify(this.statusCodes) === JSON.stringify(statusCodes))
+            this.statusCodes = statusCodes
+            this.loadProjects()
+        })
+    }
+
+    syncStatus(hash, project) {
+        setTimeout(()=> {
+            projectHashStatus(hash).then(status => {
+                if (status === project.status) return;
+                const updateTask = {
+                    type: 'chatclient',
+                    func: 'projectStatus',
+                    args: [
+                        hash,
+                        status,
+                        err => !err && this.loadProjects()
+                    ],
+                    silent: true
+                }
+
+                const createTask = {
+                    type: 'chatclient',
+                    func: 'project',
+                    args: [
+                        hash,
+                        objCopy({status}, project, true),
+                        true,
+                        err => !err && this.loadProjects()
+                    ],
+                    silent: true
+                }
+                // status in the web storage is not the same as blockchain status
+                client.projectsByHashes([hash], (_, projects) => {
+                    // create if not already exists in the web storage, otherwise update status
+                    const create = projects.size === 0
+                    project = create ? project : projects.get(hash)
+                    if (status === project.status) return;
+                    // Hack to prevent same task being executed multiple times
+                    const id = hash+project.status+status+create
+                    addToQueue( create ? createTask : updateTask, id)
+                })
+                
+            })
+        })
     }
 
     loadProjects() {
@@ -199,19 +238,27 @@ class ProjectList extends ReactiveComponent {
         const { address } = wallets[storageService.walletIndex()]
         return ownerProjectsList(address).then( hashArr => {
             if (!isArr(hashArr) || hashArr.length === 0) return this.setState({projects: new Map()});
-            // convert to string and add 0x prefix
+            // convert to string
             hashArr = hashArr.map( hash => pretty(hash) )
             // remove duplicates, if any
             hashArr = Object.keys(hashArr.reduce((obj, address) => { obj[address] = 1; return obj}, {}))
+            this.setStatusBond(hashArr)
             // Get project data from web storage
-            client.projectsByHashes( hashArr, (_, projects) => {
+            client.projectsByHashes( hashArr, (_, projects, notFoundHashes) => {
+                (notFoundHashes || []).forEach(hash => projects.set(hash, {
+                    ownerAddress: address,
+                    name: 'Unnamed',
+                    description: 'N/A',
+                    status: -1
+                }))
                 // attach project owner address name if available
                 for (let [hash, project] of projects) {
                     const {ownerAddress} = project
-                    const entry = wallets.find(x => x.address === ownerAddress) || addressbook.getByAddress(ownerAddress) || {}
+                    const entry = wallets.find(x => x.address === ownerAddress) || {}
                     project._ownerName = entry.name
                     project._hash = hash
                     project._statusText = PROJECT_STATUSES[project.status] || 'Unknown'
+                    this.syncStatus(hash, project)
                 }
                 this.setState({projects})
             })
@@ -321,7 +368,6 @@ class ProjectList extends ReactiveComponent {
                     content: (project, hash) => (
                         <Button 
                             onClick={() => this.showDetails(project, hash)}
-                            // content={mobile ? '' : 'Details'} 
                             icon={{
                                 className: mobile? 'no-margin' : '',
                                 name: 'eye'

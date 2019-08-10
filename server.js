@@ -1,5 +1,5 @@
 import express from 'express'
-import { isArr, isFn, isObj, isStr, isValidNumber, hasValue, mapCopy, mapFindByKey, mapSearch, objClean, objCopy } from './src/components/utils'
+import { isArr, isFn, isObj, isStr, isValidNumber, hasValue, mapCopy, mapFindByKey, mapSearch, objClean, objCopy } from './src/utils/utils'
 
 const httpPort = 80
 const httpsPort = 443
@@ -210,15 +210,13 @@ io.on('connection', client => {
 		}
 		// exclude any unwanted data 
 		project = objCopy(objClean(project, validKeys), existingProject, true)
-		project.status = create ? 0 : (
-			isValidNumber(project.status) ? project.status : 0
-		)
+		project.status = isValidNumber(project.status) ? project.status : 0
 
-		
 		// Add/update project
 		projects.set(hash, project)
 		saveProjects()
 		doCb && callback(null)
+		console.log(`Project ${create ? 'created' : 'updated'}: ${hash}`)
 	})
 
 	// update project status
@@ -228,13 +226,14 @@ io.on('connection', client => {
 	// 2 : closed
 	// 99: deleted
 	client.on('project-status', (hash, status, callback) => {
-		const doCb = isFn(callback)
+		if(!isFn(callback)) return;
 		const project = projects.get(hash)
-		if (!project) return doCb && callback('Project not found');
+		if (!project) return callback('Project not found');
+		console.log('Status update: ', hash, project.status, '>>', status)
 		project.status = status
 		projects.set(hash, project)
-		saveProjects
-		doCb && callback()
+		saveProjects()
+		callback()
 	})
 
 	// user projects by list of wallet addresses
@@ -264,13 +263,14 @@ io.on('connection', client => {
 	client.on('projects-by-hashes', (hashArr, callback) => {
 		if (!isFn(callback)) return;
 		if (!isArr(hashArr) ) return callback('Array of project hashes required')
+		const hashesNotFound = new Array()
 		// Find all projects by supplied hash and return Map
 		const result = hashArr.reduce((res, hash) => {
 			const project = projects.get(hash)
-			if (project) res.set(hash, project)
+			!!project ? res.set(hash, project) : hashesNotFound.push(hash)
 			return res
 		}, new Map())
-		callback(null, result)
+		callback(null, result, hashesNotFound)
 	})
 
 	// search all projects

@@ -8,15 +8,17 @@ import client from'./ChatClient'
 import blockchain from './blockchain'
 import storageService from './storage'
 import { removeToast, setToast } from './toast'
-import { isArr, isFn, isObj, objClean } from '../components/utils'
+import { isArr, isFn, isObj, objClean } from '../utils/utils'
 
 const queue = storageService.queue()
 // Minimum balance required to make a transaction
 const MIN_BALANCE = 500
 let txInProgress = false
 const txQueue = []
-export const addToQueue = (queueItem) => {
-    const id = uuid.v1()
+export const addToQueue = (queueItem, id) => {
+    // prevent adding the same task again
+    if (queue.get(id)) return;
+    id = id || uuid.v1()
     const validKeys = [
         'type',         // @type        string : name of the service. Currently supported: blockchain, chatclient
         'args',         // @args        array  : arguments supplied to func
@@ -30,6 +32,8 @@ export const addToQueue = (queueItem) => {
         'title',        // @title       string : operation title. Eg: 'Create project'
         'description',  // @description string : short description about the operation. Eg: project name etc...
         'keepToast',    // @keepToast   bool   : if falsy, will autohide toast
+        'silent',       // @silent      bool   : If true, enables silent mode and no toasts will be displayed.
+                        //                      This is particularly usefull when executing tasks that user didn't initiate or should not be bothered with.
         'next',         // @next        object : next operation in this series of queue. Same keys as @validKeys
     ]
 
@@ -65,12 +69,14 @@ const _processItem = (queueItem, id, msgId) => {
     }
 
     // Execute current task
-    queueItem.title = queueItem.title || queue.get(id).title
-    queueItem.description = queueItem.description || queue.get(id).description
+    const rootItem = queue.get(id)
+    queueItem.title = queueItem.title || rootItem.title
+    queueItem.description = queueItem.description || rootItem.description
     const args = isArr(queueItem.args) ? queueItem.args : [queueItem.args]
     const { title, description } = queueItem
     let func = null
-    const msgDuration = queue.get(id).keepToast ? 0 : null
+    const msgDuration = rootItem.keepToast ? 0 : null
+    const silent = queueItem.silent || rootItem.silent
     switch((queueItem.type || '').toLowerCase()) {
         case 'blockchain':
             // defer tx task to avoid errors
@@ -96,7 +102,12 @@ const _processItem = (queueItem, id, msgId) => {
                     )
                     const content = <p>{description}<br /> {failed && (`Error ${failed.code}: ${failed.message}`)}</p>
                     const header = !title ? statusText : `${title}: ${statusText}`
-                    msgId = setToast( {header, content, status}, msgDuration, msgId )
+                    // For debugging
+                    queueItem.error = failed
+
+                    if (!silent) {
+                        msgId = setToast( {header, content, status}, msgDuration, msgId )
+                    }
                     queueItem.status = status
                     _save()
                     if (!done) return;
@@ -108,7 +119,7 @@ const _processItem = (queueItem, id, msgId) => {
             const { address } = queueItem
             if (!address) return handlePost();
             const wallet = secretStore().find(address)
-            if (!wallet) {
+            if (!wallet && !silent) {
                 setToast( {
                     content: `Cannot create a transaction from an address that does not belong to you! Supplied address: ${address}`,
                     header: `${title}: transaction aborted`,
@@ -117,11 +128,13 @@ const _processItem = (queueItem, id, msgId) => {
                 queue.delete(id)
                 return
             }
-            msgId = setToast({
-                header: `${title}: checking balance`,
-                content: description,
-                status: 'loading'
-            }, msgDuration, msgId)
+            if (!silent) {
+                msgId = setToast({
+                    header: `${title}: checking balance`,
+                    content: description,
+                    status: 'loading'
+                }, msgDuration, msgId)
+            }
 
             txInProgress = true
             runtime.balances.balance(address).then(balance => {
@@ -143,18 +156,24 @@ const _processItem = (queueItem, id, msgId) => {
                         cancel request
                     </button>
                 )
-                msgId = setToast({
-                    content: (
-                        <p>
-                            {description} <br />
-                            You must have at least {MIN_BALANCE} Blip balance in the wallet named "{wallet.name}". 
-                            This is requied to create a blockchain transaction.
-                            Once you have enough balance {continueBtn} or reload page to continue or {cancelBtn}
-                        </p>
-                    ),
-                    header: `${title}: Insufficient balance`,
-                    status: 'error',
-                }, 0, msgId)
+
+                if (!silent) {
+                    msgId = setToast({
+                        content: (
+                            <p>
+                                {description} <br />
+                                You must have at least {MIN_BALANCE} Blip balance in the wallet named "{wallet.name}". 
+                                This is requied to create a blockchain transaction.
+                                Once you have enough balance {continueBtn} or reload page to continue or {cancelBtn}
+                            </p>
+                        ),
+                        header: `${title}: Insufficient balance`,
+                        status: 'error',
+                    }, 0, msgId)
+
+                    // For debugging
+                    queueItem.error = 'Insufficient balance'
+                }
                 _processNextTxItem()
             })
             break;
@@ -169,7 +188,12 @@ const _processItem = (queueItem, id, msgId) => {
                 const status = !err ? 'success' : 'error'
                 const statusText = !err ? 'success' : 'failed'
                 const header = !title ? statusText : `${title}: ${statusText}`
-                msgId = setToast( {header, content, status}, msgDuration, msgId )
+                // For debugging
+                queueItem.error = err
+
+                if (!silent) {
+                    msgId = setToast( {header, content, status}, msgDuration, msgId )
+                }
                 setTimeout(() => isFn(callbackOriginal) && callbackOriginal(err, a, b, c, d, e, f, g, h))
                 queueItem.status = status
                 // save progress

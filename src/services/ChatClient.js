@@ -1,5 +1,5 @@
 import io from 'socket.io-client'
-import { isFn, isArr } from '../components/utils'
+import { isFn, isArr } from '../utils/utils'
 import storageService from './storage'
 
 const port = 3001
@@ -79,7 +79,7 @@ export class ChatClient {
             'projects', walletAddrs, (err, res) => cb(err, new Map(res))
         )
         this.projectsByHashes = (hashArr, cb) => isFn(cb) && socket.emit(
-            'projects-by-hashes', hashArr, (err, res) => cb(err, new Map(res))
+            'projects-by-hashes', hashArr, (err, res, notFoundHashes) => cb(err, new Map(res), notFoundHashes)
         )
         // user projects received
         // @cb function : params =>

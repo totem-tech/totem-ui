@@ -5,7 +5,7 @@ import React from 'react'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import uuid from 'uuid'
-import { isObj, newMessage, objCopy } from '../components/utils'
+import { isObj, newMessage, objCopy } from '../utils/utils'
 const DURATION = 5000
 const toasts = new Map()
 // Use Bond as a way to trigger update to the ToastService component

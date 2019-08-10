@@ -1,6 +1,6 @@
 // import { Bond } from 'oo7'
 import { addCodecTransform, calls, hexToBytes, post, runtime, ss58Decode } from 'oo7-substrate'
-import { isBond } from '../components/utils'
+import { isBond } from '../utils/utils'
 
 const validatedAddress = address => runtime.indices.tryIndex(
     new Bond().defaultTo(ss58Decode(isBond(address) ? address._value : address)
@@ -36,6 +36,12 @@ export const addNewProject = (ownerAddress, hash) => {
 export const ownerProjectsList = address => {
     addCodecTransform('ProjectHash', 'Hash')
     return runtime.projects.ownerProjectsList(ss58Decode(address))
+}
+
+//
+export const projectHashStatus = hash => {
+    addCodecTransform('ProjectStatus', 'u16')
+    return runtime.projects.projectHashStatus(hashHexToBytes(hash))
 }
 
 // reassignProject transfers ownership of a project to a new owner address 
