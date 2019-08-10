@@ -2,7 +2,7 @@ import React from 'react'
 import { render } from 'react-dom'
 import { App } from './app.jsx'
 import { setNodeUri } from 'oo7-substrate'
-require('./denominations')
+require('./utils/denominations')
 import 'semantic-ui-css/semantic.min.css'
 const nodes = [
     'wss://node1.totem.live', // post-upgrade node (https)
