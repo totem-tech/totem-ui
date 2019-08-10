@@ -1,5 +1,5 @@
 import express from 'express'
-import { isArr, isFn, isObj, isStr, isValidNumber, hasValue, mapCopy, mapFindByKey, mapSearch, objClean, objCopy } from './src/utils/utils'
+import { isArr, isFn, isObj, isStr, isValidNumber, hasValue, mapCopy, mapFindByKey, mapSearch, objClean, objCopy } from '../src/utils/utils'
 
 const httpPort = 80
 const httpsPort = 443
@@ -57,19 +57,19 @@ const server = https.createServer(options, app)
 const io = require('socket.io').listen(server)
 const wsPort = 3001
 let users = new Map()
-const usersFile = './users.json'
+const usersFile = './server/data/users.json'
 const clients = new Map()
 const isValidId = id => /^[a-z][a-z0-9]+$/.test(id)
 const idMaxLength = 16
 const msgMaxLength = 160
 const idMinLength = 3
 let faucetRequests = new Map()
-const faucetRequestsFile = './faucet-requests.json'
+const faucetRequestsFile = './server/data/faucet-requests.json'
 const fauceRequstLimit = 5
 const faucetRequestTimeLimit = 60 * 60 * 1000 // milliseconds
-const projectsFile = './projects.json'
+const projectsFile = './server/data/projects.json'
 let projects = new Map()
-const companiesFile = './companies.json'
+const companiesFile = './server/data/companies.json'
 let companies = new Map()
 
 const findUserByClientId = clientId => mapFindByKey(users, 'clientIds', clientId)
