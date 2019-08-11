@@ -1,5 +1,5 @@
 import express from 'express'
-import { isArr, isFn, isObj, isStr, isValidNumber, hasValue, mapCopy, mapFindByKey, mapSearch, objClean, objCopy } from './src/utils/utils'
+import { isArr, isFn, isObj, isStr, isValidNumber, hasValue, mapCopy, mapFindByKey, mapSearch, objClean, objCopy } from '../src/utils/utils'
 
 const httpPort = 80
 const httpsPort = 443
@@ -57,19 +57,19 @@ const server = https.createServer(options, app)
 const io = require('socket.io').listen(server)
 const wsPort = 3001
 let users = new Map()
-const usersFile = './users.json'
+const usersFile = './server/data/users.json'
 const clients = new Map()
 const isValidId = id => /^[a-z][a-z0-9]+$/.test(id)
 const idMaxLength = 16
 const msgMaxLength = 160
 const idMinLength = 3
 let faucetRequests = new Map()
-const faucetRequestsFile = './faucet-requests.json'
+const faucetRequestsFile = './server/data/faucet-requests.json'
 const fauceRequstLimit = 5
 const faucetRequestTimeLimit = 60 * 60 * 1000 // milliseconds
-const projectsFile = './projects.json'
+const projectsFile = './server/data/projects.json'
 let projects = new Map()
-const companiesFile = './companies.json'
+const companiesFile = './server/data/companies.json'
 let companies = new Map()
 
 const findUserByClientId = clientId => mapFindByKey(users, 'clientIds', clientId)
@@ -93,8 +93,8 @@ io.on('connection', client => {
 		if (!user) return;
 		const clientIdIndex = user.clientIds.findIndex(cid => cid === client.id)
 		user.clientIds.splice(clientIdIndex, 1)
-		user.online = false
 		console.info('Client disconnected: ', client.id)
+		saveUsers()
 	})
 
 	client.on('message', (msg, callback) => {
@@ -130,8 +130,6 @@ io.on('connection', client => {
 		const newUser = {
 			id: userId,
 			secret: secret,
-			joined: new Date(),
-			online: true,
 			clientIds: [client.id]
 		}
 		users.set(userId, newUser)
@@ -147,7 +145,6 @@ io.on('connection', client => {
 		let err;
 		if (valid) {
 			user.clientIds.push(client.id)
-			user.online = true
 			clients.set(client.id, client)
 		} else {
 			err = errMsgs.loginFailed

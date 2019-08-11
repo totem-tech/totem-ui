@@ -3,10 +3,7 @@ node_modules/.bin/*
 yarn-error.log
 
 # data files
-users.json
-faucet-requests.json
-projects.json
-companies.json
+server/data/*
 
 # scripts
 start.sh
