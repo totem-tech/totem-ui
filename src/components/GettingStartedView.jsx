@@ -1,10 +1,10 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import { Button, Step } from 'semantic-ui-react'
-import Register from './forms/Register'
-import FormBuilder from './forms/FormBuilder'
-import { showForm, closeModal } from '../services/modal'
-import storageService from '../services/storage'
+// import Register from '../forms/Register'
+// import FormBuilder from '../components/FormBuilder'
+// import { showForm, closeModal } from '../services/modal'
+// import storageService from '../services/storage'
 
 export default class GetingStarted extends ReactiveComponent {
     constructor() {

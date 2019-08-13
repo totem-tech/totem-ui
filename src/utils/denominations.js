@@ -1,15 +1,17 @@
 const { setNetworkDefault, denominationInfo: { init } } = require('oo7-substrate')
 init({
 	denominations: {
-		Rock: 18,
-		KiloChunks: 15,
-		Chunk: 12,
-		KiloChips: 9,
-		Chip: 6,
-		KiloBlips: 3,
-		Blip: 0,
+		Ytx: 24,
+		Ztx: 21,
+		Etx: 18,
+		Ptx: 15,
+		Ttx: 12,
+		Gtx: 9,
+		Mtx: 6,
+		Ktx: 3,
+		Transactions: 0,
 	},
-	primary: 'Chunk',
-	unit: 'Blip',
-	ticker: 'XCH'
+	primary: 'Ttx',
+	unit: 'Transactions',
+	ticker: 'XTX'
 })

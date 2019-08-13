@@ -173,9 +173,9 @@ class ChatWidget extends ReactiveComponent {
 		return (
 			<Widget
 				titleAvatar={TotemLogoCircle}
-				title="Totem live chat"
+				title="Totem Trollbox"
 				subtitle={subtitle}
-				senderPlaceHolder={"Let's chat totem..."}
+				senderPlaceHolder={"Let's chat..."}
 				handleNewUserMessage={this.handleNewUserMessage}
 				xbadge={this.state.unreadCount}
 				autofocus={true}
