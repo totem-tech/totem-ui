@@ -12,3 +12,5 @@ docs/bundle.js
 *totem.live.*
 *fullchain.*
 *privkey.*
+sslcert/*.csr
+sslcert/*.key
