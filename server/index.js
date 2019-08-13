@@ -189,7 +189,7 @@ io.on('connection', client => {
 	client.on('project', (hash, project, create, callback) => {
 		const doCb = isFn(callback)
 		const existingProject = projects.get(hash)
-		if(create && !!existingProject) {
+		if (create && !!existingProject) {
 			return doCb && callback('Project already exists. Please use a different owner address and/or name')
 		}
 
@@ -199,7 +199,7 @@ io.on('connection', client => {
 		const validKeys = [...requiredKeys, 'status']
 		const invalid = !hash || !project || requiredKeys.reduce((invalid, key) => invalid || !project[key], false)
 		if (invalid) return doCb && callback(
-			'Project must contain all of the following properties: ' + 
+			'Project must contain all of the following properties: ' +
 			requiredKeys.join() + ' and an unique hash'
 		)
 		if (project.description.length > 160) {
@@ -208,6 +208,7 @@ io.on('connection', client => {
 		// exclude any unwanted data 
 		project = objCopy(objClean(project, validKeys), existingProject, true)
 		project.status = isValidNumber(project.status) ? project.status : 0
+		project.tsCreated = project.createdAt || new Date()
 
 		// Add/update project
 		projects.set(hash, project)
@@ -223,7 +224,7 @@ io.on('connection', client => {
 	// 2 : closed
 	// 99: deleted
 	client.on('project-status', (hash, status, callback) => {
-		if(!isFn(callback)) return;
+		if (!isFn(callback)) return;
 		const project = projects.get(hash)
 		if (!project) return callback('Project not found');
 		console.log('Status update: ', hash, project.status, '>>', status)
@@ -242,10 +243,10 @@ io.on('connection', client => {
 	//						@result map, 
 	client.on('projects', (walletAddrs, callback) => {
 		if (!isFn(callback)) return;
-		if (!isArr(walletAddrs) ) return callback('Array of wallet addresses required')
+		if (!isArr(walletAddrs)) return callback('Array of wallet addresses required')
 		// Find all projects by supplied addresses and return Map
 		const result = walletAddrs.reduce((res, address) => (
-			mapCopy(mapSearch(projects, {ownerAddress: address}), res)
+			mapCopy(mapSearch(projects, { ownerAddress: address }), res)
 		), new Map())
 		callback(null, result)
 	})
@@ -259,7 +260,7 @@ io.on('connection', client => {
 	//						@result map, 
 	client.on('projects-by-hashes', (hashArr, callback) => {
 		if (!isFn(callback)) return;
-		if (!isArr(hashArr) ) return callback('Array of project hashes required')
+		if (!isArr(hashArr)) return callback('Array of project hashes required')
 		const hashesNotFound = new Array()
 		// Find all projects by supplied hash and return Map
 		const result = hashArr.reduce((res, hash) => {
@@ -281,16 +282,16 @@ io.on('connection', client => {
 
 	// add/get company by walletAddress
 	client.on('company', (walletAddress, company, callback) => {
-		if(!isFn(callback)) return console.log('no callback');
+		if (!isFn(callback)) return console.log('no callback');
 		if (!isObj(company)) {
 			company = companies.get(walletAddress)
 			return callback(!company ? 'Company not found' : company)
 		}
 		// required keys
-		const keys = [ 'country', 'name', 'registrationNumber', 'walletAddress' ]
+		const keys = ['country', 'name', 'registrationNumber', 'walletAddress']
 		// make sure all the required keys are supplied
 		if (keys.reduce((invalid, key) => invalid || !hasValue(company[key]), !walletAddress)) {
-			return callback('Company must be a valid object and contain the following: ' + keys.join()) 
+			return callback('Company must be a valid object and contain the following: ' + keys.join())
 		}
 		const { country, name, registrationNumber } = company
 		// Check if company with wallet address already exists
@@ -299,7 +300,7 @@ io.on('connection', client => {
 		}
 		// check if company with combination of name, registration number and country already exists
 		// PS: same company name can have different registration number in different countries
-		if (mapSearch(companies, {name, registrationNumber, country}, true, true, true).size > 0) {
+		if (mapSearch(companies, { name, registrationNumber, country }, true, true, true).size > 0) {
 			return callback('Company already exists')
 		}
 
@@ -312,8 +313,8 @@ io.on('connection', client => {
 
 	// Find companies by key-value pair(s)
 	client.on('company-search', (keyValues, callback) => {
-		if(!isFn(callback)) return;
-		const keys = [ 'name', 'walletAddress', 'registrationNumber', 'country' ]
+		if (!isFn(callback)) return;
+		const keys = ['name', 'walletAddress', 'registrationNumber', 'country']
 		keyValues = objClean(keyValues, keys)
 		if (Object.keys(keyValues).length === 0) {
 			return callback('Please supply one or more of the following keys: ' + keys.join())
@@ -352,22 +353,22 @@ const emit = (ignoreClientIds, eventName, params) => {
 
 // load all files required
 var promises = [
-	{type: 'companies', path: companiesFile, saveFn: saveCompanies},
-	{type: 'faucetRequests', path: faucetRequestsFile, saveFn: saveFaucetRequests},
-	{type: 'projects', path: projectsFile, saveFn: saveProjects},
-	{type: 'users', path: usersFile, saveFn: saveUsers},
+	{ type: 'companies', path: companiesFile, saveFn: saveCompanies },
+	{ type: 'faucetRequests', path: faucetRequestsFile, saveFn: saveFaucetRequests },
+	{ type: 'projects', path: projectsFile, saveFn: saveProjects },
+	{ type: 'users', path: usersFile, saveFn: saveUsers },
 ].map(item => new Promise((resolve, reject) => {
 	const { type, path, saveFn } = item
 	if (!isStr(path)) return console.log('Invalid file path', path);
 	console.info('Reading file', path)
 	return fs.readFile(path, 'utf8', (err, data) => {
 		// Create empty file if does already not exists 
-		if(!!err) {
+		if (!!err) {
 			console.log(path, 'file does not exist. Creating new file.')
 			setTimeout(saveFn)
 		} else {
 			const map = new Map(JSON.parse(data || '[]'))
-			switch(type) {
+			switch (type) {
 				case 'companies':
 					companies = map
 					break
@@ -386,6 +387,6 @@ var promises = [
 	})
 }))
 // Start chat server
-Promise.all(promises).then(function(results){
+Promise.all(promises).then(function (results) {
 	server.listen(wsPort, () => console.log('\nChat app https Websocket listening on port ', wsPort))
-}).catch(err=> err && console.log('Promise error:', err)) 
+}).catch(err => err && console.log('Promise error:', err)) 
