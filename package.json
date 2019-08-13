@@ -9,7 +9,8 @@
     "build": "npm-run-all --parallel webpack-prod server",
     "webpack-dev": "webpack --mode development --watch --debug",
     "webpack-prod": "webpack --mode production --watch --debug",
-    "server": "nodemon --watch src/ --verbose --exec ./node_modules/.bin/babel-node ./server/index.js --ext jsx,js --presets env,react"
+    "server": "nodemon --watch src/ --watch server/ --verbose --exec ./node_modules/.bin/babel-node ./server/index.js --ext jsx,js --presets env,react",
+    "server-faucet": "nodemon --watch server-faucet/ --watch server/ --verbose --exec ./node_modules/.bin/babel-node ./server-faucet/index.js --ext jsx,js --presets env,react"
   },
   "babel": {
     "presets": [

@@ -1,5 +1,8 @@
 import express from 'express'
 import { isArr, isFn, isObj, isStr, isValidNumber, hasValue, mapCopy, mapFindByKey, mapSearch, objClean, objCopy } from '../src/utils/utils'
+// Testing faucet server authentication
+import ioClient from 'socket.io-client'
+const faucetClient = ioClient('http://127.0.0.1:3002', { query: { token: 'this_is_a_test_token' } })
 
 const httpPort = 80
 const httpsPort = 443
