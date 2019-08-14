@@ -8,10 +8,10 @@ init({
 		Ttx: 12,
 		Gtx: 9,
 		Mtx: 6,
-		Ktx: 3,
+		ktx: 3,
 		Transactions: 0,
 	},
-	primary: 'Ttx',
+	primary: 'Etx',
 	unit: 'Transactions',
 	ticker: 'XTX'
 })
