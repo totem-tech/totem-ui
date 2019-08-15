@@ -4,7 +4,7 @@ import socket from 'socket.io'
 import uuid from 'uuid'
 import nls from 'node-localstorage'
 // import { post, secretStore } from 'oo7-substrate'
-import nacl from 'tweetnacl'
+import nacl, { box, sign } from 'tweetnacl'
 nacl.util = require('tweetnacl-util')
 // Environment variables
 const FAUCET_PORT = process.env.FAUCET_PORT || 3002
@@ -15,18 +15,19 @@ const FAUCET_STORAGE_PATH = process.env.FAUCET_STORAGE_PATH || './server-faucet/
 const localStorage = new nls.LocalStorage(FAUCET_STORAGE_PATH)
 const getItem = key => JSON.parse(localStorage.getItem(key))
 const setItem = (key, value) => localStorage.setItem(key, JSON.stringify(value)) || value
-const KEY_PAIR = 'KEY_PAIR'
 // Key pair of this server
-let keyPair = getItem(KEY_PAIR)
-if (!keyPair) {
-    keyPair = nacl.box.keyPair()
-    setItem(KEY_PAIR, keyPair)
+let publicKey = getItem('publicKey')
+let secretKey = getItem('secretKey')
+if (!secretKey || !publicKey) {
+    const keyPair = nacl.box.keyPair()
+    publicKey = setItem('publicKey', nacl.util.encodeBase64(keyPair.publicKey))
+    secretKey = setItem('secretKey', nacl.util.encodeBase64(keyPair.secretKey))
 }
-const SERVER_NAME = getItem('SERVER_NAME') || setItem('SERVER_NAME', uuid.v1())
-const EXTERNAL_SERVER_PUB_KEY = getItem('EXTERNAL_SERVER_PUB_KEY')
-const EXTERNAL_SERVER_NAME = getItem('EXTERNAL_SERVER_NAME')
-if (!EXTERNAL_SERVER_PUB_KEY || !EXTERNAL_SERVER_NAME) {
-    throw new Error('External server public key (EXTERNAL_SERVER_PUB_KEY) and/or name (EXTERNAL_SERVER_NAME) file(s) not found or empty in the pseudo local storage path:', FAUCET_STORAGE_PATH)
+const serverName = getItem('serverName') || setItem('serverName', uuid.v1())
+const external_publicKey = getItem('external_publicKey')
+const external_serverName = getItem('external_serverName')
+if (!external_publicKey || !external_serverName) {
+    throw new Error('External server public key (external_publicKey) and/or name (external_serverName) file(s) not found or empty in the pseudo local storage path:', FAUCET_STORAGE_PATH)
 }
 // const testWallet = {
 //     keyData: "0887008df8c941f5ddb64e3780e5abd29cc9534bd87b59f7ce31e2ed1201eb617f786f5a863e3a2482135e618fe00732ee055080104d568a0a4a1af186190050e2ddcdc1969acb3c66423f429ffe884e1aaae05959d857ff3830a3618b8db746",
