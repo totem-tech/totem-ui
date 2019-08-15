@@ -24,7 +24,7 @@ const config = {
         loadOnDemand: false,
     },
 }
-
+// ToDo: save file if not exists
 export const getAll = configKey => {
     const item = config[configKey]
     if (item && !item.loadOnDemand) return new Promise((resolve) => resolve(item.data, configKey));
@@ -33,75 +33,75 @@ export const getAll = configKey => {
 
 export const getItem = (configKey, key) => new Promise((resolve, reject) => {
     getAll(configKey)
-    .then(data => resolve(data.get(key)))
-    .catch(reject)
+        .then(data => resolve(data.get(key)))
+        .catch(reject)
 })
 
 export const search = (configKey, keyValues, matchExact, matchAll, ignoreCase) => new Promise((resolve, reject) => {
     getAll(configKey)
-    .then(data => resolve(mapSearch(data, keyValues, matchExact, matchAll, ignoreCase)))
-    .catch(reject)
+        .then(data => resolve(mapSearch(data, keyValues, matchExact, matchAll, ignoreCase)))
+        .catch(reject)
 })
 
 export const setItem = (configKey, key, value) => new Promise((resolve, reject) => {
     const item = config[configKey]
     getAll(configKey)
-    .then(data => {
-        data.set(key, value) 
-        if (!item.loadOnDemand) {
-            item.data = data
-        }
-        saveMapToFile(item.path, data).then(resolve).catch(reject)
-    })
-    .catch(reject)
+        .then(data => {
+            data.set(key, value)
+            if (!item.loadOnDemand) {
+                item.data = data
+            }
+            saveMapToFile(item.path, data).then(resolve).catch(reject)
+        })
+        .catch(reject)
 })
 
 export const removeItem = (configKey, key) => new Promise((resolve, reject) => {
     const item = config[configKey]
     getAll(configKey)
-    .then(data => {
-        data.delete(key) 
-        if (!item.loadOnDemand) {
-            item.data = data
-        }
-        saveMapToFile(item.path, data).then(resolve).catch(reject)
-    })
-    .catch(reject)
+        .then(data => {
+            data.delete(key)
+            if (!item.loadOnDemand) {
+                item.data = data
+            }
+            saveMapToFile(item.path, data).then(resolve).catch(reject)
+        })
+        .catch(reject)
 })
 
 const saveMapToFile = (filepath, map) => new Promise((resolve, reject) => {
-	if (!isStr(filepath)) {
+    if (!isStr(filepath)) {
         const err = 'Invalid file path ' + filepath
         console.log(err)
         return reject(err)
     }
-	fs.writeFile(
-		filepath,
-		JSON.stringify(Array.from(map.entries())),
-		{ flag: 'w' },
-		err => {
+    fs.writeFile(
+        filepath,
+        JSON.stringify(Array.from(map.entries())),
+        { flag: 'w' },
+        err => {
             if (!err) return resolve();
             console.log(`Failed to save ${filepath}. ${err}`)
             reject(err)
         }
-	)
+    )
 })
 
 export const filePromise = configkey => new Promise((resolve, reject) => {
     const item = config[configkey]
     if (!item) return reject('Invalid config key');
     return fs.readFile(item.path, 'utf8', (err, data) => {
-        if(!!err) {
+        if (!!err) {
             console.log(item.path, 'file does not exist. Creating new file.')
-            setTimeout(()=> saveMapToFile(item.path, new Map()))
-        } else if(!item.loadOnDemand) {
+            setTimeout(() => saveMapToFile(item.path, new Map()))
+        } else if (!item.loadOnDemand) {
             item.data = new Map(JSON.parse(data || '[]'))
         }
         resolve(data, configkey)
     })
 })
 
-export const loadFiles = (configKeys)=> {
+export const loadFiles = (configKeys) => {
     const keys = configKeys || Object.keys(config).filter(key => !config[key].loadOnDemand)
     return Promise.all(keys.map(filePromise))
 }

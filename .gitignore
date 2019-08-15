@@ -8,9 +8,16 @@ server/data/*
 # scripts
 start.sh
 
+# bundled JS file
 docs/bundle.js
+
+# certificate keys etc
 *totem.live.*
 *fullchain.*
 *privkey.*
 sslcert/*.csr
 sslcert/*.key
+
+# Node server localStorage directory
+server/local-storage
+

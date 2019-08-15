@@ -1,9 +1,5 @@
 import express from 'express'
 import { isArr, isFn, isObj, isStr, isValidNumber, hasValue, mapCopy, mapFindByKey, mapSearch, objClean, objCopy } from '../src/utils/utils'
-// Testing faucet server authentication
-import ioClient from 'socket.io-client'
-const faucetClient = ioClient('http://127.0.0.1:3002', { query: { token: 'this_is_a_test_token' } })
-
 const httpPort = 80
 const httpsPort = 443
 const http = require('http')
@@ -77,7 +73,6 @@ let companies = new Map()
 
 const findUserByClientId = clientId => mapFindByKey(users, 'clientIds', clientId)
 
-
 // Error messages
 const errMsgs = {
 	fauceRequestLimitReached: `Maximum ${fauceRequstLimit} requests allowed within 24 hour period`,
@@ -88,6 +83,11 @@ const errMsgs = {
 	loginFailed: 'Credentials do not match',
 	loginOrRegister: 'Login/registration required'
 }
+
+/* 
+ new
+*/
+import { faucetRequestHandler } from './faucetRequestHandler'
 
 io.on('connection', client => {
 	client.on('disconnect', () => {
@@ -110,7 +110,7 @@ io.on('connection', client => {
 		const sender = findUserByClientId(client.id)
 		// Ignore message from logged out users
 		if (!sender) return doCb && callback(errMsgs.loginOrRegister);
-		emit(client.id, 'message', [msg, sender.id])
+		emitter(client.id, 'message', [msg, sender.id])
 		doCb && callback()
 	})
 
@@ -149,6 +149,7 @@ io.on('connection', client => {
 		if (valid) {
 			user.clientIds.push(client.id)
 			clients.set(client.id, client)
+			saveUsers()
 		} else {
 			err = errMsgs.loginFailed
 		}
@@ -156,37 +157,37 @@ io.on('connection', client => {
 		console.info('Login ' + (err ? 'failed' : 'success') + ' | ID:', userId, '| Client ID: ', client.id)
 		isFn(callback) && callback(err)
 	})
+	client.on('faucet-request', faucetRequestHandler(client, emitter, findUserByClientId))
+	// client.on('faucet-request', (address, callback) => {
+	// 	const doCb = isFn(callback)
+	// 	const user = findUserByClientId(client.id)
+	// 	if (!user) return doCb && callback(errMsgs.loginOrRegister)
 
-	client.on('faucet-request', (address, callback) => {
-		const doCb = isFn(callback)
-		const user = findUserByClientId(client.id)
-		if (!user) return doCb && callback(errMsgs.loginOrRegister)
+	// 	let userRequests = faucetRequests.get(user.id)
 
-		let userRequests = faucetRequests.get(user.id)
+	// 	userRequests = userRequests || []
+	// 	const numReqs = userRequests.length
+	// 	let fifthTS = (userRequests[numReqs - 5] || {}).timestamp
+	// 	fifthTS = fifthTS && typeof (fifthTS) === 'string' ? Date.parse(fifthTS) : fifthTS
+	// 	if (numReqs >= fauceRequstLimit && Math.abs(new Date() - fifthTS) < faucetRequestTimeLimit) {
+	// 		// prevents adding more than maximum number of requests within the given duration
+	// 		return doCb && callback(errMsgs.fauceRequestLimitReached, fifthTS)
+	// 	}
 
-		userRequests = userRequests || []
-		const numReqs = userRequests.length
-		let fifthTS = (userRequests[numReqs - 5] || {}).timestamp
-		fifthTS = fifthTS && typeof (fifthTS) === 'string' ? Date.parse(fifthTS) : fifthTS
-		if (numReqs >= fauceRequstLimit && Math.abs(new Date() - fifthTS) < faucetRequestTimeLimit) {
-			// prevents adding more than maximum number of requests within the given duration
-			return doCb && callback(errMsgs.fauceRequestLimitReached, fifthTS)
-		}
+	// 	userRequests.push({
+	// 		address,
+	// 		timestamp: new Date(),
+	// 		funded: false
+	// 	})
 
-		userRequests.push({
-			address,
-			timestamp: new Date(),
-			funded: false
-		})
-
-		if (numReqs >= faucetRequestTimeLimit) {
-			userRequests = userRequests.slice(numReqs - faucetRequestTimeLimit)
-		}
-		faucetRequests.set(user.id, userRequests)
-		saveFaucetRequests()
-		emit([], 'faucet-request', [user.id, address])
-		doCb && callback()
-	})
+	// 	if (numReqs >= faucetRequestTimeLimit) {
+	// 		userRequests = userRequests.slice(numReqs - faucetRequestTimeLimit)
+	// 	}
+	// 	faucetRequests.set(user.id, userRequests)
+	// 	saveFaucetRequests()
+	// 	emit([], 'faucet-request', [user.id, address])
+	// 	doCb && callback()
+	// })
 
 	// Create/update project
 	client.on('project', (hash, project, create, callback) => {
@@ -342,7 +343,7 @@ const saveMapToFile = (filepath, map) => {
 }
 
 // Broadcast message to all users except ignoreClientIds
-const emit = (ignoreClientIds, eventName, params) => {
+const emitter = (ignoreClientIds, eventName, params) => {
 	if (!isStr(eventName)) return;
 	ignoreClientIds = Array.isArray(ignoreClientIds) ? ignoreClientIds : [ignoreClientIds]
 	params = params || []
