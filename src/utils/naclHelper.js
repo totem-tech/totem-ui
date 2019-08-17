@@ -5,72 +5,49 @@ import {
     encodeBase64,
     decodeBase64
 } from "tweetnacl-util"
+import { hexToBytes } from 'oo7-substrate/src/utils'
 
-const newNonce = useSecretBox => randomBytes((useSecretBox ? secretbox : box).nonceLength)
+export const newNonce = length => randomBytes(length || box.nonceLength)
 
-export const generateKey = () => encodeBase64(randomBytes(secretbox.keyLength))
-
-export const encryptWithSecretBox = (json, key) => {
-    const keyUint8Array = decodeBase64(key)
-    const nonce = newNonce(true)
-    const messageUint8 = decodeUTF8(JSON.stringify(json))
-    const boxData = secretbox(messageUint8, nonce, keyUint8Array)
+export const encrypt = (dataObj, nonce, externalPubKey, internalSecretKey) => {
+    const extPubKeyUint8Arr = decodeBase64(externalPubKey)
+    const secretKeyUint8Arr = decodeBase64(internalSecretKey)
+    const messageArr = decodeUTF8(JSON.stringify(dataObj))
+    const boxData = box(messageArr, nonce, extPubKeyUint8Arr, secretKeyUint8Arr)
     const fullMessage = new Uint8Array(nonce.length + boxData.length)
     fullMessage.set(nonce)
     fullMessage.set(boxData, nonce.length)
     return encodeBase64(fullMessage)
 }
 
-export const decryptWithSecretBox = (messageWithNonce, key) => {
-    const keyUint8Array = decodeBase64(key)
-    const messageWithNonceAsUint8Array = decodeBase64(messageWithNonce)
-    const nonce = messageWithNonceAsUint8Array.slice(0, secretbox.nonceLength)
-    const message = messageWithNonceAsUint8Array.slice(
-        secretbox.nonceLength,
-        messageWithNonce.length
+export const decrypt = (encryptedMsg, nonce, externalPubKey, internalSecretKey) => {
+    const extPubKeyUint8Arr = decodeBase64(externalPubKey)
+    const secretKeyUint8Arr = decodeBase64(internalSecretKey)
+    const encryptedMsgArr = decodeBase64(encryptedMsg)
+    const message = encryptedMsgArr.slice(
+        nonce.Length,
+        encryptedMsg.length
     )
-    const decrypted = secretbox.open(message, nonce, keyUint8Array)
+    const decrypted = box.open(message, nonce, extPubKeyUint8Arr, secretKeyUint8Arr)
     return !decrypted ? null : JSON.parse(encodeUTF8(decrypted))
 }
+// export const verifySignature = (dataObj, secretKey, publicKey) => {
+//     const oldLength = sign.secretKeyLength
+//     const secretKeyArr = decodeBase64(secretKey)
+//     console.log(secretKeyArr.length, oldLength)
+//     sign.secretKeyLength = secretKeyArr.length
+//     const signature = sign.detached(
+//         decodeUTF8(JSON.stringify(dataObj)),
+//         secretKeyArr
+//     )
+//     return sign.detached.verify(dataObj, signature, decodeBase64(publicKey))
+// }
 
-export const newBoxKeyPair = () => {
-    const pair = box.keyPair()
-    pair.publicKey = encodeBase64(pair.publicKey)
-    pair.secretKey = encodeBase64(pair.secretKey)
-    return pair
-}
-
-export const encrypt = (dataObj, externalPubKey, internalSecretKey) => {
-    const pubKeyUint8Array = decodeBase64(externalPubKey)
-    const secretKeyUint8Array = decodeBase64(internalSecretKey)
-    const nonce = newNonce()
-    const messageUint8 = decodeUTF8(JSON.stringify(dataObj))
-    const boxData = box(messageUint8, nonce, pubKeyUint8Array, secretKeyUint8Array)
-    const fullMessage = new Uint8Array(nonce.length + boxData.length)
-    fullMessage.set(nonce)
-    fullMessage.set(boxData, nonce.length)
-    return encodeBase64(fullMessage)
-}
-
-export const decrypt = (messageWithNonce, externalPubKey, internalSecretKey) => {
-    const pubKeyUint8Array = decodeBase64(externalPubKey)
-    const secretKeyUint8Array = decodeBase64(internalSecretKey)
-    const messageWithNonceAsUint8Array = decodeBase64(messageWithNonce)
-    const nonce = messageWithNonceAsUint8Array.slice(0, box.nonceLength)
-    const message = messageWithNonceAsUint8Array.slice(
-        box.nonceLength,
-        messageWithNonce.length
-    )
-    const decrypted = box.open(message, nonce, pubKeyUint8Array, secretKeyUint8Array)
-    return !decrypted ? null : JSON.parse(encodeUTF8(decrypted))
-}
-/// ??????????? must use keypair generated for signature
-export const verifySignature = (dataObj, secretKey, publicKey) => {
-    // const pair = sign.keyPair.fromSecretKey(decodeBase64(secretKey))
-    console.log(pair)
-    const signature = sign.detached(
-        decodeUTF8(JSON.stringify(dataObj)),
-        decodeBase64(secretKey)
-    )
-    return sign.detached.verify(dataObj, signature, decodeBase64(publicKey))
+export const keyDataToPair = keyData => {
+    const arr = hexToBytes(keyData)
+    console.log('arr.length', arr.length)
+    return {
+        publicKey: encodeBase64(new Uint8Array(arr.slice(64, 96))),
+        secretKey: encodeBase64(new Uint8Array(arr.slice(0, 64)))
+    }
 }
