@@ -26,6 +26,9 @@ export const decrypt = (encryptedMsg, nonce, externalPubKey, internalSecretKey) 
     const secretKeyUint8Arr = decodeBase64(internalSecretKey)
     const encryptedMsgArr = decodeBase64(encryptedMsg)
     const nonceArr = decodeBase64(nonce)
+    const encryptedNonce = encodeBase64(encryptedMsgArr.slice(0, nonceArr.length))
+    // validate if supplied nonce matches encrypted message's nonce
+    if (encryptedNonce !== nonce) return null;
     const messageArr = encryptedMsgArr.slice(
         nonceArr.length,
         encryptedMsg.length
