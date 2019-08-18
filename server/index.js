@@ -157,7 +157,7 @@ io.on('connection', client => {
 		console.info('Login ' + (err ? 'failed' : 'success') + ' | ID:', userId, '| Client ID: ', client.id)
 		isFn(callback) && callback(err)
 	})
-	// client.on('faucet-request', faucetRequestHandler(client, emitter, findUserByClientId))
+	client.on('faucet-request', faucetRequestHandler(client, emitter, findUserByClientId))
 	// client.on('faucet-request', (address, callback) => {
 	// 	const doCb = isFn(callback)
 	// 	const user = findUserByClientId(client.id)

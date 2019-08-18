@@ -52,12 +52,30 @@ io.on('connection', client => {
     console.log('Connected to', client.id)
     client.on('disonnect', () => { console.log('Client disconnected', client.id) })
 
-    client.on('faucet', (box, callback) => {
-        // faucetQueue.push({
-        //     address,
-        //     status: undefined,
-        //     callback
-        // })
+    client.on('faucet', (encryptedMsg, nonce, callback) => {
+        const data = decrypt(
+            encryptedMsg,
+            nonce,
+            external_publicKey,
+            secretKey
+        )
+        console.log('decrypted data', data)
+        if (!data) return callback('Decryption failed')
+        const dataArr = data.split('')
+        if (serverName !== dataArr.slice(0, serverName.length).join('')) return callback('Invalid data')
+        //
+        // TODO: extract and match signature data
+        //
+        const faucetRequest = JSON.parse(dataArr.slice(serverName.length).join(''))
+        if (faucetRequest.funded) return callback('Request already funded')
+        if (!faucetRequest.address) return callback('Invalid address')
+
+        faucetQueue.push({
+            faucetRequest,
+            status: undefined,
+            callback // on success: callback(null, true)
+        })
+        callback(null)
     })
 })
 
