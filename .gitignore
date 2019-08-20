@@ -20,4 +20,5 @@ sslcert/*.key
 
 # Node server localStorage directory
 server/local-storage
+server/start.sh
 

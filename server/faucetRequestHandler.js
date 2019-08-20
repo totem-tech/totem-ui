@@ -1,34 +1,40 @@
 import nls from 'node-localstorage'
 import ioClient from 'socket.io-client'
-import { encrypt, decrypt, keyDataToPair, newNonce } from '../src/utils/naclHelper'
-import { generateHash as generateNonce, isFn, isStr, mapFindByKey, objCopy } from '../src/utils/utils'
+import { encrypt, encryptionKeypair, signingKeyPair, newNonce, newSignature, verifySignature } from '../src/utils/naclHelper'
+import { isFn, isStr } from '../src/utils/utils'
 import { getItem as getFaucetRequest, setItem as setFaucetRequest, getAll } from './dataService'
 // import { secretStore } from 'oo7-substrate'
 const DATA_KEY = 'faucetRequests'
 // Maximum number of requests within @TIME_LIMIT
-const REQUEST_LIMIT = 5
+const REQUEST_LIMIT = 5555
 const TIME_LIMIT = 24 * 60 * 60 * 1000 // 1 day in milliseconds
 // Environment variables
-const STORAGE_PATH = process.env.STORAGE_PATH || './server/local-storage'
 const FAUCET_SERVER_URL = process.env.FAUCET_SERVER_URL || 'https://127.0.0.1:3002'
-// Pseudo localStorage
-const localStorage = new nls.LocalStorage(STORAGE_PATH)
-const getItem = key => JSON.parse(localStorage.getItem(key))
-const setItem = (key, value) => localStorage.setItem(key, JSON.stringify(value)) || value
+// // Pseudo localStorage
+// const STORAGE_PATH = process.env.STORAGE_PATH || './server/local-storage'
+// const localStorage = new nls.LocalStorage(STORAGE_PATH)
+// const getItem = key => JSON.parse(localStorage.getItem(key))
+// const setItem = (key, value) => localStorage.setItem(key, JSON.stringify(value)) || value
 
-// Key pair of this server
-// const keyData = getItem('keyData')
-// console.log(keyDataToPair(keyData))
+let publicKey, secretKey, signPublicKey, signSecretKey, serverName, external_publicKey, external_serverName
+// Key pairs of this server
+publicKey = process.env.publicKey
+if (!publicKey) throw new Error('Missing "publicKey"');
 
-const publicKey = getItem('publicKey')
-const secretKey = getItem('secretKey')
-if (!publicKey || !secretKey) throw new Error('Missing "publicKey" and/or "secretKey"');
+secretKey = process.env.secretKey
+if (!secretKey) throw new Error('Missing "secretKey"');
 
-const serverName = getItem('serverName')
+signPublicKey = process.env.signPublicKey
+if (!signPublicKey) throw new Error('Missing "signPublicKey"');
+
+signSecretKey = process.env.signSecretKey
+if (!signSecretKey) throw new Error('Missing "signSecretKey"');
+
+serverName = process.env.serverName
 if (!serverName) throw new Error('Missing "serverName"');
 
-const external_publicKey = getItem('external_publicKey')
-const external_serverName = getItem('external_serverName')
+external_publicKey = process.env.external_publicKey
+external_serverName = process.env.external_serverName
 if (!external_publicKey || !external_serverName) {
     throw new Error('External server public key (external_publicKey) and/or name (external_serverName) file(s) not found or empty in the pseudo local storage path:', FAUCET_STORAGE_PATH)
 }
@@ -69,11 +75,26 @@ export const faucetRequestHandler = (client, emitter, findUserByClientId) => (ad
 
         // Send public chat messge with facuet request | REMOVE ?
         emitter([], 'faucet-request', [user.id, address])
+        const data = JSON.stringify(request)
+        const minLength = 9
+        // Length of stringified data
+        let lenStr = JSON.stringify(data.length)
+        // Make sure to have fixed length
+        if (lenStr.length < minLength) {
+            lenStr = new Array(minLength - lenStr.length).fill(0).join('') + lenStr
+        }
 
-        const data = external_serverName + JSON.stringify(request)
+        // Generate new signature
+        const signature = newSignature(data, signSecretKey)
+        console.log('\n\n\nsignSecretKey:\n', signSecretKey)
+        console.log('\n\n\nSignature:\n', signature)
+        const valid = verifySignature(data, signature, signPublicKey)
+        if (!valid) return callback('Signature pre-verification failed');
+
         const nonce = newNonce()
+        const message = lenStr + external_serverName + data + signature
         const encryptedMsg = encrypt(
-            data,
+            message,
             nonce,
             external_publicKey,
             secretKey
@@ -82,5 +103,5 @@ export const faucetRequestHandler = (client, emitter, findUserByClientId) => (ad
             callback(err, fifthTS)
         })
 
-    }).catch(err => console.log('failed to read faucet request. err:', err) || callback(err))
+    }).catch(err => console.log('Faucet request failed. Error:', err) || callback(err))
 }
