@@ -1,20 +1,15 @@
-import nls from 'node-localstorage'
+
 import ioClient from 'socket.io-client'
 import { encrypt, encryptionKeypair, signingKeyPair, newNonce, newSignature, verifySignature } from '../src/utils/naclHelper'
 import { isFn, isStr } from '../src/utils/utils'
-import { getItem as getFaucetRequest, setItem as setFaucetRequest, getAll } from './dataService'
+import DataStorage from '../src/utils/DataStorage'
 // import { secretStore } from 'oo7-substrate'
-const DATA_KEY = 'faucetRequests'
+const faucetStorage = new DataStorage('faucet-requests.json', true)
 // Maximum number of requests within @TIME_LIMIT
 const REQUEST_LIMIT = 5555
 const TIME_LIMIT = 24 * 60 * 60 * 1000 // 1 day in milliseconds
 // Environment variables
 const FAUCET_SERVER_URL = process.env.FAUCET_SERVER_URL || 'https://127.0.0.1:3002'
-// // Pseudo localStorage
-// const STORAGE_PATH = process.env.STORAGE_PATH || './server/local-storage'
-// const localStorage = new nls.LocalStorage(STORAGE_PATH)
-// const getItem = key => JSON.parse(localStorage.getItem(key))
-// const setItem = (key, value) => localStorage.setItem(key, JSON.stringify(value)) || value
 
 let keyData, walletAddress, publicKey, secretKey, signPublicKey, signSecretKey, serverName, external_publicKey, external_serverName
 
@@ -65,15 +60,15 @@ console.log('external_serverName: ', external_serverName)
 const faucetClient = ioClient(FAUCET_SERVER_URL, { secure: true, rejectUnauthorized: false })
 
 export const faucetRequestHandler = (client, emitter, findUserByClientId) => (address, callback) => {
-    if (!isFn(callback)) return
+    try {
+        if (!isFn(callback)) return
 
-    const err = setVariables()
-    if (err) return callback(err) | console.log(err)
+        const err = setVariables()
+        if (err) return callback(err) | console.log(err)
 
-    const user = findUserByClientId(client.id)
-    if (!user) return callback(errMsgs.loginOrRegister)
-    getFaucetRequest(DATA_KEY, user.id).then(userRequests => {
-        userRequests = userRequests || []
+        const user = findUserByClientId(client.id)
+        if (!user) return callback(errMsgs.loginOrRegister)
+        let userRequests = faucetStorage.get(user.id) || []
         const numReqs = userRequests.length
         let fifthTS = (userRequests[numReqs - 5] || {}).timestamp
         fifthTS = isStr(fifthTS) ? Date.parse(fifthTS) : fifthTS
@@ -92,7 +87,7 @@ export const faucetRequestHandler = (client, emitter, findUserByClientId) => (ad
             userRequests = userRequests.slice(numReqs - REQUEST_LIMIT)
         }
         // save request data
-        setFaucetRequest(DATA_KEY, user.id, userRequests).catch(err => console.log('Failed to save faucet request. Error:', err))
+        faucetStorage.set(user.id, userRequests)
 
         // Send public chat messge with facuet request | REMOVE ?
         emitter([], 'faucet-request', [user.id, address])
@@ -124,5 +119,8 @@ export const faucetRequestHandler = (client, emitter, findUserByClientId) => (ad
             callback(err, fifthTS)
         })
 
-    }).catch(err => console.log('Faucet request failed. Error:', err) || callback(err))
+    } catch (err) {
+        console.log('Faucet request failed. Error:', err)
+        callback('Faucet request failed. Please try again later.')
+    }
 }
