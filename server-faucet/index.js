@@ -14,29 +14,41 @@ const FAUCET_KEY_PATH = process.env.FAUCET_KEY_PATH || './sslcert/privkey.pem'
 // const localStorage = new nls.LocalStorage(FAUCET_STORAGE_PATH)
 // const getItem = key => JSON.parse(localStorage.getItem(key))
 // const setItem = (key, value) => localStorage.setItem(key, JSON.stringify(value)) || value
-let publicKey, secretKey, serverName, external_publicKey, external_signPublicKey, external_serverName
+let keyData, walletAddress, publicKey, secretKey, serverName, external_publicKey, external_signPublicKey, external_serverName
 
+// Reads environment variables and generate keys if needed
 const setVariables = () => {
-    // Key pairs of this server
-    publicKey = process.env.publicKey
-    if (!publicKey) return 'Missing publicKey'
-
-    secretKey = process.env.secretKey
-    if (!secretKey) return 'Missing secretKey'
-
     serverName = process.env.serverName
-    if (!serverName) return 'Missing serverName'
+    if (!serverName) return 'Missing environment variable: "serverName"'
 
     external_publicKey = process.env.external_publicKey
     external_signPublicKey = process.env.external_signPublicKey
     external_serverName = process.env.external_serverName
     if (!external_publicKey || !external_serverName || !external_signPublicKey) {
-        return 'Missing external_publicKey, external_signPublicKey or external_serverName'
+        return 'Missing environment variable(s): "external_publicKey", "external_signPublicKey" or "external_serverName"'
     }
+
+    if (!process.env.keyData) return 'Missing environment variable: "keyData"'
+
+    // Prevent generating keys when not needed
+    if (keyData === process.env.keyData) return
+
+    // Key pairs of this server
+    keyData = process.env.keyData
+    const keyPair = encryptionKeypair(keyData)
+    walletAddress = keyPair.walletAddress
+    publicKey = keyPair.publicKey
+    secretKey = keyPair.secretKey
 }
 
 const err = setVariables()
 if (err) throw new Error(err)
+console.log('keyData: ', keyData)
+console.log('walletAddress: ', walletAddress)
+console.log('Encryption KeyPair: \n' + JSON.stringify({ publicKey, secretKey }, null, 4))
+console.log('serverName: ', serverName)
+console.log('external_publicKey: ', external_publicKey)
+console.log('external_serverName: ', external_serverName)
 
 // Setup server to use SSL certificate
 const server = https.createServer({

@@ -2,7 +2,7 @@ import React from 'react'
 import { Icon, Message, Responsive } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import createHash from 'create-hash/browser'
-import { bytesToHex } from 'oo7-substrate/src/utils'
+import { bytesToHex } from './convert'
 
 /*
  * Copies supplied string to system clipboard
@@ -42,7 +42,7 @@ export const isBond = x => x instanceof Bond
 export const isDefined = x => x !== undefined && x !== null
 export const isFn = x => typeof (x) === 'function'
 export const isMap = x => x instanceof Map
-export const isObj = x => x !== null && !isArr(x) && typeof(x) === 'object'
+export const isObj = x => x !== null && !isArr(x) && typeof (x) === 'object'
 // Checks if argument is an Array of Objects. Each element type must be object, otherwise will return false.
 export const isObjArr = x => !isArr(x) ? false : !x.reduce((no, item) => no || !isObj(item), false)
 // Checks if argument is an Map of Objects. Each element type must be object, otherwise will return false.
@@ -90,7 +90,7 @@ export const arrMapSlice = (data, startIndex, endIndex, callback) => {
 			key = data[i][0]
 			value = data[i][1]
 		}
-		result.push(callback( value, key, data, isAMap))
+		result.push(callback(value, key, data, isAMap))
 	}
 	return result
 }
@@ -114,13 +114,13 @@ export const arrSearch = (arr, keyValues, matchExact, matchAll, ignoreCase, retu
 		for (const i in keys) {
 			const key = keys[i]
 			let keyword = keyValues[key]
-			let value =  item[key]
+			let value = item[key]
 
 			if (ignoreCase && isStr(value)) {
 				value = value.toLowerCase()
 				keyword = isStr(keyword) ? keyword.toLowerCase() : keyword
 			}
-			
+
 			matched = !matchExact && (isStr(value) || isArr(value)) ? value.indexOf(keyword) >= 0 : value === keyword
 			if ((matchAll && !matched) || (!matchAll && matched)) break
 		}
@@ -133,7 +133,7 @@ export const arrSearch = (arr, keyValues, matchExact, matchAll, ignoreCase, retu
 export const arrSort = (arr, key, reverse, sortOriginal) => {
 	if (!isObjArr(arr)) return [];
 	const sortedArr = sortOriginal ? arr : arr.map(x => objCopy(x, {}))
-	return  arrReverse(sortedArr.sort((a, b) => a[key] > b[key] ? 1 : -1), reverse)
+	return arrReverse(sortedArr.sort((a, b) => a[key] > b[key] ? 1 : -1), reverse)
 }
 
 export const arrReverse = (arr, reverse) => reverse ? arr.reverse() : arr
@@ -186,8 +186,8 @@ export const objWithoutKeys = (obj, keys) => !isObj(obj) || !isArr(keys) ? {} : 
 export const mapCopy = (source, dest) => !isMap(source) ? (
 	!isMap(dest) ? new Map() : dest
 ) : (
-	Array.from(source).reduce((dest, x) => dest.set(x[0], x[1]), dest)
-)
+		Array.from(source).reduce((dest, x) => dest.set(x[0], x[1]), dest)
+	)
 
 // mapFindByKey finds a specific object by supplied key and value
 //
@@ -222,13 +222,13 @@ export const mapSearch = (map, keyValues, matchExact, matchAll, ignoreCase) => {
 		for (const i in keys) {
 			const key = keys[i]
 			let keyword = keyValues[key]
-			let value =  item[key]
+			let value = item[key]
 
 			if (ignoreCase && isStr(value)) {
 				value = value.toLowerCase()
 				keyword = isStr(keyword) ? keyword.toLowerCase() : keyword
 			}
-			
+
 			matched = !matchExact && (isStr(value) || isArr(value)) ? value.indexOf(keyword) >= 0 : value === keyword
 			if ((matchAll && !matched) || (!matchAll && matched)) break
 		}
@@ -360,11 +360,11 @@ export const textEllipsis = (text, maxLen, numDots) => {
 }
 
 export const icons = {
-    error: 'exclamation circle',
-    loading: { name: 'circle notched', loading: true },
-    info: 'info',
-    success: 'check circle outline',
-    warning: 'lightning'
+	error: 'exclamation circle',
+	loading: { name: 'circle notched', loading: true },
+	info: 'info',
+	success: 'check circle outline',
+	warning: 'lightning'
 }
 
 // valid statuses: error, info, loading, success
@@ -373,25 +373,25 @@ export const newMessage = message => {
 	let { icon, showIcon, status, style } = message
 	status = status || 'info'
 	icon = React.isValidElement(icon) ? icon.props : icon
-    if (showIcon) {
-        icon = icons[status]
-    }
-
-    if (isStr(icon)) {
-        icon = { name: icon }
+	if (showIcon) {
+		icon = icons[status]
 	}
 
-    return (
-        <Message
-            {...(objWithoutKeys(message, ['showIcon']))}
-            error={status==='error'}
-			icon={icon && <Icon {...icon} style={objCopy({width: 42}, icon.style, true)} />}
-			style={objCopy(!icon && {textAlign: 'center', width: '100%'}, style)}
-            success={status==='success'}
-            visible={!!status}
-            warning={['warning', 'loading'].indexOf(status) >= 0}
-        />
-    )
+	if (isStr(icon)) {
+		icon = { name: icon }
+	}
+
+	return (
+		<Message
+			{...(objWithoutKeys(message, ['showIcon']))}
+			error={status === 'error'}
+			icon={icon && <Icon {...icon} style={objCopy({ width: 42 }, icon.style, true)} />}
+			style={objCopy(!icon && { textAlign: 'center', width: '100%' }, style)}
+			success={status === 'success'}
+			visible={!!status}
+			warning={['warning', 'loading'].indexOf(status) >= 0}
+		/>
+	)
 }
 
 /*
@@ -407,8 +407,8 @@ export function IfMobile(props) {
 	return (
 		<React.Fragment>
 			{isDefined(props.then) && (
-				<Responsive 
-					maxWidth={Responsive.onlyMobile.maxWidth} 
+				<Responsive
+					maxWidth={Responsive.onlyMobile.maxWidth}
 					onUpdate={props.onUpdate}
 					className={props.thenClassName}
 				>

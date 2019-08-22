@@ -1,5 +1,5 @@
 // IN-PROGRESS. NOT YET READY TO USE
-// TODO: OOP implementation, use node-localstorage instead of json files???? 
+// TODO: OOP implementation, use node-localstorage instead of json files????
 import fs from 'fs'
 import { isStr, mapSearch } from '../src/utils/utils'
 

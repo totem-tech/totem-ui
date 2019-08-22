@@ -1,11 +1,13 @@
 import nacl, { box, randomBytes, secretbox, sign } from "tweetnacl"
-import {
+import util, {
     decodeUTF8,
     encodeUTF8,
     encodeBase64,
     decodeBase64
 } from "tweetnacl-util"
-import { hexToBytes } from 'oo7-substrate/src/utils'
+import { blake2b } from 'blakejs'
+import { hexToBytes, bytesToHex, ss58Encode } from './convert'
+// import { secretStore } from 'oo7-substrate'
 
 export const isUint8Array = x => typeof x === Uint8Array
 export const newNonce = length => encodeBase64(randomBytes(length || box.nonceLength))
@@ -52,8 +54,9 @@ export const verifySignature = (message, signature, publicKey) => {
 
 export const encryptionKeypair = keyData => {
     const bytes = hexToBytes(keyData)
-    const { publicKey, secretKey } = box.keyPair.fromSecretKey(bytes.slice(0, 32))
+    const { publicKey, secretKey } = box.keyPair.fromSecretKey(blake2b(bytes.slice(0, 32), null, 32))
     return {
+        walletAddress: ss58Encode(bytes.slice(64, 96)),
         publicKey: encodeBase64(publicKey),
         secretKey: encodeBase64(secretKey)
     }
@@ -61,7 +64,7 @@ export const encryptionKeypair = keyData => {
 
 export const signingKeyPair = keyData => {
     const bytes = hexToBytes(keyData)
-    const { publicKey, secretKey } = sign.keyPair.fromSeed(bytes.slice(0, 32))
+    const { publicKey, secretKey } = sign.keyPair.fromSeed(blake2b(bytes.slice(0, 32), null, 32))
     return {
         publicKey: encodeBase64(publicKey),
         secretKey: encodeBase64(secretKey)

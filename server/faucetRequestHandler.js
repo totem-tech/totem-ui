@@ -16,30 +16,7 @@ const FAUCET_SERVER_URL = process.env.FAUCET_SERVER_URL || 'https://127.0.0.1:30
 // const getItem = key => JSON.parse(localStorage.getItem(key))
 // const setItem = (key, value) => localStorage.setItem(key, JSON.stringify(value)) || value
 
-let publicKey, secretKey, signPublicKey, signSecretKey, serverName, external_publicKey, external_serverName
-// Key pairs of this server
-publicKey = process.env.publicKey
-if (!publicKey) throw new Error('Missing "publicKey"');
-
-secretKey = process.env.secretKey
-if (!secretKey) throw new Error('Missing "secretKey"');
-
-signPublicKey = process.env.signPublicKey
-if (!signPublicKey) throw new Error('Missing "signPublicKey"');
-
-signSecretKey = process.env.signSecretKey
-if (!signSecretKey) throw new Error('Missing "signSecretKey"');
-
-serverName = process.env.serverName
-if (!serverName) throw new Error('Missing "serverName"');
-
-external_publicKey = process.env.external_publicKey
-external_serverName = process.env.external_serverName
-if (!external_publicKey || !external_serverName) {
-    throw new Error('External server public key (external_publicKey) and/or name (external_serverName) file(s) not found or empty in the pseudo local storage path:', FAUCET_STORAGE_PATH)
-}
-
-const faucetClient = ioClient(FAUCET_SERVER_URL, { secure: true, rejectUnauthorized: false })
+let keyData, walletAddress, publicKey, secretKey, signPublicKey, signSecretKey, serverName, external_publicKey, external_serverName
 
 // Error messages
 const errMsgs = {
@@ -47,8 +24,52 @@ const errMsgs = {
     loginOrRegister: 'Login/registration required'
 }
 
+// Reads environment variables and generate keys if needed
+const setVariables = () => {
+    serverName = process.env.serverName
+    if (!serverName) return 'Missing environment variable: "serverName"'
+
+    external_publicKey = process.env.external_publicKey
+    external_serverName = process.env.external_serverName
+    if (!external_publicKey || !external_serverName) {
+        return 'Missing environment variable(s): "external_publicKey" and/or "external_serverName"'
+    }
+
+    if (!process.env.keyData) return 'Missing environment variable: "keyData"'
+
+    // Prevent generating keys when not needed
+    if (keyData === process.env.keyData) return
+
+    // Key pairs of this server
+    keyData = process.env.keyData
+    const keyPair = encryptionKeypair(keyData)
+    walletAddress = keyPair.walletAddress
+    publicKey = keyPair.publicKey
+    secretKey = keyPair.secretKey
+
+    const signKeyPair = signingKeyPair(keyData)
+    signPublicKey = signKeyPair.publicKey
+    signSecretKey = signKeyPair.secretKey
+}
+
+const err = setVariables()
+if (err) throw new Error(err)
+console.log('keyData: ', keyData)
+console.log('walletAddress: ', walletAddress)
+console.log('Encryption KeyPair: \n' + JSON.stringify({ publicKey, secretKey }, null, 4))
+console.log('Signing KeyPair: \n' + JSON.stringify({ signPublicKey, signSecretKey }, null, 4))
+console.log('serverName: ', serverName)
+console.log('external_publicKey: ', external_publicKey)
+console.log('external_serverName: ', external_serverName)
+
+const faucetClient = ioClient(FAUCET_SERVER_URL, { secure: true, rejectUnauthorized: false })
+
 export const faucetRequestHandler = (client, emitter, findUserByClientId) => (address, callback) => {
     if (!isFn(callback)) return
+
+    const err = setVariables()
+    if (err) return callback(err) | console.log(err)
+
     const user = findUserByClientId(client.id)
     if (!user) return callback(errMsgs.loginOrRegister)
     getFaucetRequest(DATA_KEY, user.id).then(userRequests => {
@@ -89,7 +110,7 @@ export const faucetRequestHandler = (client, emitter, findUserByClientId) => (ad
         console.log('\n\n\nsignSecretKey:\n', signSecretKey)
         console.log('\n\n\nSignature:\n', signature)
         const valid = verifySignature(data, signature, signPublicKey)
-        if (!valid) return callback('Signature pre-verification failed');
+        if (!valid) return callback('Signature pre-verification failed')
 
         const nonce = newNonce()
         const message = lenStr + external_serverName + data + signature
