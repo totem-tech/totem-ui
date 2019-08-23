@@ -8,4 +8,5 @@ _______________STATIC_VARIABLES_BELOW_______________="Changes to below variables
 FAUCET_PORT="int: port number" \
 FAUCET_CERT_PATH="string: ./path/to/ssl/certificate/key/file" \
 FAUCET_KEY_PATH="string: ./path/to/ssl/certificate/private/key/file" \
+NODE_URL="string: wss://host.ext...." \
 yarn run server-faucet
