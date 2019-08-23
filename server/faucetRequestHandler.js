@@ -96,9 +96,7 @@ export const faucetRequestHandler = (client, emitter, findUserByClientId) => (ad
         // Length of stringified data
         let lenStr = JSON.stringify(data.length)
         // Make sure to have fixed length
-        if (lenStr.length < minLength) {
-            lenStr = new Array(minLength - lenStr.length).fill(0).join('') + lenStr
-        }
+        lenStr = lenStr.padStart(minLength)
 
         // Generate new signature
         const signature = newSignature(data, signSecretKey)

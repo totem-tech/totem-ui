@@ -1,12 +1,12 @@
-import nacl, { box, randomBytes, secretbox, sign } from "tweetnacl"
-import util, {
+import { box, randomBytes, sign } from "tweetnacl"
+import {
     decodeUTF8,
     encodeUTF8,
     encodeBase64,
     decodeBase64
-} from "tweetnacl-util"
+} from "./convert"
 import { blake2b } from 'blakejs'
-import { hexToBytes, bytesToHex, ss58Encode } from './convert'
+import { hexToBytes, ss58Encode } from './convert'
 // import { secretStore } from 'oo7-substrate'
 
 export const isUint8Array = x => typeof x === Uint8Array
@@ -39,6 +39,7 @@ export const decrypt = (encryptedMsg, nonce, externalPubKey, internalSecretKey) 
     const decrypted = box.open(messageArr, nonce, externalPubKey, internalSecretKey)
     return !decrypted ? null : JSON.parse(encodeUTF8(decrypted))
 }
+
 export const newSignature = (message, secretKey) => {
     message = isUint8Array(message) ? message : decodeUTF8(message)
     secretKey = isUint8Array(secretKey) ? secretKey : decodeBase64(secretKey)
@@ -50,6 +51,16 @@ export const verifySignature = (message, signature, publicKey) => {
     signature = isUint8Array(signature) ? signature : decodeBase64(signature)
     publicKey = isUint8Array(publicKey) ? publicKey : decodeBase64(publicKey)
     return sign.detached.verify(message, signature, publicKey)
+}
+
+export const getKeyPair = keyData => {
+    const bytes = hexToBytes(keyData)
+    return {
+        address: ss58Encode(bytes.slice(64, 96)),
+        publicKey: Uint8Array.from(bytes.slice(64, 96)),
+        secretKey32: Uint8Array.from(bytes.slice(0, 32)),
+        secretKey64: Uint8Array.from(bytes.slice(0, 64))
+    }
 }
 
 export const encryptionKeypair = keyData => {

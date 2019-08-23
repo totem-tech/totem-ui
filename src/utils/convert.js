@@ -1,36 +1,24 @@
-import { ss58Encode } from 'oo7-substrate/src/ss58'
+import {
+    ss58Encode as ss58Encode1,
+    ss58Decode as ss58Decode1
+} from 'oo7-substrate/src/ss58'
+import {
+    hexToBytes as hexToBytes1,
+    bytesToHex as bytesToHex1
+} from 'oo7-substrate/src/utils.js'
+import {
+    decodeUTF8 as decodeUTF81,
+    encodeUTF8 as encodeUTF81,
+    encodeBase64 as encodeBase641,
+    decodeBase64 as decodeBase641
+} from "tweetnacl-util"
 
-const convert = {
-    ss58Encode
-}
-
-// Taken from oo7-substrate/src/utils.js
-convert.hexToBytes = str => {
-    if (!str) {
-        return new Uint8Array();
-    }
-    var a = [];
-    for (var i = str.startsWith('0x') ? 2 : 0, len = str.length; i < len; i += 2) {
-        a.push(parseInt(str.substr(i, 2), 16));
-    }
-
-    return new Uint8Array(a);
-}
-
-// Taken from oo7-substrate/src/utils.js
-convert.bytesToHex = uint8arr => {
-    if (!uint8arr) {
-        return '';
-    }
-    var hexStr = '';
-    for (var i = 0; i < uint8arr.length; i++) {
-        var hex = (uint8arr[i] & 0xff).toString(16);
-        hex = (hex.length === 1) ? '0' + hex : hex;
-        hexStr += hex;
-    }
-
-    return hexStr.toLowerCase();
-}
-
-export default convert
-module.exports = convert
+// For easy access and placeholder for some functions to be copied here
+export const ss58Encode = ss58Encode1
+export const ss58Decode = ss58Decode1
+export const hexToBytes = hexToBytes1
+export const bytesToHex = bytesToHex1
+export const decodeUTF8 = decodeUTF81
+export const encodeUTF8 = encodeUTF81
+export const encodeBase64 = encodeBase641
+export const decodeBase64 = decodeBase641
