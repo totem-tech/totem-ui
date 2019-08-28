@@ -4,40 +4,24 @@ import hexToU8a from '@polkadot/util/hex/toU8a'
 export async function txHandler(api, uri, toAddress, amount, secretKey) {
     // create an instance of our testing keyring
     // If you're using ES6 module imports instead of require, just change this line to:
-    const keyring = new Keyring()
+    const keyring = new Keyring({ type: 'sr25519' })
 
     // Restore funding wallet 
+    // Use first 32 byte secret key as hex......................
     const sender = keyring.addFromUri(uri, undefined, 'sr25519')
-    // const sender = keyring.addFromSeed(
-    //     secretKey instanceof Uint8Array ? secretKey : hexToU8a(secretKey, 256),
-    //     undefined,
-    //     'sr25519'
-    // )
     console.log('sender.address:', sender.address)
     showBalance(api, sender.address, toAddress)
     let balance = await api.query.balances.freeBalance(sender.address)
     if (balance <= amount) throw new Error('Insufficient balance')
-    // get the nonce for the admin key
-    const nonce = await api.query.system.accountNonce(sender.address)
+     // Create a extrinsic, transferring 12345 units to Bob
+    const transfer = api.tx.balances.transfer(toAddress, amount);
 
-    console.log('Sending', amount, 'from', sender.address, 'to', toAddress, 'with nonce', nonce.toString())
+    // Sign and send the transaction using our account
+    const hash = await transfer.signAndSend(sender);
 
-    // Do the transfer and track the actual status
-    api.tx.balances
-        .transfer(toAddress, amount)
-        .sign(sender, { nonce })
-        .send(({ events = [], status = {} }) => {
-            console.log('Transaction status:', status.type)
-
-            if (!status.isFinalized) return
-            console.log('Completed at block hash', status.asFinalized.toHex())
-            console.log('Events:')
-
-            events.forEach(({ phase, event: { data, method, section } }) => {
-                console.log('\t', phase.toString(), `: ${section}.${method}`, data.toString())
-            })
-            showBalance(api, sender.address, toAddress)
-        })
+    console.log('Transfer sent with hash', hash.toHex());
+    console.log('Balance after transfer:')
+    showBalance(api, sender.address, toAddress)
 }
 // Make sure to catch errors
 // txHandler().catch(console.error)
