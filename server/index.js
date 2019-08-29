@@ -62,12 +62,6 @@ const isValidId = id => /^[a-z][a-z0-9]+$/.test(id)
 const idMaxLength = 16
 const msgMaxLength = 160
 const idMinLength = 3
-let faucetRequests = new Map()
-const faucetRequestsFile = './server/data/faucet-requests.json'
-const fauceRequstLimit = 5
-const faucetRequestTimeLimit = 60 * 60 * 1000 // milliseconds
-const projectsFile = './server/data/projects.json'
-let projects = new Map()
 const companiesFile = './server/data/companies.json'
 let companies = new Map()
 
@@ -75,7 +69,6 @@ const findUserByClientId = clientId => mapFindByKey(users, 'clientIds', clientId
 
 // Error messages
 const errMsgs = {
-	fauceRequestLimitReached: `Maximum ${fauceRequstLimit} requests allowed within 24 hour period`,
 	idInvalid: `Only alpha-numeric characters allowed and must start with an alphabet`,
 	idLength: `Must be between ${idMinLength} to ${idMaxLength} characters`,
 	idExists: 'User ID already taken',
@@ -88,6 +81,7 @@ const errMsgs = {
  new
 */
 import { faucetRequestHandler } from './faucetRequestHandler'
+import { projectAddOrUpdate, projectUpdateStatus, projectsByHashes, projectsByWallets, projectsSearch } from './projects'
 
 io.on('connection', client => {
 	client.on('disconnect', () => {
@@ -157,134 +151,16 @@ io.on('connection', client => {
 		console.info('Login ' + (err ? 'failed' : 'success') + ' | ID:', userId, '| Client ID: ', client.id)
 		isFn(callback) && callback(err)
 	})
+	
 	client.on('faucet-request', faucetRequestHandler(client, emitter, findUserByClientId))
-	// client.on('faucet-request', (address, callback) => {
-	// 	const doCb = isFn(callback)
-	// 	const user = findUserByClientId(client.id)
-	// 	if (!user) return doCb && callback(errMsgs.loginOrRegister)
 
-	// 	let userRequests = faucetRequests.get(user.id)
+	// Project related handlers
+	client.on('project', projectAddOrUpdate)
+	client.on('project-status', projectUpdateStatus)
+	client.on('projects', projectsByWallets)
+	client.on('projects-by-hashes', projectsByHashes)
+	client.on('projects-search', projectsSearch)
 
-	// 	userRequests = userRequests || []
-	// 	const numReqs = userRequests.length
-	// 	let fifthTS = (userRequests[numReqs - 5] || {}).timestamp
-	// 	fifthTS = fifthTS && typeof (fifthTS) === 'string' ? Date.parse(fifthTS) : fifthTS
-	// 	if (numReqs >= fauceRequstLimit && Math.abs(new Date() - fifthTS) < faucetRequestTimeLimit) {
-	// 		// prevents adding more than maximum number of requests within the given duration
-	// 		return doCb && callback(errMsgs.fauceRequestLimitReached, fifthTS)
-	// 	}
-
-	// 	userRequests.push({
-	// 		address,
-	// 		timestamp: new Date(),
-	// 		funded: false
-	// 	})
-
-	// 	if (numReqs >= faucetRequestTimeLimit) {
-	// 		userRequests = userRequests.slice(numReqs - faucetRequestTimeLimit)
-	// 	}
-	// 	faucetRequests.set(user.id, userRequests)
-	// 	saveFaucetRequests()
-	// 	emit([], 'faucet-request', [user.id, address])
-	// 	doCb && callback()
-	// })
-
-	// Create/update project
-	client.on('project', (hash, project, create, callback) => {
-		const doCb = isFn(callback)
-		const existingProject = projects.get(hash)
-		if (create && !!existingProject) {
-			return doCb && callback('Project already exists. Please use a different owner address and/or name')
-		}
-
-		// check if project contains all the required properties
-		const requiredKeys = ['name', 'ownerAddress', 'description']
-		// All the acceptable keys
-		const validKeys = [...requiredKeys, 'status']
-		const invalid = !hash || !project || requiredKeys.reduce((invalid, key) => invalid || !project[key], false)
-		if (invalid) return doCb && callback(
-			'Project must contain all of the following properties: ' +
-			requiredKeys.join() + ' and an unique hash'
-		)
-		if (project.description.length > 160) {
-			doCb && callback('Project description must not exceed 160 characters')
-		}
-		// exclude any unwanted data 
-		project = objCopy(objClean(project, validKeys), existingProject, true)
-		project.status = isValidNumber(project.status) ? project.status : 0
-		project.tsCreated = project.createdAt || new Date()
-
-		// Add/update project
-		projects.set(hash, project)
-		saveProjects()
-		doCb && callback(null)
-		console.log(`Project ${create ? 'created' : 'updated'}: ${hash}`)
-	})
-
-	// update project status
-	// Statuses:
-	// 0 : open
-	// 1 : reopened
-	// 2 : closed
-	// 99: deleted
-	client.on('project-status', (hash, status, callback) => {
-		if (!isFn(callback)) return;
-		const project = projects.get(hash)
-		if (!project) return callback('Project not found');
-		console.log('Status update: ', hash, project.status, '>>', status)
-		project.status = status
-		projects.set(hash, project)
-		saveProjects()
-		callback()
-	})
-
-	// user projects by list of wallet addresses
-	// Params
-	// @walletAddrs	array
-	// @callback	function: 
-	//						Params:
-	//						@err	string, 
-	//						@result map, 
-	client.on('projects', (walletAddrs, callback) => {
-		if (!isFn(callback)) return;
-		if (!isArr(walletAddrs)) return callback('Array of wallet addresses required')
-		// Find all projects by supplied addresses and return Map
-		const result = walletAddrs.reduce((res, address) => (
-			mapCopy(mapSearch(projects, { ownerAddress: address }), res)
-		), new Map())
-		callback(null, result)
-	})
-
-	// user projects by list of project hashes
-	// Params
-	// @hashArr	array
-	// @callback	function: 
-	//						Params:
-	//						@err	string, 
-	//						@result map, 
-	client.on('projects-by-hashes', (hashArr, callback) => {
-		if (!isFn(callback)) return;
-		if (!isArr(hashArr)) return callback('Array of project hashes required')
-		const hashesNotFound = new Array()
-		// Find all projects by supplied hash and return Map
-		const result = hashArr.reduce((res, hash) => {
-			const project = projects.get(hash)
-			!!project ? res.set(hash, project) : hashesNotFound.push(hash)
-			return res
-		}, new Map())
-		callback(null, result, hashesNotFound)
-	})
-
-	// search all projects
-	client.on('project-search', (keyword, key, callback) => {
-		if (!isFn(callback)) return
-		callback('Not implemented')
-		// const user = findUserByClientId(client.id)
-		// if (!user) return callback(errMsgs.loginOrRegister)
-		// callback('', mapSearch(projects, ....))
-	})
-
-	// add/get company by walletAddress
 	client.on('company', (walletAddress, company, callback) => {
 		if (!isFn(callback)) return console.log('no callback');
 		if (!isObj(company)) {
@@ -329,8 +205,6 @@ io.on('connection', client => {
 })
 
 const saveCompanies = () => saveMapToFile(companiesFile, companies)
-const saveFaucetRequests = () => saveMapToFile(faucetRequestsFile, faucetRequests)
-const saveProjects = () => saveMapToFile(projectsFile, projects)
 const saveUsers = () => saveMapToFile(usersFile, users)
 const saveMapToFile = (filepath, map) => {
 	if (!isStr(filepath)) return console.log('Invalid file path', filepath);
@@ -358,8 +232,6 @@ const emitter = (ignoreClientIds, eventName, params) => {
 // load all files required
 var promises = [
 	{ type: 'companies', path: companiesFile, saveFn: saveCompanies },
-	{ type: 'faucetRequests', path: faucetRequestsFile, saveFn: saveFaucetRequests },
-	{ type: 'projects', path: projectsFile, saveFn: saveProjects },
 	{ type: 'users', path: usersFile, saveFn: saveUsers },
 ].map(item => new Promise((resolve, reject) => {
 	const { type, path, saveFn } = item
@@ -378,9 +250,6 @@ var promises = [
 					break
 				case 'faucetRequests':
 					faucetRequests = map
-					break
-				case 'projects':
-					projects = map
 					break
 				case 'users':
 					users = map

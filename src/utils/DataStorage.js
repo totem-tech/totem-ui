@@ -23,11 +23,11 @@ const save = (key, value, isMap = true) => {
 class DataStorage {
     constructor(filename, loadOnDemand = false) {
         this.filename = filename
-        // whether to cache data
+        // whether to disable data cache
         this.loadOnDemand = loadOnDemand
         // this.Type = Map
         if (loadOnDemand) return
-        this.data = getAll()
+        this.data = this.getAll()
     }
 
     getAll() {
