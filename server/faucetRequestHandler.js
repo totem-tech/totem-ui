@@ -69,12 +69,13 @@ export const faucetRequestHandler = (client, emitter, findUserByClientId) => (ad
         const user = findUserByClientId(client.id)
         if (!user) return callback(errMsgs.loginOrRegister)
         let userRequests = faucetStorage.get(user.id) || []
+        const index = userRequests.length
         const numReqs = userRequests.length
         let fifthTS = (userRequests[numReqs - 5] || {}).timestamp
         fifthTS = isStr(fifthTS) ? Date.parse(fifthTS) : fifthTS
         if (numReqs >= REQUEST_LIMIT && Math.abs(new Date() - fifthTS) < TIME_LIMIT) {
             // prevents adding more than maximum number of requests within the given duration
-            return callback(errMsgs.fauceRequestLimitReached, fifthTS)
+            return callback(errMsgs.fauceRequestLimitReached)
         }
         const request = {
             address,
@@ -113,8 +114,12 @@ export const faucetRequestHandler = (client, emitter, findUserByClientId) => (ad
             external_publicKey,
             secretKey
         )
-        faucetClient.emit('faucet', encryptedMsg, nonce, (err, success) => {
-            callback(err, fifthTS)
+        faucetClient.emit('faucet', encryptedMsg, nonce, (err, hash) => {
+            callback(err, hash)
+            userRequests[index].funded = !err
+            userRequests[index].hash = hash
+            // update request data
+            faucetStorage.set(user.id, userRequests)
         })
 
     } catch (err) {

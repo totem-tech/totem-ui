@@ -93,12 +93,12 @@ class PageHeader extends ReactiveComponent {
 			this.faucetMsgId = setToast(msg, 3000, this.faucetMsgId)
 			return
 		}
-		client.faucetRequest(address, (err, fifthTs) => {
+		client.faucetRequest(address, (err, txHash) => {
 			const msg = {
-				content: err || 'Request sent!',
+				content: err || `Faucet transfer complete. Transaction hash: ${txHash}`,
 				status: !!err ? 'error' : 'success'
 			}
-			this.faucetMsgId = setToast(msg, 3000, this.faucetMsgId)
+			this.faucetMsgId = setToast(msg, null, this.faucetMsgId)
 		})
 	}
 
