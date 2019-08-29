@@ -3,10 +3,9 @@ import ioClient from 'socket.io-client'
 import { encrypt, encryptionKeypair, signingKeyPair, newNonce, newSignature, verifySignature } from '../src/utils/naclHelper'
 import { isFn, isStr } from '../src/utils/utils'
 import DataStorage from '../src/utils/DataStorage'
-// import { secretStore } from 'oo7-substrate'
 const faucetStorage = new DataStorage('faucet-requests.json', true)
 // Maximum number of requests within @TIME_LIMIT
-const REQUEST_LIMIT = 5555
+const REQUEST_LIMIT = 5
 const TIME_LIMIT = 24 * 60 * 60 * 1000 // 1 day in milliseconds
 // Environment variables
 const FAUCET_SERVER_URL = process.env.FAUCET_SERVER_URL || 'https://127.0.0.1:3002'
