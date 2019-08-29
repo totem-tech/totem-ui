@@ -62,7 +62,6 @@ const faucetClient = ioClient(FAUCET_SERVER_URL, { secure: true, rejectUnauthori
 export const faucetRequestHandler = (client, emitter, findUserByClientId) => (address, callback) => {
     try {
         if (!isFn(callback)) return
-
         const err = setVariables()
         if (err) return callback(err) | console.log(err)
 
@@ -91,7 +90,7 @@ export const faucetRequestHandler = (client, emitter, findUserByClientId) => (ad
         faucetStorage.set(user.id, userRequests)
 
         // Send public chat messge with facuet request | REMOVE ?
-        emitter([], 'faucet-request', [user.id, address])
+        // emitter([], 'faucet-request', [user.id, address])
         const data = JSON.stringify(request)
         const minLength = 9
         // Length of stringified data

@@ -73,7 +73,7 @@ class ChatWidget extends ReactiveComponent {
 		this.handleNewUserMessage = this.handleNewUserMessage.bind(this)
 		this.login = this.login.bind(this)
 		this.setupChatClient = this.setupChatClient.bind(this)
-		this.addFaucetEntry = this.addFaucetEntry.bind(this)
+		// this.addFaucetEntry = this.addFaucetEntry.bind(this)
 
 		onLogin( userId => this.setState({userId}))
 	}
@@ -105,36 +105,36 @@ class ChatWidget extends ReactiveComponent {
 			this.setState({showOfflineMsg: false})
 		})
 
-		this.client.onFaucetRequest(this.addFaucetEntry)
+		// this.client.onFaucetRequest(this.addFaucetEntry)
 	}
 
-	addFaucetEntry(userId, address) {
-		const fromMe = userId === this.state.userId
-		const addArr = address.split('')
-		const addressShort = addArr.slice(0, 4).join('') + '...' + addArr.slice(addArr.length - 4, addArr.length).join('') + ' '
-		const content = (
-			<div>
-				<h4 style={styles.faucetRequestTitle}>
-					{fromMe ? 'You made a request for funds' : 'Funds requested for @' + userId}
-				</h4>
-				<div>Address: {addressShort}
-					<Icon
-						link
-						title="Copy address"
-						name="copy outline"
-						onClick={() => copyToClipboard(address)}
-					/>
-				</div>
-			</div>
-		)
+	// addFaucetEntry(userId, address) {
+	// 	const fromMe = userId === this.state.userId
+	// 	const addArr = address.split('')
+	// 	const addressShort = addArr.slice(0, 4).join('') + '...' + addArr.slice(addArr.length - 4, addArr.length).join('') + ' '
+	// 	const content = (
+	// 		<div>
+	// 			<h4 style={styles.faucetRequestTitle}>
+	// 				{fromMe ? 'You made a request for funds' : 'Funds requested for @' + userId}
+	// 			</h4>
+	// 			<div>Address: {addressShort}
+	// 				<Icon
+	// 					link
+	// 					title="Copy address"
+	// 					name="copy outline"
+	// 					onClick={() => copyToClipboard(address)}
+	// 				/>
+	// 			</div>
+	// 		</div>
+	// 	)
 
-		const props = {
-			background: fromMe ? 'grey' : '#f4f7f9',
-			color: fromMe ? 'white' : 'black',
-			content
-		}
-		renderCustomComponent(EventEntry, props)
-	}
+	// 	const props = {
+	// 		background: fromMe ? 'grey' : '#f4f7f9',
+	// 		color: fromMe ? 'white' : 'black',
+	// 		content
+	// 	}
+	// 	renderCustomComponent(EventEntry, props)
+	// }
 
 	handleNewUserMessage(msg) {
 		this.client.message(msg, err => err ? addEventMsg(err) : addToHistory(msg, this.state.userId))
