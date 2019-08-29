@@ -62,8 +62,6 @@ const isValidId = id => /^[a-z][a-z0-9]+$/.test(id)
 const idMaxLength = 16
 const msgMaxLength = 160
 const idMinLength = 3
-const companiesFile = './server/data/companies.json'
-let companies = new Map()
 
 const findUserByClientId = clientId => mapFindByKey(users, 'clientIds', clientId)
 
@@ -82,6 +80,7 @@ const errMsgs = {
 */
 import { faucetRequestHandler } from './faucetRequestHandler'
 import { projectAddOrUpdate, projectUpdateStatus, projectsByHashes, projectsByWallets, projectsSearch } from './projects'
+import { company, companySearch } from './companies'
 
 io.on('connection', client => {
 	client.on('disconnect', () => {
@@ -161,50 +160,10 @@ io.on('connection', client => {
 	client.on('projects-by-hashes', projectsByHashes)
 	client.on('projects-search', projectsSearch)
 
-	client.on('company', (walletAddress, company, callback) => {
-		if (!isFn(callback)) return console.log('no callback');
-		if (!isObj(company)) {
-			company = companies.get(walletAddress)
-			return callback(!company ? 'Company not found' : company)
-		}
-		// required keys
-		const keys = ['country', 'name', 'registrationNumber', 'walletAddress']
-		// make sure all the required keys are supplied
-		if (keys.reduce((invalid, key) => invalid || !hasValue(company[key]), !walletAddress)) {
-			return callback('Company must be a valid object and contain the following: ' + keys.join())
-		}
-		const { country, name, registrationNumber } = company
-		// Check if company with wallet address already exists
-		if (!!companies.get(walletAddress)) {
-			return callback('Wallet address is already associated with a company')
-		}
-		// check if company with combination of name, registration number and country already exists
-		// PS: same company name can have different registration number in different countries
-		if (mapSearch(companies, { name, registrationNumber, country }, true, true, true).size > 0) {
-			return callback('Company already exists')
-		}
-
-		console.log('Company created: ', JSON.stringify(company))
-		delete company.walletAddress;
-		companies.set(walletAddress, company)
-		callback()
-		saveCompanies()
-	})
-
-	// Find companies by key-value pair(s)
-	client.on('company-search', (keyValues, callback) => {
-		if (!isFn(callback)) return;
-		const keys = ['name', 'walletAddress', 'registrationNumber', 'country']
-		keyValues = objClean(keyValues, keys)
-		if (Object.keys(keyValues).length === 0) {
-			return callback('Please supply one or more of the following keys: ' + keys.join())
-		}
-
-		callback(null, mapSearch(companies, keyValues))
-	})
+	client.on('company', company)
+	client.on('company-search', companySearch)
 })
 
-const saveCompanies = () => saveMapToFile(companiesFile, companies)
 const saveUsers = () => saveMapToFile(usersFile, users)
 const saveMapToFile = (filepath, map) => {
 	if (!isStr(filepath)) return console.log('Invalid file path', filepath);
@@ -231,7 +190,6 @@ const emitter = (ignoreClientIds, eventName, params) => {
 
 // load all files required
 var promises = [
-	{ type: 'companies', path: companiesFile, saveFn: saveCompanies },
 	{ type: 'users', path: usersFile, saveFn: saveUsers },
 ].map(item => new Promise((resolve, reject) => {
 	const { type, path, saveFn } = item
@@ -245,9 +203,6 @@ var promises = [
 		} else {
 			const map = new Map(JSON.parse(data || '[]'))
 			switch (type) {
-				case 'companies':
-					companies = map
-					break
 				case 'faucetRequests':
 					faucetRequests = map
 					break
