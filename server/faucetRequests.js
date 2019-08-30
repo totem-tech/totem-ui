@@ -10,7 +10,7 @@ const TIME_LIMIT = 24 * 60 * 60 * 1000 // 1 day in milliseconds
 // Environment variables
 const FAUCET_SERVER_URL = process.env.FAUCET_SERVER_URL || 'https://127.0.0.1:3002'
 
-let keyData, walletAddress, publicKey, secretKey, signPublicKey, signSecretKey, serverName, external_publicKey, external_serverName
+let keyData, walletAddress, publicKey, secretKey, signPublicKey, signSecretKey, serverName, external_publicKey, external_serverName, printSensitiveData
 
 // Error messages
 const errMsgs = {
@@ -44,22 +44,28 @@ const setVariables = () => {
     const signKeyPair = signingKeyPair(keyData)
     signPublicKey = signKeyPair.publicKey
     signSecretKey = signKeyPair.secretKey
+
+    // only print sensitive data if "printSensitiveData" environment variable is set to "YES" (case-sensitive)
+    printSensitiveData = process.env.printSensitiveData === "YES"
+    if (!printSensitiveData) return
+    console.log('keyData: ', keyData)
+    console.log('walletAddress: ', walletAddress)
+    console.log('Encryption KeyPair: \n' + JSON.stringify({ publicKey, secretKey }, null, 4))
+    console.log('Signing KeyPair: \n' + JSON.stringify({ signPublicKey, signSecretKey }, null, 4))
+    console.log('serverName: ', serverName)
+    console.log('external_publicKey: ', external_publicKey)
+    console.log('external_serverName: ', external_serverName)
 }
 
 const err = setVariables()
 if (err) throw new Error(err)
-console.log('keyData: ', keyData)
-console.log('walletAddress: ', walletAddress)
-console.log('Encryption KeyPair: \n' + JSON.stringify({ publicKey, secretKey }, null, 4))
-console.log('Signing KeyPair: \n' + JSON.stringify({ signPublicKey, signSecretKey }, null, 4))
-console.log('serverName: ', serverName)
-console.log('external_publicKey: ', external_publicKey)
-console.log('external_serverName: ', external_serverName)
-
+// connect to faucet server
 const faucetClient = ioClient(FAUCET_SERVER_URL, { secure: true, rejectUnauthorized: false })
 
 export const faucetRequestHandler = (client, emitter, findUserByClientId) => (address, callback) => {
     try {
+
+console.log('faucetClient.connected', faucetClient.connected)
         if (!isFn(callback)) return
         const err = setVariables()
         if (err) return callback(err) | console.log(err)
@@ -99,8 +105,8 @@ export const faucetRequestHandler = (client, emitter, findUserByClientId) => (ad
 
         // Generate new signature
         const signature = newSignature(data, signSecretKey)
-        console.log('\n\n\nsignSecretKey:\n', signSecretKey)
-        console.log('\n\n\nSignature:\n', signature)
+        printSensitiveData && console.log('\n\n\nsignSecretKey:\n', signSecretKey)
+        printSensitiveData && console.log('\n\n\nSignature:\n', signature)
         const valid = verifySignature(data, signature, signPublicKey)
         if (!valid) return callback('Signature pre-verification failed')
 

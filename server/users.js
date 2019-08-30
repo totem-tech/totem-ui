@@ -31,7 +31,7 @@ export const handleDisconnect = (clients, client) => () => {
     const clientIdIndex = clientIds.findIndex(cid => cid === client.id)
     // remove clientId
     clientIds.splice(clientIdIndex, 1)
-    userClientIds.set(user.id, clientIdIndex)
+    userClientIds.set(user.id, clientIds)
     console.info('Client disconnected: ', client.id)
 }
 
