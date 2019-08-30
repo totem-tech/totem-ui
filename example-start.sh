@@ -6,4 +6,6 @@ external_publicKey="string: (base64-encoded) 32 byte encryption public key from 
 _______________STATIC_VARIABLES_BELOW_______________="Changes to below variables DO REQUIRE server restart" \
 FAUCET_SERVER_URL="string: https://hostname:port" \
 STORAGE_PATH="string: ./relative/or/absolute/directory/path/where/server/data/is/stored" \
+UI_CERT_PATH="./sslcert/fullchain.pem" \
+UI_KEY_PATH="./sslcert/privkey.pem" \
 yarn run dev

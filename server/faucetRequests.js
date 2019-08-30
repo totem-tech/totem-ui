@@ -3,7 +3,7 @@ import ioClient from 'socket.io-client'
 import { encrypt, encryptionKeypair, signingKeyPair, newNonce, newSignature, verifySignature } from '../src/utils/naclHelper'
 import { isFn, isStr } from '../src/utils/utils'
 import DataStorage from '../src/utils/DataStorage'
-const faucetStorage = new DataStorage('faucet-requests.json', true)
+const faucetRequests = new DataStorage('faucet-requests.json', true)
 // Maximum number of requests within @TIME_LIMIT
 const REQUEST_LIMIT = 5
 const TIME_LIMIT = 24 * 60 * 60 * 1000 // 1 day in milliseconds
@@ -66,7 +66,7 @@ export const faucetRequestHandler = (client, emitter, findUserByClientId) => (ad
 
         const user = findUserByClientId(client.id)
         if (!user) return callback(errMsgs.loginOrRegister)
-        let userRequests = faucetStorage.get(user.id) || []
+        let userRequests = faucetRequests.get(user.id) || []
         const index = userRequests.length
         const numReqs = userRequests.length
         let fifthTS = (userRequests[numReqs - 5] || {}).timestamp
@@ -86,7 +86,7 @@ export const faucetRequestHandler = (client, emitter, findUserByClientId) => (ad
             userRequests = userRequests.slice(numReqs - REQUEST_LIMIT)
         }
         // save request data
-        faucetStorage.set(user.id, userRequests)
+        faucetRequests.set(user.id, userRequests)
 
         // Send public chat messge with facuet request | REMOVE ?
         // emitter([], 'faucet-request', [user.id, address])
@@ -117,7 +117,7 @@ export const faucetRequestHandler = (client, emitter, findUserByClientId) => (ad
             userRequests[index].funded = !err
             userRequests[index].hash = hash
             // update request data
-            faucetStorage.set(user.id, userRequests)
+            faucetRequests.set(user.id, userRequests)
         })
 
     } catch (err) {

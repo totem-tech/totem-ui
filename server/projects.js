@@ -15,7 +15,7 @@ const messages = {
 }
 
 // Create/update project
-export const projectAddOrUpdate = (hash, project, create, callback) => {
+export const handleProject = (hash, project, create, callback) => {
     if (!isFn(callback)) return;
     const existingProject = projects.get(hash)
     if (create && !!existingProject) {
@@ -44,7 +44,7 @@ export const projectAddOrUpdate = (hash, project, create, callback) => {
 // 1 : reopened
 // 2 : closed
 // 99: deleted
-export const projectUpdateStatus = (hash, status, callback) => {
+export const handleProjectStatus = (hash, status, callback) => {
     if (!isFn(callback)) return;
     const project = projects.get(hash)
     if (!project) return callback(messages.projectNotFound);
@@ -62,7 +62,7 @@ export const projectUpdateStatus = (hash, status, callback) => {
 //						Params:
 //						@err	string, 
 //						@result map, 
-export const projectsByWallets = (walletAddrs, callback) => {
+export const handleProjects = (walletAddrs, callback) => {
     if (!isFn(callback)) return;
     if (!isArr(walletAddrs)) return callback(messages.arrayRequired)
     // Find all projects by supplied addresses and return Map
@@ -80,7 +80,7 @@ export const projectsByWallets = (walletAddrs, callback) => {
 //						Params:
 //						@err	string, 
 //						@result map, 
-export const projectsByHashes = (hashArr, callback) => {
+export const handleProjectsByHashes = (hashArr, callback) => {
     if (!isFn(callback)) return;
     if (!isArr(hashArr)) return callback(messages.arrayRequired)
     const hashesNotFound = new Array()
@@ -93,7 +93,7 @@ export const projectsByHashes = (hashArr, callback) => {
     callback(null, result, hashesNotFound)
 }
 
-export const projectsSearch = (keyword, key, callback) => {
+export const handleProjectsSearch = (keyword, key, callback) => {
     if (!isFn(callback)) return
     callback('Not implemented')
     // const user = findUserByClientId(client.id)

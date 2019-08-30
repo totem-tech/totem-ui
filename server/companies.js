@@ -20,7 +20,7 @@ const messages = {
 // @walletAddress string: company wallet address
 // @company       object: if non-object supplied will return existing company, if available
 // @callback      function: callback function
-export const company = (walletAddress, company, callback) => {
+export const handleCompany = (walletAddress, company, callback) => {
     if (!isFn(callback)) return
     if (!isObj(company)) {
         company = companies.get(walletAddress)
@@ -53,7 +53,7 @@ export const company = (walletAddress, company, callback) => {
 // Params:
 // @keyValues object: key(s) and respective value(s) to search for
 // @callback  function: callback function
-export const companySearch = (keyValues, callback) => {
+export const handleCompanySearch = (keyValues, callback) => {
     if (!isFn(callback)) return
     keyValues = objClean(keyValues, searchKeys)
     if (Object.keys(keyValues).length === 0) {

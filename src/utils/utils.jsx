@@ -193,13 +193,13 @@ export const mapCopy = (source, dest) => !isMap(source) ? (
 //
 // Params:
 // @map		Map: Map of objects
-// @key		any: object key to match
+// @key		any: object key to match or null if value is not an object
 // @value	any
 //
 // Returns Object: first item partial/fully matching @value with supplied @key
 export const mapFindByKey = (map, key, value, matchExact) => {
 	for (let [_, item] of map.entries()) {
-		const val = item[key]
+		const val = key === null ? item : item[key]
 		if (!matchExact && (isStr(val) || isArr(val)) ? val.indexOf(value) >= 0 : val === value) return item;
 	}
 }
