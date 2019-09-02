@@ -14,9 +14,9 @@ import storageService from '../services/storage'
 import { ownerProjectsList, projectHashStatus } from '../services/blockchain'
 import { addToQueue } from '../services/queue'
 
-const toBeImplemented = ()=> alert('To be implemented')
+const toBeImplemented = () => alert('To be implemented')
 
-const PROJECT_STATUSES = { 0: 'Open', 1: 'Re-opened', 2: 'Closed', 99: 'Deleted'}
+const PROJECT_STATUSES = { 0: 'Open', 1: 'Re-opened', 2: 'Closed', 99: 'Deleted' }
 
 class ProjectList extends ReactiveComponent {
     constructor(props) {
@@ -29,7 +29,7 @@ class ProjectList extends ReactiveComponent {
         this.state = {
             actionsIndex: -1,
             projects: new Map(),
-            topLeftMenu : [
+            topLeftMenu: [
                 {
                     active: false,
                     content: 'Create',
@@ -52,7 +52,7 @@ class ProjectList extends ReactiveComponent {
                         const project = this.state.projects.get(selectedHashes[0])
                         project && showForm(
                             ProjectForm,
-                            { 
+                            {
                                 modal: true,
                                 project,
                                 hash: selectedHashes[0],
@@ -97,7 +97,7 @@ class ProjectList extends ReactiveComponent {
                         })
 
                         topRightMenu.find(x => x.name === 'close').content = doClose ? 'Re-open' : 'Close'
-                        this.setState({topRightMenu})
+                        this.setState({ topRightMenu })
                     }
                 },
                 {
@@ -115,7 +115,7 @@ class ProjectList extends ReactiveComponent {
                             if (status === targetStatus || !name) return;
                             addToQueue({
                                 type: 'blockchain',
-                                func:'removeProject',
+                                func: 'removeProject',
                                 args: [ownerAddress, hash],
                                 address: ownerAddress,
                                 title: `Delete project`,
@@ -126,7 +126,7 @@ class ProjectList extends ReactiveComponent {
                                     args: [
                                         hash,
                                         targetStatus,
-                                        () => {} // placeholder callback. required for data service
+                                        () => { } // placeholder callback. required for data service
                                     ]
                                 }
                             })
@@ -142,7 +142,7 @@ class ProjectList extends ReactiveComponent {
                         if (selectedHashes.length === 0) return;
                         if (selectedHashes.length > 1) return toBeImplemented();
                         const project = this.state.projects.get(selectedHashes[0])
-                        project && showForm(ReassignProjectForm, {hash: selectedHashes[0], project, size: 'tiny'})
+                        project && showForm(ReassignProjectForm, { hash: selectedHashes[0], project, size: 'tiny' })
                     }
                 },
                 {
@@ -160,13 +160,13 @@ class ProjectList extends ReactiveComponent {
         const { secretStore: ss } = this.state
         const wallets = ss ? ss.keys : secretStore()._value.keys // force if not ready
         const { address } = wallets[storageService.walletIndex()]
-        this.triggerBond = Bond.all([  
+        this.triggerBond = Bond.all([
             secretStore(),
             storageService.walletIndexBond,
             ownerProjectsList(address)
         ])
         // reload projects whenever any of the bond's value updates
-        this.notifyId =  this.triggerBond.notify(() => this.loadProjects())
+        this.notifyId = this.triggerBond.notify(() => this.loadProjects())
     }
 
     componentWillUnmount() {
@@ -183,16 +183,16 @@ class ProjectList extends ReactiveComponent {
         // untie existing bond
         if (this.statusBond && this.statusTieId) this.statusBond.untie(this.statusTieId);
         this.statusBond = Bond.all(this.hashes.map(hash => projectHashStatus(hash)))
-        this.statusTieId = this.statusBond.tie((statusCodes)=> {
+        this.statusTieId = this.statusBond.tie((statusCodes) => {
             // return if all status codes received are exactly same as previously set ones
             if (JSON.stringify(this.statusCodes) === JSON.stringify(statusCodes))
-            this.statusCodes = statusCodes
+                this.statusCodes = statusCodes
             this.loadProjects()
         })
     }
 
     syncStatus(hash, project) {
-        setTimeout(()=> {
+        setTimeout(() => {
             projectHashStatus(hash).then(status => {
                 if (status === project.status) return;
                 const updateTask = {
@@ -211,7 +211,7 @@ class ProjectList extends ReactiveComponent {
                     func: 'project',
                     args: [
                         hash,
-                        objCopy({status}, project, true),
+                        objCopy({ status }, project, true),
                         true,
                         err => !err && this.loadProjects()
                     ],
@@ -224,27 +224,27 @@ class ProjectList extends ReactiveComponent {
                     project = create ? project : projects.get(hash)
                     if (status === project.status) return;
                     // Hack to prevent same task being executed multiple times
-                    const id = hash+project.status+status+create
-                    addToQueue( create ? createTask : updateTask, id)
+                    const id = hash + project.status + status + create
+                    addToQueue(create ? createTask : updateTask, id)
                 })
-                
+
             })
         })
     }
 
     loadProjects() {
-        const {secretStore: ss} = this.state
+        const { secretStore: ss } = this.state
         const wallets = ss ? ss.keys : secretStore()._value.keys // force if not ready
         const { address } = wallets[storageService.walletIndex()]
-        return ownerProjectsList(address).then( hashArr => {
-            if (!isArr(hashArr) || hashArr.length === 0) return this.setState({projects: new Map()});
+        return ownerProjectsList(address).then(hashArr => {
+            if (!isArr(hashArr) || hashArr.length === 0) return this.setState({ projects: new Map() });
             // convert to string
-            hashArr = hashArr.map( hash => pretty(hash) )
+            hashArr = hashArr.map(hash => pretty(hash))
             // remove duplicates, if any
-            hashArr = Object.keys(hashArr.reduce((obj, address) => { obj[address] = 1; return obj}, {}))
+            hashArr = Object.keys(hashArr.reduce((obj, address) => { obj[address] = 1; return obj }, {}))
             this.setStatusBond(hashArr)
             // Get project data from web storage
-            client.projectsByHashes( hashArr, (_, projects, notFoundHashes) => {
+            client.projectsByHashes(hashArr, (_, projects, notFoundHashes) => {
                 (notFoundHashes || []).forEach(hash => projects.set(hash, {
                     ownerAddress: address,
                     name: 'Unnamed',
@@ -253,14 +253,14 @@ class ProjectList extends ReactiveComponent {
                 }))
                 // attach project owner address name if available
                 for (let [hash, project] of projects) {
-                    const {ownerAddress} = project
+                    const { ownerAddress } = project
                     const entry = wallets.find(x => x.address === ownerAddress) || {}
                     project._ownerName = entry.name
                     project._hash = hash
                     project._statusText = PROJECT_STATUSES[project.status] || 'Unknown'
                     this.syncStatus(hash, project)
                 }
-                this.setState({projects})
+                this.setState({ projects })
             })
         })
     }
@@ -268,7 +268,7 @@ class ProjectList extends ReactiveComponent {
     handleSelection(selectedHashes) {
         const { projects, topRightMenu } = this.state
         const len = selectedHashes.length
-        topRightMenu.forEach(x => {x.disabled = len === 0; return x})
+        topRightMenu.forEach(x => { x.disabled = len === 0; return x })
 
         // Enable export button only when all projects are selected
         const exportBtn = topRightMenu.find(x => x.name === 'export')
@@ -281,7 +281,7 @@ class ProjectList extends ReactiveComponent {
         closeBtn.content = doClose ? 'Close' : 'Re-open'
         closeBtn.icon = `toggle ${doClose ? 'off' : 'on'}`
 
-        if (len <= 1) return this.setState({topRightMenu})
+        if (len <= 1) return this.setState({ topRightMenu })
         // more than one selected
         // Disable edit button, otherwise it will require multiple modals to be opened
         const editBtn = topRightMenu.find(x => x.name === 'edit')
@@ -335,22 +335,22 @@ class ProjectList extends ReactiveComponent {
                 defaultSort: 'status',
                 onRowSelect: this.handleSelection.bind(this),
             }
-            
+
             listProps.columns = [
-                { 
-                    key:'name',
+                {
+                    key: 'name',
                     title: 'Name'
                 },
-                { 
+                {
                     collapsing: true,
                     key: 'totalTime',
-                    title: 'Total Time', 
-                    content: project => (project.totalTime || 0) + ' blocks' 
+                    title: 'Total Time',
+                    content: project => (project.totalTime || 0) + ' blocks'
                 },
                 mobile ? null : {
                     collapsing: true,
                     content: this.getOwner,
-                    key: '_ownerName', 
+                    key: '_ownerName',
                     title: 'Owner',
                 },
                 mobile ? null : {
@@ -366,13 +366,13 @@ class ProjectList extends ReactiveComponent {
                     // No key required
                     collapsing: true,
                     content: (project, hash) => (
-                        <Button 
+                        <Button
                             onClick={() => this.showDetails(project, hash)}
                             icon={{
-                                className: mobile? 'no-margin' : '',
+                                className: mobile ? 'no-margin' : '',
                                 name: 'eye'
                             }}
-                            style={{margin: 0}} 
+                            style={{ margin: 0 }}
                         />
                     ),
                     textAlign: 'center',

@@ -24,22 +24,22 @@ import ToastService from './services/toast'
 import { resumeQueue } from './services/queue'
 import { IfMobile } from './utils/utils'
 // Images
-import TotemButtonLogo from'./assets/totem-button-grey.png'
+import TotemButtonLogo from './assets/totem-button-grey.png'
 
 export class App extends ReactiveComponent {
 	constructor() {
 		super([], { ensureRuntime: runtimeUp })
 		this.state = {
 			sidebarItems: [...sidebarItems].map(item => {
-			  item.elementRef = React.createRef()
-			  return item
+				item.elementRef = React.createRef()
+				return item
 			}),
 			sidebarCollapsed: false,
 			sidebarVisible: !this.isMobile(),
 			status: {}
 		}
 
-		nodeService().status.notify(() => this.setState({status: nodeService().status._value})|console.log('status changed'))
+		nodeService().status.notify(() => this.setState({ status: nodeService().status._value }) | console.log('status changed'))
 
 		// For debug only.
 		window.runtime = runtime
@@ -64,13 +64,13 @@ export class App extends ReactiveComponent {
 
 	// hack to format as a currency. Needs to go in a seperate Display Formatting Utilities file.
 	round(value, decimals) {
-		return Number(Math.round(value +'e'+ decimals) +'e-'+ decimals).toFixed(decimals)
+		return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals).toFixed(decimals)
 	}
 
 	handleSidebarToggle(sidebarVisible, sidebarCollapsed) {
-		this.setState({sidebarVisible, sidebarCollapsed})
+		this.setState({ sidebarVisible, sidebarCollapsed })
 	}
-  
+
 	toggleMenuItem(index, isMobile) {
 		const items = [...this.state.sidebarItems]
 		items[index].active = !items[index].active
@@ -82,15 +82,15 @@ export class App extends ReactiveComponent {
 		items[index].active && setTimeout(() => {
 			// Scroll down to the content segment
 			document.getElementById('main-content')
-				.scrollTo(0, items[index].elementRef.current.offsetTop - (isMobile ? 75  : 0))
+				.scrollTo(0, items[index].elementRef.current.offsetTop - (isMobile ? 75 : 0))
 		}, 100)
 	}
-  
+
 	handleClose(index) {
 		const sidebarItems = this.state.sidebarItems
 		if (!sidebarItems[index]) return;
 		sidebarItems[index].active = false
-		this.setState({sidebarItems})
+		this.setState({ sidebarItems })
 	}
 
 	getContent(mobile) {
@@ -121,15 +121,15 @@ export class App extends ReactiveComponent {
 						id="main-content"
 						fluid
 						style={sidebarCollapsed ? mainContentCollapsed : mainContent}
-					>	
+					>
 						<ErrorBoundary>
 							<PageHeader
-									logoSrc={logoSrc}
-									isMobile={mobile}
-									onSidebarToggle={handleSidebarToggle}
-									sidebarCollapsed={sidebarCollapsed}
-									sidebarVisible={sidebarVisible}
-								/>
+								logoSrc={logoSrc}
+								isMobile={mobile}
+								onSidebarToggle={handleSidebarToggle}
+								sidebarCollapsed={sidebarCollapsed}
+								sidebarVisible={sidebarVisible}
+							/>
 						</ErrorBoundary>
 
 
@@ -149,8 +149,8 @@ export class App extends ReactiveComponent {
 	unreadyRender() {
 		const { status } = this.state
 		return (
-			<Dimmer active style={{height: '100%', position: 'fixed'}}>
-				{!!status.error ? 'Connection failed! Please check your internet connection.':  <Loader indeterminate>Connecting to Totem blockchain network...</Loader>}
+			<Dimmer active style={{ height: '100%', position: 'fixed' }}>
+				{!!status.error ? 'Connection failed! Please check your internet connection.' : <Loader indeterminate>Connecting to Totem blockchain network...</Loader>}
 			</Dimmer>
 		)
 	}
@@ -163,7 +163,7 @@ export class App extends ReactiveComponent {
 		].join(' ')
 		if (!this.resumed) {
 			this.resumed = true
-			setTimeout(()=> resumeQueue(), 1000)
+			setTimeout(() => resumeQueue(), 1000)
 		}
 
 		return (
@@ -205,44 +205,44 @@ const sidebarItems = [
 	{ icon: "file alternate", title: "Timekeeping", subHeader: "Book time against projects", content: <TimeKeepingView />, active: true },
 	{ icon: "barcode", title: "Products", subHeader: "" },
 	{
-	  icon: "dollar sign",
-	  title: "Payment",
-	  header: "Direct payments",
-	  subHeader: "Send funds from your account to another",
-	  active: false,
-	  content: <SendFundsView />
+		icon: "dollar sign",
+		title: "Payment",
+		header: "Direct payments",
+		subHeader: "Send funds from your account to another",
+		active: false,
+		content: <SendFundsView />
 	},
 	{
-	  icon: "money",
-	  title: "Wallet",
-	  subHeader: "Manage your secret keys",
-	  active: false,
-	  content: <WalletView />
+		icon: "money",
+		title: "Wallet",
+		subHeader: "Manage your secret keys",
+		active: false,
+		content: <WalletView />
 	},
-	{ 
-	  active: false,
-	  icon: "wrench",
-	  title: "Utilities",
-	  subHeader: "Blockchain utilities",
-	  subHeaderDetails: 'This is a sample detailed subheader',
-	  content: <UtilitiesView />
+	{
+		active: false,
+		icon: "wrench",
+		title: "Utilities",
+		subHeader: "Blockchain utilities",
+		subHeaderDetails: 'This is a sample detailed subheader',
+		content: <UtilitiesView />
 	},
 	{ icon: "settings", title: "Settings", subHeader: "" }
-  ]
-  
+]
+
 const styles = {
 	pushable: {
-	  margin: 0,
-	  height: 'calc(100% - 155px)',
-	  overflow: 'hidden',
-	  WebkitOverflow: 'hidden',
+		margin: 0,
+		height: 'calc(100% - 155px)',
+		overflow: 'hidden',
+		WebkitOverflow: 'hidden',
 	},
 	mainContent: {
-	  overflow: 'hidden auto',
-	  WebkitOverflow: 'hidden auto',
-	  height: '100%',
-	  scrollBehavior: 'smooth',
-	  padding: '75px 15px 15px'
+		overflow: 'hidden auto',
+		WebkitOverflow: 'hidden auto',
+		height: '100%',
+		scrollBehavior: 'smooth',
+		padding: '75px 15px 15px'
 	},
 	mainContentCollapsed: {
 		overflow: 'hidden auto',
@@ -252,6 +252,6 @@ const styles = {
 		padding: '75px 15px 75px'
 	},
 	spaceBelow: {
-	  marginBottom: 15
+		marginBottom: 15
 	}
-  }
+}
