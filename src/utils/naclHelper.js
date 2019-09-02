@@ -7,7 +7,6 @@ import {
 } from "./convert"
 import { blake2b } from 'blakejs'
 import { hexToBytes, ss58Encode } from './convert'
-// import { secretStore } from 'oo7-substrate'
 
 export const isUint8Array = x => typeof x === Uint8Array
 export const newNonce = length => encodeBase64(randomBytes(length || box.nonceLength))
@@ -53,29 +52,25 @@ export const verifySignature = (message, signature, publicKey) => {
     return sign.detached.verify(message, signature, publicKey)
 }
 
-export const getKeyPair = keyData => {
+export const keyInfoFromKeyData = keyData => { 
     const bytes = hexToBytes(keyData)
     return {
-        address: ss58Encode(bytes.slice(64, 96)),
-        publicKey: Uint8Array.from(bytes.slice(64, 96)),
-        secretKey32: Uint8Array.from(bytes.slice(0, 32)),
-        secretKey64: Uint8Array.from(bytes.slice(0, 64))
+        walletAddress: ss58Encode(bytes.slice(64, 96)),
+        walletAddressBytes: bytes.slice(64, 96),
+        first64Bytes: bytes.slice(0, 64)
     }
 }
 
-export const encryptionKeypair = keyData => {
-    const bytes = hexToBytes(keyData)
-    const { publicKey, secretKey } = box.keyPair.fromSecretKey(blake2b(bytes.slice(0, 32), null, 32))
+export const encryptionKeypair = keyDataBytes => {
+    const { publicKey, secretKey } = box.keyPair.fromSecretKey(blake2b(keyDataBytes, null, 32))
     return {
-        walletAddress: ss58Encode(bytes.slice(64, 96)),
         publicKey: encodeBase64(publicKey),
         secretKey: encodeBase64(secretKey)
     }
 }
 
-export const signingKeyPair = keyData => {
-    const bytes = hexToBytes(keyData)
-    const { publicKey, secretKey } = sign.keyPair.fromSeed(blake2b(bytes.slice(0, 32), null, 32))
+export const signingKeyPair = keyDataBytes => {
+    const { publicKey, secretKey } = sign.keyPair.fromSeed(blake2b(keyDataBytes, null, 32))
     return {
         publicKey: encodeBase64(publicKey),
         secretKey: encodeBase64(secretKey)
