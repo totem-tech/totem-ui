@@ -5,7 +5,7 @@ import { isFn, isStr } from '../src/utils/utils'
 import DataStorage from '../src/utils/DataStorage'
 const faucetRequests = new DataStorage('faucet-requests.json', true)
 // Maximum number of requests within @TIME_LIMIT
-const REQUEST_LIMIT = 55
+const REQUEST_LIMIT = 5
 const TIME_LIMIT = 24 * 60 * 60 * 1000 // 1 day in milliseconds
 // Duration to disallow user from creating a new faucet request if there is already one in progress (neither success nor error).
 // After timeout, assume something went wrong and allow user to create a new request
