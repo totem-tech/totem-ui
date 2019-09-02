@@ -12,6 +12,7 @@ import PartnerView from './views/PartnerView'
 import SendFundsView from './views/SendFundsView'
 import UtilitiesView from './views/UtilitiesView'
 import WalletView from './views/WalletView'
+import TimeKeepingView from './views/TimeKeepingView'
 import ErrorBoundary from './components/CatchReactErrors'
 import ChatWidget from './components/ChatWidget'
 import ContentSegment from './components/ContentSegment'
@@ -201,7 +202,7 @@ const sidebarItems = [
 		title: "Projects",
 		subHeader: "View and/or manage your projects"
 	},  
-	{ icon: "file alternate", title: "Timekeeping", subHeader: "" },
+	{ icon: "file alternate", title: "Timekeeping", subHeader: "Book time against projects", content: <TimeKeepingView />, active: true },
 	{ icon: "barcode", title: "Products", subHeader: "" },
 	{
 	  icon: "dollar sign",

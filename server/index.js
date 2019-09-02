@@ -94,6 +94,7 @@ io.on('connection', client => {
 		clients.delete(client.id)
 		const user = findUserByClientId(client.id)
 		if (!user) return;
+		user.clientIds = user.clientIds || []
 		const clientIdIndex = user.clientIds.findIndex(cid => cid === client.id)
 		user.clientIds.splice(clientIdIndex, 1)
 		console.info('Client disconnected: ', client.id)
@@ -147,6 +148,7 @@ io.on('connection', client => {
 		const valid = user && user.secret === secret
 		let err;
 		if (valid) {
+			user.clientIds = user.clientIds || []
 			user.clientIds.push(client.id)
 			clients.set(client.id, client)
 		} else {
@@ -275,12 +277,21 @@ io.on('connection', client => {
 	})
 
 	// search all projects
-	client.on('project-search', (keyword, key, callback) => {
-		if (!isFn(callback)) return
-		callback('Not implemented')
-		// const user = findUserByClientId(client.id)
-		// if (!user) return callback(errMsgs.loginOrRegister)
-		// callback('', mapSearch(projects, ....))
+	client.on('projects-search', (keyword, callback) => {
+		if (!isFn(callback) || !keyword) return
+		const result = new Map()
+		const projectByHash = isStr(keyword) && keyword.startsWith('0x') ? projects.get(keyword) : null
+		if (projectByHash) {
+			// if supplied keyword is a hash
+			result.set(keyword, projectByHash)
+			return callback(null, result)
+		}
+
+		return callback(null, mapSearch(projects, {
+			name: keyword,
+			description: keyword,
+			ownerAddress: keyword
+		}, false, false, true))
 	})
 
 	// add/get company by walletAddress

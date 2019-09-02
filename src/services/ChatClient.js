@@ -81,6 +81,8 @@ export class ChatClient {
         this.projectsByHashes = (hashArr, cb) => isFn(cb) && socket.emit(
             'projects-by-hashes', hashArr, (err, res, notFoundHashes) => cb(err, new Map(res), notFoundHashes)
         )
+        // project search
+        this.projectsSearch = (keyword, cb) => socket.emit('projects-search', keyword, (err, result) => cb(err, new Map(result)))
         // user projects received
         // @cb function : params =>
         //                  @err    string/null : error message or null if success
