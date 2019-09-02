@@ -1,6 +1,6 @@
 
 import ioClient from 'socket.io-client'
-import { encrypt, encryptionKeypair, signingKeyPair, newNonce, newSignature, verifySignature } from '../src/utils/naclHelper'
+import { encrypt, encryptionKeypair, signingKeyPair, newNonce, newSignature, verifySignature, keyInfoFromKeyData } from '../src/utils/naclHelper'
 import { isFn, isStr } from '../src/utils/utils'
 import DataStorage from '../src/utils/DataStorage'
 const faucetRequests = new DataStorage('faucet-requests.json', true)
@@ -10,7 +10,7 @@ const TIME_LIMIT = 24 * 60 * 60 * 1000 // 1 day in milliseconds
 // Environment variables
 const FAUCET_SERVER_URL = process.env.FAUCET_SERVER_URL || 'https://127.0.0.1:3002'
 
-let keyData, walletAddress, publicKey, secretKey, signPublicKey, signSecretKey, serverName, external_publicKey, external_serverName, printSensitiveData
+let keyData, walletAddress, secretKey, signPublicKey, signSecretKey, encryption_keypair, signature_keypair, serverName, external_publicKey, external_serverName, printSensitiveData
 
 // Error messages
 const errMsgs = {
@@ -36,25 +36,36 @@ const setVariables = () => {
 
     // Key pairs of this server
     keyData = process.env.keyData
-    const keyPair = encryptionKeypair(keyData)
-    walletAddress = keyPair.walletAddress
-    publicKey = keyPair.publicKey
-    secretKey = keyPair.secretKey
+    const keyDataBytes = keyInfoFromKeyData(keyData)
+    
+    walletAddress = keyDataBytes.walletAddress
+    // walletAddress = keyPair.walletAddress
 
-    const signKeyPair = signingKeyPair(keyData)
-    signPublicKey = signKeyPair.publicKey
-    signSecretKey = signKeyPair.secretKey
+    const encryptionKeyPair = encryptionKeypair(keyData)
+    // const keyPair = encryptionKeypair(keyData)
+    // publicKey = encryptionKeyPair.publicKey
+    secretKey = encryptionKeyPair.secretKey
+
+    const signatureKeyPair = signingKeyPair(keyData)    
+    // const signKeyPair = signingKeyPair(keyData)
+    signPublicKey = signatureKeyPair.publicKey
+    signSecretKey = signatureKeyPair.secretKey
+
+    encryption_keypair = encryptionKeyPair
+    signature_keypair = signatureKeyPair
 
     // only print sensitive data if "printSensitiveData" environment variable is set to "YES" (case-sensitive)
     printSensitiveData = process.env.printSensitiveData === "YES"
     if (!printSensitiveData) return
-    console.log('keyData: ', keyData)
-    console.log('walletAddress: ', walletAddress)
-    console.log('Encryption KeyPair: \n' + JSON.stringify({ publicKey, secretKey }, null, 4))
-    console.log('Signing KeyPair: \n' + JSON.stringify({ signPublicKey, signSecretKey }, null, 4))
-    console.log('serverName: ', serverName)
-    console.log('external_publicKey: ', external_publicKey)
-    console.log('external_serverName: ', external_serverName)
+
+   console.log('serverName: ', serverName, '\n')
+   console.log('keyData: ', keyData, '\n')
+   console.log('walletAddress: ', walletAddress, '\n')
+   console.log('Encryption KeyPair base64 encoded: \n' + JSON.stringify(encryption_keypair, null, 4), '\n')
+   console.log('Signature KeyPair base64 encoded: \n' + JSON.stringify(signature_keypair, null, 4), '\n')
+   console.log('external_serverName: ', external_serverName,)
+   console.log('external_publicKey base64 encoded: ', external_publicKey, '\n')
+
 }
 
 const err = setVariables()
