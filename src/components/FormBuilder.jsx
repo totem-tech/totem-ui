@@ -182,23 +182,6 @@ class FormBuilder extends ReactiveComponent {
                         {submitBtn}
                     </Modal.Actions> 
                 )}
-                {/* {message && !!message.status && (
-                    <Message
-                        {...message}
-                        content={message.content}
-                        header={message.header}
-                        error={message.status==='error'}
-                        style={objCopy(
-                            styles.formMessage,
-                            message.style || {
-                                textAlign: !message.icon && (!message.header || !message.content) ? 'center' : 'left'
-                            }
-                        )}
-                        success={message.status==='success'}
-                        visible={!!message.status}
-                        warning={message.status==='warning'}
-                    />
-                )} */}
                 {newMessage(message)}
             </Modal>
         )
@@ -459,16 +442,19 @@ class CheckboxGroup extends ReactiveComponent {
     }
 }
 
-export const fillValues = (inputs, obj, forceFill) => {
-    if (!isObj(obj)) return;
+export const fillValues = (inputs, values, forceFill) => {
+    if (!isObj(values)) return;
     inputs.forEach(input => {
-        if (!input.hasOwnProperty('name') || !obj.hasOwnProperty(input.name) || (!forceFill && isDefined(input.value))) return;
-        if(['accountidbond', 'inputbond'].indexOf(input.type.toLowerCase()) >= 0) {
-            input.defaultValue = obj[input.name]
+        if (!input.hasOwnProperty('name') || !values.hasOwnProperty(input.name) || (!forceFill && isDefined(input.value)) || !input.type) return;
+        const type = input.type.toLowerCase()
+        if(['accountidbond', 'inputbond'].indexOf(type) >= 0) {
+            input.defaultValue = values[input.name]
             // make sure Bond is also updated
             isBond(input.bond) && input.bond.changed(input.defaultValue)
+        } else if (['checkbox', 'radio'].indexOf(type) >= 0) {
+            input.defaultChecked = values[input.name]
         } else {
-            input.value = obj[input.name]
+            input.value = values[input.name]
         }
     })
 }

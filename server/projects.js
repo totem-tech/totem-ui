@@ -1,5 +1,5 @@
 import DataStorage from '../src/utils/DataStorage'
-import { isArr, isFn, objCopy, objClean, isValidNumber } from '../src/utils/utils'
+import { isArr, isFn, isStr, objCopy, objClean, isValidNumber } from '../src/utils/utils'
 const projects = new DataStorage('projects.json', false) // enables caching entire projects list
 // Must-have properties
 const requiredKeys = ['name', 'ownerAddress', 'description']
