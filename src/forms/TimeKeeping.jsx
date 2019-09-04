@@ -2,14 +2,17 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import { chain } from 'oo7-substrate'
-import { Button, Icon } from 'semantic-ui-react'
+import { Button, Divider, Icon } from 'semantic-ui-react'
 import FormBuilder, { fillValues } from '../components/FormBuilder'
 import { confirm } from '../services/modal'
 import client from '../services/ChatClient'
 import storage from '../services/storage'
-import { arrSort, deferred, textEllipsis } from '../utils/utils'
+import { arrSort, deferred, isDefined, objCopy, textEllipsis } from '../utils/utils'
 
-const timeRegex = /^(\d{2}):[0-5][0-9]:[0-5](0|5)$/
+const BLOCK_DURATION_SECONDS = 5
+const DURATION_REGEX = /^(\d{2}):[0-5][0-9]:[0-5](0|5)$/
+const prependO = n => n < 10 ? `0${n}` : n
+
 export default class TimeKeepingForm extends ReactiveComponent {
     constructor(props) {
         super(props)
@@ -18,13 +21,23 @@ export default class TimeKeepingForm extends ReactiveComponent {
 
         const emptySearchMsg = 'Enter project name, hash or owner address'
         this.blockCount = 0
-        const savedValues = storage.timeKeeping() || {}
+        const values = storage.timeKeeping() || {}
+        if (!isDefined(values.durationValid)) {
+            values.durationValid = true
+        }
+
         this.state = {
-            durationValid: true,
-            finished: false,
-            inprogress: false,
-            manualEntry: !!savedValues.manualEntry,
-            formValues: savedValues,
+            values: {
+                blockCount: values.blockCount,
+                blockEnd: values.blockEnd,
+                blockStart: values.blockStart,
+                duration: values.duration || '',
+                durationValid: values.durationValid,
+                finished: values.finished,
+                inprogress: values.inprogress,
+                manualEntry: !!values.manualEntry,
+                projectHash: values.projectHash || ''
+            },
             inputs: [
                 {
                     clearable: true, // set as default in FormInput ???
@@ -33,114 +46,93 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     // minCharacters: 3,
                     name: 'projectHash',
                     noResultsMessage: emptySearchMsg,
-                    onChange: (e, values, i) => {
-                        const { inputs } = this.state
-                        inputs[i].value = values.projectHash
-                        this.setState({ inputs })
-                    },
-                    onSearchChange: deferred(this.handleSearchChange, 300, this),
+                    onChange: this.handleProjectChange.bind(this),
+                    onSearchChange: deferred(this.handleSearch, 300, this),
                     options: [],
                     placeholder: emptySearchMsg,
                     selection: true,
                     // Custom improved dropdown search
-                    search: (options, searchQuery) => {
-                        if (!options  || options.length === 0) return []
-                        const projectHashes = {}
-                        searchQuery = (searchQuery || '').toLowerCase().trim()
-                        const search = key => {
-                            const matches = options.map((option, i) => {
-                                let x = option[key].toLowerCase().match(searchQuery)
-                                if (!x || projectHashes[options[i].value]) return
-                                projectHashes[options[i].value] = 1
-                                return { index: i, matchIndex: x.index }
-                            }).filter(x => !!x)
-                            return arrSort(matches, 'matchIndex').map(x => options[x.index])
-                        }
-
-                        // First include results that matches project title
-                        const result = search('text')
-                        // Now include options matching project hash, name and owner address that is placed in the option.key
-                        return result.concat(search('key'))
-                    },
+                    search: this.projectsCustomSearch.bind(this),
                     type: 'dropdown',
                 },
                 {
-                    label: 'Starting Block',
-                    name: 'blockStart',
-                    readOnly: true,
-                    type: 'hidden',
-                },
-                {
-                    label: 'Ending Block',
-                    name: 'blockEnd',
-                    readOnly: true,
-                    type: 'hidden',
-                },
-                {
-                    label: 'Block count',
-                    name: 'blockCount',
-                    type: 'hidden',
-                },
-                {
-                    // action: {
-                    //     icon: 'pencil',
-                    //     onClick: ()=> {
-                    //         // const {inputs} = this.state
-                    //         // const duraIn = inputs.find(x => x.name === 'duration')
-                    //         // duraIn.readOnly = !duraIn.readOnly
-                    //         // duraIn.value = duraIn.value || '00:00:00'
-                    //         // this.setState({inputs, durationValid: true})
-                    //     }
-                    // },
                     autoComplete: 'off',
                     label: 'Duration',
                     name: 'duration',
-                    onChange: (e, values, i) => {
-                        const { inputs } = this.state
-                        const durationValid = inputs[i].value === '00:00:00' ? false : timeRegex.test(values.duration)
-                        inputs[i].message = durationValid ? null : {
+                    onChange: (e, formValues, i) => {
+                        const { inputs, values } = this.state
+                        values.durationValid = inputs[i].value === '00:00:00' ? false : DURATION_REGEX.test(formValues.duration)
+                        inputs[i].message = values.durationValid ? null : {
                             content: <span>Please enter a valid duration in the following format:<br /><b>hh:mm:ss</b><br />Seconds must be in increments of 5</span>,
                             header: 'Invalid duration',
                             showIcon: true,
                             status: 'error',
                         }
-                        this.setState({inputs, durationValid})
+                        this.setState({inputs, values})
                     },
                     placeholder: 'hh:mm:ss',
-                    readOnly: true,
-                    // style: {fontWeight: 'bold', color: 'red'},
+                    readOnly: values.manualEntry !== true,
                     type: 'text',
+                    value: ''
                 },
                 {
+                    disabled: !!values.inprogress,
                     label: 'Manually enter duration',
                     name: 'manualEntry',
                     type: 'checkbox',
-                    onChange: (e, values) => {
-                        const { manualEntry } = values
-                        const { inputs } = this.state
+                    onChange: (e, formValues) => {
+                        const { manualEntry } = formValues
+                        const { inputs, values } = this.state
                         const duraIn = inputs.find(x => x.name === 'duration')
                         duraIn.readOnly = !manualEntry
                         duraIn.value = duraIn.value || '00:00:00'
-                        const durationValid = duraIn.value === '00:00:00' ? false : timeRegex.test(values.duration)
-                        this.setState({inputs, manualEntry, durationValid})
+                        values.durationValid = duraIn.value === '00:00:00' ? false : DURATION_REGEX.test(formValues.duration)
+                        values.manualEntry = manualEntry
+                        this.setState({inputs, values})
                     }
-                }
+                },
             ]
         }
 
         // restore saved values
-        fillValues(this.state.inputs, savedValues, true)
-        const {projectHash} = savedValues
-        projectHash && setTimeout(()=> this.handleSearchChange({}, {searchQuery: projectHash}))
+        fillValues(this.state.inputs, values, true)
+        setTimeout(()=> this.handleSearch({}, {searchQuery: values.projectHash || ''}))
     }
 
     handleValuesChange(e, formValues) {
-        console.log(formValues)
-        storage.timeKeeping(formValues)
-        this.setState({formValues})
+        const values = objCopy(formValues, this.state.values)
+        this.setState({values})
+        this.saveValues()
     }
 
-    handleSearchChange(_, data) {
+    handleProjectChange(e, values, i) {
+        const { inputs } = this.state
+        inputs[i].value = values.projectHash
+        this.setState({ inputs })
+    }
+
+    // Customise projects DropDown search/filtering to include project hash, owner address etc matches
+    projectsCustomSearch(options, searchQuery) {
+        if (!options  || options.length === 0) return []
+        const projectHashes = {}
+        searchQuery = (searchQuery || '').toLowerCase().trim()
+        const search = key => {
+            const matches = options.map((option, i) => {
+                let x = option[key].toLowerCase().match(searchQuery)
+                if (!x || projectHashes[options[i].value]) return
+                projectHashes[options[i].value] = 1
+                return { index: i, matchIndex: x.index }
+            }).filter(x => !!x)
+            return arrSort(matches, 'matchIndex').map(x => options[x.index])
+        }
+
+        // First include results that matches project title
+        const result = search('text')
+        // Now include options matching project hash, name and owner address that is placed in the option.key
+        return result.concat(search('key'))
+    }
+
+    handleSearch(_, data) {
         const searchQuery = (data.searchQuery || '').trim()
         const { inputs } = this.state
         const i = 0
@@ -171,33 +163,50 @@ export default class TimeKeepingForm extends ReactiveComponent {
 
     handleReset() {
         const { inputs } = this.state
+        const values = {durationValid: true }
         inputs.find(x => x.name === 'duration').value = ''
-        inputs.find(x => x.name === 'manualEntry').checked = false
-        this.setState({
-            durationValid: true,
-            finished: false,
-            inprogress: false,
-            inputs,
-            manualEntry: false,
-        })
+        inputs.find(x => x.name === 'manualEntry').defaultChecked = false
+        inputs.find(x => x.name === 'projectHash').value = ''
+        this.setState({values, inputs})
+        storage.timeKeeping(values)
     }
 
     handleStart() {
-        const { blockNumber, inputs } = this.state
-        inputs.find(x => x.name === 'blockStart').value =  blockNumber
+        const { blockNumber, inputs, values } = this.state
         inputs.find(x => x.name === 'manualEntry').disabled = true
         const duraIn = inputs.find(x => x.name === 'duration')
-        duraIn.type = 'text'
         duraIn.readOnly = true
         duraIn.message = null
-        this.setState({inputs, inprogress: true, finished: false, durationValid: true})
+        values.blockStart =  blockNumber
+        values.finished = false
+        values.inprogress = true
+        values.durationValid = true
+        this.setState({inputs, values})
+        this.saveValues()
     }
 
     handleFinish() {
-        const { blockNumber, inputs } = this.state
-        inputs.find(x => x.name === 'blockEnd').value =  blockNumber
+        const { blockNumber, inputs, values } = this.state
         inputs.find(x => x.name === 'manualEntry').disabled = false
-        this.setState({inputs, inprogress: false, finished: true})
+        values.blockEnd =  blockNumber
+        values.inprogress = false
+        values.finished = true
+        this.setState({inputs, values})
+        this.saveValues()
+    }
+
+    handleResume() {
+        const { blockNumber, inputs, values } = this.state
+        values.blockCount = this.durationToBlockCount(values.duration) - 1
+        values.blockEnd = blockNumber
+        values.blockStart = blockNumber - values.blockCount
+        values.inprogress = true
+        values.finished = false
+        values.manualEntry = false
+        const meIn = inputs.find(x => x.name === 'manualEntry')
+        meIn.defaultChecked = false
+        meIn.disabled = true
+        this.setState({inputs, values})
     }
 
     handleSubmit() {
@@ -209,16 +218,31 @@ export default class TimeKeepingForm extends ReactiveComponent {
             },
             size: 'mini'
         })
-        
+    }
+
+    saveValues(currentBlockNumber, newDuration) {
+        const { blockNumber, inputs, values } = this.state
+        const duraIn = inputs.find(x => x.name === 'duration')
+        currentBlockNumber = currentBlockNumber || blockNumber
+        if (!!newDuration) {
+            values.duration = newDuration
+            values.blockCount = durationToBlockCount(newDuration)
+            values.blockEnd = currentBlockNumber
+            values.blockStart = currentBlockNumber - values.blockCount
+        } else if (currentBlockNumber > 0 && values.inprogress && !values.finished) {
+            values.duration = this.blockCountToDuration( currentBlockNumber - values.blockStart )
+        }
+        duraIn.value = values.duration
+        values.durationValid = DURATION_REGEX.test(values.duration)
+        this.setState({blockNumber: currentBlockNumber, inputs, values})
+        values.durationValid && storage.timeKeeping(values)
     }
 
     componentWillMount() {
         this.tieId = chain.height.tie( blockNumber => {
-            const { finished, inputs, inprogress } = this.state
-            if (!inprogress && finished) {
-                inputs.find(x => x.name === 'blockCount').value = blockNumber - inputs.find(x => x.name === 'blockStart').value
-            }
-            this.setState({blockNumber, inputs})
+            blockNumber = parseInt(blockNumber)
+            this.setState({blockNumber})
+            this.state.values.inprogress && this.saveValues(blockNumber)
         })
     }
 
@@ -226,40 +250,83 @@ export default class TimeKeepingForm extends ReactiveComponent {
         chain.height.untie(this.tieId)
     }
 
+    blockCountToDuration(blockCount) {
+        const seconds = (blockCount * 5) % 60
+        const totalMinutes = parseInt((blockCount*5)/60)
+        const hours = parseInt(totalMinutes/60)
+        return prependO(hours) + ':' + prependO(totalMinutes % 60) + ':' + prependO(seconds)
+    }
+
+    durationToBlockCount(duration) {
+        if (!DURATION_REGEX.test(duration)) return 0
+        const [hours, minutes, seconds] = duration.split(':')
+        const totalSeconds = parseInt(seconds) + parseInt(minutes) * 60 + parseInt(hours) * 60 * 60
+        return totalSeconds/BLOCK_DURATION_SECONDS
+    }
+
     render() {
-        const { blockNumber, durationValid, finished, inputs, inprogress, manualEntry } = this.state
-        const blockStart = inputs.find(x => x.name === 'blockStart').value
+        const { inputs, values } = this.state
+        const { durationValid, finished, inprogress, manualEntry } = values
         const duraIn = inputs.find(x => x.name === 'duration')
-        if (inprogress) {
-            const O = n => n < 10 ? `0${n}` : n
-            const blockCount = blockNumber - blockStart
-            const seconds = (blockCount * 5) % 60
-            const totalMinutes = parseInt((blockCount*5)/60)
-            const hours = parseInt(totalMinutes/60)
-            const duration = O(hours) + ':' + O(totalMinutes % 60) + ':' + O(seconds)
-            duraIn.value = duration
+        if (finished && !manualEntry) {
+            duraIn.action = {
+                icon: 'play',
+                onClick: ()=> confirm({
+                    header: 'Resume timer',
+                    content: 'Would you like to resume timer?',
+                    onConfirm: ()=> this.handleResume(),
+                    confirmButton: 'Yes',
+                    cancelButton: 'No',
+                    size: 'mini'
+                }),
+                title: 'Resume timer'
+            }
+        } else {
+            duraIn.icon = undefined
+            duraIn.action = undefined
         }
+
+        const done = finished || manualEntry
         return (
             <FormBuilder
                 {...{
                     inputs,
                     onChange: this.handleValuesChange,
                     submitText: (
-                        <Button
-                            icon
-                            fluid
-                            disabled={!inputs[0].value || (manualEntry && !durationValid)}
-                            labelPosition="left"
-                            onClick={() => inprogress ? this.handleFinish() : (finished || manualEntry ? this.handleSubmit() : this.handleStart())}
-                            size="massive"
-                        >
-                            {!inprogress ? (finished || manualEntry ? 'Submit' : 'Start') : (
-                                <React.Fragment>
-                                    <Icon name="clock outline" loading={true} style={{background: 'transparent'}} />
-                                    Finish
-                                </React.Fragment>
+                        <React.Fragment>
+                            <Button
+                                icon
+                                fluid
+                                disabled={!inputs[0].value || (manualEntry && !durationValid)}
+                                labelPosition="right"
+                                onClick={() => inprogress ? this.handleFinish() : (done ? this.handleSubmit() : this.handleStart())}
+                                size="massive"
+                            >
+                                {!inprogress ? (done ? 'Submit' : 'Start') : (
+                                    <React.Fragment>
+                                        <Icon name="clock outline" loading={true} style={{background: 'transparent'}} />
+                                        Stop
+                                    </React.Fragment>
+                                )}
+                            </Button>
+                            {done && (
+                                <Button 
+                                    content="Reset"
+                                    fluid
+                                    negative
+                                    onClick= {()=> confirm({
+                                        header: 'Reset Timer',
+                                        content: 'You are about to reset your timer. Are you sure?',
+                                        onConfirm: ()=> this.handleReset(),
+                                        confirmButton: 'Yes',
+                                        cancelButton: 'No',
+                                        size: 'mini'
+                                    })}
+                                    style={{marginTop: 5}}
+                                    title='Reset'
+                                />
                             )}
-                        </Button>
+                        </React.Fragment>
                     )
                 }} 
             />
