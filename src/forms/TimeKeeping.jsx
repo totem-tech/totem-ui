@@ -1,13 +1,14 @@
 
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
-import { chain } from 'oo7-substrate'
+import { chain, secretStore } from 'oo7-substrate'
 import { Button, Divider, Icon } from 'semantic-ui-react'
+import { arrSort, deferred, isDefined, objCopy, textEllipsis } from '../utils/utils'
 import FormBuilder, { fillValues } from '../components/FormBuilder'
 import { confirm } from '../services/modal'
 import client from '../services/ChatClient'
 import storage from '../services/storage'
-import { arrSort, deferred, isDefined, objCopy, textEllipsis } from '../utils/utils'
+import addressbook from '../services/addressbook'
 
 const BLOCK_DURATION_SECONDS = 5
 const DURATION_REGEX = /^(\d{2}):[0-5][0-9]:[0-5](0|5)$/
@@ -18,6 +19,8 @@ export default class TimeKeepingForm extends ReactiveComponent {
         super(props)
 
         this.handleValuesChange = this.handleValuesChange.bind(this)
+        this.handleManualEntryChange = this.handleManualEntryChange.bind(this)
+        this.handleDurationChange = this.handleDurationChange.bind(this)
 
         const emptySearchMsg = 'Enter project name, hash or owner address'
         this.blockCount = 0
@@ -59,17 +62,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     autoComplete: 'off',
                     label: 'Duration',
                     name: 'duration',
-                    onChange: (e, formValues, i) => {
-                        const { inputs, values } = this.state
-                        values.durationValid = inputs[i].value === '00:00:00' ? false : DURATION_REGEX.test(formValues.duration)
-                        inputs[i].message = values.durationValid ? null : {
-                            content: <span>Please enter a valid duration in the following format:<br /><b>hh:mm:ss</b><br />Seconds must be in increments of 5</span>,
-                            header: 'Invalid duration',
-                            showIcon: true,
-                            status: 'error',
-                        }
-                        this.setState({inputs, values})
-                    },
+                    onChange: this.handleDurationChange,
                     placeholder: 'hh:mm:ss',
                     readOnly: values.manualEntry !== true,
                     type: 'text',
@@ -80,23 +73,37 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     label: 'Manually enter duration',
                     name: 'manualEntry',
                     type: 'checkbox',
-                    onChange: (e, formValues) => {
-                        const { manualEntry } = formValues
-                        const { inputs, values } = this.state
-                        const duraIn = inputs.find(x => x.name === 'duration')
-                        duraIn.readOnly = !manualEntry
-                        duraIn.value = duraIn.value || '00:00:00'
-                        values.durationValid = duraIn.value === '00:00:00' ? false : DURATION_REGEX.test(formValues.duration)
-                        values.manualEntry = manualEntry
-                        this.setState({inputs, values})
-                    }
+                    onChange: this.handleManualEntryChange
                 },
             ]
         }
 
         // restore saved values
         fillValues(this.state.inputs, values, true)
-        setTimeout(()=> this.handleSearch({}, {searchQuery: values.projectHash || ''}))
+        setTimeout(()=> this.handleSearch({}, {searchQuery: values.projectHash}))
+    }
+
+    handleDurationChange (e, formValues, i) {
+        const { inputs, values } = this.state
+        values.durationValid = inputs[i].value === '00:00:00' ? false : DURATION_REGEX.test(formValues.duration)
+        inputs[i].message = values.durationValid ? null : {
+            content: <span>Please enter a valid duration in the following format:<br /><b>hh:mm:ss</b><br />Seconds must be in increments of 5</span>,
+            header: 'Invalid duration',
+            showIcon: true,
+            status: 'error',
+        }
+        this.setState({inputs, values})
+    }
+
+    handleManualEntryChange(e, formValues) {
+        const { manualEntry } = formValues
+        const { inputs, values } = this.state
+        const duraIn = inputs.find(x => x.name === 'duration')
+        duraIn.readOnly = !manualEntry
+        duraIn.value = duraIn.value || '00:00:00'
+        values.durationValid = duraIn.value === '00:00:00' ? false : DURATION_REGEX.test(formValues.duration)
+        values.manualEntry = manualEntry
+        this.setState({inputs, values})
     }
 
     handleValuesChange(e, formValues) {
@@ -149,7 +156,11 @@ export default class TimeKeepingForm extends ReactiveComponent {
             // inputs[i].noResultsMessage = projects.size === 0 ? 'Your search yielded no result' : 'Select a project'
             inputs[i].options = Array.from(projects).map(n => ({
                 key: n[0] + n[1].ownerAddress + n[1].description, // also used for searching
-                description: textEllipsis(n[1].ownerAddress, 15, 5), // ToDo: replace with wallet name if available in partner or wallet list
+                description: (
+                    (secretStore().find(n[1].ownerAddress) || {}).name
+                    || (addressbook.getByAddress(n[1].ownerAddress) || {}).name
+                    || textEllipsis(n[1].ownerAddress, 15, 5)
+                ),
                 text: n[1].name,
                 value: n[0] // project hash
             }))
@@ -267,6 +278,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
     render() {
         const { inputs, values } = this.state
         const { durationValid, finished, inprogress, manualEntry } = values
+        const done = finished || manualEntry
         const duraIn = inputs.find(x => x.name === 'duration')
         if (finished && !manualEntry) {
             duraIn.action = {
@@ -286,50 +298,50 @@ export default class TimeKeepingForm extends ReactiveComponent {
             duraIn.action = undefined
         }
 
-        const done = finished || manualEntry
+        const resetBtn = done && (
+            <Button 
+                content="Reset"
+                fluid
+                negative
+                onClick= {()=> confirm({
+                    header: 'Reset Timer',
+                    content: 'You are about to reset your timer. Are you sure?',
+                    onConfirm: ()=> this.handleReset(),
+                    confirmButton: 'Yes',
+                    cancelButton: 'No',
+                    size: 'mini'
+                })}
+                style={{marginTop: 5}}
+                title='Reset'
+            />
+        )
+
+        const submitText = (
+            <React.Fragment>
+                <Button
+                    icon
+                    fluid
+                    disabled={!inputs[0].value || (manualEntry && !durationValid)}
+                    labelPosition="right"
+                    onClick={() => inprogress ? this.handleFinish() : (done ? this.handleSubmit() : this.handleStart())}
+                    size="massive"
+                >
+                    {!inprogress ? (done ? 'Submit' : 'Start') : (
+                        <React.Fragment>
+                            <Icon name="clock outline" loading={true} style={{background: 'transparent'}} />
+                            Stop
+                        </React.Fragment>
+                    )}
+                </Button>
+                {resetBtn}
+            </React.Fragment>
+        )
         return (
-            <FormBuilder
-                {...{
+            <FormBuilder {...{
                     inputs,
                     onChange: this.handleValuesChange,
-                    submitText: (
-                        <React.Fragment>
-                            <Button
-                                icon
-                                fluid
-                                disabled={!inputs[0].value || (manualEntry && !durationValid)}
-                                labelPosition="right"
-                                onClick={() => inprogress ? this.handleFinish() : (done ? this.handleSubmit() : this.handleStart())}
-                                size="massive"
-                            >
-                                {!inprogress ? (done ? 'Submit' : 'Start') : (
-                                    <React.Fragment>
-                                        <Icon name="clock outline" loading={true} style={{background: 'transparent'}} />
-                                        Stop
-                                    </React.Fragment>
-                                )}
-                            </Button>
-                            {done && (
-                                <Button 
-                                    content="Reset"
-                                    fluid
-                                    negative
-                                    onClick= {()=> confirm({
-                                        header: 'Reset Timer',
-                                        content: 'You are about to reset your timer. Are you sure?',
-                                        onConfirm: ()=> this.handleReset(),
-                                        confirmButton: 'Yes',
-                                        cancelButton: 'No',
-                                        size: 'mini'
-                                    })}
-                                    style={{marginTop: 5}}
-                                    title='Reset'
-                                />
-                            )}
-                        </React.Fragment>
-                    )
-                }} 
-            />
+                    submitText
+            }} />
         )
     }
 }
