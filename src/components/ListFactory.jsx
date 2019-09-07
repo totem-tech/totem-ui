@@ -217,10 +217,10 @@ export class DataTable extends ReactiveComponent {
     }
 
     getTopContent(mobile, totalRows, selectedIndexes) {
-        let { topLeftMenu, topRightMenu } = this.props
+        let { searchable, topLeftMenu, topRightMenu } = this.props
         const { keywords } = this.state
   
-        const searchCol = (
+        const searchCol = searchable && (
             <Grid.Column key="0" tablet={16} computer={5} style={{padding: 0}}>
                 <Input
                     action={{
@@ -236,11 +236,11 @@ export class DataTable extends ReactiveComponent {
             </Grid.Column>
         )
 
-        const right = (
+        const right = topRightMenu && topRightMenu.length > 0 && (
             <Grid.Column floated="right" key="1" tablet={16} computer={3} style={{padding: 0}}>
                 <Dropdown text='Actions' button fluid style={{textAlign: 'center'}} disabled={selectedIndexes.length === 0}>
                     <Dropdown.Menu direction="left" style={{minWidth: 'auto'}}>
-                        {(topRightMenu || []).map((item, i) => (
+                        {(topRightMenu || []).map((item, i) => React.isValidElement(item) ? item : (
                             <Dropdown.Item
                                 {...item}
                                 key={i}
@@ -256,7 +256,7 @@ export class DataTable extends ReactiveComponent {
             <Grid columns={3} style={{margin: '-1rem 0', paddingBottom: '15px'}}>
                 <Grid.Row>
                     <Grid.Column tablet={16} computer={6} style={{padding: 0}}>
-                        {(topLeftMenu || []).map((item, i) => (
+                        {(topLeftMenu || []).map((item, i) => React.isValidElement(item) ? item : (
                             <Button
                                 {...item}
                                 fluid={mobile}
@@ -367,6 +367,7 @@ export class DataTable extends ReactiveComponent {
     render() {
         let {  data, columns: columnsOriginal, footerContent, perPage, searchExtraKeys } = this.props
         let { keywords, selectedIndexes, sortAsc, sortBy } = this.state
+        keywords = keywords.trim()
         data = data || []
         const columns = columnsOriginal.filter(x => !!x)
         const keys = columns.filter(x => !!x.key).map(x => x.key)
@@ -374,7 +375,12 @@ export class DataTable extends ReactiveComponent {
         if(isArr(searchExtraKeys)) {
             searchExtraKeys.forEach(key => keys.indexOf(key) === -1 & keys.push(key))
         }
-        const filteredData = sort(search(data, keywords, keys), sortBy, !sortAsc)
+        const filteredData = sort(
+            !keywords ? data : search(data, keywords, keys),
+            sortBy,
+            !sortAsc,
+            false
+        )
         selectedIndexes = selectedIndexes.filter(index => !!(isArr(data) ? data[index] : data.get(index)))
         const totalRows = filteredData.length || filteredData.size
         const totalPages = Math.ceil(totalRows / perPage)
@@ -383,7 +389,10 @@ export class DataTable extends ReactiveComponent {
 
         return (
             <div>
-                <IfMobile then={this.getTopContent(true, totalRows, selectedIndexes)} else={this.getTopContent(false, totalRows, selectedIndexes)} />
+                <IfMobile
+                    then={this.getTopContent(true, totalRows, selectedIndexes)}
+                    else={this.getTopContent(false, totalRows, selectedIndexes)}
+                />
                 {totalRows > 0 && (
                     <div style={{overflowX: 'auto'}}>
                         <Table celled selectable sortable unstackable singleLine>
@@ -432,12 +441,16 @@ DataTable.propTypes = {
     defaultSort: PropTypes.string,
     footerContent: PropTypes.any,
     perPage: PropTypes.number,
+    searchable: PropTypes.bool,
     searchExtraKeys: PropTypes.array,
+    selectable: PropTypes.bool,
     topLeftMenu: PropTypes.arrayOf(PropTypes.object),
     topRightMenu: PropTypes.arrayOf(PropTypes.object)
 }
 DataTable.defaultProps = {
     perPage: 10,
+    searchable: true,
+    selectable: false,
 }
 
 export class Paginator extends ReactiveComponent {

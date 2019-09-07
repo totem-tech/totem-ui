@@ -1,6 +1,8 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import TimeKeepingForm from '../forms/TimeKeeping'
+import { showForm } from '../services/modal'
+import ProjectTimeKeepingList from '../lists/TimeKeepingList'
 
 class TimeKeepingView extends ReactiveComponent {
     constructor(props) {
@@ -9,10 +11,7 @@ class TimeKeepingView extends ReactiveComponent {
 
     render() {
         return (
-            <div style={{maxWidth: 350}}>
-                <TimeKeepingForm />
-                {/* <h3> List or table showing the total hours worked per project, total blocks, percentage of hours worked over all hours for all projects. </h3> */}
-            </div>
+            <ProjectTimeKeepingList />
         )
     }
 }

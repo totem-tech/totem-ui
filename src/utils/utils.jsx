@@ -50,8 +50,24 @@ export const isObjMap = x => !isMap(x) ? false : !Array.from(x).reduce((no, item
 export const isStr = x => typeof (x) === 'string'
 export const isValidNumber = x => typeof (x) == 'number' && !isNaN(x) && isFinite(x)
 export const hasValue = x => isDefined(x) && (isValidNumber(x) || (isStr(x) && !!x))
-
 export const isMobile = () => window.innerWidth <= Responsive.onlyMobile.maxWidth
+
+export const randomInt = (min, max) => parseInt(Math.random() * (max - min) + min)
+
+/*
+ * duration conversion. ToDo: move to convert.js
+ */
+export const secondsToDuration = numSeconds => {
+	numSeconds = parseInt(numSeconds || 0)
+	const seconds = numSeconds % 60
+	const totalMinutes = parseInt(numSeconds/60)
+	const hours = parseInt(totalMinutes/60)
+	return prepend0(hours) + ':' + prepend0(totalMinutes % 60) + ':' + prepend0(seconds)
+}
+export const durationToSeconds = duration => {
+	const [hours, minutes, seconds] = duration.split(':')
+	return parseInt(seconds) + parseInt(minutes) * 60 + parseInt(hours) * 60 * 60
+}
 
 // getKeys returns an array of keys or indexes depending on object type
 export const getKeys = source => {
@@ -106,9 +122,9 @@ export const arrMapSlice = (data, startIndex, endIndex, callback) => {
 // Returns Map (key = original index) or Array (index not preserved) if @returnArr == true
 export const arrSearch = (arr, keyValues, matchExact, matchAll, ignoreCase, returnArr) => {
 	const result = returnArr ? new Array() : new Map()
-	if (!isObj(keyValues) || !isMap(arr)) return result;
+	if (!isObj(keyValues) || !isObjArr(arr)) return result;
 	const keys = Object.keys(keyValues)
-	for (var index = 0; index < arr.length; i++) {
+	for (var index = 0; index < arr.length; index++) {
 		let matched = false
 		const item = arr[index]
 		for (const i in keys) {
@@ -237,7 +253,7 @@ export const mapSearch = (map, keyValues, matchExact, matchAll, ignoreCase) => {
 	return result
 }
 
-// Returns a new map sorted by key. Must be a map obects
+// Returns a new map sorted by key. Must be a map of objects
 export const mapSort = (map, key, reverse) => !isObjMap(map) ? map : new Map(arrReverse(
 	Array.from(map).sort((a, b) => a[1][key] > b[1][key] ? 1 : -1),
 	reverse
@@ -255,7 +271,7 @@ export const search = (data, keywords, keys) => {
 }
 
 // Sort Array or Map
-export const sort = (data, key, reverse) => isArr(data) ? arrSort(data, key, reverse) : (
+export const sort = (data, key, reverse, sortOriginal) => isArr(data) ? arrSort(data, key, reverse, sortOriginal) : (
 	isMap(data) ? mapSort(data, key, reverse) : data
 )
 

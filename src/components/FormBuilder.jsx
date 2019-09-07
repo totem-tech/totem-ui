@@ -172,7 +172,7 @@ class FormBuilder extends ReactiveComponent {
                 </Modal.Content>
                 {!hideFooter && (
                     <Modal.Actions>
-                        {React.isValidElement(closeText) ? closeText : (
+                        {React.isValidElement(closeText) || closeText === null ? closeText : (
                             <Button
                                 content={closeText || (success ? 'Close' : 'Cancel')}
                                 negative

@@ -42,7 +42,7 @@ storage.chatUser = (id, secret) => {
 // timeKeeping
 storage.timeKeeping = formValues => {
     const key = 'time-keeping'
-    if (!isObj(formValues)) return getItem(key)
+    if (!isObj(formValues)) return getItem(key) || {}
     setItem(key, formValues)
     storage.timeKeepingBond.changed(formValues)
 }

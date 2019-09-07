@@ -1,18 +1,20 @@
 
 import React from 'react'
+import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { chain, secretStore } from 'oo7-substrate'
 import { Button, Divider, Icon } from 'semantic-ui-react'
-import { arrSort, deferred, isDefined, objCopy, textEllipsis } from '../utils/utils'
+import { arrSort, deferred, durationToSeconds, isDefined, objCopy, secondsToDuration, textEllipsis } from '../utils/utils'
 import FormBuilder, { fillValues } from '../components/FormBuilder'
 import { confirm } from '../services/modal'
-import client from '../services/ChatClient'
 import storage from '../services/storage'
-import addressbook from '../services/addressbook'
+import { projectDropdown, handleSearch } from '../components/ProjectDropdown'
 
 const BLOCK_DURATION_SECONDS = 5
-const DURATION_REGEX = /^(\d{2}):[0-5][0-9]:[0-5](0|5)$/
-const prependO = n => n < 10 ? `0${n}` : n
+const BLOCK_DURATION_REGEX = /^(\d{2}):[0-5][0-9]:[0-5](0|5)$/ // valid duration up to 99:59:55
+const blockCountToDuration = blockCount => secondsToDuration(blockCount * BLOCK_DURATION_SECONDS)
+const durationToBlockCount = duration => BLOCK_DURATION_REGEX.test(duration) ? durationToSeconds(duration)/BLOCK_DURATION_SECONDS : 0
+const toBeImplemented = ()=> alert('To be implemented')
 
 export default class TimeKeepingForm extends ReactiveComponent {
     constructor(props) {
@@ -22,42 +24,19 @@ export default class TimeKeepingForm extends ReactiveComponent {
         this.handleManualEntryChange = this.handleManualEntryChange.bind(this)
         this.handleDurationChange = this.handleDurationChange.bind(this)
 
-        const emptySearchMsg = 'Enter project name, hash or owner address'
-        this.blockCount = 0
         const values = storage.timeKeeping() || {}
-        if (!isDefined(values.durationValid)) {
-            values.durationValid = true
-        }
+        values.durationValid = !isDefined(values.durationValid) ? true : values.durationValid
+        values.duration = values.duration || '00:00:00'
+        values.manualEntry = values.manualEntry
+        values.projectHash = props.projectHash || values.projectHash || ''
 
         this.state = {
-            values: {
-                blockCount: values.blockCount,
-                blockEnd: values.blockEnd,
-                blockStart: values.blockStart,
-                duration: values.duration || '',
-                durationValid: values.durationValid,
-                finished: values.finished,
-                inprogress: values.inprogress,
-                manualEntry: !!values.manualEntry,
-                projectHash: values.projectHash || ''
-            },
+            values,
             inputs: [
-                {
-                    clearable: true, // set as default in FormInput ???
-                    // defaultSearchQuery: savedValues.projectHash || '',
-                    label: 'Select project',
-                    // minCharacters: 3,
-                    name: 'projectHash',
-                    noResultsMessage: emptySearchMsg,
+                objCopy(projectDropdown, {
                     onChange: this.handleProjectChange.bind(this),
-                    onSearchChange: deferred(this.handleSearch, 300, this),
-                    options: [],
-                    placeholder: emptySearchMsg,
-                    selection: true,
-                    // Custom improved dropdown search
-                    search: this.projectsCustomSearch.bind(this),
-                    type: 'dropdown',
-                },
+                    onSearchChange: deferred(handleSearch, 300, this),
+                }, true),
                 {
                     autoComplete: 'off',
                     label: 'Duration',
@@ -66,7 +45,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     placeholder: 'hh:mm:ss',
                     readOnly: values.manualEntry !== true,
                     type: 'text',
-                    value: ''
+                    value: '00:00:00'
                 },
                 {
                     disabled: !!values.inprogress,
@@ -80,12 +59,12 @@ export default class TimeKeepingForm extends ReactiveComponent {
 
         // restore saved values
         fillValues(this.state.inputs, values, true)
-        setTimeout(()=> this.handleSearch({}, {searchQuery: values.projectHash}))
+        setTimeout(()=> handleSearch.call(this, {}, {searchQuery: values.projectHash}))
     }
 
     handleDurationChange (e, formValues, i) {
         const { inputs, values } = this.state
-        values.durationValid = inputs[i].value === '00:00:00' ? false : DURATION_REGEX.test(formValues.duration)
+        values.durationValid = inputs[i].value === '00:00:00' ? false : BLOCK_DURATION_REGEX.test(formValues.duration)
         inputs[i].message = values.durationValid ? null : {
             content: <span>Please enter a valid duration in the following format:<br /><b>hh:mm:ss</b><br />Seconds must be in increments of 5</span>,
             header: 'Invalid duration',
@@ -101,7 +80,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         const duraIn = inputs.find(x => x.name === 'duration')
         duraIn.readOnly = !manualEntry
         duraIn.value = duraIn.value || '00:00:00'
-        values.durationValid = duraIn.value === '00:00:00' ? false : DURATION_REGEX.test(formValues.duration)
+        values.durationValid = duraIn.value === '00:00:00' ? false : BLOCK_DURATION_REGEX.test(formValues.duration)
         values.manualEntry = manualEntry
         this.setState({inputs, values})
     }
@@ -118,64 +97,10 @@ export default class TimeKeepingForm extends ReactiveComponent {
         this.setState({ inputs })
     }
 
-    // Customise projects DropDown search/filtering to include project hash, owner address etc matches
-    projectsCustomSearch(options, searchQuery) {
-        if (!options  || options.length === 0) return []
-        const projectHashes = {}
-        searchQuery = (searchQuery || '').toLowerCase().trim()
-        const search = key => {
-            const matches = options.map((option, i) => {
-                let x = option[key].toLowerCase().match(searchQuery)
-                if (!x || projectHashes[options[i].value]) return
-                projectHashes[options[i].value] = 1
-                return { index: i, matchIndex: x.index }
-            }).filter(x => !!x)
-            return arrSort(matches, 'matchIndex').map(x => options[x.index])
-        }
-
-        // First include results that matches project title
-        const result = search('text')
-        // Now include options matching project hash, name and owner address that is placed in the option.key
-        return result.concat(search('key'))
-    }
-
-    handleSearch(_, data) {
-        const searchQuery = (data.searchQuery || '').trim()
-        const { inputs } = this.state
-        const i = 0
-        inputs[i].loading = !!searchQuery
-        inputs[i].options = []
-        // inputs[i].noResultsMessage = !searchQuery ? emptySearchMsg : 'Searching projects...'
-        inputs[i].value = !searchQuery ? '' : inputs[i].value
-        this.setState({inputs})
-        if (!searchQuery) return
-
-        client.projectsSearch(searchQuery, (err, projects) => {
-            inputs[i].loading = false
-            inputs[i].message = !err ? {} : {status: 'error', content: err }
-            // inputs[i].noResultsMessage = projects.size === 0 ? 'Your search yielded no result' : 'Select a project'
-            inputs[i].options = Array.from(projects).map(n => ({
-                key: n[0] + n[1].ownerAddress + n[1].description, // also used for searching
-                description: (
-                    (secretStore().find(n[1].ownerAddress) || {}).name
-                    || (addressbook.getByAddress(n[1].ownerAddress) || {}).name
-                    || textEllipsis(n[1].ownerAddress, 15, 5)
-                ),
-                text: n[1].name,
-                value: n[0] // project hash
-            }))
-            if (!inputs[i].options.find(x => x.value === inputs[i].value)) {
-                // Remove value if no longer in the options list
-                inputs[i].value = undefined
-            }
-            this.setState({inputs})
-        })
-    }
-
     handleReset() {
         const { inputs } = this.state
         const values = {durationValid: true }
-        inputs.find(x => x.name === 'duration').value = ''
+        inputs.find(x => x.name === 'duration').value = '00:00:00'
         inputs.find(x => x.name === 'manualEntry').defaultChecked = false
         inputs.find(x => x.name === 'projectHash').value = ''
         this.setState({values, inputs})
@@ -208,7 +133,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
 
     handleResume() {
         const { blockNumber, inputs, values } = this.state
-        values.blockCount = this.durationToBlockCount(values.duration) - 1
+        values.blockCount = durationToBlockCount(values.duration) - 1
         values.blockEnd = blockNumber
         values.blockStart = blockNumber - values.blockCount
         values.inprogress = true
@@ -218,12 +143,14 @@ export default class TimeKeepingForm extends ReactiveComponent {
         meIn.defaultChecked = false
         meIn.disabled = true
         this.setState({inputs, values})
+        this.saveValues()
     }
 
     handleSubmit() {
         confirm({
             onConfirm: ()=> {
                 // send task to queue service
+                toBeImplemented()
                 // Reset form
                 this.handleReset()
             },
@@ -241,19 +168,22 @@ export default class TimeKeepingForm extends ReactiveComponent {
             values.blockEnd = currentBlockNumber
             values.blockStart = currentBlockNumber - values.blockCount
         } else if (currentBlockNumber > 0 && values.inprogress && !values.finished) {
-            values.duration = this.blockCountToDuration( currentBlockNumber - values.blockStart )
+            values.duration = blockCountToDuration( currentBlockNumber - values.blockStart )
         }
         duraIn.value = values.duration
-        values.durationValid = DURATION_REGEX.test(values.duration)
+        values.durationValid = BLOCK_DURATION_REGEX.test(values.duration)
         this.setState({blockNumber: currentBlockNumber, inputs, values})
         values.durationValid && storage.timeKeeping(values)
     }
 
     componentWillMount() {
         this.tieId = chain.height.tie( blockNumber => {
+            const { values } = this.state
+            const {inprogress, duration} = values
+            const doSave = inprogress || (duration && duration !== '00:00:00')
             blockNumber = parseInt(blockNumber)
             this.setState({blockNumber})
-            this.state.values.inprogress && this.saveValues(blockNumber)
+            doSave && this.saveValues(blockNumber)
         })
     }
 
@@ -261,25 +191,13 @@ export default class TimeKeepingForm extends ReactiveComponent {
         chain.height.untie(this.tieId)
     }
 
-    blockCountToDuration(blockCount) {
-        const seconds = (blockCount * 5) % 60
-        const totalMinutes = parseInt((blockCount*5)/60)
-        const hours = parseInt(totalMinutes/60)
-        return prependO(hours) + ':' + prependO(totalMinutes % 60) + ':' + prependO(seconds)
-    }
-
-    durationToBlockCount(duration) {
-        if (!DURATION_REGEX.test(duration)) return 0
-        const [hours, minutes, seconds] = duration.split(':')
-        const totalSeconds = parseInt(seconds) + parseInt(minutes) * 60 + parseInt(hours) * 60 * 60
-        return totalSeconds/BLOCK_DURATION_SECONDS
-    }
-
     render() {
+        const { modal } = this.props
         const { inputs, values } = this.state
         const { durationValid, finished, inprogress, manualEntry } = values
         const done = finished || manualEntry
         const duraIn = inputs.find(x => x.name === 'duration')
+        const btnStyle = modal ? { marginLeft: 0, marginRight: 0 } : {}
         if (finished && !manualEntry) {
             duraIn.action = {
                 icon: 'play',
@@ -311,7 +229,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     cancelButton: 'No',
                     size: 'mini'
                 })}
-                style={{marginTop: 5}}
+                style={objCopy(btnStyle, {marginTop: 5})}
                 title='Reset'
             />
         )
@@ -325,6 +243,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     labelPosition="right"
                     onClick={() => inprogress ? this.handleFinish() : (done ? this.handleSubmit() : this.handleStart())}
                     size="massive"
+                    style={btnStyle}
                 >
                     {!inprogress ? (done ? 'Submit' : 'Start') : (
                         <React.Fragment>
@@ -337,11 +256,29 @@ export default class TimeKeepingForm extends ReactiveComponent {
             </React.Fragment>
         )
         return (
-            <FormBuilder {...{
-                    inputs,
-                    onChange: this.handleValuesChange,
-                    submitText
-            }} />
+            <FormBuilder {...objCopy(this.props, {
+                closeText: null,
+                inputs,
+                message: !inprogress ? {} : {
+                    content: 'You may now close the dialog and come back to it anytime by clicking on the clock icon in the header.',
+                    header: 'Timer started',
+                    showIcon: true,
+                    status: 'info'
+                },
+                onChange: this.handleValuesChange,
+                submitText
+            })} />
         )
     }
+}
+
+TimeKeepingForm.defaultProps = {
+    closeOnEscape: true,
+    closeOnDimmerClick: true,
+    header: 'Time Keeper',
+    size: 'mini'
+}
+
+TimeKeepingForm.propTypes = {
+    projectHash: PropTypes.string
 }
