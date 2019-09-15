@@ -38,36 +38,22 @@ export const generateHash = (seed, algo, asBytes) => {
  * Data validation
  */
 export const isArr = x => Array.isArray(x)
+export const isBool = x => typeof x === 'bool'
 export const isBond = x => x instanceof Bond
 export const isDefined = x => x !== undefined && x !== null
-export const isFn = x => typeof (x) === 'function'
+export const isFn = x => typeof x === 'function'
 export const isMap = x => x instanceof Map
-export const isObj = x => x !== null && !isArr(x) && typeof (x) === 'object'
+export const isObj = x => x !== null && !isArr(x) && typeof x === 'object'
 // Checks if argument is an Array of Objects. Each element type must be object, otherwise will return false.
 export const isObjArr = x => !isArr(x) ? false : !x.reduce((no, item) => no || !isObj(item), false)
 // Checks if argument is an Map of Objects. Each element type must be object, otherwise will return false.
 export const isObjMap = x => !isMap(x) ? false : !Array.from(x).reduce((no, item) => no || !isObj(item[1]), false)
-export const isStr = x => typeof (x) === 'string'
-export const isValidNumber = x => typeof (x) == 'number' && !isNaN(x) && isFinite(x)
+export const isStr = x => typeof x === 'string'
+export const isValidNumber = x => typeof x == 'number' && !isNaN(x) && isFinite(x)
 export const hasValue = x => isDefined(x) && (isValidNumber(x) || (isStr(x) && !!x))
 export const isMobile = () => window.innerWidth <= Responsive.onlyMobile.maxWidth
 
 export const randomInt = (min, max) => parseInt(Math.random() * (max - min) + min)
-
-/*
- * duration conversion. ToDo: move to convert.js
- */
-export const secondsToDuration = numSeconds => {
-	numSeconds = parseInt(numSeconds || 0)
-	const seconds = numSeconds % 60
-	const totalMinutes = parseInt(numSeconds/60)
-	const hours = parseInt(totalMinutes/60)
-	return prepend0(hours) + ':' + prepend0(totalMinutes % 60) + ':' + prepend0(seconds)
-}
-export const durationToSeconds = duration => {
-	const [hours, minutes, seconds] = duration.split(':')
-	return parseInt(seconds) + parseInt(minutes) * 60 + parseInt(hours) * 60 * 60
-}
 
 // getKeys returns an array of keys or indexes depending on object type
 export const getKeys = source => {
@@ -276,7 +262,7 @@ export const sort = (data, key, reverse, sortOriginal) => isArr(data) ? arrSort(
 )
 
 /*
- * Date formatting etc.
+ * Date formatting etc. ToDo: move to time.js
  */
 // prepend0 prepends '0' if number is less than 10
 const prepend0 = n => (n < 10 ? '0' : '') + n

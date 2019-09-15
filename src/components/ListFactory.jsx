@@ -12,12 +12,12 @@ class ListFactory extends ReactiveComponent {
 
     render() {
         const { type } = this.props
-        
+
         switch (type.toLowerCase()) {
             case 'datatable':
                 return <DataTable {...this.props} />
-            case 'cardlist': 
-            default: 
+            case 'cardlist':
+            default:
                 return <CardList {...this.props} />
         }
     }
@@ -38,7 +38,7 @@ export class CardList extends ReactiveComponent {
     }
 
     render() {
-        let { items, itemsPerRow, navLimit, pageOnSelect, style} = this.props
+        let { items, itemsPerRow, navLimit, pageOnSelect, style } = this.props
         const { pageNo, perPage } = this.state
         const totalPages = Math.ceil(items.length / perPage)
         itemsPerRow = itemsPerRow || 1
@@ -46,15 +46,15 @@ export class CardList extends ReactiveComponent {
         return (
             <React.Fragment>
                 {showPaginator && (
-                    <div style={{textAlign: 'center', margin: 30}}>
+                    <div style={{ textAlign: 'center', margin: 30 }}>
                         <Paginator
                             total={totalPages}
                             current={pageNo}
                             navLimit={navLimit || 3}
-                            onSelect={pageNo => {this.setState({pageNo}); isFn(pageOnSelect) && pageOnSelect(pageNo); }}
+                            onSelect={pageNo => { this.setState({ pageNo }); isFn(pageOnSelect) && pageOnSelect(pageNo); }}
                         />
                     </div>
-                    
+
                 )}
                 <Card.Group style={style} itemsPerRow={itemsPerRow || 1}>
                     {mapItemsByPage(items, pageNo, perPage, (card, i) => (
@@ -107,7 +107,7 @@ export class CardListItem extends ReactiveComponent {
 }
 CardListItem.propTypes = {
     header: PropTypes.object.isRequired,
-    menu: PropTypes.arrayOf(PropTypes.ob) 
+    menu: PropTypes.arrayOf(PropTypes.ob)
 }
 
 export class CardHeader extends ReactiveComponent {
@@ -123,8 +123,8 @@ export class CardHeader extends ReactiveComponent {
                 {image}
             </Image>
         ) : (
-            <Image floated="left" size="mini" src={iamge} />
-        ))
+                <Image floated="left" size="mini" src={iamge} />
+            ))
 
         const getIcon = (icon, key) => (
             !icon ? '' : <Icon
@@ -132,29 +132,29 @@ export class CardHeader extends ReactiveComponent {
                 className={icon.className}
                 key={key}
                 link={isFn(icon.onClick)}
-                name={ icon.name || 'question'}
+                name={icon.name || 'question'}
                 onClick={icon.onClick}
                 size={icon.size || 'small'}
                 style={icon.style}
             />
         )
-        
+
         return (
             <React.Fragment>
-                 {headerImage}
-                 {input && inputVisible ? <FormInput {...input} /> : (
-                     <Card.Header
-                         as={hasOnClick ? 'a' : 'div'}
-                         style={{cursor: hasOnClick ? 'pointer' : 'default'}} 
-                         onClick={!inputVisible ? onClick : undefined}
-                     >
-                         {content}
-                         {!Array.isArray(icon) ? getIcon(icon) : icon.map((ic, i) => (
-                             getIcon(ic, i)
-                         ))}
-                     </Card.Header>
-                 )}
-                 {subheader && <Card.Meta content={subheader} />} 
+                {headerImage}
+                {input && inputVisible ? <FormInput {...input} /> : (
+                    <Card.Header
+                        as={hasOnClick ? 'a' : 'div'}
+                        style={{ cursor: hasOnClick ? 'pointer' : 'default' }}
+                        onClick={!inputVisible ? onClick : undefined}
+                    >
+                        {content}
+                        {!Array.isArray(icon) ? getIcon(icon) : icon.map((ic, i) => (
+                            getIcon(ic, i)
+                        ))}
+                    </Card.Header>
+                )}
+                {subheader && <Card.Meta content={subheader} />}
             </React.Fragment>
         )
     }
@@ -204,7 +204,7 @@ export class DataTable extends ReactiveComponent {
             selectedIndexes.splice(index, 1)
         }
         isFn(onRowSelect) && onRowSelect(selectedIndexes, key)
-        this.setState({selectedIndexes})
+        this.setState({ selectedIndexes })
     }
 
     handleAllSelect(selectedIndexes) {
@@ -213,21 +213,21 @@ export class DataTable extends ReactiveComponent {
         const totalSelected = selectedIndexes.length
         selectedIndexes = total === totalSelected ? [] : getKeys(data)
         isFn(onRowSelect) && onRowSelect(selectedIndexes)
-        this.setState({selectedIndexes})
+        this.setState({ selectedIndexes })
     }
 
     getTopContent(mobile, totalRows, selectedIndexes) {
         let { searchable, topLeftMenu, topRightMenu } = this.props
         const { keywords } = this.state
-  
+
         const searchCol = searchable && (
-            <Grid.Column key="0" tablet={16} computer={5} style={{padding: 0}}>
+            <Grid.Column key="0" tablet={16} computer={5} style={{ padding: 0 }}>
                 <Input
                     action={{
-                        icon:'search',
-                        position:'right'
+                        icon: 'search',
+                        position: 'right'
                     }}
-                    onChange={(e, d) => this.setState({keywords: d.value})}
+                    onChange={(e, d) => this.setState({ keywords: d.value })}
                     placeholder="Search"
                     style={!mobile ? undefined : { margin: '15px 0', width: '100%' }}
                     type="text"
@@ -237,14 +237,14 @@ export class DataTable extends ReactiveComponent {
         )
 
         const right = topRightMenu && topRightMenu.length > 0 && (
-            <Grid.Column floated="right" key="1" tablet={16} computer={3} style={{padding: 0}}>
-                <Dropdown text='Actions' button fluid style={{textAlign: 'center'}} disabled={selectedIndexes.length === 0}>
-                    <Dropdown.Menu direction="left" style={{minWidth: 'auto'}}>
+            <Grid.Column floated="right" key="1" tablet={16} computer={3} style={{ padding: 0 }}>
+                <Dropdown text='Actions' button fluid style={{ textAlign: 'center' }} disabled={selectedIndexes.length === 0}>
+                    <Dropdown.Menu direction="left" style={{ minWidth: 'auto' }}>
                         {(topRightMenu || []).map((item, i) => React.isValidElement(item) ? item : (
                             <Dropdown.Item
                                 {...item}
                                 key={i}
-                                onClick={() => isFn(item.onClick) && item.onClick(selectedIndexes) }
+                                onClick={() => isFn(item.onClick) && item.onClick(selectedIndexes)}
                             />
                         ))}
                     </Dropdown.Menu>
@@ -253,16 +253,16 @@ export class DataTable extends ReactiveComponent {
         )
 
         return (
-            <Grid columns={3} style={{margin: '-1rem 0', paddingBottom: '15px'}}>
+            <Grid columns={3} style={{ margin: '-1rem 0', paddingBottom: '15px' }}>
                 <Grid.Row>
-                    <Grid.Column tablet={16} computer={6} style={{padding: 0}}>
+                    <Grid.Column tablet={16} computer={6} style={{ padding: 0 }}>
                         {(topLeftMenu || []).map((item, i) => React.isValidElement(item) ? item : (
                             <Button
                                 {...item}
                                 fluid={mobile}
                                 key={i}
-                                onClick={() => isFn(item.onClick) && item.onClick(selectedIndexes) }
-                                style={ !mobile ? item.style : objCopy({marginBottom: 5}, item.style)}
+                                onClick={() => isFn(item.onClick) && item.onClick(selectedIndexes)}
+                                style={!mobile ? item.style : objCopy({ marginBottom: 5 }, item.style)}
                             />
                         ))}
                     </Grid.Column>
@@ -280,22 +280,22 @@ export class DataTable extends ReactiveComponent {
 
         return mapItemsByPage(filteredData, pageNo, perPage, (item, key, items, isMap) => (
             <Table.Row key={key}>
-                { selectable && ( /* include checkbox to select items */
+                {selectable && ( /* include checkbox to select items */
                     <Table.Cell onClick={() => this.handleRowSelect(key, selectedIndexes)} style={styles.checkboxCell}>
-                        <Icon 
-                            name={(selectedIndexes.indexOf(key) >= 0 ? 'check ' : '') +'square outline'}
+                        <Icon
+                            name={(selectedIndexes.indexOf(key) >= 0 ? 'check ' : '') + 'square outline'}
                             size="large"
                             className="no-margin"
                         />
                     </Table.Cell>
                 )}
                 {columns.map((cell, j) => (
-                    <Table.Cell 
+                    <Table.Cell
                         {...objWithoutKeys(cell, ['content', 'style'])}
-                        key={j} 
+                        key={j}
                         content={undefined}
                         textAlign={cell.textAlign || 'left'}
-                        style={objCopy(cell.style, {padding: cell.collapsing ? '0 5px' : undefined})}
+                        style={objCopy(cell.style, { padding: cell.collapsing ? '0 5px' : undefined })}
                     >
                         {!cell.content ? item[cell.key] : (
                             isFn(cell.content) ? cell.content(item, key, items, isMap) : cell.content
@@ -311,11 +311,11 @@ export class DataTable extends ReactiveComponent {
         const { sortAsc, sortBy } = this.state
 
         const headers = columns.map((x, i) => (
-            <Table.HeaderCell 
-                key={i} 
-                onClick={() => x.key && this.setState({sortBy: x.key, sortAsc: sortBy === x.key ? !sortAsc : true})}
+            <Table.HeaderCell
+                key={i}
+                onClick={() => x.key && this.setState({ sortBy: x.key, sortAsc: sortBy === x.key ? !sortAsc : true })}
                 sorted={sortBy !== x.key ? null : (sortAsc ? 'ascending' : 'descending')}
-                textAlign={x.textAlign || 'center'}
+                textAlign="center"
             >
                 {x.title}
             </Table.HeaderCell>
@@ -345,18 +345,18 @@ export class DataTable extends ReactiveComponent {
 
     getFooter(mobile, totalPages) {
         return () => {
-            let {  footerContent, navLimit, pageOnSelect } = this.props
+            let { footerContent, navLimit, pageOnSelect } = this.props
             const { pageNo } = this.state
             return (
                 <React.Fragment>
-                    {footerContent && <div style={{float: 'left', width: mobile ? '100%' : undefined}}>{footerContent}</div>}
+                    {footerContent && <div style={{ float: 'left', width: mobile ? '100%' : undefined }}>{footerContent}</div>}
                     {totalPages <= 1 ? undefined : (
                         <Paginator
                             total={totalPages}
                             current={pageNo}
                             navLimit={navLimit || 5}
                             float={mobile ? undefined : 'right'}
-                            onSelect={pageNo => {this.setState({pageNo}); isFn(pageOnSelect) && pageOnSelect(pageNo); }}
+                            onSelect={pageNo => { this.setState({ pageNo }); isFn(pageOnSelect) && pageOnSelect(pageNo); }}
                         />
                     )}
                 </React.Fragment>
@@ -365,14 +365,14 @@ export class DataTable extends ReactiveComponent {
     }
 
     render() {
-        let {  data, columns: columnsOriginal, footerContent, perPage, searchExtraKeys } = this.props
+        let { data, columns: columnsOriginal, footerContent, perPage, searchExtraKeys } = this.props
         let { keywords, selectedIndexes, sortAsc, sortBy } = this.state
         keywords = keywords.trim()
         data = data || []
         const columns = columnsOriginal.filter(x => !!x)
         const keys = columns.filter(x => !!x.key).map(x => x.key)
         // Include extra searcheable keys that are not visibile on the table
-        if(isArr(searchExtraKeys)) {
+        if (isArr(searchExtraKeys)) {
             searchExtraKeys.forEach(key => keys.indexOf(key) === -1 & keys.push(key))
         }
         const filteredData = sort(
@@ -394,7 +394,7 @@ export class DataTable extends ReactiveComponent {
                     else={this.getTopContent(false, totalRows, selectedIndexes)}
                 />
                 {totalRows > 0 && (
-                    <div style={{overflowX: 'auto'}}>
+                    <div style={{ overflowX: 'auto' }}>
                         <Table celled selectable sortable unstackable singleLine>
                             <Table.Header>
                                 <Table.Row>
@@ -406,7 +406,7 @@ export class DataTable extends ReactiveComponent {
                                 {rows}
                             </Table.Body>
 
-                            {!footerContent && totalPages <= 1? undefined : (
+                            {!footerContent && totalPages <= 1 ? undefined : (
                                 <Table.Footer>
                                     <Table.Row>
                                         <Table.HeaderCell colSpan={columns.length + 1}>
@@ -470,17 +470,17 @@ export class Paginator extends ReactiveComponent {
 
     getItems() {
         const { current, navLimit, total } = this.props
-        const edging = (current + navLimit -1) >= total
-        let start = edging ? total - navLimit + 1 : current - Math.floor(navLimit/2)
+        const edging = (current + navLimit - 1) >= total
+        let start = edging ? total - navLimit + 1 : current - Math.floor(navLimit / 2)
         start = start < 1 ? 1 : start
         let end = start + navLimit
         end = end > total ? total + (edging ? 1 : 0) : end
         return Array(end - start).fill(0).map((_, i) => (
             <Menu.Item
-                active={current === start+i}
+                active={current === start + i}
                 as="a"
                 key={i}
-                onClick={() => this.handleClick(start+i)}
+                onClick={() => this.handleClick(start + i)}
             >
                 {start + i}
             </Menu.Item>
@@ -494,7 +494,7 @@ export class Paginator extends ReactiveComponent {
         const next = current + 1
         const prev = current - 1
 
-        const menuProps = {pagination: true}
+        const menuProps = { pagination: true }
         if (isDefined(float)) {
             menuProps.floated = float
         }
@@ -503,22 +503,22 @@ export class Paginator extends ReactiveComponent {
                 <Menu.Item
                     as="a"
                     icon
-                    onClick={()=> handleClick(prev)}
-                    disabled={ prev <= 0 }
+                    onClick={() => handleClick(prev)}
+                    disabled={prev <= 0}
                 >
                     <Icon name="chevron left" />
                 </Menu.Item>
                 {getItems()}
-                <Menu.Item 
-                    as="a" 
+                <Menu.Item
+                    as="a"
                     icon
-                    onClick={()=> handleClick(next)} 
-                    disabled={ next > total }
+                    onClick={() => handleClick(next)}
+                    disabled={next > total}
                 >
                     <Icon name="chevron right" />
                 </Menu.Item>
             </Menu>
-       )
+        )
     }
 }
 

@@ -4,17 +4,23 @@ import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { chain, secretStore } from 'oo7-substrate'
 import { Button, Divider, Icon } from 'semantic-ui-react'
-import { arrSort, deferred, durationToSeconds, isDefined, objCopy, secondsToDuration, textEllipsis } from '../utils/utils'
+import { arrSort, deferred, isDefined, objCopy, textEllipsis } from '../utils/utils'
+import {
+    BLOCK_DURATION_SECONDS,
+    BLOCK_DURATION_REGEX,
+    durationToSeconds,
+    RATE_PERIODS,
+    secondsToDuration,
+} from '../utils/time'
 import FormBuilder, { fillValues } from '../components/FormBuilder'
 import { confirm } from '../services/modal'
 import storage from '../services/storage'
 import { projectDropdown, handleSearch } from '../components/ProjectDropdown'
 
-const BLOCK_DURATION_SECONDS = 5
-const BLOCK_DURATION_REGEX = /^(\d{2}):[0-5][0-9]:[0-5](0|5)$/ // valid duration up to 99:59:55
+const DURATION_ZERO = '00:00:00'
 const blockCountToDuration = blockCount => secondsToDuration(blockCount * BLOCK_DURATION_SECONDS)
-const durationToBlockCount = duration => BLOCK_DURATION_REGEX.test(duration) ? durationToSeconds(duration)/BLOCK_DURATION_SECONDS : 0
-const toBeImplemented = ()=> alert('To be implemented')
+const durationToBlockCount = duration => BLOCK_DURATION_REGEX.test(duration) ? durationToSeconds(duration) / BLOCK_DURATION_SECONDS : 0
+const toBeImplemented = () => alert('To be implemented')
 
 export default class TimeKeepingForm extends ReactiveComponent {
     constructor(props) {
@@ -26,7 +32,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
 
         const values = storage.timeKeeping() || {}
         values.durationValid = !isDefined(values.durationValid) ? true : values.durationValid
-        values.duration = values.duration || '00:00:00'
+        values.duration = values.duration || DURATION_ZERO
         values.manualEntry = values.manualEntry
         values.projectHash = props.projectHash || values.projectHash || ''
 
@@ -36,7 +42,43 @@ export default class TimeKeepingForm extends ReactiveComponent {
                 objCopy(projectDropdown, {
                     onChange: this.handleProjectChange.bind(this),
                     onSearchChange: deferred(handleSearch, 300, this),
+                    required: true
                 }, true),
+                {
+                    name: 'rate-fields',
+                    type: 'group',
+                    widths: 'equal',
+                    inputs: [
+                        {
+                            label: 'Rate Amount',
+                            name: 'rateAmount',
+                            required: true,
+                            type: 'number',
+                            useInput: true,
+                        },
+                        {
+                            label: 'Rate Unit',
+                            maxLength: 10,
+                            name: 'rateUnit',
+                            required: true,
+                            type: 'text',
+                            useInput: true,
+                        },
+                        {
+                            label: 'Rate Period',
+                            name: 'ratePeriod',
+                            options: RATE_PERIODS.map(p => ({
+                                key: p,
+                                text: p + (p === 'block' ? ' - ' + BLOCK_DURATION_SECONDS + ' seconds' : ''),
+                                value: p
+                            })),
+                            required: true,
+                            selection: true,
+                            type: 'dropdown',
+                            useInput: true,
+                        },
+                    ],
+                },
                 {
                     autoComplete: 'off',
                     label: 'Duration',
@@ -45,7 +87,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     placeholder: 'hh:mm:ss',
                     readOnly: values.manualEntry !== true,
                     type: 'text',
-                    value: '00:00:00'
+                    value: DURATION_ZERO
                 },
                 {
                     disabled: !!values.inprogress,
@@ -54,24 +96,32 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     type: 'checkbox',
                     onChange: this.handleManualEntryChange
                 },
+                {
+                    content: "Reset",
+                    fluid: true,
+                    name: 'reset',
+                    negative: true,
+                    onClick: () => this.handleReset(true),
+                    type: 'button'
+                }
             ]
         }
 
         // restore saved values
         fillValues(this.state.inputs, values, true)
-        setTimeout(()=> handleSearch.call(this, {}, {searchQuery: values.projectHash}))
+        setTimeout(() => handleSearch.call(this, {}, { searchQuery: values.projectHash }))
     }
 
-    handleDurationChange (e, formValues, i) {
+    handleDurationChange(e, formValues, i) {
         const { inputs, values } = this.state
-        values.durationValid = inputs[i].value === '00:00:00' ? false : BLOCK_DURATION_REGEX.test(formValues.duration)
+        values.durationValid = inputs[i].value === DURATION_ZERO ? false : BLOCK_DURATION_REGEX.test(formValues.duration)
         inputs[i].message = values.durationValid ? null : {
             content: <span>Please enter a valid duration in the following format:<br /><b>hh:mm:ss</b><br />Seconds must be in increments of 5</span>,
             header: 'Invalid duration',
             showIcon: true,
             status: 'error',
         }
-        this.setState({inputs, values})
+        this.setState({ inputs, values })
     }
 
     handleManualEntryChange(e, formValues) {
@@ -79,15 +129,15 @@ export default class TimeKeepingForm extends ReactiveComponent {
         const { inputs, values } = this.state
         const duraIn = inputs.find(x => x.name === 'duration')
         duraIn.readOnly = !manualEntry
-        duraIn.value = duraIn.value || '00:00:00'
-        values.durationValid = duraIn.value === '00:00:00' ? false : BLOCK_DURATION_REGEX.test(formValues.duration)
+        duraIn.value = duraIn.value || DURATION_ZERO
+        values.durationValid = duraIn.value === DURATION_ZERO ? false : BLOCK_DURATION_REGEX.test(formValues.duration)
         values.manualEntry = manualEntry
-        this.setState({inputs, values})
+        this.setState({ inputs, values })
     }
 
     handleValuesChange(e, formValues) {
         const values = objCopy(formValues, this.state.values)
-        this.setState({values})
+        this.setState({ values })
         this.saveValues()
     }
 
@@ -97,14 +147,26 @@ export default class TimeKeepingForm extends ReactiveComponent {
         this.setState({ inputs })
     }
 
-    handleReset() {
-        const { inputs } = this.state
-        const values = {durationValid: true }
-        inputs.find(x => x.name === 'duration').value = '00:00:00'
-        inputs.find(x => x.name === 'manualEntry').defaultChecked = false
-        inputs.find(x => x.name === 'projectHash').value = ''
-        this.setState({values, inputs})
-        storage.timeKeeping(values)
+    handleReset(userInitiated) {
+        const { inputs, values } = this.state
+        const doConfirm = userInitiated && values.duration && values.duration !== DURATION_ZERO
+        const reset = () => {
+            const values = { durationValid: true }
+            inputs.find(x => x.name === 'duration').value = DURATION_ZERO
+            inputs.find(x => x.name === 'manualEntry').defaultChecked = false
+            inputs.find(x => x.name === 'projectHash').value = ''
+            this.setState({ values, inputs })
+            storage.timeKeeping(values)
+        }
+
+        !doConfirm ? reset() : confirm({
+            header: 'Reset Timer',
+            content: 'You are about to reset your timer. Are you sure?',
+            onConfirm: () => reset(),
+            confirmButton: 'Yes',
+            cancelButton: 'No',
+            size: 'mini'
+        })
     }
 
     handleStart() {
@@ -113,27 +175,27 @@ export default class TimeKeepingForm extends ReactiveComponent {
         const duraIn = inputs.find(x => x.name === 'duration')
         duraIn.readOnly = true
         duraIn.message = null
-        values.blockStart =  blockNumber
+        values.blockStart = blockNumber
         values.finished = false
         values.inprogress = true
         values.durationValid = true
-        this.setState({inputs, values})
+        this.setState({ inputs, values })
         this.saveValues()
     }
 
     handleFinish() {
         const { blockNumber, inputs, values } = this.state
         inputs.find(x => x.name === 'manualEntry').disabled = false
-        values.blockEnd =  blockNumber
+        values.blockEnd = blockNumber
         values.inprogress = false
         values.finished = true
-        this.setState({inputs, values})
+        this.setState({ inputs, values })
         this.saveValues()
     }
 
     handleResume() {
         const { blockNumber, inputs, values } = this.state
-        values.blockCount = durationToBlockCount(values.duration) - 1
+        values.blockCount = durationToBlockCount(values.duration)
         values.blockEnd = blockNumber
         values.blockStart = blockNumber - values.blockCount
         values.inprogress = true
@@ -142,13 +204,13 @@ export default class TimeKeepingForm extends ReactiveComponent {
         const meIn = inputs.find(x => x.name === 'manualEntry')
         meIn.defaultChecked = false
         meIn.disabled = true
-        this.setState({inputs, values})
-        this.saveValues()
+        this.setState({ inputs, values })
+        setTimeout(this.saveValues)
     }
 
     handleSubmit() {
         confirm({
-            onConfirm: ()=> {
+            onConfirm: () => {
                 // send task to queue service
                 toBeImplemented()
                 // Reset form
@@ -168,22 +230,21 @@ export default class TimeKeepingForm extends ReactiveComponent {
             values.blockEnd = currentBlockNumber
             values.blockStart = currentBlockNumber - values.blockCount
         } else if (currentBlockNumber > 0 && values.inprogress && !values.finished) {
-            values.duration = blockCountToDuration( currentBlockNumber - values.blockStart )
+            values.duration = blockCountToDuration(currentBlockNumber - values.blockStart)
         }
         duraIn.value = values.duration
         values.durationValid = BLOCK_DURATION_REGEX.test(values.duration)
-        this.setState({blockNumber: currentBlockNumber, inputs, values})
+        this.setState({ blockNumber: currentBlockNumber, inputs, values })
         values.durationValid && storage.timeKeeping(values)
     }
 
     componentWillMount() {
-        this.tieId = chain.height.tie( blockNumber => {
+        this.tieId = chain.height.tie(blockNumber => {
             const { values } = this.state
-            const {inprogress, duration} = values
-            const doSave = inprogress || (duration && duration !== '00:00:00')
+            const { inprogress, duration } = values
+            const doSave = inprogress || (duration && duration !== DURATION_ZERO)
             blockNumber = parseInt(blockNumber)
-            this.setState({blockNumber})
-            doSave && this.saveValues(blockNumber)
+            doSave ? this.saveValues(blockNumber) : this.setState({ blockNumber })
         })
     }
 
@@ -198,63 +259,24 @@ export default class TimeKeepingForm extends ReactiveComponent {
         const done = finished || manualEntry
         const duraIn = inputs.find(x => x.name === 'duration')
         const btnStyle = modal ? { marginLeft: 0, marginRight: 0 } : {}
-        if (finished && !manualEntry) {
-            duraIn.action = {
-                icon: 'play',
-                onClick: ()=> confirm({
-                    header: 'Resume timer',
-                    content: 'Would you like to resume timer?',
-                    onConfirm: ()=> this.handleResume(),
-                    confirmButton: 'Yes',
-                    cancelButton: 'No',
-                    size: 'mini'
-                }),
-                title: 'Resume timer'
-            }
-        } else {
-            duraIn.icon = undefined
-            duraIn.action = undefined
+        const doneItems = ['reset', 'rate-fields']
+        inputs.filter(x => doneItems.indexOf(x.name) >= 0).forEach(x => x.hidden = !done)
+        // Show resume item when timer is stopped
+        duraIn.action = !finished || manualEntry ? undefined : {
+            icon: 'play',
+            // prevents annoying HTML form validation warnings from showing up when clicked
+            formNoValidate: true,
+            onClick: () => confirm({
+                header: 'Resume timer',
+                content: 'Would you like to resume timer?',
+                onConfirm: (e) => e.preventDefault() | e.stopPropagation() | this.handleResume(),
+                confirmButton: 'Yes',
+                cancelButton: 'No',
+                size: 'mini'
+            }),
+            title: 'Resume timer'
         }
 
-        const resetBtn = done && (
-            <Button 
-                content="Reset"
-                fluid
-                negative
-                onClick= {()=> confirm({
-                    header: 'Reset Timer',
-                    content: 'You are about to reset your timer. Are you sure?',
-                    onConfirm: ()=> this.handleReset(),
-                    confirmButton: 'Yes',
-                    cancelButton: 'No',
-                    size: 'mini'
-                })}
-                style={objCopy(btnStyle, {marginTop: 5})}
-                title='Reset'
-            />
-        )
-
-        const submitText = (
-            <React.Fragment>
-                <Button
-                    icon
-                    fluid
-                    disabled={!inputs[0].value || (manualEntry && !durationValid)}
-                    labelPosition="right"
-                    onClick={() => inprogress ? this.handleFinish() : (done ? this.handleSubmit() : this.handleStart())}
-                    size="massive"
-                    style={btnStyle}
-                >
-                    {!inprogress ? (done ? 'Submit' : 'Start') : (
-                        <React.Fragment>
-                            <Icon name="clock outline" loading={true} style={{background: 'transparent'}} />
-                            Stop
-                        </React.Fragment>
-                    )}
-                </Button>
-                {resetBtn}
-            </React.Fragment>
-        )
         return (
             <FormBuilder {...objCopy(this.props, {
                 closeText: null,
@@ -266,7 +288,24 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     status: 'info'
                 },
                 onChange: this.handleValuesChange,
-                submitText
+                submitText: (
+                    <Button
+                        icon
+                        fluid
+                        disabled={manualEntry && !durationValid ? false : undefined}
+                        labelPosition="right"
+                        onClick={() => inprogress ? this.handleFinish() : (done ? this.handleSubmit() : this.handleStart())}
+                        size="massive"
+                        style={btnStyle}
+                    >
+                        {!inprogress ? (done ? 'Submit' : 'Start') : (
+                            <React.Fragment>
+                                <Icon name="clock outline" loading={true} style={{ background: 'transparent' }} />
+                                Stop
+                            </React.Fragment>
+                        )}
+                    </Button>
+                )
             })} />
         )
     }
@@ -276,7 +315,7 @@ TimeKeepingForm.defaultProps = {
     closeOnEscape: true,
     closeOnDimmerClick: true,
     header: 'Time Keeper',
-    size: 'mini'
+    size: 'tiny'
 }
 
 TimeKeepingForm.propTypes = {
