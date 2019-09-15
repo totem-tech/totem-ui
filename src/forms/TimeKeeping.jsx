@@ -52,17 +52,17 @@ export default class TimeKeepingForm extends ReactiveComponent {
                         {
                             label: 'Rate Amount',
                             name: 'rateAmount',
+                            placeholder: '123.45',
                             required: true,
                             type: 'number',
-                            useInput: true,
                         },
                         {
                             label: 'Rate Unit',
                             maxLength: 10,
                             name: 'rateUnit',
+                            placeholder: 'BTC, US$, Euro...',
                             required: true,
                             type: 'text',
-                            useInput: true,
                         },
                         {
                             label: 'Rate Period',
@@ -72,10 +72,10 @@ export default class TimeKeepingForm extends ReactiveComponent {
                                 text: p + (p === 'block' ? ' - ' + BLOCK_DURATION_SECONDS + ' seconds' : ''),
                                 value: p
                             })),
+                            placeholder: 'Select a rate period',
                             required: true,
                             selection: true,
                             type: 'dropdown',
-                            useInput: true,
                         },
                     ],
                 },
@@ -205,7 +205,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         meIn.defaultChecked = false
         meIn.disabled = true
         this.setState({ inputs, values })
-        setTimeout(this.saveValues)
+        setTimeout(this.saveValues.bind(this))
     }
 
     handleSubmit() {
@@ -269,7 +269,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
             onClick: () => confirm({
                 header: 'Resume timer',
                 content: 'Would you like to resume timer?',
-                onConfirm: (e) => e.preventDefault() | e.stopPropagation() | this.handleResume(),
+                onConfirm: this.handleResume.bind(this),
                 confirmButton: 'Yes',
                 cancelButton: 'No',
                 size: 'mini'

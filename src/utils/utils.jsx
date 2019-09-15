@@ -262,24 +262,6 @@ export const sort = (data, key, reverse, sortOriginal) => isArr(data) ? arrSort(
 )
 
 /*
- * Date formatting etc. ToDo: move to time.js
- */
-// prepend0 prepends '0' if number is less than 10
-const prepend0 = n => (n < 10 ? '0' : '') + n
-
-// For todays date;
-Date.prototype.today = function () {
-	return prepend0(this.getDate()) + "/" + prepend0(this.getMonth() + 1) + "/" + this.getFullYear();
-}
-
-// For the time now
-Date.prototype.timeNow = function () {
-	return prepend0(this.getHours()) + ":" + prepend0(this.getMinutes()) + ":" + prepend0(this.getSeconds())
-}
-
-export const getNow = () => new Date().today() + " @ " + new Date().timeNow()
-
-/*
  * State management
  */
 // setStateTimeout sets state property value before and after timeout

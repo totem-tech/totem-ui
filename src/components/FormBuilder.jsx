@@ -23,10 +23,10 @@ class FormBuilder extends ReactiveComponent {
         this.handleSubmit = this.handleSubmit.bind(this)
     }
 
-    getValues(inputs, excludeIndex, values) {
+    getValues(inputs, values) {
         return inputs.reduce((values, input, i) => {
-            if (!isDefined(input.name) || i === excludeIndex) return values;
-            let { value } = values
+            if (!isDefined(input.name)) return values;
+            let value = values[input.name]
             value = !isDefined(value) ? input.value : value
             if (['accountidbond', 'inputbond'].indexOf(input.type.toLowerCase()) >= 0 && isBond(input.bond)) {
                 value = input.bond._value
@@ -36,7 +36,7 @@ class FormBuilder extends ReactiveComponent {
         }, values || {})
     }
 
-    handleChange(e, data, index, input) {
+    handleChange(e, data, index, input, childIndex) {
         const { name, onChange: onInputChange } = input
         let { inputs } = this.state
         const { onChange: formOnChange } = this.props
@@ -44,9 +44,13 @@ class FormBuilder extends ReactiveComponent {
         const { value } = data
         const updateBond = isBond(input.bond) && input.type.toLowerCase() !== 'checkbox-group'
         values[name] = value
-        inputs[index].value = value
+        if (isDefined(childIndex)) {
+            inputs[index].inputs[childIndex].value = value
+        } else {
+            inputs[index].value = value
+        }
         // update values of other inputs
-        values = this.getValues(inputs, -1, values)
+        values = this.getValues(inputs, values)
         updateBond && input.bond.changed(value)
 
         // trigger input items's onchange callback
@@ -117,27 +121,7 @@ class FormBuilder extends ReactiveComponent {
         submitProps.onClick = isFn(onClick) ? onClick : this.handleSubmit
         submitProps.positive = true
         const submitBtn = submitText === null ? undefined : <Button {...submitProps} />
-        // const submitBtn = React.isValidElement(submitText) || submitText === null ? submitText : (
-        //     <Button
-        //         content={submitText}
-        //         disabled={isFormInvalid(inputs, values) || submitDisabled || message.error || success}
-        //         key="submit"
-        //         onClick={this.handleSubmit}
-        //         positive
-        //     />
-        // )
 
-        // const resetProps = React.isValidElement(resetText) ? objCopy(resetText.props) : {}
-        // const resetBtn = resetText === null ? undefined : (
-        //     <Button
-        //         {...resetProps}
-        //         color="yellow"
-        //         key="reset"
-        //         onClick={resetProps.onClick || this.handleReset}
-        //         type="reset"
-        //     />
-        // )
-        // const resetBtn = ''
         const form = (
             <Form
                 error={message.status === 'error'}
@@ -148,13 +132,22 @@ class FormBuilder extends ReactiveComponent {
                 warning={message.status === 'warning'}
                 widths={widths}
             >
-                {Array.isArray(inputs) && inputs.map((input, i) => (
-                    <FormInput
-                        key={i}
-                        {...input}
-                        onChange={(e, data) => this.handleChange(e, data, i, input)}
-                    />
-                ))}
+                {Array.isArray(inputs) && inputs.map((input, i) => {
+                    const isGroup = (input.type || '').toLowerCase() === 'group'
+                    return (
+                        <FormInput
+                            key={i}
+                            {...input}
+                            inputs={!isGroup || !isArr(input.inputs) ? undefined : input.inputs.map((childInput, childIndex) => {
+                                const cin = objWithoutKeys(childInput, ['onChange'])
+                                cin.onChange = (e, data) => this.handleChange(e, data, i, childInput, childIndex)
+                                cin.useInput = true
+                                return cin
+                            })}
+                            onChange={isGroup ? undefined : (e, data) => this.handleChange(e, data, i, input)}
+                        />
+                    )
+                })}
                 {/* Include submit button if not a modal */}
                 {!modal && !hideFooter && submitBtn}
             </Form>
@@ -483,25 +476,28 @@ export const fillValues = (inputs, values, forceFill) => {
 export const resetValues = inputs => inputs.map(input => { input.value = undefined; return input })
 
 export const isFormInvalid = (inputs = [], values) => inputs.reduce((invalid, input) => {
+    const inType = (input.type || '').toLowerCase()
+    const isCheckbox = ['checkbox', 'radio'].indexOf(inType) >= 0
+    const isGroup = inType === 'group'
     // ignore current input if conditions met
     if (// one of the previous inputs was invalid 
         invalid
         // input's type is invalid
         || !isStr(input.type)
         // current input is hidden
-        || (input.type === 'hidden' || input.hidden === true)
+        || (inType === 'hidden' || input.hidden === true)
         // current input is not required and does not have a value
-        || (!input.required && !hasValue(values[input.name]))
+        || (!isGroup && !input.required && !hasValue(values[input.name]))
         // not a valid input type
-        || ['button'].indexOf(input.type) >= 0) return invalid;
+        || ['button'].indexOf(inType) >= 0) return invalid;
 
     if (input.invalid) return true;
 
     // Use recursion to validate input groups
-    if (input.type === 'group') return isFormInvalid(input.inputs, values);
+    if (isGroup) return isFormInvalid(input.inputs, values);
     values = values || {}
     const value = isDefined(values[input.name]) ? values[input.name] : input.value
-    return !hasValue(value)
+    return !isCheckbox ? !hasValue(value) : !value
     // if (['number'].indexOf(input.type.toLowerCase()) >= 0) return !isDefined(value);
     // return !value;
 }, false)

@@ -14,7 +14,8 @@ import {
 } from 'react-chat-widget'
 import 'react-chat-widget/lib/styles.css'
 import { addToHistory, getClient, getUser, getHistory, getHistoryLimit, onLogin } from '../services/ChatClient'
-import { copyToClipboard, getNow, objCopy } from '../utils/utils'
+import { copyToClipboard, objCopy } from '../utils/utils'
+import { getNow } from '../utils/time'
 import TotemLogoCircle from '../assets/totem-button-grey.png';
 import Register from '../forms/Register'
 
@@ -34,8 +35,8 @@ const addEventMsg = (messageContent, type) => renderCustomComponent(EventEntry, 
 })
 
 const EventEntry = (props) => (
-	<div style={ objCopy(
-		styles.eventEntry, 
+	<div style={objCopy(
+		styles.eventEntry,
 		{
 			width: props.width || '100%',
 			background: props.background,
@@ -47,10 +48,10 @@ const EventEntry = (props) => (
 )
 
 // Message sent by other users
-const addResponseWithId = (message, id) => renderCustomComponent( MessageEntry, {message, id})
+const addResponseWithId = (message, id) => renderCustomComponent(MessageEntry, { message, id })
 const MessageEntry = (props) => (
 	<div>
-		<span style={{ fontStyle:'italic', color: 'gray'}}>
+		<span style={{ fontStyle: 'italic', color: 'gray' }}>
 			@{props.id}
 		</span>
 		<div className="rcw-response">
@@ -75,7 +76,7 @@ class ChatWidget extends ReactiveComponent {
 		this.setupChatClient = this.setupChatClient.bind(this)
 		// this.addFaucetEntry = this.addFaucetEntry.bind(this)
 
-		onLogin( userId => this.setState({userId}))
+		onLogin(userId => this.setState({ userId }))
 	}
 
 	componentDidMount() {
@@ -102,7 +103,7 @@ class ChatWidget extends ReactiveComponent {
 			if (!this.state.showOfflineMsg) return;
 
 			addEventMsg('chat server offline at : ' + getNow())
-			this.setState({showOfflineMsg: false})
+			this.setState({ showOfflineMsg: false })
 		})
 
 		// this.client.onFaucetRequest(this.addFaucetEntry)
@@ -153,11 +154,11 @@ class ChatWidget extends ReactiveComponent {
 			}
 
 			addEventMsg('chat server online at : ' + getNow(), 1)
-			this.setState({userId: user.id, showOfflineMsg: true, historyAdded: true})
+			this.setState({ userId: user.id, showOfflineMsg: true, historyAdded: true })
 		})
 	}
 
-	render () {
+	render() {
 		const { userId } = this.state
 		const subtitle = (
 			<div>

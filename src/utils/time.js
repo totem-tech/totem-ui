@@ -1,4 +1,21 @@
+/*
+ * Date formatting etc.
+ */
+// prepend0 prepends '0' if number is less than 10
 export const prepend0 = n => (n < 10 ? '0' : '') + n
+
+// For todays date;
+Date.prototype.today = function () {
+    return prepend0(this.getDate()) + "/" + prepend0(this.getMonth() + 1) + "/" + this.getFullYear();
+}
+
+// For the time now
+Date.prototype.timeNow = function () {
+    return prepend0(this.getHours()) + ":" + prepend0(this.getMinutes()) + ":" + prepend0(this.getSeconds())
+}
+
+export const getNow = () => new Date().today() + " @ " + new Date().timeNow()
+
 export const BLOCK_DURATION_SECONDS = 5
 export const BLOCK_DURATION_REGEX = /^(\d{2}):[0-5][0-9]:[0-5](0|5)$/ // valid duration up to 99:59:55
 
@@ -31,3 +48,4 @@ export const calcAmount = (blockCount, rateAmount, ratePeriod) => {
     const cycles = seconds / RATE_PERIOD_SECONDS[RATE_PERIODS.indexOf((ratePeriod || 'block').toLowerCase())]
     return rateAmount * cycles
 }
+
