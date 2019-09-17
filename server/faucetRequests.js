@@ -19,7 +19,7 @@ let keyData, walletAddress, secretKey, signPublicKey, signSecretKey, encryption_
 const errMsgs = {
     fauceRequestLimitReached: `Maximum ${REQUEST_LIMIT} requests allowed within 24 hour period`,
     loginOrRegister: 'Login/registration required',
-    faucetTransferInProgress: `You already have a faucet request in-progress. Please wait until it is finished or times out in ${TIMEOUT_DURATION/60/1000} minutes from request time.`
+    faucetTransferInProgress: `You already have a faucet request in-progress. Please wait until it is finished or times out in ${TIMEOUT_DURATION / 60 / 1000} minutes from request time.`
 }
 
 // Reads environment variables and generate keys if needed
@@ -41,7 +41,7 @@ const setVariables = () => {
     // Key pairs of this server
     keyData = process.env.keyData
     const keyDataBytes = keyInfoFromKeyData(keyData)
-    
+
     walletAddress = keyDataBytes.walletAddress
     // walletAddress = keyPair.walletAddress
 
@@ -50,7 +50,7 @@ const setVariables = () => {
     // publicKey = encryptionKeyPair.publicKey
     secretKey = encryptionKeyPair.secretKey
 
-    const signatureKeyPair = signingKeyPair(keyData)    
+    const signatureKeyPair = signingKeyPair(keyData)
     // const signKeyPair = signingKeyPair(keyData)
     signPublicKey = signatureKeyPair.publicKey
     signSecretKey = signatureKeyPair.secretKey
@@ -62,13 +62,13 @@ const setVariables = () => {
     printSensitiveData = process.env.printSensitiveData === "YES"
     if (!printSensitiveData) return
 
-   console.log('serverName: ', serverName, '\n')
-   console.log('keyData: ', keyData, '\n')
-   console.log('walletAddress: ', walletAddress, '\n')
-   console.log('Encryption KeyPair base64 encoded: \n' + JSON.stringify(encryption_keypair, null, 4), '\n')
-   console.log('Signature KeyPair base64 encoded: \n' + JSON.stringify(signature_keypair, null, 4), '\n')
-   console.log('external_serverName: ', external_serverName,)
-   console.log('external_publicKey base64 encoded: ', external_publicKey, '\n')
+    console.log('serverName: ', serverName, '\n')
+    console.log('keyData: ', keyData, '\n')
+    console.log('walletAddress: ', walletAddress, '\n')
+    console.log('Encryption KeyPair base64 encoded: \n' + JSON.stringify(encryption_keypair, null, 4), '\n')
+    console.log('Signature KeyPair base64 encoded: \n' + JSON.stringify(signature_keypair, null, 4), '\n')
+    console.log('external_serverName: ', external_serverName)
+    console.log('external_publicKey base64 encoded: ', external_publicKey, '\n')
 
 }
 
@@ -77,7 +77,7 @@ if (err) throw new Error(err)
 // connect to faucet server
 const faucetClient = ioClient(FAUCET_SERVER_URL, { secure: true, rejectUnauthorized: false })
 
-export const faucetRequestHandler = (client, findUserByClientId) => (address, callback) => {
+export const handleFaucetRequest = (client, findUserByClientId) => (address, callback) => {
     try {
 
         console.log('faucetClient.connected', faucetClient.connected)

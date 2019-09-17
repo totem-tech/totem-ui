@@ -13,7 +13,7 @@ export const getHistory = () => storageService.chatHistory()
 export const getHistoryLimit = () => HISTORY_LIMIT
 export const addToHistory = (message, id) => {
     const history = getHistory()
-    history.push({message, id})
+    history.push({ message, id })
     storageService.chatHistory(history.slice(history.length - HISTORY_LIMIT, history.length))
 }
 // Adds callback to be executed after login is successful
@@ -50,7 +50,7 @@ export class ChatClient {
         this.onError = cb => socket.on('error', cb)
         this.message = (msg, cb) => socket.emit('message', msg, cb)
         this.onMessage = cb => socket.on('message', cb)
-        
+
         // Request funds
         this.faucetRequest = (address, cb) => socket.emit('faucet-request', address, cb)
         // Funds received
@@ -108,6 +108,10 @@ export class ChatClient {
         this.companySearch = (keyValues, cb) => isFn(cb) && socket.emit(
             'company-search', keyValues, (err, result) => cb(err, new Map(result))
         )
+
+        // Add/update time keeping entry
+        this.timeKeepingEntry = (hash, entry, cb) => isFn(cb) && socket.emit('time-keeping-entry', hash, entry, cb)
+        this.timeKeepingEntryApproval = (hash, approve, cb) => isFn(cb) && socket.emit('time-keeping-entry-approval', hash, approve, cb)
     }
 
     register(id, secret, cb) {

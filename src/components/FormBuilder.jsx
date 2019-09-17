@@ -114,12 +114,12 @@ class FormBuilder extends ReactiveComponent {
         }
 
         let submitProps = React.isValidElement(submitText) ? objCopy(submitText.props) : {}
-        const { content, disabled, onClick } = submitProps
+        const { content, disabled, onClick, positive } = submitProps
         const shouldDisable = isFormInvalid(inputs, values) || submitDisabled || message.error || success
         submitProps.content = isDefined(content) || !isStr(submitText) ? content : submitText
         submitProps.disabled = isBool(disabled) ? disabled : shouldDisable
         submitProps.onClick = isFn(onClick) ? onClick : this.handleSubmit
-        submitProps.positive = true
+        submitProps.positive = isDefined(positive) ? positive : true
         const submitBtn = submitText === null ? undefined : <Button {...submitProps} />
 
         const form = (
@@ -457,49 +457,64 @@ class CheckboxGroup extends ReactiveComponent {
 }
 
 export const fillValues = (inputs, values, forceFill) => {
-    if (!isObj(values)) return;
+    if (!isObj(values)) return
     inputs.forEach(input => {
-        if (!input.hasOwnProperty('name') || !values.hasOwnProperty(input.name) || (!forceFill && isDefined(input.value)) || !input.type) return;
-        const type = input.type.toLowerCase()
+        let { bond, defaultValue, name, type } = input
+        const newValue = values[input.name]
+        type = (isStr(type) ? type : '').toLowerCase()
+        const isGroup = type === 'group'
+        if (!isGroup && (
+            !isDefined(name) || !values.hasOwnProperty(input.name)
+            || (!forceFill && isDefined(input.value)) || !type)
+        ) return
         if (['accountidbond', 'inputbond'].indexOf(type) >= 0) {
-            input.defaultValue = values[input.name]
-            // make sure Bond is also updated
-            isBond(input.bond) && input.bond.changed(input.defaultValue)
+            input.defaultValue = newValue
         } else if (['checkbox', 'radio'].indexOf(type) >= 0) {
-            input.defaultChecked = values[input.name]
+            input.defaultChecked = newValue
+        } else if (isGroup) {
+            fillValues(input.inputs, values, forceFill)
         } else {
-            input.value = values[input.name]
+            input.value = newValue
         }
+        // make sure Bond is also updated
+        isBond(bond) && bond.changed(input.defaultValue)
     })
 }
 
-export const resetValues = inputs => inputs.map(input => { input.value = undefined; return input })
+export const resetValues = inputs => inputs.map(input => {
+    if ((input.type || '').toLowerCase() === 'group') {
+        resetValues(input.inputs)
+    } else {
+        input.value = undefined;
+    }
+    return input
+})
 
 export const isFormInvalid = (inputs = [], values) => inputs.reduce((invalid, input) => {
     const inType = (input.type || '').toLowerCase()
     const isCheckbox = ['checkbox', 'radio'].indexOf(inType) >= 0
     const isGroup = inType === 'group'
+    const isRequired = !!input.required
     // ignore current input if conditions met
     if (// one of the previous inputs was invalid 
         invalid
         // input's type is invalid
-        || !isStr(input.type)
+        || !inType
         // current input is hidden
         || (inType === 'hidden' || input.hidden === true)
         // current input is not required and does not have a value
-        || (!isGroup && !input.required && !hasValue(values[input.name]))
+        || (!isGroup && !isRequired && !hasValue(values[input.name]))
         // not a valid input type
         || ['button'].indexOf(inType) >= 0) return invalid;
 
+    // if input is set invalid externally
     if (input.invalid) return true;
 
     // Use recursion to validate input groups
     if (isGroup) return isFormInvalid(input.inputs, values);
     values = values || {}
     const value = isDefined(values[input.name]) ? values[input.name] : input.value
-    return !isCheckbox ? !hasValue(value) : !value
-    // if (['number'].indexOf(input.type.toLowerCase()) >= 0) return !isDefined(value);
-    // return !value;
+    return isCheckbox && isRequired ? !value : !hasValue(value)
 }, false)
 
 const styles = {

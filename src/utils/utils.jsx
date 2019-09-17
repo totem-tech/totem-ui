@@ -8,15 +8,15 @@ import { bytesToHex } from './convert'
  * Copies supplied string to system clipboard
  */
 export const copyToClipboard = str => {
-	const el = document.createElement('textarea');
-	el.value = str;
-	el.setAttribute('readonly', '');
-	el.style.position = 'absolute';
-	el.style.left = '-9999px';
-	document.body.appendChild(el);
-	el.select();
-	document.execCommand('copy');
-	document.body.removeChild(el);
+	const el = document.createElement('textarea')
+	el.value = str
+	el.setAttribute('readonly', '')
+	el.style.position = 'absolute'
+	el.style.left = '-9999px'
+	document.body.appendChild(el)
+	el.select()
+	document.execCommand('copy')
+	document.body.removeChild(el)
 }
 
 // generateHash generates a 
@@ -79,9 +79,9 @@ export const getKeys = source => {
 // Returns array of items all returned by @callback
 export const arrMapSlice = (data, startIndex, endIndex, callback) => {
 	const isAMap = isMap(data)
-	if (!isArr(data) && !isAMap) return [];
+	if (!isArr(data) && !isAMap) return []
 	const len = isAMap ? data.size : data.length
-	// if (len === 0) return [];
+	// if (len === 0) return []
 	data = isAMap ? Array.from(data) : data
 	startIndex = startIndex || 0
 	endIndex = !endIndex || endIndex >= len ? len - 1 : endIndex
@@ -108,7 +108,7 @@ export const arrMapSlice = (data, startIndex, endIndex, callback) => {
 // Returns Map (key = original index) or Array (index not preserved) if @returnArr == true
 export const arrSearch = (arr, keyValues, matchExact, matchAll, ignoreCase, returnArr) => {
 	const result = returnArr ? new Array() : new Map()
-	if (!isObj(keyValues) || !isObjArr(arr)) return result;
+	if (!isObj(keyValues) || !isObjArr(arr)) return result
 	const keys = Object.keys(keyValues)
 	for (var index = 0; index < arr.length; index++) {
 		let matched = false
@@ -133,7 +133,7 @@ export const arrSearch = (arr, keyValues, matchExact, matchAll, ignoreCase, retu
 
 // Returns new array sorted by key. If sortOriginal is 'truty', existing array will be sorted and returned.
 export const arrSort = (arr, key, reverse, sortOriginal) => {
-	if (!isObjArr(arr)) return [];
+	if (!isObjArr(arr)) return []
 	const sortedArr = sortOriginal ? arr : arr.map(x => objCopy(x, {}))
 	return arrReverse(sortedArr.sort((a, b) => a[key] > b[key] ? 1 : -1), reverse)
 }
@@ -165,8 +165,46 @@ export const objClean = (obj, keys) => !isObj(obj) || !isArr(keys) ? {} : keys.r
 		cleanObj[key] = obj[key]
 	}
 	return cleanObj
-}, {})
+}, {})// objHasKeys checks if all the supplied keys exists in a object
+//
+// Params:
+// @obj				object
+// @keys			array
+// @requireValue	book	: (optional) if true, will check if all keys has valid value
+//
+// returns bool
+export const objHasKeys = (obj = {}, keys = [], requireValue = false) => {
+	return !keys.reduce((no, key) => no || (requireValue ? !hasValue(obj[key]) : !obj.hasOwnProperty(key)), false)
+}
 
+// objReadOnly returns a new read-only object where only new properties can be added.
+//
+// Params:
+// @obj		object : (optional) if valid object supplied, new object will be created based on @obj.
+//					 Otherwise, new empty object will be used.
+//					 PS: original supplied object's will remain writable, unless re-assigned to returned object.
+// @strict	bool   : (optional) if true, will throw error when user attempts to set value of an existing property
+//
+// Returns object
+export const objReadOnly = (obj, strict) => new Proxy(isObj(obj) ? obj : {}, {
+	setProperty: (self, key, value) => {
+		if (!self.hasOwnProperty(key)) {
+			self[key] = value
+		} else if (strict === true) {
+			throw new Error('Cannot modify read-only property "' + key + '"')
+		}
+		return true
+	},
+	get: (self, key) => self[key],
+	set: function (self, key, value) {
+		return this.setProperty(self, key, value)
+	},
+	defineProperty: function (self, key) {
+		return this.setProperty(self, key, value)
+	},
+	// Prevent removal of properties
+	deleteProperty: () => false
+})
 
 // objWithoutKeys creates a new object excluding specified keys
 // 
@@ -202,7 +240,7 @@ export const mapCopy = (source, dest) => !isMap(source) ? (
 export const mapFindByKey = (map, key, value, matchExact) => {
 	for (let [_, item] of map.entries()) {
 		const val = key === null ? item : item[key]
-		if (!matchExact && (isStr(val) || isArr(val)) ? val.indexOf(value) >= 0 : val === value) return item;
+		if (!matchExact && (isStr(val) || isArr(val)) ? val.indexOf(value) >= 0 : val === value) return item
 	}
 }
 
@@ -217,7 +255,7 @@ export const mapFindByKey = (map, key, value, matchExact) => {
 // Returns Map
 export const mapSearch = (map, keyValues, matchExact, matchAll, ignoreCase) => {
 	const result = new Map()
-	if (!isObj(keyValues) || !isMap(map)) return result;
+	if (!isObj(keyValues) || !isMap(map)) return result
 	const keys = Object.keys(keyValues)
 	for (let [itemKey, item] of map.entries()) {
 		let matched = false
@@ -247,7 +285,7 @@ export const mapSort = (map, key, reverse) => !isObjMap(map) ? map : new Map(arr
 
 // Search Array or Map
 export const search = (data, keywords, keys) => {
-	if (!keywords || keywords.length === 0 || !(isArr(data) || isMap(data))) return data;
+	if (!keywords || keywords.length === 0 || !(isArr(data) || isMap(data))) return data
 	const fn = isMap(data) ? mapSearch : arrSearch
 	const keyValues = keys.reduce((obj, key) => {
 		obj[key] = keywords
@@ -278,7 +316,7 @@ export const sort = (data, key, reverse, sortOriginal) => isArr(data) ? arrSort(
 // Returns:
 // @timeoutId   number  : Use this to cancel timeout. Handy when component is about to unmount
 export function setStateTimeout(instance, key, dataBefore, dataAfter, delay) {
-	if (!isFn(instance.setState)) return;
+	if (!isFn(instance.setState)) return
 	dataBefore !== undefined && setState(instance, key, dataBefore)
 	return setTimeout(() => {
 		setState(instance, key, dataAfter)
@@ -310,12 +348,12 @@ export function setState(instance, key, value) {
 //                        Default value: 50
 // @thisArg    object   : optional, makes sure callback is bounded to supplied object 
 export function deferred(callback, delay, thisArg) {
-	let timeoutId;
+	let timeoutId
 	return function () {
 		const args = arguments
-		if (timeoutId) clearTimeout(timeoutId);
+		if (timeoutId) clearTimeout(timeoutId)
 		timeoutId = setTimeout(function () {
-			isFn(callback) && callback.apply(thisArg, args);
+			isFn(callback) && callback.apply(thisArg, args)
 		}, delay || 50)
 	}
 }
@@ -353,7 +391,7 @@ export const icons = {
 
 // valid statuses: error, info, loading, success
 export const newMessage = message => {
-	if (!isObj(message) || (!message.content && !message.list && !message.header)) return;
+	if (!isObj(message) || (!message.content && !message.list && !message.header)) return
 	let { icon, showIcon, status, style } = message
 	status = status || 'info'
 	icon = React.isValidElement(icon) ? icon.props : icon
