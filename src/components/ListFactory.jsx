@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { Button, Card, Dropdown, Grid, Icon, Image, Input, Menu, Table } from 'semantic-ui-react'
-import { arrMapSlice, getKeys, IfMobile, isArr, isDefined, isFn, objWithoutKeys, objCopy, search, sort } from '../utils/utils'
+import { arrMapSlice, getKeys, IfMobile, isArr, isDefined, isFn, newMessage, objWithoutKeys, objCopy, search, sort } from '../utils/utils'
 import { FormInput } from '../components/FormBuilder'
 
 class ListFactory extends ReactiveComponent {
@@ -321,25 +321,24 @@ export class DataTable extends ReactiveComponent {
             </Table.HeaderCell>
         ))
 
-        if (selectable) {
-            // include checkbox to select items
-            const n = selectedIndexes.length
-            const iconName = `${n > 0 ? 'check ' : ''}square${n === 0 || n != totalRows ? ' outline' : ''}`
-            headers.splice(0, 0, (
-                <Table.HeaderCell
-                    key="checkbox"
-                    onClick={() => this.handleAllSelect(selectedIndexes)}
-                    style={styles.checkboxCell}
-                    title={`${n === totalRows ? 'Deselect' : 'Select'} all`}
-                >
-                    <Icon
-                        name={iconName}
-                        size="large"
-                        className="no-margin"
-                    />
-                </Table.HeaderCell>
-            ))
-        }
+        if (!selectable) return headers
+        // include checkbox to select items
+        const n = selectedIndexes.length
+        const iconName = `${n > 0 ? 'check ' : ''}square${n === 0 || n != totalRows ? ' outline' : ''}`
+        headers.splice(0, 0, (
+            <Table.HeaderCell
+                key="checkbox"
+                onClick={() => this.handleAllSelect(selectedIndexes)}
+                style={styles.checkboxCell}
+                title={`${n === totalRows ? 'Deselect' : 'Select'} all`}
+            >
+                <Icon
+                    name={iconName}
+                    size="large"
+                    className="no-margin"
+                />
+            </Table.HeaderCell>
+        ))
         return headers
     }
 
@@ -365,7 +364,7 @@ export class DataTable extends ReactiveComponent {
     }
 
     render() {
-        let { data, columns: columnsOriginal, footerContent, perPage, searchExtraKeys } = this.props
+        let { data, columns: columnsOriginal, emptyMessage, footerContent, perPage, searchExtraKeys } = this.props
         let { keywords, selectedIndexes, sortAsc, sortBy } = this.state
         keywords = keywords.trim()
         data = data || []
@@ -393,7 +392,7 @@ export class DataTable extends ReactiveComponent {
                     then={this.getTopContent(true, totalRows, selectedIndexes)}
                     else={this.getTopContent(false, totalRows, selectedIndexes)}
                 />
-                {totalRows > 0 && (
+                {totalRows === 0 ? newMessage(emptyMessage) : (
                     <div style={{ overflowX: 'auto' }}>
                         <Table celled selectable sortable unstackable singleLine>
                             <Table.Header>
@@ -439,6 +438,7 @@ DataTable.propTypes = {
     ),
     // Object key to set initial sort by
     defaultSort: PropTypes.string,
+    emptyMessage: PropTypes.object,
     footerContent: PropTypes.any,
     perPage: PropTypes.number,
     searchable: PropTypes.bool,

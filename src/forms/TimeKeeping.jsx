@@ -4,7 +4,8 @@ import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { chain, secretStore } from 'oo7-substrate'
 import { Button, Divider, Icon } from 'semantic-ui-react'
-import { arrSort, deferred, generateHash, isDefined, objCopy, objReadOnly, textEllipsis } from '../utils/utils'
+import uuid from 'uuid'
+import { arrSort, deferred, generateHash, isDefined, objCopy, objClean, objReadOnly, textEllipsis } from '../utils/utils'
 import {
     BLOCK_DURATION_SECONDS,
     BLOCK_DURATION_REGEX,
@@ -18,12 +19,25 @@ import storage from '../services/storage'
 import { projectDropdown, handleSearch } from '../components/ProjectDropdown'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
-
 const DURATION_ZERO = '00:00:00'
 const blockCountToDuration = blockCount => secondsToDuration(blockCount * BLOCK_DURATION_SECONDS)
 const durationToBlockCount = duration => BLOCK_DURATION_REGEX.test(duration) ? durationToSeconds(duration) / BLOCK_DURATION_SECONDS : 0
-const toBeImplemented = () => alert('To be implemented')
-
+const validKeys = [
+    'hash',
+    'address',
+    'approved',
+    'blockStart',
+    'blockEnd',
+    'blockCount',
+    'duration',
+    'projectHash',
+    'rateAmount',
+    'rateUnit',
+    'ratePeriod',
+    'totalAmount',
+    'tsCreated',
+    'tsUpdated',
+]
 export default class TimeKeepingForm extends ReactiveComponent {
     constructor(props) {
         super(props)
@@ -33,7 +47,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         this.saveValues = this.saveValues.bind(this)
 
         const values = storage.timeKeeping() || {}
-        const { duration, durationValid, manualEntry, projectHash, ratePeriod } = values
+        const { address, duration, durationValid, manualEntry, projectHash, ratePeriod } = values
 
         values.durationValid = !isDefined(durationValid) ? true : durationValid
         values.duration = duration || DURATION_ZERO
@@ -50,6 +64,15 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     onSearchChange: deferred(handleSearch, 300, this),
                     required: true
                 }, true),
+                {
+                    label: 'Account/Wallet',
+                    name: 'address',
+                    type: 'dropdown',
+                    options: [],
+                    required: true,
+                    search: true,
+                    selection: true,
+                },
                 {
                     name: 'rate-fields',
                     type: 'group',
@@ -234,13 +257,15 @@ export default class TimeKeepingForm extends ReactiveComponent {
     handleSubmit() {
         const { inputs, values } = this.state
         const { projectHash } = values
-        // temp
-        values.address = '0x12322'
         const projectOption = (inputs.find(x => x.name === 'projectHash').options || [])
             .find(option => option.value === projectHash) || {}
         const queueProps = {
             type: QUEUE_TYPES.CHATCLIENT,
-            args: [generateHash(), values, (err, entry) => console.log('submitted', err, entry)],
+            args: [
+                generateHash(JSON.stringify(values) + uuid.v1()),
+                objClean(values, validKeys),
+                (err, entry) => console.log('submitted', err, entry)
+            ],
             func: 'timeKeepingEntry',
             title: 'Time Keeping',
             description: 'Project: ' + projectOption.text + ' | Duration: ' + values.duration
@@ -293,7 +318,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         const done = stopped || manualEntry
         const duraIn = inputs.find(x => x.name === 'duration')
         const btnStyle = modal ? { marginLeft: 0, marginRight: 0 } : {}
-        const doneItems = ['reset', 'rate-fields']
+        const doneItems = ['address', 'reset', 'rate-fields']
         inputs.filter(x => doneItems.indexOf(x.name) >= 0).forEach(x => x.hidden = !done)
         // Show resume item when timer is stopped
         duraIn.action = !stopped || manualEntry ? undefined : {
@@ -310,6 +335,14 @@ export default class TimeKeepingForm extends ReactiveComponent {
             }),
             title: 'Resume timer'
         }
+
+        // set wallet options
+        inputs.find(x => x.name === 'address')
+            .options = (secretStore()._keys).map((wallet, key) => ({
+                key,
+                text: wallet.name,
+                value: wallet.address
+            }))
 
         return (
             <FormBuilder {...objCopy(this.props, {

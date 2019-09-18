@@ -70,7 +70,8 @@ export function handleSearch(_, data) {
             key: n[0] + n[1].ownerAddress + n[1].description, // also used for searching
             description: getName(n[1].ownerAddress),
             text: n[1].name,
-            value: n[0] // project hash
+            value: n[0], // project hash,
+            project: n[1]
         }))
         if (!inputs[i].options.find(x => x.value === inputs[i].value)) {
             // Remove value if no longer in the options list

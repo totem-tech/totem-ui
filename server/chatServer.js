@@ -8,7 +8,11 @@ import { handleFaucetRequest } from './faucetRequests'
 import { handleCompany, handleCompanySearch } from './companies'
 import { handleProject, handleProjectStatus, handleProjectsByHashes, handleProjects, handleProjectsSearch } from './projects'
 import { findUserByClientId, handleDisconnect, handleIdExists, handleLogin, handleMessage, handleRegister } from './users'
-import { handleTimeKeepingEntry, handleTimeKeepingEntryApproval } from './timeKeeping'
+import {
+    handleTimeKeepingEntry,
+    handleTimeKeepingEntryApproval,
+    handleTimeKeepingEntrySearch,
+} from './timeKeeping'
 const PORT = 3001
 const clients = new Map()
 
@@ -40,6 +44,7 @@ export const initChatServer = (httpsOptions, expressApp) => {
         // Time keeping handlers
         client.on('time-keeping-entry', handleTimeKeepingEntry(client, findUserByClientId))
         client.on('time-keeping-entry-approval', handleTimeKeepingEntryApproval)
+        client.on('time-keeping-entry-search', handleTimeKeepingEntrySearch)
     })
 
     // Broadcast message to all users except ignoreClientIds

@@ -1,5 +1,5 @@
 import DataStorage from '../src/utils/DataStorage'
-import { isObj, isFn, objHasKeys, objCopy, objWithoutKeys } from '../src/utils/utils'
+import { isObj, isFn, objHasKeys, objCopy, objClean, objWithoutKeys } from '../src/utils/utils'
 import { RATE_PERIODS, calcAmount, secondsToDuration, BLOCK_DURATION_SECONDS } from '../src/utils/time'
 const timeKeeping = new DataStorage('time-keeping.json', true)
 
@@ -57,6 +57,7 @@ export const handleTimeKeepingEntry = (client, findUserByClientId) => (hash, ent
 
     if (create) {
         savedEntry.userId = user.id
+        savedEntry.approved = false
     } else {
         savedEntry.tsUpdated = new Date()
         savedEntry.updatedBy = user.id
@@ -69,8 +70,19 @@ export const handleTimeKeepingEntry = (client, findUserByClientId) => (hash, ent
     callback()
 }
 
-export const timeKeepingEntriesByProjectHash = (projectHash, callback) => {
-    if (isFn(callback)) return
+export const handleTimeKeepingEntrySearch = (query, matchExact, matchAll, ignoreCase, callback) => {
+    console.log('handleTimeKeepingEntrySearch', query, matchExact, matchAll, ignoreCase, isFn(callback))
+    if (!isFn(callback)) return
+    const searchableKeys = ['address', 'projectHash', 'approved']
+    let keyValues = {}
+    if (isObj(query)) {
+        keyValues = objClean(query, searchableKeys)
+    } else {
+        searchableKeys.forEach(key => keyValues[key] = query)
+    }
+    const result = timeKeeping.search(keyValues, matchExact, matchAll, ignoreCase)
+    console.log('results:', result.size)
+    callback(null, result)
 }
 
 // approve/disapprove a time keeping entry
