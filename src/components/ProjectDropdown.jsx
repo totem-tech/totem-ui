@@ -41,13 +41,13 @@ export const projectDropdown = {
     type: 'dropdown',
 }
 
-const getName = addr => (secretStore().find(addr) || {}).name
+export const getAddressName = address => (secretStore().find(address) || {}).name
     // not found in wallet list
     // search in addressbook
-    || (addressbook.getByAddress(addr) || {}).name
+    || (addressbook.getByAddress(address) || {}).name
     // not available in addressbok or wallet list
     // display the address itself with ellipsis
-    || textEllipsis(n[1].ownerAddress, 15, 5)
+    || textEllipsis(address, 15, 5)
 
 // for use with form builder
 export function handleSearch(_, data) {
@@ -68,7 +68,7 @@ export function handleSearch(_, data) {
         inputs[i].message = !err ? {} : { status: 'error', content: err }
         inputs[i].options = Array.from(projects).map(n => ({
             key: n[0] + n[1].ownerAddress + n[1].description, // also used for searching
-            description: getName(n[1].ownerAddress),
+            description: getAddressName(n[1].ownerAddress),
             text: n[1].name,
             value: n[0], // project hash,
             project: n[1]

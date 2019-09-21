@@ -219,6 +219,8 @@ export class DataTable extends ReactiveComponent {
     getTopContent(mobile, totalRows, selectedIndexes) {
         let { searchable, topLeftMenu, topRightMenu } = this.props
         const { keywords } = this.state
+        topLeftMenu = (topLeftMenu || []).filter(x => !x.hidden)
+        topRightMenu = (topRightMenu || []).filter(x => !x.hidden)
 
         const searchCol = searchable && (
             <Grid.Column key="0" tablet={16} computer={5} style={{ padding: 0 }}>
@@ -240,7 +242,7 @@ export class DataTable extends ReactiveComponent {
             <Grid.Column floated="right" key="1" tablet={16} computer={3} style={{ padding: 0 }}>
                 <Dropdown text='Actions' button fluid style={{ textAlign: 'center' }} disabled={selectedIndexes.length === 0}>
                     <Dropdown.Menu direction="left" style={{ minWidth: 'auto' }}>
-                        {(topRightMenu || []).map((item, i) => React.isValidElement(item) ? item : (
+                        {topRightMenu.map((item, i) => React.isValidElement(item) ? item : (
                             <Dropdown.Item
                                 {...item}
                                 key={i}
@@ -256,7 +258,7 @@ export class DataTable extends ReactiveComponent {
             <Grid columns={3} style={{ margin: '-1rem 0', paddingBottom: '15px' }}>
                 <Grid.Row>
                     <Grid.Column tablet={16} computer={6} style={{ padding: 0 }}>
-                        {(topLeftMenu || []).map((item, i) => React.isValidElement(item) ? item : (
+                        {topLeftMenu.map((item, i) => React.isValidElement(item) ? item : (
                             <Button
                                 {...item}
                                 fluid={mobile}
@@ -368,7 +370,7 @@ export class DataTable extends ReactiveComponent {
         let { keywords, selectedIndexes, sortAsc, sortBy } = this.state
         keywords = keywords.trim()
         data = data || []
-        const columns = columnsOriginal.filter(x => !!x)
+        const columns = columnsOriginal.filter(x => !!x && !x.hidden)
         const keys = columns.filter(x => !!x.key).map(x => x.key)
         // Include extra searcheable keys that are not visibile on the table
         if (isArr(searchExtraKeys)) {

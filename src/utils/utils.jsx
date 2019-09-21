@@ -38,7 +38,7 @@ export const generateHash = (seed, algo, asBytes) => {
  * Data validation
  */
 export const isArr = x => Array.isArray(x)
-export const isBool = x => typeof x === 'bool'
+export const isBool = x => typeof x === 'boolean'
 export const isBond = x => x instanceof Bond
 export const isDefined = x => x !== undefined && x !== null
 export const isFn = x => typeof x === 'function'
@@ -102,8 +102,8 @@ export const arrMapSlice = (data, startIndex, endIndex, callback) => {
 // Params:
 // @map			Map
 // @keyValues	Object	: key-value pairs
-// @matchAll	bool 	: match all supplied key-value pairs
-// @ignoreCase	bool	: case-insensitive search for strings
+// @matchAll	boolean 	: match all supplied key-value pairs
+// @ignoreCase	boolean	: case-insensitive search for strings
 //
 // Returns Map (key = original index) or Array (index not preserved) if @returnArr == true
 export const arrSearch = (arr, keyValues, matchExact, matchAll, ignoreCase, returnArr) => {
@@ -138,14 +138,22 @@ export const arrSort = (arr, key, reverse, sortOriginal) => {
 	return arrReverse(sortedArr.sort((a, b) => a[key] > b[key] ? 1 : -1), reverse)
 }
 
+// Reverse array items
 export const arrReverse = (arr, reverse) => reverse ? arr.reverse() : arr
+
+export const arrUnique = (arr = []) => Object.values(
+	arr.reduce((itemsObj, item) => {
+		itemsObj[item] = item
+		return itemsObj
+	}, {})
+)
 
 // objCopy copies top level properties and returns another object
 //
 // Params:
 // @source  object
 // @dest    object (optional)
-// @force	bool (optional) force create new object
+// @force	boolean (optional) force create new object
 export const objCopy = (source, dest, force) => !isObj(source) ? dest || {} : (
 	Object.keys(source).reduce((obj, key) => {
 		obj[key] = source[key]
@@ -172,7 +180,7 @@ export const objClean = (obj, keys) => !isObj(obj) || !isArr(keys) ? {} : keys.r
 // @keys			array
 // @requireValue	book	: (optional) if true, will check if all keys has valid value
 //
-// returns bool
+// returns boolean
 export const objHasKeys = (obj = {}, keys = [], requireValue = false) => {
 	return !keys.reduce((no, key) => no || (requireValue ? !hasValue(obj[key]) : !obj.hasOwnProperty(key)), false)
 }
@@ -183,7 +191,7 @@ export const objHasKeys = (obj = {}, keys = [], requireValue = false) => {
 // @obj		object : (optional) if valid object supplied, new object will be created based on @obj.
 //					 Otherwise, new empty object will be used.
 //					 PS: original supplied object's will remain writable, unless re-assigned to returned object.
-// @strict	bool   : (optional) if true, will throw error when user attempts to set value of an existing property
+// @strict	boolean   : (optional) if true, will throw error when user attempts to set value of an existing property
 //
 // Returns object
 export const objReadOnly = (obj, strict) => new Proxy(isObj(obj) ? obj : {}, {
@@ -249,8 +257,8 @@ export const mapFindByKey = (map, key, value, matchExact) => {
 // Params:
 // @map			Map
 // @keyValues	Object	: key-value pairs
-// @matchAll	bool 	: match all supplied key-value pairs
-// @ignoreCase	bool	: case-insensitive search for strings
+// @matchAll	boolean 	: match all supplied key-value pairs
+// @ignoreCase	boolean	: case-insensitive search for strings
 //
 // Returns Map
 export const mapSearch = (map, keyValues, matchExact, matchAll, ignoreCase) => {
