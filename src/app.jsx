@@ -1,5 +1,5 @@
 import React from 'react'
-import { Icon, Container, Dimmer, Loader, Responsive, Sidebar } from 'semantic-ui-react'
+import { Container, Dimmer, Loader, Responsive, Sidebar } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import {
@@ -8,10 +8,11 @@ import {
 } from 'oo7-substrate'
 
 // Components
+import GettingStarted from './components/GettingStartedView'
 import PartnerView from './views/PartnerView'
 import SendFundsView from './views/SendFundsView'
 import UtilitiesView from './views/UtilitiesView'
-import WalletView from './views/WalletView'
+import IdentitiesView from './views/WalletView'
 import TimeKeepingView from './views/TimeKeepingView'
 import ErrorBoundary from './components/CatchReactErrors'
 import ChatWidget from './components/ChatWidget'
@@ -178,34 +179,41 @@ export class App extends ReactiveComponent {
 }
 
 const sidebarItems = [
+	{
+		active: true,
+		content: <GettingStarted />,
+		headerDividerHidden: true,
+		icon: "play circle outline",
+		title: "Getting Started"
+	},
 	// { icon: "object group outline", title: "Overview", subHeader: "", active: true, content: <LedgerTransactionList />},
 	{
-		icon: "sitemap", title: "Partners",
+		icon: "users", title: "Partners",
 		header: "Vendors and Customers",
 		subHeader: "Inspect the status of any account and name it for later use",
 		active: false,
 		content: <PartnerView />
 	},
 	// { icon: "file alternate", title: "Invoice", subHeader: "", active: false, content: <Invoice /> },
-	{ icon: "pen square", title: "Manage Invoices", subHeader: "" },
-	{ icon: "file alternate", title: "Credit Note", subHeader: "" },
-	{ icon: "tint", title: "Purchase Order", subHeader: "" },
-	{ icon: "edit", title: "Manage Orders", subHeader: "" },
-	{ icon: "file alternate", title: "Expense", subHeader: "" },
-	{ icon: "bug", title: "Disputed Items", subHeader: "" },
-	{ icon: "crop", title: "Account Adjustments", subHeader: "" },
+	{ icon: "file alternate", title: "Manage Invoices", subHeader: "" },
+	{ icon: "file alternate outline", title: "Credit Note", subHeader: "" },
+	{ icon: "exchange", title: "Purchase Order", subHeader: "" },
+	{ icon: "inbox", title: "Manage Orders", subHeader: "" },
+	{ icon: "cc mastercard", title: "Expense", subHeader: "" },
+	{ icon: "exclamation circle", title: "Disputed Items", subHeader: "" },
+	{ icon: "chart bar outline", title: "Edit Accounting", subHeader: "" },
 	{
 		active: true,
 		content: <ProjectList />,
 		headerDividerHidden: true,
-		icon: "barcode",
+		icon: "tasks",
 		title: "Projects",
 		subHeader: "View and/or manage your projects"
 	},  
-	{ icon: "file alternate", title: "Timekeeping", subHeader: "Book time against projects", content: <TimeKeepingView />, active: true },
-	{ icon: "barcode", title: "Products", subHeader: "" },
+	{ icon: "clock outline", title: "Timekeeping", subHeader: "Manage timekeeping against projects and tasks. You can create projects and tasks for yourself, or others can assign them to you.", content: <TimeKeepingView />, active: true },
+	{ icon: "lightbulb", title: "Products", subHeader: "" },
 	{
-		icon: "dollar sign",
+		icon: "money bill alternate outline",
 		title: "Payment",
 		header: "Direct payments",
 		subHeader: "Send funds from your account to another",
@@ -213,21 +221,21 @@ const sidebarItems = [
 		content: <SendFundsView />
 	},
 	{
-		icon: "money",
-		title: "Wallet",
-		subHeader: "Manage your secret keys",
+		icon: "id badge outline",
+		title: "Identities",
+		subHeader: "Manage your Identity keys",
 		active: false,
-		content: <WalletView />
+		content: <IdentitiesView />
 	},
 	{
 		active: false,
-		icon: "wrench",
+		icon: "stethoscope",
 		title: "Utilities",
 		subHeader: "Blockchain utilities",
 		subHeaderDetails: 'This is a sample detailed subheader',
 		content: <UtilitiesView />
 	},
-	{ icon: "settings", title: "Settings", subHeader: "" }
+	{ icon: "cogs", title: "Settings", subHeader: "" }
 ]
 
 const styles = {
