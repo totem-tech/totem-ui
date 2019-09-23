@@ -276,8 +276,9 @@ export class FormInput extends ReactiveComponent {
         // Forces the synthetic event and it's value to persist
         // Required for use with deferred function
         isFn(event.persist) && event.persist();
-        let errMsg = required && !hasValue(value) ? VALIDATION_MESSAGES.requiredField() : undefined
-        if (!errMsg) {
+        const hasVal = hasValue(value)
+        let errMsg = required && !hasVal ? VALIDATION_MESSAGES.requiredField() : undefined
+        if (hasVal && !errMsg) {
             switch ((type || '').toLowerCase()) {
                 case 'checkbox':
                 case 'radio':
@@ -327,7 +328,7 @@ export class FormInput extends ReactiveComponent {
         let inputEl = ''
         // Remove attributes that are used by the form or Form.Field but
         // shouldn't be used or may cause error when using with inputEl
-        const nonAttrs = ['deferred', 'hidden', 'inline', 'invalid', 'label', 'useInput']
+        const nonAttrs = ['deferred', 'hidden', 'inline', 'invalid', '_invalid', 'label', 'useInput']
         let attrs = objWithoutKeys(this.props, nonAttrs)
         attrs.onChange = handleChange
         const messageEl = newMessage(message)

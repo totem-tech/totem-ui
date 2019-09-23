@@ -66,6 +66,7 @@ export const showForm = (FormComponent, props, id) => {
     if (!isFn(FormComponent)) return;
     id = id || uuid.v1()
     props = props || {}
+    props.modal = true
     return add(
         id,
         <FormComponent

@@ -1,9 +1,9 @@
 import DataStorage from '../src/utils/DataStorage'
-import { isObj, isFn, objHasKeys, objCopy, objClean, objWithoutKeys } from '../src/utils/utils'
+import { arrReadOnly, isObj, isFn, objHasKeys, objCopy, objClean, objWithoutKeys } from '../src/utils/utils'
 import { RATE_PERIODS, calcAmount, secondsToDuration, BLOCK_DURATION_SECONDS } from '../src/utils/time'
 const timeKeeping = new DataStorage('time-keeping.json', true)
 
-const REQUIRED_KEYS = [
+const REQUIRED_KEYS = arrReadOnly([
     'address',
     'blockEnd',
     'blockStart',
@@ -11,10 +11,10 @@ const REQUIRED_KEYS = [
     'rateAmount',
     'rateUnit',
     'ratePeriod',
-]
+])
 
 // only update from the server
-const OTHER_KEYS = [
+const OTHER_KEYS = arrReadOnly([
     'approved',
     'duration',
     'blockCount',
@@ -22,7 +22,7 @@ const OTHER_KEYS = [
     'tsCreated',
     'tsUpdated',
     'updatedBy'
-]
+])
 
 const messages = {
     alreadyApproved: 'Cannot update an already approved time keeping entry',

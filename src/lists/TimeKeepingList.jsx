@@ -22,7 +22,7 @@ import {
     RATE_PERIODS,
     secondsToDuration,
 } from '../utils/time'
-import TimeKeepingForm from '../forms/TimeKeeping'
+import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'
 import { showForm } from '../services/modal'
 import storageService from '../services/storage'
 import addressbook from '../services/addressbook'
@@ -78,9 +78,14 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                     },
                     {
                         collapsing: true,
-                        content: (item) => {
-                            const {isOwner} = this.state
-                            return isOwner && <Button icon="pencil" onClick={toBeImplemented} />
+                        content: (entry, hash) => {
+                            const { isOwner, projectHash, project } = this.state
+                            return isOwner && <Button icon="pencil" onClick={()=> {
+                                showForm(TimeKeepingUpdateForm, {
+                                    entry,
+                                    hash,
+                                    onSubmit: ()=> this.getEntries(projectHash, project)})
+                            }} />
                         },
                         textAlign: 'center',
                         title: 'Action',

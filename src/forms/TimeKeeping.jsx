@@ -5,7 +5,7 @@ import { ReactiveComponent } from 'oo7-react'
 import { chain, secretStore } from 'oo7-substrate'
 import { Button, Divider, Icon } from 'semantic-ui-react'
 import uuid from 'uuid'
-import { arrSort, deferred, generateHash, isDefined, isFn, objCopy, objClean, objReadOnly, textEllipsis, isValidNumber } from '../utils/utils'
+import { arrReadOnly, deferred, generateHash, isDefined, isFn, objCopy, objClean, objReadOnly, textEllipsis, isValidNumber, objWithoutKeys } from '../utils/utils'
 import {
     BLOCK_DURATION_SECONDS,
     BLOCK_DURATION_REGEX,
@@ -22,7 +22,7 @@ import { addToQueue, QUEUE_TYPES } from '../services/queue'
 const DURATION_ZERO = '00:00:00'
 const blockCountToDuration = blockCount => secondsToDuration(blockCount * BLOCK_DURATION_SECONDS)
 const durationToBlockCount = duration => BLOCK_DURATION_REGEX.test(duration) ? durationToSeconds(duration) / BLOCK_DURATION_SECONDS : 0
-const validKeys = [
+const validKeys = arrReadOnly([
     'hash',
     'address',
     'approved',
@@ -37,14 +37,28 @@ const validKeys = [
     'totalAmount',
     'tsCreated',
     'tsUpdated',
-]
+], true)
+
+function handleDurationChange(e, formValues, i) {
+    const { inputs, values } = this.state
+    const valid = BLOCK_DURATION_REGEX.test(formValues.duration)
+    const invalid = inputs[i].value === DURATION_ZERO && values.manualEntry ? true : !valid
+    inputs[i].message = !invalid ? null : {
+        content: <span>Please enter a valid duration in the following format:<br /><b>hh:mm:ss</b><br />Seconds must be in increments of 5</span>,
+        header: 'Invalid duration',
+        showIcon: true,
+        status: 'error',
+    }
+    inputs[i].invalid = invalid
+    inputs[i].error = invalid
+    this.setState({ inputs: inputs })
+}
 
 export default class TimeKeepingForm extends ReactiveComponent {
     constructor(props) {
         super(props)
 
         this.handleValuesChange = this.handleValuesChange.bind(this)
-        this.handleDurationChange = this.handleDurationChange.bind(this)
         this.saveValues = this.saveValues.bind(this)
 
         const values = storage.timeKeeping() || {}
@@ -116,7 +130,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     autoComplete: 'off',
                     label: 'Duration',
                     name: 'duration',
-                    onChange: this.handleDurationChange,
+                    onChange: handleDurationChange.bind(this),
                     placeholder: 'hh:mm:ss',
                     readOnly: values.manualEntry !== 'yes',
                     type: 'text',
@@ -159,19 +173,6 @@ export default class TimeKeepingForm extends ReactiveComponent {
 
     componentWillUnmount() {
         chain.height.untie(this.tieId)
-    }
-
-    handleDurationChange(e, formValues, i) {
-        const { inputs, values } = this.state
-        const valid = BLOCK_DURATION_REGEX.test(formValues.duration)
-        const durationValid = inputs[i].value === DURATION_ZERO && values.manualEntry ? false : valid
-        inputs[i].message = durationValid ? null : {
-            content: <span>Please enter a valid duration in the following format:<br /><b>hh:mm:ss</b><br />Seconds must be in increments of 5</span>,
-            header: 'Invalid duration',
-            showIcon: true,
-            status: 'error',
-        }
-        this.setState({ inputs: inputs })
     }
 
     handleValuesChange(_, formValues) {
@@ -287,7 +288,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                 }
             ],
             func: 'timeKeepingEntry',
-            title: 'Time Keeping',
+            title: 'Time Keeping - New Entry',
             description: 'Project: ' + projectName + ' | Duration: ' + values.duration
         }
         const message = {
@@ -321,37 +322,6 @@ export default class TimeKeepingForm extends ReactiveComponent {
             submitText: 'Proceed',
             closeText: 'Go Back'
         })
-
-        // confirm({
-        //     confirmButton: 'Submit',
-        //     content: (
-        //         <div>
-        //             Please verify the following information before submitting:
-
-        //             <FormBuilder {...{
-        //                 inputs:[
-        //                     ['Wallet', getAddressName(address)],
-        //                     ['Project', projectName],
-        //                     ['Duration', duration],
-        //                 ].map(x => ({
-        //                     readOnly: true,
-        //                     label: x[0],
-        //                     name: x[0],
-        //                     type: 'text',
-        //                     value: x[1]
-        //                 })),
-        //                 submitText: null
-        //             }}/>
-        //         </div>
-        //     ),
-        //     header: 'Verify Information',
-        //     onConfirm: () => {
-        //         // send task to queue service
-        //         addToQueue(queueProps)
-        //         this.setState({ message })
-        //     },
-        //     size: 'tiny'
-        // })
     }
 
     saveValues(currentBlockNumber, newDuration) {
@@ -450,10 +420,94 @@ export default class TimeKeepingForm extends ReactiveComponent {
 TimeKeepingForm.defaultProps = {
     closeOnEscape: true,
     closeOnDimmerClick: true,
-    header: 'Time Keeper',
+    header: 'Time Keeping',
     size: 'tiny'
 }
 
 TimeKeepingForm.propTypes = {
     projectHash: PropTypes.string,
+}
+
+export class TimeKeepingUpdateForm extends ReactiveComponent {
+    constructor(props) {
+        super(props)
+
+        this.state = {
+            message: {},
+            values: props.entry || {},
+            inputs : [
+                {
+                    label: 'Duration',
+                    name: 'duration',
+                    onChange: handleDurationChange.bind(this),
+                    type: 'text',
+                    required: true,
+                }
+            ]
+        }
+
+        fillValues(this.state.inputs, props.entry)
+    }
+
+    handleSubmit(e, values) {
+        const { entry, hash, onSubmit } = this.props
+        values = objCopy(values, entry, true)
+        const queueProps = {
+            type: QUEUE_TYPES.CHATCLIENT,
+            args: [
+                hash,
+                objClean(values, validKeys),
+                (err, entry) => {
+                    this.setState({
+                        message: {
+                            content: err || 'Entry updated successfully',
+                            status: err ? 'error' : 'success',
+                            showIcon: true
+                        },
+                    })
+                    isFn(onSubmit) && onSubmit(!err, entry)
+                }
+            ],
+            func: 'timeKeepingEntry',
+            title: 'Time Keeping - Update Entry',
+            description: 'Hash: ' + hash + ' | Duration: ' + values.duration
+        }
+        const message = {
+            content: 'Request has been added to queue. You will be notified of the progress shortly.',
+            header: 'Action queued',
+            status: 'success',
+            showIcon: true
+        }
+        addToQueue(queueProps)
+        this.setState({message})
+    }
+
+    render() {
+        const { inputs, message } = this.state
+        return <FormBuilder {...objCopy({
+            inputs,
+            message,
+            onSubmit:this.handleSubmit.bind(this)
+        }, objWithoutKeys(this.props, ['entry', 'hash']))} />
+    }
+}
+
+TimeKeepingUpdateForm.propTypes = {
+    hash: PropTypes.string,
+    entry: PropTypes.shape({
+        address: PropTypes.string.isRequired,
+        blockEnd: PropTypes.number.isRequired,
+        blockStart: PropTypes.number.isRequired,
+        projectHash: PropTypes.string.isRequired,
+        rateAmount: PropTypes.number.isRequired,
+        rateUnit: PropTypes.string.isRequired,
+        ratePeriod: PropTypes.string.isRequired,
+    }).isRequired
+}
+
+TimeKeepingUpdateForm.defaultProps = {
+    closeOnEscape: false,
+    closeOnDimmerClick: false,
+    header: 'Time Keeping: Update Entry',
+    size: 'tiny'
 }
