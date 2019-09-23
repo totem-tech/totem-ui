@@ -15,9 +15,10 @@ const queue = storageService.queue()
 const MIN_BALANCE = 500
 let txInProgress = false
 const txQueue = []
-export const QUEUE_TYPES = objReadOnly({}, true)
-QUEUE_TYPES.CHATCLIENT = 'chatclient'
-QUEUE_TYPES.BLOCKCHAIN = 'blockchain'
+export const QUEUE_TYPES = objReadOnly({
+    CHATCLIENT: 'chatclient',
+    BLOCKCHAIN: 'blockchain',
+}, true)
 
 export const addToQueue = (queueItem, id) => {
     // prevent adding the same task again

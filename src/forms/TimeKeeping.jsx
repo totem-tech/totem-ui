@@ -5,7 +5,7 @@ import { ReactiveComponent } from 'oo7-react'
 import { chain, secretStore } from 'oo7-substrate'
 import { Button, Divider, Icon } from 'semantic-ui-react'
 import uuid from 'uuid'
-import { arrSort, deferred, generateHash, isDefined, isFn, objCopy, objClean, objReadOnly, textEllipsis } from '../utils/utils'
+import { arrSort, deferred, generateHash, isDefined, isFn, objCopy, objClean, objReadOnly, textEllipsis, isValidNumber } from '../utils/utils'
 import {
     BLOCK_DURATION_SECONDS,
     BLOCK_DURATION_REGEX,
@@ -38,6 +38,7 @@ const validKeys = [
     'tsCreated',
     'tsUpdated',
 ]
+
 export default class TimeKeepingForm extends ReactiveComponent {
     constructor(props) {
         super(props)
@@ -47,14 +48,12 @@ export default class TimeKeepingForm extends ReactiveComponent {
         this.saveValues = this.saveValues.bind(this)
 
         const values = storage.timeKeeping() || {}
-        const { address, duration, durationValid, manualEntry, projectHash, ratePeriod } = values
-
+        const { duration, durationValid, inprogress, manualEntry, projectHash, ratePeriod } = values
         values.durationValid = !isDefined(durationValid) ? true : durationValid
         values.duration = duration || DURATION_ZERO
-        values.manualEntry = !!manualEntry
-        values.projectHash = props.projectHash || projectHash || ''
+        // values.manualEntry = !!manualEntry
+        values.projectHash = isDefined(projectHash) && inprogress ? projectHash : props.projectHash || projectHash || ''
         values.ratePeriod = RATE_PERIODS.indexOf(ratePeriod) >= 0 ? ratePeriod : RATE_PERIODS[0]
-
 
         this.state = {
             message: {},
@@ -80,6 +79,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     inputs: [
                         {
                             label: 'Rate Amount',
+                            min: 0,
                             name: 'rateAmount',
                             placeholder: '123.45',
                             required: true,
@@ -89,12 +89,13 @@ export default class TimeKeepingForm extends ReactiveComponent {
                         },
                         {
                             label: 'Rate Unit',
+                            minLength: 2,
                             maxLength: 10,
                             name: 'rateUnit',
                             placeholder: 'BTC, US$, Euro...',
-                            required: true,
+                            // required: true,
                             type: 'text',
-                            value: ''
+                            value: '',
                         },
                         {
                             label: 'Rate Period',
@@ -117,15 +118,19 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     name: 'duration',
                     onChange: this.handleDurationChange,
                     placeholder: 'hh:mm:ss',
-                    readOnly: values.manualEntry !== true,
+                    readOnly: values.manualEntry !== 'yes',
                     type: 'text',
                     value: DURATION_ZERO
                 },
                 {
                     disabled: !!values.inprogress,
-                    label: 'Manually enter duration',
                     name: 'manualEntry',
-                    type: 'checkbox',
+                    type: 'checkbox-group',
+                    options: [{
+                        label: 'Manually enter duration',
+                        value: 'yes'
+                    }],
+                    required: false,
                 },
                 {
                     content: "Reset",
@@ -169,7 +174,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         this.setState({ inputs: inputs })
     }
 
-    handleValuesChange(e, formValues) {
+    handleValuesChange(_, formValues) {
         let { inputs, values } = this.state
         values = objCopy(formValues, values)
         const { blockEnd, blockStart, manualEntry } = values
@@ -186,19 +191,21 @@ export default class TimeKeepingForm extends ReactiveComponent {
         // Disable duration input when in timer mode
         duraIn.readOnly = !manualEntry
         this.setState({ inputs: inputs })
-        this.saveValues(null, duration)
+        setTimeout(()=>this.saveValues(null, duration))
     }
 
     handleReset(userInitiated) {
         const { inputs, values } = this.state
         const doConfirm = userInitiated && values.duration && values.duration !== DURATION_ZERO
         const reset = () => {
-            values.duration = DURATION_ZERO
-            values.inprogress = false
-            values.stopped = false
+            values.address = ''
             values.blockStart = 0
             values.blockEnd = 0
             values.blockCount = 0
+            values.duration = DURATION_ZERO
+            values.inprogress = false
+            values.stopped = false
+            inputs.find(x => x.name === 'address').value = ''
             inputs.find(x => x.name === 'duration').value = DURATION_ZERO
             this.setState({ values, inputs })
             storage.timeKeeping(values)
@@ -220,6 +227,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         const duraIn = inputs.find(x => x.name === 'duration')
         duraIn.readOnly = true
         duraIn.message = null
+        values.address = secretStore()._keys[storage.walletIndex()].address
         values.blockCount = durationToBlockCount(values.duration)
         values.blockStart = blockNumber - values.blockCount
         values.stopped = false
@@ -246,7 +254,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         values.blockStart = blockNumber - values.blockCount
         values.inprogress = true
         values.stopped = false
-        values.manualEntry = false
+        values.manualEntry = undefined
         const meIn = inputs.find(x => x.name === 'manualEntry')
         meIn.defaultChecked = false
         meIn.disabled = true

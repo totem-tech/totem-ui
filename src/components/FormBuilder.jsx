@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Button, Checkbox, Dropdown, Form, Header, Icon, Input, Message, Modal, TextArea } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
-import { isDefined, isArr, isBool, isBond, isFn, isObj, isStr, objCopy, objWithoutKeys, newMessage, hasValue } from '../utils/utils';
+import { isDefined, isArr, isBool, isBond, isFn, isObj, isStr, objCopy, objWithoutKeys, newMessage, hasValue, objReadOnly, isValidNumber } from '../utils/utils';
 import { InputBond } from '../InputBond'
 import { AccountIdBond } from '../AccountIdBond'
 
@@ -43,6 +43,7 @@ class FormBuilder extends ReactiveComponent {
         let { values } = this.state
         const { value } = data
         const updateBond = isBond(input.bond) && input.type.toLowerCase() !== 'checkbox-group'
+        inputs[index]._invalid = data.invalid
         values[name] = value
         if (isDefined(childIndex)) {
             inputs[index].inputs[childIndex].value = value
@@ -54,9 +55,9 @@ class FormBuilder extends ReactiveComponent {
         updateBond && input.bond.changed(value)
 
         // trigger input items's onchange callback
-        isFn(onInputChange) && onInputChange(e, values, index)
+        isFn(onInputChange) && onInputChange(e, values, index, childIndex)
         // trigger form's onchange callback
-        isFn(formOnChange) && formOnChange(e, values, index)
+        isFn(formOnChange) && formOnChange(e, values, index, childIndex)
         this.setState({ inputs, values })
     }
 
@@ -249,35 +250,79 @@ FormBuilder.defaultProps = {
 }
 export default FormBuilder
 
+const VALIDATION_MESSAGES = objReadOnly({
+    max: (max) => `Number must be smaller or equal ${max}`,
+    maxLength: (value, max) => `Maximum ${max} ${typeof value === 'number' ? 'digit' : 'character'}${max > 1 ? 's' : ''} required`,
+    min: (min) => `Number must be greater or equal ${min}`,
+    minLength: (value, min) => `Minimum ${min} ${typeof value === 'number' ? 'digit' : 'character'}${min > 1 ? 's' : ''} required`,
+    requiredField: () => 'Required field',
+    validNumber: ()=> 'Please enter a valid number'
+}, true)
+
 export class FormInput extends ReactiveComponent {
     constructor(props) {
         super(props)
 
         this.handleChange = this.handleChange.bind(this)
+
+        this.state = {
+            message : undefined
+        }
     }
 
     handleChange(event, data) {
-        const { onChange, falseValue, trueValue, type } = this.props
+        const { falseValue: no, max, maxLength, min, minLength, onChange, required, trueValue: yes, type } = this.props
+        const { value } = data
         // Forces the synthetic event and it's value to persist
         // Required for use with deferred function
         isFn(event.persist) && event.persist();
-        if (!isFn(onChange)) return;
-        if (['checkbox', 'radio'].indexOf(type) >= 0) {
-            // Sematic UI's Checkbox component only supports string and number as value
-            // This allows support for any value types
-            data.value = data.checked ? (
-                isDefined(trueValue) ? trueValue : true
-            ) : (
-                    isDefined(falseValue) ? falseValue : false
-                )
+        let errMsg = required && !hasValue(value) ? VALIDATION_MESSAGES.requiredField() : undefined
+        if (!errMsg) {
+            switch ((type || '').toLowerCase()) {
+                case 'checkbox':
+                case 'radio':
+                    // Sematic UI's Checkbox component only supports string and number as value
+                    // This allows support for any value types
+                    data.value = data.checked ? (isDefined(yes) ? yes : true) : (isDefined(no) ? no : false)
+                    break
+                case 'number':
+                    if (!required && value === '') break
+                    const num = (value.indexOf('.') >= 0 ? parseFloat : parseInt)(value)
+                    if (!isValidNumber(num)) {
+                        errMsg = VALIDATION_MESSAGES.validNumber()
+                    }
+                    if (isValidNumber(max) && max < num) {
+                        errMsg = VALIDATION_MESSAGES.max(max)
+                        break
+                    }
+                    if (isValidNumber(min) && min > num) {
+                        errMsg = VALIDATION_MESSAGES.min(min)
+                        break
+                    }
+                case 'text':
+                case 'textarea':
+                    if (isDefined(maxLength) && maxLength < value.length) {
+                        errMsg = VALIDATION_MESSAGES.maxLength(value, maxLength)
+                        break
+                    }
+                    if (isDefined(minLength) && minLength > value.length) {
+                        errMsg = VALIDATION_MESSAGES.minLength(value, minLength)
+                        break
+                    }
+                    break
+            }
         }
 
-        onChange(event, data || {}, this.props)
+        data.invalid = !!errMsg
+        isFn(onChange) && onChange(event, data || {}, this.props)
+        this.setState({message: !errMsg ? null : { content: errMsg, status: 'error'}})
     }
 
     render() {
         const { handleChange } = this
-        const { hidden, inline, label, message, required, type, useInput, width } = this.props
+        const { error, hidden, inline, label, message: externalMessage, required, type, useInput, width } = this.props
+        const { message: internalMessage } = this.state
+        const message = internalMessage || externalMessage
         let hideLabel = false
         let inputEl = ''
         // Remove attributes that are used by the form or Form.Field but
@@ -333,19 +378,26 @@ export class FormInput extends ReactiveComponent {
                 inputEl = <TextArea {...attrs} />
                 break;
             default:
-                attrs.error = attrs.error || (message && message.status === 'error')
                 attrs.fluid = !useInput ? undefined : attrs.fluid
                 inputEl = !useInput ? <Form.Input {...attrs} /> : <Input {...attrs} />
         }
 
-        return !isGroup ? (<Form.Field width={width} required={required}>
-            {!hideLabel && label && <label>{label}</label>}
-            {inputEl}
-            {messageEl}
-        </Form.Field>) : (<Form.Group inline={inline} widths={attrs.widths}>
-            {inputEl}
-            {messageEl}
-        </Form.Group>)
+        return !isGroup ? (
+            <Form.Field
+                error={message && message.status === 'error' || error}
+                required={required}
+                width={width}
+            >
+                {!hideLabel && label && <label>{label}</label>}
+                {inputEl}
+                {messageEl}
+            </Form.Field>
+        ) : (
+            <Form.Group inline={inline} widths={attrs.widths}>
+                {inputEl}
+                {messageEl}
+            </Form.Group>
+        )
     }
 }
 FormInput.propTypes = {
@@ -507,8 +559,8 @@ export const isFormInvalid = (inputs = [], values) => inputs.reduce((invalid, in
         // not a valid input type
         || ['button'].indexOf(inType) >= 0) return invalid;
 
-    // if input is set invalid externally
-    if (input.invalid) return true;
+    // if input is set invalid externally or internally by FormInput
+    if (input.invalid || input._invalid) return true;
 
     // Use recursion to validate input groups
     if (isGroup) return isFormInvalid(input.inputs, values);

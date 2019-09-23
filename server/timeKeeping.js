@@ -34,8 +34,6 @@ const messages = {
 
 // add, get or update a time keeping entry
 export const handleTimeKeepingEntry = (client, findUserByClientId) => (hash, entry, callback) => {
-    console.log('handleTimeKeepingEntry')
-    console.log('hash', hash)
     if (!isFn(callback)) return
     let savedEntry = timeKeeping.get(hash)
     if (!isObj(entry)) return callback(null, savedEntry)
@@ -71,7 +69,6 @@ export const handleTimeKeepingEntry = (client, findUserByClientId) => (hash, ent
 }
 
 export const handleTimeKeepingEntrySearch = (query, matchExact, matchAll, ignoreCase, callback) => {
-    console.log('handleTimeKeepingEntrySearch', query, matchExact, matchAll, ignoreCase, isFn(callback))
     if (!isFn(callback)) return
     const searchableKeys = ['address', 'projectHash', 'approved']
     let keyValues = {}
@@ -80,9 +77,7 @@ export const handleTimeKeepingEntrySearch = (query, matchExact, matchAll, ignore
     } else {
         searchableKeys.forEach(key => keyValues[key] = query)
     }
-    const result = timeKeeping.search(keyValues, matchExact, matchAll, ignoreCase)
-    console.log('results:', result.size)
-    callback(null, result)
+    callback(null, timeKeeping.search(keyValues, matchExact, matchAll, ignoreCase))
 }
 
 // approve/disapprove a time keeping entry

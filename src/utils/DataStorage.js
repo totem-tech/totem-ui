@@ -1,4 +1,4 @@
-import { mapSearch } from './utils'
+import { isStr, mapSearch } from './utils'
 
 let storage;
 try {
@@ -16,6 +16,8 @@ const read = (key, isMap = true) => {
     return isMap ? new Map(data) : data
 }
 const write = (key, value, isMap = true) => {
+    // invalid key: ignore request
+    if (!isStr(key)) return false
     value = isMap ? Array.from(value.entries()) : value
     storage.setItem(key, JSON.stringify(value, null, 4))
 }
