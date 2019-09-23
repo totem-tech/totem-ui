@@ -18,7 +18,7 @@ const txQueue = []
 export const QUEUE_TYPES = objReadOnly({
     CHATCLIENT: 'chatclient',
     BLOCKCHAIN: 'blockchain',
-}, true)
+}, false)
 
 export const addToQueue = (queueItem, id) => {
     // prevent adding the same task again

@@ -15,7 +15,7 @@ const REQUIRED_KEYS = arrReadOnly([
 
 // only update from the server
 const OTHER_KEYS = arrReadOnly([
-    'approved',
+    'approved', // true => approved, false => rejected, undefined: not set yet
     'duration',
     'blockCount',
     'totalAmount',
@@ -30,6 +30,7 @@ const messages = {
     invalidKeys: `Time keeping entry must contain all of the following properties: ${REQUIRED_KEYS.join(', ')} and an unique hash`,
     loginRequired: 'Must be logged in to book/update an entry',
     notFound: 'Time keeping entry not found',
+    permissionDenied: 'Permission denied'
 }
 
 // add, get or update a time keeping entry
@@ -41,6 +42,7 @@ export const handleTimeKeepingEntry = (client, findUserByClientId) => (hash, ent
     const create = !savedEntry
     const user = findUserByClientId(client.id)
     if (!user) return callback(messages.loginRequired)
+    if (!create && savedEntry.userId !== user.id) return callback(messages.permissionDenied)
     // validate entry
     if (!objHasKeys(entry, REQUIRED_KEYS, true)) return callback(messages.invalidKeys)
 
@@ -55,7 +57,7 @@ export const handleTimeKeepingEntry = (client, findUserByClientId) => (hash, ent
 
     if (create) {
         savedEntry.userId = user.id
-        savedEntry.approved = false
+        savedEntry.approved = undefined
     } else {
         savedEntry.tsUpdated = new Date()
         savedEntry.updatedBy = user.id
@@ -85,10 +87,18 @@ export const handleTimeKeepingEntryApproval = (hash, approve = false, callback) 
     if (!isFn(callback)) return
     const savedEntry = timeKeeping.get(hash)
     if (!savedEntry) return callback(messages.notFound)
-    if (!approve && savedEntry.aproved) return callback(messages.alreadyApproved)
+    if (savedEntry.approved) return callback(messages.alreadyApproved)
     savedEntry.approved = approve
     timeKeeping.set(hash, savedEntry)
     callback()
+}
+
+export const handleTimeKeepingBan = (projectHash, userAddress, ban = false, callback) => {
+    
+}
+
+export const handleTimeKeepingDispute = (hash, callback) => {
+    
 }
 
 // notify user ????

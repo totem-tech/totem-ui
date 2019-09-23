@@ -30,6 +30,7 @@ import storage from '../services/storage'
 import client from '../services/ChatClient'
 import ProjectDropdown, {getAddressName} from '../components/ProjectDropdown'
 import {confirm} from '../services/modal'
+import { QUEUE_TYPES, addToQueue } from '../services/queue'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -76,50 +77,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                     {
                         collapsing: true,
                         style: {padding: 0,width: 90},
-                        content: (entry, hash) => {
-                            const { isOwner, projectHash, project } = this.state
-                            const {address: selectedAddress} = secretStore()._keys[storage.walletIndex()]
-                            const isUser = selectedAddress === entry.address
-                            let actionBtn = isUser || !isOwner ? (
-                                <Button
-                                    disabled={!isUser}
-                                    icon="pencil"
-                                    style={{marginLeft: -10}}
-                                    title="Edit"
-                                    onClick={()=> {
-                                    showForm(TimeKeepingUpdateForm, {
-                                        entry,
-                                        hash,
-                                        onSubmit: ()=> this.getEntries(projectHash, project)})
-                                }} />
-                            ) : (
-                                <Button
-                                    icon="bug"
-                                    onClick={toBeImplemented}
-                                    style={{marginLeft: -10}}
-                                    title="Dispute"
-                                />
-                            )
-                            
-                            return (
-                                <Button.Group>
-                                    {actionBtn}
-                                    <Dropdown
-                                        className='button icon'
-                                        floating
-                                        options={[
-                                            {
-                                                key: 0,
-                                                icon: 'copy outline',
-                                                text: 'Copy Address',
-                                                onClick: () => copyToClipboard(entry.address)
-                                            }
-                                        ]}
-                                        trigger={<React.Fragment />}
-                                    />
-                                </Button.Group>
-                            )
-                        },
+                        content: this.getActionContent.bind(this),
                         textAlign: 'center',
                         title: 'Action',
                     }
@@ -174,9 +132,9 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                         icon: {
                             color: 'green',
                             name: 'check',
-                         },
+                        },
                         key: 'Approve',
-                        onClick: toBeImplemented,
+                        onClick: selectedKeys => selectedKeys.forEach(hash => this.handleApprove(hash, true)),
                     },
                     {
                         content: 'Reject',
@@ -185,7 +143,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                             name: 'x',
                         },
                         key: 'Reject',
-                        onClick: toBeImplemented,
+                        onClick: selectedKeys => selectedKeys.forEach(hash => this.handleApprove(hash, false)),
                     },
                     {
                         content: 'Ban User',
@@ -241,6 +199,75 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     componentWillUnmount() {
         storageService.walletIndexBond.untie(this.tieId)
     }
+    
+    getActionContent(entry, hash) {
+        const { isOwner, projectHash, project } = this.state
+        const {address: selectedAddress} = secretStore()._keys[storage.walletIndex()]
+        const isUser = selectedAddress === entry.address
+        let actionBtn = isUser || !isOwner ? (
+            <Button
+                disabled={!isUser || entry.approved}
+                icon="pencil"
+                style={{marginLeft: -10}}
+                title="Edit"
+                onClick={()=> {
+                showForm(TimeKeepingUpdateForm, {
+                    entry,
+                    hash,
+                    onSubmit: ()=> this.getEntries(projectHash, project)})
+            }} />
+        ) : (
+            <Button
+                icon="bug"
+                onClick={toBeImplemented}
+                style={{marginLeft: -10}}
+                title="Dispute"
+            />
+        )
+        
+        return (
+            <Button.Group>
+                {actionBtn}
+                <Dropdown
+                    className='button icon'
+                    floating
+                    options={[
+                        {
+                            key: 0,
+                            icon: 'copy outline',
+                            text: 'Copy Address',
+                            onClick: () => copyToClipboard(entry.address)
+                        },
+                        {
+                            content: 'Add Partner',
+                            icon: 'user plus',
+                            key: 'partner',
+                            onClick: toBeImplemented,
+                        },
+                        {
+                            content: 'Approve',
+                            icon: {
+                                color: 'green',
+                                name: 'check',
+                            },
+                            key: 'Approve',
+                            onClick: () => this.handleApprove(hash, true),
+                        },
+                        {
+                            content: 'Reject',
+                            icon: {
+                                color: 'red',
+                                name: 'x',
+                            },
+                            key: 'Reject',
+                            onClick: ()=> this.handleApprove(hash, false),
+                        }
+                    ]}
+                    trigger={<React.Fragment />}
+                />
+            </Button.Group>
+        )
+    }
 
     getEntries(projectHash, project) {
         const { listProps } = this.state
@@ -289,6 +316,20 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 }))
             }
         )
+    }
+
+    handleApprove(hash, approve = false) {
+        const { listProps: {data}, project, projectHash } = this.state
+        const entry = data.get(hash)
+        if (entry.approved === approve) return
+        const queueProps = {
+            type: QUEUE_TYPES.CHATCLIENT,
+            func: 'timeKeepingEntryApproval',
+            args: [hash, approve, ()=> this.getEntries(projectHash, project)],
+            title: 'Time Keeping - Approve',
+            description: `Hash: ${hash} | Duration: ${entry.duration}`
+        }
+        addToQueue(queueProps)
     }
 
     handleRowSelect(selectedKeys) {
