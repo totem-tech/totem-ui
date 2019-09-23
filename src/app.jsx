@@ -1,5 +1,5 @@
 import React from 'react'
-import { Icon, Container, Dimmer, Loader, Responsive, Sidebar } from 'semantic-ui-react'
+import { Container, Dimmer, Loader, Responsive, Sidebar } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import {
@@ -12,7 +12,7 @@ import GettingStarted from './components/GettingStartedView'
 import PartnerView from './views/PartnerView'
 import SendFundsView from './views/SendFundsView'
 import UtilitiesView from './views/UtilitiesView'
-import WalletView from './views/WalletView'
+import IdentityView from './views/WalletView'
 import ErrorBoundary from './components/CatchReactErrors'
 import ChatWidget from './components/ChatWidget'
 import ContentSegment from './components/ContentSegment'
@@ -222,10 +222,10 @@ const sidebarItems = [
 	},
 	{
 	  icon: "money",
-	  title: "Wallet",
-	  subHeader: "Manage your secret keys",
+	  title: "Identities",
+	  subHeader: "Manage your identity keys",
 	  active: false,
-	  content: <WalletView />
+	  content: <IdentityView />
 	},
 	{ 
 	  active: false,
