@@ -13,7 +13,7 @@ export const getHistory = () => storageService.chatHistory()
 export const getHistoryLimit = () => HISTORY_LIMIT
 export const addToHistory = (message, id) => {
     const history = getHistory()
-    history.push({ message, id })
+    history.push({message, id})
     storageService.chatHistory(history.slice(history.length - HISTORY_LIMIT, history.length))
 }
 // Adds callback to be executed after login is successful
@@ -50,11 +50,11 @@ export class ChatClient {
         this.onError = cb => socket.on('error', cb)
         this.message = (msg, cb) => socket.emit('message', msg, cb)
         this.onMessage = cb => socket.on('message', cb)
-
+        
         // Request funds
         this.faucetRequest = (address, cb) => socket.emit('faucet-request', address, cb)
         // Funds received
-        // this.onFaucetRequest = cb => socket.on('faucet-request', cb)
+        this.onFaucetRequest = cb => socket.on('faucet-request', cb)
         // Check if User ID Exists
         this.idExists = (userId, cb) => socket.emit('id-exists', userId, cb)
 
@@ -81,8 +81,6 @@ export class ChatClient {
         this.projectsByHashes = (hashArr, cb) => isFn(cb) && socket.emit(
             'projects-by-hashes', hashArr, (err, res, notFoundHashes) => cb(err, new Map(res), notFoundHashes)
         )
-        // project search
-        this.projectsSearch = (keyword, cb) => socket.emit('projects-search', keyword, (err, result) => cb(err, new Map(result)))
         // user projects received
         // @cb function : params =>
         //                  @err    string/null : error message or null if success
@@ -107,15 +105,6 @@ export class ChatClient {
         //                      @result Map         : Map of companies with walletAddress as eky
         this.companySearch = (keyValues, cb) => isFn(cb) && socket.emit(
             'company-search', keyValues, (err, result) => cb(err, new Map(result))
-        )
-
-        // Add/update time keeping entry
-        this.timeKeepingEntry = (hash, entry, cb) => isFn(cb) && socket.emit('time-keeping-entry', hash, entry, cb)
-        this.timeKeepingEntryApproval = (hash, approve, cb) => isFn(cb) && socket.emit('time-keeping-entry-approval', hash, approve, cb)
-        this.handleTimeKeepingEntrySearch = (query, matchExact, matchAll, ignoreCase, cb) => isFn(cb) && socket.emit(
-            'time-keeping-entry-search',
-            query, matchExact, matchAll, ignoreCase,
-            (err, entriesArr) => cb(err, new Map(entriesArr))
         )
     }
 

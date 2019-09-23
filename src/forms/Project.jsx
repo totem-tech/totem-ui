@@ -4,8 +4,8 @@ import { ReactiveComponent } from 'oo7-react'
 import { runtime, secretStore } from 'oo7-substrate'
 import FormBuilder, { fillValues } from '../components/FormBuilder'
 import { arrSort, generateHash, isDefined, isFn, isObj, objCopy } from '../utils/utils'
-import storageService from '../services/storage'
-import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import storageService  from '../services/storage'
+import { addToQueue } from '../services/queue'
 import { Pretty } from '../Pretty'
 import addressbook from '../services/addressbook';
 import { confirm } from '../services/modal'
@@ -43,7 +43,7 @@ class Project extends ReactiveComponent {
                     name: 'ownerAddress',
                     onChange: (_, values) => {
                         const { hash, project } = this.props
-                        const isCreate = !hash
+                        const isCreate  = !hash
                         const signerAddress = isCreate ? values.ownerAddress : project.ownerAddress
                         // do not check if owner address has not been changed
                         if (!signerAddress) return;
@@ -81,19 +81,19 @@ class Project extends ReactiveComponent {
         const hash = existingHash || generateHash(values)
         const { name: projectName, ownerAddress } = values
         let message = {
-            content: `Your project will be ${create ? 'created' : 'updated'} shortly. 
+            content: `Your project will be ${create ? 'created': 'updated'} shortly. 
                 You will received toast messages notifying you of progress. 
                 You may close the dialog now.`,
-            header: `Project  ${create ? 'creation' : 'update'} has been queued`,
+            header: `Project  ${create ? 'creation': 'update'} has been queued`,
             status: 'success',
             showIcon: true
         }
-
-        this.setState({ closeText: 'Close', message, success: true })
-
+        
+        this.setState({closeText: 'Close', message, success: true})
+        
         // Add or update project to web storage
         const clientTask = {
-            type: QUEUE_TYPES.CHATCLIENT,
+            type: 'ChatClient',
             func: 'project',
             args: [
                 hash,
@@ -107,7 +107,7 @@ class Project extends ReactiveComponent {
 
         // Send transaction to blockchain first, then add to web storage
         const blockchainTask = {
-            type: QUEUE_TYPES.BLOCKCHAIN,
+            type: 'blockchain',
             func: 'addNewProject',
             args: [ownerAddress, hash],
             address: ownerAddress,
@@ -128,7 +128,7 @@ class Project extends ReactiveComponent {
             onOpen,
             onClose,
             open: propsOpen,
-            project,
+            project, 
             size,
             subheader,
             trigger
@@ -143,9 +143,10 @@ class Project extends ReactiveComponent {
             style: styles.itemHeader,
             text: 'Wallets',
             value: '' // keep
-            // add wallet items to owner address dropdown
-        }].concat(arrSort(secretStore && secretStore.keys || [], 'name').map((wallet, i) => ({
-            key: 'wallet-' + i + wallet.address,
+        }]
+        // add wallet items to owner address dropdown
+        .concat(arrSort(secretStore && secretStore.keys || [] , 'name').map((wallet, i) => ({
+            key: 'wallet-'+i+ wallet.address,
             text: wallet.name,
             description: <Pretty value={runtime.balances.balance(ss58Decode(wallet.address))} />,
             value: wallet.address
@@ -167,7 +168,7 @@ class Project extends ReactiveComponent {
                 onSubmit: this.handleSubmit,
                 size,
                 subheader,
-                submitText: !!hash ? 'Update' : 'Create',
+                submitText : !!hash ? 'Update' : 'Create',
                 success,
                 trigger,
             }} />
@@ -192,9 +193,9 @@ Project.defaultProps = {
 export default Project
 
 const styles = {
-    itemHeader: {
-        background: 'grey',
-        color: 'white',
+    itemHeader: { 
+        background: 'grey', 
+        color: 'white', 
         fontWeight: 'bold',
         fontSize: '1em'
     }
@@ -216,14 +217,14 @@ function checkBalance(address, inputName) {
             status: 'error'
         }
 
-        return this.setState({ inputs })
+        return this.setState({inputs})
     }
     inputs[index].message = {
         content: 'Checking balance....',
         showIcon: true,
         status: 'loading'
     }
-    this.setState({ inputs })
+    this.setState({inputs})
     // check if singing address has enough funds
     runtime.balances.balance(address).then(balance => {
         const notEnought = balance <= minBalance
@@ -236,7 +237,7 @@ function checkBalance(address, inputName) {
             status: 'error',
             showIcon: true
         }
-        this.setState({ inputs });
+        this.setState({inputs});
     })
 }
 
@@ -302,7 +303,7 @@ export class ReassignProjectForm extends ReactiveComponent {
         const { hash, name, ownerAddress, newOwnerAddress } = values
         const walletExists = secretStore().find(newOwnerAddress)
         const task = {
-            type: QUEUE_TYPES.BLOCKCHAIN,
+            type: 'blockchain',
             func: 'reassignProject',
             args: [ownerAddress, newOwnerAddress, hash],
             address: ownerAddress,
@@ -313,13 +314,13 @@ export class ReassignProjectForm extends ReactiveComponent {
                 func: 'project',
                 args: [
                     hash,
-                    objCopy({ ownerAddress: newOwnerAddress }, project, true),
+                    objCopy({ownerAddress: newOwnerAddress}, project, true),
                     false,
-                    (err) => isFn(onSubmit) && onSubmit(values, !err)
+                    (err)=> isFn(onSubmit) && onSubmit(values, !err)
                 ]
             }
         }
-        const proceed = () => addToQueue(task) | this.setState({
+        const proceed = ()=> addToQueue(task) | this.setState({
             message: {
                 header: 'Re-assign request added to queue',
                 content: 'Your request has been added to queue. ',
@@ -351,13 +352,13 @@ export class ReassignProjectForm extends ReactiveComponent {
             text: 'Wallets',
             value: '' // keep
         }]
-            // add wallet items to owner address dropdown
-            .concat(arrSort(wallets, 'name').map((wallet, i) => ({
-                key: 'wallet-' + i + wallet.address,
-                text: wallet.name,
-                description: <Pretty value={runtime.balances.balance(ss58Decode(wallet.address))} />,
-                value: wallet.address
-            })))
+        // add wallet items to owner address dropdown
+        .concat(arrSort(wallets, 'name').map((wallet, i) => ({
+            key: 'wallet-'+i+ wallet.address,
+            text: wallet.name,
+            description: <Pretty value={runtime.balances.balance(ss58Decode(wallet.address))} />,
+            value: wallet.address
+        })))
 
         if (partners.length > 0) {
             options = options.concat({
@@ -366,12 +367,12 @@ export class ReassignProjectForm extends ReactiveComponent {
                 text: 'Partners',
                 value: '' // keep
             })
-                .concat(arrSort(partners, 'name').map((partner, i) => ({
-                    key: 'partner-' + i + partner.address,
-                    text: partner.name,
-                    description: <Pretty value={runtime.balances.balance(ss58Decode(partner.address))} />,
-                    value: partner.address
-                })))
+            .concat(arrSort(partners, 'name').map((partner, i) => ({
+                key: 'partner-'+i+ partner.address,
+                text: partner.name,
+                description: <Pretty value={runtime.balances.balance(ss58Decode(partner.address))} />,
+                value: partner.address
+            })))
         }
 
         inputs.filter(x => x.type.toLowerCase() === 'dropdown').forEach(input => input.options = options)
@@ -383,7 +384,7 @@ export class ReassignProjectForm extends ReactiveComponent {
                 subheader,
                 inputs,
                 message,
-                modal,
+                modal, 
                 onClose,
                 onSubmit: this.handleSubmit,
                 open,

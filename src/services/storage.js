@@ -3,7 +3,7 @@
  * Typically this should be used by other services
  */
 import { Bond } from 'oo7'
-import { isArr, isObj, isObjMap, isStr, isValidNumber } from '../utils/utils'
+import { isArr, isObjMap, isStr, isValidNumber } from '../utils/utils'
 // Local Storage item key prefix for all items
 const PREFIX = 'totem_'
 const storage = {}
@@ -39,16 +39,6 @@ storage.chatUser = (id, secret) => {
     return isStr(id) && isStr(secret) ? setItem(key, { id, secret }) : getItem(key)
 }
 
-// timeKeeping
-storage.timeKeeping = formValues => {
-    const key = 'time-keeping'
-    if (!isObj(formValues)) return getItem(key) || {}
-    setItem(key, formValues)
-    storage.timeKeepingBond.changed(formValues)
-}
-storage.timeKeepingBond = new Bond()
-
-// queue stores and retrieves queued task details from local storage
 storage.queue = queueMap => {
     const key = 'queue-data'
     return !isObjMap(queueMap) ? new Map(getItem(key)) : setItem(key, Array.from(queueMap))
