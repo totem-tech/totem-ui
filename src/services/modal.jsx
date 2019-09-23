@@ -41,13 +41,15 @@ export const closeModal = id => modals.delete(id) | trigger.changed(modals.size)
 // @id              string : random id assigned to the modal. Can be used to remove using the remove function
 export const confirm = (confirmProps, id) => {
     id = id || uuid.v1()
+    const { content, open, onCancel, onConfirm } = confirmProps
     return add(
         id,
         <Confirm
           {...confirmProps}
-          open={isDefined(confirmProps.open) ? confirmProps.open : true}
-          onCancel={(e, d) => {closeModal(id); isFn(confirmProps.onCancel) && confirmProps.onCancel(e, d)}}
-          onConfirm={(e, d) => {closeModal(id); isFn(confirmProps.onConfirm) && confirmProps.onConfirm(e, d)}}
+          content={<div className="content">{content}</div>}
+          open={isDefined(open) ? open : true}
+          onCancel={(e, d) => closeModal(id) | isFn(onCancel) && onCancel(e, d)}
+          onConfirm={(e, d) => closeModal(id) | isFn(onConfirm) && onConfirm(e, d)}
         />
     )
 }

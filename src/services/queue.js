@@ -4,17 +4,21 @@
 import React from 'react'
 import uuid from 'uuid'
 import { runtime, secretStore } from 'oo7-substrate'
-import client from'./ChatClient'
+import client from './ChatClient'
 import blockchain from './blockchain'
 import storageService from './storage'
 import { removeToast, setToast } from './toast'
-import { isArr, isFn, isObj, objClean } from '../utils/utils'
+import { isArr, isFn, isObj, objClean, objReadOnly } from '../utils/utils'
 
 const queue = storageService.queue()
 // Minimum balance required to make a transaction
 const MIN_BALANCE = 500
 let txInProgress = false
 const txQueue = []
+export const QUEUE_TYPES = objReadOnly({}, true)
+QUEUE_TYPES.CHATCLIENT = 'chatclient'
+QUEUE_TYPES.BLOCKCHAIN = 'blockchain'
+
 export const addToQueue = (queueItem, id) => {
     // prevent adding the same task again
     if (queue.get(id)) return;
@@ -23,37 +27,37 @@ export const addToQueue = (queueItem, id) => {
         'type',         // @type        string : name of the service. Currently supported: blockchain, chatclient
         'args',         // @args        array  : arguments supplied to func
         'func',         // @func        string : name of the function within the service.
-                        //                      - For blockchain service, must return an instance of Bond returned by substrate package's post() function
-                        //                      - For ChatClient, the callback must be the last item in the @args array
-                        //                              AND the first argument to the callback must be:
-                        //                                  - a string with error message to indicate request failure.
-                        //                                  - OR, falsy to indicate request success
+        //                      - For blockchain service, must return an instance of Bond returned by substrate package's post() function
+        //                      - For ChatClient, the callback must be the last item in the @args array
+        //                              AND the first argument to the callback must be:
+        //                                  - a string with error message to indicate request failure.
+        //                                  - OR, falsy to indicate request success
         'address',      // @address     string/bond: optionally for blockchain @type, include source address to check balance before making blockchain call
         'title',        // @title       string : operation title. Eg: 'Create project'
         'description',  // @description string : short description about the operation. Eg: project name etc...
         'keepToast',    // @keepToast   bool   : if falsy, will autohide toast
         'silent',       // @silent      bool   : If true, enables silent mode and no toasts will be displayed.
-                        //                      This is particularly usefull when executing tasks that user didn't initiate or should not be bothered with.
+        //                      This is particularly usefull when executing tasks that user didn't initiate or should not be bothered with.
         'next',         // @next        object : next operation in this series of queue. Same keys as @validKeys
     ]
 
     queueItem = objClean(queueItem, validKeys)
     queue.set(id, queueItem)
     _save()
-    setTimeout(()=> _processItem(queueItem, id))
+    setTimeout(() => _processItem(queueItem, id))
     return id
 }
 
 // save to localStorage
-const _save = ()=> storageService.queue(queue)
+const _save = () => storageService.queue(queue)
 
-export const resumeQueue = ()=> queue.size > 0 && Array.from(queue).forEach((x, i) => setTimeout(()=>_processItem(x[1], x[0])))
+export const resumeQueue = () => queue.size > 0 && Array.from(queue).forEach((x, i) => setTimeout(() => _processItem(x[1], x[0])))
 
-const _processNextTxItem = ()=> {
+const _processNextTxItem = () => {
     txInProgress = false
     if (txQueue.length === 0) return;
-    const {queueItem, id, msgId} = txQueue.pop()
-    setTimeout(()=>_processItem(queueItem, id, msgId))
+    const { queueItem, id, msgId } = txQueue.pop()
+    setTimeout(() => _processItem(queueItem, id, msgId))
 }
 
 const _processItem = (queueItem, id, msgId) => {
@@ -77,11 +81,11 @@ const _processItem = (queueItem, id, msgId) => {
     let func = null
     const msgDuration = rootItem.keepToast ? 0 : null
     const silent = queueItem.silent || rootItem.silent
-    switch((queueItem.type || '').toLowerCase()) {
-        case 'blockchain':
+    switch ((queueItem.type || '').toLowerCase()) {
+        case QUEUE_TYPES.BLOCKCHAIN:
             // defer tx task to avoid errors
-            if (txInProgress) return txQueue.push({queueItem, id, msgId});
-            const handlePost = ()=> {
+            if (txInProgress) return txQueue.push({ queueItem, id, msgId });
+            const handlePost = () => {
                 txInProgress = true
                 func = blockchain[queueItem.func]
                 if (!func) return queue.delete(id) | _save();
@@ -91,7 +95,7 @@ const _processItem = (queueItem, id, msgId) => {
                 setTimeout(() => _save())
 
                 const tieId = bond.tie(result => {
-                    if(!isObj(result)) return;
+                    if (!isObj(result)) return;
                     const { failed, finalized, sending, signing } = result
                     const done = failed || finalized
                     const status = !done ? 'loading' : (finalized ? 'success' : 'error')
@@ -106,7 +110,7 @@ const _processItem = (queueItem, id, msgId) => {
                     queueItem.error = failed
 
                     if (!silent) {
-                        msgId = setToast( {header, content, status}, msgDuration, msgId )
+                        msgId = setToast({ header, content, status }, msgDuration, msgId)
                     }
                     queueItem.status = status
                     _save()
@@ -120,11 +124,11 @@ const _processItem = (queueItem, id, msgId) => {
             if (!address) return handlePost();
             const wallet = secretStore().find(address)
             if (!wallet && !silent) {
-                setToast( {
+                setToast({
                     content: `Cannot create a transaction from an address that does not belong to you! Supplied address: ${address}`,
                     header: `${title}: transaction aborted`,
                     status: 'error'
-                }, 0, msgId )
+                }, 0, msgId)
                 queue.delete(id)
                 return
             }
@@ -143,7 +147,7 @@ const _processItem = (queueItem, id, msgId) => {
                 const continueBtn = (
                     <button
                         className="ui button basic mini"
-                        onClick={()=> _processItem(queueItem, id, msgId)}
+                        onClick={() => _processItem(queueItem, id, msgId)}
                     >
                         click here
                     </button>
@@ -151,7 +155,7 @@ const _processItem = (queueItem, id, msgId) => {
                 const cancelBtn = (
                     <button
                         className="ui button basic mini"
-                        onClick={()=> queue.delete(id) | _save() | removeToast(msgId)}
+                        onClick={() => queue.delete(id) | _save() | removeToast(msgId)}
                     >
                         cancel request
                     </button>
@@ -177,13 +181,13 @@ const _processItem = (queueItem, id, msgId) => {
                 _processNextTxItem()
             })
             break;
-        case 'chatclient':
+        case QUEUE_TYPES.CHATCLIENT:
             func = client[queueItem.func]
             if (!func) return queue.delete(id) | _save();
             // assume last item is the callback
             const callbackOriginal = args[args.length - 1]
             // Intercept callback to determine whether request has been successful or not
-            const interceptCb = function(err, a, b, c, d, e, f, g, h) {
+            const interceptCb = function (err, a, b, c, d, e, f, g, h) {
                 const content = (!err ? description : <p>Error: {err} <br /></p>)
                 const status = !err ? 'success' : 'error'
                 const statusText = !err ? 'success' : 'failed'
@@ -192,7 +196,7 @@ const _processItem = (queueItem, id, msgId) => {
                 queueItem.error = err
 
                 if (!silent) {
-                    msgId = setToast( {header, content, status}, msgDuration, msgId )
+                    msgId = setToast({ header, content, status }, msgDuration, msgId)
                 }
                 setTimeout(() => isFn(callbackOriginal) && callbackOriginal(err, a, b, c, d, e, f, g, h))
                 queueItem.status = status
@@ -201,11 +205,11 @@ const _processItem = (queueItem, id, msgId) => {
                 if (err || !isObj(next)) return queue.delete(id)
                 return _processItem(next, id, msgId)
             }
-            args[args.length === 0 ? 0 : args.length-1] = interceptCb
+            args[args.length === 0 ? 0 : args.length - 1] = interceptCb
             // initiate request
             func.apply({}, args)
             break;
-        default: 
+        default:
             queue.delete(id)
             break;
     }
