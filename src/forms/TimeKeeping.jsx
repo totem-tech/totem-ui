@@ -39,6 +39,47 @@ const validKeys = arrReadOnly([
     'tsUpdated',
 ], true)
 
+const RATE_FIELDS_Group = {
+    hidden: true,
+    name: 'rate-fields',
+    type: 'group',
+    widths: 'equal',
+    inputs: [
+        {
+            label: 'Rate Amount',
+            min: 0,
+            name: 'rateAmount',
+            placeholder: '123.45',
+            required: true,
+            style: { minWidth: 100 },
+            type: 'number',
+            value: 0.00
+        },
+        {
+            label: 'Rate Unit',
+            maxLength: 10,
+            name: 'rateUnit',
+            placeholder: 'BTC, US$, Euro...',
+            required: true,
+            type: 'text',
+            value: '',
+        },
+        {
+            label: 'Rate Period',
+            name: 'ratePeriod',
+            options: RATE_PERIODS.map(p => ({
+                key: p,
+                text: p + (p === 'block' ? ' - ' + BLOCK_DURATION_SECONDS + ' seconds' : ''),
+                value: p
+            })),
+            placeholder: 'Select a rate period',
+            required: true,
+            selection: true,
+            type: 'dropdown',
+        },
+    ],
+}
+
 function handleDurationChange(e, formValues, i) {
     const { inputs, values } = this.state
     const valid = BLOCK_DURATION_REGEX.test(formValues.duration)
@@ -86,46 +127,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     search: true,
                     selection: true,
                 },
-                {
-                    name: 'rate-fields',
-                    type: 'group',
-                    widths: 'equal',
-                    inputs: [
-                        {
-                            label: 'Rate Amount',
-                            min: 0,
-                            name: 'rateAmount',
-                            placeholder: '123.45',
-                            required: true,
-                            style: { minWidth: 100 },
-                            type: 'number',
-                            value: 0.00
-                        },
-                        {
-                            label: 'Rate Unit',
-                            minLength: 2,
-                            maxLength: 10,
-                            name: 'rateUnit',
-                            placeholder: 'BTC, US$, Euro...',
-                            // required: true,
-                            type: 'text',
-                            value: '',
-                        },
-                        {
-                            label: 'Rate Period',
-                            name: 'ratePeriod',
-                            options: RATE_PERIODS.map(p => ({
-                                key: p,
-                                text: p + (p === 'block' ? ' - ' + BLOCK_DURATION_SECONDS + ' seconds' : ''),
-                                value: p
-                            })),
-                            placeholder: 'Select a rate period',
-                            required: true,
-                            selection: true,
-                            type: 'dropdown',
-                        },
-                    ],
-                },
+                RATE_FIELDS_Group,
                 {
                     autoComplete: 'off',
                     label: 'Duration',
@@ -442,11 +444,12 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
                     onChange: handleDurationChange.bind(this),
                     type: 'text',
                     required: true,
-                }
+                },
+                objCopy({hidden: false}, RATE_FIELDS_Group)
             ]
         }
 
-        fillValues(this.state.inputs, props.entry)
+        fillValues(this.state.inputs, props.entry, true)
     }
 
     handleSubmit(e, values) {
@@ -487,7 +490,7 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
         return <FormBuilder {...objCopy({
             inputs,
             message,
-            onSubmit:this.handleSubmit.bind(this)
+            onSubmit:this.handleSubmit.bind(this),
         }, objWithoutKeys(this.props, ['entry', 'hash']))} />
     }
 }
@@ -506,8 +509,10 @@ TimeKeepingUpdateForm.propTypes = {
 }
 
 TimeKeepingUpdateForm.defaultProps = {
+    closeText: 'Close',
     closeOnEscape: false,
     closeOnDimmerClick: false,
     header: 'Time Keeping: Update Entry',
-    size: 'tiny'
+    size: 'tiny',
+    submitText: 'Update',
 }

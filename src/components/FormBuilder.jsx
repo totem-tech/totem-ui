@@ -288,7 +288,7 @@ export class FormInput extends ReactiveComponent {
                     break
                 case 'number':
                     if (!required && value === '') break
-                    const num = (value.indexOf('.') >= 0 ? parseFloat : parseInt)(value)
+                    const num = eval(value)
                     if (!isValidNumber(num)) {
                         errMsg = VALIDATION_MESSAGES.validNumber()
                     }
@@ -300,6 +300,7 @@ export class FormInput extends ReactiveComponent {
                         errMsg = VALIDATION_MESSAGES.min(min)
                         break
                     }
+                    data.value = num
                 case 'text':
                 case 'textarea':
                     if (isDefined(maxLength) && maxLength < value.length) {

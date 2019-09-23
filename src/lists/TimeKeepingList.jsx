@@ -49,18 +49,15 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                         title: 'Project'
                     },
                     {
-                        // collapsing: true,
                         key: '_nameOrAddress',
                         title: 'Address'
                     },
                     {
-                        // collapsing: true,
                         key: 'duration',
                         textAlign: 'center',
                         title: 'Duration'
                     },
                     {
-                        // collapsing: true,
                         key: '_rate',
                         textAlign: 'center',
                         title: 'Rate',
@@ -78,14 +75,50 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                     },
                     {
                         collapsing: true,
+                        style: {padding: 0,width: 90},
                         content: (entry, hash) => {
                             const { isOwner, projectHash, project } = this.state
-                            return isOwner && <Button icon="pencil" onClick={()=> {
-                                showForm(TimeKeepingUpdateForm, {
-                                    entry,
-                                    hash,
-                                    onSubmit: ()=> this.getEntries(projectHash, project)})
-                            }} />
+                            const {address: selectedAddress} = secretStore()._keys[storage.walletIndex()]
+                            const isUser = selectedAddress === entry.address
+                            let actionBtn = isUser || !isOwner ? (
+                                <Button
+                                    disabled={!isUser}
+                                    icon="pencil"
+                                    style={{marginLeft: -10}}
+                                    title="Edit"
+                                    onClick={()=> {
+                                    showForm(TimeKeepingUpdateForm, {
+                                        entry,
+                                        hash,
+                                        onSubmit: ()=> this.getEntries(projectHash, project)})
+                                }} />
+                            ) : (
+                                <Button
+                                    icon="bug"
+                                    onClick={toBeImplemented}
+                                    style={{marginLeft: -10}}
+                                    title="Dispute"
+                                />
+                            )
+                            
+                            return (
+                                <Button.Group>
+                                    {actionBtn}
+                                    <Dropdown
+                                        className='button icon'
+                                        floating
+                                        options={[
+                                            {
+                                                key: 0,
+                                                icon: 'copy outline',
+                                                text: 'Copy Address',
+                                                onClick: () => copyToClipboard(entry.address)
+                                            }
+                                        ]}
+                                        trigger={<React.Fragment />}
+                                    />
+                                </Button.Group>
+                            )
                         },
                         textAlign: 'center',
                         title: 'Action',
@@ -237,15 +270,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 Array.from(data).forEach(x => {
                     const item = x[1]
                     const { address, ratePeriod, rateAmount, rateUnit, approved, totalAmount } = item
-                    item._nameOrAddress = <span>
-                        {getAddressName(address)}
-                        <Icon
-                            name="copy outline"
-                            style={{cursor: 'pointer'}}
-                            onClick={()=> copyToClipboard(address)}
-                            title="Copy address"
-                        />
-                    </span>
+                    item._nameOrAddress = getAddressName(address)
                     item._rate = rateUnit + rateAmount + '/' + ratePeriod
                     item._approved = approved ? 'Yes' : 'No'
                     item._total = rateUnit + totalAmount.toFixed(2)
@@ -272,7 +297,8 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         leftMenu.forEach( x => x.hidden = selectedKeys.length === 0
             || (!isOwner && ['Approve', 'Reject'].indexOf(x.key ) >= 0)
             || (!projectHash && ['Ban'].indexOf(x.key) >= 0))
-            this.setState({listProps})
+        
+        this.setState({listProps})
     }
 
     render() {
