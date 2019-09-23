@@ -13,7 +13,7 @@ import { ReactiveComponent } from 'oo7-react'
 import { secretStore } from 'oo7-substrate'
 import { Button, Dropdown, Header, Icon } from 'semantic-ui-react'
 import ListFactory from '../components/ListFactory'
-import { arrUnique, objCopy, randomInt, copyToClipboard } from '../utils/utils'
+import { arrUnique, objCopy, randomInt, copyToClipboard, isDefined } from '../utils/utils'
 import {
     BLOCK_DURATION_SECONDS,
     BLOCK_DURATION_REGEX,
@@ -70,9 +70,9 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                     },
                     {
                         collapsing: true,
-                        key: '_approved',
+                        key: '_status',
                         textAlign: 'center',
-                        title: 'Approved',
+                        title: 'Status',
                     },
                     {
                         collapsing: true,
@@ -299,7 +299,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                     const { address, ratePeriod, rateAmount, rateUnit, approved, totalAmount } = item
                     item._nameOrAddress = getAddressName(address)
                     item._rate = rateUnit + rateAmount + '/' + ratePeriod
-                    item._approved = approved ? 'Yes' : 'No'
+                    item._status = !isDefined(approved) ? '-' : (approved ? 'Approved' : 'Rejected')
                     item._total = rateUnit + totalAmount.toFixed(2)
                     if (projectHashes.indexOf(item.projectHash) === -1) projectHashes.push(item.projectHash)
                     return x
