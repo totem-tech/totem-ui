@@ -89,7 +89,7 @@ export const handleFaucetRequest = (client, findUserByClientId) => (address, cal
         if (!user) return callback(errMsgs.loginOrRegister)
         let userRequests = faucetRequests.get(user.id) || []
         const last = userRequests[userRequests.length - 1]
-        if (last.inProgress) {
+        if (last && last.inProgress) {
             const lastTs = isStr(last.timestamp) ? Date.parse(last.timestamp) : last.timestamp
             // Disallow user from creating a new faucet request if there is already one in progress (neither success nor error) and hasn't timed out
             if (Math.abs(new Date() - lastTs) < TIMEOUT_DURATION) return callback(errMsgs.faucetTransferInProgress)
