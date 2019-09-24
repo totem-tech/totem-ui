@@ -22,7 +22,7 @@ export const projectDropdown = {
     search: (options, searchQuery) => {
         if (!options || options.length === 0) return []
         const projectHashes = {}
-        searchQuery = (searchQuery || '').toLowerCase().trim()
+        searchQuery = encodeURI(searchQuery || '').toLowerCase().trim()
         const search = key => {
             const matches = options.map((option, i) => {
                 let x = option[key].toLowerCase().match(searchQuery)

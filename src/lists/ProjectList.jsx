@@ -13,6 +13,7 @@ import client from '../services/ChatClient'
 import storageService from '../services/storage'
 import { ownerProjectsList, projectHashStatus } from '../services/blockchain'
 import { addToQueue } from '../services/queue'
+import addressbook from '../services/addressbook'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -21,7 +22,7 @@ const PROJECT_STATUSES = { 0: 'Open', 1: 'Re-opened', 2: 'Closed', 99: 'Deleted'
 class ProjectList extends ReactiveComponent {
     constructor(props) {
         super(props, {
-            secretStore: secretStore()
+            // secretStore: secretStore()
         })
 
         this.getContent = this.getContent.bind(this)
@@ -161,6 +162,7 @@ class ProjectList extends ReactiveComponent {
         const wallets = ss ? ss.keys : secretStore()._value.keys // force if not ready
         const { address } = wallets[storageService.walletIndex()]
         this.triggerBond = Bond.all([
+            addressbook.getBond(),
             secretStore(),
             storageService.walletIndexBond,
             ownerProjectsList(address)

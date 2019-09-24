@@ -11,35 +11,24 @@ import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { secretStore } from 'oo7-substrate'
-import { Button, Dropdown, Header, Icon } from 'semantic-ui-react'
+import { Button, Dropdown } from 'semantic-ui-react'
 import ListFactory from '../components/ListFactory'
 import { arrUnique, objCopy, randomInt, copyToClipboard, isDefined } from '../utils/utils'
-import {
-    BLOCK_DURATION_SECONDS,
-    BLOCK_DURATION_REGEX,
-    calcAmount,
-    durationToSeconds,
-    RATE_PERIODS,
-    secondsToDuration,
-} from '../utils/time'
-import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'
-import { showForm } from '../services/modal'
-import storageService from '../services/storage'
-import addressbook from '../services/addressbook'
-import storage from '../services/storage'
-import client from '../services/ChatClient'
+import { calcAmount, RATE_PERIODS, secondsToDuration } from '../utils/time'
 import ProjectDropdown, {getAddressName} from '../components/ProjectDropdown'
-import {confirm} from '../services/modal'
-import { QUEUE_TYPES, addToQueue } from '../services/queue'
+import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'
+import PartnerForm from '../forms/Partner'
+import { confirm, showForm } from '../services/modal'
+import addressbook from '../services/addressbook'
+import client from '../services/ChatClient'
+import storage from '../services/storage'
+import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
 const toBeImplemented = () => alert('To be implemented')
 
 export default class ProjectTimeKeepingList extends ReactiveComponent {
     constructor(props) {
-        super(props, {
-            _0: storageService.walletIndexBond,
-            _1: storageService.timeKeepingBond
-        })
+        super(props)
 
         this.state = {
             projectHash: '',
@@ -189,80 +178,88 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 type: 'datatable',
             }
         }
+
+        setTimeout(()=>this.getEntries())
     }
 
-    componentDidMount() {
-        const { project, projectHash } = this.state
-        this.tieId = storageService.walletIndexBond.tie(() => this.getEntries(projectHash, project))
+    componentWillMount() {
+        this.updateBond = Bond.all([
+            storage.walletIndexBond,
+            storage.timeKeepingBond,
+            secretStore(),
+            addressbook.getBond(),
+        ])
+
+        this.tieId = this.updateBond.notify(() => this.getEntries(this.state.projectHash, this.state.project))
+
     }
 
     componentWillUnmount() {
-        storageService.walletIndexBond.untie(this.tieId)
+        this.updateBond.untie(this.tieId)
     }
-    
+
     getActionContent(entry, hash) {
         const { isOwner, projectHash, project } = this.state
-        const {address: selectedAddress} = secretStore()._keys[storage.walletIndex()]
+        const {address: selectedAddress} = secretStore()._keys[storage.walletIndex()] || {}
         const isUser = selectedAddress === entry.address
-        let actionBtn = isUser || !isOwner ? (
-            <Button
-                disabled={!isUser || entry.approved}
-                icon="pencil"
-                style={{marginLeft: -10}}
-                title="Edit"
-                onClick={()=> {
-                showForm(TimeKeepingUpdateForm, {
-                    entry,
-                    hash,
-                    onSubmit: ()=> this.getEntries(projectHash, project)})
-            }} />
-        ) : (
-            <Button
-                icon="bug"
-                onClick={toBeImplemented}
-                style={{marginLeft: -10}}
-                title="Dispute"
-            />
-        )
-        
+        const btnProps = isOwner && !isUser ? {
+            icon: 'bug',
+            onClick: toBeImplemented,
+            title: 'Dispute',
+        } : {
+            icon: 'pencil',
+            onClick: ()=> showForm(
+                TimeKeepingUpdateForm,
+                { entry, hash, onSubmit: ()=> this.getEntries(projectHash, project) }
+            ),
+            title: 'Edit',
+        }
+
+        const options = [
+            {
+                icon: 'copy outline',
+                key: 0,
+                text: 'Copy Address',
+                onClick: () => copyToClipboard(entry.address)
+            },
+            {
+                content: 'Add Partner',
+                disabled: !!addressbook.getByAddress(entry.address) || !!secretStore().find(entry.address),
+                icon: 'user plus',
+                key: 1,
+                onClick: ()=> showForm(
+                    PartnerForm,
+                    {values: {address: entry.address}}
+                ),
+            },
+            {
+                content: 'Approve',
+                disabled: entry.approved,
+                icon: {
+                    color: 'green',
+                    name: 'check',
+                },
+                key: 2,
+                onClick: () => this.handleApprove(hash, true),
+            },
+            {
+                content: 'Reject',
+                disabled: entry.approved || entry.approved === false,
+                icon: {
+                    color: 'red',
+                    name: 'x',
+                },
+                key: 3,
+                onClick: ()=> this.handleApprove(hash, false),
+            }
+        ]
         return (
             <Button.Group>
-                {actionBtn}
+                <Button {...btnProps} style={{marginLeft: -10}} />
                 <Dropdown
                     className='button icon'
                     floating
-                    options={[
-                        {
-                            key: 0,
-                            icon: 'copy outline',
-                            text: 'Copy Address',
-                            onClick: () => copyToClipboard(entry.address)
-                        },
-                        {
-                            content: 'Add Partner',
-                            icon: 'user plus',
-                            key: 'partner',
-                            onClick: toBeImplemented,
-                        },
-                        {
-                            content: 'Approve',
-                            icon: {
-                                color: 'green',
-                                name: 'check',
-                            },
-                            key: 'Approve',
-                            onClick: () => this.handleApprove(hash, true),
-                        },
-                        {
-                            content: 'Reject',
-                            icon: {
-                                color: 'red',
-                                name: 'x',
-                            },
-                            key: 'Reject',
-                            onClick: ()=> this.handleApprove(hash, false),
-                        }
-                    ]}
+                    options={options}
                     trigger={<React.Fragment />}
                 />
             </Button.Group>
@@ -270,9 +267,8 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     }
 
     getEntries(projectHash, project) {
-        const { listProps } = this.state
-        const index = storage.walletIndex()
-        const address = secretStore()._keys[index].address
+        const { listProps} = this.state
+        const address = secretStore()._keys[storage.walletIndex()].address
         const isOwner = (project || {}).ownerAddress === address
         // // only show personal bookings if not owner
         listProps.loading = true

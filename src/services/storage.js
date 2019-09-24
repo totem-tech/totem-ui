@@ -47,6 +47,7 @@ storage.timeKeeping = formValues => {
     storage.timeKeepingBond.changed(formValues)
 }
 storage.timeKeepingBond = new Bond()
+storage.timeKeepingBond.changed(storage.timeKeeping())
 
 // queue stores and retrieves queued task details from local storage
 storage.queue = queueMap => {
