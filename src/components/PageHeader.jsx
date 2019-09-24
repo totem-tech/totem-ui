@@ -19,12 +19,11 @@ class PageHeader extends ReactiveComponent {
 			secretStore: secretStore(),
 			// keep UI updated when selected wallet changed
 			index: storage.walletIndexBond,
-			timerValues: storage.timeKeepingBond,
+			_: storage.timeKeepingBond,
 		})
 
 		const user = getUser()
 		this.state = {
-			// index: storageService.walletIndex(),
 			id: user ? user.id : '',
 		}
 
@@ -42,7 +41,6 @@ class PageHeader extends ReactiveComponent {
 		const { secretStore } = this.state
 		const num = eval(data.value)
 		const index = num < secretStore.keys.length ? num : 0
-		// this.setState({ index })
 		storage.walletIndex(index)
 	}
 
@@ -117,7 +115,7 @@ class PageHeader extends ReactiveComponent {
 			onFaucetRequest: () => this.handleFaucetRequest(addressSelected),
 			onSelection: this.handleSelection,
 			selectedIndex: index,
-			timerActive: (timerValues || {}).inprogress,
+			timerActive: storage.timeKeeping().inprogress,
 			timerOnClick: ()=> showForm(TimeKeepingForm, {}),
 			wallets
 		}
@@ -139,7 +137,9 @@ export default PageHeader
 
 class MobileHeader extends ReactiveComponent {
 	constructor(props) {
-		super(props)
+		super(props, {
+			timerValues: storage.timeKeepingBond
+		})
 		this.state = {
 			showTools: false
 		}

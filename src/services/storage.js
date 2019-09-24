@@ -3,6 +3,7 @@
  * Typically this should be used by other services
  */
 import { Bond } from 'oo7'
+import uuid from 'uuid'
 import { isArr, isObj, isObjMap, isStr, isValidNumber } from '../utils/utils'
 // Local Storage item key prefix for all items
 const PREFIX = 'totem_'
@@ -44,10 +45,10 @@ storage.timeKeeping = formValues => {
     const key = 'time-keeping'
     if (!isObj(formValues)) return getItem(key) || {}
     setItem(key, formValues)
-    storage.timeKeepingBond.changed(formValues)
+    storage.timeKeepingBond.changed(uuid.v1())
 }
 storage.timeKeepingBond = new Bond()
-storage.timeKeepingBond.changed(storage.timeKeeping())
+storage.timeKeepingBond.changed(uuid.v1())
 
 // queue stores and retrieves queued task details from local storage
 storage.queue = queueMap => {
