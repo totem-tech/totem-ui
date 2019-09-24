@@ -50,7 +50,23 @@ export const isObjArr = x => !isArr(x) ? false : !x.reduce((no, item) => no || !
 export const isObjMap = x => !isMap(x) ? false : !Array.from(x).reduce((no, item) => no || !isObj(item[1]), false)
 export const isStr = x => typeof x === 'string'
 export const isValidNumber = x => typeof x == 'number' && !isNaN(x) && isFinite(x)
-export const hasValue = x => isDefined(x) && (isValidNumber(x) || (isStr(x) && !!x.trim()))
+export const hasValue = x => {
+	if (!isDefined(x)) return false
+	switch (typeof x) {
+		case 'string':
+			return isStr(x) && !!x.trim()
+		case 'number':
+			return isValidNumber(x)
+		case 'object':
+			const len = isArr(x) ? x.length : Object.keys(x)
+			return len > 0
+		case 'boolean':
+		default:
+			// already defined
+			return true
+	}
+	// (isValidNumber(x) || (isStr(x) && !!x.trim()) || isBool(x))
+}
 export const isMobile = () => window.innerWidth <= Responsive.onlyMobile.maxWidth
 
 export const randomInt = (min, max) => parseInt(Math.random() * (max - min) + min)

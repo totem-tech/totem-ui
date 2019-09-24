@@ -102,7 +102,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                             <Button {...{
                                 active: false,
                                 content: 'Timer',
-                                icon: 'clock',
+                                icon: 'clock outline',
                                 key: 1,
                                 onClick: () => {
                                     const { projectHash } = this.state

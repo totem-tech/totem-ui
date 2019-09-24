@@ -8,8 +8,9 @@ import { copyToClipboard, setState, setStateTimeout } from '../utils/utils'
 import { Pretty } from '../Pretty'
 import FormBuilder from '../components/FormBuilder'
 import { showForm, closeModal } from '../services/modal'
-import storageService from '../services/storage'
+import storage from '../services/storage'
 import { setToast } from '../services/toast'
+import TimeKeepingForm from '../forms/TimeKeeping'
 
 class PageHeader extends ReactiveComponent {
 	constructor(props) {
@@ -17,7 +18,8 @@ class PageHeader extends ReactiveComponent {
 			ensureRuntime: runtimeUp,
 			secretStore: secretStore(),
 			// keep UI updated when selected wallet changed
-			_: storageService.walletIndexBond
+			index: storage.walletIndexBond,
+			timerValues: storage.timeKeepingBond,
 		})
 
 		const user = getUser()
@@ -29,7 +31,7 @@ class PageHeader extends ReactiveComponent {
 		// Update user ID after registration
 		!this.state.id && onLogin(id => id && this.setState({id}))
 
-		this.getSeletectedAddress = () => (this.state.secretStore.keys[storageService.walletIndex()] || {}).address
+		this.getSeletectedAddress = () => (this.state.secretStore.keys[storage.walletIndex()] || {}).address
 		this.handleCopy = this.handleCopy.bind(this)
 		this.handleEdit = this.handleEdit.bind(this)
 		this.handleFaucetRequest = this.handleFaucetRequest.bind(this)
@@ -41,7 +43,7 @@ class PageHeader extends ReactiveComponent {
 		const num = eval(data.value)
 		const index = num < secretStore.keys.length ? num : 0
 		// this.setState({ index })
-		storageService.walletIndex(index)
+		storage.walletIndex(index)
 	}
 
 	handleCopy() {
@@ -54,7 +56,7 @@ class PageHeader extends ReactiveComponent {
 
 	handleEdit() {
 		const { secretStore: ss } = this.state
-		const index = storageService.walletIndex()
+		const index = storage.walletIndex()
 		const wallet = ss.keys[index]
 		// Create a modal form on-the-fly!
 		const inputs = [
@@ -104,7 +106,7 @@ class PageHeader extends ReactiveComponent {
 	}
 
 	render() {
-		const { id, index, secretStore } = this.state
+		const { id, index, secretStore, timerValues } = this.state
 		const { keys: wallets} = secretStore
 		const addressSelected = this.getSeletectedAddress()
 		const viewProps = {
@@ -115,6 +117,8 @@ class PageHeader extends ReactiveComponent {
 			onFaucetRequest: () => this.handleFaucetRequest(addressSelected),
 			onSelection: this.handleSelection,
 			selectedIndex: index,
+			timerActive: (timerValues || {}).inprogress,
+			timerOnClick: ()=> showForm(TimeKeepingForm, {}),
 			wallets
 		}
 		return <MobileHeader {...this.props} {...viewProps} />
@@ -148,18 +152,21 @@ class MobileHeader extends ReactiveComponent {
 	}
 
 	render() {
-	const instance = this
-	const { showTools } = this.state
-	const {
-		id,
-		isMobile,
-		logoSrc,
-		onCopy,
-		onEdit,
-		onFaucetRequest,
-		onSelection,
-		wallets
-	} = this.props
+		const instance = this
+		const { showTools } = this.state
+		const {
+			id,
+			isMobile,
+			logoSrc,
+			onCopy,
+			onEdit,
+			onFaucetRequest,
+			onSelection,
+			selectedIndex,
+			timerActive,
+			timerOnClick,
+			wallets
+		} = this.props
 
 		return (
 			<div>
@@ -174,20 +181,31 @@ class MobileHeader extends ReactiveComponent {
 						<Image size="mini" src={logoSrc} />
 					</Menu.Item>
 					<Menu.Menu position="right">
+						{id && (
+							<Menu.Item
+								icon={{
+									className: 'no-margin',
+									loading: timerActive,
+									name: 'clock outline',
+									size: 'big'
+								}}
+								onClick={timerOnClick}
+							/>
+						)}
 						<Menu.Item>
-						<Dropdown
-							labeled
-							value={storageService.walletIndex()}
-							noResultsMessage="No wallet available"
-							placeholder="Select an account"
-							onChange={onSelection}
-							options={wallets.map((wallet, i) => ({
-								key: i,
-								text: (wallet.name || '').split('').slice(0, 16).join(''),
-								description: <Pretty value={runtime.balances.balance(ss58Decode(wallet.address))} />,
-								value: i
-							}))}
-						/>
+							<Dropdown
+								labeled
+								value={selectedIndex}
+								noResultsMessage="No wallet available"
+								placeholder="Select an account"
+								onChange={onSelection}
+								options={wallets.map((wallet, i) => ({
+									key: i,
+									text: (wallet.name || '').split('').slice(0, 16).join(''),
+									description: <Pretty value={runtime.balances.balance(ss58Decode(wallet.address))} />,
+									value: i
+								}))}
+							/>
 						</Menu.Item>
 					</Menu.Menu>
 					<Menu.Menu fixed="right">

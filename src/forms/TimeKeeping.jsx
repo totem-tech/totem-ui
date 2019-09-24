@@ -134,19 +134,19 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     name: 'duration',
                     onChange: handleDurationChange.bind(this),
                     placeholder: 'hh:mm:ss',
-                    readOnly: values.manualEntry !== 'yes',
+                    readOnly: values.manualEntry !== true,
                     type: 'text',
                     value: DURATION_ZERO
                 },
                 {
                     disabled: !!values.inprogress,
                     name: 'manualEntry',
-                    type: 'checkbox-group',
                     options: [{
                         label: 'Manually enter duration',
-                        value: 'yes'
+                        value: true
                     }],
                     required: false,
+                    type: 'checkbox-group',
                 },
                 {
                     content: "Reset",
@@ -201,14 +201,12 @@ export default class TimeKeepingForm extends ReactiveComponent {
         const { inputs, values } = this.state
         const doConfirm = userInitiated && values.duration && values.duration !== DURATION_ZERO
         const reset = () => {
-            values.address = ''
             values.blockStart = 0
             values.blockEnd = 0
             values.blockCount = 0
             values.duration = DURATION_ZERO
             values.inprogress = false
             values.stopped = false
-            inputs.find(x => x.name === 'address').value = ''
             inputs.find(x => x.name === 'duration').value = DURATION_ZERO
             this.setState({ values, inputs })
             storage.timeKeeping(values)

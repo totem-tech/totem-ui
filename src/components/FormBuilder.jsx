@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Button, Checkbox, Dropdown, Form, Header, Icon, Input, Message, Modal, TextArea } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
-import { isDefined, isArr, isBool, isBond, isFn, isObj, isStr, objCopy, objWithoutKeys, newMessage, hasValue, objReadOnly, isValidNumber } from '../utils/utils';
+import { isDefined, isArr, isBool, isBond, isFn, isObj, isStr, objCopy, objWithoutKeys, newMessage, hasValue, objReadOnly, isValidNumber, arrReadOnly } from '../utils/utils';
 import { InputBond } from '../InputBond'
 import { AccountIdBond } from '../AccountIdBond'
 
@@ -23,9 +23,10 @@ class FormBuilder extends ReactiveComponent {
         this.handleSubmit = this.handleSubmit.bind(this)
     }
 
-    getValues(inputs, values) {
+    getValues(inputs = [], values = {}) {
         return inputs.reduce((values, input, i) => {
-            if (!isDefined(input.name)) return values;
+            if (!isDefined(input.name)) return values
+            if (input.type.toLowerCase() === 'group') return this.getValues(input.inputs, values)
             let value = values[input.name]
             value = !isDefined(value) ? input.value : value
             if (['accountidbond', 'inputbond'].indexOf(input.type.toLowerCase()) >= 0 && isBond(input.bond)) {
@@ -33,7 +34,7 @@ class FormBuilder extends ReactiveComponent {
             }
             values[input.name] = value
             return values
-        }, values || {})
+        }, values)
     }
 
     handleChange(e, data, index, input, childIndex) {
@@ -258,6 +259,9 @@ const VALIDATION_MESSAGES = objReadOnly({
     requiredField: () => 'Required field',
     validNumber: ()=> 'Please enter a valid number'
 }, true)
+const NON_ATTRIBUTES = arrReadOnly(
+    ['deferred', 'hidden', 'inline', 'invalid', '_invalid', 'label', 'trueValue', 'falseValue', 'useInput']
+)
 
 export class FormInput extends ReactiveComponent {
     constructor(props) {
@@ -271,20 +275,29 @@ export class FormInput extends ReactiveComponent {
     }
 
     handleChange(event, data) {
-        const { falseValue: no, max, maxLength, min, minLength, onChange, required, trueValue: yes, type } = this.props
-        const { value } = data
+        const { falseValue: no, max, maxLength, min, minLength, onChange, required, trueValue: yes, type} = this.props
+        const { checked, value } = data
         // Forces the synthetic event and it's value to persist
         // Required for use with deferred function
-        isFn(event.persist) && event.persist();
-        const hasVal = hasValue(value)
-        let errMsg = required && !hasVal ? VALIDATION_MESSAGES.requiredField() : undefined
+        event && isFn(event.persist) && event.persist();
+        const typeLower = (type || '').toLowerCase()
+        const isCheck = ['checkbox', 'radio'].indexOf(typeLower) >= 0
+        const hasVal = hasValue(isCheck ? checked : value)
+        let errMsg = !isCheck && required && !hasVal ? VALIDATION_MESSAGES.requiredField() : undefined
         if (hasVal && !errMsg) {
-            switch ((type || '').toLowerCase()) {
+            switch (typeLower) {
+                case 'checkbox-group':
+                    console.log(checked, value)
+                    break
                 case 'checkbox':
                 case 'radio':
                     // Sematic UI's Checkbox component only supports string and number as value
                     // This allows support for any value types
-                    data.value = data.checked ? (isDefined(yes) ? yes : true) : (isDefined(no) ? no : false)
+                    data.value = checked ? (isDefined(yes) ? yes : true) : (isDefined(no) ? no : false)
+                    console.log(required, checked)
+                    if (required && !checked) {
+                        errMsg = VALIDATION_MESSAGES.requiredField()
+                    }
                     break
                 case 'number':
                     if (!required && value === '') break
@@ -321,7 +334,6 @@ export class FormInput extends ReactiveComponent {
     }
 
     render() {
-        const { handleChange } = this
         const { error, hidden, inline, label, message: externalMessage, required, type, useInput, width } = this.props
         const { message: internalMessage } = this.state
         const message = internalMessage || externalMessage
@@ -329,9 +341,8 @@ export class FormInput extends ReactiveComponent {
         let inputEl = ''
         // Remove attributes that are used by the form or Form.Field but
         // shouldn't be used or may cause error when using with inputEl
-        const nonAttrs = ['deferred', 'hidden', 'inline', 'invalid', '_invalid', 'label', 'useInput']
-        let attrs = objWithoutKeys(this.props, nonAttrs)
-        attrs.onChange = handleChange
+        let attrs = objWithoutKeys(this.props, NON_ATTRIBUTES)
+        attrs.onChange = this.handleChange
         const messageEl = newMessage(message)
         let isGroup = false
 
@@ -461,20 +472,22 @@ class CheckboxGroup extends ReactiveComponent {
         const value = props.value || (hasBond && props.bond._value) || (allowMultiple ? [] : undefined)
         this.state = {
             allowMultiple,
-            value
+            value: !allowMultiple ? value : (isArr(value) ? value : (isDefined(value) ? [value] : []))
         }
         this.handleChange = this.handleChange.bind(this)
         hasBond && props.bond.notify(() => this.setState({ value: props.bond._value }))
     }
 
-    handleChange(e, data) {
+    handleChange(e, data, option) {
         isObj(e) && isFn(e.persist) && e.persist()
         const { onChange } = this.props
         let { allowMultiple, value } = this.state
-        const { checked, value: val } = data
+        const { checked } = data
+        const { value: val } = option
         if (!allowMultiple) {
             value = checked ? val : undefined
         } else {
+            value = isArr(value) ? value : (isDefined(value) ? [value] : [])
             checked ? value.push(val) : value.splice(value.indexOf(val), 1)
         }
         data.value = value
@@ -490,21 +503,24 @@ class CheckboxGroup extends ReactiveComponent {
         const commonProps = objWithoutKeys(this.props, excludeKeys)
         return (
             <div>
-                {!isArr(options) ? '' : options.map((option, i) => (
-                    <Checkbox
-                        key={i}
-                        {...commonProps}
-                        checked={allowMultiple ? value.indexOf(option.value) >= 0 : value === option.value}
-                        className={(inline ? '' : 'sixteen wide ') + option.className || ''}
-                        label={option.label}
-                        name={name + (allowMultiple ? i : '')}
-                        onChange={this.handleChange}
-                        required={false}
-                        style={objCopy(style, { margin: '0 5px' })}
-                        type="checkbox"
-                        value={option.value}
-                    />
-                ))}
+                {!isArr(options) ? '' : options.map((option, i) => {
+                    const checked = allowMultiple ? value.indexOf(option.value) >= 0 : value === option.value
+                    return (
+                        <Checkbox
+                            key={i}
+                            {...commonProps}
+                            checked={checked}
+                            className={(inline ? '' : 'sixteen wide ') + option.className || ''}
+                            label={option.label}
+                            name={name + (allowMultiple ? i : '')}
+                            onChange={(e, d)=> this.handleChange(e, d, option)}
+                            required={false}
+                            style={objCopy(style, { margin: '0 5px' })}
+                            type="checkbox"
+                            value={checked ? `${option.value}` : ''}
+                        />
+                    )
+                })}
             </div>
         )
     }

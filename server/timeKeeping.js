@@ -44,7 +44,7 @@ export const handleTimeKeepingEntry = (client, findUserByClientId) => (hash, ent
     if (!user) return callback(messages.loginRequired)
     if (!create && savedEntry.userId !== user.id) return callback(messages.permissionDenied)
     // validate entry
-    if (!objHasKeys(entry, REQUIRED_KEYS, true)) return callback(messages.invalidKeys)
+    if (!objHasKeys(entry, REQUIRED_KEYS, true)) return callback(messages.invalidKeys + JSON.stringify(entry, null, 4))
 
     if (!create && savedEntry.approved) return callback(messages.alreadyApproved)
     savedEntry = objCopy(objWithoutKeys(entry, OTHER_KEYS), savedEntry)
