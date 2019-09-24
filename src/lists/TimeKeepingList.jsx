@@ -224,7 +224,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             },
             {
                 content: 'Add Partner',
-                disabled: !!addressbook.getByAddress(entry.address) || !!secretStore().find(entry.address),
+                hidden: !!addressbook.getByAddress(entry.address) || !!secretStore().find(entry.address),
                 icon: 'user plus',
                 key: 1,
                 onClick: ()=> showForm(
@@ -234,7 +234,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             },
             {
                 content: 'Approve',
-                disabled: entry.approved,
+                hidden: entry.approved,
                 icon: {
                     color: 'green',
                     name: 'check',
@@ -244,7 +244,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             },
             {
                 content: 'Reject',
-                disabled: entry.approved || entry.approved === false,
+                hidden: entry.approved || entry.approved === false,
                 icon: {
                     color: 'red',
                     name: 'x',
@@ -253,13 +253,14 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 onClick: ()=> this.handleApprove(hash, false),
             }
         ]
+
         return (
             <Button.Group>
                 <Button {...btnProps} style={{marginLeft: -10}} />
                 <Dropdown
                     className='button icon'
                     floating
-                    options={options}
+                    options={options.filter(x => !x.hidden)}
                     trigger={<React.Fragment />}
                 />
             </Button.Group>
