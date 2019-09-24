@@ -60,7 +60,7 @@ export default class GetingStarted extends ReactiveComponent {
 								onClick={this.handleFaucetRequest}>
 								<Step.Content>
 									<Step.Title>Request XTX</Step.Title>
-									<Step.Description>As soon as your account has <br /> xtx you can use Totem.</Step.Description>
+									<Step.Description>To make transactions, you need to spend  <br />XTX transactions! Get some XTX from  <br />our faucet by clicking here!</Step.Description>
 								</Step.Content>
 							</Step>
 						</Step.Group>

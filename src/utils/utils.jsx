@@ -47,9 +47,10 @@ export const isObj = x => x !== null && !isArr(x) && typeof(x) === 'object'
 export const isObjArr = x => !isArr(x) ? false : !x.reduce((no, item) => no || !isObj(item), false)
 // Checks if argument is an Map of Objects. Each element type must be object, otherwise will return false.
 export const isObjMap = x => !isMap(x) ? false : !Array.from(x).reduce((no, item) => no || !isObj(item[1]), false)
-export const isStr = x => typeof (x) === 'string'
-export const isValidNumber = x => typeof (x) == 'number' && !isNaN(x) && isFinite(x)
-export const hasValue = x => isDefined(x) && (isValidNumber(x) || (isStr(x) && !!x))
+export const isStr = x => typeof x === 'string'
+export const isValidNumber = x => typeof x == 'number' && !isNaN(x) && isFinite(x)
+export const hasValue = x => isDefined(x) && (isValidNumber(x) || (isStr(x) && !!x.trim()))
+export const isMobile = () => window.innerWidth <= Responsive.onlyMobile.maxWidth
 
 export const isMobile = () => window.innerWidth <= Responsive.onlyMobile.maxWidth
 
@@ -95,6 +96,12 @@ export const arrMapSlice = (data, startIndex, endIndex, callback) => {
 	return result
 }
 
+// Read-only array
+export const arrReadOnly = (arr = [], strict = false) => objReadOnly(arr, strict)
+
+// Reverse array items
+export const arrReverse = (arr, reverse) => reverse ? arr.reverse() : arr
+
 // arrSearch search for objects by key-value pairs
 //
 // Params:
@@ -136,7 +143,12 @@ export const arrSort = (arr, key, reverse, sortOriginal) => {
 	return  arrReverse(sortedArr.sort((a, b) => a[key] > b[key] ? 1 : -1), reverse)
 }
 
-export const arrReverse = (arr, reverse) => reverse ? arr.reverse() : arr
+export const arrUnique = (arr = []) => Object.values(
+	arr.reduce((itemsObj, item) => {
+		itemsObj[item] = item
+		return itemsObj
+	}, {})
+)
 
 // objCopy copies top level properties and returns another object
 //
@@ -165,6 +177,32 @@ export const objClean = (obj, keys) => !isObj(obj) || !isArr(keys) ? {} : keys.r
 	return cleanObj
 }, {})
 
+// objReadOnly returns a new read-only object where only new properties can be added.
+//
+// Params:
+// @obj	   object/array : (optional) if valid object supplied, new object will be created based on @obj.
+//					 Otherwise, new empty object will be used.
+//					 PS: original supplied object's properties will remain writable, unless re-assigned to the returned object.
+// @strict boolean: (optional) if true, any attempt to add or update property to returned object will throw a TypeError.
+//					 Otherwise, only new properties can be added. Attempts to update properties will be silently ignored.
+//
+// Returns  object
+export const objReadOnly = (obj = {}, strict = false) => new Proxy(obj, {
+	setProperty: (self, key, value) => {
+		if (strict === true) {
+			// prevents adding new or updating existing property
+			throw new TypeError(`Assignment to constant ${Array.isArray(obj) ? 'array' : 'object'} key: ${key}`)
+		} else if (!self.hasOwnProperty(key)) {
+			self[key] = value
+		}
+		return true
+	},
+	get: (self, key) => self[key],
+	set: function (self, key, value) { return this.setProperty(self, key, value) },
+	defineProperty: function (self, key) { return this.setProperty(self, key, value)},
+	// Prevent removal of properties
+	deleteProperty: () => false
+})
 
 // objWithoutKeys creates a new object excluding specified keys
 // 
