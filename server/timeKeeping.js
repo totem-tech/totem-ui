@@ -1,7 +1,7 @@
 import DataStorage from '../src/utils/DataStorage'
 import { arrReadOnly, isObj, isFn, objHasKeys, objCopy, objClean, objWithoutKeys } from '../src/utils/utils'
 import { RATE_PERIODS, calcAmount, secondsToDuration, BLOCK_DURATION_SECONDS } from '../src/utils/time'
-import { handleProject as getProject } from './projects'
+import { handleProject as getProject, handleProjectFirstUsedTS as setFirstUsed } from './projects'
 const timeKeeping = new DataStorage('time-keeping.json', true)
 
 const REQUIRED_KEYS = arrReadOnly([
@@ -44,8 +44,7 @@ export const handleTimeKeepingEntry = (client, findUserByClientId) => (hash, ent
     if (!user) return callback(messages.loginRequired)
 
     getProject(entry.projectHash, null, null, (_, project = {}) => {
-        const {timeKeeping} = project
-        const {bannedAddresses: addrs} = timeKeeping || {}
+        const addrs = (project.timeKeeping || {}).bannedAddresses || []
         if (!create && savedEntry.userId !== user.id || (addrs && addrs.indexOf(entry.address) >= 0)) {
             return callback(messages.permissionDenied)
         }
@@ -71,9 +70,13 @@ export const handleTimeKeepingEntry = (client, findUserByClientId) => (hash, ent
     
         // add to/update storage
         timeKeeping.set(hash, savedEntry)
-    
         console.log('Time keeping entry added', hash)
         callback()
+        if (!create || project.tsFirstUsed) return
+        setFirstUsed(entry.projectHash, err => err && console.log(
+            'Failed to save project first used timestamp. Project Hash: ', hash, ' Current Time:', new Date(),
+            '\nError: ', err
+        ))
     })
 }
 

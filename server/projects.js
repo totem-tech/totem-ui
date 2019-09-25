@@ -5,6 +5,7 @@ const projects = new DataStorage('projects.json', true)
 const requiredKeys = ['name', 'ownerAddress', 'description']
 // All the acceptable properties
 const validKeys = [...requiredKeys, 'status']
+// Internally managed keys : ['tsCreated', 'tsFirstUsed']
 const descMaxLen = 160
 const messages = {
     arrayRequired: 'Array required',
@@ -37,7 +38,6 @@ export const handleProject = (hash, project, create, callback) => {
 
     // Add/update project
     projects.set(hash, project)
-    // saveProjects()
     callback(null)
     console.log(`Project ${create ? 'created' : 'updated'}: ${hash}`)
 }
@@ -55,7 +55,6 @@ export const handleProjectStatus = (hash, status, callback) => {
     console.log('Status update: ', hash, project.status, '>>', status)
     project.status = status
     projects.set(hash, project)
-    // saveProjects()
     callback()
 }
 
@@ -151,4 +150,13 @@ export const handleProjectTimeKeepingBan = (hash, addresses = [], ban = false, c
     }
     callback(null, changed)
     console.log('handleProjectTimeKeepingBan', changed, addresses, ban)
+}
+
+export const handleProjectFirstUsedTS = (hash, callback) => {
+    if (!isFn(callback)) return
+    const project = projects.get(hash)
+    if (!project) return callback(messages.projectNotFound)
+    project.tsFirstUsed = new Date()
+    projects.set(hash, project)
+    callback()
 }

@@ -260,6 +260,7 @@ class ProjectList extends ReactiveComponent {
                     project._ownerName = entry.name
                     project._hash = hash
                     project._statusText = PROJECT_STATUSES[project.status] || 'Unknown'
+                    project._tsFirstUsed = `${project.tsFirstUsed}`.split('T').join(' ').split('Z').join(' ').split('.')[0]
                     this.syncStatus(hash, project)
                 }
                 this.setState({ projects })
@@ -301,6 +302,7 @@ class ProjectList extends ReactiveComponent {
             status: 'Status Code',
             _statusText: 'Status',
             hash: 'Hash',
+            _tsFirstUsed: 'First Used'
         }
         // Create a form on the fly and display data a read-only input fields
         showForm(FormBuilder, {
