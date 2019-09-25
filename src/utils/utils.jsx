@@ -251,10 +251,23 @@ export const objWithoutKeys = (obj, keys) => !isObj(obj) || !isArr(keys) ? {} : 
 export const mapCopy = (source, dest) => !isMap(source) ? (
 	!isMap(dest) ? new Map() : dest
 ) : (
-		Array.from(source).reduce((dest, x) => dest.set(x[0], x[1]), dest)
-	)
+	Array.from(source).reduce((dest, x) => dest.set(x[0], x[1]), dest)
+)
 
-// mapFindByKey finds a specific object by supplied key and value
+export const mapFilter = (map, callback) => {
+	const result = new Map()
+	if (!isMap(map)) return result
+
+	Array.from(map).forEach(x => {
+		const key = x[0]
+		const value = x[1]
+		if(callback(value, key, map)) {
+			result.set(key, value)
+		}
+	})
+	return result
+}
+// mapFindByKey finds a specific object by supplied object property/key and value within
 //
 // Params:
 // @map		Map: Map of objects

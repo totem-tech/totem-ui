@@ -132,7 +132,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     autoComplete: 'off',
                     label: 'Duration',
                     name: 'duration',
-                    onChange: handleDurationChange.bind(this),
+                    onChange: deferred(handleDurationChange, 300, this),
                     placeholder: 'hh:mm:ss',
                     readOnly: values.manualEntry !== true,
                     type: 'text',
@@ -439,7 +439,7 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
                 {
                     label: 'Duration',
                     name: 'duration',
-                    onChange: handleDurationChange.bind(this),
+                    onChange: deferred(handleDurationChange, 300, this),
                     type: 'text',
                     required: true,
                 },

@@ -58,7 +58,7 @@ export class ChatClient {
         // Check if User ID Exists
         this.idExists = (userId, cb) => socket.emit('id-exists', userId, cb)
 
-        // add/update project
+        // add/get/update project
         //
         // Params:
         // @hash    string: A hash string generated using the project details as seed. Will be used as ID/key.
@@ -68,6 +68,9 @@ export class ChatClient {
         this.project = (hash, project, create, cb) => socket.emit('project', hash, project, create, cb)
         // Set project status
         this.projectStatus = (hash, status, cb) => socket.emit('project-status', hash, status, cb)
+        this.projectTimeKeepingBan = (hash, address, ban, cb) => isFn(cb) && socket.emit(
+            'project-time-keeping-ban', hash, address, ban, cb
+        )
         // request user projects
         //
         // Params:

@@ -286,15 +286,11 @@ export class FormInput extends ReactiveComponent {
         let errMsg = !isCheck && required && !hasVal ? VALIDATION_MESSAGES.requiredField() : undefined
         if (hasVal && !errMsg) {
             switch (typeLower) {
-                case 'checkbox-group':
-                    console.log(checked, value)
-                    break
                 case 'checkbox':
                 case 'radio':
                     // Sematic UI's Checkbox component only supports string and number as value
                     // This allows support for any value types
                     data.value = checked ? (isDefined(yes) ? yes : true) : (isDefined(no) ? no : false)
-                    console.log(required, checked)
                     if (required && !checked) {
                         errMsg = VALIDATION_MESSAGES.requiredField()
                     }

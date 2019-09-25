@@ -1,6 +1,7 @@
 import DataStorage from '../src/utils/DataStorage'
 import { arrReadOnly, isObj, isFn, objHasKeys, objCopy, objClean, objWithoutKeys } from '../src/utils/utils'
 import { RATE_PERIODS, calcAmount, secondsToDuration, BLOCK_DURATION_SECONDS } from '../src/utils/time'
+import { handleProject as getProject } from './projects'
 const timeKeeping = new DataStorage('time-keeping.json', true)
 
 const REQUIRED_KEYS = arrReadOnly([
@@ -38,36 +39,42 @@ export const handleTimeKeepingEntry = (client, findUserByClientId) => (hash, ent
     if (!isFn(callback)) return
     let savedEntry = timeKeeping.get(hash)
     if (!isObj(entry)) return callback(null, savedEntry)
-
     const create = !savedEntry
     const user = findUserByClientId(client.id)
     if (!user) return callback(messages.loginRequired)
-    if (!create && savedEntry.userId !== user.id) return callback(messages.permissionDenied)
-    // validate entry
-    if (!objHasKeys(entry, REQUIRED_KEYS, true)) return callback(messages.invalidKeys + JSON.stringify(entry, null, 4))
 
-    if (!create && savedEntry.approved) return callback(messages.alreadyApproved)
-    savedEntry = objCopy(objWithoutKeys(entry, OTHER_KEYS), savedEntry)
-    const { blockEnd, blockStart, rateAmount, ratePeriod, tsCreated, userId } = savedEntry
-    savedEntry.blockCount = blockEnd - blockStart
-    if (savedEntry.blockCount < 0) return callback(messages.invalidBlockCount)
-    savedEntry.duration = secondsToDuration(BLOCK_DURATION_SECONDS * savedEntry.blockCount)
-    savedEntry.totalAmount = calcAmount(savedEntry.blockCount, rateAmount, ratePeriod)
-    savedEntry.tsCreated = tsCreated || new Date()
-
-    if (create) {
-        savedEntry.userId = user.id
-        savedEntry.approved = undefined
-    } else {
-        savedEntry.tsUpdated = new Date()
-        savedEntry.updatedBy = user.id
-    }
-
-    // add to/update storage
-    timeKeeping.set(hash, savedEntry)
-
-    console.log('Time keeping entry added', hash)
-    callback()
+    getProject(entry.projectHash, null, null, (_, project = {}) => {
+        const {timeKeeping} = project
+        const {bannedAddresses: addrs} = timeKeeping || {}
+        if (!create && savedEntry.userId !== user.id || (addrs && addrs.indexOf(entry.address) >= 0)) {
+            return callback(messages.permissionDenied)
+        }
+        if (!create && savedEntry.approved) return callback(messages.alreadyApproved)
+        // validate entry
+        if (!objHasKeys(entry, REQUIRED_KEYS, true)) return callback(messages.invalidKeys + JSON.stringify(entry, null, 4))
+    
+        savedEntry = objCopy(objWithoutKeys(entry, OTHER_KEYS), savedEntry)
+        const { blockEnd, blockStart, rateAmount, ratePeriod, tsCreated, userId } = savedEntry
+        savedEntry.blockCount = blockEnd - blockStart
+        if (savedEntry.blockCount < 0) return callback(messages.invalidBlockCount)
+        savedEntry.duration = secondsToDuration(BLOCK_DURATION_SECONDS * savedEntry.blockCount)
+        savedEntry.totalAmount = calcAmount(savedEntry.blockCount, rateAmount, ratePeriod)
+        savedEntry.tsCreated = tsCreated || new Date()
+    
+        if (create) {
+            savedEntry.userId = user.id
+            savedEntry.approved = undefined
+        } else {
+            savedEntry.tsUpdated = new Date()
+            savedEntry.updatedBy = user.id
+        }
+    
+        // add to/update storage
+        timeKeeping.set(hash, savedEntry)
+    
+        console.log('Time keeping entry added', hash)
+        callback()
+    })
 }
 
 export const handleTimeKeepingEntrySearch = (query, matchExact, matchAll, ignoreCase, callback) => {
@@ -91,10 +98,6 @@ export const handleTimeKeepingEntryApproval = (hash, approve = false, callback) 
     savedEntry.approved = approve
     timeKeeping.set(hash, savedEntry)
     callback()
-}
-
-export const handleTimeKeepingBan = (projectHash, userAddress, ban = false, callback) => {
-    
 }
 
 export const handleTimeKeepingDispute = (hash, callback) => {

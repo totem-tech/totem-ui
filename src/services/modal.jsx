@@ -48,11 +48,12 @@ export const confirm = (confirmProps, id) => {
           {...confirmProps}
           content={<div className="content">{content}</div>}
           open={isDefined(open) ? open : true}
-          onCancel={(e, d) => closeModal(id) | isFn(onCancel) && onCancel(e, d)}
-          onConfirm={(e, d) => closeModal(id) | isFn(onConfirm) && onConfirm(e, d)}
+          onCancel={(e, d) => closeModal(id) | (isFn(onCancel) && onCancel(e, d))}
+          onConfirm={(e, d) => closeModal(id) | (isFn(onConfirm) && onConfirm(e, d))}
         />
     )
 }
+
 // showForm opens form in a modal dialog
 //
 // Params: 

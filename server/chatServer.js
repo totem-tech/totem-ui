@@ -4,21 +4,37 @@
 import https from 'https'
 import socketIO from 'socket.io'
 import { isStr, isArr } from '../src/utils/utils'
-import { handleFaucetRequest } from './faucetRequests'
 import { handleCompany, handleCompanySearch } from './companies'
-import { handleProject, handleProjectStatus, handleProjectsByHashes, handleProjects, handleProjectsSearch } from './projects'
-import { findUserByClientId, handleDisconnect, handleIdExists, handleLogin, handleMessage, handleRegister } from './users'
+import { handleFaucetRequest } from './faucetRequests'
+import {
+    handleProject,
+    handleProjectStatus,
+    handleProjectTimeKeepingBan,
+    handleProjects,
+    handleProjectsByHashes,
+    handleProjectsSearch
+} from './projects'
 import {
     handleTimeKeepingEntry,
     handleTimeKeepingEntryApproval,
     handleTimeKeepingEntrySearch,
 } from './timeKeeping'
+import {
+    findUserByClientId,
+    handleDisconnect,
+    handleIdExists,
+    handleLogin,
+    handleMessage,
+    handleRegister
+} from './users'
+
 const PORT = 3001
 const clients = new Map()
 
 export const initChatServer = (httpsOptions, expressApp) => {
     const server = https.createServer(httpsOptions, expressApp)
     const socket = socketIO.listen(server)
+
     socket.on('connection', client => {
         // User related handlers
         client.on('disconnect', handleDisconnect(clients, client))
@@ -33,6 +49,7 @@ export const initChatServer = (httpsOptions, expressApp) => {
         // Project related handlers
         client.on('project', handleProject)
         client.on('project-status', handleProjectStatus)
+        client.on('project-time-keeping-ban', handleProjectTimeKeepingBan)
         client.on('projects', handleProjects)
         client.on('projects-by-hashes', handleProjectsByHashes)
         client.on('projects-search', handleProjectsSearch)

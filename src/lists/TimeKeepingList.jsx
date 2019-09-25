@@ -13,7 +13,7 @@ import { ReactiveComponent } from 'oo7-react'
 import { secretStore } from 'oo7-substrate'
 import { Button, Dropdown } from 'semantic-ui-react'
 import ListFactory from '../components/ListFactory'
-import { arrUnique, objCopy, randomInt, copyToClipboard, isDefined } from '../utils/utils'
+import { arrUnique, objCopy, randomInt, copyToClipboard, isDefined, mapFilter } from '../utils/utils'
 import { calcAmount, RATE_PERIODS, secondsToDuration } from '../utils/time'
 import ProjectDropdown, {getAddressName} from '../components/ProjectDropdown'
 import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'
@@ -65,6 +65,12 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                     },
                     {
                         collapsing: true,
+                        key: '_banned',
+                        textAlign: 'center',
+                        title: 'Banned',
+                    },
+                    {
+                        collapsing: true,
                         style: {padding: 0,width: 90},
                         content: this.getActionContent.bind(this),
                         textAlign: 'center',
@@ -98,6 +104,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                                     projectHash && options.find(o => o.value === projectHash).project
                                 )}
                                 noResultsMessage="Project name, hash or owner"
+                                selectOnNavigation={false}
                             />
                             <Button {...{
                                 active: false,
@@ -141,38 +148,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                             name: 'ban',
                         },
                         key: 'Ban',
-                        onClick: (selectedKeys) => {
-                            const { listProps: { data } } = this.state
-                            const addresses = arrUnique(selectedKeys.map(key => data.get(key).address))
-                                // filter out user wallets
-                                .filter(address => !secretStore().find(address))
-
-                            if(addresses.length === 0) return confirm({
-                                cancelButton: null,
-                                content: 'You cannot ban your own wallet(s)',
-                                header: 'Uh oh!',
-                                size: 'mini',
-                            })
-
-                            confirm({
-                                content: (
-                                    <div>
-                                        You are about to ban address(es) permanently from the selected project:
-                                        <pre style={{ backgroundColor: 'gray', color: 'blue', padding: 15 }}>
-                                            {addresses.join('\n')}
-                                        </pre>
-
-                                        What does this mean?
-                                        <ul>
-                                            <li>No further booking or disputes will be accepted from them</li>
-                                            <li>Only approved booking(s) will be visible to you</li>
-                                        </ul>
-                                    </div>
-                                ),
-                                header: 'Ban wallet(s)?',
-                                onConfirm: toBeImplemented
-                            })
-                        }
+                        onClick: this.handleBan.bind(this)
                     }
                 ],
                 type: 'datatable',
@@ -267,10 +243,11 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         )
     }
 
-    getEntries(projectHash, project) {
+    getEntries(projectHash = '', project = {}) {
         const { listProps} = this.state
         const address = secretStore()._keys[storage.walletIndex()].address
-        const isOwner = (project || {}).ownerAddress === address
+        const isOwner = project.ownerAddress === address
+        const bannedAddresses = (project.timeKeeping || {}).bannedAddresses || []
         // // only show personal bookings if not owner
         listProps.loading = true
         listProps.selectable = isOwner
@@ -288,12 +265,15 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         client.handleTimeKeepingEntrySearch(
             query, true, true, true,
             (err, data) => {
+                // exclude any banned address
+                data = mapFilter(data, entry => entry.approved || bannedAddresses.indexOf(entry.address) === -1)
                 listProps.loading = false
                 listProps.data = data
                 const projectHashes = []
                 Array.from(data).forEach(x => {
                     const item = x[1]
                     const { address, ratePeriod, rateAmount, rateUnit, approved, totalAmount } = item
+                    item._banned = bannedAddresses.indexOf(address) >= 0 ? 'Yes' : 'No'
                     item._nameOrAddress = getAddressName(address)
                     item._rate = rateUnit + rateAmount + '/' + ratePeriod
                     item._status = !isDefined(approved) ? '-' : (approved ? 'Approved' : 'Rejected')
@@ -327,6 +307,68 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             description: `Hash: ${hash} | Duration: ${entry.duration}`
         }
         addToQueue(queueProps)
+    }
+
+    handleBan(selectedKeys) {
+        const { listProps: { data }, project, projectHash } = this.state
+        const {timeKeeping} = project
+        const {bannedAddresses} = timeKeeping || {}
+        let addresses = arrUnique(selectedKeys.map(key => data.get(key).address))
+            // filter out user wallets
+            .filter(address => !secretStore().find(address))
+        // prevents accidental self-banning
+        if(addresses.length === 0) return confirm({
+            cancelButton: null,
+            content: 'You cannot ban your own wallet(s)',
+            header: 'Uh oh!',
+            size: 'tiny',
+        })
+
+        addresses = addresses.filter(address => (bannedAddresses || []).indexOf(address) === -1)
+        const s = addresses.length <= 1 ? '' : 's'
+        const es = s ? 'es' : ''
+        if(addresses.length === 0) return confirm({
+            cancelButton: null,
+            content: `Selected addresses are already banned`,
+            header: 'Uh oh!',
+            size: 'tiny',
+        })
+
+        const queueProps = {
+            type: QUEUE_TYPES.CHATCLIENT,
+            func: 'projectTimeKeepingBan',
+            args: [projectHash, addresses, true],
+            title: 'Project - ban user',
+            description: `Ban ${addresses.length} user${s}`,
+            // When successfull retrieve the updated project with banned addresses and update entry list
+            next: {
+                type: QUEUE_TYPES.CHATCLIENT,
+                func: 'project',
+                args: [projectHash, null, null, (err, project) => !err && this.getEntries(projectHash, project)],
+                // No toast required for this child-task
+                silent: true
+            }
+        }
+
+        confirm({
+            content: (
+                <div>
+                    You are about to ban the following address{es} permanently 
+                    from the project named "{project.name}":
+                    <pre style={{ backgroundColor: 'gray', color: 'blue', padding: 15 }}>
+                        {addresses.join('\n')}
+                    </pre>
+
+                    What does this mean?
+                    <ul>
+                        <li>No further booking or other actions will be accepted from the user{s}</li>
+                        <li>Only approved bookings will be visible to you</li>
+                    </ul>
+                </div>
+            ),
+            header: `Ban user${s}?`,
+            onConfirm: ()=> addToQueue(queueProps)
+        })
     }
 
     handleRowSelect(selectedKeys) {

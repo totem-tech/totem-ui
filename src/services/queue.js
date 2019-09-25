@@ -57,7 +57,7 @@ export const resumeQueue = () => queue.size > 0 && Array.from(queue).forEach((x,
 const _processNextTxItem = () => {
     txInProgress = false
     if (txQueue.length === 0) return;
-    const { queueItem, id, msgId } = txQueue.pop()
+    const { queueItem, id, msgId } = txQueue.shift()
     setTimeout(() => _processItem(queueItem, id, msgId))
 }
 

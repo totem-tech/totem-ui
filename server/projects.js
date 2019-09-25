@@ -1,6 +1,6 @@
 import DataStorage from '../src/utils/DataStorage'
-import { isArr, isFn, isStr, objCopy, objClean, isValidNumber } from '../src/utils/utils'
-const projects = new DataStorage('projects.json', false) // enables caching entire projects list
+import { isArr, isFn, isStr, objCopy, objClean, isValidNumber, isBool, isObj } from '../src/utils/utils'
+const projects = new DataStorage('projects.json', true)
 // Must-have properties
 const requiredKeys = ['name', 'ownerAddress', 'description']
 // All the acceptable properties
@@ -9,12 +9,13 @@ const descMaxLen = 160
 const messages = {
     arrayRequired: 'Array required',
     exists: 'Project already exists. Please use a different owner address, name and/or description to create a new project',
-    invalidKeys: `Project must contain all of the following properties: ${requiredKeys.join()} and an unique hash`,
     invalidDescMaxLen: `Project description must not exceed ${descMaxLen} characters`,
+    invalidParams: 'Invalid parameters supplied',
+    projectInvalidKeys: `Project must contain all of the following properties: ${requiredKeys.join()} and an unique hash`,
     projectNotFound: 'Project not found',
 }
 
-// Create/update project
+// Create/get/update project
 export const handleProject = (hash, project, create, callback) => {
     if (!isFn(callback)) return;
     const existingProject = projects.get(hash)
@@ -22,9 +23,12 @@ export const handleProject = (hash, project, create, callback) => {
         return callback(messages.exists)
     }
 
+    // return existing project
+    if (!isObj(project)) return callback(null, existingProject)
+
     // check if project contains all the required properties
     const invalid = !hash || !project || requiredKeys.reduce((invalid, key) => invalid || !project[key], false)
-    if (invalid) return callback(messages.invalidKeys)
+    if (invalid) return callback(messages.projectInvalidKeys)
     if (project.description.length > descMaxLen) return callback(messages.invalidDescMaxLen)
     // exclude any unwanted data 
     project = objCopy(objClean(project, validKeys), existingProject, true)
@@ -108,4 +112,43 @@ export const handleProjectsSearch = (keyword, callback) => {
         description: keyword,
         ownerAddress: keyword
     }, false, false, true))
+}
+
+// projectTimeKeepingBan bans or un-bans a userId or address from any time keeping activities
+//
+// Params:
+// @hash        string  : project hash
+// @addresses   array   : User ID to ban
+// @ban         boolean : whether to ban or unban user/address
+export const handleProjectTimeKeepingBan = (hash, addresses = [], ban = false, callback) => {
+    if (!isFn(callback)) return
+    if (!hash || !isArr(addresses) || addresses.length === 0 || !isBool(ban)) return callback(messages.invalidParams)
+    const project = projects.get(hash)
+    if (!project) return callback(messages.projectNotFound)
+
+    project.timeKeeping = project.timeKeeping || {}
+    let {bannedAddresses: existingAddresses} = project.timeKeeping
+    existingAddresses = existingAddresses || []
+    
+    const changed = addresses.reduce((changed, address) => {
+        if (!isStr(address)) return changed
+        const index = existingAddresses.indexOf(address)
+        const found = index >= 0
+        if (ban === true && !found) {
+            existingAddresses.push(address)
+            console.log('added', address)
+            return true
+        } else if (ban === false && found) {
+            existingAddresses.splice(index, 1)
+            return true
+        }
+        return changed
+    }, false)
+
+    if (changed) {
+        project.timeKeeping.bannedAddresses = existingAddresses
+        projects.set(hash, project)
+    }
+    callback(null, changed)
+    console.log('handleProjectTimeKeepingBan', changed, addresses, ban)
 }
