@@ -222,6 +222,8 @@ export class DataTable extends ReactiveComponent {
         topLeftMenu = (topLeftMenu || []).filter(x => !x.hidden)
         topRightMenu = (topRightMenu || []).filter(x => !x.hidden)
 
+        if (topLeftMenu.length + topRightMenu.length + totalRows === 0) return
+
         const searchCol = searchable && (
             <Grid.Column key="0" tablet={16} computer={5} style={{ padding: 0 }}>
                 <Input
@@ -366,7 +368,7 @@ export class DataTable extends ReactiveComponent {
     }
 
     render() {
-        let { data, columns: columnsOriginal, emptyMessage, footerContent, perPage, searchExtraKeys } = this.props
+        let { data, columns: columnsOriginal, emptyMessage, footerContent, loading, perPage, searchExtraKeys } = this.props
         let { keywords, selectedIndexes, sortAsc, sortBy } = this.state
         keywords = keywords.trim()
         data = data || []
@@ -383,18 +385,18 @@ export class DataTable extends ReactiveComponent {
             false
         )
         selectedIndexes = selectedIndexes.filter(index => !!(isArr(data) ? data[index] : data.get(index)))
-        const totalRows = filteredData.length || filteredData.size
+        const totalRows = filteredData.length || filteredData.size || 0
         const totalPages = Math.ceil(totalRows / perPage)
         const headers = this.getHeaders(totalRows, columns, selectedIndexes)
         const rows = this.getRows(filteredData, columns, selectedIndexes)
 
         return (
-            <div>
+            <div className="data-table">
                 <IfMobile
                     then={this.getTopContent(true, totalRows, selectedIndexes)}
                     else={this.getTopContent(false, totalRows, selectedIndexes)}
                 />
-                {totalRows === 0 ? newMessage(emptyMessage) : (
+                {totalRows === 0 ? ( loading ? '' : newMessage(emptyMessage)) : (
                     <div style={{ overflowX: 'auto' }}>
                         <Table celled selectable sortable unstackable singleLine>
                             <Table.Header>
@@ -442,6 +444,7 @@ DataTable.propTypes = {
     defaultSort: PropTypes.string,
     emptyMessage: PropTypes.object,
     footerContent: PropTypes.any,
+    loading: PropTypes.bool,
     perPage: PropTypes.number,
     searchable: PropTypes.bool,
     searchExtraKeys: PropTypes.array,
