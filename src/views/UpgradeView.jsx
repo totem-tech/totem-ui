@@ -12,13 +12,13 @@ class UpgradeView extends ReactiveComponent {
 			m.modules && m.modules.some(o => o.name === 'sudo')
 			|| m.modules.some(o => o.name === 'upgrade_key')
 		)
-		this.runtime = new Bond
+		this.newRuntime = new Bond
 	}
 
 	render() {
 		const contents = (
 			<div>
-				<FileUploadBond bond={runtime} content="Select Runtime" />
+				<FileUploadBond bond={this.runtime} content="Select Runtime" />
 				<TransactButton
 					content="Upgrade"
 					icon="warning"

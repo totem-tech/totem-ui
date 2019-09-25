@@ -40,12 +40,12 @@ const subItems = [
         header: 'Network status',
         subHeader: 'Technical information about the Totem Network'
     },
-    // {
-    //     content: <UpgradeView />,
-    //     icon: 'wrench',
-    //     header: 'Upgrade',
-    //     subHeader: 'Upgrade the runtime using the UpgradeKey module'
-    // },
+    {
+        content: <UpgradeView />,
+        icon: 'wrench',
+        header: 'Upgrade',
+        subHeader: 'Upgrade the runtime using the UpgradeKey module'
+    },
     // {
     //     content: <TransactionsView />,
     //     icon: 'certificate',
