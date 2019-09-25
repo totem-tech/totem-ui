@@ -40,10 +40,15 @@ export default class TimeKeepingSummary extends ReactiveComponent {
                 }
             ]
         }
+        setTimeout(()=>this.getSummary())
     }
     
     componentWillMount() {
-        this.getSummary()
+        this.tieId = storage.walletIndexBond.tie(() => this.getSummary())
+    }
+
+    componentWillUnmount() {
+        storage.walletIndexBond.untie(this.tieId)
     }
 
     getSummary() {

@@ -24,9 +24,7 @@ class TimeKeepingView extends ReactiveComponent {
                     toggle
                     type="checkbox"
                 />
-                <div style={showSummary ? {} : {marginTop: 15}}>
-                    {showSummary ? <TimeKeepingSummary /> : <ProjectTimeKeepingList />}
-                </div>
+                {showSummary ? <TimeKeepingSummary /> : <ProjectTimeKeepingList />}
             </div>
         )
     }
