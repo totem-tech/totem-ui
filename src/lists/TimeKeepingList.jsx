@@ -36,7 +36,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 columns: [
                     {
                         key: '_projectName',
-                        title: 'Project'
+                        title: 'Project',
                     },
                     {
                         key: '_nameOrAddress',
@@ -63,12 +63,12 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                         textAlign: 'center',
                         title: 'Status',
                     },
-                    {
-                        collapsing: true,
-                        key: '_banned',
-                        textAlign: 'center',
-                        title: 'Banned',
-                    },
+                    // {
+                    //     collapsing: true,
+                    //     key: '_banned',
+                    //     textAlign: 'center',
+                    //     title: 'Banned',
+                    // },
                     {
                         collapsing: true,
                         style: {padding: 0,width: 90},
@@ -84,6 +84,16 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 },
                 loading: false,
                 perPage: 10,
+                rowProps: (item) => {
+                    const { project } = this.state
+                    const bannedAddresses = ((project || {}).timeKeeping || {}).bannedAddresses || []
+                    const {address, approved} = item
+                    const isBanned = bannedAddresses.indexOf(address) >= 0
+                    if (isBanned) return {error: true, title: 'User banned'}
+                    return approved === false ? {warning: true, title: 'Rejected'} : (
+                        approved === true ? {positive: true, title: 'Approved'} : {}
+                    )
+                },
                 searchExtraKeys: [
                     'address',
                     'hash',
@@ -179,10 +189,12 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         const {address: selectedAddress} = secretStore()._keys[storage.walletIndex()] || {}
         const isUser = selectedAddress === entry.address
         const btnProps = isOwner && !isUser ? {
+            disabled: entry.approved === true,
             icon: 'bug',
             onClick: toBeImplemented,
             title: 'Dispute',
         } : {
+            disabled: entry.approved === true,
             icon: 'pencil',
             onClick: ()=> showForm(
                 TimeKeepingUpdateForm,
@@ -210,7 +222,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             },
             {
                 content: 'Approve',
-                hidden: entry.approved,
+                hidden: !isOwner || entry.approved === true,
                 icon: {
                     color: 'green',
                     name: 'check',
@@ -220,7 +232,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             },
             {
                 content: 'Reject',
-                hidden: entry.approved || entry.approved === false,
+                hidden: !isOwner || entry.approved === true || entry.approved === false,
                 icon: {
                     color: 'red',
                     name: 'x',

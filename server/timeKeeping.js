@@ -93,14 +93,18 @@ export const handleTimeKeepingEntrySearch = (query, matchExact, matchAll, ignore
 }
 
 // approve/disapprove a time keeping entry
-export const handleTimeKeepingEntryApproval = (hash, approve = false, callback) => {
+export const handleTimeKeepingEntryApproval = (client, findUserByClientId) => (hash, approve = false, callback) => {
     if (!isFn(callback)) return
-    const savedEntry = timeKeeping.get(hash)
-    if (!savedEntry) return callback(messages.notFound)
-    if (savedEntry.approved) return callback(messages.alreadyApproved)
-    savedEntry.approved = approve
-    timeKeeping.set(hash, savedEntry)
-    callback()
+    const entry = timeKeeping.get(hash)
+    if (!entry) return callback(messages.notFound)
+    const user = findUserByClientId(client.id)
+    getProject(entry.projectHash, null, null, (_, project = {}) => {
+        if (!user || user.id !== project.userId) return callback(messages.permissionDenied)
+        if (entry.approved) return callback(messages.alreadyApproved)
+        entry.approved = approve
+        timeKeeping.set(hash, entry)
+        callback()
+    })
 }
 
 export const handleTimeKeepingDispute = (hash, callback) => {

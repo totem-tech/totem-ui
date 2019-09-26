@@ -279,11 +279,11 @@ export class DataTable extends ReactiveComponent {
     }
 
     getRows(filteredData, columns, selectedIndexes) {
-        let { perPage, selectable } = this.props
+        let { perPage, rowProps, selectable } = this.props
         const { pageNo } = this.state
 
         return mapItemsByPage(filteredData, pageNo, perPage, (item, key, items, isMap) => (
-            <Table.Row key={key}>
+            <Table.Row key={key} {...(isFn(rowProps) ? rowProps(item, key, items, isMap) : rowProps || {})}>
                 {selectable && ( /* include checkbox to select items */
                     <Table.Cell onClick={() => this.handleRowSelect(key, selectedIndexes)} style={styles.checkboxCell}>
                         <Icon
@@ -295,7 +295,7 @@ export class DataTable extends ReactiveComponent {
                 )}
                 {columns.map((cell, j) => (
                     <Table.Cell
-                        {...objWithoutKeys(cell, ['content', 'style'])}
+                        {...objWithoutKeys(cell, ['title'])}
                         key={j}
                         content={undefined}
                         textAlign={cell.textAlign || 'left'}
@@ -447,6 +447,10 @@ DataTable.propTypes = {
     footerContent: PropTypes.any,
     loading: PropTypes.bool,
     perPage: PropTypes.number,
+    rowProps: PropTypes.oneOf([
+        PropTypes.func,
+        PropTypes.object
+    ]),
     searchable: PropTypes.bool,
     searchExtraKeys: PropTypes.array,
     selectable: PropTypes.bool,

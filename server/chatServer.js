@@ -60,7 +60,7 @@ export const initChatServer = (httpsOptions, expressApp) => {
 
         // Time keeping handlers
         client.on('time-keeping-entry', handleTimeKeepingEntry(client, findUserByClientId))
-        client.on('time-keeping-entry-approval', handleTimeKeepingEntryApproval)
+        client.on('time-keeping-entry-approval', handleTimeKeepingEntryApproval(client, findUserByClientId))
         client.on('time-keeping-entry-search', handleTimeKeepingEntrySearch)
     })
 
