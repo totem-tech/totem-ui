@@ -447,7 +447,7 @@ DataTable.propTypes = {
     footerContent: PropTypes.any,
     loading: PropTypes.bool,
     perPage: PropTypes.number,
-    rowProps: PropTypes.oneOf([
+    rowProps: PropTypes.oneOfType([
         PropTypes.func,
         PropTypes.object
     ]),

@@ -43,7 +43,7 @@ export const handleTimeKeepingEntry = (client, findUserByClientId) => (hash, ent
     const user = findUserByClientId(client.id)
     if (!user) return callback(messages.loginRequired)
 
-    getProject(entry.projectHash, null, null, (_, project = {}) => {
+    getProject(client, findUserByClientId)(entry.projectHash, null, null, (_, project = {}) => {
         const addrs = (project.timeKeeping || {}).bannedAddresses || []
         if (!create && savedEntry.userId !== user.id || (addrs && addrs.indexOf(entry.address) >= 0)) {
             return callback(messages.permissionDenied)
@@ -98,7 +98,7 @@ export const handleTimeKeepingEntryApproval = (client, findUserByClientId) => (h
     const entry = timeKeeping.get(hash)
     if (!entry) return callback(messages.notFound)
     const user = findUserByClientId(client.id)
-    getProject(entry.projectHash, null, null, (_, project = {}) => {
+    getProject(client, findUserByClientId)(entry.projectHash, null, null, (_, project = {}) => {
         if (!user || user.id !== project.userId) return callback(messages.permissionDenied)
         if (entry.approved) return callback(messages.alreadyApproved)
         entry.approved = approve

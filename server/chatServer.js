@@ -47,7 +47,7 @@ export const initChatServer = (httpsOptions, expressApp) => {
         client.on('faucet-request', handleFaucetRequest(client, findUserByClientId))
 
         // Project related handlers
-        client.on('project', handleProject)
+        client.on('project', handleProject(client, findUserByClientId))
         client.on('project-status', handleProjectStatus)
         client.on('project-time-keeping-ban', handleProjectTimeKeepingBan)
         client.on('projects', handleProjects)

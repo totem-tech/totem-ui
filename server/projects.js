@@ -8,6 +8,7 @@ const validKeys = [...requiredKeys, 'status']
 // Internally managed keys : ['tsCreated', 'tsFirstUsed']
 const descMaxLen = 160
 const messages = {
+    accessDenied: 'Access denied',
     arrayRequired: 'Array required',
     exists: 'Project already exists. Please use a different owner address, name and/or description to create a new project',
     invalidDescMaxLen: `Project description must not exceed ${descMaxLen} characters`,
@@ -17,7 +18,7 @@ const messages = {
 }
 
 // Create/get/update project
-export const handleProject = (hash, project, create, callback) => {
+export const handleProject = (client, findUserByClientId) => (hash, project, create, callback) => {
     if (!isFn(callback)) return;
     const existingProject = projects.get(hash)
     if (create && !!existingProject) {
@@ -27,6 +28,9 @@ export const handleProject = (hash, project, create, callback) => {
     // return existing project
     if (!isObj(project)) return callback(null, existingProject)
 
+    const user = findUserByClientId(client.id)
+    if (!user) return callback(messages.accessDenied)
+
     // check if project contains all the required properties
     const invalid = !hash || !project || requiredKeys.reduce((invalid, key) => invalid || !project[key], false)
     if (invalid) return callback(messages.projectInvalidKeys)
@@ -35,6 +39,7 @@ export const handleProject = (hash, project, create, callback) => {
     project = objCopy(objClean(project, validKeys), existingProject, true)
     project.status = isValidNumber(project.status) ? project.status : 0
     project.tsCreated = project.createdAt || new Date()
+    project.userId = create ? user.id : project.userId
 
     // Add/update project
     projects.set(hash, project)

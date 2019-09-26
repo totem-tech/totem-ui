@@ -189,12 +189,12 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         const {address: selectedAddress} = secretStore()._keys[storage.walletIndex()] || {}
         const isUser = selectedAddress === entry.address
         const btnProps = isOwner && !isUser ? {
-            disabled: entry.approved === true,
+            disabled: !isOwner || entry.approved === true,
             icon: 'bug',
             onClick: toBeImplemented,
             title: 'Dispute',
         } : {
-            disabled: entry.approved === true,
+            disabled: entry.address !== selectedAddress || entry.approved === true,
             icon: 'pencil',
             onClick: ()=> showForm(
                 TimeKeepingUpdateForm,
