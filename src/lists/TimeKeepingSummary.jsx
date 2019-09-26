@@ -61,7 +61,8 @@ export default class TimeKeepingSummary extends ReactiveComponent {
                 return hashes
             }, {}))
             const data = projectHashes.map(hash => {
-                const totalBlocks = entriesArr.reduce((totalBlocks, [_, entry]) => totalBlocks + entry.blockCount, 0)
+                const totalBlocks = entriesArr.filter(([_, x]) => x.projectHash === hash)
+                    .reduce((totalBlocks, [_, entry]) => totalBlocks + entry.blockCount, 0)
                 return {
                     hash,
                     name: '',
@@ -74,7 +75,7 @@ export default class TimeKeepingSummary extends ReactiveComponent {
             setTimeout(()=> this.getProjectNames())
         })
     }
-
+    
     getProjectNames() {
         const {data} = this.state
         data.forEach(row => {

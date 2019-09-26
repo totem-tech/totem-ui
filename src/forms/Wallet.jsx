@@ -138,3 +138,31 @@ Wallet.defaultProps = {
     submitText: 'Create'
 }
 export default Wallet
+
+
+export class WalletUpdate extends ReactiveComponent {
+    constructor(props) {
+        super(props)
+
+        this.state = {
+            inputs: [
+                {
+                    label: 'Name',
+                    name: 'name',
+                    placeholder: 'Enter new name',
+                    required: true,
+                    type: 'text',
+                    value: wallet.name
+                }
+            ]
+        }
+    }
+
+    render() {
+
+    }
+}
+
+WalletUpdate.propTypes = {
+    index: PropTypes.number.isRequired
+}

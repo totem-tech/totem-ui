@@ -9,7 +9,7 @@ class TimeKeepingView extends ReactiveComponent {
     constructor(props) {
         super(props)
 
-        this.state = {showSummary: true}
+        this.state = {showSummary: false}
     }
 
     render() {

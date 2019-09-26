@@ -1,5 +1,5 @@
 import DataStorage from '../src/utils/DataStorage'
-import { isArr, isFn, isStr, objCopy, objClean, isValidNumber, isBool, isObj } from '../src/utils/utils'
+import { isArr, isFn, isStr, objCopy, objClean, isValidNumber, isBool, isObj, isDefined } from '../src/utils/utils'
 const projects = new DataStorage('projects.json', true)
 // Must-have properties
 const requiredKeys = ['name', 'ownerAddress', 'description']
@@ -13,6 +13,7 @@ const messages = {
     exists: 'Project already exists. Please use a different owner address, name and/or description to create a new project',
     invalidDescMaxLen: `Project description must not exceed ${descMaxLen} characters`,
     invalidParams: 'Invalid parameters supplied',
+    loginRequired: 'You must be logged in to perform this action',
     projectInvalidKeys: `Project must contain all of the following properties: ${requiredKeys.join()} and an unique hash`,
     projectNotFound: 'Project not found',
 }
@@ -29,7 +30,9 @@ export const handleProject = (client, findUserByClientId) => (hash, project, cre
     if (!isObj(project)) return callback(null, existingProject)
 
     const user = findUserByClientId(client.id)
-    if (!user) return callback(messages.accessDenied)
+    if (!user) return callback(messages.loginRequired)
+    const {userId} = existingProject
+    if (!create && isDefined(userId) && user.id !== userId) return (messages.accessDenied)
 
     // check if project contains all the required properties
     const invalid = !hash || !project || requiredKeys.reduce((invalid, key) => invalid || !project[key], false)

@@ -177,7 +177,6 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         ])
 
         this.tieId = this.updateBond.notify(() => this.getEntries(this.state.projectHash, this.state.project))
-
     }
 
     componentWillUnmount() {
@@ -204,12 +203,12 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         }
 
         const options = [
-            {
-                icon: 'copy outline',
-                key: 0,
-                text: 'Copy Address',
-                onClick: () => copyToClipboard(entry.address)
-            },
+            // {
+            //     icon: 'copy outline',
+            //     key: 0,
+            //     text: 'Copy Address',
+            //     onClick: () => copyToClipboard(entry.address)
+            // },
             {
                 content: 'Add Partner',
                 hidden: !!addressbook.getByAddress(entry.address) || !!secretStore().find(entry.address),
@@ -240,17 +239,19 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 key: 3,
                 onClick: ()=> this.handleApprove(hash, false),
             }
-        ]
+        ].filter(x => !x.hidden)
 
         return (
             <Button.Group>
                 <Button {...btnProps} style={{marginLeft: -10}} />
-                <Dropdown
-                    className='button icon'
-                    floating
-                    options={options.filter(x => !x.hidden)}
-                    trigger={<React.Fragment />}
-                />
+                {options.length > 0 && (
+                    <Dropdown
+                        className='button icon'
+                        floating
+                        options={options}
+                        trigger={<React.Fragment />}
+                    />
+                )}
             </Button.Group>
         )
     }

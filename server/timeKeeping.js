@@ -26,12 +26,12 @@ const OTHER_KEYS = arrReadOnly([
 ])
 
 const messages = {
+    accessDenied: 'Access denied',
     alreadyApproved: 'Cannot update an already approved time keeping entry',
     invalidBlockCount: 'Block count must be a valid positive number',
     invalidKeys: `Time keeping entry must contain all of the following properties: ${REQUIRED_KEYS.join(', ')} and an unique hash`,
     loginRequired: 'Must be logged in to book/update an entry',
     notFound: 'Time keeping entry not found',
-    permissionDenied: 'Permission denied'
 }
 
 // add, get or update a time keeping entry
@@ -45,12 +45,11 @@ export const handleTimeKeepingEntry = (client, findUserByClientId) => (hash, ent
 
     getProject(client, findUserByClientId)(entry.projectHash, null, null, (_, project = {}) => {
         const addrs = (project.timeKeeping || {}).bannedAddresses || []
-        if (!create && savedEntry.userId !== user.id || (addrs && addrs.indexOf(entry.address) >= 0)) {
-            return callback(messages.permissionDenied)
-        }
+        const isBanned = addrs && addrs.indexOf(entry.address) >= 0
+        if (!create && (savedEntry.userId !== user.id || isBanned)) return callback(messages.accessDenied)
         if (!create && savedEntry.approved) return callback(messages.alreadyApproved)
         // validate entry
-        if (!objHasKeys(entry, REQUIRED_KEYS, true)) return callback(messages.invalidKeys + JSON.stringify(entry, null, 4))
+        if (!objHasKeys(entry, REQUIRED_KEYS, true)) return callback(messages.invalidKeys)
     
         savedEntry = objCopy(objWithoutKeys(entry, OTHER_KEYS), savedEntry)
         const { blockEnd, blockStart, rateAmount, ratePeriod, tsCreated, userId } = savedEntry
@@ -99,7 +98,7 @@ export const handleTimeKeepingEntryApproval = (client, findUserByClientId) => (h
     if (!entry) return callback(messages.notFound)
     const user = findUserByClientId(client.id)
     getProject(client, findUserByClientId)(entry.projectHash, null, null, (_, project = {}) => {
-        if (!user || user.id !== project.userId) return callback(messages.permissionDenied)
+        if (!user || user.id !== project.userId) return callback(messages.accessDenied)
         if (entry.approved) return callback(messages.alreadyApproved)
         entry.approved = approve
         timeKeeping.set(hash, entry)
