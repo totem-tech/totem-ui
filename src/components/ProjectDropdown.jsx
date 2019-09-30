@@ -29,7 +29,7 @@ export const projectDropdown = {
         if (!searchQuery) return options
         const search = key => {
             const matches = options.map((option, i) => {
-                let x = option[key].toLowerCase().match(searchQuery)
+                let x = (option[key] || '').toLowerCase().match(searchQuery)
                 if (!x || projectHashes[options[i].value]) return
                 projectHashes[options[i].value] = 1
                 return { index: i, matchIndex: x.index }

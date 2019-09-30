@@ -1,6 +1,6 @@
 import DataStorage from '../src/utils/DataStorage'
 import { arrReadOnly, isObj, isFn, objHasKeys, objCopy, objClean, objWithoutKeys } from '../src/utils/utils'
-import { RATE_PERIODS, calcAmount, secondsToDuration, BLOCK_DURATION_SECONDS } from '../src/utils/time'
+import { secondsToDuration, BLOCK_DURATION_SECONDS } from '../src/utils/time'
 import { handleProject as getProject, handleProjectFirstUsedTS as setFirstUsed } from './projects'
 const timeKeeping = new DataStorage('time-keeping.json', true)
 
@@ -9,9 +9,6 @@ const REQUIRED_KEYS = arrReadOnly([
     'blockEnd',
     'blockStart',
     'projectHash',
-    'rateAmount',
-    'rateUnit',
-    'ratePeriod',
 ])
 
 // only update from the server
@@ -52,11 +49,10 @@ export const handleTimeKeepingEntry = (client, findUserByClientId) => (hash, ent
         if (!objHasKeys(entry, REQUIRED_KEYS, true)) return callback(messages.invalidKeys)
     
         savedEntry = objCopy(objWithoutKeys(entry, OTHER_KEYS), savedEntry)
-        const { blockEnd, blockStart, rateAmount, ratePeriod, tsCreated, userId } = savedEntry
+        const { blockEnd, blockStart, tsCreated } = savedEntry
         savedEntry.blockCount = blockEnd - blockStart
         if (savedEntry.blockCount < 0) return callback(messages.invalidBlockCount)
         savedEntry.duration = secondsToDuration(BLOCK_DURATION_SECONDS * savedEntry.blockCount)
-        savedEntry.totalAmount = calcAmount(savedEntry.blockCount, rateAmount, ratePeriod)
         savedEntry.tsCreated = tsCreated || new Date()
     
         if (create) {

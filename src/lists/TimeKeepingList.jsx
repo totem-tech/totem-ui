@@ -13,8 +13,7 @@ import { ReactiveComponent } from 'oo7-react'
 import { secretStore } from 'oo7-substrate'
 import { Button, Dropdown } from 'semantic-ui-react'
 import ListFactory from '../components/ListFactory'
-import { arrUnique, objCopy, randomInt, copyToClipboard, isDefined, mapFilter } from '../utils/utils'
-import { calcAmount, RATE_PERIODS, secondsToDuration } from '../utils/time'
+import { arrUnique, isDefined, mapFilter } from '../utils/utils'
 import ProjectDropdown, {getAddressName} from '../components/ProjectDropdown'
 import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'
 import PartnerForm from '../forms/Partner'
@@ -30,8 +29,11 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     constructor(props) {
         super(props)
 
+        const project = props.project || {}
+        const projectHash = props.projectHash || ''
         this.state = {
-            projectHash: '',
+            project,
+            projectHash,
             listProps: {
                 columns: [
                     {
@@ -48,27 +50,11 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                         title: 'Duration'
                     },
                     {
-                        key: '_rate',
-                        textAlign: 'center',
-                        title: 'Rate',
-                    },
-                    {
-                        key: '_total',
-                        textAlign: 'right',
-                        title: 'Total Amount'
-                    },
-                    {
                         collapsing: true,
                         key: '_status',
                         textAlign: 'center',
                         title: 'Status',
                     },
-                    // {
-                    //     collapsing: true,
-                    //     key: '_banned',
-                    //     textAlign: 'center',
-                    //     title: 'Banned',
-                    // },
                     {
                         collapsing: true,
                         style: {padding: 0,width: 90},
@@ -103,18 +89,25 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                     (
                         <Button.Group key="0">
                             <ProjectDropdown
-                                style={{ border: '1px solid lightgrey', width: 196 }}
-                                button
                                 basic
+                                button
+                                defaultValue={projectHash}
                                 label=""
-                                placeholder="Select a project"
                                 key="0"
+                                noResultsMessage="Project name, hash or owner"
                                 onChange={(_, { options, value: projectHash }) => this.getEntries(
                                     projectHash,
                                     projectHash && options.find(o => o.value === projectHash).project
                                 )}
-                                noResultsMessage="Project name, hash or owner"
+                                options={!projectHash ? [] : [{
+                                    description: getAddressName(project.ownerAddress),
+                                    text: project.name,
+                                    value: projectHash,
+                                    project,
+                                }]}
+                                placeholder="Select a project"
                                 selectOnNavigation={false}
+                                style={{ border: '1px solid lightgrey', width: 196 }}
                             />
                             <Button {...{
                                 active: false,
@@ -171,7 +164,6 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     componentWillMount() {
         this.updateBond = Bond.all([
             storage.walletIndexBond,
-            storage.timeKeepingBond,
             secretStore(),
             addressbook.getBond(),
         ])
@@ -203,21 +195,12 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         }
 
         const options = [
-            // {
-            //     icon: 'copy outline',
-            //     key: 0,
-            //     text: 'Copy Address',
-            //     onClick: () => copyToClipboard(entry.address)
-            // },
             {
                 content: 'Add Partner',
                 hidden: !!addressbook.getByAddress(entry.address) || !!secretStore().find(entry.address),
                 icon: 'user plus',
                 key: 1,
-                onClick: ()=> showForm(
-                    PartnerForm,
-                    {values: {address: entry.address}}
-                ),
+                onClick: ()=> showForm( PartnerForm, {values: {address: entry.address}} ),
             },
             {
                 content: 'Approve',
@@ -285,12 +268,10 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 const projectHashes = []
                 Array.from(data).forEach(x => {
                     const item = x[1]
-                    const { address, ratePeriod, rateAmount, rateUnit, approved, totalAmount } = item
+                    const { address, approved, totalAmount } = item
                     item._banned = bannedAddresses.indexOf(address) >= 0 ? 'Yes' : 'No'
                     item._nameOrAddress = getAddressName(address)
-                    item._rate = rateUnit + rateAmount + '/' + ratePeriod
                     item._status = !isDefined(approved) ? '-' : (approved ? 'Approved' : 'Rejected')
-                    item._total = rateUnit + totalAmount.toFixed(2)
                     if (projectHashes.indexOf(item.projectHash) === -1) projectHashes.push(item.projectHash)
                     return x
                 })
@@ -404,46 +385,13 @@ ProjectTimeKeepingList.propTypes = {
         hash: PropTypes.string,
         name: PropTypes.name,
         ownerAddress: PropTypes.string
-    })//.isRequired
+    })
 }
 
-// for test only
 ProjectTimeKeepingList.defaultProps = {
+    projectHash: '0xbe6956a152791b89fba8cacad7fc28f274a77253cb733dc38afc9e2641bb54b3',
     project: {
-        hash: '0x5652e822f39f2ac58517017aaf8ec000e3bce24bd0e0f08d916df67c76641df8',
-        name: 'Alice\'s Project 01',
-        ownerAddress: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
+        ownerAddress: '5Fk6Ek9BuoyqPrDA54P54PpXdGmWFpMRSd8Ghsz7FsF8XHcH',
+        name: 'Time Keeping 0003'
     }
 }
-
-const sampleOwners = [
-    '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-    '5Fk6Ek9BuoyqPrDA54P54PpXdGmWFpMRSd8Ghsz7FsF8XHcH',
-    '5EqAJNwzZ7VozoBHYPxN7aKKR21qZQfsDSnatQtc2miiEwuG',
-    '5HCAZvwcvF9ZokEDHEJYUcTaMiBi44yuaBDRixWpY9tNMmnm'
-]
-
-// generate sample time bookings for test only
-const sampleBookingsByProject = new Array(10).fill({}).map((x, i) => {
-    const blockStart = randomInt(1, 320000)
-    const blockEnd = blockStart + randomInt(100, 100000)
-    const blockCount = blockEnd - blockStart
-    const ratePeriod = RATE_PERIODS[i % RATE_PERIODS.length]
-    const rateAmount = randomInt(1, 10)
-    return {
-        hash: '0x' + (i + '').padStart(10, '0'), // tx hash?
-        address: sampleOwners[i % sampleOwners.length],
-        approved: false,
-        blockStart: blockStart,
-        blockEnd: blockEnd,
-        blockCount,
-        duration: secondsToDuration(blockCount * 5),
-        projectHash: '0x67199a17ff2a829703b308bb507ad6c66359587851f0634d2868de43ea3d63a8',
-        rateAmount,
-        rateUnit: '$', // network currency only or any currency including fiat and crypto?
-        ratePeriod: ratePeriod, // block (default), hour or day,
-        totalAmount: calcAmount(blockCount, rateAmount, ratePeriod), // total chargeable/payable amount
-        tsCreated: new Date(),
-        tsUpdated: new Date()
-    }
-})

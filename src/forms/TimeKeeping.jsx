@@ -5,12 +5,11 @@ import { ReactiveComponent } from 'oo7-react'
 import { chain, secretStore } from 'oo7-substrate'
 import { Button, Divider, Icon } from 'semantic-ui-react'
 import uuid from 'uuid'
-import { arrReadOnly, deferred, generateHash, isDefined, isFn, objCopy, objClean, objReadOnly, textEllipsis, isValidNumber, objWithoutKeys } from '../utils/utils'
+import { arrReadOnly, deferred, generateHash, hasValue, isDefined, isFn, objCopy, objClean, objReadOnly, textEllipsis, isValidNumber, objWithoutKeys } from '../utils/utils'
 import {
     BLOCK_DURATION_SECONDS,
     BLOCK_DURATION_REGEX,
     durationToSeconds,
-    RATE_PERIODS,
     secondsToDuration,
 } from '../utils/time'
 import FormBuilder, { fillValues } from '../components/FormBuilder'
@@ -31,54 +30,10 @@ const validKeys = arrReadOnly([
     'blockCount',
     'duration',
     'projectHash',
-    'rateAmount',
-    'rateUnit',
-    'ratePeriod',
     'totalAmount',
     'tsCreated',
     'tsUpdated',
 ], true)
-
-const RATE_FIELDS_Group = {
-    hidden: true,
-    name: 'rate-fields',
-    type: 'group',
-    widths: 'equal',
-    inputs: [
-        {
-            label: 'Rate Amount',
-            min: 0,
-            name: 'rateAmount',
-            placeholder: '123.45',
-            required: true,
-            style: { minWidth: 100 },
-            type: 'number',
-            value: 0.00
-        },
-        {
-            label: 'Rate Unit',
-            maxLength: 10,
-            name: 'rateUnit',
-            placeholder: 'BTC, US$, Euro...',
-            required: true,
-            type: 'text',
-            value: '',
-        },
-        {
-            label: 'Rate Period',
-            name: 'ratePeriod',
-            options: RATE_PERIODS.map(p => ({
-                key: p,
-                text: p + (p === 'block' ? ' - ' + BLOCK_DURATION_SECONDS + ' seconds' : ''),
-                value: p
-            })),
-            placeholder: 'Select a rate period',
-            required: true,
-            selection: true,
-            type: 'dropdown',
-        },
-    ],
-}
 
 function handleDurationChange(e, formValues, i) {
     const { inputs, values } = this.state
@@ -103,18 +58,18 @@ export default class TimeKeepingForm extends ReactiveComponent {
         this.saveValues = this.saveValues.bind(this)
 
         const values = storage.timeKeeping() || {}
-        const { duration, durationValid, inprogress, manualEntry, projectHash, ratePeriod } = values
+        const { duration, durationValid, inprogress, projectHash } = values
         values.durationValid = !isDefined(durationValid) ? true : durationValid
         values.duration = duration || DURATION_ZERO
-        // values.manualEntry = !!manualEntry
-        values.projectHash = isDefined(projectHash) && inprogress ? projectHash : props.projectHash || projectHash || ''
-        values.ratePeriod = RATE_PERIODS.indexOf(ratePeriod) >= 0 ? ratePeriod : RATE_PERIODS[0]
+        const projectHashSupplied = hasValue(props.projectHash)
+        values.projectHash = projectHashSupplied && !inprogress ? props.projectHash: projectHash
 
         this.state = {
             message: {},
             values,
             inputs: [
                 objCopy(projectDropdown, {
+                    disabled: projectHashSupplied,
                     onSearchChange: deferred(handleSearch, 300, this),
                     required: true
                 }, true),
@@ -127,7 +82,6 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     search: true,
                     selection: true,
                 },
-                RATE_FIELDS_Group,
                 {
                     autoComplete: 'off',
                     label: 'Duration',
@@ -355,8 +309,9 @@ export default class TimeKeepingForm extends ReactiveComponent {
         const done = stopped || manualEntry
         const duraIn = inputs.find(x => x.name === 'duration')
         const btnStyle = modal ? { marginLeft: 0, marginRight: 0 } : {}
-        const doneItems = ['address', 'reset', 'rate-fields']
+        const doneItems = [ 'address', 'reset' ]
         inputs.filter(x => doneItems.indexOf(x.name) >= 0).forEach(x => x.hidden = !done)
+        inputs.find(x => x.name === 'projectHash').disabled = inprogress
         // Show resume item when timer is stopped
         duraIn.action = !stopped || manualEntry ? undefined : {
             icon: 'play',
@@ -443,7 +398,6 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
                     type: 'text',
                     required: true,
                 },
-                objCopy({hidden: false}, RATE_FIELDS_Group)
             ]
         }
 
@@ -500,9 +454,6 @@ TimeKeepingUpdateForm.propTypes = {
         blockEnd: PropTypes.number.isRequired,
         blockStart: PropTypes.number.isRequired,
         projectHash: PropTypes.string.isRequired,
-        rateAmount: PropTypes.number.isRequired,
-        rateUnit: PropTypes.string.isRequired,
-        ratePeriod: PropTypes.string.isRequired,
     }).isRequired
 }
 
