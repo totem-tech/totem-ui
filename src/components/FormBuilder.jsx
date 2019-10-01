@@ -111,6 +111,7 @@ class FormBuilder extends ReactiveComponent {
         let modalOpen = isFn(onClose) ? open : sOpen
         if (success && closeOnSubmit) {
             modalOpen = false
+            isFn(onClose) && onClose({}, {})
         }
 
         let submitProps = React.isValidElement(submitText) ? objCopy(submitText.props) : {}

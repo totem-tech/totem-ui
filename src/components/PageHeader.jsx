@@ -4,13 +4,13 @@ import { ReactiveComponent } from 'oo7-react'
 import { runtimeUp, secretStore, runtime, ss58Decode } from 'oo7-substrate'
 import { Dropdown, Image, Menu } from 'semantic-ui-react'
 import { getUser, getClient, onLogin } from '../services/ChatClient'
-import { copyToClipboard, setState, setStateTimeout } from '../utils/utils'
+import { copyToClipboard } from '../utils/utils'
 import { Pretty } from '../Pretty'
-import FormBuilder from '../components/FormBuilder'
-import { showForm, closeModal } from '../services/modal'
+import { showForm } from '../services/modal'
 import storage from '../services/storage'
 import { setToast } from '../services/toast'
 import TimeKeepingForm from '../forms/TimeKeeping'
+import { WalletUpdate } from '../forms/Wallet'
 
 class PageHeader extends ReactiveComponent {
 	constructor(props) {
@@ -53,32 +53,7 @@ class PageHeader extends ReactiveComponent {
 	}
 
 	handleEdit() {
-		const { secretStore: ss } = this.state
-		const index = storage.walletIndex()
-		const wallet = ss.keys[index]
-		// Create a modal form on-the-fly!
-		const inputs = [
-			{
-				label: 'Name',
-				name: 'name',
-				placeholder: 'Enter new name',
-				required: true,
-				type: 'text',
-				value: wallet.name
-			}
-		]
-
-		const formId = showForm(FormBuilder, {
-			header: 'Update wallet name',
-			inputs,
-			onSubmit: (e, values) => {
-				wallet.name = values.name
-				secretStore()._sync()
-				closeModal(formId)
-			},
-			size: 'tiny',
-			submitText: 'Update'
-		})
+		showForm(WalletUpdate, {index: storage.walletIndex()})
 	}
 
 	handleFaucetRequest() {
@@ -216,7 +191,7 @@ class MobileHeader extends ReactiveComponent {
 								size: 'large',
 								className: 'no-margin'
 							}}
-							onClick={() => setState(instance, 'showTools', !showTools)}
+							onClick={() => this.setState({showTools: !showTools})}
 						>
 							<Dropdown.Menu className="left">
 								<Dropdown.Item

@@ -1,17 +1,23 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import { Step } from 'semantic-ui-react'
+import { showForm } from '../services/modal'
+import { WalletUpdate } from '../forms/Wallet'
+import storage from '../services/storage'
+
 export default class GetingStarted extends ReactiveComponent {
 	constructor() {
 		super([])
-		this.state = {}
+		this.state = {
+			activeIndex: 0
+		}
 		this.handleIdentityChange = this.handleIdentityChange.bind(this)
 		this.handleChatUserCreate = this.handleChatUserCreate.bind(this)
 		this.handleFaucetRequest = this.handleFaucetRequest.bind(this)
 	}
 
 	handleIdentityChange() {
-		alert("To be implemented");
+		showForm(WalletUpdate, {index: storage.walletIndex(), onSubmit: success => success && this.setState({activeIndex: 1}) })
 	}
 
 	handleChatUserCreate() {
@@ -23,7 +29,7 @@ export default class GetingStarted extends ReactiveComponent {
 	}
 
 	render() {
-		const { active } = this.state
+		const { activeIndex } = this.state
 		return (
 			<React.Fragment>
 				<div>
@@ -38,16 +44,20 @@ export default class GetingStarted extends ReactiveComponent {
 					<div>
 						<Step.Group ordered>
 							<Step
-								completed
-								disabled
+								active={activeIndex === 0}
+								completed={activeIndex > 0}
+								disabled={activeIndex !== 0}
 								onClick={this.handleIdentityChange}>
 								<Step.Content>
 									<Step.Title>Edit Default Identity</Step.Title>
 									<Step.Description>This Identities are only known to you.<br />You can create as many as you like in <br />the Identities Module.</Step.Description>
 								</Step.Content>
 							</Step>
+
 							<Step
-								active
+								active={activeIndex === 1}
+								completed={activeIndex > 1}
+								disabled={activeIndex !== 1}
 								onClick={this.handleChatUserCreate}>
 								<Step.Content>
 									<Step.Title>Create Chat User ID</Step.Title>
@@ -56,7 +66,9 @@ export default class GetingStarted extends ReactiveComponent {
 							</Step>
 
 							<Step
-								disabled
+								active={activeIndex === 2}
+								completed={activeIndex > 2}
+								disabled={activeIndex !== 2}
 								onClick={this.handleFaucetRequest}>
 								<Step.Content>
 									<Step.Title>Request XTX</Step.Title>

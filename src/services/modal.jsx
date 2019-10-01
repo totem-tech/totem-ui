@@ -67,17 +67,18 @@ export const showForm = (FormComponent, props, id) => {
     if (!isFn(FormComponent)) return;
     id = id || uuid.v1()
     props = props || {}
+    const { closeOnSubmit, onSubmit } = props
     props.modal = true
     return add(
         id,
         <FormComponent
             {...props}
             modal={true}
-            open={true}
             onClose={(e, d)=> {
-                closeModal(id)
+                setTimeout(()=>closeModal(id))
                 isFn(props.onClose) && props.onClose(e, d)
             }}
+            open={true}
         />
     )
 }

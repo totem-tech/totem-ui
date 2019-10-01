@@ -362,6 +362,7 @@ export function setStateTimeout(instance, key, dataBefore, dataAfter, delay) {
 }
 
 // setState changes state property value immediately
+// TODO: deprecate
 //
 // Params: 
 // @instance React component instance : state of the instance that will be changed
