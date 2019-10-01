@@ -11,6 +11,7 @@ import storage from '../services/storage'
 import { setToast } from '../services/toast'
 import TimeKeepingForm from '../forms/TimeKeeping'
 import { WalletUpdate } from '../forms/Wallet'
+import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
 class PageHeader extends ReactiveComponent {
 	constructor(props) {
@@ -69,17 +70,24 @@ class PageHeader extends ReactiveComponent {
 			return
 		}
 		this.faucetMsgId = setToast({content: 'Faucet request sent', status: 'loading'}, null, this.faucetMsgId)
-		client.faucetRequest(address, (err, txHash) => {
-			const msg = {
-				content: err || `Faucet transfer complete. Transaction hash: ${txHash}`,
-				status: !!err ? 'error' : 'success'
-			}
-			this.faucetMsgId = setToast(msg, null, this.faucetMsgId)
-		})
+		
+		addToQueue({
+			type: QUEUE_TYPES.CHATCLIENT,
+			func: 'faucetRequest',
+			args: [
+				address,
+				(err, txHash) => {
+					this.faucetMsgId = setToast({
+						content: err || `Faucet transfer complete. Transaction hash: ${txHash}`,
+						status: !!err ? 'error' : 'success'
+					}, null, this.faucetMsgId)
+				},
+			]
+		}, null, this.faucetMsgId)
 	}
 
 	render() {
-		const { id, index, secretStore, timerValues } = this.state
+		const { id, index, secretStore } = this.state
 		const { keys: wallets} = secretStore
 		const addressSelected = this.getSeletectedAddress()
 		const viewProps = {
@@ -127,7 +135,6 @@ class MobileHeader extends ReactiveComponent {
 	}
 
 	render() {
-		const instance = this
 		const { showTools } = this.state
 		const {
 			id,

@@ -20,7 +20,7 @@ export const QUEUE_TYPES = objReadOnly({
     BLOCKCHAIN: 'blockchain',
 }, false)
 
-export const addToQueue = (queueItem, id) => {
+export const addToQueue = (queueItem, id, toastId) => {
     // prevent adding the same task again
     if (queue.get(id)) return;
     id = id || uuid.v1()
@@ -45,7 +45,7 @@ export const addToQueue = (queueItem, id) => {
     queueItem = objClean(queueItem, validKeys)
     queue.set(id, queueItem)
     _save()
-    setTimeout(() => _processItem(queueItem, id))
+    setTimeout(() => _processItem(queueItem, id, toastId))
     return id
 }
 
@@ -57,11 +57,11 @@ export const resumeQueue = () => queue.size > 0 && Array.from(queue).forEach((x,
 const _processNextTxItem = () => {
     txInProgress = false
     if (txQueue.length === 0) return;
-    const { queueItem, id, msgId } = txQueue.shift()
-    setTimeout(() => _processItem(queueItem, id, msgId))
+    const { queueItem, id, toastId } = txQueue.shift()
+    setTimeout(() => _processItem(queueItem, id, toastId))
 }
 
-const _processItem = (queueItem, id, msgId) => {
+const _processItem = (queueItem, id, toastId) => {
     if (!isObj(queueItem) || queueItem.status === 'error') return queue.delete(id) | _save();
     const next = queueItem.next
     if ('success' === queueItem.status) {
@@ -70,7 +70,7 @@ const _processItem = (queueItem, id, msgId) => {
             return queue.delete(id) | _save()
         }
         // Go to next task
-        return _processItem(next, id, msgId)
+        return _processItem(next, id, toastId)
     }
 
     // Execute current task
@@ -85,7 +85,7 @@ const _processItem = (queueItem, id, msgId) => {
     switch ((queueItem.type || '').toLowerCase()) {
         case QUEUE_TYPES.BLOCKCHAIN:
             // defer tx task to avoid errors
-            if (txInProgress) return txQueue.push({ queueItem, id, msgId });
+            if (txInProgress) return txQueue.push({ queueItem, id, toastId });
             const handlePost = () => {
                 txInProgress = true
                 func = blockchain[queueItem.func]
@@ -111,14 +111,14 @@ const _processItem = (queueItem, id, msgId) => {
                     queueItem.error = failed
 
                     if (!silent) {
-                        msgId = setToast({ header, content, status }, msgDuration, msgId)
+                        toastId = setToast({ header, content, status }, msgDuration, toastId)
                     }
                     queueItem.status = status
                     _save()
                     if (!done) return;
                     _processNextTxItem()
                     bond.untie(tieId)
-                    if (finalized) next ? _processItem(next, id, msgId) : queue.delete(id) | _save();
+                    if (finalized) next ? _processItem(next, id, toastId) : queue.delete(id) | _save();
                 })
             }
             const { address } = queueItem
@@ -129,16 +129,16 @@ const _processItem = (queueItem, id, msgId) => {
                     content: `Cannot create a transaction from an address that does not belong to you! Supplied address: ${address}`,
                     header: `${title}: transaction aborted`,
                     status: 'error'
-                }, 0, msgId)
+                }, 0, toastId)
                 queue.delete(id)
                 return
             }
             if (!silent) {
-                msgId = setToast({
+                toastId = setToast({
                     header: `${title}: checking balance`,
                     content: description,
                     status: 'loading'
-                }, msgDuration, msgId)
+                }, msgDuration, toastId)
             }
 
             txInProgress = true
@@ -148,7 +148,7 @@ const _processItem = (queueItem, id, msgId) => {
                 const continueBtn = (
                     <button
                         className="ui button basic mini"
-                        onClick={() => _processItem(queueItem, id, msgId)}
+                        onClick={() => _processItem(queueItem, id, toastId)}
                     >
                         click here
                     </button>
@@ -156,14 +156,14 @@ const _processItem = (queueItem, id, msgId) => {
                 const cancelBtn = (
                     <button
                         className="ui button basic mini"
-                        onClick={() => queue.delete(id) | _save() | removeToast(msgId)}
+                        onClick={() => queue.delete(id) | _save() | removeToast(toastId)}
                     >
                         cancel request
                     </button>
                 )
 
                 if (!silent) {
-                    msgId = setToast({
+                    toastId = setToast({
                         content: (
                             <p>
                                 {description} <br />
@@ -174,7 +174,7 @@ const _processItem = (queueItem, id, msgId) => {
                         ),
                         header: `${title}: Insufficient balance`,
                         status: 'error',
-                    }, 0, msgId)
+                    }, 0, toastId)
 
                     // For debugging
                     queueItem.error = 'Insufficient balance'
@@ -197,14 +197,14 @@ const _processItem = (queueItem, id, msgId) => {
                 queueItem.error = err
 
                 if (!silent) {
-                    msgId = setToast({ header, content, status }, msgDuration, msgId)
+                    toastId = setToast({ header, content, status }, msgDuration, toastId)
                 }
                 setTimeout(() => isFn(callbackOriginal) && callbackOriginal(err, a, b, c, d, e, f, g, h))
                 queueItem.status = status
                 // save progress
                 _save()
                 if (err || !isObj(next)) return queue.delete(id)
-                return _processItem(next, id, msgId)
+                return _processItem(next, id, toastId)
             }
             args[args.length === 0 ? 0 : args.length - 1] = interceptCb
             // initiate request

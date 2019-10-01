@@ -53,10 +53,12 @@ class FormBuilder extends ReactiveComponent {
         values = this.getValues(inputs, values)
         updateBond && input.bond.changed(value)
 
-        // trigger input items's onchange callback
-        isFn(onInputChange) && onInputChange(e, values, index, childIndex)
-        // trigger form's onchange callback
-        isFn(formOnChange) && formOnChange(e, values, index, childIndex)
+        if (!data.invalid) {
+            // trigger input items's onchange callback
+            isFn(onInputChange) && onInputChange(e, values, index, childIndex)
+            // trigger form's onchange callback
+            isFn(formOnChange) && formOnChange(e, values, index, childIndex)
+        }
         this.setState({ inputs, values })
     }
 

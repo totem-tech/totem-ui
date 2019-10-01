@@ -40,11 +40,17 @@ storage.chatUser = (id, secret) => {
     return isStr(id) && isStr(secret) ? setItem(key, { id, secret }) : getItem(key)
 }
 
-// timeKeeping
-storage.timeKeeping = formValues => {
+// getting started module's current step index
+storage.gettingStartedStepIndex = index => {
+    const key = 'getting-started-step-index'
+    return isValidNumber(index) ? setItem(key, index) : getItem(key) || 0
+}
+
+// timeKeeping form values and states for use with the TimeKeeping form
+storage.timeKeeping = data => {
     const key = 'time-keeping'
-    if (!isObj(formValues)) return getItem(key) || {}
-    setItem(key, formValues)
+    if (!isObj(data)) return getItem(key) || {}
+    setItem(key, data)
     storage.timeKeepingBond.changed(uuid.v1())
 }
 storage.timeKeepingBond = new Bond()

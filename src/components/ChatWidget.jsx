@@ -18,6 +18,7 @@ import { copyToClipboard, objCopy } from '../utils/utils'
 import { getNow } from '../utils/time'
 import TotemLogoCircle from '../assets/totem-button-grey.png';
 import Register from '../forms/Register'
+import { showForm } from '../services/modal'
 
 const historyLimit = getHistoryLimit()
 const eventTypes = [
@@ -163,9 +164,13 @@ class ChatWidget extends ReactiveComponent {
 		const subtitle = (
 			<div>
 				{userId ? <h5>Logged in as {'@' + userId}</h5> : (
-					<Register
-						modal={true}
-						trigger={<Button as="a" basic inverted size="tiny" content="Register chat user id" />}
+					<Button 
+						as="a" 
+						basic 
+						inverted 
+						size="tiny" 
+						content="Register chat user id" 
+						onClick={()=> showForm(Register, {closeOnSubmit: true})} 
 					/>
 				)}
 				<p>Your chat history is not saved on the server. Up to {historyLimit} messages are saved locally.</p>

@@ -52,7 +52,7 @@ export const handleRegister = (clients, client) => (userId, secret, callback) =>
     if (!isFn(callback)) return
     if (users.get(userId)) return callback(errMsgs.idExists)
     if (!isValidId(userId)) return callback(errMsgs.idInvalid)
-    if (userId.length >= idMaxLength || userId.length < idMinLength) return callback(errMsgs.idLength)
+    if (userId.length > idMaxLength || userId.length < idMinLength) return callback(errMsgs.idLength)
 
     const newUser = {
         id: userId,
