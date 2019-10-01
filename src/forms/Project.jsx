@@ -229,7 +229,7 @@ function checkBalance(address, inputName) {
         const notEnought = balance <= minBalance
         inputs[index].invalid = notEnought
         inputs[index].message = !notEnought ? {} : {
-            content: `You must have more than ${minBalance} Blip balance 
+            content: `You must have more than ${minBalance} Transactions balance 
                     in the wallet named "${wallet.name}". 
                     This is requied to create a blockchain transaction.`,
             header: 'Insufficient balance',

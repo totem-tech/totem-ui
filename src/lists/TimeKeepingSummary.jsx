@@ -61,7 +61,7 @@ export default class TimeKeepingSummary extends ReactiveComponent {
                 return hashes
             }, {}))
             const data = projectHashes.map(hash => {
-                const totalBlocks = entriesArr.filter(([_, x]) => x.projectHash === hash)
+                const totalBlocks = entriesArr.filter(([_, entry]) => entry.projectHash === hash)
                     .reduce((totalBlocks, [_, entry]) => totalBlocks + entry.blockCount, 0)
                 return {
                     hash,
@@ -80,7 +80,7 @@ export default class TimeKeepingSummary extends ReactiveComponent {
         const {data} = this.state
         data.forEach(row => {
             client.project(row.hash, null, null, (err, { name }) => {
-                row.name = name
+                row.name = name || ''
                 this.setState({data})
             })
         })
