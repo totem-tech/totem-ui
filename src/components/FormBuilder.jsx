@@ -499,20 +499,20 @@ class CheckboxGroup extends ReactiveComponent {
         const excludeKeys = ['bond', 'inline', 'multiple', 'name', 'options', 'required', 'type', 'value', 'width']
         const commonProps = objWithoutKeys(this.props, excludeKeys)
         return (
-            <div>
+            <div style={style}>
                 {!isArr(options) ? '' : options.map((option, i) => {
+                    if (option.hidden) return ''
                     const checked = allowMultiple ? value.indexOf(option.value) >= 0 : value === option.value
+                    const optionProps = objCopy(option, commonProps, true)
                     return (
                         <Checkbox
                             key={i}
-                            {...commonProps}
+                            {...optionProps}
                             checked={checked}
-                            className={(inline ? '' : 'sixteen wide ') + option.className || ''}
-                            label={option.label}
                             name={name + (allowMultiple ? i : '')}
                             onChange={(e, d)=> this.handleChange(e, d, option)}
                             required={false}
-                            style={objCopy(style, { margin: '0 5px' })}
+                            style={objCopy(option.style, { margin: '0 5px', width: (inline ? 'auto' : '100%') })}
                             type="checkbox"
                             value={checked ? `${option.value}` : ''}
                         />

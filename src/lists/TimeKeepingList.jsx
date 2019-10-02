@@ -215,14 +215,14 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         const bannedAddresses = project && (project.timeKeeping || {}).bannedAddresses || []
         listProps.selectable = manage && isOwner
         listProps.columns.find(x => x.key === '_projectName').hidden = !!projectHash
-        const denyManage = manage && !isOwner
+        const denyManage = manage && project && !isOwner
         listProps.emptyMessage = {
             content: denyManage ? 'You do not own this project' : 'No entries found',
             status: denyManage ? 'error' : 'warning'
         }
-        listProps.data = new Map()
+        listProps.data = denyManage ? new Map() : listProps.data
         this.setState({ isOwner, listProps, projectHash, project })
-        if (manage && project && !isOwner) return
+        if (denyManage) return
 
         const query = {}
         if (projectHash) {
@@ -265,7 +265,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     handleApprove(hash, approve = false) {
         const { listProps: {data} } = this.state
         const entry = data.get(hash)
-        if (entry.approved === approve) return
+        if (entry.approved || entry.approved === approve) return
         const queueProps = {
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'timeKeepingEntryApproval',

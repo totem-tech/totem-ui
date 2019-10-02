@@ -1,17 +1,18 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
-import {Divider} from 'semantic-ui-react'
-import { deferred, objCopy } from '../utils/utils'
-import { FormInput } from '../components/FormBuilder'
+import {Divider, Header} from 'semantic-ui-react'
+import { deferred, objCopy, IfMobile } from '../utils/utils'
+import ContentSegment from '../components/ContentSegment'
 import ProjectTimeKeepingList from '../lists/TimeKeepingList'
 import TimeKeepingSummary from '../lists/TimeKeepingSummary'
 import FormBuilder, {findInput} from '../components/FormBuilder'
-import {projectDropdown, handleSearch, getAddressName} from '../components/ProjectDropdown'
+import {projectDropdown, handleSearch} from '../components/ProjectDropdown'
 
 class TimeKeepingView extends ReactiveComponent {
     constructor(props) {
         super(props)
 
+        this.getContent = this.getContent.bind(this)
         this.state = {
             values: {
                 option: 'entries'
@@ -20,42 +21,44 @@ class TimeKeepingView extends ReactiveComponent {
                 {
                     name: 'group',
                     type: 'group',
-                    equalWidths: true,
                     inputs: [
-                        {
-                            name: 'option',
-                            placeholder: 'Select an option',
-                            selection: true,
-                            type: 'dropdown',
-                            value: 'entries',
-                            options: [
-                                {
-                                    text: 'My Entries',
-                                    value: 'entries'
-                                },
-                                {
-                                    text: 'Invites',
-                                    value: 'invites',
-                                },
-                                {
-                                    text: 'Manage',
-                                    value: 'manage',
-                                },
-                                {
-                                    text: 'Summary',
-                                    value: 'summary',
-                                },
-                            ],
-                        },
                         objCopy(
                             {
                                 label: '',
                                 onChange: this.handleProjectChange.bind(this),
                                 onSearchChange: deferred(handleSearch, 300, this),
+                                width: 4,
                             },
                             projectDropdown,
                             true,
                         ),
+                        {
+                            multiple: true,
+                            name: 'option',
+                            placeholder: 'Select an option',
+                            toggle: true,
+                            type: 'checkbox-group',
+                            value: 'entries',
+                            width: 12,
+                            options: [
+                                {
+                                    label: 'My Entries',
+                                    value: 'entries'
+                                },
+                                {
+                                    label: 'Manage',
+                                    value: 'manage',
+                                },
+                                {
+                                    label: 'Invites',
+                                    value: 'invites',
+                                },
+                                {
+                                    label: 'Summary',
+                                    value: 'summary',
+                                },
+                            ],
+                        },
                     ],
                 }
             ],
@@ -73,28 +76,54 @@ class TimeKeepingView extends ReactiveComponent {
         this.setState({ inputs, project })
     }
 
-    render() {
+    getContent(mobile) {
         const { inputs, project, values: {projectHash, option} } = this.state
-        let content = ''
+        let contents = []
+        const manage = option.indexOf('manage') >= 0
+        const showSummary = option.indexOf('summary') >= 0
+        const showInvites = option.indexOf('invites') >= 0
+        const showEntries = option.indexOf('entries') >= 0 || manage
+        const optionInput = findInput(inputs, 'option')
+        optionInput.inline = !mobile
+        optionInput.style = mobile ? { margin: '15px 0'} : { float: 'right' }
+        optionInput.style.paddingTop = 7
+        findInput(inputs, 'option').options.find(x => x.value === 'entries').disabled = manage
 
-        switch(option) {
-            case 'summary': 
-                content = <TimeKeepingSummary />
-                break
-            case 'entries':
-            case 'manage':
-                content = <ProjectTimeKeepingList {...{project, projectHash}} manage={option === 'manage'} />
-                break
-            case 'invites': 
-                break
-        }
+        if (showEntries) contents.push({
+            content: <ProjectTimeKeepingList key="entries" {...{project, projectHash, manage}} />,
+        })
+        if (showInvites) contents.push({
+            content: 'Not implemented',
+            header: 'Invitations'
+        })
+        if (showSummary) contents.push({
+            content: <TimeKeepingSummary key="summary" />,
+            header: 'My Time Keeping Summary',
+        })
 
         return (
             <div>
-                <FormBuilder {...{inputs, onChange: this.handleChange.bind(this) , submitText: null}} />
-                {content}
+                <FormBuilder {...{
+                    inputs,
+                    onChange: this.handleChange.bind(this) ,
+                    submitText: null}}
+                />
+                {contents.map((item, i) => (
+                    <ContentSegment
+                        {...item}
+                        active={true}
+                        basic={true}
+                        key={i}
+                        headerTag="h3"
+                        style={{padding:0}}
+                    />
+                ))}
             </div>
         )
+    }
+
+    render() {
+        return <IfMobile then={this.getContent} else={this.getContent} />
     }
 }
 

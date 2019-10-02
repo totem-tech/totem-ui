@@ -460,33 +460,30 @@ export const newMessage = message => {
  */
 export function IfFn(props) {
 	const content = props.condition ? props.then : props.else
-	return (isFn(content) ? content() : content) || ''
+	return (isFn(content) ? content(props.condition) : content) || ''
 }
 
 // IfMobile component can be used to switch between content when on mobile and/or not
 export function IfMobile(props) {
-	const { else: _else, then } = props
-	const elseContent = IfFn({condition: true, then: _else})
-	const thenContent = IfFn({condition: true, then: then})
 	return (
 		<React.Fragment>
-			{thenContent && (
+			{props.then && (
 				<Responsive
 					maxWidth={Responsive.onlyMobile.maxWidth}
 					onUpdate={props.onUpdate}
 					className={props.thenClassName}
 				>
-					{thenContent}
+					<IfFn {...{condition: true, then: props.then}} />
 				</Responsive>
 			)}
 
-			{elseContent && (
+			{props.else && (
 				<Responsive
 					minWidth={Responsive.onlyMobile.maxWidth}
 					onUpdate={props.then ? undefined : props.onUpdate}
 					className={props.elseClassName}
 				>
-					{elseContent}
+					<IfFn {...{condition: false, else: props.else}} />
 				</Responsive>
 			)}
 		</React.Fragment>

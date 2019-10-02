@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import {ReactiveComponent, If} from 'oo7-react'
 import { runtimeUp } from 'oo7-substrate'
 import { Divider, Header, Icon, Placeholder, Rail, Segment } from 'semantic-ui-react'
+import { isFn } from '../utils/utils'
 
 class ContentSegment extends ReactiveComponent {
 	constructor(props) {
@@ -18,66 +19,91 @@ class ContentSegment extends ReactiveComponent {
 	}
 
 	render() {
-		const headerText = this.props.header || this.props.title
-		const header = (
-			<Header as={this.props.headerTag || 'h2'} inverted={this.props.headerInverted}>
-				<Icon name={this.props.icon} />        
-				<Header.Content>
-					<div>
-						{headerText} 
+		const {
+			active,
+			basic,
+			color,
+			compact,
+			content,
+			contentPadding,
+			header,
+			headerDivider,
+			headerDividerHidden,
+			headerTag,
+			headerInverted,
+			icon,
+			index,
+			inverted,
+			onClose,
+			style,
+			subHeader,
+			subHeaderDetails,
+			title,
+			vertical,
+		} = this.props
+		const { showSubHeader } = this.state
+
+		const headerText = header || title
+
+		return !active ? '' : (
+			<Segment
+				basic={basic}
+				color={color}
+				compact={!!compact}
+				inverted={inverted}
+				padded
+				style={style}
+				vertical={vertical}
+			>
+				{isFn(onClose) && (
+					<Rail internal position='right' close style={styles.closeButtonRail}>
 						<Icon 
 							link 
-							name='question circle outline' 
+							name='times circle outline' 
 							color="grey" 
-							size="small" 
-							onClick={this.toggleSubHeader} 
+							size="mini" 
+							onClick={() => onClose(index)} 
 						/>
-					</div>
-				</Header.Content>
-				{this.state.showSubHeader && (
-					<React.Fragment>
-						<Header.Subheader style={styles.subHeader}>
-							{this.props.subHeader}
-						</Header.Subheader>
-						<div style={styles.subHeaderDetails}>
-							{this.props.subHeaderDetails}
-						</div>
-					</React.Fragment>
+					</Rail>
 				)}
-			</Header>
-		)
 
-		const closeBtn = (
-			<Rail internal position='right' close style={styles.closeButtonRail}>
-				<Icon 
-					link 
-					name='times circle outline' 
-					color="grey" 
-					size="mini" 
-					onClick={() => this.props.onClose(this.props.index)} 
-				/>
-			</Rail>
-		)
+				{!!headerText && (
+					<Header as={headerTag || 'h2'} inverted={headerInverted}>
+						{icon && <Icon name={icon} />}
+						<Header.Content>
+							<div>
+								{headerText}
+								{showSubHeader && (
+									<Icon 
+										link 
+										name='question circle outline' 
+										color="grey" 
+										size="small" 
+										onClick={this.toggleSubHeader} 
+									/>
+								)}
+							</div>
+						</Header.Content>
+						{subHeaderDetails && (
+							<React.Fragment>
+								<Header.Subheader style={styles.subHeader}>
+									{subHeader}
+								</Header.Subheader>
+								<div style={styles.subHeaderDetails}>
+									{subHeaderDetails}
+								</div>
+							</React.Fragment>
+						)}
+					</Header>
+				)}
 
-		const segment = (
-			<Segment
-				basic={this.props.basic}
-				color={this.props.color}
-				compact={!!this.props.compact}
-				inverted={this.props.inverted}
-				padded
-				style={this.props.style}
-				vertical={this.props.vertical}
-			>
-				<If condition={typeof(this.props.onClose) === 'function'} then={closeBtn} />
-				<If condition={!!headerText} then={header} />
-				<If condition={!!headerText && !!this.props.headerDivider} then={<Divider hidden={!!this.props.headerDividerHidden} />} />
-				<div style={{ padding: this.props.contentPadding }}>
-					<If condition={!!this.props.content} then={this.props.content} else={placeholder} />
+				{!!headerText && !!headerDivider && <Divider hidden={!!headerDividerHidden} />}
+
+				<div style={{ padding: contentPadding || 0 }}>
+					{!!content ? content : placeholder}
 				</div>
 			</Segment>
 		)
-		return <If condition={this.props.active} then={segment} />
 	}
 } 
 
