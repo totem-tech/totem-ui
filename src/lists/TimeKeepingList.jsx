@@ -215,7 +215,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         const {manage, projectHash, project} = this.props
         const { listProps} = this.state
         const address = secretStore()._keys[storage.walletIndex()].address
-        const isOwner = project ? project.ownerAddress === address : true
+        const isOwner = manage && (project ? project.ownerAddress === address : true)
         const bannedAddresses = project && (project.timeKeeping || {}).bannedAddresses || []
         listProps.selectable = manage && isOwner
         listProps.columns.find(x => x.key === '_projectName').hidden = !!projectHash
