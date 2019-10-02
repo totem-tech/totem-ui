@@ -90,14 +90,14 @@ class TimeKeepingView extends ReactiveComponent {
         findInput(inputs, 'option').options.find(x => x.value === 'entries').disabled = manage
 
         if (showEntries) contents.push({
-            content: <ProjectTimeKeepingList key="entries" {...{project, projectHash, manage}} />,
+            content: <ProjectTimeKeepingList {...{project, projectHash, manage}} />,
         })
         if (showInvites) contents.push({
             content: 'Not implemented',
             header: 'Invitations'
         })
         if (showSummary) contents.push({
-            content: <TimeKeepingSummary key="summary" />,
+            content: <TimeKeepingSummary />,
             header: 'My Time Keeping Summary',
         })
 

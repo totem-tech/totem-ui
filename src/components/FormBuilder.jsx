@@ -107,7 +107,6 @@ class FormBuilder extends ReactiveComponent {
             trigger,
             widths
         } = this.props
-        const { handleClose } = this
         const { inputs, open: sOpen, values } = this.state
         // whether the 'open' status is controlled or uncontrolled
         let modalOpen = isFn(onClose) ? open : sOpen
@@ -116,14 +115,24 @@ class FormBuilder extends ReactiveComponent {
             isFn(onClose) && onClose({}, {})
         }
 
-        let submitProps = React.isValidElement(submitText) ? objCopy(submitText.props) : {}
-        const { content, disabled, onClick, positive } = submitProps
-        const shouldDisable = isFormInvalid(inputs, values) || submitDisabled || message.error || success
-        submitProps.content = isDefined(content) || !isStr(submitText) ? content : submitText
-        submitProps.disabled = isBool(disabled) ? disabled : shouldDisable
-        submitProps.onClick = isFn(onClick) ? onClick : this.handleSubmit
-        submitProps.positive = isDefined(positive) ? positive : true
-        const submitBtn = submitText === null ? undefined : <Button {...submitProps} />
+        let submitBtn, closeBtn
+        if (submitText !== null) {
+            let submitProps = React.isValidElement(submitText) ? objCopy(submitText.props) : {}
+            const { content, disabled, onClick, positive } = submitProps
+            const shouldDisable = isFormInvalid(inputs, values) || submitDisabled || message.error || success
+            submitProps.content = content || (!isStr(submitText) ? content : submitText)
+            submitProps.disabled = isBool(disabled) ? disabled : shouldDisable
+            submitProps.onClick = isFn(onClick) ? onClick : this.handleSubmit
+            submitProps.positive = isDefined(positive) ? positive : true
+            submitBtn = <Button {...submitProps} />
+        }
+        if (!modal || closeText !== null) {
+            const closeProps = React.isValidElement(closeText) ? objCopy(closeText.props) : {}
+            closeProps.content = closeProps.content || (isStr(closeText) ? closeText : (success ? 'Close' : 'Cancel'))
+            closeProps.negative = isDefined(closeProps.negative) ? closeProps.negative : true
+            closeProps.onClick = closeProps.onClick || this.handleClose
+            closeBtn = <Button {...closeProps} />
+        }
 
         const form = (
             <Form
@@ -162,7 +171,7 @@ class FormBuilder extends ReactiveComponent {
                 closeOnDimmerClick={!!closeOnDimmerClick}
                 defaultOpen={defaultOpen}
                 dimmer={true}
-                onClose={handleClose}
+                onClose={this.handleClose}
                 onOpen={onOpen}
                 open={modalOpen}
                 size={size}
@@ -174,7 +183,7 @@ class FormBuilder extends ReactiveComponent {
                         color="grey"
                         link
                         name='times circle outline'
-                        onClick={handleClose}
+                        onClick={this.handleClose}
                         size="large"
                     />
                 </div>
@@ -190,13 +199,7 @@ class FormBuilder extends ReactiveComponent {
                 <Modal.Content>{form}</Modal.Content>
                 {!hideFooter && (
                     <Modal.Actions>
-                        {React.isValidElement(closeText) || closeText === null ? closeText : (
-                            <Button
-                                content={closeText || (success ? 'Close' : 'Cancel')}
-                                negative
-                                onClick={handleClose}
-                            />
-                        )}
+                        {closeBtn}
                         {submitBtn}
                     </Modal.Actions>
                 )}

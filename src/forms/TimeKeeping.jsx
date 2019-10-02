@@ -102,14 +102,14 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     required: false,
                     type: 'checkbox-group',
                 },
-                {
-                    content: "Reset",
-                    fluid: true,
-                    name: 'reset',
-                    negative: true,
-                    onClick: () => this.handleReset(true),
-                    type: 'button'
-                }
+                // {
+                //     content: 'Reset',
+                //     fluid: true,
+                //     name: 'reset',
+                //     negative: true,
+                //     onClick: () => this.handleReset(true),
+                //     type: 'button'
+                // }
             ]
         }
 
@@ -302,13 +302,13 @@ export default class TimeKeepingForm extends ReactiveComponent {
     }
 
     render() {
-        const { modal } = this.props
+        const { onClose } = this.props
         const { inputs, message, values } = this.state
         const { duration, stopped, inprogress, manualEntry } = values
         const durationValid = values && BLOCK_DURATION_REGEX.test(duration) && duration !== DURATION_ZERO
         const done = stopped || manualEntry
         const duraIn = inputs.find(x => x.name === 'duration')
-        const btnStyle = modal ? { marginLeft: 0, marginRight: 0 } : {}
+        const btnStyle = { width: 'calc( 50% - 12px )', margin: 3}
         const doneItems = [ 'address', 'reset' ]
         inputs.filter(x => doneItems.indexOf(x.name) >= 0).forEach(x => x.hidden = !done)
         inputs.find(x => x.name === 'projectHash').disabled = inprogress
@@ -337,8 +337,26 @@ export default class TimeKeepingForm extends ReactiveComponent {
             }))
 
         return (
-            <FormBuilder {...objCopy(this.props, {
-                closeText: null,
+            <FormBuilder {...objCopy({
+                closeText: (
+                    <Button
+                        size="massive"
+                        style={btnStyle}
+                        onClick={(e, d) => {
+                            const { values: {inprogress}} = this.state
+                            const doCancel = ()=> this.handleReset(false) | isFn(onClose) && onClose(e, d)
+                            !inprogress ? doCancel() : confirm({
+                                cancelButton: 'No, continue timer',
+                                confirmButton: 'Yes',
+                                content: 'You have a running timer. Would you like to stop and exit?',
+                                header: 'Are you sure?',
+                                onConfirm: doCancel,
+                                size: 'tiny'
+                            })
+                            
+                        }}
+                    />
+                ),
                 inputs,
                 message: !inprogress ? message : {
                     content: 'You may now close the dialog and come back to it anytime by clicking on the clock icon in the header.',
@@ -350,9 +368,8 @@ export default class TimeKeepingForm extends ReactiveComponent {
                 submitText: (
                     <Button
                         icon
-                        fluid
                         disabled={(manualEntry || stopped) && !durationValid ? true : undefined}
-                        labelPosition="right"
+                        labelPosition={!!inprogress ? "right" : undefined}
                         onClick={() => inprogress ? this.handleStop() : (done ? this.handleSubmit() : this.handleStart())}
                         positive={!inprogress}
                         color={inprogress ? 'grey' : undefined}
@@ -367,7 +384,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                         )}
                     </Button>
                 )
-            })} />
+            }, this.props, true)} />
         )
     }
 }
