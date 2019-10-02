@@ -29,11 +29,8 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     constructor(props) {
         super(props)
 
-        const project = props.project || {}
-        const projectHash = props.projectHash || ''
+        this.getEntries = this.getEntries.bind(this)
         this.state = {
-            project,
-            projectHash,
             listProps: {
                 columns: [
                     {
@@ -86,44 +83,19 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                     'approved',
                 ],
                 topLeftMenu: [
-                    (
-                        <Button.Group key="0">
-                            <ProjectDropdown
-                                basic
-                                button
-                                defaultValue={projectHash}
-                                label=""
-                                key="0"
-                                noResultsMessage="Project name, hash or owner"
-                                onChange={(_, { options, value: projectHash }) => this.getEntries(
-                                    projectHash,
-                                    projectHash && options.find(o => o.value === projectHash).project
-                                )}
-                                options={!projectHash ? [] : [{
-                                    description: getAddressName(project.ownerAddress),
-                                    text: project.name,
-                                    value: projectHash,
-                                    project,
-                                }]}
-                                placeholder="Select a project"
-                                selectOnNavigation={false}
-                                style={{ border: '1px solid lightgrey', width: 196 }}
-                            />
-                            <Button {...{
-                                active: false,
-                                content: 'Timer',
-                                icon: 'clock outline',
-                                key: 1,
-                                onClick: () => {
-                                    const { projectHash } = this.state
-                                    showForm(TimeKeepingForm, { modal: true, projectHash, onSubmit: ()=> {
-                                        const { projectHash, project } = this.state
-                                        this.getEntries(projectHash, project)
-                                    }})
-                                }
-                            }} />
-                        </Button.Group>
-                    )
+                    {
+                        active: false,
+                        content: 'Timer',
+                        icon: 'clock outline',
+                        key: 1,
+                        onClick: () => {
+                            showForm(TimeKeepingForm, {
+                                modal: true,
+                                projectHash: this.props.projectHash,
+                                onSubmit: this.getEntries
+                            })
+                        }
+                    },
                 ],
                 topRightMenu: [
                     {
@@ -158,7 +130,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             }
         }
 
-        setTimeout(()=>this.getEntries())
+        setTimeout(this.getEntries)
     }
 
     componentWillMount() {
@@ -168,7 +140,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             addressbook.getBond(),
         ])
 
-        this.tieId = this.updateBond.notify(() => this.getEntries(this.state.projectHash, this.state.project))
+        this.tieId = this.updateBond.notify(this.getEntries)
     }
 
     componentWillUnmount() {
@@ -176,7 +148,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     }
 
     getActionContent(entry, hash) {
-        const { isOwner, projectHash, project } = this.state
+        const { isOwner } = this.state
         const {address: selectedAddress} = secretStore()._keys[storage.walletIndex()] || {}
         const isUser = selectedAddress === entry.address
         const btnProps = isOwner && !isUser ? {
@@ -189,7 +161,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             icon: 'pencil',
             onClick: ()=> showForm(
                 TimeKeepingUpdateForm,
-                { entry, hash, onSubmit: ()=> this.getEntries(projectHash, project) }
+                { entry, hash, onSubmit: this.getEntries }
             ),
             title: 'Edit',
         }
@@ -239,11 +211,12 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         )
     }
 
-    getEntries(projectHash = '', project = {}) {
+    getEntries() {
+        const {manage, projectHash, project} = this.props
         const { listProps} = this.state
         const address = secretStore()._keys[storage.walletIndex()].address
-        const isOwner = project.ownerAddress === address
-        const bannedAddresses = (project.timeKeeping || {}).bannedAddresses || []
+        const isOwner = manage && (project ? project.ownerAddress === address : true)
+        const bannedAddresses = project && (project.timeKeeping || {}).bannedAddresses || []
         // // only show personal bookings if not owner
         listProps.loading = true
         listProps.selectable = isOwner
@@ -254,7 +227,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         }
         listProps.columns.find(x => x.key === '_projectName').hidden = !!projectHash
 
-        if (!isOwner) {
+        if (!isOwner || !projectHash) {
             // only show other user's entries if select wallet is the project owner
             query.address = address
         }
@@ -290,13 +263,13 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     }
 
     handleApprove(hash, approve = false) {
-        const { listProps: {data}, project, projectHash } = this.state
+        const { listProps: {data} } = this.state
         const entry = data.get(hash)
         if (entry.approved === approve) return
         const queueProps = {
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'timeKeepingEntryApproval',
-            args: [hash, approve, ()=> this.getEntries(projectHash, project)],
+            args: [hash, approve, (err)=> !err && this.getEntries()],
             title: 'Time Keeping - Approve',
             description: `Hash: ${hash} | Duration: ${entry.duration}`
         }
@@ -338,7 +311,11 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             next: {
                 type: QUEUE_TYPES.CHATCLIENT,
                 func: 'project',
-                args: [projectHash, null, null, (err, project) => !err && this.getEntries(projectHash, project)],
+                args: [projectHash, null, null, (err, project) => {
+                    if(err) return
+                    this.setState({project})
+                    setTimeout(this.getEntries)
+                }],
                 // No toast required for this child-task
                 silent: true
             }
@@ -376,22 +353,24 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     }
 
     render() {
+        const propsStr = JSON.stringify(this.props)
+        if (this.propsStr !== propsStr) {
+            // update entries list
+            this.propsStr = propsStr
+            setTimeout(this.getEntries)
+        }
         return <ListFactory {...this.state.listProps} />
     }
 }
-
 ProjectTimeKeepingList.propTypes = {
+    manage: PropTypes.bool,
+    projecthash: PropTypes.string,
     project: PropTypes.shape({
         hash: PropTypes.string,
         name: PropTypes.name,
         ownerAddress: PropTypes.string
     })
 }
-
 ProjectTimeKeepingList.defaultProps = {
-    projectHash: '0xbe6956a152791b89fba8cacad7fc28f274a77253cb733dc38afc9e2641bb54b3',
-    project: {
-        ownerAddress: '5Fk6Ek9BuoyqPrDA54P54PpXdGmWFpMRSd8Ghsz7FsF8XHcH',
-        name: 'Time Keeping 0003'
-    }
+    manage: false
 }

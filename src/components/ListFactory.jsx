@@ -233,7 +233,7 @@ export class DataTable extends ReactiveComponent {
                     }}
                     onChange={(e, d) => this.setState({ keywords: d.value })}
                     placeholder="Search"
-                    style={!mobile ? undefined : { margin: '15px 0', width: '100%' }}
+                    style={!mobile ? undefined : styles.searchMobile}
                     type="text"
                     value={keywords}
                 />
@@ -257,7 +257,7 @@ export class DataTable extends ReactiveComponent {
         )
 
         return (
-            <Grid className="data-table-top-content" columns={3} style={{ margin: '0', marginBottom: '-1rem' }}>
+            <Grid columns={3} style={styles.tableTopContent}>
                 <Grid.Row>
                     <Grid.Column tablet={16} computer={6} style={{ padding: 0 }}>
                         {topLeftMenu.map((item, i) => React.isValidElement(item) ? item : (
@@ -397,7 +397,7 @@ export class DataTable extends ReactiveComponent {
                     else={this.getTopContent(false, totalRows, selectedIndexes)}
                 />
                 
-                <div style={{ overflowX: 'auto', marginTop: '1rem' }}>
+                <div style={styles.tableContent}>
                     {totalRows === 0 ? loading ? '' : newMessage(emptyMessage) : (
                         <Table celled selectable sortable unstackable singleLine>
                             <Table.Header>
@@ -545,5 +545,19 @@ const styles = {
         padding: '0px 5px',
         width: 25,
         cursor: 'pointer',
+    },
+    searchMobile: {
+        margin: '15px 0',
+        width: '100%',
+    },
+    tableContent: { 
+        display: 'block',
+        marginTop: '1rem',
+        overflowX: 'auto',
+        width: '100%',
+    },
+    tableTopContent: {
+        margin: '-1rem 0',
+        width: '100%'
     }
 }

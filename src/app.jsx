@@ -203,7 +203,7 @@ const sidebarItems = [
 	{ icon: "exclamation circle", title: "Disputed Items", subHeader: "" },
 	{ icon: "chart bar outline", title: "Edit Accounting", subHeader: "" },
 	{
-		active: true,
+		active: false,
 		content: <ProjectList />,
 		headerDividerHidden: true,
 		icon: "tasks",

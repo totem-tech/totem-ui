@@ -5,18 +5,18 @@ import { secretStore } from 'oo7-substrate'
 import { arrSort, deferred, objCopy, textEllipsis } from '../utils/utils'
 import client from '../services/ChatClient'
 import addressbook from '../services/addressbook'
-import { FormInput } from '../components/FormBuilder'
+import { FormInput, findInput } from '../components/FormBuilder'
 
 const emptySearchMsg = 'Enter project name, hash or owner address'
 
 // for use with form builder
 export const projectDropdown = {
     clearable: true,
-    label: 'Select project',
+    label: 'Project',
     name: 'projectHash',
     noResultsMessage: emptySearchMsg,
     options: [],
-    placeholder: emptySearchMsg,
+    placeholder: 'Select a project',
     selection: true,
     // Customise projects DropDown search/filtering to include project hash, owner address etc matches
     search: (options, searchQuery) => {
@@ -59,27 +59,29 @@ export function handleSearch(_, data) {
     const formInstance = this
     const searchQuery = (data.searchQuery || '').trim()
     const { inputs } = formInstance.state
-    const i = inputs.findIndex(x => x.name === 'projectHash')
-    if (i === -1) return
-    inputs[i].loading = !!searchQuery
-    inputs[i].options = []
-    inputs[i].value = !searchQuery ? '' : inputs[i].value
+    const input = findInput(inputs, 'projectHash')
+    if (!input) return
+    input.loading = !!searchQuery
+    input.options = []
+    input.value = !searchQuery ? '' : input.value
     formInstance.setState({ inputs })
     if (!searchQuery) return
 
     client.projectsSearch(searchQuery, (err, projects) => {
-        inputs[i].loading = false
-        inputs[i].message = !err ? {} : { status: 'error', content: err }
-        inputs[i].options = Array.from(projects).map(n => ({
+        const { inputs } = formInstance.state
+        const input = findInput(inputs, 'projectHash')
+        input.loading = false
+        input.message = !err ? {} : { status: 'error', content: err }
+        input.options = Array.from(projects).map(n => ({
             key: n[0] + n[1].ownerAddress + n[1].description, // also used for searching
             description: getAddressName(n[1].ownerAddress),
             text: n[1].name,
             value: n[0], // project hash,
             project: n[1]
         }))
-        if (!inputs[i].options.find(x => x.value === inputs[i].value)) {
+        if (!input.options.find(x => x.value === input.value)) {
             // Remove value if no longer in the options list
-            inputs[i].value = undefined
+            input.value = undefined
         }
         formInstance.setState({ inputs })
     })

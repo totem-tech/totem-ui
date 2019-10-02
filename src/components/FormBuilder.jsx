@@ -496,7 +496,7 @@ class CheckboxGroup extends ReactiveComponent {
     render() {
         const { inline, name, options, style } = this.props
         const { allowMultiple, value } = this.state
-        const excludeKeys = ['bond', 'inline', 'multiple', 'name', 'required', 'type', 'value', 'width']
+        const excludeKeys = ['bond', 'inline', 'multiple', 'name', 'options', 'required', 'type', 'value', 'width']
         const commonProps = objWithoutKeys(this.props, excludeKeys)
         return (
             <div>
@@ -583,6 +583,12 @@ export const isFormInvalid = (inputs = [], values) => inputs.reduce((invalid, in
     const value = isDefined(values[input.name]) ? values[input.name] : input.value
     return isCheckbox && isRequired ? !value : !hasValue(value)
 }, false)
+
+export const findInput = (inputs, name) => inputs.find(x => x.name === name) || (
+    inputs.filter(x => x.type === 'group').reduce((input, group = {}) => { 
+        return input || findInput(group.inputs || [], name)
+    }, undefined)
+)
 
 const styles = {
     closeButton: {
