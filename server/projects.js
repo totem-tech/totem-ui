@@ -31,7 +31,7 @@ export const handleProject = (client, findUserByClientId) => (hash, project, cre
 
     const user = findUserByClientId(client.id)
     if (!user) return callback(messages.loginRequired)
-    const {userId} = existingProject
+    const {userId} = existingProject || {}
     if (!create && isDefined(userId) && user.id !== userId) return (messages.accessDenied)
 
     // check if project contains all the required properties

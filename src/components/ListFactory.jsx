@@ -398,7 +398,7 @@ export class DataTable extends ReactiveComponent {
                 />
                 
                 <div style={styles.tableContent}>
-                    {totalRows === 0 ? loading ? '' : newMessage(emptyMessage) : (
+                    {totalRows === 0 ? newMessage(emptyMessage) : (
                         <Table celled selectable sortable unstackable singleLine>
                             <Table.Header>
                                 <Table.Row>
@@ -458,6 +458,10 @@ DataTable.propTypes = {
     topRightMenu: PropTypes.arrayOf(PropTypes.object)
 }
 DataTable.defaultProps = {
+    emptyMessage: {
+        content: 'No entries found',
+        status: 'warning'
+    },
     perPage: 10,
     searchable: true,
     selectable: false,

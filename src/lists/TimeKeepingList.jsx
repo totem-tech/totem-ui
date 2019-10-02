@@ -61,10 +61,6 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                     }
                 ],
                 defaultSort: 'status',
-                emptyMessage: {
-                    content: 'No entries found!',
-                    status: 'warning'
-                },
                 loading: false,
                 perPage: 10,
                 rowProps: (item) => {
