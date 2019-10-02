@@ -215,19 +215,24 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         const {manage, projectHash, project} = this.props
         const { listProps} = this.state
         const address = secretStore()._keys[storage.walletIndex()].address
-        const isOwner = manage && (project ? project.ownerAddress === address : true)
+        const isOwner = project ? project.ownerAddress === address : true
         const bannedAddresses = project && (project.timeKeeping || {}).bannedAddresses || []
-        // // only show personal bookings if not owner
-        listProps.loading = true
-        listProps.selectable = isOwner
+        listProps.selectable = manage && isOwner
+        listProps.columns.find(x => x.key === '_projectName').hidden = !!projectHash
+        const denyManage = manage && !isOwner
+        listProps.emptyMessage = {
+            content: denyManage ? 'You do not own this project' : 'No entries found',
+            status: denyManage ? 'error' : 'warning'
+        }
+        listProps.data = new Map()
         this.setState({ isOwner, listProps, projectHash, project })
+        if (manage && project && !isOwner) return
+
         const query = {}
         if (projectHash) {
             query.projectHash = projectHash
         }
-        listProps.columns.find(x => x.key === '_projectName').hidden = !!projectHash
-
-        if (!isOwner || !projectHash) {
+        if (!isOwner || !project) {
             // only show other user's entries if select wallet is the project owner
             query.address = address
         }
@@ -236,7 +241,6 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             (err, data) => {
                 // exclude any banned address
                 data = mapFilter(data, entry => entry.approved || bannedAddresses.indexOf(entry.address) === -1)
-                listProps.loading = false
                 listProps.data = data
                 const projectHashes = []
                 Array.from(data).forEach(x => {
