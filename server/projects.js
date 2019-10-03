@@ -1,10 +1,16 @@
 import DataStorage from '../src/utils/DataStorage'
-import { isArr, isFn, isStr, objCopy, objClean, isValidNumber, isBool, isObj, isDefined } from '../src/utils/utils'
+import { arrReadOnly, isArr, isBool, isDefined, isFn, isObj, isStr, isValidNumber, objCopy, objClean } from '../src/utils/utils'
 const projects = new DataStorage('projects.json', true)
 // Must-have properties
 const requiredKeys = ['name', 'ownerAddress', 'description']
 // All the acceptable properties
 const validKeys = [...requiredKeys, 'status']
+const STATUS_CODES = [
+    0, // open
+    1, // reopened
+    2, // closed
+    9, //deleted
+]
 // Internally managed keys : ['tsCreated', 'tsFirstUsed']
 const descMaxLen = 160
 const messages = {
@@ -13,6 +19,7 @@ const messages = {
     exists: 'Project already exists. Please use a different owner address, name and/or description to create a new project',
     invalidDescMaxLen: `Project description must not exceed ${descMaxLen} characters`,
     invalidParams: 'Invalid parameters supplied',
+    invalidStatusCode: `Invalid project status codes supplied. Acceptable codes: ${STATUS_CODES.join()}`,
     loginRequired: 'You must be logged in to perform this action',
     projectInvalidKeys: `Project must contain all of the following properties: ${requiredKeys.join()} and an unique hash`,
     projectNotFound: 'Project not found',
@@ -50,18 +57,16 @@ export const handleProject = (client, findUserByClientId) => (hash, project, cre
     console.log(`Project ${create ? 'created' : 'updated'}: ${hash}`)
 }
 
-// update project status
-// Statuses:
-// 0 : open
-// 1 : reopened
-// 2 : closed
-// 99: deleted
-export const handleProjectStatus = (hash, status, callback) => {
-    if (!isFn(callback)) return;
+// Set project first time used timestamp, if not already set
+//
+// Params:
+// @hash     string: project hash
+// @callback function
+export const handleProjectFirstUsedTS = (hash, callback) => {
+    if (!isFn(callback)) return
     const project = projects.get(hash)
-    if (!project) return callback(messages.projectNotFound);
-    console.log('Status update: ', hash, project.status, '>>', status)
-    project.status = status
+    if (!project) return callback(messages.projectNotFound)
+    project.tsFirstUsed = new Date()
     projects.set(hash, project)
     callback()
 }
@@ -93,7 +98,7 @@ export const handleProjects = (walletAddrs, callback) => {
 //						@result map, 
 export const handleProjectsByHashes = (hashArr, callback) => {
     if (!isFn(callback)) return;
-    if (!isArr(hashArr)) return callback(messages.arrayRequired)
+    if (!isArr(hashArr) || hashArr.length === 0) return callback(messages.arrayRequired)
     const hashesNotFound = new Array()
     // Find all projects by supplied hash and return Map
     const result = hashArr.reduce((res, hash) => {
@@ -104,21 +109,43 @@ export const handleProjectsByHashes = (hashArr, callback) => {
     callback(null, result, hashesNotFound)
 }
 
+// Search for projects
+//
+// Params:
+// @keyword     string : search keyword(s), if keyword is a project hash (starts with '0x') will return the project with the hash.
+//                       Otherwise, keyword will be matched against name, description and ownerAddress
+// @callback    function: params: @error string, @result Map
 export const handleProjectsSearch = (keyword, callback) => {
-    if (!isFn(callback) || !keyword) return
-    const result = new Map()
+    if (!isFn(callback)) return
+    if (!keyword) return callback(null, new Map())
     const projectByHash = isStr(keyword) && keyword.startsWith('0x') ? projects.get(keyword) : null
     if (projectByHash) {
         // if supplied keyword is a hash
-        result.set(keyword, projectByHash)
-        return callback(null, result)
+        return callback(null, new Map([[keyword, projectByHash]]))
     }
 
-    return callback(null, projects.search({
+    callback(null, projects.search({
         name: keyword,
         description: keyword,
         ownerAddress: keyword
     }, false, false, true))
+}
+
+// Update project status
+//
+// Params:
+// @hash        string: project hash
+// @status      number: a valid project status code
+// @callback    function: params: @error string
+export const handleProjectStatus = (hash, status, callback) => {
+    if (!isFn(callback)) return;
+    const project = projects.get(hash)
+    if (!project) return callback(messages.projectNotFound);
+    if (STATUS_CODES.indexOf(status) === -1) return callback(messages.invalidStatusCode)
+    console.log('Project status updated: ', hash, project.status, '>>', status)
+    project.status = status
+    projects.set(hash, project)
+    callback()
 }
 
 // projectTimeKeepingBan bans or un-bans a userId or address from any time keeping activities
@@ -127,6 +154,7 @@ export const handleProjectsSearch = (keyword, callback) => {
 // @hash        string  : project hash
 // @addresses   array   : User ID to ban
 // @ban         boolean : whether to ban or unban user/address
+// @callback    function: params: @error string, @changed boolean
 export const handleProjectTimeKeepingBan = (hash, addresses = [], ban = false, callback) => {
     if (!isFn(callback)) return
     if (!hash || !isArr(addresses) || addresses.length === 0 || !isBool(ban)) return callback(messages.invalidParams)
@@ -143,7 +171,6 @@ export const handleProjectTimeKeepingBan = (hash, addresses = [], ban = false, c
         const found = index >= 0
         if (ban === true && !found) {
             existingAddresses.push(address)
-            console.log('added', address)
             return true
         } else if (ban === false && found) {
             existingAddresses.splice(index, 1)
@@ -157,14 +184,4 @@ export const handleProjectTimeKeepingBan = (hash, addresses = [], ban = false, c
         projects.set(hash, project)
     }
     callback(null, changed)
-    console.log('handleProjectTimeKeepingBan', changed, addresses, ban)
-}
-
-export const handleProjectFirstUsedTS = (hash, callback) => {
-    if (!isFn(callback)) return
-    const project = projects.get(hash)
-    if (!project) return callback(messages.projectNotFound)
-    project.tsFirstUsed = new Date()
-    projects.set(hash, project)
-    callback()
 }

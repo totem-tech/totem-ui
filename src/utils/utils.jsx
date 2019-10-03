@@ -97,7 +97,6 @@ export const arrMapSlice = (data, startIndex, endIndex, callback) => {
 	const isAMap = isMap(data)
 	if (!isArr(data) && !isAMap) return []
 	const len = isAMap ? data.size : data.length
-	// if (len === 0) return []
 	data = isAMap ? Array.from(data) : data
 	startIndex = startIndex || 0
 	endIndex = !endIndex || endIndex >= len ? len - 1 : endIndex

@@ -1,11 +1,3 @@
-/*
- * Lists ToDos: 
- * 1. List or table showing the total hours worked per project, total blocks, percentage of hours worked over all hours for all projects
- * 2. List for a selected project:
- *      a. display list of all booked times by ALL users, if currently selected wallet wallet is the ownerAddress
- *      b. otherwise, display only booked times by the selected wallet
- */
-
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
