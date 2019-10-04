@@ -2,7 +2,7 @@ import DataStorage from '../src/utils/DataStorage'
 import { arrReadOnly, isObj, isFn, objHasKeys, objCopy, objClean, objWithoutKeys } from '../src/utils/utils'
 import { secondsToDuration, BLOCK_DURATION_SECONDS } from '../src/utils/time'
 import { handleProject, handleProjectFirstUsedTS } from './projects'
-import { findUserByClientId } from './users' 
+import { getUserByClientId } from './users' 
 const timeKeeping = new DataStorage('time-keeping.json', true)
 
 const REQUIRED_KEYS = arrReadOnly([
@@ -39,7 +39,7 @@ export function handleTimeKeepingEntry(hash, entry, callback) {
     let savedEntry = timeKeeping.get(hash)
     if (!isObj(entry)) return callback(null, savedEntry)
     const create = !savedEntry
-    const user = findUserByClientId(client.id)
+    const user = getUserByClientId(client.id)
     if (!user) return callback(messages.loginRequired)
 
     handleProject.bind(client)(entry.projectHash, null, null, (_, project = {}) => {
@@ -95,7 +95,7 @@ export function handleTimeKeepingEntryApproval(hash, approve = false, callback) 
     if (!isFn(callback)) return
     const entry = timeKeeping.get(hash)
     if (!entry) return callback(messages.notFound)
-    const user = findUserByClientId(client.id)
+    const user = getUserByClientId(client.id)
     handleProject.bind(client)(entry.projectHash, null, null, (_, project = {}) => {
         if (!user || user.id !== project.userId) return callback(messages.accessDenied)
         if (entry.approved) return callback(messages.alreadyApproved)
@@ -105,11 +105,6 @@ export function handleTimeKeepingEntryApproval(hash, approve = false, callback) 
     })
 }
 
-export const handleTimeKeepingDispute = (hash, callback) => {
-    
-}
-
-// notify user ????
-export const handleNotify = (userId, hash, message) => {
-
+export function handleTimeKeepingDispute(hash, callback) {
+    const client = this
 }

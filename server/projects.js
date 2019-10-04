@@ -1,6 +1,6 @@
 import DataStorage from '../src/utils/DataStorage'
 import { isArr, isBool, isDefined, isFn, isObj, isStr, isValidNumber, objCopy, objClean } from '../src/utils/utils'
-import { findUserByClientId, userClientIds } from './users'
+import { getUserByClientId, idExists, userClientIds } from './users'
 const projects = new DataStorage('projects.json', true)
 // Must-have properties
 const requiredKeys = ['name', 'ownerAddress', 'description']
@@ -39,7 +39,7 @@ export function handleProject(hash, project, create, callback) {
     // return existing project
     if (!isObj(project)) return callback(null, existingProject)
 
-    const user = findUserByClientId(client.id)
+    const user = getUserByClientId(client.id)
     if (!user) return callback(messages.loginRequired)
     const {userId} = existingProject || {}
     if (!create && isDefined(userId) && user.id !== userId) return (messages.accessDenied)
@@ -193,11 +193,13 @@ export const handleProjectTimeKeepingBan = (hash, addresses = [], ban = false, c
  * Time keeping specific functions
  */ 
 // projectTimeKeepingInvite 
-export function projectTimeKeepingInvite(userIds, {projectHash}) {
+export function projectTimeKeepingInvite(senderId, userIds, {projectHash}) {
     const project = projects.get(projectHash)
     if (!project) return messages.projectNotFound
+    // Only allow project owner to send invitations to time keeping
+    if (project.userId !== senderId) return messages.accessDenied
 
-    const invalidIds = userIds.filter(id => !userClientIds.get(id))
+    const invalidIds = userIds.filter(userId => !idExists(userId))
     if (invalidIds.length > 0) return `${messages.invalidUserIds}: ${invalidIds.join(', ')}`
 
     const timeKeeping = project.timeKeeping || {}

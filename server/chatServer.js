@@ -25,6 +25,7 @@ import {
     handleMessage,
     handleRegister,
 } from './users'
+import { handleNotify } from './notify'
 
 export const PORT = 3001
 let server, socket
@@ -42,6 +43,9 @@ export const initChatServer = (httpsOptions, expressApp) => {
 
         // Faucet request
         client.on('faucet-request', handleFaucetRequest.bind(client))
+
+        // Notification handler
+        client.on('notify', handleNotify.bind(client))
 
         // Project related handlers
         client.on('project', handleProject.bind(client))

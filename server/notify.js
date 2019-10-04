@@ -1,12 +1,12 @@
 import DataStorage from '../src/utils/DataStorage'
 import uuid from 'uuid'
-import { isArr, isFn, isObj, objHasKeys, objReadOnly, isStr  } from '../src/utils/utils'
-import { emitToUsers, findUserByClientId, isUserOnline, onUserLogin } from './users'
+import { arrUnique, isArr, isFn, isObj, objHasKeys, objReadOnly, isStr  } from '../src/utils/utils'
+import { emitToUsers, getUserByClientId, isUserOnline, onUserLogin } from './users'
 import { projectTimeKeepingInvite } from './projects'
 
-const notifications = new DataStorage('notifications', true)
-const targetUserIds = new DataStorage('notification-receivers', false)
-const EVENT_NAME = 'notification'
+const notifications = new DataStorage('notifications.json', true)
+const userNotificationIds = new DataStorage('notification-receivers.json', false)
+export const EVENT_NAME = 'notify'
 export const VALID_TYPES = objReadOnly({
     // notification that doesn't fall into other types
     // alert: {
@@ -27,55 +27,67 @@ export const VALID_TYPES = objReadOnly({
                 'projectHash' // hash of the project invited to
             ],
             // expireAfter: null, // set expiration date??
+            //
+            // @handleNotify function: callback function to be executed before adding a notification.
+            //                      Must return error string if any error occurs or notification should be void.
+            //                      Params:
+            //                      @toUserIds  array
+            //                      @data       object
+            //                      @message    string
             handleNotify: projectTimeKeepingInvite, // place it in the project.js
             messageRequired: true,
             // messageEncrypted: false,
             handleResponse: ()=> {}, // placeholder, place it in 
         },
     }, // invitation to project and response, dispute time keeping entry and response
-}, true)
+}, true, true)
 
 const messages = {
+    notifySelf: 'You cannot notify yourself',
     invalidParams: 'Invalid/missing required parameter(s)',
     loginRequired: 'Login required',
     runtimeError: 'Runtime error occured. Please try again later or contact support'
 }
 
-// Send notifications to users
-const emitNotifications = () => Array.from(targetUserIds).forEach(([userId]) => notifyUser(userId))
-
-const notifyUser = userId => {
+// Send notification to all clients of a specific user
+const _notifyUser = userId => setTimeout(()=> {
     if (!isUserOnline(userId)) return
-    const nodificationIds = targetUserIds.get(userId)
-    if (!nodificationIds) return
-    nodificationIds.forEach(id => {
-        const {from, to, type, childType, message, data, tsCreated} = notifications.get(id)
-        emitToUsers([userId], EVENT_NAME, [ from, type, childType, message, data, tsCreated ])
+    arrUnique(userNotificationIds.get(userId)).forEach(id => {
+        const {from, type, childType, message, data, tsCreated} = notifications.get(id)
+        emitToUsers([userId], EVENT_NAME, [id, from, type, childType, message, data, tsCreated, (received)=> {
+            const notifyIds = userNotificationIds.get(userId)
+            notifyIds.splice(notifyIds.indexOf(id), 1)
+            if (notifyIds.length > 0) return userNotificationIds.set(userId, notifyIds)
+            userNotificationIds.delete(userId)
+        }])
     })
-    targetUserIds.delete(userId)
-}
+}, 500) // minimum 150 ms delay required, otherwise client UI might not receive it on time to consume the event
 
-// Notify user when user logs in
-onUserLogin(userId => notifyUser(userId))
+// Check and notify user when on login
+onUserLogin(_notifyUser)
 
 // handleNotify deals with notification requests
 //
 // Params:
-// @to          array    : User ID(s)
+// @toUserIds   array    : receiver User ID(s)
 // @type        string   : parent notification type
 // @childType   string   : child notification type
 // @message     string   : message to be displayed (unless custom message required). can be encrypted later on
 // @data        object   : information specific to the type of notification
 // @callback    function : params: (@err string) 
-export function handleNotify( to = [], type = '', childType = '', message = '', data = {}, callback ) {
+export function handleNotify( toUserIds = [], type = '', childType = '', message = '', data = {}, callback ) {
     const client = this
+    console.log('handleNotify() ', toUserIds)
     if (!isFn(callback)) return
     try {
-        const user = findUserByClientId(client.id)
+        const user = getUserByClientId(client.id)
         if (!user) return callback(messages.loginRequired)
-        if (!isArr(to) || to.length === 0) return callback(messages.invalidParams + ': to')
+        if (!isArr(toUserIds) || toUserIds.length === 0) return callback(messages.invalidParams + ': to')
+        // prevent user sending notification to themselves
+        if (toUserIds.indexOf(user.id) >= 0) return callback(messages.notifySelf)
+        toUserIds = arrUnique(toUserIds)
 
-        const typeObj = !VALID_TYPES[type]
+        const typeObj = VALID_TYPES[type]
         if (!isObj(typeObj)) return callback(messages.invalidParams + ': type')
         
         const childTypeObj = typeObj[childType]
@@ -85,17 +97,18 @@ export function handleNotify( to = [], type = '', childType = '', message = '', 
         if (config.dataRequired && !objHasKeys(data, config.dataFields, true)) {
             return callback(`${messages.invalidParams}: data { ${config.dataFields.join()} }`)
         }
-        if (config.messageRequired && (!isStr(messages) || !message.trim())) {
+        if (config.messageRequired && (!isStr(message) || !message.trim())) {
             return callback(messages.invalidParams + ': message')
         }
 
-        // emitToUsers(to, EVENT_NAME, [type, childType, message, data])
-        const err = config.handleNotify(to, data)
+        // if notification type has a handler function execute it
+        const from = user.id
+        const err = isFn(config.handleNotify) && config.handleNotify(from, toUserIds, data, message)
         if (err) return callback(err)
         const id = uuid.v1()
         notifications.set(id, {
-            from: user.id,
-            to,
+            from,
+            to: toUserIds,
             type,
             childType,
             message,
@@ -104,13 +117,14 @@ export function handleNotify( to = [], type = '', childType = '', message = '', 
         })
 
         // add user id and notification id to a list for faster processing
-        to.forEach(userId => {
-            const ids = targetUserIds.get(userId) || []
+        toUserIds.forEach(userId => {
+            const ids = userNotificationIds.get(userId) || []
             ids.push(id)
-            targetUserIds.set(userId, ids)
+            userNotificationIds.set(userId, arrUnique(ids))
+            // notify the user if online
+            _notifyUser(userId)
         })
         callback()
-        emitNotifications()
     } catch (e) {
         console.log('Runtime error occured: ', e)
         callback(messages.runtimeError)

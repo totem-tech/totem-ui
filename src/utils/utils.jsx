@@ -213,12 +213,14 @@ export const objHasKeys = (obj = {}, keys = [], requireValue = false) => {
 //					 PS: original supplied object's properties will remain writable, unless re-assigned to the returned object.
 // @strict boolean: (optional) if true, any attempt to add or update property to returned object will throw a TypeError.
 //					 Otherwise, only new properties can be added. Attempts to update properties will be silently ignored.
+// @silent boolean: (optional) whether to throw error when in strict mode
 //
 // Returns  object
-export const objReadOnly = (obj = {}, strict = false) => new Proxy(obj, {
+export const objReadOnly = (obj = {}, strict = false, silent = false) => new Proxy(obj, {
 	setProperty: (self, key, value) => {
+		// prevents adding new or updating existing property
 		if (strict === true) {
-			// prevents adding new or updating existing property
+			if (silent) return true;
 			throw new TypeError(`Assignment to constant ${Array.isArray(obj) ? 'array' : 'object'} key: ${key}`)
 		} else if (!self.hasOwnProperty(key)) {
 			self[key] = value

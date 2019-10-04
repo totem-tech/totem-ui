@@ -8,7 +8,7 @@ import client from './ChatClient'
 import blockchain from './blockchain'
 import storageService from './storage'
 import { removeToast, setToast } from './toast'
-import { isArr, isFn, isObj, objClean, objReadOnly } from '../utils/utils'
+import { isArr, isFn, isObj, objClean, objReadOnly, isBond } from '../utils/utils'
 
 const queue = storageService.queue()
 // Minimum balance required to make a transaction
@@ -92,6 +92,7 @@ const _processItem = (queueItem, id, toastId) => {
                 if (!func) return queue.delete(id) | _save();
                 // initiate transactional request
                 const bond = func.apply({}, args)
+                if (!isBond(bond)) return
                 queueItem.status = 'loading'
                 setTimeout(() => _save())
 

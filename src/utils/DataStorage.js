@@ -23,12 +23,14 @@ const write = (key, value, isMap = true) => {
 }
 
 class DataStorage {
-    constructor(filename, disableCache = false) {
+    constructor(filename, disableCache = false, split = false) {
         this.filename = filename
         // whether to disable data cache
         this.disableCache = disableCache
         this.Type = Map
         this.data = disableCache ? new this.Type() : this.getAll()
+        // ToDo: @split === true store all ids in a single file and individual values in separate files individually under a separate directory
+        // This may help if any file needs larger amount of concurrent operations
     }
 
     getAll() {

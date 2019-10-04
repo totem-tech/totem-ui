@@ -89,7 +89,6 @@ export const removeProject = (ownerAddress, hash) => {
     })
 }
 
-
 // closeProject removes project
 //
 // Params:
@@ -111,7 +110,6 @@ export const closeProject = (ownerAddress, hash) => {
         longevity: true
     })
 }
-
 
 // reopenProject removes project
 //

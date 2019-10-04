@@ -1,5 +1,5 @@
 import io from 'socket.io-client'
-import { isFn, isArr } from '../utils/utils'
+import { isFn } from '../utils/utils'
 import storageService from './storage'
 
 const port = 3001
@@ -34,6 +34,21 @@ export const getClient = () => {
     return instance
 }
 
+
+    window.sendNotify = () => {
+        // emulate send notification
+        const isBrave = getUser().id === 'brave'
+        const toUserIds = [isBrave ? 'chromexe' : 'brave']
+        const projectHash = isBrave ? '0x007abc020689be19844664a497b23b7bb6f1f1be9bd6fc406e4c983d2b2c0bed' : '0xaa4519740a665105ef3a726fc54cc051083238c90ee8015783ad7acc7ae5d78f'
+        const message = isBrave ? 'Time keeping 001' : 'T001'
+        getClient().notify(toUserIds, 'timeKeeping', 'invitation', message, {projectHash}, 
+            err => console.log('Notification sent:', !err, err))
+    }
+    setTimeout(() => getClient().onNotify((id, senderId, type, childType, message, data, tsCreated, confirm) => { 
+        confirm(true)
+        console.log('Notification received!', id, senderId, tsCreated)
+    }))
+
 // Make sure to always keep the callback as the last argument
 export class ChatClient {
     constructor(url) {
@@ -57,6 +72,34 @@ export class ChatClient {
         // this.onFaucetRequest = cb => socket.on('faucet-request', cb)
         // Check if User ID Exists
         this.idExists = (userId, cb) => socket.emit('id-exists', userId, cb)
+
+        // Send notification
+        //
+        // Params:
+        // @toUserIds   array    : receiver User ID(s)
+        // @type        string   : parent notification type. Eg: timeKeeping
+        // @childType   string   : child notification type. Eg: invitation
+        // @message     string   : message to be displayed (unless custom message required). can be encrypted later on
+        // @data        object   : information specific to the type of notification
+        // @cb          function : callback function
+        //                         Params:
+        //                         @err string: error message if failed or rejected
+        this.notify = (toUserIds, type, childType, message, data, cb) => isFn(cb) && socket.emit(
+            'notify', toUserIds, type, childType, message, data, cb
+        )
+        // Receive notification
+        //
+        // Params:
+        // @cb function: callback function
+        //          Params:
+        //          @senderId   string: sender user ID
+        //          @type       string: parent notification type
+        //          @childType  string: child notification type
+        //          @data       object: information specific to the notification @type
+        //          @tsCreated  date  : notification creation timestamp
+        this.onNotify = cb => isFn(cb) && socket.on('notify', (id, senderId, type, childType, message, data, tsCreated, cbConfrim) =>
+            cb(id, senderId, type, childType, message, data, tsCreated, cbConfrim)
+        )
 
         // add/get/update project
         //
