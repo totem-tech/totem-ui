@@ -1,7 +1,8 @@
 import DataStorage from '../src/utils/DataStorage'
 import { arrReadOnly, isObj, isFn, objHasKeys, objCopy, objClean, objWithoutKeys } from '../src/utils/utils'
 import { secondsToDuration, BLOCK_DURATION_SECONDS } from '../src/utils/time'
-import { handleProject as getProject, handleProjectFirstUsedTS as setFirstUsed } from './projects'
+import { handleProject, handleProjectFirstUsedTS } from './projects'
+import { findUserByClientId } from './users' 
 const timeKeeping = new DataStorage('time-keeping.json', true)
 
 const REQUIRED_KEYS = arrReadOnly([
@@ -32,7 +33,8 @@ const messages = {
 }
 
 // add, get or update a time keeping entry
-export const handleTimeKeepingEntry = (client, findUserByClientId) => (hash, entry, callback) => {
+export function handleTimeKeepingEntry(hash, entry, callback) {
+    const client = this
     if (!isFn(callback)) return
     let savedEntry = timeKeeping.get(hash)
     if (!isObj(entry)) return callback(null, savedEntry)
@@ -40,7 +42,7 @@ export const handleTimeKeepingEntry = (client, findUserByClientId) => (hash, ent
     const user = findUserByClientId(client.id)
     if (!user) return callback(messages.loginRequired)
 
-    getProject(client, findUserByClientId)(entry.projectHash, null, null, (_, project = {}) => {
+    handleProject.bind(client)(entry.projectHash, null, null, (_, project = {}) => {
         const addrs = (project.timeKeeping || {}).bannedAddresses || []
         const isBanned = addrs && addrs.indexOf(entry.address) >= 0
         if (!create && (savedEntry.userId !== user.id || isBanned)) return callback(messages.accessDenied)
@@ -68,7 +70,7 @@ export const handleTimeKeepingEntry = (client, findUserByClientId) => (hash, ent
         console.log('Time keeping entry added', hash)
         callback()
         if (!create || project.tsFirstUsed) return
-        setFirstUsed(entry.projectHash, err => err && console.log(
+        handleProjectFirstUsedTS(entry.projectHash, err => err && console.log(
             'Failed to save project first used timestamp. Project Hash: ', hash, ' Current Time:', new Date(),
             '\nError: ', err
         ))
@@ -88,12 +90,13 @@ export const handleTimeKeepingEntrySearch = (query, matchExact, matchAll, ignore
 }
 
 // approve/disapprove a time keeping entry
-export const handleTimeKeepingEntryApproval = (client, findUserByClientId) => (hash, approve = false, callback) => {
+export function handleTimeKeepingEntryApproval(hash, approve = false, callback) {
+    const client = this
     if (!isFn(callback)) return
     const entry = timeKeeping.get(hash)
     if (!entry) return callback(messages.notFound)
     const user = findUserByClientId(client.id)
-    getProject(client, findUserByClientId)(entry.projectHash, null, null, (_, project = {}) => {
+    handleProject.bind(client)(entry.projectHash, null, null, (_, project = {}) => {
         if (!user || user.id !== project.userId) return callback(messages.accessDenied)
         if (entry.approved) return callback(messages.alreadyApproved)
         entry.approved = approve

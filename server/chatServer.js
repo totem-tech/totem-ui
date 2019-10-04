@@ -3,7 +3,6 @@
  */
 import https from 'https'
 import socketIO from 'socket.io'
-import { isStr, isArr } from '../src/utils/utils'
 import { handleCompany, handleCompanySearch } from './companies'
 import { handleFaucetRequest } from './faucetRequests'
 import {
@@ -20,61 +19,47 @@ import {
     handleTimeKeepingEntrySearch,
 } from './timeKeeping'
 import {
-    findUserByClientId,
     handleDisconnect,
     handleIdExists,
     handleLogin,
     handleMessage,
-    handleRegister
+    handleRegister,
 } from './users'
 
-const PORT = 3001
-const clients = new Map()
-
+export const PORT = 3001
+let server, socket
 export const initChatServer = (httpsOptions, expressApp) => {
-    const server = https.createServer(httpsOptions, expressApp)
-    const socket = socketIO.listen(server)
+    server = https.createServer(httpsOptions, expressApp)
+    socket = socketIO.listen(server)
 
     socket.on('connection', client => {
         // User related handlers
-        client.on('disconnect', handleDisconnect(clients, client))
-        client.on('message', handleMessage(client, emitter))
-        client.on('id-exists', handleIdExists)
-        client.on('register', handleRegister(clients, client))
-        client.on('login', handleLogin(clients, client))
+        client.on('disconnect', handleDisconnect.bind(client))
+        client.on('message', handleMessage.bind(client))
+        client.on('id-exists', handleIdExists.bind(client))
+        client.on('register', handleRegister.bind(client))
+        client.on('login', handleLogin.bind(client))
 
         // Faucet request
-        client.on('faucet-request', handleFaucetRequest(client, findUserByClientId))
+        client.on('faucet-request', handleFaucetRequest.bind(client))
 
         // Project related handlers
-        client.on('project', handleProject(client, findUserByClientId))
-        client.on('project-status', handleProjectStatus)
-        client.on('project-time-keeping-ban', handleProjectTimeKeepingBan)
-        client.on('projects', handleProjects)
-        client.on('projects-by-hashes', handleProjectsByHashes)
-        client.on('projects-search', handleProjectsSearch)
+        client.on('project', handleProject.bind(client))
+        client.on('project-status', handleProjectStatus.bind(client))
+        client.on('project-time-keeping-ban', handleProjectTimeKeepingBan.bind(client))
+        client.on('projects', handleProjects.bind(client))
+        client.on('projects-by-hashes', handleProjectsByHashes.bind(client))
+        client.on('projects-search', handleProjectsSearch.bind(client))
 
         // Company related handlers
-        client.on('company', handleCompany)
-        client.on('company-search', handleCompanySearch)
+        client.on('company', handleCompany.bind(client))
+        client.on('company-search', handleCompanySearch.bind(client))
 
         // Time keeping handlers
-        client.on('time-keeping-entry', handleTimeKeepingEntry(client, findUserByClientId))
-        client.on('time-keeping-entry-approval', handleTimeKeepingEntryApproval(client, findUserByClientId))
-        client.on('time-keeping-entry-search', handleTimeKeepingEntrySearch)
+        client.on('time-keeping-entry', handleTimeKeepingEntry.bind(client))
+        client.on('time-keeping-entry-approval', handleTimeKeepingEntryApproval.bind(client))
+        client.on('time-keeping-entry-search', handleTimeKeepingEntrySearch.bind(client))
     })
-
-    // Broadcast message to all users except ignoreClientIds
-    const emitter = (ignoreClientIds, eventName, params) => {
-        if (!isStr(eventName)) return;
-        ignoreClientIds = isArr(ignoreClientIds) ? ignoreClientIds : [ignoreClientIds]
-        params = params || []
-        params.splice(0, 0, eventName)
-        for (const [_, iClient] of clients) {
-            if (ignoreClientIds.indexOf(iClient.id) >= 0) continue; // ignore sender client
-            iClient.emit.apply(iClient, params)
-        }
-    }
 
     // Start listening
     server.listen(PORT, () => console.log('\nChat app https Websocket listening on port ', PORT))

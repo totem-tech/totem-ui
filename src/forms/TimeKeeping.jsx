@@ -3,9 +3,9 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { chain, secretStore } from 'oo7-substrate'
-import { Button, Divider, Icon } from 'semantic-ui-react'
+import { Button, Icon } from 'semantic-ui-react'
 import uuid from 'uuid'
-import { arrReadOnly, deferred, generateHash, hasValue, isDefined, isFn, objCopy, objClean, objReadOnly, textEllipsis, isValidNumber, objWithoutKeys } from '../utils/utils'
+import { arrReadOnly, deferred, generateHash, hasValue, isDefined, isFn, objCopy, objClean, objWithoutKeys } from '../utils/utils'
 import {
     BLOCK_DURATION_SECONDS,
     BLOCK_DURATION_REGEX,

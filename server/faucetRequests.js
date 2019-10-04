@@ -3,6 +3,7 @@ import ioClient from 'socket.io-client'
 import { encrypt, encryptionKeypair, signingKeyPair, newNonce, newSignature, verifySignature, keyInfoFromKeyData } from '../src/utils/naclHelper'
 import { isFn, isStr } from '../src/utils/utils'
 import DataStorage from '../src/utils/DataStorage'
+import { findUserByClientId } from './users'
 const faucetRequests = new DataStorage('faucet-requests.json', true)
 // Maximum number of requests within @TIME_LIMIT
 const REQUEST_LIMIT = 5
@@ -77,9 +78,9 @@ if (err) throw new Error(err)
 // connect to faucet server
 const faucetClient = ioClient(FAUCET_SERVER_URL, { secure: true, rejectUnauthorized: false })
 
-export const handleFaucetRequest = (client, findUserByClientId) => (address, callback) => {
+export function handleFaucetRequest(address, callback) {
+    const client = this
     try {
-
         console.log('faucetClient.connected', faucetClient.connected)
         if (!isFn(callback)) return
         const err = setVariables()

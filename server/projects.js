@@ -1,5 +1,6 @@
 import DataStorage from '../src/utils/DataStorage'
-import { arrReadOnly, isArr, isBool, isDefined, isFn, isObj, isStr, isValidNumber, objCopy, objClean } from '../src/utils/utils'
+import { isArr, isBool, isDefined, isFn, isObj, isStr, isValidNumber, objCopy, objClean } from '../src/utils/utils'
+import { findUserByClientId, userClientIds } from './users'
 const projects = new DataStorage('projects.json', true)
 // Must-have properties
 const requiredKeys = ['name', 'ownerAddress', 'description']
@@ -20,13 +21,15 @@ const messages = {
     invalidDescMaxLen: `Project description must not exceed ${descMaxLen} characters`,
     invalidParams: 'Invalid parameters supplied',
     invalidStatusCode: `Invalid project status codes supplied. Acceptable codes: ${STATUS_CODES.join()}`,
+    invalidUserIds: 'Invalid user ID(s) supplied',
     loginRequired: 'You must be logged in to perform this action',
     projectInvalidKeys: `Project must contain all of the following properties: ${requiredKeys.join()} and an unique hash`,
     projectNotFound: 'Project not found',
 }
 
 // Create/get/update project
-export const handleProject = (client, findUserByClientId) => (hash, project, create, callback) => {
+export function handleProject(hash, project, create, callback) {
+    const client = this
     if (!isFn(callback)) return;
     const existingProject = projects.get(hash)
     if (create && !!existingProject) {
@@ -184,4 +187,29 @@ export const handleProjectTimeKeepingBan = (hash, addresses = [], ban = false, c
         projects.set(hash, project)
     }
     callback(null, changed)
+}
+
+/*
+ * Time keeping specific functions
+ */ 
+// projectTimeKeepingInvite 
+export function projectTimeKeepingInvite(userIds, {projectHash}) {
+    const project = projects.get(projectHash)
+    if (!project) return messages.projectNotFound
+
+    const invalidIds = userIds.filter(id => !userClientIds.get(id))
+    if (invalidIds.length > 0) return `${messages.invalidUserIds}: ${invalidIds.join(', ')}`
+
+    const timeKeeping = project.timeKeeping || {}
+    timeKeeping.invitations = (timeKeeping.invitations || {})
+    userIds.forEach(userId => {
+        if (timeKeeping.invitations[userId]) return;
+        timeKeeping.invitations[userId] = {
+            accepted: false,
+            tsAccepted: undefined,
+            tsInvited: new Date(),
+        }
+    }),
+    project.timeKeeping = timeKeeping
+    projects.set(projectHash, project)
 }

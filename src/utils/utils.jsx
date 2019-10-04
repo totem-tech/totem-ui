@@ -191,7 +191,9 @@ export const objClean = (obj, keys) => !isObj(obj) || !isArr(keys) ? {} : keys.r
 		cleanObj[key] = obj[key]
 	}
 	return cleanObj
-}, {})// objHasKeys checks if all the supplied keys exists in a object
+}, {})
+
+// objHasKeys checks if all the supplied keys exists in a object
 //
 // Params:
 // @obj				object
