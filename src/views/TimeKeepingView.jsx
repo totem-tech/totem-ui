@@ -1,9 +1,10 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import {Divider, Header} from 'semantic-ui-react'
-import { deferred, objCopy, IfMobile } from '../utils/utils'
+import { deferred, objCopy, IfMobile, newMessage } from '../utils/utils'
 import ContentSegment from '../components/ContentSegment'
 import ProjectTimeKeepingList from '../lists/TimeKeepingList'
+import TimeKeepingInviteList from '../lists/TimeKeepingInviteList'
 import TimeKeepingSummary from '../lists/TimeKeepingSummary'
 import FormBuilder, {findInput} from '../components/FormBuilder'
 import {projectDropdown, handleSearch} from '../components/ProjectDropdown'
@@ -93,7 +94,7 @@ class TimeKeepingView extends ReactiveComponent {
             content: <ProjectTimeKeepingList {...{project, projectHash, manage}} />,
         })
         if (showInvites) contents.push({
-            content: 'Not implemented',
+            content: <TimeKeepingInviteList {...{projectHash}} />,
             header: 'Invitations'
         })
         if (showSummary) contents.push({

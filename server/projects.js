@@ -127,11 +127,13 @@ export const handleProjectsSearch = (keyword, callback) => {
         return callback(null, new Map([[keyword, projectByHash]]))
     }
 
-    callback(null, projects.search({
+    const keyValues = isObj(keyword) ? objClean(keyword, validKeys) : {
         name: keyword,
         description: keyword,
         ownerAddress: keyword
-    }, false, false, true))
+    }
+
+    callback(null, projects.search(keyValues, false, false, true))
 }
 
 // Update project status
@@ -193,11 +195,11 @@ export const handleProjectTimeKeepingBan = (hash, addresses = [], ban = false, c
  * Time keeping specific functions
  */ 
 // projectTimeKeepingInvite 
-export function projectTimeKeepingInvite(senderId, userIds, {projectHash}) {
+export function projectTimeKeepingInvite(notificationId, senderId, userIds, {projectHash}) {
     const project = projects.get(projectHash)
     if (!project) return messages.projectNotFound
     // Only allow project owner to send invitations to time keeping
-    if (project.userId !== senderId) return messages.accessDenied
+    if (project.userId && project.userId !== senderId) return messages.accessDenied
 
     const invalidIds = userIds.filter(userId => !idExists(userId))
     if (invalidIds.length > 0) return `${messages.invalidUserIds}: ${invalidIds.join(', ')}`
@@ -208,6 +210,7 @@ export function projectTimeKeepingInvite(senderId, userIds, {projectHash}) {
         if (timeKeeping.invitations[userId]) return;
         timeKeeping.invitations[userId] = {
             accepted: false,
+            notificationId,
             tsAccepted: undefined,
             tsInvited: new Date(),
         }

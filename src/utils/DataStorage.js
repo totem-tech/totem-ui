@@ -15,21 +15,20 @@ const read = key => {
     const data = JSON.parse(storage.getItem(key) || '[]')
     return new Map(data)
 }
-const write = (key, value, beautifyJSON) => {
+const write = (key, value) => {
     // invalid key: ignore request
     if (!isStr(key)) return false
     value = Array.from(value.entries())
-    storage.setItem(key, JSON.stringify(value, null, (beautifyJSON ? 4 : 0)))
+    storage.setItem(key, JSON.stringify(value))
 }
 
 class DataStorage {
-    constructor(filename, disableCache = false, beautifyJSON = true, split = false) {
+    constructor(filename, disableCache = false, split = false) {
         this.filename = filename
         // whether to disable data cache
         this.disableCache = disableCache
         this.Type = Map
         this.data = disableCache ? new this.Type() : this.getAll()
-        this.beautifyJSON = beautifyJSON
         // ToDo: @split === true store all ids in a single file and individual values in separate files individually under a separate directory
         // This may help if any file needs larger amount of concurrent operations
     }

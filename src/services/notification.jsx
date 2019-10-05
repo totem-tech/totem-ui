@@ -10,10 +10,12 @@ const notifications = new DataStorage('totem_service_notifications', true, false
 // store unread counts for individual types
 const unreadCounts = new DataStorage('totem_service_notifications-unread-counts', true, false)
 const triggerBond = new Bond()
+export const newNotificationBond = new Bond()
 
 client.onNotify((id, senderId, type, childType, message, data, tsCreated, confirmReceived) => {
     if (notifications.get(id)) return
-    notifications.set(id, {
+    const newNotification = {
+        id,
         senderId,
         type,
         childType,
@@ -22,8 +24,10 @@ client.onNotify((id, senderId, type, childType, message, data, tsCreated, confir
         tsCreated,
         deleted: false,
         read: false,
-    })
+    }
+    notifications.set(id, newNotification)
     triggerBond.changed(uuid.v1())
+    newNotificationBond.changed(newNotification)
     console.log('Notification received!', id, senderId, tsCreated)
     confirmReceived(true)
 })
@@ -45,10 +49,9 @@ export const toggleRead = id => {
     triggerBond.changed(uuid.v1())
 }
 
-export const markDeleted = id => {
+export const deleteNotification = id => notifications.delete(id) | triggerBond.changed(uuid.v1())
 
-}
-
+// ToDo: on bell icon click request new notifications
 export default class NotificationDropdown extends ReactiveComponent {
     constructor() {
         super([], {triggerBond})
@@ -56,7 +59,8 @@ export default class NotificationDropdown extends ReactiveComponent {
 
     render() {
         const maxHeight = window.innerHeight - 140
-        return (
+        const items = notifications.getAll()
+        return items.size === 0 ? '' : (
             <Dropdown
                 icon={{
                     name: 'bell outline',
@@ -66,7 +70,7 @@ export default class NotificationDropdown extends ReactiveComponent {
                 scrolling
             >
                 <Dropdown.Menu className="notification-service" direction="left" style={{maxHeight}}>
-                    {Array.from(notifications.getAll()).filter(([_, {deleted}]) => !deleted).map(([id, item]) => {
+                    {Array.from(items).filter(([_, {deleted}]) => !deleted).map(([id, item]) => {
                         const {senderId, type, childType, message, data, tsCreated, read} = item
                         const typeSpaced = type.replace('_', ' ')
                         const msg = {
@@ -76,7 +80,7 @@ export default class NotificationDropdown extends ReactiveComponent {
                             header: `${typeSpaced}: ${childType}`,
                             key: id,
                             onClick: () => toggleRead(id),
-                            onDismiss: (e) => e.stopPropagation() | markDeleted(id),
+                            onDismiss: (e) => e.stopPropagation() | deleteNotification(id),
                             status: read ? undefined : 'success',
                             style: {textAlign: 'left'},
                         }

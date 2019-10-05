@@ -16,6 +16,15 @@ Date.prototype.timeNow = function () {
 
 export const getNow = () => new Date().today() + " @ " + new Date().timeNow()
 
+
+// formats string timestamp
+//
+// converts '2019-10-05T16:58:06.093Z' to '2019-10-05 16:58'
+export const formatStrTimestamp = tsStr => !tsStr ? '' : tsStr.replace(/\T|\Z/g, ' ').substr(0, 16)
+
+/*
+ * rate related stuff
+ */
 export const BLOCK_DURATION_SECONDS = 5
 export const BLOCK_DURATION_REGEX = /^(\d{2}):[0-5][0-9]:[0-5](0|5)$/ // valid duration up to 99:59:55
 

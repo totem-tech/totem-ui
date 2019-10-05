@@ -529,14 +529,16 @@ class CheckboxGroup extends ReactiveComponent {
 export const fillValues = (inputs, values, forceFill) => {
     if (!isObj(values)) return
     inputs.forEach(input => {
-        let { bond, defaultValue, name, type } = input
+        let { bond, name, type } = input
         const newValue = values[input.name]
         type = (isStr(type) ? type : '').toLowerCase()
         const isGroup = type === 'group'
         if (!isGroup && (
-            !isDefined(name) || !values.hasOwnProperty(input.name)
-            || (!forceFill && isDefined(input.value)) || !type)
+                !isDefined(name) || !values.hasOwnProperty(input.name)
+                || (!forceFill && hasValue(input.value)) || !type
+            )
         ) return
+        
         if (['accountidbond', 'inputbond'].indexOf(type) >= 0) {
             input.defaultValue = newValue
         } else if (['checkbox', 'radio'].indexOf(type) >= 0) {

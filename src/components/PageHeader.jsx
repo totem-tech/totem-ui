@@ -12,7 +12,7 @@ import { setToast } from '../services/toast'
 import TimeKeepingForm from '../forms/TimeKeeping'
 import { WalletUpdate } from '../forms/Wallet'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import NotificationService from '../services/notification'
+import NotificationDropdown from '../services/notification'
 
 class PageHeader extends ReactiveComponent {
 	constructor(props) {
@@ -222,7 +222,7 @@ class MobileHeader extends ReactiveComponent {
 								]}
 							</Dropdown.Menu>
 						</Dropdown>
-						<NotificationService />
+						<NotificationDropdown />
 						
 					</Menu.Menu>
 				</Menu>

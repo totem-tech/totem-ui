@@ -179,10 +179,10 @@ export const objCopy = (source, dest, force) => !isObj(source) ? dest || {} : (
 	}, !force ? (dest || {}) : objCopy(dest, {}))
 )
 
-// objClean produces a new object with supplied keys and values from supplied object
+// objClean produces a clean object with only the supplied keys and their respective values
 //
 // Params:
-// @obj		object
+// @obj		object/array
 // @keys	array : if empty/not array, an empty object will be returned
 //
 // Returns object

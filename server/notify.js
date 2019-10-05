@@ -22,22 +22,24 @@ export const VALID_TYPES = objReadOnly({
             responseRequired: false
         },
         invitation: {
-            dataRequired: true,
+            dataRequired: true, // determines whether the all the @dataFields are required
             dataFields: [
-                'projectHash' // hash of the project invited to
+                'projectHash'   // hash of the project invited to
             ],
             // expireAfter: null, // set expiration date??
             //
             // @handleNotify function: callback function to be executed before adding a notification.
             //                      Must return error string if any error occurs or notification should be void.
             //                      Params:
-            //                      @toUserIds  array
-            //                      @data       object
-            //                      @message    string
+            //                      @id         string : notification ID
+            //                      @from       string : sender user ID
+            //                      @toUserIds  array  : receiver user IDs
+            //                      @data       object : extra information, can be specific to the module
+            //                      @message    string :
             handleNotify: projectTimeKeepingInvite, // place it in the project.js
             messageRequired: true,
             // messageEncrypted: false,
-            handleResponse: ()=> {}, // placeholder, place it in 
+            handleResponse: ()=> {}, // placeholder, place it in
         },
     }, // invitation to project and response, dispute time keeping entry and response
 }, true, true)
@@ -103,9 +105,9 @@ export function handleNotify( toUserIds = [], type = '', childType = '', message
 
         // if notification type has a handler function execute it
         const from = user.id
-        const err = isFn(config.handleNotify) && config.handleNotify(from, toUserIds, data, message)
-        if (err) return callback(err)
         const id = uuid.v1()
+        const err = isFn(config.handleNotify) && config.handleNotify(id, from, toUserIds, data, message)
+        if (err) return callback(err)
         notifications.set(id, {
             from,
             to: toUserIds,
