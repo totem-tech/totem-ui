@@ -13,6 +13,9 @@
     "server-faucet": "nodemon --watch server-faucet/ --watch server/ --verbose --exec ./node_modules/.bin/babel-node ./server-faucet/index.js --ext jsx,js --presets env,react"
   },
   "babel": {
+    "plugins": [
+      "babel-plugin-transform-object-rest-spread"
+    ],
     "presets": [
       "env",
       "react"
@@ -41,6 +44,7 @@
     "@polkadot/api": "^0.81.1",
     "@polkadot/keyring": "^1.1.1",
     "@polkadot/wasm-crypto": "^0.3.1",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "bip39": "^2.5.0",
     "blakejs": "^1.1.0",
     "bs58": "^4.0.1",
