@@ -7,6 +7,7 @@ import { newMessage } from '../utils/utils'
 import client, {getUser} from './ChatClient'
 import DataStorage from '../utils/DataStorage'
 const notifications = new DataStorage('totem_service_notifications', true, false)
+// store unread counts for individual types
 const unreadCounts = new DataStorage('totem_service_notifications-unread-counts', true, false)
 const triggerBond = new Bond()
 
@@ -23,13 +24,8 @@ client.onNotify((id, senderId, type, childType, message, data, tsCreated, confir
         read: false,
     })
     triggerBond.changed(uuid.v1())
-    console.log('notification.js')
-    confirmReceived(true)
-})
-
-client.onNotify((id, senderId, type, childType, message, data, tsCreated, confirm) => { 
-    confirm(true)
     console.log('Notification received!', id, senderId, tsCreated)
+    confirmReceived(true)
 })
 
 window.sendNotify = () => {
@@ -41,7 +37,6 @@ window.sendNotify = () => {
     client.notify(toUserIds, 'time_keeping', 'invitation', message, {projectHash}, 
         err => console.log('Notification sent:', !err, err))
 }
-// console.log('window', window)
 
 export const toggleRead = id => {
     const item = notifications.get(id)
@@ -54,7 +49,7 @@ export const markDeleted = id => {
 
 }
 
-export default class NotificationService extends ReactiveComponent {
+export default class NotificationDropdown extends ReactiveComponent {
     constructor() {
         super([], {triggerBond})
     }
@@ -92,7 +87,7 @@ export default class NotificationService extends ReactiveComponent {
                                 msg.content = (
                                     <div>
                                         <b>@{senderId}</b> invited you to start booking time on the following project:
-                                        <b>{message}</b>
+                                        <b> {message}</b>
                                         <div title="" style={{textAlign: 'center', marginTop: 10}}>
                                             <Button.Group>
                                                 <Button positive onClick={e => e.stopPropagation()}>Accept</Button>
@@ -124,5 +119,3 @@ export default class NotificationService extends ReactiveComponent {
         )
     }
 }
-
-// export class Notification 
