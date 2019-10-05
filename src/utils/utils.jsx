@@ -424,6 +424,7 @@ export const textEllipsis = (text, maxLen, numDots) => {
 }
 
 export const icons = {
+	basic: '',
 	error: 'exclamation circle',
 	loading: { name: 'circle notched', loading: true },
 	info: 'info',
@@ -431,11 +432,11 @@ export const icons = {
 	warning: 'lightning'
 }
 
-// valid statuses: error, info, loading, success
+// valid statuses: error, info, loading, warning, success
 export const newMessage = message => {
 	if (!isObj(message) || (!message.content && !message.list && !message.header)) return
 	let { icon, showIcon, status, style } = message
-	status = status || 'info'
+	status = status
 	icon = React.isValidElement(icon) ? icon.props : icon
 	if (showIcon) {
 		icon = icons[status]
@@ -450,6 +451,7 @@ export const newMessage = message => {
 			{...(objWithoutKeys(message, ['showIcon']))}
 			error={status === 'error'}
 			icon={icon && <Icon {...icon} style={objCopy({ width: 42 }, icon.style, true)} />}
+			info={status === 'info'}
 			style={objCopy(!icon && { textAlign: 'center', width: '100%' }, style)}
 			success={status === 'success'}
 			visible={!!status}

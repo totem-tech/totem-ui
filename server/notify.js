@@ -15,7 +15,7 @@ export const VALID_TYPES = objReadOnly({
     // invoice: {
     //     responseRequired: false
     // }, 
-    timeKeeping: {
+    time_keeping: {
         hasChild: true,
         // child types
         dispute: {

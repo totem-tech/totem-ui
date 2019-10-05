@@ -34,21 +34,6 @@ export const getClient = () => {
     return instance
 }
 
-
-    window.sendNotify = () => {
-        // emulate send notification
-        const isBrave = getUser().id === 'brave'
-        const toUserIds = [isBrave ? 'chromexe' : 'brave']
-        const projectHash = isBrave ? '0x007abc020689be19844664a497b23b7bb6f1f1be9bd6fc406e4c983d2b2c0bed' : '0xaa4519740a665105ef3a726fc54cc051083238c90ee8015783ad7acc7ae5d78f'
-        const message = isBrave ? 'Time keeping 001' : 'T001'
-        getClient().notify(toUserIds, 'timeKeeping', 'invitation', message, {projectHash}, 
-            err => console.log('Notification sent:', !err, err))
-    }
-    setTimeout(() => getClient().onNotify((id, senderId, type, childType, message, data, tsCreated, confirm) => { 
-        confirm(true)
-        console.log('Notification received!', id, senderId, tsCreated)
-    }))
-
 // Make sure to always keep the callback as the last argument
 export class ChatClient {
     constructor(url) {
@@ -87,7 +72,7 @@ export class ChatClient {
         this.notify = (toUserIds, type, childType, message, data, cb) => isFn(cb) && socket.emit(
             'notify', toUserIds, type, childType, message, data, cb
         )
-        // Receive notification
+        // Receive notification. 
         //
         // Params:
         // @cb function: callback function

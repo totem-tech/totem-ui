@@ -96,6 +96,14 @@
 .no-margin {
   margin: 0 !important;
 }
+.no-padding, .ui.menu .item .notification-service.menu.left.visible .item.no-padding {
+  padding: 0 !important;
+}
+.ui.menu .ui.dropdown .notification-service.menu > .item > .message i:not(.close) {
+  float: left;
+  font-size: 40px !important;
+  margin-right: 5px !important;
+}
 
 i.icon:not(.no-margin) {
   /*font-size: 1em  !important;*/

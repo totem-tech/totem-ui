@@ -22,6 +22,7 @@ import ProjectList from './lists/ProjectList'
 import SidebarLeft from './components/SidebarLeft'
 import ModalService from './services/modal'
 import ToastService from './services/toast'
+import NotificationService from './services/notification'
 import { resumeQueue } from './services/queue'
 import { IfMobile } from './utils/utils'
 // Images
@@ -102,6 +103,7 @@ export class App extends ReactiveComponent {
 
 		return (
 			<React.Fragment>
+				{/* <NotificationService /> */}
 				<ChatWidget />
 				<ModalService />
 				{/* <IfFn condition={!mobile && sidebarCollapsed} then={()=> <SystemStatus sidebar={true} visible={true} />} /> */}
