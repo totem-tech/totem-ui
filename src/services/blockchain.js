@@ -1,10 +1,11 @@
 // import { Bond } from 'oo7'
-import { addCodecTransform, calls, hexToBytes, post, runtime, ss58Decode } from 'oo7-substrate'
+import { addCodecTransform, calls, post, runtime, ss58Decode } from 'oo7-substrate'
 import { isBond } from '../utils/utils'
+import { hexToBytes } from '../utils/convert'
 
 const validatedAddress = address => runtime.indices.tryIndex(
-    new Bond().defaultTo(ss58Decode(isBond(address) ? address._value : address)
-))
+    new Bond().defaultTo(ss58Decode(isBond(address) ? address._value : address))
+)
 const hashHexToBytes = hash => hexToBytes(isBond(hash) ? hash._value : hash)
 
 // addNewProject registers a hash against a wallet into the blockchain
@@ -131,6 +132,14 @@ export const reopenProject = (ownerAddress, hash) => {
         compact: false,
         longevity: true
     })
+}
+
+// timeKeepingPendingInvites retrieves pending invites by address
+export const timeKeeping = {
+    inviteStatus: (projectHash, address) => runtime.timekeeping.workerProjectsBacklogStatus(
+        hashHexToBytes(projectHash), validatedAddress(address)
+    ),
+    pendingInvites: address => runtime.timekeeping.workerProjectsBacklogList(validatedAddress(address)),
 }
 
 // Include all functions here that will be used by Queue Service

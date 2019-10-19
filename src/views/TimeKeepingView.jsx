@@ -1,13 +1,13 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
-import {Divider, Header} from 'semantic-ui-react'
+import { Divider, Header } from 'semantic-ui-react'
 import { deferred, objCopy, IfMobile, newMessage } from '../utils/utils'
 import ContentSegment from '../components/ContentSegment'
 import ProjectTimeKeepingList from '../lists/TimeKeepingList'
 import TimeKeepingInviteList from '../lists/TimeKeepingInviteList'
 import TimeKeepingSummary from '../lists/TimeKeepingSummary'
-import FormBuilder, {findInput} from '../components/FormBuilder'
-import {projectDropdown, handleSearch} from '../components/ProjectDropdown'
+import FormBuilder, { findInput } from '../components/FormBuilder'
+import { projectDropdown, handleSearch } from '../components/ProjectDropdown'
 
 class TimeKeepingView extends ReactiveComponent {
     constructor(props) {
@@ -67,34 +67,34 @@ class TimeKeepingView extends ReactiveComponent {
     }
 
     handleChange(e, values = {}) {
-        this.setState({values})
+        this.setState({ values })
     }
 
     handleProjectChange(_, { projectHash }) {
         const { inputs } = this.state
-        const {options} = findInput(inputs, 'projectHash')
+        const { options } = findInput(inputs, 'projectHash')
         const project = !projectHash ? undefined : options.find(o => o.value === projectHash).project
         this.setState({ inputs, project })
     }
 
     getContent(mobile) {
-        const { inputs, project, values: {projectHash, option} } = this.state
+        const { inputs, project, values: { projectHash, option } } = this.state
         let contents = []
-        const manage = option.indexOf('manage') >= 0
-        const showSummary = option.indexOf('summary') >= 0
-        const showInvites = option.indexOf('invites') >= 0
-        const showEntries = option.indexOf('entries') >= 0 || manage
+        const manage = option.includes('manage')
+        const showSummary = option.includes('summary')
+        const showInvites = option.includes('invites')
+        const showEntries = option.includes('entries') || manage
         const optionInput = findInput(inputs, 'option')
         optionInput.inline = !mobile
-        optionInput.style = mobile ? { margin: '15px 0'} : { float: 'right' }
+        optionInput.style = mobile ? { margin: '15px 0' } : { float: 'right' }
         optionInput.style.paddingTop = 7
         findInput(inputs, 'option').options.find(x => x.value === 'entries').disabled = manage
 
         if (showEntries) contents.push({
-            content: <ProjectTimeKeepingList {...{project, projectHash, manage}} />,
+            content: <ProjectTimeKeepingList {...{ project, projectHash, manage }} />,
         })
         if (showInvites) contents.push({
-            content: <TimeKeepingInviteList {...{projectHash}} />,
+            content: <TimeKeepingInviteList {...{ projectHash }} />,
             header: 'Invitations'
         })
         if (showSummary) contents.push({
@@ -106,8 +106,9 @@ class TimeKeepingView extends ReactiveComponent {
             <div>
                 <FormBuilder {...{
                     inputs,
-                    onChange: this.handleChange.bind(this) ,
-                    submitText: null}}
+                    onChange: this.handleChange.bind(this),
+                    submitText: null
+                }}
                 />
                 {contents.map((item, i) => (
                     <ContentSegment
@@ -116,7 +117,7 @@ class TimeKeepingView extends ReactiveComponent {
                         basic={true}
                         key={i}
                         headerTag="h3"
-                        style={{padding:0}}
+                        style={{ padding: 0 }}
                     />
                 ))}
             </div>
