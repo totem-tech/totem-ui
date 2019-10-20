@@ -69,10 +69,11 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
                 proIn.options = Array.from(projects)
                     // include only active (open/reopened) projects
                     .filter(([_, { status }]) => [0, 1].indexOf(status) >= 0)
-                    .map(([hash, { name }]) => ({
+                    .map(([hash, project]) => ({
                         key: hash,
-                        text: name,
+                        text: project.name,
                         value: hash,
+                        project,
                     }))
 
                 proIn.invalid = !!err || proIn.options.length === 0
@@ -165,6 +166,7 @@ TimeKeepingInviteForm.propTypes = {
     })
 }
 TimeKeepingInviteForm.defaultProps = {
+    closeText: 'Close',
     header: 'Time Keeping: Invite User(s)',
     size: 'tiny',
     submitText: 'Invite'

@@ -1,8 +1,8 @@
 import DataStorage from '../src/utils/DataStorage'
 import uuid from 'uuid'
-import { arrUnique, isArr, isFn, isObj, objHasKeys, objReadOnly, isStr  } from '../src/utils/utils'
+import { arrUnique, isArr, isFn, isObj, objHasKeys, objReadOnly, isStr } from '../src/utils/utils'
 import { emitToUsers, getUserByClientId, isUserOnline, onUserLogin } from './users'
-import { projectTimeKeepingInvite } from './projects'
+import { projectTimeKeepingAccept, projectTimeKeepingInvite } from './projects'
 
 const notifications = new DataStorage('notifications.json', true)
 const userNotificationIds = new DataStorage('notification-receivers.json', false)
@@ -16,6 +16,7 @@ export const VALID_TYPES = objReadOnly({
     //     responseRequired: false
     // }, 
     time_keeping: {
+        alert: {},
         hasChild: true,
         // child types
         dispute: {
@@ -24,7 +25,8 @@ export const VALID_TYPES = objReadOnly({
         invitation: {
             dataRequired: true, // determines whether the all the @dataFields are required
             dataFields: [
-                'projectHash'   // hash of the project invited to
+                'projectHash',   // hash of the project invited to
+                //'workerAddress', // optional, pre-defined worker address (can be changed by worker)
             ],
             // expireAfter: null, // set expiration date??
             //
@@ -39,7 +41,16 @@ export const VALID_TYPES = objReadOnly({
             handleNotify: projectTimeKeepingInvite, // place it in the project.js
             messageRequired: true,
             // messageEncrypted: false,
-            handleResponse: ()=> {}, // placeholder, place it in
+        },
+        invitationResponse: {
+            dataRequired: true,
+            dataFields: [
+                'projectHash',
+                'accepted', // bool
+                'workerAddress', //string
+            ],
+            handleNotify: projectTimeKeepingAccept,
+            messageRequired: false,
         },
     }, // invitation to project and response, dispute time keeping entry and response
 }, true, true)
@@ -52,11 +63,11 @@ const messages = {
 }
 
 // Send notification to all clients of a specific user
-const _notifyUser = userId => setTimeout(()=> {
+const _notifyUser = userId => setTimeout(() => {
     if (!isUserOnline(userId)) return
     arrUnique(userNotificationIds.get(userId)).forEach(id => {
-        const {from, type, childType, message, data, tsCreated} = notifications.get(id)
-        emitToUsers([userId], EVENT_NAME, [id, from, type, childType, message, data, tsCreated, (received)=> {
+        const { from, type, childType, message, data, tsCreated } = notifications.get(id)
+        emitToUsers([userId], EVENT_NAME, [id, from, type, childType, message, data, tsCreated, (received) => {
             const notifyIds = userNotificationIds.get(userId)
             notifyIds.splice(notifyIds.indexOf(id), 1)
             if (notifyIds.length > 0) return userNotificationIds.set(userId, notifyIds)
@@ -77,7 +88,7 @@ onUserLogin(_notifyUser)
 // @message     string   : message to be displayed (unless custom message required). can be encrypted later on
 // @data        object   : information specific to the type of notification
 // @callback    function : params: (@err string) 
-export function handleNotify( toUserIds = [], type = '', childType = '', message = '', data = {}, callback ) {
+export function handleNotify(toUserIds = [], type = '', childType = '', message = '', data = {}, callback) {
     const client = this
     console.log('handleNotify() ', toUserIds)
     if (!isFn(callback)) return
@@ -91,10 +102,10 @@ export function handleNotify( toUserIds = [], type = '', childType = '', message
 
         const typeObj = VALID_TYPES[type]
         if (!isObj(typeObj)) return callback(messages.invalidParams + ': type')
-        
+
         const childTypeObj = typeObj[childType]
         if (typeObj.hasChild && !isObj(childTypeObj)) return callback(messages.invalidParams + ': childType')
-        
+
         const config = typeObj.hasChild ? childTypeObj : typeObj
         if (config.dataRequired && !objHasKeys(data, config.dataFields, true)) {
             return callback(`${messages.invalidParams}: data { ${config.dataFields.join()} }`)

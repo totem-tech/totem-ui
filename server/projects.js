@@ -22,6 +22,7 @@ const messages = {
     invalidParams: 'Invalid parameters supplied',
     invalidStatusCode: `Invalid project status codes supplied. Acceptable codes: ${STATUS_CODES.join()}`,
     invalidUserIds: 'Invalid user ID(s) supplied',
+    invitationNotFound: 'invitation not found',
     loginRequired: 'You must be logged in to perform this action',
     projectInvalidKeys: `Project must contain all of the following properties: ${requiredKeys.join()} and an unique hash`,
     projectNotFound: 'Project not found',
@@ -41,7 +42,7 @@ export function handleProject(hash, project, create, callback) {
 
     const user = getUserByClientId(client.id)
     if (!user) return callback(messages.loginRequired)
-    const {userId} = existingProject || {}
+    const { userId } = existingProject || {}
     if (!create && isDefined(userId) && user.id !== userId) return (messages.accessDenied)
 
     // check if project contains all the required properties
@@ -167,9 +168,9 @@ export const handleProjectTimeKeepingBan = (hash, addresses = [], ban = false, c
     if (!project) return callback(messages.projectNotFound)
 
     project.timeKeeping = project.timeKeeping || {}
-    let {bannedAddresses: existingAddresses} = project.timeKeeping
+    let { bannedAddresses: existingAddresses } = project.timeKeeping
     existingAddresses = existingAddresses || []
-    
+
     const changed = addresses.reduce((changed, address) => {
         if (!isStr(address)) return changed
         const index = existingAddresses.indexOf(address)
@@ -193,9 +194,39 @@ export const handleProjectTimeKeepingBan = (hash, addresses = [], ban = false, c
 
 /*
  * Time keeping specific functions
- */ 
+ */
+// handle accept/rejection of an invitations
+//
+// Params: 
+// @notificationId  string
+// @senderId        string: worker's user ID (assumed authenticated by notification system)
+// @userIds         array: single item array with project owner's user ID
+// @data            object: {
+//                      @projectHash    string
+//                      @accepted       boolean: whether worker accepted or rejected the invitation
+//                      @workerAddress  string : address of the worker to be associated with the project
+//                  }
+//
+// Returns error string or undefined (success)
+export function projectTimeKeepingAccept(notificationId, senderId, userIds, { projectHash, accepted, workerAddress }) {
+    const project = projects.get(projectHash)
+    if (!project) return messages.projectNotFound
+
+    const workerId = senderId
+    const timeKeeping = project.timeKeeping || { invitations: [] }
+    const invitation = timeKeeping.invitations[workerId]
+    if (!invitation) return messages.invitationNotFound
+    invitation.accepted = accepted
+    invitation.workerAddress = workerAddress
+    invitation.tsAccepted = new Date()
+    // update data
+    projects.set(projectHash, project)
+}
+
 // projectTimeKeepingInvite 
-export function projectTimeKeepingInvite(notificationId, senderId, userIds, {projectHash}) {
+//
+// Returns error string or undefined (success)
+export function projectTimeKeepingInvite(notificationId, senderId, userIds, { projectHash, workerAddress }) {
     const project = projects.get(projectHash)
     if (!project) return messages.projectNotFound
     // Only allow project owner to send invitations to time keeping
@@ -206,15 +237,17 @@ export function projectTimeKeepingInvite(notificationId, senderId, userIds, {pro
 
     const timeKeeping = project.timeKeeping || {}
     timeKeeping.invitations = (timeKeeping.invitations || {})
-    userIds.forEach(userId => {
-        if (timeKeeping.invitations[userId]) return;
-        timeKeeping.invitations[userId] = {
+    userIds.forEach(workerId => {
+        if (timeKeeping.invitations[workerId]) return;
+        timeKeeping.invitations[workerId] = {
             accepted: false,
             notificationId,
             tsAccepted: undefined,
             tsInvited: new Date(),
+            workerAddress,
         }
-    }),
+    })
     project.timeKeeping = timeKeeping
+    // save/update data
     projects.set(projectHash, project)
 }

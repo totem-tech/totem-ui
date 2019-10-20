@@ -99,6 +99,7 @@ const _processItem = (queueItem, id, toastId) => {
                 const tieId = bond.tie(result => {
                     if (!isObj(result)) return;
                     const { failed, finalized, sending, signing } = result
+                    console.log({ result })
                     const done = failed || finalized
                     const status = !done ? 'loading' : (finalized ? 'success' : 'error')
                     const statusText = finalized ? 'Transaction successful' : (
