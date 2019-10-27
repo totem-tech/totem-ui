@@ -37,16 +37,6 @@ client.onNotify((id, senderId, type, childType, message, data, tsCreated, confir
     confirmReceived(true)
 })
 
-window.sendNotify = () => {
-    // emulate send notification
-    const isBrave = getUser().id === 'brave'
-    const toUserIds = [isBrave ? 'chromexe' : 'brave']
-    const projectHash = isBrave ? '0x007abc020689be19844664a497b23b7bb6f1f1be9bd6fc406e4c983d2b2c0bed' : '0xaa4519740a665105ef3a726fc54cc051083238c90ee8015783ad7acc7ae5d78f'
-    const message = isBrave ? 'Time keeping 001' : 'T001'
-    client.notify(toUserIds, 'time_keeping', 'invitation', message, { projectHash },
-        err => console.log('Notification sent:', !err, err))
-}
-
 export const toggleRead = id => {
     const item = notifications.get(id)
     item.read = !item.read
@@ -63,61 +53,75 @@ export default class NotificationDropdown extends ReactiveComponent {
     }
 
     // time keeping invite response
-    handleTKInviteResponse(id, accepted = false) {
+    handleTKIdentityResponse(id, accepted = false) {
         const notification = notifications.get(id)
-        const { childType, data, message: projectName, senderId, type } = notification
-        const { projectHash, workerAddress } = data
+        const { childType, data, senderId, type } = notification
+        const { projectName, projectHash } = data
         const respond = (workerAddress) => {
             console.log({ workerAddress })
-            const acceptedStr = accepted ? 'accepted' : 'rejected'
-            const queueProps = {
-                type: QUEUE_TYPES.BLOCKCHAIN,
-                func: 'timeKeeping_invitation_add',
-                args: [projectHash, workerAddress, workerAddress],
-                title: 'TimeKeeping - invitation (step 1)',
-                description: `Project: ${projectName} | Response: ${acceptedStr}`,
-                next: {
-                    type: QUEUE_TYPES.BLOCKCHAIN,
-                    func: 'timeKeeping_invitation_accept',
-                    args: [projectHash, workerAddress],
-                    title: 'TimeKeeping - invitation (step 2)',
-                    next: {
-                        type: QUEUE_TYPES.CHATCLIENT,
-                        func: 'notify',
-                        title: 'TimeKeeping - invitation (step 3)',
-                        args: [
-                            [senderId],
-                            type,
-                            childType + 'Response',
-                            `${acceptedStr} invitation to project "${projectName}"`,
-                            { projectHash, accepted, workerAddress },
-                            err => !err && deleteNotification(id)
-                        ]
-                    }
-                },
-            }
-            addToQueue(queueProps)
-
+            const acceptStr = accepted ? 'submit' : 'reject'
+            addToQueue({
+                type: QUEUE_TYPES.CHATCLIENT,
+                func: 'notify',
+                title: `TimeKeeping - ${acceptStr} identity`,
+                description: `Project: ${projectName}`,
+                args: [
+                    [senderId],
+                    type,
+                    childType + '_response',
+                    `${acceptStr}ed invitation to project: "${projectName}"`,
+                    { accepted, projectHash, workerAddress },
+                    err => !err && deleteNotification(id)
+                ]
+            })
         }
-        const isWorkerAddressValid = !!workerAddress && !!secretStore.find(workerAddress)
-        if (!accepted || isWorkerAddressValid) return respond(workerAddress)
 
-        showForm(SelectIdentityForm, {
+        !accepted ? respond() : showForm(SelectIdentityForm, {
+            header: 'Submit Identity',
+            message: {
+                content: `Your identity will be sent to the project owner. Upon approval you will receive the formal 
+                    invitation and once you accept that you will be able to start booking time for the project.`,
+                header: 'How it works?',
+                icon: 'question circle'
+            },
             onSubmit: (_, { address }) => respond(address),
-            subheader: 'Select an wallet to be use with the invited project',
-            submitText: 'Accept Invitation',
+            subheader: 'Select an identity to be use with the invited project',
+        })
+    }
+
+    handleTKInvitationResponse(id, accepted) {
+        const notification = notifications.get(id)
+        const { childType, data, senderId, type } = notification
+        const { projectHash, projectName, workerAddress } = data
+        const acceptedStr = accepted ? 'accepted' : 'rejected'
+        addToQueue({
+            type: QUEUE_TYPES.BLOCKCHAIN,
+            func: 'timeKeeping_invitation_accept',
+            args: [projectHash, workerAddress],
+            title: `TimeKeeping - ${accepted ? 'accept' : 'reject'} invitation`,
+            description: `Project: ${projectName}`,
+            next: {
+                type: QUEUE_TYPES.CHATCLIENT,
+                func: 'notify',
+                args: [
+                    [senderId],
+                    type,
+                    childType + '_response',
+                    `${acceptedStr} invitation to project: "${projectName}"`,
+                    { accepted, projectHash, workerAddress },
+                    err => !err && deleteNotification(id)
+                ]
+            },
         })
     }
 
     render() {
         const maxHeight = window.innerHeight - 140
         const items = notifications.getAll()
+
         return items.size === 0 ? '' : (
             <Dropdown
-                icon={{
-                    name: 'bell outline',
-                    size: 'large'
-                }}
+                icon={{ name: 'bell outline', size: 'large' }}
                 item
                 scrolling
             >
@@ -125,6 +129,7 @@ export default class NotificationDropdown extends ReactiveComponent {
                     {Array.from(items).filter(([_, { deleted }]) => !deleted).map(([id, item]) => {
                         const { senderId, type, childType, message, data, tsCreated, read } = item
                         const typeSpaced = type.replace('_', ' ')
+                        let projectName
                         const msg = {
                             // attached: true,
                             icon: { name: 'bell outline', size: 'large' },
@@ -138,23 +143,29 @@ export default class NotificationDropdown extends ReactiveComponent {
                         }
 
                         switch (type + ':' + childType) {
-                            case 'time_keeping:invitation':
+                            case 'time_keeping:identity':
+                                projectName = message
                                 msg.icon.name = 'clock outline'
                                 msg.content = (
                                     <div>
-                                        <b>@{senderId}</b> invited you to start booking time on the following project:
-                                        <b> {message}</b>
-                                        <div title="" style={{ textAlign: 'center', marginTop: 10 }}>
-                                            <Button.Group>
-                                                <Button positive onClick={e => this.handleTKInviteResponse(id, true)}>
-                                                    Accept
-                                                </Button>
-                                                <Button.Or />
-                                                <Button negative onClick={e => this.handleTKInviteResponse(id, false)}>
-                                                    Reject
-                                                </Button>
-                                            </Button.Group>
-                                        </div>
+                                        <b>@{senderId}</b> wants you to join the following project:
+                                        <b> {projectName}</b>
+                                        <ButtonAcceptOrReject
+                                            onResponse={accepted => this.handleTKIdentityResponse(id, accepted)}
+                                        />
+                                    </div>
+                                )
+                                break
+                            case 'time_keeping:invitation':
+                                projectName = message
+                                msg.icon.name = 'clock outline'
+                                msg.content = (
+                                    <div>
+                                        <b>@{senderId}</b> invited you to start booking time for the following project:
+                                        <b> {projectName}</b>
+                                        <ButtonAcceptOrReject
+                                            onResponse={accepted => this.handleTKInvitationResponse(id, accepted)}
+                                        />
                                     </div>
                                 )
                                 break
@@ -179,3 +190,17 @@ export default class NotificationDropdown extends ReactiveComponent {
         )
     }
 }
+
+const ButtonAcceptOrReject = ({ onResponse, acceptText, rejectText }) => (
+    <div title="" style={{ textAlign: 'center', marginTop: 10 }}>
+        <Button.Group>
+            <Button positive onClick={() => onResponse(true)}>
+                {acceptText || 'Accept'}
+            </Button>
+            <Button.Or />
+            <Button negative onClick={() => onResponse(false)}>
+                {rejectText || 'Reject'}
+            </Button>
+        </Button.Group>
+    </div>
+)

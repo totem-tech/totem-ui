@@ -10,7 +10,7 @@ import { ownerProjectsList } from '../services/blockchain'
 import { bytesToHex } from '../utils/convert'
 
 const notificationType = 'time_keeping'
-const childType = 'invitation'
+const childType = 'identity'
 
 export default class TimeKeepingInviteForm extends ReactiveComponent {
     constructor(props) {
@@ -126,11 +126,13 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
         const { projectHash, userIds } = values
         const projectName = findInput(inputs, 'projectHash').options.find(x => x.value === projectHash).text
         this.setState({ loading: true })
-        client.notify(userIds, notificationType, childType, projectName, { projectHash }, err => {
+        client.notify(userIds, notificationType, childType, null, { projectHash, projectName }, err => {
             this.setState({
                 loading: false,
                 message: !err ? {
-                    header: 'Notificaton sent!',
+                    content: `Invitation sent to selected work(s) requesting their identity (wallet) to be used with 
+                        the project. Once worker submits their identity you will be able to initiate a formal invitation.`,
+                    header: 'Notification sent!',
                     showIcon: true,
                     status: 'success',
                 } : {
@@ -167,7 +169,8 @@ TimeKeepingInviteForm.propTypes = {
 }
 TimeKeepingInviteForm.defaultProps = {
     closeText: 'Close',
-    header: 'Time Keeping: Invite User(s)',
+    header: 'Time Keeping: Invite Worker(s)',
     size: 'tiny',
-    submitText: 'Invite'
+    subheader: '',
+    submitText: 'Request Worker Identity',
 }

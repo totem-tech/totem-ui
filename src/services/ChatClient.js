@@ -142,11 +142,16 @@ export class ChatClient {
 
         // Add/update time keeping entry
         this.timeKeepingEntry = (hash, entry, cb) => isFn(cb) && socket.emit('time-keeping-entry', hash, entry, cb)
-        this.timeKeepingEntryApproval = (hash, approve, cb) => isFn(cb) && socket.emit('time-keeping-entry-approval', hash, approve, cb)
-        this.handleTimeKeepingEntrySearch = (query, matchExact, matchAll, ignoreCase, cb) => isFn(cb) && socket.emit(
+        this.timeKeepingEntryApproval = (hash, approve, cb) => isFn(cb) && socket.emit(
+            'time-keeping-entry-approval', hash, approve, cb
+        )
+        this.timeKeepingEntrySearch = (query, matchExact, matchAll, ignoreCase, cb) => isFn(cb) && socket.emit(
             'time-keeping-entry-search',
             query, matchExact, matchAll, ignoreCase,
             (err, entriesArr) => cb(err, new Map(entriesArr))
+        )
+        this.timeKeepingInvitations = (projectHash, cb) => isFn(cb) && socket.emit(
+            'time-keeping-invitations', projectHash, (err, result) => cb(err, new Map(result))
         )
     }
 

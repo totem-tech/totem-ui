@@ -1,8 +1,8 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import { secretStore } from 'oo7-substrate'
-import FormBuilder from '../components/FormBuilder'
-import { isFn } from '../utils/utils'
+import FormBuilder, { fillValues } from '../components/FormBuilder'
+import { isFn, isObj } from '../utils/utils'
 
 // 
 export default class SelectIdentityForm extends ReactiveComponent {
@@ -10,7 +10,6 @@ export default class SelectIdentityForm extends ReactiveComponent {
         super(props)
 
         this.state = {
-            message: {},
             success: false,
             inputs: [
                 {
@@ -29,6 +28,8 @@ export default class SelectIdentityForm extends ReactiveComponent {
                 }
             ]
         }
+
+        isObj(props.values) && fillValues(this.state.inputs, props.values)
     }
 
     handleSubmit(e, values) {
@@ -38,13 +39,12 @@ export default class SelectIdentityForm extends ReactiveComponent {
     }
 
     render() {
-        const { inputs, message, success } = this.state
+        const { inputs, success } = this.state
         return (
             <FormBuilder
                 {...this.props}
                 {...{
                     inputs,
-                    message,
                     onSubmit: this.handleSubmit.bind(this),
                     success,
                 }}

@@ -17,6 +17,7 @@ import {
     handleTimeKeepingEntry,
     handleTimeKeepingEntryApproval,
     handleTimeKeepingEntrySearch,
+    handleTimeKeepingInvitations,
 } from './timeKeeping'
 import {
     handleDisconnect,
@@ -63,6 +64,7 @@ export const initChatServer = (httpsOptions, expressApp) => {
         client.on('time-keeping-entry', handleTimeKeepingEntry.bind(client))
         client.on('time-keeping-entry-approval', handleTimeKeepingEntryApproval.bind(client))
         client.on('time-keeping-entry-search', handleTimeKeepingEntrySearch.bind(client))
+        client.on('time-keeping-invitations', handleTimeKeepingInvitations.bind(client))
     })
 
     // Start listening

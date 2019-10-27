@@ -21,12 +21,14 @@ const messages = {
     invalidDescMaxLen: `Project description must not exceed ${descMaxLen} characters`,
     invalidParams: 'Invalid parameters supplied',
     invalidStatusCode: `Invalid project status codes supplied. Acceptable codes: ${STATUS_CODES.join()}`,
-    invalidUserIds: 'Invalid user ID(s) supplied',
     invitationNotFound: 'invitation not found',
     loginRequired: 'You must be logged in to perform this action',
     projectInvalidKeys: `Project must contain all of the following properties: ${requiredKeys.join()} and an unique hash`,
     projectNotFound: 'Project not found',
 }
+
+
+export const getProject = projectHash => projects.get(projectHash)
 
 // Create/get/update project
 export function handleProject(hash, project, create, callback) {
@@ -38,7 +40,10 @@ export function handleProject(hash, project, create, callback) {
     }
 
     // return existing project
-    if (!isObj(project)) return callback(null, existingProject)
+    if (!isObj(project)) return callback(
+        !!existingProject ? null : messages.projectNotFound,
+        existingProject
+    )
 
     const user = getUserByClientId(client.id)
     if (!user) return callback(messages.loginRequired)
@@ -58,7 +63,7 @@ export function handleProject(hash, project, create, callback) {
     // Add/update project
     projects.set(hash, project)
     callback(null)
-    console.log(`Project ${create ? 'created' : 'updated'}: ${hash}`)
+    console.log(`Project ${create ? 'created' : 'updated'}: ${hash} `)
 }
 
 // Set project first time used timestamp, if not already set
@@ -192,62 +197,68 @@ export const handleProjectTimeKeepingBan = (hash, addresses = [], ban = false, c
     callback(null, changed)
 }
 
-/*
- * Time keeping specific functions
- */
-// handle accept/rejection of an invitations
-//
-// Params: 
-// @notificationId  string
-// @senderId        string: worker's user ID (assumed authenticated by notification system)
-// @userIds         array: single item array with project owner's user ID
-// @data            object: {
-//                      @projectHash    string
-//                      @accepted       boolean: whether worker accepted or rejected the invitation
-//                      @workerAddress  string : address of the worker to be associated with the project
-//                  }
-//
-// Returns error string or undefined (success)
-export function projectTimeKeepingAccept(notificationId, senderId, userIds, { projectHash, accepted, workerAddress }) {
-    const project = projects.get(projectHash)
-    if (!project) return messages.projectNotFound
+// /*
+//  * Time keeping specific functions
+//  */
+// // handle accept/rejection of an invitations
+// //
+// // Params: 
+// // @notificationId  string
+// // @senderId        string: worker's user ID (assumed authenticated by notification system)
+// // @userIds         array: single item array with project owner's user ID
+// // @data            object: {
+// //                      @projectHash    string
+// //                      @accepted       boolean: whether worker accepted or rejected the invitation
+// //                      @workerAddress  string : address of the worker to be associated with the project
+// //                  }
+// //
+// // Returns error string or undefined (success)
+// export function projectTimeKeepingIdentityResponse(notificationId, senderId, userIds, { projectHash, accepted, workerAddress }) {
+//     const project = projects.get(projectHash)
+//     if (!project) return messages.projectNotFound
 
-    const workerId = senderId
-    const timeKeeping = project.timeKeeping || { invitations: [] }
-    const invitation = timeKeeping.invitations[workerId]
-    if (!invitation) return messages.invitationNotFound
-    invitation.accepted = accepted
-    invitation.workerAddress = workerAddress
-    invitation.tsAccepted = new Date()
-    // update data
-    projects.set(projectHash, project)
-}
+//     const workerId = senderId
+//     const timeKeeping = project.timeKeeping || { invitations: [] }
+//     const invitation = timeKeeping.invitations[workerId]
+//     if (!invitation) return messages.invitationNotFound
+//     invitation.status = `identity ${accepted && !!workerAddress ? 'supplied' : 'rejected'} `
+//     invitation.workerAddress = workerAddress
+//     // update data
+//     projects.set(projectHash, project)
+// }
 
-// projectTimeKeepingInvite 
-//
-// Returns error string or undefined (success)
-export function projectTimeKeepingInvite(notificationId, senderId, userIds, { projectHash, workerAddress }) {
-    const project = projects.get(projectHash)
-    if (!project) return messages.projectNotFound
-    // Only allow project owner to send invitations to time keeping
-    if (project.userId && project.userId !== senderId) return messages.accessDenied
+// // projectTimeKeepingIdentityRequest 
+// //
+// // Returns error string or undefined (success)
+// export function projectTimeKeepingIdentityRequest(notificationId, senderId, userIds, { projectHash, workerAddress }) {
+//     const project = projects.get(projectHash)
+//     if (!project) return messages.projectNotFound
+//     // Only allow project owner to send invitations to time keeping
+//     if (project.userId && project.userId !== senderId) return messages.accessDenied
 
-    const invalidIds = userIds.filter(userId => !idExists(userId))
-    if (invalidIds.length > 0) return `${messages.invalidUserIds}: ${invalidIds.join(', ')}`
+//     const invalidIds = userIds.filter(userId => !idExists(userId))
+//     if (invalidIds.length > 0) return `${messages.invalidUserIds}: ${invalidIds.join(', ')} `
 
-    const timeKeeping = project.timeKeeping || {}
-    timeKeeping.invitations = (timeKeeping.invitations || {})
-    userIds.forEach(workerId => {
-        if (timeKeeping.invitations[workerId]) return;
-        timeKeeping.invitations[workerId] = {
-            accepted: false,
-            notificationId,
-            tsAccepted: undefined,
-            tsInvited: new Date(),
-            workerAddress,
-        }
-    })
-    project.timeKeeping = timeKeeping
-    // save/update data
-    projects.set(projectHash, project)
-}
+//     const timeKeeping = project.timeKeeping || {}
+//     timeKeeping.invitations = (timeKeeping.invitations || {})
+//     const idsAreadyAccepted = userIds.reduce((ids, workerId) => {
+//         const invitation = timeKeeping.invitations[workerId]
+//         // prevents overriding data but will still send an invitation to the worker
+//         if (invitation) {
+//             invitation.accepted || !!invitation.workerAddress ? ids.push(workerId) : null
+//         } else {
+//             timeKeeping.invitations[workerId] = {
+//                 notificationId,
+//                 status: 'identity requested',
+//                 tsInvited: new Date(),
+//                 workerAddress,
+//             }
+//         }
+//         return ids
+//     }, [])
+
+//     if (idsAreadyAccepted.length > 0) return messages.usersAlreadyAcceptedProject(idsAreadyAccepted)
+//     project.timeKeeping = timeKeeping
+//     // save/update data
+//     projects.set(projectHash, project)
+// }

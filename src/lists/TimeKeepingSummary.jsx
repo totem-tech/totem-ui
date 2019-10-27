@@ -53,7 +53,7 @@ export default class TimeKeepingSummary extends ReactiveComponent {
 
     getSummary() {
         const address = (secretStore()._keys[storage.walletIndex()] || {}).address
-        client.handleTimeKeepingEntrySearch({address}, true, true, false, (err, entries) => {
+        client.timeKeepingEntrySearch({address}, true, true, false, (err, entries) => {
             const entriesArr = Array.from(entries)
             const userTotalBlocks = entriesArr.reduce((sum, [_, entry]) => sum + entry.blockCount, 0)
             const projectHashes = Object.keys(entriesArr.reduce((hashes, [_, entry]) => {

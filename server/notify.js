@@ -2,11 +2,28 @@ import DataStorage from '../src/utils/DataStorage'
 import uuid from 'uuid'
 import { arrUnique, isArr, isFn, isObj, objHasKeys, objReadOnly, isStr } from '../src/utils/utils'
 import { emitToUsers, getUserByClientId, isUserOnline, onUserLogin } from './users'
-import { projectTimeKeepingAccept, projectTimeKeepingInvite } from './projects'
+import {
+    processTKIdentityRequest,
+    processTKIdentityResponse,
+    processTKInvitation,
+    processTKInvitationResponse,
+} from './timeKeeping'
 
 const notifications = new DataStorage('notifications.json', true)
 const userNotificationIds = new DataStorage('notification-receivers.json', false)
 export const EVENT_NAME = 'notify'
+const REQUIRED = true
+const NOT_REQUIRED = false
+
+// @handleNotify function: callback function to be executed before adding a notification.
+//                      Must return error string if any error occurs or notification should be void.
+//                      thisArg: client object
+//                      Params:
+//                      @id         string : notification ID
+//                      @from       string : sender user ID
+//                      @toUserIds  array  : receiver user IDs
+//                      @data       object : extra information, can be specific to the module
+//                      @message    string : message to be displayed, unless invitation type has custom view
 export const VALID_TYPES = objReadOnly({
     // notification that doesn't fall into other types
     // alert: {
@@ -20,39 +37,42 @@ export const VALID_TYPES = objReadOnly({
         hasChild: true,
         // child types
         dispute: {
-            responseRequired: false
+            responseRequired: REQUIRED
         },
-        invitation: {
-            dataRequired: true, // determines whether the all the @dataFields are required
-            dataFields: [
-                'projectHash',   // hash of the project invited to
-                //'workerAddress', // optional, pre-defined worker address (can be changed by worker)
-            ],
-            // expireAfter: null, // set expiration date??
-            //
-            // @handleNotify function: callback function to be executed before adding a notification.
-            //                      Must return error string if any error occurs or notification should be void.
-            //                      Params:
-            //                      @id         string : notification ID
-            //                      @from       string : sender user ID
-            //                      @toUserIds  array  : receiver user IDs
-            //                      @data       object : extra information, can be specific to the module
-            //                      @message    string :
-            handleNotify: projectTimeKeepingInvite, // place it in the project.js
-            messageRequired: true,
+        // Request identity from new worker
+        identity: {
+            dataFields: {
+                projectHash: REQUIRED,
+                projectName: REQUIRED,
+            },
+            handleNotify: processTKIdentityRequest,
+            messageRequired: NOT_REQUIRED, // use project name only???
             // messageEncrypted: false,
         },
-        invitationResponse: {
-            dataRequired: true,
-            dataFields: [
-                'projectHash',
-                'accepted', // bool
-                'workerAddress', //string
-            ],
-            handleNotify: projectTimeKeepingAccept,
-            messageRequired: false,
+        // Worker's response to identity request
+        identity_response: {
+            dataFields: {
+                accepted: REQUIRED, // bool  
+                projectHash: REQUIRED, // string
+                workerAddress: NOT_REQUIRED, //string
+            },
+            handleNotify: processTKIdentityResponse,
+            messageRequired: REQUIRED,
         },
-    }, // invitation to project and response, dispute time keeping entry and response
+        invitation: {
+            dataFields: {
+                projectHash: REQUIRED, // string
+                projectName: REQUIRED,
+                workerAddress: REQUIRED, //string
+            },
+            messageRequird: NOT_REQUIRED,
+            notifyHander: processTKInvitation,
+        },
+        invitation_response: {
+            messageRequird: REQUIRED,
+            notifyHander: processTKInvitationResponse,
+        },
+    },
 }, true, true)
 
 const messages = {
@@ -90,7 +110,7 @@ onUserLogin(_notifyUser)
 // @callback    function : params: (@err string) 
 export function handleNotify(toUserIds = [], type = '', childType = '', message = '', data = {}, callback) {
     const client = this
-    console.log('handleNotify() ', toUserIds)
+    console.log('handleNotify() ', { toUserIds })
     if (!isFn(callback)) return
     try {
         const user = getUserByClientId(client.id)
@@ -107,6 +127,7 @@ export function handleNotify(toUserIds = [], type = '', childType = '', message 
         if (typeObj.hasChild && !isObj(childTypeObj)) return callback(messages.invalidParams + ': childType')
 
         const config = typeObj.hasChild ? childTypeObj : typeObj
+
         if (config.dataRequired && !objHasKeys(data, config.dataFields, true)) {
             return callback(`${messages.invalidParams}: data { ${config.dataFields.join()} }`)
         }
@@ -117,7 +138,7 @@ export function handleNotify(toUserIds = [], type = '', childType = '', message 
         // if notification type has a handler function execute it
         const from = user.id
         const id = uuid.v1()
-        const err = isFn(config.handleNotify) && config.handleNotify(id, from, toUserIds, data, message)
+        const err = isFn(config.handleNotify) && config.handleNotify.bind(client)(id, from, toUserIds, data, message)
         if (err) return callback(err)
         notifications.set(id, {
             from,
