@@ -134,8 +134,42 @@ export const reopenProject = (ownerAddress, hash) => {
     })
 }
 
-addCodecTransform('ProjectHashRef', 'Hash')
-// timeKeepingPendingInvites retrieves pending invites by address
+addCodecTransform('ProjectHash', 'Hash')
+addCodecTransform('ProjectStatus', 'u16')
+addCodecTransform('ProjectHashRef', 'Hash')// Project Hash
+addCodecTransform('T::Hash', 'Hash') // Timekeeping record hash 
+// default hash "0xe4d673a76e8b32ca3989dbb9f444f71813c88d36120170b15151d58c7106cc83"
+addCodecTransform('NumberOfBlocks', 'u64') // Quantity of blocks determines the passage of time
+addCodecTransform('LockStatus', 'bool') // Locked true, unlocked false (default) 
+addCodecTransform('StatusOfTimeRecord', 'u16') // submitted(0), accepted(1), rejected(2), disputed(3), blocked(4), invoiced(5)
+addCodecTransform('PostingPeriod', 'u16') // 15 fiscal periods (0-14) // not yet implemented use default 0
+addCodecTransform('StartBlockNumber', 'NumberOfBlocks')
+addCodecTransform('EndBlockNumber', 'NumberOfBlocks')
+addCodecTransform('AcceptAssignedStatus', 'bool') // Accepted true, not yet accepted false (default)
+addCodecTransform('ReasonCode', 'u16') // Reason for lock or block status change // not yet implemented use default 0
+addCodecTransform('ReasonCodeType', 'u16') // Category of reason code // not yet implemented use default 0
+// ReasonCodeText not stored on chain as langiage dependent and should be in external storage 
+addCodecTransform('ReasonCodeStruct', {
+    'ReasonCodeKey': 'ReasonCode',
+    'ReasonCodeTypeKey': 'ReasonCodeType'
+})
+addCodecTransform('BanStatus', 'bool') // Banned true, not banned false (default)
+addCodecTransform('BannedStruct', {
+    'BanStatusKey': 'BanStatus',
+    'ReasonCodeStructKey': 'ReasonCodeStructType'
+})
+// Main timekeeping type
+addCodecTransform('Timekeeper<NumberOfBlocks,LockStatus,StatusOfTimeRecord,ReasonCodeStruct,PostingPeriod,StartOrEndBlockNumber>': {
+    'total_blocks': 'NumberOfBlocks',
+    'locked_status': 'LockStatus',
+    'locked_reason': 'ReasonCodeStruct',
+    'submit_status': 'StatusOfTimeRecord',
+    'reason_code': 'ReasonCodeStruct',
+    'posting_period': 'PostingPeriod',
+    'start_block': 'StartOrEndBlockNumber',
+    'end_block': 'StartOrEndBlockNumber'
+})
+
 export const timeKeeping = {
     record: {
         // Blockchain transaction
@@ -204,10 +238,10 @@ export const timeKeeping = {
             })
         },
         // status of an invitation
-        status: (projectHash, workerAddress) => runtime.timekeeping.workerProjectsBacklogStatus(
+        status: (projectHash, workerAddress) => runtime.timekeeping.workerProjectsBacklogStatus([
             hashHexToBytes(projectHash),
             ss58Decode(workerAddress)
-        ),
+        ]),
         // Worker's pending invitation to projects
         pending: workerAddress => runtime.timekeeping.workerProjectsBacklogList(ss58Decode(workerAddress)),
     },
