@@ -146,7 +146,7 @@ export class ChatClient {
             'time-keeping-entry-approval', hash, approve, cb
         )
         this.timeKeepingEntrySearch = (query, matchExact, matchAll, ignoreCase, cb) => isFn(cb) && socket.emit(
-            'time-keeping-entry-search',
+            'time-keeping-entry-search',                                                              
             query, matchExact, matchAll, ignoreCase,
             (err, entriesArr) => cb(err, new Map(entriesArr))
         )

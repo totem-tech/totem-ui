@@ -114,6 +114,7 @@ export function handleTimeKeepingDispute(hash, callback) {
     const client = this
 }
 
+// Retrieve list of invitations by project hash
 export function handleTimeKeepingInvitations(projectHash, callback) {
     if (!isFn(callback)) return
     const client = this

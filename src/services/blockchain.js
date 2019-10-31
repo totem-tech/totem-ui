@@ -134,54 +134,19 @@ export const reopenProject = (ownerAddress, hash) => {
     })
 }
 
-addCodecTransform('ProjectHash', 'Hash')
-addCodecTransform('ProjectStatus', 'u16')
-addCodecTransform('ProjectHashRef', 'Hash')// Project Hash
-addCodecTransform('T::Hash', 'Hash') // Timekeeping record hash 
-// default hash "0xe4d673a76e8b32ca3989dbb9f444f71813c88d36120170b15151d58c7106cc83"
-addCodecTransform('NumberOfBlocks', 'u64') // Quantity of blocks determines the passage of time
-addCodecTransform('LockStatus', 'bool') // Locked true, unlocked false (default) 
-addCodecTransform('StatusOfTimeRecord', 'u16') // submitted(0), accepted(1), rejected(2), disputed(3), blocked(4), invoiced(5)
-addCodecTransform('PostingPeriod', 'u16') // 15 fiscal periods (0-14) // not yet implemented use default 0
-addCodecTransform('StartBlockNumber', 'NumberOfBlocks')
-addCodecTransform('EndBlockNumber', 'NumberOfBlocks')
-addCodecTransform('AcceptAssignedStatus', 'bool') // Accepted true, not yet accepted false (default)
-addCodecTransform('ReasonCode', 'u16') // Reason for lock or block status change // not yet implemented use default 0
-addCodecTransform('ReasonCodeType', 'u16') // Category of reason code // not yet implemented use default 0
-// ReasonCodeText not stored on chain as langiage dependent and should be in external storage 
-addCodecTransform('ReasonCodeStruct', {
-    'ReasonCodeKey': 'ReasonCode',
-    'ReasonCodeTypeKey': 'ReasonCodeType'
-})
-addCodecTransform('BanStatus', 'bool') // Banned true, not banned false (default)
-addCodecTransform('BannedStruct', {
-    'BanStatusKey': 'BanStatus',
-    'ReasonCodeStructKey': 'ReasonCodeStructType'
-})
-// Main timekeeping type
-addCodecTransform('Timekeeper<NumberOfBlocks,LockStatus,StatusOfTimeRecord,ReasonCodeStruct,PostingPeriod,StartOrEndBlockNumber>': {
-    'total_blocks': 'NumberOfBlocks',
-    'locked_status': 'LockStatus',
-    'locked_reason': 'ReasonCodeStruct',
-    'submit_status': 'StatusOfTimeRecord',
-    'reason_code': 'ReasonCodeStruct',
-    'posting_period': 'PostingPeriod',
-    'start_block': 'StartOrEndBlockNumber',
-    'end_block': 'StartOrEndBlockNumber'
-})
-
 export const timeKeeping = {
     record: {
         // Blockchain transaction
         // @postingPeriod u16: 15 fiscal periods (0-14) // not yet implemented use default 0
-        add: (projectHash, workerAddress, recordHash, blockCount, blockEnd, postingPeriod) => {
+        add: (workerAddress, projectHash, recordHash, blockCount, postingPeriod, blockStart, blockEnd) => {
             return post({
                 sender: validatedSenderAddress(workerAddress),
-                call: calls.timekeeping.workerAcceptanceProject(
+                call: calls.timekeeping.submitTime(
                     hashHexToBytes(projectHash),
                     hashHexToBytes(recordHash),
                     blockCount,
                     postingPeriod,
+                    blockStart,
                     blockEnd,
                 ),
                 compact: false,
@@ -190,7 +155,7 @@ export const timeKeeping = {
         },
         // Blockchain transaction
         // (project owner) approve a time record
-        approve: (projectHash, ownerAddress, workerAddress, recordHash, status, locked, reason) => {
+        approve: (ownerAddress, projectHash, workerAddress, recordHash, status, locked, reason) => {
             return post({
                 sender: validatedSenderAddress(ownerAddress),
                 call: calls.timekeeping.authoriseTime(
@@ -207,11 +172,13 @@ export const timeKeeping = {
             })
         },
         // get details of a record
-        get: (projectHash, workerAddress, recordHash) => runtime.timekeeping.timeRecord(
+        get: (workerAddress, projectHash, recordHash) => runtime.timekeeping.timeRecord(
             validatedSenderAddress(workerAddress),
             hashHexToBytes(projectHash),
             hashHexToBytes(recordHash)
         ),
+        // list of records booked by worker
+        list: workerAddress => runtime.timekeeping.workerTimeRecordsHashList(validatedSenderAddress(workerAddress)),
     },
     invitation: {
         // Blockchain transaction
@@ -245,8 +212,6 @@ export const timeKeeping = {
         // Worker's pending invitation to projects
         pending: workerAddress => runtime.timekeeping.workerProjectsBacklogList(ss58Decode(workerAddress)),
     },
-    // list of records booked by worker
-    records: address => runtime.timekeeping.workerTimeRecordsHashList(validatedSenderAddress(address)),
     // list of workers that accepted invitation
     workers: projectHash => runtime.timekeeping.projectWorkersList(hashHexToBytes(projectHash)),
     // check if worker is banned. undefined: not banned, object: banned
@@ -269,3 +234,53 @@ export default {
     timeKeeping_record_add: timeKeeping.record.add,
     timeKeeping_record_approve: timeKeeping.record.approve,
 }
+
+// ToDo: use common-utils library
+const types = {
+    "ProjectHash": "Hash",
+    "DeletedProject": "Hash",
+    "ProjectStatus": "u16",
+    "AcceptAssignedStatus": "bool",
+    "BanStatus": "bool",
+    "LockStatus": "bool",
+    "ReasonCode": "u16",
+    "ReasonCodeType": "u16",
+    "NumberOfBlocks": "u64",
+    "PostingPeriod": "u16",
+    "ProjectHashRef": "Hash",
+    "StartOrEndBlockNumber": "u64",
+    "StatusOfTimeRecord": "u16",
+    "ReasonCodeStruct":
+    {
+        "ReasonCodeKey": "ReasonCode",
+        "ReasonCodeTypeKey": "ReasonCodeType"
+    },
+    "BannedStruct":
+    {
+        "BanStatusKey": "BanStatus",
+        "ReasonCodeStructKey": "ReasonCodeStruct"
+    },
+    "Timekeeper":
+    {
+        "total_blocks": "NumberOfBlocks",
+        "locked_status": "LockStatus",
+        "locked_reason": "ReasonCodeStruct",
+        "submit_status": "StatusOfTimeRecord",
+        "reason_code": "ReasonCodeStruct",
+        "posting_period": "PostingPeriod",
+        "start_block": "StartOrEndBlockNumber",
+        "end_block": "StartOrEndBlockNumber"
+    },
+    // "Timekeeper<NumberOfBlocks,LockStatus,StatusOfTimeRecord,ReasonCodeStruct,PostingPeriod,StartOrEndBlockNumber>": {
+    //     "total_blocks": "NumberOfBlocks",
+    //     "locked_status": "LockStatus",
+    //     "locked_reason": "ReasonCodeStruct",
+    //     "submit_status": "StatusOfTimeRecord",
+    //     "reason_code": "ReasonCodeStruct",
+    //     "posting_period": "PostingPeriod",
+    //     "start_block": "StartOrEndBlockNumber",
+    //     "end_block": "StartOrEndBlockNumber"
+    // },
+}
+
+Object.keys(types).forEach(key => addCodecTransform(key, types[key]))

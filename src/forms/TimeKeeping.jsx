@@ -73,7 +73,8 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     disabled: projectHashSupplied,
                     onChange: this.handleProjectChange.bind(this),
                     onSearchChange: deferred(handleSearch, 300, this),
-                    required: true
+                    required: true,
+                    selectOnNavigation: false,
                 }, true),
                 {
                     label: 'Account/Wallet',
@@ -171,26 +172,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                                         compact
                                         size="tiny"
                                         content="invite yourself"
-                                        onClick={() => confirm({
-                                            cancelButton: 'No',
-                                            confirmButton: 'Yes',
-                                            content: 'Are you sure you want to invite yourself?',
-                                            header: 'Invite Self',
-                                            size: 'mini',
-                                            onConfirm: () => {
-                                                this.inviteSelf(projectHash, workerAddress, project.name)
-                                                this.setState({
-                                                    message: {
-                                                        content: `The invitation requires two blockchain transactions which has 
-                                                        been queued. It may take a while. You may close the modal for now.`,
-                                                        header: 'Added to queue',
-                                                        showIcon: true,
-                                                        status: 'success'
-                                                    }
-                                                })
-                                            }
-
-                                        })}
+                                        onClick={() => this.inviteSelf(projectHash, workerAddress, project.name)}
                                     />
                                     so that you can book time for your own project?
                                 </p>
@@ -207,17 +189,35 @@ export default class TimeKeepingForm extends ReactiveComponent {
     }
 
     inviteSelf(projectHash, address, projectName) {
-        addToQueue({
-            type: QUEUE_TYPES.BLOCKCHAIN,
-            func: 'timeKeeping_invitation_add',
-            args: [projectHash, address, address],
-            title: 'Time Keeping - inviting myself',
-            description: `Project: ${projectName}`,
-            next: {
-                type: QUEUE_TYPES.BLOCKCHAIN,
-                func: 'timeKeeping_invitation_accept',
-                args: [projectHash, address],
-                title: 'Time Keeping - accepting self invite'
+        confirm({
+            cancelButton: 'No',
+            confirmButton: 'Yes',
+            content: 'Are you sure you want to invite yourself?',
+            header: 'Invite Self',
+            size: 'mini',
+            onConfirm: () => {
+                addToQueue({
+                    type: QUEUE_TYPES.BLOCKCHAIN,
+                    func: 'timeKeeping_invitation_add',
+                    args: [projectHash, address, address],
+                    title: 'Time Keeping - inviting myself',
+                    description: `Project: ${projectName}`,
+                    next: {
+                        type: QUEUE_TYPES.BLOCKCHAIN,
+                        func: 'timeKeeping_invitation_accept',
+                        args: [projectHash, address],
+                        title: 'Time Keeping - accepting self invite'
+                    }
+                })
+                this.setState({
+                    message: {
+                        content: `The invitation requires two blockchain transactions which has been queued. 
+                            It may take a while to complete the process. You may close the modal for now.`,
+                        header: 'Added to queue',
+                        showIcon: true,
+                        status: 'success'
+                    }
+                })
             }
         })
     }
@@ -311,30 +311,36 @@ export default class TimeKeepingForm extends ReactiveComponent {
     handleSubmit() {
         const { inputs, values } = this.state
         const { onSubmit } = this.props
-        const { address, duration, projectHash } = values
+        const { address, blockCount, blockEnd, blockStart, duration, projectHash } = values
         const projectOption = (inputs.find(x => x.name === 'projectHash').options || [])
             .find(option => option.value === projectHash) || {}
         const projectName = projectOption.text
+        const recordHash = generateHash(JSON.stringify(values) + uuid.v1())
         const queueProps = {
-            type: QUEUE_TYPES.CHATCLIENT,
-            args: [
-                generateHash(JSON.stringify(values) + uuid.v1()),
-                objClean(values, validKeys),
-                (err, entry) => {
-                    this.setState({
-                        message: {
-                            content: err || 'Entry added successfully',
-                            status: err ? 'error' : 'success',
-                            showIcon: true
-                        },
-                    })
-                    !err & this.handleReset()
-                    isFn(onSubmit) && onSubmit(!err, entry)
-                }
-            ],
-            func: 'timeKeepingEntry',
+            type: QUEUE_TYPES.BLOCKCHAIN,
+            func: 'timeKeeping_record_add',
+            args: [address, projectHash, recordHash, blockCount, 0, blockStart, blockEnd],
             title: 'Time Keeping - New Entry',
-            description: 'Project: ' + projectName + ' | Duration: ' + values.duration
+            description: 'Project: ' + projectName + ' | Duration: ' + values.duration,
+            next: {
+                type: QUEUE_TYPES.CHATCLIENT,
+                args: [
+                    recordHash,
+                    objClean(values, validKeys),
+                    (err, entry) => {
+                        this.setState({
+                            message: {
+                                content: err || 'Entry added successfully',
+                                status: err ? 'error' : 'success',
+                                showIcon: true
+                            },
+                        })
+                        !err & this.handleReset()
+                        isFn(onSubmit) && onSubmit(!err, entry)
+                    }
+                ],
+                func: 'timeKeepingEntry',
+            }
         }
         const message = {
             content: 'Request has been added to queue. You will be notified of the progress shortly.',
@@ -349,6 +355,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                 ['Wallet', getAddressName(address)],
                 ['Project', projectName],
                 ['Duration', duration],
+                ['Block Count', blockCount],
             ].map(x => ({
                 readOnly: true,
                 label: x[0],
@@ -379,7 +386,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
             values.duration = newDuration
             values.blockCount = durationToBlockCount(newDuration)
             values.blockEnd = currentBlockNumber
-            values.blockStart = currentBlockNumber - blockCount
+            values.blockStart = currentBlockNumber - values.blockCount
         } else {
             values.blockEnd = inprogress ? currentBlockNumber : blockEnd
             values.blockCount = values.blockEnd - blockStart

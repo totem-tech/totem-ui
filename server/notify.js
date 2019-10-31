@@ -66,11 +66,11 @@ export const VALID_TYPES = objReadOnly({
                 workerAddress: REQUIRED, //string
             },
             messageRequird: NOT_REQUIRED,
-            notifyHander: processTKInvitation,
+            handleNotify: processTKInvitation,
         },
         invitation_response: {
             messageRequird: REQUIRED,
-            notifyHander: processTKInvitationResponse,
+            handleNotify: processTKInvitationResponse,
         },
     },
 }, true, true)
