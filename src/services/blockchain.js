@@ -173,12 +173,12 @@ export const timeKeeping = {
         },
         // get details of a record
         get: (workerAddress, projectHash, recordHash) => runtime.timekeeping.timeRecord(
-            validatedSenderAddress(workerAddress),
+            ss58Decode(workerAddress),
             hashHexToBytes(projectHash),
             hashHexToBytes(recordHash)
         ),
-        // list of records booked by worker
-        list: workerAddress => runtime.timekeeping.workerTimeRecordsHashList(validatedSenderAddress(workerAddress)),
+        // list of record hashes booked by worker
+        list: (workerAddress) => runtime.timekeeping.workerTimeRecordsHashList(ss58Decode(workerAddress)),
     },
     invitation: {
         // Blockchain transaction
@@ -250,18 +250,19 @@ const types = {
     "ProjectHashRef": "Hash",
     "StartOrEndBlockNumber": "u64",
     "StatusOfTimeRecord": "u16",
-    "ReasonCodeStruct":
-    {
+    "ReasonCodeStruct": {
         "ReasonCodeKey": "ReasonCode",
         "ReasonCodeTypeKey": "ReasonCodeType"
+        // "ReasonCode": "u16",
+        // "ReasonCodeType": "u16",
     },
-    "BannedStruct":
-    {
+    "ReasonCodeStruct<ReasonCode,ReasonCodeType>": "ReasonCodeStruct",
+    "BannedStruct": {
         "BanStatusKey": "BanStatus",
         "ReasonCodeStructKey": "ReasonCodeStruct"
     },
-    "Timekeeper":
-    {
+    "BannedStruct<BanStatus,ReasonCodeStruct>": "BannedStruct",
+    "Timekeeper": {
         "total_blocks": "NumberOfBlocks",
         "locked_status": "LockStatus",
         "locked_reason": "ReasonCodeStruct",
@@ -271,16 +272,9 @@ const types = {
         "start_block": "StartOrEndBlockNumber",
         "end_block": "StartOrEndBlockNumber"
     },
-    // "Timekeeper<NumberOfBlocks,LockStatus,StatusOfTimeRecord,ReasonCodeStruct,PostingPeriod,StartOrEndBlockNumber>": {
-    //     "total_blocks": "NumberOfBlocks",
-    //     "locked_status": "LockStatus",
-    //     "locked_reason": "ReasonCodeStruct",
-    //     "submit_status": "StatusOfTimeRecord",
-    //     "reason_code": "ReasonCodeStruct",
-    //     "posting_period": "PostingPeriod",
-    //     "start_block": "StartOrEndBlockNumber",
-    //     "end_block": "StartOrEndBlockNumber"
-    // },
 }
+// new line is required!!!
+types[`Timekeeper<NumberOfBlocks,LockStatus,StatusOfTimeRecord,ReasonCodeStruct,
+PostingPeriod,StartOrEndBlockNumber>`] = 'Timekeeper'
 
 Object.keys(types).forEach(key => addCodecTransform(key, types[key]))

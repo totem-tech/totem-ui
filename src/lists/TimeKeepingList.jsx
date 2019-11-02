@@ -14,8 +14,13 @@ import addressbook from '../services/addressbook'
 import client from '../services/ChatClient'
 import storage from '../services/storage'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import { timeKeeping } from '../services/blockchain'
+import { secondsToDuration, BLOCK_DURATION_SECONDS } from '../utils/time'
+import { bytesToHex } from '../utils/convert'
 
 const toBeImplemented = () => alert('To be implemented')
+
+const hashListCache = new Map() // key: address, value: []
 
 export default class ProjectTimeKeepingList extends ReactiveComponent {
     constructor(props) {
@@ -23,6 +28,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
         this.getEntries = this.getEntries.bind(this)
         this.state = {
+            forceReloadHashes: false,
             listProps: {
                 columns: [
                     {
@@ -34,7 +40,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                         title: 'Address'
                     },
                     {
-                        key: 'duration',
+                        key: '_duration',
                         textAlign: 'center',
                         title: 'Duration'
                     },
@@ -201,7 +207,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
     getEntries() {
         const { manage, projectHash, project } = this.props
-        const { listProps } = this.state
+        const { forceReloadHashes, listProps } = this.state
         const address = secretStore()._keys[storage.walletIndex()].address
         const isOwner = manage && (project ? project.ownerAddress === address : true)
         const bannedAddresses = project && (project.timeKeeping || {}).bannedAddresses || []
@@ -209,13 +215,53 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         listProps.columns.find(x => x.key === '_projectName').hidden = !!projectHash
         const denyManage = manage && project && !isOwner
         listProps.emptyMessage = {
-            content: denyManage ? 'You do not own this project' : 'No entries found',
+            content: denyManage ? 'You do not own this project' : (
+                !projectHash ? 'Please select a project to see time records' : 'No entries found'
+            ),
             status: denyManage ? 'error' : 'warning'
         }
         listProps.data = denyManage ? new Map() : listProps.data
-        this.setState({ isOwner, listProps, projectHash, project })
-        if (denyManage) return
 
+        this.setState({ isOwner, listProps, projectHash, project })
+        if (denyManage || !projectHash) return
+
+        const processHashes = hashes => {
+            client.project(projectHash, null, null, (err, project) => {
+                Bond.all(hashes.map(timeHash => runtime.timekeeping.timeRecord([
+                    ss58Decode(address),
+                    hexToBytes(projectHash),
+                    timeHash
+                ]))).then(records => { // record === null means not found or does not belong to user or project
+                    listProps.data = records.map((record, i) => !record ? null : ({
+                        ...record,
+                        _hash: bytesToHex(hashes[i]),
+                        _banned: bannedAddresses.indexOf(address) >= 0 ? 'Yes' : 'No',
+                        _duration: secondsToDuration((record.end_block - record.start_block) * BLOCK_DURATION_SECONDS),
+                        _nameOrAddress: getAddressName(address),
+                        _projectName: project.name,
+                        _status: record.locked_status ? 'locked' : '??'
+                    })).filter(x => !!x) // get rid of empty values
+
+                    this.setState({ listProps })
+                    /*
+                    end_block: 216557
+                    locked_reason: {ReasonCodeKey: 0, ReasonCodeTypeKey: 0, _type: "ReasonCodeStruct"}
+                    locked_status: false
+                    posting_period: 0
+                    reason_code: {ReasonCodeKey: 0, ReasonCodeTypeKey: 0, _type: "ReasonCodeStruct"}
+                    start_block: 210797
+                    submit_status: 0
+                    total_blocks: 5760
+                    */
+                })
+            })
+        }
+
+        timeKeeping.record.list(address).then(processHashes)
+
+        return
+
+        // legacy
         const query = {}
         if (projectHash) {
             query.projectHash = projectHash
@@ -252,6 +298,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 }))
             }
         )
+
     }
 
     handleApprove(hash, approve = false) {
