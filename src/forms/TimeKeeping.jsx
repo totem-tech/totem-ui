@@ -4,8 +4,7 @@ import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { chain, secretStore } from 'oo7-substrate'
 import { Button, Icon } from 'semantic-ui-react'
-import uuid from 'uuid'
-import { arrReadOnly, deferred, generateHash, hasValue, isDefined, isFn, objCopy, objClean, objWithoutKeys } from '../utils/utils'
+import { arrReadOnly, deferred, hasValue, isDefined, isFn, objCopy, objClean, objWithoutKeys } from '../utils/utils'
 import {
     BLOCK_DURATION_SECONDS,
     BLOCK_DURATION_REGEX,
@@ -35,6 +34,9 @@ const validKeys = arrReadOnly([
     'tsCreated',
     'tsUpdated',
 ], true)
+
+// Hash that indicates creation of new record
+const NEW_RECORD_HASH = '0xe4d673a76e8b32ca3989dbb9f444f71813c88d36120170b15151d58c7106cc83'
 
 function handleDurationChange(e, formValues, i) {
     const { inputs, values } = this.state
@@ -315,17 +317,16 @@ export default class TimeKeepingForm extends ReactiveComponent {
         const projectOption = (inputs.find(x => x.name === 'projectHash').options || [])
             .find(option => option.value === projectHash) || {}
         const projectName = projectOption.text
-        const recordHash = generateHash(JSON.stringify(values) + uuid.v1())
         const queueProps = {
             type: QUEUE_TYPES.BLOCKCHAIN,
             func: 'timeKeeping_record_add',
-            args: [address, projectHash, recordHash, blockCount, 0, blockStart, blockEnd],
+            args: [address, projectHash, NEW_RECORD_HASH, blockCount, 0, blockStart, blockEnd],
             title: 'Time Keeping - New Entry',
             description: 'Project: ' + projectName + ' | Duration: ' + values.duration,
             next: {
                 type: QUEUE_TYPES.CHATCLIENT,
                 args: [
-                    recordHash,
+                    NEW_RECORD_HASH,
                     objClean(values, validKeys),
                     (err, entry) => {
                         this.setState({
