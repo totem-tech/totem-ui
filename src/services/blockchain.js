@@ -177,16 +177,17 @@ export const timeKeeping = {
             hashHexToBytes(projectHash),
             hashHexToBytes(recordHash)
         ),
-        // list of record hashes booked by worker
-        list: (workerAddress) => runtime.timekeeping.workerTimeRecordsHashList(ss58Decode(workerAddress)),
+        // list of all record hashes booked by worker
+        list: workerAddress => runtime.timekeeping.workerTimeRecordsHashList(ss58Decode(workerAddress)),
+        listByProject: projectHash => runtime.timekeeping.projectTimeRecordsHashList(hashHexToBytes(projectHash))
     },
     invitation: {
         // Blockchain transaction
         // (worker) accept invitation to a project
-        accept: (projectHash, workerAddress) => {
+        accept: (projectHash, workerAddress, accepted) => {
             return post({
                 sender: validatedSenderAddress(workerAddress),
-                call: calls.timekeeping.workerAcceptanceProject(hashHexToBytes(projectHash)),
+                call: calls.timekeeping.workerAcceptanceProject(hashHexToBytes(projectHash), accepted),
                 compact: false,
                 longevity: true
             })

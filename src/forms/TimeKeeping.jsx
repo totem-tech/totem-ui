@@ -321,17 +321,18 @@ export default class TimeKeepingForm extends ReactiveComponent {
             type: QUEUE_TYPES.BLOCKCHAIN,
             func: 'timeKeeping_record_add',
             args: [address, projectHash, NEW_RECORD_HASH, blockCount, 0, blockStart, blockEnd],
-            title: 'Time Keeping - New Entry',
+            title: 'Time Keeping - New Record',
             description: 'Project: ' + projectName + ' | Duration: ' + values.duration,
             next: {
                 type: QUEUE_TYPES.CHATCLIENT,
+                func: 'timeKeepingEntry',
                 args: [
                     NEW_RECORD_HASH,
                     objClean(values, validKeys),
                     (err, entry) => {
                         this.setState({
                             message: {
-                                content: err || 'Entry added successfully',
+                                content: err || 'Time record added successfully',
                                 status: err ? 'error' : 'success',
                                 showIcon: true
                             },
@@ -340,7 +341,6 @@ export default class TimeKeepingForm extends ReactiveComponent {
                         isFn(onSubmit) && onSubmit(!err, entry)
                     }
                 ],
-                func: 'timeKeepingEntry',
             }
         }
         const message = {

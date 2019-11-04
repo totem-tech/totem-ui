@@ -97,7 +97,7 @@ export default class NotificationDropdown extends ReactiveComponent {
         addToQueue({
             type: QUEUE_TYPES.BLOCKCHAIN,
             func: 'timeKeeping_invitation_accept',
-            args: [projectHash, workerAddress],
+            args: [projectHash, workerAddress, accepted],
             title: `TimeKeeping - ${accepted ? 'accept' : 'reject'} invitation`,
             description: `Project: ${projectName}`,
             next: {
@@ -194,11 +194,11 @@ export default class NotificationDropdown extends ReactiveComponent {
 const ButtonAcceptOrReject = ({ onResponse, acceptText, rejectText }) => (
     <div title="" style={{ textAlign: 'center', marginTop: 10 }}>
         <Button.Group>
-            <Button positive onClick={() => onResponse(true)}>
+            <Button positive onClick={(e) => e.preventDefault() | onResponse(true)}>
                 {acceptText || 'Accept'}
             </Button>
             <Button.Or />
-            <Button negative onClick={() => onResponse(false)}>
+            <Button negative onClick={(e) => e.preventDefault() | onResponse(false)}>
                 {rejectText || 'Reject'}
             </Button>
         </Button.Group>

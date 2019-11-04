@@ -207,7 +207,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
     getEntries() {
         const { manage, projectHash, project } = this.props
-        const { forceReloadHashes, listProps } = this.state
+        const { listProps } = this.state
         const address = secretStore()._keys[storage.walletIndex()].address
         const isOwner = manage && (project ? project.ownerAddress === address : true)
         const bannedAddresses = project && (project.timeKeeping || {}).bannedAddresses || []
@@ -216,7 +216,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         const denyManage = manage && project && !isOwner
         listProps.emptyMessage = {
             content: denyManage ? 'You do not own this project' : (
-                !projectHash ? 'Please select a project to see time records' : 'No entries found'
+                !projectHash ? 'Please select a project to view time records' : 'No entries found'
             ),
             status: denyManage ? 'error' : 'warning'
         }
@@ -257,7 +257,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             })
         }
 
-        timeKeeping.record.list(address).then(processHashes)
+        timeKeeping.record.listByProject(projectHash).then(processHashes)
 
         return
 
