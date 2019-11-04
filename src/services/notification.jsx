@@ -126,7 +126,7 @@ export default class NotificationDropdown extends ReactiveComponent {
                 scrolling
             >
                 <Dropdown.Menu className="notification-service" direction="left" style={{ maxHeight }}>
-                    {Array.from(items).filter(([_, { deleted }]) => !deleted).map(([id, item]) => {
+                    {Array.from(items).filter(([_, { deleted }]) => !deleted).reverse().map(([id, item]) => {
                         const { senderId, type, childType, message, data, tsCreated, read } = item
                         const typeSpaced = type.replace('_', ' ')
                         let projectName
