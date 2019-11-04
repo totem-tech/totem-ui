@@ -46,6 +46,7 @@
 }
 .mobile .pusher.main-content {
   margin: 0 !important;
+  overflow: auto !important;
 }
 /* Fixes the dimmer height being limited due to the use of scrollbar */ 
 .mobile.sidebar-visible .main-content.pusher.container:after {
@@ -69,12 +70,14 @@
   transform: translate3d(60px, 0, 0);
   max-width: calc(100% - 60px) !important;
   margin-left: 0 !important;
+  overflow: auto !important;
 }
 #app > :not(.mobile) .ui.visible.left.sidebar:not(.thin) ~ .pusher.main-content {
   -webkit-transform: translate3d(300px, 0, 0);
   transform: translate3d(235px, 0, 0);
   max-width: calc(100% - 235px) !important;
   margin-left: 0 !important;
+  overflow: auto !important;
 }
 #app > :not(.mobile) .ui.black.inverted.vertical.ui.left.wide.visible.sidebar.menu {
   width: 235px !important;
@@ -92,6 +95,14 @@
 
 .no-margin {
   margin: 0 !important;
+}
+.no-padding, .ui.menu .item .notification-service.menu.left.visible .item.no-padding {
+  padding: 0 !important;
+}
+.ui.menu .ui.dropdown .notification-service.menu > .item > .message i:not(.close) {
+  float: left;
+  font-size: 40px !important;
+  margin-right: 5px !important;
 }
 
 i.icon:not(.no-margin) {

@@ -11,24 +11,26 @@ try {
     storage = new nls.LocalStorage(STORAGE_PATH)
 }
 
-const read = (key, isMap = true) => {
+const read = key => {
     const data = JSON.parse(storage.getItem(key) || '[]')
-    return isMap ? new Map(data) : data
+    return new Map(data)
 }
-const write = (key, value, isMap = true) => {
+const write = (key, value) => {
     // invalid key: ignore request
     if (!isStr(key)) return false
-    value = isMap ? Array.from(value.entries()) : value
-    storage.setItem(key, JSON.stringify(value, null, 4))
+    value = Array.from(value.entries())
+    storage.setItem(key, JSON.stringify(value))
 }
 
 class DataStorage {
-    constructor(filename, disableCache = false) {
+    constructor(filename, disableCache = false, split = false) {
         this.filename = filename
         // whether to disable data cache
         this.disableCache = disableCache
         this.Type = Map
         this.data = disableCache ? new this.Type() : this.getAll()
+        // ToDo: @split === true store all ids in a single file and individual values in separate files individually under a separate directory
+        // This may help if any file needs larger amount of concurrent operations
     }
 
     getAll() {

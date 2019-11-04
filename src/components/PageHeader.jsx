@@ -4,12 +4,15 @@ import { ReactiveComponent } from 'oo7-react'
 import { runtimeUp, secretStore, runtime, ss58Decode } from 'oo7-substrate'
 import { Dropdown, Image, Menu } from 'semantic-ui-react'
 import { getUser, getClient, onLogin } from '../services/ChatClient'
-import { copyToClipboard, setState, setStateTimeout } from '../utils/utils'
+import { copyToClipboard } from '../utils/utils'
 import { Pretty } from '../Pretty'
-import FormBuilder from '../components/FormBuilder'
-import { showForm, closeModal } from '../services/modal'
-import storageService from '../services/storage'
+import { showForm } from '../services/modal'
+import storage from '../services/storage'
 import { setToast } from '../services/toast'
+import TimeKeepingForm from '../forms/TimeKeeping'
+import { WalletUpdate } from '../forms/Wallet'
+import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import NotificationDropdown from '../services/notification'
 
 class PageHeader extends ReactiveComponent {
 	constructor(props) {
@@ -17,19 +20,19 @@ class PageHeader extends ReactiveComponent {
 			ensureRuntime: runtimeUp,
 			secretStore: secretStore(),
 			// keep UI updated when selected wallet changed
-			_: storageService.walletIndexBond
+			index: storage.walletIndexBond,
+			_: storage.timeKeepingBond,
 		})
 
 		const user = getUser()
 		this.state = {
-			// index: storageService.walletIndex(),
 			id: user ? user.id : '',
 		}
 
 		// Update user ID after registration
 		!this.state.id && onLogin(id => id && this.setState({id}))
 
-		this.getSeletectedAddress = () => (this.state.secretStore.keys[storageService.walletIndex()] || {}).address
+		this.getSeletectedAddress = () => (this.state.secretStore.keys[storage.walletIndex()] || {}).address
 		this.handleCopy = this.handleCopy.bind(this)
 		this.handleEdit = this.handleEdit.bind(this)
 		this.handleFaucetRequest = this.handleFaucetRequest.bind(this)
@@ -40,8 +43,7 @@ class PageHeader extends ReactiveComponent {
 		const { secretStore } = this.state
 		const num = eval(data.value)
 		const index = num < secretStore.keys.length ? num : 0
-		// this.setState({ index })
-		storageService.walletIndex(index)
+		storage.walletIndex(index)
 	}
 
 	handleCopy() {
@@ -53,32 +55,7 @@ class PageHeader extends ReactiveComponent {
 	}
 
 	handleEdit() {
-		const { secretStore: ss } = this.state
-		const index = storageService.walletIndex()
-		const wallet = ss.keys[index]
-		// Create a modal form on-the-fly!
-		const inputs = [
-			{
-				label: 'Name',
-				name: 'name',
-				placeholder: 'Enter new name',
-				required: true,
-				type: 'text',
-				value: wallet.name
-			}
-		]
-
-		const formId = showForm(FormBuilder, {
-			header: 'Update wallet name',
-			inputs,
-			onSubmit: (e, values) => {
-				wallet.name = values.name
-				secretStore()._sync()
-				closeModal(formId)
-			},
-			size: 'tiny',
-			submitText: 'Update'
-		})
+		showForm(WalletUpdate, {index: storage.walletIndex()})
 	}
 
 	handleFaucetRequest() {
@@ -93,13 +70,21 @@ class PageHeader extends ReactiveComponent {
 			this.faucetMsgId = setToast(msg, 3000, this.faucetMsgId)
 			return
 		}
-		client.faucetRequest(address, (err, fifthTs) => {
-			const msg = {
-				content: err || 'Request sent!',
-				status: !!err ? 'error' : 'success'
-			}
-			this.faucetMsgId = setToast(msg, 3000, this.faucetMsgId)
-		})
+		this.faucetMsgId = setToast({content: 'Faucet request sent', status: 'loading'}, null, this.faucetMsgId)
+		
+		addToQueue({
+			type: QUEUE_TYPES.CHATCLIENT,
+			func: 'faucetRequest',
+			args: [
+				address,
+				(err, txHash) => {
+					this.faucetMsgId = setToast({
+						content: err || `Faucet transfer complete. Transaction hash: ${txHash}`,
+						status: !!err ? 'error' : 'success'
+					}, null, this.faucetMsgId)
+				},
+			]
+		}, null, this.faucetMsgId)
 	}
 
 	render() {
@@ -114,6 +99,8 @@ class PageHeader extends ReactiveComponent {
 			onFaucetRequest: () => this.handleFaucetRequest(addressSelected),
 			onSelection: this.handleSelection,
 			selectedIndex: index,
+			timerActive: storage.timeKeeping().inprogress,
+			timerOnClick: ()=> showForm(TimeKeepingForm, {}),
 			wallets
 		}
 		return <MobileHeader {...this.props} {...viewProps} />
@@ -134,7 +121,9 @@ export default PageHeader
 
 class MobileHeader extends ReactiveComponent {
 	constructor(props) {
-		super(props)
+		super(props, {
+			timerValues: storage.timeKeepingBond
+		})
 		this.state = {
 			showTools: false
 		}
@@ -147,18 +136,20 @@ class MobileHeader extends ReactiveComponent {
 	}
 
 	render() {
-	const instance = this
-	const { showTools } = this.state
-	const {
-		id,
-		isMobile,
-		logoSrc,
-		onCopy,
-		onEdit,
-		onFaucetRequest,
-		onSelection,
-		wallets
-	} = this.props
+		const { showTools } = this.state
+		const {
+			id,
+			isMobile,
+			logoSrc,
+			onCopy,
+			onEdit,
+			onFaucetRequest,
+			onSelection,
+			selectedIndex,
+			timerActive,
+			timerOnClick,
+			wallets
+		} = this.props
 
 		return (
 			<div>
@@ -173,20 +164,31 @@ class MobileHeader extends ReactiveComponent {
 						<Image size="mini" src={logoSrc} />
 					</Menu.Item>
 					<Menu.Menu position="right">
+						{id && (
+							<Menu.Item
+								icon={{
+									className: 'no-margin',
+									loading: timerActive,
+									name: 'clock outline',
+									size: 'big'
+								}}
+								onClick={timerOnClick}
+							/>
+						)}
 						<Menu.Item>
-						<Dropdown
-							labeled
-							value={storageService.walletIndex()}
-							noResultsMessage="No wallet available"
-							placeholder="Select an account"
-							onChange={onSelection}
-							options={wallets.map((wallet, i) => ({
-								key: i,
-								text: (wallet.name || '').split('').slice(0, 16).join(''),
-								description: <Pretty value={runtime.balances.balance(ss58Decode(wallet.address))} />,
-								value: i
-							}))}
-						/>
+							<Dropdown
+								labeled
+								value={selectedIndex}
+								noResultsMessage="No wallet available"
+								placeholder="Select an account"
+								onChange={onSelection}
+								options={wallets.map((wallet, i) => ({
+									key: i,
+									text: (wallet.name || '').split('').slice(0, 16).join(''),
+									description: <Pretty value={runtime.balances.balance(ss58Decode(wallet.address))} />,
+									value: i
+								}))}
+							/>
 						</Menu.Item>
 					</Menu.Menu>
 					<Menu.Menu fixed="right">
@@ -197,7 +199,7 @@ class MobileHeader extends ReactiveComponent {
 								size: 'large',
 								className: 'no-margin'
 							}}
-							onClick={() => setState(instance, 'showTools', !showTools)}
+							onClick={() => this.setState({showTools: !showTools})}
 						>
 							<Dropdown.Menu className="left">
 								<Dropdown.Item
@@ -220,6 +222,8 @@ class MobileHeader extends ReactiveComponent {
 								]}
 							</Dropdown.Menu>
 						</Dropdown>
+						<NotificationDropdown />
+						
 					</Menu.Menu>
 				</Menu>
 			</div>

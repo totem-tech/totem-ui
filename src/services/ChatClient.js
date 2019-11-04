@@ -1,5 +1,5 @@
 import io from 'socket.io-client'
-import { isFn, isArr } from '../utils/utils'
+import { isFn } from '../utils/utils'
 import storageService from './storage'
 
 const port = 3001
@@ -58,7 +58,35 @@ export class ChatClient {
         // Check if User ID Exists
         this.idExists = (userId, cb) => socket.emit('id-exists', userId, cb)
 
-        // add/update project
+        // Send notification
+        //
+        // Params:
+        // @toUserIds   array    : receiver User ID(s)
+        // @type        string   : parent notification type. Eg: timeKeeping
+        // @childType   string   : child notification type. Eg: invitation
+        // @message     string   : message to be displayed (unless custom message required). can be encrypted later on
+        // @data        object   : information specific to the type of notification
+        // @cb          function : callback function
+        //                         Params:
+        //                         @err string: error message if failed or rejected
+        this.notify = (toUserIds, type, childType, message, data, cb) => isFn(cb) && socket.emit(
+            'notify', toUserIds, type, childType, message, data, cb
+        )
+        // Receive notification. 
+        //
+        // Params:
+        // @cb function: callback function
+        //          Params:
+        //          @senderId   string: sender user ID
+        //          @type       string: parent notification type
+        //          @childType  string: child notification type
+        //          @data       object: information specific to the notification @type
+        //          @tsCreated  date  : notification creation timestamp
+        this.onNotify = cb => isFn(cb) && socket.on('notify', (id, senderId, type, childType, message, data, tsCreated, cbConfrim) =>
+            cb(id, senderId, type, childType, message, data, tsCreated, cbConfrim)
+        )
+
+        // add/get/update project
         //
         // Params:
         // @hash    string: A hash string generated using the project details as seed. Will be used as ID/key.
@@ -68,6 +96,9 @@ export class ChatClient {
         this.project = (hash, project, create, cb) => socket.emit('project', hash, project, create, cb)
         // Set project status
         this.projectStatus = (hash, status, cb) => socket.emit('project-status', hash, status, cb)
+        this.projectTimeKeepingBan = (hash, address, ban, cb) => isFn(cb) && socket.emit(
+            'project-time-keeping-ban', hash, address, ban, cb
+        )
         // request user projects
         //
         // Params:
@@ -105,6 +136,20 @@ export class ChatClient {
         //                      @result Map         : Map of companies with walletAddress as eky
         this.companySearch = (keyValues, cb) => isFn(cb) && socket.emit(
             'company-search', keyValues, (err, result) => cb(err, new Map(result))
+        )
+
+        // Add/update time keeping entry
+        this.timeKeepingEntry = (hash, entry, cb) => isFn(cb) && socket.emit('time-keeping-entry', hash, entry, cb)
+        this.timeKeepingEntryApproval = (hash, approve, cb) => isFn(cb) && socket.emit(
+            'time-keeping-entry-approval', hash, approve, cb
+        )
+        this.timeKeepingEntrySearch = (query, matchExact, matchAll, ignoreCase, cb) => isFn(cb) && socket.emit(
+            'time-keeping-entry-search',                                                              
+            query, matchExact, matchAll, ignoreCase,
+            (err, entriesArr) => cb(err, new Map(entriesArr))
+        )
+        this.timeKeepingInvitations = (projectHash, cb) => isFn(cb) && socket.emit(
+            'time-keeping-invitations', projectHash, (err, result) => cb(err, new Map(result))
         )
     }
 

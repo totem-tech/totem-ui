@@ -29,5 +29,9 @@ module.exports = {
   },
   devServer: {
     contentBase: './dist'
-  }
+  },
+  // solves "Can't resolve 'fs'" error
+  node: {
+    fs: "empty"
+ }
 };

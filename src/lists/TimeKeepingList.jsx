@@ -1,72 +1,48 @@
-/*
- * Lists ToDos: 
- * 1. List or table showing the total hours worked per project, total blocks, percentage of hours worked over all hours for all projects
- * 2. List for a selected project:
- *      a. display list of all booked times by ALL users, if currently selected wallet wallet is the ownerAddress
- *      b. otherwise, display only booked times by the selected wallet
- */
-
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { secretStore } from 'oo7-substrate'
-import { Button, Dropdown, Header, Icon } from 'semantic-ui-react'
+import { Button, Dropdown } from 'semantic-ui-react'
 import ListFactory from '../components/ListFactory'
-import { arrUnique, objCopy, randomInt, copyToClipboard, isDefined } from '../utils/utils'
-import {
-    BLOCK_DURATION_SECONDS,
-    BLOCK_DURATION_REGEX,
-    calcAmount,
-    durationToSeconds,
-    RATE_PERIODS,
-    secondsToDuration,
-} from '../utils/time'
+import { arrUnique, isDefined, mapFilter } from '../utils/utils'
+import ProjectDropdown, { getAddressName } from '../components/ProjectDropdown'
 import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'
-import { showForm } from '../services/modal'
-import storageService from '../services/storage'
+import PartnerForm from '../forms/Partner'
+import { confirm, showForm } from '../services/modal'
 import addressbook from '../services/addressbook'
-import storage from '../services/storage'
 import client from '../services/ChatClient'
-import ProjectDropdown, {getAddressName} from '../components/ProjectDropdown'
-import {confirm} from '../services/modal'
-import { QUEUE_TYPES, addToQueue } from '../services/queue'
+import storage from '../services/storage'
+import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import { timeKeeping } from '../services/blockchain'
+import { secondsToDuration, BLOCK_DURATION_SECONDS } from '../utils/time'
+import { bytesToHex } from '../utils/convert'
 
 const toBeImplemented = () => alert('To be implemented')
 
+const hashListCache = new Map() // key: address, value: []
+
 export default class ProjectTimeKeepingList extends ReactiveComponent {
     constructor(props) {
-        super(props, {
-            _0: storageService.walletIndexBond,
-            _1: storageService.timeKeepingBond
-        })
+        super(props)
 
+        this.getEntries = this.getEntries.bind(this)
         this.state = {
-            projectHash: '',
+            forceReloadHashes: false,
             listProps: {
                 columns: [
                     {
                         key: '_projectName',
-                        title: 'Project'
+                        title: 'Project',
                     },
                     {
                         key: '_nameOrAddress',
                         title: 'Address'
                     },
                     {
-                        key: 'duration',
+                        key: '_duration',
                         textAlign: 'center',
                         title: 'Duration'
-                    },
-                    {
-                        key: '_rate',
-                        textAlign: 'center',
-                        title: 'Rate',
-                    },
-                    {
-                        key: '_total',
-                        textAlign: 'right',
-                        title: 'Total Amount'
                     },
                     {
                         collapsing: true,
@@ -76,55 +52,44 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                     },
                     {
                         collapsing: true,
-                        style: {padding: 0,width: 90},
+                        style: { padding: 0, width: 90 },
                         content: this.getActionContent.bind(this),
                         textAlign: 'center',
                         title: 'Action',
                     }
                 ],
                 defaultSort: 'status',
-                emptyMessage: {
-                    content: 'No entries found!',
-                    status: 'warning'
-                },
                 loading: false,
                 perPage: 10,
+                rowProps: (item) => {
+                    const { project } = this.state
+                    const bannedAddresses = ((project || {}).timeKeeping || {}).bannedAddresses || []
+                    const { address, approved } = item
+                    const isBanned = bannedAddresses.indexOf(address) >= 0
+                    if (isBanned) return { error: true, title: 'User banned' }
+                    return approved === false ? { warning: true, title: 'Rejected' } : (
+                        approved === true ? { positive: true, title: 'Approved' } : {}
+                    )
+                },
                 searchExtraKeys: [
                     'address',
                     'hash',
                     'approved',
                 ],
                 topLeftMenu: [
-                    (
-                        <Button.Group key="0">
-                            <ProjectDropdown
-                                style={{ border: '1px solid lightgrey', width: 196 }}
-                                button
-                                basic
-                                label=""
-                                placeholder="Select a project"
-                                key="0"
-                                onChange={(_, { options, value: projectHash }) => this.getEntries(
-                                    projectHash,
-                                    projectHash && options.find(o => o.value === projectHash).project
-                                )}
-                                noResultsMessage="Project name, hash or owner"
-                            />
-                            <Button {...{
-                                active: false,
-                                content: 'Timer',
-                                icon: 'clock',
-                                key: 1,
-                                onClick: () => {
-                                    const { projectHash } = this.state
-                                    showForm(TimeKeepingForm, { modal: true, projectHash, onSubmit: ()=> {
-                                        const { projectHash, project } = this.state
-                                        this.getEntries(projectHash, project)
-                                    }})
-                                }
-                            }} />
-                        </Button.Group>
-                    )
+                    {
+                        active: false,
+                        content: 'Timer',
+                        icon: 'clock outline',
+                        key: 1,
+                        onClick: () => {
+                            showForm(TimeKeepingForm, {
+                                modal: true,
+                                projectHash: this.props.projectHash,
+                                onSubmit: this.getEntries
+                            })
+                        }
+                    },
                 ],
                 topRightMenu: [
                     {
@@ -152,155 +117,172 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                             name: 'ban',
                         },
                         key: 'Ban',
-                        onClick: (selectedKeys) => {
-                            const { listProps: { data } } = this.state
-                            const addresses = arrUnique(selectedKeys.map(key => data.get(key).address))
-                                // filter out user wallets
-                                .filter(address => !secretStore().find(address))
-
-                            if(addresses.length === 0) return confirm({
-                                cancelButton: null,
-                                content: 'You cannot ban your own wallet(s)',
-                                header: 'Uh oh!',
-                                size: 'mini',
-                            })
-
-                            confirm({
-                                content: (
-                                    <div>
-                                        You are about to ban address(es) permanently from the selected project:
-                                        <pre style={{ backgroundColor: 'gray', color: 'blue', padding: 15 }}>
-                                            {addresses.join('\n')}
-                                        </pre>
-
-                                        What does this mean?
-                                        <ul>
-                                            <li>No further booking or disputes will be accepted from them</li>
-                                            <li>Only approved booking(s) will be visible to you</li>
-                                        </ul>
-                                    </div>
-                                ),
-                                header: 'Ban wallet(s)?',
-                                onConfirm: toBeImplemented
-                            })
-                        }
+                        onClick: this.handleBan.bind(this)
                     }
                 ],
                 type: 'datatable',
             }
         }
+
+        setTimeout(this.getEntries)
     }
 
-    componentDidMount() {
-        const { project, projectHash } = this.state
-        this.tieId = storageService.walletIndexBond.tie(() => this.getEntries(projectHash, project))
+    componentWillMount() {
+        this.updateBond = Bond.all([
+            storage.walletIndexBond,
+            secretStore(),
+            addressbook.getBond(),
+        ])
+
+        this.tieId = this.updateBond.notify(this.getEntries)
     }
 
     componentWillUnmount() {
-        storageService.walletIndexBond.untie(this.tieId)
+        this.updateBond.untie(this.tieId)
     }
-    
+
     getActionContent(entry, hash) {
-        const { isOwner, projectHash, project } = this.state
-        const {address: selectedAddress} = secretStore()._keys[storage.walletIndex()]
+        const { isOwner } = this.state
+        const { address: selectedAddress } = secretStore()._keys[storage.walletIndex()] || {}
         const isUser = selectedAddress === entry.address
-        let actionBtn = isUser || !isOwner ? (
-            <Button
-                disabled={!isUser || entry.approved}
-                icon="pencil"
-                style={{marginLeft: -10}}
-                title="Edit"
-                onClick={()=> {
-                showForm(TimeKeepingUpdateForm, {
-                    entry,
-                    hash,
-                    onSubmit: ()=> this.getEntries(projectHash, project)})
-            }} />
-        ) : (
-            <Button
-                icon="bug"
-                onClick={toBeImplemented}
-                style={{marginLeft: -10}}
-                title="Dispute"
-            />
-        )
-        
+        const btnProps = isOwner && !isUser ? {
+            disabled: !isOwner || entry.approved === true,
+            icon: 'bug',
+            onClick: toBeImplemented,
+            title: 'Dispute',
+        } : {
+                disabled: entry.address !== selectedAddress || entry.approved === true,
+                icon: 'pencil',
+                onClick: () => showForm(
+                    TimeKeepingUpdateForm,
+                    { entry, hash, onSubmit: this.getEntries }
+                ),
+                title: 'Edit',
+            }
+
+        const options = [
+            {
+                content: 'Add Partner',
+                hidden: !!addressbook.getByAddress(entry.address) || !!secretStore().find(entry.address),
+                icon: 'user plus',
+                key: 1,
+                onClick: () => showForm(PartnerForm, { values: { address: entry.address } }),
+            },
+            {
+                content: 'Approve',
+                hidden: !isOwner || entry.approved === true,
+                icon: {
+                    color: 'green',
+                    name: 'check',
+                },
+                key: 2,
+                onClick: () => this.handleApprove(hash, true),
+            },
+            {
+                content: 'Reject',
+                hidden: !isOwner || entry.approved === true || entry.approved === false,
+                icon: {
+                    color: 'red',
+                    name: 'x',
+                },
+                key: 3,
+                onClick: () => this.handleApprove(hash, false),
+            }
+        ].filter(x => !x.hidden)
+
         return (
             <Button.Group>
-                {actionBtn}
-                <Dropdown
-                    className='button icon'
-                    floating
-                    options={[
-                        {
-                            key: 0,
-                            icon: 'copy outline',
-                            text: 'Copy Address',
-                            onClick: () => copyToClipboard(entry.address)
-                        },
-                        {
-                            content: 'Add Partner',
-                            icon: 'user plus',
-                            key: 'partner',
-                            onClick: toBeImplemented,
-                        },
-                        {
-                            content: 'Approve',
-                            icon: {
-                                color: 'green',
-                                name: 'check',
-                            },
-                            key: 'Approve',
-                            onClick: () => this.handleApprove(hash, true),
-                        },
-                        {
-                            content: 'Reject',
-                            icon: {
-                                color: 'red',
-                                name: 'x',
-                            },
-                            key: 'Reject',
-                            onClick: ()=> this.handleApprove(hash, false),
-                        }
-                    ]}
-                    trigger={<React.Fragment />}
-                />
+                <Button {...btnProps} style={{ marginLeft: -10 }} />
+                {options.length > 0 && (
+                    <Dropdown
+                        className='button icon'
+                        floating
+                        options={options}
+                        trigger={<React.Fragment />}
+                    />
+                )}
             </Button.Group>
         )
     }
 
-    getEntries(projectHash, project) {
+    getEntries() {
+        const { manage, projectHash, project } = this.props
         const { listProps } = this.state
-        const index = storage.walletIndex()
-        const address = secretStore()._keys[index].address
-        const isOwner = (project || {}).ownerAddress === address
-        // // only show personal bookings if not owner
-        listProps.loading = true
-        listProps.selectable = isOwner
+        const address = secretStore()._keys[storage.walletIndex()].address
+        const isOwner = manage && (project ? project.ownerAddress === address : true)
+        const bannedAddresses = project && (project.timeKeeping || {}).bannedAddresses || []
+        listProps.selectable = manage && isOwner
+        listProps.columns.find(x => x.key === '_projectName').hidden = !!projectHash
+        const denyManage = manage && project && !isOwner
+        listProps.emptyMessage = {
+            content: denyManage ? 'You do not own this project' : (
+                !projectHash ? 'Please select a project to view time records' : 'No entries found'
+            ),
+            status: denyManage ? 'error' : 'warning'
+        }
+        listProps.data = denyManage ? new Map() : listProps.data
+
         this.setState({ isOwner, listProps, projectHash, project })
+        if (denyManage || !projectHash) return
+
+        const processHashes = hashes => {
+            client.project(projectHash, null, null, (err, project) => {
+                Bond.all(hashes.map(timeHash => runtime.timekeeping.timeRecord([
+                    ss58Decode(address),
+                    hexToBytes(projectHash),
+                    timeHash
+                ]))).then(records => { // record === null means not found or does not belong to user or project
+                    listProps.data = records.map((record, i) => !record ? null : ({
+                        ...record,
+                        _hash: bytesToHex(hashes[i]),
+                        _banned: bannedAddresses.indexOf(address) >= 0 ? 'Yes' : 'No',
+                        _duration: secondsToDuration((record.end_block - record.start_block) * BLOCK_DURATION_SECONDS),
+                        _nameOrAddress: getAddressName(address),
+                        _projectName: project.name,
+                        _status: record.locked_status ? 'locked' : '??'
+                    })).filter(x => !!x) // get rid of empty values
+
+                    this.setState({ listProps })
+                    /*
+                    end_block: 216557
+                    locked_reason: {ReasonCodeKey: 0, ReasonCodeTypeKey: 0, _type: "ReasonCodeStruct"}
+                    locked_status: false
+                    posting_period: 0
+                    reason_code: {ReasonCodeKey: 0, ReasonCodeTypeKey: 0, _type: "ReasonCodeStruct"}
+                    start_block: 210797
+                    submit_status: 0
+                    total_blocks: 5760
+                    */
+                })
+            })
+        }
+
+        timeKeeping.record.listByProject(projectHash).then(processHashes)
+
+        return
+
+        // legacy
         const query = {}
         if (projectHash) {
             query.projectHash = projectHash
         }
-        listProps.columns.find(x => x.key === '_projectName').hidden = !!projectHash
-
-        if (!isOwner) {
+        if (!isOwner || !project) {
             // only show other user's entries if select wallet is the project owner
             query.address = address
         }
-        client.handleTimeKeepingEntrySearch(
+        client.timeKeepingEntrySearch(
             query, true, true, true,
             (err, data) => {
-                listProps.loading = false
+                // exclude any banned address
+                data = mapFilter(data, entry => entry.approved || bannedAddresses.indexOf(entry.address) === -1)
                 listProps.data = data
                 const projectHashes = []
                 Array.from(data).forEach(x => {
                     const item = x[1]
-                    const { address, ratePeriod, rateAmount, rateUnit, approved, totalAmount } = item
+                    const { address, approved, totalAmount } = item
+                    item._banned = bannedAddresses.indexOf(address) >= 0 ? 'Yes' : 'No'
                     item._nameOrAddress = getAddressName(address)
-                    item._rate = rateUnit + rateAmount + '/' + ratePeriod
                     item._status = !isDefined(approved) ? '-' : (approved ? 'Approved' : 'Rejected')
-                    item._total = rateUnit + totalAmount.toFixed(2)
                     if (projectHashes.indexOf(item.projectHash) === -1) projectHashes.push(item.projectHash)
                     return x
                 })
@@ -316,82 +298,118 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 }))
             }
         )
+
     }
 
     handleApprove(hash, approve = false) {
-        const { listProps: {data}, project, projectHash } = this.state
+        const { listProps: { data } } = this.state
         const entry = data.get(hash)
-        if (entry.approved === approve) return
+        if (entry.approved || entry.approved === approve) return
         const queueProps = {
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'timeKeepingEntryApproval',
-            args: [hash, approve, ()=> this.getEntries(projectHash, project)],
+            args: [hash, approve, (err) => !err && this.getEntries()],
             title: 'Time Keeping - Approve',
             description: `Hash: ${hash} | Duration: ${entry.duration}`
         }
         addToQueue(queueProps)
     }
 
+    handleBan(selectedKeys) {
+        const { listProps: { data }, project, projectHash } = this.state
+        const { timeKeeping } = project
+        const { bannedAddresses } = timeKeeping || {}
+        let addresses = arrUnique(selectedKeys.map(key => data.get(key).address))
+            // filter out user wallets
+            .filter(address => !secretStore().find(address))
+        // prevents accidental self-banning
+        if (addresses.length === 0) return confirm({
+            cancelButton: null,
+            content: 'You cannot ban your own wallet(s)',
+            header: 'Uh oh!',
+            size: 'tiny',
+        })
+
+        addresses = addresses.filter(address => (bannedAddresses || []).indexOf(address) === -1)
+        const s = addresses.length <= 1 ? '' : 's'
+        const es = s ? 'es' : ''
+        if (addresses.length === 0) return confirm({
+            cancelButton: null,
+            content: `Selected addresses are already banned`,
+            header: 'Uh oh!',
+            size: 'tiny',
+        })
+
+        const queueProps = {
+            type: QUEUE_TYPES.CHATCLIENT,
+            func: 'projectTimeKeepingBan',
+            args: [projectHash, addresses, true],
+            title: 'Project - ban user',
+            description: `Ban ${addresses.length} user${s}`,
+            // When successfull retrieve the updated project with banned addresses and update entry list
+            next: {
+                type: QUEUE_TYPES.CHATCLIENT,
+                func: 'project',
+                args: [projectHash, null, null, (err, project) => {
+                    if (err) return
+                    this.setState({ project })
+                    setTimeout(this.getEntries)
+                }],
+                // No toast required for this child-task
+                silent: true
+            }
+        }
+
+        confirm({
+            content: (
+                <div>
+                    You are about to ban the following address{es} permanently
+                    from the project named "{project.name}":
+                    <pre style={{ backgroundColor: 'gray', color: 'blue', padding: 15 }}>
+                        {addresses.join('\n')}
+                    </pre>
+
+                    What does this mean?
+                    <ul>
+                        <li>No further booking or other actions will be accepted from the user{s}</li>
+                        <li>Only approved bookings will be visible to you</li>
+                    </ul>
+                </div>
+            ),
+            header: `Ban user${s}?`,
+            onConfirm: () => addToQueue(queueProps)
+        })
+    }
+
     handleRowSelect(selectedKeys) {
-        const {isOwner, listProps, projectHash} = this.state
+        const { isOwner, listProps, projectHash } = this.state
         const { topLeftMenu: leftMenu } = listProps
-        leftMenu.forEach( x => x.hidden = selectedKeys.length === 0
-            || (!isOwner && ['Approve', 'Reject'].indexOf(x.key ) >= 0)
+        leftMenu.forEach(x => x.hidden = selectedKeys.length === 0
+            || (!isOwner && ['Approve', 'Reject'].indexOf(x.key) >= 0)
             || (!projectHash && ['Ban'].indexOf(x.key) >= 0))
-        
-        this.setState({listProps})
+
+        this.setState({ listProps })
     }
 
     render() {
+        const propsStr = JSON.stringify(this.props)
+        if (this.propsStr !== propsStr) {
+            // update entries list
+            this.propsStr = propsStr
+            setTimeout(this.getEntries)
+        }
         return <ListFactory {...this.state.listProps} />
     }
 }
-
 ProjectTimeKeepingList.propTypes = {
+    manage: PropTypes.bool,
+    projecthash: PropTypes.string,
     project: PropTypes.shape({
         hash: PropTypes.string,
         name: PropTypes.name,
         ownerAddress: PropTypes.string
-    })//.isRequired
+    })
 }
-
-// for test only
 ProjectTimeKeepingList.defaultProps = {
-    project: {
-        hash: '0x5652e822f39f2ac58517017aaf8ec000e3bce24bd0e0f08d916df67c76641df8',
-        name: 'Alice\'s Project 01',
-        ownerAddress: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
-    }
+    manage: false
 }
-
-const sampleOwners = [
-    '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-    '5Fk6Ek9BuoyqPrDA54P54PpXdGmWFpMRSd8Ghsz7FsF8XHcH',
-    '5EqAJNwzZ7VozoBHYPxN7aKKR21qZQfsDSnatQtc2miiEwuG',
-    '5HCAZvwcvF9ZokEDHEJYUcTaMiBi44yuaBDRixWpY9tNMmnm'
-]
-
-// generate sample time bookings for test only
-const sampleBookingsByProject = new Array(10).fill({}).map((x, i) => {
-    const blockStart = randomInt(1, 320000)
-    const blockEnd = blockStart + randomInt(100, 100000)
-    const blockCount = blockEnd - blockStart
-    const ratePeriod = RATE_PERIODS[i % RATE_PERIODS.length]
-    const rateAmount = randomInt(1, 10)
-    return {
-        hash: '0x' + (i + '').padStart(10, '0'), // tx hash?
-        address: sampleOwners[i % sampleOwners.length],
-        approved: false,
-        blockStart: blockStart,
-        blockEnd: blockEnd,
-        blockCount,
-        duration: secondsToDuration(blockCount * 5),
-        projectHash: '0x67199a17ff2a829703b308bb507ad6c66359587851f0634d2868de43ea3d63a8',
-        rateAmount,
-        rateUnit: '$', // network currency only or any currency including fiat and crypto?
-        ratePeriod: ratePeriod, // block (default), hour or day,
-        totalAmount: calcAmount(blockCount, rateAmount, ratePeriod), // total chargeable/payable amount
-        tsCreated: new Date(),
-        tsUpdated: new Date()
-    }
-})

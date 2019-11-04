@@ -219,9 +219,13 @@ export class DataTable extends ReactiveComponent {
     getTopContent(mobile, totalRows, selectedIndexes) {
         let { topLeftMenu, topRightMenu } = this.props
         const { keywords } = this.state
-  
-        const searchCol = (
-            <Grid.Column key="0" tablet={16} computer={5} style={{padding: 0}}>
+        topLeftMenu = (topLeftMenu || []).filter(x => !x.hidden)
+        topRightMenu = (topRightMenu || []).filter(x => !x.hidden)
+
+        if (topLeftMenu.length + topRightMenu.length === 0) return
+
+        const searchCol = searchable && (
+            <Grid.Column key="0" tablet={16} computer={5} style={{ padding: 0 }}>
                 <Input
                     action={{
                         icon:'search',
@@ -229,7 +233,7 @@ export class DataTable extends ReactiveComponent {
                     }}
                     onChange={(e, d) => this.setState({keywords: d.value})}
                     placeholder="Search"
-                    style={!mobile ? undefined : { margin: '15px 0', width: '100%' }}
+                    style={!mobile ? undefined : styles.searchMobile}
                     type="text"
                     value={keywords}
                 />
@@ -253,7 +257,7 @@ export class DataTable extends ReactiveComponent {
         )
 
         return (
-            <Grid columns={3} style={{margin: '-1rem 0', paddingBottom: '15px'}}>
+            <Grid columns={3} style={styles.tableTopContent}>
                 <Grid.Row>
                     <Grid.Column tablet={16} computer={6} style={{padding: 0}}>
                         {(topLeftMenu || []).map((item, i) => (
@@ -275,12 +279,12 @@ export class DataTable extends ReactiveComponent {
     }
 
     getRows(filteredData, columns, selectedIndexes) {
-        let { perPage, selectable } = this.props
+        let { perPage, rowProps, selectable } = this.props
         const { pageNo } = this.state
 
         return mapItemsByPage(filteredData, pageNo, perPage, (item, key, items, isMap) => (
-            <Table.Row key={key}>
-                { selectable && ( /* include checkbox to select items */
+            <Table.Row key={key} {...(isFn(rowProps) ? rowProps(item, key, items, isMap) : rowProps || {})}>
+                {selectable && ( /* include checkbox to select items */
                     <Table.Cell onClick={() => this.handleRowSelect(key, selectedIndexes)} style={styles.checkboxCell}>
                         <Icon 
                             name={(selectedIndexes.indexOf(key) >= 0 ? 'check ' : '') +'square outline'}
@@ -290,9 +294,9 @@ export class DataTable extends ReactiveComponent {
                     </Table.Cell>
                 )}
                 {columns.map((cell, j) => (
-                    <Table.Cell 
-                        {...objWithoutKeys(cell, ['content', 'style'])}
-                        key={j} 
+                    <Table.Cell
+                        {...objWithoutKeys(cell, ['title'])}
+                        key={j}
                         content={undefined}
                         textAlign={cell.textAlign || 'left'}
                         style={objCopy(cell.style, {padding: cell.collapsing ? '0 5px' : undefined})}
@@ -343,30 +347,29 @@ export class DataTable extends ReactiveComponent {
         return headers
     }
 
-    getFooter(mobile, totalPages) {
-        return () => {
-            let {  footerContent, navLimit, pageOnSelect } = this.props
-            const { pageNo } = this.state
-            return (
-                <React.Fragment>
-                    {footerContent && <div style={{float: 'left', width: mobile ? '100%' : undefined}}>{footerContent}</div>}
-                    {totalPages <= 1 ? undefined : (
-                        <Paginator
-                            total={totalPages}
-                            current={pageNo}
-                            navLimit={navLimit || 5}
-                            float={mobile ? undefined : 'right'}
-                            onSelect={pageNo => {this.setState({pageNo}); isFn(pageOnSelect) && pageOnSelect(pageNo); }}
-                        />
-                    )}
-                </React.Fragment>
-            )
-        }
+    getFooter(mobile, totalPages, pageNo) {
+        let { footerContent, navLimit, pageOnSelect } = this.props
+        // const {pageNo} = this.state
+        return (
+            <React.Fragment>
+                {footerContent && <div style={{ float: 'left', width: mobile ? '100%' : undefined }}>{footerContent}</div>}
+                {totalPages <= 1 ? undefined : (
+                    <Paginator
+                        total={totalPages}
+                        current={pageNo}
+                        navLimit={navLimit || 5}
+                        float={mobile ? undefined : 'right'}
+                        onSelect={pageNo => { this.setState({ pageNo }); isFn(pageOnSelect) && pageOnSelect(pageNo); }}
+                    />
+                )}
+            </React.Fragment>
+        )
     }
 
     render() {
-        let {  data, columns: columnsOriginal, footerContent, perPage, searchExtraKeys } = this.props
-        let { keywords, selectedIndexes, sortAsc, sortBy } = this.state
+        let { data, columns: columnsOriginal, emptyMessage, footerContent, loading, perPage, searchExtraKeys } = this.props
+        let { keywords, pageNo, selectedIndexes, sortAsc, sortBy } = this.state
+        keywords = keywords.trim()
         data = data || []
         const columns = columnsOriginal.filter(x => !!x)
         const keys = columns.filter(x => !!x.key).map(x => x.key)
@@ -376,16 +379,21 @@ export class DataTable extends ReactiveComponent {
         }
         const filteredData = sort(search(data, keywords, keys), sortBy, !sortAsc)
         selectedIndexes = selectedIndexes.filter(index => !!(isArr(data) ? data[index] : data.get(index)))
-        const totalRows = filteredData.length || filteredData.size
+        const totalRows = filteredData.length || filteredData.size || 0
         const totalPages = Math.ceil(totalRows / perPage)
         const headers = this.getHeaders(totalRows, columns, selectedIndexes)
         const rows = this.getRows(filteredData, columns, selectedIndexes)
-
+        pageNo = pageNo > totalPages ? 1 : pageNo
+        this.state.pageNo = pageNo
         return (
-            <div>
-                <IfMobile then={this.getTopContent(true, totalRows, selectedIndexes)} else={this.getTopContent(false, totalRows, selectedIndexes)} />
-                {totalRows > 0 && (
-                    <div style={{overflowX: 'auto'}}>
+            <div className="data-table">
+                <IfMobile
+                    then={this.getTopContent(true, totalRows, selectedIndexes)}
+                    else={this.getTopContent(false, totalRows, selectedIndexes)}
+                />
+                
+                <div style={styles.tableContent}>
+                    {totalRows === 0 ? newMessage(emptyMessage) : (
                         <Table celled selectable sortable unstackable singleLine>
                             <Table.Header>
                                 <Table.Row>
@@ -402,16 +410,16 @@ export class DataTable extends ReactiveComponent {
                                     <Table.Row>
                                         <Table.HeaderCell colSpan={columns.length + 1}>
                                             <IfMobile
-                                                then={this.getFooter(true, totalPages)}
-                                                else={this.getFooter(false, totalPages)}
+                                                then={()=> this.getFooter(true, totalPages, pageNo)}
+                                                else={()=> this.getFooter(false, totalPages, pageNo)}
                                             />
                                         </Table.HeaderCell>
                                     </Table.Row>
                                 </Table.Footer>
                             )}
                         </Table>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         )
     }
@@ -431,12 +439,22 @@ DataTable.propTypes = {
     // Object key to set initial sort by
     defaultSort: PropTypes.string,
     footerContent: PropTypes.any,
+    loading: PropTypes.bool,
     perPage: PropTypes.number,
+    rowProps: PropTypes.oneOfType([
+        PropTypes.func,
+        PropTypes.object
+    ]),
+    searchable: PropTypes.bool,
     searchExtraKeys: PropTypes.array,
     topLeftMenu: PropTypes.arrayOf(PropTypes.object),
     topRightMenu: PropTypes.arrayOf(PropTypes.object)
 }
 DataTable.defaultProps = {
+    emptyMessage: {
+        content: 'No entries found',
+        status: 'warning'
+    },
     perPage: 10,
 }
 
@@ -522,5 +540,19 @@ const styles = {
         padding: '0px 5px',
         width: 25,
         cursor: 'pointer',
+    },
+    searchMobile: {
+        margin: '15px 0',
+        width: '100%',
+    },
+    tableContent: { 
+        display: 'block',
+        margin: '1rem 0',
+        overflowX: 'auto',
+        width: '100%',
+    },
+    tableTopContent: {
+        margin: '-1rem 0',
+        width: '100%'
     }
 }

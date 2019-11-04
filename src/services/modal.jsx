@@ -45,12 +45,14 @@ export const confirm = (confirmProps, id) => {
         id,
         <Confirm
           {...confirmProps}
-          open={isDefined(confirmProps.open) ? confirmProps.open : true}
-          onCancel={(e, d) => {closeModal(id); isFn(confirmProps.onCancel) && confirmProps.onCancel(e, d)}}
-          onConfirm={(e, d) => {closeModal(id); isFn(confirmProps.onConfirm) && confirmProps.onConfirm(e, d)}}
+          content={<div className="content">{content}</div>}
+          open={isDefined(open) ? open : true}
+          onCancel={(e, d) => closeModal(id) | (isFn(onCancel) && onCancel(e, d))}
+          onConfirm={(e, d) => closeModal(id) | (isFn(onConfirm) && onConfirm(e, d))}
         />
     )
 }
+
 // showForm opens form in a modal dialog
 //
 // Params: 
@@ -64,17 +66,16 @@ export const showForm = (FormComponent, props, id) => {
     if (!isFn(FormComponent)) return;
     id = id || uuid.v1()
     props = props || {}
-    props.modal = true
     return add(
         id,
         <FormComponent
             {...props}
             modal={true}
-            open={true}
             onClose={(e, d)=> {
-                closeModal(id)
+                setTimeout(()=>closeModal(id))
                 isFn(props.onClose) && props.onClose(e, d)
             }}
+            open={true}
         />
     )
 }

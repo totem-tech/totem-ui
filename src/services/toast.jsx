@@ -62,7 +62,7 @@ export const setToast = (message, duration, id) => {
     toasts.set( id, messageEl )
     trigger.trigger(uuid.v1())
     if (autoClose) {
-        timeoutIds.set(id, setTimeout( () => removeToast(id), duration || DURATION))        
+        timeoutIds.set(id, setTimeout(handleClose, duration || DURATION))        
     }
     return id
 }

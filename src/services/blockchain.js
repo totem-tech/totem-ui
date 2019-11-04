@@ -1,10 +1,11 @@
 // import { Bond } from 'oo7'
-import { addCodecTransform, calls, hexToBytes, post, runtime, ss58Decode } from 'oo7-substrate'
+import { addCodecTransform, calls, post, runtime, ss58Decode } from 'oo7-substrate'
 import { isBond } from '../utils/utils'
+import { hexToBytes } from '../utils/convert'
 
-const validatedAddress = address => runtime.indices.tryIndex(
-    new Bond().defaultTo(ss58Decode(isBond(address) ? address._value : address)
-))
+const validatedSenderAddress = address => runtime.indices.tryIndex(
+    new Bond().defaultTo(ss58Decode(isBond(address) ? address._value : address))
+)
 const hashHexToBytes = hash => hexToBytes(isBond(hash) ? hash._value : hash)
 
 // addNewProject registers a hash against a wallet into the blockchain
@@ -23,7 +24,7 @@ export const addNewProject = (ownerAddress, hash) => {
     addCodecTransform('ProjectHash', 'Hash')
 
     return post({
-        sender: validatedAddress(ownerAddress),
+        sender: validatedSenderAddress(ownerAddress),
         call: calls.projects.addNewProject(hashHexToBytes(hash)),
         compact: false,
         longevity: true
@@ -60,7 +61,7 @@ export const projectHashStatus = hash => {
 export const reassignProject = (ownerAddress, newOwnerAddress, hash) => {
     addCodecTransform('ProjectHash', 'Hash')
     return post({
-        sender: validatedAddress(ownerAddress),
+        sender: validatedSenderAddress(ownerAddress),
         call: calls.projects.reassignProject(newOwnerAddress, hashHexToBytes(hash)),
         compact: false,
         longevity: true
@@ -82,13 +83,12 @@ export const reassignProject = (ownerAddress, newOwnerAddress, hash) => {
 export const removeProject = (ownerAddress, hash) => {
     addCodecTransform('ProjectHash', 'Hash')
     return post({
-        sender: validatedAddress(ownerAddress),
+        sender: validatedSenderAddress(ownerAddress),
         call: calls.projects.removeProject(hashHexToBytes(hash)),
         compact: false,
         longevity: true
     })
 }
-
 
 // closeProject removes project
 //
@@ -105,13 +105,12 @@ export const removeProject = (ownerAddress, hash) => {
 export const closeProject = (ownerAddress, hash) => {
     addCodecTransform('ProjectHash', 'Hash')
     return post({
-        sender: validatedAddress(ownerAddress),
+        sender: validatedSenderAddress(ownerAddress),
         call: calls.projects.closeProject(hashHexToBytes(hash)),
         compact: false,
         longevity: true
     })
 }
-
 
 // reopenProject removes project
 //
@@ -128,18 +127,155 @@ export const closeProject = (ownerAddress, hash) => {
 export const reopenProject = (ownerAddress, hash) => {
     addCodecTransform('ProjectHash', 'Hash')
     return post({
-        sender: validatedAddress(ownerAddress),
+        sender: validatedSenderAddress(ownerAddress),
         call: calls.projects.reopenProject(hashHexToBytes(hash)),
         compact: false,
         longevity: true
     })
 }
 
+export const timeKeeping = {
+    record: {
+        // Blockchain transaction
+        // @postingPeriod u16: 15 fiscal periods (0-14) // not yet implemented use default 0
+        add: (workerAddress, projectHash, recordHash, blockCount, postingPeriod, blockStart, blockEnd) => {
+            return post({
+                sender: validatedSenderAddress(workerAddress),
+                call: calls.timekeeping.submitTime(
+                    hashHexToBytes(projectHash),
+                    hashHexToBytes(recordHash),
+                    blockCount,
+                    postingPeriod,
+                    blockStart,
+                    blockEnd,
+                ),
+                compact: false,
+                longevity: true
+            })
+        },
+        // Blockchain transaction
+        // (project owner) approve a time record
+        approve: (ownerAddress, projectHash, workerAddress, recordHash, status, locked, reason) => {
+            return post({
+                sender: validatedSenderAddress(ownerAddress),
+                call: calls.timekeeping.authoriseTime(
+                    hashHexToBytes(projectHash),
+                    validatedSenderAddress(ownerAddress),
+                    validatedSenderAddress(workerAddress),
+                    hashHexToBytes(recordHash),
+                    status,
+                    locked,
+                    reason,
+                ),
+                compact: false,
+                longevity: true
+            })
+        },
+        // get details of a record
+        get: (workerAddress, projectHash, recordHash) => runtime.timekeeping.timeRecord(
+            ss58Decode(workerAddress),
+            hashHexToBytes(projectHash),
+            hashHexToBytes(recordHash)
+        ),
+        // list of all record hashes booked by worker
+        list: workerAddress => runtime.timekeeping.workerTimeRecordsHashList(ss58Decode(workerAddress)),
+        listByProject: projectHash => runtime.timekeeping.projectTimeRecordsHashList(hashHexToBytes(projectHash))
+    },
+    invitation: {
+        // Blockchain transaction
+        // (worker) accept invitation to a project
+        accept: (projectHash, workerAddress, accepted) => {
+            return post({
+                sender: validatedSenderAddress(workerAddress),
+                call: calls.timekeeping.workerAcceptanceProject(hashHexToBytes(projectHash), accepted),
+                compact: false,
+                longevity: true
+            })
+        },
+        // Blockchain transaction
+        // (project owner) invite a worker to join a project
+        add: (projectHash, ownerAddress, workerAddress) => {
+            return post({
+                sender: validatedSenderAddress(ownerAddress),
+                call: calls.timekeeping.notifyProjectWorker(
+                    ss58Decode(workerAddress),
+                    hashHexToBytes(projectHash),
+                ),
+                compact: false,
+                longevity: true
+            })
+        },
+        // status of an invitation
+        status: (projectHash, workerAddress) => runtime.timekeeping.workerProjectsBacklogStatus([
+            hashHexToBytes(projectHash),
+            ss58Decode(workerAddress)
+        ]),
+        // Worker's pending invitation to projects
+        pending: workerAddress => runtime.timekeeping.workerProjectsBacklogList(ss58Decode(workerAddress)),
+    },
+    // list of workers that accepted invitation
+    workers: projectHash => runtime.timekeeping.projectWorkersList(hashHexToBytes(projectHash)),
+    // check if worker is banned. undefined: not banned, object: banned
+    workerBanStatus: (projectHash, address) => runtime.timekeeping.projectWorkersBanList(
+        hashHexToBytes(projectHash),
+        validatedSenderAddress(address)
+    ),
+}
+
 // Include all functions here that will be used by Queue Service
+// Only blockchain transactions
 export default {
     addNewProject,
     reassignProject,
     removeProject,
     closeProject,
     reopenProject,
+    timeKeeping_invitation_accept: timeKeeping.invitation.accept,
+    timeKeeping_invitation_add: timeKeeping.invitation.add,
+    timeKeeping_record_add: timeKeeping.record.add,
+    timeKeeping_record_approve: timeKeeping.record.approve,
 }
+
+// ToDo: use common-utils library
+const types = {
+    "ProjectHash": "Hash",
+    "DeletedProject": "Hash",
+    "ProjectStatus": "u16",
+    "AcceptAssignedStatus": "bool",
+    "BanStatus": "bool",
+    "LockStatus": "bool",
+    "ReasonCode": "u16",
+    "ReasonCodeType": "u16",
+    "NumberOfBlocks": "u64",
+    "PostingPeriod": "u16",
+    "ProjectHashRef": "Hash",
+    "StartOrEndBlockNumber": "u64",
+    "StatusOfTimeRecord": "u16",
+    "ReasonCodeStruct": {
+        "ReasonCodeKey": "ReasonCode",
+        "ReasonCodeTypeKey": "ReasonCodeType"
+        // "ReasonCode": "u16",
+        // "ReasonCodeType": "u16",
+    },
+    "ReasonCodeStruct<ReasonCode,ReasonCodeType>": "ReasonCodeStruct",
+    "BannedStruct": {
+        "BanStatusKey": "BanStatus",
+        "ReasonCodeStructKey": "ReasonCodeStruct"
+    },
+    "BannedStruct<BanStatus,ReasonCodeStruct>": "BannedStruct",
+    "Timekeeper": {
+        "total_blocks": "NumberOfBlocks",
+        "locked_status": "LockStatus",
+        "locked_reason": "ReasonCodeStruct",
+        "submit_status": "StatusOfTimeRecord",
+        "reason_code": "ReasonCodeStruct",
+        "posting_period": "PostingPeriod",
+        "start_block": "StartOrEndBlockNumber",
+        "end_block": "StartOrEndBlockNumber"
+    },
+}
+// new line is required!!!
+types[`Timekeeper<NumberOfBlocks,LockStatus,StatusOfTimeRecord,ReasonCodeStruct,
+PostingPeriod,StartOrEndBlockNumber>`] = 'Timekeeper'
+
+Object.keys(types).forEach(key => addCodecTransform(key, types[key]))

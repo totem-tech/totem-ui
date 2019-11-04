@@ -1,13 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Button, Checkbox, Dropdown, Form, Header, Icon, Input, Message, Modal, TextArea } from 'semantic-ui-react'
+import { Button, Checkbox, Dropdown, Form, Header, Icon, Input, Modal, TextArea } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
-import { isDefined, isArr, isBool, isBond, isFn, isObj, isStr, objCopy, objWithoutKeys, newMessage, hasValue, objReadOnly, isValidNumber } from '../utils/utils';
+import { isDefined, isArr, isBool, isBond, isFn, isObj, isStr, objCopy, objWithoutKeys, newMessage, hasValue, objReadOnly, isValidNumber, arrReadOnly } from '../utils/utils';
 import { InputBond } from '../InputBond'
 import { AccountIdBond } from '../AccountIdBond'
 
-// ToDo: automate validation process by checking for data on input change
-//       and prevent submission of form if data is invalid and/or required field in empty
 class FormBuilder extends ReactiveComponent {
     constructor(props) {
         super(props)
@@ -23,17 +21,18 @@ class FormBuilder extends ReactiveComponent {
         this.handleSubmit = this.handleSubmit.bind(this)
     }
 
-    getValues(inputs, excludeIndex, values) {
+    getValues(inputs = [], values = {}) {
         return inputs.reduce((values, input, i) => {
-            if (!isDefined(input.name) || i === excludeIndex) return values;
-            let { value } = values
+            if (!isDefined(input.name)) return values
+            if (input.type.toLowerCase() === 'group') return this.getValues(input.inputs, values)
+            let value = values[input.name]
             value = !isDefined(value) ? input.value : value
             if (['accountidbond', 'inputbond'].indexOf(input.type.toLowerCase()) >= 0 && isBond(input.bond)) {
                 value = input.bond._value
             }
             values[input.name] = value
             return values
-        }, values || {})
+        }, values)
     }
 
     handleChange(e, data, index, input) {
@@ -49,11 +48,13 @@ class FormBuilder extends ReactiveComponent {
         // update values of other inputs
         values = this.getValues(inputs, -1, values)
         updateBond && input.bond.changed(value)
-                
-        // trigger input items's onchange callback
-        isFn(onInputChange) && onInputChange(e, values, index, childIndex)
-        // trigger form's onchange callback
-        isFn(formOnChange) && formOnChange(e, values, index, childIndex)
+
+        if (!data.invalid) {
+            // trigger input items's onchange callback
+            isFn(onInputChange) && onInputChange(e, values, index, childIndex)
+            // trigger form's onchange callback
+            isFn(formOnChange) && formOnChange(e, values, index, childIndex)
+        }
         this.setState({ inputs, values })
     }
 
@@ -98,22 +99,32 @@ class FormBuilder extends ReactiveComponent {
             trigger,
             widths
         } = this.props
-        const { handleClose } = this
         const { inputs, open: sOpen, values } = this.state
         // whether the 'open' status is controlled or uncontrolled
         let modalOpen = isFn(onClose) ? open : sOpen
         if (success && closeOnSubmit) {
             modalOpen = false
+            isFn(onClose) && onClose({}, {})
         }
 
-        const submitBtn = React.isValidElement(submitText) || submitText === null ? submitText : (
-            <Button
-                content={submitText}
-                disabled={isFormInvalid(inputs, values) || submitDisabled || message.error || success}
-                onClick={this.handleSubmit}
-                positive
-            />
-        )
+        let submitBtn, closeBtn
+        if (submitText !== null) {
+            let submitProps = React.isValidElement(submitText) ? objCopy(submitText.props) : {}
+            const { content, disabled, onClick, positive } = submitProps
+            const shouldDisable = isFormInvalid(inputs, values) || submitDisabled || message.error || success
+            submitProps.content = content || (!isStr(submitText) ? content : submitText)
+            submitProps.disabled = isBool(disabled) ? disabled : shouldDisable
+            submitProps.onClick = isFn(onClick) ? onClick : this.handleSubmit
+            submitProps.positive = isDefined(positive) ? positive : true
+            submitBtn = <Button {...submitProps} />
+        }
+        if (!modal || closeText !== null) {
+            const closeProps = React.isValidElement(closeText) ? objCopy(closeText.props) : {}
+            closeProps.content = closeProps.content || (isStr(closeText) ? closeText : (success ? 'Close' : 'Cancel'))
+            closeProps.negative = isDefined(closeProps.negative) ? closeProps.negative : true
+            closeProps.onClick = closeProps.onClick || this.handleClose
+            closeBtn = <Button {...closeProps} />
+        }
 
         const form = (
             <Form 
@@ -143,7 +154,7 @@ class FormBuilder extends ReactiveComponent {
                 closeOnDimmerClick={!!closeOnDimmerClick}
                 defaultOpen={defaultOpen}
                 dimmer={true}
-                onClose={handleClose}
+                onClose={this.handleClose}
                 onOpen={onOpen}
                 open={modalOpen}
                 size={size}
@@ -155,7 +166,7 @@ class FormBuilder extends ReactiveComponent {
                         color="grey" 
                         link
                         name='times circle outline'
-                        onClick={handleClose}
+                        onClick={this.handleClose}
                         size="large"
                     />
                 </div>
@@ -173,13 +184,7 @@ class FormBuilder extends ReactiveComponent {
                 </Modal.Content>
                 {!hideFooter && (
                     <Modal.Actions>
-                        {React.isValidElement(closeText) ? closeText : (
-                            <Button
-                                content={closeText || (success ? 'Close' : 'Cancel')}
-                                negative
-                                onClick={handleClose}
-                            />
-                        )}
+                        {closeBtn}
                         {submitBtn}
                     </Modal.Actions> 
                 )}
@@ -260,6 +265,9 @@ const VALIDATION_MESSAGES = objReadOnly({
     requiredField: () => 'Required field',
     validNumber: ()=> 'Please enter a valid number'
 }, true)
+const NON_ATTRIBUTES = arrReadOnly(
+    ['deferred', 'hidden', 'inline', 'invalid', '_invalid', 'label', 'trueValue', 'falseValue', 'useInput']
+)
 
 export class FormInput extends ReactiveComponent {
     constructor(props) {
@@ -273,20 +281,25 @@ export class FormInput extends ReactiveComponent {
     }
 
     handleChange(event, data) {
-        const { falseValue: no, max, maxLength, min, minLength, onChange, required, trueValue: yes, type } = this.props
-        const { value } = data
+        const { falseValue: no, max, maxLength, min, minLength, onChange, required, trueValue: yes, type} = this.props
+        const { checked, value } = data
         // Forces the synthetic event and it's value to persist
         // Required for use with deferred function
-        isFn(event.persist) && event.persist();
-        const hasVal = hasValue(value)
-        let errMsg = required && !hasVal ? VALIDATION_MESSAGES.requiredField() : undefined
+        event && isFn(event.persist) && event.persist();
+        const typeLower = (type || '').toLowerCase()
+        const isCheck = ['checkbox', 'radio'].indexOf(typeLower) >= 0
+        const hasVal = hasValue(isCheck ? checked : value)
+        let errMsg = !isCheck && required && !hasVal ? VALIDATION_MESSAGES.requiredField() : undefined
         if (hasVal && !errMsg) {
-            switch ((type || '').toLowerCase()) {
+            switch (typeLower) {
                 case 'checkbox':
                 case 'radio':
                     // Sematic UI's Checkbox component only supports string and number as value
                     // This allows support for any value types
-                    data.value = data.checked ? (isDefined(yes) ? yes : true) : (isDefined(no) ? no : false)
+                    data.value = checked ? (isDefined(yes) ? yes : true) : (isDefined(no) ? no : false)
+                    if (required && !checked) {
+                        errMsg = VALIDATION_MESSAGES.requiredField()
+                    }
                     break
                 case 'number':
                     if (!required && value === '') break
@@ -323,7 +336,6 @@ export class FormInput extends ReactiveComponent {
     }
 
     render() {
-        const { handleChange } = this
         const { error, hidden, inline, label, message: externalMessage, required, type, useInput, width } = this.props
         const { message: internalMessage } = this.state
         const message = internalMessage || externalMessage
@@ -331,9 +343,8 @@ export class FormInput extends ReactiveComponent {
         let inputEl = ''
         // Remove attributes that are used by the form or Form.Field but
         // shouldn't be used or may cause error when using with inputEl
-        const nonAttrs = ['deferred', 'hidden', 'inline', 'invalid', '_invalid', 'label', 'useInput']
-        let attrs = objWithoutKeys(this.props, nonAttrs)
-        attrs.onChange = handleChange
+        let attrs = objWithoutKeys(this.props, NON_ATTRIBUTES)
+        attrs.onChange = this.handleChange
         const messageEl = newMessage(message)
 
         switch(type.toLowerCase()) {
@@ -460,20 +471,22 @@ class CheckboxGroup extends ReactiveComponent {
         const value = props.value || (hasBond && props.bond._value) || (allowMultiple ? [] : undefined)
         this.state = {
             allowMultiple,
-            value
+            value: !allowMultiple ? value : (isArr(value) ? value : (isDefined(value) ? [value] : []))
         }
         this.handleChange = this.handleChange.bind(this)
         hasBond && props.bond.notify(() => this.setState({value: props.bond._value}))
     }
 
-    handleChange(e, data) {
+    handleChange(e, data, option) {
         isObj(e) && isFn(e.persist) && e.persist()
         const { onChange } = this.props
         let { allowMultiple, value } = this.state
-        const {checked, value: val} = data
+        const { checked } = data
+        const { value: val } = option
         if (!allowMultiple) {
             value = checked ? val : undefined
         } else {
+            value = isArr(value) ? value : (isDefined(value) ? [value] : [])
             checked ? value.push(val) : value.splice(value.indexOf(val), 1)
         }
         data.value = value
@@ -485,25 +498,28 @@ class CheckboxGroup extends ReactiveComponent {
     render() {
         const { inline, name, options, style } = this.props
         const { allowMultiple, value } = this.state
-        const excludeKeys = ['bond', 'inline', 'multiple', 'name', 'required', 'type', 'value', 'width']
+        const excludeKeys = ['bond', 'inline', 'multiple', 'name', 'options', 'required', 'type', 'value', 'width']
         const commonProps = objWithoutKeys(this.props, excludeKeys)
         return (
-            <div>
-                {!isArr(options) ? '' : options.map((option, i) => (
-                    <Checkbox
-                        key={i} 
-                        {...commonProps}
-                        checked={allowMultiple ? value.indexOf(option.value) >= 0 : value === option.value}
-                        className={(inline ? '' : 'sixteen wide ') + option.className || ''}
-                        label={option.label}
-                        name={name + (allowMultiple ? i : '')}
-                        onChange={this.handleChange}
-                        required={false}
-                        style={objCopy(style, {margin: '0 5px'})}
-                        type="checkbox"
-                        value={option.value}
-                    />
-                ))}
+            <div style={style}>
+                {!isArr(options) ? '' : options.map((option, i) => {
+                    if (option.hidden) return ''
+                    const checked = allowMultiple ? value.indexOf(option.value) >= 0 : value === option.value
+                    const optionProps = objCopy(option, commonProps, true)
+                    return (
+                        <Checkbox
+                            key={i}
+                            {...optionProps}
+                            checked={checked}
+                            name={name + (allowMultiple ? i : '')}
+                            onChange={(e, d)=> this.handleChange(e, d, option)}
+                            required={false}
+                            style={objCopy(option.style, { margin: '0 5px', width: (inline ? 'auto' : '100%') })}
+                            type="checkbox"
+                            value={checked ? `${option.value}` : ''}
+                        />
+                    )
+                })}
             </div>
         )
     }
@@ -512,11 +528,22 @@ class CheckboxGroup extends ReactiveComponent {
 export const fillValues = (inputs, obj, forceFill) => {
     if (!isObj(obj)) return;
     inputs.forEach(input => {
-        if (!input.hasOwnProperty('name') || !obj.hasOwnProperty(input.name) || (!forceFill && isDefined(input.value))) return;
-        if(['accountidbond', 'inputbond'].indexOf(input.type.toLowerCase()) >= 0) {
-            input.defaultValue = obj[input.name]
-            // make sure Bond is also updated
-            isBond(input.bond) && input.bond.changed(input.defaultValue)
+        let { bond, name, type } = input
+        const newValue = values[input.name]
+        type = (isStr(type) ? type : '').toLowerCase()
+        const isGroup = type === 'group'
+        if (!isGroup && (
+                !isDefined(name) || !values.hasOwnProperty(input.name)
+                || (!forceFill && hasValue(input.value)) || !type
+            )
+        ) return
+        
+        if (['accountidbond', 'inputbond'].indexOf(type) >= 0) {
+            input.defaultValue = newValue
+        } else if (['checkbox', 'radio'].indexOf(type) >= 0) {
+            input.defaultChecked = newValue
+        } else if (isGroup) {
+            fillValues(input.inputs, values, forceFill)
         } else {
             input.value = obj[input.name]
         }
@@ -562,6 +589,12 @@ export const isFormInvalid = (inputs, values) => (inputs || []).reduce((invalid,
     if (['number'].indexOf(input.type.toLowerCase()) >= 0) return !isDefined(value);
     return !value;
 }, false)
+
+export const findInput = (inputs, name) => inputs.find(x => x.name === name) || (
+    inputs.filter(x => x.type === 'group').reduce((input, group = {}) => { 
+        return input || findInput(group.inputs || [], name)
+    }, undefined)
+)
 
 const styles = {
     closeButton: {

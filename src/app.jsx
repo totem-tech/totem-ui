@@ -22,6 +22,7 @@ import ProjectList from './lists/ProjectList'
 import SidebarLeft from './components/SidebarLeft'
 import ModalService from './services/modal'
 import ToastService from './services/toast'
+import NotificationService from './services/notification'
 import { resumeQueue } from './services/queue'
 import { IfMobile } from './utils/utils'
 // Images
@@ -102,6 +103,7 @@ export class App extends ReactiveComponent {
 
 		return (
 			<React.Fragment>
+				{/* <NotificationService /> */}
 				<ChatWidget />
 				<ModalService />
 				{/* <IfFn condition={!mobile && sidebarCollapsed} then={()=> <SystemStatus sidebar={true} visible={true} />} /> */}
@@ -203,7 +205,7 @@ const sidebarItems = [
 	{ icon: "exclamation circle", title: "Disputed Items", subHeader: "" },
 	{ icon: "chart bar outline", title: "Edit Accounting", subHeader: "" },
 	{
-		active: true,
+		active: false,
 		content: <ProjectList />,
 		headerDividerHidden: true,
 		icon: "tasks",

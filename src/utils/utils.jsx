@@ -49,7 +49,23 @@ export const isObjArr = x => !isArr(x) ? false : !x.reduce((no, item) => no || !
 export const isObjMap = x => !isMap(x) ? false : !Array.from(x).reduce((no, item) => no || !isObj(item[1]), false)
 export const isStr = x => typeof x === 'string'
 export const isValidNumber = x => typeof x == 'number' && !isNaN(x) && isFinite(x)
-export const hasValue = x => isDefined(x) && (isValidNumber(x) || (isStr(x) && !!x.trim()))
+export const hasValue = x => {
+	if (!isDefined(x)) return false
+	switch (typeof x) {
+		case 'string':
+			return isStr(x) && !!x.trim()
+		case 'number':
+			return isValidNumber(x)
+		case 'object':
+			const len = isArr(x) ? x.length : Object.keys(x)
+			return len > 0
+		case 'boolean':
+		default:
+			// already defined
+			return true
+	}
+	// (isValidNumber(x) || (isStr(x) && !!x.trim()) || isBool(x))
+}
 export const isMobile = () => window.innerWidth <= Responsive.onlyMobile.maxWidth
 
 export const isMobile = () => window.innerWidth <= Responsive.onlyMobile.maxWidth
@@ -80,7 +96,6 @@ export const arrMapSlice = (data, startIndex, endIndex, callback) => {
 	const isAMap = isMap(data)
 	if (!isArr(data) && !isAMap) return [];
 	const len = isAMap ? data.size : data.length
-	// if (len === 0) return [];
 	data = isAMap ? Array.from(data) : data
 	startIndex = startIndex || 0
 	endIndex = !endIndex || endIndex >= len ? len - 1 : endIndex
@@ -163,10 +178,10 @@ export const objCopy = (source, dest, force) => !isObj(source) ? dest || {} : (
 	}, !force ? (dest || {}) : objCopy(dest, {}))
 )
 
-// objClean produces a new object with supplied keys and values from supplied object
+// objClean produces a clean object with only the supplied keys and their respective values
 //
 // Params:
-// @obj		object
+// @obj		object/array
 // @keys	array : if empty/not array, an empty object will be returned
 //
 // Returns object
@@ -177,6 +192,18 @@ export const objClean = (obj, keys) => !isObj(obj) || !isArr(keys) ? {} : keys.r
 	return cleanObj
 }, {})
 
+// objHasKeys checks if all the supplied keys exists in a object
+//
+// Params:
+// @obj				object
+// @keys			array
+// @requireValue	book	: (optional) if true, will check if all keys has valid value
+//
+// returns boolean
+export const objHasKeys = (obj = {}, keys = [], requireValue = false) => {
+	return !keys.reduce((no, key) => no || (requireValue ? !hasValue(obj[key]) : !obj.hasOwnProperty(key)), false)
+}
+
 // objReadOnly returns a new read-only object where only new properties can be added.
 //
 // Params:
@@ -185,12 +212,14 @@ export const objClean = (obj, keys) => !isObj(obj) || !isArr(keys) ? {} : keys.r
 //					 PS: original supplied object's properties will remain writable, unless re-assigned to the returned object.
 // @strict boolean: (optional) if true, any attempt to add or update property to returned object will throw a TypeError.
 //					 Otherwise, only new properties can be added. Attempts to update properties will be silently ignored.
+// @silent boolean: (optional) whether to throw error when in strict mode
 //
 // Returns  object
-export const objReadOnly = (obj = {}, strict = false) => new Proxy(obj, {
+export const objReadOnly = (obj = {}, strict = false, silent = false) => new Proxy(obj, {
 	setProperty: (self, key, value) => {
+		// prevents adding new or updating existing property
 		if (strict === true) {
-			// prevents adding new or updating existing property
+			if (silent) return true;
 			throw new TypeError(`Assignment to constant ${Array.isArray(obj) ? 'array' : 'object'} key: ${key}`)
 		} else if (!self.hasOwnProperty(key)) {
 			self[key] = value
@@ -227,7 +256,20 @@ export const mapCopy = (source, dest) => !isMap(source) ? (
 	Array.from(source).reduce((dest, x) => dest.set(x[0], x[1]), dest)
 )
 
-// mapFindByKey finds a specific object by supplied key and value
+export const mapFilter = (map, callback) => {
+	const result = new Map()
+	if (!isMap(map)) return result
+
+	Array.from(map).forEach(x => {
+		const key = x[0]
+		const value = x[1]
+		if(callback(value, key, map)) {
+			result.set(key, value)
+		}
+	})
+	return result
+}
+// mapFindByKey finds a specific object by supplied object property/key and value within
 //
 // Params:
 // @map		Map: Map of objects
@@ -340,6 +382,7 @@ export function setStateTimeout(instance, key, dataBefore, dataAfter, delay) {
 }
 
 // setState changes state property value immediately
+// TODO: deprecate
 //
 // Params: 
 // @instance React component instance : state of the instance that will be changed
@@ -398,18 +441,19 @@ export const textEllipsis = (text, maxLen, numDots) => {
 }
 
 export const icons = {
-    error: 'exclamation circle',
-    loading: { name: 'circle notched', loading: true },
-    info: 'info',
-    success: 'check circle outline',
-    warning: 'lightning'
+	basic: '',
+	error: 'exclamation circle',
+	loading: { name: 'circle notched', loading: true },
+	info: 'info',
+	success: 'check circle outline',
+	warning: 'lightning'
 }
 
-// valid statuses: error, info, loading, success
+// valid statuses: error, info, loading, warning, success
 export const newMessage = message => {
 	if (!isObj(message) || (!message.content && !message.list && !message.header)) return;
 	let { icon, showIcon, status, style } = message
-	status = status || 'info'
+	status = status
 	icon = React.isValidElement(icon) ? icon.props : icon
     if (showIcon) {
         icon = icons[status]
@@ -419,17 +463,18 @@ export const newMessage = message => {
         icon = { name: icon }
 	}
 
-    return (
-        <Message
-            {...(objWithoutKeys(message, ['showIcon']))}
-            error={status==='error'}
-			icon={icon && <Icon {...icon} style={objCopy({width: 42}, icon.style, true)} />}
-			style={objCopy(!icon && {textAlign: 'center', width: '100%'}, style)}
-            success={status==='success'}
-            visible={!!status}
-            warning={['warning', 'loading'].indexOf(status) >= 0}
-        />
-    )
+	return (
+		<Message
+			{...(objWithoutKeys(message, ['showIcon']))}
+			error={status === 'error'}
+			icon={icon && <Icon {...icon} style={objCopy({ width: 42 }, icon.style, true)} />}
+			info={status === 'info'}
+			style={objCopy(!icon && { textAlign: 'center', width: '100%' }, style)}
+			success={status === 'success'}
+			visible={!!status}
+			warning={['warning', 'loading'].indexOf(status) >= 0}
+		/>
+	)
 }
 
 /*
@@ -437,30 +482,30 @@ export const newMessage = message => {
  */
 export function IfFn(props) {
 	const content = props.condition ? props.then : props.else
-	return (isFn(content) ? content() : content) || ''
+	return (isFn(content) ? content(props.condition) : content) || ''
 }
 
 // IfMobile component can be used to switch between content when on mobile and/or not
 export function IfMobile(props) {
 	return (
 		<React.Fragment>
-			{isDefined(props.then) && (
-				<Responsive 
-					maxWidth={Responsive.onlyMobile.maxWidth} 
+			{props.then && (
+				<Responsive
+					maxWidth={Responsive.onlyMobile.maxWidth}
 					onUpdate={props.onUpdate}
 					className={props.thenClassName}
 				>
-					<IfFn condition={true} then={props.then} />
+					<IfFn {...{condition: true, then: props.then}} />
 				</Responsive>
 			)}
 
-			{isDefined(props.else) && (
+			{props.else && (
 				<Responsive
 					minWidth={Responsive.onlyMobile.maxWidth}
 					onUpdate={props.then ? undefined : props.onUpdate}
 					className={props.elseClassName}
 				>
-					<IfFn condition={true} then={props.else} />
+					<IfFn {...{condition: false, else: props.else}} />
 				</Responsive>
 			)}
 		</React.Fragment>

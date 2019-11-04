@@ -8,7 +8,7 @@ init({
 		Ttx: 12,
 		Gtx: 9,
 		Mtx: 6,
-		ktx: 3,
+		Ktx: 3,
 		Transactions: 0,
 	},
 	primary: 'Etx',

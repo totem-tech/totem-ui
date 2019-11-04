@@ -8,7 +8,7 @@ const { generateMnemonic } = require('bip39')
 import { Button } from 'semantic-ui-react'
 import FormBuilder, { fillValues } from '../components/FormBuilder'
 import { TransformBondButton } from '../TransformBondButton'
-import { IfMobile, isFn, isObj } from '../utils/utils'
+import { IfMobile, isFn, isObj, objCopy } from '../utils/utils'
 
 class Wallet extends ReactiveComponent {
     constructor(props) {
@@ -138,3 +138,56 @@ Wallet.defaultProps = {
     submitText: 'Create'
 }
 export default Wallet
+
+/* 
+ * Update wallet/identity name
+ */
+export class WalletUpdate extends ReactiveComponent {
+    constructor(props) {
+        super(props)
+
+        this.handleSubmit = this.handleSubmit.bind(this)
+
+        this.state = {
+            success: false,
+            inputs: [
+                {
+                    label: 'Name',
+                    name: 'name',
+                    placeholder: 'Enter new name',
+                    required: true,
+                    type: 'text',
+                    value: props.name || (secretStore()._keys[props.index] || {}).name || ''
+                }
+            ]
+        }
+    }
+
+    handleSubmit(e, values) {
+        const {index, onSubmit} = this.props
+        const wallet = secretStore()._keys[index] || {}
+        wallet.name = values.name
+        secretStore()._sync()
+        isFn(onSubmit) && onSubmit(true, values)
+        this.setState({success: true})
+    }
+
+    render() {
+        const {inputs, success} = this.state
+        const onSubmit = this.handleSubmit
+        const closeText = success ? 'Close' : 'Cancel'
+        return <FormBuilder {...this.props} {...{closeText, onSubmit, inputs, success}}/>
+    }
+}
+
+WalletUpdate.propTypes = {
+    index: PropTypes.number.isRequired,
+    name: PropTypes.string
+}
+
+WalletUpdate.defaultProps = {
+    closeOnSubmit: true,
+    header: 'Update Identity',
+    size: 'tiny',
+    submitText: 'Update',
+}
