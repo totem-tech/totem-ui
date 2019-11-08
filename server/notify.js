@@ -9,9 +9,9 @@ import {
     processTKInvitationResponse,
 } from './timeKeeping'
 
+export const EVENT_NAME = 'notify'
 const notifications = new DataStorage('notifications.json', true)
 const userNotificationIds = new DataStorage('notification-receivers.json', false)
-export const EVENT_NAME = 'notify'
 const REQUIRED = true
 const NOT_REQUIRED = false
 
@@ -31,7 +31,23 @@ export const VALID_TYPES = objReadOnly({
     // }, 
     // invoice: {
     //     responseRequired: false
-    // }, 
+    // },
+    identity: {
+        request: {
+            dataFields: {
+                address: REQUIRED,
+                reason: REQUIRED, // one-liner explanation by the requester of why they want receivers identity
+            },
+            message: NOT_REQUIRED,
+        },
+        share: {
+            dataFields: {
+                address: REQUIRED,
+                name: REQUIRED, // name of the user or the identity
+            },
+            message: NOT_REQUIRED,
+        }
+    },
     time_keeping: {
         alert: {},
         hasChild: true,
@@ -164,20 +180,3 @@ export function handleNotify(toUserIds = [], type = '', childType = '', message 
         callback(messages.runtimeError)
     }
 }
-
-// export const handleNotificationResponse = (notification, callback) => {
-//     if (!isObj(notification) || object)
-//     const {
-//         to = [],
-//         message = '',
-//         type = '',
-//         data = {}
-//     } = notification
-
-// }
-
-// export const handleNotificationRead = (notification, callback) => {
-//     if (!isObj(notification) || object)
-//     const {to = [], message = '', type = '', data = {} } = notification
-
-// }
