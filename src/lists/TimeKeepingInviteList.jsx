@@ -30,6 +30,14 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
                 ],
                 data: [],
                 selectable: true,
+                rowProps: item => {
+                    // formal invitation accepted
+                    if (item.status === 'invitation accepted') return { positive: true }
+                    // identity or formal invitation rejected
+                    if (item.status.endsWith('rejected')) return { error: true }
+                    // invitation in progress
+                    if (!!item.status) return { warning: true }
+                },
                 topLeftMenu: [
                     {
                         content: 'Invite',

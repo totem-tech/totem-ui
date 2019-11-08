@@ -208,8 +208,8 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     getEntries() {
         const { manage, projectHash, project } = this.props
         const { listProps } = this.state
-        const address = secretStore()._keys[storage.walletIndex()].address
-        const isOwner = manage && (project ? project.ownerAddress === address : true)
+        const workerAddress = secretStore()._keys[storage.walletIndex()].address
+        const isOwner = manage && (project ? project.ownerAddress === workerAddress : true)
         const bannedAddresses = project && (project.timeKeeping || {}).bannedAddresses || []
         listProps.selectable = manage && isOwner
         listProps.columns.find(x => x.key === '_projectName').hidden = !!projectHash
@@ -228,16 +228,16 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         const processHashes = hashes => {
             client.project(projectHash, null, null, (err, project) => {
                 Bond.all(hashes.map(timeHash => runtime.timekeeping.timeRecord([
-                    ss58Decode(address),
+                    ss58Decode(workerAddress),
                     hexToBytes(projectHash),
                     timeHash
                 ]))).then(records => { // record === null means not found or does not belong to user or project
                     listProps.data = records.map((record, i) => !record ? null : ({
                         ...record,
                         _hash: bytesToHex(hashes[i]),
-                        _banned: bannedAddresses.indexOf(address) >= 0 ? 'Yes' : 'No',
+                        _banned: bannedAddresses.indexOf(workerAddress) >= 0 ? 'Yes' : 'No',
                         _duration: secondsToDuration((record.end_block - record.start_block) * BLOCK_DURATION_SECONDS),
-                        _nameOrAddress: getAddressName(address),
+                        _nameOrAddress: getAddressName(workerAddress),
                         _projectName: project.name,
                         _status: record.locked_status ? 'locked' : '??'
                     })).filter(x => !!x) // get rid of empty values
@@ -257,7 +257,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             })
         }
 
-        timeKeeping.record.listByProject(projectHash).then(processHashes)
+        timeKeeping.record.list(workerAddress).then(processHashes)
 
         return
 
@@ -268,7 +268,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         }
         if (!isOwner || !project) {
             // only show other user's entries if select wallet is the project owner
-            query.address = address
+            query.address = workerAddress
         }
         client.timeKeepingEntrySearch(
             query, true, true, true,

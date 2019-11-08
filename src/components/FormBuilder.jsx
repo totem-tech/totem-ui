@@ -261,10 +261,10 @@ const VALIDATION_MESSAGES = objReadOnly({
     min: (min) => `Number must be greater or equal ${min}`,
     minLength: (value, min) => `Minimum ${min} ${typeof value === 'number' ? 'digit' : 'character'}${min > 1 ? 's' : ''} required`,
     requiredField: () => 'Required field',
-    validNumber: ()=> 'Please enter a valid number'
+    validNumber: () => 'Please enter a valid number'
 }, true)
-const NON_ATTRIBUTES = arrReadOnly(
-    ['deferred', 'hidden', 'inline', 'invalid', '_invalid', 'label', 'trueValue', 'falseValue', 'useInput']
+const NON_ATTRIBUTES = Object.freeze(
+    ['styleContainer', 'deferred', 'hidden', 'inline', 'invalid', '_invalid', 'label', 'trueValue', 'falseValue', 'useInput']
 )
 
 export class FormInput extends ReactiveComponent {
@@ -274,12 +274,12 @@ export class FormInput extends ReactiveComponent {
         this.handleChange = this.handleChange.bind(this)
 
         this.state = {
-            message : undefined
+            message: undefined
         }
     }
 
     handleChange(event, data) {
-        const { falseValue: no, max, maxLength, min, minLength, onChange, required, trueValue: yes, type} = this.props
+        const { falseValue: no, max, maxLength, min, minLength, onChange, required, trueValue: yes, type } = this.props
         const { checked, value } = data
         // Forces the synthetic event and it's value to persist
         // Required for use with deferred function
@@ -330,11 +330,11 @@ export class FormInput extends ReactiveComponent {
 
         data.invalid = !!errMsg
         isFn(onChange) && onChange(event, data || {}, this.props)
-        this.setState({message: !errMsg ? null : { content: errMsg, status: 'error'}})
+        this.setState({ message: !errMsg ? null : { content: errMsg, status: 'error' } })
     }
 
     render() {
-        const { error, hidden, inline, label, message: externalMessage, required, type, useInput, width } = this.props
+        const { error, hidden, inline, label, message: externalMessage, required, styleContainer, type, useInput, width } = this.props
         const { message: internalMessage } = this.state
         const message = internalMessage || externalMessage
         let hideLabel = false
@@ -399,6 +399,7 @@ export class FormInput extends ReactiveComponent {
             <Form.Field
                 error={message && message.status === 'error' || error}
                 required={required}
+                style={styleContainer}
                 width={width}
             >
                 {!hideLabel && label && <label>{label}</label>}
@@ -406,11 +407,11 @@ export class FormInput extends ReactiveComponent {
                 {messageEl}
             </Form.Field>
         ) : (
-            <Form.Group inline={inline} widths={attrs.widths}>
-                {inputEl}
-                {messageEl}
-            </Form.Group>
-        )
+                <Form.Group inline={inline} style={styleContainer} widths={attrs.widths}>
+                    {inputEl}
+                    {messageEl}
+                </Form.Group>
+            )
     }
 }
 FormInput.propTypes = {
@@ -503,27 +504,44 @@ class CheckboxGroup extends ReactiveComponent {
         const commonProps = objWithoutKeys(this.props, excludeKeys)
         return (
             <div style={style}>
-                {!isArr(options) ? '' : options.map((option, i) => {
-                    if (option.hidden) return ''
+                {(options || []).map((option, i) => {
                     const checked = allowMultiple ? value.indexOf(option.value) >= 0 : value === option.value
-                    const optionProps = objCopy(option, commonProps, true)
-                    return (
+                    return option.hidden ? '' : (
                         <Checkbox
-                            key={i}
-                            {...optionProps}
-                            checked={checked}
-                            name={name + (allowMultiple ? i : '')}
-                            onChange={(e, d)=> this.handleChange(e, d, option)}
-                            required={false}
-                            style={objCopy(option.style, { margin: '0 5px', width: (inline ? 'auto' : '100%') })}
-                            type="checkbox"
-                            value={checked ? `${option.value}` : ''}
+                            {...{
+                                ...commonProps,
+                                ...option,
+                                checked,
+                                key: i,
+                                name: name + (allowMultiple ? i : ''),
+                                onChange: (e, d) => this.handleChange(e, d, option, i),
+                                required: false, // handled by CheckboxGroup
+                                style: {
+                                    ...option.style,
+                                    margin: '5px',
+                                    width: inline ? 'auto' : '100%'
+                                },
+                                type: "checkbox",
+                                value: checked ? `${option.value}` : '',
+                            }}
                         />
                     )
                 })}
             </div>
         )
     }
+}
+CheckboxGroup.propTypes = {
+    // bond: Bond
+    inline: PropTypes.bool,
+    multiple: PropTypes.bool, // if true, allows multiple selection
+    name: PropTypes.string,
+    options: PropTypes.array,
+    required: PropTypes.bool,
+    style: PropTypes.object,
+    type: PropTypes.string,
+    value: PropTypes.any,
+    width: PropTypes.number,
 }
 
 export const fillValues = (inputs, values, forceFill) => {
@@ -534,11 +552,11 @@ export const fillValues = (inputs, values, forceFill) => {
         type = (isStr(type) ? type : '').toLowerCase()
         const isGroup = type === 'group'
         if (!isGroup && (
-                !isDefined(name) || !values.hasOwnProperty(input.name)
-                || (!forceFill && hasValue(input.value)) || !type
-            )
+            !isDefined(name) || !values.hasOwnProperty(input.name)
+            || (!forceFill && hasValue(input.value)) || !type
+        )
         ) return
-        
+
         if (['accountidbond', 'inputbond'].indexOf(type) >= 0) {
             input.defaultValue = newValue
         } else if (['checkbox', 'radio'].indexOf(type) >= 0) {
@@ -590,7 +608,7 @@ export const isFormInvalid = (inputs = [], values) => inputs.reduce((invalid, in
 }, false)
 
 export const findInput = (inputs, name) => inputs.find(x => x.name === name) || (
-    inputs.filter(x => x.type === 'group').reduce((input, group = {}) => { 
+    inputs.filter(x => x.type === 'group').reduce((input, group = {}) => {
         return input || findInput(group.inputs || [], name)
     }, undefined)
 )

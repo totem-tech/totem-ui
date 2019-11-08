@@ -30,7 +30,7 @@ class PageHeader extends ReactiveComponent {
 		}
 
 		// Update user ID after registration
-		!this.state.id && onLogin(id => id && this.setState({id}))
+		!this.state.id && onLogin(id => id && this.setState({ id }))
 
 		this.getSeletectedAddress = () => (this.state.secretStore.keys[storage.walletIndex()] || {}).address
 		this.handleCopy = this.handleCopy.bind(this)
@@ -50,12 +50,12 @@ class PageHeader extends ReactiveComponent {
 		const address = this.getSeletectedAddress()
 		if (!address) return;
 		copyToClipboard(address)
-		const msg = { content: 'Address copied to clipboard', status: 'success'}
+		const msg = { content: 'Address copied to clipboard', status: 'success' }
 		this.copiedMsgId = setToast(msg, 2000, this.copiedMsgId)
 	}
 
 	handleEdit() {
-		showForm(WalletUpdate, {index: storage.walletIndex()})
+		showForm(WalletUpdate, { index: storage.walletIndex() })
 	}
 
 	handleFaucetRequest() {
@@ -70,8 +70,8 @@ class PageHeader extends ReactiveComponent {
 			this.faucetMsgId = setToast(msg, 3000, this.faucetMsgId)
 			return
 		}
-		this.faucetMsgId = setToast({content: 'Faucet request sent', status: 'loading'}, null, this.faucetMsgId)
-		
+		this.faucetMsgId = setToast({ content: 'Faucet request sent', status: 'loading' }, null, this.faucetMsgId)
+
 		addToQueue({
 			type: QUEUE_TYPES.CHATCLIENT,
 			func: 'faucetRequest',
@@ -89,7 +89,7 @@ class PageHeader extends ReactiveComponent {
 
 	render() {
 		const { id, index, secretStore } = this.state
-		const { keys: wallets} = secretStore
+		const { keys: wallets } = secretStore
 		const addressSelected = this.getSeletectedAddress()
 		const viewProps = {
 			addressSelected,
@@ -100,7 +100,7 @@ class PageHeader extends ReactiveComponent {
 			onSelection: this.handleSelection,
 			selectedIndex: index,
 			timerActive: storage.timeKeeping().inprogress,
-			timerOnClick: ()=> showForm(TimeKeepingForm, {}),
+			timerOnClick: () => showForm(TimeKeepingForm, {}),
 			wallets
 		}
 		return <MobileHeader {...this.props} {...viewProps} />
@@ -156,7 +156,7 @@ class MobileHeader extends ReactiveComponent {
 				<Menu fixed="top" inverted>
 					{isMobile && (
 						<Menu.Item
-							icon={{name:'sidebar', size: 'big', className: 'no-margin'}}
+							icon={{ name: 'sidebar', size: 'big', className: 'no-margin' }}
 							onClick={this.handleToggle}
 						/>
 					)}
@@ -199,7 +199,7 @@ class MobileHeader extends ReactiveComponent {
 								size: 'large',
 								className: 'no-margin'
 							}}
-							onClick={() => this.setState({showTools: !showTools})}
+							onClick={() => this.setState({ showTools: !showTools })}
 						>
 							<Dropdown.Menu className="left">
 								<Dropdown.Item
@@ -214,16 +214,16 @@ class MobileHeader extends ReactiveComponent {
 								/>
 								{id && [
 									<Dropdown.Item
-									key="0"
-									icon="gem"
-									content="Request Funds"
-									onClick={onFaucetRequest}
+										key="0"
+										icon="gem"
+										content="Request Funds"
+										onClick={onFaucetRequest}
 									/>
 								]}
 							</Dropdown.Menu>
 						</Dropdown>
 						<NotificationDropdown />
-						
+
 					</Menu.Menu>
 				</Menu>
 			</div>

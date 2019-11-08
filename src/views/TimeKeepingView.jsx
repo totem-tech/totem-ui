@@ -28,6 +28,7 @@ class TimeKeepingView extends ReactiveComponent {
                                 label: '',
                                 onChange: this.handleProjectChange.bind(this),
                                 onSearchChange: deferred(handleSearch, 300, this),
+                                styleContainer: { minWidth: '15em' },
                                 width: 4,
                             },
                             projectDropdown,
@@ -86,7 +87,7 @@ class TimeKeepingView extends ReactiveComponent {
         const showEntries = option.includes('entries') || manage
         const optionInput = findInput(inputs, 'option')
         optionInput.inline = !mobile
-        optionInput.style = mobile ? { margin: '15px 0' } : { float: 'right' }
+        optionInput.style = { float: mobile ? '' : 'right' }
         optionInput.style.paddingTop = 7
         findInput(inputs, 'option').options.find(x => x.value === 'entries').disabled = manage
 

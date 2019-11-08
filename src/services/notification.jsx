@@ -129,7 +129,7 @@ export default class NotificationDropdown extends ReactiveComponent {
                     {Array.from(items).filter(([_, { deleted }]) => !deleted).reverse().map(([id, item]) => {
                         const { senderId, type, childType, message, data, tsCreated, read } = item
                         const typeSpaced = type.replace('_', ' ')
-                        let projectName
+                        let { projectName } = data
                         const msg = {
                             // attached: true,
                             icon: { name: 'bell outline', size: 'large' },
@@ -144,7 +144,6 @@ export default class NotificationDropdown extends ReactiveComponent {
 
                         switch (type + ':' + childType) {
                             case 'time_keeping:identity':
-                                projectName = message
                                 msg.icon.name = 'clock outline'
                                 msg.content = (
                                     <div>
@@ -157,7 +156,6 @@ export default class NotificationDropdown extends ReactiveComponent {
                                 )
                                 break
                             case 'time_keeping:invitation':
-                                projectName = message
                                 msg.icon.name = 'clock outline'
                                 msg.content = (
                                     <div>
