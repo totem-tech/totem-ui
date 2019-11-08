@@ -1,5 +1,5 @@
 import React from 'react'
-import { List, Button } from 'semantic-ui-react'
+import { List, Button, Label } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
 import { runtime } from 'oo7-substrate'
 import Identicon from 'polkadot-identicon'
@@ -7,9 +7,10 @@ import addressbook from '../services/addressbook'
 import PartnerForm from '../forms/Partner'
 import CompanyForm from '../forms/Company'
 import ListFactory from '../components/ListFactory'
-import { showForm } from '../services/modal'
-import { textEllipsis } from '../utils/utils'
+import { confirm, showForm } from '../services/modal'
+import { copyToClipboard, textEllipsis } from '../utils/utils'
 
+const toBeImplemented = () => alert('To be implemented')
 // export class PartnerList extends ReactiveComponent {
 // 	constructor() {
 // 		super([], {
@@ -83,11 +84,56 @@ export default class PartnerList extends ReactiveComponent {
 					{ key: '_address', title: 'Address' },
 					{ key: '_public', textAlign: 'center', title: 'Public' }, //yes/no
 					{ key: '_tags', title: 'Tags' },
-					{ title: 'Actions', content: 'buttons: update, make public' }
+					{
+						collapsing: true,
+						//'buttons: copy address, update, share, make public',
+						content: (partner, index) => {
+							const { address, name, isPublic } = partner
+							return (
+								<React.Fragment>
+									<Button
+										icon='copy'
+										onClick={() => copyToClipboard(address)}
+										title='Copy address'
+									/>
+									<Button
+										icon='share'
+										onClick={toBeImplemented}
+										title='Share partner'
+									/>
+									<Button
+										icon='world'
+										onClick={() => showForm(CompanyForm, {
+											walletAddress: address,
+											onSubmit: (e, v, success) => success && addressbook.setPublic(i, true)
+										})}
+										title='Make public'
+									/>
+									<Button
+										icon='pencil'
+										onClick={() => showForm(PartnerForm, { index, values: partner })}
+										title='Update partner'
+									/>
+									<Button
+										icon='close'
+										onClick={() => confirm({
+											confirmButton: <Button negative content="Delete" />,
+											content: <p>Partner name: <b>{name}</b></p>,
+											header: 'Delete partner?',
+											onConfirm: () => addressbook.remove(name, address),
+											size: 'mini',
+										})}
+										title="Delete partner"
+									/>
+								</React.Fragment>
+							)
+						},
+						title: 'Actions',
+					}
 				],
 				data: [],
 				defaultSort: 'name',
-				searchExtraKeys: ['_public'],
+				searchExtraKeys: ['_public', '_tagsStr'],
 				searchable: true,
 				topLeftMenu: [
 					{
@@ -95,11 +141,17 @@ export default class PartnerList extends ReactiveComponent {
 						content: 'Create',
 						icon: 'plus',
 						name: 'create',
-						onClick: () => showForm(
-							PartnerForm, {}
-							// { modal: true, onSubmit: (e, v, success) => success && this.loadProjects() }
-						)
-					}],
+						onClick: () => showForm(PartnerForm)
+					},
+					{
+						active: false,
+						content: 'Request',
+						icon: 'user plus',
+						name: 'create',
+						onClick: toBeImplemented,
+						title: 'Request identity from other users',
+					}
+				],
 				type: 'DataTable'
 			}
 		}
@@ -117,12 +169,17 @@ export default class PartnerList extends ReactiveComponent {
 				_public: isPublic ? 'yes' : 'no',
 				_tags: (
 					<div>
-						{partner.tags.map(tag => <p key={tag}>{tag}</p>)}
+						{tags.map(tag => (
+							<div key={tag} style={{ marginBottom: 1 }}>
+								<Label>{tag}</Label>
+							</div>
+						))
+						}
 					</div>
-				)
+				),
+				_tagsStr: tags.join(' ')
 			}
 		})
 		return <ListFactory {...listProps} />
 	}
-
 }

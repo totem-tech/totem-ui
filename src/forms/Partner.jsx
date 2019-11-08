@@ -1,13 +1,13 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-import { ReactiveComponent} from 'oo7-react'
+import { ReactiveComponent } from 'oo7-react'
 import { TransformBondButton } from '../TransformBondButton'
 import { deferred, IfMobile, isFn, isObj } from '../utils/utils'
 import addressbook, { setPublic } from '../services/addressbook'
 import FormBuilder, { fillValues } from '../components/FormBuilder'
 import client from '../services/ChatClient'
-import {showForm} from '../services/modal'
+import { showForm } from '../services/modal'
 import CompanyForm from './Company'
 // import AddressLookup from '../AddressLookup'
 
@@ -26,7 +26,7 @@ class Partner extends ReactiveComponent {
         this.state = {
             doUpdate,
             message: {},
-            tags: ['partner'],
+            // tags: [],
             success: false,
             values,
             inputs: [
@@ -50,28 +50,28 @@ class Partner extends ReactiveComponent {
                             status: 'error'
                         }
                         inputs.find(x => x.name === 'name').disabled = address ? !!exists : false
-                        this.setState({inputs})
+                        this.setState({ inputs })
                         return address
                     }
                 },
                 {
-                    // allowAdditions: true,
+                    allowAdditions: true,
                     label: 'Tags',
                     name: 'tags',
-                    // noResultsMessage: 'Type tag and press enter to add',
-                    // multiple: true,
-                    // onAddItem: this.handleAddTag.bind(this),
-                    // onChange: this.handleTagChange.bind(this),
-                    // options: [{
-                    //     key: 'partner',
-                    //     text: 'partner',
-                    //     value: 'partner'
-                    // }],
+                    noResultsMessage: 'Type tag and press enter to add',
+                    multiple: true,
+                    onAddItem: this.handleAddTag.bind(this),
+                    onChange: this.handleTagChange.bind(this),
+                    options: (values.tags || []).map(tag => ({
+                        key: tag,
+                        text: tag,
+                        value: tag
+                    })),
                     placeholder: 'Enter tags',
-                    type: 'hidden',
-                    // search: true,
-                    // selection: true,
-                    value: ['partner']
+                    type: 'dropdown',
+                    search: true,
+                    selection: true,
+                    value: values.tags || []
                 },
                 {
                     inline: true,
@@ -83,7 +83,7 @@ class Partner extends ReactiveComponent {
                     ],
                     radio: true,
                     required: true,
-                    type:'checkbox-group',
+                    type: 'checkbox-group',
                     value: 'personal'
                 },
                 {
@@ -97,13 +97,13 @@ class Partner extends ReactiveComponent {
                     ],
                     radio: true,
                     required: true,
-                    type:'checkbox-group',
+                    type: 'checkbox-group',
                     value: 'private'
                 },
                 {
                     action: props.modal ? undefined : (
                         <TransformBondButton
-                            content={doUpdate ? 'Update' : 'Add' }
+                            content={doUpdate ? 'Update' : 'Add'}
                             transform={this.handleSubmit.bind(this)}
                             args={[this.nick, this.lookup]}
                             immediate
@@ -126,7 +126,7 @@ class Partner extends ReactiveComponent {
                             content: 'Please choose an unique name',
                             status: 'error'
                         }
-                        this.setState({inputs})
+                        this.setState({ inputs })
                         return name && !nameExists && address && !addressExists ? name : null
                     }
                 }
@@ -148,23 +148,23 @@ class Partner extends ReactiveComponent {
             visibility.bond.changed(isPublic ? 'public' : 'private')
             visibility.message = !isPublic ? null : {
                 content: 'Address is already publicly shared as company named: ' + company.name,
-                status: 'warning'  
+                status: 'warning'
             }
             // make sure addressbook is also updated
             doUpdate && addressbook.setPublic(index, isPublic)
-            this.setState({inputs})
+            this.setState({ inputs })
         })
     }
 
-    // handleAddTag(_, data) {
-    //     const { inputs } = this.state
-    //     inputs.find(x => x.name === 'tags').options.push({
-    //         key: data.value,
-    //         text: data.value,
-    //         value: data.value
-    //     })
-    //     this.setState({inputs})
-    // }
+    handleAddTag(_, data) {
+        const { inputs } = this.state
+        inputs.find(x => x.name === 'tags').options.push({
+            key: data.value,
+            text: data.value,
+            value: data.value
+        })
+        this.setState({ inputs })
+    }
 
     // handleAddressChange(e, values, index) {
     //     const { inputs } = this.state
@@ -175,18 +175,18 @@ class Partner extends ReactiveComponent {
     //     this.setState({inputs})
     // }
 
-    // handleTagChange(_, values) {
-    //     this.setState({tags: values.tags})
-    // }
+    handleTagChange(_, values) {
+        this.setState({ tags: values.tags })
+    }
 
     handleChange(_, values) {
-        this.setState({values})
+        this.setState({ values })
     }
 
     handleSubmit() {
         const { closeOnSubmit, index, modal, onSubmit, values: oldValues } = this.props
         const { inputs, values: newValues } = this.state
-        const {name, address, tags, type, visibility} = newValues
+        const { name, address, tags, type, visibility } = newValues
         const doUpdate = index >= 0 && isObj(oldValues)
         if (doUpdate) {
             addressbook.updateByIndex(index, name, address, tags, type, visibility)
@@ -227,7 +227,7 @@ class Partner extends ReactiveComponent {
     }
 
     render() {
-        const { 
+        const {
             closeOnSubmit,
             header,
             headerIcon,
@@ -238,7 +238,7 @@ class Partner extends ReactiveComponent {
             size,
             trigger
         } = this.props
-        
+
         const { doUpdate, inputs, message, success } = this.state
 
         const getForm = (mobile) => () => (
@@ -247,15 +247,15 @@ class Partner extends ReactiveComponent {
                 header: header || `${doUpdate ? 'Update' : 'Add'} partner`,
                 headerIcon,
                 hideFooter: !modal,
-                inputs: mobile || modal ? inputs : inputs.map(x => {x.width = 8; return x;}), 
+                inputs: mobile || modal ? inputs : inputs.map(x => { x.width = 8; return x; }),
                 message,
                 modal,
                 onChange: this.handleChange,
                 onSubmit: modal ? this.handleSubmit : undefined,
-                open, 
+                open,
                 size,
                 subheader,
-                submitText : `${doUpdate ? 'Update' : 'Add'} partner`,
+                submitText: `${doUpdate ? 'Update' : 'Add'} partner`,
                 success,
                 trigger
             }} />

@@ -182,7 +182,7 @@ export class App extends ReactiveComponent {
 
 const sidebarItems = [
 	{
-		active: true,
+		active: false,
 		content: <GettingStarted />,
 		headerDividerHidden: true,
 		icon: "play circle outline",
@@ -193,7 +193,7 @@ const sidebarItems = [
 		icon: "users", title: "Partners",
 		header: "Vendors and Customers",
 		subHeader: "Inspect the status of any account and name it for later use",
-		active: false,
+		active: true,
 		content: <PartnerView />
 	},
 	// { icon: "file alternate", title: "Invoice", subHeader: "", active: false, content: <Invoice /> },
@@ -211,7 +211,7 @@ const sidebarItems = [
 		icon: "tasks",
 		title: "Projects",
 		subHeader: "View and/or manage your projects"
-	},  
+	},
 	{ icon: "clock outline", title: "Timekeeping", subHeader: "Manage timekeeping against projects and tasks. You can create projects and tasks for yourself, or others can assign them to you.", content: <TimeKeepingView />, active: true },
 	{ icon: "lightbulb", title: "Products", subHeader: "" },
 	{

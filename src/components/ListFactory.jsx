@@ -222,7 +222,7 @@ export class DataTable extends ReactiveComponent {
         topLeftMenu = (topLeftMenu || []).filter(x => !x.hidden)
         topRightMenu = (topRightMenu || []).filter(x => !x.hidden)
 
-        // if (topLeftMenu.length + topRightMenu.length === 0 && !searchable) return
+        if (topLeftMenu.length + topRightMenu.length === 0 && !searchable) return
 
         const searchCol = searchable && (
             <Grid.Column key="0" tablet={16} computer={5} style={{ padding: 0 }}>
