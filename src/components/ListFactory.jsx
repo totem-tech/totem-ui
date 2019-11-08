@@ -222,7 +222,7 @@ export class DataTable extends ReactiveComponent {
         topLeftMenu = (topLeftMenu || []).filter(x => !x.hidden)
         topRightMenu = (topRightMenu || []).filter(x => !x.hidden)
 
-        if (topLeftMenu.length + topRightMenu.length === 0) return
+        // if (topLeftMenu.length + topRightMenu.length === 0 && !searchable) return
 
         const searchCol = searchable && (
             <Grid.Column key="0" tablet={16} computer={5} style={{ padding: 0 }}>
@@ -372,7 +372,7 @@ export class DataTable extends ReactiveComponent {
         data = data || []
         const columns = columnsOriginal.filter(x => !!x && !x.hidden)
         const keys = columns.filter(x => !!x.key).map(x => x.key)
-        // Include extra searcheable keys that are not visibile on the table
+        // Include extra searchable keys that are not visibile on the table
         if (isArr(searchExtraKeys)) {
             searchExtraKeys.forEach(key => keys.indexOf(key) === -1 & keys.push(key))
         }
@@ -395,7 +395,7 @@ export class DataTable extends ReactiveComponent {
                     then={this.getTopContent(true, totalRows, selectedIndexes)}
                     else={this.getTopContent(false, totalRows, selectedIndexes)}
                 />
-                
+
                 <div style={styles.tableContent}>
                     {totalRows === 0 ? newMessage(emptyMessage) : (
                         <Table celled selectable sortable unstackable singleLine>
@@ -414,8 +414,8 @@ export class DataTable extends ReactiveComponent {
                                     <Table.Row>
                                         <Table.HeaderCell colSpan={columns.length + 1}>
                                             <IfMobile
-                                                then={()=> this.getFooter(true, totalPages, pageNo)}
-                                                else={()=> this.getFooter(false, totalPages, pageNo)}
+                                                then={() => this.getFooter(true, totalPages, pageNo)}
+                                                else={() => this.getFooter(false, totalPages, pageNo)}
                                             />
                                         </Table.HeaderCell>
                                     </Table.Row>
@@ -553,7 +553,7 @@ const styles = {
         margin: '15px 0',
         width: '100%',
     },
-    tableContent: { 
+    tableContent: {
         display: 'block',
         margin: '1rem 0',
         overflowX: 'auto',

@@ -229,7 +229,7 @@ export const objReadOnly = (obj = {}, strict = false, silent = false) => new Pro
 	},
 	get: (self, key) => self[key],
 	set: function (self, key, value) { return this.setProperty(self, key, value) },
-	defineProperty: function (self, key) { return this.setProperty(self, key, value)},
+	defineProperty: function (self, key) { return this.setProperty(self, key, value) },
 	// Prevent removal of properties
 	deleteProperty: () => false
 })
@@ -254,8 +254,8 @@ export const objWithoutKeys = (obj, keys) => !isObj(obj) || !isArr(keys) ? {} : 
 export const mapCopy = (source, dest) => !isMap(source) ? (
 	!isMap(dest) ? new Map() : dest
 ) : (
-	Array.from(source).reduce((dest, x) => dest.set(x[0], x[1]), dest)
-)
+		Array.from(source).reduce((dest, x) => dest.set(x[0], x[1]), dest)
+	)
 
 export const mapFilter = (map, callback) => {
 	const result = new Map()
@@ -264,7 +264,7 @@ export const mapFilter = (map, callback) => {
 	Array.from(map).forEach(x => {
 		const key = x[0]
 		const value = x[1]
-		if(callback(value, key, map)) {
+		if (callback(value, key, map)) {
 			result.set(key, value)
 		}
 	})
@@ -400,15 +400,16 @@ export function deferred(callback, delay, thisArg) {
 	}
 }
 
-// textEllipsis shortens string into 'abc...xyz' form
+// textEllipsis shortens string into 'abc...xyz' or 'abcedf... form
 //
 // Params: 
 // @text    string
 // @maxLen  number: maximum length of the shortened text including dots
 // @numDots number: number of dots to be inserted in the middle. Default: 3
+// @split   boolean: if false, will add dots at the end
 //
 // Returns string
-export const textEllipsis = (text, maxLen, numDots) => {
+export const textEllipsis = (text, maxLen, numDots, split = true) => {
 	text = !isStr(text) ? '' : text
 	maxLen = maxLen || text.length
 	if (text.length <= maxLen || !maxLen) return text;
@@ -418,8 +419,8 @@ export const textEllipsis = (text, maxLen, numDots) => {
 	const isEven = textLen % 2 === 0
 	const arr = text.split('')
 	const dots = new Array(numDots).fill('.').join('')
-	const left = arr.slice(0, partLen).join('')
-	const right = arr.slice(text.length - (isEven ? partLen : partLen + 1)).join('')
+	const left = arr.slice(0, split ? partLen : partLen * 2).join('')
+	const right = !split ? '' : arr.slice(text.length - (isEven ? partLen : partLen + 1)).join('')
 	return left + dots + right
 }
 
@@ -478,7 +479,7 @@ export function IfMobile(props) {
 					onUpdate={props.onUpdate}
 					className={props.thenClassName}
 				>
-					<IfFn {...{condition: true, then: props.then}} />
+					<IfFn {...{ condition: true, then: props.then }} />
 				</Responsive>
 			)}
 
@@ -488,7 +489,7 @@ export function IfMobile(props) {
 					onUpdate={props.then ? undefined : props.onUpdate}
 					className={props.elseClassName}
 				>
-					<IfFn {...{condition: false, else: props.else}} />
+					<IfFn {...{ condition: false, else: props.else }} />
 				</Responsive>
 			)}
 		</React.Fragment>
