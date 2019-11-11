@@ -33,6 +33,12 @@ class DataStorage {
         // This may help if any file needs larger amount of concurrent operations
     }
 
+    // returns first item matching criteria
+    find(keyValues, matchExact, matchAll, ignoreCase) {
+        const result = this.search(keyValues, matchExact, matchAll, ignoreCase)
+        return result.size === 0 ? null : Array.from(result)[0][1]
+    }
+
     getAll() {
         if (!this.filename) return new this.Type()
         if (this.disableCache) return read(this.filename)

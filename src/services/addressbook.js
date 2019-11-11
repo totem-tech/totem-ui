@@ -12,7 +12,7 @@ export const add = (name, address, tags, type, visibility) => {
     if (getIndex(name, address, addresses) >= 0) return;
     _save(addresses.concat([{
         address: pretty(address),
-        name, 
+        name,
         tags: tags || [],
         type,
         visibility,
@@ -67,7 +67,7 @@ export const setPublic = (index, isPublic) => {
 const addressbook = {
     add,
     getAll,
-    getBond: ()=> bond,
+    getBond: () => bond,
     getByAddress,
     getByName,
     getByTag,

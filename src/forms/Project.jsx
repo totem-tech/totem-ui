@@ -141,7 +141,7 @@ class Project extends ReactiveComponent {
         ownerDD.options = [{
             key: 0,
             style: styles.itemHeader,
-            text: 'Wallets',
+            text: 'Identities',
             value: '' // keep
             // add wallet items to owner address dropdown
         }].concat(arrSort(secretStore && secretStore.keys || [], 'name').map((wallet, i) => ({

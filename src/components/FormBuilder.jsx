@@ -5,6 +5,7 @@ import { ReactiveComponent } from 'oo7-react'
 import { isDefined, isArr, isBool, isBond, isFn, isObj, isStr, objCopy, objWithoutKeys, newMessage, hasValue, objReadOnly, isValidNumber, arrReadOnly } from '../utils/utils';
 import { InputBond } from '../InputBond'
 import { AccountIdBond } from '../AccountIdBond'
+import FormInput from './FormInput'
 
 class FormBuilder extends ReactiveComponent {
     constructor(props) {
@@ -15,6 +16,7 @@ class FormBuilder extends ReactiveComponent {
             open: props.open,
             values: this.getValues(props.inputs)
         }
+        this.state.inputs.forEach(x => ({ ...x, controlled: isDefined(x.value) }))
 
         this.handleChange = this.handleChange.bind(this)
         this.handleClose = this.handleClose.bind(this)
@@ -23,14 +25,17 @@ class FormBuilder extends ReactiveComponent {
 
     getValues(inputs = [], values = {}) {
         return inputs.reduce((values, input, i) => {
-            if (!isDefined(input.name)) return values
-            if (input.type.toLowerCase() === 'group') return this.getValues(input.inputs, values)
-            let value = values[input.name]
-            value = !isDefined(value) ? input.value : value
-            if (['accountidbond', 'inputbond'].indexOf(input.type.toLowerCase()) >= 0 && isBond(input.bond)) {
-                value = input.bond._value
+            const { bond, inputs, name, controlled, type } = input
+            const typeLC = type.toLowerCase()
+            const isGroup = typeLC === 'group'
+            if (!isDefined(name)) return values
+            if (isGroup) return this.getValues(inputs, values)
+            let value = values[name]
+            value = !(controlled ? hasValue : isDefined)(value) ? input.value : value
+            if (['accountidbond', 'inputbond'].indexOf(typeLC) >= 0 && isBond(bond)) {
+                value = bond._value
             }
-            values[input.name] = value
+            values[name] = value
             return values
         }, values)
     }
@@ -255,294 +260,8 @@ FormBuilder.defaultProps = {
 }
 export default FormBuilder
 
-const VALIDATION_MESSAGES = objReadOnly({
-    max: (max) => `Number must be smaller or equal ${max}`,
-    maxLength: (value, max) => `Maximum ${max} ${typeof value === 'number' ? 'digit' : 'character'}${max > 1 ? 's' : ''} required`,
-    min: (min) => `Number must be greater or equal ${min}`,
-    minLength: (value, min) => `Minimum ${min} ${typeof value === 'number' ? 'digit' : 'character'}${min > 1 ? 's' : ''} required`,
-    requiredField: () => 'Required field',
-    validNumber: () => 'Please enter a valid number'
-}, true)
-const NON_ATTRIBUTES = Object.freeze(
-    ['styleContainer', 'deferred', 'hidden', 'inline', 'invalid', '_invalid', 'label', 'trueValue', 'falseValue', 'useInput']
-)
+////////////////// form input
 
-export class FormInput extends ReactiveComponent {
-    constructor(props) {
-        super(props)
-
-        this.handleChange = this.handleChange.bind(this)
-
-        this.state = {
-            message: undefined
-        }
-    }
-
-    handleChange(event, data) {
-        const { falseValue: no, max, maxLength, min, minLength, onChange, required, trueValue: yes, type } = this.props
-        const { checked, value } = data
-        // Forces the synthetic event and it's value to persist
-        // Required for use with deferred function
-        event && isFn(event.persist) && event.persist();
-        const typeLower = (type || '').toLowerCase()
-        const isCheck = ['checkbox', 'radio'].indexOf(typeLower) >= 0
-        const hasVal = hasValue(isCheck ? checked : value)
-        let errMsg = !isCheck && required && !hasVal ? VALIDATION_MESSAGES.requiredField() : undefined
-        if (hasVal && !errMsg) {
-            switch (typeLower) {
-                case 'checkbox':
-                case 'radio':
-                    // Sematic UI's Checkbox component only supports string and number as value
-                    // This allows support for any value types
-                    data.value = checked ? (isDefined(yes) ? yes : true) : (isDefined(no) ? no : false)
-                    if (required && !checked) {
-                        errMsg = VALIDATION_MESSAGES.requiredField()
-                    }
-                    break
-                case 'number':
-                    if (!required && value === '') break
-                    const num = eval(value)
-                    if (!isValidNumber(num)) {
-                        errMsg = VALIDATION_MESSAGES.validNumber()
-                    }
-                    if (isValidNumber(max) && max < num) {
-                        errMsg = VALIDATION_MESSAGES.max(max)
-                        break
-                    }
-                    if (isValidNumber(min) && min > num) {
-                        errMsg = VALIDATION_MESSAGES.min(min)
-                        break
-                    }
-                    data.value = num
-                case 'text':
-                case 'textarea':
-                    if (isDefined(maxLength) && maxLength < value.length) {
-                        errMsg = VALIDATION_MESSAGES.maxLength(value, maxLength)
-                        break
-                    }
-                    if (isDefined(minLength) && minLength > value.length) {
-                        errMsg = VALIDATION_MESSAGES.minLength(value, minLength)
-                        break
-                    }
-                    break
-            }
-        }
-
-        data.invalid = !!errMsg
-        isFn(onChange) && onChange(event, data || {}, this.props)
-        this.setState({ message: !errMsg ? null : { content: errMsg, status: 'error' } })
-    }
-
-    render() {
-        const { error, hidden, inline, label, message: externalMessage, required, styleContainer, type, useInput, width } = this.props
-        const { message: internalMessage } = this.state
-        const message = internalMessage || externalMessage
-        let hideLabel = false
-        let inputEl = ''
-        // Remove attributes that are used by the form or Form.Field but
-        // shouldn't be used or may cause error when using with inputEl
-        let attrs = objWithoutKeys(this.props, NON_ATTRIBUTES)
-        attrs.onChange = this.handleChange
-        const messageEl = newMessage(message)
-        let isGroup = false
-
-        switch (hidden ? 'hidden' : type.toLowerCase()) {
-            case 'accountidbond':
-                inputEl = <AccountIdBond {...attrs} />
-                break;
-            case 'button':
-                inputEl = <Button {...attrs} />
-                break;
-            case 'checkbox':
-            case 'radio':
-                attrs.toggle = type.toLowerCase() !== 'radio' && attrs.toggle
-                attrs.type = "checkbox"
-                delete attrs.value;
-                hideLabel = true
-                inputEl = <Form.Checkbox {...attrs} label={label} />
-                break;
-            case 'checkbox-group':
-            case 'radio-group':
-                attrs.inline = inline
-                inputEl = (
-                    <CheckboxGroup
-                        {...attrs}
-                        radio={type.toLowerCase() === 'radio-group' ? true : attrs.radio}
-                    />
-                )
-                break;
-            case 'dropdown':
-                inputEl = <Dropdown {...attrs} />
-                break;
-            case 'group':
-                isGroup = true
-                inputEl = attrs.inputs.map((subInput, i) => <FormInput key={i} {...subInput} />)
-                break;
-            case 'hidden':
-                hideLabel = true
-                break;
-            case 'inputbond':
-                if (isDefined(attrs.value)) {
-                    attrs.defaultValue = attrs.value
-                }
-                inputEl = <InputBond {...attrs} />
-                break;
-            case 'textarea':
-                inputEl = <TextArea {...attrs} />
-                break;
-            default:
-                attrs.fluid = !useInput ? undefined : attrs.fluid
-                inputEl = !useInput ? <Form.Input {...attrs} /> : <Input {...attrs} />
-        }
-
-        return !isGroup ? (
-            <Form.Field
-                error={message && message.status === 'error' || error}
-                required={required}
-                style={styleContainer}
-                width={width}
-            >
-                {!hideLabel && label && <label>{label}</label>}
-                {inputEl}
-                {messageEl}
-            </Form.Field>
-        ) : (
-                <Form.Group inline={inline} style={styleContainer} widths={attrs.widths}>
-                    {inputEl}
-                    {messageEl}
-                </Form.Group>
-            )
-    }
-}
-FormInput.propTypes = {
-    action: PropTypes.oneOfType([
-        PropTypes.object,
-        PropTypes.string
-    ]),
-    actionPosition: PropTypes.string,
-    checked: PropTypes.bool,        // For checkbox/radio
-    defaultChecked: PropTypes.bool, // For checkbox/radio
-    defaultValue: PropTypes.oneOfType([
-        PropTypes.number,
-        PropTypes.string
-    ]),
-    // Delay, in miliseconds, to precess input value change
-    deferred: PropTypes.number,
-    icon: PropTypes.oneOfType([
-        PropTypes.object,
-        PropTypes.string
-    ]),
-    iconPosition: PropTypes.string,
-    disabled: PropTypes.bool,
-    error: PropTypes.bool,
-    fluid: PropTypes.bool,
-    focus: PropTypes.bool,
-    hidden: PropTypes.bool,
-    inputs: PropTypes.array,
-    // Whether to use Semantic UI's Input or Form.Input component.
-    // Truthy => Input, Falsy (default) => Form.Input
-    useInput: PropTypes.bool,
-    message: PropTypes.object,
-    max: PropTypes.number,
-    maxLength: PropTypes.number,
-    min: PropTypes.number,
-    minLength: PropTypes.number,
-    name: PropTypes.string.isRequired,
-    label: PropTypes.string,
-    onChange: PropTypes.func,
-    placeholder: PropTypes.string,
-    readOnly: PropTypes.bool,
-    required: PropTypes.bool,
-    slider: PropTypes.bool,         // For checkbox/radio
-    toggle: PropTypes.bool,         // For checkbox/radio
-    type: PropTypes.string.isRequired,
-    value: PropTypes.any,
-    onValidate: PropTypes.func,
-    width: PropTypes.number
-}
-FormInput.defaultProps = {
-    type: 'text',
-    width: 16
-}
-
-class CheckboxGroup extends ReactiveComponent {
-    constructor(props) {
-        super(props, { bond: props.bond })
-        const allowMultiple = !props.radio && props.multiple
-        const hasBond = isBond(props.bond)
-        const value = props.value || (hasBond && props.bond._value) || (allowMultiple ? [] : undefined)
-        this.state = {
-            allowMultiple,
-            value: !allowMultiple ? value : (isArr(value) ? value : (isDefined(value) ? [value] : []))
-        }
-        this.handleChange = this.handleChange.bind(this)
-        hasBond && props.bond.notify(() => this.setState({ value: props.bond._value }))
-    }
-
-    handleChange(e, data, option) {
-        isObj(e) && isFn(e.persist) && e.persist()
-        const { onChange } = this.props
-        let { allowMultiple, value } = this.state
-        const { checked } = data
-        const { value: val } = option
-        if (!allowMultiple) {
-            value = checked ? val : undefined
-        } else {
-            value = isArr(value) ? value : (isDefined(value) ? [value] : [])
-            checked ? value.push(val) : value.splice(value.indexOf(val), 1)
-        }
-        data.value = value
-
-        this.setState({ value })
-        isFn(onChange) && onChange(e, data)
-    }
-
-    render() {
-        const { inline, name, options, style } = this.props
-        const { allowMultiple, value } = this.state
-        const excludeKeys = ['bond', 'inline', 'multiple', 'name', 'options', 'required', 'type', 'value', 'width']
-        const commonProps = objWithoutKeys(this.props, excludeKeys)
-        return (
-            <div style={style}>
-                {(options || []).map((option, i) => {
-                    const checked = allowMultiple ? value.indexOf(option.value) >= 0 : value === option.value
-                    return option.hidden ? '' : (
-                        <Checkbox
-                            {...{
-                                ...commonProps,
-                                ...option,
-                                checked,
-                                key: i,
-                                name: name + (allowMultiple ? i : ''),
-                                onChange: (e, d) => this.handleChange(e, d, option, i),
-                                required: false, // handled by CheckboxGroup
-                                style: {
-                                    ...option.style,
-                                    margin: '5px',
-                                    width: inline ? 'auto' : '100%'
-                                },
-                                type: "checkbox",
-                                value: checked ? `${option.value}` : '',
-                            }}
-                        />
-                    )
-                })}
-            </div>
-        )
-    }
-}
-CheckboxGroup.propTypes = {
-    // bond: Bond
-    inline: PropTypes.bool,
-    multiple: PropTypes.bool, // if true, allows multiple selection
-    name: PropTypes.string,
-    options: PropTypes.array,
-    required: PropTypes.bool,
-    style: PropTypes.object,
-    type: PropTypes.string,
-    value: PropTypes.any,
-    width: PropTypes.number,
-}
 
 export const fillValues = (inputs, values, forceFill) => {
     if (!isObj(values)) return

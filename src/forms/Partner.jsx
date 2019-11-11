@@ -9,7 +9,6 @@ import FormBuilder, { fillValues } from '../components/FormBuilder'
 import client from '../services/ChatClient'
 import { showForm } from '../services/modal'
 import CompanyForm from './Company'
-// import AddressLookup from '../AddressLookup'
 
 class Partner extends ReactiveComponent {
     constructor(props) {
@@ -205,7 +204,7 @@ class Partner extends ReactiveComponent {
             success: true,
         })
         // Open add partner form
-        isFn(onSubmit) && onSubmit(newValues, index)
+        isFn(onSubmit) && onSubmit(true, newValues)
         //clear form
         this.nick.changed('')
         this.lookup.changed('')

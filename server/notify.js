@@ -35,7 +35,6 @@ export const VALID_TYPES = objReadOnly({
     identity: {
         request: {
             dataFields: {
-                address: REQUIRED,
                 reason: REQUIRED, // one-liner explanation by the requester of why they want receivers identity
             },
             message: NOT_REQUIRED,

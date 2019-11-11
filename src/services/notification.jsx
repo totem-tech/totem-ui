@@ -4,12 +4,15 @@ import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { secretStore } from 'oo7-substrate'
 import { Button, Dropdown } from 'semantic-ui-react'
+import { ButtonAcceptOrReject, UserID } from '../components/buttons'
 import { newMessage } from '../utils/utils'
 import client, { getUser } from './ChatClient'
 import DataStorage from '../utils/DataStorage'
 import { showForm } from './modal'
 import { addToQueue, QUEUE_TYPES } from './queue'
 import SelectIdentityForm from '../forms/SelectIdentity'
+import IdentityShareForm from '../forms/IdentityShare'
+import PartnerForm from '../forms/Partner'
 
 const notifications = new DataStorage('totem_service_notifications', true, false)
 // store unread counts for individual types
@@ -58,7 +61,6 @@ export default class NotificationDropdown extends ReactiveComponent {
         const { childType, data, senderId, type } = notification
         const { projectName, projectHash } = data
         const respond = (workerAddress) => {
-            console.log({ workerAddress })
             const acceptStr = accepted ? 'submit' : 'reject'
             addToQueue({
                 type: QUEUE_TYPES.CHATCLIENT,
@@ -128,21 +130,57 @@ export default class NotificationDropdown extends ReactiveComponent {
                 <Dropdown.Menu className="notification-service" direction="left" style={{ maxHeight }}>
                     {Array.from(items).filter(([_, { deleted }]) => !deleted).reverse().map(([id, item]) => {
                         const { senderId, type, childType, message, data, tsCreated, read } = item
+                        const userIdBtn = <UserID userId={senderId} />
                         const typeSpaced = type.replace('_', ' ')
                         let { projectName } = data
                         const msg = {
                             // attached: true,
                             icon: { name: 'bell outline', size: 'large' },
-                            content: `@${senderId}: ${message}`,
-                            header: `${typeSpaced}: ${childType}`,
+                            content: <span>{userIdBtn}: {message}</span>,
+                            header: `${typeSpaced} ${childType}`,
                             key: id,
                             onClick: () => toggleRead(id),
-                            onDismiss: (e) => e.stopPropagation() | deleteNotification(id),
+                            onDismiss: e => e.stopPropagation() | deleteNotification(id),
                             status: read ? undefined : 'success',
                             style: { textAlign: 'left' },
                         }
 
                         switch (type + ':' + childType) {
+                            case 'identity:request':
+                                msg.header = <span>{userIdBtn} requested your identity</span>
+                                msg.icon.name = 'user'
+                                msg.content = (
+                                    <div>
+                                        <b>Reason:</b> {data.reason}
+                                        <ButtonAcceptOrReject
+                                            acceptText='Share'
+                                            onClick={accepted => !accepted ? deleteNotification(id) : showForm(IdentityShareForm, {
+                                                disabledFields: ['userIds'],
+                                                onSubmit: success => success && deleteNotification(id),
+                                                values: { userIds: [senderId] },
+                                            })}
+                                        />
+                                    </div>
+                                )
+                                break
+                            case 'identity:share':
+                                const { address, name } = data
+                                msg.header = <span>Identity received from {userIdBtn}</span>
+                                msg.icon.name = 'user plus'
+                                msg.content = (
+                                    <div>
+                                        <br />
+                                        <ButtonAcceptOrReject
+                                            acceptText='Add Partner'
+                                            onClick={accepted => !accepted ? deleteNotification(id) : showForm(PartnerForm, {
+                                                onSubmit: success => success && deleteNotification(id),
+                                                values: { address, name },
+                                            })}
+                                            rejectText='Ignore'
+                                        />
+                                    </div>
+                                )
+                                break
                             case 'time_keeping:identity':
                                 msg.icon.name = 'clock outline'
                                 msg.content = (
@@ -150,7 +188,7 @@ export default class NotificationDropdown extends ReactiveComponent {
                                         <b>@{senderId}</b> wants you to join the following project:
                                         <b> {projectName}</b>
                                         <ButtonAcceptOrReject
-                                            onResponse={accepted => this.handleTKIdentityResponse(id, accepted)}
+                                            onClick={accepted => this.handleTKIdentityResponse(id, accepted)}
                                         />
                                     </div>
                                 )
@@ -162,7 +200,7 @@ export default class NotificationDropdown extends ReactiveComponent {
                                         <b>@{senderId}</b> invited you to start booking time for the following project:
                                         <b> {projectName}</b>
                                         <ButtonAcceptOrReject
-                                            onResponse={accepted => this.handleTKInvitationResponse(id, accepted)}
+                                            onClick={accepted => this.handleTKInvitationResponse(id, accepted)}
                                         />
                                     </div>
                                 )
@@ -189,16 +227,6 @@ export default class NotificationDropdown extends ReactiveComponent {
     }
 }
 
-const ButtonAcceptOrReject = ({ onResponse, acceptText, rejectText }) => (
-    <div title="" style={{ textAlign: 'center', marginTop: 10 }}>
-        <Button.Group>
-            <Button positive onClick={(e) => e.preventDefault() | onResponse(true)}>
-                {acceptText || 'Accept'}
-            </Button>
-            <Button.Or />
-            <Button negative onClick={(e) => e.preventDefault() | onResponse(false)}>
-                {rejectText || 'Reject'}
-            </Button>
-        </Button.Group>
-    </div>
-)
+export const handleIdentityRequest = (notificationId, accepted = false) => {
+    const notification = notifications.get(notificationId)
+}
