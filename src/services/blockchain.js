@@ -179,7 +179,8 @@ export const timeKeeping = {
         ),
         // list of all record hashes booked by worker
         list: workerAddress => runtime.timekeeping.workerTimeRecordsHashList(ss58Decode(workerAddress)),
-        listByProject: projectHash => runtime.timekeeping.projectTimeRecordsHashList(hashHexToBytes(projectHash))
+        // list of all record hashes in a project 
+        listByProject: projectHash => runtime.timekeeping.projectTimeRecordsHashList(hashHexToBytes(projectHash)),
     },
     invitation: {
         // Blockchain transaction
