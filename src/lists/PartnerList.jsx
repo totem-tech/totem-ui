@@ -11,8 +11,8 @@ import IdentityRequestForm from '../forms/IdentityRequest'
 import IdentityShareForm from '../forms/IdentityShare'
 
 export default class PartnerList extends ReactiveComponent {
-	constructor() {
-		super([], { partners: addressbook.getBond() })
+	constructor(props) {
+		super(props)
 
 		this.state = {
 			listProps: {
@@ -21,22 +21,21 @@ export default class PartnerList extends ReactiveComponent {
 					{ key: '_name', title: 'Name' },
 					{ collapsing: true, key: '_address', title: 'Address' },
 					{
-						content: (partner, index) => {
-							const { address, name, isPublic } = partner
+						content: ({ address, isPublic }) => {
 							return (
 								<Checkbox
-									checked={partner.isPublic}
+									checked={isPublic}
 									toggle
 									onChange={(_, { checked }) => checked && showForm(CompanyForm, {
 										walletAddress: address,
-										onSubmit: (e, v, success) => success && addressbook.setPublic(index, true),
+										onSubmit: (e, v, success) => success && addressbook.setPublic(address),
 										size: 'tiny',
 									})}
+									title='Click to make public'
 								/>
 							)
 						},
 						collapsing: true,
-						// key: '_public',
 						textAlign: 'center',
 						title: 'Public'
 					},
@@ -44,14 +43,9 @@ export default class PartnerList extends ReactiveComponent {
 					{
 						collapsing: true,
 						content: (partner, index) => {
-							const { address, name, isPublic } = partner
+							const { address, name } = partner
 							return (
 								<React.Fragment>
-									{/* <Button
-										icon='copy'
-										onClick={() => copyToClipboard(address)}
-										title='Copy address'
-									/> */}
 									<Button
 										icon='share'
 										onClick={() => showForm(IdentityShareForm, {
@@ -59,21 +53,14 @@ export default class PartnerList extends ReactiveComponent {
 											header: 'Share Partner Identity',
 											includeOwnIdentities: false,
 											includePartners: true,
+											size: 'tiny',
 											values: { address, name },
 										})}
 										title='Share partner'
 									/>
-									{/* <Button
-										icon='world'
-										onClick={() => showForm(CompanyForm, {
-											walletAddress: address,
-											onSubmit: (e, v, success) => success && addressbook.setPublic(index, true)
-										})}
-										title='Make public'
-									/> */}
 									<Button
 										icon='pencil'
-										onClick={() => showForm(PartnerForm, { index, values: partner })}
+										onClick={() => showForm(PartnerForm, { index, values: partner, size: 'tiny' })}
 										title='Update partner'
 									/>
 									<Button
@@ -82,7 +69,7 @@ export default class PartnerList extends ReactiveComponent {
 											confirmButton: <Button negative content="Delete" />,
 											content: <p>Partner name: <b>{name}</b></p>,
 											header: 'Delete partner?',
-											onConfirm: () => addressbook.remove(name, address),
+											onConfirm: () => addressbook.remove(address),
 											size: 'mini',
 										})}
 										title="Delete partner"
@@ -93,24 +80,25 @@ export default class PartnerList extends ReactiveComponent {
 						title: 'Actions',
 					}
 				],
-				data: [],
+				data: new Map(),
 				defaultSort: 'name',
+				emptyMessage: {},
 				searchExtraKeys: ['_public', '_tagsStr'],
 				searchable: true,
 				topLeftMenu: [
 					{
 						active: false,
-						content: 'Create',
+						content: 'Add',
 						icon: 'plus',
 						name: 'create',
-						onClick: () => showForm(PartnerForm)
+						onClick: () => showForm(PartnerForm, { size: 'tiny' })
 					},
 					{
 						active: false,
 						content: 'Request',
 						icon: 'user plus',
 						name: 'create',
-						onClick: () => showForm(IdentityRequestForm),
+						onClick: () => showForm(IdentityRequestForm, { size: 'tiny' }),
 						title: 'Request identity from other users',
 					}
 				],
@@ -119,26 +107,36 @@ export default class PartnerList extends ReactiveComponent {
 		}
 	}
 
-	render() {
-		const { listProps, partners } = this.state
-		listProps.data = (partners || []).map((partner, key) => {
-			const { address, isPublic, name, tags } = partner
-			return {
-				...partner,
-				key,
-				_address: textEllipsis(address, 15, 3),
-				_name: textEllipsis(name, 25, 3, false),
-				_tags: tags.map(tag => (
-					<Label key={tag} style={{ margin: 1, float: 'left', display: 'inline' }}>
-						{tag}
-					</Label>
-				)),
-				// makes tags searchable
-				_tagsStr: tags.join(' '),
-				// makes public/private text searchable
-				_public: isPublic ? 'public' : 'private',
-			}
+	componentWillMount() {
+		this.tieId = addressbook.getBond().tie(() => this.getPartners())
+	}
+
+	componentWillUnmount() {
+		addressbook.getBond().untie(this.tieId)
+	}
+
+	getPartners() {
+		const { listProps } = this.state
+		listProps.data = addressbook.getAll()
+
+		Array.from(listProps.data).forEach(([_, p]) => {
+			const { address, name, isPublic, tags } = p
+			p._address = textEllipsis(address, 15, 3)
+			p._name = textEllipsis(name, 25, 3, false)
+			p._tags = tags.map(tag => (
+				<Label key={tag} style={{ margin: 1, float: 'left', display: 'inline' }}>
+					{tag}
+				</Label>
+			))
+			// makes tags searchable
+			p._tagsStr = tags.join(' ')
+			// makes public/private text searchable
+			p._public = isPublic ? 'public' : 'private'
 		})
-		return <ListFactory {...listProps} />
+		this.setState({ listProps })
+	}
+
+	render() {
+		return <ListFactory {...this.state.listProps} />
 	}
 }

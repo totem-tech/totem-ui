@@ -48,7 +48,7 @@ export const projectDropdown = {
 export const getAddressName = address => (secretStore().find(address) || {}).name
     // not found in wallet list
     // search in addressbook
-    || (addressbook.getByAddress(address) || {}).name
+    || (addressbook.get(address) || {}).name
     // not available in addressbok or wallet list
     // display the address itself with ellipsis
     || textEllipsis(address, 15, 5)

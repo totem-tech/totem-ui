@@ -344,7 +344,7 @@ export class ReassignProjectForm extends ReactiveComponent {
         const { header, modal, onClose, open, size, subheader } = this.props
         const { closeText, inputs, message, success } = this.state
         const wallets = secretStore()._value.keys || []
-        const partners = addressbook.getAll()
+        const partners = Array.from(addressbook.getAll()).map((_, p) => p)
         let options = [{
             key: 0,
             style: styles.itemHeader,

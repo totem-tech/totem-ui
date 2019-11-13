@@ -6,7 +6,7 @@ import addressbook from '../services/addressbook'
 
 class PartnerView extends ReactiveComponent {
 	constructor() {
-		super([], { bond: addressbook.getBond() })
+		super([])
 	}
 
 	readyRender() {

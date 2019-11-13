@@ -89,7 +89,7 @@ export default class IdentityShareForm extends ReactiveComponent {
                     text: 'Partners',
                     value: '' // keep
                 },
-                ...addressbook.getAll().map(({ address, name }) => ({
+                ...Array.from(addressbook.getAll()).map(([address, { name }]) => ({
                     key: address,
                     name, // keep
                     text: name,

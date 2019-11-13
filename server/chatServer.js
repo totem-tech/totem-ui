@@ -42,6 +42,10 @@ export const initChatServer = (httpsOptions, expressApp) => {
         client.on('register', handleRegister.bind(client))
         client.on('login', handleLogin.bind(client))
 
+        // Company related handlers
+        client.on('company', handleCompany.bind(client))
+        client.on('company-search', handleCompanySearch.bind(client))
+
         // Faucet request
         client.on('faucet-request', handleFaucetRequest.bind(client))
 
@@ -55,10 +59,6 @@ export const initChatServer = (httpsOptions, expressApp) => {
         client.on('projects', handleProjects.bind(client))
         client.on('projects-by-hashes', handleProjectsByHashes.bind(client))
         client.on('projects-search', handleProjectsSearch.bind(client))
-
-        // Company related handlers
-        client.on('company', handleCompany.bind(client))
-        client.on('company-search', handleCompanySearch.bind(client))
 
         // Time keeping handlers
         client.on('time-keeping-entry', handleTimeKeepingEntry.bind(client))

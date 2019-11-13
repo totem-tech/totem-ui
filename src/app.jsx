@@ -9,7 +9,6 @@ import {
 
 // Components
 import GettingStarted from './components/GettingStartedView'
-import PartnerView from './views/PartnerView'
 import SendFundsView from './views/SendFundsView'
 import UtilitiesView from './views/UtilitiesView'
 import IdentitiesView from './views/WalletView'
@@ -18,6 +17,7 @@ import ErrorBoundary from './components/CatchReactErrors'
 import ChatWidget from './components/ChatWidget'
 import ContentSegment from './components/ContentSegment'
 import PageHeader from './components/PageHeader'
+import PartnerList from './lists/PartnerList'
 import ProjectList from './lists/ProjectList'
 import SidebarLeft from './components/SidebarLeft'
 import ModalService from './services/modal'
@@ -194,7 +194,7 @@ const sidebarItems = [
 		header: "Vendors and Customers",
 		subHeader: "Inspect the status of any account and name it for later use",
 		active: true,
-		content: <PartnerView />
+		content: <PartnerList />
 	},
 	// { icon: "file alternate", title: "Invoice", subHeader: "", active: false, content: <Invoice /> },
 	{ icon: "file alternate", title: "Manage Invoices", subHeader: "" },

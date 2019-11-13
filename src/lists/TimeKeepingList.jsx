@@ -163,7 +163,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         const options = [
             {
                 content: 'Add Partner',
-                hidden: !!addressbook.getByAddress(entry.address) || !!secretStore().find(entry.address),
+                hidden: !!addressbook.get(entry.address) || !!secretStore().find(entry.address),
                 icon: 'user plus',
                 key: 1,
                 onClick: () => showForm(PartnerForm, { values: { address: entry.address } }),

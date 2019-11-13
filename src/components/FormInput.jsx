@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Button, Dropdown, Form, Input, TextArea } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
-import { isDefined, isFn, objWithoutKeys, newMessage, hasValue, objReadOnly, isValidNumber } from '../utils/utils';
+import { isDefined, isFn, objWithoutKeys, newMessage, hasValue, objReadOnly, isValidNumber, isStr } from '../utils/utils';
 import { InputBond } from '../InputBond'
 import { AccountIdBond } from '../AccountIdBond'
 import CheckboxGroup from './CheckboxGroup'
@@ -15,9 +15,10 @@ const VALIDATION_MESSAGES = objReadOnly({
     requiredField: () => 'Required field',
     validNumber: () => 'Please enter a valid number'
 }, true)
-const NON_ATTRIBUTES = Object.freeze(
-    ['controlled', 'deferred', 'hidden', 'inline', 'invalid', '_invalid', 'label', 'trueValue', 'falseValue', 'styleContainer', 'useInput']
-)
+const NON_ATTRIBUTES = Object.freeze([
+    'controlled', 'deferred', 'hidden', 'inline', 'invalid', '_invalid', 'label',
+    'trueValue', 'falseValue', 'styleContainer', 'useInput', 'validate'
+])
 
 export default class FormInput extends ReactiveComponent {
     constructor(props) {
@@ -31,7 +32,16 @@ export default class FormInput extends ReactiveComponent {
     }
 
     handleChange(event, data) {
-        const { falseValue: no, max, maxLength, min, minLength, onChange, required, trueValue: yes, type } = this.props
+        const {
+            falseValue: no,
+            max,
+            maxLength, min, minLength,
+            onChange,
+            required,
+            trueValue: yes,
+            type,
+            validate,
+        } = this.props
         const { checked, value } = data
         // Forces the synthetic event and it's value to persist
         // Required for use with deferred function
@@ -80,9 +90,19 @@ export default class FormInput extends ReactiveComponent {
             }
         }
 
+        let message = !errMsg ? null : { content: errMsg, status: 'error' }
+        // custom validation
+        if (!message && isFn(validate)) {
+            const vMsg = validate(event, data)
+            message = !vMsg || !isStr(vMsg) ? vMsg : { content: vMsg, status: 'error' }
+            if (message && message.status === 'error') {
+                errMsg = message.content
+            }
+        }
+
         data.invalid = !!errMsg
-        isFn(onChange) && onChange(event, data || {}, this.props)
-        this.setState({ message: !errMsg ? null : { content: errMsg, status: 'error' } })
+        isFn(onChange) && onChange(event, data, this.props)
+        this.setState({ message })
     }
 
     render() {
@@ -163,6 +183,19 @@ export default class FormInput extends ReactiveComponent {
     }
 }
 FormInput.propTypes = {
+    // Delay, in miliseconds, to precess input value change
+    deferred: PropTypes.number,
+    type: PropTypes.string.isRequired,
+    // Validate field. Only invoked when onChange is triggered and built-in validation passed.
+    //
+    // Params:
+    //          @event object
+    //          @data object
+    // Expected Return: false or string (error), or message object
+    validate: PropTypes.func,
+
+
+    // Semantic UI supported props. Remove????
     action: PropTypes.oneOfType([
         PropTypes.object,
         PropTypes.string
@@ -174,8 +207,6 @@ FormInput.propTypes = {
         PropTypes.number,
         PropTypes.string
     ]),
-    // Delay, in miliseconds, to precess input value change
-    deferred: PropTypes.number,
     icon: PropTypes.oneOfType([
         PropTypes.object,
         PropTypes.string
@@ -203,7 +234,6 @@ FormInput.propTypes = {
     required: PropTypes.bool,
     slider: PropTypes.bool,         // For checkbox/radio
     toggle: PropTypes.bool,         // For checkbox/radio
-    type: PropTypes.string.isRequired,
     value: PropTypes.any,
     onValidate: PropTypes.func,
     width: PropTypes.number

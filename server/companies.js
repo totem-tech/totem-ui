@@ -25,7 +25,7 @@ export const handleCompany = (walletAddress, company, callback) => {
     if (!isObj(company)) {
         company = companies.get(walletAddress)
         // ToDo: return company object on second parameter
-        return callback(!company ? messages.notFound : company)
+        return callback(!company ? messages.notFound : null, company)
     }
     // make sure all the required keys are supplied
     if (requiredKeys.reduce((invalid, key) => invalid || !hasValue(company[key]), !walletAddress)) {
