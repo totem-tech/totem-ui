@@ -4,7 +4,7 @@ import { ReactiveComponent } from 'oo7-react'
 import { secretStore } from 'oo7-substrate'
 import { arrSort, deferred, objCopy, textEllipsis } from '../utils/utils'
 import client from '../services/ChatClient'
-import addressbook from '../services/addressbook'
+import addressbook from '../services/partners'
 import { FormInput, findInput } from '../components/FormBuilder'
 
 const emptySearchMsg = 'Enter project name, hash or owner address'

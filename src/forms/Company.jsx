@@ -1,10 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
-import FormBuilder from '../components/FormBuilder'
-import faker from 'faker'
-import { isDefined, isFn } from '../utils/utils'
+import { ss58Decode } from 'oo7-substrate'
+import FormBuilder, { findInput } from '../components/FormBuilder'
+import { deferred, isFn, isObj } from '../utils/utils'
 import client from '../services/ChatClient'
+import storage from '../services/storage'
 
 class Company extends ReactiveComponent {
     constructor(props) {
@@ -12,18 +13,19 @@ class Company extends ReactiveComponent {
 
         this.handleSubmit = this.handleSubmit.bind(this)
 
-        const countries = faker.definitions.address.country
+        const { walletAddress } = props
         this.state = {
             message: props.message || {},
-            open: props.open,
             success: false,
             inputs: [
                 {
-                    label: 'Company Wallet',
+                    label: 'Identity',
                     name: 'walletAddress',
+                    onChange: deferred((_, { walletAddress }) => this.checkCompany(walletAddress), 300),
                     readOnly: true,
                     type: 'text',
-                    value: props.walletAddress
+                    validate: (e, { value }) => !ss58Decode(value) ? 'Please enter a valid address' : null,
+                    value: walletAddress || ''
                 },
                 {
                     label: 'Company Name',
@@ -44,10 +46,10 @@ class Company extends ReactiveComponent {
                 {
                     label: 'Country',
                     name: 'country',
-                    options: countries.map((country, key) => ({
-                        key,
-                        text: country,
-                        value: country
+                    options: Array.from(storage.countries.getAll()).map(([_, { code, name }]) => ({
+                        key: code,
+                        text: name,
+                        value: code
                     })),
                     placeholder: 'Select a country',
                     required: true,
@@ -57,6 +59,29 @@ class Company extends ReactiveComponent {
                 }
             ]
         }
+
+        if (!!walletAddress) setTimeout(() => this.checkCompany(walletAddress))
+    }
+
+    checkCompany(walletAddress) {
+        // check if a company already exists with address
+        const { inputs } = this.state
+        const wAddrIn = findInput(inputs, 'walletAddress')
+        wAddrIn.loading = true
+        this.setState({ inputs })
+
+        client.company(walletAddress, null, (_, company) => {
+            const exists = isObj(company)
+            wAddrIn.loading = false
+            wAddrIn.invalid = exists
+            wAddrIn.message = !exists ? null : {
+                content: `A company called "${company.name}" already exists using this identity`,
+                showIcon: true,
+                status: 'error',
+            }
+            this.setState({ inputs })
+        })
+
     }
 
     handleSubmit(e, values) {
@@ -65,29 +90,21 @@ class Company extends ReactiveComponent {
             const success = !err
             const message = {
                 header: success ? 'Company added successfully' : err,
+                showIcon: true,
                 status: success ? 'success' : 'error'
             }
-            this.setState({success, message})
+            this.setState({ success, message })
 
             isFn(onSubmit) && onSubmit(e, values, success)
         })
     }
 
     render() {
-        const { inputs, message, open, success } = this.state
-        const { header, modal, open: propsOpen, size, subheader } = this.props
-
         return (
             <FormBuilder {...{
-                header,
-                inputs,
-                message,
-                modal,
+                ...this.props,
+                ...this.state,
                 onSubmit: this.handleSubmit,
-                open: modal && isDefined(propsOpen) ? propsOpen : open,
-                success,
-                size,
-                subheader
             }} />
         )
     }

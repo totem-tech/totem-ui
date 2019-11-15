@@ -1,5 +1,6 @@
 import DataStorage from '../src/utils/DataStorage'
 import { isFn, isObj, hasValue, objClean } from '../src/utils/utils'
+import { isCountryCode } from './countries'
 
 const companies = new DataStorage('companies.json', true) // disable caching
 // Must-have properties
@@ -9,6 +10,7 @@ const searchKeys = ['name', 'walletAddress', 'registrationNumber', 'country']
 const messages = {
     exists: 'Company already exists',
     invalidKeys: 'Company must be a valid object and contain the following: ' + requiredKeys.join(),
+    invalidCountry: 'Invalid country code supplied',
     notFound: 'Company not found',
     walletAlreadyAssociated: 'Wallet address is already associated with a company',
     requiredSearchKeys: 'Please supply one or more of the following keys: ' + searchKeys.join()
@@ -27,11 +29,14 @@ export const handleCompany = (walletAddress, company, callback) => {
         // ToDo: return company object on second parameter
         return callback(!company ? messages.notFound : null, company)
     }
+    const { country, name, registrationNumber } = company
+
     // make sure all the required keys are supplied
     if (requiredKeys.reduce((invalid, key) => invalid || !hasValue(company[key]), !walletAddress)) {
         return callback(messages.invalidKeys)
     }
-    const { country, name, registrationNumber } = company
+
+    if (!isCountryCode(country)) return callback(messages.invalidCountry)
     // Check if company with wallet address already exists
     if (!!companies.get(walletAddress)) {
         return callback(messages.walletAlreadyAssociated)
@@ -53,11 +58,11 @@ export const handleCompany = (walletAddress, company, callback) => {
 // Params:
 // @keyValues object: key(s) and respective value(s) to search for
 // @callback  function: callback function
-export const handleCompanySearch = (keyValues, callback) => {
+export const handleCompanySearch = (keyValues, matchExact, matchAll, ignoreCase, callback) => {
     if (!isFn(callback)) return
     keyValues = objClean(keyValues, searchKeys)
     if (Object.keys(keyValues).length === 0) {
         return callback(messages.requiredSearchKeys)
     }
-    callback(null, companies.search(keyValues))
+    callback(null, companies.search(keyValues, matchExact, matchAll, ignoreCase))
 }

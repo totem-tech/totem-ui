@@ -13,7 +13,7 @@ import client from '../services/ChatClient'
 import storageService from '../services/storage'
 import { ownerProjectsList, projectHashStatus } from '../services/blockchain'
 import { addToQueue } from '../services/queue'
-import addressbook from '../services/addressbook'
+import addressbook from '../services/partners'
 
 const toBeImplemented = () => alert('To be implemented')
 

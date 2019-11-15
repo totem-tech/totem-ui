@@ -149,7 +149,7 @@ export default class IdentityRequestForm extends ReactiveComponent {
         client.notify(userIds, notificationType, childType, null, data, err => {
             const success = !err
             const message = {
-                content: `Identity request has been sent to selected user${userIds.length > 1 ? 's' : ''}. 
+                content: `Identity request has been sent to ${userIds.length === 1 ? '@' + userIds[0] : 'selected users'}. 
                     You will receive notification once they share their identity.`,
                 header: 'Request sent!',
                 showIcon: true,

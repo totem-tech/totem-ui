@@ -7,7 +7,7 @@ import { arrSort, generateHash, isDefined, isFn, isObj, objCopy } from '../utils
 import storageService from '../services/storage'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { Pretty } from '../Pretty'
-import addressbook from '../services/addressbook';
+import addressbook from '../services/partners';
 import { confirm } from '../services/modal'
 
 // Create or update project form

@@ -4,6 +4,7 @@
 import https from 'https'
 import socketIO from 'socket.io'
 import { handleCompany, handleCompanySearch } from './companies'
+import { handleCountries } from './countries'
 import { handleFaucetRequest } from './faucetRequests'
 import {
     handleProject,
@@ -45,6 +46,9 @@ export const initChatServer = (httpsOptions, expressApp) => {
         // Company related handlers
         client.on('company', handleCompany.bind(client))
         client.on('company-search', handleCompanySearch.bind(client))
+
+        // Countries related handlers
+        client.on('countries', handleCountries.bind(client))
 
         // Faucet request
         client.on('faucet-request', handleFaucetRequest.bind(client))

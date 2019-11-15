@@ -5,17 +5,19 @@
 import { Bond } from 'oo7'
 import uuid from 'uuid'
 import { isArr, isObj, isObjMap, isStr, isValidNumber } from '../utils/utils'
+import DataStorage from '../utils/DataStorage'
 // Local Storage item key prefix for all items
 const PREFIX = 'totem_'
+const PREFIX_STATIC = PREFIX + 'static_'
 const storage = {}
 const getItem = key => JSON.parse(localStorage.getItem(PREFIX + key))
 const setItem = (key, value) => localStorage.setItem(PREFIX + key, JSON.stringify(value))
 
 // addressbook get/set addressbook entries
-storage.addressbook = entries => {
-    const key = 'addressbook'
-    return isArr(entries) ? setItem(key, entries) : getItem(key) || []
-}
+// storage.addressbook = entries => {
+//     const key = 'addressbook'
+//     return isArr(entries) ? setItem(key, entries) : getItem(key) || []
+// }
 
 // chatHistory gets/sets chat history
 //
@@ -40,6 +42,8 @@ storage.chatUser = (id, secret) => {
     return isStr(id) && isStr(secret) ? setItem(key, { id, secret }) : getItem(key)
 }
 
+storage.countries = new DataStorage(PREFIX_STATIC + 'countries', true)
+
 // getting started module's current step index
 storage.gettingStartedStepIndex = index => {
     const key = 'getting-started-step-index'
@@ -60,7 +64,6 @@ storage.timeKeepingBond.changed(uuid.v1())
 storage.queue = queueMap => {
     const key = 'queue-data'
     return !isObjMap(queueMap) ? new Map(getItem(key)) : setItem(key, Array.from(queueMap))
-
 }
 
 // walletIndex gets/sets selected wallet index number
@@ -74,8 +77,8 @@ storage.walletIndex = index => {
     if (isValidNumber(index)) {
         setItem(key, index)
         return storage.walletIndexBond.changed(index)
-     }
-     return parseInt(getItem(key) || 0)
+    }
+    return parseInt(getItem(key) || 0)
 }
 // Bond to keep components updated 
 storage.walletIndexBond = new Bond()

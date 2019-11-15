@@ -128,17 +128,22 @@ export class ChatClient {
         // @cb              function: params =>
         //                      @err    string/null/object : error message or null if success or existing company if @company not supplied
         this.company = (walletAddress, company, cb) => socket.emit('company', walletAddress, company, cb)
-
         // search companies
         //
         // Params:
         // @keyValues   object: one or more key-value pair to search for
+        // @matchExact  boolean
+        // @matchAll    boolean
+        // @ignoreCase  boolean
         // @cb          function: params =>
         //                      @err    string/null : error message or null if success
         //                      @result Map         : Map of companies with walletAddress as eky
-        this.companySearch = (keyValues, cb) => isFn(cb) && socket.emit(
-            'company-search', keyValues, (err, result) => cb(err, new Map(result))
+        this.companySearch = (keyValues, matchExact, matchAll, ignoreCase, cb) => isFn(cb) && socket.emit(
+            'company-search', keyValues, matchExact, matchAll, ignoreCase, (err, result) => cb(err, new Map(result))
         )
+
+        // Get list of all countries with 3 character codes
+        this.countries = (cb) => isFn(cb) && socket.emit('countries', (err, countries) => cb(err, new Map(countries)))
 
         // Add/update time keeping entry
         this.timeKeepingEntry = (hash, entry, cb) => isFn(cb) && socket.emit('time-keeping-entry', hash, entry, cb)

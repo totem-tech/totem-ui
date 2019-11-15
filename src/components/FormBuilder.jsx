@@ -97,7 +97,7 @@ class FormBuilder extends ReactiveComponent {
             headerIcon,
             hideFooter,
             loading,
-            message,
+            message: msg,
             modal,
             onClose,
             onOpen,
@@ -119,6 +119,7 @@ class FormBuilder extends ReactiveComponent {
             modalOpen = false
             isFn(onClose) && onClose({}, {})
         }
+        const message = isObj(msg) && msg || {}
 
         let submitBtn, closeBtn
         if (submitText !== null) {

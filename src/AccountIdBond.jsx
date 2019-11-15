@@ -6,7 +6,7 @@ const { Label, Input } = require('semantic-ui-react');
 const { InputBond } = require('./InputBond');
 const nacl = require('tweetnacl');
 const { stringToSeed, hexToBytes, bytesToHex, runtime, secretStore, addressBook, ss58Decode, AccountId } = require('oo7-substrate');
-import addressbook from './services/addressbook'
+import addressbook from './services/partners'
 
 class AccountIdBond extends InputBond {
 	constructor() { super() }

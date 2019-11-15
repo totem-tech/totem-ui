@@ -2,10 +2,11 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { secretStore } from 'oo7-substrate'
+import { isFn } from '../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import { handleAddUser } from './IdentityRequest'
-import addressbook from '../services/addressbook'
-import client, { getUser } from '../services/ChatClient'
+import addressbook from '../services/partners'
+import client from '../services/ChatClient'
 
 const notificationType = 'identity'
 const childType = 'share'
@@ -126,7 +127,7 @@ export default class IdentityShareForm extends ReactiveComponent {
         client.notify(userIds, notificationType, childType, null, data, err => {
             const success = !err
             const message = {
-                content: `Identity has been sent to selected user${userIds.length > 1 ? 's' : ''}`,
+                content: `Identity has been sent to ${userIds.length === 1 ? '@' + userIds[0] : 'selected users'}`,
                 header: 'Identity sent!',
                 showIcon: true,
                 status: 'success',
@@ -163,6 +164,7 @@ IdentityShareForm.defaultProps = {
     header: 'Share Identity',
     includePartners: false,
     includeOwnIdentities: true,
+    size: 'tiny',
     subheader: 'The selected identity will be added to the receivers partner list',
 }
 
