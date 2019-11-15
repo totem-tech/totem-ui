@@ -137,7 +137,7 @@ export class ChatClient {
         // @ignoreCase  boolean
         // @cb          function: params =>
         //                      @err    string/null : error message or null if success
-        //                      @result Map         : Map of companies with walletAddress as eky
+        //                      @result Map         : Map of companies with walletAddress as key
         this.companySearch = (keyValues, matchExact, matchAll, ignoreCase, cb) => isFn(cb) && socket.emit(
             'company-search', keyValues, matchExact, matchAll, ignoreCase, (err, result) => cb(err, new Map(result))
         )

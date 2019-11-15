@@ -151,9 +151,11 @@ export class App extends ReactiveComponent {
 
 	unreadyRender() {
 		const { status } = this.state
+		const failedMsg = 'Connection failed! Please check your internet connection.'
+		const connectingMsg = 'Connecting to Totem blockchain network...'
 		return (
 			<Dimmer active style={{ height: '100%', position: 'fixed' }}>
-				{!!status.error ? 'Connection failed! Please check your internet connection.' : <Loader indeterminate>Connecting to Totem blockchain network...</Loader>}
+				{!!status.error ? failedMsg : <Loader indeterminate>{connectingMsg}</Loader>}
 			</Dimmer>
 		)
 	}
@@ -164,6 +166,7 @@ export class App extends ReactiveComponent {
 			sidebarVisible ? 'sidebar-visible' : '',
 			sidebarCollapsed ? 'sidebar-collapsed' : ''
 		].join(' ')
+
 		if (!this.resumed) {
 			this.resumed = true
 			setTimeout(() => resumeQueue(), 1000)
@@ -212,7 +215,13 @@ const sidebarItems = [
 		title: "Projects",
 		subHeader: "View and/or manage your projects"
 	},
-	{ icon: "clock outline", title: "Timekeeping", subHeader: "Manage timekeeping against projects and tasks. You can create projects and tasks for yourself, or others can assign them to you.", content: <TimeKeepingView />, active: true },
+	{
+		active: false,
+		content: <TimeKeepingView />,
+		icon: "clock outline",
+		subHeader: "Manage timekeeping against projects and tasks. You can create projects and tasks for yourself, or others can assign them to you.",
+		title: "Timekeeping",
+	},
 	{ icon: "lightbulb", title: "Products", subHeader: "" },
 	{
 		icon: "money bill alternate outline",
@@ -226,7 +235,7 @@ const sidebarItems = [
 		icon: "id badge outline",
 		title: "Identities",
 		subHeader: "Manage your Identity keys",
-		active: false,
+		active: true,
 		content: <IdentitiesView />
 	},
 	{

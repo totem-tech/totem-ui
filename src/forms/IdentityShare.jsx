@@ -21,7 +21,7 @@ export default class IdentityShareForm extends ReactiveComponent {
             success: false,
             inputs: [
                 {
-                    label: 'Identity',
+                    label: 'Partner to be shared',
                     name: 'address',
                     placeholder: 'Select an identity',
                     required: true,
@@ -31,7 +31,7 @@ export default class IdentityShareForm extends ReactiveComponent {
                     value: '',
                 },
                 {
-                    label: 'Custom Identity Name',
+                    label: 'Enter new partner name (will be seen by recipients)',
                     name: 'name',
                     placeholder: 'Enter a name to be shared',
                     required: false,
@@ -41,7 +41,7 @@ export default class IdentityShareForm extends ReactiveComponent {
                 {
                     allowAdditions: true,
                     clearable: true,
-                    label: 'Receiver(s)',
+                    label: 'Recipient(s)',
                     multiple: true,
                     name: 'userIds',
                     noResultsMessage: 'Type user ID and press enter to add',

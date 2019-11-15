@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { ss58Decode } from 'oo7-substrate'
-import FormBuilder, { findInput } from '../components/FormBuilder'
+import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import { deferred, isFn, isObj } from '../utils/utils'
 import client from '../services/ChatClient'
 import storage from '../services/storage'
@@ -13,7 +13,7 @@ class Company extends ReactiveComponent {
 
         this.handleSubmit = this.handleSubmit.bind(this)
 
-        const { walletAddress } = props
+        const { name, walletAddress } = props.values || {}
         this.state = {
             message: props.message || {},
             success: false,
@@ -33,7 +33,7 @@ class Company extends ReactiveComponent {
                     placeholder: 'Enter company name',
                     required: true,
                     type: 'text',
-                    value: ''
+                    value: name || ''
                 },
                 {
                     label: 'Registration Number',
@@ -85,11 +85,12 @@ class Company extends ReactiveComponent {
     }
 
     handleSubmit(e, values) {
-        const { onSubmit, walletAddress } = this.props
-        client.company(walletAddress, values, err => {
+        const { onSubmit } = this.props
+        client.company(values.walletAddress, values, err => {
             const success = !err
             const message = {
-                header: success ? 'Company added successfully' : err,
+                content: success ? 'Company added successfully' : err,
+                header: success ? 'Success' : 'Submission failed',
                 showIcon: true,
                 status: success ? 'success' : 'error'
             }
@@ -110,7 +111,12 @@ class Company extends ReactiveComponent {
     }
 }
 Company.propTypes = {
-    walletAddress: PropTypes.string.isRequired
+    values: PropTypes.shape({
+        country: PropTypes.string,
+        name: PropTypes.string,
+        registrationNumber: PropTypes.string,
+        walletAddress: PropTypes.string.isRequired
+    })
 }
 Company.defaultProps = {
     header: 'Add company',

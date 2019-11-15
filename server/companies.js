@@ -33,6 +33,8 @@ export const handleCompany = (walletAddress, company, callback) => {
 
     // make sure all the required keys are supplied
     if (requiredKeys.reduce((invalid, key) => invalid || !hasValue(company[key]), !walletAddress)) {
+        console.log({ walletAddress })
+        console.log({ company })
         return callback(messages.invalidKeys)
     }
 

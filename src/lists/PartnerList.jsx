@@ -23,16 +23,20 @@ export default class PartnerList extends ReactiveComponent {
 					{ collapsing: true, key: '_address', title: 'Address' },
 					{
 						content: ({ address, isPublic }) => (
-							<Checkbox
-								checked={isPublic}
-								toggle
-								onChange={(_, { checked }) => checked && showForm(CompanyForm, {
-									walletAddress: address,
-									onSubmit: (e, v, success) => success && addressbook.setPublic(address),
-									size: 'tiny',
-								})}
-								title='Click to make public'
-							/>
+							<div
+								title={isPublic ? 'Public company cannot be changed to private.' :
+									'Click to add a public company with this identity'}
+							>
+								<Checkbox
+									checked={isPublic}
+									toggle
+									onChange={(_, { checked }) => checked && showForm(CompanyForm, {
+										walletAddress: address,
+										onSubmit: (e, v, success) => success && addressbook.setPublic(address),
+										size: 'tiny',
+									})}
+								/>
+							</div>
 						),
 						collapsing: true,
 						textAlign: 'center',
@@ -50,7 +54,7 @@ export default class PartnerList extends ReactiveComponent {
 									<Button
 										icon='share'
 										onClick={() => showForm(IdentityShareForm, {
-											disabledFields: ['identity'],
+											disabledFields: ['address'],
 											header: 'Share Partner Identity',
 											includeOwnIdentities: false,
 											includePartners: true,
@@ -124,7 +128,7 @@ export default class PartnerList extends ReactiveComponent {
 			p._address = textEllipsis(address, 15, 3)
 			p._associatedIdentity = associatedIdentity && getAddressName(associatedIdentity)
 			p._name = textEllipsis(name, 25, 3, false)
-			p._tags = tags.map(tag => (
+			p._tags = (tags || []).map(tag => (
 				<Label key={tag} style={{ margin: 1, float: 'left', display: 'inline' }}>
 					{tag}
 				</Label>

@@ -49,7 +49,7 @@ export default class FormInput extends ReactiveComponent {
         const typeLower = (type || '').toLowerCase()
         const isCheck = ['checkbox', 'radio'].indexOf(typeLower) >= 0
         const hasVal = hasValue(isCheck ? checked : value)
-        let errMsg = !isCheck && required && !hasVal ? VALIDATION_MESSAGES.requiredField() : undefined
+        let errMsg //= !isCheck && required && !hasVal ? VALIDATION_MESSAGES.requiredField() : undefined
 
         if (hasVal && !errMsg) {
             switch (typeLower) {
@@ -107,6 +107,7 @@ export default class FormInput extends ReactiveComponent {
 
     render() {
         const { error, hidden, inline, label, message: externalMessage, required, styleContainer, type, useInput, width } = this.props
+        if (hidden) return ''
         const { message: internalMessage } = this.state
         const message = internalMessage || externalMessage
         let hideLabel = false
@@ -119,7 +120,7 @@ export default class FormInput extends ReactiveComponent {
         let isGroup = false
         const typeLC = type.toLowerCase()
 
-        switch (hidden ? 'hidden' : typeLC) {
+        switch (typeLC) {
             case 'accountidbond':
                 inputEl = <AccountIdBond {...attrs} />
                 break;
@@ -145,9 +146,6 @@ export default class FormInput extends ReactiveComponent {
             case 'group':
                 isGroup = true
                 inputEl = attrs.inputs.map((subInput, i) => <FormInput key={i} {...subInput} />)
-                break;
-            case 'hidden':
-                hideLabel = true
                 break;
             case 'inputbond':
                 if (isDefined(attrs.value)) {

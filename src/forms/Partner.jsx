@@ -1,14 +1,39 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { secretStore, ss58Decode } from 'oo7-substrate'
-import { deferred, isFn, isObj } from '../utils/utils'
+import { arrSort, deferred, isFn, isObj } from '../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import addressbook from '../services/partners'
 import client from '../services/ChatClient'
 import { showForm } from '../services/modal'
 import CompanyForm from './Company'
 import { getAddressName } from '../components/ProjectDropdown'
+
+const dropDownCustomSearch = (optionKeys = ['text']) => (options, searchQuery) => {
+    if (!options || options.length === 0) return []
+    const uniqueValues = {}
+    searchQuery = (searchQuery || '')
+        .toLowerCase().trim()
+    if (!searchQuery) return options
+    const search = key => {
+        const matches = options.map((option, i) => {
+            try {
+                // catches errors caused by the use of some special characters with .match() below
+                let x = (option[key] || '').toLowerCase().match(searchQuery)
+                if (!x || uniqueValues[options[i].value]) return
+                const matchIndex = x.index
+                uniqueValues[options[i].value] = 1
+                return { index: i, matchIndex }
+            } catch (e) {
+                return
+            }
+        }).filter(r => !!r)
+        return arrSort(matches, 'matchIndex').map(x => options[x.index])
+    }
+    return optionKeys.reduce((result, key) => result.concat(search(key)), [])
+}
 
 class Partner extends ReactiveComponent {
     constructor(props) {
@@ -17,7 +42,10 @@ class Partner extends ReactiveComponent {
         const partner = addressbook.get(props.values && props.values.address)
         this.doUpdate = !!partner
         const values = { ...partner, ...props.values }
+        const { address, name, visibility } = values
 
+        // placeholder to store user added address to the dropdown list
+        this.customAddresses = []
         this.state = {
             closeText: props.closeText,
             header: props.header || `${this.doUpdate ? 'Update' : 'Add'} partner`,
@@ -29,7 +57,99 @@ class Partner extends ReactiveComponent {
             values,
             inputs: [
                 {
-                    label: 'Name',
+                    inline: true,
+                    label: 'Partner Type',
+                    name: 'type',
+                    options: [
+                        { label: 'Personal', value: 'personal' },
+                        { label: 'Business', value: 'business' }
+                    ],
+                    radio: true,
+                    required: true,
+                    type: 'checkbox-group',
+                    value: 'personal'
+                },
+                {
+                    clearable: true,
+                    label: 'Associated Identity',
+                    name: 'associatedIdentity',
+                    options: [],
+                    placeholder: 'Select your identity',
+                    selection: true,
+                    search: true,
+                    type: 'dropdown',
+                },
+                {
+                    allowAdditions: false,
+                    additionLabel: 'Use ',
+                    clearable: true,
+                    hidden: this.doUpdate && visibility !== 'public',
+                    label: 'Company/Identity',
+                    name: 'address',
+                    options: !address ? [] : [{
+                        key: address + ' ' + name,
+                        text: name || address,
+                        value: address,
+                    }],
+                    placeholder: 'Enter company name or partner identity',
+                    required: true,
+                    search: dropDownCustomSearch(['key']),
+                    selection: true,
+                    type: 'dropdown',
+                    validate: this.validateAddress,
+                    onAddItem: (_, { value }) => {
+                        if (this.customAddresses.includes(value)) return
+                        const { inputs } = this.state
+                        findInput(inputs, 'address').options.push({
+                            key: value,
+                            text: value,
+                            value,
+                        })
+                        this.setState({ inputs })
+                    },
+                    onChange: this.handleAddressChange.bind(this),
+                    onSearchChange: deferred((_, { searchQuery }) => {
+                        if (!searchQuery) return
+                        const isValidAddress = !!ss58Decode(searchQuery)
+                        const { inputs } = this.state
+                        const companyIn = findInput(inputs, 'address')
+                        companyIn.allowAdditions = false
+                        const handleResult = (err, companies) => {
+                            companyIn.options = err ? [] : Array.from(companies).map(([address, company]) => {
+                                return {
+                                    company, // keep
+                                    key: [...Object.keys(company).map(k => company[k]), address].join(' '), // also used for searching
+                                    description: `${company.country} | ${getAddressName(address)}`,
+                                    text: company.name,
+                                    // searchableStr: ,
+                                    value: address,
+                                }
+                            })
+                            companyIn.message = !err ? null : { content: err, status: 'error' }
+                            this.setState({ inputs })
+                        }
+                        const searchCompany = () => {
+                            const query = {
+                                country: searchQuery,
+                                name: searchQuery,
+                                registrationNumber: searchQuery,
+                            }
+                            client.companySearch(query, false, false, true, handleResult)
+                        }
+                        !isValidAddress ? searchCompany() : client.company(searchQuery, null, (err, company) => {
+                            if (!err && isObj(company)) {
+                                // searchQuery is exact match for a company wallet address
+                                return handleResult(null, new Map([[searchQuery, company]]))
+                            }
+                            // valid address but not a company >> allow user to add as option
+                            companyIn.allowAdditions = true
+                            companyIn.options = []
+                            this.setState({ inputs })
+                        })
+                    }, 300, this),
+                },
+                {
+                    label: 'Partner Name',
                     name: 'name',
                     placeholder: 'A name for this address',
                     required: true,
@@ -43,55 +163,18 @@ class Partner extends ReactiveComponent {
                     value: '',
                 },
                 {
-                    label: 'Identity',
-                    minLength: 48,
-                    maxLength: 48,
-                    name: 'address',
-                    onChange: deferred((e, { address }) => this.checkVisibility(address), 300, this),
-                    placeholder: 'Enter an address',
-                    readOnly: this.doUpdate,
-                    required: true,
-                    type: 'text',
-                    validate: this.validateAddress,
-                    value: '',
-                },
-                {
-                    clearable: true,
-                    label: 'Or Select A Public Company',
-                    name: 'companyAddress',
-                    options: [],
-                    onChange: (e, { companyAddress: cAddr }, i) => {
-                        const { inputs } = this.state
-                        const addressIn = findInput(inputs, 'address')
-                        const nameIn = findInput(inputs, 'name')
-                        findInput(inputs, 'visibility').hidden = !!cAddr
-                        addressIn.disabled = !!cAddr
-                        addressIn.required = !cAddr
-                        addressIn.value = cAddr
-                        nameIn.required = !cAddr
-                        nameIn.label = cAddr ? 'Custom Name' : 'Name'
-                        this.setState({ inputs })
-                    },
-                    onSearchChange: deferred((_, { searchQuery }) => {
-                        client.companySearch({ name: searchQuery }, false, false, true, (err, companies) => {
-                            const { inputs } = this.state
-                            const companyIn = findInput(inputs, 'companyAddress')
-                            companyIn.options = err ? [] : Array.from(companies).map(([address, company]) => ({
-                                company,
-                                key: address, // also used for searching
-                                description: `${company.country} | ${getAddressName(address)}`,
-                                text: company.name,
-                                value: address,
-                            }))
-                            companyIn.message = !err ? null : { content: err, status: 'error' }
-                            return this.setState({ inputs })
-                        })
-                    }, 300, this),
-                    placeholder: 'Enter company name',
-                    search: true,
-                    selection: true,
-                    type: 'dropdown',
-                    validate: this.validateAddress,
+                    bond: new Bond(),
+                    disabled: false, // only disable when company address selected
+                    inline: true,
+                    label: 'Partner Visibility',
+                    name: 'visibility',
+                    options: [
+                        { label: 'Private', value: 'private' },
+                        { label: 'Public', value: 'public' }
+                    ],
+                    radio: true,
+                    type: 'checkbox-group',
+                    value: values.visibility || 'private'
                 },
                 {
                     allowAdditions: true,
@@ -112,32 +195,6 @@ class Partner extends ReactiveComponent {
                     value: values.tags || []
                 },
                 {
-                    inline: true,
-                    label: 'Type Of Partner',
-                    name: 'type',
-                    options: [
-                        { label: 'Personal', value: 'personal' },
-                        { label: 'Business', value: 'business' }
-                    ],
-                    radio: true,
-                    required: true,
-                    type: 'checkbox-group',
-                    value: 'personal'
-                },
-                {
-                    inline: true,
-                    label: 'Partner Visibility',
-                    name: 'visibility',
-                    options: [
-                        { label: 'Private', value: 'private' },
-                        { label: 'Public', value: 'public' }
-                    ],
-                    radio: true,
-                    required: true,
-                    type: 'checkbox-group',
-                    value: values.visibility || 'private'
-                },
-                {
                     icon: 'at',
                     iconPosition: 'left',
                     label: 'User ID',
@@ -149,16 +206,6 @@ class Partner extends ReactiveComponent {
                     type: 'text',
                     value: '',
                 },
-                {
-                    clearable: true,
-                    label: 'Associated Identity',
-                    name: 'associatedIdentity',
-                    options: [],
-                    placeholder: 'Select your identity',
-                    selection: true,
-                    search: true,
-                    type: 'dropdown',
-                }
             ]
         }
 
@@ -178,29 +225,31 @@ class Partner extends ReactiveComponent {
     }
 
     checkVisibility(address) {
+        if (!address) return
         const { inputs, values } = this.state
         const addressIn = findInput(inputs, 'address')
-        const visibility = inputs.find(x => x.name === 'visibility')
-        addressIn.loading = true
+        addressIn.loading = !!address
         this.setState({ inputs })
 
         // check if address is aleady public
         client.company(address, null, (_, company) => {
             addressIn.loading = false
-            const isPublic = isObj(company)
-            if (isPublic) {
-                visibility.disabled = true
-                // visibility.value = 'public'
-                // values.visibility = 'public'
-                visibility.message = {
-                    content: 'Address is already publicly shared as company named: ' + company.name,
-                    status: 'warning'
-                }
-            }
+            findInput(inputs, 'visibility').hidden = !!company
+            findInput(inputs, 'name').hidden = !!company
+
             // make sure addressbook is also updated
-            this.doUpdate && isPublic && addressbook.setPublic(address)
+            this.doUpdate && company && addressbook.setPublic(address)
             this.setState({ inputs, values })
         })
+    }
+
+    handleAddressChange(e, { address }, i) {
+        const { inputs } = this.state
+        const nameIn = findInput(inputs, 'name')
+        const { company } = inputs[i].options.find(x => x.value === address) || {}
+        findInput(inputs, 'visibility').hidden = !!company
+        nameIn.hidden = !!company
+        this.setState({ inputs })
     }
 
     handleAddTag(_, data) {
@@ -216,18 +265,18 @@ class Partner extends ReactiveComponent {
     handleSubmit() {
         const { closeOnSubmit, onSubmit } = this.props
         const { inputs, values } = this.state
-        const { companyAddress: cAddr } = values
-        const companyExists = inputs.find(x => x.name === 'visibility').disabled
-        if (!!cAddr || companyExists) {
-            values.address = cAddr || values.address
-            values.visibility = 'public'
-            values.name = values.name || (
-                findInput(inputs, 'companyAddress').options.find(x => x.value === cAddr).company.name
-            )
+        const { company } = findInput(inputs, 'address').options.find(x => x.value === values.address) || {}
+        const visibilityIn = findInput(inputs, 'visibility')
+        const visibilityDisabled = visibilityIn.disabled || visibilityIn.hidden
+        const companyExists = !!company || visibilityDisabled
+        let { associatedIdentity, name, address, tags, type, userId, visibility } = values
+        if (!!companyExists) {
+            name = company && company.name || name
+            visibility = 'public'
         }
-        const { associatedIdentity, name, address, tags, type, userId, visibility } = values
+        const addCompany = !visibilityDisabled && visibility === 'public' && !company
 
-        addressbook.set(address, name, tags, type, userId, visibility, associatedIdentity)
+        addressbook.set(address, name, tags, type, userId, addCompany ? 'private' : visibility, associatedIdentity)
         this.setState({
             closeText: 'Close',
             message: closeOnSubmit ? null : {
@@ -237,9 +286,9 @@ class Partner extends ReactiveComponent {
             },
             success: true,
         })
+
         // Open add partner form
         isFn(onSubmit) && onSubmit(true, values)
-        const addCompany = visibility === 'public' && !companyExists
         addCompany && showForm(CompanyForm, {
             message: {
                 header: `Partner ${this.doUpdate ? 'updated' : 'added'} successfully`,
@@ -250,7 +299,10 @@ class Partner extends ReactiveComponent {
             },
             onSubmit: (e, v, success) => success && addressbook.setPublic(address),
             size: 'tiny',
-            walletAddress: address,
+            values: {
+                name,
+                walletAddress: address,
+            }
         })
     }
 

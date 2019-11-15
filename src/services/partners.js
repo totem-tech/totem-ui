@@ -11,6 +11,8 @@ updateBond()
 const set = (address, name, tags, type, userId, visibility, associatedIdentity) => {
     name = name.trim()
     address = address.trim()
+    tags = tags || []
+    type = type || 'personal'
     if (!name || !address) return
     partners.set(address, {
         address, name, tags, type, userId, visibility, associatedIdentity, isPublic: visibility === 'public'
