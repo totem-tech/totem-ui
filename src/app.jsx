@@ -195,7 +195,7 @@ const sidebarItems = [
 	{
 		icon: "users", title: "Partners",
 		header: "Vendors and Customers",
-		subHeader: "Inspect the status of any account and name it for later use",
+		subHeader: "Store, manage, request and share partner identities",
 		active: true,
 		content: <PartnerList />
 	},
@@ -243,7 +243,7 @@ const sidebarItems = [
 		icon: "stethoscope",
 		title: "Utilities",
 		subHeader: "Blockchain utilities",
-		subHeaderDetails: 'This is a sample detailed subheader',
+		// subHeaderDetails: 'This is a sample detailed subheader', // for extra information that extends subHeader
 		content: <UtilitiesView />
 	},
 	{ icon: "cogs", title: "Settings", subHeader: "" }
