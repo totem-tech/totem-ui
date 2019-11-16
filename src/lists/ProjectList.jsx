@@ -300,6 +300,7 @@ class ProjectList extends ReactiveComponent {
             // ownerAddress: 'Owner Address',
             description: 'Description of Project',
             // status: 'Status Code',
+            totalTime: 'Total Time',
             _statusText: 'Project Status',
             _tsFirstUsed: 'Project First Used',
             hash: 'Project Unique ID'

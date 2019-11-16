@@ -39,7 +39,7 @@ class Project extends ReactiveComponent {
                 },
                 {
                     disabled: !!props.hash,
-                    label: 'Owner Address',
+                    label: 'Select a Project Owner Identity',
                     name: 'ownerAddress',
                     onChange: (_, values) => {
                         const { hash, project } = this.props
@@ -57,11 +57,11 @@ class Project extends ReactiveComponent {
                     value: props.hash ? undefined : selectedWallet
                 },
                 {
-                    label: 'Description',
+                    label: 'Project Description',
                     name: 'description',
                     maxLength: 160,
                     type: 'textarea',
-                    placeholder: 'Enter short description.... (max 160 characters)',
+                    placeholder: 'Enter short description of the project... (max 160 characters)',
                     required: true,
                 }
             ]
@@ -82,7 +82,7 @@ class Project extends ReactiveComponent {
         const { name: projectName, ownerAddress } = values
         let message = {
             content: `Your project will be ${create ? 'created' : 'updated'} shortly. 
-                You will received toast messages notifying you of progress. 
+                You will received  messages notifying you of progress. 
                 You may close the dialog now.`,
             header: `Project  ${create ? 'creation' : 'update'} has been queued`,
             status: 'success',
@@ -211,7 +211,7 @@ function checkBalance(address, inputName) {
 
     if (!wallet) {
         inputs[index].message = {
-            header: 'Address does not belong to you!',
+            header: 'This Identity does not belong to you!',
             showIcon: true,
             status: 'error'
         }
@@ -219,7 +219,7 @@ function checkBalance(address, inputName) {
         return this.setState({ inputs })
     }
     inputs[index].message = {
-        content: 'Checking balance....',
+        content: 'Checking balance...',
         showIcon: true,
         status: 'loading'
     }
@@ -229,9 +229,8 @@ function checkBalance(address, inputName) {
         const notEnought = balance <= minBalance
         inputs[index].invalid = notEnought
         inputs[index].message = !notEnought ? {} : {
-            content: `You must have more than ${minBalance} Transactions balance 
-                    in the wallet named "${wallet.name}". 
-                    This is requied to create a blockchain transaction.`,
+            content: `"${wallet.name}" must have more than ${minBalance} Transactions balance 
+                    to be able to create an entry on the Totem blockchain.`,
             header: 'Insufficient balance',
             status: 'error',
             showIcon: true
@@ -269,7 +268,7 @@ export class ReassignProjectForm extends ReactiveComponent {
                 },
                 {
                     disabled: true,
-                    label: 'Current Owner',
+                    label: 'Current Project Owner',
                     name: 'ownerAddress',
                     required: true,
                     search: true,
@@ -278,10 +277,10 @@ export class ReassignProjectForm extends ReactiveComponent {
                     value: props.project.ownerAddress
                 },
                 {
-                    label: 'New Owner',
+                    label: 'New Project Owner',
                     name: 'newOwnerAddress',
                     onChange: this.handleNewOwnerChange,
-                    placeholder: 'Select owner',
+                    placeholder: 'Select partner',
                     search: true,
                     selection: true,
                     required: true,
@@ -322,7 +321,7 @@ export class ReassignProjectForm extends ReactiveComponent {
         const proceed = () => addToQueue(task) | this.setState({
             message: {
                 header: 'Re-assign request added to queue',
-                content: 'Your request has been added to queue. ',
+                content: 'Your request to reassign the project has been added to queue. ',
                 status: 'success',
                 showIcon: true
             },
@@ -332,9 +331,9 @@ export class ReassignProjectForm extends ReactiveComponent {
         !!walletExists ? proceed() : confirm({
             cancelButton: { content: 'Cancel', color: 'green' },
             confirmButton: { content: 'Proceed', negative: true },
-            content: 'You are about to assign owner of this project to an address that does not belong to you.'
+            content: 'You are about to assign the ownership of this project to an Identity that does not belong to you.'
                 + ' If you proceed, you will no longer be able to update this project.',
-            header: 'Are you sure?',
+            header: 'Are you sure you want to reassign this project?',
             onConfirm: () => proceed(),
             size: 'tiny'
         })
