@@ -2,8 +2,8 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
 
-export const ButtonAcceptOrReject = ({ onClick, acceptText, rejectText }) => (
-    <div title="" style={{ textAlign: 'center', marginTop: 10 }}>
+export const ButtonAcceptOrReject = ({ onClick, acceptText, rejectText, style }) => (
+    <div title="" style={style || { textAlign: 'center', marginTop: 10 }}>
         <Button.Group>
             <Button positive onClick={(e) => e.stopPropagation() | onClick(true)}>
                 {acceptText}

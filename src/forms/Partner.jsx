@@ -216,11 +216,14 @@ class Partner extends ReactiveComponent {
     componentWillMount() {
         const { inputs } = this.state
         const assocIn = findInput(inputs, 'associatedIdentity')
-        assocIn.options = secretStore()._keys.map(({ name, address }) => ({
-            key: address,
-            text: name,
-            value: address,
-        }))
+        assocIn.options = arrSort(
+            secretStore()._keys.map(({ name, address }) => ({
+                key: address,
+                text: name,
+                value: address,
+            })),
+            'text'
+        )
         this.setState({ inputs })
     }
 

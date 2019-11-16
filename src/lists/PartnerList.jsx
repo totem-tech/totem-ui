@@ -1,6 +1,7 @@
 import React from 'react'
-import { Checkbox, Button, Label } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
+import { Checkbox, Button, Label } from 'semantic-ui-react'
+import { ButtonAcceptOrReject } from '../components/buttons'
 import { textEllipsis } from '../utils/utils'
 import { confirm, showForm } from '../services/modal'
 import ListFactory from '../components/ListFactory'
@@ -31,7 +32,7 @@ export default class PartnerList extends ReactiveComponent {
 									checked={isPublic}
 									toggle
 									onChange={(_, { checked }) => checked && showForm(CompanyForm, {
-										walletAddress: address,
+										values: { walletAddress: address },
 										onSubmit: (e, v, success) => success && addressbook.setPublic(address),
 										size: 'tiny',
 									})}
@@ -87,24 +88,16 @@ export default class PartnerList extends ReactiveComponent {
 				data: new Map(),
 				defaultSort: 'name',
 				emptyMessage: {},
-				searchExtraKeys: ['_public', '_tagsStr'],
+				searchExtraKeys: ['_associatedIdentity', '_tagsStr', 'address', 'name', 'visibility'],
 				searchable: true,
 				topLeftMenu: [
-					{
-						active: false,
-						content: 'Add',
-						icon: 'plus',
-						name: 'create',
-						onClick: () => showForm(PartnerForm, { size: 'tiny' })
-					},
-					{
-						active: false,
-						content: 'Request',
-						icon: 'user plus',
-						name: 'create',
-						onClick: () => showForm(IdentityRequestForm, { size: 'tiny' }),
-						title: 'Request identity from other users',
-					}
+					(
+						<Button.Group key='0'>
+							<Button icon='plus' content='Add' onClick={() => showForm(PartnerForm)} />
+							<Button.Or />
+							<Button content='Request' onClick={() => showForm(IdentityRequestForm)} />
+						</Button.Group>
+					)
 				],
 				type: 'DataTable'
 			}
@@ -124,7 +117,7 @@ export default class PartnerList extends ReactiveComponent {
 		listProps.data = addressbook.getAll()
 
 		Array.from(listProps.data).forEach(([_, p]) => {
-			const { associatedIdentity, address, name, isPublic, tags } = p
+			const { associatedIdentity, address, name, tags } = p
 			p._address = textEllipsis(address, 15, 3)
 			p._associatedIdentity = associatedIdentity && getAddressName(associatedIdentity)
 			p._name = textEllipsis(name, 25, 3, false)
@@ -135,8 +128,6 @@ export default class PartnerList extends ReactiveComponent {
 			))
 			// makes tags searchable
 			p._tagsStr = tags.join(' ')
-			// makes public/private text searchable
-			p._public = isPublic ? 'public' : 'private'
 		})
 		this.setState({ listProps })
 	}

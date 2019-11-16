@@ -22,7 +22,7 @@ class Company extends ReactiveComponent {
                     label: 'Identity',
                     name: 'walletAddress',
                     onChange: deferred((_, { walletAddress }) => this.checkCompany(walletAddress), 300),
-                    readOnly: true,
+                    readOnly: !!walletAddress,
                     type: 'text',
                     validate: (e, { value }) => !ss58Decode(value) ? 'Please enter a valid address' : null,
                     value: walletAddress || ''
