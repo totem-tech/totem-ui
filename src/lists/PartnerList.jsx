@@ -1,7 +1,7 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import { Checkbox, Button, Label } from 'semantic-ui-react'
-import { ButtonAcceptOrReject } from '../components/buttons'
+// import { ButtonAcceptOrReject } from '../components/buttons'
 import { textEllipsis } from '../utils/utils'
 import { confirm, showForm } from '../services/modal'
 import ListFactory from '../components/ListFactory'
@@ -21,12 +21,12 @@ export default class PartnerList extends ReactiveComponent {
 				columns: [
 					{ collapsing: true, key: 'type', title: 'Type' },
 					{ key: '_name', title: 'Name' },
-					{ collapsing: true, key: '_address', title: 'Address' },
+					// { collapsing: true, key: '_address', title: 'Address' },
 					{
 						content: ({ address, isPublic }) => (
 							<div
-								title={isPublic ? 'Public company cannot be changed to private.' :
-									'Click to add a public company with this identity'}
+								title={isPublic ? 'A public company cannot be changed to private.' :
+									'Click to add a company with this identity to the public database'}
 							>
 								<Checkbox
 									checked={isPublic}
@@ -34,7 +34,7 @@ export default class PartnerList extends ReactiveComponent {
 									onChange={(_, { checked }) => checked && showForm(CompanyForm, {
 										values: { walletAddress: address },
 										onSubmit: (e, v, success) => success && addressbook.setPublic(address),
-										size: 'tiny',
+										size: 'mini',
 									})}
 								/>
 							</div>
@@ -44,7 +44,7 @@ export default class PartnerList extends ReactiveComponent {
 						title: 'Public'
 					},
 					{ key: '_tags', title: 'Tags' },
-					{ key: '_associatedIdentity', title: 'Associated With', style: { maxWidth: 200 } },
+					{ key: '_associatedIdentity', title: 'Used by', style: { maxWidth: 200 } },
 					{
 						collapsing: true,
 						title: 'Actions',
@@ -56,29 +56,29 @@ export default class PartnerList extends ReactiveComponent {
 										icon='share'
 										onClick={() => showForm(IdentityShareForm, {
 											disabledFields: ['address'],
-											header: 'Share Partner Identity',
+											header: 'Share Partner details',
 											includeOwnIdentities: false,
 											includePartners: true,
 											size: 'tiny',
 											values: { address, name },
 										})}
-										title='Share partner'
+										title='Share'
 									/>
 									<Button
 										icon='pencil'
 										onClick={() => showForm(PartnerForm, { index, values: partner, size: 'tiny' })}
-										title='Update partner'
+										title='Update'
 									/>
 									<Button
 										icon='close'
 										onClick={() => confirm({
 											confirmButton: <Button negative content="Delete" />,
 											content: <p>Partner name: <b>{name}</b></p>,
-											header: 'Delete partner?',
+											header: 'Are you sure you want to delete this partner?',
 											onConfirm: () => addressbook.remove(address),
 											size: 'mini',
 										})}
-										title="Delete partner"
+										title="Delete"
 									/>
 								</React.Fragment>
 							)

@@ -58,7 +58,7 @@ class Partner extends ReactiveComponent {
             inputs: [
                 {
                     inline: true,
-                    label: 'Partner Type',
+                    label: 'Partner Usage Type',
                     name: 'type',
                     options: [
                         { label: 'Personal', value: 'personal' },
@@ -70,28 +70,18 @@ class Partner extends ReactiveComponent {
                     value: 'personal'
                 },
                 {
-                    clearable: true,
-                    label: 'Associated Identity',
-                    name: 'associatedIdentity',
-                    options: [],
-                    placeholder: 'Select your identity',
-                    selection: true,
-                    search: true,
-                    type: 'dropdown',
-                },
-                {
                     allowAdditions: false,
                     additionLabel: 'Use ',
                     clearable: true,
                     hidden: this.doUpdate && visibility !== 'public',
-                    label: 'Company/Identity',
+                    label: 'Search for Company or Identity',
                     name: 'address',
                     options: !address ? [] : [{
                         key: address + ' ' + name,
                         text: name || address,
                         value: address,
                     }],
-                    placeholder: 'Enter company name or partner identity',
+                    placeholder: 'Search by company details or identity',
                     required: true,
                     search: dropDownCustomSearch(['key']),
                     selection: true,
@@ -149,38 +139,34 @@ class Partner extends ReactiveComponent {
                     }, 300, this),
                 },
                 {
-                    label: 'Partner Name',
+                    label: 'Enter Partner Name',
                     name: 'name',
-                    placeholder: 'A name for this address',
+                    placeholder: 'Enter a name for this partner',
                     required: true,
                     type: 'text',
                     validate: (e, { value: name }) => {
                         const { values: oldValues } = this.props
                         name = name.trim()
                         if (this.doUpdate && isObj(oldValues) && oldValues.name === name) return
-                        if (addressbook.getByName(name)) return 'Please choose an unique partner name'
+                        if (addressbook.getByName(name)) return 'Please choose an unique partner name.'
                     },
                     value: '',
                 },
                 {
-                    bond: new Bond(),
-                    disabled: false, // only disable when company address selected
-                    inline: true,
-                    label: 'Partner Visibility',
-                    name: 'visibility',
-                    options: [
-                        { label: 'Private', value: 'private' },
-                        { label: 'Public', value: 'public' }
-                    ],
-                    radio: true,
-                    type: 'checkbox-group',
-                    value: values.visibility || 'private'
+                    clearable: true,
+                    label: 'Associated with your identity',
+                    name: 'associatedIdentity',
+                    options: [],
+                    placeholder: 'Select one of your identities',
+                    selection: true,
+                    search: true,
+                    type: 'dropdown',
                 },
                 {
                     allowAdditions: true,
                     label: 'Tags',
                     name: 'tags',
-                    noResultsMessage: 'Type tag and press enter to add',
+                    noResultsMessage: 'Enter tag and press enter to add, to tags list.',
                     multiple: true,
                     onAddItem: this.handleAddTag.bind(this),
                     options: (values.tags || []).map(tag => ({
@@ -195,14 +181,28 @@ class Partner extends ReactiveComponent {
                     value: values.tags || []
                 },
                 {
+                    bond: new Bond(),
+                    disabled: false, // only disable when company address selected
+                    inline: true,
+                    label: 'Decide Partner Visibility (on the network)',
+                    name: 'visibility',
+                    options: [
+                        { label: 'Private', value: 'private' },
+                        { label: 'Public', value: 'public' }
+                    ],
+                    radio: true,
+                    type: 'checkbox-group',
+                    value: values.visibility || 'private'
+                },
+                {
                     icon: 'at',
                     iconPosition: 'left',
-                    label: 'User ID',
+                    label: 'User ID for this partner',
                     maxLength: 16,
                     minLength: 3,
                     name: 'userId',
                     onChange: deferred(this.handleUserIDChange, 300, this),
-                    placeholder: 'Enter partner User ID',
+                    placeholder: 'Enter User ID for this partner.',
                     type: 'text',
                     value: '',
                 },
@@ -295,8 +295,8 @@ class Partner extends ReactiveComponent {
         addCompany && showForm(CompanyForm, {
             message: {
                 header: `Partner ${this.doUpdate ? 'updated' : 'added'} successfully`,
-                content: `You have chosen to make your partner public. 
-                    Please fill up the form to proceed or click cancel to return.`,
+                content: `You have chosen to make your partner public. Please ensure you  
+                    fill in the correct details. Click cancel to abort making public.`,
                 showIcon: true,
                 status: 'success'
             },
@@ -332,7 +332,7 @@ class Partner extends ReactiveComponent {
         if (!address) return
         const partner = addressbook.get(address)
         if (partner) return `Partner already exists with name "${partner.name}"`
-        if (!ss58Decode(address)) return 'Please enter a valid address'
+        if (!ss58Decode(address)) return 'Please enter a valid identity'
     }
 
     render() {
