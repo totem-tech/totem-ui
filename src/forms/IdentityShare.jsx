@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { secretStore } from 'oo7-substrate'
-import { isFn } from '../utils/utils'
+import { isFn, isObj } from '../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import { handleAddUser } from './IdentityRequest'
 import addressbook from '../services/partners'
@@ -61,7 +61,7 @@ export default class IdentityShareForm extends ReactiveComponent {
     componentWillMount() {
         // prefill and disable fields 
         const { disabledFields, includePartners, includeOwnIdentities, values } = this.props
-        const { userIds } = values
+        const { address, userIds } = values
         const { inputs } = this.state
         const identityIn = findInput(inputs, 'address')
         // add identity options
@@ -80,7 +80,6 @@ export default class IdentityShareForm extends ReactiveComponent {
                     text: name,
                     value: address
                 })))
-
         }
         if (includePartners) {
             identityIn.options.push(
@@ -97,7 +96,6 @@ export default class IdentityShareForm extends ReactiveComponent {
                     value: address
                 }))
             )
-
         }
 
         // disable fields
@@ -113,6 +111,15 @@ export default class IdentityShareForm extends ReactiveComponent {
         // prefill values
         fillValues(inputs, values)
         this.setState({ inputs })
+
+        if (!address) return
+        // hide name input if public company is being shared
+        identityIn.loading = true
+        client.company(address, null, (_, company) => {
+            identityIn.loading = false
+            if (isObj(company)) findInput(inputs, 'name').hidden = true
+            this.setState({ inputs })
+        })
     }
 
     handleSubmit(e, values) {

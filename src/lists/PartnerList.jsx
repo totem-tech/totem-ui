@@ -2,7 +2,7 @@ import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import { Checkbox, Button, Label } from 'semantic-ui-react'
 // import { ButtonAcceptOrReject } from '../components/buttons'
-import { textEllipsis } from '../utils/utils'
+import { textEllipsis, IfMobile } from '../utils/utils'
 import { confirm, showForm } from '../services/modal'
 import ListFactory from '../components/ListFactory'
 import addressbook from '../services/partners'
@@ -50,42 +50,7 @@ export default class PartnerList extends ReactiveComponent {
 					{
 						collapsing: true,
 						title: 'Edit',
-						content: (partner, index) => {
-							const { address, name } = partner
-							return (
-								<React.Fragment>
-									<Button
-										icon='share'
-										onClick={() => showForm(IdentityShareForm, {
-											disabledFields: ['address'],
-											header: 'Share Partner Identity',
-											subheader: 'Share a Partner with one or more Totem users',
-											includeOwnIdentities: false,
-											includePartners: true,
-											size: 'tiny',
-											values: { address, name },
-										})}
-										title='Share'
-									/>
-									<Button
-										icon='pencil'
-										onClick={() => showForm(PartnerForm, { index, values: partner, size: 'tiny' })}
-										title='Update'
-									/>
-									<Button
-										icon='close'
-										onClick={() => confirm({
-											confirmButton: <Button negative content="Remove" />,
-											content: <p>Partner name: <b>{name}</b></p>,
-											header: 'Are you sure you want to remove this partner from your list?',
-											onConfirm: () => addressbook.remove(address),
-											size: 'mini',
-										})}
-										title="Delete"
-									/>
-								</React.Fragment>
-							)
-						},
+						content: this.getActions.bind(this),
 					}
 				],
 				data: new Map(),
@@ -93,15 +58,7 @@ export default class PartnerList extends ReactiveComponent {
 				emptyMessage: {},
 				searchExtraKeys: ['_associatedIdentity', '_tagsStr', 'address', 'name', 'visibility'],
 				searchable: true,
-				topLeftMenu: [
-					(
-						<Button.Group key='0'>
-							<Button icon='plus' content='Add' onClick={() => showForm(PartnerForm)} />
-							<Button.Or />
-							<Button content='Request' onClick={() => showForm(IdentityRequestForm)} />
-						</Button.Group>
-					)
-				],
+				topLeftMenu: [],
 				type: 'DataTable'
 			}
 		}
@@ -113,6 +70,44 @@ export default class PartnerList extends ReactiveComponent {
 
 	componentWillUnmount() {
 		addressbook.getBond().untie(this.tieId)
+	}
+
+	getActions(partner) {
+		const { address, name } = partner
+		return (
+			<React.Fragment>
+				<Button
+					icon='share'
+					onClick={() => showForm(IdentityShareForm, {
+						disabledFields: ['address'],
+						header: 'Share Partner Identity',
+						subheader: 'Share a Partner with one or more Totem users',
+						includeOwnIdentities: false,
+						includePartners: true,
+						size: 'tiny',
+						values: { address, name },
+					})}
+					title='Share'
+				/>
+				<Button
+					icon='pencil'
+					onClick={() => showForm(PartnerForm, { values: partner, size: 'tiny' })}
+					title='Update'
+				/>
+				<Button
+					icon='close'
+					onClick={() => confirm({
+						confirmButton: <Button negative content="Remove" />,
+						content: <p>Partner name: <b>{name}</b></p>,
+						header: 'Remove Partner',
+						subheader: 'Are you sure you want to remove this partner from your list?',
+						onConfirm: () => addressbook.remove(address),
+						size: 'mini',
+					})}
+					title="Delete"
+				/>
+			</React.Fragment>
+		)
 	}
 
 	getPartners() {
@@ -135,7 +130,22 @@ export default class PartnerList extends ReactiveComponent {
 		this.setState({ listProps })
 	}
 
+	getContent(mobile) {
+		const { listProps } = this.state
+		listProps.topLeftMenu = [
+			(
+				<Button.Group fluid={mobile} key='0'>
+					<Button icon='plus' content='Add' onClick={() => showForm(PartnerForm)} />
+					<Button.Or />
+					<Button content='Request' onClick={() => showForm(IdentityRequestForm)} />
+				</Button.Group>
+			)
+		]
+		return <ListFactory {...listProps} />
+	}
+
 	render() {
-		return <ListFactory {...this.state.listProps} />
+
+		return <IfMobile then={() => this.getContent(true)} else={() => this.getContent(false)} />
 	}
 }

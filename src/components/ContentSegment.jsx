@@ -1,13 +1,13 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {ReactiveComponent, If} from 'oo7-react'
+import { ReactiveComponent, If } from 'oo7-react'
 import { runtimeUp } from 'oo7-substrate'
 import { Divider, Header, Icon, Placeholder, Rail, Segment } from 'semantic-ui-react'
 import { isFn } from '../utils/utils'
 
 class ContentSegment extends ReactiveComponent {
 	constructor(props) {
-		super(props, {ensureRuntimeUp: runtimeUp})
+		super(props, { ensureRuntimeUp: runtimeUp })
 		this.state = {
 			showSubHeader: false
 		}
@@ -15,7 +15,7 @@ class ContentSegment extends ReactiveComponent {
 	}
 
 	toggleSubHeader() {
-		this.setState({showSubHeader: !this.state.showSubHeader})
+		this.setState({ showSubHeader: !this.state.showSubHeader })
 	}
 
 	render() {
@@ -57,12 +57,12 @@ class ContentSegment extends ReactiveComponent {
 			>
 				{isFn(onClose) && (
 					<Rail internal position='right' close style={styles.closeButtonRail}>
-						<Icon 
-							link 
-							name='times circle outline' 
-							color="grey" 
-							size="mini" 
-							onClick={() => onClose(index)} 
+						<Icon
+							link
+							name='times circle outline'
+							color="grey"
+							size="mini"
+							onClick={() => onClose(index)}
 						/>
 					</Rail>
 				)}
@@ -73,25 +73,27 @@ class ContentSegment extends ReactiveComponent {
 						<Header.Content>
 							<div>
 								{headerText}
-								{showSubHeader && (
-									<Icon 
-										link 
-										name='question circle outline' 
-										color="grey" 
-										size="small" 
-										onClick={this.toggleSubHeader} 
+								{subHeader && (
+									<Icon
+										link
+										name='question circle outline'
+										color="grey"
+										size="small"
+										onClick={this.toggleSubHeader}
 									/>
 								)}
 							</div>
 						</Header.Content>
-						{subHeaderDetails && (
+						{showSubHeader && (
 							<React.Fragment>
 								<Header.Subheader style={styles.subHeader}>
 									{subHeader}
 								</Header.Subheader>
-								<div style={styles.subHeaderDetails}>
-									{subHeaderDetails}
-								</div>
+								{subHeaderDetails && (
+									<div style={styles.subHeaderDetails}>
+										{subHeaderDetails}
+									</div>
+								)}
 							</React.Fragment>
 						)}
 					</Header>
@@ -105,7 +107,7 @@ class ContentSegment extends ReactiveComponent {
 			</Segment>
 		)
 	}
-} 
+}
 
 export default ContentSegment
 
@@ -125,12 +127,12 @@ ContentSegment.propTypes = {
 	headerDividerHidden: PropTypes.bool,
 	headerInverted: PropTypes.bool,
 	headerTag: PropTypes.string,
-	icon:  PropTypes.string,
+	icon: PropTypes.string,
 	index: PropTypes.number,
-	inverted:  PropTypes.bool,
+	inverted: PropTypes.bool,
 	subHeader: PropTypes.string,
 	style: PropTypes.object,
-	title:  PropTypes.string,
+	title: PropTypes.string,
 	vertical: PropTypes.bool
 }
 
@@ -142,25 +144,25 @@ ContentSegment.defaultProps = {
 	headerTag: 'h2',
 	index: 0,
 	style: {
-		borderRadius: 2 
+		borderRadius: 2
 	},
 	vertical: false
 }
 
 
 const placeholder = (
-  <Placeholder>
-    <Placeholder.Paragraph>
-      <Placeholder.Line />
-      <Placeholder.Line />
-      <Placeholder.Line />
-      <Placeholder.Line />
-      <Placeholder.Line />
-      <Placeholder.Line />
-      <Placeholder.Line />
-      <Placeholder.Line />
-    </Placeholder.Paragraph>
-  </Placeholder>
+	<Placeholder>
+		<Placeholder.Paragraph>
+			<Placeholder.Line />
+			<Placeholder.Line />
+			<Placeholder.Line />
+			<Placeholder.Line />
+			<Placeholder.Line />
+			<Placeholder.Line />
+			<Placeholder.Line />
+			<Placeholder.Line />
+		</Placeholder.Paragraph>
+	</Placeholder>
 )
 
 const styles = {
