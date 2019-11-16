@@ -24,27 +24,27 @@ class Company extends ReactiveComponent {
                     onChange: deferred((_, { walletAddress }) => this.checkCompany(walletAddress), 300),
                     readOnly: !!walletAddress,
                     type: 'text',
-                    validate: (e, { value }) => !ss58Decode(value) ? 'Please enter a valid address' : null,
+                    validate: (e, { value }) => !ss58Decode(value) ? 'Please enter a valid Totem Identity' : null,
                     value: walletAddress || ''
                 },
                 {
-                    label: 'Company Name',
+                    label: 'Company or Entity Name',
                     name: 'name',
-                    placeholder: 'Enter company name',
+                    placeholder: 'Enter the trade name',
                     required: true,
                     type: 'text',
                     value: name || ''
                 },
                 {
-                    label: 'Registration Number',
+                    label: 'Registered Number',
                     name: 'registrationNumber',
-                    placeholder: 'Enter registration number',
+                    placeholder: 'Enter national registered number of entity',
                     required: true,
                     type: 'text',
                     value: ''
                 },
                 {
-                    label: 'Country',
+                    label: 'Country of Registration',
                     name: 'country',
                     options: Array.from(storage.countries.getAll()).map(([_, { code, name }]) => ({
                         key: code,
@@ -75,7 +75,7 @@ class Company extends ReactiveComponent {
             wAddrIn.loading = false
             wAddrIn.invalid = exists
             wAddrIn.message = !exists ? null : {
-                content: `A company called "${company.name}" already exists using this identity`,
+                content: `An entity called "${company.name}" already exists. You cannot resubmit.`,
                 showIcon: true,
                 status: 'error',
             }

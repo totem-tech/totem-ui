@@ -19,8 +19,10 @@ export default class PartnerList extends ReactiveComponent {
 		this.state = {
 			listProps: {
 				columns: [
-					{ collapsing: true, key: 'type', title: 'Type' },
-					{ key: '_name', title: 'Name' },
+					{ key: '_name', title: 'Partner Name' },
+					{ collapsing: true, key: 'type', title: 'Usage' },
+					{ key: '_associatedIdentity', title: 'Used by', style: { maxWidth: 200 } },
+					{ key: '_tags', title: 'Tags' },
 					// { collapsing: true, key: '_address', title: 'Address' },
 					{
 						content: ({ address, isPublic }) => (
@@ -32,6 +34,8 @@ export default class PartnerList extends ReactiveComponent {
 									checked={isPublic}
 									toggle
 									onChange={(_, { checked }) => checked && showForm(CompanyForm, {
+										header: 'Make Partner Public',
+										subheader: 'Warning: doing this makes this partner visible to all Totem users',
 										values: { walletAddress: address },
 										onSubmit: (e, v, success) => success && addressbook.setPublic(address),
 										size: 'mini',
@@ -43,11 +47,9 @@ export default class PartnerList extends ReactiveComponent {
 						textAlign: 'center',
 						title: 'Public'
 					},
-					{ key: '_tags', title: 'Tags' },
-					{ key: '_associatedIdentity', title: 'Used by', style: { maxWidth: 200 } },
 					{
 						collapsing: true,
-						title: 'Actions',
+						title: 'Edit',
 						content: (partner, index) => {
 							const { address, name } = partner
 							return (
@@ -56,7 +58,8 @@ export default class PartnerList extends ReactiveComponent {
 										icon='share'
 										onClick={() => showForm(IdentityShareForm, {
 											disabledFields: ['address'],
-											header: 'Share Partner details',
+											header: 'Share Partner Identity',
+											subheader: 'Share a Partner with one or more Totem users',
 											includeOwnIdentities: false,
 											includePartners: true,
 											size: 'tiny',
@@ -72,9 +75,10 @@ export default class PartnerList extends ReactiveComponent {
 									<Button
 										icon='close'
 										onClick={() => confirm({
-											confirmButton: <Button negative content="Delete" />,
+											confirmButton: <Button negative content="Remove" />,
 											content: <p>Partner name: <b>{name}</b></p>,
-											header: 'Are you sure you want to delete this partner?',
+											header: 'Remove Partner',
+											subheader: 'Are you sure you want to remove this partner from your list?',
 											onConfirm: () => addressbook.remove(address),
 											size: 'mini',
 										})}

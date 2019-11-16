@@ -8,8 +8,8 @@ import { arrUnique, isFn } from '../utils/utils'
 const notificationType = 'identity'
 const childType = 'request'
 const reasonList = [
-    'Add to partner list',
-    'Project time keeping',
+    'To add your Identity to my Partner list',
+    'Project timekeeping',
     // add anything else here
     'Custom'
 ]
@@ -63,7 +63,7 @@ export default class IdentityRequestForm extends ReactiveComponent {
                     label: 'User',
                     multiple: true,
                     name: 'userIds',
-                    noResultsMessage: 'Type user ID and press enter to add',
+                    noResultsMessage: 'Type a UserID and press enter to add',
                     onAddItem: this.handleAddUser.bind(this),
                     options: [],
                     placeholder: 'Enter User ID(s)',
@@ -87,7 +87,7 @@ export default class IdentityRequestForm extends ReactiveComponent {
                         text: r,
                         value: r
                     })),
-                    placeholder: 'Select a reason',
+                    placeholder: 'Select a reason for this request',
                     required: true,
                     search: true,
                     selection: true,
@@ -98,7 +98,7 @@ export default class IdentityRequestForm extends ReactiveComponent {
                     label: 'Custom Reason',
                     name: 'customReason',
                     maxLength: 160,
-                    placeholder: 'Enter short description',
+                    placeholder: 'Enter a reason for your request',
                     required: true,
                     type: 'text',
                     value: '',
@@ -150,7 +150,7 @@ export default class IdentityRequestForm extends ReactiveComponent {
             const success = !err
             const message = {
                 content: `Identity request has been sent to ${userIds.length === 1 ? '@' + userIds[0] : 'selected users'}. 
-                    You will receive notification once they share their identity.`,
+                    You will receive notification once they agree to share their Identity with you.`,
                 header: 'Request sent!',
                 showIcon: true,
                 status: 'success',
@@ -184,6 +184,6 @@ IdentityRequestForm.defaultProps = {
     closeText: 'Close',
     header: 'Request Partner Identity',
     size: 'tiny',
-    subheader: 'Request user(s) to share their identity',
+    subheader: 'Request one or more user(s) to share a Totem Identities with you.',
     submitText: 'Submit',
 }

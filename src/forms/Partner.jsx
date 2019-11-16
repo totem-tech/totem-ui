@@ -295,7 +295,7 @@ class Partner extends ReactiveComponent {
         addCompany && showForm(CompanyForm, {
             message: {
                 header: `Partner ${this.doUpdate ? 'updated' : 'added'} successfully`,
-                content: `You have chosen to make your partner public. Please ensure you  
+                content: `You have chosen to make this partner public. Please ensure you  
                     fill in the correct details. Click cancel to abort making public.`,
                 showIcon: true,
                 status: 'success'
@@ -331,8 +331,8 @@ class Partner extends ReactiveComponent {
     validateAddress(e, { value: address }) {
         if (!address) return
         const partner = addressbook.get(address)
-        if (partner) return `Partner already exists with name "${partner.name}"`
-        if (!ss58Decode(address)) return 'Please enter a valid identity'
+        if (partner) return `Partner "${partner.name}" is already in your list!`
+        if (!ss58Decode(address)) return 'Please enter a valid Totem Identity'
     }
 
     render() {

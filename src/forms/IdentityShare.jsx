@@ -165,7 +165,7 @@ IdentityShareForm.defaultProps = {
     includePartners: false,
     includeOwnIdentities: true,
     size: 'tiny',
-    subheader: 'The selected identity will be added to the receivers partner list',
+    subheader: 'Share an Identity with one or more Totem users',
 }
 
 const styles = {
