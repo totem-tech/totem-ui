@@ -77,8 +77,7 @@ export default class PartnerList extends ReactiveComponent {
 										onClick={() => confirm({
 											confirmButton: <Button negative content="Remove" />,
 											content: <p>Partner name: <b>{name}</b></p>,
-											header: 'Remove Partner',
-											subheader: 'Are you sure you want to remove this partner from your list?',
+											header: 'Are you sure you want to remove this partner from your list?',
 											onConfirm: () => addressbook.remove(address),
 											size: 'mini',
 										})}

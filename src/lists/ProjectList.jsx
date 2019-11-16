@@ -295,14 +295,14 @@ class ProjectList extends ReactiveComponent {
         project = objCopy(project)
         project.hash = hash
         const labels = {
-            name: 'Name',
-            _ownerName: 'Owner Name',
-            ownerAddress: 'Owner Address',
-            description: 'Description',
-            status: 'Status Code',
-            _statusText: 'Status',
-            hash: 'Hash',
-            _tsFirstUsed: 'First Used'
+            name: 'Project Name',
+            _ownerName: 'Project Owner',
+            // ownerAddress: 'Owner Address',
+            description: 'Description of Project',
+            // status: 'Status Code',
+            _statusText: 'Project Status',
+            _tsFirstUsed: 'Project First Used',
+            hash: 'Project Unique ID'
         }
         // Create a form on the fly and display data a read-only input fields
         showForm(FormBuilder, {
@@ -345,18 +345,12 @@ class ProjectList extends ReactiveComponent {
                     key: 'name',
                     title: 'Name'
                 },
-                {
-                    collapsing: true,
-                    key: 'totalTime',
-                    title: 'Total Time',
-                    content: project => (project.totalTime || 0) + ' blocks'
-                },
-                mobile ? null : {
-                    collapsing: true,
-                    content: this.getOwner,
-                    key: '_ownerName',
-                    title: 'Owner',
-                },
+                // mobile ? null : {
+                    //     collapsing: true,
+                    //     content: this.getOwner,
+                    //     key: '_ownerName',
+                    //     title: 'Owner',
+                    // },
                 mobile ? null : {
                     key: 'description',
                     title: 'Description'
@@ -365,6 +359,12 @@ class ProjectList extends ReactiveComponent {
                     collapsing: true,
                     key: '_statusText',
                     title: 'Status'
+                },
+                {
+                    collapsing: true,
+                    key: 'totalTime',
+                    title: 'Total Time',
+                    content: project => (project.totalTime || 0) + ' blocks'
                 },
                 {
                     // No key required

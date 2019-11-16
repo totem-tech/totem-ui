@@ -184,6 +184,6 @@ IdentityRequestForm.defaultProps = {
     closeText: 'Close',
     header: 'Request Partner Identity',
     size: 'tiny',
-    subheader: 'Request one or more user(s) to share a Totem Identities with you.',
+    subheader: 'Request one or more user(s) to share a Totem Identity with you.',
     submitText: 'Submit',
 }
