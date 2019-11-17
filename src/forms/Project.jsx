@@ -155,7 +155,7 @@ class Project extends ReactiveComponent {
         return (
             <FormBuilder {...{
                 closeText,
-                header: header || (project ? 'Edit ' + project.name : 'Create a new project'),
+                header: header || (project ? 'Edit : ' + project.name : 'Create a new project'),
                 headerIcon: headerIcon || (project ? 'edit' : 'plus'),
                 inputs,
                 loading,

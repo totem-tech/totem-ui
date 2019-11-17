@@ -29,12 +29,12 @@ class FormRegister extends ReactiveComponent {
                     type: 'text',
                     required: true,
                     value: ''
-                },
-                {
-                    label: ' I agree to the Totem Tech terms and condition',
-                    name: 'agree',
-                    type: 'checkbox',
-                    required: true
+                // },
+                // {
+                //     label: ' I agree to the Totem Tech terms and condition',
+                //     name: 'agree',
+                //     type: 'checkbox',
+                //     required: true
                 }
             ],
         }
@@ -47,7 +47,7 @@ class FormRegister extends ReactiveComponent {
         inputs[index].invalid = !valid
         if (!valid) {
             inputs[index].message = {
-                content: 'Only lowercase alpha-numeric characters allowed and must start with an alphabet',
+                content: 'Lowercase alpha-numeric only, ID must start with a letter.',
                 header: 'Invalid ID',
                 showIcon: true,
                 status: 'error'
@@ -93,8 +93,7 @@ class FormRegister extends ReactiveComponent {
             setTimeout(() => {
                 dropMessages()
                 addResponseMessage(
-                    'So, you want to get started with Totem? Great! Just ping your address using the Request Funds ' +
-                    'button and we\'ll send you some funds! Then you are good to go!'
+                    'Welcom to the Totem trollbox. Please be nice.'
                 )
                 !isWidgetOpened() && toggleWidget()
             })

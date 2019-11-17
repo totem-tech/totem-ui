@@ -103,7 +103,7 @@ class ChatWidget extends ReactiveComponent {
 			// Prevents showing 'offline' more than once until status changes back to online
 			if (!this.state.showOfflineMsg) return;
 
-			addEventMsg('chat server offline at : ' + getNow())
+			// addEventMsg('chat server offline at : ' + getNow())
 			this.setState({ showOfflineMsg: false })
 		})
 
@@ -154,7 +154,7 @@ class ChatWidget extends ReactiveComponent {
 				})
 			}
 
-			addEventMsg('chat server online at : ' + getNow(), 1)
+			// addEventMsg('chat server online at : ' + getNow(), 1)
 			this.setState({ userId: user.id, showOfflineMsg: true, historyAdded: true })
 		})
 	}
@@ -173,15 +173,15 @@ class ChatWidget extends ReactiveComponent {
 						onClick={()=> showForm(Register, {closeOnSubmit: true})} 
 					/>
 				)}
-				<p>Your chat history is not saved on the server. Up to {historyLimit} messages are saved locally.</p>
+				{/* <p>Your chat history is not saved on the server. Up to {historyLimit} messages are saved locally.</p> */}
 			</div>
 		)
 		return (
 			<Widget
 				titleAvatar={TotemLogoCircle}
-				title="Totem live chat"
+				title="totem trollbox"
 				subtitle={subtitle}
-				senderPlaceHolder={"Let's chat totem..."}
+				senderPlaceHolder={"Say something nice..."}
 				handleNewUserMessage={this.handleNewUserMessage}
 				xbadge={this.state.unreadCount}
 				autofocus={true}

@@ -22,7 +22,7 @@ import ProjectList from './lists/ProjectList'
 import SidebarLeft from './components/SidebarLeft'
 import ModalService from './services/modal'
 import ToastService from './services/toast'
-import NotificationService from './services/notification'
+// import NotificationService from './services/notification'
 import { resumeQueue } from './services/queue'
 import { IfMobile } from './utils/utils'
 // Images
@@ -194,8 +194,15 @@ const sidebarItems = [
 	// { icon: "object group outline", title: "Overview", subHeader: "", active: true, content: <LedgerTransactionList />},
 	{
 		icon: "users", title: "Partners",
-		header: "Vendors and Customers",
-		subHeader: "Store, manage, request and share partner identities",
+		header: "Partner Contact List",
+		subHeader: "Manage suppliers or customers, or any other party that you have contact with in Totem.",
+		subHeaderDetails: 
+		"In Totem, a partner is anyone that you intend to interact with. Each partner has one or more identities, \n" + 
+		"that they can share with you. (see the Identities Module for more information on Identities.) \n" + 
+		"The best way to get someone's identity is to request it, which you can do using the internal notofocation service. \n" +
+		"Click Request, and enter the partner\'s userID and hopefully they will share one with you. \n" +
+		"You can give each shared Partner Identity a new name, add tags, and define it any way you want. \n" + 
+		"Once a partner is stored in this list you can use it all over Totem."
 		active: true,
 		content: <PartnerList />
 	},
@@ -212,15 +219,19 @@ const sidebarItems = [
 		content: <ProjectList />,
 		headerDividerHidden: true,
 		icon: "tasks",
-		title: "Projects",
-		subHeader: "View and/or manage your projects"
+		title: "Project Module",
+		subHeader: "Manage projects."
+		subHeaderDetails: 
+		"You can use the project module to account for individual tasks as well as projects. You can invite team members to projects or assign individuals tasks, manage and approve \n" +
+		"all time booked against a task/project. Projects and tasks are then automatically mapped to invoices or other payments, and all accounting will be correctly posted, without you \n" +
+		"needing to do anything else." 
 	},
 	{
 		active: false,
 		content: <TimeKeepingView />,
 		icon: "clock outline",
-		subHeader: "Manage timekeeping against projects and tasks. You can create projects and tasks for yourself, or others can assign them to you.",
 		title: "Timekeeping",
+		subHeader: "Manage timekeeping against projects and tasks.",
 	},
 	{ icon: "lightbulb", title: "Products", subHeader: "" },
 	{
