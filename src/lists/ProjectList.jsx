@@ -108,13 +108,16 @@ class ProjectList extends ReactiveComponent {
                     disabled: true,
                     icon: 'trash alternate',
                     onClick: (selectedHashes) => {
+                        const queueItems = []
+                        const projectNames = []
                         selectedHashes.forEach(hash => {
                             const { projects } = this.state
                             const targetStatus = 99
                             const { name, ownerAddress, status } = projects.get(hash) || {}
                             // ignore if project is already at target status or project not longer exists in the list
                             if (status === targetStatus || !name) return;
-                            addToQueue({
+                            projectNames.push(name)
+                            queueItems.push({
                                 type: 'blockchain',
                                 func: 'removeProject',
                                 args: [ownerAddress, hash],
@@ -131,6 +134,21 @@ class ProjectList extends ReactiveComponent {
                                     ]
                                 }
                             })
+                        })
+                        if (projectNames.length === 0) return
+                        const s = projectNames.length > 1 ? 's' : ''
+                        confirm({
+                            content: (
+                                <div>
+                                    <h4>You are about to delete the following project{s}:</h4>
+                                    <ul>
+                                        {projectNames.map((name, i) => <li key={i}>{name}</li>)}
+                                    </ul>
+                                </div>
+                            ),
+                            header: 'Delete project' + s,
+                            onConfirm: () => queueItems.forEach(item => addToQueue(item)),
+                            size: 'mini',
                         })
                     }
                 },
@@ -347,11 +365,11 @@ class ProjectList extends ReactiveComponent {
                     title: 'Name'
                 },
                 // mobile ? null : {
-                    //     collapsing: true,
-                    //     content: this.getOwner,
-                    //     key: '_ownerName',
-                    //     title: 'Owner',
-                    // },
+                //     collapsing: true,
+                //     content: this.getOwner,
+                //     key: '_ownerName',
+                //     title: 'Owner',
+                // },
                 mobile ? null : {
                     key: 'description',
                     title: 'Description'
