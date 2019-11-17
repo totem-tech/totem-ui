@@ -191,7 +191,7 @@ const sidebarItems = [
 		icon: "play circle outline",
 		title: "Getting Started"
 	},
-	// { icon: "object group outline", title: "Overview", subHeader: "", active: true, content: <LedgerTransactionList />},
+	// { icon: "object group outline", title: "Overview", subHeader: "", active: false, content: <LedgerTransactionList />},
 	{
 		icon: "users", title: "Partners",
 		header: "Partner Contact List",
@@ -202,8 +202,8 @@ const sidebarItems = [
 		"The best way to get someone's identity is to request it, which you can do using the internal notofocation service. \n" +
 		"Click Request, and enter the partner\'s userID and hopefully they will share one with you. \n" +
 		"You can give each shared Partner Identity a new name, add tags, and define it any way you want. \n" + 
-		"Once a partner is stored in this list you can use it all over Totem."
-		active: true,
+		"Once a partner is stored in this list you can use it all over Totem.",
+		active: false,
 		content: <PartnerList />
 	},
 	// { icon: "file alternate", title: "Invoice", subHeader: "", active: false, content: <Invoice /> },
@@ -220,7 +220,7 @@ const sidebarItems = [
 		headerDividerHidden: true,
 		icon: "tasks",
 		title: "Project Module",
-		subHeader: "Manage projects."
+		subHeader: "Manage projects.",
 		subHeaderDetails: 
 		"You can use the project module to account for individual tasks as well as projects. You can invite team members to projects or assign individuals tasks, manage and approve \n" +
 		"all time booked against a task/project. Projects and tasks are then automatically mapped to invoices or other payments, and all accounting will be correctly posted, without you \n" +
@@ -246,7 +246,7 @@ const sidebarItems = [
 		icon: "id badge outline",
 		title: "Identities",
 		subHeader: "Manage your Identity keys",
-		active: true,
+		active: false,
 		content: <IdentitiesView />
 	},
 	{

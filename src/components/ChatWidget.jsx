@@ -163,18 +163,21 @@ class ChatWidget extends ReactiveComponent {
 		const { userId } = this.state
 		const subtitle = (
 			<div>
-				{userId ? <h5>Logged in as {'@' + userId}</h5> : (
-					<Button 
-						as="a" 
-						basic 
-						inverted 
-						size="tiny" 
-						content="Register chat user id" 
-						onClick={()=> showForm(Register, {closeOnSubmit: true})} 
-					/>
-				)}
-				{/* <p>Your chat history is not saved on the server. Up to {historyLimit} messages are saved locally.</p> */}
+				{userId ? <h5>Logged in as {'@' + userId}</h5> : <h5></h5>}
 			</div>
+			// <div>
+			// 	{userId ? <h5>Logged in as {'@' + userId}</h5> : (
+			// 		// <Button 
+			// 		// 	as="a" 
+			// 		// 	basic 
+			// 		// 	inverted 
+			// 		// 	size="tiny" 
+			// 		// 	content="Register chat user id" 
+			// 		// 	onClick={()=> showForm(Register, {closeOnSubmit: true})} 
+			// 		// />
+			// 	)}
+			// 	{/* <p>Your chat history is not saved on the server. Up to {historyLimit} messages are saved locally.</p> */}
+			// </div>
 		)
 		return (
 			<Widget
