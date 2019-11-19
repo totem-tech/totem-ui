@@ -194,7 +194,7 @@ class FormBuilder extends ReactiveComponent {
                     />
                 </div>
                 {header && (
-                    <Header as={Modal.Header}>
+                    <Header as={Modal.Header} style={styles.header}>
                         <Header.Content>
                             {headerIcon && <Icon name={headerIcon} size="large" />}
                             {header}
@@ -341,5 +341,8 @@ const styles = {
     },
     formMessage: {
         margin: 1
+    },
+    header: {
+        textTransform: 'capitalize',
     }
 }

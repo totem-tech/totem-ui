@@ -1,11 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
-import {runtime, secretStore} from 'oo7-substrate'
+import { runtime, secretStore } from 'oo7-substrate'
 import Identicon from 'polkadot-identicon'
 import { Label } from 'semantic-ui-react'
 import { copyToClipboard, IfMobile, IfNotMobile, isObj, setState, setStateTimeout, textEllipsis } from '../utils/utils'
-import ListFactory, { CardListItem} from '../components/ListFactory'
+import ListFactory, { CardListItem } from '../components/ListFactory'
 import storageService from '../services/storage'
 import { confirm } from '../services/modal'
 
@@ -23,7 +23,7 @@ export class WalletItem extends ReactiveComponent {
             actionsVisible: false,
             showSecret: false
         }
-        
+
         this.handleDelete = this.handleDelete.bind(this)
         this.handleEdit = this.handleEdit.bind(this)
         this.handleSave = this.handleSave.bind(this)
@@ -37,18 +37,18 @@ export class WalletItem extends ReactiveComponent {
         const isOnlyItem = total === 1
         if (!isSelected && !isOnlyItem) {
             return confirm({
-                confirmButton: {content: 'Delete', negative: true},
+                confirmButton: { content: 'Delete', negative: true },
                 header: 'Delete wallet?',
                 onConfirm: () => {
                     // If "to be deleted" index is lower than the selected index,
                     // adjust the selected index to keep the same wallet selected
-                    if (index < selectedIndex) storageService.walletIndex(selectedIndex -1);
+                    if (index < selectedIndex) storageService.walletIndex(selectedIndex - 1);
                     secretStore().forget(wallet)
                 },
                 size: 'mini'
             })
         }
-        
+
         return confirm({
             cancelButton: null,
             content: 'You cannot delete ' + (
@@ -58,10 +58,10 @@ export class WalletItem extends ReactiveComponent {
             size: 'mini'
         })
     }
-    
+
     handleEdit() {
         const { edit, draft } = this.state
-        this.setState({edit: !edit, draft: draft || wallet.name})
+        this.setState({ edit: !edit, draft: draft || wallet.name })
     }
 
     handleSave(e) {
@@ -72,7 +72,7 @@ export class WalletItem extends ReactiveComponent {
         secretStore()._sync()
         this.handleEdit()
     }
-    
+
     render() {
         const { addressLength, fluid, style, wallet } = this.props
         if (!wallet) return '';
@@ -86,10 +86,10 @@ export class WalletItem extends ReactiveComponent {
                 className: 'circular',
                 link: true,
                 name: 'angle ' + (actionsVisible ? 'up' : 'down'),
-                onClick: ()=> setState(this, 'actionsVisible', !actionsVisible)
+                onClick: () => setState(this, 'actionsVisible', !actionsVisible)
             }],
             content: wallet.name,
-            image: <Identicon account={ wallet.account } />,
+            image: <Identicon account={wallet.account} />,
             input: {
                 action: {
                     color: 'black',
@@ -98,12 +98,12 @@ export class WalletItem extends ReactiveComponent {
                     size: 'tiny'
                 },
                 name: 'walletName',
-                onChange: (e)=> setState(this, 'draft', e.target.value),
+                onChange: (e) => setState(this, 'draft', e.target.value),
                 size: 'mini',
                 value: draft
             },
             inputVisible: edit,
-            onClick: ()=> setState(this, 'actionsVisible', !actionsVisible),
+            onClick: () => setState(this, 'actionsVisible', !actionsVisible),
             subheader: <IfMobile then={() => textEllipsis(addr, 25, 5)} else={addr} />
         }
 
@@ -157,7 +157,7 @@ export class WalletItem extends ReactiveComponent {
                             Crypto
                             <Label.Detail>
                                 <span style={{
-                                    fontWeight: 'bold', 
+                                    fontWeight: 'bold',
                                     width: '4em',
                                     textTransform: 'capitalize',
                                     color: walletType == 'sr25519' ? '#050' : '#daa'
@@ -181,20 +181,20 @@ WalletItem.propTypes = {
 
 class WalletList extends ReactiveComponent {
     constructor(props) {
-        super(props, {secretStore: secretStore()})
+        super(props, { secretStore: secretStore() })
     }
 
     render() {
-        const {itemsPerRow, type} = this.props
+        const { itemsPerRow, type } = this.props
         const wallets = this.state.secretStore.keys || []
         const numItemsPerRow = itemsPerRow || 1
         const walletItems = wallets.map((wallet, i) => (
             <WalletItem
                 addressLength={numItemsPerRow > 1 && 15}
                 index={i}
-                key={i+wallet.name+wallet.address}
+                key={i + wallet.name + wallet.address}
                 fluid={true}
-                style={ itemsPerRow === 1 ? {margin: 0} : undefined }
+                style={itemsPerRow === 1 ? { margin: 0 } : undefined}
                 total={wallets.length}
                 wallet={wallet}
             />
@@ -202,11 +202,11 @@ class WalletList extends ReactiveComponent {
 
         const getList = mobile => () => (
             <ListFactory
-                type={ type || 'cardlist'}
+                type={type || 'cardlist'}
                 items={walletItems}
                 fluid={true}
                 itemsPerRow={mobile ? 1 : numItemsPerRow}
-                style={!mobile && numItemsPerRow === 1 ? {marginTop : 15} : {}}
+                style={!mobile && numItemsPerRow === 1 ? { marginTop: 15 } : {}}
             />
         )
 

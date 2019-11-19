@@ -19,6 +19,7 @@ import ContentSegment from './components/ContentSegment'
 import PageHeader from './components/PageHeader'
 import PartnerList from './lists/PartnerList'
 import ProjectList from './lists/ProjectList'
+import IdentityList from './lists/IdentityList'
 import SidebarLeft from './components/SidebarLeft'
 import ModalService from './services/modal'
 import ToastService from './services/toast'
@@ -231,12 +232,19 @@ const sidebarItems = [
 		active: false,
 		content: <SendFundsView />
 	},
+	// {
+	// 	icon: "id badge outline",
+	// 	title: "Identities",
+	// 	subHeader: "Manage your Identity keys",
+	// 	active: true,
+	// 	content: <IdentitiesView />
+	// },
 	{
 		icon: "id badge outline",
 		title: "Identities",
 		subHeader: "Manage your Identity keys",
 		active: true,
-		content: <IdentitiesView />
+		content: <IdentityList />
 	},
 	{
 		active: false,

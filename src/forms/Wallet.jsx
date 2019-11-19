@@ -9,6 +9,7 @@ import { Button } from 'semantic-ui-react'
 import FormBuilder, { fillValues } from '../components/FormBuilder'
 import { TransformBondButton } from '../TransformBondButton'
 import { IfMobile, isFn, isObj, objCopy } from '../utils/utils'
+import { set as updateIdentity } from '../services/identity'
 
 class Wallet extends ReactiveComponent {
     constructor(props) {
@@ -19,7 +20,7 @@ class Wallet extends ReactiveComponent {
         this.lastSeed = null
         this.seedAccount = this.seed.map(s => s ? secretStore().accountFromPhrase(s) : undefined)
         this.seedAccount.use()
-    
+
         this.handleSubmit = this.handleSubmit.bind(this)
 
         this.state = {
@@ -60,8 +61,8 @@ class Wallet extends ReactiveComponent {
                     name: 'name',
                     placeholder: 'A name for the wallet',
                     type: 'InputBond',
-                    validator: n =>n ? secretStore().map(ss => (ss.byName[n] ? null : n)) : null
-            
+                    validator: n => n ? secretStore().map(ss => (ss.byName[n] ? null : n)) : null
+
                 }
             ],
             message: {},
@@ -73,13 +74,13 @@ class Wallet extends ReactiveComponent {
         const { onSubmit } = this.props
         isFn(onSubmit) && setTimeout(() => {
             onSubmit({ seed, name })
-            this.setState({success: true})
+            this.setState({ success: true })
         }, 100)
         return secretStore().submit(seed, name)
     }
 
     handleGenerate() {
-      this.seed.trigger(generateMnemonic())
+        this.seed.trigger(generateMnemonic())
     }
 
     render() {
@@ -103,26 +104,26 @@ class Wallet extends ReactiveComponent {
                 header={header}
                 headerIcon={headerIcon}
                 hideFooter={true}
-                inputs={inputs.map(input => { input.width = mobile || modal ? 16 : 8; return input})}
+                inputs={inputs.map(input => { input.width = mobile || modal ? 16 : 8; return input })}
                 message={message}
                 modal={modal}
                 onClose={onClose}
                 onOpen={onOpen}
                 open={open}
                 size={size}
-                style={mobile && !modal ? {marginBottom : 30} : {}}
+                style={mobile && !modal ? { marginBottom: 30 } : {}}
                 subheader={subheader}
                 success={success}
                 trigger={trigger}
             />
         )
 
-        if ( isObj(wallet) ) {
+        if (isObj(wallet)) {
             // prefill values if needed
             fillValues(inputs, wallet, true)
         }
 
-        return <IfMobile then={getForm(true)} else={getForm(false)} /> 
+        return <IfMobile then={getForm(true)} else={getForm(false)} />
     }
 
 }
@@ -164,19 +165,20 @@ export class WalletUpdate extends ReactiveComponent {
     }
 
     handleSubmit(e, values) {
-        const {index, onSubmit} = this.props
+        const { index, onSubmit } = this.props
         const wallet = secretStore()._keys[index] || {}
-        wallet.name = values.name
-        secretStore()._sync()
+        // wallet.name = values.name
+        // secretStore()._sync()
+        updateIdentity(wallet.address, { name: values.name })
         isFn(onSubmit) && onSubmit(true, values)
-        this.setState({success: true})
+        this.setState({ success: true })
     }
 
     render() {
-        const {inputs, success} = this.state
+        const { inputs, success } = this.state
         const onSubmit = this.handleSubmit
         const closeText = success ? 'Close' : 'Cancel'
-        return <FormBuilder {...this.props} {...{closeText, onSubmit, inputs, success}}/>
+        return <FormBuilder {...this.props} {...{ closeText, onSubmit, inputs, success }} />
     }
 }
 
