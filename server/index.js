@@ -14,7 +14,7 @@ const CHAT_SERVER_PORT = process.env.CHAT_SERVER_PORT || 3001
 // set up plain http server and have it listen on port 80 to redirect to https 
 http.createServer(function (req, res) {
 	printHostData = process.env.printSensitiveData === "YES"
-		if (!printHostData) {
+		if (printHostData) {
 			console.log("Host : ", req.headers['host'])
 			console.log("URL : ", req.url)
 		}
