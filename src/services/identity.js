@@ -6,10 +6,11 @@ import uuid from 'uuid'
 import { objClean } from '../utils/utils'
 
 const _ssFind = address => secretStore().find(address)
-const _ssSubmit = () => secretStore().submit(seed, name)
+const _ssSubmit = (seed, name) => secretStore().submit(seed, name)
 const _ssKeys = () => secretStore()._keys
 const _ssSync = () => secretStore()._sync()
 const _ssForget = address => secretStore().forget(address)
+// setTimeout(() => secretStore().tie(() => updateBond()))
 
 const identities = new DataStorage('totem_identities')
 const updateBond = () => bond.changed(uuid.v1())
@@ -58,13 +59,14 @@ export const remove = address => {
 
 // add/update
 export const set = (address, identity = {}) => {
-    const { name, seed } = identity
+    const { name, uri: seed } = identity
     let existing = _ssFind(address)
     if (!existing) {
         if (!seed || !name) return
-        // create new
+        // create new identity
         _ssSubmit(seed, name)
-        existing = _ssFind(address)
+        existing = _ssFind(name)
+        address = existing.address
     }
     identities.set(address, {
         ...identities.get(address),

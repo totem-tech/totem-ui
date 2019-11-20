@@ -9,7 +9,7 @@ import { Button } from 'semantic-ui-react'
 import FormBuilder, { fillValues } from '../components/FormBuilder'
 import { TransformBondButton } from '../TransformBondButton'
 import { IfMobile, isFn, isObj, objCopy } from '../utils/utils'
-import { set as updateIdentity } from '../services/identity'
+import { set as setIdentity } from '../services/identity'
 
 class Wallet extends ReactiveComponent {
     constructor(props) {
@@ -19,7 +19,7 @@ class Wallet extends ReactiveComponent {
         this.name = new Bond()
         this.lastSeed = null
         this.seedAccount = this.seed.map(s => s ? secretStore().accountFromPhrase(s) : undefined)
-        this.seedAccount.use()
+        // this.seedAccount.use()
 
         this.handleSubmit = this.handleSubmit.bind(this)
 
@@ -76,7 +76,8 @@ class Wallet extends ReactiveComponent {
             onSubmit({ seed, name })
             this.setState({ success: true })
         }, 100)
-        return secretStore().submit(seed, name)
+        // return secretStore().submit(seed, name)
+        setIdentity(null, { seed, name })
     }
 
     handleGenerate() {
@@ -169,7 +170,7 @@ export class WalletUpdate extends ReactiveComponent {
         const wallet = secretStore()._keys[index] || {}
         // wallet.name = values.name
         // secretStore()._sync()
-        updateIdentity(wallet.address, { name: values.name })
+        setIdentity(wallet.address, { name: values.name })
         isFn(onSubmit) && onSubmit(true, values)
         this.setState({ success: true })
     }

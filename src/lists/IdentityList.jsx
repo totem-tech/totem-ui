@@ -1,19 +1,18 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
-import { Button } from 'semantic-ui-react'
+import { Button, Label } from 'semantic-ui-react'
 import { DataTable } from '../components/ListFactory'
-import identityService, { getBond } from '../services/identity'
+import identityService from '../services/identity'
 import { confirm, showForm } from '../services/modal'
 import { formatStrTimestamp } from '../utils/time'
 import IdentityShareForm from '../forms/IdentityShare'
-import IdentityForm from '../forms/Wallet'
+import IdentityForm from '../forms/Identity'
 
 const toBeImplemented = () => alert('To be implemented')
 const words = {
     actions: 'actions',
     create: 'create',
     name: 'name',
-    never: 'never',
     personal: 'personal',
     tags: 'tags',
     usage: 'usage',
@@ -77,9 +76,9 @@ export default class ItentityList extends ReactiveComponent {
             const data = identityService.getAll()
             this.allBackupDone = data.reduce((done, { cloudBackupTS }) => !done ? false : !!cloudBackupTS, true)
             data.forEach(identity => {
-                identity._cloudBackupTS = formatStrTimestamp(identity.cloudBackupTS) || words.never
+                identity._cloudBackupTS = formatStrTimestamp(identity.cloudBackupTS)
                 identity.usageType = identity.usageType || words.personal
-                identity.tags = (identity.tags || []).map(tag => (
+                identity._tags = (identity.tags || []).map(tag => (
                     <Label key={tag} style={{ margin: 1, float: 'left', display: 'inline' }}>
                         {tag}
                     </Label>
@@ -107,8 +106,13 @@ export default class ItentityList extends ReactiveComponent {
                     title={texts.shareIdentityDetails}
                 />
                 <Button
+                    icon='eye'
+                    onClick={toBeImplemented}
+                    title={texts.updateIdentity}
+                />
+                <Button
                     icon='pencil'
-                    onClick={toBeImplemented} //{() => showForm(WalletUpdate, { wallet: identity, size: 'tiny' })}
+                    onClick={() => showForm(IdentityForm, { values: identity })}
                     title={texts.updateIdentity}
                 />
                 <Button

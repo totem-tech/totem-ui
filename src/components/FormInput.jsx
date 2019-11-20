@@ -1,8 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Button, Dropdown, Form, Input, TextArea } from 'semantic-ui-react'
+import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
-import { isDefined, isFn, objWithoutKeys, newMessage, hasValue, objReadOnly, isValidNumber, isStr } from '../utils/utils';
+import { isBond, isDefined, isFn, objWithoutKeys, newMessage, hasValue, objReadOnly, isValidNumber, isStr } from '../utils/utils';
 import { InputBond } from '../InputBond'
 import { AccountIdBond } from '../AccountIdBond'
 import CheckboxGroup from './CheckboxGroup'
@@ -16,7 +17,7 @@ const VALIDATION_MESSAGES = objReadOnly({
     validNumber: () => 'Please enter a valid number'
 }, true)
 const NON_ATTRIBUTES = Object.freeze([
-    'controlled', 'deferred', 'hidden', 'inline', 'invalid', '_invalid', 'label',
+    'bond', 'controlled', 'deferred', 'hidden', 'inline', 'invalid', '_invalid', 'label',
     'trueValue', 'falseValue', 'styleContainer', 'useInput', 'validate'
 ])
 
@@ -25,13 +26,15 @@ export default class FormInput extends ReactiveComponent {
         super(props)
 
         this.handleChange = this.handleChange.bind(this)
-
+        this.bond = props.bond
         this.state = {
             message: undefined
         }
+
+        setTimeout(() => isBond(this.bond) && this.bond.tie(value => this.handleChange({}, { value }), false))
     }
 
-    handleChange(event, data) {
+    handleChange(event, data, triggerBond = true) {
         const {
             falseValue: no,
             max,
@@ -103,6 +106,10 @@ export default class FormInput extends ReactiveComponent {
         data.invalid = !!errMsg
         isFn(onChange) && onChange(event, data, this.props)
         this.setState({ message })
+
+        if (isBond(this.bond) && !data.invalid && triggerBond === true) {
+            this.bond.changed(value)
+        }
     }
 
     render() {
@@ -147,6 +154,9 @@ export default class FormInput extends ReactiveComponent {
                 isGroup = true
                 inputEl = attrs.inputs.map((subInput, i) => <FormInput key={i} {...subInput} />)
                 break;
+            case 'hidden':
+                hideLabel = true
+                break
             case 'inputbond':
                 if (isDefined(attrs.value)) {
                     attrs.defaultValue = attrs.value
@@ -181,6 +191,7 @@ export default class FormInput extends ReactiveComponent {
     }
 }
 FormInput.propTypes = {
+    bond: PropTypes.any,
     // Delay, in miliseconds, to precess input value change
     deferred: PropTypes.number,
     type: PropTypes.string.isRequired,
