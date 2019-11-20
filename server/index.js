@@ -37,7 +37,7 @@ const keyFileName = 'privkey.pem'
 
 const devModeCertBasePath = './sslcert/'
 // Todo make this dynamic for the host
-const prodModeCertBasePath = '/etc/letsencrypt/live/' + SUBDOMAIN + '.' + req.headers['host'] 
+const prodModeCertBasePath = '/etc/letsencrypt/live/' + SUBDOMAIN + '.totem.live'
 
 let certPath = devModeCertBasePath
 let keyPath = devModeCertBasePath
