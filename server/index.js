@@ -18,7 +18,7 @@ http.createServer(function (req, res) {
 	// 		console.log("Host : ", req.headers['host'])
 	// 		console.log("URL : ", req.url)
 	// 	}
-	res.writeHead(307, { "Location": "https://" + SUBDOMAIN + '.' + req.headers['host'] + req.url });
+	res.writeHead(307, { "Location": "https://" + req.headers['host'] + req.url });
 	res.end();
 }).listen(HTTP_PORT, () => console.log('\nApp http to https redirection listening on port ', HTTP_PORT));
 
