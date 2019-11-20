@@ -13,11 +13,11 @@ const CHAT_SERVER_PORT = process.env.CHAT_SERVER_PORT || 3001
 
 // set up plain http server and have it listen on port 80 to redirect to https 
 http.createServer(function (req, res) {
-	printHostData = process.env.printSensitiveData === "YES"
-		if (printHostData) {
-			console.log("Host : ", req.headers['host'])
-			console.log("URL : ", req.url)
-		}
+	// printHostData = process.env.printSensitiveData === "YES"
+	// 	if (printHostData) {
+	// 		console.log("Host : ", req.headers['host'])
+	// 		console.log("URL : ", req.url)
+	// 	}
 	res.writeHead(307, { "Location": "https://" + SUBDOMAIN + '.' + req.headers['host'] + req.url });
 	res.end();
 }).listen(HTTP_PORT, () => console.log('\nApp http to https redirection listening on port ', HTTP_PORT));
