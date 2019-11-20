@@ -174,11 +174,12 @@ const styles = {
 		width: 50
 	},
 	subHeader: {
-		marginTop: 10
+		marginTop: 8
 	},
 	subHeaderDetails: {
 		fontWeight: 'normal',
 		fontSize: 13,
-		margin: 0
+		lineHeight: '20px',
+		marginTop: 8
 	}
 }

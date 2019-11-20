@@ -9,4 +9,9 @@ FAUCET_SERVER_URL="string: https://hostname:port" \
 STORAGE_PATH="string: ./relative/or/absolute/directory/path/where/server/data/is/stored" \
 UI_CERT_PATH="./sslcert/fullchain.pem" \
 UI_KEY_PATH="./sslcert/privkey.pem" \
+HTTP_PORT="int: 80" \
+HTTPS_PORT="int: 443" \
+SUBDOMAIN="string: " \
+EXECUTION_MODE="string: dev" \ 
+CHAT_SERVER_PORT="int 3001" \
 yarn run dev
