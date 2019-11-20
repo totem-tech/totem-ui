@@ -299,7 +299,7 @@ export const resetValues = inputs => inputs.map(input => {
 })
 
 export const isFormInvalid = (inputs = [], values) => inputs.reduce((invalid, input) => {
-    const inType = (input.type || '').toLowerCase()
+    const inType = (input.type || 'text').toLowerCase()
     const isCheckbox = ['checkbox', 'radio'].indexOf(inType) >= 0
     const isGroup = inType === 'group'
     const isRequired = !!input.required
