@@ -7,6 +7,7 @@ import { confirm, showForm } from '../services/modal'
 import { formatStrTimestamp } from '../utils/time'
 import IdentityShareForm from '../forms/IdentityShare'
 import IdentityForm from '../forms/Identity'
+import IdentityDetailsForm from '../forms/IdentityDetails'
 
 const toBeImplemented = () => alert('To be implemented')
 const words = {
@@ -30,6 +31,7 @@ const texts = {
     removeWarningPart1: 'You are about to remove the following identity.',
     removeWarningPart2: `This actions is irreversible. You will lose access to any activity/data related to this project.`,
     shareIdentity: 'Share identity',
+    showDetails: 'Show details',
     shareIdentityDetails: 'Share your identity with other Totem users',
     updateIdentity: 'Update identity',
 }
@@ -107,8 +109,8 @@ export default class ItentityList extends ReactiveComponent {
                 />
                 <Button
                     icon='eye'
-                    onClick={toBeImplemented}
-                    title={texts.updateIdentity}
+                    onClick={() => showForm(IdentityDetailsForm, { values: identity })}
+                    title={texts.showDetails}
                 />
                 <Button
                     icon='pencil'

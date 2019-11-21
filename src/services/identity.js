@@ -82,11 +82,33 @@ export const set = (address, identity = {}) => {
     updateBond()
 }
 
+export const getSelected = () => {
+    const result = identities.search({ selected: true }, true, true)
+    if (result.size === 0) return
+    const [address] = Array.from(result)[0]
+    return find(address)
+}
+
+export const setSelected = address => {
+    const identity = identities.get(address)
+    if (!identities.get(address)) return false
+    const selected = identities.search({ selected: true }, true, true)
+    Array.from(selected).forEach(([addr, next]) => {
+        next.selected = false
+        identities.set(addr, next)
+    })
+    identity.selected = true
+    identities.set(address, identity)
+}
+
 export default {
     bond,
+    find,
     get,
     getAll,
+    getSelected,
     remove,
     set,
+    setSelected,
 }
 

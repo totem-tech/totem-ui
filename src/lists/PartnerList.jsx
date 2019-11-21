@@ -95,7 +95,7 @@ export default class PartnerList extends ReactiveComponent {
 					title='Update'
 				/>
 				<Button
-					icon='close'
+					icon='trash'
 					onClick={() => confirm({
 						confirmButton: <Button negative content="Remove" />,
 						content: <p>Partner name: <b>{name}</b></p>,

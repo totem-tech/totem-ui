@@ -6,7 +6,7 @@ import Identicon from 'polkadot-identicon'
 import { generateMnemonic } from 'bip39'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import identityService from '../services/identity'
-import { isFn } from '../utils/utils'
+import { isFn, textCapitalize } from '../utils/utils'
 
 const words = {
     address: 'address',
@@ -21,10 +21,7 @@ const words = {
     tags: 'tags',
     update: 'update',
 }
-const wordsCapitalized = Object.keys(words).reduce((obj, key) => {
-    obj[key] = words[key][0].toUpperCase() + words[key].slice(1)
-    return obj
-}, {})
+const wordsCapitalized = textCapitalize(words)
 const texts = {
     identityNamePlaceholder: 'A name for the identity',
     restoreInputLabel: 'Restore my existing identity',

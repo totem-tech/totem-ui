@@ -17,7 +17,7 @@ const VALIDATION_MESSAGES = objReadOnly({
     validNumber: () => 'Please enter a valid number'
 }, true)
 const NON_ATTRIBUTES = Object.freeze([
-    'bond', 'controlled', 'deferred', 'hidden', 'inline', 'invalid', '_invalid', 'label',
+    'bond', 'controlled', 'deferred', 'hidden', 'inline', 'invalid', '_invalid', 'inlineLabel', 'label',
     'trueValue', 'falseValue', 'styleContainer', 'useInput', 'validate'
 ])
 
@@ -113,7 +113,10 @@ export default class FormInput extends ReactiveComponent {
     }
 
     render() {
-        const { error, hidden, inline, label, message: externalMessage, required, styleContainer, type, useInput, width } = this.props
+        const {
+            error, hidden, inline, inlineLabel, label, message: externalMessage,
+            required, styleContainer, type, useInput, width
+        } = this.props
         if (hidden) return ''
         const { message: internalMessage } = this.state
         const message = internalMessage || externalMessage
@@ -168,6 +171,10 @@ export default class FormInput extends ReactiveComponent {
                 break;
             default:
                 attrs.fluid = !useInput ? undefined : attrs.fluid
+                if (!!inlineLabel) {
+                    attrs.label = inlineLabel
+                    console.log({ labelPosition: attrs.labelPosition })
+                }
                 inputEl = !useInput ? <Form.Input {...attrs} /> : <Input {...attrs} />
         }
 
@@ -194,6 +201,8 @@ FormInput.propTypes = {
     bond: PropTypes.any,
     // Delay, in miliseconds, to precess input value change
     deferred: PropTypes.number,
+    // For text field types
+    inlineLabel: PropTypes.any,
     type: PropTypes.string.isRequired,
     // Validate field. Only invoked when onChange is triggered and built-in validation passed.
     //
