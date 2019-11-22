@@ -117,7 +117,7 @@ export default class ItentityList extends ReactiveComponent {
                     onClick={() => showForm(IdentityForm, { values: identity })}
                     title={texts.updateIdentity}
                 />
-                <Button
+                {/* <Button
                     icon='close'
                     onClick={() => confirm({
                         confirmButton: <Button negative content={texts.removePermanently} />,
@@ -130,7 +130,7 @@ export default class ItentityList extends ReactiveComponent {
                         size: 'mini',
                     })}
                     title={texts.removeIdentity}
-                />
+                /> */}
             </React.Fragment>
         )
     }

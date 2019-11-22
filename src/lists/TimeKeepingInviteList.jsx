@@ -1,16 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
-import { secretStore } from 'oo7-substrate'
 import { formatStrTimestamp } from '../utils/time'
-import client, { getUser } from '../services/ChatClient'
-import storage from '../services/storage'
+import client from '../services/ChatClient'
 import { showForm } from '../services/modal'
 import { newNotificationBond } from '../services/notification'
 import ListFactory from '../components/ListFactory'
 import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
 import { getAddressName } from '../components/ProjectDropdown'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import { getSelected } from '../services/identity'
 
 const notifyType = 'time_keeping'
 const childType = 'invitation'
@@ -114,7 +113,7 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
 
         client.project(projectHash, null, null, (_, project = {}) => {
             client.timeKeepingInvitations(projectHash, (err, invitations) => {
-                const { address } = secretStore()._keys[storage.walletIndex()] || {}
+                const { address } = getSelected()
                 const { ownerAddress } = project
                 const isOwner = ownerAddress && ownerAddress === address
                 listProps.selectable = !!isOwner

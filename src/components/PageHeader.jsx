@@ -4,24 +4,24 @@ import { ReactiveComponent } from 'oo7-react'
 import { runtimeUp, secretStore, runtime, ss58Decode } from 'oo7-substrate'
 import { Dropdown, Image, Menu } from 'semantic-ui-react'
 import { getUser, getClient, onLogin } from '../services/ChatClient'
-import { copyToClipboard } from '../utils/utils'
+import { copyToClipboard, isFn } from '../utils/utils'
 import { Pretty } from '../Pretty'
 import { showForm } from '../services/modal'
 import storage from '../services/storage'
 import { setToast } from '../services/toast'
 import TimeKeepingForm from '../forms/TimeKeeping'
-import { WalletUpdate } from '../forms/Wallet'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import NotificationDropdown from '../services/notification'
+import identityService from '../services/identity'
+import IdentityForm from '../forms/Identity'
+
 
 class PageHeader extends ReactiveComponent {
 	constructor(props) {
 		super(props, {
-			ensureRuntime: runtimeUp,
-			secretStore: secretStore(),
 			// keep UI updated when selected wallet changed
-			index: storage.walletIndexBond,
-			_: storage.timeKeepingBond,
+			_0: identityService.bond,
+			_1: storage.timeKeepingBond,
 		})
 
 		const user = getUser()
@@ -32,18 +32,15 @@ class PageHeader extends ReactiveComponent {
 		// Update user ID after registration
 		!this.state.id && onLogin(id => id && this.setState({ id }))
 
-		this.getSeletectedAddress = () => (this.state.secretStore.keys[storage.walletIndex()] || {}).address
+		this.getSeletectedAddress = () => identityService.getSelected().address
 		this.handleCopy = this.handleCopy.bind(this)
 		this.handleEdit = this.handleEdit.bind(this)
 		this.handleFaucetRequest = this.handleFaucetRequest.bind(this)
 		this.handleSelection = this.handleSelection.bind(this)
 	}
 
-	handleSelection(_, data) {
-		const { secretStore } = this.state
-		const num = eval(data.value)
-		const index = num < secretStore.keys.length ? num : 0
-		storage.walletIndex(index)
+	handleSelection(_, { value: address }) {
+		identityService.setSelected(address)
 	}
 
 	handleCopy() {
@@ -55,7 +52,10 @@ class PageHeader extends ReactiveComponent {
 	}
 
 	handleEdit() {
-		showForm(WalletUpdate, { index: storage.walletIndex() })
+		showForm(IdentityForm, {
+			values: identityService.getSelected(),
+			onSubmit: () => this.setState({})
+		})
 	}
 
 	handleFaucetRequest() {
@@ -88,17 +88,15 @@ class PageHeader extends ReactiveComponent {
 	}
 
 	render() {
-		const { id, index, secretStore } = this.state
-		const { keys: wallets } = secretStore
-		const addressSelected = this.getSeletectedAddress()
+		const { id } = this.state
+		const wallets = identityService.getAll()
 		const viewProps = {
-			addressSelected,
+			addressSelected: this.getSeletectedAddress(),
 			id,
 			onCopy: this.handleCopy,
 			onEdit: this.handleEdit,
-			onFaucetRequest: () => this.handleFaucetRequest(addressSelected),
+			onFaucetRequest: () => this.handleFaucetRequest(),
 			onSelection: this.handleSelection,
-			selectedIndex: index,
 			timerActive: storage.timeKeeping().inprogress,
 			timerOnClick: () => showForm(TimeKeepingForm, {}),
 			wallets
@@ -138,6 +136,7 @@ class MobileHeader extends ReactiveComponent {
 	render() {
 		const { showTools } = this.state
 		const {
+			addressSelected,
 			id,
 			isMobile,
 			logoSrc,
@@ -145,7 +144,6 @@ class MobileHeader extends ReactiveComponent {
 			onEdit,
 			onFaucetRequest,
 			onSelection,
-			selectedIndex,
 			timerActive,
 			timerOnClick,
 			wallets
@@ -178,15 +176,15 @@ class MobileHeader extends ReactiveComponent {
 						<Menu.Item>
 							<Dropdown
 								labeled
-								value={selectedIndex}
+								value={addressSelected}
 								noResultsMessage="No wallet available"
 								placeholder="Select an account"
 								onChange={onSelection}
-								options={wallets.map((wallet, i) => ({
-									key: i,
-									text: (wallet.name || '').split('').slice(0, 16).join(''),
-									description: <Pretty value={runtime.balances.balance(ss58Decode(wallet.address))} />,
-									value: i
+								options={wallets.map(({ address, name }) => ({
+									key: address,
+									text: (name || '').split('').slice(0, 16).join(''),
+									description: <Pretty value={runtime.balances.balance(ss58Decode(address))} />,
+									value: address
 								}))}
 							/>
 						</Menu.Item>
@@ -204,7 +202,7 @@ class MobileHeader extends ReactiveComponent {
 							<Dropdown.Menu className="left">
 								<Dropdown.Item
 									icon="pencil"
-									content="Edit Address Name"
+									content="Update Identity"
 									onClick={onEdit}
 								/>
 								<Dropdown.Item

@@ -10,22 +10,23 @@ const _ssSubmit = (seed, name) => secretStore().submit(seed, name)
 const _ssKeys = () => secretStore()._keys
 const _ssSync = () => secretStore()._sync()
 const _ssForget = address => secretStore().forget(address)
-// setTimeout(() => secretStore().tie(() => updateBond()))
 
 const identities = new DataStorage('totem_identities')
 const updateBond = () => bond.changed(uuid.v1())
 const VALID_KEYS = [
+    'address',
     'cloudBackupStatus', // undefined: never backed up, in-progress, done
     'cloudBackupTS', // most recent successful backup timestamp
     //???? 'fileBackupTS' // most recent file backup timestamp
     // 
-    // 'name',
     // 'seed',
+    'name',
     'tags',
     'usageType',
 ]
 
 export const bond = new Bond().defaultTo(uuid.v1())
+export const selectedAddressBond = new Bond().defaultTo(uuid.v1())
 
 export const get = address => {
     const identity = _ssFind(address)
@@ -40,6 +41,15 @@ export const getAll = () => _ssKeys().map(identity => ({
     // add extra information
     ...identities.get(identity.address)
 }))
+
+export const getSelected = () => {
+    const result = identities.search({ selected: true }, true, true)
+    let [address] = Array.from(result)[0] || []
+    if (!address) {
+        address = _ssKeys()[0].address
+    }
+    return find(address)
+}
 
 export const find = addressOrName => {
     const found = _ssFind(addressOrName)
@@ -82,16 +92,9 @@ export const set = (address, identity = {}) => {
     updateBond()
 }
 
-export const getSelected = () => {
-    const result = identities.search({ selected: true }, true, true)
-    if (result.size === 0) return
-    const [address] = Array.from(result)[0]
-    return find(address)
-}
-
 export const setSelected = address => {
-    const identity = identities.get(address)
-    if (!identities.get(address)) return false
+    if (!_ssFind(address)) return
+    const identity = identities.get(address) || {}
     const selected = identities.search({ selected: true }, true, true)
     Array.from(selected).forEach(([addr, next]) => {
         next.selected = false
@@ -99,6 +102,8 @@ export const setSelected = address => {
     })
     identity.selected = true
     identities.set(address, identity)
+    selectedAddressBond.changed(uuid.v1())
+    updateBond()
 }
 
 export default {
@@ -108,7 +113,7 @@ export default {
     getAll,
     getSelected,
     remove,
+    selectedAddressBond,
     set,
     setSelected,
 }
-

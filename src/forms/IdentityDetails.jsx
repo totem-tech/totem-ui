@@ -5,7 +5,7 @@ import { ReactiveComponent } from 'oo7-react'
 import { secretStore } from 'oo7-substrate'
 import { Button, Icon, Label } from 'semantic-ui-react'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import { get as getIdentity, remove as removeIdentity } from '../services/identity'
+import { get as getIdentity, getSelected, remove as removeIdentity } from '../services/identity'
 import storage from '../services/storage'
 import { textCapitalize, copyToClipboard } from '../utils/utils'
 import { confirm } from '../services/modal'
@@ -29,7 +29,6 @@ const texts = {
     selectedWalletWarning: 'Cannot remove selected wallet',
     showSeed: 'Show seed',
 }
-const getSelectedAddress = () => secretStore()._keys[storage.walletIndex()].address
 
 export default class IdentityDetails extends ReactiveComponent {
     constructor(props) {
@@ -123,7 +122,7 @@ export default class IdentityDetails extends ReactiveComponent {
     handleSubmit() {
         const { onSubmit } = this.props
         const { address, name } = this.identity
-        if (address === getSelectedAddress()) {
+        if (address === getSelected().address) {
             return confirm({
                 cancelButton: 'Ok',
                 confirmButton: null,
