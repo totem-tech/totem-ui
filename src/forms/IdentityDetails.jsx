@@ -21,6 +21,7 @@ const words = {
 }
 const wordsCapitalized = textCapitalize(words)
 const texts = {
+    cryptoType: 'Crypto Type',
     hideSeed: 'Hide seed',
     identityDetails: 'Identity details',
     noKeepItHidden: 'No keep it hidden',
@@ -101,6 +102,11 @@ export default class IdentityDetails extends ReactiveComponent {
                     readOnly: true,
                     type: 'text',
                     useInput: true,
+                },
+                {
+                    label: texts.cryptoType,
+                    name: 'type',
+                    readOnly: true,
                 },
             ],
         }

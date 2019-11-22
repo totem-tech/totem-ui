@@ -6,7 +6,7 @@ import Identicon from 'polkadot-identicon'
 import { generateMnemonic } from 'bip39'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import identityService from '../services/identity'
-import { isFn, textCapitalize } from '../utils/utils'
+import { deferred, isFn, textCapitalize } from '../utils/utils'
 
 const words = {
     address: 'address',
@@ -83,10 +83,16 @@ export default class IdentityForm extends ReactiveComponent {
                     label: wordsCapitalized.seed,
                     name: 'uri',
                     placeholder: texts.seedPlaceholder,
-                    readOnly: this.doUpdate,
+                    readOnly: true,
                     required: true,
                     type: 'text',
-                    value: ''
+                    validate: (_, { value: seed }) => {
+                        const valid = !!identityService.accountFromPhrase(seed)
+                        if (!valid) this.addressBond.changed('')
+                        return valid ? null : 'Please enter a valid seed'
+
+                    },
+                    value: '',
                 },
                 {
                     hidden: this.doUpdate && (this.values.uri || '').includes('/totem/'),
@@ -146,6 +152,7 @@ export default class IdentityForm extends ReactiveComponent {
         const uriInput = findInput(inputs, 'uri')
         uriInput.action = restore ? undefined : this.generateBtn
         uriInput.readOnly = !restore
+        this.setState({ inputs })
     }
 
     handleSubmit() {

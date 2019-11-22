@@ -11,16 +11,16 @@ const _ssKeys = () => secretStore()._keys
 const _ssSync = () => secretStore()._sync()
 const _ssForget = address => secretStore().forget(address)
 
-const identities = new DataStorage('totem_identities')
+const identities = new DataStorage('totem_identities', true)
 const updateBond = () => bond.changed(uuid.v1())
 const VALID_KEYS = [
-    'address',
+    // 'address',
     'cloudBackupStatus', // undefined: never backed up, in-progress, done
     'cloudBackupTS', // most recent successful backup timestamp
     //???? 'fileBackupTS' // most recent file backup timestamp
     // 
     // 'seed',
-    'name',
+    // 'name',
     'tags',
     'usageType',
 ]
@@ -72,22 +72,26 @@ export const remove = address => {
 // add/update
 export const set = (address, identity = {}) => {
     const { name, uri: seed } = identity
+    let create = false
     let existing = _ssFind(address)
     if (!existing) {
-        if (!seed || !name) return
+        const account = accountFromPhrase(seed)
+        if (!account || !name) return
+        create = true
         // create new identity
         _ssSubmit(seed, name)
         existing = _ssFind(name)
         address = existing.address
     }
+    const cleanObj = objClean(identity, VALID_KEYS)
     identities.set(address, {
         ...identities.get(address),
         // get rid of any unaccepted keys
-        ...objClean(identity, VALID_KEYS)
+        ...cleanObj,
     })
 
     // update name in secretStore
-    if (!seed && name && name !== existing.name) {
+    if (!create && !!name && name !== existing.name) {
         existing.name = name
         _ssSync()
     }
@@ -109,6 +113,7 @@ export const setSelected = address => {
 }
 
 export default {
+    accountFromPhrase,
     bond,
     find,
     get,
