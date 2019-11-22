@@ -197,9 +197,9 @@ const sidebarItems = [
 		header: "Partner Contact List",
 		subHeader: "Manage suppliers or customers, or any other party that you have contact with in Totem.",
 		subHeaderDetails: 
-		"In Totem, a partner is anyone that you intend to interact with. Each partner has one or more identities, \n" + 
-		"that they can share with you. (see the Identities Module for more information on Identities.) \n" + 
-		"The best way to get someone's identity is to request it, which you can do using the internal notofocation service. \n" +
+		"In Totem, a partner is anyone that you intend to interact with. Each partner has one or more identities,\n " + 
+		"that they can share with you. (see the Identities Module for more information on Identities.) \n " + 
+		"The best way to get someone's identity is to request it, which you can do using the internal messaging service. \n" +
 		"Click Request, and enter the partner\'s userID and hopefully they will share one with you. \n" +
 		"You can give each shared Partner Identity a new name, add tags, and define it any way you want. \n" + 
 		"Once a partner is stored in this list you can use it all over Totem.",
@@ -236,9 +236,9 @@ const sidebarItems = [
 	{ icon: "lightbulb", title: "Products", subHeader: "" },
 	{
 		icon: "money bill alternate outline",
-		title: "Payment",
-		header: "Direct payments",
-		subHeader: "Send funds from your account to another",
+		title: "Transfer",
+		header: "Transfer Transaction Allocations",
+		subHeader: "Use this module to send your transaction allocations to \n another Identity. You can send to any Identity on the network, including your own",
 		active: false,
 		content: <SendFundsView />
 	},
