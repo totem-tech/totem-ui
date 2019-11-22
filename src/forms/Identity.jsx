@@ -7,6 +7,7 @@ import { generateMnemonic } from 'bip39'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import identityService from '../services/identity'
 import { isFn, textCapitalize } from '../utils/utils'
+import { ss58Encode } from '../utils/convert'
 
 const words = {
     address: 'address',
@@ -25,6 +26,7 @@ const wordsCapitalized = textCapitalize(words)
 const texts = {
     identityNamePlaceholder: 'A name for the identity',
     restoreInputLabel: 'Restore my existing identity',
+    seedExists: 'Seed alreaedy exists in the identity list',
     seedPlaceholder: 'Enter existing seed or generate one',
     tagsInputEmptyMessage: 'Enter tag and press enter to add, to tags list',
     tagsPlaceholder: 'Enter tags',
@@ -88,15 +90,34 @@ export default class IdentityForm extends ReactiveComponent {
                     readOnly: true,
                     required: true,
                     type: 'text',
+                    // validation for restore seed only
                     validate: (_, { value: seed }) => {
-                        if (!!identityService.accountFromPhrase(seed)) {
+                        const { inputs } = this.state
+                        const account = identityService.accountFromPhrase(seed)
+                        if (!account) {
                             this.addressBond.changed('')
                             return texts.validSeedRequired
                         }
+                        const address = ss58Encode(account)
+                        if (identityService.find(address)) return texts.seedExists
+                        this.values.address = address
+                        this.addressBond.changed(address)
+                        if (seed.includes('/totem/')) {
+                            // extract usageType
+                            const usagetypeInt = parseInt(seed.split('/totem/')[1])
+                            const usageType = usagetypeInt === 1 ? 'business' : 'personal'
+                            const usageTypeIn = findInput(inputs, 'usageType')
+                            usageTypeIn.hidden = true
+                            this.values.usageType = usageType
+                            usageTypeIn.bond.changed(usageType)
+                            this.setState({ inputs })
+                        }
+                        return null
                     },
                     value: '',
                 },
                 {
+                    bond: new Bond(),
                     hidden: this.doUpdate && (this.values.uri || '').includes('/totem/'),
                     inline: true,
                     label: texts.usageType,
@@ -111,6 +132,7 @@ export default class IdentityForm extends ReactiveComponent {
                     type: 'Checkbox-group',
                 },
                 {
+                    bond: this.addressBond,
                     label: wordsCapitalized.address,
                     name: 'address',
                     type: 'hidden',

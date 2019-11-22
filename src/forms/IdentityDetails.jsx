@@ -5,7 +5,7 @@ import { ReactiveComponent } from 'oo7-react'
 import { Button } from 'semantic-ui-react'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import identityService from '../services/identity'
-import { textCapitalize, copyToClipboard } from '../utils/utils'
+import { copyToClipboard, isFn, textCapitalize } from '../utils/utils'
 import { confirm } from '../services/modal'
 
 const words = {
