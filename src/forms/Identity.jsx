@@ -162,7 +162,7 @@ export default class IdentityForm extends ReactiveComponent {
         if (restore) return
         seed = seed || generateMnemonic()
         seed = seed.split('/totem/')[0] + `/totem/${usageType === 'personal' ? 0 : 1}/0`
-        this.addressBond.changed(secretStore().accountFromPhrase(seed) || '')
+        this.addressBond.changed(identityService.accountFromPhrase(seed) || '')
         findInput(inputs, 'uri').bond.changed(seed)
         this.setState({ inputs })
     }

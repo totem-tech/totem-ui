@@ -6,7 +6,6 @@ import { showForm } from '../services/modal'
 import { setToast } from '../services/toast'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import identityService from '../services/identity'
-import { WalletUpdate } from '../forms/Wallet'
 import RegisterForm from '../forms/Register'
 import IdentityForm from '../forms/Identity'
 

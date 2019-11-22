@@ -2,12 +2,13 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
-import { secretStore, ss58Decode } from 'oo7-substrate'
+import { ss58Decode } from '../utils/convert'
 import { arrSort, deferred, isFn, isObj } from '../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import addressbook from '../services/partners'
 import client from '../services/ChatClient'
 import { showForm } from '../services/modal'
+import identityService from '../services/identity'
 import CompanyForm from './Company'
 import { getAddressName } from '../components/ProjectDropdown'
 
@@ -217,7 +218,7 @@ class Partner extends ReactiveComponent {
         const { inputs } = this.state
         const assocIn = findInput(inputs, 'associatedIdentity')
         assocIn.options = arrSort(
-            secretStore()._keys.map(({ name, address }) => ({
+            identityService.getAll().map(({ name, address }) => ({
                 key: address,
                 text: name,
                 value: address,

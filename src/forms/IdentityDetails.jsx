@@ -2,11 +2,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
-import { secretStore } from 'oo7-substrate'
-import { Button, Icon, Label } from 'semantic-ui-react'
+import { Button } from 'semantic-ui-react'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import { get as getIdentity, getSelected, remove as removeIdentity } from '../services/identity'
-import storage from '../services/storage'
+import identityService from '../services/identity'
 import { textCapitalize, copyToClipboard } from '../utils/utils'
 import { confirm } from '../services/modal'
 
@@ -110,7 +108,7 @@ export default class IdentityDetails extends ReactiveComponent {
 
     componentWillMount() {
         const { address } = this.props.values
-        this.identity = getIdentity(address) || {}
+        this.identity = identityService.get(address) || {}
         fillValues(this.state.inputs, { ...this.identity, uri: this.getUri() })
     }
 
@@ -122,7 +120,7 @@ export default class IdentityDetails extends ReactiveComponent {
     handleSubmit() {
         const { onSubmit } = this.props
         const { address, name } = this.identity
-        if (address === getSelected().address) {
+        if (address === identityService.getSelected().address) {
             return confirm({
                 cancelButton: 'Ok',
                 confirmButton: null,
@@ -145,7 +143,7 @@ export default class IdentityDetails extends ReactiveComponent {
             ],
             header: `${wordsCapitalized.remove} ${wordsCapitalized.identity}`,
             onConfirm: () => {
-                removeIdentity(address)
+                identityService.remove(address)
                 this.setState({ success: true })
                 isFn(onSubmit) && onSubmit(true, this.identity)
             },

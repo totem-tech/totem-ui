@@ -6,7 +6,6 @@ import DataStorage from '../utils/DataStorage'
 import GettingStarted from './components/GettingStartedView'
 import SendFundsView from './views/SendFundsView'
 import UtilitiesView from './views/UtilitiesView'
-import IdentitiesView from './views/WalletView'
 import TimeKeepingView from './views/TimeKeepingView'
 import PartnerList from './lists/PartnerList'
 import ProjectList from './lists/ProjectList'
@@ -60,13 +59,13 @@ const sidebarItems = [
         active: false,
         content: <SendFundsView />
     },
-    {
-        icon: "id badge outline",
-        title: "Identities",
-        subHeader: "Manage your Identity keys",
-        active: true,
-        content: <IdentitiesView />
-    },
+    // {
+    //     icon: "id badge outline",
+    //     title: "Identities",
+    //     subHeader: "Manage your Identity keys",
+    //     active: true,
+    //     content: <IdentitiesView />
+    // },
     {
         active: false,
         icon: "stethoscope",

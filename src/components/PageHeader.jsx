@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
-import { runtimeUp, secretStore, runtime, ss58Decode } from 'oo7-substrate'
+import { runtime, ss58Decode } from 'oo7-substrate'
 import { Dropdown, Image, Menu } from 'semantic-ui-react'
 import { getUser, getClient, onLogin } from '../services/ChatClient'
 import { copyToClipboard, isFn } from '../utils/utils'

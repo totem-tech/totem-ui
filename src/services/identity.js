@@ -28,6 +28,8 @@ const VALID_KEYS = [
 export const bond = new Bond().defaultTo(uuid.v1())
 export const selectedAddressBond = new Bond().defaultTo(uuid.v1())
 
+export const accountFromPhrase = seed => secretStore().accountFromPhrase(seed)
+
 export const get = address => {
     const identity = _ssFind(address)
     return !identity ? null : {

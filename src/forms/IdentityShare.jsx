@@ -1,12 +1,12 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
-import { secretStore } from 'oo7-substrate'
 import { isFn, isObj } from '../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import { handleAddUser } from './IdentityRequest'
 import addressbook from '../services/partners'
 import client from '../services/ChatClient'
+import identityService from '../services/identity'
 
 const notificationType = 'identity'
 const childType = 'share'
@@ -74,7 +74,7 @@ export default class IdentityShareForm extends ReactiveComponent {
                     text: 'Identities',
                     value: '' // keep
                 },
-                ...secretStore()._keys.map(({ address, name }) => ({
+                ...identityService.getAll().map(({ address, name }) => ({
                     key: address,
                     name, // keep
                     text: name,

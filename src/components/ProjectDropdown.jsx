@@ -1,10 +1,10 @@
 
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
-import { secretStore } from 'oo7-substrate'
 import { arrSort, deferred, objCopy, textEllipsis } from '../utils/utils'
 import client from '../services/ChatClient'
 import addressbook from '../services/partners'
+import identityService from '../services/identity'
 import { FormInput, findInput } from '../components/FormBuilder'
 
 const emptySearchMsg = 'Enter project name, hash or owner address'
@@ -45,7 +45,7 @@ export const projectDropdown = {
     type: 'dropdown',
 }
 
-export const getAddressName = address => (secretStore().find(address) || {}).name
+export const getAddressName = address => (identityService.find(address) || {}).name
     // not found in wallet list
     // search in addressbook
     || (addressbook.get(address) || {}).name
