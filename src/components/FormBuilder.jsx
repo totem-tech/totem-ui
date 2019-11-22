@@ -26,7 +26,7 @@ class FormBuilder extends ReactiveComponent {
     getValues(inputs = [], values = {}) {
         return inputs.reduce((values, input, i) => {
             const { bond, inputs, name, controlled, type } = input
-            const typeLC = type.toLowerCase()
+            const typeLC = (type || '').toLowerCase()
             const isGroup = typeLC === 'group'
             if (!isDefined(name)) return values
             if (isGroup) return this.getValues(inputs, values)
@@ -46,7 +46,7 @@ class FormBuilder extends ReactiveComponent {
         const { onChange: formOnChange } = this.props
         let { values } = this.state
         const { value } = data
-        const updateBond = isBond(input.bond) && input.type.toLowerCase() !== 'checkbox-group'
+        // const updateBond = isBond(input.bond) && input.type.toLowerCase() !== 'checkbox-group'
         inputs[index]._invalid = data.invalid
         values[name] = value
         if (isDefined(childIndex)) {
@@ -56,7 +56,7 @@ class FormBuilder extends ReactiveComponent {
         }
         // update values of other inputs
         values = this.getValues(inputs, values)
-        updateBond && input.bond.changed(value)
+        // updateBond && input.bond.changed(value)
 
         if (!data.invalid) {
             // trigger input items's onchange callback
@@ -194,7 +194,7 @@ class FormBuilder extends ReactiveComponent {
                     />
                 </div>
                 {header && (
-                    <Header as={Modal.Header}>
+                    <Header as={Modal.Header} style={styles.header}>
                         <Header.Content>
                             {headerIcon && <Icon name={headerIcon} size="large" />}
                             {header}
@@ -261,15 +261,12 @@ FormBuilder.defaultProps = {
 }
 export default FormBuilder
 
-////////////////// form input
-
-
 export const fillValues = (inputs, values, forceFill) => {
     if (!isObj(values)) return
     inputs.forEach(input => {
         let { bond, name, type } = input
         const newValue = values[input.name]
-        type = (isStr(type) ? type : '').toLowerCase()
+        type = (isStr(type) ? type : 'text').toLowerCase()
         const isGroup = type === 'group'
         if (!isGroup && (
             !isDefined(name) || !values.hasOwnProperty(input.name)
@@ -287,7 +284,8 @@ export const fillValues = (inputs, values, forceFill) => {
             input.value = newValue
         }
         // make sure Bond is also updated
-        isBond(bond) && bond.changed(input.defaultValue)
+        if (!isBond(bond)) return
+        setTimeout(() => bond.changed(newValue))
     })
 }
 
@@ -301,7 +299,7 @@ export const resetValues = inputs => inputs.map(input => {
 })
 
 export const isFormInvalid = (inputs = [], values) => inputs.reduce((invalid, input) => {
-    const inType = (input.type || '').toLowerCase()
+    const inType = (input.type || 'text').toLowerCase()
     const isCheckbox = ['checkbox', 'radio'].indexOf(inType) >= 0
     const isGroup = inType === 'group'
     const isRequired = !!input.required
@@ -341,5 +339,8 @@ const styles = {
     },
     formMessage: {
         margin: 1
+    },
+    header: {
+        textTransform: 'capitalize',
     }
 }

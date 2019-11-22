@@ -2,19 +2,18 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
-import { secretStore } from 'oo7-substrate'
 import { Button, Dropdown } from 'semantic-ui-react'
 import ListFactory from '../components/ListFactory'
 import { arrUnique, isDefined, mapFilter } from '../utils/utils'
-import ProjectDropdown, { getAddressName } from '../components/ProjectDropdown'
+import { getAddressName } from '../components/ProjectDropdown'
 import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'
 import PartnerForm from '../forms/Partner'
 import { confirm, showForm } from '../services/modal'
 import addressbook from '../services/partners'
 import client from '../services/ChatClient'
-import storage from '../services/storage'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { timeKeeping } from '../services/blockchain'
+import identityService from '../services/identity'
 import { secondsToDuration, BLOCK_DURATION_SECONDS } from '../utils/time'
 import { bytesToHex } from '../utils/convert'
 
@@ -129,8 +128,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
     componentWillMount() {
         this.updateBond = Bond.all([
-            storage.walletIndexBond,
-            secretStore(),
+            identityService.bond,
             addressbook.getBond(),
         ])
 
@@ -143,7 +141,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
     getActionContent(entry, hash) {
         const { isOwner } = this.state
-        const { address: selectedAddress } = secretStore()._keys[storage.walletIndex()] || {}
+        const { address: selectedAddress } = identityService.getSelected()
         const isUser = selectedAddress === entry.address
         const btnProps = isOwner && !isUser ? {
             disabled: !isOwner || entry.approved === true,
@@ -163,7 +161,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         const options = [
             {
                 content: 'Add Partner',
-                hidden: !!addressbook.get(entry.address) || !!secretStore().find(entry.address),
+                hidden: !!addressbook.get(entry.address) || !!identityService.find(entry.address),
                 icon: 'user plus',
                 key: 1,
                 onClick: () => showForm(PartnerForm, { values: { address: entry.address } }),
@@ -208,7 +206,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     getEntries() {
         const { manage, projectHash, project } = this.props
         const { listProps } = this.state
-        const workerAddress = secretStore()._keys[storage.walletIndex()].address
+        const { address: workerAddress } = identityService.getSelected()
         const isOwner = manage && (project ? project.ownerAddress === workerAddress : true)
         const bannedAddresses = project && (project.timeKeeping || {}).bannedAddresses || []
         listProps.selectable = manage && isOwner
@@ -321,7 +319,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         const { bannedAddresses } = timeKeeping || {}
         let addresses = arrUnique(selectedKeys.map(key => data.get(key).address))
             // filter out user wallets
-            .filter(address => !secretStore().find(address))
+            .filter(address => !identityService.find(address))
         // prevents accidental self-banning
         if (addresses.length === 0) return confirm({
             cancelButton: null,

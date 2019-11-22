@@ -11,7 +11,6 @@ import {
 import GettingStarted from './components/GettingStartedView'
 import SendFundsView from './views/SendFundsView'
 import UtilitiesView from './views/UtilitiesView'
-import IdentitiesView from './views/WalletView'
 import TimeKeepingView from './views/TimeKeepingView'
 import ErrorBoundary from './components/CatchReactErrors'
 import ChatWidget from './components/ChatWidget'
@@ -19,6 +18,7 @@ import ContentSegment from './components/ContentSegment'
 import PageHeader from './components/PageHeader'
 import PartnerList from './lists/PartnerList'
 import ProjectList from './lists/ProjectList'
+import IdentityList from './lists/IdentityList'
 import SidebarLeft from './components/SidebarLeft'
 import ModalService from './services/modal'
 import ToastService from './services/toast'
@@ -247,7 +247,7 @@ const sidebarItems = [
 		title: "Identities",
 		subHeader: "Manage your Identity keys",
 		active: false,
-		content: <IdentitiesView />
+		content: <IdentityList />
 	},
 	{
 		active: false,

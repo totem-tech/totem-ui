@@ -10,14 +10,14 @@ const trigger = new Bond()
 
 class ModalService extends ReactiveComponent {
     constructor() {
-        super([], {trigger})
+        super([], { trigger })
     }
     render() {
         return (
             <div className="modal-service">
                 {Array.from(modals).map(item => <span key={item[0]}>{item[1]}</span>)}
             </div>
-        ) 
+        )
     }
 }
 export default ModalService
@@ -45,11 +45,11 @@ export const confirm = (confirmProps, id) => {
     return add(
         id,
         <Confirm
-          {...confirmProps}
-          content={<div className="content">{content}</div>}
-          open={isDefined(open) ? open : true}
-          onCancel={(e, d) => closeModal(id) | (isFn(onCancel) && onCancel(e, d))}
-          onConfirm={(e, d) => closeModal(id) | (isFn(onConfirm) && onConfirm(e, d))}
+            {...confirmProps}
+            content={content && <div className="content">{content}</div>}
+            open={isDefined(open) ? open : true}
+            onCancel={(e, d) => closeModal(id) | (isFn(onCancel) && onCancel(e, d))}
+            onConfirm={(e, d) => closeModal(id) | (isFn(onConfirm) && onConfirm(e, d))}
         />
     )
 }
@@ -72,8 +72,8 @@ export const showForm = (FormComponent, props, id) => {
         <FormComponent
             {...props}
             modal={true}
-            onClose={(e, d)=> {
-                setTimeout(()=>closeModal(id))
+            onClose={(e, d) => {
+                setTimeout(() => closeModal(id))
                 isFn(props.onClose) && props.onClose(e, d)
             }}
             open={true}

@@ -1,8 +1,8 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
-import { secretStore } from 'oo7-substrate'
 import FormBuilder, { fillValues } from '../components/FormBuilder'
 import { isFn, isObj } from '../utils/utils'
+import { getAll as getIdentities } from '../services/identity'
 
 // 
 export default class SelectIdentityForm extends ReactiveComponent {
@@ -15,7 +15,7 @@ export default class SelectIdentityForm extends ReactiveComponent {
                 {
                     label: 'Identity',
                     name: 'address',
-                    options: secretStore()._keys.map((wallet, i) => ({
+                    options: getIdentities().map((wallet, i) => ({
                         key: i,
                         text: wallet.name,
                         value: wallet.address

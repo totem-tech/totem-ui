@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
-import { pretty, secretStore } from 'oo7-substrate'
+import { pretty } from 'oo7-substrate'
 import { Button } from 'semantic-ui-react'
 import ListFactory from '../components/ListFactory'
 import FormBuilder from '../components/FormBuilder'
@@ -10,10 +10,10 @@ import ProjectForm, { ReassignProjectForm } from '../forms/Project'
 import { deferred, isArr, IfMobile, objCopy } from '../utils/utils'
 import { confirm, showForm } from '../services/modal'
 import client from '../services/ChatClient'
-import storageService from '../services/storage'
 import { ownerProjectsList, projectHashStatus } from '../services/blockchain'
 import { addToQueue } from '../services/queue'
 import addressbook from '../services/partners'
+import identityService from '../services/identity'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -21,9 +21,7 @@ const PROJECT_STATUSES = { 0: 'Open', 1: 'Re-opened', 2: 'Closed', 99: 'Deleted'
 
 class ProjectList extends ReactiveComponent {
     constructor(props) {
-        super(props, {
-            // secretStore: secretStore()
-        })
+        super(props)
 
         this.getContent = this.getContent.bind(this)
         this.loadProjects = deferred(this.loadProjects, 100, this)
@@ -108,13 +106,16 @@ class ProjectList extends ReactiveComponent {
                     disabled: true,
                     icon: 'trash alternate',
                     onClick: (selectedHashes) => {
+                        const queueItems = []
+                        const projectNames = []
                         selectedHashes.forEach(hash => {
                             const { projects } = this.state
                             const targetStatus = 99
                             const { name, ownerAddress, status } = projects.get(hash) || {}
                             // ignore if project is already at target status or project not longer exists in the list
                             if (status === targetStatus || !name) return;
-                            addToQueue({
+                            projectNames.push(name)
+                            queueItems.push({
                                 type: 'blockchain',
                                 func: 'removeProject',
                                 args: [ownerAddress, hash],
@@ -131,6 +132,21 @@ class ProjectList extends ReactiveComponent {
                                     ]
                                 }
                             })
+                        })
+                        if (projectNames.length === 0) return
+                        const s = projectNames.length > 1 ? 's' : ''
+                        confirm({
+                            content: (
+                                <div>
+                                    <h4>You are about to delete the following project{s}:</h4>
+                                    <ul>
+                                        {projectNames.map((name, i) => <li key={i}>{name}</li>)}
+                                    </ul>
+                                </div>
+                            ),
+                            header: 'Delete project' + s,
+                            onConfirm: () => queueItems.forEach(item => addToQueue(item)),
+                            size: 'mini',
                         })
                     }
                 },
@@ -158,13 +174,10 @@ class ProjectList extends ReactiveComponent {
     }
 
     componentWillMount() {
-        const { secretStore: ss } = this.state
-        const wallets = ss ? ss.keys : secretStore()._value.keys // force if not ready
-        const { address } = wallets[storageService.walletIndex()]
+        const { address } = identityService.getSelected()
         this.triggerBond = Bond.all([
             addressbook.getBond(),
-            secretStore(),
-            storageService.walletIndexBond,
+            identityService.bond,
             ownerProjectsList(address)
         ])
         // reload projects whenever any of the bond's value updates
@@ -235,9 +248,8 @@ class ProjectList extends ReactiveComponent {
     }
 
     loadProjects() {
-        const { secretStore: ss } = this.state
-        const wallets = ss ? ss.keys : secretStore()._value.keys // force if not ready
-        const { address } = wallets[storageService.walletIndex()]
+        const wallets = identityService.getAll()
+        const { address } = identityService.getSelected()
         return ownerProjectsList(address).then(hashArr => {
             if (!isArr(hashArr) || hashArr.length === 0) return this.setState({ projects: new Map() });
             // convert to string
@@ -348,11 +360,11 @@ class ProjectList extends ReactiveComponent {
                     title: 'Name'
                 },
                 // mobile ? null : {
-                    //     collapsing: true,
-                    //     content: this.getOwner,
-                    //     key: '_ownerName',
-                    //     title: 'Owner',
-                    // },
+                //     collapsing: true,
+                //     content: this.getOwner,
+                //     key: '_ownerName',
+                //     title: 'Owner',
+                // },
                 mobile ? null : {
                     key: 'description',
                     title: 'Description'
