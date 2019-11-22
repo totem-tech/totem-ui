@@ -2,7 +2,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
-import { chain, secretStore } from 'oo7-substrate'
+import { chain } from 'oo7-substrate'
 import { Button, Icon } from 'semantic-ui-react'
 import { arrReadOnly, deferred, hasValue, isDefined, isFn, objCopy, objClean, objWithoutKeys } from '../utils/utils'
 import {
@@ -17,6 +17,7 @@ import storage from '../services/storage'
 import { projectDropdown, handleSearch, getAddressName } from '../components/ProjectDropdown'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { projectHashStatus, timeKeeping } from '../services/blockchain'
+import { getAll as getIdentities, getSelected } from '../services/identity'
 
 const DURATION_ZERO = '00:00:00'
 const blockCountToDuration = blockCount => secondsToDuration(blockCount * BLOCK_DURATION_SECONDS)
@@ -154,7 +155,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                 return this.setState({ inputs })
             }
 
-            const { address: workerAddress } = secretStore()._keys[storage.walletIndex()]
+            const { address: workerAddress } = getSelected()
             // check if user is active on the project
             timeKeeping.invitation.status(projectHash, workerAddress).then(workerActive => {
                 inputs[index].loading = false
@@ -275,7 +276,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         const duraIn = inputs.find(x => x.name === 'duration')
         duraIn.readOnly = true
         duraIn.message = null
-        values.address = secretStore()._keys[storage.walletIndex()].address
+        values.address = getSelected().address
         values.blockCount = durationToBlockCount(values.duration)
         values.blockStart = blockNumber - values.blockCount
         values.stopped = false
@@ -429,7 +430,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
 
         // set wallet options
         inputs.find(x => x.name === 'address')
-            .options = (secretStore()._keys).map((wallet, key) => ({
+            .options = getIdentities().map((wallet, key) => ({
                 key,
                 text: wallet.name,
                 value: wallet.address

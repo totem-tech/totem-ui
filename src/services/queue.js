@@ -3,10 +3,11 @@
  */
 import React from 'react'
 import uuid from 'uuid'
-import { runtime, secretStore } from 'oo7-substrate'
+import { runtime } from 'oo7-substrate'
 import client from './ChatClient'
 import blockchain from './blockchain'
 import storageService from './storage'
+import { find as findIdentity } from './identity'
 import { removeToast, setToast } from './toast'
 import { isArr, isFn, isObj, objClean, objReadOnly, isBond } from '../utils/utils'
 
@@ -125,7 +126,7 @@ const _processItem = (queueItem, id, toastId) => {
             }
             const { address } = queueItem
             if (!address) return handlePost();
-            const wallet = secretStore().find(address)
+            const wallet = findIdentity(address)
             if (!wallet && !silent) {
                 setToast({
                     content: `Cannot create a transaction from an address that does not belong to you! Supplied address: ${address}`,

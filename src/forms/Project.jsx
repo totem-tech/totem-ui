@@ -1,25 +1,23 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
-import { runtime, secretStore } from 'oo7-substrate'
+import { runtime } from 'oo7-substrate'
 import FormBuilder, { fillValues } from '../components/FormBuilder'
 import { arrSort, generateHash, isDefined, isFn, isObj, objCopy } from '../utils/utils'
-import storageService from '../services/storage'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { Pretty } from '../Pretty'
 import addressbook from '../services/partners';
 import { confirm } from '../services/modal'
+import identityService from '../services/identity'
 
 // Create or update project form
 class Project extends ReactiveComponent {
     constructor(props) {
-        super(props, {
-            secretStore: secretStore(),
-        })
+        super(props)
 
         this.handleSubmit = this.handleSubmit.bind(this)
         this.checkOwnerBalance = checkBalance.bind(this)
-        const selectedWallet = secretStore().use()._value.keys[storageService.walletIndex()].address
+        const { address: selectedAddress } = identityService.getSelected()
 
         this.state = {
             closeText: 'Cancel',
@@ -54,7 +52,7 @@ class Project extends ReactiveComponent {
                     search: true,
                     selection: true,
                     required: true,
-                    value: props.hash ? undefined : selectedWallet
+                    value: props.hash ? undefined : selectedAddress
                 },
                 {
                     label: 'Project Description',
@@ -71,7 +69,7 @@ class Project extends ReactiveComponent {
         if (isObj(props.project)) fillValues(this.state.inputs, props.project, true)
         setTimeout(() => {
             // Check if wallet has balance
-            this.checkOwnerBalance(props.project ? props.project.ownerAddress : selectedWallet, 'ownerAddress')
+            this.checkOwnerBalance(props.project ? props.project.ownerAddress : selectedAddress, 'ownerAddress')
         })
     }
 
@@ -133,7 +131,7 @@ class Project extends ReactiveComponent {
             subheader,
             trigger
         } = this.props
-        const { closeText, inputs, loading, message, open, secretStore, success } = this.state
+        const { closeText, inputs, loading, message, open, success } = this.state
         const isOpenControlled = modal && !trigger && isDefined(propsOpen)
         const ownerDD = inputs.find(x => x.name === 'ownerAddress')
 
@@ -144,7 +142,7 @@ class Project extends ReactiveComponent {
             text: 'Identities',
             value: '' // keep
             // add wallet items to owner address dropdown
-        }].concat(arrSort(secretStore && secretStore.keys || [], 'name').map((wallet, i) => ({
+        }].concat(arrSort(identityService.getAll(), 'name').map((wallet, i) => ({
             key: 'wallet-' + i + wallet.address,
             text: wallet.name,
             description: <Pretty value={runtime.balances.balance(ss58Decode(wallet.address))} />,
@@ -203,7 +201,7 @@ const styles = {
 function checkBalance(address, inputName) {
     const { inputs } = this.state
     const index = this.state.inputs.findIndex(x => x.name === inputName)
-    const wallet = secretStore().find(address)
+    const wallet = identityService.find(address)
     // minimum balance required
     const minBalance = 500
     // keep input field in invalid state until verified
@@ -299,7 +297,7 @@ export class ReassignProjectForm extends ReactiveComponent {
     handleSubmit(e, values) {
         const { project, onSubmit } = this.props
         const { hash, name, ownerAddress, newOwnerAddress } = values
-        const walletExists = secretStore().find(newOwnerAddress)
+        const walletExists = identityService.find(newOwnerAddress)
         const task = {
             type: QUEUE_TYPES.BLOCKCHAIN,
             func: 'reassignProject',
@@ -342,7 +340,7 @@ export class ReassignProjectForm extends ReactiveComponent {
     render() {
         const { header, modal, onClose, open, size, subheader } = this.props
         const { closeText, inputs, message, success } = this.state
-        const wallets = secretStore()._value.keys || []
+        const wallets = identityService.getAll()
         const partners = Array.from(addressbook.getAll()).map((_, p) => p)
         let options = [{
             key: 0,

@@ -5,8 +5,9 @@ import storage from '../services/storage'
 import { showForm } from '../services/modal'
 import { setToast } from '../services/toast'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import { WalletUpdate } from '../forms/Wallet'
+import identityService from '../services/identity'
 import RegisterForm from '../forms/Register'
+import IdentityForm from '../forms/Identity'
 
 export default class GetingStarted extends ReactiveComponent {
 	constructor() {
@@ -20,8 +21,8 @@ export default class GetingStarted extends ReactiveComponent {
 	}
 
 	handleIdentityChange() {
-		showForm(WalletUpdate, {
-			index: storage.walletIndex(),
+		showForm(IdentityForm, {
+			values: identityService.getSelected(),
 			onSubmit: success => success && this.setIndex(1)
 		})
 	}
@@ -33,17 +34,17 @@ export default class GetingStarted extends ReactiveComponent {
 		})
 	}
 
-	handleFaucetRequest() {		
-		this.faucetMsgId = setToast({content: 'Faucet request sent', status: 'loading'}, null, this.faucetMsgId)
-		const address = secretStore()._keys[storage.walletIndex()].address
-		
+	handleFaucetRequest() {
+		this.faucetMsgId = setToast({ content: 'Faucet request sent', status: 'loading' }, null, this.faucetMsgId)
+		const { address } = identityService.getSelected()
+
 		addToQueue({
 			type: QUEUE_TYPES.CHATCLIENT,
 			func: 'faucetRequest',
 			args: [
 				address,
 				(err, txHash) => {
-						this.faucetMsgId = setToast({
+					this.faucetMsgId = setToast({
 						content: err || `Faucet transfer complete. Transaction hash: ${txHash}`,
 						status: !!err ? 'error' : 'success'
 					}, null, this.faucetMsgId)
@@ -55,7 +56,7 @@ export default class GetingStarted extends ReactiveComponent {
 
 	setIndex(index) {
 		storage.gettingStartedStepIndex(index)
-		setTimeout(()=> this.setState({activeIndex: index}))
+		setTimeout(() => this.setState({ activeIndex: index }))
 	}
 
 	render() {
@@ -69,13 +70,16 @@ export default class GetingStarted extends ReactiveComponent {
 				<div>
 					<h3>A quick guide to getting started with Totem Live Accounting.</h3>
 					<p>
-						It's currently under heavy development, but you can already use the Identities, Partners, Project and Timekeeping Modules as well as make basic transactions using the Payments Module.
+						It's currently under heavy development, but you can already use the Identities, Partners,
+						Project and Timekeeping Modules as well as make basic transactions using the Payments Module.
 					</p>
 					<p>
-						To use Totem, you need to spend transaction credits. We call them XTX for short. Generally it will cost you 1 XTX per activity - but don't worry, we are nice open source people, and we'll give you thousands! (Enough to get you started, because after all, we want you to use Totem!)
+						To use Totem, you need to spend transaction credits. We call them XTX for short. Generally it
+						will cost you 1 XTX per activity - but don't worry, we are nice open source people, and we'll
+						give you thousands! (Enough to get you started, because after all, we want you to use Totem!)
 					</p>
 					<h4>Only 3 short steps to begin. Let's go!</h4>
-					<div style={{overflowX: 'auto'}}>
+					<div style={{ overflowX: 'auto' }}>
 						<Step.Group ordered>
 							<Step
 								active={activeIndex === 0}
@@ -84,7 +88,11 @@ export default class GetingStarted extends ReactiveComponent {
 								onClick={this.handleIdentityChange}>
 								<Step.Content>
 									<Step.Title>Edit Default Identity</Step.Title>
-									<Step.Description>This Identities are only known to you.<br />You can create as many as you like in <br />the Identities Module.</Step.Description>
+									<Step.Description>
+										This Identities are only known to you.<br />
+										You can create as many as you like in <br />
+										the Identities Module.
+									</Step.Description>
 								</Step.Content>
 							</Step>
 
@@ -95,7 +103,11 @@ export default class GetingStarted extends ReactiveComponent {
 								onClick={this.handleChatUserCreate}>
 								<Step.Content>
 									<Step.Title>Create Chat User ID</Step.Title>
-									<Step.Description>Chat is how you communicate with <br />other Totem users. Choose a unique <br />name (preferably not your own name!)</Step.Description>
+									<Step.Description>
+										Chat is how you communicate with <br />
+										other Totem users. Choose a unique <br />
+										name (preferably not your own name!)
+									</Step.Description>
 								</Step.Content>
 							</Step>
 
@@ -106,7 +118,11 @@ export default class GetingStarted extends ReactiveComponent {
 								onClick={this.handleFaucetRequest}>
 								<Step.Content>
 									<Step.Title>Request XTX</Step.Title>
-									<Step.Description>To make transactions, you need to spend  <br />XTX transactions! Get some XTX from  <br />our faucet by clicking here!</Step.Description>
+									<Step.Description>
+										To make transactions, you need to spend  <br />
+										XTX transactions! Get some XTX from  <br />
+										our faucet by clicking here!
+									</Step.Description>
 								</Step.Content>
 							</Step>
 						</Step.Group>

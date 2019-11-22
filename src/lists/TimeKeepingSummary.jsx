@@ -1,9 +1,8 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
-import { secretStore } from 'oo7-substrate'
 import ListFactory from '../components/ListFactory'
-import storage from '../services/storage'
 import client from '../services/ChatClient'
+import identityService from '../services/identity'
 import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
 
 export default class TimeKeepingSummary extends ReactiveComponent {
@@ -40,20 +39,20 @@ export default class TimeKeepingSummary extends ReactiveComponent {
                 }
             ]
         }
-        setTimeout(()=>this.getSummary())
+        setTimeout(() => this.getSummary())
     }
-    
+
     componentWillMount() {
-        this.tieId = storage.walletIndexBond.tie(() => this.getSummary())
+        this.tieId = identityService.selectedAddressBond.tie(() => this.getSummary())
     }
 
     componentWillUnmount() {
-        storage.walletIndexBond.untie(this.tieId)
+        identityService.selectedAddressBond.untie(this.tieId)
     }
 
     getSummary() {
-        const address = (secretStore()._keys[storage.walletIndex()] || {}).address
-        client.timeKeepingEntrySearch({address}, true, true, false, (err, entries) => {
+        const { address } = identityService.getSelected()
+        client.timeKeepingEntrySearch({ address }, true, true, false, (err, entries) => {
             const entriesArr = Array.from(entries)
             const userTotalBlocks = entriesArr.reduce((sum, [_, entry]) => sum + entry.blockCount, 0)
             const projectHashes = Object.keys(entriesArr.reduce((hashes, [_, entry]) => {
@@ -71,17 +70,17 @@ export default class TimeKeepingSummary extends ReactiveComponent {
                     percentage: ((totalBlocks / userTotalBlocks) * 100).toFixed(2) + '%'
                 }
             }) || []
-            this.setState({data})
-            setTimeout(()=> this.getProjectNames())
+            this.setState({ data })
+            setTimeout(() => this.getProjectNames())
         })
     }
-    
+
     getProjectNames() {
-        const {data} = this.state
+        const { data } = this.state
         data.forEach(row => {
             client.project(row.hash, null, null, (err, { name }) => {
                 row.name = name || ''
-                this.setState({data})
+                this.setState({ data })
             })
         })
     }

@@ -10,7 +10,7 @@ const STATUS_CODES = [
     0, // open
     1, // reopened
     2, // closed
-    9, //deleted
+    99, //deleted
 ]
 // Internally managed keys : ['tsCreated', 'tsFirstUsed']
 const descMaxLen = 160
@@ -152,7 +152,7 @@ export const handleProjectStatus = (hash, status, callback) => {
     if (!isFn(callback)) return;
     const project = projects.get(hash)
     if (!project) return callback(messages.projectNotFound);
-    if (STATUS_CODES.indexOf(status) === -1) return callback(messages.invalidStatusCode)
+    if (!STATUS_CODES.includes(status)) return callback(messages.invalidStatusCode)
     console.log('Project status updated: ', hash, project.status, '>>', status)
     project.status = status
     projects.set(hash, project)

@@ -1,18 +1,20 @@
+// ToDo: deprecate?
+// Only used by src/components/SystemStatus.jsx and src/legacies/ChainInfoBar.jsx
 
-import {calls, runtime, chain, nodeService, system, runtimeUp, ss58Encode, ss58Decode, secretStore} from 'oo7-substrate'
-import {Bond} from 'oo7'
+import { calls, runtime, chain, nodeService, system, runtimeUp, ss58Encode, ss58Decode, secretStore } from 'oo7-substrate'
+import { Bond } from 'oo7'
 import uuid from 'uuid'
 
 const PREFIX = 'data-cache'
-const isFn = fn => typeof(fn) === 'function'
-const UPDATE_FREQUENCY = 1000*30 //  milliseconds (30 Seconds)
+const isFn = fn => typeof (fn) === 'function'
+const UPDATE_FREQUENCY = 1000 * 30 //  milliseconds (30 Seconds)
 // In case of custom runtime or when bond is not immediately available
 const DEFER_DELAY = 10 * 1000
 const DEFER_MAX_TRIES = 10
 const settings = {
     chain_height: { bond: () => chain.height },
     chain_lag: { bond: () => chain.lag },
-    nodeService_status: { bond: () => nodeService().status},
+    nodeService_status: { bond: () => nodeService().status },
     runtime_totem_claimsCount: {
         bond: () => runtime.totem.claimsCount,
         // deferred-ish mechanism is required as runtime.totem is not immediately available and causes error
@@ -26,25 +28,25 @@ const settings = {
         // callbacks: undefined,
         // notifyId: undefined
     },
-    runtime_balances_balance: { 
+    runtime_balances_balance: {
         bond: () => runtime.balances.balance,
         requireArgs: true,
         // settings: new Map() // for each variation of argument(s)
     },
     runtime_core_authorities: { bond: () => runtime.core.authorities },
-    runtime_balances_totalIssuance: { bond: () => runtime.balances.totalIssuance},
-    runtime_version_implName: { bond: () => runtime.version.implName},
-    runtime_version_implVersion: { bond: () => runtime.version.implVersion},
-    runtime_version_specName: { bond: () => runtime.version.specName},
+    runtime_balances_totalIssuance: { bond: () => runtime.balances.totalIssuance },
+    runtime_version_implName: { bond: () => runtime.version.implName },
+    runtime_version_implVersion: { bond: () => runtime.version.implVersion },
+    runtime_version_specName: { bond: () => runtime.version.specName },
     runtime_version_specVersion: { bond: () => runtime.version.specVersion },
     runtimeUp: { bond: () => runtimeUp },
-    secretStore_keys: { bond: ()=> secretStore() },
+    secretStore_keys: { bond: () => secretStore() },
     system_chain: { bond: () => system.chain },
     system_health_is_syncing: { bond: () => system.health.isSyncing },
     system_health_should_have_peers: { bond: () => system.health.shouldHavePeers },
     system_health_peers: { bond: () => system.health.peers },
     system_name: { bond: () => system.name },
-    system_version: {bond: () => system.version}
+    system_version: { bond: () => system.version }
 }
 
 // subscribe adds an watcher for blockchain related data.
@@ -106,10 +108,10 @@ const setNotifier = (bond, item) => bond.notify(() => notifierCallback(bond, ite
 const notifierCallback = (bond, item) => {
     const val = bond.use()._value
     if (item.value === val || !bond.isReady()) return;
-    
+
     item.valueOld = item.value
     item.value = val
-    const triggerUpdate = !item.lastUpdated || Math.abs(new Date()-item.lastUpdated) >= item.updateFrequency
+    const triggerUpdate = !item.lastUpdated || Math.abs(new Date() - item.lastUpdated) >= item.updateFrequency
     if (!triggerUpdate) return;
 
     Array.from(item.callbacks.entries()).forEach(cbEntry => {

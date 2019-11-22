@@ -319,6 +319,7 @@ export class DataTable extends ReactiveComponent {
                 key={i}
                 onClick={() => x.key && this.setState({ sortBy: x.key, sortAsc: sortBy === x.key ? !sortAsc : true })}
                 sorted={sortBy !== x.key ? null : (sortAsc ? 'ascending' : 'descending')}
+                style={styles.columnHeader}
                 textAlign="center"
             >
                 {x.title}
@@ -548,6 +549,9 @@ const styles = {
         padding: '0px 5px',
         width: 25,
         cursor: 'pointer',
+    },
+    columnHeader: {
+        textTransform: 'capitalize',
     },
     searchMobile: {
         margin: '15px 0',

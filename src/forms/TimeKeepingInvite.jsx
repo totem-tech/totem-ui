@@ -1,12 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
-import { secretStore } from 'oo7-substrate'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import client, { getUser } from '../services/ChatClient'
-import storage from '../services/storage'
 import { arrUnique, isFn } from '../utils/utils'
 import { ownerProjectsList } from '../services/blockchain'
+import { getSelected } from '../services/identity'
 import { bytesToHex } from '../utils/convert'
 
 const notificationType = 'time_keeping'
@@ -55,7 +54,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
     componentWillMount() {
         const { inputs } = this.state
         // retrieve owner projects
-        const { address: ownerAddress } = secretStore()._keys[storage.walletIndex()] || {}
+        const { address: ownerAddress } = getSelected()
         const proIn = findInput(inputs, 'projectHash') || {}
         proIn.loading = true
         this.setState({ inputs })
