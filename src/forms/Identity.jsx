@@ -6,7 +6,7 @@ import Identicon from 'polkadot-identicon'
 import { generateMnemonic } from 'bip39'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import identityService from '../services/identity'
-import { deferred, isFn, textCapitalize } from '../utils/utils'
+import { isFn, textCapitalize } from '../utils/utils'
 
 const words = {
     address: 'address',
@@ -28,7 +28,9 @@ const texts = {
     seedPlaceholder: 'Enter existing seed or generate one',
     tagsInputEmptyMessage: 'Enter tag and press enter to add, to tags list',
     tagsPlaceholder: 'Enter tags',
-    usageType: 'Usage Type',
+    uniqueNameRequired: 'Please enter an unique name',
+    usageType: 'Usage type',
+    validSeedRequired: 'Please enter a valid seed',
 }
 
 export default class IdentityForm extends ReactiveComponent {
@@ -62,7 +64,7 @@ export default class IdentityForm extends ReactiveComponent {
                     validate: (_, { value: name }) => {
                         const existing = identityService.find(name)
                         if (existing && existing.address !== this.values.address) {
-                            return 'Please enter an unique name'
+                            return texts.uniqueNameRequired
                         }
                     },
                     value: '',
@@ -89,7 +91,7 @@ export default class IdentityForm extends ReactiveComponent {
                     validate: (_, { value: seed }) => {
                         if (!!identityService.accountFromPhrase(seed)) {
                             this.addressBond.changed('')
-                            return 'Please enter a valid seed'
+                            return texts.validSeedRequired
                         }
                     },
                     value: '',
