@@ -38,11 +38,6 @@ export default class IdentityForm extends ReactiveComponent {
         this.values = { ...props.values }
         this.addressBond = new Bond().defaultTo(this.values.address)
         this.doUpdate = !!this.values.address
-        this.generateBtn = {
-            content: wordsCapitalized.generate,
-            icon: 'magic',
-            onClick: (e) => e.preventDefault() | this.updateSeed()
-        }
 
         this.state = {
             message: props.message,
@@ -64,12 +59,17 @@ export default class IdentityForm extends ReactiveComponent {
                     name: 'name',
                     placeholder: texts.identityNamePlaceholder,
                     required: true,
+                    validate: (_, { value: name }) => {
+                        const existing = identityService.find(name)
+                        if (existing && existing.address !== this.values.address) {
+                            return 'Please enter an unique name'
+                        }
+                    },
                     value: '',
                 },
                 {
-                    action: this.doUpdate ? undefined : this.generateBtn,
                     bond: new Bond(),
-                    hidden: this.doUpdate,
+                    hidden: true,
                     icon: (
                         <i style={{ opacity: 1 }} className="icon">
                             <Identicon
@@ -87,10 +87,10 @@ export default class IdentityForm extends ReactiveComponent {
                     required: true,
                     type: 'text',
                     validate: (_, { value: seed }) => {
-                        const valid = !!identityService.accountFromPhrase(seed)
-                        if (!valid) this.addressBond.changed('')
-                        return valid ? null : 'Please enter a valid seed'
-
+                        if (!!identityService.accountFromPhrase(seed)) {
+                            this.addressBond.changed('')
+                            return 'Please enter a valid seed'
+                        }
                     },
                     value: '',
                 },
@@ -152,6 +152,7 @@ export default class IdentityForm extends ReactiveComponent {
         const uriInput = findInput(inputs, 'uri')
         uriInput.action = restore ? undefined : this.generateBtn
         uriInput.readOnly = !restore
+        uriInput.hidden = !restore
         this.setState({ inputs })
     }
 

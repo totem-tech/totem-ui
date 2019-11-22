@@ -14,13 +14,12 @@ const _ssForget = address => secretStore().forget(address)
 const identities = new DataStorage('totem_identities', true)
 const updateBond = () => bond.changed(uuid.v1())
 const VALID_KEYS = [
-    // 'address',
     'cloudBackupStatus', // undefined: never backed up, in-progress, done
     'cloudBackupTS', // most recent successful backup timestamp
     //???? 'fileBackupTS' // most recent file backup timestamp
     // 
     // 'seed',
-    // 'name',
+    'name',
     'tags',
     'usageType',
 ]
@@ -83,11 +82,10 @@ export const set = (address, identity = {}) => {
         existing = _ssFind(name)
         address = existing.address
     }
-    const cleanObj = objClean(identity, VALID_KEYS)
     identities.set(address, {
         ...identities.get(address),
         // get rid of any unaccepted keys
-        ...cleanObj,
+        ...objClean(identity, VALID_KEYS),
     })
 
     // update name in secretStore
