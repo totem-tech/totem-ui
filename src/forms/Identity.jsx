@@ -152,6 +152,10 @@ export default class IdentityForm extends ReactiveComponent {
         uriInput.readOnly = !restore
         uriInput.hidden = !restore
         uriInput.validate = restore ? this.validateUri : undefined
+        if (restore) {
+            uriInput.bond.changed('')
+            this.addressBond.changed('')
+        }
         this.setState({ inputs })
     }
 
@@ -167,8 +171,10 @@ export default class IdentityForm extends ReactiveComponent {
         const { inputs } = this.state
         const { restore } = this.values
         if (restore) return
-        seed = seed || generateMnemonic()
-        seed = seed.split('/totem/')[0] + `/totem/${usageType === 'personal' ? 0 : 1}/0`
+        if (!this.doUpdate) {
+            seed = seed || generateMnemonic()
+            seed = seed.split('/totem/')[0] + `/totem/${usageType === 'personal' ? 0 : 1}/0`
+        }
         const account = identityService.accountFromPhrase(seed)
         this.addressBond.changed(account ? ss58Encode(account) : '')
         findInput(inputs, 'uri').bond.changed(seed)
