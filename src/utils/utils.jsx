@@ -403,13 +403,17 @@ export function deferred(callback, delay, thisArg) {
 // textCapitalize capitalizes the first letter of the given string(s)
 //
 // Params:
-// @text	string/array/object
+// @text			string/array/object
+// @fullSentence	bool: whether to capitalize every single word or just the first word
 //
 // Returns string/array/object (same as input if supported otherwise undefined)
-export const textCapitalize = input => {
-	if (isStr(input)) return input[0].toUpperCase() + input.slice(1)
+export const textCapitalize = (input, fullSentence = false) => {
+	if (isStr(input)) {
+		if (!fullSentence) return input[0].toUpperCase() + input.slice(1)
+		return input.split(' ').map(word => textCapitalize(word, false)).join(' ')
+	}
 	if (isObj(input)) return Object.keys(input).reduce((obj, key) => {
-		obj[key] = textCapitalize(input[key])
+		obj[key] = textCapitalize(input[key], fullSentence)
 		return obj
 	}, isArr(input) ? [] : {})
 }

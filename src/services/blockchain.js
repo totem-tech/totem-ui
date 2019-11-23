@@ -21,7 +21,6 @@ const hashHexToBytes = hash => hexToBytes(isBond(hash) ? hash._value : hash)
 //              4. {finalized: 'TXID'}
 //              5. {failed: {code: xxx, message: 'error message'}}
 export const addNewProject = (ownerAddress, hash) => {
-    addCodecTransform('ProjectHash', 'Hash')
 
     return post({
         sender: validatedSenderAddress(ownerAddress),
@@ -35,13 +34,11 @@ export const addNewProject = (ownerAddress, hash) => {
 //
 // Returns Bond
 export const ownerProjectsList = address => {
-    addCodecTransform('ProjectHash', 'Hash')
     return runtime.projects.ownerProjectsList(ss58Decode(address))
 }
 
 //
 export const projectHashStatus = hash => {
-    addCodecTransform('ProjectStatus', 'u16')
     return runtime.projects.projectHashStatus(hashHexToBytes(hash))
 }
 
@@ -59,7 +56,6 @@ export const projectHashStatus = hash => {
 //              4. {finalized: 'TXID'}
 //              5. {failed: {code: xxx, message: 'error message'}}
 export const reassignProject = (ownerAddress, newOwnerAddress, hash) => {
-    addCodecTransform('ProjectHash', 'Hash')
     return post({
         sender: validatedSenderAddress(ownerAddress),
         call: calls.projects.reassignProject(newOwnerAddress, hashHexToBytes(hash)),
@@ -81,7 +77,6 @@ export const reassignProject = (ownerAddress, newOwnerAddress, hash) => {
 //              4. {finalized: 'TXID'}
 //              5. {failed: {code: xxx, message: 'error message'}}
 export const removeProject = (ownerAddress, hash) => {
-    addCodecTransform('ProjectHash', 'Hash')
     return post({
         sender: validatedSenderAddress(ownerAddress),
         call: calls.projects.removeProject(hashHexToBytes(hash)),
@@ -103,7 +98,6 @@ export const removeProject = (ownerAddress, hash) => {
 //              4. {finalized: 'TXID'}
 //              5. {failed: {code: xxx, message: 'error message'}}
 export const closeProject = (ownerAddress, hash) => {
-    addCodecTransform('ProjectHash', 'Hash')
     return post({
         sender: validatedSenderAddress(ownerAddress),
         call: calls.projects.closeProject(hashHexToBytes(hash)),
@@ -125,13 +119,22 @@ export const closeProject = (ownerAddress, hash) => {
 //              4. {finalized: 'TXID'}
 //              5. {failed: {code: xxx, message: 'error message'}}
 export const reopenProject = (ownerAddress, hash) => {
-    addCodecTransform('ProjectHash', 'Hash')
     return post({
         sender: validatedSenderAddress(ownerAddress),
         call: calls.projects.reopenProject(hashHexToBytes(hash)),
         compact: false,
         longevity: true
     })
+}
+
+export const project = {
+    add: addNewProject,
+    close: closeProject,
+    listByOwner: ownerProjectsList,
+    reassign: reassignProject,
+    remove: removeProject,
+    reopen: reopenProject,
+    status: projectHashStatus,
 }
 
 export const timeKeeping = {
@@ -211,8 +214,9 @@ export const timeKeeping = {
             hashHexToBytes(projectHash),
             ss58Decode(workerAddress)
         ]),
+        listByProject: projectHash => runtime.timekeeping.projectWorkersList(hashHexToBytes(projectHash)),
         // Worker's pending invitation to projects
-        pending: workerAddress => runtime.timekeeping.workerProjectsBacklogList(ss58Decode(workerAddress)),
+        listByWorker: workerAddress => runtime.timekeeping.workerProjectsBacklogList(ss58Decode(workerAddress)),
     },
     // list of workers that accepted invitation
     workers: projectHash => runtime.timekeeping.projectWorkersList(hashHexToBytes(projectHash)),

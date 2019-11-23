@@ -1,13 +1,31 @@
 import React from 'react'
+import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { Divider, Header } from 'semantic-ui-react'
-import { deferred, objCopy, IfMobile, newMessage } from '../utils/utils'
+import { deferred, objCopy, IfMobile, newMessage, arrUnique, arrSort, textCapitalize } from '../utils/utils'
 import ContentSegment from '../components/ContentSegment'
+import FormBuilder, { findInput } from '../components/FormBuilder'
 import ProjectTimeKeepingList from '../lists/TimeKeepingList'
 import TimeKeepingInviteList from '../lists/TimeKeepingInviteList'
 import TimeKeepingSummary from '../lists/TimeKeepingSummary'
-import FormBuilder, { findInput } from '../components/FormBuilder'
-import { projectDropdown, handleSearch } from '../components/ProjectDropdown'
+import { project, timeKeeping } from '../services/blockchain'
+import client from '../services/ChatClient'
+import { getSelected, selectedAddressBond } from '../services/identity'
+import { bytesToHex } from '../utils/convert'
+
+const words = {
+    invitations: 'invitations',
+    invites: 'invites',
+    manage: 'manage',
+    summary: 'summary',
+}
+const wordsCap = textCapitalize(words)
+const texts = {
+    createProjectOrRequestInvite: 'Create a new project or request project owner to be invited',
+    myRecords: 'My records',
+    myTimeKeepingSummary: 'My timekeeping summary',
+    selectAProject: 'Select a project',
+}
 
 class TimeKeepingView extends ReactiveComponent {
     constructor(props) {
@@ -16,47 +34,46 @@ class TimeKeepingView extends ReactiveComponent {
         this.getContent = this.getContent.bind(this)
         this.state = {
             values: {
-                option: 'entries'
+                option: 'records'
             },
             inputs: [
                 {
                     name: 'group',
                     type: 'group',
                     inputs: [
-                        objCopy(
-                            {
-                                label: '',
-                                onChange: this.handleProjectChange.bind(this),
-                                onSearchChange: deferred(handleSearch, 300, this),
-                                styleContainer: { minWidth: '15em' },
-                                width: 4,
-                            },
-                            projectDropdown,
-                            true,
-                        ),
+                        {
+                            inline: true,
+                            name: 'projectHash',
+                            onChange: deferred(this.handleProjectChange, 300, this),
+                            options: [],
+                            placeholder: texts.selectAProject,
+                            search: true,
+                            selection: true,
+                            type: 'dropdown',
+                            width: 4,
+                        },
                         {
                             multiple: true,
                             name: 'option',
-                            placeholder: 'Select an option',
                             toggle: true,
                             type: 'checkbox-group',
-                            value: 'entries',
+                            value: 'records',
                             width: 12,
                             options: [
                                 {
-                                    label: 'My Entries',
-                                    value: 'entries'
+                                    label: texts.myRecords,
+                                    value: 'records'
                                 },
                                 {
-                                    label: 'Manage',
+                                    label: wordsCap.manage,
                                     value: 'manage',
                                 },
                                 {
-                                    label: 'Invites',
+                                    label: wordsCap.invites,
                                     value: 'invites',
                                 },
                                 {
-                                    label: 'Summary',
+                                    label: wordsCap.summary,
                                     value: 'summary',
                                 },
                             ],
@@ -67,7 +84,65 @@ class TimeKeepingView extends ReactiveComponent {
         }
     }
 
-    handleChange(e, values = {}) {
+    componentWillMount() {
+        this.tieIdIdentity = selectedAddressBond.tie(() => {
+            // untie from any existing subscriptions
+            if (this.tieIdProjects && this.projectsBond) this.projectsBond.untie(this.tieIdProjects)
+            const { address } = getSelected()
+
+            // listen for changes and update projects list accordingly
+            this.projectsBond = Bond.all([
+                // projects owned by selected identity
+                project.listByOwner(address),
+                // projects selected identity was invited to
+                timeKeeping.invitation.listByWorker(address)
+            ])
+
+            this.projectsBond.tie(([owned, invited]) => {
+                const { inputs, values } = this.state
+                const { projectHash } = values
+                const projectHashes = arrUnique([...owned, ...invited].map(bytesToHex)).map(h => '0x' + h)
+                const projectIn = findInput(inputs, 'projectHash')
+                projectIn.loading = true
+                client.projectsByHashes(projectHashes, (_, projects, unknownHashes = []) => {
+                    const options = Array.from(projects).map(([hash, project]) => ({
+                        key: hash,
+                        project,
+                        text: project.name,
+                        value: hash,
+                    })).concat(...unknownHashes.map(hash => ({
+                        // if for some reason chatserver does not have the data for a project
+                        key: hash,
+                        text: hash,
+                        value: hash,
+                    })))
+                    projectIn.loading = false
+                    projectIn.options = arrSort(options, 'text')
+                    projectIn.noResultsMessage = options.length > 0 ? undefined : (
+                        // user doesn't own any project and never been invited to one
+                        <p style={{ whiteSpace: 'pre-wrap' }}>
+                            {texts.createProjectOrRequestInvite}
+                        </p>
+                    )
+
+                    if (!projectHash || !options.find(x => x.value === projectHash)) {
+                        const firstOption = options[0] || {}
+                        projectIn.value = firstOption.value
+                        values.projectHash = firstOption.value
+                    }
+
+                    this.setState({ inputs, values })
+                })
+            })
+        })
+    }
+
+    componentWillUnmount() {
+        selectedAddressBond.untie(this.tieIdIdentity)
+        this.projectsBond.untie(this.tieIdProjects)
+    }
+
+    handleChange(_, values) {
         this.setState({ values })
     }
 
@@ -84,23 +159,23 @@ class TimeKeepingView extends ReactiveComponent {
         const manage = option.includes('manage')
         const showSummary = option.includes('summary')
         const showInvites = option.includes('invites')
-        const showEntries = option.includes('entries') || manage
+        const showRecords = option.includes('records') || manage
         const optionInput = findInput(inputs, 'option')
         optionInput.inline = !mobile
         optionInput.style = { float: mobile ? '' : 'right' }
         optionInput.style.paddingTop = 7
-        findInput(inputs, 'option').options.find(x => x.value === 'entries').disabled = manage
+        findInput(inputs, 'option').options.find(x => x.value === 'records').disabled = manage
 
-        if (showEntries) contents.push({
+        if (showRecords) contents.push({
             content: <ProjectTimeKeepingList {...{ project, projectHash, manage }} />,
         })
         if (showInvites) contents.push({
             content: <TimeKeepingInviteList {...{ projectHash }} />,
-            header: 'Invitations'
+            header: wordsCap.invitations
         })
         if (showSummary) contents.push({
             content: <TimeKeepingSummary />,
-            header: 'My Time Keeping Summary',
+            header: texts.myTimeKeepingSummary,
         })
 
         return (
