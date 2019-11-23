@@ -71,13 +71,13 @@ class FormRegister extends ReactiveComponent {
     handleSubmit(_, values) {
         const { onSubmit, onSuccessOpenChat } = this.props
         const { agree, userId } =  values
-        if (!agree) return this.setState({
-            message: {
-                content: 'You must agree to the terms and conditions',
-                showIcon: true,
-                status: 'error'
-            }
-        })
+        // if (!agree) return this.setState({
+        //     message: {
+        //         content: 'You must agree to the terms and conditions',
+        //         showIcon: true,
+        //         status: 'error'
+        //     }
+        // })
         
         getClient().register(userId, uuid.v1(), err => {
             const success  = !err

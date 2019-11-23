@@ -2,7 +2,11 @@ import io from 'socket.io-client'
 import { isFn } from '../utils/utils'
 import storageService from './storage'
 
-const port = 3001
+// const port = 3001
+const port = () => {
+    let chatport = (window.location.hostname === 'totem.live') ?  3001 : 3003
+    return chatport
+}
 let instance, socket;
 const postLoginCallbacks = []
 const HISTORY_LIMIT = 100
@@ -37,7 +41,7 @@ export const getClient = () => {
 // Make sure to always keep the callback as the last argument
 export class ChatClient {
     constructor(url) {
-        this.url = url || `${window.location.hostname}:${port}`
+        this.url = url || `${window.location.hostname}:${port()}`
         socket = io(this.url)
 
         this.isConnected = () => socket.connected
