@@ -22,7 +22,7 @@ const words = {
     tags: 'tags',
     update: 'update',
 }
-const wordsCapitalized = textCapitalize(words)
+const wordsCap = textCapitalize(words)
 const texts = {
     identityNamePlaceholder: 'A name for the identity',
     restoreInputLabel: 'Restore my existing identity',
@@ -42,11 +42,13 @@ export default class IdentityForm extends ReactiveComponent {
         this.values = { ...props.values }
         this.addressBond = new Bond().defaultTo(this.values.address)
         this.doUpdate = !!this.values.address
+        this.validateUri = this.validateUri.bind(this)
 
         this.state = {
             message: props.message,
             onChange: (_, values) => this.values = values,
             onSubmit: this.handleSubmit.bind(this),
+            submitText: wordsCap.create,
             success: false,
             inputs: [
                 {
@@ -59,16 +61,11 @@ export default class IdentityForm extends ReactiveComponent {
                     type: 'Checkbox-group',
                 },
                 {
-                    label: wordsCapitalized.name,
+                    label: wordsCap.name,
                     name: 'name',
                     placeholder: texts.identityNamePlaceholder,
                     required: true,
-                    validate: (_, { value: name }) => {
-                        const existing = identityService.find(name)
-                        if (existing && existing.address !== this.values.address) {
-                            return texts.uniqueNameRequired
-                        }
-                    },
+                    validate: this.validateName.bind(this),
                     value: '',
                 },
                 {
@@ -84,36 +81,13 @@ export default class IdentityForm extends ReactiveComponent {
                         </i>
                     ),
                     iconPosition: 'left',
-                    label: wordsCapitalized.seed,
+                    label: wordsCap.seed,
                     name: 'uri',
                     placeholder: texts.seedPlaceholder,
                     readOnly: true,
                     required: true,
                     type: 'text',
-                    // validation for restore seed only
-                    validate: (_, { value: seed }) => {
-                        const { inputs } = this.state
-                        const account = identityService.accountFromPhrase(seed)
-                        if (!account) {
-                            this.addressBond.changed('')
-                            return texts.validSeedRequired
-                        }
-                        const address = ss58Encode(account)
-                        if (identityService.find(address)) return texts.seedExists
-                        this.values.address = address
-                        this.addressBond.changed(address)
-                        if (seed.includes('/totem/')) {
-                            // extract usageType
-                            const usagetypeInt = parseInt(seed.split('/totem/')[1])
-                            const usageType = usagetypeInt === 1 ? 'business' : 'personal'
-                            const usageTypeIn = findInput(inputs, 'usageType')
-                            usageTypeIn.hidden = true
-                            this.values.usageType = usageType
-                            usageTypeIn.bond.changed(usageType)
-                            this.setState({ inputs })
-                        }
-                        return null
-                    },
+                    validate: this.values.restore ? this.validateUri : undefined,
                     value: '',
                 },
                 {
@@ -124,8 +98,8 @@ export default class IdentityForm extends ReactiveComponent {
                     name: 'usageType',
                     onChange: (_, { usageType }) => this.updateSeed(this.values.uri, usageType),
                     options: [
-                        { label: wordsCapitalized.personal, value: 'personal' },
-                        { label: wordsCapitalized.business, value: 'business' }
+                        { label: wordsCap.personal, value: 'personal' },
+                        { label: wordsCap.business, value: 'business' }
                     ],
                     radio: true,
                     required: true,
@@ -133,14 +107,14 @@ export default class IdentityForm extends ReactiveComponent {
                 },
                 {
                     bond: this.addressBond,
-                    label: wordsCapitalized.address,
+                    label: wordsCap.address,
                     name: 'address',
                     type: 'hidden',
                     value: '',
                 },
                 {
                     allowAdditions: true,
-                    label: wordsCapitalized.tags,
+                    label: wordsCap.tags,
                     name: 'tags',
                     noResultsMessage: texts.tagsInputEmptyMessage,
                     multiple: true,
@@ -177,6 +151,7 @@ export default class IdentityForm extends ReactiveComponent {
         uriInput.action = restore ? undefined : this.generateBtn
         uriInput.readOnly = !restore
         uriInput.hidden = !restore
+        uriInput.validate = restore ? this.validateUri : undefined
         this.setState({ inputs })
     }
 
@@ -194,16 +169,48 @@ export default class IdentityForm extends ReactiveComponent {
         if (restore) return
         seed = seed || generateMnemonic()
         seed = seed.split('/totem/')[0] + `/totem/${usageType === 'personal' ? 0 : 1}/0`
-        this.addressBond.changed(identityService.accountFromPhrase(seed) || '')
+        const account = identityService.accountFromPhrase(seed)
+        this.addressBond.changed(account ? ss58Encode(account) : '')
         findInput(inputs, 'uri').bond.changed(seed)
         this.setState({ inputs })
     }
 
+    validateName(_, { value: name }) {
+        const existing = identityService.find(name)
+        if (existing && existing.address !== this.values.address) {
+            return texts.uniqueNameRequired
+        }
+    }
+
+    validateUri(_, { value: seed }) {
+        const { inputs } = this.state
+        const account = identityService.accountFromPhrase(seed)
+        if (!account) {
+            this.addressBond.changed('')
+            return texts.validSeedRequired
+        }
+        const address = ss58Encode(account)
+        if (identityService.find(address)) return texts.seedExists
+        this.values.address = address
+        this.addressBond.changed(address)
+        if (seed.includes('/totem/')) {
+            // extract usageType
+            const usagetypeInt = parseInt(seed.split('/totem/')[1])
+            const usageType = usagetypeInt === 1 ? 'business' : 'personal'
+            const usageTypeIn = findInput(inputs, 'usageType')
+            usageTypeIn.hidden = true
+            this.values.usageType = usageType
+            usageTypeIn.bond.changed(usageType)
+            this.setState({ inputs })
+        }
+        return null
+    }
+
     render() {
-        const { doUpdate, props, state } = this
-        const action = doUpdate ? wordsCapitalized.update : wordsCapitalized.create
+        const { doUpdate, props, state, values: { restore } } = this
+        const action = doUpdate ? wordsCap.update : (restore ? wordsCap.restore : wordsCap.create)
         state.message = state.message || props.message
-        state.header = props.header || `${action} ${wordsCapitalized.identity}`
+        state.header = props.header || `${action} ${wordsCap.identity}`
         state.submitText = props.submitText || action
         return <FormBuilder {...{ ...props, ...state }} />
     }

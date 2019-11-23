@@ -17,9 +17,6 @@ const VALID_KEYS = [
     'cloudBackupStatus', // undefined: never backed up, in-progress, done
     'cloudBackupTS', // most recent successful backup timestamp
     //???? 'fileBackupTS' // most recent file backup timestamp
-    // 
-    // 'seed',
-    'name',
     'tags',
     'usageType',
 ]

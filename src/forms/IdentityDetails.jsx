@@ -25,6 +25,9 @@ const texts = {
     hideSeed: 'Hide seed',
     identityDetails: 'Identity details',
     noKeepItHidden: 'No keep it hidden',
+    removeWarningPart1: 'You are about to remove the following identity.',
+    removeWarningPart2: `If not backed up, this action is irreversible. 
+        You will lose access to any activity/data related to this project.`,
     selectedWalletWarning: 'Cannot remove selected wallet',
     showSeed: 'Show seed',
 }
