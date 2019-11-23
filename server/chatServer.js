@@ -29,9 +29,10 @@ import {
 } from './users'
 import { handleNotify } from './notify'
 
-export const PORT = 3001
+// export const PORT = 3001 
+
 let server, socket
-export const initChatServer = (httpsOptions, expressApp) => {
+export const initChatServer = (httpsOptions, expressApp, PORT) => {
     server = https.createServer(httpsOptions, expressApp)
     socket = socketIO.listen(server)
 

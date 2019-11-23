@@ -306,13 +306,14 @@ class ProjectList extends ReactiveComponent {
     showDetails(project, hash) {
         project = objCopy(project)
         project.hash = hash
+        project._totalTime = project.totalTime + ' blocks'
         const labels = {
             name: 'Project Name',
             _ownerName: 'Project Owner',
             // ownerAddress: 'Owner Address',
             description: 'Description of Project',
             // status: 'Status Code',
-            totalTime: 'Total Time',
+            _totalTime: 'Total Time',
             _statusText: 'Project Status',
             _tsFirstUsed: 'Project First Used',
             hash: 'Project Unique ID'

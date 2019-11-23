@@ -153,7 +153,7 @@ class Project extends ReactiveComponent {
         return (
             <FormBuilder {...{
                 closeText,
-                header: header || (project ? 'Edit ' + project.name : 'Create a new project'),
+                header: header || (project ? 'Edit : ' + project.name : 'Create a new project'),
                 headerIcon: headerIcon || (project ? 'edit' : 'plus'),
                 inputs,
                 loading,
@@ -227,7 +227,7 @@ function checkBalance(address, inputName) {
         const notEnought = balance <= minBalance
         inputs[index].invalid = notEnought
         inputs[index].message = !notEnought ? {} : {
-            content: `"${wallet.name}" must have more than ${minBalance} Transactions balance 
+            content: `The selected identity "${wallet.name}" must have more than ${minBalance} Transactions balance 
                     to be able to create an entry on the Totem blockchain.`,
             header: 'Insufficient balance',
             status: 'error',
