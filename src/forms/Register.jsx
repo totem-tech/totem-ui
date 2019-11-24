@@ -27,7 +27,6 @@ class FormRegister extends ReactiveComponent {
                     minLength: 3,
                     maxLength: 16,
                     onChange: deferred(this.handleIdChange, 300, this),
-                    onBlur: console.log,
                     placeholder: 'Enter your ID',
                     type: 'text',
                     required: true,
@@ -47,7 +46,7 @@ class FormRegister extends ReactiveComponent {
 
     handleIdChange(e, values, index) {
         const { inputs } = this.state
-        const userId = (values.userId || '').trim()///toLowerCase().
+        const userId = (values.userId || '').toLowerCase().trim()
         inputs[index].message = undefined
         inputs[index].action = undefined
         this.setState({ inputs, disableSubmit: true })
