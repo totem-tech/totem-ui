@@ -345,7 +345,7 @@ export class ReassignProjectForm extends ReactiveComponent {
         let options = [{
             key: 0,
             style: styles.itemHeader,
-            text: 'Wallets',
+            text: 'Select own ID',
             value: '' // keep
         }]
             // add wallet items to owner address dropdown
@@ -360,7 +360,7 @@ export class ReassignProjectForm extends ReactiveComponent {
             options = options.concat({
                 key: 1,
                 style: styles.itemHeader,
-                text: 'Partners',
+                text: 'Select a Partner ID',
                 value: '' // keep
             })
                 .concat(arrSort(partners, 'name').map((partner, i) => ({
