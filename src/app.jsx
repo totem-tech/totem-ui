@@ -27,6 +27,7 @@ import { resumeQueue } from './services/queue'
 import { IfMobile } from './utils/utils'
 // Images
 import TotemButtonLogo from './assets/totem-button-grey.png'
+import DataStorage from './utils/DataStorage'
 
 export class App extends ReactiveComponent {
 	constructor() {
@@ -53,6 +54,7 @@ export class App extends ReactiveComponent {
 		window.that = this
 		window.metadata = metadata
 		window.Bond = Bond
+		window.DataStorage = DataStorage
 
 		this.handleSidebarToggle = this.handleSidebarToggle.bind(this)
 		this.toggleMenuItem = this.toggleMenuItem.bind(this)
@@ -185,7 +187,7 @@ export class App extends ReactiveComponent {
 
 const sidebarItems = [
 	{
-		active: false,
+		active: true,
 		content: <GettingStarted />,
 		headerDividerHidden: true,
 		icon: "play circle outline",

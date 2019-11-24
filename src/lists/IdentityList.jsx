@@ -85,6 +85,10 @@ export default class ItentityList extends ReactiveComponent {
         })
     }
 
+    componentWillUnmount() {
+        identityService.bond.untie(this.tieId)
+    }
+
     getActions(identity) {
         const { address, name } = identity
         return (
