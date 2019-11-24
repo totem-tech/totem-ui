@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import uuid from 'uuid'
 import { dropMessages, addResponseMessage, isWidgetOpened, toggleWidget } from 'react-chat-widget'
-import FormBuilder from '../components/FormBuilder'
+import FormBuilder, { findInput } from '../components/FormBuilder'
 import { deferred, isFn, objWithoutKeys } from '../utils/utils'
 import { getClient } from '../services/ChatClient'
 
@@ -13,28 +13,33 @@ class FormRegister extends ReactiveComponent {
     constructor(props) {
         super(props)
 
-        this.handleIdChange = this.handleIdChange.bind(this)
-        this.handleSubmit = this.handleSubmit.bind(this)
-
         this.state = {
-            message: {},
+            disableSubmit: undefined,
+            loading: undefined,
+            message: undefined,
+            onSubmit: this.handleSubmit.bind(this),
+            success: undefined,
             inputs: [
                 {
+                    action: undefined,
                     label: 'User ID',
                     name: 'userId',
                     minLength: 3,
                     maxLength: 16,
-                    onChange: deferred(this.handleIdChange, 300),
+                    onChange: deferred(this.handleIdChange, 300, this),
+                    onBlur: console.log,
                     placeholder: 'Enter your ID',
                     type: 'text',
                     required: true,
-                    value: ''
-                // },
-                // {
-                //     label: ' I agree to the Totem Tech terms and condition',
-                //     name: 'agree',
-                //     type: 'checkbox',
-                //     required: true
+                    value: '',
+                    validate: (_, { value: userId }) => {
+                        const { inputs } = this.state
+                        const userIdIn = findInput(inputs, 'userId')
+                        const valid = nameRegex.test(userId)
+                        userIdIn.action = valid ? userIdIn.action : undefined
+                        setTimeout(() => this.setState({ inputs }))
+                        return valid ? null : 'ID must start with a letter and must be lowercase alpha-numeric'
+                    },
                 }
             ],
         }
@@ -42,52 +47,36 @@ class FormRegister extends ReactiveComponent {
 
     handleIdChange(e, values, index) {
         const { inputs } = this.state
-        let { userId } = values
-        const valid = nameRegex.test(userId)
-        inputs[index].invalid = !valid
-        if (!valid) {
-            inputs[index].message = {
-                content: 'Lowercase alpha-numeric only, ID must start with a letter.',
-                header: 'Invalid ID',
-                showIcon: true,
-                status: 'error'
-            }
-            return this.setState({inputs})
-        }
+        const userId = (values.userId || '').trim()///toLowerCase().
+        inputs[index].message = undefined
+        inputs[index].action = undefined
+        this.setState({ inputs, disableSubmit: true })
+        if (!userId) return
 
-        this.setState({inputs})
         getClient().idExists(userId, exists => {
             inputs[index].invalid = exists
-            inputs[index].message = {
-                content: 'ID ' + (exists ? 'already exists' : 'is available'),
-                header: '@' + userId,
-                showIcon: true,
+            inputs[index].message = !exists ? undefined : {
+                content: `An user already exists with ID: ${userId}`,
                 status: exists ? 'error' : 'success'
             }
-            this.setState({inputs})
+            inputs[index].action = exists ? undefined : { color: 'green', icon: 'check' }
+            this.setState({ inputs, disableSubmit: !exists })
         })
     }
 
     handleSubmit(_, values) {
         const { onSubmit, onSuccessOpenChat } = this.props
-        const { agree, userId } =  values
-        // if (!agree) return this.setState({
-        //     message: {
-        //         content: 'You must agree to the terms and conditions',
-        //         showIcon: true,
-        //         status: 'error'
-        //     }
-        // })
-        
+        let { userId } = values
+
         getClient().register(userId, uuid.v1(), err => {
-            const success  = !err
+            const success = !err
             const message = {
                 content: err,
                 header: 'Registration ' + (success ? 'complete' : 'failed'),
                 showIcon: true,
                 status: success ? 'success' : 'error'
             }
-            this.setState({message, success: success, open: !success })
+            this.setState({ message, success: success, open: !success })
             isFn(onSubmit) && onSubmit(success, values)
             if (!success || !onSuccessOpenChat) return;
             setTimeout(() => {
@@ -101,8 +90,7 @@ class FormRegister extends ReactiveComponent {
     }
 
     render() {
-        const { inputs, message, success } = this.state
-        return <FormBuilder {...this.props} {...{ inputs, message, onSubmit: this.handleSubmit, success }} />
+        return <FormBuilder {...{ ...this.props, ...this.state }} />
     }
 }
 FormRegister.propTypes = {
