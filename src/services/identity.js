@@ -34,6 +34,7 @@ export const get = address => {
     }
 }
 
+// returns array
 export const getAll = () => _ssKeys().map(identity => ({
     ...identity,
     // add extra information

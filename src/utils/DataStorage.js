@@ -11,7 +11,7 @@ try {
     const nls = require('node-localstorage')
     const STORAGE_PATH = process.env.STORAGE_PATH || './server/data'
     console.log({ STORAGE_PATH })
-    storage = new nls.LocalStorage(STORAGE_PATH)
+    storage = new nls.LocalStorage(STORAGE_PATH, 500 * 1024 * 1024)
 }
 
 const read = key => {
@@ -80,8 +80,8 @@ class DataStorage {
     }
 
     set(key, value) {
+        if (!key) return this
         const data = this.getAll()
-        if (!data.get(key)) return this
         data.set(key, value)
         if (!this.disableCache || !this.name) {
             this.data = data

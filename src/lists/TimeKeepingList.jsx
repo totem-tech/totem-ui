@@ -150,7 +150,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     componentWillMount() {
         this.updateBond = Bond.all([
             identityService.bond,
-            addressbook.getBond(),
+            addressbook.bond,
         ])
 
         this.tieId = this.updateBond.notify(this.getEntries)

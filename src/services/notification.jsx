@@ -7,11 +7,11 @@ import { ButtonAcceptOrReject, UserID } from '../components/buttons'
 import { newMessage } from '../utils/utils'
 import client from './ChatClient'
 import DataStorage from '../utils/DataStorage'
-import { showForm } from './modal'
+import { confirm, showForm } from './modal'
 import { addToQueue, QUEUE_TYPES } from './queue'
-import SelectIdentityForm from '../forms/SelectIdentity'
 import IdentityShareForm from '../forms/IdentityShare'
 import PartnerForm from '../forms/Partner'
+import identityService from './identity'
 
 const notifications = new DataStorage('totem_service_notifications', true, false)
 // store unread counts for individual types
@@ -32,11 +32,13 @@ client.onNotify((id, senderId, type, childType, message, data, tsCreated, confir
         deleted: false,
         read: false,
     }
-    notifications.set(id, newNotification)
-    triggerBond.changed(uuid.v1())
-    newNotificationBond.changed(newNotification)
-    console.log('Notification received!', id, senderId, tsCreated)
-    confirmReceived(true)
+    setTimeout(() => {
+        confirmReceived(true)
+        notifications.set(id, newNotification)
+        triggerBond.changed(uuid.v1())
+        newNotificationBond.changed(newNotification)
+        console.log('Notification received!', id, senderId, tsCreated)
+    })
 })
 
 export const toggleRead = id => {
@@ -46,74 +48,11 @@ export const toggleRead = id => {
     triggerBond.changed(uuid.v1())
 }
 
-export const deleteNotification = id => notifications.delete(id) | triggerBond.changed(uuid.v1())
+export const remove = id => setTimeout(() => notifications.delete(id) | triggerBond.changed(uuid.v1()))
 
-// ToDo: on bell icon click request new notifications
 export default class NotificationDropdown extends ReactiveComponent {
     constructor() {
         super([], { triggerBond })
-    }
-
-    // time keeping invite response
-    handleTKIdentityResponse(id, accepted = false) {
-        const notification = notifications.get(id)
-        const { childType, data, senderId, type } = notification
-        const { projectName, projectHash } = data
-        const respond = (workerAddress) => {
-            const acceptStr = accepted ? 'submit' : 'reject'
-            addToQueue({
-                type: QUEUE_TYPES.CHATCLIENT,
-                func: 'notify',
-                title: `TimeKeeping - ${acceptStr} identity`,
-                description: `Project: ${projectName}`,
-                args: [
-                    [senderId],
-                    type,
-                    childType + '_response',
-                    `${acceptStr}ed invitation to project: "${projectName}"`,
-                    { accepted, projectHash, workerAddress },
-                    err => !err && deleteNotification(id)
-                ]
-            })
-        }
-
-        !accepted ? respond() : showForm(SelectIdentityForm, {
-            header: 'Submit Identity',
-            message: {
-                content: `Your identity will be sent to the project owner. Upon approval you will receive the formal 
-                    invitation and once you accept that you will be able to start booking time for the project.`,
-                header: 'How it works?',
-                icon: 'question circle'
-            },
-            onSubmit: (_, { address }) => respond(address),
-            subheader: 'Select an identity to be use with the invited project',
-        })
-    }
-
-    handleTKInvitationResponse(id, accepted) {
-        const notification = notifications.get(id)
-        const { childType, data, senderId, type } = notification
-        const { projectHash, projectName, workerAddress } = data
-        const acceptedStr = accepted ? 'accepted' : 'rejected'
-        addToQueue({
-            type: QUEUE_TYPES.BLOCKCHAIN,
-            func: 'timeKeeping_invitation_accept',
-            args: [projectHash, workerAddress, accepted],
-            title: `TimeKeeping - ${accepted ? 'accept' : 'reject'} invitation`,
-            description: `Project: ${projectName}`,
-            next: {
-                type: QUEUE_TYPES.CHATCLIENT,
-                func: 'notify',
-                args: [
-                    [senderId],
-                    type,
-                    childType + '_response',
-                    `${acceptedStr} invitation to project: "${projectName}"`,
-                    { accepted, projectHash, workerAddress },
-                    err => !err && deleteNotification(id)
-                ]
-            },
-        })
     }
 
     render() {
@@ -127,11 +66,10 @@ export default class NotificationDropdown extends ReactiveComponent {
                 scrolling
             >
                 <Dropdown.Menu className="notification-service" direction="left" style={{ maxHeight }}>
-                    {Array.from(items).filter(([_, { deleted }]) => !deleted).reverse().map(([id, item]) => {
-                        const { senderId, type, childType, message, data, tsCreated, read } = item
+                    {Array.from(items).filter(([_, { deleted }]) => !deleted).reverse().map(([id, notification]) => {
+                        const { senderId, type, childType, message, data, tsCreated, read } = notification
                         const userIdBtn = <UserID userId={senderId} />
                         const typeSpaced = type.replace('_', ' ')
-                        let { projectName } = data
                         const msg = {
                             // attached: true,
                             icon: { name: 'bell outline', size: 'large' },
@@ -139,13 +77,14 @@ export default class NotificationDropdown extends ReactiveComponent {
                             header: `${typeSpaced} ${childType}`,
                             key: id,
                             onClick: () => toggleRead(id),
-                            onDismiss: e => e.stopPropagation() | deleteNotification(id),
+                            onDismiss: e => e.stopPropagation() | remove(id),
                             status: read ? undefined : 'success',
                             style: { textAlign: 'left' },
                         }
 
                         switch (type + ':' + childType) {
                             case 'identity:request':
+                                // data => {reason}
                                 msg.header = <span>{userIdBtn} requested your identity</span>
                                 msg.icon.name = 'user'
                                 msg.content = (
@@ -153,9 +92,9 @@ export default class NotificationDropdown extends ReactiveComponent {
                                         <b>Reason:</b> {data.reason}
                                         <ButtonAcceptOrReject
                                             acceptText='Share'
-                                            onClick={accepted => !accepted ? deleteNotification(id) : showForm(IdentityShareForm, {
+                                            onClick={accepted => !accepted ? remove(id) : showForm(IdentityShareForm, {
                                                 disabledFields: ['userIds'],
-                                                onSubmit: success => success && deleteNotification(id),
+                                                onSubmit: success => success && remove(id),
                                                 values: { userIds: [senderId] },
                                             })}
                                         />
@@ -163,7 +102,7 @@ export default class NotificationDropdown extends ReactiveComponent {
                                 )
                                 break
                             case 'identity:share':
-                                const { address, name } = data
+                                // data => { address, name }
                                 msg.header = <span>Identity received from {userIdBtn}</span>
                                 msg.icon.name = 'user plus'
                                 msg.content = (
@@ -171,39 +110,53 @@ export default class NotificationDropdown extends ReactiveComponent {
                                         <br />
                                         <ButtonAcceptOrReject
                                             acceptText='Add Partner'
-                                            onClick={accepted => !accepted ? deleteNotification(id) : showForm(PartnerForm, {
-                                                onSubmit: success => success && deleteNotification(id),
-                                                values: { address, name },
-                                            })}
+                                            onClick={accepted => !accepted ? remove(id) : showForm(
+                                                PartnerForm,
+                                                {
+                                                    onSubmit: success => success && remove(id),
+                                                    values: data,
+                                                }
+                                            )}
                                             rejectText='Ignore'
                                         />
                                     </div>
                                 )
                                 break
-                            case 'time_keeping:identity':
-                                msg.icon.name = 'clock outline'
-                                msg.content = (
-                                    <div>
-                                        <b>@{senderId}</b> wants you to join the following project:
-                                        <b> {projectName}</b>
-                                        <ButtonAcceptOrReject
-                                            onClick={accepted => this.handleTKIdentityResponse(id, accepted)}
-                                        />
-                                    </div>
-                                )
-                                break
                             case 'time_keeping:invitation':
+                                // data => { projectHash, projectName, workerAddress }
+                                // wrong user id used to send invitation. address does not belong to user
+                                console.log({ data })
+                                if (!identityService.find(data.workerAddress)) {
+                                    return remove(id)
+                                }
                                 msg.icon.name = 'clock outline'
                                 msg.content = (
                                     <div>
-                                        <b>@{senderId}</b> invited you to start booking time for the following project:
-                                        <b> {projectName}</b>
-                                        <ButtonAcceptOrReject
-                                            onClick={accepted => this.handleTKInvitationResponse(id, accepted)}
-                                        />
+                                        <b>@{senderId}</b> invited you to start booking time on project:
+                                        <b> {data.projectName}</b>
+                                        <ButtonAcceptOrReject onClick={accepted => handleTKInvitation(
+                                            senderId,
+                                            data.projectHash,
+                                            data.projectName,
+                                            data.workerAddress,
+                                            accepted,
+                                            id,
+                                        )} />
                                     </div>
                                 )
                                 break
+                            case 'time_keeping:invitation_response':
+                                // data => { projectHash, projectName, workerAddress }
+                                const acceptedStr = data.accepted ? 'accepted' : 'rejected'
+                                msg.icon.name = 'clock outline'
+                                msg.content = (
+                                    <div>
+                                        <b>@{senderId}</b> {acceptedStr} your invitation to project:
+                                        <b> {data.projectName}</b>
+                                    </div>
+                                )
+                                break
+
                         }
 
                         msg.content = <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
@@ -219,13 +172,50 @@ export default class NotificationDropdown extends ReactiveComponent {
                                 {newMessage(msg)}
                             </Dropdown.Item>
                         )
-                    })}
+                    }).filter(x => !!x)}
                 </Dropdown.Menu>
             </Dropdown>
         )
     }
 }
 
-export const handleIdentityRequest = (notificationId, accepted = false) => {
-    const notification = notifications.get(notificationId)
+
+// handle time keeping invitaion
+export const handleTKInvitation = (
+    projectOwnerId, projectHash, projectName, workerAddress, accepted, notifyId
+) => {
+    const acceptedStr = accepted ? 'accepted' : 'rejected'
+    const type = 'time_keeping'
+    const childType = 'invitation'
+    // find notification if not supplied
+    notifyId = notifyId || Array.from(notifications.search({
+        senderId: projectOwnerId,
+        type,
+        childType
+    })).reduct((notifyId, [xNotifyId, xNotification]) => {
+        if (!!notifyId) return notifyId
+        const { data: { projectHash: hash, workerAddress: address } } = xNotification
+        const match = hash === projectHash && address === workerAddress
+        return match ? xNotifyId : null
+    }, null)
+
+    addToQueue({
+        type: QUEUE_TYPES.BLOCKCHAIN,
+        func: 'timeKeeping_invitation_accept',
+        args: [projectHash, workerAddress, accepted],
+        title: `TimeKeeping - ${accepted ? 'accept' : 'reject'} invitation`,
+        description: `Project: ${projectName}`,
+        next: {
+            type: QUEUE_TYPES.CHATCLIENT,
+            func: 'notify',
+            args: [
+                [projectOwnerId],
+                type,
+                'invitation_response',
+                `${acceptedStr} invitation to project: "${projectName}"`,
+                { accepted, projectHash, projectName, workerAddress },
+                err => !err && remove(notifyId)
+            ]
+        },
+    })
 }
