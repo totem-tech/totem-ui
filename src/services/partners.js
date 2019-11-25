@@ -7,8 +7,12 @@ const bond = new Bond()
 const updateBond = () => setTimeout(() => bond.changed(uuid.v1()))
 updateBond()
 
+export const get = address => partners.get(address)
+export const getAll = () => partners.getAll()
+export const getByName = name => partners.find({ name }, true, true, true)
+export const remove = address => partners.delete(address) | updateBond()
 // Add/update partner
-const set = (address, name, tags, type, userId, visibility, associatedIdentity) => {
+export const set = (address, name, tags, type, userId, visibility, associatedIdentity) => {
     name = name.trim()
     address = address.trim()
     tags = tags || []
@@ -21,7 +25,7 @@ const set = (address, name, tags, type, userId, visibility, associatedIdentity) 
 }
 
 // Set partner as public
-const setPublic = address => {
+export const setPublic = address => {
     const partner = partners.get(address)
     if (!partner) return
     partner.isPublic = true
@@ -31,11 +35,11 @@ const setPublic = address => {
 }
 
 export default {
+    bond,
     set,
     setPublic,
-    getBond: () => bond,
-    getAll: () => partners.getAll(),
-    get: address => partners.get(address),
-    getByName: name => partners.find({ name }, true, true, true),
-    remove: address => partners.delete(address) | updateBond(),
+    getAll,
+    get,
+    getByName,
+    remove,
 }

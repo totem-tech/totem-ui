@@ -21,7 +21,7 @@ const VALID_KEYS = [
     'usageType',
 ]
 
-export const bond = new Bond().defaultTo(uuid.v1())
+export const bond = identities.bond
 export const selectedAddressBond = new Bond().defaultTo(uuid.v1())
 
 export const accountFromPhrase = seed => secretStore().accountFromPhrase(seed)
@@ -34,6 +34,7 @@ export const get = address => {
     }
 }
 
+// returns array
 export const getAll = () => _ssKeys().map(identity => ({
     ...identity,
     // add extra information
@@ -62,7 +63,6 @@ export const find = addressOrName => {
 export const remove = address => {
     _ssForget(address)
     identities.delete(address)
-    updateBond()
 }
 
 // add/update
@@ -90,7 +90,6 @@ export const set = (address, identity = {}) => {
         existing.name = name
         _ssSync()
     }
-    updateBond()
 }
 
 export const setSelected = address => {
@@ -104,7 +103,6 @@ export const setSelected = address => {
     identity.selected = true
     identities.set(address, identity)
     selectedAddressBond.changed(uuid.v1())
-    updateBond()
 }
 
 export default {

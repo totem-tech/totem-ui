@@ -24,14 +24,7 @@ const NOT_REQUIRED = false
 //                      @toUserIds  array  : receiver user IDs
 //                      @data       object : extra information, can be specific to the module
 //                      @message    string : message to be displayed, unless invitation type has custom view
-export const VALID_TYPES = objReadOnly({
-    // notification that doesn't fall into other types
-    // alert: {
-    //     responseRequired: false
-    // }, 
-    // invoice: {
-    //     responseRequired: false
-    // },
+export const VALID_TYPES = Object.freeze({
     identity: {
         request: {
             dataFields: {
@@ -55,40 +48,46 @@ export const VALID_TYPES = objReadOnly({
             responseRequired: REQUIRED
         },
         // Request identity from new worker
-        identity: {
+        // identity: {
+        //     dataFields: {
+        //         projectHash: REQUIRED,
+        //         projectName: REQUIRED,
+        //     },
+        //     handleNotify: processTKIdentityRequest,
+        //     messageRequired: NOT_REQUIRED, // use project name only???
+        //     // messageEncrypted: false,
+        // },
+        // // Worker's response to identity request
+        // identity_response: {
+        //     dataFields: {
+        //         accepted: REQUIRED, // bool  
+        //         projectHash: REQUIRED, // string
+        //         workerAddress: NOT_REQUIRED, //string
+        //     },
+        //     handleNotify: processTKIdentityResponse,
+        //     messageRequired: REQUIRED,
+        // },
+        invitation: {
             dataFields: {
                 projectHash: REQUIRED,
                 projectName: REQUIRED,
-            },
-            handleNotify: processTKIdentityRequest,
-            messageRequired: NOT_REQUIRED, // use project name only???
-            // messageEncrypted: false,
-        },
-        // Worker's response to identity request
-        identity_response: {
-            dataFields: {
-                accepted: REQUIRED, // bool  
-                projectHash: REQUIRED, // string
-                workerAddress: NOT_REQUIRED, //string
-            },
-            handleNotify: processTKIdentityResponse,
-            messageRequired: REQUIRED,
-        },
-        invitation: {
-            dataFields: {
-                projectHash: REQUIRED, // string
-                projectName: REQUIRED,
-                workerAddress: REQUIRED, //string
+                workerAddress: REQUIRED,
             },
             messageRequird: NOT_REQUIRED,
-            handleNotify: processTKInvitation,
+            // handleNotify: processTKInvitation,
         },
         invitation_response: {
+            dataFields: {
+                accepted: REQUIRED, // bool
+                projectHash: REQUIRED,
+                projectName: REQUIRED,
+                workerAddress: REQUIRED,
+            },
             messageRequird: REQUIRED,
-            handleNotify: processTKInvitationResponse,
+            // handleNotify: processTKInvitationResponse,
         },
     },
-}, true, true)
+})
 
 const messages = {
     notifySelf: 'You cannot notify yourself',

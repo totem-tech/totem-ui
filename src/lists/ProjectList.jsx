@@ -176,7 +176,7 @@ class ProjectList extends ReactiveComponent {
     componentWillMount() {
         const { address } = identityService.getSelected()
         this.triggerBond = Bond.all([
-            addressbook.getBond(),
+            addressbook.bond,
             identityService.bond,
             ownerProjectsList(address)
         ])

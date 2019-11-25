@@ -139,74 +139,74 @@ export function handleTimeKeepingInvitations(projectHash, callback) {
 // notifyHandler
 //
 // Returns error string or undefined (success)
-export function processTKIdentityRequest(notificationId, ownerId, workerIds, { projectHash, workerAddress }) {
-    const project = getProject(projectHash)
-    if (!project) return messages.projectNotFound
-    // Only allow project owner to send invitations to time keeping
-    if (!project.userId || project.userId !== ownerId) return messages.accessDenied
+// export function processTKIdentityRequest(notificationId, ownerId, workerIds, { projectHash, workerAddress }) {
+//     const project = getProject(projectHash)
+//     if (!project) return messages.projectNotFound
+//     // Only allow project owner to send invitations to time keeping
+//     if (!project.userId || project.userId !== ownerId) return messages.accessDenied
 
-    const invalidIds = workerIds.filter(userId => !idExists(userId))
-    if (invalidIds.length > 0) return `${messages.invalidUserIds}: ${invalidIds.join(', ')} `
+//     const invalidIds = workerIds.filter(userId => !idExists(userId))
+//     if (invalidIds.length > 0) return `${messages.invalidUserIds}: ${invalidIds.join(', ')} `
 
-    const projectInvites = new Map(timeKeepingInvitations.get(projectHash))
-    const idsAreadyAccepted = workerIds.reduce((ids, workerId) => {
-        const workerInvite = projectInvites.get(workerId)
-        if (workerInvite) {
-            // prevents overriding data but will still send an invitation to the worker
-            workerInvite.accepted || !!workerInvite.workerAddress ? ids.push(workerId) : null
-        } else {
-            projectInvites.set(workerId, {
-                notificationId,
-                status: 'identity requested',
-                tsInvited: new Date(),
-                workerAddress,
-            })
-        }
-        return ids
-    }, [])
+//     const projectInvites = new Map(timeKeepingInvitations.get(projectHash))
+//     const idsAreadyAccepted = workerIds.reduce((ids, workerId) => {
+//         const workerInvite = projectInvites.get(workerId)
+//         if (workerInvite) {
+//             // prevents overriding data but will still send an invitation to the worker
+//             workerInvite.accepted || !!workerInvite.workerAddress ? ids.push(workerId) : null
+//         } else {
+//             projectInvites.set(workerId, {
+//                 notificationId,
+//                 status: 'identity requested',
+//                 tsInvited: new Date(),
+//                 workerAddress,
+//             })
+//         }
+//         return ids
+//     }, [])
 
-    if (idsAreadyAccepted.length > 0) return messages.usersAlreadyAcceptedProject(idsAreadyAccepted)
-    // save/update data
-    timeKeepingInvitations.set(projectHash, projectInvites)
-}
+//     if (idsAreadyAccepted.length > 0) return messages.usersAlreadyAcceptedProject(idsAreadyAccepted)
+//     // save/update data
+//     timeKeepingInvitations.set(projectHash, projectInvites)
+// }
 
-// 
-// notifyHandler
-export function processTKIdentityResponse(nId, workerId, [ownerId], { projectHash, accepted, workerAddress }) {
-    const project = getProject(projectHash)
-    if (!project) return messages.projectNotFound
-    if (ownerId !== project.userId) return messages.invalidProjectOwner
+// // 
+// // notifyHandler
+// export function processTKIdentityResponse(nId, workerId, [ownerId], { projectHash, accepted, workerAddress }) {
+//     const project = getProject(projectHash)
+//     if (!project) return messages.projectNotFound
+//     if (ownerId !== project.userId) return messages.invalidProjectOwner
 
-    const projectInvites = new Map(timeKeepingInvitations.get(projectHash))
-    const workerInvite = projectInvites.get(workerId)
-    if (!workerInvite) return messages.invitationNotFound
-    workerInvite.status = `identity ${accepted && !!workerAddress ? 'supplied' : 'rejected'}`
-    workerInvite.workerAddress = workerAddress
-    // update data
-    projectInvites.set(workerId, workerInvite)
-    timeKeepingInvitations.set(projectHash, projectInvites)
-}
+//     const projectInvites = new Map(timeKeepingInvitations.get(projectHash))
+//     const workerInvite = projectInvites.get(workerId)
+//     if (!workerInvite) return messages.invitationNotFound
+//     workerInvite.status = `identity ${accepted && !!workerAddress ? 'supplied' : 'rejected'}`
+//     workerInvite.workerAddress = workerAddress
+//     // update data
+//     projectInvites.set(workerId, workerInvite)
+//     timeKeepingInvitations.set(projectHash, projectInvites)
+// }
 
-export function processTKInvitation(notificationId, ownerId, workerIds, { projectHash, workerAddress }) {
-    const project = getProject(projectHash)
-    if (project.userId !== ownerId) return messages.accessDenied
+// export function processTKInvitation(notificationId, ownerId, workerIds, { projectHash, workerAddress }) {
+//     const project = getProject(projectHash)
+//     if (project.userId !== ownerId) return messages.accessDenied
 
-    const projectInvites = new Map(timeKeepingInvitations.get(projectHash))
-    workerIds.forEach(workerId => {
-        const workerInvite = projectInvites.get(workerId) || { notificationId, tsInvited: new Date(), workerAddress }
-        workerInvite.status = 'invitation sent'
-        projectInvites.set(workerId, workerInvite)
-    })
-    if (projectInvites.size > 0) timeKeepingInvitations.set(projectHash, projectInvites)
-}
+//     const projectInvites = new Map(timeKeepingInvitations.get(projectHash))
+//     workerIds.forEach(workerId => {
+//         const workerInvite = projectInvites.get(workerId) || { notificationId, tsInvited: new Date(), workerAddress }
+//         workerInvite.status = 'invitation sent'
+//         projectInvites.set(workerId, workerInvite)
+//     })
+//     if (projectInvites.size > 0) timeKeepingInvitations.set(projectHash, projectInvites)
+// }
 
-export function processTKInvitationResponse(nId, workerId, [ownerId], { accepted, projectHash, workerAddress }) {
-    const project = getProject(projectHash)
-    if (ownerId !== project.userId) return messages.invalidProjectOwner
-    const projectInvites = new Map(timeKeepingInvitations.get(projectHash))
-    const workerInvite = projectInvites.get(workerId)
-    if (!workerInvite) return messages.invitationNotFound
-    workerInvite.status = `invitation ${accepted ? 'accepted' : 'rejected'}`
-    projectInvites.set(workerId, workerInvite)
-    timeKeepingInvitations.set(projectHash, projectInvites)
-}
+// export function processTKInvitationResponse(nId, workerId, [ownerId], { accepted, projectHash, workerAddress }) {
+//     const project = getProject(projectHash)
+//     if (ownerId !== project.userId) return messages.invalidProjectOwner
+//     const projectInvites = new Map(timeKeepingInvitations.get(projectHash))
+//     const workerInvite = projectInvites.get(workerId)
+//     if (!workerInvite) return messages.invitationNotFound
+//     workerInvite.status = `invitation ${accepted ? 'accepted' : 'rejected'}`
+//     projectInvites.set(workerId, workerInvite)
+//     timeKeepingInvitations.set(projectHash, projectInvites)
+// }

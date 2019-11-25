@@ -65,11 +65,11 @@ export default class PartnerList extends ReactiveComponent {
 	}
 
 	componentWillMount() {
-		this.tieId = addressbook.getBond().tie(() => this.getPartners())
+		this.tieId = addressbook.bond.tie(() => this.getPartners())
 	}
 
 	componentWillUnmount() {
-		addressbook.getBond().untie(this.tieId)
+		addressbook.bond.untie(this.tieId)
 	}
 
 	getActions(partner) {

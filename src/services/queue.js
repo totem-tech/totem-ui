@@ -16,7 +16,7 @@ const queue = storageService.queue()
 const MIN_BALANCE = 500
 let txInProgress = false
 const txQueue = []
-export const QUEUE_TYPES = objReadOnly({
+export const QUEUE_TYPES = Object.freeze({
     CHATCLIENT: 'chatclient',
     BLOCKCHAIN: 'blockchain',
 }, false)
@@ -63,7 +63,9 @@ const _processNextTxItem = () => {
 }
 
 const _processItem = (queueItem, id, toastId) => {
-    if (!isObj(queueItem) || queueItem.status === 'error') return queue.delete(id) | _save();
+    if (!isObj(queueItem) || Object.keys(queueItem).length === 0 || queueItem.status === 'error') {
+        return queue.delete(id) | _save()
+    }
     const next = queueItem.next
     if ('success' === queueItem.status) {
         if (!isObj(next)) {

@@ -1,23 +1,32 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
+import { Button } from 'semantic-ui-react'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
-import client, { getUser } from '../services/ChatClient'
+import PartnerForm from '../forms/Partner'
 import { arrUnique, isFn } from '../utils/utils'
-import { ownerProjectsList } from '../services/blockchain'
-import { getSelected } from '../services/identity'
 import { bytesToHex } from '../utils/convert'
+import { ownerProjectsList } from '../services/blockchain'
+import client, { getUser } from '../services/ChatClient'
+import { getSelected } from '../services/identity'
+import addressbook from '../services/partners'
+import { showForm } from '../services/modal'
+import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
 const notificationType = 'time_keeping'
-const childType = 'identity'
+const childType = 'invitation'
 
 export default class TimeKeepingInviteForm extends ReactiveComponent {
     constructor(props) {
         super(props)
 
         this.state = {
+            submitDisabled: undefined,
             loading: false,
             message: {},
+            onSubmit: this.handleSubmit.bind(this),
+            success: false,
             inputs: [
                 {
                     label: 'Project',
@@ -31,19 +40,29 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
                     value: '',
                 },
                 {
-                    allowAdditions: true,
-                    label: 'User',
-                    multiple: true,
-                    name: 'userIds',
-                    noResultsMessage: 'Type user ID and press enter to add',
-                    onAddItem: this.handleAddUser.bind(this),
+                    bond: new Bond(),
+                    label: 'Partner',
+                    name: 'workerAddress',
+                    onChange: this.handlePartnerChange.bind(this),
                     options: [],
-                    placeholder: 'Enter User ID(s)',
-                    required: true,
+                    placeholder: 'Select a partner',
                     search: true,
                     selection: true,
                     type: 'dropdown',
-                    value: [],
+                    validate: (_, { value }) => {
+                        if (!value) return
+                        const { userId } = addressbook.get(value)
+                        const isOwnId = (getUser() || {}).id === userId
+                        return !isOwnId ? null : 'You cannot invite yourself'
+                    },
+                },
+                {
+                    content: 'Add New Partner',
+                    icon: 'plus',
+                    name: 'addpartner',
+                    onClick: () => showForm(PartnerForm),
+                    fluid: true,
+                    type: 'button',
                 }
             ]
         }
@@ -59,11 +78,25 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
         proIn.loading = true
         this.setState({ inputs })
 
-        // retrieve projects hashes by address
+        // automatically update when addressbook changes
+        this.tieId = addressbook.bond.tie(() => {
+            const { inputs } = this.state
+            const partnerIn = findInput(inputs, 'workerAddress')
+            // populate partner's list
+            partnerIn.options = Array.from(addressbook.getAll()).map(([address, { name, userId }]) => ({
+                description: userId && '@' + userId,
+                key: address,
+                text: name,
+                value: address
+            }))
+            this.setState({ inputs })
+        })
+
+
+        // retrieve project hashes by address
         ownerProjectsList(ownerAddress).then(hashes => {
             hashes = hashes.map(hash => '0x' + bytesToHex(hash))
             client.projectsByHashes(hashes, (err, projects, notFoundHashes) => {
-                console.log({ notFoundHashes })
                 proIn.loading = false
                 proIn.options = Array.from(projects)
                     // include only active (open/reopened) projects
@@ -88,76 +121,99 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
         })
     }
 
-    handleAddUser(e, data) {
-        const { value: userId } = data
+    componentWillUnmount() {
+        addressbook.bond.untie(this.tieId)
+    }
+
+    handlePartnerChange(_, { workerAddress }) {
         const { inputs } = this.state
-        const idsIn = findInput(inputs, 'userIds')
-        idsIn.loading = true
+        const partnerIn = findInput(inputs, 'workerAddress')
+        const partner = addressbook.get(workerAddress)
+        const { userId } = partner
+        partnerIn.invalid = !userId
+        partnerIn.message = !!userId ? null : {
+            content: (
+                <p>
+                    Selected partner does not include an User ID. <br />
+                    <Button
+                        basic
+                        content='Update Partner'
+                        onClick={e => e.preventDefault() | showForm(PartnerForm, {
+                            onSubmit: (success, { address, userId }) => {
+                                if (!success || !userId) return
+                                // partnerIn
+                                partnerIn.bond.changed(address)
+                            },
+                            values: partner,
+                        })}
+                    />
+                </p>
+            ),
+            status: 'error'
+        }
         this.setState({ inputs })
-        client.idExists(userId, exists => {
-            idsIn.loading = false
-            idsIn.invalid = !exists
-            idsIn.message = exists ? {} : {
-                content: `User ID "${userId}" not found`,
-                showIcon: true,
-                status: 'error',
-            }
-
-            if (exists && (getUser() || {}).id !== userId) {
-                idsIn.value = arrUnique(idsIn.value)
-                idsIn.options = idsIn.value.map(id => ({
-                    key: id,
-                    text: id,
-                    value: id,
-                }))
-            } else {
-                // remove from values
-                idsIn.value.splice(idsIn.value.indexOf(userId), 1)
-            }
-
-            this.setState({ inputs })
-        })
     }
 
     handleSubmit(e, values) {
         const { onSubmit } = this.props
         const { inputs } = this.state
-        const { projectHash, userIds } = values
-        const projectName = findInput(inputs, 'projectHash').options.find(x => x.value === projectHash).text
-        this.setState({ loading: true })
-        client.notify(userIds, notificationType, childType, null, { projectHash, projectName }, err => {
-            this.setState({
-                loading: false,
-                message: !err ? {
-                    content: `Invitation sent to selected work(s) requesting their identity (wallet) to be used with 
-                        the project. Once worker submits their identity you will be able to initiate a formal invitation.`,
-                    header: 'Notification sent!',
-                    showIcon: true,
-                    status: 'success',
-                } : {
-                        header: 'Submission Failed!',
-                        content: err,
-                        showIcon: true,
-                        status: 'error',
-                    }
-            })
-            isFn(onSubmit) && onSubmit(!err, values)
+        const { projectHash, workerAddress: workerAddress } = values
+        const { project } = findInput(inputs, 'projectHash').options.find(x => x.value === projectHash)
+        const { name: projectName, ownerAddress } = project
+        const { userId } = addressbook.get(workerAddress)
+        this.setState({
+            submitDisabled: true,
+            loading: true,
+            message: {
+                content: 'Invitation request has been added to background queue. You will be notified shortly of the progress.',
+                header: 'Added to queue',
+                showIcon: 'true',
+                status: 'success'
+            }
         })
+
+        const queueProps = {
+            type: QUEUE_TYPES.BLOCKCHAIN,
+            func: 'timeKeeping_invitation_add',
+            args: [projectHash, ownerAddress, workerAddress],
+            title: 'Time Keeping - Invite Worker',
+            description: 'Worker',
+            next: {
+                type: QUEUE_TYPES.CHATCLIENT,
+                func: 'notify',
+                args: [
+                    [userId],
+                    notificationType,
+                    childType,
+                    null,
+                    { projectHash, projectName, workerAddress },
+                    err => {
+                        this.setState({
+                            submitDisabled: false,
+                            loading: false,
+                            success: !err,
+                            message: !err ? {
+                                content: 'Notification containing an invitation has been sent to the selected partner',
+                                header: 'Invitation sent!',
+                                showIcon: true,
+                                status: 'success',
+                            } : {
+                                    header: 'Notification Failed!',
+                                    content: err,
+                                    showIcon: true,
+                                    status: 'error',
+                                }
+                        })
+                        isFn(onSubmit) && onSubmit(!err, values)
+                    }],
+            }
+        }
+        addToQueue(queueProps)
+
     }
 
     render() {
-        const { inputs, loading, message } = this.state
-        return (
-            <FormBuilder
-                {...this.props}
-                {...{
-                    inputs,
-                    loading,
-                    message,
-                    onSubmit: this.handleSubmit.bind(this),
-                }}
-            />
-        )
+        return <FormBuilder {...{ ...this.props, ...this.state }} />
     }
 }
 TimeKeepingInviteForm.propTypes = {
@@ -168,8 +224,8 @@ TimeKeepingInviteForm.propTypes = {
 }
 TimeKeepingInviteForm.defaultProps = {
     closeText: 'Close',
-    header: 'Time Keeping: Invite Worker(s)',
+    header: 'Time Keeping: Invite Worker',
     size: 'tiny',
     subheader: '',
-    submitText: 'Request Worker Identity',
+    submitText: 'Invite',
 }

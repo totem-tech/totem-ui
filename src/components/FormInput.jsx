@@ -31,10 +31,10 @@ export default class FormInput extends ReactiveComponent {
             message: undefined
         }
 
-        setTimeout(() => isBond(this.bond) && this.bond.tie(value => this.handleChange({}, { value }), false))
+        setTimeout(() => isBond(this.bond) && this.bond.tie(value => this.handleChange({}, { value })))
     }
 
-    handleChange(event, data, triggerBond = true) {
+    handleChange(event, data) {
         const {
             falseValue: no,
             max,
@@ -107,8 +107,8 @@ export default class FormInput extends ReactiveComponent {
         isFn(onChange) && onChange(event, data, this.props)
         this.setState({ message })
 
-        if (isBond(this.bond) && !data.invalid && triggerBond === true) {
-            this.bond.changed(value)
+        if (isBond(this.bond) && !data.invalid) {
+            this.bond._value = value
         }
     }
 

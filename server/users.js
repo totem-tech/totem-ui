@@ -10,13 +10,13 @@ const msgMaxLength = 160
 const idMinLength = 3
 // Error messages
 const messages = {
-	idInvalid: `Only alpha-numeric characters allowed and must start with an alphabet`,
-	idLength: `Must be between ${idMinLength} to ${idMaxLength} characters`,
+    idInvalid: `Only alpha-numeric characters allowed and must start with an alphabet`,
+    idLength: `Must be between ${idMinLength} to ${idMaxLength} characters`,
     idExists: 'User ID already taken',
     invalidSecret: 'Secret must be a valid string',
-	msgLengthExceeds: `Maximum ${msgMaxLength} characters allowed`,
-	loginFailed: 'Credentials do not match',
-	loginOrRegister: 'Login/registration required'
+    msgLengthExceeds: `Maximum ${msgMaxLength} characters allowed`,
+    loginFailed: 'Credentials do not match',
+    loginOrRegister: 'Login/registration required'
 }
 // User IDs reserved for Totem
 const RESERVED_IDS = arrReadOnly([
@@ -35,11 +35,11 @@ const SYSTEM_IDS = arrReadOnly([
     'me'
 ], true, true)
 // Save reserved ids without password (secret) if not already exists
-RESERVED_IDS.forEach(id => !users.get(id) && users.set(id, {id}))
+RESERVED_IDS.forEach(id => !users.get(id) && users.set(id, { id }))
 // Save system IDs without any password (secret) so that nobody can login with these
-SYSTEM_IDS.forEach(id => users.set(id, {id}))
+SYSTEM_IDS.forEach(id => users.set(id, { id }))
 const onUserLoginCallbacks = []
-const _execOnUserLogin = userId => setTimeout(()=> onUserLoginCallbacks.forEach(fn => fn(userId)))
+const _execOnUserLogin = userId => setTimeout(() => onUserLoginCallbacks.forEach(fn => fn(userId)))
 
 /*
  *
@@ -150,12 +150,13 @@ export const handleIdExists = (userId, callback) => isFn(callback) && callback(i
 
 export function handleRegister(userId, secret, callback) {
     const client = this
+    userId = (userId || '').toLowerCase()
+    secret = (secret || '').trim()
     if (!isFn(callback)) return
     if (users.get(userId)) return callback(messages.idExists)
     if (!isValidId(userId)) return callback(messages.idInvalid)
     if (userId.length > idMaxLength || userId.length < idMinLength) return callback(messages.idLength)
-    if (!isStr(secret) || !secret.trim()) return callback(messages.invalidSecret)
-
+    if (!isStr(secret) || !secret) return callback(messages.invalidSecret)
     const newUser = {
         id: userId,
         secret: secret,
@@ -168,7 +169,7 @@ export function handleRegister(userId, secret, callback) {
     _execOnUserLogin(userId)
 }
 
-export function handleLogin (userId, secret, callback) {
+export function handleLogin(userId, secret, callback) {
     const client = this
     if (!isFn(callback)) return
     const user = users.get(userId)
