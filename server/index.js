@@ -6,7 +6,7 @@ import { initChatServer } from './chatServer'
 let app = express()
 
 // Reverse Proxy config
-HTTPS_PORT _must not_ be 443 if it is behind a reverse proxy
+// HTTPS_PORT _must not_ be 443 if it is behind a reverse proxy
 const HTTPS_PORT = process.env.HTTPS_PORT || 443
 // for 
 const SUBDOMAIN = process.env.SUBDOMAIN
