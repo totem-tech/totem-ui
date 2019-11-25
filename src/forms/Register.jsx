@@ -25,7 +25,7 @@ class FormRegister extends ReactiveComponent {
                     minLength: 3,
                     maxLength: 16,
                     onChange: deferred(this.handleIdChange, 300),
-                    placeholder: 'Enter your ID',
+                    placeholder: 'Enter your UserID',
                     type: 'text',
                     required: true,
                     value: ''
@@ -47,7 +47,7 @@ class FormRegister extends ReactiveComponent {
         inputs[index].invalid = !valid
         if (!valid) {
             inputs[index].message = {
-                content: 'Lowercase alpha-numeric only, ID must start with a letter.',
+                content: 'Lowercase alpha-numeric only, User ID must start with a letter.',
                 header: 'Invalid ID',
                 showIcon: true,
                 status: 'error'
@@ -110,11 +110,12 @@ FormRegister.propTypes = {
 }
 FormRegister.defaultProps = {
     closeOnSubmit: true,
-    header: 'Register an account',
+    header: 'Register a messaging UserID',
     headerIcon: 'sign-in',
     onSuccessOpenChat: true,
     size: 'mini',
-    subheader: 'To start chat and/or make faucet request',
+    subheader: 'Lets you message and share.',
+    subHeaderDetails: 'Choose a short, unique and memorable user name.',
     submitText: 'Register'
 }
 export default FormRegister

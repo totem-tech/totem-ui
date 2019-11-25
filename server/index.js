@@ -6,7 +6,7 @@ import { initChatServer } from './chatServer'
 let app = express()
 
 // Reverse Proxy config
-// HTTPS_PORT _must not_ be 443 if it is behind a reverse proxy
+HTTPS_PORT _must not_ be 443 if it is behind a reverse proxy
 const HTTPS_PORT = process.env.HTTPS_PORT || 443
 // for 
 const SUBDOMAIN = process.env.SUBDOMAIN
@@ -21,12 +21,12 @@ const EXECUTION_MODE = process.env.EXECUTION_MODE || 'dev'
 // We require a reverse proxy to certificate issues hence this is not needed.
 
 // ******************** //
-// const HTTP_PORT = process.env.HTTP_PORT || 80
-// // set up plain http server and have it listen on port 80 to redirect to https 
-// http.createServer(function (req, res) {
-// 	res.writeHead(307, { "Location": "https://" + req.headers['host'] + req.url });
-// 	res.end();
-// }).listen(HTTP_PORT, () => console.log('\nApp http to https redirection listening on port ', HTTP_PORT));
+const HTTP_PORT = process.env.HTTP_PORT || 80
+// set up plain http server and have it listen on port 80 to redirect to https 
+http.createServer(function (req, res) {
+	res.writeHead(307, { "Location": "https://" + req.headers['host'] + req.url });
+	res.end();
+}).listen(HTTP_PORT, () => console.log('\nApp http to https redirection listening on port ', HTTP_PORT));
 // ******************* //
 
 app.use(express.static('dist'))
