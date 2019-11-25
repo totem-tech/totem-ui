@@ -119,8 +119,10 @@ Company.propTypes = {
     })
 }
 Company.defaultProps = {
-    header: 'Add company',
+    header: 'Make Partner Public',
+    // header: 'Add company',
     size: 'tiny',
-    subheader: 'Add your or a third-party company that is publicly visible'
+    // subheader: 'Add your or a third-party company that is publicly visible'
+    subheader: 'Warning: doing this makes this partner visible to all Totem users'
 }
 export default Company
