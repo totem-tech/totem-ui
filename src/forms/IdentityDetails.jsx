@@ -8,6 +8,7 @@ import identityService from '../services/identity'
 import { copyToClipboard, isFn, textCapitalize } from '../utils/utils'
 import { confirm } from '../services/modal'
 
+// address is used in some contexts to select the address from local storage. Do not change the text for address
 const words = {
     address: 'address',
     close: 'close',
@@ -21,15 +22,15 @@ const words = {
 }
 const wordsCapitalized = textCapitalize(words)
 const texts = {
-    cryptoType: 'Crypto Type',
+    cryptoType: 'Identity type',
     hideSeed: 'Hide seed',
     identityDetails: 'Identity details',
     noKeepItHidden: 'No keep it hidden',
     removeWarningPart1: 'You are about to remove the following identity.',
     removeWarningPart2: `If not backed up, this action is irreversible. 
-        You will lose access to any activity/data related to this project.`,
-    selectedWalletWarning: 'Cannot remove selected wallet',
-    showSeed: 'Show seed',
+        You will lose access to all activity/data related to this project.`,
+    selectedWalletWarning: 'Cannot remove Identity you are currently using',
+    showSeed: 'Show seed phrase',
 }
 
 export default class IdentityDetails extends ReactiveComponent {
@@ -63,9 +64,9 @@ export default class IdentityDetails extends ReactiveComponent {
                         icon: 'copy',
                         onClick: (e) => e.preventDefault() | copyToClipboard(this.identity.address),
                         style: { cursor: 'pointer' },
-                        title: `${wordsCapitalized.copy} ${words.address}`,
+                        title: `${wordsCapitalized.copy} ${words.identity}`,
                     },
-                    label: wordsCapitalized.address,
+                    label: wordsCapitalized.identity,
                     name: 'address',
                     readOnly: true,
                     type: 'text',

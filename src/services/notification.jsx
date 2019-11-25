@@ -85,11 +85,11 @@ export default class NotificationDropdown extends ReactiveComponent {
                         switch (type + ':' + childType) {
                             case 'identity:request':
                                 // data => {reason}
-                                msg.header = <span>{userIdBtn} requested your identity</span>
+                                msg.header = <span>{userIdBtn} requested an Identity from you</span>
                                 msg.icon.name = 'user'
                                 msg.content = (
                                     <div>
-                                        <b>Reason:</b> {data.reason}
+                                        <b>Reason : </b> {data.reason}
                                         <ButtonAcceptOrReject
                                             acceptText='Share'
                                             onClick={accepted => !accepted ? remove(id) : showForm(IdentityShareForm, {

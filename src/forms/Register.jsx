@@ -25,7 +25,7 @@ class FormRegister extends ReactiveComponent {
                     label: 'User ID',
                     name: 'userId',
                     minLength: 3,
-                    maxLength: 16,
+                    maxLength: 20,
                     onChange: deferred(this.handleIdChange, 300, this),
                     placeholder: 'Enter your ID',
                     type: 'text',
@@ -97,12 +97,11 @@ FormRegister.propTypes = {
 }
 FormRegister.defaultProps = {
     closeOnSubmit: true,
-    header: 'Register a messaging UserID',
+    header: 'Register a messaging User Name',
     headerIcon: 'sign-in',
     onSuccessOpenChat: true,
     size: 'mini',
-    subheader: 'Lets you message and share.',
-    subHeaderDetails: 'Choose a short, unique and memorable user name.',
+    subheader: 'Choose a short, unique and memorable user name.',
     submitText: 'Register'
 }
 export default FormRegister
