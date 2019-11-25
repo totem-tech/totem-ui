@@ -97,11 +97,12 @@ FormRegister.propTypes = {
 }
 FormRegister.defaultProps = {
     closeOnSubmit: true,
-    header: 'Register an account',
+    header: 'Register a messaging UserID',
     headerIcon: 'sign-in',
     onSuccessOpenChat: true,
     size: 'mini',
-    subheader: 'To start chat and/or make faucet request',
+    subheader: 'Lets you message and share.',
+    subHeaderDetails: 'Choose a short, unique and memorable user name.',
     submitText: 'Register'
 }
 export default FormRegister
