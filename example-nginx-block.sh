@@ -1,6 +1,6 @@
 # example nginx server block for main domain and subdomain on the totem network
 # Each node.js instance can be executed on the same server with different ports
-# The environmental variables for the node server allow you to configure this 
+# The environmental variables for the node server allow you to configure the ports
 server {
     listen 80;
     listen [::]:80;
@@ -8,8 +8,8 @@ server {
     listen [::]:443 ssl http2;
     server_name totem.live www.totem.live;
 
-    if ($http_x_forwarded_proto = "http") {
-       return 301 https://totem.live$request_uri;
+    if ($scheme != "https") {
+       return 301 https://$host$request_uri;
     }
 
     ssl_certificate                /etc/letsencrypt/live/totem.live/fullchain.pem;
@@ -27,7 +27,6 @@ server {
     location / {
 
         proxy_buffering off;
-        proxy_pass https://127.0.0.1:16181;
         proxy_http_version 1.1;
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header Upgrade $http_upgrade;
@@ -35,7 +34,11 @@ server {
         proxy_set_header Proxy "";
         proxy_set_header Host totem.live;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Fix the “It appears that your reverse proxy set up is broken" error.
+        proxy_pass                    https://127.0.0.1:16181;
+        proxy_read_timeout            90;
+        proxy_redirect                https://127.0.0.1:16181 https://totem.live;
     }
 }
 server {
@@ -45,8 +48,8 @@ server {
     listen [::]:443 ssl http2;
     server_name dev.totem.live;
 
-    if ($http_x_forwarded_proto = "http") {
-       return 301 https://dev.totem.live$request_uri;
+    if ($scheme != "https") {
+       return 301 https://$host$request_uri;
     }
 
     ssl_certificate                /etc/letsencrypt/live/dev.totem.live/fullchain.pem;
@@ -64,7 +67,6 @@ server {
     location / {
 
         proxy_buffering off;
-        proxy_pass https://127.0.0.1:16182;
         proxy_http_version 1.1;
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header Upgrade $http_upgrade;
@@ -72,6 +74,10 @@ server {
         proxy_set_header Proxy "";
         proxy_set_header Host dev.totem.live;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Fix the “It appears that your reverse proxy set up is broken" error.
+        proxy_pass                    https://127.0.0.1:16182;
+        proxy_read_timeout            90;
+        proxy_redirect                https://127.0.0.1:16182 https://dev.totem.live;
     }
 }

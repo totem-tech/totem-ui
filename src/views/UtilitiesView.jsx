@@ -2,6 +2,7 @@ import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import ContentSegment from '../components/ContentSegment'
 import UpgradeView from './UpgradeView'
+import PageUtilitiesView from './PageUtilitiesView'
 import TransactionsView from './TransactionsView'
 import PokeView from './PokeView'
 import SystemStatus from '../components/SystemStatus'
@@ -34,6 +35,12 @@ export default UtilitiesView
 
 
 const subItems = [
+    {
+        content: <PageUtilitiesView />,
+        icon: '',
+        header: 'App Tools',
+        subHeader: 'Utilities to help fix issues with the app'
+    },
     {
         content: <SystemStatus />,
         icon: '',

@@ -1,6 +1,6 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
-import { Step } from 'semantic-ui-react'
+import { Step, Embed } from 'semantic-ui-react'
 import storage from '../services/storage'
 import { showForm } from '../services/modal'
 import { setToast } from '../services/toast'
@@ -70,17 +70,19 @@ export default class GetingStarted extends ReactiveComponent {
 				<div>
 					<h3>A quick guide to getting started with Totem Live Accounting.</h3>
 					<p>
-						It's currently under heavy development, but you can already use the Identities, Partners,
-						Project and Timekeeping Modules as well as make basic transactions using the Payments Module.
+						Totem is currently under heavy development, but you can already use the Identities, Partners,
+						Project and Timekeeping Modules as well as make basic transfers of your transaction allocations using the Transfer Module.
 					</p>
 					<p>
-						To use Totem, you need to spend transaction credits. We call them XTX for short. Generally it
-						will cost you 1 XTX per activity - but don't worry, we are nice open source people, and we'll
-						give you thousands! (Enough to get you started, because after all, we want you to use Totem!)
+						Most of what you do in Totem will consume transaction allocations (XTX for short) but don't worry, we are nice open source people, and we'll
+						give you plenty to get you started.
+					</p>
+					<p>
+						If you use them up - no problem! Simply request some more from our automated faucet.
 					</p>
 					<h4>Only 3 short steps to begin. Let's go!</h4>
 					<div style={{ overflowX: 'auto' }}>
-						<Step.Group ordered>
+						<Step.Group fluid ordered>
 							<Step
 								active={activeIndex === 0}
 								completed={activeIndex > 0}
@@ -129,10 +131,21 @@ export default class GetingStarted extends ReactiveComponent {
 					</div>
 					<h3>Further essential steps:</h3>
 					<h5>What am I looking at? Watch the video:</h5>
-					<p>
-						{/*Video*/}
-					</p>
+					<div style={{height: 225, width:400}}>
+						<Embed
+							aspectRatio='16:9'
+							id='1'
+							source='vimeo'
+						/>
+					</div>
 					<h5>Backup your account. Watch the video:</h5>
+					<div style={{height: 225, width:400}}>
+						<Embed
+							aspectRatio='16:9'
+							id='1'
+							source='vimeo'
+						/>
+					</div>
 				</div>
 			</React.Fragment>
 		)

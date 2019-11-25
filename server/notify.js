@@ -90,10 +90,10 @@ export const VALID_TYPES = Object.freeze({
 })
 
 const messages = {
-    notifySelf: 'You cannot notify yourself',
+    notifySelf: 'You cannot notify yourself!',
     invalidParams: 'Invalid/missing required parameter(s)',
-    loginRequired: 'Login required',
-    runtimeError: 'Runtime error occured. Please try again later or contact support'
+    loginRequired: 'You need to complete the Getting Started module, and create a messaging User ID',
+    runtimeError: 'Runtime error occured. Please try again later or email support@totemaccounting.com'
 }
 
 // Send notification to all clients of a specific user

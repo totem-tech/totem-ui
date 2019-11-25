@@ -97,11 +97,11 @@ FormRegister.propTypes = {
 }
 FormRegister.defaultProps = {
     closeOnSubmit: true,
-    header: 'Register a messaging User Name',
+    header: 'Register a Memorable User Name',
     headerIcon: 'sign-in',
     onSuccessOpenChat: true,
     size: 'mini',
-    subheader: 'Choose a short, unique and memorable user name.',
+    subheader: 'Choose a unique alias for use with Totem chat messaging.',
     submitText: 'Register'
 }
 export default FormRegister

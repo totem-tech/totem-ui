@@ -67,7 +67,15 @@ export const hasValue = x => {
 	}
 	// (isValidNumber(x) || (isStr(x) && !!x.trim()) || isBool(x))
 }
+
+/* 
+// Window or page helpers 
+*/
 export const isMobile = () => window.innerWidth <= Responsive.onlyMobile.maxWidth
+
+// force refresh page from server
+export const forceRefreshPage = () => window.location.reload(true)
+
 
 export const randomInt = (min, max) => parseInt(Math.random() * (max - min) + min)
 
