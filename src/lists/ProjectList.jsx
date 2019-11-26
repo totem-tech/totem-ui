@@ -139,6 +139,9 @@ class ProjectList extends ReactiveComponent {
                             content: (
                                 <div>
                                     <h4>You are about to delete the following project{s}:</h4>
+                                    <p>
+                                        This action cannot be undone! You will lose access to this project data forever! A better option might be to change the project status.
+                                    </p>
                                     <ul>
                                         {projectNames.map((name, i) => <li key={i}>{name}</li>)}
                                     </ul>

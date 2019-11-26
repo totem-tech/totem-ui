@@ -28,9 +28,10 @@ const texts = {
     noKeepItHidden: 'No keep it hidden',
     removeWarningPart1: 'You are about to remove the following identity.',
     removeWarningPart2: `If not backed up, this action is irreversible. 
-        You will lose access to all activity/data related to this project.`,
+        You will lose access to all activity/data related to this Identity.`,
     selectedWalletWarning: 'Cannot remove Identity you are currently using',
     showSeed: 'Show seed phrase',
+    recoveryPhrase: 'Recovery Phrase',
 }
 
 export default class IdentityDetails extends ReactiveComponent {
@@ -75,7 +76,7 @@ export default class IdentityDetails extends ReactiveComponent {
                     inlineLabel: {
                         icon: { className: 'no-margin', name: 'eye' },
                         style: { cursor: 'pointer' },
-                        title: `${wordsCapitalized.show} ${words.seed}`,
+                        title: `${wordsCapitalized.show} ${text.recoveryPhrase}`,
                         onClick: () => {
                             const toggle = () => {
                                 const { inputs } = this.state
@@ -148,8 +149,8 @@ export default class IdentityDetails extends ReactiveComponent {
                 />
             ),
             content: [
-                <p key='0'>{texts.removeWarningPart1} <b>{texts.removeWarningPart2}</b></p>,
-                <p key='1'>{`${wordsCapitalized.identity} ${words.name}`}: <b>{name}</b></p>
+                <p key='1'>{`${wordsCapitalized.identity} ${words.name}`}: <b>{name}</b></p>,
+                <p key='0'>{texts.removeWarningPart1} <b>{texts.removeWarningPart2}</b></p>
             ],
             header: `${wordsCapitalized.remove} ${wordsCapitalized.identity}`,
             onConfirm: () => {
