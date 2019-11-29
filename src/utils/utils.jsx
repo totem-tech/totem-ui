@@ -49,6 +49,7 @@ export const isObjArr = x => !isArr(x) ? false : !x.reduce((no, item) => no || !
 // Checks if argument is an Map of Objects. Each element type must be object, otherwise will return false.
 export const isObjMap = x => !isMap(x) ? false : !Array.from(x).reduce((no, item) => no || !isObj(item[1]), false)
 export const isStr = x => typeof x === 'string'
+export const isUint8Arr = arr => arr instanceof Uint8Array
 export const isValidNumber = x => typeof x == 'number' && !isNaN(x) && isFinite(x)
 export const hasValue = x => {
 	if (!isDefined(x)) return false
@@ -283,6 +284,12 @@ export const mapFindByKey = (map, key, value, matchExact) => {
 		const val = key === null ? item : item[key]
 		if (!matchExact && (isStr(val) || isArr(val)) ? val.indexOf(value) >= 0 : val === value) return item
 	}
+}
+
+// mapJoin joins (and overrides) key-value pairs from @source to @dest
+export const mapJoin = (source = new Map(), dest = new Map()) => {
+	Array.from(source).forEach(([key, value]) => dest.set(key, value))
+	return dest
 }
 
 // mapSearch search for objects by key-value pairs

@@ -4,7 +4,7 @@ import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { chain } from 'oo7-substrate'
 import { Button, Icon } from 'semantic-ui-react'
-import { arrReadOnly, deferred, hasValue, isDefined, isFn, objCopy, objClean, objWithoutKeys } from '../utils/utils'
+import { arrReadOnly, deferred, hasValue, isDefined, isFn, objCopy, objClean, objWithoutKeys, textCapitalize } from '../utils/utils'
 import {
     BLOCK_DURATION_SECONDS,
     BLOCK_DURATION_REGEX,
@@ -14,11 +14,15 @@ import {
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import { confirm, closeModal, showForm } from '../services/modal'
 import storage from '../services/storage'
-import { projectDropdown, handleSearch, getAddressName } from '../components/ProjectDropdown'
+import { getAddressName } from '../components/ProjectDropdown'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { projectHashStatus, timeKeeping } from '../services/blockchain'
 import { getAll as getIdentities, getSelected } from '../services/identity'
+import { getAll as getProjects } from '../services/timeKeeping'
 
+// Hash that indicates creation of new record
+const NEW_RECORD_HASH = '0xe4d673a76e8b32ca3989dbb9f444f71813c88d36120170b15151d58c7106cc83'
+const activeStatusCodes = [0, 1]
 const DURATION_ZERO = '00:00:00'
 const blockCountToDuration = blockCount => secondsToDuration(blockCount * BLOCK_DURATION_SECONDS)
 const durationToBlockCount = duration => BLOCK_DURATION_REGEX.test(duration) ? durationToSeconds(duration) / BLOCK_DURATION_SECONDS : 0
@@ -35,9 +39,14 @@ const validKeys = arrReadOnly([
     'tsCreated',
     'tsUpdated',
 ], true)
-
-// Hash that indicates creation of new record
-const NEW_RECORD_HASH = '0xe4d673a76e8b32ca3989dbb9f444f71813c88d36120170b15151d58c7106cc83'
+const words = {
+    project: 'project',
+    unknown: 'unknown',
+}
+const wordsCap = textCapitalize(words)
+const texts = {
+    selectAProject: 'Select a project',
+}
 
 function handleDurationChange(e, formValues, i) {
     const { inputs, values } = this.state
@@ -72,13 +81,21 @@ export default class TimeKeepingForm extends ReactiveComponent {
             message: {},
             values,
             inputs: [
-                objCopy(projectDropdown, {
+                {
+                    bond: new Bond(),
                     disabled: projectHashSupplied,
+                    inline: true,
+                    label: wordsCap.project,
+                    name: 'projectHash',
                     onChange: this.handleProjectChange.bind(this),
-                    onSearchChange: deferred(handleSearch, 300, this),
+                    options: [],
+                    placeholder: texts.selectAProject,
                     required: true,
+                    search: true,
+                    selection: true,
                     selectOnNavigation: false,
-                }, true),
+                    type: 'dropdown',
+                },
                 {
                     label: 'Account/Wallet',
                     name: 'address',
@@ -113,8 +130,6 @@ export default class TimeKeepingForm extends ReactiveComponent {
 
         // restore saved values
         fillValues(this.state.inputs, values, true)
-        setTimeout(() => handleSearch.call(this, {}, { searchQuery: values.projectHash }))
-        values.projectHash && setTimeout(() => this.handleProjectChange({}, { projectHash: values.projectHash }, 0))
     }
 
     componentWillMount() {
@@ -124,38 +139,77 @@ export default class TimeKeepingForm extends ReactiveComponent {
             blockNumber = parseInt(blockNumber)
             inprogress ? this.saveValues(blockNumber) : this.setState({ blockNumber })
         })
+        getProjects().then(projects => {
+            console.log({ projects })
+            const { inputs } = this.state
+            findInput(inputs, 'projectHash').options = Array.from(projects).map(([hash, project]) => ({
+                key: hash,
+                project: project,
+                text: project.name || wordsCap.unknown,
+                value: hash,
+            }))
+            this.setState({ inputs })
+        })
     }
 
     componentWillUnmount() {
         chain.height.untie(this.tieId)
     }
 
+    // check if project is active (status = open or reopened)
     handleProjectChange(_, values, index) {
         const { projectHash } = values
         const { inputs } = this.state
+        const projectInactiveMsg = {
+            content: 'Please select an active project',
+            header: 'Inactive project selected!',
+            showIcon: true,
+            status: 'error',
+        }
+        const workerInActiveMsg = isOwner => ({
+            content: (
+                <div>
+                    Please select a project you are invited to and accepted.
+                    {isOwner && (
+                        <p>
+                            You are the owner of the selected project. Would you like to
+                            <Button
+                                positive
+                                compact
+                                size="tiny"
+                                content="invite yourself"
+                                onClick={() => this.inviteSelf(projectHash, workerAddress, project.name)}
+                            />
+                            so that you can book time for your own project?
+                        </p>
+                    )}
+                </div>
+            ),
+            header: 'Uninvited project selected!',
+            showIcon: true,
+            status: 'error',
+        })
+
         inputs[index].loading = true
-        inputs[index].message = {
+        inputs[index].message = !projectHash ? null : {
             content: 'Checking project status...',
             showIcon: true,
             status: 'loading',
         }
         this.setState({ inputs })
 
+        if (!projectHash) return
+
         projectHashStatus(projectHash).then(statusCode => {
-            const projectActive = [0, 1].includes(statusCode)
+            const projectActive = activeStatusCodes.includes(statusCode)
+            const { address: workerAddress } = getSelected()
             inputs[index].invalid = !projectActive
-            inputs[index].message = projectActive ? undefined : {
-                content: 'Please select an active project',
-                header: 'Inactive project selected!',
-                showIcon: true,
-                status: 'error',
-            }
+            inputs[index].message = projectActive ? undefined : projectInactiveMsg
             if (!projectActive) {
                 inputs[index].loading = false
                 return this.setState({ inputs })
             }
 
-            const { address: workerAddress } = getSelected()
             // check if user is active on the project
             timeKeeping.invitation.status(projectHash, workerAddress).then(workerActive => {
                 inputs[index].loading = false
@@ -163,65 +217,41 @@ export default class TimeKeepingForm extends ReactiveComponent {
                 const project = (findInput(inputs, 'projectHash').options
                     .find(option => option.value === projectHash) || {}).project
                 const isOwner = project.ownerAddress == workerAddress
-                inputs[index].message = workerActive ? undefined : {
-                    content: (
-                        <div>
-                            Please select a project you are invited to and accepted.
-                            {isOwner && (
-                                <p>
-                                    You are the owner of the selected project. Would you like to
-                                    <Button
-                                        positive
-                                        compact
-                                        size="tiny"
-                                        content="invite yourself"
-                                        onClick={() => this.inviteSelf(projectHash, workerAddress, project.name)}
-                                    />
-                                    so that you can book time for your own project?
-                                </p>
-                            )}
-                        </div>
-                    ),
-                    header: 'Uninvited project selected!',
-                    showIcon: true,
-                    status: 'error',
-                }
+                inputs[index].message = workerActive ? undefined : workerInActiveMsg(isOwner)
                 this.setState({ inputs })
             })
         })
     }
 
     inviteSelf(projectHash, address, projectName) {
+        const message = {
+            content: `The invitation requires two blockchain transactions which has been queued. 
+                It may take a while to complete the process. You may close the modal for now.`,
+            header: 'Added to queue',
+            showIcon: true,
+            status: 'success'
+        }
+        const queueProps = {
+            type: QUEUE_TYPES.BLOCKCHAIN,
+            func: 'timeKeeping_invitation_add',
+            args: [projectHash, address, address],
+            title: 'Time Keeping - inviting myself',
+            description: `Project: ${projectName}`,
+            next: {
+                type: QUEUE_TYPES.BLOCKCHAIN,
+                func: 'timeKeeping_invitation_accept',
+                args: [projectHash, address, true],
+                title: 'Time Keeping - accepting self invite'
+            }
+        }
+
         confirm({
             cancelButton: 'No',
             confirmButton: 'Yes',
             content: 'Are you sure you want to invite yourself?',
             header: 'Invite Self',
             size: 'mini',
-            onConfirm: () => {
-                addToQueue({
-                    type: QUEUE_TYPES.BLOCKCHAIN,
-                    func: 'timeKeeping_invitation_add',
-                    args: [projectHash, address, address],
-                    title: 'Time Keeping - inviting myself',
-                    description: `Project: ${projectName}`,
-                    next: {
-                        type: QUEUE_TYPES.BLOCKCHAIN,
-                        func: 'timeKeeping_invitation_accept',
-                        args: [projectHash, address],
-                        title: 'Time Keeping - accepting self invite'
-                    }
-                })
-                this.setState({
-                    message: {
-                        content: `The invitation requires two blockchain transactions which has been queued. 
-                            It may take a while to complete the process. You may close the modal for now.`,
-                        header: 'Added to queue',
-                        showIcon: true,
-                        status: 'success'
-                    }
-                })
-            }
+            onConfirm: () => addToQueue(queueProps) | this.setState({ message }),
         })
     }
 
@@ -315,7 +345,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         const { inputs, values } = this.state
         const { onSubmit } = this.props
         const { address, blockCount, blockEnd, blockStart, duration, projectHash } = values
-        const projectOption = (inputs.find(x => x.name === 'projectHash').options || [])
+        const projectOption = findInput(inputs, 'projectHash').options
             .find(option => option.value === projectHash) || {}
         const projectName = projectOption.text
         const queueProps = {
@@ -436,29 +466,51 @@ export default class TimeKeepingForm extends ReactiveComponent {
                 value: wallet.address
             }))
 
+        const closeBtn = (
+            <Button
+                size="massive"
+                style={btnStyle}
+                onClick={(e, d) => {
+                    const { values: { inprogress } } = this.state
+                    const doCancel = () => this.handleReset(false) | isFn(onClose) && onClose(e, d)
+                    !inprogress ? doCancel() : confirm({
+                        cancelButton: 'No, continue timer',
+                        confirmButton: 'Yes',
+                        content: 'You have a running timer. Would you like to stop and exit?',
+                        header: 'Are you sure?',
+                        onConfirm: doCancel,
+                        size: 'tiny'
+                    })
+
+                }}
+            />
+        )
+
+        const submitBtn = (
+            <Button
+                icon
+                disabled={(manualEntry || stopped) && !durationValid ? true : undefined}
+                labelPosition={!!inprogress ? "right" : undefined}
+                onClick={() => inprogress ? this.handleStop() : (done ? this.handleSubmit() : this.handleStart())}
+                positive={!inprogress}
+                color={inprogress ? 'grey' : undefined}
+                size="massive"
+                style={btnStyle}
+            >
+                {!inprogress ? (done ? 'Submit' : 'Start') : (
+                    <React.Fragment>
+                        <Icon name="clock outline" loading={true} style={{ background: 'transparent' }} />
+                        Stop
+                </React.Fragment>
+                )}
+            </Button>
+        )
+
         return (
             <FormBuilder
                 {...this.props}
                 {...{
-                    closeText: (
-                        <Button
-                            size="massive"
-                            style={btnStyle}
-                            onClick={(e, d) => {
-                                const { values: { inprogress } } = this.state
-                                const doCancel = () => this.handleReset(false) | isFn(onClose) && onClose(e, d)
-                                !inprogress ? doCancel() : confirm({
-                                    cancelButton: 'No, continue timer',
-                                    confirmButton: 'Yes',
-                                    content: 'You have a running timer. Would you like to stop and exit?',
-                                    header: 'Are you sure?',
-                                    onConfirm: doCancel,
-                                    size: 'tiny'
-                                })
-
-                            }}
-                        />
-                    ),
+                    closeText: closeBtn,
                     inputs,
                     message: !inprogress ? message : {
                         content: 'You may now close the dialog and come back to it anytime by clicking on the clock icon in the header.',
@@ -467,25 +519,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                         status: 'info'
                     },
                     onChange: this.handleValuesChange,
-                    submitText: (
-                        <Button
-                            icon
-                            disabled={(manualEntry || stopped) && !durationValid ? true : undefined}
-                            labelPosition={!!inprogress ? "right" : undefined}
-                            onClick={() => inprogress ? this.handleStop() : (done ? this.handleSubmit() : this.handleStart())}
-                            positive={!inprogress}
-                            color={inprogress ? 'grey' : undefined}
-                            size="massive"
-                            style={btnStyle}
-                        >
-                            {!inprogress ? (done ? 'Submit' : 'Start') : (
-                                <React.Fragment>
-                                    <Icon name="clock outline" loading={true} style={{ background: 'transparent' }} />
-                                    Stop
-                            </React.Fragment>
-                            )}
-                        </Button>
-                    )
+                    submitText: submitBtn
                 }} />
         )
     }

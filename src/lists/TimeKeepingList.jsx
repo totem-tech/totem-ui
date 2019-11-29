@@ -210,37 +210,31 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         this.setState({ isOwner, listProps, projectHash, project })
         if (denyManage || !projectHash) return
 
-        const processHashes = hashes => {
-            client.project(projectHash, null, null, (err, project) => {
-                Bond.all(hashes.map(timeHash => runtime.timekeeping.timeRecord([
-                    ss58Decode(workerAddress),
-                    hexToBytes(projectHash),
-                    timeHash
-                ]))).then(records => { // record === null means not found or does not belong to user or project
-                    listProps.data = records.map((record, i) => !record ? null : ({
-                        ...record,
-                        _hash: bytesToHex(hashes[i]),
-                        _banned: bannedAddresses.indexOf(workerAddress) >= 0 ? wordsCap.yes : wordsCap.no,
-                        _duration: secondsToDuration((record.end_block - record.start_block) * BLOCK_DURATION_SECONDS),
-                        _nameOrAddress: getAddressName(workerAddress),
-                        _projectName: project.name,
-                        _status: record.locked_status ? wordsCap.locked : '??'
-                    })).filter(x => !!x) // get rid of empty values
+        const processHashes = hashes => client.project(projectHash, null, null, (err, project = {}) => {
+            Bond.all(hashes.map(timeHash => timeKeeping.record.get(timeHash))).then(records => {
+                listProps.data = records.map((record, i) => !record ? null : ({
+                    ...record,
+                    _hash: bytesToHex(hashes[i]),
+                    _banned: bannedAddresses.indexOf(workerAddress) >= 0 ? wordsCap.yes : wordsCap.no,
+                    _duration: secondsToDuration((record.end_block - record.start_block) * BLOCK_DURATION_SECONDS),
+                    _nameOrAddress: getAddressName(workerAddress),
+                    _projectName: project.name,
+                    _status: record.locked_status ? wordsCap.locked : '??'
+                })).filter(x => !!x) // get rid of empty values
 
-                    this.setState({ listProps })
-                    /*
-                    end_block: 216557
-                    locked_reason: {ReasonCodeKey: 0, ReasonCodeTypeKey: 0, _type: "ReasonCodeStruct"}
-                    locked_status: false
-                    posting_period: 0
-                    reason_code: {ReasonCodeKey: 0, ReasonCodeTypeKey: 0, _type: "ReasonCodeStruct"}
-                    start_block: 210797
-                    submit_status: 0
-                    total_blocks: 5760
-                    */
-                })
+                this.setState({ listProps })
+                /*
+                end_block: 216557
+                locked_reason: {ReasonCodeKey: 0, ReasonCodeTypeKey: 0, _type: "ReasonCodeStruct"}
+                locked_status: false
+                posting_period: 0
+                reason_code: {ReasonCodeKey: 0, ReasonCodeTypeKey: 0, _type: "ReasonCodeStruct"}
+                start_block: 210797
+                submit_status: 0
+                total_blocks: 5760
+                */
             })
-        }
+        })
 
         timeKeeping.record.list(workerAddress).then(processHashes)
 

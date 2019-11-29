@@ -134,13 +134,18 @@ export default class NotificationDropdown extends ReactiveComponent {
                                     <div>
                                         <b>@{senderId}</b> invited you to start booking time on project:
                                         <b> {data.projectName}</b>
-                                        <ButtonAcceptOrReject onClick={accepted => handleTKInvitation(
-                                            senderId,
-                                            data.projectHash,
-                                            data.projectName,
-                                            data.workerAddress,
-                                            accepted,
-                                            id,
+                                        <ButtonAcceptOrReject 
+                                            onClick={accepted => confirm({
+                                                onConfirm: ()=> handleTKInvitation(
+                                                    senderId,
+                                                    data.projectHash,
+                                                    data.projectName,
+                                                    data.workerAddress,
+                                                    accepted,
+                                                    id,
+                                                ),
+                                                size: 'mini',
+                                            }
                                         )} />
                                     </div>
                                 )

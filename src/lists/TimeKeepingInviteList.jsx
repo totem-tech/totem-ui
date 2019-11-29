@@ -111,28 +111,28 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
             return this.setState({ listProps })
         }
 
-        client.project(projectHash, null, null, (_, project = {}) => {
-            client.timeKeepingInvitations(projectHash, (err, invitations) => {
-                const { address } = getSelected()
-                const { ownerAddress } = project
-                const isOwner = ownerAddress && ownerAddress === address
-                listProps.selectable = !!isOwner
-                listProps.emptyMessage = {
-                    content: err || 'No invites found',
-                    status: err ? 'error' : 'warning'
-                }
-                Array.from(invitations).forEach(([userId, invitation]) => {
-                    if (!invitation) return
-                    const { tsAccepted, tsInvited, workerAddress } = invitation
-                    invitation._userId = '@' + userId
-                    invitation._workerIdentity = getAddressName(workerAddress)
-                    invitation._tsInvited = formatStrTimestamp(tsInvited)
-                    invitation._tsAccepted = formatStrTimestamp(tsAccepted)
-                })
-                listProps.data = invitations
-                this.setState({ isOwner, listProps, project })
-            })
-        })
+        // client.project(projectHash, null, null, (_, project = {}) => {
+            // client.timeKeepingInvitations(projectHash, (err, invitations) => {
+            //     const { address } = getSelected()
+            //     const { ownerAddress } = project
+            //     const isOwner = ownerAddress && ownerAddress === address
+            //     listProps.selectable = !!isOwner
+            //     listProps.emptyMessage = {
+            //         content: err || 'No invites found',
+            //         status: err ? 'error' : 'warning'
+            //     }
+            //     Array.from(invitations).forEach(([userId, invitation]) => {
+            //         if (!invitation) return
+            //         const { tsAccepted, tsInvited, workerAddress } = invitation
+            //         invitation._userId = '@' + userId
+            //         invitation._workerIdentity = getAddressName(workerAddress)
+            //         invitation._tsInvited = formatStrTimestamp(tsInvited)
+            //         invitation._tsAccepted = formatStrTimestamp(tsAccepted)
+            //     })
+            //     listProps.data = invitations
+            //     this.setState({ isOwner, listProps, project })
+            // })
+        // })
     }
 
     render() {
