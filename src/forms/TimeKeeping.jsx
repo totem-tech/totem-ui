@@ -16,9 +16,9 @@ import { confirm, closeModal, showForm } from '../services/modal'
 import storage from '../services/storage'
 import { getAddressName } from '../components/ProjectDropdown'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import { projectHashStatus, timeKeeping } from '../services/blockchain'
+import projectService from '../services/project'
 import { getAll as getIdentities, getSelected } from '../services/identity'
-import { getAll as getProjects } from '../services/timeKeeping'
+import timeKeeping, { getProjects, getProjectsBond } from '../services/timeKeeping'
 
 // Hash that indicates creation of new record
 const NEW_RECORD_HASH = '0xe4d673a76e8b32ca3989dbb9f444f71813c88d36120170b15151d58c7106cc83'
@@ -40,12 +40,27 @@ const validKeys = arrReadOnly([
     'tsUpdated',
 ], true)
 const words = {
+    duration: 'duration',
+    error: 'error',
+    identity: 'identity',
     project: 'project',
+    success: 'success',
     unknown: 'unknown',
+    yes: 'yes',
 }
 const wordsCap = textCapitalize(words)
 const texts = {
+    checkingProjectStatus: 'Checking project status...',
+    hhmmss: 'hh:mm:ss', //????
+    inactiveProjectMsgPart1: 'Please select a project you are invited to and already accepted.',
+    inactiveProjectMsgPart2: 'You are the owner of the selected project. Would you like to invite yourself?',
+    inactiveProjectSelected: 'Inactive project selected!',
+    invalidDuration: 'Invalid duration',
+    invalidDurationMsgPart1: 'Please enter a valid duration in the following format:',
+    invalidDurationMsgPart2: 'Seconds must be in increments of 5',
+    manuallyEnterDuration: 'Manually enter duration',
     selectAProject: 'Select a project',
+    selectActiveProject: 'Please select an active project',
 }
 
 function handleDurationChange(e, formValues, i) {
@@ -53,8 +68,14 @@ function handleDurationChange(e, formValues, i) {
     const valid = BLOCK_DURATION_REGEX.test(formValues.duration)
     const invalid = inputs[i].value === DURATION_ZERO && values.manualEntry ? true : !valid
     inputs[i].message = !invalid ? null : {
-        content: <span>Please enter a valid duration in the following format:<br /><b>hh:mm:ss</b><br />Seconds must be in increments of 5</span>,
-        header: 'Invalid duration',
+        content: (
+            <span>
+                {texts.invalidDurationMsgPart1}<br />
+                <b>{texts.hhmmss}</b><br />
+                {texts.invalidDurationMsgPart2}
+            </span>
+        ),
+        header: texts.invalidDuration,
         showIcon: true,
         status: 'error',
     }
@@ -97,7 +118,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     type: 'dropdown',
                 },
                 {
-                    label: 'Account/Wallet',
+                    label: wordsCap.identity,
                     name: 'address',
                     type: 'dropdown',
                     options: [],
@@ -107,10 +128,10 @@ export default class TimeKeepingForm extends ReactiveComponent {
                 },
                 {
                     autoComplete: 'off',
-                    label: 'Duration',
+                    label: wordsCap.duration,
                     name: 'duration',
                     onChange: deferred(handleDurationChange, 300, this),
-                    placeholder: 'hh:mm:ss',
+                    placeholder: texts.hhmmss,
                     readOnly: values.manualEntry !== true,
                     type: 'text',
                     value: DURATION_ZERO
@@ -119,7 +140,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     disabled: !!values.inprogress,
                     name: 'manualEntry',
                     options: [{
-                        label: 'Manually enter duration',
+                        label: texts.manuallyEnterDuration,
                         value: true
                     }],
                     required: false,
@@ -127,9 +148,6 @@ export default class TimeKeepingForm extends ReactiveComponent {
                 },
             ]
         }
-
-        // restore saved values
-        fillValues(this.state.inputs, values, true)
     }
 
     componentWillMount() {
@@ -139,21 +157,26 @@ export default class TimeKeepingForm extends ReactiveComponent {
             blockNumber = parseInt(blockNumber)
             inprogress ? this.saveValues(blockNumber) : this.setState({ blockNumber })
         })
-        getProjects().then(projects => {
-            console.log({ projects })
-            const { inputs } = this.state
+        this.tieIdProjects = getProjectsBond.tie(() => getProjects().then(projects => {
+            const { inputs, values } = this.state
             findInput(inputs, 'projectHash').options = Array.from(projects).map(([hash, project]) => ({
                 key: hash,
-                project: project,
+                project,
                 text: project.name || wordsCap.unknown,
                 value: hash,
             }))
+            // restore saved values
+            if (!this.prefillDone) {
+                fillValues(inputs, values, true)
+                this.prefillDone = true
+            }
             this.setState({ inputs })
-        })
+        }))
     }
 
     componentWillUnmount() {
         chain.height.untie(this.tieId)
+        getProjectsBond.untie(this.tieIdProjects)
     }
 
     // check if project is active (status = open or reopened)
@@ -161,26 +184,25 @@ export default class TimeKeepingForm extends ReactiveComponent {
         const { projectHash } = values
         const { inputs } = this.state
         const projectInactiveMsg = {
-            content: 'Please select an active project',
-            header: 'Inactive project selected!',
+            content: texts.selectActiveProject,
+            header: texts.inactiveProjectSelected,
             showIcon: true,
             status: 'error',
         }
         const workerInActiveMsg = isOwner => ({
             content: (
                 <div>
-                    Please select a project you are invited to and accepted.
+                    {texts.inactiveProjectMsgPart1}
                     {isOwner && (
                         <p>
-                            You are the owner of the selected project. Would you like to
+                            {texts.inactiveProjectMsgPart2} <br />
                             <Button
                                 positive
                                 compact
                                 size="tiny"
-                                content="invite yourself"
+                                content={wordsCap.yes}
                                 onClick={() => this.inviteSelf(projectHash, workerAddress, project.name)}
                             />
-                            so that you can book time for your own project?
                         </p>
                     )}
                 </div>
@@ -192,7 +214,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
 
         inputs[index].loading = true
         inputs[index].message = !projectHash ? null : {
-            content: 'Checking project status...',
+            content: texts.checkingProjectStatus,
             showIcon: true,
             status: 'loading',
         }
@@ -200,7 +222,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
 
         if (!projectHash) return
 
-        projectHashStatus(projectHash).then(statusCode => {
+        projectService.status(projectHash).then(statusCode => {
             const projectActive = activeStatusCodes.includes(statusCode)
             const { address: workerAddress } = getSelected()
             inputs[index].invalid = !projectActive
@@ -215,7 +237,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                 inputs[index].loading = false
                 inputs[index].invalid = !workerActive
                 const project = (findInput(inputs, 'projectHash').options
-                    .find(option => option.value === projectHash) || {}).project
+                    .find(option => option.value === projectHash) || {}).project || {}
                 const isOwner = project.ownerAddress == workerAddress
                 inputs[index].message = workerActive ? undefined : workerInActiveMsg(isOwner)
                 this.setState({ inputs })
@@ -354,25 +376,18 @@ export default class TimeKeepingForm extends ReactiveComponent {
             args: [address, projectHash, NEW_RECORD_HASH, blockCount, 0, blockStart, blockEnd],
             title: 'Time Keeping - New Record',
             description: 'Project: ' + projectName + ' | Duration: ' + values.duration,
-            next: {
-                type: QUEUE_TYPES.CHATCLIENT,
-                func: 'timeKeepingEntry',
-                args: [
-                    NEW_RECORD_HASH,
-                    objClean(values, validKeys),
-                    (err, entry) => {
-                        this.setState({
-                            message: {
-                                content: err || 'Time record added successfully',
-                                status: err ? 'error' : 'success',
-                                showIcon: true
-                            },
-                        })
-                        !err & this.handleReset()
-                        isFn(onSubmit) && onSubmit(!err, entry)
-                    }
-                ],
-            }
+            then: success => {
+                this.setState({
+                    message: {
+                        content: success ? 'Time record added successfully' : 'Blockchain transaction failed!',
+                        header: success ? wordsCap.success : wordsCap.error,
+                        showIcon: true,
+                        status: success ? 'success' : 'error',
+                    },
+                })
+                !err & this.handleReset()
+                isFn(onSubmit) && onSubmit(!err, entry)
+            },
         }
         const message = {
             content: 'Request has been added to queue. You will be notified of the progress shortly.',

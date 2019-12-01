@@ -10,7 +10,7 @@ import ProjectForm, { ReassignProjectForm } from '../forms/Project'
 import { deferred, isArr, IfMobile, objCopy } from '../utils/utils'
 import { confirm, showForm } from '../services/modal'
 import client from '../services/ChatClient'
-import { ownerProjectsList, projectHashStatus } from '../services/blockchain'
+import projectService from '../services/project'
 import { addToQueue } from '../services/queue'
 import addressbook from '../services/partners'
 import identityService from '../services/identity'
@@ -178,7 +178,7 @@ class ProjectList extends ReactiveComponent {
         this.triggerBond = Bond.all([
             addressbook.bond,
             identityService.bond,
-            ownerProjectsList(address)
+            projectService.listByOwner(address)
         ])
         // reload projects whenever any of the bond's value updates
         this.notifyId = this.triggerBond.notify(() => this.loadProjects())
@@ -197,7 +197,7 @@ class ProjectList extends ReactiveComponent {
         this.hashes = hashes
         // untie existing bond
         if (this.statusBond && this.statusTieId) this.statusBond.untie(this.statusTieId);
-        this.statusBond = Bond.all(this.hashes.map(hash => projectHashStatus(hash)))
+        this.statusBond = Bond.all(this.hashes.map(hash => projectService.status(hash)))
         this.statusTieId = this.statusBond.tie((statusCodes) => {
             // return if all status codes received are exactly same as previously set ones
             if (JSON.stringify(this.statusCodes) === JSON.stringify(statusCodes))
@@ -208,7 +208,7 @@ class ProjectList extends ReactiveComponent {
 
     syncStatus(hash, project) {
         setTimeout(() => {
-            projectHashStatus(hash).then(status => {
+            projectService.status(hash).then(status => {
                 if (status === project.status) return;
                 const updateTask = {
                     type: 'chatclient',
@@ -250,7 +250,7 @@ class ProjectList extends ReactiveComponent {
     loadProjects() {
         const wallets = identityService.getAll()
         const { address } = identityService.getSelected()
-        return ownerProjectsList(address).then(hashArr => {
+        return projectService.listByOwner(address).then(hashArr => {
             if (!isArr(hashArr) || hashArr.length === 0) return this.setState({ projects: new Map() });
             // convert to string
             hashArr = hashArr.map(hash => pretty(hash))

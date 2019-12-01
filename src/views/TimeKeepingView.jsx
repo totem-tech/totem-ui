@@ -8,17 +8,18 @@ import FormBuilder, { findInput } from '../components/FormBuilder'
 import ProjectTimeKeepingList from '../lists/TimeKeepingList'
 import TimeKeepingInviteList from '../lists/TimeKeepingInviteList'
 import TimeKeepingSummary from '../lists/TimeKeepingSummary'
-import { project, timeKeeping } from '../services/blockchain'
+import projectService from '../services/project'
 import client from '../services/ChatClient'
 import { getSelected, selectedAddressBond } from '../services/identity'
 import { bytesToHex } from '../utils/convert'
-import { getAll as getProjects } from '../services/timeKeeping'
+import timeKeeping, { getProjects, getProjectsBond } from '../services/timeKeeping'
 
 const words = {
     invitations: 'invitations',
     invites: 'invites',
     manage: 'manage',
     summary: 'summary',
+    unknown: 'unknown'
 }
 const wordsCap = textCapitalize(words)
 const texts = {
@@ -75,20 +76,11 @@ class TimeKeepingView extends ReactiveComponent {
     }
 
     componentWillMount() {
-        const { address } = getSelected()
-        // listen for selected wallet changes
-        this.projectsBond = Bond.all([
-            selectedAddressBond,
-            // projects owned by selected identity
-            project.listByOwner(address),
-            // projects selected identity was invited to
-            timeKeeping.invitation.listByWorker(address)
-        ])
-        this.tieId = selectedAddressBond.tie(() => this.loadProjectOptions())
+        this.tieId = getProjectsBond.tie(() => this.loadProjectOptions())
     }
 
     componentWillUnmount() {
-        this.projectsBond.untie(this.tieId)
+        getProjectsBond.untie(this.tieId)
     }
 
     handleChange(_, values) {
@@ -157,7 +149,7 @@ class TimeKeepingView extends ReactiveComponent {
             const options = Array.from(projects).map(([hash, project]) => ({
                 key: hash,
                 project,
-                text: project.name,
+                text: (project || {}).name || wordsCap.unknown,
                 value: hash,
             }))
             projectIn.loading = false
@@ -174,7 +166,7 @@ class TimeKeepingView extends ReactiveComponent {
                 projectHash && projectIn.bond.changed(projectHash)
             }
             this.setState({ inputs, values })
-        })
+        }, console.log)
     }
 
     render() {

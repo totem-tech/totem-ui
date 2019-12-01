@@ -12,7 +12,7 @@ import { confirm, showForm } from '../services/modal'
 import addressbook from '../services/partners'
 import client from '../services/ChatClient'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import { timeKeeping } from '../services/blockchain'
+import timeKeeping from '../services/timeKeeping'
 import identityService from '../services/identity'
 import { secondsToDuration, BLOCK_DURATION_SECONDS } from '../utils/time'
 import { bytesToHex } from '../utils/convert'
@@ -144,7 +144,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             }
         }
 
-        setTimeout(this.getEntries)
+        setTimeout(this.getEntries) // remove?
     }
 
     componentWillMount() {
@@ -210,33 +210,35 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         this.setState({ isOwner, listProps, projectHash, project })
         if (denyManage || !projectHash) return
 
-        const processHashes = hashes => client.project(projectHash, null, null, (err, project = {}) => {
-            Bond.all(hashes.map(timeHash => timeKeeping.record.get(timeHash))).then(records => {
-                listProps.data = records.map((record, i) => !record ? null : ({
-                    ...record,
-                    _hash: bytesToHex(hashes[i]),
-                    _banned: bannedAddresses.indexOf(workerAddress) >= 0 ? wordsCap.yes : wordsCap.no,
-                    _duration: secondsToDuration((record.end_block - record.start_block) * BLOCK_DURATION_SECONDS),
-                    _nameOrAddress: getAddressName(workerAddress),
-                    _projectName: project.name,
-                    _status: record.locked_status ? wordsCap.locked : '??'
-                })).filter(x => !!x) // get rid of empty values
+        client.project(projectHash, null, null, (err, project = {}) => {
+            timeKeeping.record.list(workerAddress).then(hashes => {
+                Bond.all(hashes.map(timeHash => timeKeeping.record.get(timeHash))).then(records => {
+                    listProps.data = records.map((record, i) => !record ? null : ({
+                        ...record,
+                        _hash: bytesToHex(hashes[i]),
+                        _banned: bannedAddresses.indexOf(workerAddress) >= 0 ? wordsCap.yes : wordsCap.no,
+                        _duration: secondsToDuration((record.end_block - record.start_block) * BLOCK_DURATION_SECONDS),
+                        _nameOrAddress: getAddressName(workerAddress),
+                        _projectName: (project || {}).name || 'Unknown',
+                        _status: record.locked_status ? wordsCap.locked : '??'
+                    })).filter(x => !!x) // get rid of empty values
 
-                this.setState({ listProps })
-                /*
-                end_block: 216557
-                locked_reason: {ReasonCodeKey: 0, ReasonCodeTypeKey: 0, _type: "ReasonCodeStruct"}
-                locked_status: false
-                posting_period: 0
-                reason_code: {ReasonCodeKey: 0, ReasonCodeTypeKey: 0, _type: "ReasonCodeStruct"}
-                start_block: 210797
-                submit_status: 0
-                total_blocks: 5760
-                */
+                    this.setState({ listProps })
+                    /*
+                    end_block: 216557
+                    locked_reason: {ReasonCodeKey: 0, ReasonCodeTypeKey: 0, _type: "ReasonCodeStruct"}
+                    locked_status: false
+                    posting_period: 0
+                    reason_code: {ReasonCodeKey: 0, ReasonCodeTypeKey: 0, _type: "ReasonCodeStruct"}
+                    start_block: 210797
+                    submit_status: 0
+                    total_blocks: 5760
+                    */
+                })
             })
         })
 
-        timeKeeping.record.list(workerAddress).then(processHashes)
+
 
     }
 

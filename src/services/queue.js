@@ -29,6 +29,8 @@ export const addToQueue = (queueItem, id, toastId) => {
         'type',         // @type        string : name of the service. Currently supported: blockchain, chatclient
         'args',         // @args        array  : arguments supplied to func
         'func',         // @func        string : name of the function within the service.
+        'then',         // @func        function: variable arguments depending on the type of task. 
+        //                                      For type 'blockchain': boolean value indicating success/failure
         //                      - For blockchain service, must return an instance of Bond returned by substrate package's post() function
         //                      - For ChatClient, the callback must be the last item in the @args array
         //                              AND the first argument to the callback must be:
@@ -102,7 +104,6 @@ const _processItem = (queueItem, id, toastId) => {
                 const tieId = bond.tie(result => {
                     if (!isObj(result)) return;
                     const { failed, finalized, sending, signing } = result
-                    console.log({ result })
                     const done = failed || finalized
                     const status = !done ? 'loading' : (finalized ? 'success' : 'error')
                     const statusText = finalized ? 'Transaction successful' : (
@@ -121,6 +122,7 @@ const _processItem = (queueItem, id, toastId) => {
                     queueItem.status = status
                     _save()
                     if (!done) return;
+                    isFn(queueItem.then) && queueItem.then(!failed)
                     _processNextTxItem()
                     bond.untie(tieId)
                     if (finalized) next ? _processItem(next, id, toastId) : queue.delete(id) | _save();

@@ -7,12 +7,13 @@ import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import PartnerForm from '../forms/Partner'
 import { arrUnique, isFn } from '../utils/utils'
 import { bytesToHex } from '../utils/convert'
-import { ownerProjectsList } from '../services/blockchain'
+import projectService from '../services/project'
 import client, { getUser } from '../services/ChatClient'
 import { getSelected } from '../services/identity'
 import addressbook from '../services/partners'
 import { showForm } from '../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import timeKeeping from '../services/timeKeeping'
 
 const notificationType = 'time_keeping'
 const childType = 'invitation'
@@ -94,7 +95,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
 
 
         // retrieve project hashes by address
-        ownerProjectsList(ownerAddress).then(hashes => {
+        projectService.listByOwner(ownerAddress).then(hashes => {
             hashes = hashes.map(hash => '0x' + bytesToHex(hash))
             client.projectsByHashes(hashes, (err, projects, notFoundHashes) => {
                 proIn.loading = false
@@ -125,12 +126,13 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
         addressbook.bond.untie(this.tieId)
     }
 
-    handlePartnerChange(_, { workerAddress }) {
+    handlePartnerChange(_, { projectHash, workerAddress }) {
         const { inputs } = this.state
         const partnerIn = findInput(inputs, 'workerAddress')
         const partner = addressbook.get(workerAddress)
         const { userId } = partner
         partnerIn.invalid = !userId
+        partnerIn.loading = !!(userId && projectHash && workerAddress)
         partnerIn.message = !!userId ? null : {
             content: (
                 <p>
@@ -152,12 +154,31 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             status: 'error'
         }
         this.setState({ inputs })
+
+        // check if partner is already invited or accepted
+        partnerIn.loading && timeKeeping.invitation.status(projectHash, workerAddress).then(accepted => {
+            partnerIn.loading = false
+            if (accepted) {
+                partnerIn.invalid = true
+                partnerIn.message = {
+                    content: 'Partner already accepted invitation to selected project',
+                    status: 'error'
+                }
+            } else if (accepted === false) {
+                // invited but hasn't accepted yet
+                partnerIn.message = {
+                    content: 'Partner has already been invited to selected project',
+                    status: 'warning'
+                }
+            }
+            this.setState({ inputs })
+        })
     }
 
     handleSubmit(e, values) {
         const { onSubmit } = this.props
         const { inputs } = this.state
-        const { projectHash, workerAddress: workerAddress } = values
+        const { projectHash, workerAddress } = values
         const { project } = findInput(inputs, 'projectHash').options.find(x => x.value === projectHash)
         const { name: projectName, ownerAddress } = project
         const { userId } = addressbook.get(workerAddress)
