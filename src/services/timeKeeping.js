@@ -8,8 +8,9 @@ import {
 import { hashBytes, validatedSenderAddress } from './blockchain'
 import { getSelected, selectedAddressBond } from './identity'
 import DataStorage from '../utils/DataStorage'
-import { bytesToHex } from '../utils/convert'
-import { mapJoin } from '../utils/utils'
+import { bytesToHex, ss58Encode } from '../utils/convert'
+import { isBool, mapJoin } from '../utils/utils'
+import { getAddressName } from '../components/ProjectDropdown'
 
 // Only stores projects that not owned by the selected identity
 const CACHE_PREFIX = 'totem__cache_timekeeping_projects_'
@@ -24,7 +25,8 @@ const _config = {
     updatePromise: undefined,
 }
 
-// getProjects returns all the projects user owns along with the projects they have been invited to (accepted or not)\
+// getProjects returns all the projects user owns along with the projects they have been invited to (accepted or not).
+// Retrieved data is cached in localStorage and only updated there is changes to invitation or manually triggered by setting `@_forceUpdate` to `true`.
 //
 // Params:
 // @forceUpdate bool: if true and user is online, forces to update the cache.
@@ -51,7 +53,6 @@ export const getProjects = (_forceUpdate = false) => {
     // retrieve user owned projects
     _config.updatePromise = getUserProjects().then(userProjects => {
         if (!navigator.onLine || !_forceUpdate && invitedProjects.size > 0) {
-            console.log({ onLine: navigator.onLine, _forceUpdate, size: invitedProjects.size })
             return mapJoin(userProjects, invitedProjects)
         }
 
@@ -69,7 +70,6 @@ export const getProjects = (_forceUpdate = false) => {
                 cacheStorage.setAll(invitedProjects)
                 _forceUpdate && getProjectsBond.changed(uuid.v1())
                 const joined = mapJoin(userProjects, invitedProjects)
-                console.log({ joined, userProjects, invitedProjects })
                 return joined
             })
         })
@@ -80,6 +80,27 @@ export const getProjects = (_forceUpdate = false) => {
 // Triggered whenever time keeping project list is updated
 export const getProjectsBond = new Bond().defaultTo(uuid.v1())
 getUserProjectsBond.tie(() => getProjectsBond.changed(uuid.v1()))
+
+export const getInvites = projectHash => Bond.promise([
+    timeKeeping.invitation.listByProject(projectHash)
+]).then(addresses => {
+    addresses = addresses.flat().map(w => ss58Encode(w))
+    const invitations = new Map()
+    return Bond.promise(
+        addresses.map(address => timeKeeping.invitation.status(projectHash, address))
+    ).then(statuses => {
+        statuses.flat().forEach((status, i) => invitations.set(addresses[i], {
+            accepted: status,
+            address: addresses[i],
+            addressName: getAddressName(addresses[i]),
+            invited: isBool(status),
+            projectHash,
+            status,
+        }))
+        return invitations
+    })
+})
+window.getInvitesByProject = getInvites
 
 const timeKeeping = {
     invitation: {

@@ -9,7 +9,8 @@ import ListFactory from '../components/ListFactory'
 import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
 import { getAddressName } from '../components/ProjectDropdown'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import { getSelected } from '../services/identity'
+import { getSelected, selectedAddressBond } from '../services/identity'
+import timeKeeping, { getInvites } from '../services/timeKeeping'
 
 const notifyType = 'time_keeping'
 const childType = 'invitation'
@@ -21,22 +22,12 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
             listProps: {
                 columns: [
                     // notificationId
-                    { key: '_userId', title: 'User ID' },
-                    { key: '_workerIdentity', title: 'Worker Identity' },
-                    { key: 'status', textAlign: 'center', title: 'status' },
-                    { key: '_tsInvited', textAlign: 'center', title: 'Date Invited' },
-                    { key: '_tsAccepted', textAlign: 'center', title: 'Date Accepted' },
+                    // { key: '_userId', title: 'User ID' },
+                    { key: 'addressName', title: 'Worker Identity' },
+                    { key: '_status', textAlign: 'center', title: 'status' },
                 ],
                 data: [],
-                selectable: true,
-                rowProps: item => {
-                    // formal invitation accepted
-                    if (item.status === 'invitation accepted') return { positive: true }
-                    // identity or formal invitation rejected
-                    if (item.status.endsWith('rejected')) return { error: true }
-                    // invitation in progress
-                    if (!!item.status) return { warning: true }
-                },
+                rowProps: invite => ({ positive: invite.status === true }),
                 topLeftMenu: [
                     {
                         content: 'Invite',
@@ -49,29 +40,17 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
                         }
                     }
                 ],
-                topRightMenu: [
-                    {
-                        content: 'Send Formal Invitation',
-                        onClick: this.sendFormalInvitation.bind(this)
-                    }
-                ],
                 type: 'DataTable'
             }
         }
     }
 
     componentWillMount() {
-        // listen for notifications: timekeeping invitations and responses
-        this.tieId = newNotificationBond.tie(({ type, childType, data: { projectHash } }) => {
-            type === 'time_keeping'
-                && projectHash && projectHash === this.props.projectHash
-                && this.loadInvites()
-        })
+        this.tieIdAddress = selectedAddressBond.tie(() => this.loadInvites())
     }
 
     componentWillUnmount() {
-        // unsubscribe from notifiers
-        newNotificationBond.untie(this.tieId)
+        selectedAddressBond.untie(this.tieIdAddress)
     }
 
     sendFormalInvitation(workerIds) {
@@ -111,28 +90,19 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
             return this.setState({ listProps })
         }
 
-        // client.project(projectHash, null, null, (_, project = {}) => {
-            // client.timeKeepingInvitations(projectHash, (err, invitations) => {
-            //     const { address } = getSelected()
-            //     const { ownerAddress } = project
-            //     const isOwner = ownerAddress && ownerAddress === address
-            //     listProps.selectable = !!isOwner
-            //     listProps.emptyMessage = {
-            //         content: err || 'No invites found',
-            //         status: err ? 'error' : 'warning'
-            //     }
-            //     Array.from(invitations).forEach(([userId, invitation]) => {
-            //         if (!invitation) return
-            //         const { tsAccepted, tsInvited, workerAddress } = invitation
-            //         invitation._userId = '@' + userId
-            //         invitation._workerIdentity = getAddressName(workerAddress)
-            //         invitation._tsInvited = formatStrTimestamp(tsInvited)
-            //         invitation._tsAccepted = formatStrTimestamp(tsAccepted)
-            //     })
-            //     listProps.data = invitations
-            //     this.setState({ isOwner, listProps, project })
-            // })
+        // client.project(projectHash, null, false, (err, project) => {
+        //     const { address } = getSelected()
+        //     const { ownerAddress } = project || {}
+        //     const isOwner = ownerAddress === address
         // })
+        // timeKeeping.invitation.listByProject()
+        getInvites(projectHash).then(invites => {
+            Array.from(invites).forEach(([_, invite]) => {
+                invite._status = invite.status === true ? 'accepted' : 'invited'
+            })
+            listProps.data = invites
+            this.setState({ listProps })
+        }, console.log)
     }
 
     render() {

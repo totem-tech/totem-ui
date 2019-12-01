@@ -45,7 +45,13 @@ export const getProject = projectHash => fetchProjects([projectHash]).then(proje
     return projects.size > 0 ? Array.from(projects)[0][1] : undefined
 })
 
-// getProjects owned by selected identity
+// getProjects retrieves projects owned by selected identity
+// Retrieved data is cached in localStorage and only updated there is changes to invitation or manually triggered by setting `@_forceUpdate` to `true`.
+//
+// Params:
+// @_forceUpdate    Boolean
+// 
+// Returns Promise
 export const getProjects = (_forceUpdate = false) => {
     _forceUpdate = _forceUpdate || _config.firstAttempt
     const { address } = getSelected()

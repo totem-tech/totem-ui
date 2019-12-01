@@ -5,10 +5,8 @@ import { ReactiveComponent } from 'oo7-react'
 import { Button } from 'semantic-ui-react'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import PartnerForm from '../forms/Partner'
-import { arrUnique, isFn } from '../utils/utils'
-import { bytesToHex } from '../utils/convert'
-import projectService from '../services/project'
-import client, { getUser } from '../services/ChatClient'
+import { getProjects } from '../services/project'
+import { getUser } from '../services/ChatClient'
 import { getSelected } from '../services/identity'
 import addressbook from '../services/partners'
 import { showForm } from '../services/modal'
@@ -95,30 +93,24 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
 
 
         // retrieve project hashes by address
-        projectService.listByOwner(ownerAddress).then(hashes => {
-            hashes = hashes.map(hash => '0x' + bytesToHex(hash))
-            client.projectsByHashes(hashes, (err, projects, notFoundHashes) => {
-                proIn.loading = false
-                proIn.options = Array.from(projects)
-                    // include only active (open/reopened) projects
-                    .filter(([_, { status }]) => [0, 1].indexOf(status) >= 0)
-                    .map(([hash, project]) => ({
-                        key: hash,
-                        text: project.name,
-                        value: hash,
-                        project,
-                    }))
+        getProjects().then(projects => {
+            proIn.loading = false
+            proIn.options = Array.from(projects)
+                // include only active (open/reopened) projects
+                .filter(([_, { status }]) => [0, 1].indexOf(status) >= 0)
+                .map(([hash, project]) => ({
+                    key: hash,
+                    text: project.name,
+                    value: hash,
+                    project,
+                }))
 
-                proIn.invalid = !!err || proIn.options.length === 0
-                proIn.message = !proIn.invalid ? {} : {
-                    header: 'No projects found',
-                    content: err || 'You must have one or more active projects',
-                    showIcon: true,
-                    status: 'error'
-                }
-
-                this.setState({ inputs })
-            })
+            proIn.invalid = proIn.options.length === 0
+            proIn.message = !proIn.invalid ? null : {
+                content: 'You must have one or more active projects',
+                status: 'error'
+            }
+            this.setState({ inputs })
         })
     }
 
@@ -220,9 +212,9 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
                                 status: 'success',
                             } : {
                                     header: 'Notification Failed!',
-                                    content: err,
+                                    content: 'Blockchain invitation sent but failed to notify user. Error: ' + err,
                                     showIcon: true,
-                                    status: 'error',
+                                    status: 'warning',
                                 }
                         })
                         isFn(onSubmit) && onSubmit(!err, values)
@@ -230,7 +222,6 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             }
         }
         addToQueue(queueProps)
-
     }
 
     render() {
