@@ -1,6 +1,6 @@
 import { Bond } from 'oo7'
 import uuid from 'uuid'
-import {
+import project, {
     fetchProjects,
     getProjects as getUserProjects,
     getProjectsBond as getUserProjectsBond
@@ -8,9 +8,10 @@ import {
 import { hashBytes, validatedSenderAddress } from './blockchain'
 import { getSelected, selectedAddressBond } from './identity'
 import DataStorage from '../utils/DataStorage'
-import { bytesToHex, ss58Encode } from '../utils/convert'
+import { bytesToHex, ss58Decode, ss58Encode } from '../utils/convert'
 import { isBool, mapJoin } from '../utils/utils'
 import { getAddressName } from '../components/ProjectDropdown'
+import partners from './partners'
 
 // Only stores projects that not owned by the selected identity
 const CACHE_PREFIX = 'totem__cache_timekeeping_projects_'
@@ -81,26 +82,36 @@ export const getProjects = (_forceUpdate = false) => {
 export const getProjectsBond = new Bond().defaultTo(uuid.v1())
 getUserProjectsBond.tie(() => getProjectsBond.changed(uuid.v1()))
 
-export const getInvites = projectHash => Bond.promise([
-    timeKeeping.invitation.listByProject(projectHash)
-]).then(addresses => {
-    addresses = addresses.flat().map(w => ss58Encode(w))
+export const getProjectInvites = projectHash => Bond.promise([
+    timeKeeping.invitation.listByProject(projectHash),
+    project.getOwner(projectHash),
+]).then(([addresses, ownerAddress]) => {
+    addresses = addresses.map(w => ss58Encode(w))
+    ownerAddress = ss58Encode(ownerAddress)
+    const { address } = getSelected()
+    const isOwner = ownerAddress === address
     const invitations = new Map()
+    if (addresses.length === 0) return invitations
     return Bond.promise(
         addresses.map(address => timeKeeping.invitation.status(projectHash, address))
     ).then(statuses => {
-        statuses.flat().forEach((status, i) => invitations.set(addresses[i], {
-            accepted: status,
-            address: addresses[i],
-            addressName: getAddressName(addresses[i]),
-            invited: isBool(status),
-            projectHash,
-            status,
-        }))
+        statuses.flat().forEach((status, i) => {
+            if (!isOwner && address !== addresses[i]) return
+            const identity = partners.get(addresses[i]) || {}
+            const { userId } = identity
+            invitations.set(addresses[i], {
+                accepted: status,
+                address: addresses[i],
+                addressName: getAddressName(addresses[i]),
+                invited: isBool(status),
+                projectHash,
+                status,
+                userId,
+            })
+        })
         return invitations
     })
 })
-window.getInvitesByProject = getInvites
 
 const timeKeeping = {
     invitation: {
@@ -156,13 +167,12 @@ const timeKeeping = {
         },
         // Blockchain transaction
         // (project owner) approve a time record
-        approve: (ownerAddress, projectHash, workerAddress, recordHash, status, locked, reason) => {
+        approve: (workerAddress, projectHash, recordHash, status = 0, locked = false, reason = {}) => {
             return post({
-                sender: validatedSenderAddress(ownerAddress),
+                sender: validatedSenderAddress(workerAddress),
                 call: calls.timekeeping.authoriseTime(
+                    ss58Encode(workerAddress),
                     hashBytes(projectHash),
-                    validatedSenderAddress(ownerAddress),
-                    validatedSenderAddress(workerAddress),
                     hashBytes(recordHash),
                     status,
                     locked,

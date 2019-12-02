@@ -97,6 +97,7 @@ class TimeKeepingView extends ReactiveComponent {
 
     getContent(mobile) {
         const { inputs, project, values: { projectHash, option } } = this.state
+        const { loading } = findInput(inputs, 'projectHash')
         const { address } = getSelected()
         const isOwner = project && project.ownerAddress === address
         let contents = []
@@ -111,10 +112,10 @@ class TimeKeepingView extends ReactiveComponent {
         optionInput.options.find(x => x.value === 'records').disabled = manage
         optionInput.options.find(x => x.value === 'manage').hidden = !isOwner
 
-        if (showRecords) contents.push({
+        if (!loading && showRecords) contents.push({
             content: <ProjectTimeKeepingList {...{ project, projectHash, manage }} />,
         })
-        if (showInvites) contents.push({
+        if (!loading && showInvites) contents.push({
             content: <TimeKeepingInviteList {...{ projectHash }} />,
             header: wordsCap.invitations
         })

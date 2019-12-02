@@ -2,9 +2,9 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
-import { Button, Dropdown } from 'semantic-ui-react'
+import { Button } from 'semantic-ui-react'
 import ListFactory from '../components/ListFactory'
-import { arrUnique, isDefined, mapFilter, textCapitalize } from '../utils/utils'
+import { arrUnique, textCapitalize } from '../utils/utils'
 import { getAddressName } from '../components/ProjectDropdown'
 import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'
 import PartnerForm from '../forms/Partner'
@@ -18,8 +18,6 @@ import { secondsToDuration, BLOCK_DURATION_SECONDS } from '../utils/time'
 import { bytesToHex } from '../utils/convert'
 
 const toBeImplemented = () => alert('To be implemented')
-
-const hashListCache = new Map() // key: address, value: []
 
 const words = {
     action: 'action',
@@ -37,6 +35,7 @@ const words = {
     status: 'status',
     timer: 'timer',
     yes: 'yes',
+    unknown: 'unknown',
 }
 const wordsCap = textCapitalize(words)
 const texts = {
@@ -61,30 +60,15 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     constructor(props) {
         super(props)
 
-        this.getEntries = this.getEntries.bind(this)
+        this.getRecords = this.getRecords.bind(this)
         this.state = {
             forceReloadHashes: false,
             listProps: {
                 columns: [
-                    {
-                        key: '_projectName',
-                        title: wordsCap.project,
-                    },
-                    {
-                        key: '_nameOrAddress',
-                        title: wordsCap.address,
-                    },
-                    {
-                        key: '_duration',
-                        textAlign: 'center',
-                        title: wordsCap.duration,
-                    },
-                    {
-                        collapsing: true,
-                        key: '_status',
-                        textAlign: 'center',
-                        title: wordsCap.status,
-                    },
+                    { key: '_projectName', title: wordsCap.project },
+                    { key: '_nameOrAddress', title: wordsCap.address },
+                    { key: '_duration', textAlign: 'center', title: wordsCap.duration },
+                    { collapsing: true, key: '_status', textAlign: 'center', title: wordsCap.status },
                     {
                         collapsing: true,
                         style: { padding: 0, width: 90 },
@@ -116,7 +100,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                         onClick: () => showForm(TimeKeepingForm, {
                             modal: true,
                             projectHash: this.props.projectHash,
-                            onSubmit: this.getEntries
+                            onSubmit: this.getRecords
                         })
                     },
                 ],
@@ -125,26 +109,24 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                         content: wordsCap.approve,
                         icon: { color: 'green', name: 'check' },
                         key: 'actionApprove',
-                        onClick: selectedKeys => selectedKeys.forEach(hash => this.handleApprove(hash, true)),
+                        onClick: toBeImplemented //selectedKeys => selectedKeys.forEach(hash => this.handleApprove(hash, true)),
                     },
                     {
                         content: wordsCap.reject,
                         icon: { color: 'red', name: 'x' },
                         key: 'actionReject',
-                        onClick: selectedKeys => selectedKeys.forEach(hash => this.handleApprove(hash, false)),
+                        onClick: toBeImplemented //selectedKeys => selectedKeys.forEach(hash => this.handleApprove(hash, false)),
                     },
                     {
                         content: texts.banUser,
                         icon: { color: 'red', name: 'ban' },
                         key: 'actionBan',
-                        onClick: this.handleBan.bind(this)
+                        onClick: toBeImplemented //this.handleBan.bind(this)
                     }
                 ],
                 type: 'datatable',
             }
         }
-
-        setTimeout(this.getEntries) // remove?
     }
 
     componentWillMount() {
@@ -153,36 +135,36 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             addressbook.bond,
         ])
 
-        this.tieId = this.updateBond.notify(this.getEntries)
+        this.tieId = this.updateBond.notify(this.getRecords)
     }
 
     componentWillUnmount() {
         this.updateBond.untie(this.tieId)
     }
 
-    getActionContent(entry, hash) {
+    getActionContent(record, hash) {
         const { isOwner } = this.state
         const { address: selectedAddress } = identityService.getSelected()
-        const isUser = selectedAddress === entry.address
+        const isUser = selectedAddress === record.address
         return [
             {
-                disabled: !isOwner || entry.approved === true,
+                disabled: !isOwner || record.approved === true,
                 hidden: isOwner && !isUser,
                 icon: 'bug',
                 onClick: toBeImplemented,
                 title: wordsCap.dispute,
             },
             {
-                disabled: entry.address !== selectedAddress || entry.approved === true,
+                disabled: record.address !== selectedAddress || record.approved === true,
                 hidden: !(isOwner & !isUser),
                 icon: 'pencil',
-                onClick: () => showForm(TimeKeepingUpdateForm, { entry, hash, onSubmit: this.getEntries }),
+                onClick: () => showForm(TimeKeepingUpdateForm, { entry: record, hash, onSubmit: this.getRecords }),
                 title: wordsCap.edit,
             },
             {
-                hidden: !!addressbook.get(entry.address) || !!identityService.find(entry.address),
+                hidden: !record._nameOrAddress.includes('...'),
                 icon: 'user plus',
-                onClick: () => showForm(PartnerForm, { values: { address: entry.address } }),
+                onClick: () => showForm(PartnerForm, { values: { address: record.address } }),
                 title: texts.addPartner,
             },
         ].map((x, i) => { x.key = i; return x })
@@ -190,11 +172,11 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             .map((props) => <Button {...props} />)
     }
 
-    getEntries() {
+    getRecords() {
         const { manage, projectHash, project } = this.props
         const { listProps } = this.state
         const { address: workerAddress } = identityService.getSelected()
-        const isOwner = manage && (project ? project.ownerAddress === workerAddress : true)
+        const isOwner = manage && project && project.ownerAddress === workerAddress
         const bannedAddresses = project && (project.timeKeeping || {}).bannedAddresses || []
         listProps.selectable = manage && isOwner
         listProps.columns.find(x => x.key === '_projectName').hidden = !!projectHash
@@ -210,49 +192,53 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         this.setState({ isOwner, listProps, projectHash, project })
         if (denyManage || !projectHash) return
 
-        client.project(projectHash, null, null, (err, project = {}) => {
-            timeKeeping.record.list(workerAddress).then(hashes => {
+        client.project(projectHash, null, null, (_, project) => {
+            // ToDo: pagination required to improve performance also move to timeKeeping service?
+            timeKeeping.record.listByProject(projectHash).then(hashes => {
                 Bond.all(hashes.map(timeHash => timeKeeping.record.get(timeHash))).then(records => {
-                    listProps.data = records.map((record, i) => !record ? null : ({
-                        ...record,
-                        _hash: bytesToHex(hashes[i]),
-                        _banned: bannedAddresses.indexOf(workerAddress) >= 0 ? wordsCap.yes : wordsCap.no,
-                        _duration: secondsToDuration((record.end_block - record.start_block) * BLOCK_DURATION_SECONDS),
-                        _nameOrAddress: getAddressName(workerAddress),
-                        _projectName: (project || {}).name || 'Unknown',
-                        _status: record.locked_status ? wordsCap.locked : '??'
-                    })).filter(x => !!x) // get rid of empty values
-
+                    console.log({ hashes: hashes.map(h => '0x' + bytesToHex(h)), records })
+                    listProps.data = records.filter(r => !!r).map((record, i) => {
+                        const address = record.worker && ss58Encode(record.worker)
+                        return {
+                            workerAddress: address,
+                            _hash: bytesToHex(hashes[i]),
+                            // _banned: bannedAddresses.indexOf(workerAddress) >= 0 ? wordsCap.yes : wordsCap.no, // use blockchain
+                            _duration: secondsToDuration(record.total_blocks * BLOCK_DURATION_SECONDS),
+                            _nameOrAddress: getAddressName(address),
+                            _projectName: (project || {}).name || wordsCap.unknown,
+                            _status: record.locked_status ? wordsCap.locked : 'submit_status:' + record.submit_status,
+                        }
+                    }).filter(record => isOwner || record.workerAddress === workerAddress)
                     this.setState({ listProps })
                     /*
-                    end_block: 216557
-                    locked_reason: {ReasonCodeKey: 0, ReasonCodeTypeKey: 0, _type: "ReasonCodeStruct"}
-                    locked_status: false
-                    posting_period: 0
-                    reason_code: {ReasonCodeKey: 0, ReasonCodeTypeKey: 0, _type: "ReasonCodeStruct"}
-                    start_block: 210797
-                    submit_status: 0
-                    total_blocks: 5760
+                    exampleRecord: {
+                        locked_status: false
+                        posting_period: 0
+                        project_hash: ....
+                        reason_code: {ReasonCodeKey: 0, ReasonCodeTypeKey: 0, _type: "ReasonCodeStruct"}
+                        start_block: 1851599056011264
+                        submit_status: 0
+                        total_blocks: 3600
+                        worker: ....
+                    }
                     */
                 })
             })
         })
-
-
-
     }
 
     handleApprove(hash, approve = false) {
         const { listProps: { data } } = this.state
-        const entry = data.get(hash)
-        if (entry.approved || entry.approved === approve) return
-        const queueProps = {
-            type: QUEUE_TYPES.CHATCLIENT,
-            func: 'timeKeepingEntryApproval',
-            args: [hash, approve, (err) => !err && this.getEntries()],
-            title: `${texts.timeKeeping} - ${wordsCap.approve}`,
-        }
-        addToQueue(queueProps)
+        const record = data.get(hash)
+        if (record.approved || record.approved === approve) return
+        //use blockhain only
+        // const queueProps = {
+        //     type: QUEUE_TYPES.CHATCLIENT,
+        //     func: 'timeKeepingEntryApproval',
+        //     args: [hash, approve, (err) => !err && this.getRecords()],
+        //     title: `${texts.timeKeeping} - ${wordsCap.approve}`,
+        // }
+        // addToQueue(queueProps)
     }
 
     handleBan(selectedKeys) {
@@ -278,44 +264,45 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             size: 'tiny',
         })
 
-        const queueProps = {
-            type: QUEUE_TYPES.CHATCLIENT,
-            func: 'projectTimeKeepingBan',
-            args: [projectHash, addresses, true],
-            title: `${wordsCap.project} - ${texts.banUser}`,
-            description: `${texts.banUsers}: ${addresses.length}`,
-            // When successfull retrieve the updated project with banned addresses and update entry list
-            next: {
-                type: QUEUE_TYPES.CHATCLIENT,
-                func: 'project',
-                args: [projectHash, null, null, (err, project) => {
-                    if (err) return
-                    this.setState({ project })
-                    setTimeout(this.getEntries)
-                }],
-                // No toast required for this child-task
-                silent: true
-            }
-        }
+        // use blockchain
+        // const queueProps = {
+        //     type: QUEUE_TYPES.CHATCLIENT,
+        //     func: 'projectTimeKeepingBan',
+        //     args: [projectHash, addresses, true],
+        //     title: `${wordsCap.project} - ${texts.banUser}`,
+        //     description: `${texts.banUsers}: ${addresses.length}`,
+        //     // When successfull retrieve the updated project with banned addresses and update record list
+        //     next: {
+        //         type: QUEUE_TYPES.CHATCLIENT,
+        //         func: 'project',
+        //         args: [projectHash, null, null, (err, project) => {
+        //             if (err) return
+        //             this.setState({ project })
+        //             setTimeout(this.getRecords)
+        //         }],
+        //         // No toast required for this child-task
+        //         silent: true
+        //     }
+        // }
 
-        confirm({
-            header: texts.banUsers,
-            onConfirm: () => addToQueue(queueProps),
-            content: (
-                <div>
-                    {texts.timeKeepingBanWarning} - "{project.name} :"
-                    <pre style={{ backgroundColor: 'gray', color: 'blue', padding: 15 }}>
-                        {addresses.join('\n')}
-                    </pre>
+        // confirm({
+        //     header: texts.banUsers,
+        //     onConfirm: () => addToQueue(queueProps),
+        //     content: (
+        //         <div>
+        //             {texts.timeKeepingBanWarning} - "{project.name} :"
+        //             <pre style={{ backgroundColor: 'gray', color: 'blue', padding: 15 }}>
+        //                 {addresses.join('\n')}
+        //             </pre>
 
-                    {texts.whatDoesThisMean}
-                    <ul>
-                        <li>{texts.whatDoesThisMeanItemOne}</li>
-                        <li>{texts.whatDoesThisMeanItemTwo}</li>
-                    </ul>
-                </div>
-            ),
-        })
+        //             {texts.whatDoesThisMean}
+        //             <ul>
+        //                 <li>{texts.whatDoesThisMeanItemOne}</li>
+        //                 <li>{texts.whatDoesThisMeanItemTwo}</li>
+        //             </ul>
+        //         </div>
+        //     ),
+        // })
     }
 
     handleRowSelect(selectedKeys) {
@@ -333,7 +320,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         if (this.propsStr !== propsStr) {
             // update entries list
             this.propsStr = propsStr
-            setTimeout(this.getEntries)
+            setTimeout(this.getRecords)
         }
         return <ListFactory {...this.state.listProps} />
     }

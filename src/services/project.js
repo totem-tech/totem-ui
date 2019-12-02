@@ -131,6 +131,13 @@ const project = {
             longevity: true
         })
     },
+    // getOwner retrives the owner address of a project
+    //
+    // Params:
+    // @projectHash string/Bond/Uint8Array
+    //
+    // Returns Bond
+    getOwner: projectHash => runtime.projects.projectHashOwner(hashBytes(projectHash)),
     // listByOwner retrieves a list of project hashes owned by @address
     //
     // Returns Bond
