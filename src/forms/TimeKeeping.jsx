@@ -229,7 +229,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                                 compact
                                 size="tiny"
                                 content={wordsCap.yes}
-                                onClick={() => this.inviteSelf(projectHash, workerAddress, project.name)}
+                                onClick={() => this.inviteSelf(projectHash, project.name)}
                             />
                         </p>
                     )}
@@ -273,7 +273,8 @@ export default class TimeKeepingForm extends ReactiveComponent {
         })
     }
 
-    inviteSelf(projectHash, address, projectName) {
+    inviteSelf(projectHash, projectName) {
+        const { address } = getSelected()
         const message = {
             content: texts.selfInviteSuccessMsg,
             header: texts.addedToQueue,

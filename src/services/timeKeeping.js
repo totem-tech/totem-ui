@@ -167,6 +167,11 @@ const timeKeeping = {
         },
         // Blockchain transaction
         // (project owner) approve a time record
+        //
+        // Params:
+        // workerAddress, projectHash, recordHash, 
+        // @status  integer: default 0
+        // @lockedreason
         approve: (workerAddress, projectHash, recordHash, status = 0, locked = false, reason = {}) => {
             return post({
                 sender: validatedSenderAddress(workerAddress),
