@@ -12,6 +12,7 @@ import addressbook from '../services/partners'
 import { showForm } from '../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import timeKeeping from '../services/timeKeeping'
+import { isFn, arrSort } from '../utils/utils'
 
 const notificationType = 'time_keeping'
 const childType = 'invitation'
@@ -82,28 +83,33 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             const { inputs } = this.state
             const partnerIn = findInput(inputs, 'workerAddress')
             // populate partner's list
-            partnerIn.options = Array.from(addressbook.getAll()).map(([address, { name, userId }]) => ({
-                description: userId && '@' + userId,
-                key: address,
-                text: name,
-                value: address
-            }))
+            partnerIn.options = arrSort(
+                Array.from(addressbook.getAll()).map(([address, { name, userId }]) => ({
+                    description: userId && '@' + userId,
+                    key: address,
+                    text: name,
+                    value: address
+                })),
+                'text'
+            )
             this.setState({ inputs })
         })
-
 
         // retrieve project hashes by address
         getProjects().then(projects => {
             proIn.loading = false
-            proIn.options = Array.from(projects)
-                // include only active (open/reopened) projects
-                .filter(([_, { status }]) => [0, 1].indexOf(status) >= 0)
-                .map(([hash, project]) => ({
-                    key: hash,
-                    text: project.name,
-                    value: hash,
-                    project,
-                }))
+            proIn.options = arrSort(
+                Array.from(projects)
+                    // include only active (open/reopened) projects
+                    .filter(([_, { status }]) => [0, 1].indexOf(status) >= 0)
+                    .map(([hash, project]) => ({
+                        key: hash,
+                        text: project.name,
+                        value: hash,
+                        project,
+                    })),
+                'text'
+            )
 
             proIn.invalid = proIn.options.length === 0
             proIn.message = !proIn.invalid ? null : {

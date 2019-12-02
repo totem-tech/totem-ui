@@ -43,14 +43,25 @@ const words = {
     duration: 'duration',
     error: 'error',
     identity: 'identity',
+    no: 'no',
     project: 'project',
+    start: 'start',
+    submit: 'submit',
     success: 'success',
     unknown: 'unknown',
     yes: 'yes',
+    wallet: 'wallet',
 }
 const wordsCap = textCapitalize(words)
 const texts = {
+    acceptingSelfInvite: 'Time Keeping - accepting self invite',
+    addedToQueue: 'Added to queue',
+    areYouSure: 'Are you sure?',
+    areYouSureInviteSelf: 'Are you sure you want to invite yourself?',
+    blockCount: 'Block Count',
+    cancelWarning: 'You have a running timer. Would you like to stop and exit?',
     checkingProjectStatus: 'Checking project status...',
+    goBack: 'Go Back',
     hhmmss: 'hh:mm:ss', //????
     inactiveProjectMsgPart1: 'Please select a project you are invited to and already accepted.',
     inactiveProjectMsgPart2: 'You are the owner of the selected project. Would you like to invite yourself?',
@@ -58,9 +69,25 @@ const texts = {
     invalidDuration: 'Invalid duration',
     invalidDurationMsgPart1: 'Please enter a valid duration in the following format:',
     invalidDurationMsgPart2: 'Seconds must be in increments of 5',
+    inviteMyself: 'Time Keeping - inviting myself',
     manuallyEnterDuration: 'Manually enter duration',
+    noContinueTimer: 'No, continue timer',
+    recordAddedSuccessfully: 'Time record added successfully',
+    requestQueuedMsg: 'Request has been added to queue. You will be notified of the progress shortly.',
+    resetTimer: 'Reset Timer',
+    resetTimerWarning: 'You are about to reset your timer. Are you sure?',
+    resumeTimer: 'Resume timer',
+    resumeTimeWarning: 'Would you like to resume timer?',
     selectAProject: 'Select a project',
     selectActiveProject: 'Please select an active project',
+    selfInviteSuccessMsg: 'The invitation requires two blockchain transactions which has been queued. It may take a while to complete the process. You may close the modal for now.',
+    submitConfirmationMsg: 'Please vefiry the following information and click "Proceed" to submit',
+    timerStarted: 'Timer started',
+    timeKeeping: 'Time Keeping',
+    timerRunningMsg: 'You may now close the dialog and come back to it anytime by clicking on the clock icon in the header.',
+    tkNewRocord: 'Time Keeping - New Record',
+    transactionFailed: 'Blockchain transaction failed!',
+    uninivtedProjectSelected: 'Uninvited project selected!',
 }
 
 function handleDurationChange(e, formValues, i) {
@@ -137,6 +164,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     value: DURATION_ZERO
                 },
                 {
+                    bond: new Bond(),
                     disabled: !!values.inprogress,
                     name: 'manualEntry',
                     options: [{
@@ -207,7 +235,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     )}
                 </div>
             ),
-            header: 'Uninvited project selected!',
+            header: texts.uninivtedProjectSelected,
             showIcon: true,
             status: 'error',
         })
@@ -247,9 +275,8 @@ export default class TimeKeepingForm extends ReactiveComponent {
 
     inviteSelf(projectHash, address, projectName) {
         const message = {
-            content: `The invitation requires two blockchain transactions which has been queued. 
-                It may take a while to complete the process. You may close the modal for now.`,
-            header: 'Added to queue',
+            content: texts.selfInviteSuccessMsg,
+            header: texts.addedToQueue,
             showIcon: true,
             status: 'success'
         }
@@ -257,21 +284,21 @@ export default class TimeKeepingForm extends ReactiveComponent {
             type: QUEUE_TYPES.BLOCKCHAIN,
             func: 'timeKeeping_invitation_add',
             args: [projectHash, address, address],
-            title: 'Time Keeping - inviting myself',
-            description: `Project: ${projectName}`,
+            title: texts.inviteMyself,
+            description: `${wordsCap.project}: ${projectName}`,
             next: {
                 type: QUEUE_TYPES.BLOCKCHAIN,
                 func: 'timeKeeping_invitation_accept',
                 args: [projectHash, address, true],
-                title: 'Time Keeping - accepting self invite'
+                title: texts.acceptingSelfInvite
             }
         }
 
         confirm({
-            cancelButton: 'No',
-            confirmButton: 'Yes',
-            content: 'Are you sure you want to invite yourself?',
-            header: 'Invite Self',
+            cancelButton: wordsCap.no,
+            confirmButton: wordsCap.yes,
+            content: texts.areYouSureInviteSelf,
+            header: texts.inviteMyself,
             size: 'mini',
             onConfirm: () => addToQueue(queueProps) | this.setState({ message }),
         })
@@ -313,11 +340,11 @@ export default class TimeKeepingForm extends ReactiveComponent {
         }
 
         !doConfirm ? reset() : confirm({
-            header: 'Reset Timer',
-            content: 'You are about to reset your timer. Are you sure?',
+            header: texts.resetTimer,
+            content: texts.resetTimeWarning,
             onConfirm: () => reset(),
-            confirmButton: 'Yes',
-            cancelButton: 'No',
+            confirmButton: wordsCap.yes,
+            cancelButton: wordsCap.no,
             size: 'mini'
         })
     }
@@ -374,35 +401,36 @@ export default class TimeKeepingForm extends ReactiveComponent {
             type: QUEUE_TYPES.BLOCKCHAIN,
             func: 'timeKeeping_record_add',
             args: [address, projectHash, NEW_RECORD_HASH, blockCount, 0, blockStart, blockEnd],
-            title: 'Time Keeping - New Record',
-            description: 'Project: ' + projectName + ' | Duration: ' + values.duration,
+            title: texts.tkNewRecord,
+            description: `${wordsCap.project}: ${projectName} | ${wordsCap.duration}: ${values.duration}`,
             then: success => {
                 this.setState({
                     message: {
-                        content: success ? 'Time record added successfully' : 'Blockchain transaction failed!',
+                        content: success ? texts.recordAddedSuccessfully : texts.transactionFailed,
                         header: success ? wordsCap.success : wordsCap.error,
                         showIcon: true,
                         status: success ? 'success' : 'error',
                     },
                 })
-                !err & this.handleReset()
-                isFn(onSubmit) && onSubmit(!err, entry)
+                success & this.handleReset()
+                isFn(onSubmit) && onSubmit(success, values)
             },
         }
+
         const message = {
-            content: 'Request has been added to queue. You will be notified of the progress shortly.',
-            header: 'Action queued',
+            content: texts.requestQueuedMsg,
+            header: texts.addedToQueue,
             status: 'success',
             showIcon: true
         }
 
         this.confirmId = showForm(FormBuilder, {
-            header: 'Submit?',
+            header: `${wordsCap.submit}?`,
             inputs: [
-                ['Wallet', getAddressName(address)],
-                ['Project', projectName],
-                ['Duration', duration],
-                ['Block Count', blockCount],
+                [wordsCap.submit, getAddressName(address)],
+                [wordsCap.project, projectName],
+                [wordsCap.duration, duration],
+                [texts.blockCount, blockCount],
             ].map(x => ({
                 readOnly: true,
                 label: x[0],
@@ -417,9 +445,9 @@ export default class TimeKeepingForm extends ReactiveComponent {
                 this.setState({ message })
             },
             size: 'tiny',
-            subheader: 'Please vefiry the following information and click "Proceed" to submit',
-            submitText: 'Proceed',
-            closeText: 'Go Back'
+            subheader: texts.submitConfirmationMsg,
+            submitText: wordsCap.proceed,
+            closeText: texts.goBack,
         })
     }
 
@@ -463,14 +491,14 @@ export default class TimeKeepingForm extends ReactiveComponent {
             // prevents annoying HTML form validation warnings from showing up when clicked
             formNoValidate: true,
             onClick: () => confirm({
-                header: 'Resume timer',
-                content: 'Would you like to resume timer?',
+                header: texts.resumeTimer,
+                content: texts.resumeTimeWarning,
                 onConfirm: this.handleResume.bind(this),
-                confirmButton: 'Yes',
-                cancelButton: 'No',
+                confirmButton: wordsCap.yes,
+                cancelButton: wordsCap.no,
                 size: 'mini'
             }),
-            title: 'Resume timer'
+            title: texts.resumeTimer,
         }
 
         // set wallet options
@@ -489,10 +517,10 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     const { values: { inprogress } } = this.state
                     const doCancel = () => this.handleReset(false) | isFn(onClose) && onClose(e, d)
                     !inprogress ? doCancel() : confirm({
-                        cancelButton: 'No, continue timer',
-                        confirmButton: 'Yes',
-                        content: 'You have a running timer. Would you like to stop and exit?',
-                        header: 'Are you sure?',
+                        cancelButton: noContinueTimer,
+                        confirmButton: wordsCap.yes,
+                        content: texts.cancelWarning,
+                        header: texts.areYouSure,
                         onConfirm: doCancel,
                         size: 'tiny'
                     })
@@ -500,7 +528,6 @@ export default class TimeKeepingForm extends ReactiveComponent {
                 }}
             />
         )
-
         const submitBtn = (
             <Button
                 icon
@@ -512,7 +539,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                 size="massive"
                 style={btnStyle}
             >
-                {!inprogress ? (done ? 'Submit' : 'Start') : (
+                {!inprogress ? (done ? wordsCap.submit : wordsCap.start) : (
                     <React.Fragment>
                         <Icon name="clock outline" loading={true} style={{ background: 'transparent' }} />
                         Stop
@@ -522,35 +549,33 @@ export default class TimeKeepingForm extends ReactiveComponent {
         )
 
         return (
-            <FormBuilder
-                {...this.props}
-                {...{
-                    closeText: closeBtn,
-                    inputs,
-                    message: !inprogress ? message : {
-                        content: 'You may now close the dialog and come back to it anytime by clicking on the clock icon in the header.',
-                        header: 'Timer started',
-                        showIcon: true,
-                        status: 'info'
-                    },
-                    onChange: this.handleValuesChange,
-                    submitText: submitBtn
-                }} />
+            <FormBuilder {...{
+                ...this.props,
+                closeText: closeBtn,
+                inputs,
+                message: !inprogress ? message : {
+                    content: texts.timerRunningMsg,
+                    header: texts.timerStarted,
+                    showIcon: true,
+                    status: 'info'
+                },
+                onChange: this.handleValuesChange,
+                submitText: submitBtn
+            }} />
         )
     }
 }
-
 TimeKeepingForm.defaultProps = {
     closeOnEscape: true,
     closeOnDimmerClick: true,
-    header: 'Time Keeping',
+    header: texts.timeKeeping,
     size: 'tiny'
 }
 
 TimeKeepingForm.propTypes = {
     projectHash: PropTypes.string,
 }
-
+// ToDo: separate file and text extraction for language
 export class TimeKeepingUpdateForm extends ReactiveComponent {
     constructor(props) {
         super(props)
@@ -616,6 +641,7 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
 }
 
 TimeKeepingUpdateForm.propTypes = {
+    // record hash
     hash: PropTypes.string,
     entry: PropTypes.shape({
         address: PropTypes.string.isRequired,
@@ -629,7 +655,7 @@ TimeKeepingUpdateForm.defaultProps = {
     closeText: 'Close',
     closeOnEscape: false,
     closeOnDimmerClick: false,
-    header: 'Time Keeping: Update Entry',
+    header: 'Time Keeping: Update Record',
     size: 'tiny',
     submitText: 'Update',
 }
