@@ -1,17 +1,19 @@
 import { Bond } from 'oo7'
+import { calls, post, runtime } from 'oo7-substrate'
 import uuid from 'uuid'
 import project, {
     fetchProjects,
     getProjects as getUserProjects,
     getProjectsBond as getUserProjectsBond
 } from './project'
-import { hashBytes, validatedSenderAddress } from './blockchain'
-import { getSelected, selectedAddressBond } from './identity'
+import { getSelected } from './identity'
 import DataStorage from '../utils/DataStorage'
-import { bytesToHex, ss58Decode, ss58Encode } from '../utils/convert'
-import { isBool, mapJoin } from '../utils/utils'
+import { bytesToHex, hashBytes, validateAddress, ss58Decode, ss58Encode } from '../utils/convert'
+import { mapJoin } from '../utils/utils'
 import { getAddressName } from '../components/ProjectDropdown'
 import partners from './partners'
+import identities from './identity'
+import { getUser } from './ChatClient'
 
 // Only stores projects that not owned by the selected identity
 const CACHE_PREFIX = 'totem__cache_timekeeping_projects_'
@@ -69,7 +71,6 @@ export const getProjects = (_forceUpdate = false) => {
                 _config.updateInProgress = false
                 _config.firstAttempt = false
                 cacheStorage.setAll(invitedProjects)
-                _forceUpdate && getProjectsBond.changed(uuid.v1())
                 const joined = mapJoin(userProjects, invitedProjects)
                 return joined
             })
@@ -82,35 +83,44 @@ export const getProjects = (_forceUpdate = false) => {
 export const getProjectsBond = new Bond().defaultTo(uuid.v1())
 getUserProjectsBond.tie(() => getProjectsBond.changed(uuid.v1()))
 
-export const getProjectInvites = projectHash => Bond.promise([
+export const getProjectWorkers = projectHash => Bond.promise([
     timeKeeping.invitation.listByProject(projectHash),
+    // ToDo: add invited workers bond here
+    new Bond().defaultTo([]),
     project.getOwner(projectHash),
-]).then(([addresses, ownerAddress]) => {
-    addresses = addresses.map(w => ss58Encode(w))
+]).then(([acceptedAddresses, invitedAddresses, ownerAddress]) => {
+    const allAddresses = ([...acceptedAddresses, ...invitedAddresses]).map(w => ss58Encode(w))
     ownerAddress = ss58Encode(ownerAddress)
-    const { address } = getSelected()
-    const isOwner = ownerAddress === address
-    const invitations = new Map()
-    if (addresses.length === 0) return invitations
-    return Bond.promise(
-        addresses.map(address => timeKeeping.invitation.status(projectHash, address))
-    ).then(statuses => {
-        statuses.flat().forEach((status, i) => {
-            if (!isOwner && address !== addresses[i]) return
-            const identity = partners.get(addresses[i]) || {}
-            const { userId } = identity
-            invitations.set(addresses[i], {
-                accepted: status,
-                address: addresses[i],
-                addressName: getAddressName(addresses[i]),
-                invited: isBool(status),
-                projectHash,
-                status,
+    const { address: selectedAddress } = getSelected()
+    const isOwner = ownerAddress === selectedAddress
+    const workers = new Map()
+
+    allAddresses.forEach((address, i) => {
+        if (isOwner || selectedAddress === address) {
+            let { name, userId } = identities.get(address) || {}
+            let isPartner, isOwnIdentity;
+            if (name) {
+                // address is own identitty
+                userId = (getUser() || {}).id
+                isOwnIdentity = true
+            } else {
+                const partner = partners.get(address) || {}
+                name = partner.name
+                userId = partner.userId
+                isPartner = true
+            }
+            !workers.get(address) && workers.set(address, {
+                accepted: i < acceptedAddresses.length,
+                address: address,
+                addressName: getAddressName(address),
+                invited: true,
+                isOwnIdentity,
+                isPartner,
                 userId,
             })
-        })
-        return invitations
+        }
     })
+    return workers
 })
 
 const timeKeeping = {
@@ -119,7 +129,7 @@ const timeKeeping = {
         // (worker) accept invitation to a project
         accept: (projectHash, workerAddress, accepted) => {
             return post({
-                sender: validatedSenderAddress(workerAddress),
+                sender: validateAddress(workerAddress),
                 call: calls.timekeeping.workerAcceptanceProject(hashBytes(projectHash), accepted),
                 compact: false,
                 longevity: true
@@ -129,7 +139,7 @@ const timeKeeping = {
         // (project owner) invite a worker to join a project
         add: (projectHash, ownerAddress, workerAddress) => {
             return post({
-                sender: validatedSenderAddress(ownerAddress),
+                sender: validateAddress(ownerAddress),
                 call: calls.timekeeping.notifyProjectWorker(
                     ss58Decode(workerAddress),
                     hashBytes(projectHash),
@@ -152,7 +162,7 @@ const timeKeeping = {
         // @postingPeriod u16: 15 fiscal periods (0-14) // not yet implemented use default 0
         add: (workerAddress, projectHash, recordHash, blockCount, postingPeriod, blockStart, blockEnd) => {
             return post({
-                sender: validatedSenderAddress(workerAddress),
+                sender: validateAddress(workerAddress),
                 call: calls.timekeeping.submitTime(
                     hashBytes(projectHash),
                     hashBytes(recordHash),
@@ -174,7 +184,7 @@ const timeKeeping = {
         // @lockedreason
         approve: (workerAddress, projectHash, recordHash, status = 0, locked = false, reason = {}) => {
             return post({
-                sender: validatedSenderAddress(workerAddress),
+                sender: validateAddress(workerAddress),
                 call: calls.timekeeping.authoriseTime(
                     ss58Encode(workerAddress),
                     hashBytes(projectHash),
@@ -200,7 +210,7 @@ const timeKeeping = {
     // check if worker is banned. undefined: not banned, object: banned
     workerBanStatus: (projectHash, address) => runtime.timekeeping.projectWorkersBanList(
         hashBytes(projectHash),
-        validatedSenderAddress(address)
+        validateAddress(address)
     ),
 }
 export default timeKeeping

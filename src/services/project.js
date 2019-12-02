@@ -1,9 +1,9 @@
 import DataStorage from '../utils/DataStorage'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
-import { runtime } from 'oo7-substrate'
+import { calls, post, runtime } from 'oo7-substrate'
 import { getSelected, selectedAddressBond } from './identity'
-import { hashBytes, validatedSenderAddress } from './blockchain'
+import { hashBytes, validateAddress, ss58Decode } from '../utils/convert'
 import client from './ChatClient'
 import { bytesToHex } from '../utils/convert'
 import { arrUnique, isBond, isUint8Arr } from '../utils/utils'
@@ -105,7 +105,7 @@ const project = {
     //              5. {failed: {code: xxx, message: 'error message'}}
     add: (ownerAddress, hash) => {
         return post({
-            sender: validatedSenderAddress(ownerAddress),
+            sender: validateAddress(ownerAddress),
             call: calls.projects.addNewProject(hashBytes(hash)),
             compact: false,
             longevity: true
@@ -125,7 +125,7 @@ const project = {
     //              5. {failed: {code: xxx, message: 'error message'}}
     close: (ownerAddress, hash) => {
         return post({
-            sender: validatedSenderAddress(ownerAddress),
+            sender: validateAddress(ownerAddress),
             call: calls.projects.closeProject(hashBytes(hash)),
             compact: false,
             longevity: true
@@ -159,7 +159,7 @@ const project = {
     //              5. {failed: {code: xxx, message: 'error message'}}
     reassign: (ownerAddress, newOwnerAddress, hash) => {
         return post({
-            sender: validatedSenderAddress(ownerAddress),
+            sender: validateAddress(ownerAddress),
             call: calls.projects.reassignProject(newOwnerAddress, hashBytes(hash)),
             compact: false,
             longevity: true
@@ -179,7 +179,7 @@ const project = {
     //              5. {failed: {code: xxx, message: 'error message'}}
     remove: (ownerAddress, hash) => {
         return post({
-            sender: validatedSenderAddress(ownerAddress),
+            sender: validateAddress(ownerAddress),
             call: calls.projects.removeProject(hashBytes(hash)),
             compact: false,
             longevity: true
@@ -199,7 +199,7 @@ const project = {
     //              5. {failed: {code: xxx, message: 'error message'}}
     reopen: (ownerAddress, hash) => {
         return post({
-            sender: validatedSenderAddress(ownerAddress),
+            sender: validateAddress(ownerAddress),
             call: calls.projects.reopenProject(hashBytes(hash)),
             compact: false,
             longevity: true

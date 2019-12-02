@@ -1,16 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
-import { formatStrTimestamp } from '../utils/time'
-import client from '../services/ChatClient'
 import { showForm } from '../services/modal'
-import { newNotificationBond } from '../services/notification'
 import { DataTable } from '../components/ListFactory'
 import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
-import { getAddressName } from '../components/ProjectDropdown'
-import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import { getSelected, selectedAddressBond } from '../services/identity'
-import timeKeeping, { getProjectInvites } from '../services/timeKeeping'
+import { selectedAddressBond } from '../services/identity'
+import timeKeeping, { getProjectWorkers } from '../services/timeKeeping'
 import { UserID } from '../components/buttons'
 import { textCapitalize } from '../utils/utils'
 
@@ -24,6 +19,7 @@ const wordsCap = textCapitalize(words)
 const texts = {
     selectProject: 'Select a project to view invites',
     userId: 'User ID',
+    unknownUser: 'Unknown user',
     workerIdentity: 'Worker Identity',
 }
 
@@ -35,22 +31,19 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
         this.state = {
             listProps: {
                 columns: [
-                    // notificationId
                     { key: '_userId', title: texts.userId },
                     { key: 'addressName', title: texts.workerIdentity },
                     { key: '_status', textAlign: 'center', title: wordsCap.status },
                 ],
                 data: [],
-                rowProps: invite => ({ positive: invite.status === true }),
+                searchExtraKeys: ['address', 'userId'],
+                rowProps: ({ accepted }) => ({ positive: accepted }),
                 topLeftMenu: [{
                     content: wordsCap.invite,
-                    onClick: () => {
-                        const { projectHash } = this.props
-                        showForm(TimeKeepingInviteForm, {
-                            onSubmit: success => success && this.loadInvites(),
-                            values: { projectHash }
-                        })
-                    }
+                    onClick: () => showForm(TimeKeepingInviteForm, {
+                        onSubmit: success => success && this.loadInvites(),
+                        values: { projectHash: this.props.projectHash }
+                    })
                 }]
             }
         }
@@ -59,9 +52,9 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
     componentWillMount() {
         const { projectHash } = this.props
         this.tieIdAddress = selectedAddressBond.tie(this.loadInvites)
-        this.projectHash = projectHash
 
         if (!projectHash) return
+        this.projectHash = projectHash
         this.bond = timeKeeping.invitation.listByProject(projectHash)
         this.tieId = this.bond.tie(this.loadInvites)
     }
@@ -89,11 +82,12 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
             return this.setState({ listProps })
         }
 
-        getProjectInvites(projectHash).then(invites => {
+        getProjectWorkers(projectHash).then(invites => {
             Array.from(invites).forEach(([_, invite]) => {
-                const { status, userId } = invite
-                invite._status = status === true ? words.accepted : words.invited
-                invite._userId = <UserID {...{ userId }} />
+                const { accepted, userId } = invite
+                console.log({ userId })
+                invite._status = accepted === true ? words.accepted : words.invited
+                invite._userId = !userId ? texts.unknownUser : <UserID {...{ userId }} />
             })
             listProps.data = invites
             this.setState({ listProps })
