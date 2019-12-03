@@ -1,3 +1,4 @@
+// ToDo: deprecate and move getAddressName() to somewhere else
 
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'

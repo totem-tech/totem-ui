@@ -40,7 +40,7 @@ class Partner extends ReactiveComponent {
     constructor(props) {
         super(props)
 
-        const partner = addressbook.get(props.values && props.values.address)
+        const partner = props.values && addressbook.get(props.values.address)
         this.doUpdate = !!partner
         const values = { ...partner, ...props.values }
         const { address, name, visibility } = values
@@ -88,56 +88,9 @@ class Partner extends ReactiveComponent {
                     selection: true,
                     type: 'dropdown',
                     validate: this.validateAddress,
-                    onAddItem: (_, { value }) => {
-                        if (this.customAddresses.includes(value)) return
-                        const { inputs } = this.state
-                        findInput(inputs, 'address').options.push({
-                            key: value,
-                            text: value,
-                            value,
-                        })
-                        this.setState({ inputs })
-                    },
+                    onAddItem: this.handleAddressAddItem.bind(this),
                     onChange: this.handleAddressChange.bind(this),
-                    onSearchChange: deferred((_, { searchQuery }) => {
-                        if (!searchQuery) return
-                        const isValidAddress = !!ss58Decode(searchQuery)
-                        const { inputs } = this.state
-                        const companyIn = findInput(inputs, 'address')
-                        companyIn.allowAdditions = false
-                        const handleResult = (err, companies) => {
-                            companyIn.options = err ? [] : Array.from(companies).map(([address, company]) => {
-                                return {
-                                    company, // keep
-                                    key: [...Object.keys(company).map(k => company[k]), address].join(' '), // also used for searching
-                                    description: `${company.country} | ${getAddressName(address)}`,
-                                    text: company.name,
-                                    // searchableStr: ,
-                                    value: address,
-                                }
-                            })
-                            companyIn.message = !err ? null : { content: err, status: 'error' }
-                            this.setState({ inputs })
-                        }
-                        const searchCompany = () => {
-                            const query = {
-                                country: searchQuery,
-                                name: searchQuery,
-                                registrationNumber: searchQuery,
-                            }
-                            client.companySearch(query, false, false, true, handleResult)
-                        }
-                        !isValidAddress ? searchCompany() : client.company(searchQuery, null, (err, company) => {
-                            if (!err && isObj(company)) {
-                                // searchQuery is exact match for a company wallet address
-                                return handleResult(null, new Map([[searchQuery, company]]))
-                            }
-                            // valid address but not a company >> allow user to add as option
-                            companyIn.allowAdditions = true
-                            companyIn.options = []
-                            this.setState({ inputs })
-                        })
-                    }, 300, this),
+                    onSearchChange: deferred(this.handleAddressSearchChange, 300, this),
                 },
                 {
                     label: 'Enter Partner Name',
@@ -145,12 +98,7 @@ class Partner extends ReactiveComponent {
                     placeholder: 'Enter a name for this partner',
                     required: true,
                     type: 'text',
-                    validate: (e, { value: name }) => {
-                        const { values: oldValues } = this.props
-                        name = name.trim()
-                        if (this.doUpdate && isObj(oldValues) && oldValues.name === name) return
-                        if (addressbook.getByName(name)) return 'Please choose an unique partner name.'
-                    },
+                    validate: this.validateName,
                     value: '',
                 },
                 {
@@ -247,6 +195,17 @@ class Partner extends ReactiveComponent {
         })
     }
 
+    handleAddressAddItem(_, { value }) {
+        if (this.customAddresses.includes(value)) return
+        const { inputs } = this.state
+        findInput(inputs, 'address').options.push({
+            key: value,
+            text: value,
+            value,
+        })
+        this.setState({ inputs })
+    }
+
     handleAddressChange(e, { address }, i) {
         const { inputs } = this.state
         const nameIn = findInput(inputs, 'name')
@@ -254,6 +213,46 @@ class Partner extends ReactiveComponent {
         findInput(inputs, 'visibility').hidden = !!company
         nameIn.hidden = !!company
         this.setState({ inputs })
+    }
+
+    handleAddressSearchChange(_, { searchQuery }) {
+        if (!searchQuery) return
+        const isValidAddress = !!ss58Decode(searchQuery)
+        const { inputs } = this.state
+        const companyIn = findInput(inputs, 'address')
+        companyIn.allowAdditions = false
+        const handleResult = (err, companies) => {
+            companyIn.options = err ? [] : Array.from(companies).map(([address, company]) => {
+                return {
+                    company, // keep
+                    key: [...Object.keys(company).map(k => company[k]), address].join(' '), // also used for searching
+                    description: `${company.country} | ${getAddressName(address)}`,
+                    text: company.name,
+                    // searchableStr: ,
+                    value: address,
+                }
+            })
+            companyIn.message = !err ? null : { content: err, status: 'error' }
+            this.setState({ inputs })
+        }
+        const searchCompany = () => {
+            const query = {
+                country: searchQuery,
+                name: searchQuery,
+                registrationNumber: searchQuery,
+            }
+            client.companySearch(query, false, false, true, handleResult)
+        }
+        !isValidAddress ? searchCompany() : client.company(searchQuery, null, (err, company) => {
+            if (!err && isObj(company)) {
+                // searchQuery is exact match for a company wallet address
+                return handleResult(null, new Map([[searchQuery, company]]))
+            }
+            // valid address but not a company >> allow user to add as option
+            companyIn.allowAdditions = true
+            companyIn.options = []
+            this.setState({ inputs })
+        })
     }
 
     handleAddTag(_, data) {
@@ -334,6 +333,13 @@ class Partner extends ReactiveComponent {
         const partner = addressbook.get(address)
         if (partner) return `Partner "${partner.name}" is already in your list!`
         if (!ss58Decode(address)) return 'Please enter a valid Totem Identity'
+    }
+
+    validateName(e, { value: name }) {
+        const { values: oldValues } = this.props
+        name = name.trim()
+        if (this.doUpdate && isObj(oldValues) && oldValues.name === name) return
+        if (addressbook.getByName(name)) return 'Please choose an unique partner name.'
     }
 
     render() {

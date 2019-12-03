@@ -5,14 +5,14 @@ import { ReactiveComponent } from 'oo7-react'
 import { Button } from 'semantic-ui-react'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import PartnerForm from '../forms/Partner'
-import { arrUnique, isFn } from '../utils/utils'
-import { bytesToHex } from '../utils/convert'
-import { ownerProjectsList } from '../services/blockchain'
-import client, { getUser } from '../services/ChatClient'
+import { getProjects } from '../services/project'
+import { getUser } from '../services/ChatClient'
 import { getSelected } from '../services/identity'
 import addressbook from '../services/partners'
 import { showForm } from '../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import timeKeeping from '../services/timeKeeping'
+import { isFn, arrSort } from '../utils/utils'
 
 const notificationType = 'time_keeping'
 const childType = 'invitation'
@@ -83,22 +83,23 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             const { inputs } = this.state
             const partnerIn = findInput(inputs, 'workerAddress')
             // populate partner's list
-            partnerIn.options = Array.from(addressbook.getAll()).map(([address, { name, userId }]) => ({
-                description: userId && '@' + userId,
-                key: address,
-                text: name,
-                value: address
-            }))
+            partnerIn.options = arrSort(
+                Array.from(addressbook.getAll()).map(([address, { name, userId }]) => ({
+                    description: userId && '@' + userId,
+                    key: address,
+                    text: name,
+                    value: address
+                })),
+                'text'
+            )
             this.setState({ inputs })
         })
 
-
         // retrieve project hashes by address
-        ownerProjectsList(ownerAddress).then(hashes => {
-            hashes = hashes.map(hash => '0x' + bytesToHex(hash))
-            client.projectsByHashes(hashes, (err, projects, notFoundHashes) => {
-                proIn.loading = false
-                proIn.options = Array.from(projects)
+        getProjects().then(projects => {
+            proIn.loading = false
+            proIn.options = arrSort(
+                Array.from(projects)
                     // include only active (open/reopened) projects
                     .filter(([_, { status }]) => [0, 1].indexOf(status) >= 0)
                     .map(([hash, project]) => ({
@@ -106,18 +107,16 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
                         text: project.name,
                         value: hash,
                         project,
-                    }))
+                    })),
+                'text'
+            )
 
-                proIn.invalid = !!err || proIn.options.length === 0
-                proIn.message = !proIn.invalid ? {} : {
-                    header: 'No projects found',
-                    content: err || 'You must have one or more active projects',
-                    showIcon: true,
-                    status: 'error'
-                }
-
-                this.setState({ inputs })
-            })
+            proIn.invalid = proIn.options.length === 0
+            proIn.message = !proIn.invalid ? null : {
+                content: 'You must have one or more active projects',
+                status: 'error'
+            }
+            this.setState({ inputs })
         })
     }
 
@@ -125,12 +124,13 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
         addressbook.bond.untie(this.tieId)
     }
 
-    handlePartnerChange(_, { workerAddress }) {
+    handlePartnerChange(_, { projectHash, workerAddress }) {
         const { inputs } = this.state
         const partnerIn = findInput(inputs, 'workerAddress')
         const partner = addressbook.get(workerAddress)
         const { userId } = partner
         partnerIn.invalid = !userId
+        partnerIn.loading = !!(userId && projectHash && workerAddress)
         partnerIn.message = !!userId ? null : {
             content: (
                 <p>
@@ -152,12 +152,31 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             status: 'error'
         }
         this.setState({ inputs })
+
+        // check if partner is already invited or accepted
+        partnerIn.loading && timeKeeping.worker.accepted(projectHash, workerAddress).then(accepted => {
+            partnerIn.loading = false
+            if (accepted) {
+                partnerIn.invalid = true
+                partnerIn.message = {
+                    content: 'Partner already accepted invitation to selected project',
+                    status: 'error'
+                }
+            } else if (accepted === false) {
+                // invited but hasn't accepted yet
+                partnerIn.message = {
+                    content: 'Partner has already been invited to selected project',
+                    status: 'warning'
+                }
+            }
+            this.setState({ inputs })
+        })
     }
 
     handleSubmit(e, values) {
         const { onSubmit } = this.props
         const { inputs } = this.state
-        const { projectHash, workerAddress: workerAddress } = values
+        const { projectHash, workerAddress } = values
         const { project } = findInput(inputs, 'projectHash').options.find(x => x.value === projectHash)
         const { name: projectName, ownerAddress } = project
         const { userId } = addressbook.get(workerAddress)
@@ -199,9 +218,9 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
                                 status: 'success',
                             } : {
                                     header: 'Notification Failed!',
-                                    content: err,
+                                    content: 'Blockchain invitation sent but failed to notify user. Error: ' + err,
                                     showIcon: true,
-                                    status: 'error',
+                                    status: 'warning',
                                 }
                         })
                         isFn(onSubmit) && onSubmit(!err, values)
@@ -209,7 +228,6 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             }
         }
         addToQueue(queueProps)
-
     }
 
     render() {

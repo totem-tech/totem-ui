@@ -236,7 +236,7 @@ const sidebarItems = [
 			"needing to do anything else."
 	},
 	{
-		active: true,
+		active: false,
 		content: <TimeKeepingView />,
 		icon: "clock outline",
 		title: "Timekeeping",

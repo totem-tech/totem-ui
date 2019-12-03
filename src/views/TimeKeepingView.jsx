@@ -8,16 +8,18 @@ import FormBuilder, { findInput } from '../components/FormBuilder'
 import ProjectTimeKeepingList from '../lists/TimeKeepingList'
 import TimeKeepingInviteList from '../lists/TimeKeepingInviteList'
 import TimeKeepingSummary from '../lists/TimeKeepingSummary'
-import { project, timeKeeping } from '../services/blockchain'
+import projectService from '../services/project'
 import client from '../services/ChatClient'
 import { getSelected, selectedAddressBond } from '../services/identity'
 import { bytesToHex } from '../utils/convert'
+import timeKeeping, { getProjects, getProjectsBond } from '../services/timeKeeping'
 
 const words = {
     invitations: 'invitations',
     invites: 'invites',
     manage: 'manage',
     summary: 'summary',
+    unknown: 'unknown'
 }
 const wordsCap = textCapitalize(words)
 const texts = {
@@ -42,9 +44,9 @@ class TimeKeepingView extends ReactiveComponent {
                     type: 'group',
                     inputs: [
                         {
+                            bond: new Bond(),
                             inline: true,
                             name: 'projectHash',
-                            onChange: deferred(this.handleProjectChange, 300, this),
                             options: [],
                             placeholder: texts.selectAProject,
                             search: true,
@@ -60,22 +62,10 @@ class TimeKeepingView extends ReactiveComponent {
                             value: 'records',
                             width: 12,
                             options: [
-                                {
-                                    label: texts.myRecords,
-                                    value: 'records'
-                                },
-                                {
-                                    label: wordsCap.manage,
-                                    value: 'manage',
-                                },
-                                {
-                                    label: wordsCap.invites,
-                                    value: 'invites',
-                                },
-                                {
-                                    label: wordsCap.summary,
-                                    value: 'summary',
-                                },
+                                { label: texts.myRecords, value: 'records' },
+                                { label: wordsCap.manage, value: 'manage' },
+                                { label: wordsCap.invites, value: 'invites' },
+                                { label: wordsCap.summary, value: 'summary' },
                             ],
                         },
                     ],
@@ -85,78 +75,25 @@ class TimeKeepingView extends ReactiveComponent {
     }
 
     componentWillMount() {
-        this.tieIdIdentity = selectedAddressBond.tie(() => {
-            // untie from any existing subscriptions
-            if (this.tieIdProjects && this.projectsBond) this.projectsBond.untie(this.tieIdProjects)
-            const { address } = getSelected()
-
-            // listen for changes and update projects list accordingly
-            this.projectsBond = Bond.all([
-                // projects owned by selected identity
-                project.listByOwner(address),
-                // projects selected identity was invited to
-                timeKeeping.invitation.listByWorker(address)
-            ])
-
-            this.projectsBond.tie(([owned, invited]) => {
-                const { inputs, values } = this.state
-                const { projectHash } = values
-                const projectHashes = arrUnique([...owned, ...invited].map(bytesToHex)).map(h => '0x' + h)
-                const projectIn = findInput(inputs, 'projectHash')
-                projectIn.loading = true
-                client.projectsByHashes(projectHashes, (_, projects, unknownHashes = []) => {
-                    const options = Array.from(projects).map(([hash, project]) => ({
-                        key: hash,
-                        project,
-                        text: project.name,
-                        value: hash,
-                    })).concat(...unknownHashes.map(hash => ({
-                        // if for some reason chatserver does not have the data for a project
-                        key: hash,
-                        text: hash,
-                        value: hash,
-                    })))
-                    projectIn.loading = false
-                    projectIn.options = arrSort(options, 'text')
-                    projectIn.noResultsMessage = options.length > 0 ? undefined : (
-                        // user doesn't own any project and never been invited to one
-                        <p style={{ whiteSpace: 'pre-wrap' }}>
-                            {texts.createProjectOrRequestInvite}
-                        </p>
-                    )
-
-                    if (!projectHash || !options.find(x => x.value === projectHash)) {
-                        const firstOption = options[0] || {}
-                        projectIn.value = firstOption.value
-                        values.projectHash = firstOption.value
-                    }
-
-                    this.setState({ inputs, values })
-                })
-            })
-        })
+        this.tieId = getProjectsBond.tie(() => this.loadProjectOptions())
     }
 
     componentWillUnmount() {
-        selectedAddressBond.untie(this.tieIdIdentity)
-        this.projectsBond.untie(this.tieIdProjects)
+        getProjectsBond.untie(this.tieId)
     }
 
     handleChange(_, values) {
         this.setState({ values })
     }
 
-    handleProjectChange(_, { projectHash }) {
-        const { inputs } = this.state
-        const { options } = findInput(inputs, 'projectHash')
-        const project = !projectHash ? undefined : options.find(o => o.value === projectHash).project
-        this.setState({ inputs, project })
-    }
-
     getContent(mobile) {
-        const { inputs, project, values: { projectHash, option } } = this.state
+        const { inputs, values: { projectHash, option } } = this.state
+        const { loading, options: projectOptions } = findInput(inputs, 'projectHash')
+        const { ownerAddress, name } = (projectOptions.find(x => x.value === projectHash) || {}).project || {}
+        const { address } = getSelected()
+        const isOwner = ownerAddress === address
         let contents = []
-        const manage = option.includes('manage')
+        const manage = isOwner && option.includes('manage')
         const showSummary = option.includes('summary')
         const showInvites = option.includes('invites')
         const showRecords = option.includes('records') || manage
@@ -164,40 +101,68 @@ class TimeKeepingView extends ReactiveComponent {
         optionInput.inline = !mobile
         optionInput.style = { float: mobile ? '' : 'right' }
         optionInput.style.paddingTop = 7
-        findInput(inputs, 'option').options.find(x => x.value === 'records').disabled = manage
+        optionInput.options.find(x => x.value === 'records').disabled = manage
+        optionInput.options.find(x => x.value === 'manage').hidden = !isOwner
 
-        if (showRecords) contents.push({
-            content: <ProjectTimeKeepingList {...{ project, projectHash, manage }} />,
+        if (!loading && showRecords) contents.push({
+            content: <ProjectTimeKeepingList {...{ isOwner, manage, projectHash, ownerAddress, projectName: name }} />,
+            key: 'ProjectTimeKeepingList',
         })
-        if (showInvites) contents.push({
+        if (!loading && showInvites) contents.push({
             content: <TimeKeepingInviteList {...{ projectHash }} />,
-            header: wordsCap.invitations
+            header: wordsCap.invitations,
+            key: 'TimeKeepingInviteList',
         })
         if (showSummary) contents.push({
             content: <TimeKeepingSummary />,
             header: texts.myTimeKeepingSummary,
+            key: 'TimeKeepingSummary',
         })
 
         return (
             <div>
-                <FormBuilder {...{
-                    inputs,
-                    onChange: this.handleChange.bind(this),
-                    submitText: null
-                }}
-                />
-                {contents.map((item, i) => (
+                <FormBuilder {...{ inputs, onChange: this.handleChange.bind(this), submitText: null }} />
+                {contents.map(item => (
                     <ContentSegment
                         {...item}
                         active={true}
                         basic={true}
-                        key={i}
                         headerTag="h3"
                         style={{ padding: 0 }}
                     />
                 ))}
             </div>
         )
+    }
+
+    loadProjectOptions() {
+        const { inputs, values } = this.state
+        let { projectHash } = values
+        const projectIn = findInput(inputs, 'projectHash')
+        projectIn.loading = true
+        getProjects().then(projects => {
+            const options = Array.from(projects).map(([hash, project]) => ({
+                key: hash,
+                project,
+                text: (project || {}).name || wordsCap.unknown,
+                value: hash,
+            }))
+            projectIn.loading = false
+            projectIn.options = arrSort(options, 'text')
+            projectIn.noResultsMessage = options.length > 0 ? undefined : (
+                // user doesn't own any project and never been invited to one
+                <p style={{ whiteSpace: 'pre-wrap' }}>
+                    {texts.createProjectOrRequestInvite}
+                </p>
+            )
+
+            if (!projectHash || !projectIn.options.find(x => x.value === projectHash)) {
+                const { value: projectHash } = projectIn.options[0] || {}
+                values.projectHash = projectHash
+                projectHash && projectIn.bond.changed(projectHash)
+            }
+            this.setState({ inputs, values })
+        }, console.log)
     }
 
     render() {

@@ -2,7 +2,7 @@ import React from 'react'
 import { Icon, Message, Responsive } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import createHash from 'create-hash/browser'
-import { bytesToHex } from './convert'
+import { bytesToHex, hashToStr } from './convert'
 
 /*
  * Copies supplied string to system clipboard
@@ -31,7 +31,7 @@ export const generateHash = (seed, algo, asBytes) => {
 	hash.write('write to it as a stream')
 	hash.end()
 	const bytesArr = hash.read()
-	return asBytes ? bytesArr : '0x' + bytesToHex(bytesArr)
+	return asBytes ? bytesArr : hashToStr(bytesArr)
 }
 
 /*
@@ -49,6 +49,7 @@ export const isObjArr = x => !isArr(x) ? false : !x.reduce((no, item) => no || !
 // Checks if argument is an Map of Objects. Each element type must be object, otherwise will return false.
 export const isObjMap = x => !isMap(x) ? false : !Array.from(x).reduce((no, item) => no || !isObj(item[1]), false)
 export const isStr = x => typeof x === 'string'
+export const isUint8Arr = arr => arr instanceof Uint8Array
 export const isValidNumber = x => typeof x == 'number' && !isNaN(x) && isFinite(x)
 export const hasValue = x => {
 	if (!isDefined(x)) return false
@@ -293,6 +294,12 @@ export const mapFindByKey = (map, key, value, matchExact) => {
 	}
 }
 
+// mapJoin joins (and overrides) key-value pairs from @source to @dest
+export const mapJoin = (source = new Map(), dest = new Map()) => {
+	Array.from(source).forEach(([key, value]) => dest.set(key, value))
+	return dest
+}
+
 // mapSearch search for objects by key-value pairs
 //
 // Params:
@@ -463,7 +470,6 @@ export const icons = {
 export const newMessage = message => {
 	if (!isObj(message) || (!message.content && !message.list && !message.header)) return
 	let { icon, showIcon, status, style } = message
-	status = status
 	icon = React.isValidElement(icon) ? icon.props : icon
 	if (showIcon) {
 		icon = icons[status]

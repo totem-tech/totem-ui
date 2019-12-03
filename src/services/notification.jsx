@@ -134,14 +134,19 @@ export default class NotificationDropdown extends ReactiveComponent {
                                     <div>
                                         <b>@{senderId}</b> invited you to start booking time on project:
                                         <b> {data.projectName}</b>
-                                        <ButtonAcceptOrReject onClick={accepted => handleTKInvitation(
-                                            senderId,
-                                            data.projectHash,
-                                            data.projectName,
-                                            data.workerAddress,
-                                            accepted,
-                                            id,
-                                        )} />
+                                        <ButtonAcceptOrReject
+                                            onClick={accepted => confirm({
+                                                onConfirm: () => handleTKInvitation(
+                                                    senderId,
+                                                    data.projectHash,
+                                                    data.projectName,
+                                                    data.workerAddress,
+                                                    accepted,
+                                                    id,
+                                                ),
+                                                size: 'mini',
+                                            }
+                                            )} />
                                     </div>
                                 )
                                 break
@@ -201,7 +206,7 @@ export const handleTKInvitation = (
 
     addToQueue({
         type: QUEUE_TYPES.BLOCKCHAIN,
-        func: 'timeKeeping_invitation_accept',
+        func: 'timeKeeping_worker_accept',
         args: [projectHash, workerAddress, accepted],
         title: `TimeKeeping - ${accepted ? 'accept' : 'reject'} invitation`,
         description: `Project: ${projectName}`,
