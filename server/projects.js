@@ -7,10 +7,13 @@ const requiredKeys = ['name', 'ownerAddress', 'description']
 // All the acceptable properties
 const validKeys = [...requiredKeys, 'status']
 const STATUS_CODES = [
-    0, // open
-    1, // reopened
-    2, // closed
-    99, //deleted
+    0,   // open
+    100, // reopen
+    200, // on-hold
+    300, // abandon
+    400, // cancel
+    500, // close
+    999, // delete
 ]
 // Internally managed keys : ['tsCreated', 'tsFirstUsed']
 const descMaxLen = 160
@@ -67,6 +70,7 @@ export function handleProject(hash, project, create, callback) {
 }
 
 // Set project first time used timestamp, if not already set
+// ToDo : deprecate
 //
 // Params:
 // @hash     string: project hash

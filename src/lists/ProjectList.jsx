@@ -17,7 +17,20 @@ import identityService from '../services/identity'
 
 const toBeImplemented = () => alert('To be implemented')
 
-const PROJECT_STATUSES = { 0: 'Open', 1: 'Re-opened', 2: 'Closed', 99: 'Deleted' }
+const statusTexts = []
+statusTexts[0] = 'Open'
+statusTexts[100] = 'Re-opened'
+statusTexts[200] = 'On-hold'
+statusTexts[300] = 'Abandoned'
+statusTexts[400] = 'Canceled'
+statusTexts[500] = 'Closed'
+statusTexts[999] = 'Deleted'
+const statusCodes = {
+    open: 0,
+    reopen: 100,
+    close: 500,
+    delete: 999,
+}
 
 class ProjectList extends ReactiveComponent {
     constructor(props) {
@@ -43,26 +56,6 @@ class ProjectList extends ReactiveComponent {
             topRightMenu: [
                 {
                     active: false,
-                    name: 'edit',
-                    content: 'Edit',
-                    disabled: true,
-                    icon: 'pencil',
-                    onClick: (selectedHashes) => {
-                        const project = this.state.projects.get(selectedHashes[0])
-                        project && showForm(
-                            ProjectForm,
-                            {
-                                modal: true,
-                                project,
-                                hash: selectedHashes[0],
-                                onSubmit: (e, v, success) => success && setTimeout(this.loadProjects(), 2000)
-                            }
-                        )
-                    },
-                    title: 'Only one project can be edited at a time'
-                },
-                {
-                    active: false,
                     name: 'close',
                     content: 'Close', //Close/Reopen
                     disabled: true,
@@ -70,7 +63,7 @@ class ProjectList extends ReactiveComponent {
                     onClick: (selectedHashes) => {
                         const { projects, topRightMenu } = this.state
                         const doClose = selectedHashes.every(key => [0, 1].indexOf((projects.get(key) || {}).status) >= 0)
-                        const targetStatus = doClose ? 2 : 1
+                        const targetStatus = doClose ? statusCodes.close : statusCodes.reopen
                         const func = `${doClose ? 'close' : 'reopen'}Project`
                         selectedHashes.forEach(hash => {
                             const { name, ownerAddress, status } = projects.get(hash) || {}
@@ -110,7 +103,7 @@ class ProjectList extends ReactiveComponent {
                         const projectNames = []
                         selectedHashes.forEach(hash => {
                             const { projects } = this.state
-                            const targetStatus = 99
+                            const targetStatus = statusCodes.delete
                             const { name, ownerAddress, status } = projects.get(hash) || {}
                             // ignore if project is already at target status or project not longer exists in the list
                             if (status === targetStatus || !name) return;
@@ -128,7 +121,6 @@ class ProjectList extends ReactiveComponent {
                                     args: [
                                         hash,
                                         targetStatus,
-                                        () => { } // placeholder callback. required for data service
                                     ]
                                 }
                             })
@@ -271,7 +263,7 @@ class ProjectList extends ReactiveComponent {
                     const entry = wallets.find(x => x.address === ownerAddress) || {}
                     project._ownerName = entry.name
                     project._hash = hash
-                    project._statusText = PROJECT_STATUSES[project.status] || 'Unknown'
+                    project._statusText = statusTexts[project.status] || 'unknown'
                     project._tsFirstUsed = `${project.tsFirstUsed}`.split('T').join(' ').split('Z').join(' ').split('.')[0]
                     this.syncStatus(hash, project)
                 }
@@ -292,15 +284,11 @@ class ProjectList extends ReactiveComponent {
 
         // If every selected project's status is 'open' or 're-opened change action to 'Close', otherwise 'Re-open'
         const closeBtn = topRightMenu.find(x => x.name === 'close')
-        const doClose = selectedHashes.every(key => [0, 1].indexOf(projects.get(key).status) >= 0)
+        const doClose = selectedHashes.every(key => [statusCodes.open, statusCodes.reopen].indexOf(projects.get(key).status) >= 0)
         closeBtn.content = doClose ? 'Close' : 'Re-open'
         closeBtn.icon = `toggle ${doClose ? 'off' : 'on'}`
 
-        if (len <= 1) return this.setState({ topRightMenu })
-        // more than one selected
-        // Disable edit button, otherwise it will require multiple modals to be opened
-        const editBtn = topRightMenu.find(x => x.name === 'edit')
-        editBtn.disabled = true
+        this.setState({ topRightMenu })
     }
 
     showDetails(project, hash) {
@@ -383,18 +371,29 @@ class ProjectList extends ReactiveComponent {
                 {
                     // No key required
                     collapsing: true,
-                    content: (project, hash) => (
-                        <Button
-                            onClick={() => this.showDetails(project, hash)}
-                            icon={{
-                                className: mobile ? 'no-margin' : '',
-                                name: 'eye'
-                            }}
-                            style={{ margin: 0 }}
-                        />
-                    ),
+                    content: (project, hash) => ([
+                        {
+                            key: 'edit',
+                            name: 'edit',
+                            icon: 'pencil',
+                            onClick: () => showForm(ProjectForm, {
+                                modal: true,
+                                project,
+                                hash,
+                                onSubmit: (e, v, success) => success && this.loadProjects()
+                            }),
+                            title: 'Edit project'
+                        },
+                        {
+                            icon: { className: mobile ? 'no-margin' : '', name: 'eye' },
+                            key: 'detials',
+                            onClick: () => this.showDetails(project, hash),
+                            style: { margin: 0 },
+                            title: 'View detials'
+                        }
+                    ]).map(props => <Button {...props} />),
                     textAlign: 'center',
-                    title: 'Details'
+                    title: 'Action',
                 }
             ]
             return <ListFactory {...listProps} />
