@@ -3,9 +3,9 @@ import uuid from 'uuid'
 import { Bond } from 'oo7'
 import { calls, post, runtime } from 'oo7-substrate'
 import { getSelected, selectedAddressBond } from './identity'
-import { hashBytes, validateAddress, ss58Decode } from '../utils/convert'
+import { hashToBytes, validateAddress, ss58Decode } from '../utils/convert'
 import client from './ChatClient'
-import { bytesToHex } from '../utils/convert'
+import { hashToStr } from '../utils/convert'
 import { arrUnique, isBond, isUint8Arr } from '../utils/utils'
 
 const CACHE_PREFIX = 'totem__cache_projects_'
@@ -25,7 +25,7 @@ export const fetchProjects = (projectHashesOrBond = []) => new Promise((resolve,
     try {
         const process = projectHashes => {
             const uniqueHashes = arrUnique(projectHashes.flat().map(hash => {
-                return isUint8Arr(hash) ? '0x' + bytesToHex(hash) : hash
+                return isUint8Arr(hash) ? hashToStr(hash) : hash
             })).filter(hash => !['0x00'].includes(hash)) // ingore any invalid hash
             if (uniqueHashes.length === 0) return resolve(new Map())
             client.projectsByHashes(uniqueHashes, (err, projects = new Map(), unknownHashes = []) => {
@@ -63,7 +63,7 @@ export const getProjects = (_forceUpdate = false) => {
         if (_config.hashesBond) _config.hashesBond.untie(_config.tieId)
         _config.hashesBond = project.listByOwner(address)
         _config.tieId = _config.hashesBond.tie(hashes => {
-            hashes = hashes.map(h => '0x' + bytesToHex(h))
+            hashes = hashes.map(h => hashToStr(h))
             const changed = !!hashes.find(hash => !projectsCache.get(hash))
                 || !!Array.from(projectsCache).find(([hash]) => !hashes.includes(hash))
             !_config.firstAttempt && !_config.updateInProgress && changed && getProjects(true)
@@ -106,7 +106,7 @@ const project = {
     add: (ownerAddress, hash) => {
         return post({
             sender: validateAddress(ownerAddress),
-            call: calls.projects.addNewProject(hashBytes(hash)),
+            call: calls.projects.addNewProject(hashToBytes(hash)),
             compact: false,
             longevity: true
         })
@@ -126,7 +126,7 @@ const project = {
     close: (ownerAddress, hash) => {
         return post({
             sender: validateAddress(ownerAddress),
-            call: calls.projects.closeProject(hashBytes(hash)),
+            call: calls.projects.closeProject(hashToBytes(hash)),
             compact: false,
             longevity: true
         })
@@ -137,7 +137,7 @@ const project = {
     // @projectHash string/Bond/Uint8Array
     //
     // Returns Bond
-    getOwner: projectHash => runtime.projects.projectHashOwner(hashBytes(projectHash)),
+    getOwner: projectHash => runtime.projects.projectHashOwner(hashToBytes(projectHash)),
     // listByOwner retrieves a list of project hashes owned by @address
     //
     // Returns Bond
@@ -160,7 +160,7 @@ const project = {
     reassign: (ownerAddress, newOwnerAddress, hash) => {
         return post({
             sender: validateAddress(ownerAddress),
-            call: calls.projects.reassignProject(newOwnerAddress, hashBytes(hash)),
+            call: calls.projects.reassignProject(newOwnerAddress, hashToBytes(hash)),
             compact: false,
             longevity: true
         })
@@ -180,7 +180,7 @@ const project = {
     remove: (ownerAddress, hash) => {
         return post({
             sender: validateAddress(ownerAddress),
-            call: calls.projects.removeProject(hashBytes(hash)),
+            call: calls.projects.removeProject(hashToBytes(hash)),
             compact: false,
             longevity: true
         })
@@ -200,7 +200,7 @@ const project = {
     reopen: (ownerAddress, hash) => {
         return post({
             sender: validateAddress(ownerAddress),
-            call: calls.projects.reopenProject(hashBytes(hash)),
+            call: calls.projects.reopenProject(hashToBytes(hash)),
             compact: false,
             longevity: true
         })
@@ -209,7 +209,7 @@ const project = {
     // params
     // @projecthash    string/Uint8Array
     status: projecthash => {
-        return runtime.projects.projectHashStatus(hashBytes(projecthash))
+        return runtime.projects.projectHashStatus(hashToBytes(projecthash))
     },
 }
 export default project

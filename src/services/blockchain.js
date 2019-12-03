@@ -1,4 +1,4 @@
-import { addCodecTransform, calls, post, runtime, ss58Decode } from 'oo7-substrate'
+import { addCodecTransform } from 'oo7-substrate'
 import timeKeeping from './timeKeeping'
 import project from './project'
 
@@ -10,10 +10,10 @@ export default {
     removeProject: project.remove,
     closeProject: project.close,
     reopenProject: project.reopen,
-    timeKeeping_invitation_accept: timeKeeping.invitation.accept,
-    timeKeeping_invitation_add: timeKeeping.invitation.add,
-    timeKeeping_record_add: timeKeeping.record.add,
+    timeKeeping_record_save: timeKeeping.record.save,
     timeKeeping_record_approve: timeKeeping.record.approve,
+    timeKeeping_worker_add: timeKeeping.worker.add,
+    timeKeeping_worker_accept: timeKeeping.worker.accept,
 }
 
 // ToDo: use common-utils library

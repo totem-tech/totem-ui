@@ -2,7 +2,7 @@ import React from 'react'
 import { Icon, Message, Responsive } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import createHash from 'create-hash/browser'
-import { bytesToHex } from './convert'
+import { bytesToHex, hashToStr } from './convert'
 
 /*
  * Copies supplied string to system clipboard
@@ -31,7 +31,7 @@ export const generateHash = (seed, algo, asBytes) => {
 	hash.write('write to it as a stream')
 	hash.end()
 	const bytesArr = hash.read()
-	return asBytes ? bytesArr : '0x' + bytesToHex(bytesArr)
+	return asBytes ? bytesArr : hashToStr(bytesArr)
 }
 
 /*

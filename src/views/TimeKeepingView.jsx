@@ -47,7 +47,6 @@ class TimeKeepingView extends ReactiveComponent {
                             bond: new Bond(),
                             inline: true,
                             name: 'projectHash',
-                            onChange: deferred(this.handleProjectChange, 300, this),
                             options: [],
                             placeholder: texts.selectAProject,
                             search: true,
@@ -87,19 +86,12 @@ class TimeKeepingView extends ReactiveComponent {
         this.setState({ values })
     }
 
-    handleProjectChange(_, { projectHash }) {
-        const { inputs } = this.state
-        const { options } = findInput(inputs, 'projectHash')
-        const project = !projectHash ? undefined : options.find(o => o.value === projectHash).project
-        // findInput(inputs, 'option').options.find(x => x.value === 'manage').hidden = isOwner
-        this.setState({ inputs, project })
-    }
-
     getContent(mobile) {
-        const { inputs, project, values: { projectHash, option } } = this.state
-        const { loading } = findInput(inputs, 'projectHash')
+        const { inputs, values: { projectHash, option } } = this.state
+        const { loading, options: projectOptions } = findInput(inputs, 'projectHash')
+        const { ownerAddress, name } = (projectOptions.find(x => x.value === projectHash) || {}).project || {}
         const { address } = getSelected()
-        const isOwner = project && project.ownerAddress === address
+        const isOwner = ownerAddress === address
         let contents = []
         const manage = isOwner && option.includes('manage')
         const showSummary = option.includes('summary')
@@ -113,26 +105,28 @@ class TimeKeepingView extends ReactiveComponent {
         optionInput.options.find(x => x.value === 'manage').hidden = !isOwner
 
         if (!loading && showRecords) contents.push({
-            content: <ProjectTimeKeepingList {...{ project, projectHash, manage }} />,
+            content: <ProjectTimeKeepingList {...{ isOwner, manage, projectHash, ownerAddress, projectName: name }} />,
+            key: 'ProjectTimeKeepingList',
         })
         if (!loading && showInvites) contents.push({
             content: <TimeKeepingInviteList {...{ projectHash }} />,
-            header: wordsCap.invitations
+            header: wordsCap.invitations,
+            key: 'TimeKeepingInviteList',
         })
         if (showSummary) contents.push({
             content: <TimeKeepingSummary />,
             header: texts.myTimeKeepingSummary,
+            key: 'TimeKeepingSummary',
         })
 
         return (
             <div>
                 <FormBuilder {...{ inputs, onChange: this.handleChange.bind(this), submitText: null }} />
-                {contents.map((item, i) => (
+                {contents.map(item => (
                     <ContentSegment
                         {...item}
                         active={true}
                         basic={true}
-                        key={i}
                         headerTag="h3"
                         style={{ padding: 0 }}
                     />
@@ -143,7 +137,7 @@ class TimeKeepingView extends ReactiveComponent {
 
     loadProjectOptions() {
         const { inputs, values } = this.state
-        const { projectHash } = values
+        let { projectHash } = values
         const projectIn = findInput(inputs, 'projectHash')
         projectIn.loading = true
         getProjects().then(projects => {
@@ -164,6 +158,7 @@ class TimeKeepingView extends ReactiveComponent {
 
             if (!projectHash || !projectIn.options.find(x => x.value === projectHash)) {
                 const { value: projectHash } = projectIn.options[0] || {}
+                values.projectHash = projectHash
                 projectHash && projectIn.bond.changed(projectHash)
             }
             this.setState({ inputs, values })

@@ -8,17 +8,18 @@ import project, {
 } from './project'
 import { getSelected } from './identity'
 import DataStorage from '../utils/DataStorage'
-import { bytesToHex, hashBytes, validateAddress, ss58Decode, ss58Encode } from '../utils/convert'
+import { hashToBytes, hashToStr, validateAddress, ss58Decode, ss58Encode } from '../utils/convert'
 import { mapJoin } from '../utils/utils'
-import { getAddressName } from '../components/ProjectDropdown'
+import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
 import partners from './partners'
 import identities from './identity'
 import { getUser } from './ChatClient'
 
+
 // Only stores projects that not owned by the selected identity
 const CACHE_PREFIX = 'totem__cache_timekeeping_projects_'
-
 const cacheStorage = new DataStorage(undefined, true)
+const NEW_RECORD_HASH = '0xe4d673a76e8b32ca3989dbb9f444f71813c88d36120170b15151d58c7106cc83'
 const _config = {
     address: undefined,
     firstAttempt: true,
@@ -42,10 +43,10 @@ export const getProjects = (_forceUpdate = false) => {
         _config.firstAttempt = true
         _config.address = address
         if (_config.hashesBond) _config.hashesBond.untie(_config.tieId)
-        _config.hashesBond = timeKeeping.invitation.listByWorker(address)
+        _config.hashesBond = worker.listWorkerProjects(address)
         // listen for changes to user invitations and update projects list
         _config.tieId = _config.hashesBond.tie(hashes => {
-            hashes = hashes.map(h => '0x' + bytesToHex(h))
+            hashes = hashes.map(h => hashToStr(h))
             const changed = !!Array.from(invitedProjects).find(([hash]) => !hashes.includes(hash))
                 || !!hashes.find(hash => !invitedProjects.get(hash))
 
@@ -62,7 +63,7 @@ export const getProjects = (_forceUpdate = false) => {
         _config.updateInProgress = true
         // invited project hashes
         return Bond.promise([_config.hashesBond]).then(hashes => {
-            hashes = hashes.flat().map(h => '0x' + bytesToHex(h))
+            hashes = hashes.flat().map(h => hashToStr(h))
                 // exclude user owned projects
                 .filter(hash => !userProjects.get(hash))
 
@@ -83,10 +84,63 @@ export const getProjects = (_forceUpdate = false) => {
 export const getProjectsBond = new Bond().defaultTo(uuid.v1())
 getUserProjectsBond.tie(() => getProjectsBond.changed(uuid.v1()))
 
+// getRecords retrieves records by project
+//
+// Params:
+// @projectHash     string/Bond/Uint8Array
+// @ownerAddress    string/Bond/AccountID
+//
+// returns promise, resolves to a Map of records.
+export const getTimeRecords = (projectHash, ownerAddress, pageNo = 1, perPage = 5) => {
+    const { address: workerAddress } = getSelected()
+    const isOwner = ownerAddress === workerAddress
+    const result = new Map()
+    // retrieve all time record hashes by project
+    return Bond.promise([record.listByProject(projectHash)]).then(([hashes]) => {
+        if (hashes.length === 0) return result
+        // retrieve individual record details
+        return Bond.promise(hashes.map(hash => record.get(hash))).then(records => {
+            records.filter(r => !!r).map((r, i) => ({
+                ...r,
+                hash: hashes[i],
+                workerAddress: ss58Encode(r.worker),
+            }))
+                // If not project owner, only include own records
+                .filter(r => isOwner || r.workerAddress === workerAddress)
+                .forEach(record => {
+                    const { total_blocks, workerAddress } = record
+                    let { name } = identities.get(workerAddress) || partners.get(workerAddress) || {}
+                    const hash = hashToStr(record.hash)
+                    result.set(hash, {
+                        ...record,
+                        hash,
+                        duration: secondsToDuration(total_blocks * BLOCK_DURATION_SECONDS),
+                        workerName: name,
+                        // status: record.locked_status ? wordsCap.locked : 'submit_status:' + record.submit_status,
+                    })
+                })
+            return result
+            /*
+            example Record from blockchain: {
+                locked_status: false
+                posting_period: 0
+                project_hash: [...]
+                reason_code: {ReasonCodeKey: 0, ReasonCodeTypeKey: 0}
+                start_block: 1851599056011264
+                submit_status: 0
+                total_blocks: 3600
+                worker: [...]
+            }
+            */
+        })
+    })
+}
+window.getTimeRecords = getTimeRecords
+
 export const getProjectWorkers = projectHash => Bond.promise([
-    timeKeeping.invitation.listByProject(projectHash),
+    worker.listWorkers(projectHash),
     // ToDo: add invited workers bond here
-    new Bond().defaultTo([]),
+    worker.listInvited(projectHash),
     project.getOwner(projectHash),
 ]).then(([acceptedAddresses, invitedAddresses, ownerAddress]) => {
     const allAddresses = ([...acceptedAddresses, ...invitedAddresses]).map(w => ss58Encode(w))
@@ -97,25 +151,16 @@ export const getProjectWorkers = projectHash => Bond.promise([
 
     allAddresses.forEach((address, i) => {
         if (isOwner || selectedAddress === address) {
-            let { name, userId } = identities.get(address) || {}
-            let isPartner, isOwnIdentity;
-            if (name) {
+            let { name, userId } = partners.get(address) || identities.get(address) || {}
+            if (!userId && identities.get(address)) {
                 // address is own identitty
                 userId = (getUser() || {}).id
-                isOwnIdentity = true
-            } else {
-                const partner = partners.get(address) || {}
-                name = partner.name
-                userId = partner.userId
-                isPartner = true
             }
             !workers.get(address) && workers.set(address, {
                 accepted: i < acceptedAddresses.length,
-                address: address,
-                addressName: getAddressName(address),
+                address,
+                name,
                 invited: true,
-                isOwnIdentity,
-                isPartner,
                 userId,
             })
         }
@@ -123,93 +168,111 @@ export const getProjectWorkers = projectHash => Bond.promise([
     return workers
 })
 
+export const worker = {
+    // Blockchain transaction
+    // (worker) accept invitation to a project
+    accept: (projectHash, workerAddress, accepted) => {
+        return post({
+            sender: validateAddress(workerAddress),
+            call: calls.timekeeping.workerAcceptanceProject(hashToBytes(projectHash), accepted),
+            compact: false,
+            longevity: true
+        })
+    },
+    // status of invitation
+    accepted: (projectHash, workerAddress) => runtime.timekeeping.workerProjectsBacklogStatus([
+        hashToBytes(projectHash),
+        ss58Decode(workerAddress)
+    ]),
+    // Blockchain transaction
+    // (project owner) invite a worker to join a project
+    add: (projectHash, ownerAddress, workerAddress) => {
+        return post({
+            sender: validateAddress(ownerAddress),
+            call: calls.timekeeping.notifyProjectWorker(
+                ss58Decode(workerAddress),
+                hashToBytes(projectHash),
+            ),
+            compact: false,
+            longevity: true
+        })
+    },
+    // check if worker is banned. undefined: not banned, object: banned
+    banned: (projectHash, address) => runtime.timekeeping.projectWorkersBanList(
+        hashToBytes(projectHash),
+        validateAddress(address)
+    ),
+    // ban project worker
+    banWorker: (projectHash, recordHash) => runtime.timekeeping.banWorker(
+        hashToBytes(projectHash),
+        hashToBytes(recordHash)
+    ),
+    // workers that have been invited to but hasn't responded yet
+    listInvited: projectHash => runtime.timekeeping.projectInvitesList(hashToBytes(projectHash)),
+    // workers that has accepted invitation
+    listWorkers: projectHash => runtime.timekeeping.projectWorkersList(hashToBytes(projectHash)),
+    // projects that worker has been invited to or accepted
+    listWorkerProjects: workerAddress => runtime.timekeeping.workerProjectsBacklogList(ss58Decode(workerAddress)),
+}
+
+export const record = {
+    // Blockchain transaction
+    // @postingPeriod u16: 15 fiscal periods (0-14) // not yet implemented use default 0
+    // add/update record
+    save: (workerAddress, projectHash, recordHash = NEW_RECORD_HASH, blockCount, postingPeriod, blockStart, blockEnd) => {
+        return post({
+            sender: validateAddress(workerAddress),
+            call: calls.timekeeping.submitTime(
+                hashToBytes(projectHash),
+                hashToBytes(recordHash),
+                blockCount,
+                postingPeriod,
+                blockStart,
+                blockEnd,
+            ),
+            compact: false,
+            longevity: true
+        })
+    },
+    // Blockchain transaction
+    // (project owner) approve a time record
+    //
+    // Params:
+    // @workerAddress   string/bond
+    // @projectHash     string/bond/Uint8Array
+    // @recordHash      string/bond/Uint8Array
+    // @status          integer: default 0
+    // @reason          object: {ReasonCode: integer, ReasonCodeType: integer}
+    approve: (workerAddress, projectHash, recordHash, status = 0, locked = false, reason = {}) => {
+        return post({
+            sender: validateAddress(workerAddress),
+            call: calls.timekeeping.authoriseTime(
+                ss58Encode(workerAddress),
+                hashToBytes(projectHash),
+                hashToBytes(recordHash),
+                status,
+                locked,
+                reason,
+            ),
+            compact: false,
+            longevity: true
+        })
+    },
+    // get details of a record
+    get: (recordHash) => runtime.timekeeping.timeRecord(hashToBytes(recordHash)),
+    isOwner: (hash, address) => runtime.timeKeeping.timeHashOwner(hashToBytes(hash), ss58Decode(address)),
+    // list of all record hashes booked by worker
+    list: workerAddress => runtime.timekeeping.workerTimeRecordsHashList(ss58Decode(workerAddress)),
+    // list of all record hashes in a project 
+    listByProject: projectHash => runtime.timekeeping.projectTimeRecordsHashList(hashToBytes(projectHash)),
+}
+
 const timeKeeping = {
-    invitation: {
-        // Blockchain transaction
-        // (worker) accept invitation to a project
-        accept: (projectHash, workerAddress, accepted) => {
-            return post({
-                sender: validateAddress(workerAddress),
-                call: calls.timekeeping.workerAcceptanceProject(hashBytes(projectHash), accepted),
-                compact: false,
-                longevity: true
-            })
-        },
-        // Blockchain transaction
-        // (project owner) invite a worker to join a project
-        add: (projectHash, ownerAddress, workerAddress) => {
-            return post({
-                sender: validateAddress(ownerAddress),
-                call: calls.timekeeping.notifyProjectWorker(
-                    ss58Decode(workerAddress),
-                    hashBytes(projectHash),
-                ),
-                compact: false,
-                longevity: true
-            })
-        },
-        // status of an invitation
-        status: (projectHash, workerAddress) => runtime.timekeeping.workerProjectsBacklogStatus([
-            hashBytes(projectHash),
-            ss58Decode(workerAddress)
-        ]),
-        listByProject: projectHash => runtime.timekeeping.projectWorkersList(hashBytes(projectHash)),
-        // projects that worker has been invited to or accepted
-        listByWorker: workerAddress => runtime.timekeeping.workerProjectsBacklogList(ss58Decode(workerAddress)),
-    },
-    record: {
-        // Blockchain transaction
-        // @postingPeriod u16: 15 fiscal periods (0-14) // not yet implemented use default 0
-        add: (workerAddress, projectHash, recordHash, blockCount, postingPeriod, blockStart, blockEnd) => {
-            return post({
-                sender: validateAddress(workerAddress),
-                call: calls.timekeeping.submitTime(
-                    hashBytes(projectHash),
-                    hashBytes(recordHash),
-                    blockCount,
-                    postingPeriod,
-                    blockStart,
-                    blockEnd,
-                ),
-                compact: false,
-                longevity: true
-            })
-        },
-        // Blockchain transaction
-        // (project owner) approve a time record
-        //
-        // Params:
-        // workerAddress, projectHash, recordHash, 
-        // @status  integer: default 0
-        // @lockedreason
-        approve: (workerAddress, projectHash, recordHash, status = 0, locked = false, reason = {}) => {
-            return post({
-                sender: validateAddress(workerAddress),
-                call: calls.timekeeping.authoriseTime(
-                    ss58Encode(workerAddress),
-                    hashBytes(projectHash),
-                    hashBytes(recordHash),
-                    status,
-                    locked,
-                    reason,
-                ),
-                compact: false,
-                longevity: true
-            })
-        },
-        // get details of a record
-        get: (recordHash) => runtime.timekeeping.timeRecord(hashBytes(recordHash)),
-        isOwner: (hash, address) => runtime.timeKeeping.timeHashOwner(hashBytes(hash), ss58Decode(address)),
-        // list of all record hashes booked by worker
-        list: workerAddress => runtime.timekeeping.workerTimeRecordsHashList(ss58Decode(workerAddress)),
-        // list of all record hashes in a project 
-        listByProject: projectHash => runtime.timekeeping.projectTimeRecordsHashList(hashBytes(projectHash)),
-    },
-    // list of workers that accepted invitation
-    workers: projectHash => runtime.timekeeping.projectWorkersList(hashBytes(projectHash)),
+    worker,
+    record,
     // check if worker is banned. undefined: not banned, object: banned
     workerBanStatus: (projectHash, address) => runtime.timekeeping.projectWorkersBanList(
-        hashBytes(projectHash),
+        hashToBytes(projectHash),
         validateAddress(address)
     ),
 }

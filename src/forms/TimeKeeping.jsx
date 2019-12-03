@@ -45,6 +45,7 @@ const words = {
     identity: 'identity',
     no: 'no',
     project: 'project',
+    proceed: 'proceed',
     start: 'start',
     submit: 'submit',
     success: 'success',
@@ -72,7 +73,7 @@ const texts = {
     inviteMyself: 'Time Keeping - inviting myself',
     manuallyEnterDuration: 'Manually enter duration',
     noContinueTimer: 'No, continue timer',
-    recordAddedSuccessfully: 'Time record added successfully',
+    recordSubmittedSuccessfully: 'Time record submitted successfully',
     requestQueuedMsg: 'Request has been added to queue. You will be notified of the progress shortly.',
     resetTimer: 'Reset Timer',
     resetTimerWarning: 'You are about to reset your timer. Are you sure?',
@@ -82,10 +83,11 @@ const texts = {
     selectActiveProject: 'Please select an active project',
     selfInviteSuccessMsg: 'The invitation requires two blockchain transactions which has been queued. It may take a while to complete the process. You may close the modal for now.',
     submitConfirmationMsg: 'Please vefiry the following information and click "Proceed" to submit',
+    submitTime: 'Submit time',
     timerStarted: 'Timer started',
     timeKeeping: 'Time Keeping',
     timerRunningMsg: 'You may now close the dialog and come back to it anytime by clicking on the clock icon in the header.',
-    tkNewRocord: 'Time Keeping - New Record',
+    tkNewRecord: 'Time Keeping - New Record',
     transactionFailed: 'Blockchain transaction failed!',
     uninivtedProjectSelected: 'Uninvited project selected!',
 }
@@ -109,6 +111,64 @@ function handleDurationChange(e, formValues, i) {
     inputs[i].invalid = invalid
     inputs[i].error = invalid
     this.setState({ inputs: inputs })
+}
+
+function handleSubmitTime(hash, projectName, values) {
+    const { onSubmit } = this.props
+    const { blockCount, blockEnd, blockStart, duration, projectHash, workerAddress } = values
+    const queueProps = {
+        type: QUEUE_TYPES.BLOCKCHAIN,
+        func: 'timeKeeping_record_save',
+        args: [workerAddress, projectHash, hash, blockCount, 0, blockStart, blockEnd],
+        title: texts.tkNewRecord,
+        description: `${wordsCap.project}: ${projectName} | ${wordsCap.duration}: ${values.duration}`,
+        then: success => {
+            isFn(onSubmit) && onSubmit(success, values)
+            if (!this.mounted) return
+            this.setState({
+                message: {
+                    content: success ? texts.recordSubmittedSuccessfully : texts.transactionFailed,
+                    header: success ? wordsCap.success : wordsCap.error,
+                    showIcon: true,
+                    status: success ? 'success' : 'error',
+                },
+            })
+            success && this.handleReset & this.handleReset()
+        },
+    }
+
+    const message = {
+        content: texts.requestQueuedMsg,
+        header: texts.addedToQueue,
+        status: 'success',
+        showIcon: true
+    }
+
+    this.confirmId = showForm(FormBuilder, {
+        header: `${texts.submitTime}?`,
+        inputs: [
+            [wordsCap.submit, getAddressName(workerAddress)],
+            [wordsCap.project, projectName],
+            [wordsCap.duration, duration],
+            [texts.blockCount, blockCount],
+        ].map(x => ({
+            readOnly: true,
+            label: x[0],
+            name: x[0],
+            type: 'text',
+            value: x[1]
+        })),
+        onSubmit: () => {
+            closeModal(this.confirmId)
+            // send task to queue service
+            addToQueue(queueProps)
+            this.setState({ message })
+        },
+        size: 'tiny',
+        subheader: texts.submitConfirmationMsg,
+        submitText: wordsCap.proceed,
+        closeText: texts.goBack,
+    })
 }
 
 export default class TimeKeepingForm extends ReactiveComponent {
@@ -146,7 +206,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                 },
                 {
                     label: wordsCap.identity,
-                    name: 'address',
+                    name: 'workerAddress',
                     type: 'dropdown',
                     options: [],
                     required: true,
@@ -179,9 +239,9 @@ export default class TimeKeepingForm extends ReactiveComponent {
     }
 
     componentWillMount() {
+        this.mounted = true
         this.tieId = chain.height.tie(blockNumber => {
-            const values = this.state.values
-            const inprogress = values.inprogress
+            const { values: { inprogress } } = this.state
             blockNumber = parseInt(blockNumber)
             inprogress ? this.saveValues(blockNumber) : this.setState({ blockNumber })
         })
@@ -203,6 +263,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
     }
 
     componentWillUnmount() {
+        this.mounted = false
         chain.height.untie(this.tieId)
         getProjectsBond.untie(this.tieIdProjects)
     }
@@ -261,7 +322,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
             }
 
             // check if user is active on the project
-            timeKeeping.invitation.status(projectHash, workerAddress).then(workerActive => {
+            timeKeeping.worker.accepted(projectHash, workerAddress).then(workerActive => {
                 inputs[index].loading = false
                 inputs[index].invalid = !workerActive
                 const project = (findInput(inputs, 'projectHash').options
@@ -283,13 +344,13 @@ export default class TimeKeepingForm extends ReactiveComponent {
         }
         const queueProps = {
             type: QUEUE_TYPES.BLOCKCHAIN,
-            func: 'timeKeeping_invitation_add',
+            func: 'timeKeeping_worker_add',
             args: [projectHash, address, address],
             title: texts.inviteMyself,
             description: `${wordsCap.project}: ${projectName}`,
             next: {
                 type: QUEUE_TYPES.BLOCKCHAIN,
-                func: 'timeKeeping_invitation_accept',
+                func: 'timeKeeping_worker_accept',
                 args: [projectHash, address, true],
                 title: texts.acceptingSelfInvite
             }
@@ -356,7 +417,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         const duraIn = inputs.find(x => x.name === 'duration')
         duraIn.readOnly = true
         duraIn.message = null
-        values.address = getSelected().address
+        values.workerAddress = getSelected().address
         values.blockCount = durationToBlockCount(values.duration)
         values.blockStart = blockNumber - values.blockCount
         values.stopped = false
@@ -393,68 +454,16 @@ export default class TimeKeepingForm extends ReactiveComponent {
 
     handleSubmit() {
         const { inputs, values } = this.state
-        const { onSubmit } = this.props
-        const { address, blockCount, blockEnd, blockStart, duration, projectHash } = values
+        const { projectHash } = this.props
         const projectOption = findInput(inputs, 'projectHash').options
             .find(option => option.value === projectHash) || {}
         const projectName = projectOption.text
-        const queueProps = {
-            type: QUEUE_TYPES.BLOCKCHAIN,
-            func: 'timeKeeping_record_add',
-            args: [address, projectHash, NEW_RECORD_HASH, blockCount, 0, blockStart, blockEnd],
-            title: texts.tkNewRecord,
-            description: `${wordsCap.project}: ${projectName} | ${wordsCap.duration}: ${values.duration}`,
-            then: success => {
-                this.setState({
-                    message: {
-                        content: success ? texts.recordAddedSuccessfully : texts.transactionFailed,
-                        header: success ? wordsCap.success : wordsCap.error,
-                        showIcon: true,
-                        status: success ? 'success' : 'error',
-                    },
-                })
-                success & this.handleReset()
-                isFn(onSubmit) && onSubmit(success, values)
-            },
-        }
-
-        const message = {
-            content: texts.requestQueuedMsg,
-            header: texts.addedToQueue,
-            status: 'success',
-            showIcon: true
-        }
-
-        this.confirmId = showForm(FormBuilder, {
-            header: `${wordsCap.submit}?`,
-            inputs: [
-                [wordsCap.submit, getAddressName(address)],
-                [wordsCap.project, projectName],
-                [wordsCap.duration, duration],
-                [texts.blockCount, blockCount],
-            ].map(x => ({
-                readOnly: true,
-                label: x[0],
-                name: x[0],
-                type: 'text',
-                value: x[1]
-            })),
-            onSubmit: () => {
-                closeModal(this.confirmId)
-                // send task to queue service
-                addToQueue(queueProps)
-                this.setState({ message })
-            },
-            size: 'tiny',
-            subheader: texts.submitConfirmationMsg,
-            submitText: wordsCap.proceed,
-            closeText: texts.goBack,
-        })
+        handleSubmitTime.call(this, NEW_RECORD_HASH, projectName, values)
     }
 
     saveValues(currentBlockNumber, newDuration) {
         const { blockNumber, inputs, values } = this.state
-        const { blockCount, blockEnd, blockStart, inprogress, manualEntry } = values
+        const { blockEnd, blockStart, inprogress } = values
 
         const duraIn = inputs.find(x => x.name === 'duration')
         currentBlockNumber = currentBlockNumber || blockNumber
@@ -483,7 +492,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         const done = stopped || manualEntry
         const duraIn = inputs.find(x => x.name === 'duration')
         const btnStyle = { width: 'calc( 50% - 12px )', margin: 3 }
-        const doneItems = ['address', 'reset']
+        const doneItems = ['workerAddress', 'reset']
         inputs.filter(x => doneItems.indexOf(x.name) >= 0).forEach(x => x.hidden = !done)
         inputs.find(x => x.name === 'projectHash').disabled = inprogress
         // Show resume item when timer is stopped
@@ -503,7 +512,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         }
 
         // set wallet options
-        inputs.find(x => x.name === 'address')
+        inputs.find(x => x.name === 'workerAddress')
             .options = getIdentities().map((wallet, key) => ({
                 key,
                 text: wallet.name,
@@ -583,7 +592,7 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
 
         this.state = {
             message: {},
-            values: props.entry || {},
+            values: props.values || {},
             inputs: [
                 {
                     label: 'Duration',
@@ -595,40 +604,45 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
             ]
         }
 
-        fillValues(this.state.inputs, props.entry, true)
+        fillValues(this.state.inputs, props.values, true)
     }
 
-    handleSubmit(e, values) {
-        const { entry, hash, onSubmit } = this.props
-        values = objCopy(values, entry, true)
-        const queueProps = {
-            type: QUEUE_TYPES.CHATCLIENT,
-            args: [
-                hash,
-                objClean(values, validKeys),
-                (err, entry) => {
-                    this.setState({
-                        message: {
-                            content: err || 'Entry updated successfully',
-                            status: err ? 'error' : 'success',
-                            showIcon: true
-                        },
-                    })
-                    isFn(onSubmit) && onSubmit(!err, entry)
-                }
-            ],
-            func: 'timeKeepingEntry',
-            title: 'Time Keeping - Update Entry',
-            description: 'Hash: ' + hash + ' | Duration: ' + values.duration
-        }
-        const message = {
-            content: 'Request has been added to queue. You will be notified of the progress shortly.',
-            header: 'Action queued',
-            status: 'success',
-            showIcon: true
-        }
-        addToQueue(queueProps)
-        this.setState({ message })
+    handleSubmit(e, { duration }) {
+        const { hash, projectName, values } = this.props
+        const blockCount = durationToBlockCount(duration)
+        const blockEnd = values.blockStart + blockCount
+        handleSubmitTime.call(this, hash, projectName, { ...values, blockCount, blockEnd, duration })
+
+        // const { values: originalValues, hash, onSubmit } = this.props
+        // values = { ...originalValues, ...values }
+        // const queueProps = {
+        //     type: QUEUE_TYPES.BLOCKCHAIN,
+        //     args: [
+        //         hash,
+        //         objClean(values, validKeys),
+        //         (err, entry) => {
+        //             this.setState({
+        //                 message: {
+        //                     content: err || 'Entry updated successfully',
+        //                     status: err ? 'error' : 'success',
+        //                     showIcon: true
+        //                 },
+        //             })
+        //             isFn(onSubmit) && onSubmit(!err, entry)
+        //         }
+        //     ],
+        //     func: 'timeKeepingEntry',
+        //     title: 'Time Keeping - Update Entry',
+        //     description: 'Hash: ' + hash + ' | Duration: ' + values.duration
+        // }
+        // const message = {
+        //     content: 'Request has been added to queue. You will be notified of the progress shortly.',
+        //     header: 'Action queued',
+        //     status: 'success',
+        //     showIcon: true
+        // }
+        // addToQueue(queueProps)
+        // this.setState({ message })
     }
 
     render() {
@@ -643,12 +657,16 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
 
 TimeKeepingUpdateForm.propTypes = {
     // record hash
-    hash: PropTypes.string,
-    entry: PropTypes.shape({
-        address: PropTypes.string.isRequired,
+    hash: PropTypes.string.isRequired,
+    projectName: PropTypes.string.isRequired,
+    // record values
+    values: PropTypes.shape({
+        blockCount: PropTypes.number.isRequired,
         blockEnd: PropTypes.number.isRequired,
         blockStart: PropTypes.number.isRequired,
+        duration: PropTypes.string.isRequired,
         projectHash: PropTypes.string.isRequired,
+        workerAddress: PropTypes.string.isRequired,
     }).isRequired
 }
 

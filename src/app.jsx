@@ -187,7 +187,7 @@ export class App extends ReactiveComponent {
 
 const sidebarItems = [
 	{
-		active: true,
+		active: false,
 		content: <GettingStarted />,
 		headerDividerHidden: true,
 		icon: "play circle outline",
@@ -249,13 +249,13 @@ const sidebarItems = [
 		title: "Identities",
 		subHeader: "Manage your Identities",
 		subHeaderDetails:
-		"In Totem, you can create multiple identites to suit your needs. Identities are private, but you can choose which ones you share \n" +
-		"There is a default identity which is created for you when you start Totem for the first time. This Identity is your master backup key \n" +
-		"and you must not lose this. It allows you to backup all your data and also to recover the data on different devices. \n" +
-		" The other identities you create are used to manage personal or business activities. Each Identity has it's own set of accounting modules, \n" +
-		"so this means that you can only see the activities of one identity at a time. You can think of an Identity like running a company, grouping things together" +
-		"You can give each shared Identity a name, add tags, and define it any way you want, and you can associate it with partners,  \n" +
-		"Once a identity is stored in this list you can use it all over Totem. To find out more, watch the video!",
+			"In Totem, you can create multiple identites to suit your needs. Identities are private, but you can choose which ones you share \n" +
+			"There is a default identity which is created for you when you start Totem for the first time. This Identity is your master backup key \n" +
+			"and you must not lose this. It allows you to backup all your data and also to recover the data on different devices. \n" +
+			" The other identities you create are used to manage personal or business activities. Each Identity has it's own set of accounting modules, \n" +
+			"so this means that you can only see the activities of one identity at a time. You can think of an Identity like running a company, grouping things together" +
+			"You can give each shared Identity a name, add tags, and define it any way you want, and you can associate it with partners,  \n" +
+			"Once a identity is stored in this list you can use it all over Totem. To find out more, watch the video!",
 		active: false,
 		content: <IdentityList />
 	},

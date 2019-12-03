@@ -154,7 +154,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
         this.setState({ inputs })
 
         // check if partner is already invited or accepted
-        partnerIn.loading && timeKeeping.invitation.status(projectHash, workerAddress).then(accepted => {
+        partnerIn.loading && timeKeeping.worker.accepted(projectHash, workerAddress).then(accepted => {
             partnerIn.loading = false
             if (accepted) {
                 partnerIn.invalid = true

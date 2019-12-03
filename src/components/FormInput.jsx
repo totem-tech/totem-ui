@@ -114,7 +114,7 @@ export default class FormInput extends ReactiveComponent {
 
     render() {
         const {
-            error, hidden, inline, inlineLabel, label, message: externalMessage,
+            bond, error, hidden, inline, inlineLabel, label, message: externalMessage,
             required, styleContainer, type, useInput, width
         } = this.props
         if (hidden) return ''
@@ -148,7 +148,9 @@ export default class FormInput extends ReactiveComponent {
             case 'checkbox-group':
             case 'radio-group':
                 attrs.inline = inline
-                inputEl = <CheckboxGroup {...attrs} radio={typeLC === 'radio-group' ? true : attrs.radio} />
+                attrs.bond = bond
+                attrs.radio = typeLC === 'radio-group' ? true : attrs.radio
+                inputEl = <CheckboxGroup {...attrs} />
                 break;
             case 'dropdown':
                 inputEl = <Dropdown {...attrs} />

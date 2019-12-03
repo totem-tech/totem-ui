@@ -134,9 +134,9 @@ export default class NotificationDropdown extends ReactiveComponent {
                                     <div>
                                         <b>@{senderId}</b> invited you to start booking time on project:
                                         <b> {data.projectName}</b>
-                                        <ButtonAcceptOrReject 
+                                        <ButtonAcceptOrReject
                                             onClick={accepted => confirm({
-                                                onConfirm: ()=> handleTKInvitation(
+                                                onConfirm: () => handleTKInvitation(
                                                     senderId,
                                                     data.projectHash,
                                                     data.projectName,
@@ -146,7 +146,7 @@ export default class NotificationDropdown extends ReactiveComponent {
                                                 ),
                                                 size: 'mini',
                                             }
-                                        )} />
+                                            )} />
                                     </div>
                                 )
                                 break
@@ -206,7 +206,7 @@ export const handleTKInvitation = (
 
     addToQueue({
         type: QUEUE_TYPES.BLOCKCHAIN,
-        func: 'timeKeeping_invitation_accept',
+        func: 'timeKeeping_worker_accept',
         args: [projectHash, workerAddress, accepted],
         title: `TimeKeeping - ${accepted ? 'accept' : 'reject'} invitation`,
         description: `Project: ${projectName}`,

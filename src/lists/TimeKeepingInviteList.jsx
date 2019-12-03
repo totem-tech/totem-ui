@@ -1,13 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
-import { showForm } from '../services/modal'
+import { Button } from 'semantic-ui-react'
 import { DataTable } from '../components/ListFactory'
+import { textCapitalize } from '../utils/utils'
 import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
+import PartnerForm from '../forms/Partner'
+import { showForm } from '../services/modal'
 import { selectedAddressBond } from '../services/identity'
 import timeKeeping, { getProjectWorkers } from '../services/timeKeeping'
 import { UserID } from '../components/buttons'
-import { textCapitalize } from '../utils/utils'
 
 const words = {
     accepted: 'accepted',
@@ -27,21 +29,21 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
     constructor(props) {
         super(props)
 
-        this.loadInvites = this.loadInvites.bind(this)
+        this.loadWorkers = this.loadWorkers.bind(this)
         this.state = {
             listProps: {
                 columns: [
                     { key: '_userId', title: texts.userId },
-                    { key: 'addressName', title: texts.workerIdentity },
+                    { key: 'name', title: texts.workerIdentity },
                     { key: '_status', textAlign: 'center', title: wordsCap.status },
                 ],
                 data: [],
-                searchExtraKeys: ['address', 'userId'],
                 rowProps: ({ accepted }) => ({ positive: accepted }),
+                searchExtraKeys: ['address', 'userId'],
                 topLeftMenu: [{
                     content: wordsCap.invite,
                     onClick: () => showForm(TimeKeepingInviteForm, {
-                        onSubmit: success => success && this.loadInvites(),
+                        onSubmit: success => success && this.loadWorkers(),
                         values: { projectHash: this.props.projectHash }
                     })
                 }]
@@ -51,12 +53,12 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
 
     componentWillMount() {
         const { projectHash } = this.props
-        this.tieIdAddress = selectedAddressBond.tie(this.loadInvites)
+        this.tieIdAddress = selectedAddressBond.tie(this.loadWorkers)
 
         if (!projectHash) return
         this.projectHash = projectHash
-        this.bond = timeKeeping.invitation.listByProject(projectHash)
-        this.tieId = this.bond.tie(this.loadInvites)
+        this.bond = timeKeeping.worker.listWorkers(projectHash)
+        this.tieId = this.bond.tie(this.loadWorkers)
     }
 
     componentWillUnmount() {
@@ -69,12 +71,12 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
         if (this.projectHash === projectHash) return
         this.projectHash = projectHash
         this.bond && this.bond.untie(this.tieId)
-        this.bond = !projectHash ? null : timeKeeping.invitation.listByProject(projectHash)
-        this.tieId = this.bond.tie(this.loadInvites)
-        !this.bond && this.loadInvites()
+        this.bond = !projectHash ? null : timeKeeping.worker.listWorkers(projectHash)
+        this.tieId = this.bond.tie(this.loadWorkers)
+        !this.bond && this.loadWorkers()
     }
 
-    loadInvites() {
+    loadWorkers() {
         const { projectHash } = this.props
         const { listProps } = this.state
         if (!projectHash) {
@@ -82,14 +84,19 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
             return this.setState({ listProps })
         }
 
-        getProjectWorkers(projectHash).then(invites => {
-            Array.from(invites).forEach(([_, invite]) => {
-                const { accepted, userId } = invite
-                console.log({ userId })
+        getProjectWorkers(projectHash).then(workers => {
+            Array.from(workers).forEach(([_, invite]) => {
+                const { accepted, address, name, userId } = invite
                 invite._status = accepted === true ? words.accepted : words.invited
                 invite._userId = !userId ? texts.unknownUser : <UserID {...{ userId }} />
+                invite.name = name || (
+                    <Button
+                        content='Add Partner'
+                        onClick={() => showForm(PartnerForm, { values: { address } })}
+                    />
+                )
             })
-            listProps.data = invites
+            listProps.data = workers
             this.setState({ listProps })
         })
     }
