@@ -72,8 +72,7 @@ export const getProjects = (_forceUpdate = false) => {
                 _config.updateInProgress = false
                 _config.firstAttempt = false
                 cacheStorage.setAll(invitedProjects)
-                const joined = mapJoin(userProjects, invitedProjects)
-                return joined
+                return mapJoin(userProjects, invitedProjects)
             })
         })
     })
@@ -265,15 +264,21 @@ export const record = {
     list: workerAddress => runtime.timekeeping.workerTimeRecordsHashList(ss58Decode(workerAddress)),
     // list of all record hashes in a project 
     listByProject: projectHash => runtime.timekeeping.projectTimeRecordsHashList(hashToBytes(projectHash)),
+    // workers total booked time in blocks accross all projects
+    totalBlocks: address => runtime.timekeeping.totalBlocksPerAddress(ss58Decode(address)),
+    // workers total booked time in blocks on a specific project
+    totalBlocksByProject: (address, projectHash) => runtime.timekeeping.totalBlocksPerProjectPerAddress(
+        ss58Decode(address),
+        hashToBytes(projectHash)
+    )
 }
 
 const timeKeeping = {
     worker,
     record,
-    // check if worker is banned. undefined: not banned, object: banned
-    workerBanStatus: (projectHash, address) => runtime.timekeeping.projectWorkersBanList(
-        hashToBytes(projectHash),
-        validateAddress(address)
-    ),
+    project: {
+        firstSeen: projectHash => runtime.timekeeping.projectFirstSeen(hashToBytes(projectHash)),
+        totalBlocks: projectHash => runtime.timekeeping.totalBlocksPerProject(hashToBytes(projectHash)),
+    },
 }
 export default timeKeeping

@@ -290,7 +290,11 @@ export default class TimeKeepingForm extends ReactiveComponent {
                                 compact
                                 size="tiny"
                                 content={wordsCap.yes}
-                                onClick={() => this.inviteSelf(projectHash, project.name)}
+                                onClick={() => {
+                                    const { name } = (findInput(inputs, 'projectHash').options
+                                        .find(option => option.value === projectHash) || {}).project || {}
+                                    this.inviteSelf(projectHash, name)
+                                }}
                             />
                         </p>
                     )}
@@ -352,7 +356,16 @@ export default class TimeKeepingForm extends ReactiveComponent {
                 type: QUEUE_TYPES.BLOCKCHAIN,
                 func: 'timeKeeping_worker_accept',
                 args: [projectHash, address, true],
-                title: texts.acceptingSelfInvite
+                title: texts.acceptingSelfInvite,
+                then: success => {
+                    if (!success) return
+                    const { inputs } = this.state
+                    const projectIn = findInput(inputs, 'projectHash')
+                    projectIn.invalid = false
+                    projectIn.message = null
+                    projectIn.bond.changed(projectHash)
+                    this.setState({ inputs, message: null })
+                }
             }
         }
 
@@ -612,37 +625,6 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
         const blockCount = durationToBlockCount(duration)
         const blockEnd = values.blockStart + blockCount
         handleSubmitTime.call(this, hash, projectName, { ...values, blockCount, blockEnd, duration })
-
-        // const { values: originalValues, hash, onSubmit } = this.props
-        // values = { ...originalValues, ...values }
-        // const queueProps = {
-        //     type: QUEUE_TYPES.BLOCKCHAIN,
-        //     args: [
-        //         hash,
-        //         objClean(values, validKeys),
-        //         (err, entry) => {
-        //             this.setState({
-        //                 message: {
-        //                     content: err || 'Entry updated successfully',
-        //                     status: err ? 'error' : 'success',
-        //                     showIcon: true
-        //                 },
-        //             })
-        //             isFn(onSubmit) && onSubmit(!err, entry)
-        //         }
-        //     ],
-        //     func: 'timeKeepingEntry',
-        //     title: 'Time Keeping - Update Entry',
-        //     description: 'Hash: ' + hash + ' | Duration: ' + values.duration
-        // }
-        // const message = {
-        //     content: 'Request has been added to queue. You will be notified of the progress shortly.',
-        //     header: 'Action queued',
-        //     status: 'success',
-        //     showIcon: true
-        // }
-        // addToQueue(queueProps)
-        // this.setState({ message })
     }
 
     render() {

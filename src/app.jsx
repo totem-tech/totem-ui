@@ -187,7 +187,7 @@ export class App extends ReactiveComponent {
 
 const sidebarItems = [
 	{
-		active: false,
+		active: true,
 		content: <GettingStarted />,
 		headerDividerHidden: true,
 		icon: "play circle outline",
@@ -229,7 +229,7 @@ const sidebarItems = [
 			"needing to do anything else."
 	},
 	{
-		active: true,
+		active: false,
 		content: <TimeKeepingView />,
 		icon: "clock outline",
 		title: "Timekeeping",

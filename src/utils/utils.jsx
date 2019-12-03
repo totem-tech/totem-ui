@@ -462,7 +462,6 @@ export const icons = {
 export const newMessage = message => {
 	if (!isObj(message) || (!message.content && !message.list && !message.header)) return
 	let { icon, showIcon, status, style } = message
-	status = status
 	icon = React.isValidElement(icon) ? icon.props : icon
 	if (showIcon) {
 		icon = icons[status]

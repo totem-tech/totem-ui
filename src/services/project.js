@@ -2,11 +2,13 @@ import DataStorage from '../utils/DataStorage'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
 import { calls, post, runtime } from 'oo7-substrate'
-import { getSelected, selectedAddressBond } from './identity'
+import identities, { getSelected, selectedAddressBond } from './identity'
 import { hashToBytes, validateAddress, ss58Decode } from '../utils/convert'
 import client from './ChatClient'
 import { hashToStr } from '../utils/convert'
 import { arrUnique, isBond, isUint8Arr } from '../utils/utils'
+import timeKeeping from './timeKeeping'
+import partners from './partners'
 
 const CACHE_PREFIX = 'totem__cache_projects_'
 const cacheStorage = new DataStorage(undefined, true)
@@ -28,10 +30,23 @@ export const fetchProjects = (projectHashesOrBond = []) => new Promise((resolve,
                 return isUint8Arr(hash) ? hashToStr(hash) : hash
             })).filter(hash => !['0x00'].includes(hash)) // ingore any invalid hash
             if (uniqueHashes.length === 0) return resolve(new Map())
-            client.projectsByHashes(uniqueHashes, (err, projects = new Map(), unknownHashes = []) => {
-                if (err) return reject(err)
-                unknownHashes.forEach(hash => projects.set(hash, {}))
-                resolve(projects)
+            const firstSeenBond = Bond.all(uniqueHashes.map(h => timeKeeping.project.firstSeen(h)))
+            const totalBlocksBond = Bond.all(uniqueHashes.map(h => timeKeeping.project.totalBlocks(h)))
+
+            Bond.all([firstSeenBond, totalBlocksBond]).then(([arFristSeen, arTotalBlocks]) => {
+                client.projectsByHashes(uniqueHashes, (err, projects = new Map(), unknownHashes = []) => {
+                    if (err) return reject(err)
+                    unknownHashes.forEach(hash => projects.set(hash, {}))
+                    Array.from(projects).forEach(([hash, project]) => {
+                        const index = uniqueHashes.indexOf(hash)
+                        const { ownerAddress } = project
+                        project.firstSeen = arFristSeen[index]
+                        project.totalBlocks = arTotalBlocks[index]
+                        const { name } = identities.get(ownerAddress) || partners.get(ownerAddress) || {}
+                        project.ownerName = name
+                    })
+                    resolve(projects)
+                })
             })
         }
         isBond(projectHashesOrBond) ? projectHashesOrBond.then(process) : process(projectHashesOrBond)
