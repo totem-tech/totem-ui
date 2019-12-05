@@ -76,7 +76,7 @@ export default class IdentityDetails extends ReactiveComponent {
                     inlineLabel: {
                         icon: { className: 'no-margin', name: 'eye' },
                         style: { cursor: 'pointer' },
-                        title: `${wordsCapitalized.show} ${text.recoveryPhrase}`,
+                        title: `${wordsCapitalized.show} ${texts.recoveryPhrase}`,
                         onClick: () => {
                             const toggle = () => {
                                 const { inputs } = this.state
