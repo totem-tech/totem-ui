@@ -131,7 +131,7 @@ export default class GetingStarted extends ReactiveComponent {
 					</div>
 					<h3>Further essential steps:</h3>
 					<h5>What am I looking at? Watch the video:</h5>
-					<div style={{height: 225, width:400}}>
+					<div style={{ height: 225, width: 400, maxWidth: '100%' }}>
 						<Embed
 							aspectRatio='16:9'
 							id='1'
@@ -139,7 +139,7 @@ export default class GetingStarted extends ReactiveComponent {
 						/>
 					</div>
 					<h5>Backup your account. Watch the video:</h5>
-					<div style={{height: 225, width:400}}>
+					<div style={{ height: 225, width: 400, maxWidth: '100%' }}>
 						<Embed
 							aspectRatio='16:9'
 							id='1'
