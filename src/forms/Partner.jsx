@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { ss58Decode } from '../utils/convert'
-import { arrSort, deferred, isFn, isObj } from '../utils/utils'
+import { arrSort, deferred, isFn, isObj, textCapitalize } from '../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import addressbook from '../services/partners'
 import client from '../services/ChatClient'
@@ -11,6 +11,12 @@ import { showForm } from '../services/modal'
 import identityService from '../services/identity'
 import CompanyForm from './Company'
 import { getAddressName } from '../components/ProjectDropdown'
+
+const words = {
+    use: 'use',
+}
+const wordsCap = textCapitalize(words)
+const texts = {}
 
 const dropDownCustomSearch = (optionKeys = ['text']) => (options, searchQuery) => {
     if (!options || options.length === 0) return []
@@ -98,7 +104,7 @@ class Partner extends ReactiveComponent {
                     placeholder: 'Enter a name for this partner',
                     required: true,
                     type: 'text',
-                    validate: this.validateName,
+                    validate: this.validateName.bind(this),
                     value: '',
                 },
                 {
@@ -144,6 +150,15 @@ class Partner extends ReactiveComponent {
                     value: values.visibility || 'private'
                 },
                 {
+                    action: !props.suggestUserId || values.userId ? undefined : {
+                        content: `${wordsCap.use} @${props.suggestUserId}`,
+                        icon: 'arrow left',
+                        onClick: (e) => {
+                            e.preventDefault()
+                            findInput(this.state.inputs, 'userId').bond.changed(props.suggestUserId)
+                        },
+                    },
+                    bond: new Bond(),
                     icon: 'at',
                     iconPosition: 'left',
                     label: 'User ID for this partner',
@@ -295,8 +310,8 @@ class Partner extends ReactiveComponent {
         addCompany && showForm(CompanyForm, {
             message: {
                 header: `Partner ${this.doUpdate ? 'updated' : 'added'} successfully`,
-                content: `You have chosen to make this partner public. Please ensure you  
-                    fill in the correct details. Click cancel to abort making public.`,
+                content: `You have chosen to make this partner public.Please ensure you  
+                    fill in the correct details.Click cancel to abort making public.`,
                 showIcon: true,
                 status: 'success'
             },
@@ -354,6 +369,8 @@ Partner.propTypes = {
     open: PropTypes.bool,
     size: PropTypes.string,
     subheader: PropTypes.string,
+    // only when adding new partner or no user id saved with existing partner
+    suggestUserId: PropTypes.string,
     // values to be prefilled into inputs
     values: PropTypes.object,
 }

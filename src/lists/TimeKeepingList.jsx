@@ -60,8 +60,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     constructor(props) {
         super(props)
 
-        this.getRecords = this.getRecords.bind(this)// deferred(this.getRecords, 150, this)
-        this.updateBond = deferred(this.updateBond, 300, this)
+        this.getRecords = deferred(this.getRecords, 150, this)
         this.state = {
             columns: [
                 // { key: '_projectName', title: wordsCap.project },
@@ -139,17 +138,24 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         ])
 
         this.tieId = this.bond.tie(() => this.getRecords())
+        this.propsStr = JSON.stringify(this.props)
     }
 
     componentWillUnmount() {
         this.bond && this.bond.untie(this.tieId)
     }
 
-    updateBond() {
+    componentWillUpdate() {
         const { projectHash } = this.props
-        this.bond && this.bond.untie(this.tieId)
+        const propsStr = JSON.stringify(this.props)
+        if (this.propsStr === propsStr || !projectHash) return
 
-        if (this.projectHash === projectHash || !projectHash) return
+        this.bond && this.bond.untie(this.tieId)
+        this.propsStr = propsStr
+        // project hash hasn't changed but other props changed
+        if (this.projectHash !== projectHash) return this.getRecords()
+        this.projectHash = projectHash
+
         this.bond = Bond.all([
             identities.bond,
             partners.bond,
@@ -197,12 +203,15 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     }
 
     getRecords() {
-        const { projectHash, ownerAddress } = this.props
+        const { manage, ownerAddress, projectHash } = this.props
         if (!projectHash) return
 
         getTimeRecords(projectHash, ownerAddress).then(records => {
-            Array.from(records).forEach(([_, record]) => {
+            const { address } = identities.getSelected()
+            Array.from(records).forEach(([hash, record]) => {
                 const { locked, submit_status, workerAddress, workerName } = record
+
+                if (!manage && address !== workerAddress) return records.delete(hash)
                 record._workerName = workerName || (
                     <Button
                         content='Add Partner'
@@ -216,78 +225,13 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     }
 
     handleApprove(hash, approve = false) {
-        const { data } = this.state
-        const record = data.get(hash)
-        if (record.approved || record.approved === approve) return
-        //use blockhain only
-        // const queueProps = {getRecords
-        //     type: QUEUE_TYPES.CHATCLIENT,
-        //     func: 'timeKeepingEntryApproval',
-        //     args: [hash, approve, (err) => !err && this.getRecords()],
-        //     title: `${texts.timeKeeping} - ${wordsCap.approve}`,
-        // }
-        // addToQueue(queueProps)
+        // const { data } = this.state
+        // const record = data.get(hash)
+        // if (record.approved || record.approved === approve) return
     }
 
     handleBan(selectedHashes) {
-        const { data } = this.state
-        let addresses = arrUnique(selectedHashes.map(key => data.get(key).workerAddress))
-            // filter out user identities to prevent accidental self-banning
-            .filter(address => !identities.find(address))
-        if (addresses.length === 0) return confirm({
-            cancelButton: null,
-            content: texts.cannotBanOwnIdentity,
-            header: texts.uhOh,
-            size: 'tiny',
-        })
 
-        addresses = addresses.filter(address => (this.bannedAddresses || []).indexOf(address) === -1)
-        if (addresses.length === 0) return confirm({
-            cancelButton: null,
-            content: texts.selectedIdentitiesAlreadyBanned,
-            header: texts.uhOh,
-            size: 'tiny',
-        })
-
-        // use blockchain
-        // const queueProps = {
-        //     type: QUEUE_TYPES.CHATCLIENT,
-        //     func: 'projectTimeKeepingBan',
-        //     args: [projectHash, addresses, true],
-        //     title: `${wordsCap.project} - ${texts.banUser}`,
-        //     description: `${texts.banUsers}: ${addresses.length}`,
-        //     // When successfull retrieve the updated project with banned addresses and update record list
-        //     next: {
-        //         type: QUEUE_TYPES.CHATCLIENT,
-        //         func: 'project',
-        //         args: [projectHash, null, null, (err, project) => {
-        //             if (err) return
-        //             this.setState({ project })
-        //             setTimeout(this.getRecords)
-        //         }],
-        //         // No toast required for this child-task
-        //         silent: true
-        //     }
-        // }
-
-        // confirm({
-        //     header: texts.banUsers,
-        //     onConfirm: () => addToQueue(queueProps),
-        //     content: (
-        //         <div>
-        //             {texts.timeKeepingBanWarning} - "{project.name} :"
-        //             <pre style={{ backgroundColor: 'gray', color: 'blue', padding: 15 }}>
-        //                 {addresses.join('\n')}
-        //             </pre>
-
-        //             {texts.whatDoesThisMean}
-        //             <ul>
-        //                 <li>{texts.whatDoesThisMeanItemOne}</li>
-        //                 <li>{texts.whatDoesThisMeanItemTwo}</li>
-        //             </ul>
-        //         </div>
-        //     ),
-        // })
     }
 
     handleRowSelect(selectedKeys) {
@@ -303,11 +247,6 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     render() {
         const { isOwner, manage, projectHash } = this.props
         const listProps = this.state
-        const propsStr = JSON.stringify(this.props)
-        if (this.propsStr !== propsStr) {
-            this.propsStr = propsStr
-            setTimeout(() => this.updateBond())
-        }
 
         const denyManage = manage && !isOwner
         listProps.selectable = manage && isOwner

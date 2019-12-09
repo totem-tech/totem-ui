@@ -26,19 +26,6 @@ const activeStatusCodes = [0, 1]
 const DURATION_ZERO = '00:00:00'
 const blockCountToDuration = blockCount => secondsToDuration(blockCount * BLOCK_DURATION_SECONDS)
 const durationToBlockCount = duration => BLOCK_DURATION_REGEX.test(duration) ? durationToSeconds(duration) / BLOCK_DURATION_SECONDS : 0
-const validKeys = arrReadOnly([
-    'hash',
-    'address',
-    'approved',
-    'blockStart',
-    'blockEnd',
-    'blockCount',
-    'duration',
-    'projectHash',
-    'totalAmount',
-    'tsCreated',
-    'tsUpdated',
-], true)
 const words = {
     duration: 'duration',
     error: 'error',
@@ -73,6 +60,7 @@ const texts = {
     inviteMyself: 'Time Keeping - inviting myself',
     manuallyEnterDuration: 'Manually enter duration',
     noContinueTimer: 'No, continue timer',
+    noProjectsMsg: 'Create a new project or ask to be invited',
     recordSubmittedSuccessfully: 'Time record submitted successfully',
     requestQueuedMsg: 'Request has been added to queue. You will be notified of the progress shortly.',
     resetTimer: 'Reset Timer',
@@ -247,12 +235,15 @@ export default class TimeKeepingForm extends ReactiveComponent {
         })
         this.tieIdProjects = getProjectsBond.tie(() => getProjects().then(projects => {
             const { inputs, values } = this.state
-            findInput(inputs, 'projectHash').options = Array.from(projects).map(([hash, project]) => ({
+            const projectIn = findInput(inputs, 'projectHash')
+            const options = Array.from(projects).map(([hash, project]) => ({
                 key: hash,
                 project,
                 text: project.name || wordsCap.unknown,
                 value: hash,
             }))
+            projectIn.options = options
+            projectIn.noResultsMessage = options.length === 0 ? texts.noProjectsMsg : undefined
             // restore saved values
             if (!this.prefillDone) {
                 fillValues(inputs, values, true)

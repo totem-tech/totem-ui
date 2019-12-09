@@ -1,9 +1,25 @@
 import React from 'react'
+import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
+import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
+import { textCapitalize } from '../utils/utils'
 import ListFactory from '../components/ListFactory'
 import client from '../services/ChatClient'
-import identityService from '../services/identity'
-import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
+import { getSelected, selectedAddressBond } from '../services/identity'
+import timeKeeping, { getProjects } from '../services/timeKeeping'
+
+const words = {
+    project: 'project',
+    percentage: 'percentage',
+}
+const wordsCap = textCapitalize(words)        // const { address } = getSelected()
+
+const texts = {
+    noTimeRecords: 'No time records found for selected identity',
+    totalBlocks: 'Total Blocks',
+    totalHours: 'Total Hours',
+
+}
 
 export default class TimeKeepingSummary extends ReactiveComponent {
     constructor(props) {
@@ -12,7 +28,7 @@ export default class TimeKeepingSummary extends ReactiveComponent {
         this.state = {
             data: [],
             emptyMessage: {
-                content: 'You have no record of any time bookings',
+                content: texts.noTimeRecords,
                 status: 'warning',
             },
             searchable: false,
@@ -20,69 +36,46 @@ export default class TimeKeepingSummary extends ReactiveComponent {
             columns: [
                 {
                     key: 'name',
-                    title: 'Project'
+                    title: wordsCap.project,
                 },
                 {
                     key: 'totalHours',
                     textAlign: 'center',
-                    title: 'Total Hours',
+                    title: texts.totalHours,
                 },
                 {
                     key: 'totalBlocks',
                     textAlign: 'center',
-                    title: 'Total Blocks',
+                    title: texts.totalBlocks,
                 },
                 {
                     key: 'percentage',
                     textAlign: 'center',
-                    title: 'Percentage',
+                    title: wordsCap.percentage,
                 }
             ]
         }
-        setTimeout(() => this.getSummary())
     }
 
     componentWillMount() {
-        this.tieId = identityService.selectedAddressBond.tie(() => this.getSummary())
+        this.tieId = selectedAddressBond.tie(() => this.getSummary())
     }
 
     componentWillUnmount() {
-        identityService.selectedAddressBond.untie(this.tieId)
+        selectedAddressBond.untie(this.tieId)
     }
 
     getSummary() {
-        const { address } = identityService.getSelected()
-        client.timeKeepingEntrySearch({ address }, true, true, false, (err, entries) => {
-            const entriesArr = Array.from(entries)
-            const userTotalBlocks = entriesArr.reduce((sum, [_, entry]) => sum + entry.blockCount, 0)
-            const projectHashes = Object.keys(entriesArr.reduce((hashes, [_, entry]) => {
-                hashes[entry.projectHash] = 0
-                return hashes
-            }, {}))
-            const data = projectHashes.map(hash => {
-                const totalBlocks = entriesArr.filter(([_, entry]) => entry.projectHash === hash)
-                    .reduce((totalBlocks, [_, entry]) => totalBlocks + entry.blockCount, 0)
-                return {
-                    hash,
-                    name: '',
-                    totalHours: secondsToDuration(totalBlocks * BLOCK_DURATION_SECONDS),
-                    totalBlocks,
-                    percentage: ((totalBlocks / userTotalBlocks) * 100).toFixed(2) + '%'
-                }
-            }) || []
-            this.setState({ data })
-            setTimeout(() => this.getProjectNames())
-        })
-    }
-
-    getProjectNames() {
-        const { data } = this.state
-        data.forEach(row => {
-            client.project(row.hash, null, null, (err, { name }) => {
-                row.name = name || ''
-                this.setState({ data })
+        const { address } = getSelected()
+        getProjects().then(projects => {
+            const hashes = Array.from(projects).map(([hash]) => hash)
+            const bonds = hashes.map(hash => timeKeeping.record.totalBlocksByProject(address, hash))
+            Bond.promise(bonds).then(arrTotalBlocks => {
+                console.log({ hashes, arrTotalBlocks })
             })
         })
+
+        this.setState({ emptyMessage: { header: 'To be implemented' } })
     }
 
     render() {

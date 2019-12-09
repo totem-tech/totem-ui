@@ -193,10 +193,11 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
 
         const queueProps = {
             type: QUEUE_TYPES.BLOCKCHAIN,
-            func: 'timeKeeping_invitation_add',
+            func: 'timeKeeping_worker_add',
             args: [projectHash, ownerAddress, workerAddress],
             title: 'Time Keeping - Invite Worker',
             description: 'Worker',
+            then: console.log,
             next: {
                 type: QUEUE_TYPES.CHATCLIENT,
                 func: 'notify',

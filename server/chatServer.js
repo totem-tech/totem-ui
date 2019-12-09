@@ -15,12 +15,6 @@ import {
     handleProjectsSearch
 } from './projects'
 import {
-    handleTimeKeepingEntry,
-    handleTimeKeepingEntryApproval,
-    handleTimeKeepingEntrySearch,
-    handleTimeKeepingInvitations,
-} from './timeKeeping'
-import {
     handleDisconnect,
     handleIdExists,
     handleLogin,
@@ -64,12 +58,6 @@ export const initChatServer = (httpsOptions, expressApp, PORT) => {
         client.on('projects', handleProjects.bind(client))
         client.on('projects-by-hashes', handleProjectsByHashes.bind(client))
         client.on('projects-search', handleProjectsSearch.bind(client))
-
-        // Time keeping handlers
-        client.on('time-keeping-entry', handleTimeKeepingEntry.bind(client))
-        client.on('time-keeping-entry-approval', handleTimeKeepingEntryApproval.bind(client))
-        client.on('time-keeping-entry-search', handleTimeKeepingEntrySearch.bind(client))
-        client.on('time-keeping-invitations', handleTimeKeepingInvitations.bind(client))
     })
 
     // Start listening

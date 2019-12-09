@@ -53,17 +53,18 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
 
     componentWillMount() {
         const { projectHash } = this.props
-        this.tieIdAddress = selectedAddressBond.tie(this.loadWorkers)
-
         if (!projectHash) return
+        
         this.projectHash = projectHash
-        this.bond = timeKeeping.worker.listWorkers(projectHash)
-        this.tieId = this.bond.tie(this.loadWorkers)
+        this.bond = Bond.all([
+            timeKeeping.worker.listWorkers(projectHash),
+            selectedAddressBond,
+        ])
+        this.tieId = this.bond.tie(() => this.loadWorkers())
     }
 
     componentWillUnmount() {
         this.bond && this.bond.untie(this.tieId)
-        selectedAddressBond.untie(this.tieIdAddress)
     }
 
     componentWillUpdate() {
@@ -71,8 +72,11 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
         if (this.projectHash === projectHash) return
         this.projectHash = projectHash
         this.bond && this.bond.untie(this.tieId)
-        this.bond = !projectHash ? null : timeKeeping.worker.listWorkers(projectHash)
-        this.tieId = this.bond.tie(this.loadWorkers)
+        this.bond = !projectHash ? null : Bond.all([
+            timeKeeping.worker.listWorkers(projectHash),
+            selectedAddressBond,
+        ])
+        this.tieId = this.bond && this.bond.tie(() => this.loadWorkers())
         !this.bond && this.loadWorkers()
     }
 
@@ -104,7 +108,7 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
     render() {
         const { projectHash } = this.props
         const { listProps } = this.state
-        listProps.emptyMessage = projectHash ? undefined : {
+        listProps.emptyMessage = projectHash ? (listProps.data.size === 0 ? undefined : null) : {
             content: texts.selectProject,
             status: 'warning'
         }

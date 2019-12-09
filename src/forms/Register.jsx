@@ -100,7 +100,7 @@ FormRegister.defaultProps = {
     header: 'Register a messaging User Name',
     headerIcon: 'sign-in',
     onSuccessOpenChat: true,
-    size: 'mini',
+    size: 'tiny',
     subheader: 'Choose a short, unique and memorable user name.',
     submitText: 'Register'
 }

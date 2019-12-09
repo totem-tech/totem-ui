@@ -2,15 +2,10 @@ import DataStorage from '../src/utils/DataStorage'
 import uuid from 'uuid'
 import { arrUnique, isArr, isFn, isObj, objHasKeys, objReadOnly, isStr } from '../src/utils/utils'
 import { emitToUsers, getUserByClientId, isUserOnline, onUserLogin } from './users'
-import {
-    processTKIdentityRequest,
-    processTKIdentityResponse,
-    processTKInvitation,
-    processTKInvitationResponse,
-} from './timeKeeping'
 
 export const EVENT_NAME = 'notify'
 const notifications = new DataStorage('notifications.json', true)
+// Pending notification recipient user IDs
 const userNotificationIds = new DataStorage('notification-receivers.json', false)
 const REQUIRED = true
 const NOT_REQUIRED = false
@@ -41,32 +36,9 @@ export const VALID_TYPES = Object.freeze({
         }
     },
     time_keeping: {
-        alert: {},
-        hasChild: true,
-        // child types
         dispute: {
             responseRequired: REQUIRED
         },
-        // Request identity from new worker
-        // identity: {
-        //     dataFields: {
-        //         projectHash: REQUIRED,
-        //         projectName: REQUIRED,
-        //     },
-        //     handleNotify: processTKIdentityRequest,
-        //     messageRequired: NOT_REQUIRED, // use project name only???
-        //     // messageEncrypted: false,
-        // },
-        // // Worker's response to identity request
-        // identity_response: {
-        //     dataFields: {
-        //         accepted: REQUIRED, // bool  
-        //         projectHash: REQUIRED, // string
-        //         workerAddress: NOT_REQUIRED, //string
-        //     },
-        //     handleNotify: processTKIdentityResponse,
-        //     messageRequired: REQUIRED,
-        // },
         invitation: {
             dataFields: {
                 projectHash: REQUIRED,
@@ -74,17 +46,15 @@ export const VALID_TYPES = Object.freeze({
                 workerAddress: REQUIRED,
             },
             messageRequird: NOT_REQUIRED,
-            // handleNotify: processTKInvitation,
         },
         invitation_response: {
             dataFields: {
-                accepted: REQUIRED, // bool
+                accepted: REQUIRED,
                 projectHash: REQUIRED,
                 projectName: REQUIRED,
                 workerAddress: REQUIRED,
             },
             messageRequird: REQUIRED,
-            // handleNotify: processTKInvitationResponse,
         },
     },
 })
@@ -123,9 +93,8 @@ onUserLogin(_notifyUser)
 // @data        object   : information specific to the type of notification
 // @callback    function : params: (@err string) 
 export function handleNotify(toUserIds = [], type = '', childType = '', message = '', data = {}, callback) {
-    const client = this
-    console.log('handleNotify() ', { toUserIds })
     if (!isFn(callback)) return
+    const client = this
     try {
         const user = getUserByClientId(client.id)
         if (!user) return callback(messages.loginRequired)
@@ -138,9 +107,9 @@ export function handleNotify(toUserIds = [], type = '', childType = '', message 
         if (!isObj(typeObj)) return callback(messages.invalidParams + ': type')
 
         const childTypeObj = typeObj[childType]
-        if (typeObj.hasChild && !isObj(childTypeObj)) return callback(messages.invalidParams + ': childType')
+        if (childType && !isObj(childTypeObj)) return callback(messages.invalidParams + ': childType')
 
-        const config = typeObj.hasChild ? childTypeObj : typeObj
+        const config = childType ? childTypeObj : typeObj
 
         if (config.dataRequired && !objHasKeys(data, config.dataFields, true)) {
             return callback(`${messages.invalidParams}: data { ${config.dataFields.join()} }`)

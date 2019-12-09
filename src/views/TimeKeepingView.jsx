@@ -1,15 +1,13 @@
 import React from 'react'
+import uuid from 'uuid'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
-import { Divider, Header } from 'semantic-ui-react'
-import { deferred, objCopy, IfMobile, newMessage, arrUnique, arrSort, textCapitalize } from '../utils/utils'
+import { IfMobile, arrSort, textCapitalize, isBool } from '../utils/utils'
 import ContentSegment from '../components/ContentSegment'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 import ProjectTimeKeepingList from '../lists/TimeKeepingList'
 import TimeKeepingInviteList from '../lists/TimeKeepingInviteList'
 import TimeKeepingSummary from '../lists/TimeKeepingSummary'
-import projectService from '../services/project'
-import client from '../services/ChatClient'
 import { getSelected, selectedAddressBond } from '../services/identity'
 import { bytesToHex } from '../utils/convert'
 import timeKeeping, { getProjects, getProjectsBond } from '../services/timeKeeping'
@@ -83,7 +81,7 @@ class TimeKeepingView extends ReactiveComponent {
     }
 
     handleChange(_, values) {
-        this.setState({ values })
+        setTimeout(() => this.setState({ values }))
     }
 
     getContent(mobile) {
@@ -104,20 +102,22 @@ class TimeKeepingView extends ReactiveComponent {
         optionInput.options.find(x => x.value === 'records').disabled = manage
         optionInput.options.find(x => x.value === 'manage').hidden = !isOwner
 
+        const recordListProps = { isOwner, manage, ownerAddress, projectHash, projectName: name }
         if (!loading && showRecords) contents.push({
-            content: <ProjectTimeKeepingList {...{ isOwner, manage, projectHash, ownerAddress, projectName: name }} />,
-            key: 'ProjectTimeKeepingList',
+            content: <ProjectTimeKeepingList {...recordListProps} />,
+            key: 'ProjectTimeKeepingList' + JSON.stringify(recordListProps),
         })
         if (!loading && showInvites) contents.push({
             content: <TimeKeepingInviteList {...{ projectHash }} />,
             header: wordsCap.invitations,
-            key: 'TimeKeepingInviteList',
+            key: 'TimeKeepingInviteList' + projectHash,
         })
         if (showSummary) contents.push({
             content: <TimeKeepingSummary />,
             header: texts.myTimeKeepingSummary,
-            key: 'TimeKeepingSummary',
+            key: 'TimeKeepingSummary' + projectHash,
         })
+        console.log({ manage })
 
         return (
             <div>

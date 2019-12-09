@@ -115,11 +115,6 @@ export class ChatClient {
         )
         // project search
         this.projectsSearch = (keyword, cb) => socket.emit('projects-search', keyword, (err, result) => cb(err, new Map(result)))
-        // user projects received
-        // @cb function : params =>
-        //                  @err    string/null : error message or null if success
-        //                  @result Map         : Map of user projects with project hash as key
-        // this.onProjects = cb => isFn(cb) && socket.on('projects', (err, result) => cb(err, new Map(result)))
 
         // add/get company by wallet address
         //
@@ -145,20 +140,6 @@ export class ChatClient {
 
         // Get list of all countries with 3 character codes
         this.countries = (cb) => isFn(cb) && socket.emit('countries', (err, countries) => cb(err, new Map(countries)))
-
-        // Add/update time keeping entry
-        this.timeKeepingEntry = (hash, entry, cb) => isFn(cb) && socket.emit('time-keeping-entry', hash, entry, cb)
-        this.timeKeepingEntryApproval = (hash, approve, cb) => isFn(cb) && socket.emit(
-            'time-keeping-entry-approval', hash, approve, cb
-        )
-        this.timeKeepingEntrySearch = (query, matchExact, matchAll, ignoreCase, cb) => isFn(cb) && socket.emit(
-            'time-keeping-entry-search',
-            query, matchExact, matchAll, ignoreCase,
-            (err, entriesArr) => cb(err, new Map(entriesArr))
-        )
-        this.timeKeepingInvitations = (projectHash, cb) => isFn(cb) && socket.emit(
-            'time-keeping-invitations', projectHash, (err, result) => cb(err, new Map(result))
-        )
     }
 
     register(id, secret, cb) {

@@ -267,10 +267,10 @@ export const record = {
     // workers total booked time in blocks accross all projects
     totalBlocks: address => runtime.timekeeping.totalBlocksPerAddress(ss58Decode(address)),
     // workers total booked time in blocks on a specific project
-    totalBlocksByProject: (address, projectHash) => runtime.timekeeping.totalBlocksPerProjectPerAddress(
+    totalBlocksByProject: (address, projectHash) => runtime.timekeeping.totalBlocksPerProjectPerAddress([
         ss58Decode(address),
         hashToBytes(projectHash)
-    )
+    ])
 }
 
 const timeKeeping = {
