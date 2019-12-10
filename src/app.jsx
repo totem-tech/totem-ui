@@ -8,7 +8,7 @@ import {
 } from 'oo7-substrate'
 
 // Components
-import GettingStarted from './components/GettingStartedView'
+import GettingStarted from './views/GettingStartedView'
 import SendFundsView from './views/SendFundsView'
 import UtilitiesView from './views/UtilitiesView'
 import TimeKeepingView from './views/TimeKeepingView'
