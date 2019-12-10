@@ -16,7 +16,7 @@ export default {
     timeKeeping_worker_accept: timeKeeping.worker.accept,
 }
 
-// ToDo: use common-utils library
+// ToDo: use https://gitlab.com/totem-tech/common-utils/raw/master/totem-polkadot-js-types.json
 const types = {
     "ProjectHash": "Hash",
     "DeletedProject": "Hash",

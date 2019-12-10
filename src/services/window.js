@@ -13,6 +13,7 @@ export const forceLayout = size => {
     _forcedSize = _validSizes.includes(size) ? size : ''
     window.onresize()
 }
+window.forceLayout = forceLayout
 export const getLayout = () => _forcedSize || (window.innerWidth <= 991 ? 'mobile' : 'desktop')
 export const layoutBond = new Bond().defaultTo(getLayout())
 

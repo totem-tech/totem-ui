@@ -28,6 +28,8 @@ import { getLayout, layoutBond } from './services/window'
 import DataStorage from './utils/DataStorage'
 // Images
 import TotemButtonLogo from './assets/totem-button-grey.png'
+// temp
+import KeyRegistryPlayground from './forms/KeyRegistryPlayGround'
 
 export class App extends ReactiveComponent {
 	constructor() {
@@ -171,11 +173,17 @@ export class App extends ReactiveComponent {
 
 const sidebarItems = [
 	{
-		active: true,
+		active: false,
 		content: <GettingStarted />,
 		headerDividerHidden: true,
 		icon: "play circle outline",
 		title: "Getting Started"
+	},
+	{
+		active: true,
+		content: <KeyRegistryPlayground />,
+		icon: "play circle outline",
+		title: "Key Registry Playground"
 	},
 	// { icon: "object group outline", title: "Overview", subHeader: "", active: false, content: <LedgerTransactionList />},
 	{

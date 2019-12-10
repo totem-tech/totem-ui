@@ -40,10 +40,11 @@ export const decrypt = (encryptedMsg, nonce, externalPubKey, internalSecretKey) 
     return !decrypted ? null : JSON.parse(encodeUTF8(decrypted))
 }
 
-export const newSignature = (message, secretKey) => {
+export const newSignature = (message, secretKey, encodeB64 = true) => {
     message = isUint8Array(message) ? message : decodeUTF8(message)
     secretKey = isUint8Array(secretKey) ? secretKey : decodeBase64(secretKey)
-    return encodeBase64(sign.detached(message, secretKey))
+    const signed = sign.detached(message, secretKey)
+    return encodeB64 ? encodeBase64(signed) : signed
 }
 
 export const verifySignature = (message, signature, publicKey) => {
@@ -53,7 +54,7 @@ export const verifySignature = (message, signature, publicKey) => {
     return sign.detached.verify(message, signature, publicKey)
 }
 
-export const keyInfoFromKeyData = keyData => { 
+export const keyInfoFromKeyData = keyData => {
     const bytes = hexToBytes(keyData)
     return {
         walletAddress: ss58Encode(bytes.slice(64, 96)),
