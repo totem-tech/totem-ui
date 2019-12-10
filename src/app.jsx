@@ -22,23 +22,23 @@ import IdentityList from './lists/IdentityList'
 import SidebarLeft from './components/SidebarLeft'
 import ModalService from './services/modal'
 import ToastService from './services/toast'
-// import NotificationService from './services/notification'
 import { resumeQueue } from './services/queue'
-import { IfMobile } from './utils/utils'
+import { getLayout, layoutBond } from './services/window'
+// Utils
+import DataStorage from './utils/DataStorage'
 // Images
 import TotemButtonLogo from './assets/totem-button-grey.png'
-import DataStorage from './utils/DataStorage'
 
 export class App extends ReactiveComponent {
 	constructor() {
-		super([], { ensureRuntime: runtimeUp })
+		super([], { ensureRuntime: runtimeUp, layout: layoutBond })
 		this.state = {
 			sidebarItems: [...sidebarItems].map(item => {
 				item.elementRef = React.createRef()
 				return item
 			}),
 			sidebarCollapsed: false,
-			sidebarVisible: !this.isMobile(),
+			sidebarVisible: getLayout() !== 'mobile',
 			status: {}
 		}
 
@@ -59,11 +59,6 @@ export class App extends ReactiveComponent {
 		this.handleSidebarToggle = this.handleSidebarToggle.bind(this)
 		this.toggleMenuItem = this.toggleMenuItem.bind(this)
 		this.handleClose = this.handleClose.bind(this)
-		this.getContent = this.getContent.bind(this)
-	}
-
-	isMobile() {
-		return window.innerWidth <= Responsive.onlyMobile.maxWidth
 	}
 
 	// hack to format as a currency. Needs to go in a seperate Display Formatting Utilities file.
@@ -99,60 +94,6 @@ export class App extends ReactiveComponent {
 		this.setState({ sidebarItems })
 	}
 
-	getContent(mobile) {
-		const { sidebarCollapsed, sidebarItems, sidebarVisible } = this.state
-		const { handleClose, handleSidebarToggle, toggleMenuItem } = this
-		const { spaceBelow, mainContent, mainContentCollapsed } = styles
-		const logoSrc = TotemButtonLogo
-
-		return (
-			<React.Fragment>
-				{/* <NotificationService /> */}
-				<ChatWidget />
-				<ModalService />
-				{/* <IfFn condition={!mobile && sidebarCollapsed} then={()=> <SystemStatus sidebar={true} visible={true} />} /> */}
-				<Sidebar.Pushable>
-					<SidebarLeft
-						collapsed={mobile ? false : sidebarCollapsed}
-						isMobile={mobile}
-						items={sidebarItems}
-						onMenuItemClick={toggleMenuItem}
-						onSidebarToggle={handleSidebarToggle}
-						visible={mobile ? sidebarVisible : true}
-					/>
-
-					<Sidebar.Pusher
-						as={Container}
-						className="main-content"
-						dimmed={mobile && sidebarVisible}
-						id="main-content"
-						fluid
-						style={sidebarCollapsed ? mainContentCollapsed : mainContent}
-					>
-						<ErrorBoundary>
-							<PageHeader
-								logoSrc={logoSrc}
-								isMobile={mobile}
-								onSidebarToggle={handleSidebarToggle}
-								sidebarCollapsed={sidebarCollapsed}
-								sidebarVisible={sidebarVisible}
-							/>
-						</ErrorBoundary>
-
-
-						<ToastService fullWidth={true} hidden={mobile && sidebarVisible} />
-
-						{sidebarItems.map((item, i) => (
-							<div ref={item.elementRef} key={i} hidden={!item.active} style={spaceBelow}>
-								<ContentSegment {...item} onClose={handleClose} index={i} />
-							</div>
-						))}
-					</Sidebar.Pusher>
-				</Sidebar.Pushable>
-			</React.Fragment>
-		)
-	}
-
 	unreadyRender() {
 		const { status } = this.state
 		const failedMsg = 'Connection failed! Please check your internet connection.'
@@ -165,24 +106,65 @@ export class App extends ReactiveComponent {
 	}
 
 	readyRender() {
-		const { sidebarCollapsed, sidebarVisible } = this.state
+		const { layout, sidebarCollapsed, sidebarItems, sidebarVisible } = this.state
+		const isMobile = layout === 'mobile'
+		const { handleClose, handleSidebarToggle, toggleMenuItem } = this
+		const { spaceBelow, mainContent, mainContentCollapsed } = styles
+		const logoSrc = TotemButtonLogo
 		const classNames = [
 			sidebarVisible ? 'sidebar-visible' : '',
-			sidebarCollapsed ? 'sidebar-collapsed' : ''
-		].join(' ')
+			sidebarCollapsed ? 'sidebar-collapsed' : '',
+			layout,
+		].filter(Boolean).join(' ')
 
 		if (!this.resumed) {
+			// resume any incomplete queued tasks 
 			this.resumed = true
 			setTimeout(() => resumeQueue(), 1000)
 		}
 
 		return (
-			<IfMobile
-				then={this.getContent(true)}
-				thenClassName={'mobile ' + classNames}
-				else={this.getContent(false)}
-				elseClassName={classNames}
-			/>
+			<div className={classNames}>
+				<ChatWidget />
+				<ModalService />
+				<Sidebar.Pushable>
+					<SidebarLeft
+						collapsed={isMobile ? false : sidebarCollapsed}
+						isMobile={isMobile}
+						items={sidebarItems}
+						onMenuItemClick={toggleMenuItem}
+						onSidebarToggle={handleSidebarToggle}
+						visible={isMobile ? sidebarVisible : true}
+					/>
+
+					<Sidebar.Pusher
+						as={Container}
+						className="main-content"
+						dimmed={isMobile && sidebarVisible}
+						id="main-content"
+						fluid
+						style={sidebarCollapsed ? mainContentCollapsed : mainContent}
+					>
+						<ErrorBoundary>
+							<PageHeader
+								logoSrc={logoSrc}
+								isMobile={isMobile}
+								onSidebarToggle={handleSidebarToggle}
+								sidebarCollapsed={sidebarCollapsed}
+								sidebarVisible={sidebarVisible}
+							/>
+						</ErrorBoundary>
+
+						<ToastService fullWidth={true} hidden={isMobile && sidebarVisible} />
+
+						{sidebarItems.map((item, i) => (
+							<div ref={item.elementRef} key={i} hidden={!item.active} style={spaceBelow}>
+								<ContentSegment {...item} onClose={handleClose} index={i} />
+							</div>
+						))}
+					</Sidebar.Pusher>
+				</Sidebar.Pushable>
+			</div>
 		)
 	}
 }

@@ -1,18 +1,15 @@
 import React from 'react'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
-import { Divider, Header } from 'semantic-ui-react'
-import { deferred, objCopy, IfMobile, newMessage, arrUnique, arrSort, textCapitalize } from '../utils/utils'
+import { arrSort, textCapitalize } from '../utils/utils'
 import ContentSegment from '../components/ContentSegment'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 import ProjectTimeKeepingList from '../lists/TimeKeepingList'
 import TimeKeepingInviteList from '../lists/TimeKeepingInviteList'
 import TimeKeepingSummary from '../lists/TimeKeepingSummary'
-import projectService from '../services/project'
-import client from '../services/ChatClient'
-import { getSelected, selectedAddressBond } from '../services/identity'
-import { bytesToHex } from '../utils/convert'
-import timeKeeping, { getProjects, getProjectsBond } from '../services/timeKeeping'
+import { getSelected } from '../services/identity'
+import { getProjects, getProjectsBond } from '../services/timeKeeping'
+import { layoutBond } from '../services/window'
 
 const words = {
     invitations: 'invitations',
@@ -31,9 +28,8 @@ const texts = {
 
 class TimeKeepingView extends ReactiveComponent {
     constructor(props) {
-        super(props)
+        super(props, { layout: layoutBond })
 
-        this.getContent = this.getContent.bind(this)
         this.state = {
             values: {
                 option: 'records'
@@ -86,20 +82,21 @@ class TimeKeepingView extends ReactiveComponent {
         this.setState({ values })
     }
 
-    getContent(mobile) {
-        const { inputs, values: { projectHash, option } } = this.state
+    render() {
+        const { inputs, layout, values: { projectHash, option } } = this.state
         const { loading, options: projectOptions } = findInput(inputs, 'projectHash')
         const { ownerAddress, name } = (projectOptions.find(x => x.value === projectHash) || {}).project || {}
         const { address } = getSelected()
         const isOwner = ownerAddress === address
+        const isMobile = layout === 'mobile'
         let contents = []
         const manage = isOwner && option.includes('manage')
         const showSummary = option.includes('summary')
         const showInvites = option.includes('invites')
         const showRecords = option.includes('records') || manage
         const optionInput = findInput(inputs, 'option')
-        optionInput.inline = !mobile
-        optionInput.style = { float: mobile ? '' : 'right' }
+        optionInput.inline = !isMobile
+        optionInput.style = { float: isMobile ? '' : 'right' }
         optionInput.style.paddingTop = 7
         optionInput.options.find(x => x.value === 'records').disabled = manage
         optionInput.options.find(x => x.value === 'manage').hidden = !isOwner
@@ -163,10 +160,6 @@ class TimeKeepingView extends ReactiveComponent {
             }
             this.setState({ inputs, values })
         }, console.log)
-    }
-
-    render() {
-        return <IfMobile then={this.getContent} else={this.getContent} />
     }
 }
 

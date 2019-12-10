@@ -1,9 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {ReactiveComponent} from 'oo7-react'
+import { ReactiveComponent } from 'oo7-react'
 import { Icon, Menu, Sidebar } from 'semantic-ui-react'
-// import SystemStatus from './SystemStatus'
-import { IfFn } from '../utils/utils'
 
 class SidebarLeft extends ReactiveComponent {
 	constructor(props) {
@@ -26,7 +24,7 @@ class SidebarLeft extends ReactiveComponent {
 		}
 		onSidebarToggle(true, !collapsed)
 	}
-  
+
 	render() {
 		const { collapsed, isMobile, items, onMenuItemClick, visible } = this.props
 		const { collapsed: sCollapsed, expanded, menuItem, sidebarToggleWrap } = styles
@@ -60,25 +58,24 @@ class SidebarLeft extends ReactiveComponent {
 				</Menu.Item>
 
 				{// menu items 
-				items.map((item, i) => (
-					<Menu.Item
-						as="a"
-						key={i}
-						active={item.active}
-						title={collapsed ? item.title : ''}
-						onClick={() => onMenuItemClick(i, isMobile)}
-						style={i === 0 ? menuItem : {}}
-					>
-						<span>
-							<Icon
-								name={item.icon || 'folder'}
+					items.map((item, i) => (
+						<Menu.Item
+							as="a"
+							key={i}
+							active={item.active}
+							title={collapsed ? item.title : ''}
+							onClick={() => onMenuItemClick(i, isMobile)}
+							style={i === 0 ? menuItem : {}}
+						>
+							<span>
+								<Icon
+									name={item.icon || 'folder'}
 								// size={collapsed ? 'big' : 'large'}
-							/>
-							{!collapsed && item.title}
-						</span>
-					</Menu.Item>
-				))}
-				{/* <IfFn condition={isMobile || !collapsed} then={()=> <SystemStatus sidebar={false} />} /> */}
+								/>
+								{!collapsed && item.title}
+							</span>
+						</Menu.Item>
+					))}
 			</Sidebar>
 		)
 	}
