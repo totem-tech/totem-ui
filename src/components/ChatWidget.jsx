@@ -179,7 +179,7 @@ class ChatWidget extends ReactiveComponent {
 			// 	{/* <p>Your chat history is not saved on the server. Up to {historyLimit} messages are saved locally.</p> */}
 			// </div>
 		)
-		return (
+		return !userId ? '' : (
 			<Widget
 				titleAvatar={TotemLogoCircle}
 				title="totem trollbox"
