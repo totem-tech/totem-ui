@@ -8,6 +8,28 @@ import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import identityService from '../services/identity'
 import RegisterForm from '../forms/Register'
 import IdentityForm from '../forms/Identity'
+// import { textCapitalize } from '../utils/utils'
+
+// const words = {}
+// const wordsCap = textCapitalize(words)
+const texts = {
+	faucetRequestSent: 'Registration successful! A faucet request has been sent to get you started.',
+	faucetTransferComplete: 'Faucet transfer complete.',
+	quickGuidePara1: `Totem is currently under heavy development, but you can already use the Identities, Partners, Project 
+		and Timekeeping Modules as well as make basic transfers of your transaction allocations using the Transfer Module.`,
+	quickGuidePara2: `Most of what you do in Totem will consume transaction allocations (XTX for short) but don't worry, 
+		we are nice open source people, and we'll give you plenty to get you started.`,
+	quickGuidePara3: 'If you use them up - no problem! Simply request some more from our automated faucet.',
+	quickGuideTitle: 'A quick guide to getting started with Totem Live Accounting.',
+	step1Description: `This Identities are only known to you. You can create as many as you like in the Identities Module.`,
+	step1Title: 'Edit Default Identity',
+	stepsTitle: `Only 2 short steps to begin. Let's go!`,
+	step2Description: `Chat is how you communicate with other Totem users. Choose a unique name (preferably not your own name!)`,
+	step2Title: 'Create Chat User ID',
+	videoGuidTitle: 'Further essential steps:',
+	video1Title: 'What am I looking at? Watch the video:',
+	video2Title: 'Backup your account. Watch the video:',
+}
 
 export default class GetingStarted extends ReactiveComponent {
 	constructor() {
@@ -15,27 +37,24 @@ export default class GetingStarted extends ReactiveComponent {
 		this.state = {
 			activeIndex: storage.gettingStartedStepIndex()
 		}
-		this.handleIdentityChange = this.handleIdentityChange.bind(this)
-		this.handleChatUserCreate = this.handleChatUserCreate.bind(this)
-		this.handleFaucetRequest = this.handleFaucetRequest.bind(this)
+		this.handleIdentity = this.handleIdentity.bind(this)
+		this.handleRegister = this.handleRegister.bind(this)
+		this.requestFaucet = this.requestFaucet.bind(this)
 	}
 
-	handleIdentityChange() {
+	handleIdentity() {
 		showForm(IdentityForm, {
 			values: identityService.getSelected(),
 			onSubmit: success => success && this.setIndex(1)
 		})
 	}
 
-	handleChatUserCreate() {
-		showForm(RegisterForm, {
-			onSubmit: success => success && this.setIndex(2),
-			onSuccessOpenChat: false
-		})
+	handleRegister() {
+		showForm(RegisterForm, { onSubmit: ok => ok && this.setIndex(999) | this.requestFaucet() })
 	}
 
-	handleFaucetRequest() {
-		this.faucetMsgId = setToast({ content: 'Faucet request sent', status: 'loading' }, null, this.faucetMsgId)
+	requestFaucet() {
+		this.faucetMsgId = setToast({ content: texts.faucetRequestSent, status: 'success' }, 10000, this.faucetMsgId)
 		const { address } = identityService.getSelected()
 
 		addToQueue({
@@ -44,11 +63,11 @@ export default class GetingStarted extends ReactiveComponent {
 			args: [
 				address,
 				(err, txHash) => {
-					this.faucetMsgId = setToast({
-						content: err || `Faucet transfer complete. Transaction hash: ${txHash}`,
-						status: !!err ? 'error' : 'success'
-					}, null, this.faucetMsgId)
 					!err && this.setIndex(999)
+					setToast({
+						content: err || texts.faucetTransferComplete,
+						status: !!err ? 'error' : 'success'
+					}, 5000, this.faucetMsgId)
 				},
 			]
 		}, null, this.faucetMsgId)
@@ -60,40 +79,26 @@ export default class GetingStarted extends ReactiveComponent {
 	}
 
 	render() {
-		let { activeIndex } = this.state
-		// Skip step 2 if user is already registered
-		if (activeIndex === 1 && !!(storage.chatUser() || {}).id) {
-			activeIndex = 2
-		}
+		const { activeIndex } = this.state
 		return (
 			<React.Fragment>
 				<div>
-					<h3>A quick guide to getting started with Totem Live Accounting.</h3>
-					<p>
-						Totem is currently under heavy development, but you can already use the Identities, Partners,
-						Project and Timekeeping Modules as well as make basic transfers of your transaction allocations using the Transfer Module.
-					</p>
-					<p>
-						Most of what you do in Totem will consume transaction allocations (XTX for short) but don't worry, we are nice open source people, and we'll
-						give you plenty to get you started.
-					</p>
-					<p>
-						If you use them up - no problem! Simply request some more from our automated faucet.
-					</p>
-					<h4>Only 3 short steps to begin. Let's go!</h4>
+					<h3>{texts.quickGuideTitle}</h3>
+					<p>{texts.quickGuidePara1}</p>
+					<p>{texts.quickGuidePara2}</p>
+					<p>{texts.quickGuidePara3}</p>
+					<h4>{texts.stepsTitle}</h4>
 					<div style={{ overflowX: 'auto' }}>
 						<Step.Group fluid ordered>
 							<Step
 								active={activeIndex === 0}
 								completed={activeIndex > 0}
 								disabled={activeIndex !== 0}
-								onClick={this.handleIdentityChange}>
+								onClick={this.handleIdentity}>
 								<Step.Content>
-									<Step.Title>Edit Default Identity</Step.Title>
-									<Step.Description>
-										This Identities are only known to you.<br />
-										You can create as many as you like in <br />
-										the Identities Module.
+									<Step.Title>{texts.step1Title}</Step.Title>
+									<Step.Description style={styles.stepDescription}>
+										{texts.step1Description}
 									</Step.Description>
 								</Step.Content>
 							</Step>
@@ -102,44 +107,28 @@ export default class GetingStarted extends ReactiveComponent {
 								active={activeIndex === 1}
 								completed={activeIndex > 1}
 								disabled={activeIndex !== 1}
-								onClick={this.handleChatUserCreate}>
+								onClick={this.handleRegister}>
 								<Step.Content>
-									<Step.Title>Create Chat User ID</Step.Title>
-									<Step.Description>
-										Chat is how you communicate with <br />
-										other Totem users. Choose a unique <br />
-										name (preferably not your own name!)
-									</Step.Description>
-								</Step.Content>
-							</Step>
-
-							<Step
-								active={activeIndex === 2}
-								completed={activeIndex > 2}
-								disabled={activeIndex !== 2}
-								onClick={this.handleFaucetRequest}>
-								<Step.Content>
-									<Step.Title>Request XTX</Step.Title>
-									<Step.Description>
-										To make transactions, you need to spend  <br />
-										XTX transactions! Get some XTX from  <br />
-										our faucet by clicking here!
+									<Step.Title>{texts.step2Title}</Step.Title>
+									<Step.Description style={styles.stepDescription}>
+										{texts.step2Description}
 									</Step.Description>
 								</Step.Content>
 							</Step>
 						</Step.Group>
 					</div>
-					<h3>Further essential steps:</h3>
-					<h5>What am I looking at? Watch the video:</h5>
-					<div style={{ height: 225, width: 400, maxWidth: '100%' }}>
+
+					<h3>{texts.videoGuidTitle}</h3>
+					<h5>{texts.video1Title}</h5>
+					<div style={styles.videoContainer}>
 						<Embed
 							aspectRatio='16:9'
 							id='1'
 							source='vimeo'
 						/>
 					</div>
-					<h5>Backup your account. Watch the video:</h5>
-					<div style={{ height: 225, width: 400, maxWidth: '100%' }}>
+					<h5>{texts.video2Title}</h5>
+					<div style={styles.videoContainer}>
 						<Embed
 							aspectRatio='16:9'
 							id='1'
@@ -150,4 +139,15 @@ export default class GetingStarted extends ReactiveComponent {
 			</React.Fragment>
 		)
 	}
+}
+
+const styles = {
+	stepDescription: {
+		maxWidth: 215,
+	},
+	videoContainer: {
+		height: 225,
+		width: 400,
+		maxWidth: '100%'
+	},
 }

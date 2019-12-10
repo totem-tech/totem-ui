@@ -4,7 +4,7 @@ import { ReactiveComponent } from 'oo7-react'
 import uuid from 'uuid'
 import { dropMessages, addResponseMessage, isWidgetOpened, toggleWidget } from 'react-chat-widget'
 import FormBuilder, { findInput } from '../components/FormBuilder'
-import { deferred, isFn, objWithoutKeys } from '../utils/utils'
+import { deferred, isFn } from '../utils/utils'
 import { getClient } from '../services/ChatClient'
 
 const nameRegex = /^($|[a-z]|[a-z][a-z0-9]+)$/
@@ -77,14 +77,16 @@ class FormRegister extends ReactiveComponent {
             }
             this.setState({ message, success: success, open: !success })
             isFn(onSubmit) && onSubmit(success, values)
-            if (!success || !onSuccessOpenChat) return;
-            setTimeout(() => {
-                dropMessages()
-                addResponseMessage(
-                    'Welcom to the Totem trollbox. Please be nice.'
-                )
-                !isWidgetOpened() && toggleWidget()
-            })
+
+            // add welcome message
+            dropMessages()
+            addResponseMessage('Welcom to the Totem trollbox. Please be nice.')
+            // if (!success || !onSuccessOpenChat) return;
+            // setTimeout(() => {
+            //     dropMessages()
+            //     addResponseMessage('Welcom to the Totem trollbox. Please be nice.')
+            //     !isWidgetOpened() && toggleWidget()
+            // })
         })
     }
 
@@ -92,14 +94,13 @@ class FormRegister extends ReactiveComponent {
         return <FormBuilder {...{ ...this.props, ...this.state }} />
     }
 }
-FormRegister.propTypes = {
-    onSuccessOpenChat: PropTypes.bool
-}
+// FormRegister.propTypes = {
+//     onSuccessOpenChat: PropTypes.bool
+// }
 FormRegister.defaultProps = {
     closeOnSubmit: true,
     header: 'Register a Memorable User Name',
     headerIcon: 'sign-in',
-    onSuccessOpenChat: true,
     size: 'mini',
     subheader: 'Choose a unique alias for use with Totem chat messaging.',
     submitText: 'Register'
