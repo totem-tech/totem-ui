@@ -194,8 +194,8 @@ class FormBuilder extends ReactiveComponent {
                     />
                 </div>
                 {header && (
-                    <Header as={Modal.Header} style={styles.header}>
-                        <Header.Content>
+                    <Header as={Modal.Header}>
+                        <Header.Content style={styles.header}>
                             {headerIcon && <Icon name={headerIcon} size="large" />}
                             {header}
                         </Header.Content>

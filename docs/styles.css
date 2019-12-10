@@ -169,13 +169,18 @@ div.ui.padded.segment {
   transition: all 0.5s ease;
 }
 /* pushes chat launcher icon up when bottom status bar is visible */
-#app .sidebar-collapsed .rcw-widget-container {
+/* #app .sidebar-collapsed .rcw-widget-container {
   margin-bottom: 73px;
-}
+} */
 
 /* hide when mobile sidebar is open */
 .mobile.sidebar-visible .rcw-widget-container {
   display: none;
+}
+
+/* more space for messages */
+#messages .rcw-response {
+  max-width: 75%;
 }
 
 /* allow new lines in the chat subheader */
