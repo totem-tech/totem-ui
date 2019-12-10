@@ -117,7 +117,6 @@ class TimeKeepingView extends ReactiveComponent {
             header: texts.myTimeKeepingSummary,
             key: 'TimeKeepingSummary' + projectHash,
         })
-        console.log({ manage })
 
         return (
             <div>

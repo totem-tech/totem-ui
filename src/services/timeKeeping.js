@@ -270,7 +270,7 @@ export const record = {
     totalBlocksByProject: (address, projectHash) => runtime.timekeeping.totalBlocksPerProjectPerAddress([
         ss58Decode(address),
         hashToBytes(projectHash)
-    ])
+    ]),
 }
 
 const timeKeeping = {
