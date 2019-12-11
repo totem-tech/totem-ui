@@ -1,8 +1,10 @@
 import React, { Component } from 'react'
+import { Bond } from 'oo7'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 import identities from '../services/identity'
 import { newSignature, signingKeyPair, verifySignature } from '../utils/naclHelper'
-import { decodeUTF8, bytesToHex } from '../utils/convert'
+import { encodeBase64, decodeUTF8, bytesToHex } from '../utils/convert'
+import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
 
 export default class KeyRegistryPlayground extends Component {
@@ -10,7 +12,6 @@ export default class KeyRegistryPlayground extends Component {
         super()
         this.state = {
             onSubmit: this.handleSubmit.bind(this),
-            submitDisabled: true,
             inputs: [
                 {
                     label: 'Identity',
@@ -21,6 +22,7 @@ export default class KeyRegistryPlayground extends Component {
                         text: name,
                         value: address,
                     })),
+                    required: true,
                     search: true,
                     selection: true,
                     type: 'dropdown',
@@ -29,18 +31,23 @@ export default class KeyRegistryPlayground extends Component {
                     label: 'Message',
                     name: 'data',
                     onChange: this.generateSignature.bind(this),
+                    required: true,
                     type: 'text',
                     value: '',
                 },
                 {
-                    label: 'data (hex)',
+                    bond: new Bond(),
+                    label: 'Data (hex)',
                     name: 'dataHex',
+                    required: true,
                     type: 'textarea',
                     value: '',
                 },
                 {
+                    bond: new Bond(),
                     label: 'Signature (hex)',
                     name: 'signature',
+                    required: true,
                     type: 'textarea',
                     value: '',
                 }
@@ -52,15 +59,32 @@ export default class KeyRegistryPlayground extends Component {
         if (!data || !address) return
         const { inputs } = this.state
         const identity = identities.find(address)
-        const keyPair = signingKeyPair(identity.keyData) // signKeypair
-        const signature = newSignature(data, keyPair.secretKey, false)
-        findInput(inputs, 'dataHex').value = '0x' + bytesToHex(decodeUTF8(data))
-        findInput(inputs, 'signature').value = '0x' + bytesToHex(signature)
-        this.setState({ inputs })
+        const keyPair = signingKeyPair(identity.keyData, false) // signKeypair
+        this.publicKey = ss58Encode(keyPair.publicKey)
+        this.data = decodeUTF8(data)
+
+        this.signature = newSignature(encodeBase64(this.data), encodeBase64(keyPair.secretKey), false)
+        findInput(inputs, 'dataHex').bond.changed('0x' + bytesToHex(this.data))
+        findInput(inputs, 'signature').bond.changed('0x' + bytesToHex(this.signature))
     }
 
-    handleSubmit(e, values) {
-
+    handleSubmit(e, { address }) {
+        this.setState({ loading: true })
+        addToQueue({
+            type: QUEUE_TYPES.BLOCKCHAIN,
+            title: 'Register Key',
+            func: 'registerKey',
+            args: [address, this.publicKey, this.signature, this.data],
+            then: (success) => {
+                this.setState({
+                    loading: false,
+                    message: {
+                        header: 'Transaction ' + (success ? 'Success!' : 'Failed'),
+                        status: success ? 'success' : 'error',
+                    }
+                })
+            }
+        })
     }
 
     render() {

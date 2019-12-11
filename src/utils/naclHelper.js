@@ -40,11 +40,11 @@ export const decrypt = (encryptedMsg, nonce, externalPubKey, internalSecretKey) 
     return !decrypted ? null : JSON.parse(encodeUTF8(decrypted))
 }
 
-export const newSignature = (message, secretKey, encodeB64 = true) => {
+export const newSignature = (message, secretKey, encode = true) => {
     message = isUint8Array(message) ? message : decodeUTF8(message)
     secretKey = isUint8Array(secretKey) ? secretKey : decodeBase64(secretKey)
     const signed = sign.detached(message, secretKey)
-    return encodeB64 ? encodeBase64(signed) : signed
+    return encode ? encodeBase64(signed) : signed
 }
 
 export const verifySignature = (message, signature, publicKey) => {
@@ -71,10 +71,10 @@ export const encryptionKeypair = keyDataBytes => {
     }
 }
 
-export const signingKeyPair = keyDataBytes => {
+export const signingKeyPair = (keyDataBytes, encode = true) => {
     const { publicKey, secretKey } = sign.keyPair.fromSeed(blake2b(keyDataBytes, null, 32))
     return {
-        publicKey: encodeBase64(publicKey),
-        secretKey: encodeBase64(secretKey)
+        publicKey: encode ? encodeBase64(publicKey) : publicKey,
+        secretKey: encode ? encodeBase64(secretKey) : secretKey
     }
 }
