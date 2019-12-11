@@ -136,7 +136,6 @@ export default class NotificationDropdown extends ReactiveComponent {
                                 msg.icon.name = 'user plus'
                                 msg.content = (
                                     <div>
-                                        <br />
                                         <ButtonAcceptOrReject
                                             acceptText='Add Partner'
                                             onClick={accepted => !accepted ? remove(id) : showForm(
