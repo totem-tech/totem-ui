@@ -100,7 +100,9 @@
   position: fixed !important;
   top: 60px !important;
 }
-
+.notification-dropdown.has-unread.ui.item.scrolling.dropdown {
+  background: red;
+}
 #app .desktop .notification-dropdown.ui.dropdown .menu.notifictaions {
   left: calc(100% - 400px) !important;
 }

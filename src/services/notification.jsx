@@ -56,12 +56,12 @@ export default class NotificationDropdown extends ReactiveComponent {
         super([])
 
         this.state = {
-            iconClass: '',
+            blinkClass: '',
             items: notifications.getAll(),
         }
 
-        this.iconAddBlink = () => this.setState({ iconClass: 'blink' })
-        this.iconRemoveBlink = deferred(() => this.setState({ iconClass: '' }), 5000, this)
+        this.iconAddBlink = () => this.setState({ blinkClass: 'blink' })
+        this.iconRemoveBlink = deferred(() => this.setState({ blinkClass: '' }), 5000, this)
     }
 
     componentWillMount() {
@@ -78,16 +78,19 @@ export default class NotificationDropdown extends ReactiveComponent {
     }
 
     render() {
-        const { iconClass, items } = this.state
+        const { blinkClass, items } = this.state
         const style = { maxHeight: window.innerHeight - 140 }
         const allRead = Array.from(items).every(([_, { read }]) => read)
-
+        const classNames = [
+            'notification-dropdown',
+            blinkClass,
+            !allRead && 'has-unread'
+        ].filter(Boolean).join(' ')
         return items.size === 0 ? '' : (
             <Dropdown
-                className='notification-dropdown'
+                className={classNames}
                 icon={{
-                    className: ['no-margin', iconClass].join(' '),
-                    color: allRead ? 'grey' : 'red',
+                    className: 'no-margin',
                     name: 'bell',
                     size: 'large',
                 }}
