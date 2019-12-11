@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 import identities from '../services/identity'
 import { newSignature, signingKeyPair, verifySignature } from '../utils/naclHelper'
-import { decodeUTF8, bytesToHex } from '../utils/convert'
+import { encodeBase64, decodeBase64, decodeUTF8, bytesToHex } from '../utils/convert'
 
 
 export default class KeyRegistryPlayground extends Component {
@@ -39,7 +39,19 @@ export default class KeyRegistryPlayground extends Component {
                     value: '',
                 },
                 {
-                    label: 'Signature (hex)',
+                    label: 'public key (hex and base64)',
+                    name: 'publicHex',
+                    type: 'textarea',
+                    value: '',
+                },
+                {
+                    label: 'private key (hex and base64)',
+                    name: 'privateHex',
+                    type: 'textarea',
+                    value: '',
+                },
+                {
+                    label: 'Signature (hex and base64)',
                     name: 'signature',
                     type: 'textarea',
                     value: '',
@@ -55,7 +67,9 @@ export default class KeyRegistryPlayground extends Component {
         const keyPair = signingKeyPair(identity.keyData) // signKeypair
         const signature = newSignature(data, keyPair.secretKey, false)
         findInput(inputs, 'dataHex').value = '0x' + bytesToHex(decodeUTF8(data))
-        findInput(inputs, 'signature').value = '0x' + bytesToHex(signature)
+        findInput(inputs, 'signature').value = '0x' + bytesToHex(signature) + '\n' + encodeBase64(signature)
+        findInput(inputs, 'publicHex').value = '0x' + bytesToHex(decodeBase64(keyPair.publicKey)) + '\n' + keyPair.publicKey 
+        findInput(inputs, 'privateHex').value = '0x' + bytesToHex(decodeBase64(keyPair.secretKey)) + '\n' + keyPair.secretKey
         this.setState({ inputs })
     }
 
