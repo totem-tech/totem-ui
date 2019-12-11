@@ -79,8 +79,6 @@ export default class PartnerList extends ReactiveComponent {
 					icon='share'
 					onClick={() => showForm(IdentityShareForm, {
 						disabledFields: ['address'],
-						header: 'Share Partner Identity',
-						subheader: 'Share a Partner with one or more Totem users',
 						includeOwnIdentities: false,
 						includePartners: true,
 						size: 'tiny',

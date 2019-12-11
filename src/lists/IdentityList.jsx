@@ -25,7 +25,6 @@ const wordsCapitalized = Object.keys(words).reduce((obj, key) => {
 const texts = {
     emptyMessage: 'No matching identity found', // assumes there will always be an itentity
     lastBackup: 'Last Backup',
-    shareIdentity: 'Share identity',
     showDetails: 'Show details',
     shareIdentityDetails: 'Share your identity with other Totem users',
     updateIdentity: 'Update identity',
@@ -97,8 +96,6 @@ export default class ItentityList extends ReactiveComponent {
                     icon='share'
                     onClick={() => showForm(IdentityShareForm, {
                         disabledFields: ['address'],
-                        header: texts.shareIdentity,
-                        subheader: texts.shareIdentityDetails,
                         includeOwnIdentities: true,
                         includePartners: false,
                         size: 'tiny',
