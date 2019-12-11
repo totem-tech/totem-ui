@@ -4,7 +4,7 @@ import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { Dropdown } from 'semantic-ui-react'
 import { ButtonAcceptOrReject, UserID } from '../components/buttons'
-import { newMessage } from '../utils/utils'
+import { deferred, newMessage } from '../utils/utils'
 import client from './ChatClient'
 import DataStorage from '../utils/DataStorage'
 import { confirm, showForm } from './modal'
@@ -12,6 +12,7 @@ import { addToQueue, QUEUE_TYPES } from './queue'
 import IdentityShareForm from '../forms/IdentityShare'
 import PartnerForm from '../forms/Partner'
 import identityService from './identity'
+import { getLayout } from './window'
 
 const notifications = new DataStorage('totem_service_notifications', true, false)
 // store unread counts for individual types
@@ -52,27 +53,55 @@ export const remove = id => setTimeout(() => notifications.delete(id) | triggerB
 
 export default class NotificationDropdown extends ReactiveComponent {
     constructor() {
-        super([], { triggerBond })
+        super([])
+
+        this.state = {
+            iconClass: '',
+            items: notifications.getAll(),
+        }
+
+        this.iconAddBlink = () => this.setState({ iconClass: 'blink' })
+        this.iconRemoveBlink = deferred(() => this.setState({ iconClass: '' }), 5000, this)
+    }
+
+    componentWillMount() {
+        this.tieId = triggerBond.tie(() => this.setState({ items: notifications.getAll() }))
+        this.tieIdClass = newNotificationBond.tie(() => {
+            this.iconAddBlink()
+            this.iconRemoveBlink()
+        })
+    }
+
+    componentWillUnmount() {
+        triggerBond.untie(this.tieId)
+        newNotificationBond.untie(this.tieIdClass)
     }
 
     render() {
-        const maxHeight = window.innerHeight - 140
-        const items = notifications.getAll()
+        const { iconClass, items } = this.state
+        const style = { maxHeight: window.innerHeight - 140 }
+        const allRead = Array.from(items).every(([_, { read }]) => read)
 
         return items.size === 0 ? '' : (
             <Dropdown
-                icon={{ name: 'bell outline', size: 'large' }}
+                className='notification-dropdown'
+                icon={{
+                    className: ['no-margin', iconClass].join(' '),
+                    color: allRead ? 'grey' : 'red',
+                    name: 'bell',
+                    size: 'large',
+                }}
                 item
                 scrolling
             >
-                <Dropdown.Menu className="notification-service" direction="left" style={{ maxHeight }}>
+                <Dropdown.Menu className='notifictaions' direction="left" style={style}>
                     {Array.from(items).filter(([_, { deleted }]) => !deleted).reverse().map(([id, notification]) => {
                         const { senderId, type, childType, message, data, tsCreated, read } = notification
                         const userIdBtn = <UserID userId={senderId} />
                         const typeSpaced = type.replace('_', ' ')
                         const msg = {
                             // attached: true,
-                            icon: { name: 'bell outline', size: 'large' },
+                            icon: { name: 'bell outline', size: 'large', style: { marginRight: 5 } },
                             content: <span>{userIdBtn}: {message}</span>,
                             header: `${typeSpaced} ${childType}`,
                             key: id,
@@ -172,7 +201,7 @@ export default class NotificationDropdown extends ReactiveComponent {
                                 className="no-padding"
                                 key={id}
                                 onClick={e => e.stopPropagation()}
-                                style={{ minWidth: 400 }}
+                            // style={{ minWidth: 400 }}
                             >
                                 {newMessage(msg)}
                             </Dropdown.Item>

@@ -96,13 +96,32 @@
 .no-margin {
   margin: 0 !important;
 }
-.no-padding, .ui.menu .item .notification-service.menu.left.visible .item.no-padding {
+.notification-dropdown.ui.dropdown .menu.notifictaions {
+  position: fixed !important;
+  top: 60px !important;
+}
+
+#app .desktop .notification-dropdown.ui.dropdown .menu.notifictaions {
+  left: calc(100% - 400px) !important;
+}
+#app .desktop .notification-dropdown .menu.notifictaions .item {
+  max-width: 400px;
+} 
+.no-padding, .ui.menu .notification-dropdown.item .menu.notifictaions.visible .item.no-padding {
   padding: 0 !important;
 }
-.ui.menu .ui.dropdown .notification-service.menu > .item > .message i:not(.close) {
+.ui.menu .ui.notification-dropdown.dropdown .menu > .item > .message i:not(.close) {
   float: left;
   font-size: 40px !important;
   margin-right: 5px !important;
+}
+.blink {
+  animation: blinker 1s linear infinite;
+}
+@keyframes blinker {
+  50% {
+    opacity: 0;
+  }
 }
 
 i.icon:not(.no-margin) {

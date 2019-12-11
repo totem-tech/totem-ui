@@ -24,42 +24,6 @@ export default {
 }
 
 // ToDo: use https://gitlab.com/totem-tech/common-utils/raw/master/totem-polkadot-js-types.json
-// const types = {
-//     "ProjectHash": "Hash",
-//     "DeletedProject": "Hash",
-//     "ProjectStatus": "u16",
-//     "AcceptAssignedStatus": "bool",
-//     "BanStatus": "bool",
-//     "LockStatus": "bool",
-//     "ReasonCode": "u16",
-//     "ReasonCodeType": "u16",
-//     "NumberOfBlocks": "u64",
-//     "PostingPeriod": "u16",
-//     "ProjectHashRef": "Hash",
-//     "StartOrEndBlockNumber": "u64",
-//     "StatusOfTimeRecord": "u16",
-//     "ReasonCodeStruct": {
-//         "ReasonCodeKey": "ReasonCode",
-//         "ReasonCodeTypeKey": "ReasonCodeType"
-//     },
-//     "ReasonCodeStruct<ReasonCode,ReasonCodeType>": "ReasonCodeStruct",
-//     "BannedStruct": {
-//         "BanStatusKey": "BanStatus",
-//         "ReasonCodeStructKey": "ReasonCodeStruct"
-//     },
-//     "BannedStruct<BanStatus,ReasonCodeStruct>": "BannedStruct",
-//     "Timekeeper": {
-//         "worker": "AccountId",
-//         "project_hash": "ProjectHashRef",
-//         "total_blocks": "NumberOfBlocks",
-//         "locked_status": "LockStatus",
-//         "submit_status": "StatusOfTimeRecord",
-//         "reason_code": "ReasonCodeStruct",
-//         "posting_period": "PostingPeriod",
-//         "start_block": "StartOrEndBlockNumber",
-//     },
-//     "Timekeeper<AccountId,ProjectHashRef,NumberOfBlocks,LockStatus,\nStatusOfTimeRecord,ReasonCodeStruct,PostingPeriod,StartOrEndBlockNumber>": "Timekeeper",
-// }
 const types = {
     "ProjectHash": "Hash",
     "DeletedProject": "Hash",

@@ -15,7 +15,6 @@ import NotificationDropdown from '../services/notification'
 import identityService from '../services/identity'
 import IdentityForm from '../forms/Identity'
 
-
 class PageHeader extends ReactiveComponent {
 	constructor(props) {
 		super(props, {
@@ -162,6 +161,7 @@ class MobileHeader extends ReactiveComponent {
 						<Image size="mini" src={logoSrc} />
 					</Menu.Item>
 					<Menu.Menu position="right">
+						<NotificationDropdown />
 						{id && (
 							<Menu.Item
 								icon={{
@@ -220,7 +220,6 @@ class MobileHeader extends ReactiveComponent {
 								]}
 							</Dropdown.Menu>
 						</Dropdown>
-						<NotificationDropdown />
 
 					</Menu.Menu>
 				</Menu>
