@@ -17,7 +17,7 @@ export default {
     timeKeeping_worker_accept: timeKeeping.worker.accept,
     registerKey: (address, signPubKey, data, signature) => post({
         sender: validateAddress(address),
-        call: calls.keyregistry.registerKeys(ss58Decode(signPubKey), data, signature),
+        call: calls.keyregistry.registerKeys(signPubKey, data, signature),
         compact: false,
         longevity: true
     })
@@ -77,10 +77,9 @@ const types = {
     "EncryptNonce": "u16",
     "UserNameHash": "Hash",
     "RandomHashedData": "Hash",
-    "SignedKeyData": "Vec<u8>",
+    "Ed25519signature": "H512",
+    "SignedBy": "H256",
     "Data": "Vec<u8>",
-    "MessageSignature": "Vec<u8>",
-    "DocumentReference": "Vec<u8>",
     "ReasonCodeStruct": {
         "ReasonCodeKey": "ReasonCode",
         "ReasonCodeTypeKey": "ReasonCodeType"
@@ -109,6 +108,6 @@ const types = {
         "random_hash": "RandomHashedData",
         "nonce": "EncryptNonce"
     },
-    "SignedData<UserNameHash,AccountId,AccountId,RandomHashedData,EncryptNonce>": "SignedData"
+    "SignedData<UserNameHash,AccountId,RandomHashedData,EncryptNonce>": "SignedData"
 }
 Object.keys(types).forEach(key => addCodecTransform(key, types[key]))
