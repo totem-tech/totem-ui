@@ -86,18 +86,16 @@ export default class NotificationDropdown extends ReactiveComponent {
             blinkClass,
             !allRead && 'has-unread'
         ].filter(Boolean).join(' ')
+
         return items.size === 0 ? '' : (
             <Dropdown
                 className={classNames}
-                icon={{
-                    className: 'no-margin',
-                    name: 'bell',
-                    size: 'large',
-                }}
+                icon={{ className: 'no-margin', name: 'bell', size: 'large' }}
                 item
                 scrolling
             >
                 <Dropdown.Menu className='notifictaions' direction="left" style={style}>
+
                     {Array.from(items).filter(([_, { deleted }]) => !deleted).reverse().map(([id, notification]) => {
                         const { senderId, type, childType, message, data, tsCreated, read } = notification
                         const userIdBtn = <UserID userId={senderId} />

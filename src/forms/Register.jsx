@@ -36,7 +36,7 @@ class FormRegister extends ReactiveComponent {
             success: undefined,
             inputs: [
                 {
-                    action: undefined,
+                    icon: undefined,
                     label: texts.userId,
                     name: 'userId',
                     minLength: 3,
@@ -50,7 +50,7 @@ class FormRegister extends ReactiveComponent {
                         const { inputs } = this.state
                         const userIdIn = findInput(inputs, 'userId')
                         const valid = nameRegex.test(userId)
-                        userIdIn.action = valid ? userIdIn.action : undefined
+                        userIdIn.icon = valid ? userIdIn.action : undefined
                         setTimeout(() => this.setState({ inputs }))
                         return valid ? null : texts.userIdValidationMsg
                     },
@@ -63,7 +63,7 @@ class FormRegister extends ReactiveComponent {
         const { inputs } = this.state
         const userId = (values.userId || '').toLowerCase().trim()
         inputs[index].message = undefined
-        inputs[index].action = undefined
+        inputs[index].icon = undefined
         this.setState({ inputs, disableSubmit: true })
         if (!userId) return
 
@@ -73,7 +73,11 @@ class FormRegister extends ReactiveComponent {
                 content: `${texts.userIdExists} ${userId}`,
                 status: exists ? 'error' : 'success'
             }
-            inputs[index].action = exists ? undefined : { color: 'green', icon: 'check' }
+            inputs[index].icon = exists ? undefined : {
+                color: 'green',
+                name: 'check circle',
+                size: 'large',
+            }
             this.setState({ inputs, disableSubmit: !exists })
         })
     }
