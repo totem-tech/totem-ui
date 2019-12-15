@@ -41,6 +41,7 @@ class TimeKeepingView extends ReactiveComponent {
                     inputs: [
                         {
                             bond: new Bond(),
+                            className: 'no-margin',
                             inline: true,
                             name: 'projectHash',
                             options: [],
