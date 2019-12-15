@@ -92,6 +92,7 @@ export default class NotificationDropdown extends ReactiveComponent {
                 className={classNames}
                 icon={{ className: 'no-margin', name: 'bell', size: 'large' }}
                 item
+                onClick={() => this.setState({ blinkClass: '' })}
                 scrolling
             >
                 <Dropdown.Menu className='notifictaions' direction="left" style={style}>
