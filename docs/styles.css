@@ -214,6 +214,6 @@ div.ui.padded.segment {
  * Form Builder
  */
 /* adds extra spacing to Dropdown field when active. ":not(.item)" excludes Dropdown fields inside Menu */
-:not(.item) > .ui.dropdown.active.visible:not(.no-margin):not(.item) {
+.form :not(.item) > .ui.dropdown.active.visible:not(.no-margin):not(.item) {
   margin-bottom: 37px;
 }

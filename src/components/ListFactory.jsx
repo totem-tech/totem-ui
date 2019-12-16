@@ -242,8 +242,20 @@ export class DataTable extends ReactiveComponent {
         )
 
         const right = topRightMenu && topRightMenu.length > 0 && (
-            <Grid.Column floated="right" key="1" tablet={16} computer={3} style={{ padding: 0 }}>
-                <Dropdown text='Actions' button fluid style={{ textAlign: 'center' }} disabled={selectedIndexes.length === 0}>
+            <Grid.Column
+                computer={3}
+                floated="right"
+                key="1"
+                style={{ padding: 0 }}
+                tablet={16}
+            >
+                <Dropdown
+                    button
+                    disabled={selectedIndexes.length === 0}
+                    fluid
+                    style={{ textAlign: 'center' }}
+                    text='Actions'
+                >
                     <Dropdown.Menu direction="left" style={{ minWidth: 'auto' }}>
                         {topRightMenu.map((item, i) => React.isValidElement(item) ? item : (
                             <Dropdown.Item

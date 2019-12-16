@@ -140,14 +140,9 @@ export default class IdentityDetails extends ReactiveComponent {
             })
         }
 
+        const confirmContent = `${wordsCapitalized.remove} ${wordsCapitalized.permanently}`
         confirm({
-            confirmButton: (
-                <Button
-                    icon='trash'
-                    content={`${wordsCapitalized.remove} ${wordsCapitalized.permanently}`}
-                    negative
-                />
-            ),
+            confirmButton: <Button icon='trash' content={confirmContent} negative />,
             content: [
                 <p key='1'>{`${wordsCapitalized.identity} ${words.name}`}: <b>{name}</b></p>,
                 <p key='0'>{texts.removeWarningPart1} <b>{texts.removeWarningPart2}</b></p>
