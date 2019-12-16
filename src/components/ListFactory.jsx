@@ -2,8 +2,9 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { Button, Card, Dropdown, Grid, Icon, Image, Input, Menu, Table } from 'semantic-ui-react'
-import { arrMapSlice, getKeys, IfMobile, isArr, isDefined, isFn, newMessage, objWithoutKeys, objCopy, search, sort } from '../utils/utils'
+import { arrMapSlice, getKeys, isArr, isDefined, isFn, newMessage, objWithoutKeys, objCopy, search, sort } from '../utils/utils'
 import { FormInput } from '../components/FormBuilder'
+import { layoutBond } from '../services/window'
 
 class ListFactory extends ReactiveComponent {
     constructor(props) {
@@ -175,7 +176,6 @@ CardHeader.propTypes = {
 /*
  * Data Table
  */
-
 const mapItemsByPage = (data, pageNo, perPage, callback) => {
     const start = pageNo * perPage - perPage
     const end = start + perPage - 1
@@ -184,7 +184,7 @@ const mapItemsByPage = (data, pageNo, perPage, callback) => {
 
 export class DataTable extends ReactiveComponent {
     constructor(props) {
-        super(props)
+        super(props, { layout: layoutBond })
 
         this.state = {
             pageNo: props.pageNo || 1,
@@ -216,9 +216,10 @@ export class DataTable extends ReactiveComponent {
         this.setState({ selectedIndexes })
     }
 
-    getTopContent(mobile, totalRows, selectedIndexes) {
+    getTopContent(totalRows, selectedIndexes) {
         let { searchable, topLeftMenu, topRightMenu } = this.props
-        const { keywords } = this.state
+        const { keywords, layout } = this.state
+        const isMobile = layout === 'mobile'
         topLeftMenu = (topLeftMenu || []).filter(x => !x.hidden)
         topRightMenu = (topRightMenu || []).filter(x => !x.hidden)
 
@@ -233,7 +234,7 @@ export class DataTable extends ReactiveComponent {
                     }}
                     onChange={(e, d) => this.setState({ keywords: d.value })}
                     placeholder="Search"
-                    style={!mobile ? undefined : styles.searchMobile}
+                    style={!isMobile ? undefined : styles.searchMobile}
                     type="text"
                     value={keywords}
                 />
@@ -241,8 +242,20 @@ export class DataTable extends ReactiveComponent {
         )
 
         const right = topRightMenu && topRightMenu.length > 0 && (
-            <Grid.Column floated="right" key="1" tablet={16} computer={3} style={{ padding: 0 }}>
-                <Dropdown text='Actions' button fluid style={{ textAlign: 'center' }} disabled={selectedIndexes.length === 0}>
+            <Grid.Column
+                computer={3}
+                floated="right"
+                key="1"
+                style={{ padding: 0 }}
+                tablet={16}
+            >
+                <Dropdown
+                    button
+                    disabled={selectedIndexes.length === 0}
+                    fluid
+                    style={{ textAlign: 'center' }}
+                    text='Actions'
+                >
                     <Dropdown.Menu direction="left" style={{ minWidth: 'auto' }}>
                         {topRightMenu.map((item, i) => React.isValidElement(item) ? item : (
                             <Dropdown.Item
@@ -263,15 +276,15 @@ export class DataTable extends ReactiveComponent {
                         {topLeftMenu.map((item, i) => React.isValidElement(item) ? item : (
                             <Button
                                 {...item}
-                                fluid={mobile}
+                                fluid={isMobile}
                                 key={i}
                                 onClick={() => isFn(item.onClick) && item.onClick(selectedIndexes)}
-                                style={!mobile ? item.style : objCopy({ marginBottom: 5 }, item.style)}
+                                style={!isMobile ? item.style : objCopy({ marginBottom: 5 }, item.style)}
                             />
                         ))}
                     </Grid.Column>
                     {(keywords || totalRows > 0) && (
-                        mobile ? [right, searchCol] : [searchCol, right]
+                        isMobile ? [right, searchCol] : [searchCol, right]
                     )}
                 </Grid.Row>
             </Grid>
@@ -347,18 +360,20 @@ export class DataTable extends ReactiveComponent {
         return headers
     }
 
-    getFooter(mobile, totalPages, pageNo) {
+    getFooter(totalPages, pageNo) {
         let { footerContent, navLimit, pageOnSelect } = this.props
-        // const {pageNo} = this.state
+        const { layout } = this.state
+        const isMobile = layout === 'mobile'
+
         return (
             <React.Fragment>
-                {footerContent && <div style={{ float: 'left', width: mobile ? '100%' : undefined }}>{footerContent}</div>}
+                {footerContent && <div style={{ float: 'left', width: isMobile ? '100%' : undefined }}>{footerContent}</div>}
                 {totalPages <= 1 ? undefined : (
                     <Paginator
                         total={totalPages}
                         current={pageNo}
                         navLimit={navLimit || 5}
-                        float={mobile ? undefined : 'right'}
+                        float={isMobile ? undefined : 'right'}
                         onSelect={pageNo => { this.setState({ pageNo }); isFn(pageOnSelect) && pageOnSelect(pageNo); }}
                     />
                 )}
@@ -367,7 +382,7 @@ export class DataTable extends ReactiveComponent {
     }
 
     render() {
-        let { data, columns: columnsOriginal, emptyMessage, footerContent, loading, perPage, searchExtraKeys } = this.props
+        let { data, columns: columnsOriginal, emptyMessage, footerContent, perPage, searchExtraKeys } = this.props
         let { keywords, pageNo, selectedIndexes, sortAsc, sortBy } = this.state
         keywords = keywords.trim()
         data = data || []
@@ -392,10 +407,7 @@ export class DataTable extends ReactiveComponent {
         this.state.pageNo = pageNo
         return (
             <div className="data-table">
-                <IfMobile
-                    then={this.getTopContent(true, totalRows, selectedIndexes)}
-                    else={this.getTopContent(false, totalRows, selectedIndexes)}
-                />
+                {this.getTopContent(totalRows, selectedIndexes)}
 
                 <div style={styles.tableContent}>
                     {totalRows === 0 ? emptyMessage && newMessage(emptyMessage) : (
@@ -414,10 +426,7 @@ export class DataTable extends ReactiveComponent {
                                 <Table.Footer>
                                     <Table.Row>
                                         <Table.HeaderCell colSpan={columns.length + 1}>
-                                            <IfMobile
-                                                then={() => this.getFooter(true, totalPages, pageNo)}
-                                                else={() => this.getFooter(false, totalPages, pageNo)}
-                                            />
+                                            {this.getFooter(totalPages, pageNo)}\
                                         </Table.HeaderCell>
                                     </Table.Row>
                                 </Table.Footer>
@@ -445,7 +454,7 @@ DataTable.propTypes = {
     defaultSort: PropTypes.string,
     emptyMessage: PropTypes.object,
     footerContent: PropTypes.any,
-    loading: PropTypes.bool,
+    // loading: PropTypes.bool,
     perPage: PropTypes.number,
     rowProps: PropTypes.oneOfType([
         PropTypes.func,

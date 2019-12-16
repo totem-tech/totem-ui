@@ -75,7 +75,6 @@ class ChatWidget extends ReactiveComponent {
 		this.handleNewUserMessage = this.handleNewUserMessage.bind(this)
 		this.login = this.login.bind(this)
 		this.setupChatClient = this.setupChatClient.bind(this)
-		// this.addFaucetEntry = this.addFaucetEntry.bind(this)
 
 		onLogin(userId => this.setState({ userId }))
 	}
@@ -107,36 +106,7 @@ class ChatWidget extends ReactiveComponent {
 			this.setState({ showOfflineMsg: false })
 		})
 
-		// this.client.onFaucetRequest(this.addFaucetEntry)
 	}
-
-	// addFaucetEntry(userId, address) {
-	// 	const fromMe = userId === this.state.userId
-	// 	const addArr = address.split('')
-	// 	const addressShort = addArr.slice(0, 4).join('') + '...' + addArr.slice(addArr.length - 4, addArr.length).join('') + ' '
-	// 	const content = (
-	// 		<div>
-	// 			<h4 style={styles.faucetRequestTitle}>
-	// 				{fromMe ? 'You made a request for funds' : 'Funds requested for @' + userId}
-	// 			</h4>
-	// 			<div>Address: {addressShort}
-	// 				<Icon
-	// 					link
-	// 					title="Copy address"
-	// 					name="copy outline"
-	// 					onClick={() => copyToClipboard(address)}
-	// 				/>
-	// 			</div>
-	// 		</div>
-	// 	)
-
-	// 	const props = {
-	// 		background: fromMe ? 'grey' : '#f4f7f9',
-	// 		color: fromMe ? 'white' : 'black',
-	// 		content
-	// 	}
-	// 	renderCustomComponent(EventEntry, props)
-	// }
 
 	handleNewUserMessage(msg) {
 		this.client.message(msg, err => err ? addEventMsg(err) : addToHistory(msg, this.state.userId))
@@ -161,29 +131,11 @@ class ChatWidget extends ReactiveComponent {
 
 	render() {
 		const { userId } = this.state
-		const subtitle = (
-			<div>
-				{userId ? <h5>Logged in as {'@' + userId}</h5> : <h5></h5>}
-			</div>
-			// <div>
-			// 	{userId ? <h5>Logged in as {'@' + userId}</h5> : (
-			// 		// <Button 
-			// 		// 	as="a" 
-			// 		// 	basic 
-			// 		// 	inverted 
-			// 		// 	size="tiny" 
-			// 		// 	content="Register chat user id" 
-			// 		// 	onClick={()=> showForm(Register, {closeOnSubmit: true})} 
-			// 		// />
-			// 	)}
-			// 	{/* <p>Your chat history is not saved on the server. Up to {historyLimit} messages are saved locally.</p> */}
-			// </div>
-		)
-		return (
+		return !userId ? '' : (
 			<Widget
 				titleAvatar={TotemLogoCircle}
 				title="totem trollbox"
-				subtitle={subtitle}
+				subtitle={userId ? <h5>Logged in as {'@' + userId}</h5> : ''}
 				senderPlaceHolder={"Say something nice..."}
 				handleNewUserMessage={this.handleNewUserMessage}
 				xbadge={this.state.unreadCount}

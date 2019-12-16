@@ -18,19 +18,23 @@ class UpgradeView extends ReactiveComponent {
 	render() {
 		const contents = (
 			<div>
-				<FileUploadBond bond={this.newRuntime} content="Select Runtime" />
-				<TransactButton
-					content="Upgrade"
-					icon="warning"
-					tx={{
-						sender: runtime.sudo
-							? runtime.sudo.key
-							: runtime.upgrade_key.key,
-						call: calls.sudo
-							? calls.sudo.sudo(calls.consensus.setCode(this.newRuntime))
-							: calls.upgrade_key.upgrade(this.newRuntime)
-					}}
-				/>
+				<div style={{paddingBottom: '20px'}}>
+					<FileUploadBond bond={this.newRuntime} content="Select Runtime" />
+				</div>
+				<div>
+					<TransactButton
+						content="Upgrade"
+						icon="warning"
+						tx={{
+							sender: runtime.sudo
+								? runtime.sudo.key
+								: runtime.upgrade_key.key,
+							call: calls.sudo
+								? calls.sudo.sudo(calls.consensus.setCode(this.newRuntime))
+								: calls.upgrade_key.upgrade(this.newRuntime)
+						}}
+					/>
+				</div>
 			</div>
 		)
 		return <If condition={this.conditionBond} then={contents} />

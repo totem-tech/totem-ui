@@ -96,13 +96,34 @@
 .no-margin {
   margin: 0 !important;
 }
-.no-padding, .ui.menu .item .notification-service.menu.left.visible .item.no-padding {
+.notification-dropdown.ui.dropdown .menu.notifictaions {
+  position: fixed !important;
+  top: 60px !important;
+}
+.notification-dropdown.has-unread.ui.item.scrolling.dropdown {
+  background: red;
+}
+#app .desktop .notification-dropdown.ui.dropdown .menu.notifictaions {
+  left: calc(100% - 400px) !important;
+}
+#app .desktop .notification-dropdown .menu.notifictaions .item {
+  max-width: 400px;
+} 
+.no-padding, .ui.menu .notification-dropdown.item .menu.notifictaions.visible .item.no-padding {
   padding: 0 !important;
 }
-.ui.menu .ui.dropdown .notification-service.menu > .item > .message i:not(.close) {
+.ui.menu .ui.notification-dropdown.dropdown .menu > .item > .message i:not(.close) {
   float: left;
   font-size: 40px !important;
   margin-right: 5px !important;
+}
+.blink {
+  animation: blinker 1s linear infinite;
+}
+@keyframes blinker {
+  50% {
+    opacity: 0;
+  }
 }
 
 i.icon:not(.no-margin) {
@@ -169,16 +190,30 @@ div.ui.padded.segment {
   transition: all 0.5s ease;
 }
 /* pushes chat launcher icon up when bottom status bar is visible */
-#app .sidebar-collapsed .rcw-widget-container {
+/* #app .sidebar-collapsed .rcw-widget-container {
   margin-bottom: 73px;
-}
+} */
 
 /* hide when mobile sidebar is open */
 .mobile.sidebar-visible .rcw-widget-container {
   display: none;
 }
 
+/* more space for messages */
+#messages .rcw-response {
+  max-width: 75%;
+}
+
 /* allow new lines in the chat subheader */
 .rcw-header > h4 + span {
   white-space: pre-line;
+}
+
+
+/*
+ * Form Builder
+ */
+/* adds extra spacing to Dropdown field when active. ":not(.item)" excludes Dropdown fields inside Menu */
+.form :not(.item) > .ui.dropdown.active.visible:not(.no-margin):not(.item) {
+  margin-bottom: 37px;
 }

@@ -8,7 +8,7 @@ import {
 } from 'oo7-substrate'
 
 // Components
-import GettingStarted from './components/GettingStartedView'
+import GettingStarted from './views/GettingStartedView'
 import SendFundsView from './views/SendFundsView'
 import UtilitiesView from './views/UtilitiesView'
 import TimeKeepingView from './views/TimeKeepingView'
@@ -22,23 +22,25 @@ import IdentityList from './lists/IdentityList'
 import SidebarLeft from './components/SidebarLeft'
 import ModalService from './services/modal'
 import ToastService from './services/toast'
-// import NotificationService from './services/notification'
 import { resumeQueue } from './services/queue'
-import { IfMobile } from './utils/utils'
+import { getLayout, layoutBond } from './services/window'
+// Utils
+import DataStorage from './utils/DataStorage'
 // Images
 import TotemButtonLogo from './assets/totem-button-grey.png'
-import DataStorage from './utils/DataStorage'
+// temp
+import KeyRegistryPlayground from './forms/KeyRegistryPlayGround'
 
 export class App extends ReactiveComponent {
 	constructor() {
-		super([], { ensureRuntime: runtimeUp })
+		super([], { ensureRuntime: runtimeUp, layout: layoutBond })
 		this.state = {
 			sidebarItems: [...sidebarItems].map(item => {
 				item.elementRef = React.createRef()
 				return item
 			}),
 			sidebarCollapsed: false,
-			sidebarVisible: !this.isMobile(),
+			sidebarVisible: getLayout() !== 'mobile',
 			status: {}
 		}
 
@@ -59,11 +61,6 @@ export class App extends ReactiveComponent {
 		this.handleSidebarToggle = this.handleSidebarToggle.bind(this)
 		this.toggleMenuItem = this.toggleMenuItem.bind(this)
 		this.handleClose = this.handleClose.bind(this)
-		this.getContent = this.getContent.bind(this)
-	}
-
-	isMobile() {
-		return window.innerWidth <= Responsive.onlyMobile.maxWidth
 	}
 
 	// hack to format as a currency. Needs to go in a seperate Display Formatting Utilities file.
@@ -84,9 +81,11 @@ export class App extends ReactiveComponent {
 			sidebarVisible: isMobile ? false : this.state.sidebarVisible
 		})
 		items[index].active && setTimeout(() => {
+			const elRef = items[index].elementRef
 			// Scroll down to the content segment
-			document.getElementById('main-content')
-				.scrollTo(0, items[index].elementRef.current.offsetTop - (isMobile ? 75 : 0))
+			elRef && elRef.current && document.getElementById('main-content').scrollTo(0,
+				elRef.current.offsetTop - (isMobile ? 75 : 0)
+			)
 		}, 100)
 	}
 
@@ -95,60 +94,6 @@ export class App extends ReactiveComponent {
 		if (!sidebarItems[index]) return;
 		sidebarItems[index].active = false
 		this.setState({ sidebarItems })
-	}
-
-	getContent(mobile) {
-		const { sidebarCollapsed, sidebarItems, sidebarVisible } = this.state
-		const { handleClose, handleSidebarToggle, toggleMenuItem } = this
-		const { spaceBelow, mainContent, mainContentCollapsed } = styles
-		const logoSrc = TotemButtonLogo
-
-		return (
-			<React.Fragment>
-				{/* <NotificationService /> */}
-				<ChatWidget />
-				<ModalService />
-				{/* <IfFn condition={!mobile && sidebarCollapsed} then={()=> <SystemStatus sidebar={true} visible={true} />} /> */}
-				<Sidebar.Pushable>
-					<SidebarLeft
-						collapsed={mobile ? false : sidebarCollapsed}
-						isMobile={mobile}
-						items={sidebarItems}
-						onMenuItemClick={toggleMenuItem}
-						onSidebarToggle={handleSidebarToggle}
-						visible={mobile ? sidebarVisible : true}
-					/>
-
-					<Sidebar.Pusher
-						as={Container}
-						className="main-content"
-						dimmed={mobile && sidebarVisible}
-						id="main-content"
-						fluid
-						style={sidebarCollapsed ? mainContentCollapsed : mainContent}
-					>
-						<ErrorBoundary>
-							<PageHeader
-								logoSrc={logoSrc}
-								isMobile={mobile}
-								onSidebarToggle={handleSidebarToggle}
-								sidebarCollapsed={sidebarCollapsed}
-								sidebarVisible={sidebarVisible}
-							/>
-						</ErrorBoundary>
-
-
-						<ToastService fullWidth={true} hidden={mobile && sidebarVisible} />
-
-						{sidebarItems.map((item, i) => (
-							<div ref={item.elementRef} key={i} hidden={!item.active} style={spaceBelow}>
-								<ContentSegment {...item} onClose={handleClose} index={i} />
-							</div>
-						))}
-					</Sidebar.Pusher>
-				</Sidebar.Pushable>
-			</React.Fragment>
-		)
 	}
 
 	unreadyRender() {
@@ -163,24 +108,64 @@ export class App extends ReactiveComponent {
 	}
 
 	readyRender() {
-		const { sidebarCollapsed, sidebarVisible } = this.state
+		const { layout, sidebarCollapsed, sidebarItems, sidebarVisible } = this.state
+		const isMobile = layout === 'mobile'
+		const { handleClose, handleSidebarToggle, toggleMenuItem } = this
+		const { spaceBelow, mainContent, mainContentCollapsed } = styles
+		const logoSrc = TotemButtonLogo
 		const classNames = [
 			sidebarVisible ? 'sidebar-visible' : '',
-			sidebarCollapsed ? 'sidebar-collapsed' : ''
-		].join(' ')
+			sidebarCollapsed ? 'sidebar-collapsed' : '',
+			layout,
+		].filter(Boolean).join(' ')
 
 		if (!this.resumed) {
+			// resume any incomplete queued tasks 
 			this.resumed = true
 			setTimeout(() => resumeQueue(), 1000)
 		}
 
 		return (
-			<IfMobile
-				then={this.getContent(true)}
-				thenClassName={'mobile ' + classNames}
-				else={this.getContent(false)}
-				elseClassName={classNames}
-			/>
+			<div className={classNames}>
+				<ChatWidget />
+				<ModalService />
+				<ErrorBoundary>
+					<PageHeader
+						logoSrc={logoSrc}
+						isMobile={isMobile}
+						onSidebarToggle={handleSidebarToggle}
+						sidebarCollapsed={sidebarCollapsed}
+						sidebarVisible={sidebarVisible}
+					/>
+				</ErrorBoundary>
+
+				<ToastService fullWidth={true} hidden={isMobile && sidebarVisible} />
+				<Sidebar.Pushable style={styles.pushable}>
+					<SidebarLeft
+						collapsed={isMobile ? false : sidebarCollapsed}
+						isMobile={isMobile}
+						items={sidebarItems}
+						onMenuItemClick={toggleMenuItem}
+						onSidebarToggle={handleSidebarToggle}
+						visible={isMobile ? sidebarVisible : true}
+					/>
+
+					<Sidebar.Pusher
+						as={Container}
+						className="main-content"
+						dimmed={isMobile && sidebarVisible}
+						id="main-content"
+						fluid
+						style={sidebarCollapsed ? mainContentCollapsed : mainContent}
+					>
+						{sidebarItems.map((item, i) => (
+							<div ref={item.elementRef} key={i} hidden={!item.active} style={spaceBelow}>
+								<ContentSegment {...item} onClose={handleClose} index={i} />
+							</div>
+						))}
+					</Sidebar.Pusher>
+				</Sidebar.Pushable>
+			</div >
 		)
 	}
 }
@@ -193,7 +178,28 @@ const sidebarItems = [
 		icon: "play circle outline",
 		title: "Getting Started"
 	},
+	{
+		active: false,
+		content: <KeyRegistryPlayground />,
+		icon: "play circle outline",
+		title: "Key Registry Playground"
+	},
 	// { icon: "object group outline", title: "Overview", subHeader: "", active: false, content: <LedgerTransactionList />},
+	{
+		icon: "id badge outline",
+		title: "Identities",
+		subHeader: "Manage your Identities",
+		subHeaderDetails:
+			"In Totem, you can create multiple identites to suit your needs. Identities are private, but you can choose which ones you share \n" +
+			"There is a default identity which is created for you when you start Totem for the first time. This Identity is your master backup key \n" +
+			"and you must not lose this. It allows you to backup all your data and also to recover the data on different devices. \n" +
+			" The other identities you create are used to manage personal or business activities. Each Identity has it's own set of accounting modules, \n" +
+			"so this means that you can only see the activities of one identity at a time. You can think of an Identity like running a company, grouping things together" +
+			"You can give each shared Identity a name, add tags, and define it any way you want, and you can associate it with partners,  \n" +
+			"Once a identity is stored in this list you can use it all over Totem. To find out more, watch the video!",
+		active: false,
+		content: <IdentityList />
+	},
 	{
 		icon: "users", title: "Partners",
 		header: "Partner Contact List",
@@ -208,14 +214,6 @@ const sidebarItems = [
 		active: false,
 		content: <PartnerList />
 	},
-	// { icon: "file alternate", title: "Invoice", subHeader: "", active: false, content: <Invoice /> },
-	{ icon: "file alternate", title: "Manage Invoices", subHeader: "" },
-	{ icon: "file alternate outline", title: "Credit Note", subHeader: "" },
-	{ icon: "exchange", title: "Purchase Order", subHeader: "" },
-	{ icon: "inbox", title: "Manage Orders", subHeader: "" },
-	{ icon: "cc mastercard", title: "Expense", subHeader: "" },
-	{ icon: "exclamation circle", title: "Disputed Items", subHeader: "" },
-	{ icon: "chart bar outline", title: "Edit Accounting", subHeader: "" },
 	{
 		active: false,
 		content: <ProjectList />,
@@ -235,7 +233,6 @@ const sidebarItems = [
 		title: "Timekeeping",
 		subHeader: "Manage timekeeping against projects and tasks.",
 	},
-	{ icon: "lightbulb", title: "Products", subHeader: "" },
 	{
 		icon: "money bill alternate outline",
 		title: "Transfer",
@@ -244,21 +241,16 @@ const sidebarItems = [
 		active: false,
 		content: <SendFundsView />
 	},
-	{
-		icon: "id badge outline",
-		title: "Identities",
-		subHeader: "Manage your Identities",
-		subHeaderDetails:
-			"In Totem, you can create multiple identites to suit your needs. Identities are private, but you can choose which ones you share \n" +
-			"There is a default identity which is created for you when you start Totem for the first time. This Identity is your master backup key \n" +
-			"and you must not lose this. It allows you to backup all your data and also to recover the data on different devices. \n" +
-			" The other identities you create are used to manage personal or business activities. Each Identity has it's own set of accounting modules, \n" +
-			"so this means that you can only see the activities of one identity at a time. You can think of an Identity like running a company, grouping things together" +
-			"You can give each shared Identity a name, add tags, and define it any way you want, and you can associate it with partners,  \n" +
-			"Once a identity is stored in this list you can use it all over Totem. To find out more, watch the video!",
-		active: false,
-		content: <IdentityList />
-	},
+	// { icon: "file alternate", title: "Invoice", subHeader: "", active: false, content: <Invoice /> },
+	{ icon: "file alternate", title: "Manage Invoices", subHeader: "" },
+	{ icon: "file alternate outline", title: "Credit Note", subHeader: "" },
+	{ icon: "exchange", title: "Purchase Order", subHeader: "" },
+	{ icon: "inbox", title: "Manage Orders", subHeader: "" },
+	{ icon: "cc mastercard", title: "Expense", subHeader: "" },
+	{ icon: "exclamation circle", title: "Disputed Items", subHeader: "" },
+	{ icon: "chart bar outline", title: "Edit Accounting", subHeader: "" },
+	{ icon: "lightbulb", title: "Products", subHeader: "" },
+	{ icon: "cogs", title: "Settings", subHeader: "" },
 	{
 		active: false,
 		icon: "stethoscope",
@@ -266,8 +258,7 @@ const sidebarItems = [
 		subHeader: "Blockchain utilities",
 		// subHeaderDetails: 'This is a sample detailed subheader', // for extra information that extends subHeader
 		content: <UtilitiesView />
-	},
-	{ icon: "cogs", title: "Settings", subHeader: "" }
+	}
 ]
 
 const styles = {
@@ -282,15 +273,16 @@ const styles = {
 		WebkitOverflow: 'hidden auto',
 		height: '100%',
 		scrollBehavior: 'smooth',
-		padding: '75px 15px 15px'
+		padding: 15,
 	},
 	mainContentCollapsed: {
 		overflow: 'hidden auto',
 		WebkitOverflow: 'hidden auto',
 		height: '100%',
 		// scrollBehavior: 'smooth',
-		padding: '75px 15px 75px'
+		padding: 15,
 	},
+	pushable: { marginTop: 61 },
 	spaceBelow: {
 		marginBottom: 15
 	}

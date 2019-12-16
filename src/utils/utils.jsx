@@ -2,7 +2,7 @@ import React from 'react'
 import { Icon, Message, Responsive } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import createHash from 'create-hash/browser'
-import { bytesToHex, hashToStr } from './convert'
+import { hashToStr } from './convert'
 
 /*
  * Copies supplied string to system clipboard
@@ -68,7 +68,15 @@ export const hasValue = x => {
 	}
 	// (isValidNumber(x) || (isStr(x) && !!x.trim()) || isBool(x))
 }
+
+/* 
+// Window or page helpers 
+*/
 export const isMobile = () => window.innerWidth <= Responsive.onlyMobile.maxWidth
+
+// force refresh page from server
+export const forceRefreshPage = () => window.location.reload(true)
+
 
 export const randomInt = (min, max) => parseInt(Math.random() * (max - min) + min)
 
@@ -483,43 +491,4 @@ export const newMessage = message => {
 			warning={['warning', 'loading'].indexOf(status) >= 0}
 		/>
 	)
-}
-
-/*
- * Functional Components
- */
-export function IfFn(props) {
-	const content = props.condition ? props.then : props.else
-	return (isFn(content) ? content(props.condition) : content) || ''
-}
-
-// IfMobile component can be used to switch between content when on mobile and/or not
-export function IfMobile(props) {
-	return (
-		<React.Fragment>
-			{props.then && (
-				<Responsive
-					maxWidth={Responsive.onlyMobile.maxWidth}
-					onUpdate={props.onUpdate}
-					className={props.thenClassName}
-				>
-					<IfFn {...{ condition: true, then: props.then }} />
-				</Responsive>
-			)}
-
-			{props.else && (
-				<Responsive
-					minWidth={Responsive.onlyMobile.maxWidth}
-					onUpdate={props.then ? undefined : props.onUpdate}
-					className={props.elseClassName}
-				>
-					<IfFn {...{ condition: false, else: props.else }} />
-				</Responsive>
-			)}
-		</React.Fragment>
-	)
-}
-
-export function IfNotMobile(props) {
-	return <IfMobile else={props.then} elseClassName={props.thenClassName} onUpdate={props.onUpdate} />
 }

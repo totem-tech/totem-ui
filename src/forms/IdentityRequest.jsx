@@ -24,11 +24,10 @@ export function handleAddUser(e, data) {
     // check if User ID is valid
     client.idExists(userId, exists => {
         idsIn.loading = false
-        idsIn.invalid = !exists
         idsIn.message = exists ? {} : {
             content: `User ID "${userId}" not found`,
             showIcon: true,
-            status: 'error',
+            status: 'warning',
         }
 
         if (exists && (getUser() || {}).id !== userId) {

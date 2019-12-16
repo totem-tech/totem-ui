@@ -1,20 +1,20 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import { Checkbox, Button, Label } from 'semantic-ui-react'
-// import { ButtonAcceptOrReject } from '../components/buttons'
-import { textEllipsis, IfMobile } from '../utils/utils'
-import { confirm, showForm } from '../services/modal'
+import { textEllipsis } from '../utils/utils'
 import ListFactory from '../components/ListFactory'
+import { getAddressName } from '../components/ProjectDropdown'
+import { confirm, showForm } from '../services/modal'
 import addressbook from '../services/partners'
-import PartnerForm from '../forms/Partner'
+import { layoutBond } from '../services/window'
 import CompanyForm from '../forms/Company'
 import IdentityRequestForm from '../forms/IdentityRequest'
 import IdentityShareForm from '../forms/IdentityShare'
-import { getAddressName } from '../components/ProjectDropdown'
+import PartnerForm from '../forms/Partner'
 
 export default class PartnerList extends ReactiveComponent {
 	constructor(props) {
-		super(props)
+		super(props, { layout: layoutBond })
 
 		this.state = {
 			listProps: {
@@ -23,7 +23,6 @@ export default class PartnerList extends ReactiveComponent {
 					{ collapsing: true, key: 'type', title: 'Usage' },
 					{ key: '_associatedIdentity', title: 'Used by', style: { maxWidth: 200 } },
 					{ key: '_tags', title: 'Tags' },
-					// { collapsing: true, key: '_address', title: 'Address' },
 					{
 						content: ({ address, isPublic }) => (
 							<div
@@ -80,8 +79,6 @@ export default class PartnerList extends ReactiveComponent {
 					icon='share'
 					onClick={() => showForm(IdentityShareForm, {
 						disabledFields: ['address'],
-						header: 'Share Partner Identity',
-						subheader: 'Share a Partner with one or more Totem users',
 						includeOwnIdentities: false,
 						includePartners: true,
 						size: 'tiny',
@@ -129,11 +126,12 @@ export default class PartnerList extends ReactiveComponent {
 		this.setState({ listProps })
 	}
 
-	getContent(mobile) {
-		const { listProps } = this.state
+	render() {
+		const { layout, listProps } = this.state
+		const isMobile = layout === 'mobile'
 		listProps.topLeftMenu = [
 			(
-				<Button.Group fluid={mobile} key='0'>
+				<Button.Group fluid={isMobile} key='0'>
 					<Button icon='plus' content='Add' onClick={() => showForm(PartnerForm)} />
 					<Button.Or />
 					<Button content='Request' onClick={() => showForm(IdentityRequestForm)} />
@@ -141,10 +139,5 @@ export default class PartnerList extends ReactiveComponent {
 			)
 		]
 		return <ListFactory {...listProps} />
-	}
-
-	render() {
-
-		return <IfMobile then={() => this.getContent(true)} else={() => this.getContent(false)} />
 	}
 }
