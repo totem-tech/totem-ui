@@ -129,7 +129,18 @@ export class App extends ReactiveComponent {
 			<div className={classNames}>
 				<ChatWidget />
 				<ModalService />
-				<Sidebar.Pushable>
+				<ErrorBoundary>
+					<PageHeader
+						logoSrc={logoSrc}
+						isMobile={isMobile}
+						onSidebarToggle={handleSidebarToggle}
+						sidebarCollapsed={sidebarCollapsed}
+						sidebarVisible={sidebarVisible}
+					/>
+				</ErrorBoundary>
+
+				<ToastService fullWidth={true} hidden={isMobile && sidebarVisible} />
+				<Sidebar.Pushable style={styles.pushable}>
 					<SidebarLeft
 						collapsed={isMobile ? false : sidebarCollapsed}
 						isMobile={isMobile}
@@ -147,18 +158,6 @@ export class App extends ReactiveComponent {
 						fluid
 						style={sidebarCollapsed ? mainContentCollapsed : mainContent}
 					>
-						<ErrorBoundary>
-							<PageHeader
-								logoSrc={logoSrc}
-								isMobile={isMobile}
-								onSidebarToggle={handleSidebarToggle}
-								sidebarCollapsed={sidebarCollapsed}
-								sidebarVisible={sidebarVisible}
-							/>
-						</ErrorBoundary>
-
-						<ToastService fullWidth={true} hidden={isMobile && sidebarVisible} />
-
 						{sidebarItems.map((item, i) => (
 							<div ref={item.elementRef} key={i} hidden={!item.active} style={spaceBelow}>
 								<ContentSegment {...item} onClose={handleClose} index={i} />
@@ -166,21 +165,21 @@ export class App extends ReactiveComponent {
 						))}
 					</Sidebar.Pusher>
 				</Sidebar.Pushable>
-			</div>
+			</div >
 		)
 	}
 }
 
 const sidebarItems = [
 	{
-		active: false,
+		active: true,
 		content: <GettingStarted />,
 		headerDividerHidden: true,
 		icon: "play circle outline",
 		title: "Getting Started"
 	},
 	{
-		active: true,
+		active: false,
 		content: <KeyRegistryPlayground />,
 		icon: "play circle outline",
 		title: "Key Registry Playground"
@@ -274,15 +273,16 @@ const styles = {
 		WebkitOverflow: 'hidden auto',
 		height: '100%',
 		scrollBehavior: 'smooth',
-		padding: '75px 15px 15px'
+		padding: 15,
 	},
 	mainContentCollapsed: {
 		overflow: 'hidden auto',
 		WebkitOverflow: 'hidden auto',
 		height: '100%',
 		// scrollBehavior: 'smooth',
-		padding: '75px 15px 75px'
+		padding: 15,
 	},
+	pushable: { marginTop: 61 },
 	spaceBelow: {
 		marginBottom: 15
 	}

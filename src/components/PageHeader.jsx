@@ -173,13 +173,13 @@ class MobileHeader extends ReactiveComponent {
 								onClick={timerOnClick}
 							/>
 						)}
-						<Menu.Item>
+						<Menu.Item style={{ paddingRight: 0 }}>
 							<Dropdown
 								labeled
-								value={addressSelected}
 								noResultsMessage="No wallet available"
-								placeholder="Select an account"
 								onChange={onSelection}
+								placeholder="Select an account"
+								value={addressSelected}
 								options={wallets.map(({ address, name }) => ({
 									key: address,
 									text: (name || '').split('').slice(0, 16).join(''),
