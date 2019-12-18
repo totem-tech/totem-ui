@@ -25,6 +25,7 @@ const texts = {
     identityLabel2: 'Identity to be shared',
     identityLabel3: 'Partner to be shared',
     identityPlaceholder: 'Select an identity',
+    introducedByLabel: 'Introduced by',
     nameLabel: 'Enter new partner name (will be seen by recipients)',
     namePlaceholder: 'Enter a name to be shared',
     successMsgContent: 'Identity has been sent to selected user(s)',
@@ -78,6 +79,15 @@ export default class IdentityShareForm extends ReactiveComponent {
                     type: 'dropdown',
                     value: [],
                 },
+                {
+                    hidden: true,
+                    label: texts.introducedByLabel,
+                    multiple: false,
+                    name: 'introducedBy',
+                    readOnly: true,
+                    type: 'UserIdInput',
+                    value: '',
+                }
             ]
         }
     }
@@ -91,13 +101,13 @@ export default class IdentityShareForm extends ReactiveComponent {
         // add identity options
         identityIn.options = []
         if (includeOwnIdentities) {
+            includePartners && identityIn.options.push({
+                key: 0,
+                style: styles.itemHeader,
+                text: wordsCap.identities,
+                value: '' // keep
+            })
             identityIn.options.push(
-                {
-                    key: 0,
-                    style: styles.itemHeader,
-                    text: wordsCap.identities,
-                    value: '' // keep
-                },
                 ...identityService.getAll().map(({ address, name }) => ({
                     key: address,
                     name, // keep
@@ -106,13 +116,13 @@ export default class IdentityShareForm extends ReactiveComponent {
                 })))
         }
         if (includePartners) {
+            includeOwnIdentities && identityIn.options.push({
+                key: 0,
+                style: styles.itemHeader,
+                text: wordsCap.partners,
+                value: '' // keep
+            })
             identityIn.options.push(
-                {
-                    key: 0,
-                    style: styles.itemHeader,
-                    text: wordsCap.partners,
-                    value: '' // keep
-                },
                 ...Array.from(addressbook.getAll()).map(([address, { name }]) => ({
                     key: address,
                     name, // keep
@@ -143,6 +153,9 @@ export default class IdentityShareForm extends ReactiveComponent {
 
         // prefill values
         fillValues(inputs, values)
+
+        // show introducedBy only if value exists
+        findInput(inputs, 'introducedBy').hidden = !values.introducedBy
         this.setState({ header, inputs })
 
         if (!address) return

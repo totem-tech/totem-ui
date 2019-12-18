@@ -4,9 +4,11 @@ import { Button, Dropdown, Form, Input, TextArea } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { isBond, isDefined, isFn, objWithoutKeys, newMessage, hasValue, objReadOnly, isValidNumber, isStr } from '../utils/utils';
+// Custom Inputs
 import { InputBond } from '../InputBond'
 import { AccountIdBond } from '../AccountIdBond'
 import CheckboxGroup from './CheckboxGroup'
+import UserIdInput from './UserIdInput'
 
 const VALIDATION_MESSAGES = objReadOnly({
     max: (max) => `Number must be smaller or equal ${max}`,
@@ -46,13 +48,17 @@ export default class FormInput extends ReactiveComponent {
             validate,
         } = this.props
         const { checked, value } = data
+
+        // for custom input types (eg: UserIdInput)
+        if (data.invalid) return isFn(onChange) && onChange(event, data, this.props)
+
         // Forces the synthetic event and it's value to persist
         // Required for use with deferred function
         event && isFn(event.persist) && event.persist();
         const typeLower = (type || '').toLowerCase()
         const isCheck = ['checkbox', 'radio'].indexOf(typeLower) >= 0
         const hasVal = hasValue(isCheck ? checked : value)
-        let errMsg //= !isCheck && required && !hasVal ? VALIDATION_MESSAGES.requiredField() : undefined
+        let errMsg
 
         if (hasVal && !errMsg) {
             switch (typeLower) {
@@ -98,9 +104,7 @@ export default class FormInput extends ReactiveComponent {
         if (!message && isFn(validate)) {
             const vMsg = validate(event, data)
             message = !vMsg || !isStr(vMsg) ? vMsg : { content: vMsg, status: 'error' }
-            if (message && message.status === 'error') {
-                errMsg = message.content
-            }
+            errMsg = message && message.status === 'error' ? message.content : errMsg
         }
 
         data.invalid = !!errMsg
@@ -171,6 +175,9 @@ export default class FormInput extends ReactiveComponent {
             case 'textarea':
                 inputEl = <TextArea {...attrs} />
                 break;
+            case 'useridinput':
+                inputEl = <UserIdInput {...attrs} />
+                break
             default:
                 attrs.fluid = !useInput ? undefined : attrs.fluid
                 if (!!inlineLabel) {

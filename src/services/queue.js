@@ -19,7 +19,7 @@ const txQueue = []
 export const QUEUE_TYPES = Object.freeze({
     CHATCLIENT: 'chatclient',
     BLOCKCHAIN: 'blockchain',
-}, false)
+})
 
 export const addToQueue = (queueItem, id, toastId) => {
     // prevent adding the same task again

@@ -172,7 +172,7 @@ export class App extends ReactiveComponent {
 
 const sidebarItems = [
 	{
-		active: true,
+		active: false,
 		content: <GettingStarted />,
 		headerDividerHidden: true,
 		icon: "play circle outline",
@@ -186,8 +186,9 @@ const sidebarItems = [
 	},
 	// { icon: "object group outline", title: "Overview", subHeader: "", active: false, content: <LedgerTransactionList />},
 	{
+		active: false,
+		content: <IdentityList />,
 		icon: "id badge outline",
-		title: "Identities",
 		subHeader: "Manage your Identities",
 		subHeaderDetails:
 			"In Totem, you can create multiple identites to suit your needs. Identities are private, but you can choose which ones you share \n" +
@@ -197,11 +198,12 @@ const sidebarItems = [
 			"so this means that you can only see the activities of one identity at a time. You can think of an Identity like running a company, grouping things together" +
 			"You can give each shared Identity a name, add tags, and define it any way you want, and you can associate it with partners,  \n" +
 			"Once a identity is stored in this list you can use it all over Totem. To find out more, watch the video!",
-		active: false,
-		content: <IdentityList />
+		title: "Identities",
 	},
 	{
-		icon: "users", title: "Partners",
+		active: true,
+		content: <PartnerList />,
+		icon: "users",
 		header: "Partner Contact List",
 		subHeader: "Manage suppliers or customers, or any other party that you have contact with in Totem.",
 		subHeaderDetails:
@@ -211,8 +213,7 @@ const sidebarItems = [
 			"Click Request, and enter the partner\'s userID and hopefully they will share one with you. \n" +
 			"You can give each shared Partner Identity a new name, add tags, and define it any way you want. \n" +
 			"Once a partner is stored in this list you can use it all over Totem.",
-		active: false,
-		content: <PartnerList />
+		title: "Partners",
 	},
 	{
 		active: false,

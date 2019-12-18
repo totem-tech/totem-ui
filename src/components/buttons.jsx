@@ -2,6 +2,8 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
 import { textCapitalize } from '../utils/utils'
+import partners from '../services/partners'
+import identities from '../services/identity'
 
 const words = {
     accept: 'accept',

@@ -102,7 +102,7 @@ export const getTimeRecords = (projectHash, ownerAddress, pageNo = 1, perPage = 
             records.filter(r => !!r).map((r, i) => ({
                 ...r,
                 hash: hashes[i],
-                workerAddress: ss58Encode(r.worker),
+                workerAddress: r.worker && ss58Encode(r.worker) || '',
             }))
                 // If not project owner, only include own records
                 .filter(r => isOwner || r.workerAddress === workerAddress)

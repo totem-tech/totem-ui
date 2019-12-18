@@ -58,6 +58,7 @@ export default class NotificationDropdown extends ReactiveComponent {
         this.state = {
             blinkClass: '',
             items: notifications.getAll(),
+            open: false,
         }
 
         this.iconAddBlink = () => this.setState({ blinkClass: 'blink' })
@@ -67,6 +68,7 @@ export default class NotificationDropdown extends ReactiveComponent {
     componentWillMount() {
         this.tieId = triggerBond.tie(() => this.setState({ items: notifications.getAll() }))
         this.tieIdClass = newNotificationBond.tie(() => {
+            if (this.state.open) return
             this.iconAddBlink()
             this.iconRemoveBlink()
         })
@@ -93,6 +95,8 @@ export default class NotificationDropdown extends ReactiveComponent {
                 icon={{ className: 'no-margin', name: 'bell', size: 'large' }}
                 item
                 onClick={() => this.setState({ blinkClass: '' })}
+                onClose={() => this.setState({ open: false })}
+                onOpen={() => this.setState({ open: true })}
                 scrolling
             >
                 <Dropdown.Menu className='notifictaions' direction="left" style={style}>
@@ -103,7 +107,7 @@ export default class NotificationDropdown extends ReactiveComponent {
                         const typeSpaced = type.replace('_', ' ')
                         const msg = {
                             // attached: true,
-                            icon: { name: 'bell outline', size: 'large', style: { marginRight: 5 } },
+                            icon: { name: 'bell outline' },
                             content: <span>{userIdBtn}: {message}</span>,
                             header: `${typeSpaced} ${childType}`,
                             key: id,
@@ -114,27 +118,36 @@ export default class NotificationDropdown extends ReactiveComponent {
                         }
 
                         switch (type + ':' + childType) {
-                            case 'identity:request':
-                                // data => {reason}
+                            case 'identity:introduce': // data => {userId}
+                            case 'identity:request': // data => {reason}
+                                const isIntroduce = childType === 'introduce'
                                 msg.header = undefined
-                                msg.icon.name = 'user'
+                                msg.icon.name = isIntroduce ? 'handshake' : 'user'
+                                const recipientId = isIntroduce ? data.userId : senderId
                                 msg.content = (
                                     <div>
-                                        <div><b>{userIdBtn} requested an Identity from you</b></div>
-                                        <b>Reason : </b> {data.reason}
+                                        <div>
+                                            <b>{userIdBtn} {!isIntroduce ? 'requested an identity from you' :
+                                                'recommended you to share your identity with the following user: '}</b>
+                                            {isIntroduce ? <UserID userId={recipientId} /> : (
+                                                <div><b>Reason :</b> {data.reason}</div>
+                                            )}
+                                        </div>
                                         <ButtonAcceptOrReject
                                             acceptText='Share'
                                             onClick={accepted => !accepted ? remove(id) : showForm(IdentityShareForm, {
                                                 disabledFields: ['userIds'],
                                                 onSubmit: success => success && remove(id),
-                                                values: { userIds: [senderId] },
+                                                values: {
+                                                    introducedBy: isIntroduce ? senderId : null, //ToDo: 
+                                                    userIds: [recipientId]
+                                                },
                                             })}
                                         />
                                     </div>
                                 )
                                 break
-                            case 'identity:share':
-                                // data => { address, name }
+                            case 'identity:share': // data => { address, introducedBy, name }
                                 msg.header = undefined
                                 msg.icon.name = 'user plus'
                                 msg.content = (
@@ -152,11 +165,11 @@ export default class NotificationDropdown extends ReactiveComponent {
                                             )}
                                             rejectText='Ignore'
                                         />
+                                        <div>{message}</div>
                                     </div>
                                 )
                                 break
-                            case 'time_keeping:invitation':
-                                // data => { projectHash, projectName, workerAddress }
+                            case 'time_keeping:invitation': // data => { projectHash, projectName, workerAddress }
                                 // wrong user id used to send invitation. address does not belong to user
                                 if (!identityService.find(data.workerAddress)) return remove(id)
                                 msg.header = undefined
@@ -181,8 +194,7 @@ export default class NotificationDropdown extends ReactiveComponent {
                                     </div>
                                 )
                                 break
-                            case 'time_keeping:invitation_response':
-                                // data => { projectHash, projectName, workerAddress }
+                            case 'time_keeping:invitation_response': // data => { projectHash, projectName, workerAddress }
                                 const acceptedStr = data.accepted ? 'accepted' : 'rejected'
                                 msg.header = undefined
                                 msg.icon.name = 'clock outline'
@@ -195,7 +207,7 @@ export default class NotificationDropdown extends ReactiveComponent {
                                 break
                         }
 
-                        msg.content = <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
+                        msg.content = <div style={{ whiteSpace: 'pre-wrap', padding: '0 12px 0 55px' }}>{msg.content}</div>
                         msg.header = <div className="header" style={{ textTransform: 'capitalize' }}>{msg.header}</div>
                         return (
                             <Dropdown.Item
@@ -208,12 +220,11 @@ export default class NotificationDropdown extends ReactiveComponent {
                             </Dropdown.Item>
                         )
                     }).filter(x => !!x)}
-                </Dropdown.Menu>
-            </Dropdown>
+                </Dropdown.Menu >
+            </Dropdown >
         )
     }
 }
-
 
 // respond to time keeping invitation
 export const handleTKInvitation = (

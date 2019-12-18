@@ -1,7 +1,7 @@
 import DataStorage from '../src/utils/DataStorage'
 import uuid from 'uuid'
 import { arrUnique, isArr, isFn, isObj, objHasKeys, objReadOnly, isStr } from '../src/utils/utils'
-import { emitToUsers, getUserByClientId, isUserOnline, onUserLogin } from './users'
+import { emitToUsers, getUserByClientId, idExists, isUserOnline, onUserLogin } from './users'
 
 export const EVENT_NAME = 'notify'
 const notifications = new DataStorage('notifications.json', true)
@@ -9,8 +9,16 @@ const notifications = new DataStorage('notifications.json', true)
 const userNotificationIds = new DataStorage('notification-receivers.json', false)
 const REQUIRED = true
 const NOT_REQUIRED = false
+const messages = {
+    notifySelf: 'You cannot notify yourself!',
+    invalidParams: 'Invalid/missing required parameter(s)',
+    invalidUserId: 'Invalid User ID supplied',
+    loginRequired: 'You need to complete the Getting Started module, and create a messaging User ID',
+    runtimeError: 'Runtime error occured. Please try again later or email support@totemaccounting.com',
+    introducingUserIdConflict: 'Introducing user cannot not be a recipient',
+}
 
-// @handleNotify function: callback function to be executed before adding a notification.
+// @validate function: callback function to be executed before adding a notification.
 //                      Must return error string if any error occurs or notification should be void.
 //                      thisArg: client object
 //                      Params:
@@ -21,17 +29,40 @@ const NOT_REQUIRED = false
 //                      @message    string : message to be displayed, unless invitation type has custom view
 export const VALID_TYPES = Object.freeze({
     identity: {
-        request: {
+        // user1 recommends user2 to share their identity with user3
+        introduce: {
             dataFields: {
-                reason: REQUIRED, // one-liner explanation by the requester of why they want receivers identity
+                userId: REQUIRED,
+            },
+            // check if user id is valid
+            validate: (i, f, toUserIds, { userId }) => {
+                // makes sure supplied userId is valid
+                if (!idExists(userId)) return messages.invalidUserId
+                // prevents user to be introduced to themself!
+                if (toUserIds.includes(userId)) return messages.introducingUserIdConflict
             },
             message: NOT_REQUIRED,
         },
+        // user1 requests identity from user2
+        request: {
+            dataFields: {
+                // one-liner explanation by the requester of why they want receivers identity
+                reason: REQUIRED,
+            },
+            message: NOT_REQUIRED,
+        },
+        // user1 shares identity with user2
         share: {
             dataFields: {
+                // address/identity being shared
                 address: REQUIRED,
-                name: REQUIRED, // name of the user or the identity
+                // optionally include introducer ID
+                introducedBy: NOT_REQUIRED,
+                // name of the user or the identity
+                name: REQUIRED,
             },
+            // check if introducer id is valid, if provided
+            validate: (_, _1, _2, { introducerId: iId }) => !iId || idExists(iId) ? null : messages.invalidUserId,
             message: NOT_REQUIRED,
         }
     },
@@ -58,13 +89,6 @@ export const VALID_TYPES = Object.freeze({
         },
     },
 })
-
-const messages = {
-    notifySelf: 'You cannot notify yourself!',
-    invalidParams: 'Invalid/missing required parameter(s)',
-    loginRequired: 'You need to complete the Getting Started module, and create a messaging User ID',
-    runtimeError: 'Runtime error occured. Please try again later or email support@totemaccounting.com'
-}
 
 // Send notification to all clients of a specific user
 const _notifyUser = userId => setTimeout(() => {
@@ -103,6 +127,10 @@ export function handleNotify(toUserIds = [], type = '', childType = '', message 
         if (toUserIds.indexOf(user.id) >= 0) return callback(messages.notifySelf)
         toUserIds = arrUnique(toUserIds)
 
+        // check if all receipient user id are valid
+        const invalid = toUserIds.reduce((invalid, userId) => invalid || !idExists(userId), false)
+        if (invalid) return callback(messages.invalidUserId)
+
         const typeObj = VALID_TYPES[type]
         if (!isObj(typeObj)) return callback(messages.invalidParams + ': type')
 
@@ -121,7 +149,7 @@ export function handleNotify(toUserIds = [], type = '', childType = '', message 
         // if notification type has a handler function execute it
         const from = user.id
         const id = uuid.v1()
-        const err = isFn(config.handleNotify) && config.handleNotify.bind(client)(id, from, toUserIds, data, message)
+        const err = isFn(config.validate) && config.validate.bind(client)(id, from, toUserIds, data, message)
         if (err) return callback(err)
         notifications.set(id, {
             from,

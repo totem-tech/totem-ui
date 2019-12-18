@@ -11,6 +11,7 @@ import CompanyForm from '../forms/Company'
 import IdentityRequestForm from '../forms/IdentityRequest'
 import IdentityShareForm from '../forms/IdentityShare'
 import PartnerForm from '../forms/Partner'
+import IntroduceUserForm from '../forms/IntroduceUser'
 
 export default class PartnerList extends ReactiveComponent {
 	constructor(props) {
@@ -72,23 +73,26 @@ export default class PartnerList extends ReactiveComponent {
 	}
 
 	getActions(partner) {
-		const { address, name } = partner
+		const { address, name, userId } = partner
+		const updatePartner = () => showForm(PartnerForm, { values: partner, size: 'tiny' })
 		return (
 			<React.Fragment>
 				<Button
-					icon='share'
-					onClick={() => showForm(IdentityShareForm, {
-						disabledFields: ['address'],
-						includeOwnIdentities: false,
-						includePartners: true,
-						size: 'tiny',
-						values: { address, name },
-					})}
-					title='Share'
+					icon='handshake'
+					onClick={() => {
+						if (!userId) return confirm({
+							content: 'Selected partner does not include an User ID. Would you like to update partner?',
+							header: 'Partner User ID required',
+							onConfirm: updatePartner,
+							size: 'tiny',
+						})
+						showForm(IntroduceUserForm, { values: { userId } })
+					}}
+					title='Introduce user'
 				/>
 				<Button
 					icon='pencil'
-					onClick={() => showForm(PartnerForm, { values: partner, size: 'tiny' })}
+					onClick={updatePartner}
 					title='Update'
 				/>
 				<Button
