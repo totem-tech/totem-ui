@@ -1,7 +1,7 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import { Checkbox, Button, Label } from 'semantic-ui-react'
-import { textEllipsis } from '../utils/utils'
+import { textEllipsis, textCapitalize } from '../utils/utils'
 import ListFactory from '../components/ListFactory'
 import { getAddressName } from '../components/ProjectDropdown'
 import { confirm, showForm } from '../services/modal'
@@ -9,9 +9,30 @@ import addressbook from '../services/partners'
 import { layoutBond } from '../services/window'
 import CompanyForm from '../forms/Company'
 import IdentityRequestForm from '../forms/IdentityRequest'
-import IdentityShareForm from '../forms/IdentityShare'
 import PartnerForm from '../forms/Partner'
 import IntroduceUserForm from '../forms/IntroduceUser'
+
+const words = {
+	add: 'add',
+	delete: 'delete',
+	edit: 'edit',
+	public: 'public',
+	request: 'request',
+	tags: 'tags',
+	update: 'update',
+	usage: 'usage',
+}
+const wordsCap = textCapitalize(words)
+const texts = {
+	introducePartner: 'Introduce partner',
+	columnPublicTitle1: 'A public company cannot be changed to private.',
+	columnPublicTitle2: 'Click to add a company with this identity to the public database',
+	partnerName: 'Partner Name',
+	partnerNoUserIdConfirmHeader: 'Partner User ID required',
+	partnerNoUserIdConfirmMsg: 'Selected partner does not include an User ID. Would you like to update partner?',
+	removePartner: 'Remove Partner?',
+	usedBy: 'Used by',
+}
 
 export default class PartnerList extends ReactiveComponent {
 	constructor(props) {
@@ -20,43 +41,37 @@ export default class PartnerList extends ReactiveComponent {
 		this.state = {
 			listProps: {
 				columns: [
-					{ key: '_name', title: 'Partner Name' },
-					{ collapsing: true, key: 'type', title: 'Usage' },
-					{ key: '_associatedIdentity', title: 'Used by', style: { maxWidth: 200 } },
-					{ key: '_tags', title: 'Tags' },
+					{ key: '_name', title: texts.partnerName },
+					{ collapsing: true, key: 'type', title: wordsCap.usage },
+					{ key: '_associatedIdentity', title: texts.usedBy, style: { maxWidth: 200 } },
+					{ key: '_tags', title: wordsCap.tags },
 					{
-						content: ({ address, isPublic }) => (
-							<div
-								title={isPublic ? 'A public company cannot be changed to private.' :
-									'Click to add a company with this identity to the public database'}
-							>
+						content: ({ address, name, isPublic }) => (
+							<div title={isPublic ? texts.columnPublicTitle1 : texts.columnPublicTitle2}>
 								<Checkbox
 									checked={isPublic}
 									toggle
 									onChange={(_, { checked }) => checked && showForm(CompanyForm, {
-										header: 'Make Partner Public',
-										subheader: 'Warning: doing this makes this partner visible to all Totem users',
-										values: { walletAddress: address },
+										values: { name, walletAddress: address },
 										onSubmit: (e, v, success) => success && addressbook.setPublic(address),
-										size: 'mini',
 									})}
 								/>
 							</div>
 						),
 						collapsing: true,
 						textAlign: 'center',
-						title: 'Public'
+						title: wordsCap.public,
 					},
 					{
 						collapsing: true,
-						title: 'Edit',
+						title: wordsCap.edit,
 						content: this.getActions.bind(this),
 					}
 				],
 				data: new Map(),
 				defaultSort: 'name',
 				emptyMessage: {},
-				searchExtraKeys: ['_associatedIdentity', '_tagsStr', 'address', 'name', 'visibility'],
+				searchExtraKeys: ['associatedIdentity', '_tagsStr', 'address', 'name', 'visibility'],
 				searchable: true,
 				topLeftMenu: [],
 				type: 'DataTable'
@@ -81,30 +96,30 @@ export default class PartnerList extends ReactiveComponent {
 					icon='handshake'
 					onClick={() => {
 						if (!userId) return confirm({
-							content: 'Selected partner does not include an User ID. Would you like to update partner?',
-							header: 'Partner User ID required',
+							content: texts.partnerNoUserIdConfirmMsg,
+							header: texts.partnerNoUserIdConfirmHeader,
 							onConfirm: updatePartner,
 							size: 'tiny',
 						})
 						showForm(IntroduceUserForm, { values: { userId } })
 					}}
-					title='Introduce user'
+					title={texts.introducePartner}
 				/>
 				<Button
 					icon='pencil'
 					onClick={updatePartner}
-					title='Update'
+					title={wordsCap.update}
 				/>
 				<Button
 					icon='trash'
 					onClick={() => confirm({
-						confirmButton: <Button negative content="Remove" />,
-						content: <p>Partner name: <b>{name}</b></p>,
-						header: 'Remove Partner?',
+						confirmButton: <Button negative content={wordsCap.delete} />,
+						content: <p>{partnerName}: <b>{name}</b></p>,
+						header: texts.removePartner,
 						onConfirm: () => addressbook.remove(address),
 						size: 'mini',
 					})}
-					title="Delete"
+					title={wordsCap.delete}
 				/>
 			</React.Fragment>
 		)
@@ -133,15 +148,20 @@ export default class PartnerList extends ReactiveComponent {
 	render() {
 		const { layout, listProps } = this.state
 		const isMobile = layout === 'mobile'
-		listProps.topLeftMenu = [
-			(
-				<Button.Group fluid={isMobile} key='0'>
-					<Button icon='plus' content='Add' onClick={() => showForm(PartnerForm)} />
-					<Button.Or />
-					<Button content='Request' onClick={() => showForm(IdentityRequestForm)} />
-				</Button.Group>
-			)
-		]
+		listProps.topLeftMenu = [(
+			<Button.Group fluid={isMobile} key='0'>
+				<Button
+					icon='plus'
+					content={wordsCap.add}
+					onClick={() => showForm(PartnerForm)}
+				/>
+				<Button.Or />
+				<Button
+					content={wordsCap.request}
+					onClick={() => showForm(IdentityRequestForm)}
+				/>
+			</Button.Group>
+		)]
 		return <ListFactory {...listProps} />
 	}
 }

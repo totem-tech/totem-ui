@@ -172,7 +172,7 @@ export class App extends ReactiveComponent {
 
 const sidebarItems = [
 	{
-		active: false,
+		active: true,
 		content: <GettingStarted />,
 		headerDividerHidden: true,
 		icon: "play circle outline",
@@ -201,7 +201,7 @@ const sidebarItems = [
 		title: "Identities",
 	},
 	{
-		active: true,
+		active: false,
 		content: <PartnerList />,
 		icon: "users",
 		header: "Partner Contact List",

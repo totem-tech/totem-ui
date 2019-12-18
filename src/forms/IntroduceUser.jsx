@@ -4,12 +4,9 @@ import { Bond } from 'oo7'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import { isFn, textCapitalize } from '../utils/utils'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import partners from '../services/partners'
 
-const words = {
-    recipients: 'recipients',
-}
-const wordsCap = textCapitalize(words)
+// const words = {}
+// const wordsCap = textCapitalize(words)
 const texts = {
     addedToQueueContent: 'You will be notified once request is processed',
     addedToQueueHeader: 'Request has been added to queue',
@@ -78,7 +75,6 @@ export default class IntroduceUser extends Component {
     handleSubmit(_, values) {
         const { userId, recipients } = values
         const { onSubmit } = this.props
-        console.log({ ...values })
         this.setState({
             loading: true,
             message: {
@@ -92,7 +88,7 @@ export default class IntroduceUser extends Component {
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'notify',
             title: texts.header,
-            description: `${texts.userId}: ${userId} | ${wordsCap.recipients}: ${recipients.join()}`,
+            description: `${texts.userId}: ${userId} | ${texts.recipients}: ${recipients.join()}`,
             args: [recipients, type, childType, null, { userId }, err => {
                 const success = !err
                 const message = {
