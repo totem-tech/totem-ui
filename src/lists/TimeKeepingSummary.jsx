@@ -3,7 +3,7 @@ import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
 import { textCapitalize } from '../utils/utils'
-import ListFactory from '../components/ListFactory'
+import DataTable from '../components/DataTable'
 import client from '../services/ChatClient'
 import { getSelected, selectedAddressBond } from '../services/identity'
 import timeKeeping, { getProjects } from '../services/timeKeeping'
@@ -32,7 +32,6 @@ export default class TimeKeepingSummary extends ReactiveComponent {
                 status: 'warning',
             },
             searchable: false,
-            type: 'DataTable',
             columns: [
                 {
                     key: 'name',
@@ -79,6 +78,6 @@ export default class TimeKeepingSummary extends ReactiveComponent {
     }
 
     render() {
-        return <ListFactory {...this.state} />
+        return <DataTable {...this.state} />
     }
 }

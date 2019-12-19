@@ -1,7 +1,7 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import { Button, Label } from 'semantic-ui-react'
-import { DataTable } from '../components/ListFactory'
+import DataTable from '../components/DataTable'
 import identityService from '../services/identity'
 import { confirm, showForm } from '../services/modal'
 import { formatStrTimestamp } from '../utils/time'

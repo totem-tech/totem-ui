@@ -468,8 +468,8 @@ export const icons = {
 
 // valid statuses: error, info, loading, warning, success
 export const newMessage = message => {
-	if (!isObj(message) || (!message.content && !message.list && !message.header)) return
-	let { icon, showIcon, status, style } = message
+	let { content, header, icon, list, showIcon, status, style } = message || {}
+	if (!isObj(message) || (!content && !list && !header)) return
 	icon = React.isValidElement(icon) ? icon.props : icon
 	if (showIcon) {
 		icon = icons[status]

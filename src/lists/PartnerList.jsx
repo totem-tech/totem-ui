@@ -2,7 +2,7 @@ import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import { Checkbox, Button, Label } from 'semantic-ui-react'
 import { textEllipsis, textCapitalize } from '../utils/utils'
-import ListFactory from '../components/ListFactory'
+import DataTable from '../components/DataTable'
 import { getAddressName } from '../components/ProjectDropdown'
 import { confirm, showForm } from '../services/modal'
 import addressbook from '../services/partners'
@@ -70,11 +70,10 @@ export default class PartnerList extends ReactiveComponent {
 				],
 				data: new Map(),
 				defaultSort: 'name',
-				emptyMessage: {},
+				emptyMessage: null,
 				searchExtraKeys: ['associatedIdentity', '_tagsStr', 'address', 'name', 'visibility'],
 				searchable: true,
 				topLeftMenu: [],
-				type: 'DataTable'
 			}
 		}
 	}
@@ -162,6 +161,6 @@ export default class PartnerList extends ReactiveComponent {
 				/>
 			</Button.Group>
 		)]
-		return <ListFactory {...listProps} />
+		return <DataTable {...listProps} />
 	}
 }

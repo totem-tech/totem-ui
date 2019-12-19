@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { Button } from 'semantic-ui-react'
-import ListFactory from '../components/ListFactory'
+import DataTable from '../components/DataTable'
 import { arrUnique, textCapitalize, deferred } from '../utils/utils'
 import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'
 import PartnerForm from '../forms/Partner'
@@ -12,6 +12,7 @@ import partners from '../services/partners'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import timeKeeping, { getTimeRecords } from '../services/timeKeeping'
 import identities from '../services/identity'
+import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -41,7 +42,8 @@ const texts = {
     banUser: 'Ban User',
     banUsers: 'Ban Users',
     cannotBanOwnIdentity: 'You cannot ban your own identity',
-    noRecordsFound: 'No records found',
+    emptyMessage: 'No records available for this project. Start booking time yourself by cliking the timer button above',
+    orInviteWorkers: 'or invite workers',
     notProjectOwner: 'You do not own this project',
     selectedIdentitiesAlreadyBanned: 'Selected identities are already banned',
     selectProjectForRecords: 'Please select a project to view time records',
@@ -123,7 +125,6 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                     onClick: toBeImplemented //this.handleBan.bind(this)
                 }
             ],
-            type: 'datatable',
         }
     }
 
@@ -249,17 +250,32 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         const listProps = this.state
 
         const denyManage = manage && !isOwner
-        listProps.selectable = manage && isOwner
-        listProps.emptyMessage = {
-            content: denyManage ? texts.notProjectOwner : (
-                !projectHash ? texts.selectProjectForRecords : null
-            ),
-            status: denyManage ? 'error' : 'warning'
+        const msg = { content: texts.emptyMessage }
+
+        if (denyManage) {
+            msg.content = texts.notProjectOwner
+            msg.status = 'error'
+        } else if (!projectHash) {
+            msg.content = texts.notProjectOwner
+            msg.status = 'warning'
+        } else if (isOwner) {
+            msg.content = (
+                <p>
+                    {msg.content + ' '}
+                    <Button
+                        positive
+                        content={texts.orInviteWorkers}
+                        onClick={() => showForm(TimeKeepingInviteForm, { values: { projectHash } })}
+                    />
+                </p>
+            )
         }
+        listProps.emptyMessage = msg
+        listProps.selectable = manage && isOwner
         if (denyManage || !projectHash) {
             listProps.data = new Map()
         }
-        return <ListFactory {...listProps} />
+        return <DataTable {...listProps} />
     }
 }
 ProjectTimeKeepingList.propTypes = {

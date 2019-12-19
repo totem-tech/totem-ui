@@ -29,7 +29,7 @@ const texts = {
     removeWarningPart1: 'You are about to remove the following identity.',
     removeWarningPart2: `If not backed up, this action is irreversible. 
         You will lose access to all activity/data related to this Identity.`,
-    selectedWalletWarning: 'Cannot remove Identity you are currently using',
+    selectedWalletWarning: 'Cannot remove identity you are currently using',
     showSeed: 'Show seed phrase',
     recoveryPhrase: 'Recovery Phrase',
 }

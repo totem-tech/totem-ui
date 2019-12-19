@@ -4,7 +4,7 @@ import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { pretty } from 'oo7-substrate'
 import { Button } from 'semantic-ui-react'
-import ListFactory from '../components/ListFactory'
+import DataTable from '../components/DataTable'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 import ProjectForm, { ReassignProjectForm } from '../forms/Project'
 import { deferred, objCopy, textEllipsis, copyToClipboard } from '../utils/utils'
@@ -338,7 +338,6 @@ export default class ProjectList extends ReactiveComponent {
             selectable: true,
             topLeftMenu: projects.size > 0 ? topLeftMenu : topLeftMenu.filter(x => x.name === 'create'),
             topRightMenu: topRightMenu,
-            type: 'datatable',
         }
 
         listProps.columns = [
@@ -389,6 +388,6 @@ export default class ProjectList extends ReactiveComponent {
                 title: 'Action',
             }
         ]
-        return <ListFactory {...listProps} />
+        return <DataTable {...listProps} />
     }
 }

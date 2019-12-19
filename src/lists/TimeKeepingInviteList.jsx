@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { Button } from 'semantic-ui-react'
-import { DataTable } from '../components/ListFactory'
+import DataTable from '../components/DataTable'
 import { textCapitalize } from '../utils/utils'
 import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
 import PartnerForm from '../forms/Partner'
@@ -54,7 +54,7 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
     componentWillMount() {
         const { projectHash } = this.props
         if (!projectHash) return
-        
+
         this.projectHash = projectHash
         this.bond = Bond.all([
             timeKeeping.worker.listWorkers(projectHash),
