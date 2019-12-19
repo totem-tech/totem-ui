@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { Button, Dropdown, Form, Input, TextArea } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
-import { isBond, isDefined, isFn, objWithoutKeys, newMessage, hasValue, objReadOnly, isValidNumber, isStr } from '../utils/utils';
+import { deferred, isBond, isDefined, isFn, objWithoutKeys, newMessage, hasValue, objReadOnly, isValidNumber, isStr } from '../utils/utils';
 // Custom Inputs
 import { InputBond } from '../InputBond'
 import { AccountIdBond } from '../AccountIdBond'
@@ -19,7 +19,7 @@ const VALIDATION_MESSAGES = objReadOnly({
     validNumber: () => 'Please enter a valid number'
 }, true)
 const NON_ATTRIBUTES = Object.freeze([
-    'bond', 'controlled', 'deferred', 'hidden', 'inline', 'invalid', '_invalid', 'inlineLabel', 'label',
+    'bond', 'controlled', 'defer', 'hidden', 'inline', 'invalid', '_invalid', 'inlineLabel', 'label',
     'trueValue', 'falseValue', 'styleContainer', 'useInput', 'validate'
 ])
 
@@ -28,6 +28,11 @@ export default class FormInput extends ReactiveComponent {
         super(props)
 
         this.handleChange = this.handleChange.bind(this)
+        this.setErrorMessage = props.defer === null ? this.setErrorMessage.bind(this) : deferred(
+            this.setErrorMessage,
+            props.defer,
+            this
+        )
         this.bond = props.bond
         this.state = {
             message: undefined
@@ -109,11 +114,15 @@ export default class FormInput extends ReactiveComponent {
 
         data.invalid = !!errMsg
         isFn(onChange) && onChange(event, data, this.props)
-        this.setState({ message })
+        this.setErrorMessage(message)
 
         if (isBond(this.bond) && !data.invalid) {
             this.bond._value = value
         }
+    }
+
+    setErrorMessage(message = {}) {
+        this.setState({ message })
     }
 
     render() {
@@ -208,8 +217,9 @@ export default class FormInput extends ReactiveComponent {
 }
 FormInput.propTypes = {
     bond: PropTypes.any,
-    // Delay, in miliseconds, to precess input value change
-    deferred: PropTypes.number,
+    // Delay, in miliseconds, to display built-in and `validate` error messages
+    // Set `defer` to `null` to prevent using deferred mechanism
+    defer: PropTypes.number,
     // For text field types
     inlineLabel: PropTypes.any,
     type: PropTypes.string.isRequired,
@@ -220,7 +230,6 @@ FormInput.propTypes = {
     //          @data object
     // Expected Return: false or string (error), or message object
     validate: PropTypes.func,
-
 
     // Semantic UI supported props. Remove????
     action: PropTypes.oneOfType([
@@ -266,6 +275,7 @@ FormInput.propTypes = {
     width: PropTypes.number
 }
 FormInput.defaultProps = {
+    defer: 300,
     type: 'text',
     width: 16
 }
