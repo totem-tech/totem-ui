@@ -8,6 +8,8 @@ import { formatStrTimestamp } from '../utils/time'
 import IdentityShareForm from '../forms/IdentityShare'
 import IdentityForm from '../forms/Identity'
 import IdentityDetailsForm from '../forms/IdentityDetails'
+import { Pretty } from '../Pretty'
+import { ss58Decode } from 'oo7-substrate'
 
 const toBeImplemented = () => alert('To be implemented')
 const words = {
@@ -27,6 +29,7 @@ const texts = {
     lastBackup: 'Last Backup',
     showDetails: 'Show details',
     shareIdentityDetails: 'Share your identity with other Totem users',
+    txAllocations: 'TX alloctions',
     updateIdentity: 'Update identity',
 }
 
@@ -46,6 +49,11 @@ export default class ItentityList extends ReactiveComponent {
                     key: '_cloudBackupTS',
                     textAlign: 'center',
                     title: texts.lastBackup
+                },
+                {
+                    collapsing: true,
+                    content: ({ address }) => <Pretty value={runtime.balances.balance(ss58Decode(address))} />,
+                    title: texts.txAllocations,
                 },
                 {
                     collapsing: true,
