@@ -350,6 +350,40 @@ export const search = (data, keywords, keys) => {
 	return fn(data, keyValues, false, false, true, false)
 }
 
+// Semantic UI Dropdown search defaults to only "text" option property.
+// This enables search by any option property (`searchKeys`).
+//
+// Params:
+// @searchKeys	array of strings
+//
+// Returns function: a callback function
+// 					Callback params:
+//					@options 		array of objects
+//					@searchQuery	string
+//					returns array of objects
+export const searchRanked = (searchKeys = ['text']) => (options, searchQuery) => {
+	if (!options || options.length === 0) return []
+	const uniqueValues = {}
+	searchQuery = (searchQuery || '').toLowerCase().trim()
+	if (!searchQuery) return options
+	const search = key => {
+		const matches = options.map((option, i) => {
+			try {
+				// catches errors caused by the use of some special characters with .match() below
+				let x = (option[key] || '').toLowerCase().match(searchQuery)
+				if (!x || uniqueValues[options[i].value]) return
+				const matchIndex = x.index
+				uniqueValues[options[i].value] = 1
+				return { index: i, matchIndex }
+			} catch (e) {
+				console.log(e)
+			}
+		}).filter(r => !!r)
+		return arrSort(matches, 'matchIndex').map(x => options[x.index])
+	}
+	return searchKeys.reduce((result, key) => result.concat(search(key)), [])
+}
+
 // Sort Array or Map
 export const sort = (data, key, reverse, sortOriginal) => isArr(data) ? arrSort(data, key, reverse, sortOriginal) : (
 	isMap(data) ? mapSort(data, key, reverse) : data

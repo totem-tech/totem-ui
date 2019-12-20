@@ -18,30 +18,6 @@ const words = {
 const wordsCap = textCapitalize(words)
 const texts = {}
 
-const dropDownCustomSearch = (optionKeys = ['text']) => (options, searchQuery) => {
-    if (!options || options.length === 0) return []
-    const uniqueValues = {}
-    searchQuery = (searchQuery || '')
-        .toLowerCase().trim()
-    if (!searchQuery) return options
-    const search = key => {
-        const matches = options.map((option, i) => {
-            try {
-                // catches errors caused by the use of some special characters with .match() below
-                let x = (option[key] || '').toLowerCase().match(searchQuery)
-                if (!x || uniqueValues[options[i].value]) return
-                const matchIndex = x.index
-                uniqueValues[options[i].value] = 1
-                return { index: i, matchIndex }
-            } catch (e) {
-                return
-            }
-        }).filter(r => !!r)
-        return arrSort(matches, 'matchIndex').map(x => options[x.index])
-    }
-    return optionKeys.reduce((result, key) => result.concat(search(key)), [])
-}
-
 class Partner extends ReactiveComponent {
     constructor(props) {
         super(props)
@@ -84,13 +60,13 @@ class Partner extends ReactiveComponent {
                     label: 'Search for Company or Identity',
                     name: 'address',
                     options: !address ? [] : [{
-                        key: address + ' ' + name,
+                        key: address + name,
                         text: name || address,
                         value: address,
                     }],
                     placeholder: 'Search by company details or identity',
                     required: true,
-                    search: dropDownCustomSearch(['key']),
+                    search: ['text', 'value'],
                     selection: true,
                     type: 'dropdown',
                     validate: this.validateAddress,

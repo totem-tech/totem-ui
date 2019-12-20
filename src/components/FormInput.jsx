@@ -3,7 +3,10 @@ import PropTypes from 'prop-types'
 import { Button, Dropdown, Form, Input, TextArea } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
-import { deferred, isBond, isDefined, isFn, objWithoutKeys, newMessage, hasValue, objReadOnly, isValidNumber, isStr } from '../utils/utils';
+import {
+    deferred, hasValue, isBond, isDefined, isFn, isValidNumber, isStr,
+    newMessage, objReadOnly, objWithoutKeys, searchRanked, isArr
+} from '../utils/utils';
 // Custom Inputs
 import { InputBond } from '../InputBond'
 import { AccountIdBond } from '../AccountIdBond'
@@ -166,6 +169,9 @@ export default class FormInput extends ReactiveComponent {
                 inputEl = <CheckboxGroup {...attrs} />
                 break;
             case 'dropdown':
+                if (attrs.search && isArr(attrs.search)) {
+                    attrs.search = searchRanked(attrs.search)
+                }
                 inputEl = <Dropdown {...attrs} />
                 break;
             case 'group':
@@ -222,6 +228,12 @@ FormInput.propTypes = {
     defer: PropTypes.number,
     // For text field types
     inlineLabel: PropTypes.any,
+    search: PropTypes.oneOfType([
+        // Array of option keys to be searchable (FormInput specific)
+        PropTypes.array,
+        PropTypes.bool,
+        PropTypes.func,
+    ]),
     type: PropTypes.string.isRequired,
     // Validate field. Only invoked when onChange is triggered and built-in validation passed.
     //
