@@ -31,6 +31,7 @@ export default class IntroduceUser extends Component {
             inputs: [
                 {
                     bond: new Bond(),
+                    includePartners: true,
                     label: texts.userToIntroduce,
                     multiple: false,
                     name: 'userId',
@@ -39,6 +40,7 @@ export default class IntroduceUser extends Component {
                 },
                 {
                     bond: new Bond(),
+                    includePartners: true,
                     label: texts.recipients,
                     multiple: true,
                     name: 'recipients',

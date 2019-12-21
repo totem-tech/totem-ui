@@ -157,16 +157,13 @@ class Partner extends ReactiveComponent {
                 },
                 {
                     bond: new Bond(),
-                    icon: 'at',
-                    iconPosition: 'left',
                     label: texts.userIdLabel,
+                    name: 'userId',
                     maxLength: 16,
                     minLength: 3,
-                    name: 'userId',
-                    onChange: deferred(this.handleUserIDChange, 300, this),
+                    multiple: false,
                     placeholder: texts.userIdPlaceholder,
-                    type: 'text',
-                    value: '',
+                    type: 'UserIdInput',
                 },
             ]
         }
@@ -323,25 +320,6 @@ class Partner extends ReactiveComponent {
                 walletAddress: address,
             }
         })
-    }
-    
-    handleUserIDChange(e, { userId }, i) {
-        const { inputs } = this.state
-        inputs[i].loading = !!userId
-        const validateId = exists => {
-            inputs[i].invalid = !exists
-            inputs[i].loading = false
-            inputs[i].message = exists ? null : {
-                content: texts.userIdInvalidMsg,
-                status: 'error'
-            }
-            this.setState({ inputs })
-        }
-
-        if (!userId) return validateId(true)
-
-        this.setState({ inputs })
-        client.idExists(userId, validateId)
     }
 
     validateAddress(e, { value: address }) {

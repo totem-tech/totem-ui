@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { isFn, isObj, textCapitalize } from '../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import { handleAddUser } from './IdentityRequest'
 import addressbook from '../services/partners'
 import client from '../services/ChatClient'
 import identityService from '../services/identity'
@@ -63,21 +62,15 @@ export default class IdentityShareForm extends ReactiveComponent {
                     type: 'text',
                     value: '',
                 },
+
                 {
-                    allowAdditions: true,
-                    clearable: true,
                     label: texts.userIdsLabel,
-                    multiple: true,
                     name: 'userIds',
-                    noResultsMessage: texts.userIdsNoResultMsg,
-                    onAddItem: handleAddUser.bind(this),
-                    options: [],
+                    multiple: true,
+                    noResultsMessage: texts.userIdsLabel,
                     placeholder: texts.userIdsPlaceholder,
                     required: true,
-                    search: true,
-                    selection: true,
-                    type: 'dropdown',
-                    value: [],
+                    type: 'UserIdInput',
                 },
                 {
                     hidden: true,

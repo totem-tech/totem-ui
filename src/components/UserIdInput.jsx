@@ -25,24 +25,30 @@ const noAttrs = [
     'required',
     'validate',
 ]
+const noAttrsTextField = [
+    ...noAttrs,
+    'allowAdditions',
+    'clearable',
+]
 
 export default class UserIdInput extends Component {
     constructor(props) {
         super(props)
 
-        const { multiple, options } = props
+        const { allowAdditions, clearable, includePartners, multiple, options, value } = props
         let input = {
-            action: { icon: 'at', onClick: e => e.preventDefault() },
-            actionPosition: 'left',
+            inlineLabel: { icon: { className: 'no-margin', name: 'at' } },
+            labelPosition: 'left',
             placeholder: texts.enterUserId,
             type: 'text',
             value: '',
+            useInput: true,
         }
-        if (multiple) input = {
+        if (multiple || includePartners) input = {
             additionLabel: `${wordsCap.add} @`,
-            allowAdditions: true,
-            clearable: true,
-            multiple: true,
+            allowAdditions,
+            clearable,
+            multiple: multiple,
             noResultsMessage: texts.noResultsMessage,
             onAddItem: this.handleAddUser.bind(this),
             onClose: () => this.setState({ open: false }),
@@ -52,7 +58,7 @@ export default class UserIdInput extends Component {
             search: true,
             selection: true,
             type: 'dropdown',
-            value: [],
+            value: multiple ? [] : value,
         }
 
         this.state = {
@@ -65,9 +71,9 @@ export default class UserIdInput extends Component {
     }
 
     componentWillMount() {
-        const { multiple, value } = this.props
+        const { includePartners, multiple, value } = this.props
         hasValue(value) && this.state.bond.changed(value)
-        if (!multiple) return
+        if (!multiple && !includePartners) return
 
         let { options } = this.state
         const userIds = options.map(({ userId }) => userId)
@@ -92,18 +98,25 @@ export default class UserIdInput extends Component {
     }
 
     handleChange(e, data) {
-        const { multiple, onChange } = this.props
+        const { includePartners, multiple, onChange } = this.props
         this.setState({ value: data.value, message: undefined })
         isFn(onChange) && onChange(e, data)
-        !multiple && this.handleTextChange(e, data)
+        !multiple && !includePartners && this.handleTextChange(e, data)
     }
 
     handleAddUser(e, data) {
         const { value: userId } = data
-        const { excludeOwnId, onChange } = this.props
+        const { excludeOwnId, multiple, onChange } = this.props
         const isOwnId = excludeOwnId && (getUser() || {}).id === userId
         let { value } = this.state
-        isOwnId && value.splice(value.indexOf(userId), 1)
+        const removeInvalidValue = () => {
+            if (multiple) {
+                value.splice(value.indexOf(userId), 1)
+            } else {
+                value = undefined
+            }
+        }
+        isOwnId && removeInvalidValue()
         this.setState({
             loading: !isOwnId,
             message: !isOwnId ? undefined : {
@@ -130,10 +143,10 @@ export default class UserIdInput extends Component {
 
             if (!exists) {
                 // not valid => remove from values
-                value.splice(value.indexOf(userId), 1)
+                removeInvalidValue()
             } else {
                 // required to prevent Semantic's unexpected behaviour!!
-                value = arrUnique([...value, userId])
+                value = !multiple ? value : arrUnique([...value, userId])
                 // add newly added user id as an option
                 input.options.push({
                     key: userId,
@@ -143,7 +156,11 @@ export default class UserIdInput extends Component {
             }
             // trigger a value change
             isFn(onChange) && onChange(e, { ...data, value })
-            this.setState({ ...input, open: exists, value })
+            this.setState({
+                ...input,
+                open: exists && multiple,
+                value
+            })
         })
     }
 
@@ -159,6 +176,8 @@ export default class UserIdInput extends Component {
                 status: 'error'
             }
         })
+
+        if (!value) return this.setState({ icon: undefined, message: undefined })
 
         client.idExists(value, exists => {
             const invalid = !exists
@@ -177,11 +196,15 @@ export default class UserIdInput extends Component {
     }
 
     render() {
+        const { includeParners, multiple } = this.props
         let { invalid, loading } = this.state
         invalid = invalid || this.props.invalid
         loading = loading || this.props.loading
         return <FormInput {...{
-            ...objWithoutKeys(this.props, noAttrs),
+            ...objWithoutKeys(
+                this.props,
+                !includeParners && !multiple ? noAttrsTextField : noAttrs
+            ),
             ...this.state,
             invalid,
             loading,
@@ -189,13 +212,17 @@ export default class UserIdInput extends Component {
     }
 }
 UserIdInput.propTypes = {
+    allowAdditions: PropTypes.bool,
+    clearable: PropTypes.bool,
     excludeOwnId: PropTypes.bool,
     // if `@multiple` === true, include partners with user ids
     includePartners: PropTypes.bool,
     multiple: PropTypes.bool,
 }
 UserIdInput.defaultProps = {
+    allowAdditions: true,
+    clearable: true,
     excludeOwnId: true,
-    includePartners: true,
+    includePartners: false,
     multiple: false,
 }

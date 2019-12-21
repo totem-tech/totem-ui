@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import client, { getUser } from '../services/ChatClient'
-import { arrUnique, isFn } from '../utils/utils'
+import { arrUnique, isFn, textCapitalize } from '../utils/utils'
 
 const notificationType = 'identity'
 const childType = 'request'
@@ -14,36 +14,13 @@ const reasonList = [
     'Custom'
 ]
 
-export function handleAddUser(e, data) {
-    const { value: userId } = data
-    const { inputs } = this.state
-    const idsIn = findInput(inputs, 'userIds')
-    idsIn.loading = true
-    this.setState({ inputs })
-
-    // check if User ID is valid
-    client.idExists(userId, exists => {
-        idsIn.loading = false
-        idsIn.message = exists ? {} : {
-            content: `User ID "${userId}" not found`,
-            showIcon: true,
-            status: 'warning',
-        }
-
-        if (exists && (getUser() || {}).id !== userId) {
-            idsIn.value = arrUnique([...idsIn.value, userId])
-            idsIn.options = idsIn.value.map(id => ({
-                key: id,
-                text: id,
-                value: id,
-            }))
-        } else {
-            // not valid or entered own userId => remove from values
-            idsIn.value.splice(idsIn.value.indexOf(userId), 1)
-        }
-
-        this.setState({ inputs })
-    })
+const words = {
+    user: 'user',
+}
+const wordsCap = textCapitalize(words)
+const texts = {
+    userIdsNoResultsMessage: 'Type a UserID and press enter to add',
+    userIdsPlaceholder: 'Enter User ID(s)',
 }
 
 export default class IdentityRequestForm extends ReactiveComponent {
@@ -57,20 +34,14 @@ export default class IdentityRequestForm extends ReactiveComponent {
             success: false,
             inputs: [
                 {
-                    allowAdditions: true,
-                    clearable: true,
-                    label: 'User',
-                    multiple: true,
+                    includePartners: false,
+                    label: wordsCap.user,
                     name: 'userIds',
-                    noResultsMessage: 'Type a UserID and press enter to add',
-                    onAddItem: this.handleAddUser.bind(this),
-                    options: [],
-                    placeholder: 'Enter User ID(s)',
+                    multiple: true,
+                    noResultsMessage: texts.userIdsNoResultsMessage,
                     required: true,
-                    search: true,
-                    selection: true,
-                    type: 'dropdown',
-                    value: [],
+                    placeholder: texts.userIdsPlaceholder,
+                    type: 'UserIdInput',
                 },
                 {
                     label: 'Reason',

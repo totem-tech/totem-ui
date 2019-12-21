@@ -88,25 +88,31 @@ export default class PartnerList extends ReactiveComponent {
 
 	getActions(partner) {
 		const { address, name, userId } = partner
-		const updatePartner = () => showForm(PartnerForm, { values: partner, size: 'tiny' })
+		const introduce = userId => showForm(IntroduceUserForm, { values: { userId } })
+		const updatePartner = onSubmit => () => showForm(PartnerForm, {
+			onSubmit,
+			size: 'tiny',
+			values: partner,
+		})
 		return (
 			<React.Fragment>
 				<Button
 					icon='handshake'
 					onClick={() => {
-						if (!userId) return confirm({
+						if (!!userId) return introduce(userId)
+
+						confirm({
 							content: texts.partnerNoUserIdConfirmMsg,
 							header: texts.partnerNoUserIdConfirmHeader,
-							onConfirm: updatePartner,
+							onConfirm: updatePartner((success, { userId }) => success && introduce(userId)),
 							size: 'tiny',
 						})
-						showForm(IntroduceUserForm, { values: { userId } })
 					}}
 					title={texts.introducePartner}
 				/>
 				<Button
 					icon='pencil'
-					onClick={updatePartner}
+					onClick={updatePartner()}
 					title={wordsCap.update}
 				/>
 				<Button
