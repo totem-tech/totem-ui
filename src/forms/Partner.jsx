@@ -55,10 +55,14 @@ class Partner extends ReactiveComponent {
                 {
                     allowAdditions: false,
                     additionLabel: 'Use ',
+                    bond: new Bond(),
                     clearable: true,
                     hidden: this.doUpdate && visibility !== 'public',
                     label: 'Search for Company or Identity',
                     name: 'address',
+                    onAddItem: this.handleAddressAddItem.bind(this),
+                    onChange: this.handleAddressChange.bind(this),
+                    onSearchChange: deferred(this.handleAddressSearchChange, 300, this),
                     options: !address ? [] : [{
                         key: address + name,
                         text: name || address,
@@ -69,12 +73,10 @@ class Partner extends ReactiveComponent {
                     search: ['text', 'value'],
                     selection: true,
                     type: 'dropdown',
-                    validate: this.validateAddress,
-                    onAddItem: this.handleAddressAddItem.bind(this),
-                    onChange: this.handleAddressChange.bind(this),
-                    onSearchChange: deferred(this.handleAddressSearchChange, 300, this),
+                    validate: this.doUpdate ? null : this.validateAddress,
                 },
                 {
+                    bond: new Bond(),
                     label: 'Enter Partner Name',
                     name: 'name',
                     placeholder: 'Enter a name for this partner',
@@ -148,13 +150,10 @@ class Partner extends ReactiveComponent {
                 },
             ]
         }
-
-        isObj(props.values) && fillValues(this.state.inputs, props.values, true)
-        !!values.address && setTimeout(() => this.checkVisibility(values.address))
     }
 
     componentWillMount() {
-        const { inputs } = this.state
+        const { inputs, values } = this.state
         const assocIn = findInput(inputs, 'associatedIdentity')
         assocIn.options = arrSort(
             identityService.getAll().map(({ name, address }) => ({
@@ -164,7 +163,14 @@ class Partner extends ReactiveComponent {
             })),
             'text'
         )
+
+        fillValues(inputs, values, true)
         this.setState({ inputs })
+        if (!values.address) return
+        setTimeout(() => {
+            this.checkVisibility(values.address)
+            this.handleAddressSearchChange({}, { searchQuery: values.address })
+        })
     }
 
     checkVisibility(address) {
