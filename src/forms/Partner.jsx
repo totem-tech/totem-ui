@@ -13,10 +13,38 @@ import CompanyForm from './Company'
 import { getAddressName } from '../components/ProjectDropdown'
 
 const words = {
-    use: 'use',
+    business: 'business',
+    close: 'close',
+    personal: 'personal',
+    tags: 'tags',
+    private: 'private',
+    public: 'public',
 }
 const wordsCap = textCapitalize(words)
-const texts = {}
+const texts = {
+    addressAdditionLabel: 'Use ',
+    addressLabel: 'Search for Company or Identity',
+    addressPlaceholder: 'Search by company details or identity',
+    addressValidationMsg1: 'Partner already exists with the following name:',
+    addressValidationMsg2: 'Please enter a valid Totem Identity',
+    associatedIdentityLabel: 'Associated with your identity',
+    associatedIdentityPlaceholder: 'Select one of your identities',
+    companyFormOnOpenMsg: `You have chosen to make this partner public. Please ensure you fill in the correct details. Click cancel to abort making public.`,
+    header1: 'Add partner',
+    header2: 'Update partner',
+    nameLabel: 'Enter Partner Name',
+    namePlaceholder: 'Enter a name for this partner',
+    nameValidationMsg: 'Please choose an unique partner name.',
+    submitSuccessMsg1: 'Partner created successfully',
+    submitSuccessMsg2: 'Partner updated successfully',
+    tagsNoResultsMsg: 'Enter tag and press enter to add, to tags list.',
+    tagsPlaceholder: 'Enter tags',
+    typeLabel: 'Partner Usage Type',
+    userIdInvalidMsg: 'Please enter a valid User ID',
+    userIdLabel: 'User ID for this partner',
+    userIdPlaceholder: 'Enter User ID for this partner',
+    visibilityLabel: 'Decide Partner Visibility (on the network)',
+}
 
 class Partner extends ReactiveComponent {
     constructor(props) {
@@ -31,21 +59,21 @@ class Partner extends ReactiveComponent {
         this.customAddresses = []
         this.state = {
             closeText: props.closeText,
-            header: props.header || `${this.doUpdate ? 'Update' : 'Add'} partner`,
+            header: props.header || (this.doUpdate ? texts.header2 : texts.header1),
             message: {},
             onChange: (_, values) => this.setState({ values }),
-            onSubmit: this.handleSubmit.bind(this),
-            submitText: props.submitText || `${this.doUpdate ? 'Update' : 'Add'} partner`,
+            onSubmit: this.handleSubmit,
+            submitText: props.submitText || (this.doUpdate ? texts.header2 : texts.header1),
             success: false,
             values,
             inputs: [
                 {
                     inline: true,
-                    label: 'Partner Usage Type',
+                    label: texts.typeLabel,
                     name: 'type',
                     options: [
-                        { label: 'Personal', value: 'personal' },
-                        { label: 'Business', value: 'business' }
+                        { label: wordsCap.personal, value: 'personal' },
+                        { label: wordsCap.business, value: 'business' }
                     ],
                     radio: true,
                     required: true,
@@ -54,21 +82,21 @@ class Partner extends ReactiveComponent {
                 },
                 {
                     allowAdditions: false,
-                    additionLabel: 'Use ',
+                    additionLabel: texts.addressAdditionLabel,
                     bond: new Bond(),
                     clearable: true,
                     hidden: this.doUpdate && visibility !== 'public',
-                    label: 'Search for Company or Identity',
+                    label: texts.addressLabel,
                     name: 'address',
-                    onAddItem: this.handleAddressAddItem.bind(this),
-                    onChange: this.handleAddressChange.bind(this),
-                    onSearchChange: deferred(this.handleAddressSearchChange, 300, this),
+                    onAddItem: this.handleAddressAddItem,
+                    onChange: this.handleAddressChange,
+                    onSearchChange: deferred(this.handleAddressSearchChange, 300),
                     options: !address ? [] : [{
                         key: address + name,
                         text: name || address,
                         value: address,
                     }],
-                    placeholder: 'Search by company details or identity',
+                    placeholder: texts.addressPlaceholder,
                     required: true,
                     search: ['text', 'value'],
                     selection: true,
@@ -77,37 +105,37 @@ class Partner extends ReactiveComponent {
                 },
                 {
                     bond: new Bond(),
-                    label: 'Enter Partner Name',
+                    label: texts.nameLabel,
                     name: 'name',
-                    placeholder: 'Enter a name for this partner',
+                    placeholder: texts.namePlaceholder,
                     required: true,
                     type: 'text',
-                    validate: this.validateName.bind(this),
+                    validate: this.validateName,
                     value: '',
                 },
                 {
                     clearable: true,
-                    label: 'Associated with your identity',
+                    label: texts.associatedIdentityLabel,
                     name: 'associatedIdentity',
                     options: [],
-                    placeholder: 'Select one of your identities',
+                    placeholder: texts.associatedIdentityPlaceholder,
                     selection: true,
                     search: true,
                     type: 'dropdown',
                 },
                 {
                     allowAdditions: true,
-                    label: 'Tags',
+                    label: wordsCap.tags,
                     name: 'tags',
-                    noResultsMessage: 'Enter tag and press enter to add, to tags list.',
+                    noResultsMessage: texts.tagsNoResultsMsg,
                     multiple: true,
-                    onAddItem: this.handleAddTag.bind(this),
+                    onAddItem: this.handleAddTag,
                     options: (values.tags || []).map(tag => ({
                         key: tag,
                         text: tag,
                         value: tag
                     })),
-                    placeholder: 'Enter tags',
+                    placeholder: texts.tagsPlaceholder,
                     type: 'dropdown',
                     search: true,
                     selection: true,
@@ -117,34 +145,26 @@ class Partner extends ReactiveComponent {
                     bond: new Bond(),
                     disabled: false, // only disable when company address selected
                     inline: true,
-                    label: 'Decide Partner Visibility (on the network)',
+                    label: texts.visibilityLabel,
                     name: 'visibility',
                     options: [
-                        { label: 'Private', value: 'private' },
-                        { label: 'Public', value: 'public' }
+                        { label: wordsCap.private, value: 'private' },
+                        { label: wordsCap.public, value: 'public' }
                     ],
                     radio: true,
                     type: 'checkbox-group',
                     value: values.visibility || 'private'
                 },
                 {
-                    action: !props.suggestUserId || values.userId ? undefined : {
-                        content: `${wordsCap.use} @${props.suggestUserId}`,
-                        icon: 'arrow left',
-                        onClick: (e) => {
-                            e.preventDefault()
-                            findInput(this.state.inputs, 'userId').bond.changed(props.suggestUserId)
-                        },
-                    },
                     bond: new Bond(),
                     icon: 'at',
                     iconPosition: 'left',
-                    label: 'User ID for this partner',
+                    label: texts.userIdLabel,
                     maxLength: 16,
                     minLength: 3,
                     name: 'userId',
                     onChange: deferred(this.handleUserIDChange, 300, this),
-                    placeholder: 'Enter User ID for this partner.',
+                    placeholder: texts.userIdPlaceholder,
                     type: 'text',
                     value: '',
                 },
@@ -192,7 +212,7 @@ class Partner extends ReactiveComponent {
         })
     }
 
-    handleAddressAddItem(_, { value }) {
+    handleAddressAddItem = (_, { value }) => {
         if (this.customAddresses.includes(value)) return
         const { inputs } = this.state
         findInput(inputs, 'address').options.push({
@@ -203,7 +223,7 @@ class Partner extends ReactiveComponent {
         this.setState({ inputs })
     }
 
-    handleAddressChange(e, { address }, i) {
+    handleAddressChange = (e, { address }, i) => {
         const { inputs } = this.state
         const nameIn = findInput(inputs, 'name')
         const { company } = inputs[i].options.find(x => x.value === address) || {}
@@ -212,7 +232,7 @@ class Partner extends ReactiveComponent {
         this.setState({ inputs })
     }
 
-    handleAddressSearchChange(_, { searchQuery }) {
+    handleAddressSearchChange = (_, { searchQuery }) => {
         if (!searchQuery) return
         const isValidAddress = !!ss58Decode(searchQuery)
         const { inputs } = this.state
@@ -252,7 +272,7 @@ class Partner extends ReactiveComponent {
         })
     }
 
-    handleAddTag(_, data) {
+    handleAddTag = (_, data) => {
         const { inputs } = this.state
         inputs.find(x => x.name === 'tags').options.push({
             key: data.value,
@@ -262,7 +282,7 @@ class Partner extends ReactiveComponent {
         this.setState({ inputs })
     }
 
-    handleSubmit() {
+    handleSubmit = () => {
         const { closeOnSubmit, onSubmit } = this.props
         const { inputs, values } = this.state
         const { company } = findInput(inputs, 'address').options.find(x => x.value === values.address) || {}
@@ -278,9 +298,9 @@ class Partner extends ReactiveComponent {
 
         addressbook.set(address, name, tags, type, userId, addCompany ? 'private' : visibility, associatedIdentity)
         this.setState({
-            closeText: 'Close',
+            closeText: wordsCap.close,
             message: closeOnSubmit ? null : {
-                content: `Partner ${this.doUpdate ? 'updated' : 'created'} successfully`,
+                content: this.doUpdate ? texts.submitSuccessMsg2 : texts.submitSuccessMsg1,
                 showIcon: true,
                 status: 'success'
             },
@@ -291,9 +311,8 @@ class Partner extends ReactiveComponent {
         isFn(onSubmit) && onSubmit(true, values)
         addCompany && showForm(CompanyForm, {
             message: {
-                header: `Partner ${this.doUpdate ? 'updated' : 'added'} successfully`,
-                content: `You have chosen to make this partner public.Please ensure you  
-                    fill in the correct details.Click cancel to abort making public.`,
+                header: this.doUpdate ? texts.submitSuccessMsg2 : texts.submitSuccessMsg1,
+                content: texts.companyFormOnOpenMsg,
                 showIcon: true,
                 status: 'success'
             },
@@ -305,7 +324,7 @@ class Partner extends ReactiveComponent {
             }
         })
     }
-
+    
     handleUserIDChange(e, { userId }, i) {
         const { inputs } = this.state
         inputs[i].loading = !!userId
@@ -313,7 +332,7 @@ class Partner extends ReactiveComponent {
             inputs[i].invalid = !exists
             inputs[i].loading = false
             inputs[i].message = exists ? null : {
-                content: 'Please enter a valid User ID',
+                content: texts.userIdInvalidMsg,
                 status: 'error'
             }
             this.setState({ inputs })
@@ -328,15 +347,20 @@ class Partner extends ReactiveComponent {
     validateAddress(e, { value: address }) {
         if (!address) return
         const partner = addressbook.get(address)
-        if (partner) return `Partner "${partner.name}" is already in your list!`
-        if (!ss58Decode(address)) return 'Please enter a valid Totem Identity'
+        if (partner) return (
+            <p>
+                {texts.addressValidationMsg1} <br />
+                {partner.name}
+            </p>
+        )
+        if (!ss58Decode(address)) return texts.addressValidationMsg2
     }
 
-    validateName(e, { value: name }) {
+    validateName = (e, { value: name }) => {
         const { values: oldValues } = this.props
         name = name.trim()
         if (this.doUpdate && isObj(oldValues) && oldValues.name === name) return
-        if (addressbook.getByName(name)) return 'Please choose an unique partner name.'
+        if (addressbook.getByName(name)) return texts.nameValidationMsg
     }
 
     render() {
@@ -351,8 +375,6 @@ Partner.propTypes = {
     open: PropTypes.bool,
     size: PropTypes.string,
     subheader: PropTypes.string,
-    // only when adding new partner or no user id saved with existing partner
-    suggestUserId: PropTypes.string,
     // values to be prefilled into inputs
     values: PropTypes.object,
 }

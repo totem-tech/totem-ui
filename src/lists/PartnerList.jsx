@@ -66,7 +66,7 @@ export default class PartnerList extends ReactiveComponent {
 						collapsing: true,
 						title: wordsCap.edit,
 						content: this.getActions.bind(this),
-					}
+					},
 				],
 				data: new Map(),
 				defaultSort: 'name',

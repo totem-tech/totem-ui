@@ -4,7 +4,6 @@ import DataStorage from '../utils/DataStorage'
 
 // Sidebar Item Content components
 import GettingStarted from './components/GettingStartedView'
-import SendFundsView from './views/SendFundsView'
 import UtilitiesView from './views/UtilitiesView'
 import TimeKeepingView from './views/TimeKeepingView'
 import PartnerList from './lists/PartnerList'
@@ -51,14 +50,7 @@ const sidebarItems = [
         title: "Timekeeping",
     },
     { icon: "lightbulb", title: "Products", subHeader: "" },
-    {
-        icon: "money bill alternate outline",
-        title: "Payment",
-        header: "Direct payments",
-        subHeader: "Send funds from your account to another",
-        active: false,
-        content: <SendFundsView />
-    },
+
     // {
     //     icon: "id badge outline",
     //     title: "Identities",

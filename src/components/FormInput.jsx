@@ -13,17 +13,22 @@ import { AccountIdBond } from '../AccountIdBond'
 import CheckboxGroup from './CheckboxGroup'
 import UserIdInput from './UserIdInput'
 
-const VALIDATION_MESSAGES = objReadOnly({
+const VALIDATION_MESSAGES = Object.freeze({
+    integer: () => 'Number must be an integer (no decimals)',
     max: (max) => `Number must be smaller or equal ${max}`,
     maxLength: (value, max) => `Maximum ${max} ${typeof value === 'number' ? 'digit' : 'character'}${max > 1 ? 's' : ''} required`,
     min: (min) => `Number must be greater or equal ${min}`,
     minLength: (value, min) => `Minimum ${min} ${typeof value === 'number' ? 'digit' : 'character'}${min > 1 ? 's' : ''} required`,
     requiredField: () => 'Required field',
     validNumber: () => 'Please enter a valid number'
-}, true)
+})
 const NON_ATTRIBUTES = Object.freeze([
-    'bond', 'controlled', 'defer', 'hidden', 'inline', 'invalid', '_invalid', 'inlineLabel', 'label',
+    'bond', 'controlled', 'defer', 'hidden', 'inline', 'integer', 'invalid', '_invalid', 'inlineLabel', 'label',
     'trueValue', 'falseValue', 'styleContainer', 'useInput', 'validate'
+])
+export const nonValueTypes = Object.freeze([
+    'button',
+    'html',
 ])
 
 export default class FormInput extends ReactiveComponent {
@@ -47,6 +52,7 @@ export default class FormInput extends ReactiveComponent {
     handleChange(event, data) {
         const {
             falseValue: no,
+            integer,
             max,
             maxLength, min, minLength,
             onChange,
@@ -81,9 +87,9 @@ export default class FormInput extends ReactiveComponent {
                     break
                 case 'number':
                     if (!required && value === '') break
-                    const num = eval(value)
+                    const num = integer ? parseInt(value) : parseFloat(value)
                     if (!isValidNumber(num)) {
-                        errMsg = VALIDATION_MESSAGES.validNumber()
+                        errMsg = integer ? VALIDATION_MESSAGES.integer() : VALIDATION_MESSAGES.validNumber()
                     }
                     if (isValidNumber(max) && max < num) {
                         errMsg = VALIDATION_MESSAGES.max(max)
@@ -111,7 +117,10 @@ export default class FormInput extends ReactiveComponent {
         // custom validation
         if (!message && isFn(validate)) {
             const vMsg = validate(event, data)
-            message = !vMsg || !isStr(vMsg) ? vMsg : { content: vMsg, status: 'error' }
+            message = !vMsg && !isStr(vMsg) && !React.isValidElement(vMsg) ? vMsg : {
+                content: vMsg,
+                status: 'error'
+            }
             errMsg = message && message.status === 'error' ? message.content : errMsg
         }
 
@@ -130,12 +139,12 @@ export default class FormInput extends ReactiveComponent {
 
     render() {
         const {
-            bond, error, hidden, inline, inlineLabel, label, message: externalMessage,
+            bond, content, error, hidden, inline, inlineLabel, label, message: externalMsg,
             required, styleContainer, type, useInput, width
         } = this.props
         if (hidden) return ''
-        const { message: internalMessage } = this.state
-        const message = internalMessage || externalMessage
+        const { message: internalMsg } = this.state
+        const message = internalMsg || externalMsg
         let hideLabel = false
         let inputEl = ''
         // Remove attributes that are used by the form or Form.Field but
@@ -181,6 +190,7 @@ export default class FormInput extends ReactiveComponent {
             case 'hidden':
                 hideLabel = true
                 break
+            case 'html': return content || ''
             case 'inputbond':
                 if (isDefined(attrs.value)) {
                     attrs.defaultValue = attrs.value
@@ -195,11 +205,9 @@ export default class FormInput extends ReactiveComponent {
                 break
             default:
                 attrs.fluid = !useInput ? undefined : attrs.fluid
-                if (!!inlineLabel) {
-                    attrs.label = inlineLabel
-                    console.log({ labelPosition: attrs.labelPosition })
-                }
-                inputEl = !useInput ? <Form.Input {...attrs} /> : <Input {...attrs} />
+                attrs.label = inlineLabel || attrs.label
+                const El = useInput ? Input : Form.Input
+                inputEl = <El {...attrs} />
         }
 
         return !isGroup ? (
@@ -228,6 +236,8 @@ FormInput.propTypes = {
     defer: PropTypes.number,
     // For text field types
     inlineLabel: PropTypes.any,
+    // If field types is 'number', will validate as an integer. Otherwise, float is assumed.
+    integer: PropTypes.bool,
     search: PropTypes.oneOfType([
         // Array of option keys to be searchable (FormInput specific)
         PropTypes.array,
@@ -288,6 +298,7 @@ FormInput.propTypes = {
 }
 FormInput.defaultProps = {
     defer: 300,
+    integer: false,
     type: 'text',
     width: 16
 }

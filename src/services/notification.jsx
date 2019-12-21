@@ -159,7 +159,6 @@ export default class NotificationDropdown extends ReactiveComponent {
                                                 PartnerForm,
                                                 {
                                                     onSubmit: success => success && remove(id),
-                                                    suggestUserId: senderId,
                                                     values: data,
                                                 }
                                             )}

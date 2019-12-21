@@ -2,23 +2,29 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Checkbox } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
-import { isDefined, isArr, isBond, isFn, isObj, objWithoutKeys } from '../utils/utils'
+import { hasValue, isDefined, isArr, isBond, isFn, isObj, objWithoutKeys } from '../utils/utils'
 
 export default class CheckboxGroup extends ReactiveComponent {
-    constructor(props) {
-        super(props, { bond: props.bond })
-        const allowMultiple = !props.radio && props.multiple
-        const hasBond = isBond(props.bond)
-        const value = props.value || (hasBond && props.bond._value) || (allowMultiple ? [] : undefined)
-        this.state = {
-            allowMultiple,
-            value: !allowMultiple ? value : (isArr(value) ? value : (isDefined(value) ? [value] : []))
+
+    componentWillMount() {
+        let { bond, multiple, radio, value } = this.props
+        const allowMultiple = !radio && multiple
+        const hasBond = isBond(bond)
+        value = value || (hasBond && bond._value) || (allowMultiple ? [] : undefined)
+        if (allowMultiple) {
+            value = isArr(value) ? value : (hasValue(value) ? [value] : [])
         }
-        this.handleChange = this.handleChange.bind(this)
-        hasBond && props.bond.notify(() => this.setState({ value: props.bond._value }))
+        this.setState({ allowMultiple, value })
+        if (!hasBond) return
+        this.tieId = bond.tie(() => this.setState({ value: bond._value }))
     }
 
-    handleChange(e, data, option) {
+    componentWillUnmount() {
+        const { bond } = this.props
+        isBond(bond) && bond.untie(this.tieId)
+    }
+
+    handleChange = (e, data, option) => {
         isObj(e) && isFn(e.persist) && e.persist()
         const { onChange } = this.props
         let { allowMultiple, value } = this.state

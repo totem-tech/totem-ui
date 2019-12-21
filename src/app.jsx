@@ -8,22 +8,22 @@ import {
 } from 'oo7-substrate'
 
 // Components
-import GettingStarted from './views/GettingStartedView'
-import SendFundsView from './views/SendFundsView'
-import UtilitiesView from './views/UtilitiesView'
-import TimeKeepingView from './views/TimeKeepingView'
 import ErrorBoundary from './components/CatchReactErrors'
 import ChatWidget from './components/ChatWidget'
 import ContentSegment from './components/ContentSegment'
 import PageHeader from './components/PageHeader'
+import TransferForm from './forms/Transfer'
+import IdentityList from './lists/IdentityList'
 import PartnerList from './lists/PartnerList'
 import ProjectList from './lists/ProjectList'
-import IdentityList from './lists/IdentityList'
-import SidebarLeft from './components/SidebarLeft'
 import ModalService from './services/modal'
-import ToastService from './services/toast'
 import { resumeQueue } from './services/queue'
+import SidebarLeft from './components/SidebarLeft'
+import ToastService from './services/toast'
 import { getLayout, layoutBond } from './services/window'
+import GettingStarted from './views/GettingStartedView'
+import UtilitiesView from './views/UtilitiesView'
+import TimeKeepingView from './views/TimeKeepingView'
 // Utils
 import DataStorage from './utils/DataStorage'
 // Images
@@ -235,12 +235,12 @@ const sidebarItems = [
 		subHeader: "Manage timekeeping against projects and tasks.",
 	},
 	{
+		active: false,
+		content: <TransferForm style={{ maxWidth: 350 }} />,
 		icon: "money bill alternate outline",
 		title: "Transfer",
 		header: "Transfer Transaction Allocations",
 		subHeader: "Use this module to send your transaction allocations to \n another Identity. You can send to any Identity on the network, including your own",
-		active: false,
-		content: <SendFundsView />
 	},
 	// { icon: "file alternate", title: "Invoice", subHeader: "", active: false, content: <Invoice /> },
 	{ icon: "file alternate", title: "Manage Invoices", subHeader: "" },

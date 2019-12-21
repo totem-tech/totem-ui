@@ -1,11 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Button, Checkbox, Dropdown, Form, Header, Icon, Input, Modal, TextArea } from 'semantic-ui-react'
+import { Button, Form, Header, Icon, Modal } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
-import { isDefined, isArr, isBool, isBond, isFn, isObj, isStr, objCopy, objWithoutKeys, newMessage, hasValue, objReadOnly, isValidNumber, arrReadOnly } from '../utils/utils';
-import { InputBond } from '../InputBond'
-import { AccountIdBond } from '../AccountIdBond'
-import FormInput from './FormInput'
+import { isDefined, isArr, isBool, isBond, isFn, isObj, isStr, objCopy, objWithoutKeys, newMessage, hasValue } from '../utils/utils';
+import FormInput, { nonValueTypes } from './FormInput'
 
 class FormBuilder extends ReactiveComponent {
     constructor(props) {
@@ -28,7 +26,7 @@ class FormBuilder extends ReactiveComponent {
             const { bond, inputs, name, controlled, type } = input
             const typeLC = (type || '').toLowerCase()
             const isGroup = typeLC === 'group'
-            if (!isDefined(name)) return values
+            if (!isStr(name) || nonValueTypes.includes(type)) return values
             if (isGroup) return this.getValues(inputs, values)
             let value = values[name]
             value = !(controlled ? hasValue : isDefined)(value) ? input.value : value
@@ -167,7 +165,7 @@ class FormBuilder extends ReactiveComponent {
                     )
                 })}
                 {/* Include submit button if not a modal */}
-                {!modal && !hideFooter && submitBtn}
+                {!modal && !hideFooter && (<div>{submitBtn}{newMessage(message)}</div>)}
             </Form>
         )
 

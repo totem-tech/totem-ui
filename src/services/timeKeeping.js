@@ -170,14 +170,12 @@ export const getProjectWorkers = projectHash => Bond.promise([
 export const worker = {
     // Blockchain transaction
     // (worker) accept invitation to a project
-    accept: (projectHash, workerAddress, accepted) => {
-        return post({
-            sender: validateAddress(workerAddress),
-            call: calls.timekeeping.workerAcceptanceProject(hashToBytes(projectHash), accepted),
-            compact: false,
-            longevity: true
-        })
-    },
+    accept: (projectHash, workerAddress, accepted) => post({
+        sender: validateAddress(workerAddress),
+        call: calls.timekeeping.workerAcceptanceProject(hashToBytes(projectHash), accepted),
+        compact: false,
+        longevity: true
+    }),
     // status of invitation
     accepted: (projectHash, workerAddress) => runtime.timekeeping.workerProjectsBacklogStatus([
         hashToBytes(projectHash),
@@ -185,17 +183,15 @@ export const worker = {
     ]),
     // Blockchain transaction
     // (project owner) invite a worker to join a project
-    add: (projectHash, ownerAddress, workerAddress) => {
-        return post({
-            sender: validateAddress(ownerAddress),
-            call: calls.timekeeping.notifyProjectWorker(
-                ss58Decode(workerAddress),
-                hashToBytes(projectHash),
-            ),
-            compact: false,
-            longevity: true
-        })
-    },
+    add: (projectHash, ownerAddress, workerAddress) => post({
+        sender: validateAddress(ownerAddress),
+        call: calls.timekeeping.notifyProjectWorker(
+            ss58Decode(workerAddress),
+            hashToBytes(projectHash),
+        ),
+        compact: false,
+        longevity: true
+    }),
     // check if worker is banned. undefined: not banned, object: banned
     banned: (projectHash, address) => runtime.timekeeping.projectWorkersBanList(
         hashToBytes(projectHash),
@@ -218,21 +214,19 @@ export const record = {
     // Blockchain transaction
     // @postingPeriod u16: 15 fiscal periods (0-14) // not yet implemented use default 0
     // add/update record
-    save: (workerAddress, projectHash, recordHash = NEW_RECORD_HASH, blockCount, postingPeriod, blockStart, blockEnd) => {
-        return post({
-            sender: validateAddress(workerAddress),
-            call: calls.timekeeping.submitTime(
-                hashToBytes(projectHash),
-                hashToBytes(recordHash),
-                blockCount,
-                postingPeriod,
-                blockStart,
-                blockEnd,
-            ),
-            compact: false,
-            longevity: true
-        })
-    },
+    save: (workerAddress, projectHash, recordHash, blockCount, postingPeriod, blockStart, blockEnd) => post({
+        sender: validateAddress(workerAddress),
+        call: calls.timekeeping.submitTime(
+            hashToBytes(projectHash),
+            hashToBytes(recordHash || NEW_RECORD_HASH),
+            blockCount,
+            postingPeriod,
+            blockStart,
+            blockEnd,
+        ),
+        compact: false,
+        longevity: true
+    }),
     // Blockchain transaction
     // (project owner) approve a time record
     //
@@ -242,21 +236,19 @@ export const record = {
     // @recordHash      string/bond/Uint8Array
     // @status          integer: default 0
     // @reason          object: {ReasonCode: integer, ReasonCodeType: integer}
-    approve: (workerAddress, projectHash, recordHash, status = 0, locked = false, reason = {}) => {
-        return post({
-            sender: validateAddress(workerAddress),
-            call: calls.timekeeping.authoriseTime(
-                ss58Encode(workerAddress),
-                hashToBytes(projectHash),
-                hashToBytes(recordHash),
-                status,
-                locked,
-                reason,
-            ),
-            compact: false,
-            longevity: true
-        })
-    },
+    approve: (workerAddress, projectHash, recordHash, status = 0, locked = false, reason = {}) => post({
+        sender: validateAddress(workerAddress),
+        call: calls.timekeeping.authoriseTime(
+            ss58Encode(workerAddress),
+            hashToBytes(projectHash),
+            hashToBytes(recordHash),
+            status,
+            locked,
+            reason,
+        ),
+        compact: false,
+        longevity: true
+    }),
     // get details of a record
     get: (recordHash) => runtime.timekeeping.timeRecord(hashToBytes(recordHash)),
     isOwner: (hash, address) => runtime.timeKeeping.timeHashOwner(hashToBytes(hash), ss58Decode(address)),
