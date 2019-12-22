@@ -2,10 +2,10 @@ import { ApiPromise, WsProvider } from '@polkadot/api'
 import Keyring from '@polkadot/keyring/'
 import createPair from '@polkadot/keyring/pair'
 
-const TIMEOUT = 30000
 const TYPE = 'sr25519'
 const config = {
     nodes: [],
+    timeout: 30000,
     types: {},
 }
 
@@ -20,19 +20,30 @@ const config = {
 //                  - will resolve to an object: { api, provider}
 //                  - will reject to either a @err: string or object (if object use @message property for error message)
 //                  - will reject if connection fails as well as times out
-export const connect = (nodeUrl, types, autoConnect = true, timeout) => {
+export const connect = (
+    nodeUrl = config.nodes[0],
+    types = config.types,
+    autoConnect = true,
+    timeout = config.timeout
+) => {
     const provider = new WsProvider(nodeUrl, autoConnect)
     return new Promise((resolve, reject) => {
         if (!autoConnect) provider.connect()
-        const tId = setTimeout(() => !provider.isConnected() && reject('Connection timeout'), timeout || TIMEOUT)
+        // auto reject if doesn't connect within specified duration
+        const tId = setTimeout(() => !provider.isConnected() && reject('Connection timeout'), timeout)
+        // reject if connection fails
         provider.websocket.addEventListener('error', () => reject('Connection failed') | clearTimeout(tId))
+        // instantiate the Polkadot API using the provider and supplied types
         ApiPromise.create({ provider, types }).then(api => resolve({ api, provider }) | clearTimeout(tId), reject)
     })
 }
 
-export const setDefaultConfig = (nodes, types) => {
-    config.nodes = nodes || config.nodes
-    config.types = types || config.types
+
+// setDefaultConfig sets nodes and types for use with once-off connections as well as default values for @connect function
+export const setDefaultConfig = (nodes = config.nodes, types = config.types, timeout = config.timeout) => {
+    config.nodes = nodes
+    config.types = types
+    config.timeout = timeout
 }
 
 // transfer funds between accounts
@@ -51,8 +62,11 @@ export const transfer = (toAddress, amount, secretKey, publicKey, api) => {
             return new Promise((_, reject) => reject('Unable to connect: invalid configuration'))
         }
         return connect(config.nodes[0], config.types, false)
-            .then(({ api, provider }) => transfer(toAddress, amount, secretKey, publicKey, api)
-                .finally(() => provider.disconnect()))
+            .then(({ api, provider }) => {
+                console.log({ api, provider })
+                return transfer(toAddress, amount, secretKey, publicKey, api)
+                    .finally(() => provider.disconnect())
+            })
     }
 
     const keyring = new Keyring({ type: TYPE })

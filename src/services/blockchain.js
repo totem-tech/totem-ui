@@ -40,6 +40,7 @@ export const setConfig = newConfig => {
     }
     denominationInfo.init({ ...config, denominations })
 }
+// setConfig(config)
 
 // Include all functions here that will be used by Queue Service
 // Only blockchain transactions
