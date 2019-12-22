@@ -19,6 +19,7 @@ class SidebarLeft extends ReactiveComponent {
 
 	handleToggle() {
 		const { collapsed, isMobile, onSidebarToggle, visible } = this.props
+
 		if (isMobile) {
 			return onSidebarToggle(!visible, false)
 		}
@@ -29,21 +30,25 @@ class SidebarLeft extends ReactiveComponent {
 		const { collapsed, isMobile, items, onMenuItemClick, visible } = this.props
 		const { collapsed: sCollapsed, expanded, menuItem, sidebarToggleWrap } = styles
 		const animation = isMobile ? 'overlay' : 'push'
+
+		// force open sidebar if no item is active
+		const allInactive = items.every(({ active }) => !active)
+		const collapse = allInactive ? false : collapsed
 		return (
 			<Sidebar
 				as={Menu}
 				animation={animation}
 				direction="left"
 				vertical
-				visible={visible}
-				width={collapsed ? 'very thin' : 'wide'}
+				visible={allInactive ? true : visible}
+				width={collapse ? 'very thin' : 'wide'}
 				color="black"
 				inverted
-				style={isMobile ? (collapsed ? sCollapsed : expanded) : {}}
-				onHide={this.handleHide}
+				style={isMobile ? (collapse ? sCollapsed : expanded) : {}}
+				onHide={allInactive ? undefined : this.handleHide}
 			>
 				{/* show sidebar toggle when not on mobile */}
-				<Menu.Item style={sidebarToggleWrap} onClick={this.handleToggle}>
+				<Menu.Item style={sidebarToggleWrap} onClick={allInactive ? undefined : this.handleToggle}>
 					<div
 						style={styles.sidebarToggle}
 						position="right"
@@ -51,8 +56,8 @@ class SidebarLeft extends ReactiveComponent {
 						style={styles.sidebarToggle}
 					>
 						<span>
-							<Icon name={'arrow alternate circle ' + (collapsed ? 'right ' : 'left ') + 'outline'} />
-							{collapsed ? '' : ' Close sidebar'}
+							<Icon name={'arrow alternate circle ' + (collapse ? 'right ' : 'left ') + 'outline'} />
+							{collapse ? '' : ' Close sidebar'}
 						</span>
 					</div>
 				</Menu.Item>
@@ -63,7 +68,7 @@ class SidebarLeft extends ReactiveComponent {
 							as="a"
 							key={i}
 							active={item.active}
-							title={collapsed ? item.title : ''}
+							title={collapse ? item.title : ''}
 							onClick={() => onMenuItemClick(i, isMobile)}
 							style={i === 0 ? menuItem : {}}
 						>
@@ -72,7 +77,7 @@ class SidebarLeft extends ReactiveComponent {
 									name={item.icon || 'folder'}
 								// size={collapsed ? 'big' : 'large'}
 								/>
-								{!collapsed && item.title}
+								{!collapse && item.title}
 							</span>
 						</Menu.Item>
 					))}
