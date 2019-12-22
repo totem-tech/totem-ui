@@ -236,7 +236,7 @@ const sidebarItems = [
 	},
 	{
 		active: false,
-		content: <TransferForm style={{ maxWidth: 350 }} />,
+		content: <TransferForm style={{ maxWidth: 620 }} />,
 		icon: "money bill alternate outline",
 		title: "Transfer",
 		header: "Transfer Transaction Allocations",

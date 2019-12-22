@@ -2,17 +2,17 @@ import React from 'react'
 import { render } from 'react-dom'
 import { App } from './app.jsx'
 import { setNodeUri } from 'oo7-substrate'
-import { nodes, setConfig, types } from './services/blockchain'
+import { getTypes, nodes, setConfig } from './services/blockchain'
 import 'semantic-ui-css/semantic.min.css'
 import client from './services/ChatClient'
 import storage from './services/storage'
-import { connect } from './utils/polkadotHelper'
+import { setDefaultConfig } from './utils/polkadotHelper'
 
 let hasCountries = storage.countries.getAll().size > 0
 
 // set denomnination info
 setConfig({
-    primary: 'Etx',
+    primary: 'Ktx',
     unit: 'Transactions',
     ticker: 'XTX'
 })
@@ -25,7 +25,7 @@ setNodeUri(nodes)
     hasCountries = true
 }))
 
-// attempt to connect using polkadot
-connect(nodes[0], types).then(api => console.log({ api }))
-
-render(<App />, document.getElementById('app'))
+getTypes().then(types => {
+    setDefaultConfig(nodes, types)
+    render(<App />, document.getElementById('app'))
+})

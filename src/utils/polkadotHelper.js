@@ -1,62 +1,81 @@
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import Keyring from '@polkadot/keyring/'
 import createPair from '@polkadot/keyring/pair'
-import { isFn } from './utils'
 
-let _api, _nodeUrl, _types
+const TIMEOUT = 30000
+const TYPE = 'sr25519'
+const config = {
+    nodes: [],
+    types: {},
+}
 
-export const connect = (nodeUrl, types) => {
-    _nodeUrl = nodeUrl || _nodeUrl
-    _types = types || _types
-    console.log('Polkadot: Connecting to Totem Blockchain Network...')
-    // connect to node
-    const provider = new WsProvider(_nodeUrl)
-    // Create the API and wait until ready
-    return ApiPromise.create({ provider, types }).then(api => {
-        // Retrieve the chain & node information information via rpc calls
-        Promise.all([
-            api.rpc.system.chain(),
-            api.rpc.system.name(),
-            api.rpc.system.version()
-        ]).then(([chain, nodeName, nodeVersion]) => {
-            console.log(`Polkadot: Connected to chain "${chain}" using "${nodeName}" v${nodeVersion}`)
-        })
-
-        // Set @api object for handleFaucetTransfer to use when needed
-        _api = api
-        return api
+// connect initiates a connection to the blockchain using PolkadotJS
+//
+// Params:
+// @nodeUrl     string
+// @types       object: custom type definitions
+// @autoConnect boolean: whether to auto reconnect or create an once-off connection
+//
+// returns promise: 
+//                  - will resolve to an object: { api, provider}
+//                  - will reject to either a @err: string or object (if object use @message property for error message)
+//                  - will reject if connection fails as well as times out
+export const connect = (nodeUrl, types, autoConnect = true, timeout) => {
+    const provider = new WsProvider(nodeUrl, autoConnect)
+    return new Promise((resolve, reject) => {
+        if (!autoConnect) provider.connect()
+        const tId = setTimeout(() => !provider.isConnected() && reject('Connection timeout'), timeout || TIMEOUT)
+        provider.websocket.addEventListener('error', () => reject('Connection failed') | clearTimeout(tId))
+        ApiPromise.create({ provider, types }).then(api => resolve({ api, provider }) | clearTimeout(tId), reject)
     })
 }
 
-// @secretKey   string: secretKey or seed
-// @publicKey   string: if undefined, @secretkey will be assumed to be a seed
-export const transfer = (toAddress, amount, secretKey, publicKey) => {
-    // check if api is connected otherwise connect
-    // _api.connected??
+export const setDefaultConfig = (nodes, types) => {
+    config.nodes = nodes || config.nodes
+    config.types = types || config.types
+}
 
-    const keyring = new Keyring({ type: 'sr25519' })
+// transfer funds between accounts
+//
+// Params:
+// @toAddress   string: destination identity/address
+// @secretKey   string: secretKey or seed
+// @publicKey   string: if falsy, @secretkey will be assumed to be a seed with type: 'sr25519'
+// @api         object: Polkadot API from `ApiPromise`
+//
+// Returns promise: will resolve to transaction hash
+export const transfer = (toAddress, amount, secretKey, publicKey, api) => {
+    if (!api) {
+        // config.nodes wasn't set => return empty promise that rejects immediately
+        if (config.nodes.length === 0) {
+            return new Promise((_, reject) => reject('Unable to connect: invalid configuration'))
+        }
+        return connect(config.nodes[0], config.types, false)
+            .then(({ api, provider }) => transfer(toAddress, amount, secretKey, publicKey, api)
+                .finally(() => provider.disconnect()))
+    }
+
+    const keyring = new Keyring({ type: TYPE })
     let pair
     if (!!publicKey) {
-        pair = createPair('sr25519', { secretKey, publicKey })
+        pair = createPair(TYPE, { secretKey, publicKey })
         keyring.addPair(pair)
     } else {
         pair = keyring.addFromUri(secretKey)
     }
-
     const sender = keyring.getPair(pair.address)
     return Promise.all([
-        _api.query.balances.freeBalance(sender.address),
-        _api.query.system.accountNonce(sender.address),
+        api.query.balances.freeBalance(sender.address),
+        api.query.system.accountNonce(sender.address),
     ]).then(([balance, nonce]) => new Promise((resolve, reject) => {
         if (balance <= amount) return reject('Insufficient balance')
-        console.log('Polkadot: transfer', { balance, nonce })
+        console.log('Polkadot: transfer', { balance: balance.toString(), nonce: nonce.toString() })
 
-        _api.tx.balances
+        api.tx.balances
             .transfer(toAddress, amount)
             .sign(sender, { nonce })
-            .send(data => {
-                const { events = [], status } = data || {}
-                console.log('Polkadot: Transaction status', status.type, { res: data })
+            .send(({ status }) => {
+                console.log('Polkadot: Transaction status', status.type)
                 if (!status.isFinalized) return
                 const hash = status.asFinalized.toHex()
                 console.log('Polkadot: Completed at block hash', hash)

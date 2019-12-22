@@ -10,7 +10,7 @@ import { config, denominations } from '../services/blockchain'
 import identities from '../services/identity'
 import { showForm } from '../services/modal'
 import partners from '../services/partners'
-import { arrSort, textCapitalize } from '../utils/utils'
+import { arrSort, isStr, textCapitalize } from '../utils/utils'
 import { ss58Decode } from '../utils/convert'
 import { transfer } from '../utils/polkadotHelper'
 
@@ -159,7 +159,7 @@ export default class Transfer extends Component {
 
     setMessage = (err, hash) => {
         const inProgress = !err && !hash
-        const content = inProgress ? '' : err || (
+        const content = inProgress ? '' : (!err || isStr(err) ? err : err.message) || (
             <p> {texts.submitSuccessContent} <br /> {hash}</p>
         )
         const header = inProgress ? texts.submitInprogressHeader : (

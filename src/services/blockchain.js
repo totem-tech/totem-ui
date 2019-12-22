@@ -17,10 +17,13 @@ export const denominations = Object.freeze({
     Transactions: 0,
 })
 export let config = Object.freeze({
-    primary: 'Etx',
+    primary: 'Gtx',
     unit: 'Transactions',
     ticker: 'XTX'
 })
+
+// use a placeholder promsie as types may eventually be retrived frome external source
+export const getTypes = () => new Promise(resolve => resolve(types))
 
 export const nodes = [
     'wss://node1.totem.live', // post-upgrade node (https)
@@ -65,7 +68,7 @@ export default {
 }
 
 // ToDo: use https://gitlab.com/totem-tech/common-utils/raw/master/totem-polkadot-js-types.json
-export const types = {
+const types = {
     "ProjectHash": "Hash",
     "DeletedProject": "Hash",
     "ProjectStatus": "u16",
@@ -74,17 +77,26 @@ export const types = {
     "LockStatus": "bool",
     "ReasonCode": "u16",
     "ReasonCodeType": "u16",
+    "NumberOfBreaks": "u16",
     "NumberOfBlocks": "u64",
     "PostingPeriod": "u16",
     "ProjectHashRef": "Hash",
     "StartOrEndBlockNumber": "u64",
     "StatusOfTimeRecord": "u16",
-    "EncryptNonce": "u16",
+    "EncryptPublicKey": "H256",
+    "EncryptNonce": "u64",
     "UserNameHash": "Hash",
     "RandomHashedData": "Hash",
     "Ed25519signature": "H512",
     "SignedBy": "H256",
     "Data": "Vec<u8>",
+    "SignedData": {
+        "user_hash": "UserNameHash",
+        "pub_enc_key": "EncryptPublicKey",
+        "pub_sign_key": "SignedBy",
+        "nonce": "EncryptNonce"
+    },
+    "SignedData<UserNameHash, EncryptPublicKey, SignedBy, EncryptNonce>": "SignedData",
     "ReasonCodeStruct": {
         "ReasonCodeKey": "ReasonCode",
         "ReasonCodeTypeKey": "ReasonCodeType"
@@ -103,16 +115,12 @@ export const types = {
         "reason_code": "ReasonCodeStruct",
         "posting_period": "PostingPeriod",
         "start_block": "StartOrEndBlockNumber",
-        "end_block": "StartOrEndBlockNumber"
+        "end_block": "StartOrEndBlockNumber",
+        "nr_of_breaks": "NumberOfBreaks"
     },
-    "Timekeeper<AccountId,ProjectHashRef,NumberOfBlocks,LockStatus,\nStatusOfTimeRecord,ReasonCodeStruct,PostingPeriod,StartOrEndBlockNumber>": "Timekeeper",
-    "SignedData": {
-        "userHash": "UserNameHash",
-        "pub_enc_key": "AccountId",
-        "pub_sign_key": "AccountId",
-        "random_hash": "RandomHashedData",
-        "nonce": "EncryptNonce"
-    },
-    "SignedData<UserNameHash,AccountId,RandomHashedData,EncryptNonce>": "SignedData"
+    "Timekeeper<AccountId,ProjectHashRef,NumberOfBlocks,LockStatus,\nStatusOfTimeRecord,ReasonCodeStruct,PostingPeriod,StartOrEndBlockNumber,NumberOfBreaks>": "Timekeeper",
+    // remove
+    "EncryptedVerificationData": "Hash"
+
 }
 Object.keys(types).forEach(key => addCodecTransform(key, types[key]))
