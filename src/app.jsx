@@ -138,6 +138,10 @@ export class App extends ReactiveComponent {
 						sidebarVisible={sidebarVisible}
 					/>
 				</ErrorBoundary>
+				<ToastService {...{
+					hidden: isMobile && sidebarVisible,
+					style: { left: (isMobile ? 10 : sidebarCollapsed ? 70 : 245) },
+				}} />
 
 				<Sidebar.Pushable style={styles.pushable}>
 					<SidebarLeft
@@ -157,7 +161,6 @@ export class App extends ReactiveComponent {
 						fluid
 						style={sidebarCollapsed ? mainContentCollapsed : mainContent}
 					>
-						<ToastService fullWidth={true} hidden={isMobile && sidebarVisible} />
 
 						{sidebarItems.map((item, i) => (
 							<div ref={item.elementRef} key={i} hidden={!item.active} style={spaceBelow}>
@@ -264,12 +267,6 @@ const sidebarItems = [
 ]
 
 const styles = {
-	pushable: {
-		margin: 0,
-		height: 'calc(100% - 155px)',
-		overflow: 'hidden',
-		WebkitOverflow: 'hidden',
-	},
 	mainContent: {
 		overflow: 'hidden auto',
 		WebkitOverflow: 'hidden auto',
@@ -284,7 +281,12 @@ const styles = {
 		// scrollBehavior: 'smooth',
 		padding: 15,
 	},
-	pushable: { marginTop: 61 },
+	pushable: {
+		margin: 0,
+		height: 'calc(100% - 61px)',
+		overflow: 'hidden',
+		WebkitOverflow: 'hidden',
+	},
 	spaceBelow: {
 		marginBottom: 15
 	}

@@ -150,7 +150,7 @@ class MobileHeader extends ReactiveComponent {
 
 		return (
 			<div>
-				<Menu fixed="top" inverted>
+				<Menu attached="top" inverted> {/*fixed="top" */}
 					{isMobile && (
 						<Menu.Item
 							icon={{ name: 'sidebar', size: 'big', className: 'no-margin' }}
@@ -182,7 +182,7 @@ class MobileHeader extends ReactiveComponent {
 								value={addressSelected}
 								options={wallets.map(({ address, name }) => ({
 									key: address,
-									text: (name || '').split('').slice(0, 16).join(''),
+									text: !isMobile ? name : name.split('').slice(0, 7).join(''),
 									description: <Pretty value={runtime.balances.balance(ss58Decode(address))} />,
 									value: address
 								}))}
