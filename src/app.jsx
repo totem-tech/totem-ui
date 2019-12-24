@@ -139,7 +139,6 @@ export class App extends ReactiveComponent {
 					/>
 				</ErrorBoundary>
 
-				<ToastService fullWidth={true} hidden={isMobile && sidebarVisible} />
 				<Sidebar.Pushable style={styles.pushable}>
 					<SidebarLeft
 						collapsed={isMobile ? false : sidebarCollapsed}
@@ -158,6 +157,8 @@ export class App extends ReactiveComponent {
 						fluid
 						style={sidebarCollapsed ? mainContentCollapsed : mainContent}
 					>
+						<ToastService fullWidth={true} hidden={isMobile && sidebarVisible} />
+
 						{sidebarItems.map((item, i) => (
 							<div ref={item.elementRef} key={i} hidden={!item.active} style={spaceBelow}>
 								<ContentSegment {...item} onClose={handleClose} index={i} />

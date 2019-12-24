@@ -15,13 +15,13 @@ const timeoutIds = new Map()
 
 class ToastService extends ReactiveComponent {
     constructor(props) {
-        super(props, {trigger})
+        super(props, { trigger })
     }
     render() {
         const { hidden, fullWidth } = this.props
         let style = styles.toastService
         if (fullWidth) {
-            style = objCopy({maxWidth: '100%', width: '100%'}, style, true)
+            style = objCopy({ maxWidth: '100%', width: '100%' }, style, true)
         }
         return !hidden && (
             <div className="toast-service" style={style}>
@@ -54,15 +54,15 @@ export const setToast = (message, duration, id) => {
         {
             key: id,
             onDismiss: handleClose,
-            style: objCopy({margin: 5}, message.style)
+            style: objCopy({ margin: 5 }, message.style)
         },
         message,
         true
     ))
-    toasts.set( id, messageEl )
+    toasts.set(id, messageEl)
     trigger.trigger(uuid.v1())
     if (autoClose) {
-        timeoutIds.set(id, setTimeout(handleClose, duration || DURATION))        
+        timeoutIds.set(id, setTimeout(handleClose, duration || DURATION))
     }
     return id
 }
@@ -80,10 +80,10 @@ const styles = {
         overflowY: 'auto',
         paddingRight: 10,
         position: 'fixed',
-            right: 0,
-            transition: 'all 0.5s ease',
-            WebkitTransition: 'all 0.5s ease',
-        top: 61,
+        right: 0,
+        transition: 'all 0.5s ease',
+        WebkitTransition: 'all 0.5s ease',
+        top: 0,
         zIndex: 1001
     }
 }
