@@ -17,72 +17,33 @@ const texts = {
     registrationComplete: 'Registration complete',
     registrationFailed: 'Registration failed',
     userId: 'User ID',
-    userIdExists: 'An user already exists with ID:',
     userIdPlaceholder: 'Enter your desired ID',
-    userIdValidationMsg: 'ID must start with a letter and must be lowercase alpha-numeric',
-    welcomeMsg: 'Welcom to the Totem trollbox. Please be nice.',
+    welcomeMsg: 'Welcome to the Totem trollbox. Please be nice.',
 }
-const nameRegex = /^($|[a-z]|[a-z][a-z0-9]+)$/
 
-class FormRegister extends ReactiveComponent {
+export default class FormRegister extends ReactiveComponent {
     constructor(props) {
         super(props)
 
         this.state = {
-            disableSubmit: undefined,
-            loading: undefined,
             message: undefined,
-            onSubmit: this.handleSubmit.bind(this),
-            success: undefined,
+            onSubmit: this.handleSubmit,
+            success: false,
             inputs: [
                 {
-                    icon: undefined,
                     label: texts.userId,
                     name: 'userId',
-                    minLength: 3,
-                    maxLength: 20,
-                    onChange: deferred(this.handleIdChange, 300, this),
+                    newUser: true,
                     placeholder: texts.userIdPlaceholder,
-                    type: 'text',
+                    type: 'UserIdInput',
                     required: true,
                     value: '',
-                    validate: (_, { value: userId }) => {
-                        const { inputs } = this.state
-                        const userIdIn = findInput(inputs, 'userId')
-                        const valid = nameRegex.test(userId)
-                        userIdIn.icon = valid ? userIdIn.action : undefined
-                        setTimeout(() => this.setState({ inputs }))
-                        return valid ? null : texts.userIdValidationMsg
-                    },
                 }
             ],
         }
     }
 
-    handleIdChange(e, values, index) {
-        const { inputs } = this.state
-        const userId = (values.userId || '').toLowerCase().trim()
-        inputs[index].message = undefined
-        inputs[index].icon = undefined
-        this.setState({ inputs, disableSubmit: true })
-        if (!userId) return
-
-        getClient().idExists(userId, exists => {
-            inputs[index].invalid = exists
-            inputs[index].message = !exists ? undefined : {
-                content: `${texts.userIdExists} ${userId}`,
-                status: exists ? 'error' : 'success'
-            }
-            inputs[index].icon = exists ? undefined : {
-                color: 'green',
-                name: 'check circle',
-                size: 'large',
-            }
-            this.setState({ inputs, disableSubmit: !exists })
-        })
-    }
-
-    handleSubmit(_, values) {
+    handleSubmit = (_, values) => {
         const { onSubmit } = this.props
         let { userId } = values
 
@@ -103,11 +64,8 @@ class FormRegister extends ReactiveComponent {
         })
     }
 
-    render() {
-        return <FormBuilder {...{ ...this.props, ...this.state }} />
-    }
+    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
-
 FormRegister.defaultProps = {
     closeOnSubmit: true,
     header: texts.formHeader,
@@ -116,4 +74,3 @@ FormRegister.defaultProps = {
     subheader: texts.formSubheader,
     submitText: wordsCap.register
 }
-export default FormRegister

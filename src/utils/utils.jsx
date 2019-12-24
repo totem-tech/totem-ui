@@ -48,6 +48,7 @@ export const isObj = x => x !== null && !isArr(x) && typeof x === 'object'
 export const isObjArr = x => !isArr(x) ? false : !x.reduce((no, item) => no || !isObj(item), false)
 // Checks if argument is an Map of Objects. Each element type must be object, otherwise will return false.
 export const isObjMap = x => !isMap(x) ? false : !Array.from(x).reduce((no, item) => no || !isObj(item[1]), false)
+export const isPromise = x => x instanceof Promise
 export const isStr = x => typeof x === 'string'
 export const isUint8Arr = arr => arr instanceof Uint8Array
 export const isValidNumber = x => typeof x == 'number' && !isNaN(x) && isFinite(x)

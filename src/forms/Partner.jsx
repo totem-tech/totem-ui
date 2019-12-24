@@ -90,7 +90,7 @@ class Partner extends ReactiveComponent {
                     name: 'address',
                     onAddItem: this.handleAddressAddItem,
                     onChange: this.handleAddressChange,
-                    onSearchChange: deferred(this.handleAddressSearchChange, 300),
+                    onSearchChange: this.handleAddressSearchChange,
                     options: !address ? [] : [{
                         key: address + name,
                         text: name || address,
@@ -159,8 +159,6 @@ class Partner extends ReactiveComponent {
                     bond: new Bond(),
                     label: texts.userIdLabel,
                     name: 'userId',
-                    maxLength: 16,
-                    minLength: 3,
                     multiple: false,
                     placeholder: texts.userIdPlaceholder,
                     type: 'UserIdInput',
@@ -229,7 +227,7 @@ class Partner extends ReactiveComponent {
         this.setState({ inputs })
     }
 
-    handleAddressSearchChange = (_, { searchQuery }) => {
+    handleAddressSearchChange = deferred((_, { searchQuery }) => {
         if (!searchQuery) return
         const isValidAddress = !!ss58Decode(searchQuery)
         const { inputs } = this.state
@@ -267,7 +265,7 @@ class Partner extends ReactiveComponent {
             companyIn.options = []
             this.setState({ inputs })
         })
-    }
+    }, 300)
 
     handleAddTag = (_, data) => {
         const { inputs } = this.state

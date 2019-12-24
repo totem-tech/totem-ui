@@ -4,8 +4,8 @@ import { Button, Dropdown, Form, Input, TextArea } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import {
-    deferred, hasValue, isBond, isDefined, isFn, isValidNumber, isStr,
-    newMessage, objReadOnly, objWithoutKeys, searchRanked, isArr
+    deferred, hasValue, isArr, isBond, isDefined, isFn, isPromise,
+    isStr, isValidNumber, newMessage, objWithoutKeys, searchRanked,
 } from '../utils/utils';
 // Custom Inputs
 import { InputBond } from '../InputBond'
@@ -35,21 +35,23 @@ export default class FormInput extends ReactiveComponent {
     constructor(props) {
         super(props)
 
+        const { bond, defer } = props
         this.handleChange = this.handleChange.bind(this)
-        this.setErrorMessage = props.defer === null ? this.setErrorMessage.bind(this) : deferred(
-            this.setErrorMessage,
-            props.defer,
-            this
-        )
-        this.bond = props.bond
-        this.state = {
-            message: undefined
+        this.bond = isBond(this.bond) ? bond : undefined
+        this.state = { message: undefined }
+        if (defer !== null) {
+            this.setMessage = deferred(this.setMessage, defer)
         }
-
-        setTimeout(() => isBond(this.bond) && this.bond.tie(value => this.handleChange({}, { value })))
     }
 
-    handleChange(event, data) {
+    componentWillMount() {
+        if (!this.bond) return
+        this.tieId = this.bond && this.bond.tie(value => this.handleChange({}, { value }))
+    }
+
+    componentWillUnmount = () => this.bond && this.bond.untie(this.tieId)
+
+    handleChange = (event, data) => {
         const {
             falseValue: no,
             integer,
@@ -114,28 +116,35 @@ export default class FormInput extends ReactiveComponent {
         }
 
         let message = !errMsg ? null : { content: errMsg, status: 'error' }
+        const triggerChange = () => {
+            data.invalid = !!errMsg
+            isFn(onChange) && onChange(event, data, this.props)
+            this.setMessage(message)
+
+            if (isBond(this.bond) && !data.invalid) {
+                this.bond._value = value
+            }
+        }
+        if (message || !isFn(validate)) return triggerChange()
+        isFn(onChange) && onChange(event, data, this.props)
+
         // custom validation
-        if (!message && isFn(validate)) {
-            const vMsg = validate(event, data)
+        new Promise(r => r(validate(event, data))).then(vMsg => {
+            if (vMsg === true) {
+                // means field is invalid but no message to display
+                errMsg = true
+                return triggerChange()
+            }
             message = !vMsg && !isStr(vMsg) && !React.isValidElement(vMsg) ? vMsg : {
                 content: vMsg,
                 status: 'error'
             }
             errMsg = message && message.status === 'error' ? message.content : errMsg
-        }
-
-        data.invalid = !!errMsg
-        isFn(onChange) && onChange(event, data, this.props)
-        this.setErrorMessage(message)
-
-        if (isBond(this.bond) && !data.invalid) {
-            this.bond._value = value
-        }
+            triggerChange()
+        })
     }
 
-    setErrorMessage(message = {}) {
-        this.setState({ message })
-    }
+    setMessage = (message = {}) => this.setState({ message })
 
     render() {
         const {
@@ -250,7 +259,13 @@ FormInput.propTypes = {
     // Params:
     //          @event object
     //          @data object
-    // Expected Return: false or string (error), or message object
+    // Expected Return: one of the following: 
+    //              falsy (if no error),
+    //              true (exact value, indicates invalid but no message to display)
+    //              string (assumes error)
+    //              ReactElement (assumes error)
+    //              object (can be any status type. Required prop: content or header)
+    //              Promise (must resolve to one of the above) - defers onChange trigger until resolved
     validate: PropTypes.func,
 
     // Semantic UI supported props. Remove????

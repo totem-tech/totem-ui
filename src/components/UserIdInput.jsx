@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { Bond } from 'oo7'
 import PropTypes from 'prop-types'
 import FormInput from './FormInput'
-import { arrUnique, deferred, isFn, hasValue, objWithoutKeys, textCapitalize, arrSort } from '../utils/utils'
+import { arrUnique, deferred, isFn, hasValue, objWithoutKeys, textCapitalize, arrSort, search } from '../utils/utils'
 import client, { getUser } from '../services/ChatClient'
 import partners from '../services/partners'
 
@@ -22,6 +22,7 @@ const noAttrs = [
     'includePartners',
     'message',
     'multiple',
+    'newUser',
     'required',
     'validate',
 ]
@@ -30,6 +31,10 @@ const noAttrsTextField = [
     'allowAdditions',
     'clearable',
 ]
+const invalidIcon = { color: 'red', name: 'warning circle', size: 'large' }
+const validIcon = { color: 'green', name: 'check circle', size: 'large' }
+// eliminates any characters that are not allowed, including digits at the beginning
+export const getId = str => str.toLowerCase().replace(/(^[0-9]+)|[^a-z0-9]/gi, '')
 
 export default class UserIdInput extends Component {
     constructor(props) {
@@ -37,10 +42,13 @@ export default class UserIdInput extends Component {
 
         const { allowAdditions, clearable, includePartners, multiple, options, value } = props
         let input = {
+            defer: null,
             inlineLabel: { icon: { className: 'no-margin', name: 'at' } },
             labelPosition: 'left',
+            maxLength: 16,
             placeholder: texts.enterUserId,
             type: 'text',
+            validate: this.validateTextField,
             value: '',
             useInput: true,
         }
@@ -50,12 +58,14 @@ export default class UserIdInput extends Component {
             clearable,
             multiple: multiple,
             noResultsMessage: texts.noResultsMessage,
-            onAddItem: this.handleAddUser.bind(this),
+            onAddItem: this.handleAddUser,
             onClose: () => this.setState({ open: false }),
             onOpen: () => this.setState({ open: true }),
+            onSearchChange: this.handleSearchChange,
             options: options || [],
             placeholder: texts.enterUserIds,
             search: true,
+            searchQuery: props.searchQuery || '',
             selection: true,
             type: 'dropdown',
             value: multiple ? [] : value,
@@ -64,10 +74,8 @@ export default class UserIdInput extends Component {
         this.state = {
             ...input,
             bond: props.bond || new Bond(),
-            onChange: this.handleChange.bind(this),
+            onChange: this.handleChange,
         }
-
-        this.handleTextChange = deferred(this.handleTextChange, 300, this)
     }
 
     componentWillMount() {
@@ -97,26 +105,16 @@ export default class UserIdInput extends Component {
         this.setState({ options })
     }
 
-    handleChange(e, data) {
-        const { includePartners, multiple, onChange } = this.props
-        this.setState({ value: data.value, message: undefined })
-        isFn(onChange) && onChange(e, data)
-        !multiple && !includePartners && this.handleTextChange(e, data)
-    }
-
-    handleAddUser(e, data) {
+    handleAddUser = (e, data) => {
         const { value: userId } = data
         const { excludeOwnId, multiple, onChange } = this.props
         const isOwnId = excludeOwnId && (getUser() || {}).id === userId
         let { value } = this.state
-        const removeInvalidValue = () => {
-            if (multiple) {
-                value.splice(value.indexOf(userId), 1)
-            } else {
-                value = undefined
-            }
+        const removeNewValue = () => {
+            if (multiple) return value.splice(value.indexOf(userId), 1)
+            value = undefined
         }
-        isOwnId && removeInvalidValue()
+        isOwnId && removeNewValue()
         this.setState({
             loading: !isOwnId,
             message: !isOwnId ? undefined : {
@@ -125,6 +123,7 @@ export default class UserIdInput extends Component {
                 status: 'warning'
             },
             open: !isOwnId,
+            searchQuery: '',
             value,
         })
 
@@ -143,7 +142,7 @@ export default class UserIdInput extends Component {
 
             if (!exists) {
                 // not valid => remove from values
-                removeInvalidValue()
+                removeNewValue()
             } else {
                 // required to prevent Semantic's unexpected behaviour!!
                 value = !multiple ? value : arrUnique([...value, userId])
@@ -164,36 +163,28 @@ export default class UserIdInput extends Component {
         })
     }
 
-    handleTextChange(e, data) {
-        const { value } = data
-        const { excludeOwnId, onChange } = this.props
-        const isOwnId = excludeOwnId && (getUser() || {}).id === value
-        if (isOwnId) return this.setState({
-            invalid: true,
-            message: {
-                content: texts.ownIdEntered,
-                showIcon: true,
-                status: 'error'
-            }
-        })
+    handleChange = (e, { value }) => this.setState({ value, message: undefined })
 
-        if (!value) return this.setState({ icon: undefined, message: undefined })
+    handleSearchChange = (_, { searchQuery: q }) => this.setState({ searchQuery: getId(q) })
+
+    validateTextField = (e, data) => new Promise(resolve => {
+        data.value = getId(data.value)
+        const { value } = data
+        const { excludeOwnId, newUser, onChange } = this.props
+        const isOwnId = excludeOwnId && (getUser() || {}).id === value
+        // trigger a value change
+        const triggerChagne = invalid => {
+            this.setState({ icon: invalid ? invalidIcon : validIcon, value })
+            isFn(onChange) && onChange(e, { ...data, invalid })
+        }
+        if (isOwnId || value.length < 3) return triggerChagne(true) | resolve(isOwnId ? texts.ownIdEntered : true)
 
         client.idExists(value, exists => {
-            const invalid = !exists
-            this.setState({
-                icon: {
-                    color: exists ? 'green' : 'red',
-                    name: `${exists ? 'check' : 'warning'} circle`,
-                    size: 'large',
-                },
-                invalid,
-                message: undefined,
-            })
-            // trigger a value change
-            isFn(onChange) && onChange(e, { ...data, invalid, value })
+            const invalid = newUser ? exists : !exists
+            triggerChagne(invalid)
+            resolve(invalid)
         })
-    }
+    })
 
     render() {
         const { includeParners, multiple } = this.props
@@ -218,6 +209,9 @@ UserIdInput.propTypes = {
     // if `@multiple` === true, include partners with user ids
     includePartners: PropTypes.bool,
     multiple: PropTypes.bool,
+    // Reverses validation for single user and textfield
+    // Applicable only when (When multiple = false && includePartners = false)
+    newUser: PropTypes.bool,
 }
 UserIdInput.defaultProps = {
     allowAdditions: true,
@@ -225,4 +219,5 @@ UserIdInput.defaultProps = {
     excludeOwnId: true,
     includePartners: false,
     multiple: false,
+    newUser: false,
 }

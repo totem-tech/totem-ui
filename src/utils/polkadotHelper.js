@@ -25,19 +25,16 @@ export const connect = (
     types = config.types,
     autoConnect = true,
     timeout = config.timeout
-) => {
+) => new Promise((resolve, reject) => {
     const provider = new WsProvider(nodeUrl, autoConnect)
-    return new Promise((resolve, reject) => {
-        if (!autoConnect) provider.connect()
-        // auto reject if doesn't connect within specified duration
-        const tId = setTimeout(() => !provider.isConnected() && reject('Connection timeout'), timeout)
-        // reject if connection fails
-        provider.websocket.addEventListener('error', () => reject('Connection failed') | clearTimeout(tId))
-        // instantiate the Polkadot API using the provider and supplied types
-        ApiPromise.create({ provider, types }).then(api => resolve({ api, provider }) | clearTimeout(tId), reject)
-    })
-}
-
+    if (!autoConnect) provider.connect()
+    // auto reject if doesn't connect within specified duration
+    const tId = setTimeout(() => !provider.isConnected() && reject('Connection timeout'), timeout)
+    // reject if connection fails
+    provider.websocket.addEventListener('error', () => reject('Connection failed') | clearTimeout(tId))
+    // instantiate the Polkadot API using the provider and supplied types
+    ApiPromise.create({ provider, types }).then(api => resolve({ api, provider }) | clearTimeout(tId), reject)
+})
 
 // setDefaultConfig sets nodes and types for use with once-off connections as well as default values for @connect function
 export const setDefaultConfig = (nodes = config.nodes, types = config.types, timeout = config.timeout) => {
