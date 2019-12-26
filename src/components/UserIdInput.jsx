@@ -73,15 +73,16 @@ export default class UserIdInput extends Component {
 
         this.state = {
             ...input,
-            bond: props.bond || new Bond(),
+            // bond: props.bond || new Bond(),
             onChange: this.handleChange,
         }
     }
 
     componentWillMount() {
-        const { includePartners, multiple, value } = this.props
-        hasValue(value) && this.state.bond.changed(value)
-        if (!multiple && !includePartners) return
+        this._mounted = true
+        let { includePartners, value } = this.props
+        value = value || (multiple ? [] : '')
+        if (!includePartners) return this.setState({ value })
 
         let { options } = this.state
         const userIds = options.map(({ userId }) => userId)
@@ -101,8 +102,11 @@ export default class UserIdInput extends Component {
 
         // sort by userId
         options = arrSort(options, 'text')
+        this.setState({ options, value })
+    }
 
-        this.setState({ options })
+    componentWillUnmount() {
+        this._mounted = false
     }
 
     handleAddUser = (e, data) => {
@@ -165,7 +169,12 @@ export default class UserIdInput extends Component {
         })
     }
 
-    handleChange = (e, { value }) => this.setState({ value, message: undefined, searchQuery: '' })
+    handleChange = (e, data) => {
+        const { onChange } = this.props
+        const { value } = data
+        this.setState({ value, message: undefined, searchQuery: '' })
+        setTimeout(() => isFn(onChange) && onChange(e, data))
+    }
 
     handleSearchChange = (_, { searchQuery: q }) => this.setState({ searchQuery: getId(q) })
 
@@ -190,9 +199,10 @@ export default class UserIdInput extends Component {
 
     render() {
         const { includeParners, multiple } = this.props
-        let { invalid, loading } = this.state
+        let { invalid, loading, options } = this.state
         invalid = invalid || this.props.invalid
         loading = loading || this.props.loading
+        options = this.props.options || options
         return <FormInput {...{
             ...objWithoutKeys(
                 this.props,
@@ -201,6 +211,7 @@ export default class UserIdInput extends Component {
             ...this.state,
             invalid,
             loading,
+            options,
         }} />
     }
 }

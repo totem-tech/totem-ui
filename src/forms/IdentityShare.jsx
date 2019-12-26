@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
-import { isFn, isObj, textCapitalize } from '../utils/utils'
+import { isFn, isObj, textCapitalize, isArr } from '../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import addressbook from '../services/partners'
 import client from '../services/ChatClient'
@@ -138,11 +138,14 @@ export default class IdentityShareForm extends ReactiveComponent {
         inputs.forEach(input => input.disabled = disabledFields.includes(input.name))
 
         // add User Ids as options if supplied in values
-        findInput(inputs, 'userIds').options = (userIds || []).map(id => ({
-            key: id,
-            text: id,
-            value: id,
-        }))
+        if (isArr(userIds) && userIds.length > 0) {
+            const userIdIn = findInput(inputs, 'userIds')
+            userIdIn.options = (userIds || []).map(id => ({
+                key: id,
+                text: id,
+                value: id,
+            }))
+        }
 
         // prefill values
         fillValues(inputs, values)
