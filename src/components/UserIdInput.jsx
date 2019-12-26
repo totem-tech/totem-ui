@@ -52,7 +52,7 @@ export default class UserIdInput extends Component {
             value: '',
             useInput: true,
         }
-        if (multiple || includePartners) input = {
+        if (multiple || includePartners || options) input = {
             additionLabel: `${wordsCap.add} @`,
             allowAdditions,
             clearable,
@@ -80,7 +80,7 @@ export default class UserIdInput extends Component {
 
     componentWillMount() {
         this._mounted = true
-        let { includePartners, value } = this.props
+        let { includePartners, multiple, value } = this.props
         value = value || (multiple ? [] : '')
         if (!includePartners) return this.setState({ value })
 
@@ -172,7 +172,11 @@ export default class UserIdInput extends Component {
     handleChange = (e, data) => {
         const { onChange } = this.props
         const { value } = data
-        this.setState({ value, message: undefined, searchQuery: '' })
+        const s = { value, message: undefined }
+        if (this.state.options) {
+            s.searchQuery = ''
+        }
+        this.setState(s)
         setTimeout(() => isFn(onChange) && onChange(e, data))
     }
 
@@ -198,15 +202,14 @@ export default class UserIdInput extends Component {
     })
 
     render() {
-        const { includeParners, multiple } = this.props
         let { invalid, loading, options } = this.state
         invalid = invalid || this.props.invalid
         loading = loading || this.props.loading
-        options = this.props.options || options
+        // options = this.props.options || options
         return <FormInput {...{
             ...objWithoutKeys(
                 this.props,
-                !includeParners && !multiple ? noAttrsTextField : noAttrs
+                !options ? noAttrsTextField : noAttrs
             ),
             ...this.state,
             invalid,
@@ -223,7 +226,7 @@ UserIdInput.propTypes = {
     includePartners: PropTypes.bool,
     multiple: PropTypes.bool,
     // Reverses validation for single user and textfield
-    // Applicable only when (When multiple = false && includePartners = false)
+    // Applicable only when (When multiple = false && includePartners = false && options is undefined)
     newUser: PropTypes.bool,
 }
 UserIdInput.defaultProps = {
