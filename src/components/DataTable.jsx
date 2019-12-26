@@ -19,7 +19,7 @@ const words = {
 const wordsCap = textCapitalize(words)
 const texts = {
     deselectAll: 'Deselect all',
-    noDataAvailable: 'No data availablesssss',
+    noDataAvailable: 'No data available',
     noResultsMsg: 'Your search yielded no results',
     selectAll: 'Select all',
 }

@@ -146,11 +146,12 @@ export default class UserIdInput extends Component {
             } else {
                 // required to prevent Semantic's unexpected behaviour!!
                 value = !multiple ? value : arrUnique([...value, userId])
+                const optionExists = input.options.find(x => x.value === userId)
                 // add newly added user id as an option
-                input.options.push({
+                !optionExists && input.options.push({
                     key: userId,
                     text: userId,
-                    value: userId,
+                    value: userId
                 })
             }
             // trigger a value change
@@ -158,12 +159,13 @@ export default class UserIdInput extends Component {
             this.setState({
                 ...input,
                 open: exists && multiple,
-                value
+                value,
+                searchQuery: '',
             })
         })
     }
 
-    handleChange = (e, { value }) => this.setState({ value, message: undefined })
+    handleChange = (e, { value }) => this.setState({ value, message: undefined, searchQuery: '' })
 
     handleSearchChange = (_, { searchQuery: q }) => this.setState({ searchQuery: getId(q) })
 
