@@ -28,8 +28,8 @@ const texts = {
     partnerPlaceholder: 'Select partner',
     submitErrorHeader: 'Transaction error',
     submitInprogressHeader: 'Transaction in-progress',
-    submitSuccessContent: 'Transaction hash:',
-    submitSuccessHeader: 'Transaction complete',
+    submitSuccessContent: 'Transfer complete',
+    submitSuccessHeader: 'Transaction successful',
 }
 
 export default class Transfer extends Component {
@@ -107,9 +107,9 @@ export default class Transfer extends Component {
 
     componentWillMount() {
         const { inputs } = this.state
-        const { values } = this.props
+        const { disabledFields, values } = this.props
         const fromIn = findInput(inputs, 'from')
-        // change value selected address changes
+        // change value when selected address changes
         this.tieIdSelected = identities.selectedAddressBond.tie(() => {
             fromIn.bond.changed(identities.getSelected().address)
         })
@@ -136,6 +136,9 @@ export default class Transfer extends Component {
             this.setState({ inputs })
         })
 
+        // disable inputs
+        disabledFields && disabledFields.forEach(name => (findInput(inputs, name) || {}).disabled = true)
+
         fillValues(inputs, values)
     }
 
@@ -160,7 +163,7 @@ export default class Transfer extends Component {
     setMessage = (err, hash) => {
         const inProgress = !err && !hash
         const content = inProgress ? '' : (!err || isStr(err) ? err : err.message) || (
-            <p> {texts.submitSuccessContent} <br /> {hash}</p>
+            <p> {texts.submitSuccessContent}</p>
         )
         const header = inProgress ? texts.submitInprogressHeader : (
             err ? texts.submitErrorHeader : texts.submitSuccessHeader
@@ -184,9 +187,14 @@ export default class Transfer extends Component {
 }
 
 Transfer.propTypes = {
+    // array of input names to be disabled
+    disabledFields: PropTypes.array,
     values: PropTypes.shape({
         amount: PropTypes.number,
         from: PropTypes.string,
         to: PropTypes.string,
     })
+}
+Transfer.defaultProps = {
+    disabledFields: ['from']
 }
