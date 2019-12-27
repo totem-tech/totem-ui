@@ -9,13 +9,14 @@ import IdentityShareForm from '../forms/IdentityShare'
 import IdentityForm from '../forms/Identity'
 import IdentityDetailsForm from '../forms/IdentityDetails'
 import { Pretty } from '../Pretty'
-import { ss58Decode } from 'oo7-substrate'
+import { ss58Decode } from '../utils/convert'
 
 const toBeImplemented = () => alert('To be implemented')
 const words = {
     actions: 'actions',
     create: 'create',
     name: 'name',
+    never: 'never',
     personal: 'personal',
     tags: 'tags',
     usage: 'usage',
@@ -80,7 +81,7 @@ export default class ItentityList extends ReactiveComponent {
             const data = identityService.getAll()
             this.allBackupDone = data.reduce((done, { cloudBackupTS }) => !done ? false : !!cloudBackupTS, true)
             data.forEach(identity => {
-                identity._cloudBackupTS = formatStrTimestamp(identity.cloudBackupTS)
+                identity._cloudBackupTS = formatStrTimestamp(identity.cloudBackupTS) || words.never
                 identity.usageType = identity.usageType || words.personal
                 identity._tags = (identity.tags || []).map(tag => (
                     <Label key={tag} style={{ margin: 1, float: 'left', display: 'inline' }}>

@@ -7,6 +7,8 @@ import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import identityService from '../services/identity'
 import { copyToClipboard, isFn, textCapitalize } from '../utils/utils'
 import { confirm } from '../services/modal'
+import { Pretty } from '../Pretty'
+import { ss58Decode } from '../utils/convert'
 
 // address is used in some contexts to select the address from local storage. Do not change the text for address
 const words = {
@@ -15,23 +17,28 @@ const words = {
     copy: 'copy',
     identity: 'identity',
     name: 'name',
+    never: 'never',
     permanently: 'permanently',
     remove: 'remove',
     seed: 'seed',
     show: 'show',
+    tags: 'tags',
+    usage: 'usage',
 }
-const wordsCapitalized = textCapitalize(words)
+const wordsCap = textCapitalize(words)
 const texts = {
     cryptoType: 'Identity type',
     hideSeed: 'Hide seed',
     identityDetails: 'Identity details',
+    lastBackup: 'Last backup',
     noKeepItHidden: 'No keep it hidden',
+    recoveryPhrase: 'Recovery Phrase',
     removeWarningPart1: 'You are about to remove the following identity.',
     removeWarningPart2: `If not backed up, this action is irreversible. 
         You will lose access to all activity/data related to this Identity.`,
     selectedWalletWarning: 'Cannot remove identity you are currently using',
     showSeed: 'Show seed phrase',
-    recoveryPhrase: 'Recovery Phrase',
+    txAllocations: 'TX Allocations',
 }
 
 export default class IdentityDetails extends ReactiveComponent {
@@ -42,20 +49,20 @@ export default class IdentityDetails extends ReactiveComponent {
         this.showSeed = false
         this.state = {
             closeOnSubmit: true,
-            closeText: <Button negative={false} positive content={wordsCapitalized.close} />,
+            closeText: <Button negative={false} positive content={wordsCap.close} />,
             onSubmit: this.handleSubmit.bind(this),
             submitText: (
                 <Button
                     icon='trash'
                     negative
                     positive={false}
-                    content={`${wordsCapitalized.remove} ${wordsCapitalized.permanently}`}
+                    content={`${wordsCap.remove} ${wordsCap.permanently}`}
                 />
             ),
             success: false, // sets true  when identity removed
             inputs: [
                 {
-                    label: wordsCapitalized.name,
+                    label: wordsCap.name,
                     name: 'name',
                     readOnly: true,
                     type: 'text',
@@ -65,9 +72,9 @@ export default class IdentityDetails extends ReactiveComponent {
                         icon: 'copy',
                         onClick: (e) => e.preventDefault() | copyToClipboard(this.identity.address),
                         style: { cursor: 'pointer' },
-                        title: `${wordsCapitalized.copy} ${words.identity}`,
+                        title: `${wordsCap.copy} ${words.identity}`,
                     },
-                    label: wordsCapitalized.identity,
+                    label: wordsCap.identity,
                     name: 'address',
                     readOnly: true,
                     type: 'text',
@@ -76,7 +83,7 @@ export default class IdentityDetails extends ReactiveComponent {
                     inlineLabel: {
                         icon: { className: 'no-margin', name: 'eye' },
                         style: { cursor: 'pointer' },
-                        title: `${wordsCapitalized.show} ${texts.recoveryPhrase}`,
+                        title: `${wordsCap.show} ${texts.recoveryPhrase}`,
                         onClick: () => {
                             const toggle = () => {
                                 const { inputs } = this.state
@@ -85,7 +92,7 @@ export default class IdentityDetails extends ReactiveComponent {
                                 uriIn.action = !this.showSeed ? undefined : {
                                     icon: 'copy',
                                     onClick: (e) => e.preventDefault() | copyToClipboard(this.identity.uri),
-                                    title: `${wordsCapitalized.copy} ${words.seed}`,
+                                    title: `${wordsCap.copy} ${words.seed}`,
                                 }
                                 uriIn.inlineLabel.icon.name = `eye${this.showSeed ? ' slash' : ''}`
                                 uriIn.inlineLabel.title = `${this.showSeed ? texts.hideSeed : texts.showSeed}`
@@ -94,7 +101,7 @@ export default class IdentityDetails extends ReactiveComponent {
                             }
                             this.showSeed ? toggle() : confirm({
                                 cancelButton: <Button positive content={texts.noKeepItHidden} />,
-                                confirmButton: <Button negative content={wordsCapitalized.show} />,
+                                confirmButton: <Button negative content={wordsCap.show} />,
                                 header: texts.showSeed,
                                 onConfirm: toggle,
                                 size: 'mini',
@@ -102,7 +109,7 @@ export default class IdentityDetails extends ReactiveComponent {
                         },
                     },
                     labelPosition: 'left', // for inlineLabel
-                    label: wordsCapitalized.seed,
+                    label: wordsCap.seed,
                     name: 'uri',
                     readOnly: true,
                     type: 'text',
@@ -113,14 +120,53 @@ export default class IdentityDetails extends ReactiveComponent {
                     name: 'type',
                     readOnly: true,
                 },
+                {
+                    label: wordsCap.usage,
+                    name: 'usageType',
+                    readOnly: true,
+                    type: 'text',
+                },
+                {
+                    disabled: true,
+                    label: wordsCap.tags,
+                    multiple: true,
+                    name: 'tags',
+                    options: [],
+                    search: true,
+                    selection: true,
+                    type: 'dropdown',
+                },
+                {
+                    defaultValue: words.never,
+                    label: texts.lastBackup,
+                    name: 'cloudBackupTS',
+                    readOnly: true,
+                    type: 'text',
+                },
+                {
+                    name: 'txAllocations',
+                    type: 'html'
+                }
             ],
         }
     }
 
     componentWillMount() {
-        const { address } = this.props.values
+        const { inputs } = this.state
+        const { address, tags } = this.props.values || {}
         this.identity = identityService.get(address) || {}
-        fillValues(this.state.inputs, { ...this.identity, uri: this.getUri() })
+        // populate 'tags' field options using the value
+        findInput(inputs, 'tags').options = (tags || []).map(tag => ({
+            key: tag,
+            text: tag,
+            value: tag,
+        }))
+        findInput(inputs, 'txAllocations').content = (
+            <label style={{ fontWeight: 'bold', margin: 0 }}>
+                {texts.txAllocations}: <Pretty value={runtime.balances.balance(ss58Decode(address))} />
+            </label>
+        )
+        fillValues(inputs, { ...this.identity, uri: this.getUri() })
     }
 
     getUri() {
@@ -140,14 +186,14 @@ export default class IdentityDetails extends ReactiveComponent {
             })
         }
 
-        const confirmContent = `${wordsCapitalized.remove} ${wordsCapitalized.permanently}`
+        const confirmContent = `${wordsCap.remove} ${wordsCap.permanently}`
         confirm({
             confirmButton: <Button icon='trash' content={confirmContent} negative />,
             content: [
-                <p key='1'>{`${wordsCapitalized.identity} ${words.name}`}: <b>{name}</b></p>,
+                <p key='1'>{`${wordsCap.identity} ${words.name}`}: <b>{name}</b></p>,
                 <p key='0'>{texts.removeWarningPart1} <b>{texts.removeWarningPart2}</b></p>
             ],
-            header: `${wordsCapitalized.remove} ${wordsCapitalized.identity}`,
+            header: `${wordsCap.remove} ${wordsCap.identity}`,
             onConfirm: () => {
                 identityService.remove(address)
                 this.setState({ success: true })
