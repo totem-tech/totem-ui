@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { runtime } from 'oo7-substrate'
-import FormBuilder, { fillValues } from '../components/FormBuilder'
+import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import { arrSort, generateHash, isDefined, isFn, isObj, objCopy } from '../utils/utils'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { Pretty } from '../Pretty'
@@ -198,6 +198,7 @@ const styles = {
     }
 }
 
+// todo: deprecate
 function checkBalance(address, inputName) {
     const { inputs } = this.state
     const index = this.state.inputs.findIndex(x => x.name === inputName)
@@ -235,158 +236,4 @@ function checkBalance(address, inputName) {
         }
         this.setState({ inputs });
     })
-}
-
-export class ReassignProjectForm extends ReactiveComponent {
-    constructor(props) {
-        super(props)
-
-        this.handleSubmit = this.handleSubmit.bind(this)
-        this.checkOwnerBalance = checkBalance.bind(this)
-
-        this.state = {
-            message: {},
-            success: false,
-            inputs: [
-                {
-                    label: 'Project Name',
-                    name: 'name',
-                    readOnly: true,
-                    required: true,
-                    type: 'text',
-                    value: props.project.name
-                },
-                {
-                    label: 'Project Hash',
-                    name: 'hash',
-                    readOnly: true,
-                    required: true,
-                    type: 'text',
-                    value: props.hash
-                },
-                {
-                    disabled: true,
-                    label: 'Current Project Owner',
-                    name: 'ownerAddress',
-                    required: true,
-                    search: true,
-                    selection: true,
-                    type: 'dropdown',
-                    value: props.project.ownerAddress
-                },
-                {
-                    label: 'New Project Owner',
-                    name: 'newOwnerAddress',
-                    onChange: this.handleNewOwnerChange,
-                    placeholder: 'Select partner',
-                    search: true,
-                    selection: true,
-                    required: true,
-                    type: 'dropdown',
-
-                }
-            ]
-        }
-    }
-
-    componentWillMount() {
-        const { ownerAddress } = this.props.project || {}
-        this.checkOwnerBalance(ownerAddress, 'ownerAddress')
-    }
-
-    handleSubmit(e, values) {
-        const { project, onSubmit } = this.props
-        const { hash, name, ownerAddress, newOwnerAddress } = values
-        const walletExists = identityService.find(newOwnerAddress)
-        const task = {
-            type: QUEUE_TYPES.BLOCKCHAIN,
-            func: 'reassignProject',
-            args: [ownerAddress, newOwnerAddress, hash],
-            address: ownerAddress,
-            title: 'Re-assign project owner',
-            description: 'Project Name: ' + name,
-            next: {
-                type: 'chatclient',
-                func: 'project',
-                args: [
-                    hash,
-                    objCopy({ ownerAddress: newOwnerAddress }, project, true),
-                    false,
-                    (err) => isFn(onSubmit) && onSubmit(values, !err)
-                ]
-            }
-        }
-        const proceed = () => addToQueue(task) | this.setState({
-            message: {
-                header: 'Re-assign request added to queue',
-                content: 'Your request to reassign the project has been added to queue. ',
-                status: 'success',
-                showIcon: true
-            },
-            success: true
-        })
-
-        !!walletExists ? proceed() : confirm({
-            cancelButton: { content: 'Cancel', color: 'green' },
-            confirmButton: { content: 'Proceed', negative: true },
-            content: 'You are about to assign the ownership of this project to an Identity that does not belong to you.'
-                + ' If you proceed, you will no longer be able to update this project.',
-            header: 'Are you sure you want to reassign this project?',
-            onConfirm: () => proceed(),
-            size: 'tiny'
-        })
-    }
-
-    render() {
-        const { header, modal, onClose, open, size, subheader } = this.props
-        const { closeText, inputs, message, success } = this.state
-        const wallets = identityService.getAll()
-        const partners = Array.from(addressbook.getAll()).map((_, p) => p)
-        let options = [{
-            key: 0,
-            style: styles.itemHeader,
-            text: 'Select own ID',
-            value: '' // keep
-        }]
-            // add wallet items to owner address dropdown
-            .concat(arrSort(wallets, 'name').map((wallet, i) => ({
-                key: 'wallet-' + i + wallet.address,
-                text: wallet.name,
-                description: <Pretty value={runtime.balances.balance(ss58Decode(wallet.address))} />,
-                value: wallet.address
-            })))
-
-        if (partners.length > 0) {
-            options = options.concat({
-                key: 1,
-                style: styles.itemHeader,
-                text: 'Select a Partner ID',
-                value: '' // keep
-            })
-                .concat(arrSort(partners, 'name').map((partner, i) => ({
-                    key: 'partner-' + i + partner.address,
-                    text: partner.name,
-                    description: <Pretty value={runtime.balances.balance(ss58Decode(partner.address))} />,
-                    value: partner.address
-                })))
-        }
-
-        inputs.filter(x => x.type.toLowerCase() === 'dropdown').forEach(input => input.options = options)
-
-        return (
-            <FormBuilder {...{
-                closeText,
-                header: header || 'Re-assign Project Owner',
-                subheader,
-                inputs,
-                message,
-                modal,
-                onClose,
-                onSubmit: this.handleSubmit,
-                open,
-                size,
-                success
-            }} />
-        )
-    }
 }

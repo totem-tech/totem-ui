@@ -8,7 +8,8 @@ import { formatStrTimestamp } from '../utils/time'
 import DataTable from '../components/DataTable'
 import TimeKeepingInviteList from '../lists/TimeKeepingInviteList'
 import FormBuilder, { findInput } from '../components/FormBuilder'
-import ProjectForm, { ReassignProjectForm } from '../forms/Project'
+import ProjectForm from '../forms/Project'
+import ReassignProjectForm from '../forms/ProjectReassign'
 // services
 import client from '../services/ChatClient'
 import identityService from '../services/identity'
@@ -222,7 +223,11 @@ export default class ProjectList extends ReactiveComponent {
     handleReassignOwner(selectedHashes = []) {
         if (selectedHashes.length > 1) return;
         const project = this.state.projects.get(selectedHashes[0])
-        project && showForm(ReassignProjectForm, { hash: selectedHashes[0], project, size: 'tiny' })
+        project && showForm(ReassignProjectForm, {
+            hash: selectedHashes[0],
+            size: 'tiny',
+            values: project,
+        })
     }
 
     handleRowSelection(selectedHashes) {
