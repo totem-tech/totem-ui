@@ -112,34 +112,64 @@ export default class ProjectList extends ReactiveComponent {
     // if all of the projects are open/repopened, then close otherwise reopens closed ones
     handleCloseReopen(selectedHashes) {
         const { projects, topRightMenu } = this.state
-        const doClose = selectedHashes.every(key => [0, 1].indexOf((projects.get(key) || {}).status) >= 0)
+        const openStatuses = [statusCodes.open, statusCodes.reopen]
+        const doClose = selectedHashes.every(key => openStatuses.indexOf((projects.get(key) || {}).status) >= 0)
         const targetStatus = doClose ? statusCodes.close : statusCodes.reopen
-        const func = `${doClose ? 'close' : 'reopen'}Project`
-        selectedHashes.forEach(hash => {
-            const { name, ownerAddress, status } = projects.get(hash) || {}
-            // ignore if project is already at target status or project no longer exists
-            if (status === targetStatus || !name) return;
-            addToQueue({
-                type: 'blockchain',
-                func,
-                args: [ownerAddress, hash],
-                address: ownerAddress,
-                title: `${doClose ? 'Close' : 'Re-open'} project`,
-                description: `Name: ${name}`,
-                next: {
-                    type: 'chatclient',
-                    func: 'projectStatus',
-                    args: [
-                        hash,
-                        targetStatus,
-                        err => !err //&& this.loadProjects()
-                    ]
-                }
-            })
-        })
+        const func = doClose ? 'closeProject' : 'reopenProject'
+        const targetHashes = selectedHashes.reduce((hashArr, hash) => {
+            const { status } = projects.get(hash) || {}
+            const isOpen = openStatuses.includes(status)
+            if (doClose && isOpen || !doClose && !isOpen) {
+                hashArr.push(hash)
+            }
+            return hashArr
+        }, [])
 
-        topRightMenu.find(x => x.name === 'close').content = doClose ? 'Re-open' : 'Close'
-        this.setState({ topRightMenu })
+        confirm({
+            content: (
+                <div>
+                    You are about to change status of the following projects to: {
+                        statusTexts[doClose ? statusCodes.close : statusCodes.reopen]}
+                    <ol>
+                        {targetHashes.map(hash => (
+                            <li key={hash}>{projects.get(hash).name}</li>
+                        ))}
+                    </ol>
+                </div>
+            ),
+            confirmButton: 'Proceed',
+            header: 'Are you sure?',
+            onConfirm: () => {
+                targetHashes.forEach(hash => {
+                    const { name, ownerAddress, status } = projects.get(hash) || {}
+                    // ignore if project is already at target status or project no longer exists
+                    if (status === targetStatus || !name) return;
+                    addToQueue({
+                        type: 'blockchain',
+                        func,
+                        args: [ownerAddress, hash],
+                        address: ownerAddress,
+                        title: `${doClose ? 'Close' : 'Re-open'} project`,
+                        description: `Name: ${name}`,
+                        next: {
+                            type: 'chatclient',
+                            func: 'projectStatus',
+                            args: [
+                                hash,
+                                targetStatus,
+                                // force update projects' cache
+                                err => !err && getProjects(true)
+                            ]
+                        }
+                    })
+                })
+
+                topRightMenu.find(x => x.name === 'close').content = statusTexts[
+                    doClose ? statusCodes.reopen : statusCodes.close
+                ]
+                this.setState({ topRightMenu })
+            }
+        })
     }
 
     handleDelete(selectedHashes) {

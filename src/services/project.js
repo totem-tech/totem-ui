@@ -122,14 +122,12 @@ const project = {
     //              3. 'ready'
     //              4. {finalized: 'TXID'}
     //              5. {failed: {code: xxx, message: 'error message'}}
-    add: (ownerAddress, hash) => {
-        return post({
-            sender: validateAddress(ownerAddress),
-            call: calls.projects.addNewProject(hashToBytes(hash)),
-            compact: false,
-            longevity: true
-        })
-    },
+    add: (ownerAddress, hash) => post({
+        sender: validateAddress(ownerAddress),
+        call: calls.projects.addNewProject(hashToBytes(hash)),
+        compact: false,
+        longevity: true
+    }),
     // close a project
     //
     // Params:
@@ -142,14 +140,12 @@ const project = {
     //              3. 'ready'
     //              4. {finalized: 'TXID'}
     //              5. {failed: {code: xxx, message: 'error message'}}
-    close: (ownerAddress, hash) => {
-        return post({
-            sender: validateAddress(ownerAddress),
-            call: calls.projects.closeProject(hashToBytes(hash)),
-            compact: false,
-            longevity: true
-        })
-    },
+    close: (ownerAddress, hash) => post({
+        sender: validateAddress(ownerAddress),
+        call: calls.projects.closeProject(hashToBytes(hash)),
+        compact: false,
+        longevity: true
+    }),
     // getOwner retrives the owner address of a project
     //
     // Params:
@@ -160,9 +156,7 @@ const project = {
     // listByOwner retrieves a list of project hashes owned by @address
     //
     // Returns Bond
-    listByOwner: address => {
-        return runtime.projects.ownerProjectsList(ss58Decode(address))
-    },
+    listByOwner: address => runtime.projects.ownerProjectsList(ss58Decode(address)),
     // reassign transfers ownership of a project to a new owner address 
     //
     // Params:
@@ -176,14 +170,12 @@ const project = {
     //              3. 'ready'
     //              4. {finalized: 'TXID'}
     //              5. {failed: {code: xxx, message: 'error message'}}
-    reassign: (ownerAddress, newOwnerAddress, hash) => {
-        return post({
-            sender: validateAddress(ownerAddress),
-            call: calls.projects.reassignProject(newOwnerAddress, hashToBytes(hash)),
-            compact: false,
-            longevity: true
-        })
-    },
+    reassign: (ownerAddress, newOwnerAddress, hash) => post({
+        sender: validateAddress(ownerAddress),
+        call: calls.projects.reassignProject(newOwnerAddress, hashToBytes(hash)),
+        compact: false,
+        longevity: true
+    }),
     // remove a project
     //
     // Params:
@@ -196,14 +188,12 @@ const project = {
     //              3. 'ready'
     //              4. {finalized: 'TXID'}
     //              5. {failed: {code: xxx, message: 'error message'}}
-    remove: (ownerAddress, hash) => {
-        return post({
-            sender: validateAddress(ownerAddress),
-            call: calls.projects.removeProject(hashToBytes(hash)),
-            compact: false,
-            longevity: true
-        })
-    },
+    remove: (ownerAddress, hash) => post({
+        sender: validateAddress(ownerAddress),
+        call: calls.projects.removeProject(hashToBytes(hash)),
+        compact: false,
+        longevity: true
+    }),
     // reopenProject removes project
     //
     // Params:
@@ -216,19 +206,15 @@ const project = {
     //              3. 'ready'
     //              4. {finalized: 'TXID'}
     //              5. {failed: {code: xxx, message: 'error message'}}
-    reopen: (ownerAddress, hash) => {
-        return post({
-            sender: validateAddress(ownerAddress),
-            call: calls.projects.reopenProject(hashToBytes(hash)),
-            compact: false,
-            longevity: true
-        })
-    },
+    reopen: (ownerAddress, hash) => post({
+        sender: validateAddress(ownerAddress),
+        call: calls.projects.reopenProject(hashToBytes(hash)),
+        compact: false,
+        longevity: true
+    }),
     // status retrieves the status code of a project
     // params
     // @projecthash    string/Uint8Array
-    status: projecthash => {
-        return runtime.projects.projectHashStatus(hashToBytes(projecthash))
-    },
+    status: projecthash => runtime.projects.projectHashStatus(hashToBytes(projecthash)),
 }
 export default project
