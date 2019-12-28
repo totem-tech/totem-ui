@@ -5,13 +5,14 @@ import { ReactiveComponent } from 'oo7-react'
 import { Dropdown } from 'semantic-ui-react'
 import { ButtonAcceptOrReject, UserID } from '../components/buttons'
 import { deferred, newMessage } from '../utils/utils'
-import client from './ChatClient'
-import DataStorage from '../utils/DataStorage'
-import { confirm, showForm } from './modal'
-import { addToQueue, QUEUE_TYPES } from './queue'
 import IdentityShareForm from '../forms/IdentityShare'
 import PartnerForm from '../forms/Partner'
+import DataStorage from '../utils/DataStorage'
+import client, { getUser } from './ChatClient'
 import identityService from './identity'
+import { confirm, showForm } from './modal'
+import { getProject } from './project'
+import { addToQueue, QUEUE_TYPES } from './queue'
 import { getLayout } from './window'
 
 const notifications = new DataStorage('totem_service_notifications', true, false)
@@ -140,7 +141,7 @@ export default class NotificationDropdown extends ReactiveComponent {
                                                 onSubmit: success => success && remove(id),
                                                 values: {
                                                     introducedBy: isIntroduce ? senderId : null, //ToDo: 
-                                                    userIds: [recipientId]
+                                                    userIds: [recipientId],
                                                 },
                                             })}
                                         />
@@ -159,7 +160,10 @@ export default class NotificationDropdown extends ReactiveComponent {
                                                 PartnerForm,
                                                 {
                                                     onSubmit: success => success && remove(id),
-                                                    values: data,
+                                                    values: {
+                                                        address: data.address,
+                                                        userId: data.introducedBy || senderId,
+                                                    },
                                                 }
                                             )}
                                             rejectText='Ignore'
@@ -180,11 +184,11 @@ export default class NotificationDropdown extends ReactiveComponent {
                                         <ButtonAcceptOrReject
                                             onClick={accepted => confirm({
                                                 onConfirm: () => handleTKInvitation(
-                                                    senderId,
                                                     data.projectHash,
-                                                    data.projectName,
                                                     data.workerAddress,
                                                     accepted,
+                                                    senderId,
+                                                    data.projectName,
                                                     id,
                                                 ),
                                                 size: 'mini',
@@ -227,30 +231,34 @@ export default class NotificationDropdown extends ReactiveComponent {
 
 // respond to time keeping invitation
 export const handleTKInvitation = (
-    projectOwnerId, projectHash, projectName, workerAddress, accepted, notifyId
+    projectHash, workerAddress, accepted,
+    // optional args
+    projectOwnerId, projectName, notifyId
 ) => {
     const acceptedStr = accepted ? 'accepted' : 'rejected'
     const type = 'time_keeping'
     const childType = 'invitation'
+    const currentUserId = (getUser() || {}).id
     // find notification if not supplied
     notifyId = notifyId || Array.from(notifications.search({
         senderId: projectOwnerId,
         type,
         childType
-    })).reduct((notifyId, [xNotifyId, xNotification]) => {
+    })).reduce((notifyId, [xNotifyId, xNotification]) => {
         if (!!notifyId) return notifyId
         const { data: { projectHash: hash, workerAddress: address } } = xNotification
         const match = hash === projectHash && address === workerAddress
         return match ? xNotifyId : null
     }, null)
 
-    addToQueue({
+    const getprops = (projectOwnerId, projectName) => ({
         type: QUEUE_TYPES.BLOCKCHAIN,
         func: 'timeKeeping_worker_accept',
         args: [projectHash, workerAddress, accepted],
         title: `TimeKeeping - ${accepted ? 'accept' : 'reject'} invitation`,
         description: `Project: ${projectName}`,
-        next: {
+        // no need to notify if current user is the project owner
+        next: !projectOwnerId || projectOwnerId === currentUserId ? undefined : {
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'notify',
             args: [
@@ -259,8 +267,16 @@ export const handleTKInvitation = (
                 'invitation_response',
                 `${acceptedStr} invitation to project: "${projectName}"`,
                 { accepted, projectHash, projectName, workerAddress },
-                err => !err && remove(notifyId)
+                err => !err && notifyId && remove(notifyId)
             ]
-        },
+        }
+    })
+
+    if (!!projectOwnerId && !!projectName) return addToQueue(getprops(projectOwnerId, projectName))
+
+    // retrieve project details to get project name and owners user id
+    getProject(projectHash).then(project => {
+        const { name, userId } = project || {}
+        addToQueue(getprops(userId, name))
     })
 }

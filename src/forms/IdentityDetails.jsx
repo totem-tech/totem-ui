@@ -41,6 +41,7 @@ const texts = {
     txAllocations: 'TX Allocations',
 }
 
+// Read-only form
 export default class IdentityDetails extends ReactiveComponent {
     constructor(props) {
         super(props)

@@ -7,8 +7,7 @@ import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import PartnerForm from '../forms/Partner'
 import { getProjects } from '../services/project'
 import { getUser } from '../services/ChatClient'
-import { getSelected } from '../services/identity'
-import addressbook from '../services/partners'
+import partners from '../services/partners'
 import { showForm } from '../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import timeKeeping from '../services/timeKeeping'
@@ -43,15 +42,16 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
                     bond: new Bond(),
                     label: 'Partner',
                     name: 'workerAddress',
-                    onChange: this.handlePartnerChange.bind(this),
+                    onChange: this.handlePartnerChange,
                     options: [],
                     placeholder: 'Select a partner',
+                    required: true,
                     search: true,
                     selection: true,
                     type: 'dropdown',
                     validate: (_, { value }) => {
                         if (!value) return
-                        const { userId } = addressbook.get(value)
+                        const { userId } = partners.get(value)
                         const isOwnId = (getUser() || {}).id === userId
                         return !isOwnId ? null : 'You cannot invite yourself'
                     },
@@ -60,31 +60,33 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
                     content: 'Add New Partner',
                     icon: 'plus',
                     name: 'addpartner',
-                    onClick: () => showForm(PartnerForm),
+                    onClick: () => showForm(PartnerForm, {
+                        onSubmit: (_, { address }) => {
+                            const { inputs } = this.state
+                            findInput(inputs, 'workerAddress').bond.changed(address)
+                        }
+                    }),
                     fluid: true,
                     type: 'button',
                 }
             ]
         }
-
-        fillValues(this.state.inputs, props.values)
     }
 
     componentWillMount() {
+        this._mounted = true
         const { inputs } = this.state
-        // retrieve owner projects
-        const { address: ownerAddress } = getSelected()
         const proIn = findInput(inputs, 'projectHash') || {}
         proIn.loading = true
         this.setState({ inputs })
 
         // automatically update when addressbook changes
-        this.tieId = addressbook.bond.tie(() => {
+        this.tieId = partners.bond.tie(() => {
             const { inputs } = this.state
             const partnerIn = findInput(inputs, 'workerAddress')
             // populate partner's list
             partnerIn.options = arrSort(
-                Array.from(addressbook.getAll()).map(([address, { name, userId }]) => ({
+                Array.from(partners.getAll()).map(([address, { name, userId }]) => ({
                     description: userId && '@' + userId,
                     key: address,
                     text: name,
@@ -118,16 +120,19 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             }
             this.setState({ inputs })
         })
+
+        fillValues(inputs, this.props.values)
     }
 
     componentWillUnmount() {
-        addressbook.bond.untie(this.tieId)
+        this._mounted = false
+        partners.bond.untie(this.tieId)
     }
 
-    handlePartnerChange(_, { projectHash, workerAddress }) {
+    handlePartnerChange = (_, { projectHash, workerAddress }) => {
         const { inputs } = this.state
         const partnerIn = findInput(inputs, 'workerAddress')
-        const partner = addressbook.get(workerAddress)
+        const partner = partners.get(workerAddress)
         const { userId } = partner
         partnerIn.invalid = !userId
         partnerIn.loading = !!(userId && projectHash && workerAddress)
@@ -139,10 +144,9 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
                         basic
                         content='Update Partner'
                         onClick={e => e.preventDefault() | showForm(PartnerForm, {
-                            onSubmit: (success, { address, userId }) => {
-                                if (!success || !userId) return
-                                // partnerIn
-                                partnerIn.bond.changed(address)
+                            onSubmit: (_, { address, userId }) => {
+                                partnerIn.invalid = !userId
+                                userId && partnerIn.bond.changed(address)
                             },
                             values: partner,
                         })}
@@ -179,7 +183,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
         const { projectHash, workerAddress } = values
         const { project } = findInput(inputs, 'projectHash').options.find(x => x.value === projectHash)
         const { name: projectName, ownerAddress } = project
-        const { userId } = addressbook.get(workerAddress)
+        const { name, userId } = partners.get(workerAddress)
         this.setState({
             submitDisabled: true,
             loading: true,
@@ -196,7 +200,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             func: 'timeKeeping_worker_add',
             args: [projectHash, ownerAddress, workerAddress],
             title: 'Time Keeping - Invite Worker',
-            description: 'Worker',
+            description: 'Invitee: ' + name,
             then: console.log,
             next: {
                 type: QUEUE_TYPES.CHATCLIENT,
@@ -208,7 +212,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
                     null,
                     { projectHash, projectName, workerAddress },
                     err => {
-                        this.setState({
+                        this._mounted && this.setState({
                             submitDisabled: false,
                             loading: false,
                             success: !err,

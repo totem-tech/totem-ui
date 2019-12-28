@@ -164,7 +164,7 @@ export const getProjectWorkers = projectHash => Bond.promise([
             })
         }
     })
-    return workers
+    return { isOwner, ownerAddress, workers }
 })
 
 export const worker = {

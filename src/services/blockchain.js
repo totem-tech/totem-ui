@@ -119,7 +119,7 @@ const types = {
         "end_block": "StartOrEndBlockNumber",
         "nr_of_breaks": "NumberOfBreaks"
     },
-    "Timekeeper<AccountId,ProjectHashRef,NumberOfBlocks,LockStatus,\nStatusOfTimeRecord,ReasonCodeStruct,PostingPeriod,StartOrEndBlockNumber,NumberOfBreaks>": "Timekeeper",
+    "Timekeeper<AccountId,ProjectHashRef,NumberOfBlocks,LockStatus,\nStatusOfTimeRecord,ReasonCodeStruct,PostingPeriod,StartOrEndBlockNumber,\nNumberOfBreaks>": "Timekeeper",
     // remove
     "EncryptedVerificationData": "Hash"
 

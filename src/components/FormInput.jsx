@@ -37,19 +37,18 @@ export default class FormInput extends ReactiveComponent {
 
         const { bond, defer } = props
         this.handleChange = this.handleChange.bind(this)
-        this.bond = isBond(this.bond) ? bond : undefined
+        this.bond = isBond(bond) ? bond : undefined
         this.state = { message: undefined }
         if (defer !== null) {
             this.setMessage = deferred(this.setMessage, defer)
         }
+
+        this.bond && this.bond.tie(value => setTimeout(() => this.handleChange({}, { ...this.props, value })))
     }
 
-    componentWillMount() {
-        if (!this.bond) return
-        this.tieId = this.bond && this.bond.tie(value => this.handleChange({}, { value }))
-    }
+    componentWillMount = () => this._mounted = true
 
-    componentWillUnmount = () => this.bond && this.bond.untie(this.tieId)
+    componentWillUnmount = () => this._mounted = false
 
     handleChange = (event, data) => {
         const {
@@ -144,7 +143,7 @@ export default class FormInput extends ReactiveComponent {
         })
     }
 
-    setMessage = (message = {}) => this.setState({ message })
+    setMessage = (message = {}) => this._mounted && this.setState({ message })
 
     render() {
         const {

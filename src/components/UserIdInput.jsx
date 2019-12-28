@@ -170,6 +170,8 @@ export default class UserIdInput extends Component {
     }
 
     handleChange = (e, data) => {
+        if (!this.state.options) return
+        // only for dropdown
         const { onChange } = this.props
         const { value } = data
         const s = { value, message: undefined }
@@ -177,7 +179,7 @@ export default class UserIdInput extends Component {
             s.searchQuery = ''
         }
         this.setState(s)
-        setTimeout(() => isFn(onChange) && onChange(e, data))
+        isFn(onChange) && onChange(e, data)
     }
 
     handleSearchChange = (_, { searchQuery: q }) => this.setState({ searchQuery: getId(q) })
@@ -189,8 +191,15 @@ export default class UserIdInput extends Component {
         const isOwnId = excludeOwnId && (getUser() || {}).id === value
         // trigger a value change
         const triggerChagne = invalid => {
-            this.setState({ icon: invalid ? invalidIcon : validIcon, value })
-            isFn(onChange) && onChange(e, { ...data, invalid })
+            this.setState({
+                icon: !value ? undefined : (invalid ? invalidIcon : validIcon),
+                value,
+            })
+            isFn(onChange) && onChange(e, {
+                ...data,
+                invalid,
+                value: invalid ? '' : value,
+            })
         }
         if (isOwnId || value.length < 3) return triggerChagne(true) | resolve(isOwnId ? texts.ownIdEntered : true)
 

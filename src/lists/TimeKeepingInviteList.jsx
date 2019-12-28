@@ -2,14 +2,15 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { Button } from 'semantic-ui-react'
+import { ButtonAcceptOrReject, UserID } from '../components/buttons'
 import DataTable from '../components/DataTable'
 import { textCapitalize } from '../utils/utils'
-import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
 import PartnerForm from '../forms/Partner'
+import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
+import identities, { selectedAddressBond } from '../services/identity'
 import { showForm } from '../services/modal'
-import { selectedAddressBond } from '../services/identity'
+import { handleTKInvitation } from '../services/notification'
 import timeKeeping, { getProjectWorkers } from '../services/timeKeeping'
-import { UserID } from '../components/buttons'
 
 const words = {
     accepted: 'accepted',
@@ -47,7 +48,8 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
                         values: { projectHash: this.props.projectHash }
                     })
                 }]
-            }
+            },
+            searchExtraKeys: ['userId', 'status']
         }
     }
 
@@ -88,10 +90,14 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
             return this.setState({ listProps })
         }
 
-        getProjectWorkers(projectHash).then(workers => {
+        getProjectWorkers(projectHash).then(({ workers }) => {
             Array.from(workers).forEach(([_, invite]) => {
                 const { accepted, address, name, userId } = invite
-                invite._status = accepted === true ? words.accepted : words.invited
+                const isIdentity = !!identities.get(address)
+                invite._status = accepted === true ? words.accepted : (!isIdentity ? words.invited : (
+                    // Worker identity belongs to current user => button to accept or reject
+                    <ButtonAcceptOrReject onClick={accepted => handleTKInvitation(projectHash, address, accepted)} />
+                ))
                 invite._userId = !userId ? texts.unknownUser : <UserID {...{ userId }} />
                 invite.name = name || (
                     <Button

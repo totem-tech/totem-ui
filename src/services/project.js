@@ -92,6 +92,10 @@ export const getProjects = (_forceUpdate = false) => {
     _config.updateInProgress = true
     // if not online resolve to cached projects and update whenever goes online
     _config.updatePromise = fetchProjects(_config.hashesBond).then(projects => {
+        // in case chat server does not have the project
+        Array.from(projects).forEach(([_, project]) => {
+            project.ownerAddress = project.ownerAddress || address
+        })
         _config.updateInProgress = false
         _config.firstAttempt = false
         cacheStorage.setAll(projects)

@@ -59,9 +59,9 @@ class FormBuilder extends ReactiveComponent {
         if (!data.invalid) {
             // trigger input items's onchange callback
             isFn(onInputChange) && onInputChange(e, values, index, childIndex)
-            // trigger form's onchange callback
-            isFn(formOnChange) && formOnChange(e, values, index, childIndex)
         }
+        // trigger form's onchange callback
+        isFn(formOnChange) && formOnChange(e, values, index, childIndex)
         this.setState({ inputs, values })
     }
 
@@ -269,8 +269,7 @@ export const fillValues = (inputs, values, forceFill) => {
         if (!isGroup && (
             !isDefined(name) || !values.hasOwnProperty(input.name)
             || (!forceFill && hasValue(input.value)) || !type
-        )
-        ) return
+        )) return
 
         if (['accountidbond', 'inputbond'].indexOf(type) >= 0) {
             input.defaultValue = newValue
