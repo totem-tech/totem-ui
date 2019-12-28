@@ -208,25 +208,16 @@ export const worker = {
     listWorkers: projectHash => runtime.timekeeping.projectWorkersList(hashToBytes(projectHash)),
     // projects that worker has been invited to or accepted
     listWorkerProjects: workerAddress => runtime.timekeeping.workerProjectsBacklogList(ss58Decode(workerAddress)),
+    // workers total booked time in blocks accross all projects
+    totalBlocks: address => runtime.timekeeping.totalBlocksPerAddress(ss58Decode(address)),
+    // workers total booked time in blocks on a specific project
+    totalBlocksByProject: (address, projectHash) => runtime.timekeeping.totalBlocksPerProjectPerAddress([
+        ss58Decode(address),
+        hashToBytes(projectHash)
+    ]),
 }
 
 export const record = {
-    // Blockchain transaction
-    // @postingPeriod u16: 15 fiscal periods (0-14) // not yet implemented use default 0
-    // add/update record
-    save: (workerAddress, projectHash, recordHash, blockCount, postingPeriod, blockStart, blockEnd) => post({
-        sender: validateAddress(workerAddress),
-        call: calls.timekeeping.submitTime(
-            hashToBytes(projectHash),
-            hashToBytes(recordHash || NEW_RECORD_HASH),
-            blockCount,
-            postingPeriod,
-            blockStart,
-            blockEnd,
-        ),
-        compact: false,
-        longevity: true
-    }),
     // Blockchain transaction
     // (project owner) approve a time record
     //
@@ -250,27 +241,38 @@ export const record = {
         longevity: true
     }),
     // get details of a record
-    get: (recordHash) => runtime.timekeeping.timeRecord(hashToBytes(recordHash)),
+    get: recordHash => runtime.timekeeping.timeRecord(hashToBytes(recordHash)),
     isOwner: (hash, address) => runtime.timeKeeping.timeHashOwner(hashToBytes(hash), ss58Decode(address)),
     // list of all record hashes booked by worker
     list: workerAddress => runtime.timekeeping.workerTimeRecordsHashList(ss58Decode(workerAddress)),
     // list of all record hashes in a project 
     listByProject: projectHash => runtime.timekeeping.projectTimeRecordsHashList(hashToBytes(projectHash)),
-    // workers total booked time in blocks accross all projects
-    totalBlocks: address => runtime.timekeeping.totalBlocksPerAddress(ss58Decode(address)),
-    // workers total booked time in blocks on a specific project
-    totalBlocksByProject: (address, projectHash) => runtime.timekeeping.totalBlocksPerProjectPerAddress([
-        ss58Decode(address),
-        hashToBytes(projectHash)
-    ]),
+    // Blockchain transaction
+    // @postingPeriod u16: 15 fiscal periods (0-14) // not yet implemented use default 0
+    // add/update record
+    save: (workerAddress, projectHash, recordHash, blockCount, postingPeriod, blockStart, blockEnd) => post({
+        sender: validateAddress(workerAddress),
+        call: calls.timekeeping.submitTime(
+            hashToBytes(projectHash),
+            hashToBytes(recordHash || NEW_RECORD_HASH),
+            blockCount,
+            postingPeriod,
+            blockStart,
+            blockEnd,
+        ),
+        compact: false,
+        longevity: true
+    }),
 }
 
 const timeKeeping = {
-    worker,
-    record,
     project: {
+        // timestamp of the very first recorded time on a project
         firstSeen: projectHash => runtime.timekeeping.projectFirstSeen(hashToBytes(projectHash)),
+        // get total blocks booked in a project
         totalBlocks: projectHash => runtime.timekeeping.totalBlocksPerProject(hashToBytes(projectHash)),
     },
+    record,
+    worker,
 }
 export default timeKeeping

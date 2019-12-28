@@ -1,8 +1,7 @@
-import React from 'react'
+import React, { Component } from 'react'
 import { Bond } from 'oo7'
-import { ReactiveComponent } from 'oo7-react'
 import { Button } from 'semantic-ui-react'
-import { deferred, objCopy, textEllipsis, copyToClipboard } from '../utils/utils'
+import { copyToClipboard, textEllipsis, textCapitalize } from '../utils/utils'
 import { formatStrTimestamp } from '../utils/time'
 // components
 import DataTable from '../components/DataTable'
@@ -11,75 +10,172 @@ import FormBuilder, { findInput } from '../components/FormBuilder'
 import ProjectForm from '../forms/Project'
 import ReassignProjectForm from '../forms/ProjectReassign'
 // services
-import client from '../services/ChatClient'
-import identityService from '../services/identity'
 import { confirm, showForm } from '../services/modal'
 import { addToQueue } from '../services/queue'
-import addressbook from '../services/partners'
 import projectService, { getProjects, getProjectsBond } from '../services/project'
-import { layoutBond } from '../services/window'
+import { layoutBond, getLayout } from '../services/window'
 
 const toBeImplemented = () => alert('To be implemented')
+const words = {
+    actions: 'actions',
+    abandoned: 'abandoned',
+    blocks: 'blocks',
+    canceled: 'canceled',
+    close: 'close',
+    closed: 'closed',
+    create: 'create',
+    delete: 'delete',
+    deleted: 'deleted',
+    description: 'description',
+    export: 'export',
+    name: 'name',
+    never: 'never',
+    onHold: 'On-hold',
+    open: 'open',
+    proceed: 'proceed',
+    project: 'project',
+    reopen: 're-open',
+    reopened: 're-opened',
+    status: 'status',
+    unknown: 'unknown',
+}
+const wordsCap = textCapitalize(words)
+const texts = {
+    areYouSure: 'Are you sure?',
+    closeProject: 'Close project',
+    deleteConfirmMsg1: 'You are about to delete the following project(s):',
+    deleteConfirmMsg2: `This action cannot be undone! 
+        You will lose access to this project data forever! 
+        A better option might be to change the project status.`,
+    deleteConfirmHeader: 'Delete project(s)',
+    detailsNameLabel: 'Project Name',
+    detailsHashLabel: 'Project Unique ID',
+    detailsDescLabel: 'Description of Project',
+    detailsTotalTimeLabel: 'Total Time',
+    detailsStatusLabel: 'Project Status',
+    detailsFirstSeenLabel: 'Project First Used',
+    detailsFormHeader: 'Project Details',
+    editProject: 'Edit project',
+    projectCloseReopenWarning: 'You are about to change status of the following projects to: ',
+    projectTeam: 'Project team - ',
+    reassignOwner: 'Re-assign owner',
+    reopenProject: 'Re-open project',
+    totalTime: 'Total Time',
+    viewDetails: 'View details',
+    viewTeam: 'View team',
+}
 
 const statusTexts = []
-statusTexts[0] = 'Open'
-statusTexts[100] = 'Re-opened'
-statusTexts[200] = 'On-hold'
-statusTexts[300] = 'Abandoned'
-statusTexts[400] = 'Canceled'
-statusTexts[500] = 'Closed'
-statusTexts[999] = 'Deleted'
+statusTexts[0] = wordsCap.open
+statusTexts[100] = wordsCap.reopened
+statusTexts[200] = wordsCap.onHold
+statusTexts[300] = wordsCap.abandoned
+statusTexts[400] = wordsCap.canceled
+statusTexts[500] = wordsCap.closed
+statusTexts[999] = wordsCap.deleted
 const statusCodes = {
     open: 0,
     reopen: 100,
     close: 500,
     delete: 999,
 }
+const openStatuses = [statusCodes.open, statusCodes.reopen]
 
-export default class ProjectList extends ReactiveComponent {
+export default class ProjectList extends Component {
     constructor(props) {
-        super(props, { layout: layoutBond })
+        super(props)
 
-        this.loadProjects = deferred(this.loadProjects, 100, this)
         this.state = {
-            projects: new Map(),
-            emptyMessage: {},
-            topLeftMenu: [
+            emptyMessage: null,
+            data: new Map(),
+            defaultSort: 'status',
+            perPage: 5,
+            onRowSelect: this.handleRowSelection,
+            searchExtraKeys: ['ownerAddress', 'status', '_statusText'],
+            selectable: true,
+            columns: [
                 {
-                    active: false,
-                    content: 'Create',
-                    icon: 'plus',
-                    name: 'create',
-                    onClick: () => showForm(ProjectForm, { onSubmit: ok => ok && this.loadProjects() })
-                }
+                    key: 'name',
+                    title: wordsCap.name
+                },
+                {
+                    hidden: true,
+                    key: 'description',
+                    title: wordsCap.description
+                },
+                {
+                    collapsing: true,
+                    key: '_statusText',
+                    textAlign: 'center',
+                    title: wordsCap.status
+                },
+                {
+                    collapsing: true,
+                    key: '_totalTime',
+                    textAlign: 'center',
+                    title: texts.totalTime,
+                },
+                {
+                    // No key required
+                    collapsing: true,
+                    content: (project, hash) => ([
+                        {
+                            key: 'edit',
+                            icon: 'pencil',
+                            onClick: () => showForm(ProjectForm, { hash, values: project }),
+                            title: texts.editProject,
+                        },
+                        {
+                            icon: { name: 'group' },
+                            key: 'workers',
+                            onClick: () => this.showTeam(hash, project.name),
+                            title: texts.viewTeam,
+                        },
+                        {
+                            icon: { name: 'eye' },
+                            key: 'detials',
+                            onClick: () => this.showDetails(project, hash),
+                            title: texts.viewDetails,
+                        }
+                    ]).map(props => <Button {...props} />),
+                    textAlign: 'center',
+                    title: wordsCap.actions,
+                },
             ],
+            topLeftMenu: [{
+                active: false,
+                content: wordsCap.create,
+                icon: 'plus',
+                name: 'create',
+                onClick: () => showForm(ProjectForm)
+            }],
             topRightMenu: [
                 {
                     active: false,
-                    name: 'close',
-                    content: 'Close', //Close/Reopen
+                    content: wordsCap.close, //Close/Reopen
                     disabled: true,
                     icon: 'toggle off',
-                    onClick: this.handleCloseReopen.bind(this),
+                    name: 'close',
+                    onClick: this.handleCloseReopen,
                 },
                 {
                     active: false,
-                    name: 'delete',
-                    content: 'Delete',
+                    content: wordsCap.delete,
                     disabled: true,
                     icon: 'trash alternate',
-                    onClick: this.handleDelete.bind(this),
+                    name: 'delete',
+                    onClick: this.handleDelete,
                 },
                 {
                     active: false,
-                    content: 'Re-assign owner',
+                    content: texts.reassignOwner,
                     icon: 'mail forward',
                     name: 're-assign',
-                    onClick: this.handleReassignOwner.bind(this),
+                    onClick: this.handleReassignOwner,
                 },
                 {
                     active: false,
-                    content: 'Export',
+                    content: wordsCap.export,
                     icon: 'file excel',
                     name: 'export',
                     onClick: toBeImplemented
@@ -89,54 +185,47 @@ export default class ProjectList extends ReactiveComponent {
     }
 
     componentWillMount() {
-        this.bond = Bond.all([
-            addressbook.bond,
-            identityService.bond,
-            getProjectsBond,
-
-        ])
         // reload projects whenever any of the bond's value updates
-        this.tieId = this.bond.tie(() => this.loadProjects())
-        this.loadProjects()
+        this.tieId = getProjectsBond.tie(() => this.loadProjects())
+        this.tieIdLayout = layoutBond.tie(() => {
+            const { columns } = this.state
+            // hide on mobile
+            columns.find(x => x.key === 'description').hidden = getLayout() === 'mobile'
+            this.setState({ columns })
+        })
     }
 
     componentWillUnmount() {
         // unsubscribe from updates
-        this.bond.untie(this.tieId)
+        getProjectsBond.untie(this.tieId)
+        layoutBond.untie(this.tieIdLayout)
         if (this.statusBond) this.statusBond.untie(this.statusTieId);
     }
 
     // either close or reopen projects
     // if all of the projects are open/repopened, then close otherwise reopens closed ones
-    handleCloseReopen(selectedHashes) {
-        const { projects, topRightMenu } = this.state
-        const openStatuses = [statusCodes.open, statusCodes.reopen]
+    handleCloseReopen = selectedHashes => {
+        const { data: projects, topRightMenu } = this.state
         const doClose = selectedHashes.every(key => openStatuses.indexOf((projects.get(key) || {}).status) >= 0)
         const targetStatus = doClose ? statusCodes.close : statusCodes.reopen
+        const targetStatusText = statusTexts[doClose ? statusCodes.close : statusCodes.reopen]
         const func = doClose ? 'closeProject' : 'reopenProject'
         const targetHashes = selectedHashes.reduce((hashArr, hash) => {
             const { status } = projects.get(hash) || {}
             const isOpen = openStatuses.includes(status)
-            if (doClose && isOpen || !doClose && !isOpen) {
-                hashArr.push(hash)
-            }
+            if (doClose && isOpen || !doClose && !isOpen) hashArr.push(hash)
             return hashArr
         }, [])
 
         confirm({
             content: (
                 <div>
-                    You are about to change status of the following projects to: {
-                        statusTexts[doClose ? statusCodes.close : statusCodes.reopen]}
-                    <ol>
-                        {targetHashes.map(hash => (
-                            <li key={hash}>{projects.get(hash).name}</li>
-                        ))}
-                    </ol>
+                    {texts.projectCloseReopenWarning} <b>{targetStatusText}</b>
+                    <ol>{targetHashes.map(hash => <li key={hash}>{projects.get(hash).name}</li>)}</ol>
                 </div>
             ),
-            confirmButton: 'Proceed',
-            header: 'Are you sure?',
+            confirmButton: wordsCap.procees,
+            header: texts.areYouSure,
             onConfirm: () => {
                 targetHashes.forEach(hash => {
                     const { name, ownerAddress, status } = projects.get(hash) || {}
@@ -147,8 +236,8 @@ export default class ProjectList extends ReactiveComponent {
                         func,
                         args: [ownerAddress, hash],
                         address: ownerAddress,
-                        title: `${doClose ? 'Close' : 'Re-open'} project`,
-                        description: `Name: ${name}`,
+                        title: doClose ? texts.closeProject : texts.reopenProject,
+                        description: `${wordsCap.project}: ${name}`,
                         next: {
                             type: 'chatclient',
                             func: 'projectStatus',
@@ -162,19 +251,18 @@ export default class ProjectList extends ReactiveComponent {
                     })
                 })
 
-                topRightMenu.find(x => x.name === 'close').content = statusTexts[
-                    doClose ? statusCodes.reopen : statusCodes.close
-                ]
+                const menuItemText = doClose ? wordsCap.reopen : wordsCap.close
+                topRightMenu.find(x => x.name === 'close').content = menuItemText
                 this.setState({ topRightMenu })
             }
         })
     }
 
-    handleDelete(selectedHashes) {
+    handleDelete = selectedHashes => {
         const queueItems = []
         const projectNames = []
         selectedHashes.forEach(hash => {
-            const { projects } = this.state
+            const { data: projects } = this.state
             const targetStatus = statusCodes.delete
             const { name, ownerAddress, status } = projects.get(hash) || {}
             // ignore if project is already at target status or project not longer exists in the list
@@ -185,49 +273,39 @@ export default class ProjectList extends ReactiveComponent {
                 func: 'removeProject',
                 args: [ownerAddress, hash],
                 address: ownerAddress,
-                title: `Delete project`,
-                description: `Name: ${name}`,
+                title: texts.deleteConfirmHeader,
+                description: `${wordsCap.project}: ${name}`,
                 next: {
                     type: 'chatclient',
                     func: 'projectStatus',
-                    args: [
-                        hash,
-                        targetStatus,
-                    ]
+                    args: [hash, targetStatus]
                 }
             })
         })
         if (projectNames.length === 0) return
-        const s = projectNames.length > 1 ? 's' : ''
         confirm({
+            confirmButton: { color: 'red', content: wordsCap.proceed },
             content: (
                 <div>
-                    <h4>You are about to delete the following project{s}:</h4>
-                    <p>
-                        This action cannot be undone! You will lose access to this project data forever! A better option might be to change the project status.
-                    </p>
-                    <ul>
-                        {projectNames.map((name, i) => <li key={i}>{name}</li>)}
-                    </ul>
+                    <h4>{texts.deleteConfirmMsg1}</h4>
+                    <ul>{projectNames.map((name, i) => <li key={i}>{name}</li>)}</ul>
+                    <p style={{ color: 'red' }}>{texts.deleteConfirmMsg2}</p>
                 </div>
             ),
-            header: 'Delete project' + s,
+            header: texts.deleteConfirmHeader,
             onConfirm: () => queueItems.forEach(item => addToQueue(item)),
             size: 'mini',
         })
     }
 
-    handleReassignOwner(selectedHashes = []) {
+    handleReassignOwner = selectedHashes => {
         if (selectedHashes.length > 1) return;
         const project = this.state.projects.get(selectedHashes[0])
-        project && showForm(ReassignProjectForm, {
-            hash: selectedHashes[0],
-            values: project,
-        })
+        project && showForm(ReassignProjectForm, { hash: selectedHashes[0], values: project })
     }
 
-    handleRowSelection(selectedHashes) {
-        const { projects, topRightMenu } = this.state
+    handleRowSelection = selectedHashes => {
+        const { data: projects, topRightMenu } = this.state
         const len = selectedHashes.length
         topRightMenu.forEach(x => { x.disabled = len === 0; return x })
 
@@ -237,32 +315,27 @@ export default class ProjectList extends ReactiveComponent {
 
         // If every selected project's status is 'open' or 're-opened change action to 'Close', otherwise 'Re-open'
         const closeBtn = findInput(topRightMenu, 'close')
-        const doClose = selectedHashes.every(key => [statusCodes.open, statusCodes.reopen].indexOf(projects.get(key).status) >= 0)
-        closeBtn.content = doClose ? 'Close' : 'Re-open'
+        const doClose = selectedHashes.every(key => openStatuses.indexOf(projects.get(key).status) >= 0)
+        closeBtn.content = doClose ? wordsCap.close : wordsCap.reopen
         closeBtn.icon = `toggle ${doClose ? 'off' : 'on'}`
-
         findInput(topRightMenu, 're-assign').disabled = len !== 1
 
         this.setState({ topRightMenu })
     }
 
     loadProjects = force => getProjects(force).then(projects => {
-        const ar = Array.from(projects)
-        ar.forEach(([hash, project]) => {
+        const hashes = Array.from(projects).map(([hash, project]) => {
+            const { status, totalBlocks } = project
             project._hash = hash
-            project._statusText = statusTexts[project.status] || 'unknown'
-            this.syncStatus(hash, project)
+            project._statusText = statusTexts[status] || words.unknown
+            project._totalTime = `${totalBlocks} ${words.blocks}`
+            return hash
         })
-        this.setStatusBond(ar.map(([hash]) => hash))
-        const isEmpty = projects.size === 0
-        const emptyMessage = {
-            content: isEmpty ? '' : 'Your search yielded no results',
-            status: isEmpty ? '' : 'warning'
-        }
-        this.setState({ emptyMessage, projects })
+        this.setStatusBond(hashes)
+        this.setState({ data: projects })
     }, console.log)
 
-    // ToDo: deprecate by not storing status in the chatserver
+    // ToDo: re-evaluate
     // Reload project list whenever status of any of the projects changes
     setStatusBond(hashes) {
         // return if all the hashes are the same as the ones from previous call
@@ -273,81 +346,40 @@ export default class ProjectList extends ReactiveComponent {
         this.statusBond = Bond.all(this.hashes.map(hash => projectService.status(hash)))
         this.statusTieId = this.statusBond.tie((statusCodes) => {
             // return if all status codes received are exactly same as previously set ones
-            if (JSON.stringify(this.statusCodes) === JSON.stringify(statusCodes))
-                this.statusCodes = statusCodes
-            this.loadProjects()
+            if (JSON.stringify(this.statusCodes) === JSON.stringify(statusCodes)) return
+            this.statusCodes = statusCodes
+            this.loadProjects(true)
         })
     }
 
-    // ToDo: deprecate by not storing status in the chatserver
-    syncStatus(hash, project) {
-        setTimeout(() => {
-            projectService.status(hash).then(status => {
-                if (status === project.status) return;
-                const updateTask = {
-                    type: 'chatclient',
-                    func: 'projectStatus',
-                    args: [
-                        hash,
-                        status,
-                        err => !err && this.loadProjects()
-                    ],
-                    silent: true
-                }
-
-                const createTask = {
-                    type: 'chatclient',
-                    func: 'project',
-                    args: [
-                        hash,
-                        objCopy({ status }, project, true),
-                        true,
-                        err => !err && this.loadProjects()
-                    ],
-                    silent: true
-                }
-                // status in the web storage is not the same as blockchain status
-                client.projectsByHashes([hash], (_, projects) => {
-                    // create if not already exists in the web storage, otherwise update status
-                    const create = projects.size === 0
-                    project = create ? project : projects.get(hash)
-                    if (status === project.status) return;
-                    // Hack to prevent same task being executed multiple times
-                    const id = hash + project.status + status + create
-                    addToQueue(create ? createTask : updateTask, id)
-                })
-
-            })
-        })
-    }
-
+    // show project team in a modal
     showTeam = (hash, projectName) => confirm({
-        cancelButton: 'Close',
+        cancelButton: wordsCap.close,
         confirmButton: null,
         content: <TimeKeepingInviteList projectHash={hash} />,
-        header: 'Project team - ' + projectName,
+        header: texts.projectTeam + projectName,
     })
 
-    showDetails(project, hash) {
+    // show project details in a read-only modal form
+    showDetails = (project, hash) => {
         const data = { ...project }
         data._hash = textEllipsis(hash, 23)
-        data._firstSeen = data.firstSeen ? formatStrTimestamp(data.firstSeen) : 'never'
-        data._totalTime = (data.totalBlocks || 0) + ' blocks'
+        data._firstSeen = data.firstSeen ? formatStrTimestamp(data.firstSeen) : words.never
         const labels = {
-            name: 'Project Name',
-            _hash: 'Project Unique ID',
-            description: 'Description of Project',
-            _totalTime: 'Total Time',
-            _statusText: 'Project Status',
-            _firstSeen: 'Project First Used'
+            name: texts.detailsNameLabel,
+            _hash: texts.detailsHashLabel,
+            description: texts.detailsDescLabel,
+            _totalTime: texts.detailsTotalTimeLabel,
+            _statusText: texts.detailsStatusLabel,
+            _firstSeen: texts.detailsFirstSeenLabel
         }
         // Create a form on the fly and display data a read-only input fields
         showForm(FormBuilder, {
             closeOnEscape: true,
             closeOnDimmerClick: true,
-            closeText: 'Close',
-            header: 'Project Details',
-            inputs: Object.keys(labels).map((key, i, keys) => ({
+            closeText: wordsCap.close,
+            header: texts.detailsFormHeader,
+            inputs: Object.keys(labels).map(key => ({
                 action: key !== '_hash' ? undefined : { icon: 'copy', onClick: () => copyToClipboard(hash) },
                 label: labels[key],
                 name: key,
@@ -360,75 +392,5 @@ export default class ProjectList extends ReactiveComponent {
         })
     }
 
-    render() {
-        const { emptyMessage, layout, projects, topRightMenu, topLeftMenu } = this.state
-        const isMobile = layout === 'mobile'
-        const listProps = {
-            data: projects,
-            defaultSort: 'status',
-            emptyMessage,
-            float: 'right',
-            pageNo: 1,
-            perPage: 5,
-            onRowSelect: this.handleRowSelection.bind(this),
-            searchExtraKeys: ['ownerAddress', 'status', '_statusText'],
-            selectable: true,
-            topLeftMenu: projects.size > 0 ? topLeftMenu : topLeftMenu.filter(x => x.name === 'create'),
-            topRightMenu: topRightMenu,
-        }
-
-        listProps.columns = [
-            {
-                key: 'name',
-                title: 'Name'
-            },
-            isMobile ? null : {
-                key: 'description',
-                title: 'Description'
-            },
-            {
-                collapsing: true,
-                key: '_statusText',
-                title: 'Status'
-            },
-            {
-                collapsing: true,
-                key: 'totalTime',
-                title: 'Total Time',
-                content: project => (project.totalTime || 0) + ' blocks'
-            },
-            {
-                // No key required
-                collapsing: true,
-                content: (project, hash) => ([
-                    {
-                        key: 'edit',
-                        name: 'edit',
-                        icon: 'pencil',
-                        onClick: () => showForm(ProjectForm, {
-                            hash,
-                            onSubmit: ok => ok && this.loadProjects(),
-                            values: project,
-                        }),
-                        title: 'Edit project'
-                    },
-                    {
-                        icon: { name: 'group' },
-                        key: 'workers',
-                        onClick: () => this.showTeam(hash, project.name),
-                        title: 'View team'
-                    },
-                    {
-                        icon: { name: 'eye' },
-                        key: 'detials',
-                        onClick: () => this.showDetails(project, hash),
-                        title: 'View detials'
-                    }
-                ]).map(props => <Button {...props} />),
-                textAlign: 'center',
-                title: 'Action',
-            }
-        ]
-        return <DataTable {...listProps} />
-    }
+    render = () => <DataTable {...{ ...this.props, ...this.state }} />
 }

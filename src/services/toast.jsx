@@ -70,7 +70,7 @@ const styles = {
         overflowY: 'auto',
         paddingRight: 10,
         position: 'fixed',
-        right: 20,
+        right: 10, // TODO: user 15 when scrollbar visible
         transition: 'all 0.5s ease',
         WebkitTransition: 'all 0.5s ease',
         top: 61,

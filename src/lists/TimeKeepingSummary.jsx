@@ -68,7 +68,7 @@ export default class TimeKeepingSummary extends ReactiveComponent {
         const { address } = getSelected()
         getProjects().then(projects => {
             const hashes = Array.from(projects).map(([hash]) => hash)
-            const bonds = hashes.map(hash => timeKeeping.record.totalBlocksByProject(address, hash))
+            const bonds = hashes.map(hash => timeKeeping.worker.totalBlocksByProject(address, hash))
             Bond.promise(bonds).then(arrTotalBlocks => {
                 console.log({ hashes, arrTotalBlocks })
             })

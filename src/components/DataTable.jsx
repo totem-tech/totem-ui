@@ -145,7 +145,7 @@ export default class DataTable extends ReactiveComponent {
                         />
                     </Table.Cell>
                 )}
-                {columns.map((cell, j) => (
+                {columns.filter(x => !x.hidden).map((cell, j) => (
                     <Table.Cell
                         {...objWithoutKeys(cell, ['title'])}
                         key={j}
@@ -166,7 +166,7 @@ export default class DataTable extends ReactiveComponent {
         let { selectable } = this.props
         const { sortAsc, sortBy } = this.state
 
-        const headers = columns.map((x, i) => (
+        const headers = columns.filter(x => !x.hidden).map((x, i) => (
             <Table.HeaderCell
                 key={i}
                 onClick={() => x.key && this.setState({ sortBy: x.key, sortAsc: sortBy === x.key ? !sortAsc : true })}
@@ -292,6 +292,7 @@ DataTable.propTypes = {
     columns: PropTypes.arrayOf(
         PropTypes.shape({
             content: PropTypes.any,
+            hidden: PropTypes.bool,
             key: PropTypes.string,
             title: PropTypes.string.isRequired
         })
