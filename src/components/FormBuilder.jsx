@@ -5,7 +5,7 @@ import { ReactiveComponent } from 'oo7-react'
 import { isDefined, isArr, isBool, isBond, isFn, isObj, isStr, objCopy, objWithoutKeys, newMessage, hasValue } from '../utils/utils';
 import FormInput, { nonValueTypes } from './FormInput'
 
-class FormBuilder extends ReactiveComponent {
+export default class FormBuilder extends ReactiveComponent {
     constructor(props) {
         super(props)
 
@@ -257,7 +257,6 @@ FormBuilder.defaultProps = {
     },
     submitText: 'Submit'
 }
-export default FormBuilder
 
 export const fillValues = (inputs, values, forceFill) => {
     if (!isObj(values)) return

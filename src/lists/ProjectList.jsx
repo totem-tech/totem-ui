@@ -16,7 +16,7 @@ import identityService from '../services/identity'
 import { confirm, showForm } from '../services/modal'
 import { addToQueue } from '../services/queue'
 import addressbook from '../services/partners'
-import projectService, { getProjects } from '../services/project'
+import projectService, { getProjects, getProjectsBond } from '../services/project'
 import { layoutBond } from '../services/window'
 
 const toBeImplemented = () => alert('To be implemented')
@@ -50,10 +50,7 @@ export default class ProjectList extends ReactiveComponent {
                     content: 'Create',
                     icon: 'plus',
                     name: 'create',
-                    onClick: () => showForm(
-                        ProjectForm,
-                        { modal: true, onSubmit: (e, v, success) => success && this.loadProjects() }
-                    )
+                    onClick: () => showForm(ProjectForm, { onSubmit: ok => ok && this.loadProjects() })
                 }
             ],
             topRightMenu: [
@@ -92,11 +89,11 @@ export default class ProjectList extends ReactiveComponent {
     }
 
     componentWillMount() {
-        const { address } = identityService.getSelected()
         this.bond = Bond.all([
             addressbook.bond,
             identityService.bond,
-            projectService.listByOwner(address)
+            getProjectsBond,
+
         ])
         // reload projects whenever any of the bond's value updates
         this.tieId = this.bond.tie(() => this.loadProjects())
@@ -225,7 +222,6 @@ export default class ProjectList extends ReactiveComponent {
         const project = this.state.projects.get(selectedHashes[0])
         project && showForm(ReassignProjectForm, {
             hash: selectedHashes[0],
-            size: 'tiny',
             values: project,
         })
     }
@@ -250,23 +246,21 @@ export default class ProjectList extends ReactiveComponent {
         this.setState({ topRightMenu })
     }
 
-    loadProjects() {
-        getProjects().then(projects => {
-            const ar = Array.from(projects)
-            ar.forEach(([hash, project]) => {
-                project._hash = hash
-                project._statusText = statusTexts[project.status] || 'unknown'
-                this.syncStatus(hash, project)
-            })
-            this.setStatusBond(ar.map(([hash]) => hash))
-            const isEmpty = projects.size === 0
-            const emptyMessage = {
-                content: isEmpty ? '' : 'Your search yielded no results',
-                status: isEmpty ? '' : 'warning'
-            }
-            this.setState({ emptyMessage, projects })
-        }, console.log)
-    }
+    loadProjects = force => getProjects(force).then(projects => {
+        const ar = Array.from(projects)
+        ar.forEach(([hash, project]) => {
+            project._hash = hash
+            project._statusText = statusTexts[project.status] || 'unknown'
+            this.syncStatus(hash, project)
+        })
+        this.setStatusBond(ar.map(([hash]) => hash))
+        const isEmpty = projects.size === 0
+        const emptyMessage = {
+            content: isEmpty ? '' : 'Your search yielded no results',
+            status: isEmpty ? '' : 'warning'
+        }
+        this.setState({ emptyMessage, projects })
+    }, console.log)
 
     // ToDo: deprecate by not storing status in the chatserver
     // Reload project list whenever status of any of the projects changes
@@ -412,10 +406,9 @@ export default class ProjectList extends ReactiveComponent {
                         name: 'edit',
                         icon: 'pencil',
                         onClick: () => showForm(ProjectForm, {
-                            modal: true,
-                            project,
                             hash,
-                            onSubmit: (e, v, success) => success && this.loadProjects()
+                            onSubmit: ok => ok && this.loadProjects(),
+                            values: project,
                         }),
                         title: 'Edit project'
                     },

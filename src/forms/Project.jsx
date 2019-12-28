@@ -1,239 +1,173 @@
-import React from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { ReactiveComponent } from 'oo7-react'
 import { runtime } from 'oo7-substrate'
-import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import { arrSort, generateHash, isDefined, isFn, isObj, objCopy } from '../utils/utils'
-import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { Pretty } from '../Pretty'
-import addressbook from '../services/partners';
-import { confirm } from '../services/modal'
-import identityService from '../services/identity'
+import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
+import { arrSort, generateHash, isFn, textCapitalize } from '../utils/utils'
+import identities, { getSelected } from '../services/identity'
+import { getProjects } from '../services/project'
+import { addToQueue, QUEUE_TYPES } from '../services/queue'
+
+const words = {
+    cancel: 'cancel',
+    close: 'close',
+    create: 'create',
+    update: 'update',
+}
+const wordsCap = textCapitalize(words)
+const texts = {
+    descLabel: 'Project Description',
+    descPlaceholder: 'Enter short description of the project... (max 160 characters)',
+    formHeaderCreate: 'Create a new project',
+    formHeaderUpdate: 'Update project',
+    nameLabel: 'Project Name',
+    namePlaceholder: 'Enter project name',
+    ownerLabel: 'Select a Project Owner Identity',
+    ownerPlaceholder: 'Select owner',
+    submitErrorHeader: 'Request failed',
+    submitQueuedMsg: 'Your request has been added to background queue. You may close the dialog now.',
+    submitQueuedHeader: 'Project has been queued',
+    submitSuccessHeader: 'Project created/updated successfully',
+    submitTitleCreate: 'Create project',
+    submitTitleUpdate: 'Update project',
+}
 
 // Create or update project form
-class Project extends ReactiveComponent {
+export default class ProjectForm extends Component {
     constructor(props) {
         super(props)
 
-        this.handleSubmit = this.handleSubmit.bind(this)
-        this.checkOwnerBalance = checkBalance.bind(this)
-        const { address: selectedAddress } = identityService.getSelected()
-
         this.state = {
-            closeText: 'Cancel',
-            loading: false,
-            message: {},
-            open: props.open,
+            onSubmit: this.handleSubmit,
             success: false,
             inputs: [
                 {
-                    label: 'Project Name',
+                    label: texts.nameLabel,
                     name: 'name',
                     minLength: 3,
-                    placeholder: 'Enter project name',
-                    type: 'text',
+                    placeholder: texts.namePlaceholder,
                     required: true,
+                    type: 'text',
                     value: ''
                 },
                 {
                     disabled: !!props.hash,
-                    label: 'Select a Project Owner Identity',
+                    label: texts.ownerLabel,
                     name: 'ownerAddress',
-                    onChange: (_, values) => {
-                        const { hash, project } = this.props
-                        const isCreate = !hash
-                        const signerAddress = isCreate ? values.ownerAddress : project.ownerAddress
-                        // do not check if owner address has not been changed
-                        if (!signerAddress) return;
-                        this.checkOwnerBalance(signerAddress, 'ownerAddress')
-                    },
-                    placeholder: 'Select owner',
-                    type: 'dropdown',
-                    search: true,
-                    selection: true,
+                    placeholder: texts.ownerPlaceholder,
                     required: true,
-                    value: props.hash ? undefined : selectedAddress
+                    search: ['text', 'value'],
+                    selection: true,
+                    type: 'dropdown',
                 },
                 {
-                    label: 'Project Description',
+                    label: texts.descLabel,
                     name: 'description',
                     maxLength: 160,
-                    type: 'textarea',
-                    placeholder: 'Enter short description of the project... (max 160 characters)',
+                    placeholder: texts.descPlaceholder,
                     required: true,
+                    type: 'textarea',
+                    value: '',
                 }
             ]
         }
+    }
 
-        // prefill values if needed
-        if (isObj(props.project)) fillValues(this.state.inputs, props.project, true)
-        setTimeout(() => {
-            // Check if wallet has balance
-            this.checkOwnerBalance(props.project ? props.project.ownerAddress : selectedAddress, 'ownerAddress')
+    componentWillMount() {
+        const { hash, header } = this.props
+        const { inputs } = this.state
+        const values = this.props.values || {}
+        values.ownerAddress = values.ownerAddress || getSelected().address
+        fillValues(inputs, values)
+        this.setState({
+            inputs,
+            header: header || (hash ? texts.formHeaderUpdate : texts.formHeaderCreate),
+            submitText: hash ? wordsCap.update : wordsCap.create,
+        })
+
+        // populate and auto update ownerAddress dropdown options
+        this.tieId = identities.bond.tie(() => {
+            const options = identities.getAll().map(({ address, name }) => ({
+                key: address,
+                text: name,
+                description: <Pretty value={runtime.balances.balance(ss58Decode(address))} />,
+                value: address
+            }))
+            findInput(inputs, 'ownerAddress').options = arrSort(options, 'text')
+            this.setState({ inputs })
         })
     }
 
-    handleSubmit(e, values) {
+    componentWillUnmount = () => identities.bond.untie(this.tieId)
+
+    handleSubmit = (e, values) => {
         const { onSubmit, hash: existingHash } = this.props
         const create = !existingHash
         const hash = existingHash || generateHash(values)
         const { name: projectName, ownerAddress } = values
-        let message = {
-            content: `Your project will be ${create ? 'created' : 'updated'} shortly. 
-                You will received  messages notifying you of progress. 
-                You may close the dialog now.`,
-            header: `Project  ${create ? 'creation' : 'update'} has been queued`,
-            status: 'success',
+        const title = create ? texts.submitTitleCreate : texts.submitTitleUpdate
+        const description = `${texts.nameLabel}: ${projectName}`
+        const message = {
+            content: texts.submitQueuedMsg,
+            header: texts.submitQueuedHeader,
+            status: 'loading',
             showIcon: true
         }
 
-        this.setState({ closeText: 'Close', message, success: true })
+        this.setState({ message, submitDisabled: true })
 
-        // Add or update project to web storage
         const clientTask = {
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'project',
+            title,
+            description,
             args: [
                 hash,
                 values,
                 create,
-                err => isFn(onSubmit) && onSubmit(e, values, !err)
+                err => {
+                    isFn(onSubmit) && onSubmit(!err, values)
+                    this.setState({
+                        message: {
+                            content: err || '',
+                            header: err ? texts.submitErrorHeader : texts.submitSuccessHeader,
+                            showIcon: true,
+                            status: !err ? 'success' : 'warning',
+                        },
+                        submitDisabled: false,
+                        success: !err,
+                    })
+                    // trigger cache update
+                    !err && getProjects(true)
+                }
             ],
-            title: `${create ? 'Create' : 'Update'} project`,
-            description: 'Name: ' + projectName,
         }
 
-        // Send transaction to blockchain first, then add to web storage
+        // Send transaction to blockchain first, then add to external storage
         const blockchainTask = {
+            address: ownerAddress,
             type: QUEUE_TYPES.BLOCKCHAIN,
             func: 'addNewProject',
             args: [ownerAddress, hash],
-            address: ownerAddress,
-            title: 'Create project',
-            description: 'Name: ' + projectName,
+            title,
+            description,
             next: clientTask
         }
 
         addToQueue(create ? blockchainTask : clientTask)
     }
 
-    render() {
-        const {
-            header,
-            headerIcon,
-            hash,
-            modal,
-            onOpen,
-            onClose,
-            open: propsOpen,
-            project,
-            size,
-            subheader,
-            trigger
-        } = this.props
-        const { closeText, inputs, loading, message, open, success } = this.state
-        const isOpenControlled = modal && !trigger && isDefined(propsOpen)
-        const ownerDD = inputs.find(x => x.name === 'ownerAddress')
-
-        // add tittle item
-        ownerDD.options = [{
-            key: 0,
-            style: styles.itemHeader,
-            text: 'Identities',
-            value: '' // keep
-            // add wallet items to owner address dropdown
-        }].concat(arrSort(identityService.getAll(), 'name').map((wallet, i) => ({
-            key: 'wallet-' + i + wallet.address,
-            text: wallet.name,
-            description: <Pretty value={runtime.balances.balance(ss58Decode(wallet.address))} />,
-            value: wallet.address
-        })))
-
-
-        return (
-            <FormBuilder {...{
-                closeText,
-                header: header || (project ? 'Edit : ' + project.name : 'Create a new project'),
-                headerIcon: headerIcon || (project ? 'edit' : 'plus'),
-                inputs,
-                loading,
-                message,
-                modal,
-                onClose,
-                onOpen,
-                open: isOpenControlled ? propsOpen : open,
-                onSubmit: this.handleSubmit,
-                size,
-                subheader,
-                submitText: !!hash ? 'Update' : 'Create',
-                success,
-                trigger,
-            }} />
-        )
-    }
+    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
-Project.propTypes = {
+ProjectForm.propTypes = {
     // Project hash
     hash: PropTypes.string,
-    modal: PropTypes.bool,
-    onClose: PropTypes.func,
-    onOpen: PropTypes.func,
-    project: PropTypes.object, // if supplied prefill form
-    size: PropTypes.string,
-    // Element to 'trigger'/open the modal, modal=true required
-    trigger: PropTypes.element
+    values: PropTypes.shape({
+        description: PropTypes.string.isRequired,
+        name: PropTypes.string.isRequired,
+        ownerAddress: PropTypes.string.isRequired,
+    }),
 }
-Project.defaultProps = {
-    modal: false,
+ProjectForm.defaultProps = {
     size: 'tiny'
-}
-export default Project
-
-const styles = {
-    itemHeader: {
-        background: 'grey',
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: '1em'
-    }
-}
-
-// todo: deprecate
-function checkBalance(address, inputName) {
-    const { inputs } = this.state
-    const index = this.state.inputs.findIndex(x => x.name === inputName)
-    const wallet = identityService.find(address)
-    // minimum balance required
-    const minBalance = 500
-    // keep input field in invalid state until verified
-    inputs[index].invalid = true
-
-    if (!wallet) {
-        inputs[index].message = {
-            header: 'This Identity does not belong to you!',
-            showIcon: true,
-            status: 'error'
-        }
-
-        return this.setState({ inputs })
-    }
-    inputs[index].message = {
-        content: 'Checking balance...',
-        showIcon: true,
-        status: 'loading'
-    }
-    this.setState({ inputs })
-    // check if singing address has enough funds
-    runtime.balances.balance(address).then(balance => {
-        const notEnought = balance <= minBalance
-        inputs[index].invalid = notEnought
-        inputs[index].message = !notEnought ? {} : {
-            content: `The selected identity "${wallet.name}" must have more than ${minBalance} Transactions balance 
-                    to be able to create an entry on the Totem blockchain.`,
-            header: 'Insufficient balance',
-            status: 'error',
-            showIcon: true
-        }
-        this.setState({ inputs });
-    })
 }
