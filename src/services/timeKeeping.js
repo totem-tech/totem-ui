@@ -81,7 +81,7 @@ export const getProjects = (_forceUpdate = false) => {
 
 // Triggered whenever time keeping project list is updated
 export const getProjectsBond = new Bond().defaultTo(uuid.v1())
-getUserProjectsBond.tie(() => getProjectsBond.changed(uuid.v1()))
+setTimeout(() => getUserProjectsBond.tie(() => getProjectsBond.changed(uuid.v1())))
 
 // getRecords retrieves records by project
 //

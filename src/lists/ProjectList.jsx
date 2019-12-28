@@ -1,14 +1,15 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
-import { pretty } from 'oo7-substrate'
 import { Button } from 'semantic-ui-react'
-import DataTable from '../components/DataTable'
-import FormBuilder, { findInput } from '../components/FormBuilder'
-import ProjectForm, { ReassignProjectForm } from '../forms/Project'
 import { deferred, objCopy, textEllipsis, copyToClipboard } from '../utils/utils'
 import { formatStrTimestamp } from '../utils/time'
+// components
+import DataTable from '../components/DataTable'
+import TimeKeepingInviteList from '../lists/TimeKeepingInviteList'
+import FormBuilder, { findInput } from '../components/FormBuilder'
+import ProjectForm, { ReassignProjectForm } from '../forms/Project'
+// services
 import client from '../services/ChatClient'
 import identityService from '../services/identity'
 import { confirm, showForm } from '../services/modal'
@@ -291,6 +292,13 @@ export default class ProjectList extends ReactiveComponent {
         })
     }
 
+    showTeam = (hash, projectName) => confirm({
+        cancelButton: 'Close',
+        confirmButton: null,
+        content: <TimeKeepingInviteList projectHash={hash} />,
+        header: 'Project team - ' + projectName,
+    })
+
     showDetails(project, hash) {
         const data = { ...project }
         data._hash = textEllipsis(hash, 23)
@@ -302,7 +310,7 @@ export default class ProjectList extends ReactiveComponent {
             description: 'Description of Project',
             _totalTime: 'Total Time',
             _statusText: 'Project Status',
-            _firstSeen: 'Project First Used',
+            _firstSeen: 'Project First Used'
         }
         // Create a form on the fly and display data a read-only input fields
         showForm(FormBuilder, {
@@ -377,10 +385,15 @@ export default class ProjectList extends ReactiveComponent {
                         title: 'Edit project'
                     },
                     {
-                        icon: { className: isMobile ? 'no-margin' : '', name: 'eye' },
+                        icon: { name: 'group' },
+                        key: 'workers',
+                        onClick: () => this.showTeam(hash, project.name),
+                        title: 'View team'
+                    },
+                    {
+                        icon: { name: 'eye' },
                         key: 'detials',
                         onClick: () => this.showDetails(project, hash),
-                        style: { margin: 0 },
                         title: 'View detials'
                     }
                 ]).map(props => <Button {...props} />),

@@ -46,7 +46,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
                     options: [],
                     placeholder: 'Select a partner',
                     required: true,
-                    search: true,
+                    search: ['text', 'value', 'description'],
                     selection: true,
                     type: 'dropdown',
                     validate: (_, { value }) => {
@@ -196,6 +196,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
         })
 
         const queueProps = {
+            address: ownerAddress, // for balance check
             type: QUEUE_TYPES.BLOCKCHAIN,
             func: 'timeKeeping_worker_add',
             args: [projectHash, ownerAddress, workerAddress],

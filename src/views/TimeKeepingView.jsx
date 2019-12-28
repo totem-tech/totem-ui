@@ -62,7 +62,7 @@ class TimeKeepingView extends ReactiveComponent {
                             options: [
                                 { label: texts.myRecords, value: 'records' },
                                 { label: wordsCap.manage, value: 'manage' },
-                                { label: wordsCap.invites, value: 'invites' },
+                                // { label: wordsCap.invites, value: 'invites' },
                                 { label: wordsCap.summary, value: 'summary' },
                             ],
                         },
@@ -94,7 +94,7 @@ class TimeKeepingView extends ReactiveComponent {
         let contents = []
         const manage = isOwner && option.includes('manage')
         const showSummary = option.includes('summary')
-        const showInvites = option.includes('invites')
+        // const showInvites = option.includes('invites')
         const showRecords = option.includes('records') || manage
         const optionInput = findInput(inputs, 'option')
         optionInput.inline = !isMobile
@@ -108,11 +108,11 @@ class TimeKeepingView extends ReactiveComponent {
             content: <ProjectTimeKeepingList {...recordListProps} />,
             key: 'ProjectTimeKeepingList' + JSON.stringify(recordListProps),
         })
-        if (!loading && showInvites) contents.push({
-            content: <TimeKeepingInviteList {...{ projectHash }} />,
-            header: wordsCap.invitations,
-            key: 'TimeKeepingInviteList' + projectHash,
-        })
+        // if (!loading && showInvites) contents.push({
+        //     content: <TimeKeepingInviteList {...{ projectHash }} />,
+        //     header: wordsCap.invitations,
+        //     key: 'TimeKeepingInviteList' + projectHash,
+        // })
         if (showSummary) contents.push({
             content: <TimeKeepingSummary />,
             header: texts.myTimeKeepingSummary,

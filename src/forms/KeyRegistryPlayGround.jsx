@@ -113,6 +113,7 @@ export default class KeyRegistryPlayground extends Component {
     handleSubmit(e, { address, dataHex, publicHex, signatureHex }) {
         this.setState({ loading: true })
         addToQueue({
+            address, // for balance check
             type: QUEUE_TYPES.BLOCKCHAIN,
             title: 'Register Key',
             func: 'registerKey',

@@ -9,7 +9,7 @@ import blockchain from './blockchain'
 import storageService from './storage'
 import { find as findIdentity } from './identity'
 import { removeToast, setToast } from './toast'
-import { isArr, isFn, isObj, objClean, objReadOnly, isBond } from '../utils/utils'
+import { isArr, isFn, isObj, objClean, isBond } from '../utils/utils'
 
 const queue = storageService.queue()
 // Minimum balance required to make a transaction

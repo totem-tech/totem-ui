@@ -70,10 +70,7 @@ export default class DataTable extends ReactiveComponent {
         const searchCol = searchable && (
             <Grid.Column key="0" tablet={16} computer={5} style={{ padding: 0 }}>
                 <Input
-                    action={{
-                        icon: 'search',
-                        position: 'right'
-                    }}
+                    icon='search'
                     onChange={(e, d) => this.setState({ keywords: d.value })}
                     placeholder={wordsCap.search}
                     style={!isMobile ? undefined : styles.searchMobile}

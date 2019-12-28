@@ -4,7 +4,7 @@ import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { chain } from 'oo7-substrate'
 import { Button, Icon } from 'semantic-ui-react'
-import { arrReadOnly, deferred, hasValue, isDefined, isFn, objCopy, objClean, objWithoutKeys, textCapitalize } from '../utils/utils'
+import { deferred, hasValue, isDefined, isFn, objCopy, objWithoutKeys, textCapitalize } from '../utils/utils'
 import {
     BLOCK_DURATION_SECONDS,
     BLOCK_DURATION_REGEX,
@@ -12,12 +12,15 @@ import {
     secondsToDuration,
 } from '../utils/time'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import { confirm, closeModal, showForm } from '../services/modal'
-import storage from '../services/storage'
 import { getAddressName } from '../components/ProjectDropdown'
-import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import { ButtonAcceptOrReject } from '../components/buttons'
+// services
+import identities, { getSelected } from '../services/identity'
+import { confirm, closeModal, showForm } from '../services/modal'
+import { handleTKInvitation } from '../services/notification'
 import projectService from '../services/project'
-import { getAll as getIdentities, getSelected } from '../services/identity'
+import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import storage from '../services/storage'
 import timeKeeping, { getProjects, getProjectsBond } from '../services/timeKeeping'
 
 // Hash that indicates creation of new record
@@ -51,8 +54,11 @@ const texts = {
     checkingProjectStatus: 'Checking project status...',
     goBack: 'Go Back',
     hhmmss: 'hh:mm:ss', //????
-    inactiveProjectMsgPart1: 'Please select a project you are invited to and already accepted.',
-    inactiveProjectMsgPart2: 'You are the owner of the selected project. Would you like to invite yourself?',
+    inactiveWorkerHeader1: 'Uninvited project selected!',
+    inactiveWorkerHeader2: 'Action required',
+    inactiveWorkerMsg1: 'Please select a project you are invited to and already accepted.',
+    inactiveWorkerMsg2: 'You are the owner of the selected project. Would you like to invite yourself?',
+    inactiveWorkerMsg3: 'You are yet to accept/reject invitation for this project.',
     inactiveProjectSelected: 'Inactive project selected!',
     invalidDuration: 'Invalid duration',
     invalidDurationMsgPart1: 'Please enter a valid duration in the following format:',
@@ -77,7 +83,6 @@ const texts = {
     timerRunningMsg: 'You may now close the dialog and come back to it anytime by clicking on the clock icon in the header.',
     tkNewRecord: 'Time Keeping - New Record',
     transactionFailed: 'Blockchain transaction failed!',
-    uninivtedProjectSelected: 'Uninvited project selected!',
 }
 
 function handleDurationChange(e, formValues, i) {
@@ -105,6 +110,7 @@ function handleSubmitTime(hash, projectName, values) {
     const { onSubmit } = this.props
     const { blockCount, blockEnd, blockStart, duration, projectHash, workerAddress } = values
     const queueProps = {
+        address: workerAddress, // for balance check
         type: QUEUE_TYPES.BLOCKCHAIN,
         func: 'timeKeeping_record_save',
         args: [workerAddress, projectHash, hash, blockCount, 0, blockStart, blockEnd],
@@ -269,29 +275,35 @@ export default class TimeKeepingForm extends ReactiveComponent {
             showIcon: true,
             status: 'error',
         }
-        const workerInActiveMsg = isOwner => ({
+        const workerInActiveMsg = (invited, isOwner, ownerAddress, workerAddress) => ({
             content: (
                 <div>
-                    {texts.inactiveProjectMsgPart1}
-                    {isOwner && (
-                        <p>
-                            {texts.inactiveProjectMsgPart2} <br />
-                            <Button
-                                positive
-                                compact
-                                size="tiny"
-                                content={wordsCap.yes}
-                                onClick={() => {
-                                    const { name } = (findInput(inputs, 'projectHash').options
-                                        .find(option => option.value === projectHash) || {}).project || {}
-                                    this.inviteSelf(projectHash, name)
-                                }}
-                            />
-                        </p>
-                    )}
+                    {!isOwner ? texts.inactiveWorkerMsg1 : invited ? (
+                        // user has been invited to project but hasn't responded yet
+                        <div>
+                            {texts.inactiveWorkerMsg3} <br />
+                            <ButtonAcceptOrReject onClick={ok => handleTKInvitation(projectHash, workerAddress, ok)} />
+                        </div>
+                    ) : (
+                            // user is the owner of the project but hasn't invited themselves yet
+                            <div>
+                                {texts.inactiveWorkerMsg2} <br />
+                                <Button
+                                    positive
+                                    compact
+                                    size="tiny"
+                                    content={wordsCap.yes}
+                                    onClick={() => {
+                                        const { name } = (findInput(inputs, 'projectHash').options
+                                            .find(option => option.value === projectHash) || {}).project || {}
+                                        this.inviteSelf(projectHash, name, ownerAddress, workerAddress)
+                                    }}
+                                />
+                            </div>
+                        )}
                 </div>
             ),
-            header: texts.uninivtedProjectSelected,
+            header: invited ? texts.inactiveWorkerHeader2 : texts.inactiveWorkerHeader1,
             showIcon: true,
             status: 'error',
         })
@@ -320,33 +332,42 @@ export default class TimeKeepingForm extends ReactiveComponent {
             timeKeeping.worker.accepted(projectHash, workerAddress).then(workerActive => {
                 inputs[index].loading = false
                 inputs[index].invalid = !workerActive
+                console.log({ workerActive })
                 const project = (findInput(inputs, 'projectHash').options
                     .find(option => option.value === projectHash) || {}).project || {}
-                const isOwner = project.ownerAddress == workerAddress
-                inputs[index].message = workerActive ? undefined : workerInActiveMsg(isOwner)
+                const isOwner = identities.get(workerAddress) && identities.get(project.ownerAddress)
+                inputs[index].message = workerActive ? undefined : workerInActiveMsg(
+                    workerActive === false,
+                    isOwner,
+                    project.ownerAddress,
+                    workerAddress
+                )
                 this.setState({ inputs })
             })
         })
     }
 
-    inviteSelf(projectHash, projectName) {
-        const { address } = getSelected()
+    // invite and accept project when both owner and worker identities belong to user
+    inviteSelf(projectHash, projectName, ownerAddress, workerAddress) {
         const message = {
             content: texts.selfInviteSuccessMsg,
             header: texts.addedToQueue,
             showIcon: true,
             status: 'success'
         }
+        // check if user is already invited, if invited only process acceptence
         const queueProps = {
+            address: ownerAddress, // for automatic balance check 
             type: QUEUE_TYPES.BLOCKCHAIN,
             func: 'timeKeeping_worker_add',
-            args: [projectHash, address, address],
+            args: [projectHash, ownerAddress, workerAddress],
             title: texts.inviteMyself,
             description: `${wordsCap.project}: ${projectName}`,
             next: {
+                address: workerAddress, // for automatic balance check 
                 type: QUEUE_TYPES.BLOCKCHAIN,
                 func: 'timeKeeping_worker_accept',
-                args: [projectHash, address, true],
+                args: [projectHash, workerAddress, true],
                 title: texts.acceptingSelfInvite,
                 then: success => {
                     if (!success) return
@@ -517,7 +538,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
 
         // set wallet options
         inputs.find(x => x.name === 'workerAddress')
-            .options = getIdentities().map((wallet, key) => ({
+            .options = identities.getAll().map((wallet, key) => ({
                 key,
                 text: wallet.name,
                 value: wallet.address

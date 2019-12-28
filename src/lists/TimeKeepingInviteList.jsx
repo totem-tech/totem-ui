@@ -17,13 +17,13 @@ const words = {
     invite: 'invite',
     invited: 'invited',
     status: 'status',
+    worker: 'worker',
 }
 const wordsCap = textCapitalize(words)
 const texts = {
     selectProject: 'Select a project to view invites',
     userId: 'User ID',
     unknownUser: 'Unknown user',
-    workerIdentity: 'Worker Identity',
 }
 
 export default class TimeKeepingInviteList extends ReactiveComponent {
@@ -34,8 +34,8 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
         this.state = {
             listProps: {
                 columns: [
-                    { key: '_userId', title: texts.userId },
-                    { key: 'name', title: texts.workerIdentity },
+                    // { key: '_userId', title: texts.userId },
+                    { key: 'name', title: wordsCap.worker },
                     { key: '_status', textAlign: 'center', title: wordsCap.status },
                 ],
                 data: [],
@@ -98,7 +98,7 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
                     // Worker identity belongs to current user => button to accept or reject
                     <ButtonAcceptOrReject onClick={accepted => handleTKInvitation(projectHash, address, accepted)} />
                 ))
-                invite._userId = !userId ? texts.unknownUser : <UserID {...{ userId }} />
+                // invite._userId = !userId ? texts.unknownUser : <UserID {...{ userId }} />
                 invite.name = name || (
                     <Button
                         content='Add Partner'

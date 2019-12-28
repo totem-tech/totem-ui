@@ -252,6 +252,7 @@ export const handleTKInvitation = (
     }, null)
 
     const getprops = (projectOwnerId, projectName) => ({
+        address: workerAddress, // for automatic balance check 
         type: QUEUE_TYPES.BLOCKCHAIN,
         func: 'timeKeeping_worker_accept',
         args: [projectHash, workerAddress, accepted],
@@ -259,6 +260,7 @@ export const handleTKInvitation = (
         description: `Project: ${projectName}`,
         // no need to notify if current user is the project owner
         next: !projectOwnerId || projectOwnerId === currentUserId ? undefined : {
+            address: workerAddress, // for automatic balance check 
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'notify',
             args: [
