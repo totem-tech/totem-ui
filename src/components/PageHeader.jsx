@@ -4,7 +4,7 @@ import { ReactiveComponent } from 'oo7-react'
 import { runtime, ss58Decode } from 'oo7-substrate'
 import { Dropdown, Image, Menu } from 'semantic-ui-react'
 import { getUser, getClient, onLogin } from '../services/ChatClient'
-import { copyToClipboard, isFn } from '../utils/utils'
+import { copyToClipboard } from '../utils/utils'
 import { Pretty } from '../Pretty'
 import { showForm } from '../services/modal'
 import storage from '../services/storage'
@@ -12,54 +12,42 @@ import { setToast } from '../services/toast'
 import TimeKeepingForm from '../forms/TimeKeeping'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import NotificationDropdown from '../services/notification'
-import identityService from '../services/identity'
+import identities, { getSelected, setSelected } from '../services/identity'
 import IdentityForm from '../forms/Identity'
 
-class PageHeader extends ReactiveComponent {
+export default class PageHeader extends ReactiveComponent {
 	constructor(props) {
 		super(props, {
 			// keep UI updated when selected wallet changed
-			_0: identityService.bond,
+			_0: identities.bond,
 			_1: storage.timeKeepingBond,
 		})
 
-		const user = getUser()
-		this.state = {
-			id: user ? user.id : '',
-		}
+		this.state = getUser() || { id: '' }
 
 		// Update user ID after registration
 		!this.state.id && onLogin(id => id && this.setState({ id }))
-
-		this.getSeletectedAddress = () => identityService.getSelected().address
-		this.handleCopy = this.handleCopy.bind(this)
-		this.handleEdit = this.handleEdit.bind(this)
-		this.handleFaucetRequest = this.handleFaucetRequest.bind(this)
-		this.handleSelection = this.handleSelection.bind(this)
 	}
 
-	handleSelection(_, { value: address }) {
-		identityService.setSelected(address)
+	handleSelection = (_, { value: address }) => {
+		setSelected(address)
 	}
 
-	handleCopy() {
-		const address = this.getSeletectedAddress()
+	handleCopy = () => {
+		const { address } = getSelected()
 		if (!address) return;
 		copyToClipboard(address)
 		const msg = { content: 'Address copied to clipboard', status: 'success' }
 		this.copiedMsgId = setToast(msg, 2000, this.copiedMsgId)
 	}
 
-	handleEdit() {
-		showForm(IdentityForm, {
-			values: identityService.getSelected(),
-			onSubmit: () => this.setState({})
-		})
-	}
+	handleEdit = () => showForm(IdentityForm, {
+		values: getSelected(),
+		onSubmit: () => this.setState({})
+	})
 
-	handleFaucetRequest() {
-		const address = this.getSeletectedAddress()
-		if (!address) return;
+	handleFaucetRequest = () => {
+		const { address } = getSelected()
 		const client = getClient()
 		if (!client.isConnected()) {
 			const msg = {
@@ -88,9 +76,9 @@ class PageHeader extends ReactiveComponent {
 
 	render() {
 		const { id } = this.state
-		const wallets = identityService.getAll()
+		const wallets = identities.getAll()
 		const viewProps = {
-			addressSelected: this.getSeletectedAddress(),
+			addressSelected: getSelected().address,
 			id,
 			onCopy: this.handleCopy,
 			onEdit: this.handleEdit,
@@ -114,8 +102,6 @@ PageHeader.defaultProps = {
 	logoSrc: 'https://react.semantic-ui.com/images/wireframe/image.png'
 }
 
-export default PageHeader
-
 class MobileHeader extends ReactiveComponent {
 	constructor(props) {
 		super(props, {
@@ -124,11 +110,10 @@ class MobileHeader extends ReactiveComponent {
 		this.state = {
 			showTools: false
 		}
-		this.handleToggle = this.handleToggle.bind(this)
 	}
 
-	handleToggle() {
-		let { sidebarCollapsed, isMobile, onSidebarToggle, sidebarVisible } = this.props
+	handleToggle = () => {
+		const { sidebarCollapsed, isMobile, onSidebarToggle, sidebarVisible } = this.props
 		isMobile ? onSidebarToggle(!sidebarVisible, false) : onSidebarToggle(true, !sidebarCollapsed)
 	}
 
@@ -145,7 +130,7 @@ class MobileHeader extends ReactiveComponent {
 			onSelection,
 			timerActive,
 			timerOnClick,
-			wallets
+			wallets,
 		} = this.props
 
 		return (

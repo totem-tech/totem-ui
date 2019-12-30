@@ -30,7 +30,6 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
     constructor(props) {
         super(props)
 
-        this.loadWorkers = this.loadWorkers.bind(this)
         this.state = {
             listProps: {
                 columns: [
@@ -46,7 +45,7 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
                     onClick: () => showForm(TimeKeepingInviteForm, {
                         onSubmit: success => success && this.loadWorkers(),
                         values: { projectHash: this.props.projectHash }
-                    })
+                    }) | console.log({ projectHash: this.props.projectHash })
                 }]
             },
             searchExtraKeys: ['userId', 'status']
@@ -82,7 +81,7 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
         !this.bond && this.loadWorkers()
     }
 
-    loadWorkers() {
+    loadWorkers = () => {
         const { projectHash } = this.props
         const { listProps } = this.state
         if (!projectHash) {

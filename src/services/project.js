@@ -22,6 +22,18 @@ const _config = {
     updatePromise: undefined,
 }
 
+// project status codes
+export const statusCodes = {
+    open: 0,
+    reopen: 100,
+    onHold: 200,
+    abandon: 300,
+    cancel: 400,
+    close: 500,
+    delete: 999,
+}
+export const openStatuses = [statusCodes.open, statusCodes.reopen]
+
 // retrieve full project details by hashes
 export const fetchProjects = (projectHashesOrBond = []) => new Promise((resolve, reject) => {
     try {

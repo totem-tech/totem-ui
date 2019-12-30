@@ -56,7 +56,7 @@ const texts = {
     hhmmss: 'hh:mm:ss', //????
     inactiveWorkerHeader1: 'Uninvited project selected!',
     inactiveWorkerHeader2: 'Action required',
-    inactiveWorkerMsg1: 'Please select a project you are invited to and already accepted.',
+    inactiveWorkerMsg1: 'Please select a project you have been invited to and already accepted.',
     inactiveWorkerMsg2: 'You are the owner of the selected project. Would you like to invite yourself?',
     inactiveWorkerMsg3: 'You are yet to accept/reject invitation for this project.',
     inactiveProjectSelected: 'Inactive project selected!',
@@ -265,6 +265,39 @@ export default class TimeKeepingForm extends ReactiveComponent {
         getProjectsBond.untie(this.tieIdProjects)
     }
 
+    getWorkerInActiveMsg = (projectHash, invited, isOwner, ownerAddress, workerAddress) => ({
+        content: (
+            <div>
+                {!isOwner ? texts.inactiveWorkerMsg1 : invited ? (
+                    // user has been invited to project but hasn't responded yet
+                    <div>
+                        {texts.inactiveWorkerMsg3} <br />
+                        <ButtonAcceptOrReject onClick={ok => handleTKInvitation(projectHash, workerAddress, ok)} />
+                    </div>
+                ) : (
+                        // user is the owner of the project but hasn't invited themselves yet
+                        <div>
+                            {texts.inactiveWorkerMsg2} <br />
+                            <Button
+                                positive
+                                compact
+                                size="tiny"
+                                content={wordsCap.yes}
+                                onClick={() => {
+                                    const { name } = (findInput(this.state.inputs, 'projectHash').options
+                                        .find(option => option.value === projectHash) || {}).project || {}
+                                    this.inviteSelf(projectHash, name, ownerAddress, workerAddress)
+                                }}
+                            />
+                        </div>
+                    )}
+            </div>
+        ),
+        header: invited ? texts.inactiveWorkerHeader2 : texts.inactiveWorkerHeader1,
+        showIcon: true,
+        status: 'error',
+    })
+
     // check if project is active (status = open or reopened)
     handleProjectChange(_, values, index) {
         const { projectHash } = values
@@ -275,38 +308,6 @@ export default class TimeKeepingForm extends ReactiveComponent {
             showIcon: true,
             status: 'error',
         }
-        const workerInActiveMsg = (invited, isOwner, ownerAddress, workerAddress) => ({
-            content: (
-                <div>
-                    {!isOwner ? texts.inactiveWorkerMsg1 : invited ? (
-                        // user has been invited to project but hasn't responded yet
-                        <div>
-                            {texts.inactiveWorkerMsg3} <br />
-                            <ButtonAcceptOrReject onClick={ok => handleTKInvitation(projectHash, workerAddress, ok)} />
-                        </div>
-                    ) : (
-                            // user is the owner of the project but hasn't invited themselves yet
-                            <div>
-                                {texts.inactiveWorkerMsg2} <br />
-                                <Button
-                                    positive
-                                    compact
-                                    size="tiny"
-                                    content={wordsCap.yes}
-                                    onClick={() => {
-                                        const { name } = (findInput(inputs, 'projectHash').options
-                                            .find(option => option.value === projectHash) || {}).project || {}
-                                        this.inviteSelf(projectHash, name, ownerAddress, workerAddress)
-                                    }}
-                                />
-                            </div>
-                        )}
-                </div>
-            ),
-            header: invited ? texts.inactiveWorkerHeader2 : texts.inactiveWorkerHeader1,
-            showIcon: true,
-            status: 'error',
-        })
 
         inputs[index].loading = true
         inputs[index].message = !projectHash ? null : {
@@ -332,11 +333,11 @@ export default class TimeKeepingForm extends ReactiveComponent {
             timeKeeping.worker.accepted(projectHash, workerAddress).then(workerActive => {
                 inputs[index].loading = false
                 inputs[index].invalid = !workerActive
-                console.log({ workerActive })
                 const project = (findInput(inputs, 'projectHash').options
                     .find(option => option.value === projectHash) || {}).project || {}
                 const isOwner = identities.get(workerAddress) && identities.get(project.ownerAddress)
-                inputs[index].message = workerActive ? undefined : workerInActiveMsg(
+                inputs[index].message = workerActive ? undefined : this.getWorkerInActiveMsg(
+                    projectHash,
                     workerActive === false,
                     isOwner,
                     project.ownerAddress,

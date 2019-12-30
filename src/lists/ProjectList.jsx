@@ -12,7 +12,7 @@ import ReassignProjectForm from '../forms/ProjectReassign'
 // services
 import { confirm, showForm } from '../services/modal'
 import { addToQueue } from '../services/queue'
-import projectService, { getProjects, getProjectsBond } from '../services/project'
+import projectService, { getProjects, getProjectsBond, openStatuses, statusCodes } from '../services/project'
 import { layoutBond, getLayout } from '../services/window'
 
 const toBeImplemented = () => alert('To be implemented')
@@ -64,22 +64,14 @@ const texts = {
     viewDetails: 'View details',
     viewTeam: 'View team',
 }
-
 const statusTexts = []
-statusTexts[0] = wordsCap.open
-statusTexts[100] = wordsCap.reopened
-statusTexts[200] = wordsCap.onHold
-statusTexts[300] = wordsCap.abandoned
-statusTexts[400] = wordsCap.canceled
-statusTexts[500] = wordsCap.closed
-statusTexts[999] = wordsCap.deleted
-const statusCodes = {
-    open: 0,
-    reopen: 100,
-    close: 500,
-    delete: 999,
-}
-const openStatuses = [statusCodes.open, statusCodes.reopen]
+statusTexts[statusCodes.open] = wordsCap.open
+statusTexts[statusCodes.reopen] = wordsCap.reopened
+statusTexts[statusCodes.onHold] = wordsCap.onHold
+statusTexts[statusCodes.abandon] = wordsCap.abandoned
+statusTexts[statusCodes.cancel] = wordsCap.canceled
+statusTexts[statusCodes.close] = wordsCap.closed
+statusTexts[statusCodes.delete] = wordsCap.deleted
 
 export default class ProjectList extends Component {
     constructor(props) {

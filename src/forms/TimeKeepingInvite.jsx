@@ -5,7 +5,7 @@ import { ReactiveComponent } from 'oo7-react'
 import { Button } from 'semantic-ui-react'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import PartnerForm from '../forms/Partner'
-import { getProjects } from '../services/project'
+import { getProjects, openStatuses } from '../services/project'
 import { getUser } from '../services/ChatClient'
 import partners from '../services/partners'
 import { showForm } from '../services/modal'
@@ -76,7 +76,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
     componentWillMount() {
         this._mounted = true
         const { inputs } = this.state
-        const proIn = findInput(inputs, 'projectHash') || {}
+        const proIn = findInput(inputs, 'projectHash')
         proIn.loading = true
         this.setState({ inputs })
 
@@ -103,7 +103,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             proIn.options = arrSort(
                 Array.from(projects)
                     // include only active (open/reopened) projects
-                    .filter(([_, { status }]) => [0, 1].indexOf(status) >= 0)
+                    .filter(([_, { status }]) => openStatuses.indexOf(status) >= 0)
                     .map(([hash, project]) => ({
                         key: hash,
                         text: project.name,
@@ -112,6 +112,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
                     })),
                 'text'
             )
+            console.log({ options: proIn.options })
 
             proIn.invalid = proIn.options.length === 0
             proIn.message = !proIn.invalid ? null : {
