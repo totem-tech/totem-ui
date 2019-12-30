@@ -1,4 +1,6 @@
 import React from 'react'
+import uuid from 'uuid'
+import { Bond } from 'oo7'
 import DataStorage from '../utils/DataStorage'
 // Components
 import TransferForm from '../forms/Transfer'
@@ -12,18 +14,34 @@ import TimeKeepingView from '../views/TimeKeepingView'
 import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
 import { isBool } from '../utils/utils'
 import { findInput as findItem } from '../components/FormBuilder'
+// services
+import { getLayout } from './window'
 
 const statuses = new DataStorage('totem_sidebar-items-status')
 
-export const setActive = (name, active = true, hidden) => {
+export const setActive = (name, active = true, hidden, defer = 100) => {
     const item = findItem(sidebarItems, name)
     if (!item) return
     item.active = active
     item.hidden = isBool(hidden) ? hidden : item.hidden
     statuses.set(name, active)
+    // Scroll down to the content segment if more than one item active
+    item.active && sidebarItems.filter(x => x.active && !x.hidden).length > 1 && setTimeout(() => {
+        const elRef = item.elementRef
+        const isMobile = getLayout() === 'mobile'
+        if (!elRef || !elRef.current) return
+        document.getElementById('main-content').scrollTo(0,
+            elRef.current.offsetTop - (isMobile ? 75 : 0)
+        )
+    }, defer)
     return item
 }
-export const setContentProps = (name, props) => (findItem(sidebarItems, name) || {}).contentProps = props
+export const setContentProps = (name, props = {}) => {
+    const item = findItem(sidebarItems, name)
+    if (!item) return
+    Object.keys(props).forEach(key => item.contentProps[key] = props[key])
+    item.bond.changed(uuid.v1())
+}
 export const gsName = 'getting-started'
 export const sidebarItems = [
     {
@@ -166,6 +184,8 @@ export const sidebarItems = [
 ].map(item => {
     const {
         active = false,
+        bond = new Bond().defaultTo(uuid.v1()),
+        contentProps = {},
         title,
         // use title if name not provided
         name = title
@@ -174,7 +194,11 @@ export const sidebarItems = [
     return {
         ...item,
         active: isBool(activeX) ? activeX : active,
+        // used to force trigger ContentSegment update
+        bond,
+        contentProps,
         name,
+        // used for auto scrolling to element
         elementRef: React.createRef(),
     }
 })

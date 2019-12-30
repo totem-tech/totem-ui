@@ -1,12 +1,25 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Divider, Header, Icon, Placeholder, Rail, Segment } from 'semantic-ui-react'
-import { isFn, isObj } from '../utils/utils'
+import { isFn } from '../utils/utils'
 
 export default class ContentSegment extends Component {
 	constructor(props) {
 		super(props)
 		this.state = { showSubHeader: false }
+	}
+
+	componentWillMount() {
+		this._mounted = true
+		const { bond } = this.props
+		if (!bond) return
+		this.tieId = bond.tie(() => this.setState({ ignored: bond._value }))
+	}
+
+	componentWillUnmount() {
+		this._mounted = false
+		const { bond } = this.props
+		bond && bond.untie(this.tieId)
 	}
 
 	toggleSubHeader = () => this.setState({ showSubHeader: !this.state.showSubHeader })
@@ -26,8 +39,8 @@ export default class ContentSegment extends Component {
 			headerTag,
 			headerInverted,
 			icon,
-			index,
 			inverted,
+			name,
 			onClose,
 			style,
 			subHeader,
@@ -56,7 +69,7 @@ export default class ContentSegment extends Component {
 							name='times circle outline'
 							color="grey"
 							size="mini"
-							onClick={() => onClose(index)}
+							onClick={() => onClose(name)}
 						/>
 					</Rail>
 				)}
@@ -106,6 +119,8 @@ export default class ContentSegment extends Component {
 ContentSegment.propTypes = {
 	active: PropTypes.bool,
 	basic: PropTypes.bool,
+	// used to force trigger ContentSegment update
+	bond: PropTypes.object,
 	onClose: PropTypes.func,
 	color: PropTypes.string,
 	content: PropTypes.oneOfType([
@@ -126,8 +141,9 @@ ContentSegment.propTypes = {
 	headerInverted: PropTypes.bool,
 	headerTag: PropTypes.string,
 	icon: PropTypes.string,
-	index: PropTypes.number,
+	index: PropTypes.number, // unused
 	inverted: PropTypes.bool,
+	name: PropTypes.string,
 	subHeader: PropTypes.string,
 	style: PropTypes.object,
 	title: PropTypes.string,

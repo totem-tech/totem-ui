@@ -23,6 +23,7 @@ import { getLayout, layoutBond } from './services/window'
 import DataStorage from './utils/DataStorage'
 // Images
 import TotemButtonLogo from './assets/totem-button-grey.png'
+import { findInput } from './components/FormBuilder'
 
 export class App extends ReactiveComponent {
 	constructor() {
@@ -62,30 +63,14 @@ export class App extends ReactiveComponent {
 
 	handleSidebarToggle = (v, c) => this.setState({ sidebarVisible: v, sidebarCollapsed: c })
 
-	toggleMenuItem = index => {
-		const { isMobile, sidebarItems, sidebarVisible } = this.state
-		const item = sidebarItems[index]
-		setActive(item.name, !item.active)
-		this.setState({
-			sidebarItems,
-			sidebarVisible: isMobile ? false : sidebarVisible
-		})
-		// Scroll down to the content segment
-		item.active && setTimeout(() => {
-			const elRef = item.elementRef
-			elRef && elRef.current && document.getElementById('main-content').scrollTo(0,
-				elRef.current.offsetTop - (isMobile ? 75 : 0)
-			)
-		}, 100)
-
-	}
-
-	handleClose = (index) => {
-		const sidebarItems = this.state.sidebarItems
-		if (!sidebarItems[index]) return;
-		sidebarItems[index].active = false
+	toggleMenuItem = name => {
+		const { sidebarItems } = this.state
+		const item = findInput(sidebarItems, name)
+		setActive(name, !item.active)
 		this.setState({ sidebarItems })
 	}
+
+	handleClose = name => setActive(name, false) | this.setState({ sidebarItems })
 
 	unreadyRender() {
 		const { status } = this.state
@@ -153,9 +138,11 @@ export class App extends ReactiveComponent {
 					>
 
 						{sidebarItems.filter(x => !x.hidden).map((item, i) => (
-							<div ref={item.elementRef} key={i} hidden={!item.active} style={spaceBelow}>
-								<ContentSegment {...item} onClose={handleClose} index={i} />
-							</div>
+							<ErrorBoundary key={i} >
+								<div ref={item.elementRef} key={i} hidden={!item.active} style={spaceBelow}>
+									<ContentSegment {...item} onClose={handleClose} />
+								</div>
+							</ErrorBoundary>
 						))}
 					</Sidebar.Pusher>
 				</Sidebar.Pushable>

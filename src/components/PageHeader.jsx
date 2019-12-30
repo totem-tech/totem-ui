@@ -113,8 +113,8 @@ class MobileHeader extends ReactiveComponent {
 	}
 
 	handleToggle = () => {
-		const { sidebarCollapsed, isMobile, onSidebarToggle, sidebarVisible } = this.props
-		isMobile ? onSidebarToggle(!sidebarVisible, false) : onSidebarToggle(true, !sidebarCollapsed)
+		const { onSidebarToggle, sidebarVisible } = this.props
+		onSidebarToggle(!sidebarVisible, false)
 	}
 
 	render() {
@@ -128,6 +128,7 @@ class MobileHeader extends ReactiveComponent {
 			onEdit,
 			onFaucetRequest,
 			onSelection,
+			sidebarVisible,
 			timerActive,
 			timerOnClick,
 			wallets,
@@ -139,7 +140,8 @@ class MobileHeader extends ReactiveComponent {
 					{isMobile && (
 						<Menu.Item
 							icon={{ name: 'sidebar', size: 'big', className: 'no-margin' }}
-							onClick={this.handleToggle}
+							// on mobile when sidebar is visible toggle is not neccessary on-document-click it is already triggered
+							onClick={sidebarVisible ? undefined : this.handleToggle}
 						/>
 					)}
 					<Menu.Item>

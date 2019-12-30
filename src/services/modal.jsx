@@ -8,19 +8,17 @@ const modals = new Map()
 // Use Bond as a way to trigger update to the ModalService component
 const trigger = new Bond()
 
-class ModalService extends ReactiveComponent {
+export default class ModalService extends ReactiveComponent {
     constructor() {
         super([], { trigger })
     }
-    render() {
-        return (
-            <div className="modal-service">
-                {Array.from(modals).map(item => <span key={item[0]}>{item[1]}</span>)}
-            </div>
-        )
-    }
+
+    render = () => (
+        <div className="modal-service">
+            {Array.from(modals).map(item => <span key={item[0]}>{item[1]}</span>)}
+        </div>
+    )
 }
-export default ModalService
 
 const add = (id, element) => {
     id = id || uuid.v1()

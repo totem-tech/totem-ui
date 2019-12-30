@@ -53,7 +53,7 @@ export default class SidebarLeft extends ReactiveComponent {
 							key={i}
 							active={item.active}
 							title={collapse ? item.title : ''}
-							onClick={() => onMenuItemClick(i)}
+							onClick={() => onMenuItemClick(item.name)}
 							style={i === 0 ? styles.menuItem : {}}
 						>
 							<span>

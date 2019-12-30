@@ -10,9 +10,10 @@ import FormBuilder, { findInput } from '../components/FormBuilder'
 import ProjectForm from '../forms/Project'
 import ReassignProjectForm from '../forms/ProjectReassign'
 // services
-import { confirm, showForm } from '../services/modal'
+import { confirm, showForm, closeModal } from '../services/modal'
 import { addToQueue } from '../services/queue'
 import projectService, { getProjects, getProjectsBond, openStatuses, statusCodes } from '../services/project'
+import { setActive, setContentProps } from '../services/sidebar'
 import { layoutBond, getLayout } from '../services/window'
 
 const toBeImplemented = () => alert('To be implemented')
@@ -55,6 +56,7 @@ const texts = {
     detailsStatusLabel: 'Project Status',
     detailsFirstSeenLabel: 'Project First Used',
     detailsFormHeader: 'Project Details',
+    detailsTimeRecordsBtn: 'View Time Records',
     editProject: 'Edit project',
     projectCloseReopenWarning: 'You are about to change status of the following projects to: ',
     projectTeam: 'Project team - ',
@@ -366,7 +368,7 @@ export default class ProjectList extends Component {
             _firstSeen: texts.detailsFirstSeenLabel
         }
         // Create a form on the fly and display data a read-only input fields
-        showForm(FormBuilder, {
+        this.detailsModalId = showForm(FormBuilder, {
             closeOnEscape: true,
             closeOnDimmerClick: true,
             closeText: wordsCap.close,
@@ -378,7 +380,23 @@ export default class ProjectList extends Component {
                 readOnly: true,
                 type: key === 'description' ? 'textarea' : 'text',
                 value: data[key]
-            })),
+            })).concat({
+                // view time records button
+                content: texts.detailsTimeRecordsBtn,
+                name: 'button',
+                onClick: () => {
+                    closeModal(this.detailsModalId)
+                    const props = { values: { option: 'manage', projectHash: hash } }
+                    setActive('timekeeping')
+                    setTimeout(() => {
+                        setContentProps('timekeeping', props)
+                        //
+                        // not quite working yet as expected, requires double triggers to be effective
+                        setContentProps('timekeeping', props)
+                    }, 200)
+                },
+                type: 'Button',
+            }),
             size: 'tiny',
             submitText: null
         })

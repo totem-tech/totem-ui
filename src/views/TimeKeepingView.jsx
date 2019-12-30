@@ -1,12 +1,11 @@
-import React from 'react'
-import uuid from 'uuid'
+import React, { Component } from 'react'
+import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-import { ReactiveComponent } from 'oo7-react'
 import { arrSort, textCapitalize } from '../utils/utils'
 import ContentSegment from '../components/ContentSegment'
-import FormBuilder, { findInput } from '../components/FormBuilder'
+import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import ProjectTimeKeepingList from '../lists/TimeKeepingList'
-import TimeKeepingInviteList from '../lists/TimeKeepingInviteList'
+// import TimeKeepingInviteList from '../lists/TimeKeepingInviteList'
 import TimeKeepingSummary from '../lists/TimeKeepingSummary'
 import { getSelected } from '../services/identity'
 import { getProjects, getProjectsBond } from '../services/timeKeeping'
@@ -26,10 +25,9 @@ const texts = {
     myTimeKeepingSummary: 'My timekeeping summary',
     selectAProject: 'Select a project',
 }
-
-class TimeKeepingView extends ReactiveComponent {
+export default class TimeKeepingView extends Component {
     constructor(props) {
-        super(props, { layout: layoutBond })
+        super(props)
 
         this.state = {
             values: {
@@ -53,6 +51,7 @@ class TimeKeepingView extends ReactiveComponent {
                             width: 4,
                         },
                         {
+                            bond: new Bond(),
                             multiple: true,
                             name: 'option',
                             toggle: true,
@@ -73,24 +72,66 @@ class TimeKeepingView extends ReactiveComponent {
     }
 
     componentWillMount() {
-        this.tieId = getProjectsBond.tie(() => this.loadProjectOptions())
+        this._mounted = true
+        this.tieId = getProjectsBond.tie(() => this._mounted && this.loadProjectOptions())
+        this.tieIdLayout = layoutBond.tie(layout => this._mounted && this.setState({ isMobile: layout === 'mobile' }))
     }
-
     componentWillUnmount() {
+        this._mounted = false
         getProjectsBond.untie(this.tieId)
+        layoutBond.untie(this.tieIdLayout)
     }
 
-    handleChange(_, values) {
-        setTimeout(() => this.setState({ values }))
+    componentWillUpdate() {
+        const { inputs, values: inputValues } = this.state
+        let { values } = this.props
+        const newStr = JSON.stringify(values)
+        if (newStr === this.valuesStr) return
+        this.valuesStr = newStr
+        values = { ...inputValues, ...values }
+        fillValues(inputs, values, true)
+        this.setState({ inputs, values })
+    }
+
+    handleChange = (_, values) => setTimeout(() => this.setState({ values }))
+
+    loadProjectOptions = () => {
+        const { inputs, values } = this.state
+        let { projectHash } = values
+        const projectIn = findInput(inputs, 'projectHash')
+        projectIn.loading = true
+        getProjects().then(projects => {
+            const options = Array.from(projects).map(([hash, project]) => ({
+                key: hash,
+                project,
+                text: (project || {}).name || wordsCap.unknown,
+                value: hash,
+            }))
+            projectIn.loading = false
+            projectIn.options = arrSort(options, 'text')
+            projectIn.noResultsMessage = options.length > 0 ? undefined : (
+                // user doesn't own any project and never been invited to one
+                <p style={{ whiteSpace: 'pre-wrap' }}>
+                    {texts.createProjectOrRequestInvite}
+                </p>
+            )
+
+            if (!projectHash || !projectIn.options.find(x => x.value === projectHash)) {
+                const { value: projectHash } = projectIn.options[0] || {}
+                values.projectHash = projectHash
+                projectHash && projectIn.bond.changed(projectHash)
+            }
+            this.setState({ inputs, values })
+        }, console.log)
     }
 
     render() {
-        const { inputs, layout, values: { projectHash, option } } = this.state
+        const { inputs, isMobile, values: { projectHash, option } } = this.state
         const { loading, options: projectOptions } = findInput(inputs, 'projectHash')
         const { ownerAddress, name } = (projectOptions.find(x => x.value === projectHash) || {}).project || {}
         const { address } = getSelected()
         const isOwner = ownerAddress === address
-        const isMobile = layout === 'mobile'
+        // const isMobile = layout === 'mobile'
         let contents = []
         const manage = isOwner && option.includes('manage')
         const showSummary = option.includes('summary')
@@ -134,36 +175,10 @@ class TimeKeepingView extends ReactiveComponent {
             </div>
         )
     }
-
-    loadProjectOptions() {
-        const { inputs, values } = this.state
-        let { projectHash } = values
-        const projectIn = findInput(inputs, 'projectHash')
-        projectIn.loading = true
-        getProjects().then(projects => {
-            const options = Array.from(projects).map(([hash, project]) => ({
-                key: hash,
-                project,
-                text: (project || {}).name || wordsCap.unknown,
-                value: hash,
-            }))
-            projectIn.loading = false
-            projectIn.options = arrSort(options, 'text')
-            projectIn.noResultsMessage = options.length > 0 ? undefined : (
-                // user doesn't own any project and never been invited to one
-                <p style={{ whiteSpace: 'pre-wrap' }}>
-                    {texts.createProjectOrRequestInvite}
-                </p>
-            )
-
-            if (!projectHash || !projectIn.options.find(x => x.value === projectHash)) {
-                const { value: projectHash } = projectIn.options[0] || {}
-                values.projectHash = projectHash
-                projectHash && projectIn.bond.changed(projectHash)
-            }
-            this.setState({ inputs, values })
-        }, console.log)
-    }
 }
-
-export default TimeKeepingView
+TimeKeepingView.propTypes = {
+    values: PropTypes.shape({
+        option: PropTypes.string,
+        projectHash: PropTypes.string,
+    })
+}
