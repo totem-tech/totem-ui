@@ -174,7 +174,7 @@ const _processItem = (queueItem, id, toastId) => {
                         content: (
                             <p>
                                 {description} <br />
-                                You must have at least {MIN_BALANCE} Transactions balance in the wallet named "{wallet.name}".
+                                You must have at least {MIN_BALANCE} Transactions balance in the identity named "{wallet.name}".
                                 This is requied to create a blockchain transaction.
                                 Once you have enough balance {continueBtn} or reload page to continue or {cancelBtn}
                             </p>

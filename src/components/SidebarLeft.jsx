@@ -3,52 +3,36 @@ import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { Icon, Menu, Sidebar } from 'semantic-ui-react'
 
-class SidebarLeft extends ReactiveComponent {
-	constructor(props) {
-		super(props)
-		this.handleHide = this.handleHide.bind(this)
-		this.handleToggle = this.handleToggle.bind(this)
-	}
+export default class SidebarLeft extends ReactiveComponent {
 
-	handleHide() {
-		const { isMobile, onSidebarToggle } = this.props
-		if (isMobile) {
-			return onSidebarToggle(false, false)
-		}
-	}
-
-	handleToggle() {
+	handleToggle = () => {
 		const { collapsed, isMobile, onSidebarToggle, visible } = this.props
-
-		if (isMobile) {
-			return onSidebarToggle(!visible, false)
-		}
-		onSidebarToggle(true, !collapsed)
+		isMobile ? onSidebarToggle(!visible, false) : onSidebarToggle(true, !collapsed)
 	}
 
 	render() {
-		const { collapsed, isMobile, items, onMenuItemClick, visible } = this.props
-		const { collapsed: sCollapsed, expanded, menuItem, sidebarToggleWrap } = styles
-		const animation = isMobile ? 'overlay' : 'push'
-
+		const { collapsed, isMobile, items, onMenuItemClick, onSidebarToggle, visible } = this.props
 		// force open sidebar if no item is active
 		const allInactive = items.every(({ active }) => !active)
 		const collapse = allInactive ? false : collapsed
 		return (
 			<Sidebar
 				as={Menu}
-				animation={animation}
+				animation={isMobile ? 'overlay' : 'push'}
 				direction="left"
 				vertical
 				visible={allInactive ? true : visible}
 				width={collapse ? 'very thin' : 'wide'}
 				color="black"
 				inverted
-				style={isMobile ? (collapse ? sCollapsed : expanded) : {}}
-				onHide={allInactive ? undefined : this.handleHide}
+				style={isMobile ? (collapse ? styles.collapsed : styles.expanded) : {}}
+				onHide={() => !allInactive && isMobile && onSidebarToggle(false, false)}
 			>
 				{/* show sidebar toggle when not on mobile */}
-				<Menu.Item style={sidebarToggleWrap} onClick={allInactive ? undefined : this.handleToggle}>
+				<Menu.Item
+					style={styles.sidebarToggleWrap}
+					onClick={allInactive ? undefined : this.handleToggle}
+				>
 					<div
 						style={styles.sidebarToggle}
 						position="right"
@@ -56,21 +40,21 @@ class SidebarLeft extends ReactiveComponent {
 						style={styles.sidebarToggle}
 					>
 						<span>
-							<Icon name={'arrow alternate circle ' + (collapse ? 'right ' : 'left ') + 'outline'} />
+							<Icon name={`arrow alternate circle ${collapse ? 'right' : 'left'} outline`} />
 							{collapse ? '' : ' Close sidebar'}
 						</span>
 					</div>
 				</Menu.Item>
 
 				{// menu items 
-					items.map((item, i) => (
+					items.map((item, i) => item.hidden ? '' : (
 						<Menu.Item
 							as="a"
 							key={i}
 							active={item.active}
 							title={collapse ? item.title : ''}
-							onClick={() => onMenuItemClick(i, isMobile)}
-							style={i === 0 ? menuItem : {}}
+							onClick={() => onMenuItemClick(i)}
+							style={i === 0 ? styles.menuItem : {}}
 						>
 							<span>
 								<Icon
@@ -89,7 +73,38 @@ class SidebarLeft extends ReactiveComponent {
 SidebarLeft.propTypes = {
 	collapsed: PropTypes.bool,
 	isMobile: PropTypes.bool,
-	items: PropTypes.array,
+	items: PropTypes.arrayOf(PropTypes.shape({
+		active: PropTypes.bool.isRequired,
+		content: PropTypes.any,
+		// props to be supplied to content, if content is an element
+		contentProps: PropTypes.object,
+		elementRef: PropTypes.any.isRequired,
+		icon: PropTypes.oneOfType([
+			PropTypes.string,
+			PropTypes.object,
+		]),
+		header: PropTypes.oneOfType([
+			PropTypes.element,
+			PropTypes.node,
+			PropTypes.string,
+		]),
+		name: PropTypes.string.isRequired,
+		subHeader: PropTypes.oneOfType([
+			PropTypes.element,
+			PropTypes.node,
+			PropTypes.string,
+		]),
+		subHeaderDetails: PropTypes.oneOfType([
+			PropTypes.element,
+			PropTypes.node,
+			PropTypes.string,
+		]),
+		title: PropTypes.oneOfType([
+			PropTypes.element,
+			PropTypes.node,
+			PropTypes.string,
+		]).isRequired,
+	})),
 	onMenuItemClick: PropTypes.func,
 	onSidebarToggle: PropTypes.func.isRequired,
 	visible: PropTypes.bool
@@ -101,20 +116,19 @@ SidebarLeft.defaultProps = {
 	items: [
 		//// for example only
 		// { 
-		//   icon: 'warning sign',
-		//   title: 'No items available',
-		//   header: 'Sample Header',
-		//   subHeader: 'A sample',
-		//   subHeaderDetails: 'Sample text that extends subheader',
-		//   content: 'This is a sample',
 		//   active: true,
+		//   content: 'This is a sample',
 		//   elementRef: React.createRef()
+		//   icon: 'warning sign',
+		//	 name: 'unique-identifier'
+		//   header: 'Sample Content Header',
+		//   subHeader: 'Sample content subheader',
+		//   subHeaderDetails: 'Sample subheader details',
+		//   title: 'Menu item title',
 		// }
 	],
 	visible: true
 }
-
-export default SidebarLeft
 
 const styles = {
 	collapsed: {

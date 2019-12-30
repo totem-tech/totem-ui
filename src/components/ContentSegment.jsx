@@ -1,22 +1,15 @@
-import React from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { ReactiveComponent, If } from 'oo7-react'
-import { runtimeUp } from 'oo7-substrate'
 import { Divider, Header, Icon, Placeholder, Rail, Segment } from 'semantic-ui-react'
-import { isFn } from '../utils/utils'
+import { isFn, isObj } from '../utils/utils'
 
-class ContentSegment extends ReactiveComponent {
+export default class ContentSegment extends Component {
 	constructor(props) {
-		super(props, { ensureRuntimeUp: runtimeUp })
-		this.state = {
-			showSubHeader: false
-		}
-		this.toggleSubHeader = this.toggleSubHeader.bind(this)
+		super(props)
+		this.state = { showSubHeader: false }
 	}
 
-	toggleSubHeader() {
-		this.setState({ showSubHeader: !this.state.showSubHeader })
-	}
+	toggleSubHeader = () => this.setState({ showSubHeader: !this.state.showSubHeader })
 
 	render() {
 		const {
@@ -25,6 +18,7 @@ class ContentSegment extends ReactiveComponent {
 			color,
 			compact,
 			content,
+			contentProps,
 			contentPadding,
 			header,
 			headerDivider,
@@ -42,8 +36,8 @@ class ContentSegment extends ReactiveComponent {
 			vertical,
 		} = this.props
 		const { showSubHeader } = this.state
-
 		const headerText = header || title
+		const ContentEl = isFn(content) ? content : undefined
 
 		return !active ? '' : (
 			<Segment
@@ -102,25 +96,29 @@ class ContentSegment extends ReactiveComponent {
 				{!!headerText && !!headerDivider && <Divider hidden={!!headerDividerHidden} />}
 
 				<div style={{ padding: contentPadding || 0 }}>
-					{!!content ? content : placeholder}
+					{!content ? placeholder : !!ContentEl ? <ContentEl {...contentProps} /> : content}
 				</div>
 			</Segment>
 		)
 	}
 }
 
-export default ContentSegment
-
 ContentSegment.propTypes = {
 	active: PropTypes.bool,
 	basic: PropTypes.bool,
 	onClose: PropTypes.func,
 	color: PropTypes.string,
-	content: PropTypes.node,
+	content: PropTypes.oneOfType([
+		PropTypes.element,
+		PropTypes.elementType,
+		PropTypes.node,
+		PropTypes.string,
+	]),
 	contentPadding: PropTypes.oneOfType([
 		PropTypes.string,
 		PropTypes.number
 	]),
+	contentProps: PropTypes.object,
 	compact: PropTypes.bool,
 	header: PropTypes.string,
 	headerDivider: PropTypes.bool,
