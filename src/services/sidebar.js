@@ -12,36 +12,13 @@ import UtilitiesView from '../views/UtilitiesView'
 import TimeKeepingView from '../views/TimeKeepingView'
 // temp
 import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
-import { isBool } from '../utils/utils'
+import { isBool, isBond } from '../utils/utils'
 import { findInput as findItem } from '../components/FormBuilder'
 // services
 import { getLayout } from './window'
 
+// store items' "active" status in the localStorage
 const statuses = new DataStorage('totem_sidebar-items-status')
-
-export const setActive = (name, active = true, hidden, defer = 100) => {
-    const item = findItem(sidebarItems, name)
-    if (!item) return
-    item.active = active
-    item.hidden = isBool(hidden) ? hidden : item.hidden
-    statuses.set(name, active)
-    // Scroll down to the content segment if more than one item active
-    item.active && sidebarItems.filter(x => x.active && !x.hidden).length > 1 && setTimeout(() => {
-        const elRef = item.elementRef
-        const isMobile = getLayout() === 'mobile'
-        if (!elRef || !elRef.current) return
-        document.getElementById('main-content').scrollTo(0,
-            elRef.current.offsetTop - (isMobile ? 75 : 0)
-        )
-    }, defer)
-    return item
-}
-export const setContentProps = (name, props = {}) => {
-    const item = findItem(sidebarItems, name)
-    if (!item) return
-    Object.keys(props).forEach(key => item.contentProps[key] = props[key])
-    item.bond.changed(uuid.v1())
-}
 export const gsName = 'getting-started'
 export const sidebarItems = [
     {
@@ -101,7 +78,7 @@ export const sidebarItems = [
     },
     {
         content: ProjectList,
-        headerDividerHidden: true,
+        // headerDividerHidden: true,
         icon: 'tasks',
         name: 'projects',
         subHeader: 'Manage projects.',
@@ -112,7 +89,10 @@ export const sidebarItems = [
         title: 'Project Module',
     },
     {
+        // indicates contentArgs is variable and forces content to be re-rendered
+        bond: new Bond().defaultTo(uuid.v1()),
         content: TimeKeepingView,
+        contentArgs: {},
         icon: 'clock outline',
         name: 'timekeeping',
         subHeader: 'Manage timekeeping against projects and tasks.',
@@ -184,7 +164,6 @@ export const sidebarItems = [
 ].map(item => {
     const {
         active = false,
-        bond = new Bond().defaultTo(uuid.v1()),
         contentProps = {},
         title,
         // use title if name not provided
@@ -194,8 +173,6 @@ export const sidebarItems = [
     return {
         ...item,
         active: isBool(activeX) ? activeX : active,
-        // used to force trigger ContentSegment update
-        bond,
         contentProps,
         name,
         // used for auto scrolling to element
@@ -208,3 +185,30 @@ export const sidebarItems = [
 statuses.setAll(sidebarItems.reduce((map, { active, name }) => map.set(name, active), new Map()))
 // if all items are inactive show getting started module
 sidebarItems.every(x => x.hidden || !x.active) && setActive(gsName)
+
+export const getItem = name => findItem(sidebarItems, name)
+
+export const setActive = (name, active = true, hidden) => {
+    const item = findItem(sidebarItems, name)
+    if (!item) return
+    item.active = active
+    item.hidden = isBool(hidden) ? hidden : item.hidden
+    statuses.set(name, active)
+    // Scroll down to the content segment if more than one item active
+    item.active && sidebarItems.filter(x => x.active && !x.hidden).length > 1 && setTimeout(() => {
+        const elRef = item.elementRef
+        const isMobile = getLayout() === 'mobile'
+        if (!elRef || !elRef.current) return
+        document.getElementById('main-content').scrollTo(0,
+            elRef.current.offsetTop - (isMobile ? 75 : 0)
+        )
+    }, 100)
+    return item
+}
+
+export const setContentProps = (name, props = {}) => {
+    const item = findItem(sidebarItems, name)
+    if (!item) return
+    Object.keys(props).forEach(key => item.contentProps[key] = props[key])
+    isBond(item.bond) && item.bond.changed(uuid.v1())
+}

@@ -138,11 +138,9 @@ export class App extends ReactiveComponent {
 					>
 
 						{sidebarItems.filter(x => !x.hidden).map((item, i) => (
-							<ErrorBoundary key={i} >
-								<div ref={item.elementRef} key={i} hidden={!item.active} style={spaceBelow}>
-									<ContentSegment {...item} onClose={handleClose} />
-								</div>
-							</ErrorBoundary>
+							<div ref={item.elementRef} key={i} hidden={!item.active} style={spaceBelow}>
+								<ContentSegment {...item} onClose={handleClose} />
+							</div>
 						))}
 					</Sidebar.Pusher>
 				</Sidebar.Pushable>

@@ -13,7 +13,7 @@ import ReassignProjectForm from '../forms/ProjectReassign'
 import { confirm, showForm, closeModal } from '../services/modal'
 import { addToQueue } from '../services/queue'
 import projectService, { getProjects, getProjectsBond, openStatuses, statusCodes } from '../services/project'
-import { setActive, setContentProps } from '../services/sidebar'
+import { getItem, setActive, setContentProps } from '../services/sidebar'
 import { layoutBond, getLayout } from '../services/window'
 
 const toBeImplemented = () => alert('To be implemented')
@@ -385,15 +385,13 @@ export default class ProjectList extends Component {
                 content: texts.detailsTimeRecordsBtn,
                 name: 'button',
                 onClick: () => {
-                    closeModal(this.detailsModalId)
-                    const props = { values: { option: 'manage', projectHash: hash } }
-                    setActive('timekeeping')
-                    setTimeout(() => {
-                        setContentProps('timekeeping', props)
-                        //
-                        // not quite working yet as expected, requires double triggers to be effective
-                        setContentProps('timekeeping', props)
-                    }, 200)
+                    const itemProps = { values: { option: 'manage', projectHash: hash } }
+                    const sidebarItemName = 'timekeeping'
+                    const sidebarItem = getItem(sidebarItemName)
+                    if (!sidebarItem) return
+                    if (!sidebarItem.active) setActive(sidebarItemName)
+                    setContentProps(sidebarItemName, itemProps)
+                    closeModal(this.detailsModalId, 200)
                 },
                 type: 'Button',
             }),

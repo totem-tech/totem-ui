@@ -27,7 +27,7 @@ const add = (id, element) => {
     return id
 }
 
-export const closeModal = id => modals.delete(id) | trigger.changed(modals.size)
+export const closeModal = (id, delay = 0) => setTimeout(() => modals.delete(id) | trigger.changed(modals.size), delay)
 
 // confirm opens a confirm dialog
 //

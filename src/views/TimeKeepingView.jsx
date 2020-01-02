@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-import { arrSort, textCapitalize } from '../utils/utils'
+import { arrSort, isObj, textCapitalize } from '../utils/utils'
 import ContentSegment from '../components/ContentSegment'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import ProjectTimeKeepingList from '../lists/TimeKeepingList'
@@ -30,9 +30,7 @@ export default class TimeKeepingView extends Component {
         super(props)
 
         this.state = {
-            values: {
-                option: 'records'
-            },
+            values: isObj(props.values) ? props.values : { option: 'records' },
             inputs: [
                 {
                     name: 'group',
@@ -55,15 +53,15 @@ export default class TimeKeepingView extends Component {
                             multiple: true,
                             name: 'option',
                             toggle: true,
-                            type: 'checkbox-group',
-                            value: 'records',
-                            width: 12,
                             options: [
                                 { label: texts.myRecords, value: 'records' },
                                 { label: wordsCap.manage, value: 'manage' },
                                 // { label: wordsCap.invites, value: 'invites' },
                                 { label: wordsCap.summary, value: 'summary' },
                             ],
+                            value: 'records',
+                            type: 'checkbox-group',
+                            width: 12,
                         },
                     ],
                 }
@@ -75,22 +73,12 @@ export default class TimeKeepingView extends Component {
         this._mounted = true
         this.tieId = getProjectsBond.tie(() => this._mounted && this.loadProjectOptions())
         this.tieIdLayout = layoutBond.tie(layout => this._mounted && this.setState({ isMobile: layout === 'mobile' }))
+        fillValues(this.state.inputs, this.props.values, true)
     }
     componentWillUnmount() {
         this._mounted = false
         getProjectsBond.untie(this.tieId)
         layoutBond.untie(this.tieIdLayout)
-    }
-
-    componentWillUpdate() {
-        const { inputs, values: inputValues } = this.state
-        let { values } = this.props
-        const newStr = JSON.stringify(values)
-        if (newStr === this.valuesStr) return
-        this.valuesStr = newStr
-        values = { ...inputValues, ...values }
-        fillValues(inputs, values, true)
-        this.setState({ inputs, values })
     }
 
     handleChange = (_, values) => setTimeout(() => this.setState({ values }))

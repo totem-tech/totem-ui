@@ -1,25 +1,32 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Divider, Header, Icon, Placeholder, Rail, Segment } from 'semantic-ui-react'
-import { isFn } from '../utils/utils'
+import ErrorBoundary from './CatchReactErrors'
+import { isBond, isFn } from '../utils/utils'
 
 export default class ContentSegment extends Component {
 	constructor(props) {
 		super(props)
-		this.state = { showSubHeader: false }
+		this.state = {
+			hideContent: false,
+			showSubHeader: false,
+		}
 	}
 
 	componentWillMount() {
 		this._mounted = true
 		const { bond } = this.props
-		if (!bond) return
-		this.tieId = bond.tie(() => this.setState({ ignored: bond._value }))
+		if (!isBond(bond)) return
+		this.tieId = bond.tie(() => {
+			this.setState({ hideContent: true })
+			setTimeout(() => this.setState({ hideContent: false }), 100)
+		})
 	}
 
 	componentWillUnmount() {
 		this._mounted = false
 		const { bond } = this.props
-		bond && bond.untie(this.tieId)
+		isBond(bond) && bond.untie(this.tieId)
 	}
 
 	toggleSubHeader = () => this.setState({ showSubHeader: !this.state.showSubHeader })
@@ -48,7 +55,7 @@ export default class ContentSegment extends Component {
 			title,
 			vertical,
 		} = this.props
-		const { showSubHeader } = this.state
+		const { hideContent, showSubHeader } = this.state
 		const headerText = header || title
 		const ContentEl = isFn(content) ? content : undefined
 
@@ -109,7 +116,11 @@ export default class ContentSegment extends Component {
 				{!!headerText && !!headerDivider && <Divider hidden={!!headerDividerHidden} />}
 
 				<div style={{ padding: contentPadding || 0 }}>
-					{!content ? placeholder : !!ContentEl ? <ContentEl {...contentProps} /> : content}
+					<ErrorBoundary>
+						{!hideContent && (
+							!content ? placeholder : !!ContentEl ? <ContentEl {...contentProps} /> : content
+						)}
+					</ErrorBoundary>
 				</div>
 			</Segment>
 		)
