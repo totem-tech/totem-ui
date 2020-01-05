@@ -161,7 +161,7 @@ export default class NotificationDropdown extends ReactiveComponent {
                                                 {
                                                     onSubmit: success => success && remove(id),
                                                     values: {
-                                                        address: data.address,
+                                                        ...data,
                                                         userId: data.introducedBy || senderId,
                                                     },
                                                 }

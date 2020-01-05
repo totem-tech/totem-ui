@@ -98,7 +98,7 @@ class Partner extends ReactiveComponent {
                     }],
                     placeholder: texts.addressPlaceholder,
                     required: true,
-                    search: ['text', 'value'],
+                    search: ['text', 'value', 'key'],
                     selection: true,
                     type: 'dropdown',
                     validate: this.doUpdate ? null : this.validateAddress,
@@ -169,6 +169,7 @@ class Partner extends ReactiveComponent {
 
     componentWillMount() {
         const { inputs, values } = this.state
+        // const addressIn = findInput(inputs, 'address')
         const assocIn = findInput(inputs, 'associatedIdentity')
         assocIn.options = arrSort(
             identityService.getAll().map(({ name, address }) => ({
@@ -182,6 +183,7 @@ class Partner extends ReactiveComponent {
         fillValues(inputs, values, true)
         this.setState({ inputs })
         if (!values.address) return
+        // const optionExists = addressIn.options.find()
         setTimeout(() => {
             this.checkVisibility(values.address)
             this.handleAddressSearchChange({}, { searchQuery: values.address })
@@ -230,11 +232,12 @@ class Partner extends ReactiveComponent {
     handleAddressSearchChange = deferred((_, { searchQuery }) => {
         if (!searchQuery) return
         const isValidAddress = !!ss58Decode(searchQuery)
+        const { address: addressProp } = this.props.values || {}
         const { inputs } = this.state
-        const companyIn = findInput(inputs, 'address')
-        companyIn.allowAdditions = false
+        const addressIn = findInput(inputs, 'address')
+        addressIn.allowAdditions = false
         const handleResult = (err, companies) => {
-            companyIn.options = err ? [] : Array.from(companies).map(([address, company]) => {
+            addressIn.options = err ? [] : Array.from(companies).map(([address, company]) => {
                 return {
                     company, // keep
                     key: [...Object.keys(company).map(k => company[k]), address].join(' '), // also used for searching
@@ -244,7 +247,7 @@ class Partner extends ReactiveComponent {
                     value: address,
                 }
             })
-            companyIn.message = !err ? null : { content: err, status: 'error' }
+            addressIn.message = !err ? null : { content: err, status: 'error' }
             this.setState({ inputs })
         }
         const searchCompany = () => {
@@ -261,8 +264,7 @@ class Partner extends ReactiveComponent {
                 return handleResult(null, new Map([[searchQuery, company]]))
             }
             // valid address but not a company >> allow user to add as option
-            companyIn.allowAdditions = true
-            companyIn.options = []
+            addressIn.allowAdditions = true
             this.setState({ inputs })
         })
     }, 300)
