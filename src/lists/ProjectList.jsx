@@ -294,9 +294,11 @@ export default class ProjectList extends Component {
     }
 
     handleReassignOwner = selectedHashes => {
-        if (selectedHashes.length > 1) return;
-        const project = this.state.projects.get(selectedHashes[0])
-        project && showForm(ReassignProjectForm, { hash: selectedHashes[0], values: project })
+        if (selectedHashes.length !== 1) return;
+        const { data: projects } = this.state
+        const hash = selectedHashes[0]
+        const project = projects.get(hash)
+        project && showForm(ReassignProjectForm, { hash, values: project })
     }
 
     handleRowSelection = selectedHashes => {

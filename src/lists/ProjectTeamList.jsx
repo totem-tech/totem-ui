@@ -94,13 +94,12 @@ export default class ProjectTeamList extends ReactiveComponent {
 
         getProjectWorkers(projectHash).then(({ workers }) => {
             Array.from(workers).forEach(([_, invite]) => {
-                const { accepted, address, name, userId } = invite
-                const isIdentity = !!identities.get(address)
-                invite._status = accepted === true ? words.accepted : (!isIdentity ? words.invited : (
+                const { accepted, address, name } = invite
+                const isOwnIdentity = !!identities.get(address)
+                invite._status = accepted === true ? words.accepted : (!isOwnIdentity ? words.invited : (
                     // Worker identity belongs to current user => button to accept or reject
                     <ButtonAcceptOrReject onClick={accepted => handleTKInvitation(projectHash, address, accepted)} />
                 ))
-                // invite._userId = !userId ? texts.unknownUser : <UserID {...{ userId }} />
                 invite.name = name || (
                     <Button
                         content={texts.addPartner}
