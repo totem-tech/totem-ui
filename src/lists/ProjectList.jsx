@@ -95,7 +95,8 @@ export default class ProjectList extends Component {
                 {
                     hidden: true,
                     key: 'description',
-                    title: wordsCap.description
+                    style: { whiteSpace: 'pre-wrap' },
+                    title: wordsCap.description,
                 },
                 {
                     collapsing: true,
