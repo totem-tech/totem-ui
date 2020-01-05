@@ -85,6 +85,8 @@ class Partner extends ReactiveComponent {
                     additionLabel: texts.addressAdditionLabel,
                     bond: new Bond(),
                     clearable: true,
+                    // disable when adding new and address is prefilled (possibly from notification)
+                    disabled: !this.doUpdate && !!ss58Decode(address),
                     hidden: this.doUpdate && visibility !== 'public',
                     label: texts.addressLabel,
                     name: 'address',
@@ -232,7 +234,6 @@ class Partner extends ReactiveComponent {
     handleAddressSearchChange = deferred((_, { searchQuery }) => {
         if (!searchQuery) return
         const isValidAddress = !!ss58Decode(searchQuery)
-        const { address: addressProp } = this.props.values || {}
         const { inputs } = this.state
         const addressIn = findInput(inputs, 'address')
         addressIn.allowAdditions = false
