@@ -118,7 +118,8 @@ export default class UserIdInput extends Component {
         const isOwnId = excludeOwnId && (getUser() || {}).id === userId
         let { value } = this.state
         const removeNewValue = () => {
-            if (multiple) return value.splice(value.indexOf(userId), 1)
+            const index = value.indexOf(userId)
+            if (multiple && index >= 0) return value.splice(index, 1)
             value = undefined
         }
         isOwnId && removeNewValue()
