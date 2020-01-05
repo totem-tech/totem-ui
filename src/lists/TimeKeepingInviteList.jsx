@@ -58,6 +58,7 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
 
         this.projectHash = projectHash
         this.bond = Bond.all([
+            timeKeeping.worker.listInvited(projectHash),
             timeKeeping.worker.listWorkers(projectHash),
             selectedAddressBond,
         ])
@@ -74,6 +75,7 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
         this.projectHash = projectHash
         this.bond && this.bond.untie(this.tieId)
         this.bond = !projectHash ? null : Bond.all([
+            timeKeeping.worker.listInvited(projectHash),
             timeKeeping.worker.listWorkers(projectHash),
             selectedAddressBond,
         ])

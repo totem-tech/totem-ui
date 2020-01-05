@@ -258,8 +258,8 @@ export const handleTKInvitation = (
         args: [projectHash, workerAddress, accepted],
         title: `TimeKeeping - ${accepted ? 'accept' : 'reject'} invitation`,
         description: `Project: ${projectName}`,
-        // no need to notify if current user is the project owner
-        next: !projectOwnerId || projectOwnerId === currentUserId ? undefined : {
+        // no need to notify if rejected or current user is the project owner
+        next: !accepted || !projectOwnerId || projectOwnerId === currentUserId ? undefined : {
             address: workerAddress, // for automatic balance check 
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'notify',
