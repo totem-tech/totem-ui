@@ -385,13 +385,10 @@ export default class ProjectList extends Component {
                 content: texts.detailsTimeRecordsBtn,
                 name: 'button',
                 onClick: () => {
-                    const itemProps = { values: { option: 'manage', projectHash: hash } }
+                    const contentProps = { values: { option: 'manage', projectHash: hash } }
                     const sidebarItemName = 'timekeeping'
-                    const sidebarItem = getItem(sidebarItemName)
-                    if (!sidebarItem) return
-                    if (!sidebarItem.active) setActive(sidebarItemName)
-                    setContentProps(sidebarItemName, itemProps)
-                    closeModal(this.detailsModalId, 200)
+                    closeModal(this.detailsModalId)
+                    setContentProps(sidebarItemName, contentProps)
                 },
                 type: 'Button',
             }),

@@ -12,34 +12,36 @@ import ErrorBoundary from './components/CatchReactErrors'
 import ChatWidget from './components/ChatWidget'
 import ContentSegment from './components/ContentSegment'
 import PageHeader from './components/PageHeader'
-import SidebarLeft from './components/SidebarLeft'
+import SidebarLeft, { SidebarItemContent } from './components/SidebarLeft'
 // Services
 import ModalService from './services/modal'
 import { resumeQueue } from './services/queue'
-import { setActive, sidebarItems } from './services/sidebar'
+import { sidebarItems } from './services/sidebar'
 import ToastService from './services/toast'
 import { getLayout, layoutBond } from './services/window'
 // Utils
 import DataStorage from './utils/DataStorage'
 // Images
 import TotemButtonLogo from './assets/totem-button-grey.png'
-import { findInput } from './components/FormBuilder'
 
 export class App extends ReactiveComponent {
 	constructor() {
 		super([], {
 			ensureRuntime: runtimeUp,
 			isMobile: layoutBond.map(layout => layout === 'mobile'),
-			layout: layoutBond,
 		})
 		this.state = {
-			sidebarItems,
 			sidebarCollapsed: false,
 			sidebarVisible: getLayout() !== 'mobile',
 			status: {}
 		}
 
-		nodeService().status.notify(() => this.setState({ status: nodeService().status._value }) | console.log('status changed'))
+		nodeService().status.notify(() => {
+			const status = nodeService().status._value
+			// prevent unnecessary state update
+			if (this.state.status.error && status.error) return
+			this.setState({ status })
+		})
 
 		// For debug only.
 		window.runtime = runtime
@@ -53,8 +55,6 @@ export class App extends ReactiveComponent {
 		window.DataStorage = DataStorage
 	}
 
-	// componentWillMount = () => layoutBond.tie(layout => this.setState({ isMobile: layout === 'mobile' }))
-
 	// unused
 	// hack to format as a currency. Needs to go in a seperate Display Formatting Utilities file.
 	round(value, decimals) {
@@ -62,15 +62,6 @@ export class App extends ReactiveComponent {
 	}
 
 	handleSidebarToggle = (v, c) => this.setState({ sidebarVisible: v, sidebarCollapsed: c })
-
-	toggleMenuItem = name => {
-		const { sidebarItems } = this.state
-		const item = findInput(sidebarItems, name)
-		setActive(name, !item.active)
-		this.setState({ sidebarItems })
-	}
-
-	handleClose = name => setActive(name, false) | this.setState({ sidebarItems })
 
 	unreadyRender() {
 		const { status } = this.state
@@ -84,14 +75,13 @@ export class App extends ReactiveComponent {
 	}
 
 	readyRender() {
-		const { isMobile, layout, sidebarCollapsed, sidebarItems, sidebarVisible } = this.state
-		const { handleClose, handleSidebarToggle, toggleMenuItem } = this
-		const { spaceBelow, mainContent, mainContentCollapsed } = styles
+		const { isMobile, sidebarCollapsed, sidebarVisible } = this.state
+		const { mainContent, mainContentCollapsed } = styles
 		const logoSrc = TotemButtonLogo
 		const classNames = [
 			sidebarVisible ? 'sidebar-visible' : '',
 			sidebarCollapsed ? 'sidebar-collapsed' : '',
-			layout,
+			isMobile ? 'mobile' : 'desktop',
 		].filter(Boolean).join(' ')
 
 		if (!this.resumed) {
@@ -108,7 +98,7 @@ export class App extends ReactiveComponent {
 					<PageHeader
 						logoSrc={logoSrc}
 						isMobile={isMobile}
-						onSidebarToggle={handleSidebarToggle}
+						onSidebarToggle={this.handleSidebarToggle}
 						sidebarCollapsed={sidebarCollapsed}
 						sidebarVisible={sidebarVisible}
 					/>
@@ -122,9 +112,7 @@ export class App extends ReactiveComponent {
 					<SidebarLeft
 						collapsed={isMobile ? false : sidebarCollapsed}
 						isMobile={isMobile}
-						items={sidebarItems}
-						onMenuItemClick={toggleMenuItem}
-						onSidebarToggle={handleSidebarToggle}
+						onSidebarToggle={this.handleSidebarToggle}
 						visible={isMobile ? sidebarVisible : true}
 					/>
 
@@ -136,12 +124,7 @@ export class App extends ReactiveComponent {
 						fluid
 						style={sidebarCollapsed ? mainContentCollapsed : mainContent}
 					>
-
-						{sidebarItems.filter(x => !x.hidden).map((item, i) => (
-							<div ref={item.elementRef} key={i} hidden={!item.active} style={spaceBelow}>
-								<ContentSegment {...item} onClose={handleClose} />
-							</div>
-						))}
+						{sidebarItems.map(({ name }, i) => <SidebarItemContent key={i + name} name={name} />)}
 					</Sidebar.Pusher>
 				</Sidebar.Pushable>
 			</div >
@@ -170,7 +153,4 @@ const styles = {
 		overflow: 'hidden',
 		WebkitOverflow: 'hidden',
 	},
-	spaceBelow: {
-		marginBottom: 15
-	}
 }

@@ -1,7 +1,6 @@
 import React from 'react'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
-import DataStorage from '../utils/DataStorage'
 // Components
 import TransferForm from '../forms/Transfer'
 import IdentityList from '../lists/IdentityList'
@@ -12,14 +11,16 @@ import UtilitiesView from '../views/UtilitiesView'
 import TimeKeepingView from '../views/TimeKeepingView'
 // temp
 import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
+// utils
+import DataStorage from '../utils/DataStorage'
 import { isBool, isBond } from '../utils/utils'
 import { findInput as findItem } from '../components/FormBuilder'
-// services
-import { getLayout } from './window'
 
 // store items' "active" status in the localStorage
 const statuses = new DataStorage('totem_sidebar-items-status')
+export const allInactiveBond = new Bond().defaultTo(false)
 export const gsName = 'getting-started'
+export const sidebarItemNames = []
 export const sidebarItems = [
     {
         active: true,
@@ -89,8 +90,6 @@ export const sidebarItems = [
         title: 'Project Module',
     },
     {
-        // indicates contentArgs is variable and forces content to be re-rendered
-        bond: new Bond().defaultTo(uuid.v1()),
         content: TimeKeepingView,
         contentArgs: {},
         icon: 'clock outline',
@@ -164,15 +163,19 @@ export const sidebarItems = [
 ].map(item => {
     const {
         active = false,
+        // indicates contentArgs is variable and forces content to be re-rendered
+        bond = new Bond().defaultTo(uuid.v1()),
         contentProps = {},
         title,
         // use title if name not provided
         name = title
     } = item
     const activeX = statuses.get(name)
+    sidebarItemNames.push(name)
     return {
         ...item,
         active: isBool(activeX) ? activeX : active,
+        bond,
         contentProps,
         name,
         // used for auto scrolling to element
@@ -180,35 +183,53 @@ export const sidebarItems = [
     }
 })
 
-// store/replace localStorage data
-// adds new and removes any item that's no longer being used (eg: name changed)
-statuses.setAll(sidebarItems.reduce((map, { active, name }) => map.set(name, active), new Map()))
-// if all items are inactive show getting started module
-sidebarItems.every(x => x.hidden || !x.active) && setActive(gsName)
-
 export const getItem = name => findItem(sidebarItems, name)
 
-export const setActive = (name, active = true, hidden) => {
+export const setActive = (name, active = true, contentProps, hidden) => {
     const item = findItem(sidebarItems, name)
     if (!item) return
     item.active = active
     item.hidden = isBool(hidden) ? hidden : item.hidden
+    item.contentProps = { ...item.contentProps, ...contentProps }
     statuses.set(name, active)
+    item.bond.changed(uuid.v1())
+    allInactiveBond.changed(sidebarItems.every(({ active, hidden }) => !active || hidden))
+
+    scrollTo(name)
+    return item
+}
+
+export const setContentProps = (name, props = {}, scrollToItem = true) => {
+    const item = findItem(sidebarItems, name)
+    if (!item) return
+
+    if (!item.active) return setActive(name, true, props)
+    Object.keys(props).forEach(key => item.contentProps[key] = props[key])
+    isBond(item.bond) && item.bond.changed(uuid.v1())
+
+    scrollToItem && scrollTo(name)
+    return item
+}
+
+export const scrollTo = name => {
+    const item = getItem(name)
+    const totalActive = sidebarItems.filter(x => x.active && !x.hidden).length
+    if (!item || !item.active || item.hidden || totalActive <= 1) return
     // Scroll down to the content segment if more than one item active
-    item.active && sidebarItems.filter(x => x.active && !x.hidden).length > 1 && setTimeout(() => {
+    setTimeout(() => {
         const elRef = item.elementRef
-        const isMobile = getLayout() === 'mobile'
         if (!elRef || !elRef.current) return
         document.getElementById('main-content').scrollTo(0,
-            elRef.current.offsetTop - (isMobile ? 75 : 0)
+            elRef.current.offsetTop - 15
         )
     }, 100)
     return item
 }
 
-export const setContentProps = (name, props = {}) => {
-    const item = findItem(sidebarItems, name)
-    if (!item) return
-    Object.keys(props).forEach(key => item.contentProps[key] = props[key])
-    isBond(item.bond) && item.bond.changed(uuid.v1())
-}
+export const toggleActive = name => setActive(name, !(getItem(name) || {}).active)
+
+// store/replace localStorage data
+// adds new and removes any item that's no longer being used (eg: name changed)
+statuses.setAll(sidebarItems.reduce((map, { active, name }) => map.set(name, active), new Map()))
+// if all items are inactive show getting started module
+sidebarItems.every(x => x.hidden || !x.active) && setActive(gsName)

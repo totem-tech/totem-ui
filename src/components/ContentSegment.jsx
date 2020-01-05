@@ -2,13 +2,15 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Divider, Header, Icon, Placeholder, Rail, Segment } from 'semantic-ui-react'
 import ErrorBoundary from './CatchReactErrors'
-import { isBond, isFn } from '../utils/utils'
+import { isBond, isFn, isObj } from '../utils/utils'
 
 export default class ContentSegment extends Component {
 	constructor(props) {
 		super(props)
+
 		this.state = {
-			hideContent: false,
+			content: this.getContent(props),
+			contentArgs: props.contentArgs,
 			showSubHeader: false,
 		}
 	}
@@ -18,8 +20,14 @@ export default class ContentSegment extends Component {
 		const { bond } = this.props
 		if (!isBond(bond)) return
 		this.tieId = bond.tie(() => {
-			this.setState({ hideContent: true })
-			setTimeout(() => this.setState({ hideContent: false }), 100)
+			const { contentArgs: argsS } = this.state
+			const { contentArgs: argsP } = this.props
+			const content = this.getContent()
+			// if arguments changed then force re-render
+			const doReRender = isObj(argsP) && JSON.stringify(argsS) === JSON.stringify(argsP)
+			this.setState({ content: doReRender ? '' : content, contentArgs: argsP })
+
+			doReRender && setTimeout(() => this.setState({ content }))
 		})
 	}
 
@@ -27,6 +35,12 @@ export default class ContentSegment extends Component {
 		this._mounted = false
 		const { bond } = this.props
 		isBond(bond) && bond.untie(this.tieId)
+	}
+
+	getContent = props => {
+		const { content, contentProps } = props || this.props
+		const ContentEl = isFn(content) ? content : undefined
+		return (!!ContentEl ? <ContentEl {...contentProps} /> : content) || placeholder
 	}
 
 	toggleSubHeader = () => this.setState({ showSubHeader: !this.state.showSubHeader })
@@ -37,8 +51,6 @@ export default class ContentSegment extends Component {
 			basic,
 			color,
 			compact,
-			content,
-			contentProps,
 			contentPadding,
 			header,
 			headerDivider,
@@ -55,9 +67,8 @@ export default class ContentSegment extends Component {
 			title,
 			vertical,
 		} = this.props
-		const { hideContent, showSubHeader } = this.state
+		const { content, showSubHeader } = this.state
 		const headerText = header || title
-		const ContentEl = isFn(content) ? content : undefined
 
 		return !active ? '' : (
 			<Segment
@@ -116,11 +127,7 @@ export default class ContentSegment extends Component {
 				{!!headerText && !!headerDivider && <Divider hidden={!!headerDividerHidden} />}
 
 				<div style={{ padding: contentPadding || 0 }}>
-					<ErrorBoundary>
-						{!hideContent && (
-							!content ? placeholder : !!ContentEl ? <ContentEl {...contentProps} /> : content
-						)}
-					</ErrorBoundary>
+					<ErrorBoundary>{content}</ErrorBoundary>
 				</div>
 			</Segment>
 		)
