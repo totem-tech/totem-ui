@@ -5,7 +5,7 @@ import { copyToClipboard, textEllipsis, textCapitalize } from '../utils/utils'
 import { formatStrTimestamp } from '../utils/time'
 // components
 import DataTable from '../components/DataTable'
-import TimeKeepingInviteList from '../lists/TimeKeepingInviteList'
+import ProjectTeamList from '../lists/ProjectTeamList'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 import ProjectForm from '../forms/Project'
 import ReassignProjectForm from '../forms/ProjectReassign'
@@ -13,7 +13,7 @@ import ReassignProjectForm from '../forms/ProjectReassign'
 import { confirm, showForm, closeModal } from '../services/modal'
 import { addToQueue } from '../services/queue'
 import projectService, { getProjects, getProjectsBond, openStatuses, statusCodes } from '../services/project'
-import { getItem, setActive, setContentProps } from '../services/sidebar'
+import { setContentProps } from '../services/sidebar'
 import { layoutBond, getLayout } from '../services/window'
 
 const toBeImplemented = () => alert('To be implemented')
@@ -351,7 +351,7 @@ export default class ProjectList extends Component {
     showTeam = (hash, projectName) => confirm({
         cancelButton: wordsCap.close,
         confirmButton: null,
-        content: <TimeKeepingInviteList projectHash={hash} />,
+        content: <ProjectTeamList projectHash={hash} />,
         header: texts.projectTeam + projectName,
     })
 

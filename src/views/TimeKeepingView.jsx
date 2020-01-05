@@ -5,7 +5,6 @@ import { arrSort, isObj, textCapitalize } from '../utils/utils'
 import ContentSegment from '../components/ContentSegment'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import ProjectTimeKeepingList from '../lists/TimeKeepingList'
-// import TimeKeepingInviteList from '../lists/TimeKeepingInviteList'
 import TimeKeepingSummary from '../lists/TimeKeepingSummary'
 import { getSelected } from '../services/identity'
 import { getProjects, getProjectsBond } from '../services/timeKeeping'
@@ -137,11 +136,6 @@ export default class TimeKeepingView extends Component {
             content: <ProjectTimeKeepingList {...recordListProps} />,
             key: 'ProjectTimeKeepingList' + JSON.stringify(recordListProps),
         })
-        // if (!loading && showInvites) contents.push({
-        //     content: <TimeKeepingInviteList {...{ projectHash }} />,
-        //     header: wordsCap.invitations,
-        //     key: 'TimeKeepingInviteList' + projectHash,
-        // })
         if (showSummary) contents.push({
             content: <TimeKeepingSummary />,
             header: texts.myTimeKeepingSummary,

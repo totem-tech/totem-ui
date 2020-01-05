@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { Button } from 'semantic-ui-react'
-import { ButtonAcceptOrReject, UserID } from '../components/buttons'
+import { ButtonAcceptOrReject } from '../components/buttons'
 import DataTable from '../components/DataTable'
 import { textCapitalize } from '../utils/utils'
 import PartnerForm from '../forms/Partner'
@@ -17,16 +17,17 @@ const words = {
     invite: 'invite',
     invited: 'invited',
     status: 'status',
-    worker: 'worker',
+    team: 'team',
 }
 const wordsCap = textCapitalize(words)
 const texts = {
+    addPartner: 'Add Partner',
     selectProject: 'Select a project to view invites',
     userId: 'User ID',
     unknownUser: 'Unknown user',
 }
 
-export default class TimeKeepingInviteList extends ReactiveComponent {
+export default class ProjectTeamList extends ReactiveComponent {
     constructor(props) {
         super(props)
 
@@ -34,7 +35,7 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
             listProps: {
                 columns: [
                     // { key: '_userId', title: texts.userId },
-                    { key: 'name', title: wordsCap.worker },
+                    { key: 'name', title: wordsCap.team },
                     { key: '_status', textAlign: 'center', title: wordsCap.status },
                 ],
                 data: [],
@@ -45,7 +46,7 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
                     onClick: () => showForm(TimeKeepingInviteForm, {
                         onSubmit: success => success && this.loadWorkers(),
                         values: { projectHash: this.props.projectHash }
-                    }) | console.log({ projectHash: this.props.projectHash })
+                    })
                 }]
             },
             searchExtraKeys: ['userId', 'status']
@@ -102,7 +103,7 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
                 // invite._userId = !userId ? texts.unknownUser : <UserID {...{ userId }} />
                 invite.name = name || (
                     <Button
-                        content='Add Partner'
+                        content={texts.addPartner}
                         onClick={() => showForm(PartnerForm, { values: { address } })}
                     />
                 )
@@ -122,6 +123,6 @@ export default class TimeKeepingInviteList extends ReactiveComponent {
         return <DataTable {...listProps} />
     }
 }
-TimeKeepingInviteList.propTypes = {
+ProjectTeamList.propTypes = {
     projectHash: PropTypes.string,
 }
