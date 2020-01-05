@@ -17,6 +17,10 @@ const texts = {
     registrationComplete: 'Registration complete',
     registrationFailed: 'Registration failed',
     userId: 'User ID',
+    userIdCriteria: 'Please enter an User ID that meets the following criteria:',
+    userIdCriteria1: 'contains only alphanumeric characters',
+    userIdCriteria2: 'starts with an alphabet',
+    userIdCriteria3: 'contains minimun 3 characters',
     userIdPlaceholder: 'Enter your desired ID',
     welcomeMsg: 'Welcome to the Totem trollbox. Please be nice.',
 }
@@ -32,6 +36,20 @@ export default class FormRegister extends ReactiveComponent {
             inputs: [
                 {
                     label: texts.userId,
+                    message: {
+                        content: (
+                            <div>
+                                {texts.userIdCriteria}
+                                <ul>
+                                    <li>{texts.userIdCriteria1}</li>
+                                    <li>{texts.userIdCriteria2}</li>
+                                    <li>{texts.userIdCriteria3}</li>
+                                </ul>
+                            </div>
+                        ),
+                        status: 'warning',
+                        style: { textAlign: 'left' },
+                    },
                     name: 'userId',
                     newUser: true,
                     placeholder: texts.userIdPlaceholder,

@@ -33,6 +33,7 @@ const noAttrsTextField = [
 ]
 const invalidIcon = { color: 'red', name: 'warning circle', size: 'large' }
 const validIcon = { color: 'green', name: 'check circle', size: 'large' }
+const userIdRegex = /^[a-z][a-z0-9]+$/
 // eliminates any characters that are not allowed, including digits at the beginning
 export const getId = str => str.toLowerCase().replace(/(^[0-9]+)|[^a-z0-9]/gi, '')
 
@@ -52,6 +53,8 @@ export default class UserIdInput extends Component {
             value: '',
             useInput: true,
         }
+
+        // use dropdown
         if (multiple || includePartners || options) input = {
             additionLabel: `${wordsCap.add} @`,
             allowAdditions,
@@ -185,7 +188,7 @@ export default class UserIdInput extends Component {
     handleSearchChange = (_, { searchQuery: q }) => this.setState({ searchQuery: getId(q) })
 
     validateTextField = (e, data) => new Promise(resolve => {
-        data.value = getId(data.value)
+        data.value = data.value.toLowerCase()
         const { value } = data
         const { excludeOwnId, newUser, onChange } = this.props
         const isOwnId = excludeOwnId && (getUser() || {}).id === value
@@ -202,6 +205,8 @@ export default class UserIdInput extends Component {
             })
         }
         if (isOwnId || value.length < 3) return triggerChagne(true) | resolve(isOwnId ? texts.ownIdEntered : true)
+        const valid = userIdRegex.test(value)
+        if (!valid) return triggerChagne(true) | resolve(true)
 
         client.idExists(value, exists => {
             const invalid = newUser ? exists : !exists

@@ -509,18 +509,16 @@ export const newMessage = message => {
 	if (showIcon) {
 		icon = icons[status]
 	}
-
-	if (isStr(icon)) {
-		icon = { name: icon }
-	}
+	icon = !isStr(icon) ? icon : { name: icon }
+	style = icon ? style : { textAlign: 'center', width: '100%', ...style }
 
 	return (
 		<Message
 			{...(objWithoutKeys(message, ['showIcon']))}
 			error={status === 'error'}
-			icon={icon && <Icon {...icon} style={objCopy({ width: 42 }, icon.style, true)} />}
+			icon={icon && <Icon {...icon} style={{ width: 42, ...icon.style }} />}
 			info={status === 'info'}
-			style={objCopy(!icon && { textAlign: 'center', width: '100%' }, style)}
+			style={style}
 			success={status === 'success'}
 			visible={!!status}
 			warning={['warning', 'loading'].indexOf(status) >= 0}
