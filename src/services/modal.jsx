@@ -3,10 +3,19 @@ import uuid from 'uuid'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { Confirm } from 'semantic-ui-react'
-import { isDefined, isFn, isStr } from '../utils/utils'
+import { isBool, isDefined, isFn, isStr, textCapitalize } from '../utils/utils'
+
 const modals = new Map()
 // Use Bond as a way to trigger update to the ModalService component
 const trigger = new Bond()
+const words = {
+    ok: 'ok',
+    cancel: 'cancel',
+}
+const wordsCap = textCapitalize(words)
+const texts = {
+    areYouSure: 'Are you sure?'
+}
 
 export default class ModalService extends ReactiveComponent {
     constructor() {
@@ -39,15 +48,28 @@ export const closeModal = (id, delay = 0) => setTimeout(() => modals.delete(id) 
 // @id              string : random id assigned to the modal. Can be used to remove using the remove function
 export const confirm = (confirmProps, id) => {
     id = id || uuid.v1()
-    const { content, open, onCancel, onConfirm } = confirmProps
+    let { cancelButton, confirmButton, content, open, onCancel, onConfirm } = confirmProps
+    if (!cancelButton && cancelButton !== null) {
+        cancelButton = wordsCap.cancel
+    }
+    if (!confirmButton && confirmButton !== null) {
+        confirmButton = wordsCap.ok
+    }
+    if (!content && content !== null) {
+        content = texts.areYouSure
+    }
     return add(
         id,
         <Confirm
             {...confirmProps}
-            content={content && <div className="content">{content}</div>}
-            open={isDefined(open) ? open : true}
-            onCancel={(e, d) => closeModal(id) | (isFn(onCancel) && onCancel(e, d))}
-            onConfirm={(e, d) => closeModal(id) | (isFn(onConfirm) && onConfirm(e, d))}
+            {...{
+                cancelButton,
+                confirmButton,
+                content: content && <div className="content">{content}</div>,
+                open: isBool(open) ? open : true,
+                onCancel: (e, d) => closeModal(id) | (isFn(onCancel) && onCancel(e, d)),
+                onConfirm: (e, d) => closeModal(id) | (isFn(onConfirm) && onConfirm(e, d)),
+            }}
         />
     )
 }
