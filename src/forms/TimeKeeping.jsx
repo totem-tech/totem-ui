@@ -553,7 +553,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     const { values: { inprogress } } = this.state
                     const doCancel = () => this.handleReset(false) | isFn(onClose) && onClose(e, d)
                     !inprogress ? doCancel() : confirm({
-                        cancelButton: noContinueTimer,
+                        cancelButton: texts.noContinueTimer,
                         confirmButton: wordsCap.yes,
                         content: texts.cancelWarning,
                         header: texts.areYouSure,
