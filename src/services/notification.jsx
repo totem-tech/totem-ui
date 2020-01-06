@@ -174,13 +174,15 @@ export default class NotificationDropdown extends ReactiveComponent {
                                 break
                             case 'time_keeping:invitation': // data => { projectHash, projectName, workerAddress }
                                 // wrong user id used to send invitation. address does not belong to user
-                                if (!identityService.find(data.workerAddress)) return remove(id)
+                                const identity = identityService.find(data.workerAddress)
+                                if (!identity) return remove(id)
                                 msg.header = undefined
                                 msg.icon.name = 'clock outline'
                                 msg.content = (
                                     <div>
-                                        {userIdBtn} invited you to start booking time on project:
-                                        <b> {data.projectName}</b>
+                                        {userIdBtn} invited you to start booking time.<br />
+                                        Your identity: <b>{identity.name}</b><br />
+                                        Project: <b>{data.projectName}</b><br />
                                         <ButtonAcceptOrReject
                                             onClick={accepted => confirm({
                                                 onConfirm: () => handleTKInvitation(
