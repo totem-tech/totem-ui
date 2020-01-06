@@ -88,8 +88,7 @@ export default class PartnerList extends ReactiveComponent {
 
 	getActions(partner) {
 		const { address, name, userId } = partner
-		const introduce = userId => showForm(IntroduceUserForm, { values: { userId } })
-		const updatePartner = onSubmit => () => showForm(PartnerForm, {
+		const updatePartnerCb = onSubmit => () => showForm(PartnerForm, {
 			onSubmit,
 			size: 'tiny',
 			values: partner,
@@ -99,12 +98,13 @@ export default class PartnerList extends ReactiveComponent {
 				<Button
 					icon='handshake'
 					onClick={() => {
+						const introduce = userId => showForm(IntroduceUserForm, { values: { userId } })
 						if (!!userId) return introduce(userId)
 
 						confirm({
 							content: texts.partnerNoUserIdConfirmMsg,
 							header: texts.partnerNoUserIdConfirmHeader,
-							onConfirm: updatePartner((success, { userId }) => success && introduce(userId)),
+							onConfirm: updatePartnerCb((success, { userId }) => success && introduce(userId)),
 							size: 'tiny',
 						})
 					}}
@@ -112,14 +112,14 @@ export default class PartnerList extends ReactiveComponent {
 				/>
 				<Button
 					icon='pencil'
-					onClick={updatePartner()}
+					onClick={updatePartnerCb()}
 					title={wordsCap.update}
 				/>
 				<Button
 					icon='trash'
 					onClick={() => confirm({
 						confirmButton: <Button negative content={wordsCap.delete} />,
-						content: <p>{partnerName}: <b>{name}</b></p>,
+						content: <p>{texts.partnerName}: <b>{name}</b></p>,
 						header: texts.removePartner,
 						onConfirm: () => addressbook.remove(address),
 						size: 'mini',
