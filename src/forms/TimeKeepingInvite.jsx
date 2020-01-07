@@ -5,10 +5,11 @@ import { ReactiveComponent } from 'oo7-react'
 import { Button } from 'semantic-ui-react'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import PartnerForm from '../forms/Partner'
-import { getProjects, openStatuses } from '../services/project'
 import { getUser } from '../services/ChatClient'
-import partners from '../services/partners'
+import identities, { getSelected } from '../services/identity'
 import { showForm } from '../services/modal'
+import partners from '../services/partners'
+import { getProjects, openStatuses } from '../services/project'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import timeKeeping from '../services/timeKeeping'
 import { isFn, arrSort } from '../utils/utils'
@@ -49,26 +50,20 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
                     search: ['text', 'value', 'description'],
                     selection: true,
                     type: 'dropdown',
-                    validate: (_, { value }) => {
-                        if (!value) return
-                        const { userId } = partners.get(value)
-                        const isOwnId = (getUser() || {}).id === userId
-                        return !isOwnId ? null : 'You cannot invite yourself'
-                    },
                 },
                 {
                     content: 'Add New Partner',
                     icon: 'plus',
                     name: 'addpartner',
                     onClick: () => showForm(PartnerForm, {
-                        onSubmit: (_, { address }) => {
-                            const { inputs } = this.state
-                            findInput(inputs, 'workerAddress').bond.changed(address)
+                        onSubmit: (success, { address }) => {
+                            // once partner created update the input with newly created partner's address
+                            success && findInput(this.state.inputs, 'workerAddress').bond.changed(address)
                         }
                     }),
                     fluid: true,
                     type: 'button',
-                }
+                },
             ]
         }
     }
@@ -84,6 +79,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
         this.tieId = partners.bond.tie(() => {
             const { inputs } = this.state
             const partnerIn = findInput(inputs, 'workerAddress')
+            const { address, name } = getSelected()
             // populate partner's list
             partnerIn.options = arrSort(
                 Array.from(partners.getAll()).map(([address, { name, userId }]) => ({
@@ -91,7 +87,13 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
                     key: address,
                     text: name,
                     value: address
-                })),
+                })).concat({
+                    // add selected identity so that project owner can invite themself
+                    description: 'Myself',
+                    key: address + name,
+                    text: name,
+                    value: address,
+                }),
                 'text'
             )
             this.setState({ inputs })
@@ -112,8 +114,6 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
                     })),
                 'text'
             )
-            console.log({ options: proIn.options })
-
             proIn.invalid = proIn.options.length === 0
             proIn.message = !proIn.invalid ? null : {
                 content: 'You must have one or more active projects',
@@ -135,9 +135,11 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
         const partnerIn = findInput(inputs, 'workerAddress')
         const partner = partners.get(workerAddress)
         const { userId } = partner
-        partnerIn.invalid = !userId
-        partnerIn.loading = !!(userId && projectHash && workerAddress)
-        partnerIn.message = !!userId ? null : {
+        // do not require user id if selected address belongs to user
+        const requireUserId = !identities.get(workerAddress) && !userId
+        partnerIn.invalid = requireUserId
+        partnerIn.loading = !!projectHash && !!workerAddress && !requireUserId
+        partnerIn.message = !requireUserId ? null : {
             content: (
                 <p>
                     Selected partner does not include an User ID. <br />
@@ -157,22 +159,24 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             status: 'error'
         }
         this.setState({ inputs })
+        if (!partnerIn.loading) return
 
         // check if partner is already invited or accepted
-        partnerIn.loading && timeKeeping.worker.accepted(projectHash, workerAddress).then(accepted => {
+        timeKeeping.worker.accepted(projectHash, workerAddress).then(accepted => {
+            /*
+             * accepted values:
+             * null => not yet invited or rejected
+             * true => invited and already accepted
+             * false => invited but hasn't responded
+             */
             partnerIn.loading = false
-            if (accepted) {
-                partnerIn.invalid = true
-                partnerIn.message = {
-                    content: 'Partner already accepted invitation to selected project',
-                    status: 'error'
-                }
-            } else if (accepted === false) {
-                // invited but hasn't accepted yet
-                partnerIn.message = {
-                    content: 'Partner has already been invited to selected project',
-                    status: 'warning'
-                }
+            // allows (re-)invitation if user hasn't accepted (!== true) invitation
+            partnerIn.invalid = !!accepted
+            if (accepted === null) return this.setState({ inputs })
+
+            partnerIn.message = {
+                content: accepted ? 'Partner already accepted invitation to selected project' : 'Partner has already been invited to selected project',
+                status: accepted ? 'error' : 'warning'
             }
             this.setState({ inputs })
         })
@@ -184,57 +188,75 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
         const { projectHash, workerAddress } = values
         const { project } = findInput(inputs, 'projectHash').options.find(x => x.value === projectHash)
         const { name: projectName, ownerAddress } = project
-        const { name, userId } = partners.get(workerAddress)
+        const ownIdentity = identities.get(workerAddress)
+        const { name, userId } = ownIdentity || partners.get(workerAddress)
         this.setState({
             submitDisabled: true,
             loading: true,
             message: {
-                content: 'Invitation request has been added to background queue. You will be notified shortly of the progress.',
+                content: 'Invitation request has been added to background queue',
                 header: 'Added to queue',
-                showIcon: 'true',
-                status: 'success'
+                showIcon: true,
+                status: 'loading'
             }
         })
 
-        const queueProps = {
+        const acceptOwnInvitationTask = {
+            address: workerAddress, // for automatic balance check 
+            type: QUEUE_TYPES.BLOCKCHAIN,
+            func: 'timeKeeping_worker_accept',
+            args: [projectHash, workerAddress, true],
+            title: 'Time Keeping - accept own invitation',
+            description: 'Identity: ' + name,
+            then: success => {
+                this._mounted && this.setState({
+                    submitDisabled: false,
+                    loading: false,
+                    success,
+                    message: {
+                        header: success ? 'Invitated and accepted successfully' : 'Transaction failed',
+                        showIcon: true,
+                        status: success ? 'success' : 'error'
+                    }
+                })
+                isFn(onSubmit) && onSubmit(success, values)
+            },
+        }
+        const notifyWorkerTask = {
+            type: QUEUE_TYPES.CHATCLIENT,
+            func: 'notify',
+            args: [
+                [userId],
+                notificationType,
+                childType,
+                null,
+                { projectHash, projectName, workerAddress },
+                err => {
+                    this._mounted && this.setState({
+                        submitDisabled: false,
+                        loading: false,
+                        success: !err,
+                        message: {
+                            header: !err ? 'Invitation sent!' : 'Invitation sent but failed to notify user!',
+                            content: err || '',
+                            showIcon: true,
+                            status: !err ? 'success' : 'warning',
+                        }
+                    })
+                    isFn(onSubmit) && onSubmit(!err, values)
+                }
+            ],
+        }
+
+        addToQueue({
             address: ownerAddress, // for balance check
             type: QUEUE_TYPES.BLOCKCHAIN,
             func: 'timeKeeping_worker_add',
             args: [projectHash, ownerAddress, workerAddress],
             title: 'Time Keeping - Invite Worker',
             description: 'Invitee: ' + name,
-            then: console.log,
-            next: {
-                type: QUEUE_TYPES.CHATCLIENT,
-                func: 'notify',
-                args: [
-                    [userId],
-                    notificationType,
-                    childType,
-                    null,
-                    { projectHash, projectName, workerAddress },
-                    err => {
-                        this._mounted && this.setState({
-                            submitDisabled: false,
-                            loading: false,
-                            success: !err,
-                            message: !err ? {
-                                content: 'Notification containing an invitation has been sent to the selected partner',
-                                header: 'Invitation sent!',
-                                showIcon: true,
-                                status: 'success',
-                            } : {
-                                    header: 'Notification Failed!',
-                                    content: 'Blockchain invitation sent but failed to notify user. Error: ' + err,
-                                    showIcon: true,
-                                    status: 'warning',
-                                }
-                        })
-                        isFn(onSubmit) && onSubmit(!err, values)
-                    }],
-            }
-        }
-        addToQueue(queueProps)
+            next: !!ownIdentity ? acceptOwnInvitationTask : notifyWorkerTask
+        })
     }
 
     render() {

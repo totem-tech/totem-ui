@@ -1,6 +1,7 @@
 
 import React from 'react'
 import PropTypes from 'prop-types'
+import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { chain } from 'oo7-substrate'
 import { Button, Icon } from 'semantic-ui-react'
@@ -45,10 +46,8 @@ const words = {
 }
 const wordsCap = textCapitalize(words)
 const texts = {
-    acceptingSelfInvite: 'Time Keeping - accepting self invite',
     addedToQueue: 'Added to queue',
     areYouSure: 'Are you sure?',
-    areYouSureInviteSelf: 'Are you sure you want to invite yourself?',
     blockCount: 'Block Count',
     cancelWarning: 'You have a running timer. Would you like to stop and exit?',
     checkingProjectStatus: 'Checking project status...',
@@ -57,13 +56,11 @@ const texts = {
     inactiveWorkerHeader1: 'Uninvited project selected!',
     inactiveWorkerHeader2: 'Action required',
     inactiveWorkerMsg1: 'Please select a project you have been invited to and already accepted.',
-    inactiveWorkerMsg2: 'You are the owner of the selected project. Would you like to invite yourself?',
     inactiveWorkerMsg3: 'You are yet to accept/reject invitation for this project.',
     inactiveProjectSelected: 'Inactive project selected!',
     invalidDuration: 'Invalid duration',
     invalidDurationMsgPart1: 'Please enter a valid duration in the following format:',
     invalidDurationMsgPart2: 'Seconds must be in increments of 5',
-    inviteMyself: 'Time Keeping - inviting myself',
     manuallyEnterDuration: 'Manually enter duration',
     noContinueTimer: 'No, continue timer',
     noProjectsMsg: 'Create a new project or ask to be invited',
@@ -75,7 +72,6 @@ const texts = {
     resumeTimeWarning: 'Would you like to resume timer?',
     selectAProject: 'Select a project',
     selectActiveProject: 'Please select an active project',
-    selfInviteSuccessMsg: 'The invitation requires two blockchain transactions which has been queued. It may take a while to complete the process. You may close the modal for now.',
     submitConfirmationMsg: 'Please vefiry the following information and click "Proceed" to submit',
     submitTime: 'Submit time',
     timerStarted: 'Timer started',
@@ -83,6 +79,7 @@ const texts = {
     timerRunningMsg: 'You may now close the dialog and come back to it anytime by clicking on the clock icon in the header.',
     tkNewRecord: 'Time Keeping - New Record',
     transactionFailed: 'Blockchain transaction failed!',
+    workerBannedMsg: 'Permission denied',
 }
 
 function handleDurationChange(e, formValues, i) {
@@ -181,10 +178,12 @@ export default class TimeKeepingForm extends ReactiveComponent {
 
         this.state = {
             message: {},
+            submitDisabled: false,
             values,
             inputs: [
                 {
                     bond: new Bond(),
+                    clearable: true,
                     disabled: projectHashSupplied,
                     inline: true,
                     label: wordsCap.project,
@@ -265,130 +264,58 @@ export default class TimeKeepingForm extends ReactiveComponent {
         getProjectsBond.untie(this.tieIdProjects)
     }
 
-    getWorkerInActiveMsg = (projectHash, invited, isOwner, ownerAddress, workerAddress) => ({
-        content: (
-            <div>
-                {!isOwner ? texts.inactiveWorkerMsg1 : invited ? (
-                    // user has been invited to project but hasn't responded yet
-                    <div>
-                        {texts.inactiveWorkerMsg3} <br />
-                        <ButtonAcceptOrReject onClick={ok => handleTKInvitation(projectHash, workerAddress, ok)} />
-                    </div>
-                ) : (
-                        // user is the owner of the project but hasn't invited themselves yet
-                        <div>
-                            {texts.inactiveWorkerMsg2} <br />
-                            <Button
-                                positive
-                                compact
-                                size="tiny"
-                                content={wordsCap.yes}
-                                onClick={() => {
-                                    const { name } = (findInput(this.state.inputs, 'projectHash').options
-                                        .find(option => option.value === projectHash) || {}).project || {}
-                                    this.inviteSelf(projectHash, name, ownerAddress, workerAddress)
-                                }}
-                            />
-                        </div>
-                    )}
-            </div>
-        ),
-        header: invited ? texts.inactiveWorkerHeader2 : texts.inactiveWorkerHeader1,
-        showIcon: true,
-        status: 'error',
-    })
-
     // check if project is active (status = open or reopened)
     handleProjectChange(_, values, index) {
         const { projectHash } = values
         const { inputs } = this.state
-        const projectInactiveMsg = {
-            content: texts.selectActiveProject,
-            header: texts.inactiveProjectSelected,
-            showIcon: true,
-            status: 'error',
-        }
+        if (!projectHash) return
 
         inputs[index].loading = true
-        inputs[index].message = !projectHash ? null : {
+        inputs[index].message = {
             content: texts.checkingProjectStatus,
             showIcon: true,
             status: 'loading',
         }
-        this.setState({ inputs })
+        this.setState({ inputs, submitDisabled: true })
 
-        if (!projectHash) return
-
+        // check if project status is open/reopened
         projectService.status(projectHash).then(statusCode => {
             const projectActive = activeStatusCodes.includes(statusCode)
             const { address: workerAddress } = getSelected()
             inputs[index].invalid = !projectActive
-            inputs[index].message = projectActive ? undefined : projectInactiveMsg
+            inputs[index].message = projectActive ? undefined : {
+                content: texts.selectActiveProject,
+                header: texts.inactiveProjectSelected,
+                showIcon: true,
+                status: 'error',
+            }
             if (!projectActive) {
                 inputs[index].loading = false
-                return this.setState({ inputs })
+                return this.setState({ inputs, submitDisabled: false })
             }
-
-            // check if user is active on the project
-            timeKeeping.worker.accepted(projectHash, workerAddress).then(workerActive => {
+            // check if worker's ban and invitation status
+            Bond.all([
+                timeKeeping.worker.accepted(projectHash, workerAddress),
+                timeKeeping.worker.banned(projectHash, workerAddress),
+            ]).then(([accepted, banned]) => {
                 inputs[index].loading = false
-                inputs[index].invalid = !workerActive
-                const project = (findInput(inputs, 'projectHash').options
-                    .find(option => option.value === projectHash) || {}).project || {}
-                const isOwner = identities.get(workerAddress) && identities.get(project.ownerAddress)
-                inputs[index].message = workerActive ? undefined : this.getWorkerInActiveMsg(
-                    projectHash,
-                    workerActive === false,
-                    isOwner,
-                    project.ownerAddress,
-                    workerAddress
-                )
-                this.setState({ inputs })
-            })
-        })
-    }
-
-    // invite and accept project when both owner and worker identities belong to user
-    inviteSelf(projectHash, projectName, ownerAddress, workerAddress) {
-        const message = {
-            content: texts.selfInviteSuccessMsg,
-            header: texts.addedToQueue,
-            showIcon: true,
-            status: 'success'
-        }
-        // check if user is already invited, if invited only process acceptence
-        const queueProps = {
-            address: ownerAddress, // for automatic balance check 
-            type: QUEUE_TYPES.BLOCKCHAIN,
-            func: 'timeKeeping_worker_add',
-            args: [projectHash, ownerAddress, workerAddress],
-            title: texts.inviteMyself,
-            description: `${wordsCap.project}: ${projectName}`,
-            next: {
-                address: workerAddress, // for automatic balance check 
-                type: QUEUE_TYPES.BLOCKCHAIN,
-                func: 'timeKeeping_worker_accept',
-                args: [projectHash, workerAddress, true],
-                title: texts.acceptingSelfInvite,
-                then: success => {
-                    if (!success) return
-                    const { inputs } = this.state
-                    const projectIn = findInput(inputs, 'projectHash')
-                    projectIn.invalid = false
-                    projectIn.message = null
-                    projectIn.bond.changed(projectHash)
-                    this.setState({ inputs, message: null })
+                inputs[index].invalid = banned || !accepted // null => not invited, false => not responded/aceepted
+                const invited = accepted === false
+                inputs[index].message = banned ? texts.workerBannedMsg : accepted ? undefined : {
+                    content: !invited ? texts.inactiveWorkerMsg1 : (
+                        <div>
+                            {texts.inactiveWorkerMsg3} <br />
+                            <ButtonAcceptOrReject
+                                onClick={ok => handleTKInvitation(projectHash, workerAddress, ok)}
+                            />
+                        </div>
+                    ),
+                    header: invited ? texts.inactiveWorkerHeader2 : texts.inactiveWorkerHeader1,
+                    showIcon: true,
+                    status: 'error',
                 }
-            }
-        }
-
-        confirm({
-            cancelButton: wordsCap.no,
-            confirmButton: wordsCap.yes,
-            content: texts.areYouSureInviteSelf,
-            header: texts.inviteMyself,
-            size: 'mini',
-            onConfirm: () => addToQueue(queueProps) | this.setState({ message }),
+                this.setState({ inputs, submitDisabled: false })
+            })
         })
     }
 

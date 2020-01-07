@@ -193,15 +193,20 @@ export const worker = {
         longevity: true
     }),
     // check if worker is banned. undefined: not banned, object: banned
-    banned: (projectHash, address) => runtime.timekeeping.projectWorkersBanList(
+    banned: (projectHash, address) => runtime.timekeeping.projectWorkersBanList([
         hashToBytes(projectHash),
-        validateAddress(address)
-    ),
+        ss58Decode(address)
+    ]),
     // ban project worker
-    banWorker: (projectHash, recordHash) => runtime.timekeeping.banWorker(
-        hashToBytes(projectHash),
-        hashToBytes(recordHash)
-    ),
+    banWorker: (projectHash, ownerAddress, recordHash) => post({
+        sender: validateAddress(ownerAddress),
+        call: calls.timekeeping.banWorker(
+            hashToBytes(projectHash),
+            hashToBytes(recordHash)
+        ),
+        compact: false,
+        longevity: true
+    }),
     // workers that have been invited to but hasn't responded yet
     listInvited: projectHash => runtime.timekeeping.projectInvitesList(hashToBytes(projectHash)),
     // workers that has accepted invitation
@@ -215,6 +220,16 @@ export const worker = {
         ss58Decode(address),
         hashToBytes(projectHash)
     ]),
+    // unban project worker
+    unbanWorker: (projectHash, ownerAddress, workerAddress) => post({
+        sender: validateAddress(ownerAddress),
+        call: calls.timekeeping.banWorker(
+            hashToBytes(projectHash),
+            ss58Decode(workerAddress),
+        ),
+        compact: false,
+        longevity: true
+    }),
 }
 
 export const record = {
