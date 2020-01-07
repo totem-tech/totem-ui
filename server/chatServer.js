@@ -28,7 +28,9 @@ import { handleNotify } from './notify'
 let server, socket
 export const initChatServer = (httpsOptions, expressApp, PORT) => {
     server = https.createServer(httpsOptions, expressApp)
-    socket = socketIO.listen(server)
+    
+    // https://github.com/socketio/socket.io/issues/2276 stops setting an http cookie
+    socket = socketIO.listen(server, {cookie: false}) 
 
     socket.on('connection', client => {
         // User related handlers
