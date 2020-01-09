@@ -43,7 +43,7 @@ const texts = {
     banUsers: 'Ban Users',
     cannotBanOwnIdentity: 'You cannot ban your own identity',
     emptyMessage: 'No records available for this project. Start booking time yourself by cliking the timer button above',
-    orInviteWorkers: 'or invite workers',
+    orInviteATeamMember: 'or invite a team member',
     notProjectOwner: 'You do not own this project',
     selectedIdentitiesAlreadyBanned: 'Selected identities are already banned',
     selectProjectForRecords: 'Please select a project to view time records',
@@ -264,7 +264,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                     {msg.content + ' '}
                     <Button
                         positive
-                        content={texts.orInviteWorkers}
+                        content={texts.orInviteATeamMember}
                         onClick={() => showForm(TimeKeepingInviteForm, { values: { projectHash } })}
                     />
                 </p>

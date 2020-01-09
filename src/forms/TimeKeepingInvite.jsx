@@ -134,7 +134,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
         const { inputs } = this.state
         const partnerIn = findInput(inputs, 'workerAddress')
         const partner = partners.get(workerAddress)
-        const { userId } = partner
+        const { userId } = partner || {}
         // do not require user id if selected address belongs to user
         const requireUserId = !identities.get(workerAddress) && !userId
         partnerIn.invalid = requireUserId
@@ -253,7 +253,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             type: QUEUE_TYPES.BLOCKCHAIN,
             func: 'timeKeeping_worker_add',
             args: [projectHash, ownerAddress, workerAddress],
-            title: 'Time Keeping - Invite Worker',
+            title: 'Time Keeping - Invite Team Member',
             description: 'Invitee: ' + name,
             next: !!ownIdentity ? acceptOwnInvitationTask : notifyWorkerTask
         })
@@ -271,7 +271,7 @@ TimeKeepingInviteForm.propTypes = {
 }
 TimeKeepingInviteForm.defaultProps = {
     closeText: 'Close',
-    header: 'Time Keeping: Invite Worker',
+    header: 'Time Keeping: Invite Team Member',
     size: 'tiny',
     subheader: '',
     submitText: 'Invite',
