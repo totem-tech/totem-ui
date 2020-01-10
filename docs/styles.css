@@ -217,3 +217,9 @@ div.ui.padded.segment {
 .form :not(.item) > .ui.dropdown.active.visible:not(.no-margin):not(.item) {
   margin-bottom: 37px;
 }
+
+/* Message */
+/* forces close icon to be over content */
+.ui.message .icon.close {
+  z-index: 1
+}

@@ -510,7 +510,7 @@ export const newMessage = message => {
 		icon = icons[status]
 	}
 	icon = !isStr(icon) ? icon : { name: icon }
-	style = icon ? style : { textAlign: 'center', width: '100%', ...style }
+	style = icon ? style : { textAlign: 'center', ...style }
 
 	return (
 		<Message

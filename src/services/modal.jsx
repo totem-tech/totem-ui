@@ -3,11 +3,12 @@ import uuid from 'uuid'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { Confirm } from 'semantic-ui-react'
-import { isBool, isDefined, isFn, isStr, textCapitalize } from '../utils/utils'
+import { isBool, isFn, textCapitalize } from '../utils/utils'
 
-const modals = new Map()
+export const modals = new Map()
 // Use Bond as a way to trigger update to the ModalService component
-const trigger = new Bond()
+// Stores number of modals currently open
+export const trigger = new Bond().defaultTo(0)
 const words = {
     ok: 'ok',
     cancel: 'cancel',
@@ -24,7 +25,7 @@ export default class ModalService extends ReactiveComponent {
 
     render = () => (
         <div className="modal-service">
-            {Array.from(modals).map(item => <span key={item[0]}>{item[1]}</span>)}
+            {Array.from(modals).map(([id, modalEl]) => <span {...{ key: id, id }}>{modalEl}</span>)}
         </div>
     )
 }
@@ -33,10 +34,18 @@ const add = (id, element) => {
     id = id || uuid.v1()
     modals.set(id, element)
     trigger.changed(modals.size)
+    // add class to #app element to inticate one or more modal is open
+    document.getElementById('app').classList.add('modal-open')
     return id
 }
 
-export const closeModal = (id, delay = 0) => setTimeout(() => modals.delete(id) | trigger.changed(modals.size), delay)
+export const closeModal = (id, delay = 0) => setTimeout(() => {
+    modals.delete(id)
+    // update modal service
+    trigger.changed(modals.size)
+    // remove classname if no modal is open
+    modals.size === 0 && document.getElementById('app').classList.add('modal-open')
+}, delay)
 
 // confirm opens a confirm dialog
 //

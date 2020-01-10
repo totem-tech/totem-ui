@@ -16,8 +16,8 @@ import SidebarLeft, { SidebarItemContent } from './components/SidebarLeft'
 // Services
 import ModalService from './services/modal'
 import { resumeQueue } from './services/queue'
-import { sidebarItems } from './services/sidebar'
-import ToastService from './services/toast'
+import { sidebarItems, sidebarStateBond } from './services/sidebar'
+import ToastService, { setToast } from './services/toast'
 import { getLayout, layoutBond } from './services/window'
 // Utils
 import DataStorage from './utils/DataStorage'
@@ -53,6 +53,7 @@ export class App extends ReactiveComponent {
 		window.metadata = metadata
 		window.Bond = Bond
 		window.DataStorage = DataStorage
+		window.setToast = setToast
 	}
 
 	// unused
@@ -75,13 +76,15 @@ export class App extends ReactiveComponent {
 	}
 
 	readyRender() {
-		const { isMobile, sidebarCollapsed, sidebarVisible } = this.state
+		const { isMobile, sidebarCollapsed } = this.state
 		const { mainContent, mainContentCollapsed } = styles
 		const logoSrc = TotemButtonLogo
+		const { collapsed, visible } = sidebarStateBond._value
 		const classNames = [
-			sidebarVisible ? 'sidebar-visible' : '',
-			sidebarCollapsed ? 'sidebar-collapsed' : '',
+			collapsed ? 'sidebar-collapsed' : '',
 			isMobile ? 'mobile' : 'desktop',
+			visible ? 'sidebar-visible' : '',
+			'wrapper',
 		].filter(Boolean).join(' ')
 
 		if (!this.resumed) {
@@ -94,35 +97,21 @@ export class App extends ReactiveComponent {
 			<div className={classNames}>
 				<ChatWidget />
 				<ModalService />
+				<ToastService isMobile={isMobile} />
 				<ErrorBoundary>
-					<PageHeader
-						logoSrc={logoSrc}
-						isMobile={isMobile}
-						onSidebarToggle={this.handleSidebarToggle}
-						sidebarCollapsed={sidebarCollapsed}
-						sidebarVisible={sidebarVisible}
-					/>
+					<PageHeader logoSrc={logoSrc} isMobile={isMobile} />
 				</ErrorBoundary>
-				<ToastService {...{
-					hidden: isMobile && sidebarVisible,
-					style: { left: (isMobile ? 10 : sidebarCollapsed ? 70 : 245) },
-				}} />
 
 				<Sidebar.Pushable style={styles.pushable}>
-					<SidebarLeft
-						collapsed={isMobile ? false : sidebarCollapsed}
-						isMobile={isMobile}
-						onSidebarToggle={this.handleSidebarToggle}
-						visible={isMobile ? sidebarVisible : true}
-					/>
+					<SidebarLeft isMobile={isMobile} />
 
 					<Sidebar.Pusher
 						as={Container}
 						className="main-content"
-						dimmed={isMobile && sidebarVisible}
+						dimmed={false}
 						id="main-content"
 						fluid
-						style={sidebarCollapsed ? mainContentCollapsed : mainContent}
+						style={mainContent}
 					>
 						{sidebarItems.map(({ name }, i) => <SidebarItemContent key={i + name} name={name} />)}
 					</Sidebar.Pusher>
@@ -138,13 +127,6 @@ const styles = {
 		WebkitOverflow: 'hidden auto',
 		height: '100%',
 		scrollBehavior: 'smooth',
-		padding: 15,
-	},
-	mainContentCollapsed: {
-		overflow: 'hidden auto',
-		WebkitOverflow: 'hidden auto',
-		height: '100%',
-		// scrollBehavior: 'smooth',
 		padding: 15,
 	},
 	pushable: {

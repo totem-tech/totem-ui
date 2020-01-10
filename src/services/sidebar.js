@@ -15,10 +15,46 @@ import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
 import DataStorage from '../utils/DataStorage'
 import { isBool, isBond } from '../utils/utils'
 import { findInput as findItem } from '../components/FormBuilder'
+// services
+import { getLayout, layoutBond } from './window'
 
 // store items' "active" status in the localStorage
 const statuses = new DataStorage('totem_sidebar-items-status')
 export const allInactiveBond = new Bond().defaultTo(false)
+export const sidebarStateBond = new Bond()//.defaultTo({ collapsed: false, visible: true })
+    .defaultTo({
+        collapsed: false,
+        visible: getLayout() !== 'mobile',
+    })
+export const setSidebarState = (collapsed, visible) => {
+    const lastState = sidebarStateBond._value
+    const isMobile = getLayout() === 'mobile'
+    // force expand on mobile mode
+    collapsed = !isMobile && collapsed
+    // always visible when not on mobile mode
+    visible = !isMobile || visible
+    // state hasn't changed
+    if (lastState.collapsed === collapsed && lastState.visible === visible) return
+    sidebarStateBond.changed({ collapsed, visible })
+    // // set class
+    const classNames = {
+        'sidebar-visible': visible,
+        'sidebar-collapsed': collapsed,
+    }
+    setTimeout(() => {
+        const { classList } = document.querySelector('#app > .wrapper') || {}
+        classList && Object.keys(classNames).forEach(key => classList[classNames[key] ? 'add' : 'remove'](key))
+    })
+}
+export const toggleSidebarState = () => {
+    const { collapsed, visible } = sidebarStateBond._value
+    setSidebarState(!collapsed, !visible)
+}
+// update sidebar state on layout change
+layoutBond.tie(() => {
+    const { collapsed, visible } = sidebarStateBond._value || {}
+    setSidebarState(collapsed, visible)
+})
 export const gsName = 'getting-started'
 export const sidebarItemNames = []
 export const sidebarItems = [
@@ -213,8 +249,7 @@ export const setContentProps = (name, props = {}, scrollToItem = true) => {
 
 export const scrollTo = name => {
     const item = getItem(name)
-    const totalActive = sidebarItems.filter(x => x.active && !x.hidden).length
-    if (!item || !item.active || item.hidden || totalActive <= 1) return
+    if (!item || !item.active || item.hidden) return
     // Scroll down to the content segment if more than one item active
     setTimeout(() => {
         const elRef = item.elementRef

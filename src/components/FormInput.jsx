@@ -36,7 +36,6 @@ export default class FormInput extends ReactiveComponent {
         super(props)
 
         const { bond, defer } = props
-        this.handleChange = this.handleChange.bind(this)
         this.bond = isBond(bond) ? bond : undefined
         this.state = { message: undefined }
         if (defer !== null) {
@@ -44,6 +43,9 @@ export default class FormInput extends ReactiveComponent {
         }
 
         this.bond && this.bond.tie(value => setTimeout(() => this.handleChange({}, { ...this.props, value })))
+
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
     componentWillMount = () => this._mounted = true
@@ -143,7 +145,7 @@ export default class FormInput extends ReactiveComponent {
         })
     }
 
-    setMessage = (message = {}) => this._mounted && this.setState({ message })
+    setMessage = (message = {}) => this.setState({ message })
 
     render() {
         const {

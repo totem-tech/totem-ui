@@ -13,6 +13,8 @@ export default class ContentSegment extends Component {
 			contentArgs: props.contentArgs,
 			showSubHeader: false,
 		}
+		this.originalSetState = this.setState
+		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
 	}
 
 	componentWillMount() {

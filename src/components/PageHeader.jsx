@@ -3,17 +3,21 @@ import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { runtime, ss58Decode } from 'oo7-substrate'
 import { Dropdown, Image, Menu } from 'semantic-ui-react'
-import { getUser, getClient, onLogin } from '../services/ChatClient'
-import { copyToClipboard } from '../utils/utils'
 import { Pretty } from '../Pretty'
+// utils
+import { copyToClipboard } from '../utils/utils'
+// forms
+import IdentityForm from '../forms/Identity'
+import TimeKeepingForm from '../forms/TimeKeeping'
+// services
+import { getUser, getClient, onLogin } from '../services/ChatClient'
+import identities, { getSelected, setSelected } from '../services/identity'
 import { showForm } from '../services/modal'
+import NotificationDropdown from '../services/notification'
+import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import { toggleSidebarState } from '../services/sidebar'
 import storage from '../services/storage'
 import { setToast } from '../services/toast'
-import TimeKeepingForm from '../forms/TimeKeeping'
-import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import NotificationDropdown from '../services/notification'
-import identities, { getSelected, setSelected } from '../services/identity'
-import IdentityForm from '../forms/Identity'
 
 export default class PageHeader extends ReactiveComponent {
 	constructor(props) {
@@ -29,9 +33,7 @@ export default class PageHeader extends ReactiveComponent {
 		!this.state.id && onLogin(id => id && this.setState({ id }))
 	}
 
-	handleSelection = (_, { value: address }) => {
-		setSelected(address)
-	}
+	handleSelection = (_, { value: address }) => setSelected(address)
 
 	handleCopy = () => {
 		const { address } = getSelected()
@@ -141,7 +143,7 @@ class MobileHeader extends ReactiveComponent {
 						<Menu.Item
 							icon={{ name: 'sidebar', size: 'big', className: 'no-margin' }}
 							// on mobile when sidebar is visible toggle is not neccessary on-document-click it is already triggered
-							onClick={sidebarVisible ? undefined : this.handleToggle}
+							onClick={toggleSidebarState}
 						/>
 					)}
 					<Menu.Item>

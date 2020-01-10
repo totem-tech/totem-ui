@@ -66,12 +66,14 @@ export default class TimeKeepingView extends Component {
                 }
             ],
         }
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
     componentWillMount() {
         this._mounted = true
-        this.tieId = getProjectsBond.tie(() => this._mounted && this.loadProjectOptions())
-        this.tieIdLayout = layoutBond.tie(layout => this._mounted && this.setState({ isMobile: layout === 'mobile' }))
+        this.tieId = getProjectsBond.tie(() => this.loadProjectOptions())
+        this.tieIdLayout = layoutBond.tie(layout => this.setState({ isMobile: layout === 'mobile' }))
         fillValues(this.state.inputs, this.props.values, true)
     }
     componentWillUnmount() {
