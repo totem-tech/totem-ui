@@ -98,9 +98,7 @@ export class App extends ReactiveComponent {
 				<ChatWidget />
 				<ModalService />
 				<ToastService isMobile={isMobile} />
-				<ErrorBoundary>
-					<PageHeader logoSrc={logoSrc} isMobile={isMobile} />
-				</ErrorBoundary>
+				<ErrorBoundary><PageHeader {...{ logoSrc, isMobile }} /></ErrorBoundary>
 
 				<Sidebar.Pushable style={styles.pushable}>
 					<SidebarLeft isMobile={isMobile} />

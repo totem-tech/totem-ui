@@ -1,7 +1,8 @@
-import React from 'react'
-import { ReactiveComponent } from 'oo7-react'
+import React, { Component } from 'react'
+import { newMessage } from '../utils/utils'
+import { getUrlParam } from '../services/window'
 
-export default class ErrorBoundary extends ReactiveComponent {
+export default class ErrorBoundary extends Component {
     constructor(props) {
         super(props)
         this.state = { hasError: false }
@@ -9,7 +10,11 @@ export default class ErrorBoundary extends ReactiveComponent {
 
     static getDerivedStateFromError(error) {
         // Update state so the next render will show the fallback UI.
-        return { hasError: true }
+        return {
+            debug: getUrlParam('debug') === 'true',
+            error,
+            hasError: true,
+        }
     }
 
     componentDidCatch(error, info) {
@@ -18,11 +23,13 @@ export default class ErrorBoundary extends ReactiveComponent {
     }
 
     render() {
-        if (this.state.hasError) {
-            // You can render any custom fallback UI
-            return <h1>Something went wrong with this component.</h1>
-        }
+        const { debug, error, hasError } = this.state
+        const { children } = this.props
 
-        return this.props.children
+        return !hasError ? children : newMessage({
+            content: debug ? error.stack : undefined,
+            header: !debug ? 'Something went wrong with this component' : error.message,
+            status: 'error'
+        })
     }
 }
