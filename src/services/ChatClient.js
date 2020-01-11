@@ -28,9 +28,51 @@ const _execOnLogin = (userId) => {
 
 // Returns a singleton instance of the websocket client
 // Instantiates the client if not already done
+const nonCbs = [
+    'isConnected',
+    'disconnect',
+]
 export const getClient = () => {
     if (!instance || !socket.connected) {
         instance = new ChatClient()
+        // attach a promise() functions to all event related methods. 
+        // promise() will take the exactly the same arguments as the orginal event method.
+        // however the callback is optional here as promise() will add an interceptor callback anyway.
+        //
+        // Example: use of client.message
+        //     without promise:
+        //          client.messate('hello universe!', err => console.log({err}))
+        //     with promise:
+        //          client.message.promise('hello universe!').then(
+        //              console.log, // success callback
+        //              console.log, // error callback will always have the error/first argument
+        //          )
+        //
+        Object.keys(instance).forEach(key => {
+            const prop = instance[key]
+            if (!isFn(prop) || nonCbs.includes(key)) return
+            prop.promise = function () {
+                const args = [...arguments]
+                return new Promise((resolve, reject) => {
+                    // last argument must be a callback
+                    let callbackIndex = args.length - 1
+                    const originalCallback = args[callbackIndex]
+                    // if last argument is not a callback increment index to add a new callback
+                    if (!isFn(originalCallback)) callbackIndex++
+                    args[callbackIndex] = function () {
+                        const cbArgs = arguments
+                        // first argument indicates whether there is an error.
+                        const err = cbArgs[0]
+                        isFn(originalCallback) && originalCallback.apply({}, cbArgs)
+                        const fn = !!err ? reject : resolve
+                        fn.apply({}, cbArgs)
+                    }
+                    // 
+                    prop.apply(instance, args)
+                })
+            }
+        })
+        window.client = instance
     }
     return instance
 }
@@ -139,7 +181,7 @@ export class ChatClient {
         )
 
         // Get list of all countries with 3 character codes
-        this.countries = (cb) => isFn(cb) && socket.emit('countries', (err, countries) => cb(err, new Map(countries)))
+        this.countries = cb => isFn(cb) && socket.emit('countries', (err, countries) => cb(err, new Map(countries)))
     }
 
     register(id, secret, cb) {
