@@ -35,7 +35,7 @@ const invalidIcon = { color: 'red', name: 'warning circle', size: 'large' }
 const validIcon = { color: 'green', name: 'check circle', size: 'large' }
 const userIdRegex = /^[a-z][a-z0-9]+$/
 // eliminates any characters that are not allowed, including digits at the beginning
-export const getId = str => str.toLowerCase().replace(/(^[0-9]+)|[^a-z0-9]/gi, '')
+const getId = str => str.toLowerCase().replace(/(^[0-9]+)|[^a-z0-9]/gi, '')
 
 export default class UserIdInput extends Component {
     constructor(props) {
@@ -174,21 +174,51 @@ export default class UserIdInput extends Component {
     }
 
     handleChange = (e, data) => {
-        if (!this.state.options) return
-        // only for dropdown
         const { onChange } = this.props
+        const { type } = this.state
         const { value } = data
-        const s = { value, message: undefined }
-        if (this.state.options) {
+        const s = { value }
+        if (type === 'dropdown') {
+            // only for dropdown
+            s.message = undefined
             s.searchQuery = ''
         }
         this.setState(s)
         isFn(onChange) && onChange(e, data)
     }
 
-    handleSearchChange = (_, { searchQuery: q }) => this.setState({ searchQuery: getId(q) })
+    handleSearchChange = (_, { searchQuery }) => this.setState({ searchQuery })
 
-    validateTextField = (e, data) => new Promise(resolve => {
+    // validateTextField = (e, data) => new Promise(resolve => {
+    //     data.value = data.value.toLowerCase()
+    //     const { value } = data
+    //     const { excludeOwnId, newUser, onChange } = this.props
+    //     const isOwnId = excludeOwnId && (getUser() || {}).id === value
+    //     // trigger a value change
+    //     const triggerChagne = invalid => {
+    //         this.setState({
+    //             icon: !value ? undefined : (invalid ? invalidIcon : validIcon),
+    //             value,
+    //         })
+    //         isFn(onChange) && onChange(e, {
+    //             ...data,
+    //             invalid,
+    //             value: invalid ? '' : value,
+    //         })
+    //     }
+    //     if (isOwnId || value.length < 3) return triggerChagne(true) | resolve(isOwnId ? texts.ownIdEntered : true)
+    //     const valid = userIdRegex.test(value)
+    //     if (!valid) return triggerChagne(true) | resolve(true)
+
+    //     // client.idExists(value, exists => {
+    //     //     const invalid = newUser ? exists : !exists
+    //     //     triggerChagne(invalid)
+    //     //     resolve(invalid)
+    //     // })
+    //     resolve(false)
+    // })
+
+    validateTextField = (e, data) => {
         data.value = data.value.toLowerCase()
         const { value } = data
         const { excludeOwnId, newUser, onChange } = this.props
@@ -197,24 +227,27 @@ export default class UserIdInput extends Component {
         const triggerChagne = invalid => {
             this.setState({
                 icon: !value ? undefined : (invalid ? invalidIcon : validIcon),
-                value,
             })
             isFn(onChange) && onChange(e, {
                 ...data,
                 invalid,
-                value: invalid ? '' : value,
             })
         }
-        if (isOwnId || value.length < 3) return triggerChagne(true) | resolve(isOwnId ? texts.ownIdEntered : true)
-        const valid = userIdRegex.test(value)
-        if (!valid) return triggerChagne(true) | resolve(true)
-
-        client.idExists(value, exists => {
+        if (isOwnId || value.length < 3) {
+            triggerChagne(true)
+            return isOwnId ? texts.ownIdEntered : true
+        }
+        if (!userIdRegex.test(value)) {
+            triggerChagne(true)
+            return true
+        }
+        const cb = exists => {
             const invalid = newUser ? exists : !exists
             triggerChagne(invalid)
-            resolve(invalid)
-        })
-    })
+            return invalid
+        }
+        client.idExists.promise(value).then(cb, cb)
+    }
 
     render() {
         let { invalid, loading, options } = this.state

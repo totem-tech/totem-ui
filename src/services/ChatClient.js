@@ -3,7 +3,7 @@ import { isFn } from '../utils/utils'
 import storageService from './storage'
 
 // chat server port for dev.totem.live port
-const port = (['localhost', 'totem.live'].includes(window.location.hostname)) ? 3001 : 3003
+const port = 3001 //(['localhost', 'totem.live'].includes(window.location.hostname)) ? 3001 : 3003
 let instance, socket;
 const postLoginCallbacks = []
 const HISTORY_LIMIT = 100
@@ -26,12 +26,13 @@ const _execOnLogin = (userId) => {
     }
 }
 
+// include any ChatClient property that is not a function or event that does not have a callback
+const nonCbs = ['isConnected', 'disconnect']
+const texts = {
+    notConnected: 'Messaging server is not connected'
+}
 // Returns a singleton instance of the websocket client
 // Instantiates the client if not already done
-const nonCbs = [
-    'isConnected',
-    'disconnect',
-]
 export const getClient = () => {
     if (!instance || !socket.connected) {
         instance = new ChatClient()
@@ -54,21 +55,26 @@ export const getClient = () => {
             prop.promise = function () {
                 const args = [...arguments]
                 return new Promise((resolve, reject) => {
-                    // last argument must be a callback
-                    let callbackIndex = args.length - 1
-                    const originalCallback = args[callbackIndex]
-                    // if last argument is not a callback increment index to add a new callback
-                    if (!isFn(originalCallback)) callbackIndex++
-                    args[callbackIndex] = function () {
-                        const cbArgs = arguments
-                        // first argument indicates whether there is an error.
-                        const err = cbArgs[0]
-                        isFn(originalCallback) && originalCallback.apply({}, cbArgs)
-                        const fn = !!err ? reject : resolve
-                        fn.apply({}, cbArgs)
+                    try {
+                        if (!instance.isConnected()) return reject(texts.notConnected)
+                        // last argument must be a callback
+                        let callbackIndex = args.length - 1
+                        const originalCallback = args[callbackIndex]
+                        // if last argument is not a callback increment index to add a new callback
+                        if (!isFn(originalCallback)) callbackIndex++
+                        args[callbackIndex] = function () {
+                            const cbArgs = arguments
+                            // first argument indicates whether there is an error.
+                            const err = cbArgs[0]
+                            isFn(originalCallback) && originalCallback.apply({}, cbArgs)
+                            const fn = !!err ? reject : resolve
+                            fn.apply({}, cbArgs)
+                        }
+
+                        prop.apply(instance, args)
+                    } catch (err) {
+                        reject(err)
                     }
-                    // 
-                    prop.apply(instance, args)
                 })
             }
         })
