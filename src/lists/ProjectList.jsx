@@ -5,8 +5,9 @@ import { copyToClipboard, textEllipsis, textCapitalize } from '../utils/utils'
 import { formatStrTimestamp } from '../utils/time'
 // components
 import DataTable from '../components/DataTable'
-import ProjectTeamList from '../lists/ProjectTeamList'
 import FormBuilder, { findInput } from '../components/FormBuilder'
+import ProjectTeamList from '../lists/ProjectTeamList'
+import TimeKeepingList from '../lists/TimeKeepingList'
 import ProjectForm from '../forms/Project'
 import ReassignProjectForm from '../forms/ProjectReassign'
 // services
@@ -62,6 +63,7 @@ const texts = {
     projectTeam: 'Project team - ',
     reassignOwner: 'Re-assign owner',
     reopenProject: 'Re-open project',
+    timeKeeping: 'Time keeping',
     totalTime: 'Total Time',
     viewDetails: 'View details',
     viewTeam: 'View team',
@@ -371,7 +373,7 @@ export default class ProjectList extends Component {
             _firstSeen: texts.detailsFirstSeenLabel
         }
         // Create a form on the fly and display data a read-only input fields
-        this.detailsModalId = showForm(FormBuilder, {
+        showForm(FormBuilder, {
             closeOnEscape: true,
             closeOnDimmerClick: true,
             closeText: wordsCap.close,
@@ -387,12 +389,18 @@ export default class ProjectList extends Component {
                 // view time records button
                 content: texts.detailsTimeRecordsBtn,
                 name: 'button',
-                onClick: () => {
-                    const contentProps = { values: { option: 'manage', projectHash: hash } }
-                    const sidebarItemName = 'timekeeping'
-                    closeModal(this.detailsModalId)
-                    setContentProps(sidebarItemName, contentProps)
-                },
+                onClick: () => confirm({
+                    cancelButton: wordsCap.close,
+                    confirmButton: null,
+                    content: <TimeKeepingList {...{
+                        isOwner: true,
+                        manage: true,
+                        projectHash: hash,
+                        projectName: project.name,
+                        ownerAddress: project.ownerAddress,
+                    }} />,
+                    header: `${project.name}: ${texts.timeKeeping}`,
+                }),
                 type: 'Button',
             }),
             size: 'tiny',
