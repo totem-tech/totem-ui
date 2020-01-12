@@ -187,36 +187,7 @@ export default class UserIdInput extends Component {
         isFn(onChange) && onChange(e, data)
     }
 
-    handleSearchChange = (_, { searchQuery }) => this.setState({ searchQuery })
-
-    // validateTextField = (e, data) => new Promise(resolve => {
-    //     data.value = data.value.toLowerCase()
-    //     const { value } = data
-    //     const { excludeOwnId, newUser, onChange } = this.props
-    //     const isOwnId = excludeOwnId && (getUser() || {}).id === value
-    //     // trigger a value change
-    //     const triggerChagne = invalid => {
-    //         this.setState({
-    //             icon: !value ? undefined : (invalid ? invalidIcon : validIcon),
-    //             value,
-    //         })
-    //         isFn(onChange) && onChange(e, {
-    //             ...data,
-    //             invalid,
-    //             value: invalid ? '' : value,
-    //         })
-    //     }
-    //     if (isOwnId || value.length < 3) return triggerChagne(true) | resolve(isOwnId ? texts.ownIdEntered : true)
-    //     const valid = userIdRegex.test(value)
-    //     if (!valid) return triggerChagne(true) | resolve(true)
-
-    //     // client.idExists(value, exists => {
-    //     //     const invalid = newUser ? exists : !exists
-    //     //     triggerChagne(invalid)
-    //     //     resolve(invalid)
-    //     // })
-    //     resolve(false)
-    // })
+    handleSearchChange = (_, { searchQuery: s }) => this.setState({ searchQuery: s.toLowerCase() })
 
     validateTextField = (e, data) => {
         data.value = data.value.toLowerCase()
