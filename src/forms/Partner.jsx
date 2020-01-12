@@ -5,12 +5,11 @@ import { ReactiveComponent } from 'oo7-react'
 import { ss58Decode } from '../utils/convert'
 import { arrSort, deferred, isFn, isObj, textCapitalize } from '../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import addressbook from '../services/partners'
+import addressbook, { getAddressName } from '../services/partners'
 import client from '../services/ChatClient'
 import { showForm } from '../services/modal'
 import identityService from '../services/identity'
 import CompanyForm from './Company'
-import { getAddressName } from '../components/ProjectDropdown'
 
 const words = {
     business: 'business',
