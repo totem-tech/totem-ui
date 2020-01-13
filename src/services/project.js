@@ -41,11 +41,15 @@ export const fetchProjects = (projectHashesOrBond = []) => new Promise((resolve,
             const uniqueHashes = arrUnique(projectHashes.flat().map(hash => {
                 return isUint8Arr(hash) ? hashToStr(hash) : hash
             })).filter(hash => !['0x00'].includes(hash)) // ingore any invalid hash
+
             if (uniqueHashes.length === 0) return resolve(new Map())
+
             const firstSeenBond = Bond.all(uniqueHashes.map(h => timeKeeping.project.firstSeen(h)))
             const totalBlocksBond = Bond.all(uniqueHashes.map(h => timeKeeping.project.totalBlocks(h)))
+            const statusesBond = Bond.all(uniqueHashes.map(h => project.status(h)))
 
-            Bond.all([firstSeenBond, totalBlocksBond]).then(([arFristSeen, arTotalBlocks]) => {
+            Bond.all([firstSeenBond, totalBlocksBond, statusesBond]).then(result => {
+                const [arFristSeen, arTotalBlocks, arStatusCode] = result
                 client.projectsByHashes(uniqueHashes, (err, projects = new Map(), unknownHashes = []) => {
                     if (err) return reject(err)
                     unknownHashes.forEach(hash => projects.set(hash, {}))
@@ -54,6 +58,7 @@ export const fetchProjects = (projectHashesOrBond = []) => new Promise((resolve,
                         const { ownerAddress } = project
                         project.firstSeen = arFristSeen[index]
                         project.totalBlocks = arTotalBlocks[index]
+                        project.status = arStatusCode[index]
                         const { name } = identities.get(ownerAddress) || partners.get(ownerAddress) || {}
                         project.ownerName = name
                     })
@@ -154,7 +159,7 @@ const project = {
     //              5. {failed: {code: xxx, message: 'error message'}}
     close: (ownerAddress, hash) => post({
         sender: validateAddress(ownerAddress),
-        call: calls.projects.closeProject(hashToBytes(hash)),
+        call: calls.projects.endOrUnendProject(hashToBytes(hash), statusCodes.close),
         compact: false,
         longevity: true
     }),
@@ -220,7 +225,7 @@ const project = {
     //              5. {failed: {code: xxx, message: 'error message'}}
     reopen: (ownerAddress, hash) => post({
         sender: validateAddress(ownerAddress),
-        call: calls.projects.reopenProject(hashToBytes(hash)),
+        call: calls.projects.endOrUnendProject(hashToBytes(hash), statusCodes.reopen),
         compact: false,
         longevity: true
     }),

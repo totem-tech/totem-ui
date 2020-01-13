@@ -143,26 +143,10 @@ export class ChatClient {
         // @create  bool    : whether to create or update project
         // @cb      function
         this.project = (hash, project, create, cb) => socket.emit('project', hash, project, create, cb)
-        // Set project status
-        this.projectStatus = (hash, status, cb) => socket.emit('project-status', hash, status, cb)
-        this.projectTimeKeepingBan = (hash, address, ban, cb) => isFn(cb) && socket.emit(
-            'project-time-keeping-ban', hash, address, ban, cb
-        )
-        // request user projects
-        //
-        // Params:
-        // @walletAddrs array: array of wallet addresses
-        // @cb          function : params =>
-        //                  @err    string/null : error message or null if success
-        //                  @result Map         : Map of user projects with project hash as key
-        this.projects = (walletAddrs, cb) => isFn(cb) && socket.emit(
-            'projects', walletAddrs, (err, res) => cb(err, new Map(res))
-        )
+        // retrieve projects by an array of hashes
         this.projectsByHashes = (hashArr, cb) => isFn(cb) && socket.emit(
             'projects-by-hashes', hashArr, (err, res, notFoundHashes) => cb(err, new Map(res), notFoundHashes)
         )
-        // project search
-        this.projectsSearch = (keyword, cb) => socket.emit('projects-search', keyword, (err, result) => cb(err, new Map(result)))
 
         // add/get company by wallet address
         //

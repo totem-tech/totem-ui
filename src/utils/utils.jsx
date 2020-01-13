@@ -75,6 +75,10 @@ export const hasValue = x => {
 */
 export const isMobile = () => window.innerWidth <= Responsive.onlyMobile.maxWidth
 
+export const forceClearCachedData = () => {
+	Object.keys(localStorage).forEach(key => key.startsWith('totem__cache_') && localStorage.removeItem(key))
+	forceRefreshPage()
+}
 // force refresh page from server
 export const forceRefreshPage = () => window.location.reload(true)
 

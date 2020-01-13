@@ -235,16 +235,7 @@ export default class ProjectList extends Component {
                         address: ownerAddress,
                         title: doClose ? texts.closeProject : texts.reopenProject,
                         description: `${wordsCap.project}: ${name}`,
-                        next: {
-                            type: 'chatclient',
-                            func: 'projectStatus',
-                            args: [
-                                hash,
-                                targetStatus,
-                                // force update projects' cache
-                                err => !err && getProjects(true)
-                            ]
-                        }
+                        then: success => success && getProjects(true),
                     })
                 })
 
@@ -272,11 +263,7 @@ export default class ProjectList extends Component {
                 address: ownerAddress,
                 title: texts.deleteConfirmHeader,
                 description: `${wordsCap.project}: ${name}`,
-                next: {
-                    type: 'chatclient',
-                    func: 'projectStatus',
-                    args: [hash, targetStatus]
-                }
+                then: success => success && getProjects(true),
             })
         })
         if (projectNames.length === 0) return
