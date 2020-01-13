@@ -51,6 +51,7 @@ export const addToQueue = (queueItem, id, toastId) => {
     setTimeout(() => _processItem(queueItem, id, toastId))
     return id
 }
+window.addToQueue = addToQueue
 
 // save to localStorage
 const _save = () => storageService.queue(queue)

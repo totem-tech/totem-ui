@@ -290,4 +290,5 @@ const timeKeeping = {
     record,
     worker,
 }
+window.timeKeeping = timeKeeping
 export default timeKeeping

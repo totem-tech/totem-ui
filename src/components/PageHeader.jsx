@@ -174,7 +174,9 @@ class MobileHeader extends Component {
 									options={wallets.map(({ address, name }) => ({
 										key: address,
 										text: !isMobile ? name : name.split('').slice(0, 7).join(''),
-										description: <Pretty value={runtime.balances.balance(ss58Decode(address))} />,
+										description: runtime.balances && (
+											<Pretty value={runtime.balances.balance(ss58Decode(address))} />
+										),
 										value: address
 									}))}
 								/>

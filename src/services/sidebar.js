@@ -36,7 +36,7 @@ export const setSidebarState = (collapsed, visible) => {
     // state hasn't changed
     if (lastState.collapsed === collapsed && lastState.visible === visible) return
     sidebarStateBond.changed({ collapsed, visible })
-    // // set class
+    // set class
     const classNames = {
         'sidebar-visible': visible,
         'sidebar-collapsed': collapsed,
@@ -249,7 +249,8 @@ export const setContentProps = (name, props = {}, scrollToItem = true) => {
 
 export const scrollTo = name => {
     const item = getItem(name)
-    if (!item || !item.active || item.hidden) return
+    const activeItems = sidebarItems.filter(({ active, hidden }) => !hidden && active).length
+    if (!item || !item.active || item.hidden || activeItems === 1) return
     // Scroll down to the content segment if more than one item active
     setTimeout(() => {
         const elRef = item.elementRef
