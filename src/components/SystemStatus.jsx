@@ -2,7 +2,7 @@ import React from 'react'
 import { ReactiveComponent, Rspan } from 'oo7-react'
 import { bytesToHex, pretty } from 'oo7-substrate'
 import { Icon, Grid, GridRow, GridColumn } from 'semantic-ui-react'
-import Identicon from 'polkadot-identicon'
+// import Identicon from 'polkadot-identicon'
 import { subscribeAllNSetState, unsubscribeAll } from '../services/data'
 
 class SystemStatus extends ReactiveComponent {
@@ -90,8 +90,10 @@ class SystemStatus extends ReactiveComponent {
 						Lag : {pretty(this.state.chain_lag) || 0}
 					</GridColumn>
 					<GridColumn width={4}>
-						Authorities : {(this.state.runtime_core_authorities || []).map((a, i) =>
-							<Identicon key={bytesToHex(a) + i} account={a} size={16} />)}
+						Authorities : {
+						// (this.state.runtime_core_authorities || []).map((a, i) =>
+						// 	<Identicon key={bytesToHex(a) + i} account={a} size={16} />)
+							}
 					</GridColumn>
 				</GridRow>
 			</Grid>,
