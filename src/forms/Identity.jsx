@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
-import Identicon from 'polkadot-identicon'
+// import Identicon from 'polkadot-identicon'
 import { generateMnemonic } from 'bip39'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import identityService from '../services/identity'
@@ -71,16 +71,16 @@ export default class IdentityForm extends ReactiveComponent {
                 {
                     bond: new Bond(),
                     hidden: true,
-                    icon: (
-                        <i style={{ opacity: 1 }} className="icon">
-                            <Identicon
-                                account={this.addressBond}
-                                size={28}
-                                style={{ marginTop: '5px' }}
-                            />
-                        </i>
-                    ),
-                    iconPosition: 'left',
+                    // icon: (
+                    //     <i style={{ opacity: 1 }} className="icon">
+                    //         <Identicon
+                    //             account={this.addressBond}
+                    //             size={28}
+                    //             style={{ marginTop: '5px' }}
+                    //         />
+                    //     </i>
+                    // ),
+                    // iconPosition: 'left',
                     label: wordsCap.seed,
                     name: 'uri',
                     placeholder: texts.seedPlaceholder,
