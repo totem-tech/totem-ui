@@ -11,16 +11,16 @@ import { isBond } from '../utils/utils'
 export default class SidebarLeft extends Component {
 	componentWillMount = () => {
 		sidebarStateBond.tie(s => this.setState(s))
-		allInactiveBond.tie(allInactive => this.setState({ allInactive }))
+		allInactiveBond.tie(allInactive => setTimeout(() => this.setState({ allInactive }), 500))
 	}
 
 	render() {
 		const { isMobile } = this.props
-		let { allInactive, collapsed, visible } = this.state
-		if (allInactive) {
-			collapsed = false
-			visible = true
-		}
+		const { allInactive, collapsed: c, visible: v } = this.state
+		// if (allInactive) {
+		const collapsed = allInactive ? false : c
+		const visible = allInactive ? true : v
+		// }
 		return (
 			<React.Fragment>
 				{
