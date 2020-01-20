@@ -13,12 +13,12 @@ import {
     secondsToDuration,
 } from '../utils/time'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import { getAddressName } from '../components/ProjectDropdown'
 import { ButtonAcceptOrReject } from '../components/buttons'
 // services
 import identities, { getSelected } from '../services/identity'
 import { confirm, closeModal, showForm } from '../services/modal'
 import { handleTKInvitation } from '../services/notification'
+import { getAddressName } from '../services/partners'
 import projectService from '../services/project'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import storage from '../services/storage'

@@ -66,6 +66,9 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
                 },
             ]
         }
+
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
     componentWillMount() {
@@ -209,7 +212,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             title: 'Time Keeping - accept own invitation',
             description: 'Identity: ' + name,
             then: success => {
-                this._mounted && this.setState({
+                this.setState({
                     submitDisabled: false,
                     loading: false,
                     success,
@@ -232,7 +235,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
                 null,
                 { projectHash, projectName, workerAddress },
                 err => {
-                    this._mounted && this.setState({
+                    this.setState({
                         submitDisabled: false,
                         loading: false,
                         success: !err,

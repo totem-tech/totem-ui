@@ -1,37 +1,53 @@
-import React from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { ReactiveComponent } from 'oo7-react'
-import { runtime, ss58Decode } from 'oo7-substrate'
+import { runtime } from 'oo7-substrate'
 import { Dropdown, Image, Menu } from 'semantic-ui-react'
-import { getUser, getClient, onLogin } from '../services/ChatClient'
-import { copyToClipboard } from '../utils/utils'
 import { Pretty } from '../Pretty'
+// utils
+import { copyToClipboard } from '../utils/utils'
+import { ss58Decode } from '../utils/convert'
+// forms
+import IdentityForm from '../forms/Identity'
+import TimeKeepingForm from '../forms/TimeKeeping'
+// services
+import { getUser, getClient, onLogin } from '../services/ChatClient'
+import identities, { getSelected, setSelected } from '../services/identity'
 import { showForm } from '../services/modal'
+import NotificationDropdown from '../services/notification'
+import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import { toggleSidebarState } from '../services/sidebar'
 import storage from '../services/storage'
 import { setToast } from '../services/toast'
-import TimeKeepingForm from '../forms/TimeKeeping'
-import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import NotificationDropdown from '../services/notification'
-import identities, { getSelected, setSelected } from '../services/identity'
-import IdentityForm from '../forms/Identity'
 
-export default class PageHeader extends ReactiveComponent {
+export default class PageHeader extends Component {
 	constructor(props) {
-		super(props, {
-			// keep UI updated when selected wallet changed
-			_0: identities.bond,
-			_1: storage.timeKeepingBond,
-		})
+		super(props)
 
-		this.state = getUser() || { id: '' }
+		this.state = {
+			id: (getUser() || {}).id,
+			wallets: [],
+		}
 
 		// Update user ID after registration
 		!this.state.id && onLogin(id => id && this.setState({ id }))
+		this.originalSetState = this.setState
+		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
 	}
 
-	handleSelection = (_, { value: address }) => {
-		setSelected(address)
+	componentWillMount() {
+		const { isMobile } = this.props
+		this._mounted = true
+		// force delay loading identities to avoid secretStore loading error (especially, on mobile)
+		setTimeout(() => identities.bond.tie(() => this.setState({
+			wallets: identities.getAll()
+		})), isMobile ? 500 : 100)
+
+		storage.timeKeepingBond.tie(() => this.forceUpdate())
 	}
+
+	componentWillUnmount = () => this._mounted = false
+
+	handleSelection = (_, { value: address }) => setSelected(address)
 
 	handleCopy = () => {
 		const { address } = getSelected()
@@ -43,7 +59,7 @@ export default class PageHeader extends ReactiveComponent {
 
 	handleEdit = () => showForm(IdentityForm, {
 		values: getSelected(),
-		onSubmit: () => this.setState({})
+		onSubmit: () => this.forceUpdate()
 	})
 
 	handleFaucetRequest = () => {
@@ -75,18 +91,16 @@ export default class PageHeader extends ReactiveComponent {
 	}
 
 	render() {
-		const { id } = this.state
-		const wallets = identities.getAll()
+		const { id, wallets } = this.state
 		const viewProps = {
-			addressSelected: getSelected().address,
 			id,
 			onCopy: this.handleCopy,
 			onEdit: this.handleEdit,
-			onFaucetRequest: () => this.handleFaucetRequest(),
+			onFaucetRequest: this.handleFaucetRequest,
 			onSelection: this.handleSelection,
 			timerActive: storage.timeKeeping().inprogress,
 			timerOnClick: () => showForm(TimeKeepingForm, {}),
-			wallets
+			wallets,
 		}
 		return <MobileHeader {...this.props} {...viewProps} />
 	}
@@ -94,33 +108,22 @@ export default class PageHeader extends ReactiveComponent {
 
 PageHeader.propTypes = {
 	logoSrc: PropTypes.string,
-	onSidebarToggle: PropTypes.func,
-	sidebarVisible: PropTypes.bool
+	isMobile: PropTypes.bool,
 }
 
 PageHeader.defaultProps = {
 	logoSrc: 'https://react.semantic-ui.com/images/wireframe/image.png'
 }
 
-class MobileHeader extends ReactiveComponent {
+class MobileHeader extends Component {
 	constructor(props) {
-		super(props, {
-			timerValues: storage.timeKeepingBond
-		})
-		this.state = {
-			showTools: false
-		}
-	}
-
-	handleToggle = () => {
-		const { onSidebarToggle, sidebarVisible } = this.props
-		onSidebarToggle(!sidebarVisible, false)
+		super(props)
+		this.state = { showTools: false }
 	}
 
 	render() {
 		const { showTools } = this.state
 		const {
-			addressSelected,
 			id,
 			isMobile,
 			logoSrc,
@@ -128,7 +131,6 @@ class MobileHeader extends ReactiveComponent {
 			onEdit,
 			onFaucetRequest,
 			onSelection,
-			sidebarVisible,
 			timerActive,
 			timerOnClick,
 			wallets,
@@ -136,12 +138,12 @@ class MobileHeader extends ReactiveComponent {
 
 		return (
 			<div>
-				<Menu attached="top" inverted> {/*fixed="top" */}
+				<Menu attached="top" inverted>
 					{isMobile && (
 						<Menu.Item
 							icon={{ name: 'sidebar', size: 'big', className: 'no-margin' }}
 							// on mobile when sidebar is visible toggle is not neccessary on-document-click it is already triggered
-							onClick={sidebarVisible ? undefined : this.handleToggle}
+							onClick={toggleSidebarState}
 						/>
 					)}
 					<Menu.Item>
@@ -160,21 +162,26 @@ class MobileHeader extends ReactiveComponent {
 								onClick={timerOnClick}
 							/>
 						)}
-						<Menu.Item style={{ paddingRight: 0 }}>
-							<Dropdown
-								labeled
-								noResultsMessage="No wallet available"
-								onChange={onSelection}
-								placeholder="Select an account"
-								value={addressSelected}
-								options={wallets.map(({ address, name }) => ({
-									key: address,
-									text: !isMobile ? name : name.split('').slice(0, 7).join(''),
-									description: <Pretty value={runtime.balances.balance(ss58Decode(address))} />,
-									value: address
-								}))}
-							/>
-						</Menu.Item>
+
+						{wallets && wallets.length > 0 && (
+							<Menu.Item style={{ paddingRight: 0 }}>
+								<Dropdown
+									labeled
+									noResultsMessage="No wallet available"
+									onChange={onSelection}
+									placeholder="Select an account"
+									value={getSelected().address}
+									options={wallets.map(({ address, name }) => ({
+										key: address,
+										text: !isMobile ? name : name.split('').slice(0, 7).join(''),
+										description: runtime.balances && (
+											<Pretty value={runtime.balances.balance(ss58Decode(address))} />
+										),
+										value: address
+									}))}
+								/>
+							</Menu.Item>
+						)}
 					</Menu.Menu>
 					<Menu.Menu fixed="right">
 						<Dropdown

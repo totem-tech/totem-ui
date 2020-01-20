@@ -2,134 +2,80 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Icon, Label, Menu, Sidebar } from 'semantic-ui-react'
 import ContentSegment from './ContentSegment'
-import { allInactiveBond, getItem, setActive, sidebarItems, toggleActive } from '../services/sidebar'
-import { isBond, isFn } from '../utils/utils'
+import {
+	allInactiveBond, getItem, setActive, setSidebarState,
+	sidebarItems, sidebarStateBond, toggleActive, toggleSidebarState
+} from '../services/sidebar'
+import { isBond } from '../utils/utils'
 
 export default class SidebarLeft extends Component {
-
-	componentWillMount = () => allInactiveBond.tie(allInactive => this.setState({ allInactive }))
-
-	handleToggle = () => {
-		const { collapsed, isMobile, onSidebarToggle, visible } = this.props
-		isMobile ? onSidebarToggle(!visible, false) : onSidebarToggle(true, !collapsed)
-	}
-
-	handleItemToggle = name => {
-		const { isMobile, onSidebarToggle } = this.props
-		const { active } = toggleActive(name) || {}
-		isMobile && active && onSidebarToggle(false, false)
+	componentWillMount = () => {
+		sidebarStateBond.tie(s => this.setState(s))
+		allInactiveBond.tie(allInactive => setTimeout(() => this.setState({ allInactive }), 500))
 	}
 
 	render() {
-		const { collapsed, isMobile, onSidebarToggle, visible } = this.props
-		const { allInactive } = this.state
-		// force open sidebar if no item is active
-		const collapse = allInactive ? false : collapsed
+		const { isMobile } = this.props
+		const { allInactive, collapsed: c, visible: v } = this.state
+		// if (allInactive) {
+		const collapsed = allInactive ? false : c
+		const visible = allInactive ? true : v
+		// }
 		return (
-			<Sidebar
-				as={Menu}
-				animation={isMobile ? 'overlay' : 'push'}
-				direction="left"
-				vertical
-				visible={allInactive ? true : visible}
-				width={collapse ? 'very thin' : 'wide'}
-				color="black"
-				inverted
-				style={isMobile ? (collapse ? styles.collapsed : styles.expanded) : {}}
-				onHide={() => !allInactive && isMobile && onSidebarToggle(false, false)}
-			>
-				<Menu.Item
-					style={styles.sidebarToggleWrap}
-					onClick={allInactive ? undefined : this.handleToggle}
+			<React.Fragment>
+				{
+					// use an alternative dimmer to prevent unnecessary state updates on App.jsx and the entire application
+					isMobile && visible && <div style={styles.dimmer} onClick={toggleSidebarState}></div>
+				}
+				<Sidebar
+					as={Menu}
+					animation={isMobile ? 'overlay' : 'push'}
+					direction="left"
+					vertical
+					visible={visible}
+					width={collapsed ? 'very thin' : 'wide'}
+					color="black"
+					inverted
+					style={collapsed ? styles.collapsed : styles.expanded}
+					onHidden={() => isMobile && setSidebarState(false, false)}
 				>
-					<div
-						style={styles.sidebarToggle}
-						position="right"
-						title={this.props.collapsed ? 'Expand' : 'Collapse'}
-						style={styles.sidebarToggle}
+					<Menu.Item
+						style={styles.sidebarToggleWrap}
+						onClick={toggleSidebarState}
 					>
-						<span>
-							<Icon name={`arrow alternate circle ${collapse ? 'right' : 'left'} outline`} />
-							{collapse ? '' : ' Close sidebar'}
-						</span>
-					</div>
-				</Menu.Item>
+						<div
+							style={styles.sidebarToggle}
+							position="right"
+							title={collapsed ? 'Expand' : 'Collapse'}
+							style={styles.sidebarToggle}
+						>
+							<span>
+								<Icon name={`arrow alternate circle ${collapsed ? 'right' : 'left'} outline`} />
+								{!collapsed && ' Close sidebar'}
+							</span>
+						</div>
+					</Menu.Item>
 
-				{// menu items 
-					sidebarItems.map(({ name }, i) => (
-						<SidebarMenuItem
-							{...{
-								key: i + name,
-								name,
-								onClick: () => this.handleItemToggle(name),
-								sidebarCollapsed: collapse,
-								style: i === 0 ? styles.menuItem : undefined
-							}}
-						/>
-					))}
-			</Sidebar>
+					{// menu items 
+						sidebarItems.map(({ name }, i) => (
+							<SidebarMenuItem
+								{...{
+									key: i + name,
+									isMobile,
+									name,
+									sidebarCollapsed: collapsed,
+									style: i === 0 ? styles.menuItem : undefined
+								}}
+							/>
+						))}
+				</Sidebar>
+			</React.Fragment>
 		)
 	}
 }
 
 SidebarLeft.propTypes = {
-	collapsed: PropTypes.bool,
-	isMobile: PropTypes.bool,
-	// items: PropTypes.arrayOf(PropTypes.shape({
-	// 	active: PropTypes.bool.isRequired,
-	// 	badge: PropTypes.any,
-	// 	content: PropTypes.any,
-	// 	// props to be supplied to content, if content is an element
-	// 	contentProps: PropTypes.object,
-	// 	// elementRef: PropTypes.any.isRequired,
-	// 	icon: PropTypes.oneOfType([
-	// 		PropTypes.string,
-	// 		PropTypes.object,
-	// 	]),
-	// 	header: PropTypes.oneOfType([
-	// 		PropTypes.element,
-	// 		PropTypes.node,
-	// 		PropTypes.string,
-	// 	]),
-	// 	name: PropTypes.string.isRequired,
-	// 	subHeader: PropTypes.oneOfType([
-	// 		PropTypes.element,
-	// 		PropTypes.node,
-	// 		PropTypes.string,
-	// 	]),
-	// 	subHeaderDetails: PropTypes.oneOfType([
-	// 		PropTypes.element,
-	// 		PropTypes.node,
-	// 		PropTypes.string,
-	// 	]),
-	// 	title: PropTypes.oneOfType([
-	// 		PropTypes.element,
-	// 		PropTypes.node,
-	// 		PropTypes.string,
-	// 	]).isRequired,
-	// })),
-	onSidebarToggle: PropTypes.func.isRequired,
-	visible: PropTypes.bool
-}
-
-SidebarLeft.defaultProps = {
-	collapsed: false,
-	isMobile: false,
-	items: [
-		//// for example only
-		// { 
-		//   active: true,
-		//   content: 'This is a sample',
-		//   elementRef: React.createRef()
-		//   icon: 'warning sign',
-		//	 name: 'unique-identifier'
-		//   header: 'Sample Content Header',
-		//   subHeader: 'Sample content subheader',
-		//   subHeaderDetails: 'Sample subheader details',
-		//   title: 'Menu item title',
-		// }
-	],
-	visible: true
+	isMobile: PropTypes.bool.isRequired,
 }
 
 export class SidebarItemContent extends Component {
@@ -137,10 +83,11 @@ export class SidebarItemContent extends Component {
 		const { name } = this.props
 		const { bond } = getItem(name) || {}
 		if (!isBond(bond)) return
-		this.tieId = bond.tie(() => this.forceUpdate())
+		this.bond = bond
+		this.tieId = this.bond.tie(() => this.forceUpdate())
 	}
 
-	componentWillUnmount = () => this.tieId && this.props.bond.untie(this.tieId)
+	componentWillUnmount = () => this.bond && this.bond.untie(this.tieId)
 
 	render() {
 		const item = getItem(this.props.name)
@@ -160,6 +107,9 @@ export class SidebarItemContent extends Component {
 		)
 	}
 }
+SidebarItemContent.propTypes = {
+	name: PropTypes.string.isRequired,
+}
 
 class SidebarMenuItem extends Component {
 	componentWillMount() {
@@ -171,14 +121,21 @@ class SidebarMenuItem extends Component {
 
 	componentWillUnmount = () => this.tieId && this.props.bond.untie(this.tieId)
 
+	handleClick = e => {
+		e.stopPropagation()
+		const { isMobile, name } = this.props
+		const { active } = toggleActive(name)
+		active && isMobile && toggleSidebarState()
+	}
+
 	render() {
-		const { name, onClick, sidebarCollapsed: collapse, style } = this.props
+		const { name, sidebarCollapsed: collapse, style } = this.props
 		const item = getItem(name)
 		if (!item) return ''
 
 		const { active, badge, hidden, icon, title } = item
 		return hidden ? '' : (
-			<Menu.Item {...{ as: "a", active, onClick, style, title }}>
+			<Menu.Item {...{ as: "a", active, onClick: this.handleClick, style, title }}>
 				{badge && <Label color='red'>{badge}</Label>}
 				<span>
 					<Icon {...{
@@ -191,15 +148,25 @@ class SidebarMenuItem extends Component {
 		)
 	}
 }
-
 SidebarMenuItem.propTypes = {
-	sidebarCollapsed: PropTypes.bool,
+	isMobile: PropTypes.bool.isRequired,
+	name: PropTypes.string.isRequired,
+	sidebarCollapsed: PropTypes.bool.isRequired,
+	style: PropTypes.object,
 }
 
 const styles = {
 	collapsed: {
-		width: 70,
-		paddingBottom: 52
+		overflowX: 'hidden',
+		width: 60,
+	},
+	dimmer: {
+		display: 'block',
+		position: 'absolute',
+		background: 'rgba(0, 0, 0, 0.84)',
+		height: '100%',
+		width: '100%',
+		zIndex: 3,
 	},
 	expanded: {
 		width: 265

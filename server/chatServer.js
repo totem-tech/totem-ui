@@ -8,11 +8,7 @@ import { handleCountries } from './countries'
 import { handleFaucetRequest } from './faucetRequests'
 import {
     handleProject,
-    handleProjectStatus,
-    handleProjectTimeKeepingBan,
-    handleProjects,
     handleProjectsByHashes,
-    handleProjectsSearch
 } from './projects'
 import {
     handleDisconnect,
@@ -28,9 +24,9 @@ import { handleNotify } from './notify'
 let server, socket
 export const initChatServer = (httpsOptions, expressApp, PORT) => {
     server = https.createServer(httpsOptions, expressApp)
-    
+
     // https://github.com/socketio/socket.io/issues/2276 stops setting an http cookie
-    socket = socketIO.listen(server, {cookie: false}) 
+    socket = socketIO.listen(server, { cookie: false })
 
     socket.on('connection', client => {
         // User related handlers
@@ -55,11 +51,7 @@ export const initChatServer = (httpsOptions, expressApp, PORT) => {
 
         // Project related handlers
         client.on('project', handleProject.bind(client))
-        client.on('project-status', handleProjectStatus.bind(client))
-        client.on('project-time-keeping-ban', handleProjectTimeKeepingBan.bind(client))
-        client.on('projects', handleProjects.bind(client))
         client.on('projects-by-hashes', handleProjectsByHashes.bind(client))
-        client.on('projects-search', handleProjectsSearch.bind(client))
     })
 
     // Start listening

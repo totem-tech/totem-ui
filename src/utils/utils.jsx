@@ -75,6 +75,10 @@ export const hasValue = x => {
 */
 export const isMobile = () => window.innerWidth <= Responsive.onlyMobile.maxWidth
 
+export const forceClearCachedData = () => {
+	Object.keys(localStorage).forEach(key => key.startsWith('totem__cache_') && localStorage.removeItem(key))
+	forceRefreshPage()
+}
 // force refresh page from server
 export const forceRefreshPage = () => window.location.reload(true)
 
@@ -510,7 +514,7 @@ export const newMessage = message => {
 		icon = icons[status]
 	}
 	icon = !isStr(icon) ? icon : { name: icon }
-	style = icon ? style : { textAlign: 'center', width: '100%', ...style }
+	style = icon ? style : { textAlign: 'center', ...style }
 
 	return (
 		<Message

@@ -5,11 +5,26 @@ import DataStorage from '../utils/DataStorage'
 import uuid from 'uuid'
 import { objClean } from '../utils/utils'
 
-const _ssFind = address => secretStore().find(address)
-const _ssSubmit = (seed, name) => secretStore().submit(seed, name)
-const _ssKeys = () => secretStore()._keys
-const _ssSync = () => secretStore()._sync()
-const _ssForget = address => secretStore().forget(address)
+// catch errors from secretstore
+const _secretStore = () => {
+    try {
+        return secretStore()
+    } catch (e) {
+        return {
+            //
+            accountFromPhrase: () => { },
+            find: () => { },
+            forget: () => { },
+            submit: () => { },
+            _key: [],
+        }
+    }
+}
+const _ssFind = address => _secretStore().find(address)
+const _ssSubmit = (seed, name) => _secretStore().submit(seed, name)
+const _ssKeys = () => _secretStore()._keys
+const _ssSync = () => _secretStore()._sync()
+const _ssForget = address => _secretStore().forget(address)
 
 const identities = new DataStorage('totem_identities', true)
 const updateBond = () => bond.changed(uuid.v1())
@@ -24,7 +39,7 @@ const VALID_KEYS = [
 export const bond = identities.bond
 export const selectedAddressBond = new Bond().defaultTo(uuid.v1())
 
-export const accountFromPhrase = seed => secretStore().accountFromPhrase(seed)
+export const accountFromPhrase = seed => _secretStore().accountFromPhrase(seed)
 
 export const get = address => {
     const identity = _ssFind(address)

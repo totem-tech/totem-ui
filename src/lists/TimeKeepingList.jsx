@@ -126,9 +126,13 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 }
             ],
         }
+
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
     componentWillMount() {
+        this._mounted = true
         const { projectHash } = this.props
         if (!projectHash) return
         this.projectHash = projectHash
@@ -143,6 +147,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     }
 
     componentWillUnmount() {
+        this._mounted = false
         this.bond && this.bond.untie(this.tieId)
     }
 

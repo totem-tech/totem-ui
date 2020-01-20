@@ -3,7 +3,7 @@ import { isFn } from '../utils/utils'
 import storageService from './storage'
 
 // chat server port for dev.totem.live port
-const port = (['localhost', 'totem.live'].includes(window.location.hostname)) ? 3001 : 3003
+const port = 3001 //(['localhost', 'totem.live'].includes(window.location.hostname)) ? 3001 : 3003
 let instance, socket;
 const postLoginCallbacks = []
 const HISTORY_LIMIT = 100
@@ -26,11 +26,59 @@ const _execOnLogin = (userId) => {
     }
 }
 
+// include any ChatClient property that is not a function or event that does not have a callback
+const nonCbs = ['isConnected', 'disconnect']
+const texts = {
+    notConnected: 'Messaging server is not connected'
+}
 // Returns a singleton instance of the websocket client
 // Instantiates the client if not already done
 export const getClient = () => {
     if (!instance || !socket.connected) {
         instance = new ChatClient()
+        // attach a promise() functions to all event related methods. 
+        // promise() will take the exactly the same arguments as the orginal event method.
+        // however the callback is optional here as promise() will add an interceptor callback anyway.
+        //
+        // Example: use of client.message
+        //     without promise:
+        //          client.messate('hello universe!', err => console.log({err}))
+        //     with promise:
+        //          client.message.promise('hello universe!').then(
+        //              console.log, // success callback
+        //              console.log, // error callback will always have the error/first argument
+        //          )
+        //
+        Object.keys(instance).forEach(key => {
+            const prop = instance[key]
+            if (!isFn(prop) || nonCbs.includes(key)) return
+            prop.promise = function () {
+                const args = [...arguments]
+                return new Promise((resolve, reject) => {
+                    try {
+                        if (!instance.isConnected()) return reject(texts.notConnected)
+                        // last argument must be a callback
+                        let callbackIndex = args.length - 1
+                        const originalCallback = args[callbackIndex]
+                        // if last argument is not a callback increment index to add a new callback
+                        if (!isFn(originalCallback)) callbackIndex++
+                        args[callbackIndex] = function () {
+                            const cbArgs = arguments
+                            // first argument indicates whether there is an error.
+                            const err = cbArgs[0]
+                            isFn(originalCallback) && originalCallback.apply({}, cbArgs)
+                            const fn = !!err ? reject : resolve
+                            fn.apply({}, cbArgs)
+                        }
+
+                        prop.apply(instance, args)
+                    } catch (err) {
+                        reject(err)
+                    }
+                })
+            }
+        })
+        window.client = instance
     }
     return instance
 }
@@ -95,26 +143,10 @@ export class ChatClient {
         // @create  bool    : whether to create or update project
         // @cb      function
         this.project = (hash, project, create, cb) => socket.emit('project', hash, project, create, cb)
-        // Set project status
-        this.projectStatus = (hash, status, cb) => socket.emit('project-status', hash, status, cb)
-        this.projectTimeKeepingBan = (hash, address, ban, cb) => isFn(cb) && socket.emit(
-            'project-time-keeping-ban', hash, address, ban, cb
-        )
-        // request user projects
-        //
-        // Params:
-        // @walletAddrs array: array of wallet addresses
-        // @cb          function : params =>
-        //                  @err    string/null : error message or null if success
-        //                  @result Map         : Map of user projects with project hash as key
-        this.projects = (walletAddrs, cb) => isFn(cb) && socket.emit(
-            'projects', walletAddrs, (err, res) => cb(err, new Map(res))
-        )
+        // retrieve projects by an array of hashes
         this.projectsByHashes = (hashArr, cb) => isFn(cb) && socket.emit(
             'projects-by-hashes', hashArr, (err, res, notFoundHashes) => cb(err, new Map(res), notFoundHashes)
         )
-        // project search
-        this.projectsSearch = (keyword, cb) => socket.emit('projects-search', keyword, (err, result) => cb(err, new Map(result)))
 
         // add/get company by wallet address
         //
@@ -139,7 +171,7 @@ export class ChatClient {
         )
 
         // Get list of all countries with 3 character codes
-        this.countries = (cb) => isFn(cb) && socket.emit('countries', (err, countries) => cb(err, new Map(countries)))
+        this.countries = cb => isFn(cb) && socket.emit('countries', (err, countries) => cb(err, new Map(countries)))
     }
 
     register(id, secret, cb) {

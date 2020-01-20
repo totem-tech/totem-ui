@@ -36,7 +36,6 @@ export default class FormInput extends ReactiveComponent {
         super(props)
 
         const { bond, defer } = props
-        this.handleChange = this.handleChange.bind(this)
         this.bond = isBond(bond) ? bond : undefined
         this.state = { message: undefined }
         if (defer !== null) {
@@ -44,6 +43,9 @@ export default class FormInput extends ReactiveComponent {
         }
 
         this.bond && this.bond.tie(value => setTimeout(() => this.handleChange({}, { ...this.props, value })))
+
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
     componentWillMount = () => this._mounted = true
@@ -127,8 +129,7 @@ export default class FormInput extends ReactiveComponent {
         if (message || !isFn(validate)) return triggerChange()
         isFn(onChange) && onChange(event, data, this.props)
 
-        // custom validation
-        new Promise(r => r(validate(event, data))).then(vMsg => {
+        const customValidate = vMsg => {
             if (vMsg === true) {
                 // means field is invalid but no message to display
                 errMsg = true
@@ -140,10 +141,27 @@ export default class FormInput extends ReactiveComponent {
             }
             errMsg = message && message.status === 'error' ? message.content : errMsg
             triggerChange()
-        })
+        }
+
+        const promiseOrRes = validate(event, data)
+        !isPromise(promiseOrRes) ? customValidate(promiseOrRes) : promiseOrRes.then(customValidate, err => console.log({ promiseError: err }))
+        // custom validation
+        // new Promise(r => r(validate(event, data))).then(vMsg => {
+        //     if (vMsg === true) {
+        //         // means field is invalid but no message to display
+        //         errMsg = true
+        //         return triggerChange()
+        //     }
+        //     message = !vMsg && !isStr(vMsg) && !React.isValidElement(vMsg) ? vMsg : {
+        //         content: vMsg,
+        //         status: 'error'
+        //     }
+        //     errMsg = message && message.status === 'error' ? message.content : errMsg
+        //     triggerChange()
+        // })
     }
 
-    setMessage = (message = {}) => this._mounted && this.setState({ message })
+    setMessage = (message = {}) => this.setState({ message })
 
     render() {
         const {
