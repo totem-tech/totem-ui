@@ -2,7 +2,8 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Button, Form, Header, Icon, Modal } from 'semantic-ui-react'
 import { ReactiveComponent } from 'oo7-react'
-import { isDefined, isArr, isBool, isBond, isFn, isObj, isStr, objCopy, objWithoutKeys, newMessage, hasValue } from '../utils/utils';
+import { isDefined, isArr, isBool, isBond, isFn, isObj, isStr, objCopy, objWithoutKeys, hasValue } from '../utils/utils'
+import Message from '../components/Message'
 import FormInput, { nonValueTypes } from './FormInput'
 
 export default class FormBuilder extends ReactiveComponent {
@@ -165,7 +166,12 @@ export default class FormBuilder extends ReactiveComponent {
                     )
                 })}
                 {/* Include submit button if not a modal */}
-                {!modal && !hideFooter && (<div>{submitBtn}{newMessage(message)}</div>)}
+                {!modal && !hideFooter && (
+                    <div>
+                        {submitBtn}
+                        {message && <Message {...message} />}
+                    </div>
+                )}
             </Form>
         )
 
@@ -207,7 +213,7 @@ export default class FormBuilder extends ReactiveComponent {
                         {submitBtn}
                     </Modal.Actions>
                 )}
-                {newMessage(message)}
+                {message && <Message {...message} />}
             </Modal>
         )
     }
@@ -285,7 +291,7 @@ export const fillValues = (inputs, values, forceFill) => {
     })
 }
 
-export const resetValues = inputs => inputs.map(input => {
+export const resetValues = (inputs = []) => inputs.map(input => {
     if ((input.type || '').toLowerCase() === 'group') {
         resetValues(input.inputs)
     } else {
@@ -321,6 +327,8 @@ export const isFormInvalid = (inputs = [], values) => inputs.reduce((invalid, in
     return isCheckbox && isRequired ? !value : !hasValue(value)
 }, false)
 
+// findInput returns the first item matching supplied name.
+// If any input type is group it will recursively search in the child inputs as well
 export const findInput = (inputs, name) => inputs.find(x => x.name === name) || (
     inputs.filter(x => x.type === 'group').reduce((input, group = {}) => {
         return input || findInput(group.inputs || [], name)

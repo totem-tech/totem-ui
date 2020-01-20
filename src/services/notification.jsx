@@ -4,7 +4,8 @@ import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { Dropdown } from 'semantic-ui-react'
 import { ButtonAcceptOrReject, UserID } from '../components/buttons'
-import { deferred, newMessage } from '../utils/utils'
+import Message from '../components/Message'
+import { deferred } from '../utils/utils'
 import IdentityShareForm from '../forms/IdentityShare'
 import PartnerForm from '../forms/Partner'
 import DataStorage from '../utils/DataStorage'
@@ -221,7 +222,7 @@ export default class NotificationDropdown extends ReactiveComponent {
                                 onClick={e => e.stopPropagation()}
                             // style={{ minWidth: 400 }}
                             >
-                                {newMessage(msg)}
+                                <Message {...msg} />
                             </Dropdown.Item>
                         )
                     }).filter(x => !!x)}
