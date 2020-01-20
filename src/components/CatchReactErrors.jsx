@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { newMessage } from '../utils/utils'
+import Message from './Message'
 import { getUrlParam } from '../services/window'
 
 export default class ErrorBoundary extends Component {
@@ -26,10 +26,12 @@ export default class ErrorBoundary extends Component {
         const { debug, error, hasError } = this.state
         const { children } = this.props
 
-        return !hasError ? children : newMessage({
-            content: debug ? error.stack : undefined,
-            header: !debug ? 'Something went wrong with this component' : error.message,
-            status: 'error'
-        })
+        return !hasError ? children : (
+            <Message {...{
+                content: debug ? error.stack : undefined,
+                header: !debug ? 'Something went wrong with this component' : error.message,
+                status: 'error'
+            }} />
+        )
     }
 }

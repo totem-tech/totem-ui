@@ -1,5 +1,3 @@
-import React from 'react'
-import { Icon, Message, Responsive } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import createHash from 'create-hash/browser'
 import { hashToStr } from './convert'
@@ -67,22 +65,24 @@ export const hasValue = x => {
 			// already defined
 			return true
 	}
-	// (isValidNumber(x) || (isStr(x) && !!x.trim()) || isBool(x))
 }
 
-/* 
-// Window or page helpers 
-*/
-export const isMobile = () => window.innerWidth <= Responsive.onlyMobile.maxWidth
-
+// forceClearCachedData removes any cached data from localStorage
 export const forceClearCachedData = () => {
-	Object.keys(localStorage).forEach(key => key.startsWith('totem__cache_') && localStorage.removeItem(key))
+	const keys = ['totem__cache_', 'totem__static']
+	Object.keys(localStorage).forEach(key => keys.includes(key) && localStorage.removeItem(key))
 	forceRefreshPage()
 }
 // force refresh page from server
 export const forceRefreshPage = () => window.location.reload(true)
 
-
+// randomInt generates random number within a range
+//
+// Params:
+// @min		number
+// @max		number
+// 
+// returns number
 export const randomInt = (min, max) => parseInt(Math.random() * (max - min) + min)
 
 // getKeys returns an array of keys or indexes depending on object type
@@ -503,29 +503,4 @@ export const icons = {
 	info: 'info',
 	success: 'check circle outline',
 	warning: 'lightning'
-}
-
-// valid statuses: error, info, loading, warning, success
-export const newMessage = message => {
-	let { content, header, icon, list, showIcon, status, style } = message || {}
-	if (!isObj(message) || (!content && !list && !header)) return
-	icon = React.isValidElement(icon) ? icon.props : icon
-	if (showIcon) {
-		icon = icons[status]
-	}
-	icon = !isStr(icon) ? icon : { name: icon }
-	style = icon ? style : { textAlign: 'center', ...style }
-
-	return (
-		<Message
-			{...(objWithoutKeys(message, ['showIcon']))}
-			error={status === 'error'}
-			icon={icon && <Icon {...icon} style={{ width: 42, ...icon.style }} />}
-			info={status === 'info'}
-			style={style}
-			success={status === 'success'}
-			visible={!!status}
-			warning={['warning', 'loading'].indexOf(status) >= 0}
-		/>
-	)
 }

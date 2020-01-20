@@ -5,8 +5,9 @@ import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import {
     deferred, hasValue, isArr, isBond, isDefined, isFn, isPromise,
-    isStr, isValidNumber, newMessage, objWithoutKeys, searchRanked,
+    isStr, isValidNumber, objWithoutKeys, searchRanked,
 } from '../utils/utils';
+import Message from './Message'
 // Custom Inputs
 import { InputBond } from '../InputBond'
 import { AccountIdBond } from '../AccountIdBond'
@@ -177,7 +178,6 @@ export default class FormInput extends ReactiveComponent {
         // shouldn't be used or may cause error when using with inputEl
         let attrs = objWithoutKeys(this.props, NON_ATTRIBUTES)
         attrs.onChange = this.handleChange
-        let messageEl = newMessage(message)
         let isGroup = false
         const typeLC = type.toLowerCase()
 
@@ -236,7 +236,14 @@ export default class FormInput extends ReactiveComponent {
                 inputEl = <El {...attrs} />
         }
 
-        return !isGroup ? (
+        if (isGroup) return (
+            <Form.Group inline={inline} style={styleContainer} widths={attrs.widths}>
+                {inputEl}
+                {message && <Message {...message} />}
+            </Form.Group>
+        )
+
+        return (
             <Form.Field
                 error={message && message.status === 'error' || error}
                 required={required}
@@ -245,14 +252,9 @@ export default class FormInput extends ReactiveComponent {
             >
                 {!hideLabel && label && <label>{label}</label>}
                 {inputEl}
-                {messageEl}
+                {message && <Message {...message} />}
             </Form.Field>
-        ) : (
-                <Form.Group inline={inline} style={styleContainer} widths={attrs.widths}>
-                    {inputEl}
-                    {messageEl}
-                </Form.Group>
-            )
+        )
     }
 }
 FormInput.propTypes = {
