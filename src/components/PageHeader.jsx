@@ -4,7 +4,7 @@ import { runtime } from 'oo7-substrate'
 import { Dropdown, Image, Menu } from 'semantic-ui-react'
 import { Pretty } from '../Pretty'
 // utils
-import { copyToClipboard } from '../utils/utils'
+import { copyToClipboard, textEllipsis } from '../utils/utils'
 import { ss58Decode } from '../utils/convert'
 // forms
 import IdentityForm from '../forms/Identity'
@@ -135,6 +135,7 @@ class MobileHeader extends Component {
 			timerOnClick,
 			wallets,
 		} = this.props
+		const selected = getSelected()
 
 		return (
 			<div>
@@ -170,10 +171,11 @@ class MobileHeader extends Component {
 									noResultsMessage="No wallet available"
 									onChange={onSelection}
 									placeholder="Select an account"
-									value={getSelected().address}
+									text={!isMobile ? selected.name : textEllipsis(selected.name, 7, 3, false)}
+									value={selected.address}
 									options={wallets.map(({ address, name }) => ({
 										key: address,
-										text: !isMobile ? name : name.split('').slice(0, 7).join(''),
+										text: name,
 										description: runtime.balances && (
 											<Pretty value={runtime.balances.balance(ss58Decode(address))} />
 										),
