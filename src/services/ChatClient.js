@@ -2,8 +2,9 @@ import io from 'socket.io-client'
 import { isFn } from '../utils/utils'
 import storageService from './storage'
 
-// chat server port for dev.totem.live port
-const port = 3001 //(['localhost', 'totem.live'].includes(window.location.hostname)) ? 3001 : 3003
+// chat server port
+// use 3003 for dev.totem.live otherwise 3001
+const port = window.location.hostname === 'dev.totem.live' ? 3003 : 3001
 let instance, socket;
 const postLoginCallbacks = []
 const HISTORY_LIMIT = 100
