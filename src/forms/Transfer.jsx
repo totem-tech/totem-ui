@@ -18,6 +18,7 @@ const words = {
     amount: 'amount',
     identity: 'identity',
     partner: 'partner',
+    recipient: 'recipient',
     status: 'status',
 }
 const wordsCap = textCapitalize(words)
@@ -28,7 +29,6 @@ const texts = {
     partnerPlaceholder: 'Select partner',
     submitErrorHeader: 'Transaction error',
     submitInprogressHeader: 'Transaction in-progress',
-    submitSuccessContent: 'Transfer complete',
     submitSuccessHeader: 'Transaction successful',
 }
 
@@ -100,13 +100,17 @@ export default class Transfer extends Component {
                             basic
                             className='no-margin'
                             defaultValue={config.primary}
-                            onChange={(_, { value }) => this.setState({ denomination: value })}
+                            onChange={(_, { value }) => {
+                                const { inputs } = this.state
+                                findInput(inputs, 'amount').min = this.getAmountMin(value)
+                                this.setState({ denomination: value, inputs })
+                            }}
                             options={Object.keys(denominations).map(key => ({ key, value: key, text: key }))}
                         />
                     ),
                     label: wordsCap.amount,
                     labelPosition: 'right', //inline label position
-                    min: 0,
+                    min: this.getAmountMin(config.primary),
                     name: 'amount',
                     placeholder: texts.amountPlaceholder,
                     required: true,
@@ -162,22 +166,38 @@ export default class Transfer extends Component {
         partners.bond.untie(this.tieIdPartner)
     }
 
+    clearForm = () => {
+        const { inputs } = this.state
+        fillValues(inputs, { to: null, amount: '' }, true)
+        this.setState({ inputs })
+    }
+
     handleSubmit = (_, { amount, from, to }) => {
         const { denomination } = this.state
         const { uri } = identities.get(from)
-        amount = amount * Math.pow(10, denominations[denomination])
+        const { name } = partners.get(to)
+        const amountXTX = amount * Math.pow(10, denominations[denomination])
 
         this.setMessage()
-        transfer(to, amount, uri).then(
-            hash => this.setMessage(null, hash),
+        transfer(to, amountXTX, uri).then(
+            hash => this.setMessage(null, hash, name, amount) | this.clearForm(),
             err => this.setMessage(err),
         )
     }
 
-    setMessage = (err, hash) => {
+    getAmountMin = denomination => {
+        const n = denominations[denomination] || 0
+        return Math.pow(10, -n).toFixed(n)
+    }
+
+    setMessage = (err, hash, recipientName, amount) => {
         const inProgress = !err && !hash
+        const { denomination } = this.state
         const content = inProgress ? '' : (!err || isStr(err) ? err : err.message) || (
-            <p> {texts.submitSuccessContent}</p>
+            <ul style={{ listStyleType: 'none', paddingLeft: 0 }}>
+                <li>{wordsCap.recipient}: {recipientName}</li>
+                <li>{wordsCap.amount}: {amount} {denomination}</li>
+            </ul>
         )
         const header = inProgress ? texts.submitInprogressHeader : (
             err ? texts.submitErrorHeader : texts.submitSuccessHeader
@@ -195,9 +215,7 @@ export default class Transfer extends Component {
         })
     }
 
-    render() {
-        return <FormBuilder {...{ ...this.props, ...this.state }} />
-    }
+    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
 
 Transfer.propTypes = {

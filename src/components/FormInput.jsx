@@ -16,9 +16,9 @@ import UserIdInput from './UserIdInput'
 
 const VALIDATION_MESSAGES = Object.freeze({
     integer: () => 'Number must be an integer (no decimals)',
-    max: (max) => `Number must be smaller or equal ${max}`,
+    max: max => `Number must be smaller or equal ${max}`,
     maxLength: (value, max) => `Maximum ${max} ${typeof value === 'number' ? 'digit' : 'character'}${max > 1 ? 's' : ''} required`,
-    min: (min) => `Number must be greater or equal ${min}`,
+    min: min => `Number must be greater or equal ${min}`,
     minLength: (value, min) => `Minimum ${min} ${typeof value === 'number' ? 'digit' : 'character'}${min > 1 ? 's' : ''} required`,
     requiredField: () => 'Required field',
     validNumber: () => 'Please enter a valid number'
@@ -95,11 +95,13 @@ export default class FormInput extends ReactiveComponent {
                     if (!isValidNumber(num)) {
                         errMsg = integer ? VALIDATION_MESSAGES.integer() : VALIDATION_MESSAGES.validNumber()
                     }
-                    if (isValidNumber(max) && max < num) {
+                    const maxNum = eval(max)
+                    if (isValidNumber(maxNum) && maxNum < num) {
                         errMsg = VALIDATION_MESSAGES.max(max)
                         break
                     }
-                    if (isValidNumber(min) && min > num) {
+                    const minNum = eval(min)
+                    if (isValidNumber(minNum) && minNum > num) {
                         errMsg = VALIDATION_MESSAGES.min(min)
                         break
                     }
@@ -145,21 +147,8 @@ export default class FormInput extends ReactiveComponent {
         }
 
         const promiseOrRes = validate(event, data)
-        !isPromise(promiseOrRes) ? customValidate(promiseOrRes) : promiseOrRes.then(customValidate, err => console.log({ promiseError: err }))
-        // custom validation
-        // new Promise(r => r(validate(event, data))).then(vMsg => {
-        //     if (vMsg === true) {
-        //         // means field is invalid but no message to display
-        //         errMsg = true
-        //         return triggerChange()
-        //     }
-        //     message = !vMsg && !isStr(vMsg) && !React.isValidElement(vMsg) ? vMsg : {
-        //         content: vMsg,
-        //         status: 'error'
-        //     }
-        //     errMsg = message && message.status === 'error' ? message.content : errMsg
-        //     triggerChange()
-        // })
+        if (!isPromise(promiseOrRes)) return customValidate(promiseOrRes)
+        promiseOrRes.then(customValidate, err => console.log({ promiseError: err }))
     }
 
     setMessage = (message = {}) => this.setState({ message })
@@ -222,7 +211,7 @@ export default class FormInput extends ReactiveComponent {
                     attrs.defaultValue = attrs.value
                 }
                 inputEl = <InputBond {...attrs} />
-                break;
+                break
             case 'textarea':
                 inputEl = <TextArea {...attrs} />
                 break;
@@ -316,7 +305,10 @@ FormInput.propTypes = {
     message: PropTypes.object,
     max: PropTypes.number,
     maxLength: PropTypes.number,
-    min: PropTypes.number,
+    min: PropTypes.oneOfType([
+        PropTypes.number,
+        PropTypes.string,
+    ]),
     minLength: PropTypes.number,
     name: PropTypes.string.isRequired,
     label: PropTypes.string,
