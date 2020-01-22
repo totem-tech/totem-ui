@@ -18,9 +18,9 @@ const texts = {
     registrationFailed: 'Registration failed',
     userId: 'User ID',
     userIdCriteria: 'Please enter an User ID that meets the following criteria:',
-    userIdCriteria1: 'contains only alphanumeric characters',
-    userIdCriteria2: 'starts with an alphabet',
-    userIdCriteria3: 'contains minimun 3 characters',
+    userIdCriteria1: 'starts with a letter',
+    userIdCriteria2: 'contains minimun 3 characters',
+    userIdCriteria3: 'contains only alphanumeric characters',
     userIdPlaceholder: 'Enter your desired ID',
     welcomeMsg: 'Welcome to the Totem trollbox. Please be nice.',
 }
