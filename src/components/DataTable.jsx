@@ -2,7 +2,8 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { Button, Card, Dropdown, Grid, Icon, Image, Input, Menu, Table } from 'semantic-ui-react'
-import { arrMapSlice, getKeys, isArr, isDefined, isFn, newMessage, objWithoutKeys, objCopy, search, sort, textCapitalize } from '../utils/utils'
+import { arrMapSlice, getKeys, isArr, isDefined, isFn, objWithoutKeys, objCopy, search, sort, textCapitalize } from '../utils/utils'
+import Message from '../components/Message'
 import { FormInput } from '../components/FormBuilder'
 import Paginator from './Paginator'
 import { layoutBond } from '../services/window'
@@ -256,7 +257,8 @@ export default class DataTable extends ReactiveComponent {
                 {this.getTopContent(totalRows, selectedIndexes)}
 
                 <div style={styles.tableContent}>
-                    {totalRows === 0 ? emptyMessage && newMessage(emptyMessage) : (
+                    {totalRows === 0 && emptyMessage && <Message {...emptyMessage} />}
+                    {totalRows > 0 && (
                         <Table celled selectable sortable unstackable singleLine>
                             <Table.Header>
                                 <Table.Row>

@@ -1,0 +1,5 @@
+[submodule "src/utils"]
+	path = src/utils
+	url = https://gitlab.com/totem-tech/common-utils.git
+[submodule "Submod"]
+	branch = dev
