@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Icon, Message as SemanticMessage } from 'semantic-ui-react'
-import { isObj, isStr, objWithoutKeys } from '../utils/utils'
+import { icons, isObj, isStr, objWithoutKeys } from '../utils/utils'
 
 // valid statuses: error, info, loading, warning, success
 const Message = (message = {}) => {

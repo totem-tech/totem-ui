@@ -10,7 +10,7 @@ import { config, denominations } from '../services/blockchain'
 import identities from '../services/identity'
 import { showForm } from '../services/modal'
 import partners from '../services/partners'
-import { arrSort, isStr, textCapitalize } from '../utils/utils'
+import { arrSort, isStr, textCapitalize, textEllipsis } from '../utils/utils'
 import { ss58Decode } from '../utils/convert'
 import { transfer } from '../utils/polkadotHelper'
 
@@ -39,7 +39,7 @@ export default class Transfer extends Component {
         this.state = {
             denomination: config.primary,
             message: undefined,
-            onSubmit: this.handleSubmit.bind(this),
+            onSubmit: this.handleSubmit,
             success: false,
             inputs: [
                 {
@@ -54,22 +54,33 @@ export default class Transfer extends Component {
                     value: identities.getSelected().address,
                 },
                 {
+                    additionLabel: 'Add partner: ',
                     allowAdditions: false,
                     bond: new Bond(),
                     clearable: true,
                     label: wordsCap.partner,
                     name: 'to',
                     noResultsMessage: texts.partnerEmptyMsg1,
-                    onAddItem: (_, { value }) => showForm(PartnerForm, {
-                        onSubmit: (ok, { address }) => ok && findInput(this.state.inputs, 'to').bond.changed(address),
-                        values: { address: value }
-                    }),
+                    onAddItem: (_, { value: address }) => {
+                        // in case, if partner is not added or user cancels modal makes sure to remove the item
+                        const { inputs } = this.state
+                        const toIn = findInput(inputs, 'to')
+                        toIn.options = toIn.options.filter(({ value }) => value !== address)
+                        toIn.bond.changed(null)
+                        this.setState({ inputs })
+
+                        // Open add partner modal
+                        showForm(PartnerForm, {
+                            onSubmit: (ok, { address }) => ok && toIn.bond.changed(address),
+                            values: { address }
+                        })
+                    },
                     onSearchChange: (_, { searchQuery: q }) => {
                         q = q.trim()
                         const { inputs } = this.state
                         const valid = !!ss58Decode(q)
                         const toIn = findInput(inputs, 'to')
-                        toIn.allowAdditions = valid
+                        toIn.allowAdditions = valid && !toIn.options.find(x => x.value === q)
                         toIn.noResultsMessage = !valid && q.length > 0 ? texts.partnerEmptyMsg2 : texts.partnerEmptyMsg1
                         this.setState({ inputs })
                     },
@@ -78,6 +89,8 @@ export default class Transfer extends Component {
                     required: true,
                     search: ['text', 'value'],
                     selection: true,
+                    selectOnBlur: false,
+                    selectOnNavigation: false,
                     type: 'dropdown',
                 },
                 {
@@ -127,6 +140,7 @@ export default class Transfer extends Component {
         this.tieIdPartner = partners.bond.tie(() => {
             findInput(inputs, 'to').options = arrSort(
                 Array.from(partners.getAll()).map(([_, { address, name }]) => ({
+                    description: textEllipsis(address, 20),
                     key: address,
                     text: name,
                     value: address,
