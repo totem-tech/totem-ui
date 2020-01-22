@@ -4,7 +4,8 @@
 import React, { Component } from 'react'
 import { Bond } from 'oo7'
 import uuid from 'uuid'
-import { isObj, newMessage, isStr } from '../utils/utils'
+import { isObj, isStr } from '../utils/utils'
+import Message from '../components/Message'
 import { trigger as totalModalsBond } from './modal'
 import { sidebarStateBond } from './sidebar'
 
@@ -77,13 +78,13 @@ export const setToast = (message, duration, id) => {
         clearTimeout(timeoutId)
     }
     const handleClose = () => removeToast(id)
-    const messageEl = newMessage({
+    const props = {
         ...message,
         key: id,
         onDismiss: handleClose,
         style: { ...styles.message, ...message.style },
-    })
-    toasts.set(id, messageEl)
+    }
+    toasts.set(id, <Message {...props} />)
     trigger.trigger(uuid.v1())
     autoClose && timeoutIds.set(id, setTimeout(handleClose, duration || DURATION))
     return id
