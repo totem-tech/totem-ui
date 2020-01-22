@@ -194,7 +194,7 @@ export default class Transfer extends Component {
         const inProgress = !err && !hash
         const { denomination } = this.state
         const content = inProgress ? '' : (!err || isStr(err) ? err : err.message) || (
-            <ul style={{ listStyleType: 'none', paddingLeft: 0 }}>
+            <ul style={{ listStyleType: 'none', margin: 0, paddingLeft: 0 }}>
                 <li>{wordsCap.recipient}: {recipientName}</li>
                 <li>{wordsCap.amount}: {amount} {denomination}</li>
             </ul>
