@@ -19,7 +19,7 @@ import { getUser } from './ChatClient'
 // Only stores projects that not owned by the selected identity
 const CACHE_PREFIX = 'totem__cache_timekeeping_projects_'
 const cacheStorage = new DataStorage(undefined, true)
-export const NEW_RECORD_HASH = '0xe4d673a76e8b32ca3989dbb9f444f71813c88d36120170b15151d58c7106cc83'
+export const NEW_RECORD_HASH = '0x6c9596f9ca96adf2334c4761bc161442a32ef16896427b6d43fc5e9353bbab63'
 const _config = {
     address: undefined,
     firstAttempt: true,
