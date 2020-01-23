@@ -6,6 +6,9 @@ import { setNetworkDefault, denominationInfo } from 'oo7-substrate'
 import { isObj } from '../utils/utils'
 import types from '../utils/totem-polkadot-js-types'
 
+// oo7-substrate: register custom types
+Object.keys(types).forEach(key => addCodecTransform(key, types[key]))
+
 export const denominations = Object.freeze({
     Ytx: 24,
     Ztx: 21,
@@ -27,11 +30,7 @@ export let config = Object.freeze({
 export const getTypes = () => new Promise(resolve => resolve(types))
 
 export const nodes = [
-    'wss://node1.totem.live', // post-upgrade node (https)
-    // 'wss://165.22.72.170:443', // post-upgrade node (http)
-    // 'ws://localhost:9944', // local node
-    // 'ws://104.248.37.226:16181/', // pre-upgrade node
-    // 'wss://substrate-rpc.parity.io/' // parity hosted node
+    'wss://node1.totem.live',
 ]
 
 // Replace configs
@@ -41,7 +40,6 @@ export const setConfig = newConfig => {
     }
     denominationInfo.init({ ...config, denominations })
 }
-// setConfig(config)
 
 // Include all functions here that will be used by Queue Service
 // Only blockchain transactions
@@ -68,60 +66,3 @@ export default {
         longevity: true
     })
 }
-
-// // ToDo: use https://gitlab.com/totem-tech/common-utils/raw/master/totem-polkadot-js-types.json
-// const types = {
-//     "ProjectHash": "Hash",
-//     "DeletedProject": "Hash",
-//     "ProjectStatus": "u16",
-//     "AcceptAssignedStatus": "bool",
-//     "BanStatus": "bool",
-//     "LockStatus": "bool",
-//     "ReasonCode": "u16",
-//     "ReasonCodeType": "u16",
-//     "NumberOfBreaks": "u16",
-//     "NumberOfBlocks": "u64",
-//     "PostingPeriod": "u16",
-//     "ProjectHashRef": "Hash",
-//     "StartOrEndBlockNumber": "u64",
-//     "StatusOfTimeRecord": "u16",
-//     "EncryptPublicKey": "H256",
-//     "EncryptNonce": "u64",
-//     "UserNameHash": "Hash",
-//     "RandomHashedData": "Hash",
-//     "Ed25519signature": "H512",
-//     "SignedBy": "H256",
-//     "Data": "Vec<u8>",
-//     "SignedData": {
-//         "user_hash": "UserNameHash",
-//         "pub_enc_key": "EncryptPublicKey",
-//         "pub_sign_key": "SignedBy",
-//         "nonce": "EncryptNonce"
-//     },
-//     "SignedData<UserNameHash, EncryptPublicKey, SignedBy, EncryptNonce>": "SignedData",
-//     "ReasonCodeStruct": {
-//         "ReasonCodeKey": "ReasonCode",
-//         "ReasonCodeTypeKey": "ReasonCodeType"
-//     },
-//     "ReasonCodeStruct<ReasonCode,ReasonCodeType>": "ReasonCodeStruct",
-//     "BannedStruct": {
-//         "BanStatusKey": "BanStatus",
-//         "ReasonCodeStructKey": "ReasonCodeStruct"
-//     },
-//     "BannedStruct<BanStatus,ReasonCodeStruct>": "BannedStruct",
-//     "Timekeeper": {
-//         "total_blocks": "NumberOfBlocks",
-//         "locked_status": "LockStatus",
-//         "locked_reason": "ReasonCodeStruct",
-//         "submit_status": "StatusOfTimeRecord",
-//         "reason_code": "ReasonCodeStruct",
-//         "posting_period": "PostingPeriod",
-//         "start_block": "StartOrEndBlockNumber",
-//         "end_block": "StartOrEndBlockNumber",
-//         "nr_of_breaks": "NumberOfBreaks"
-//     },
-//     "Timekeeper<AccountId,ProjectHashRef,NumberOfBlocks,LockStatus,\nStatusOfTimeRecord,ReasonCodeStruct,PostingPeriod,StartOrEndBlockNumber,\nNumberOfBreaks>": "Timekeeper",
-//     // remove
-//     "EncryptedVerificationData": "Hash"
-// }
-Object.keys(types).forEach(key => addCodecTransform(key, types[key]))
