@@ -185,6 +185,7 @@ export default class Transfer extends Component {
         )
     }
 
+    // returns the min value acceptable for the selected denomination
     getAmountMin = denomination => {
         const n = denominations[denomination] || 0
         return Math.pow(10, -n).toFixed(n)

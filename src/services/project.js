@@ -159,7 +159,7 @@ const project = {
     //              5. {failed: {code: xxx, message: 'error message'}}
     close: (ownerAddress, hash) => post({
         sender: validateAddress(ownerAddress),
-        call: calls.projects.endOrUnendProject(hashToBytes(hash), statusCodes.close),
+        call: calls.projects.setStatusProject(hashToBytes(hash), statusCodes.close),
         compact: false,
         longevity: true
     }),
@@ -225,7 +225,7 @@ const project = {
     //              5. {failed: {code: xxx, message: 'error message'}}
     reopen: (ownerAddress, hash) => post({
         sender: validateAddress(ownerAddress),
-        call: calls.projects.endOrUnendProject(hashToBytes(hash), statusCodes.reopen),
+        call: calls.projects.setStatusProject(hashToBytes(hash), statusCodes.reopen),
         compact: false,
         longevity: true
     }),
