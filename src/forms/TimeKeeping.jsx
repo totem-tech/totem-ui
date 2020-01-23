@@ -19,14 +19,12 @@ import identities, { getSelected } from '../services/identity'
 import { confirm, closeModal, showForm } from '../services/modal'
 import { handleTKInvitation } from '../services/notification'
 import { getAddressName } from '../services/partners'
-import projectService from '../services/project'
+import projectService, { openStatuses } from '../services/project'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import storage from '../services/storage'
-import timeKeeping, { getProjects, getProjectsBond } from '../services/timeKeeping'
+import timeKeeping, { getProjects, getProjectsBond, NEW_RECORD_HASH } from '../services/timeKeeping'
 
 // Hash that indicates creation of new record
-const NEW_RECORD_HASH = '0xe4d673a76e8b32ca3989dbb9f444f71813c88d36120170b15151d58c7106cc83'
-const activeStatusCodes = [0, 1]
 const DURATION_ZERO = '00:00:00'
 const blockCountToDuration = blockCount => secondsToDuration(blockCount * BLOCK_DURATION_SECONDS)
 const durationToBlockCount = duration => BLOCK_DURATION_REGEX.test(duration) ? durationToSeconds(duration) / BLOCK_DURATION_SECONDS : 0
@@ -103,14 +101,14 @@ function handleDurationChange(e, formValues, i) {
     this.setState({ inputs: inputs })
 }
 
-function handleSubmitTime(hash, projectName, values) {
+function handleSubmitTime(hash, projectName, values, status, reason, breakCount) {
     const { onSubmit } = this.props
     const { blockCount, blockEnd, blockStart, duration, projectHash, workerAddress } = values
     const queueProps = {
         address: workerAddress, // for balance check
         type: QUEUE_TYPES.BLOCKCHAIN,
         func: 'timeKeeping_record_save',
-        args: [workerAddress, projectHash, hash, blockCount, 0, blockStart, blockEnd],
+        args: [workerAddress, projectHash, hash, status, reason, blockCount, 0, blockStart, blockEnd, breakCount],
         title: texts.tkNewRecord,
         description: `${wordsCap.project}: ${projectName} | ${wordsCap.duration}: ${values.duration}`,
         then: success => {
@@ -280,7 +278,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
 
         // check if project status is open/reopened
         projectService.status(projectHash).then(statusCode => {
-            const projectActive = activeStatusCodes.includes(statusCode)
+            const projectActive = openStatuses.includes(statusCode)
             const { address: workerAddress } = getSelected()
             inputs[index].invalid = !projectActive
             inputs[index].message = projectActive ? undefined : {
@@ -411,7 +409,11 @@ export default class TimeKeepingForm extends ReactiveComponent {
         const projectOption = findInput(inputs, 'projectHash').options
             .find(option => option.value === projectHash) || {}
         const projectName = projectOption.text
-        handleSubmitTime.call(this, NEW_RECORD_HASH, projectName, values)
+        const reason = {
+            ReasonCodeKey: 0,
+            ReasonCodeTypeKey: 0
+        }
+        handleSubmitTime.call(this, NEW_RECORD_HASH, projectName, values, 0, reason, 0)
     }
 
     saveValues(currentBlockNumber, newDuration) {

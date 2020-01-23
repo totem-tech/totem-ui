@@ -6,7 +6,7 @@ import ContentSegment from '../components/ContentSegment'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import ProjectTimeKeepingList from '../lists/TimeKeepingList'
 import TimeKeepingSummary from '../lists/TimeKeepingSummary'
-import { getSelected } from '../services/identity'
+import { getSelected, selectedAddressBond } from '../services/identity'
 import { getProjects, getProjectsBond } from '../services/timeKeeping'
 import { layoutBond } from '../services/window'
 
@@ -72,13 +72,14 @@ export default class TimeKeepingView extends Component {
 
     componentWillMount() {
         this._mounted = true
-        this.tieId = getProjectsBond.tie(() => this.loadProjectOptions())
+        this.bond = Bond.all([getProjectsBond, selectedAddressBond])
+        this.tieId = this.bond.tie(() => this.loadProjectOptions())
         this.tieIdLayout = layoutBond.tie(layout => this.setState({ isMobile: layout === 'mobile' }))
         fillValues(this.state.inputs, this.props.values, true)
     }
     componentWillUnmount() {
         this._mounted = false
-        getProjectsBond.untie(this.tieId)
+        this.bond.untie(this.tieId)
         layoutBond.untie(this.tieIdLayout)
     }
 

@@ -114,7 +114,10 @@ export default class ProjectForm extends Component {
             showIcon: true
         }
 
-        this.setState({ message, submitDisabled: true })
+        this.setState({
+            message,
+            submitDisabled: true
+        })
 
         const clientTask = {
             type: QUEUE_TYPES.CHATCLIENT,
@@ -169,5 +172,6 @@ ProjectForm.propTypes = {
     }),
 }
 ProjectForm.defaultProps = {
-    size: 'tiny'
+    closeText: wordsCap.close,
+    size: 'tiny',
 }

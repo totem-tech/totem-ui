@@ -19,7 +19,7 @@ import { getUser } from './ChatClient'
 // Only stores projects that not owned by the selected identity
 const CACHE_PREFIX = 'totem__cache_timekeeping_projects_'
 const cacheStorage = new DataStorage(undefined, true)
-const NEW_RECORD_HASH = '0xe4d673a76e8b32ca3989dbb9f444f71813c88d36120170b15151d58c7106cc83'
+export const NEW_RECORD_HASH = '0xe4d673a76e8b32ca3989dbb9f444f71813c88d36120170b15151d58c7106cc83'
 const _config = {
     address: undefined,
     firstAttempt: true,
@@ -231,7 +231,15 @@ export const worker = {
         longevity: true
     }),
 }
-
+export const statuses = {
+    draft: 0,
+    submit: 1,
+    disputed: 100,
+    rejected: 200,
+    accepted: 300,
+    invoiced: 400,
+    delete: 999,
+}
 export const record = {
     // Blockchain transaction
     // (project owner) approve a time record
@@ -242,7 +250,7 @@ export const record = {
     // @recordHash      string/bond/Uint8Array
     // @status          integer: default 0
     // @reason          object: {ReasonCode: integer, ReasonCodeType: integer}
-    approve: (workerAddress, projectHash, recordHash, status = 0, locked = false, reason = {}) => post({
+    approve: (workerAddress, projectHash, recordHash, status = 300, locked = false, reason) => post({
         sender: validateAddress(workerAddress),
         call: calls.timekeeping.authoriseTime(
             ss58Encode(workerAddress),
@@ -250,7 +258,10 @@ export const record = {
             hashToBytes(recordHash),
             status,
             locked,
-            reason,
+            reason || {
+                ReasonCodeKey: 0,
+                ReasonCodeTypeKey: 0
+            },
         ),
         compact: false,
         longevity: true
@@ -265,15 +276,18 @@ export const record = {
     // Blockchain transaction
     // @postingPeriod u16: 15 fiscal periods (0-14) // not yet implemented use default 0
     // add/update record
-    save: (workerAddress, projectHash, recordHash, blockCount, postingPeriod, blockStart, blockEnd) => post({
+    save: (workerAddress, projectHash, recordHash, status = 0, reason = [0, 0], blockCount, postingPeriod = 0, blockStart, blockEnd, breakCount = 0) => post({
         sender: validateAddress(workerAddress),
         call: calls.timekeeping.submitTime(
             hashToBytes(projectHash),
             hashToBytes(recordHash || NEW_RECORD_HASH),
+            status,
+            reason,
             blockCount,
             postingPeriod,
             blockStart,
             blockEnd,
+            breakCount,
         ),
         compact: false,
         longevity: true
