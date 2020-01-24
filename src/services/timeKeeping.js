@@ -15,11 +15,10 @@ import partners from './partners'
 import identities from './identity'
 import { getUser } from './ChatClient'
 
-
+export const NEW_RECORD_HASH = '0x40518ed7e875ba87d6c7358c06b1cac9d339144f8367a0632af7273423dd124e'
 // Only stores projects that not owned by the selected identity
 const CACHE_PREFIX = 'totem__cache_timekeeping_projects_'
 const cacheStorage = new DataStorage(undefined, true)
-export const NEW_RECORD_HASH = '0x6c9596f9ca96adf2334c4761bc161442a32ef16896427b6d43fc5e9353bbab63'
 const _config = {
     address: undefined,
     firstAttempt: true,
