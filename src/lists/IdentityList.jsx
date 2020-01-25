@@ -66,6 +66,7 @@ export default class ItentityList extends ReactiveComponent {
             emptyMessage: {
                 content: texts.emptyMessage
             },
+            searchExtraKeys: ['_tagsStr'],
             topLeftMenu: [
                 {
                     content: wordsCapitalized.create,
@@ -83,6 +84,7 @@ export default class ItentityList extends ReactiveComponent {
             data.forEach(identity => {
                 identity._cloudBackupTS = formatStrTimestamp(identity.cloudBackupTS) || words.never
                 identity.usageType = identity.usageType || words.personal
+                identity._tagsStr = (identity.tags || []).join(' ')
                 identity._tags = (identity.tags || []).map(tag => (
                     <Label key={tag} style={{ margin: 1, float: 'left', display: 'inline' }}>
                         {tag}
