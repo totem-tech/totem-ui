@@ -29,6 +29,7 @@ const DURATION_ZERO = '00:00:00'
 const blockCountToDuration = blockCount => secondsToDuration(blockCount * BLOCK_DURATION_SECONDS)
 const durationToBlockCount = duration => BLOCK_DURATION_REGEX.test(duration) ? durationToSeconds(duration) / BLOCK_DURATION_SECONDS : 0
 const words = {
+    close: 'close',
     duration: 'duration',
     error: 'error',
     identity: 'identity',
@@ -39,6 +40,7 @@ const words = {
     submit: 'submit',
     success: 'success',
     unknown: 'unknown',
+    update: 'update',
     yes: 'yes',
     wallet: 'wallet',
 }
@@ -78,6 +80,7 @@ const texts = {
     timerRunningMsg: 'You may now close the dialog and come back to it anytime by clicking on the clock icon in the header.',
     tkNewRecord: 'Time Keeping - New Record',
     transactionFailed: 'Blockchain transaction failed!',
+    updateFormHeader: 'Time Keeping: Update Record',
     workerBannedMsg: 'Permission denied',
 }
 
@@ -122,7 +125,7 @@ function handleSubmitTime(hash, projectName, values, status, reason) {
                     status: success ? 'success' : 'error',
                 },
             })
-            success && this.handleReset & this.handleReset()
+            success && this.handleReset && this.handleReset()
         },
     }
 
@@ -306,7 +309,10 @@ export default class TimeKeepingForm extends ReactiveComponent {
                         <div>
                             {texts.inactiveWorkerMsg3} <br />
                             <ButtonAcceptOrReject
-                                onClick={ok => handleTKInvitation(projectHash, workerAddress, ok)}
+                                onClick={ok => handleTKInvitation(projectHash, workerAddress, ok).then(success => {
+                                    // force trigger change
+                                    success && inputs[index].bond.changed(projectHash)
+                                })}
                             />
                         </div>
                     ),
@@ -551,7 +557,7 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
             values: props.values || {},
             inputs: [
                 {
-                    label: 'Duration',
+                    label: wordsCap.duration,
                     name: 'duration',
                     onChange: deferred(handleDurationChange, 300, this),
                     type: 'text',
@@ -567,12 +573,17 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
         const { hash, projectName, values } = this.props
         const blockCount = durationToBlockCount(duration)
         const blockEnd = values.blockStart + blockCount
-        const newValues = { ...values, blockCount, blockEnd, duration }
         timeKeeping.record.get(hash).then(record => {
-            const { reason_code, submit_status } = { record }
+            const { nr_of_breaks, reason_code, submit_status } = { record }
+            const newValues = {
+                ...values,
+                blockCount,
+                blockEnd,
+                breakCount: nr_of_breaks || 0,
+                duration,
+            }
             handleSubmitTime.call(this, hash, projectName, newValues, submit_status, reason_code)
         })
-
     }
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
@@ -594,10 +605,10 @@ TimeKeepingUpdateForm.propTypes = {
 }
 
 TimeKeepingUpdateForm.defaultProps = {
-    closeText: 'Close',
+    closeText: wordsCap.close,
     closeOnEscape: false,
     closeOnDimmerClick: false,
-    header: 'Time Keeping: Update Record',
+    header: texts.updateFormHeader,
     size: 'tiny',
-    submitText: 'Update',
+    submitText: wordsCap.update,
 }

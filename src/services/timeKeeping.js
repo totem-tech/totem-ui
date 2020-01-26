@@ -182,7 +182,7 @@ export const getProjectWorkers = projectHash => Bond.promise([
 
 export const record = {
     // Blockchain transaction
-    // (project owner) approve a time record
+    // (project owner) approve/reject a time record
     //
     // Params:
     // @workerAddress   string/bond
@@ -190,14 +190,13 @@ export const record = {
     // @recordHash      string/bond/Uint8Array
     // @status          integer: default 0
     // @reason          object: {ReasonCode: integer, ReasonCodeType: integer}
-    approve: (workerAddress, projectHash, recordHash, status = 300, locked = false, reason) => post({
-        sender: validateAddress(workerAddress),
+    approve: (ownerAddress, workerAddress, projectHash, recordHash, accepted, reason) => post({
+        sender: validateAddress(ownerAddress),
         call: calls.timekeeping.authoriseTime(
-            ss58Encode(workerAddress),
+            ss58Decode(workerAddress),
             hashToBytes(projectHash),
             hashToBytes(recordHash),
-            status,
-            locked,
+            accepted ? statuses.accept : statuses.reject,
             reason || {
                 ReasonCodeKey: 0,
                 ReasonCodeTypeKey: 0
@@ -216,21 +215,21 @@ export const record = {
     // Blockchain transaction
     // @postingPeriod u16: 15 fiscal periods (0-14) // not yet implemented use default 0
     // add/update record
-    save: (workerAddress, projectHash, recordHash, status = 0, reason, blockCount, postingPeriod = 0, blockStart, blockEnd, breakCount = 0) => post({
+    save: (workerAddress, projectHash, recordHash, status, reason, blockCount, postingPeriod, blockStart, blockEnd, breakCount) => post({
         sender: validateAddress(workerAddress),
         call: calls.timekeeping.submitTime(
             hashToBytes(projectHash),
             hashToBytes(recordHash || NEW_RECORD_HASH),
-            status,
+            status || 0,
             reason || {
                 ReasonCodeKey: 0,
                 ReasonCodeTypeKey: 0
             },
             blockCount,
-            postingPeriod,
+            postingPeriod || 0,
             blockStart,
             blockEnd,
-            breakCount,
+            breakCount || 0,
         ),
         compact: false,
         longevity: true

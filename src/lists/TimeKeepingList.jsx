@@ -42,6 +42,7 @@ const words = {
 const wordsCap = textCapitalize(words)
 const texts = {
     addPartner: 'Add Partner',
+    approveRecord: 'Approve record',
     bannedUser: 'User has been banned from this project',
     banUser: 'Ban User',
     banUsers: 'Ban Users',
@@ -49,6 +50,8 @@ const texts = {
     emptyMessage: 'No records available for this project. Start booking time yourself by cliking the timer button above',
     orInviteATeamMember: 'or invite a team member',
     notProjectOwner: 'You do not own this project',
+    recordId: 'Record ID',
+    rejectRecord: 'Reject record',
     selectedIdentitiesAlreadyBanned: 'Selected identities are already banned',
     selectProjectForRecords: 'Please select a project to view time records',
     timeKeeping: 'Time Keeping',
@@ -60,7 +63,7 @@ const texts = {
 }
 const statusTexts = {}
 statusTexts[statuses.draft] = words.draft
-statusTexts[statuses.submitted] = words.submitted
+statusTexts[statuses.submit] = words.submitted
 statusTexts[statuses.dispute] = words.disputed
 statusTexts[statuses.reject] = words.rejected
 statusTexts[statuses.accept] = words.approved
@@ -71,7 +74,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     constructor(props) {
         super(props)
 
-        this.getRecords = deferred(this.getRecords, 150, this)
+        this.getRecords = deferred(this.getRecords, 150)
         this.state = {
             columns: [
                 // { key: '_projectName', title: wordsCap.project },
@@ -81,7 +84,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 {
                     collapsing: true,
                     style: { padding: 0, width: 90 },
-                    content: this.getActionContent.bind(this),
+                    content: this.getActionContent,
                     textAlign: 'center',
                     title: wordsCap.action,
                 }
@@ -90,15 +93,14 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             defaultSort: 'status',
             loading: false,
             perPage: 10,
-            rowProps: (item) => {
-                const { project } = this.props
-                const bannedAddresses = ((project || {}).timeKeeping || {}).bannedAddresses || []
-                const { address, approved } = item
-                const isBanned = bannedAddresses.indexOf(address) >= 0
-                if (isBanned) return { error: true, title: texts.bannedUser }
-                return approved === false ? { warning: true, title: wordsCap.rejected } : (
-                    approved === true ? { positive: true, title: wordsCap.approved } : {}
-                )
+            rowProps: item => {
+                const { address, approved, draft, rejected } = item
+                // if (isBanned) return { error: true, title: texts.bannedUser }
+                return !rejected && draft ? {} : {
+                    warning: rejected,
+                    positive: approved,
+                    title: approved ? wordsCap.approved : (rejected ? wordsCap.rejected : '')
+                }
             },
             searchExtraKeys: ['address', 'hash', 'approved'],
             topLeftMenu: [
@@ -119,19 +121,19 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                     content: wordsCap.approve,
                     icon: { color: 'green', name: 'check' },
                     key: 'actionApprove',
-                    onClick: toBeImplemented //selectedKeys => selectedKeys.forEach(hash => this.handleApprove(hash, true)),
+                    onClick: selectedKeys => selectedKeys.forEach(hash => this.handleApprove(hash, true)),
                 },
                 {
                     content: wordsCap.reject,
                     icon: { color: 'red', name: 'x' },
                     key: 'actionReject',
-                    onClick: toBeImplemented //selectedKeys => selectedKeys.forEach(hash => this.handleApprove(hash, false)),
+                    onClick: selectedKeys => selectedKeys.forEach(hash => this.handleApprove(hash, false)),
                 },
                 {
                     content: texts.banUser,
                     icon: { color: 'red', name: 'ban' },
                     key: 'actionBan',
-                    onClick: toBeImplemented //this.handleBan.bind(this)
+                    onClick: toBeImplemented //this.handleBan
                 }
             ],
         }
@@ -179,23 +181,21 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         this.tieId = this.bond.tie(() => this.getRecords())
     }
 
-    getActionContent(record, hash) {
+    getActionContent = (record, hash) => {
         const { isOwner, projectHash, projectName } = this.props
         const { address: selectedAddress } = identities.getSelected()
-        const { approved, duration, locked, start_block, status, total_blocks, workerAddress } = record
+        const { approved, duration, locked, start_block, submit_status, total_blocks, workerAddress } = record
         const isUser = selectedAddress === workerAddress
-        console.log({ status })
         return [
             {
                 disabled: !!approved || !isOwner,
-                hidden: isOwner && !isUser,
+                hidden: !isOwner,
                 icon: 'bug',
                 onClick: toBeImplemented,
                 title: wordsCap.dispute,
             },
             {
-                disabled: locked || approved, //
-                hidden: !isUser,
+                disabled: !isUser || submit_status !== 0 || locked || approved,
                 icon: 'pencil',
                 onClick: () => showForm(
                     TimeKeepingUpdateForm,
@@ -219,7 +219,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             .map((props) => <Button {...props} />)
     }
 
-    getRecords() {
+    getRecords = () => {
         const { manage, ownerAddress, projectHash } = this.props
         if (!projectHash) return
 
@@ -227,6 +227,10 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             const { address } = identities.getSelected()
             Array.from(records).forEach(([hash, record]) => {
                 const { locked, submit_status, workerAddress, workerName } = record
+                record.approved = submit_status === statuses.accept
+                record.rejected = submit_status === statuses.reject
+                record.draft = submit_status === statuses.draft
+                // banned = ....
 
                 if (!manage && address !== workerAddress) return records.delete(hash)
                 record._workerName = workerName || (
@@ -241,17 +245,28 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         }, console.log)
     }
 
-    handleApprove(hash, approve = false) {
-        // const { data } = this.state
-        // const record = data.get(hash)
-        // if (record.approved || record.approved === approve) return
+    handleApprove = (hash, approve = false) => {
+        const { ownerAddress, projectHash } = this.props
+        const { approved, rejected, workerAddress } = this.state.data.get(hash) || {}
+        if (!workerAddress || approved || rejected && !approve) return
+
+        // const reason = approve ? null : {.....}
+        // timeKeeping.record.approve(workerAddress, projectHash, hash, approve)
+        addToQueue({
+            type: QUEUE_TYPES.BLOCKCHAIN,
+            func: 'timeKeeping_record_approve',
+            args: [ownerAddress, workerAddress, projectHash, hash, approve],
+            title: `${texts.timeKeeping} - ${approve ? texts.approveRecord : texts.rejectRecord}`,
+            description: `${texts.recordId}: ${hash}`,
+            then: this.getRecords
+        })
     }
 
-    handleBan(selectedHashes) {
+    handleBan = (selectedHashes) => {
 
     }
 
-    handleRowSelect(selectedKeys) {
+    handleRowSelect = (selectedKeys) => {
         const { isOwner, projectHash } = this.props
         const { topLeftMenu: leftMenu } = this.state
         leftMenu.forEach(x => x.hidden = selectedKeys.length === 0

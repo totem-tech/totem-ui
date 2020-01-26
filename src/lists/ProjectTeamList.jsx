@@ -22,7 +22,6 @@ const words = {
 const wordsCap = textCapitalize(words)
 const texts = {
     addPartner: 'Add Partner',
-    selectProject: 'Select a project to view invites',
     userId: 'User ID',
     unknownUser: 'Unknown user',
 }
@@ -39,6 +38,7 @@ export default class ProjectTeamList extends ReactiveComponent {
                     { key: '_status', textAlign: 'center', title: wordsCap.status },
                 ],
                 data: [],
+                emptyMessage: null,
                 rowProps: ({ accepted }) => ({ positive: accepted }),
                 searchExtraKeys: ['address', 'userId'],
                 topLeftMenu: [{
@@ -51,9 +51,13 @@ export default class ProjectTeamList extends ReactiveComponent {
             },
             searchExtraKeys: ['userId', 'status']
         }
+
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
     componentWillMount() {
+        this._mounted = true
         const { projectHash } = this.props
         if (!projectHash) return
 
@@ -67,6 +71,7 @@ export default class ProjectTeamList extends ReactiveComponent {
     }
 
     componentWillUnmount() {
+        this._mounted = false
         this.bond && this.bond.untie(this.tieId)
     }
 
@@ -112,15 +117,7 @@ export default class ProjectTeamList extends ReactiveComponent {
         })
     }
 
-    render() {
-        const { projectHash } = this.props
-        const { listProps } = this.state
-        listProps.emptyMessage = projectHash ? (listProps.data.size === 0 ? undefined : null) : {
-            content: texts.selectProject,
-            status: 'warning'
-        }
-        return <DataTable {...listProps} />
-    }
+    render = () => <DataTable {...this.state.listProps} />
 }
 ProjectTeamList.propTypes = {
     projectHash: PropTypes.string,

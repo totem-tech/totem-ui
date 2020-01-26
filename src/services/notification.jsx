@@ -237,7 +237,7 @@ export const handleTKInvitation = (
     projectHash, workerAddress, accepted,
     // optional args
     projectOwnerId, projectName, notifyId
-) => {
+) => new Promise(resolve => {
     const acceptedStr = accepted ? 'accepted' : 'rejected'
     const type = 'time_keeping'
     const childType = 'invitation'
@@ -261,6 +261,7 @@ export const handleTKInvitation = (
         args: [projectHash, workerAddress, accepted],
         title: `TimeKeeping - ${accepted ? 'accept' : 'reject'} invitation`,
         description: `Project: ${projectName}`,
+        then: success => !success && resolve(false),
         // no need to notify if rejected or current user is the project owner
         next: !accepted || !projectOwnerId || projectOwnerId === currentUserId ? undefined : {
             address: workerAddress, // for automatic balance check 
@@ -272,7 +273,10 @@ export const handleTKInvitation = (
                 'invitation_response',
                 `${acceptedStr} invitation to project: "${projectName}"`,
                 { accepted, projectHash, projectName, workerAddress },
-                err => !err && notifyId && remove(notifyId)
+                err => {
+                    !err && notifyId && remove(notifyId)
+                    resolve(!err)
+                }
             ]
         }
     })
@@ -284,4 +288,4 @@ export const handleTKInvitation = (
         const { name, userId } = project || {}
         addToQueue(getprops(userId, name))
     })
-}
+})

@@ -27,7 +27,7 @@ const texts = {
     submitErrorHeader: 'Request failed',
     submitQueuedMsg: 'Your request has been added to background queue. You may close the dialog now.',
     submitQueuedHeader: 'Project has been queued',
-    submitSuccessHeader: 'Project created/updated successfully',
+    submitSuccessHeader: 'Project saved successfully',
     submitTitleCreate: 'Create project',
     submitTitleUpdate: 'Update project',
 }
@@ -71,9 +71,12 @@ export default class ProjectForm extends Component {
                 }
             ]
         }
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
     componentWillMount() {
+        this._mounted = true
         const { hash, header } = this.props
         const { inputs } = this.state
         const values = this.props.values || {}
@@ -98,7 +101,10 @@ export default class ProjectForm extends Component {
         })
     }
 
-    componentWillUnmount = () => identities.bond.untie(this.tieId)
+    componentWillUnmount = () => {
+        this._mounted = false
+        identities.bond.untie(this.tieId)
+    }
 
     handleSubmit = (e, values) => {
         const { onSubmit, hash: existingHash } = this.props

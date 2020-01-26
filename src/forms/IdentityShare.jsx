@@ -64,6 +64,7 @@ export default class IdentityShareForm extends ReactiveComponent {
                 },
 
                 {
+                    includePartners: true,
                     label: texts.userIdsLabel,
                     name: 'userIds',
                     multiple: true,
