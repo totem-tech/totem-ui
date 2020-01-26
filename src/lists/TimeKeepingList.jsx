@@ -4,15 +4,18 @@ import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { Button } from 'semantic-ui-react'
 import DataTable from '../components/DataTable'
-import { arrUnique, textCapitalize, deferred } from '../utils/utils'
-import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'
+import FormBuilder from '../components/FormBuilder'
+import { arrUnique, textCapitalize, deferred, copyToClipboard, textEllipsis } from '../utils/utils'
+// Forms
 import PartnerForm from '../forms/Partner'
+import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'
+import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
+// Services
+import identities from '../services/identity'
 import { confirm, showForm } from '../services/modal'
 import partners from '../services/partners'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import timeKeeping, { getTimeRecords, statuses } from '../services/timeKeeping'
-import identities from '../services/identity'
-import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -20,6 +23,7 @@ const words = {
     action: 'action',
     approve: 'approve',
     approved: 'approved',
+    close: 'close',
     deleted: 'deleted',
     dispute: 'dispute',
     disputed: 'disputed',
@@ -38,6 +42,7 @@ const words = {
     timer: 'timer',
     yes: 'yes',
     unknown: 'unknown',
+    worker: 'worker',
 }
 const wordsCap = textCapitalize(words)
 const texts = {
@@ -46,10 +51,15 @@ const texts = {
     bannedUser: 'User has been banned from this project',
     banUser: 'Ban User',
     banUsers: 'Ban Users',
+    blockStart: 'Start Block',
+    blockEnd: 'End Block',
+    blockCount: 'Number Of Blocks',
     cannotBanOwnIdentity: 'You cannot ban your own identity',
     emptyMessage: 'No records available for this project. Start booking time yourself by cliking the timer button above',
     orInviteATeamMember: 'or invite a team member',
     notProjectOwner: 'You do not own this project',
+    numberOfBreaks: 'Number Of Breaks',
+    recordDetails: 'Record Details',
     recordId: 'Record ID',
     rejectRecord: 'Reject record',
     selectedIdentitiesAlreadyBanned: 'Selected identities are already banned',
@@ -214,6 +224,10 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                     }),
                 title: wordsCap.edit,
             },
+            {
+                icon: 'eye',
+                onClick: () => this.showDetails(hash, record)
+            },
         ].map((x, i) => { x.key = i; return x })
             .filter(x => !x.hidden)
             .map((props) => <Button {...props} />)
@@ -274,6 +288,34 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             || (!projectHash && ['actionBan'].indexOf(x.key) >= 0))
 
         this.setState({ topLeftMenu: leftMenu })
+    }
+
+    showDetails = (hash, record) => {
+        const { _status, duration, end_block, nr_of_breaks, start_block, total_blocks, workerAddress, workerName } = record
+        const inputs = [
+            [texts.recordId, textEllipsis(hash, 30)],
+            [wordsCap.worker, workerName || workerAddress],
+            [wordsCap.status, _status],
+            [wordsCap.duration, duration],
+            [texts.numberOfBreaks, nr_of_breaks, 'number'],
+            [texts.blockCount, total_blocks],
+            [texts.blockStart, start_block],
+            [texts.blockEnd, end_block],
+        ].map(([label, value, type]) => ({
+            action: label !== texts.recordId ? undefined : { icon: 'copy', onClick: () => copyToClipboard(hash) },
+            label,
+            name: label,
+            type: type || 'text',
+            value,
+        }))
+
+        showForm(FormBuilder, {
+            closeText: wordsCap.close,
+            header: texts.recordDetails,
+            inputs,
+            size: 'mini',
+            submitText: null,
+        })
     }
 
     render() {
