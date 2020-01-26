@@ -10,7 +10,7 @@ import PartnerForm from '../forms/Partner'
 import { confirm, showForm } from '../services/modal'
 import partners from '../services/partners'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import timeKeeping, { getTimeRecords } from '../services/timeKeeping'
+import timeKeeping, { getTimeRecords, statuses } from '../services/timeKeeping'
 import identities from '../services/identity'
 import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
 
@@ -20,11 +20,15 @@ const words = {
     action: 'action',
     approve: 'approve',
     approved: 'approved',
+    deleted: 'deleted',
     dispute: 'dispute',
+    disputed: 'disputed',
+    draft: 'draft',
     duration: 'duration',
     edit: 'edit',
     hash: 'hash',
     identity: 'identity',
+    invoiced: 'invoiced',
     no: 'no',
     project: 'project',
     reject: 'reject',
@@ -54,9 +58,14 @@ const texts = {
     whatDoesThisMeanItemOne: 'No further booking or other actions will be accepted from the user(s)',
     whatDoesThisMeanItemTwo: 'Only approved bookings will be visible to you',
 }
-const submitStatuses = {
-    0: words.submitted,
-}
+const statusTexts = {}
+statusTexts[statuses.draft] = words.draft
+statusTexts[statuses.submitted] = words.submitted
+statusTexts[statuses.dispute] = words.disputed
+statusTexts[statuses.reject] = words.rejected
+statusTexts[statuses.accept] = words.approved
+statusTexts[statuses.invoice] = words.invoiced
+statusTexts[statuses.delete] = words.deleted
 
 export default class ProjectTimeKeepingList extends ReactiveComponent {
     constructor(props) {
@@ -173,8 +182,9 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     getActionContent(record, hash) {
         const { isOwner, projectHash, projectName } = this.props
         const { address: selectedAddress } = identities.getSelected()
-        const { approved, duration, locked, start_block, total_blocks, workerAddress } = record
+        const { approved, duration, locked, start_block, status, total_blocks, workerAddress } = record
         const isUser = selectedAddress === workerAddress
+        console.log({ status })
         return [
             {
                 disabled: !!approved || !isOwner,
@@ -184,7 +194,8 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 title: wordsCap.dispute,
             },
             {
-                disabled: approved || locked || !isUser,
+                disabled: locked || approved, //
+                hidden: !isUser,
                 icon: 'pencil',
                 onClick: () => showForm(
                     TimeKeepingUpdateForm,
@@ -224,7 +235,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                         onClick={() => showForm(PartnerForm, { values: { address: workerAddress } })}
                     />
                 )
-                record._status = locked ? words.locked : submitStatuses[submit_status]
+                record._status = locked ? words.locked : statusTexts[submit_status]
             })
             this.setState({ data: records })
         }, console.log)
@@ -261,7 +272,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             msg.content = texts.notProjectOwner
             msg.status = 'error'
         } else if (!projectHash) {
-            msg.content = texts.notProjectOwner
+            msg.content = texts.selectProjectForRecords
             msg.status = 'warning'
         } else if (isOwner) {
             msg.content = (

@@ -15,7 +15,6 @@ import partners from './partners'
 import identities from './identity'
 import { getUser } from './ChatClient'
 
-export const NEW_RECORD_HASH = '0x40518ed7e875ba87d6c7358c06b1cac9d339144f8367a0632af7273423dd124e'
 // Only stores projects that not owned by the selected identity
 const CACHE_PREFIX = 'totem__cache_timekeeping_projects_'
 const cacheStorage = new DataStorage(undefined, true)
@@ -28,6 +27,19 @@ const _config = {
     updatePromise: undefined,
 }
 
+// to sumbit a new time record must submit with this hash
+export const NEW_RECORD_HASH = '0x40518ed7e875ba87d6c7358c06b1cac9d339144f8367a0632af7273423dd124e'
+// record status codes
+export const statuses = {
+    draft: 0,
+    submit: 1,
+    dispute: 100,
+    reject: 200,
+    accept: 300,
+    invoice: 400,
+    delete: 999,
+}
+
 // getProjects returns all the projects user owns along with the projects they have been invited to (accepted or not).
 // Retrieved data is cached in localStorage and only updated there is changes to invitation or manually triggered by setting `@_forceUpdate` to `true`.
 //
@@ -38,6 +50,7 @@ export const getProjects = (_forceUpdate = false) => {
     const { address } = getSelected()
     cacheStorage.name = CACHE_PREFIX + address
     const invitedProjects = cacheStorage.getAll()
+
     if (_config.address !== address) {
         _config.firstAttempt = true
         _config.address = address
@@ -49,9 +62,10 @@ export const getProjects = (_forceUpdate = false) => {
             const changed = !!Array.from(invitedProjects).find(([hash]) => !hashes.includes(hash))
                 || !!hashes.find(hash => !invitedProjects.get(hash))
 
-            !_config.firstAttempt && _config.updateInProgress && changed && getProjects(true)
+            !_config.firstAttempt && !_config.updateInProgress && changed && getProjects(true)
         })
     }
+
     if (_config.updateInProgress && _config.updatePromise) return _config.updatePromise
     // retrieve user owned projects
     _config.updatePromise = getUserProjects().then(userProjects => {
@@ -166,6 +180,63 @@ export const getProjectWorkers = projectHash => Bond.promise([
     return { isOwner, ownerAddress, workers }
 })
 
+export const record = {
+    // Blockchain transaction
+    // (project owner) approve a time record
+    //
+    // Params:
+    // @workerAddress   string/bond
+    // @projectHash     string/bond/Uint8Array
+    // @recordHash      string/bond/Uint8Array
+    // @status          integer: default 0
+    // @reason          object: {ReasonCode: integer, ReasonCodeType: integer}
+    approve: (workerAddress, projectHash, recordHash, status = 300, locked = false, reason) => post({
+        sender: validateAddress(workerAddress),
+        call: calls.timekeeping.authoriseTime(
+            ss58Encode(workerAddress),
+            hashToBytes(projectHash),
+            hashToBytes(recordHash),
+            status,
+            locked,
+            reason || {
+                ReasonCodeKey: 0,
+                ReasonCodeTypeKey: 0
+            },
+        ),
+        compact: false,
+        longevity: true
+    }),
+    // get details of a record
+    get: recordHash => runtime.timekeeping.timeRecord(hashToBytes(recordHash)),
+    isOwner: (hash, address) => runtime.timeKeeping.timeHashOwner(hashToBytes(hash), ss58Decode(address)),
+    // list of all record hashes booked by worker
+    list: workerAddress => runtime.timekeeping.workerTimeRecordsHashList(ss58Decode(workerAddress)),
+    // list of all record hashes in a project 
+    listByProject: projectHash => runtime.timekeeping.projectTimeRecordsHashList(hashToBytes(projectHash)),
+    // Blockchain transaction
+    // @postingPeriod u16: 15 fiscal periods (0-14) // not yet implemented use default 0
+    // add/update record
+    save: (workerAddress, projectHash, recordHash, status = 0, reason, blockCount, postingPeriod = 0, blockStart, blockEnd, breakCount = 0) => post({
+        sender: validateAddress(workerAddress),
+        call: calls.timekeeping.submitTime(
+            hashToBytes(projectHash),
+            hashToBytes(recordHash || NEW_RECORD_HASH),
+            status,
+            reason || {
+                ReasonCodeKey: 0,
+                ReasonCodeTypeKey: 0
+            },
+            blockCount,
+            postingPeriod,
+            blockStart,
+            blockEnd,
+            breakCount,
+        ),
+        compact: false,
+        longevity: true
+    }),
+}
+
 export const worker = {
     // Blockchain transaction
     // (worker) accept invitation to a project
@@ -230,69 +301,6 @@ export const worker = {
         longevity: true
     }),
 }
-export const statuses = {
-    draft: 0,
-    submit: 1,
-    disputed: 100,
-    rejected: 200,
-    accepted: 300,
-    invoiced: 400,
-    delete: 999,
-}
-export const record = {
-    // Blockchain transaction
-    // (project owner) approve a time record
-    //
-    // Params:
-    // @workerAddress   string/bond
-    // @projectHash     string/bond/Uint8Array
-    // @recordHash      string/bond/Uint8Array
-    // @status          integer: default 0
-    // @reason          object: {ReasonCode: integer, ReasonCodeType: integer}
-    approve: (workerAddress, projectHash, recordHash, status = 300, locked = false, reason) => post({
-        sender: validateAddress(workerAddress),
-        call: calls.timekeeping.authoriseTime(
-            ss58Encode(workerAddress),
-            hashToBytes(projectHash),
-            hashToBytes(recordHash),
-            status,
-            locked,
-            reason || {
-                ReasonCodeKey: 0,
-                ReasonCodeTypeKey: 0
-            },
-        ),
-        compact: false,
-        longevity: true
-    }),
-    // get details of a record
-    get: recordHash => runtime.timekeeping.timeRecord(hashToBytes(recordHash)),
-    isOwner: (hash, address) => runtime.timeKeeping.timeHashOwner(hashToBytes(hash), ss58Decode(address)),
-    // list of all record hashes booked by worker
-    list: workerAddress => runtime.timekeeping.workerTimeRecordsHashList(ss58Decode(workerAddress)),
-    // list of all record hashes in a project 
-    listByProject: projectHash => runtime.timekeeping.projectTimeRecordsHashList(hashToBytes(projectHash)),
-    // Blockchain transaction
-    // @postingPeriod u16: 15 fiscal periods (0-14) // not yet implemented use default 0
-    // add/update record
-    save: (workerAddress, projectHash, recordHash, status = 0, reason = [0, 0], blockCount, postingPeriod = 0, blockStart, blockEnd, breakCount = 0) => post({
-        sender: validateAddress(workerAddress),
-        call: calls.timekeeping.submitTime(
-            hashToBytes(projectHash),
-            hashToBytes(recordHash || NEW_RECORD_HASH),
-            status,
-            reason,
-            blockCount,
-            postingPeriod,
-            blockStart,
-            blockEnd,
-            breakCount,
-        ),
-        compact: false,
-        longevity: true
-    }),
-}
-
 const timeKeeping = {
     project: {
         // timestamp of the very first recorded time on a project

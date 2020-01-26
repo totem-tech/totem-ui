@@ -9,6 +9,7 @@ import TimeKeepingSummary from '../lists/TimeKeepingSummary'
 import { getSelected, selectedAddressBond } from '../services/identity'
 import { getProjects, getProjectsBond } from '../services/timeKeeping'
 import { layoutBond } from '../services/window'
+import { openStatuses } from '../services/project'
 
 const words = {
     invitations: 'invitations',
@@ -91,12 +92,14 @@ export default class TimeKeepingView extends Component {
         const projectIn = findInput(inputs, 'projectHash')
         projectIn.loading = true
         getProjects().then(projects => {
-            const options = Array.from(projects).map(([hash, project]) => ({
-                key: hash,
-                project,
-                text: (project || {}).name || wordsCap.unknown,
-                value: hash,
-            }))
+            const options = Array.from(projects)
+                .filter(([_, { status }]) => openStatuses.includes(status))
+                .map(([hash, project]) => ({
+                    key: hash,
+                    project,
+                    text: (project || {}).name || wordsCap.unknown,
+                    value: hash,
+                }))
             projectIn.loading = false
             projectIn.options = arrSort(options, 'text')
             projectIn.noResultsMessage = options.length > 0 ? undefined : (

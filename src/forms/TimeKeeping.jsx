@@ -22,7 +22,7 @@ import { getAddressName } from '../services/partners'
 import projectService, { openStatuses } from '../services/project'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import storage from '../services/storage'
-import timeKeeping, { getProjects, getProjectsBond, NEW_RECORD_HASH } from '../services/timeKeeping'
+import timeKeeping, { getProjects, getProjectsBond, NEW_RECORD_HASH, statuses } from '../services/timeKeeping'
 
 // Hash that indicates creation of new record
 const DURATION_ZERO = '00:00:00'
@@ -46,7 +46,6 @@ const wordsCap = textCapitalize(words)
 const texts = {
     addedToQueue: 'Added to queue',
     areYouSure: 'Are you sure?',
-    blockCount: 'Block Count',
     cancelWarning: 'You have a running timer. Would you like to stop and exit?',
     checkingProjectStatus: 'Checking project status...',
     goBack: 'Go Back',
@@ -62,6 +61,8 @@ const texts = {
     manuallyEnterDuration: 'Manually enter duration',
     noContinueTimer: 'No, continue timer',
     noProjectsMsg: 'Create a new project or ask to be invited',
+    numberOfBlocks: 'Number of blocks',
+    numberOfBreaks: 'Number of breaks',
     recordSubmittedSuccessfully: 'Time record submitted successfully',
     requestQueuedMsg: 'Request has been added to queue. You will be notified of the progress shortly.',
     resetTimer: 'Reset Timer',
@@ -101,9 +102,9 @@ function handleDurationChange(e, formValues, i) {
     this.setState({ inputs: inputs })
 }
 
-function handleSubmitTime(hash, projectName, values, status, reason, breakCount) {
+function handleSubmitTime(hash, projectName, values, status, reason) {
     const { onSubmit } = this.props
-    const { blockCount, blockEnd, blockStart, duration, projectHash, workerAddress } = values
+    const { blockCount, blockEnd, blockStart, breakCount, duration, projectHash, workerAddress } = values
     const queueProps = {
         address: workerAddress, // for balance check
         type: QUEUE_TYPES.BLOCKCHAIN,
@@ -113,7 +114,6 @@ function handleSubmitTime(hash, projectName, values, status, reason, breakCount)
         description: `${wordsCap.project}: ${projectName} | ${wordsCap.duration}: ${values.duration}`,
         then: success => {
             isFn(onSubmit) && onSubmit(success, values)
-            if (!this.mounted) return
             this.setState({
                 message: {
                     content: success ? texts.recordSubmittedSuccessfully : texts.transactionFailed,
@@ -139,7 +139,8 @@ function handleSubmitTime(hash, projectName, values, status, reason, breakCount)
             [wordsCap.submit, getAddressName(workerAddress)],
             [wordsCap.project, projectName],
             [wordsCap.duration, duration],
-            [texts.blockCount, blockCount],
+            [texts.numberOfBlocks, blockCount],
+            [texts.numberOfBreaks, breakCount],
         ].map(x => ({
             readOnly: true,
             label: x[0],
@@ -164,13 +165,11 @@ export default class TimeKeepingForm extends ReactiveComponent {
     constructor(props) {
         super(props)
 
-        this.handleValuesChange = this.handleValuesChange.bind(this)
-        this.saveValues = this.saveValues.bind(this)
-
         const values = storage.timeKeeping() || {}
-        const { duration, durationValid, inprogress, projectHash } = values
+        const { breakCount, duration, durationValid, inprogress, projectHash } = values
         values.durationValid = !isDefined(durationValid) ? true : durationValid
         values.duration = duration || DURATION_ZERO
+        values.breakCount = (breakCount || 0)
         const projectHashSupplied = hasValue(props.projectHash)
         values.projectHash = projectHashSupplied && !inprogress ? props.projectHash : projectHash
 
@@ -227,10 +226,13 @@ export default class TimeKeepingForm extends ReactiveComponent {
                 },
             ]
         }
+
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
     componentWillMount() {
-        this.mounted = true
+        this._mounted = true
         this.tieId = chain.height.tie(blockNumber => {
             const { values: { inprogress } } = this.state
             blockNumber = parseInt(blockNumber)
@@ -257,7 +259,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
     }
 
     componentWillUnmount() {
-        this.mounted = false
+        this._mounted = false
         chain.height.untie(this.tieId)
         getProjectsBond.untie(this.tieIdProjects)
     }
@@ -317,7 +319,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         })
     }
 
-    handleValuesChange(_, formValues) {
+    handleValuesChange = (_, formValues) => {
         let { inputs, values } = this.state
         values = objCopy(formValues, values)
         const { blockEnd, blockStart, manualEntry } = values
@@ -347,6 +349,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
             values.duration = DURATION_ZERO
             values.inprogress = false
             values.stopped = false
+            values.breakCount = 0
             inputs.find(x => x.name === 'duration').value = DURATION_ZERO
             this.setState({ values, inputs })
             storage.timeKeeping(values)
@@ -379,11 +382,12 @@ export default class TimeKeepingForm extends ReactiveComponent {
     }
 
     handleStop() {
-        const { blockNumber, inputs, values } = this.state
+        const { blockNumber, breakCount, inputs, values } = this.state
         inputs.find(x => x.name === 'manualEntry').disabled = false
         values.blockEnd = blockNumber
         values.inprogress = false
         values.stopped = true
+        values.breakCount++
         this.setState({ inputs, values })
         setTimeout(this.saveValues)
     }
@@ -409,14 +413,10 @@ export default class TimeKeepingForm extends ReactiveComponent {
         const projectOption = findInput(inputs, 'projectHash').options
             .find(option => option.value === projectHash) || {}
         const projectName = projectOption.text
-        const reason = {
-            ReasonCodeKey: 0,
-            ReasonCodeTypeKey: 0
-        }
-        handleSubmitTime.call(this, NEW_RECORD_HASH, projectName, values, 0, reason, 0)
+        handleSubmitTime.call(this, NEW_RECORD_HASH, projectName, values, statuses.draft)
     }
 
-    saveValues(currentBlockNumber, newDuration) {
+    saveValues = (currentBlockNumber, newDuration) => {
         const { blockNumber, inputs, values } = this.state
         const { blockEnd, blockStart, inprogress } = values
 
@@ -547,6 +547,7 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
 
         this.state = {
             message: {},
+            onSubmit: this.handleSubmit,
             values: props.values || {},
             inputs: [
                 {
@@ -562,21 +563,19 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
         fillValues(this.state.inputs, props.values, true)
     }
 
-    handleSubmit(e, { duration }) {
+    handleSubmit = (e, { duration }) => {
         const { hash, projectName, values } = this.props
         const blockCount = durationToBlockCount(duration)
         const blockEnd = values.blockStart + blockCount
-        handleSubmitTime.call(this, hash, projectName, { ...values, blockCount, blockEnd, duration })
+        const newValues = { ...values, blockCount, blockEnd, duration }
+        timeKeeping.record.get(hash).then(record => {
+            const { reason_code, submit_status } = { record }
+            handleSubmitTime.call(this, hash, projectName, newValues, submit_status, reason_code)
+        })
+
     }
 
-    render() {
-        const { inputs, message } = this.state
-        return <FormBuilder {...objCopy({
-            inputs,
-            message,
-            onSubmit: this.handleSubmit.bind(this),
-        }, objWithoutKeys(this.props, ['entry', 'hash']))} />
-    }
+    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
 
 TimeKeepingUpdateForm.propTypes = {
