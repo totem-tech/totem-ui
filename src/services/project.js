@@ -53,15 +53,19 @@ export const fetchProjects = (projectHashesOrBond = []) => new Promise((resolve,
                 client.projectsByHashes(uniqueHashes, (err, projects = new Map(), unknownHashes = []) => {
                     if (err) return reject(err)
                     unknownHashes.forEach(hash => projects.set(hash, {}))
-                    Array.from(projects).forEach(([hash, project]) => {
-                        const index = uniqueHashes.indexOf(hash)
-                        const { ownerAddress } = project
-                        project.firstSeen = arFristSeen[index]
-                        project.totalBlocks = arTotalBlocks[index]
-                        project.status = arStatusCode[index]
-                        const { name } = identities.get(ownerAddress) || partners.get(ownerAddress) || {}
-                        project.ownerName = name
-                    })
+                    Array.from(projects)
+                        .forEach(([hash, project]) => {
+                            const index = uniqueHashes.indexOf(hash)
+                            project.status = arStatusCode[index]
+                            //exclude deleted project
+                            if (project.status === null) return projects.delete(hash)
+
+                            const { ownerAddress } = project
+                            const { name } = identities.get(ownerAddress) || partners.get(ownerAddress) || {}
+                            project.ownerName = name
+                            project.firstSeen = arFristSeen[index]
+                            project.totalBlocks = arTotalBlocks[index]
+                        })
                     resolve(projects)
                 })
             })
