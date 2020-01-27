@@ -93,7 +93,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 { collapsing: true, key: '_status', textAlign: 'center', title: wordsCap.status },
                 {
                     collapsing: true,
-                    style: { padding: 0, width: 90 },
+                    style: { padding: '0px 5px' },
                     content: this.getActionContent,
                     textAlign: 'center',
                     title: wordsCap.action,
@@ -192,20 +192,19 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     }
 
     getActionContent = (record, hash) => {
-        const { isOwner, projectHash, projectName } = this.props
-        const { address: selectedAddress } = identities.getSelected()
+        const { isOwner, manage, projectHash, projectName } = this.props
         const { approved, duration, locked, start_block, submit_status, total_blocks, workerAddress } = record
-        const isUser = selectedAddress === workerAddress
-        return [
+        const editableStatuses = [statuses.dispute, statuses.reject]
+        const isSubmitted = submit_status === statuses.submit
+        const buttons = [
             {
-                disabled: !!approved || !isOwner,
-                hidden: !isOwner,
-                icon: 'bug',
-                onClick: toBeImplemented,
-                title: wordsCap.dispute,
+                icon: 'eye',
+                onClick: () => this.showDetails(hash, record),
+                title: texts.recordDetails,
             },
             {
-                disabled: !isUser || submit_status !== 0 || locked || approved,
+                disabled: !editableStatuses.includes(submit_status) || locked || approved,
+                hidden: manage,
                 icon: 'pencil',
                 onClick: () => showForm(
                     TimeKeepingUpdateForm,
@@ -225,12 +224,37 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 title: wordsCap.edit,
             },
             {
-                icon: 'eye',
-                onClick: () => this.showDetails(hash, record)
+                disabled: !isSubmitted,
+                hidden: !manage,
+                icon: 'check',
+                onClick: () => this.handleApprove(hash, true),
+                positive: true,
+                title: wordsCap.approve,
+            },
+            {
+                disabled: !isSubmitted || approved || !isOwner,
+                hidden: !manage,
+                icon: 'bug',
+                onClick: toBeImplemented,
+                title: wordsCap.dispute,
+            },
+            {
+                disabled: !isSubmitted,
+                hidden: !manage,
+                icon: 'close',
+                onClick: () => confirm({
+                    confirmButton: <Button negative content={wordsCap.reject} />,
+                    onConfirm: () => this.handleApprove(hash, false),
+                    size: 'tiny'
+                }),
+                negative: true,
+                title: wordsCap.reject,
             },
         ].map((x, i) => { x.key = i; return x })
             .filter(x => !x.hidden)
             .map((props) => <Button {...props} />)
+
+        return buttons
     }
 
     getRecords = () => {
@@ -261,8 +285,8 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
     handleApprove = (hash, approve = false) => {
         const { ownerAddress, projectHash } = this.props
-        const { approved, rejected, workerAddress } = this.state.data.get(hash) || {}
-        if (!workerAddress || approved || rejected && !approve) return
+        const { approved, submiteStatus, workerAddress } = this.state.data.get(hash) || {}
+        if (!workerAddress || submiteStatus !== statuses.submit || approved === approve) return
 
         // const reason = approve ? null : {.....}
         // timeKeeping.record.approve(workerAddress, projectHash, hash, approve)

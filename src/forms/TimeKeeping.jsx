@@ -108,6 +108,7 @@ function handleDurationChange(e, formValues, i) {
 function handleSubmitTime(hash, projectName, values, status, reason) {
     const { onSubmit } = this.props
     const { blockCount, blockEnd, blockStart, breakCount, duration, projectHash, workerAddress } = values
+    this.setState({ submitDisabled: true })
     const queueProps = {
         address: workerAddress, // for balance check
         type: QUEUE_TYPES.BLOCKCHAIN,
@@ -124,6 +125,7 @@ function handleSubmitTime(hash, projectName, values, status, reason) {
                     showIcon: true,
                     status: success ? 'success' : 'error',
                 },
+                submitDisabled: false,
             })
             success && this.handleReset && this.handleReset()
         },
@@ -188,7 +190,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     inline: true,
                     label: wordsCap.project,
                     name: 'projectHash',
-                    onChange: this.handleProjectChange.bind(this),
+                    onChange: this.handleProjectChange,
                     options: [],
                     placeholder: texts.selectAProject,
                     required: true,
@@ -268,7 +270,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
     }
 
     // check if project is active (status = open or reopened)
-    handleProjectChange(_, values, index) {
+    handleProjectChange = (_, values, index) => {
         const { projectHash } = values
         const { inputs } = this.state
         if (!projectHash) return
@@ -388,12 +390,11 @@ export default class TimeKeepingForm extends ReactiveComponent {
     }
 
     handleStop() {
-        const { blockNumber, breakCount, inputs, values } = this.state
+        const { blockNumber, inputs, values } = this.state
         inputs.find(x => x.name === 'manualEntry').disabled = false
         values.blockEnd = blockNumber
         values.inprogress = false
         values.stopped = true
-        values.breakCount++
         this.setState({ inputs, values })
         setTimeout(this.saveValues)
     }
@@ -406,6 +407,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         values.inprogress = true
         values.stopped = false
         values.manualEntry = undefined
+        values.breakCount++
         const meIn = inputs.find(x => x.name === 'manualEntry')
         meIn.defaultChecked = false
         meIn.disabled = true
@@ -419,7 +421,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         const projectOption = findInput(inputs, 'projectHash').options
             .find(option => option.value === projectHash) || {}
         const projectName = projectOption.text
-        handleSubmitTime.call(this, NEW_RECORD_HASH, projectName, values, statuses.draft)
+        handleSubmitTime.call(this, NEW_RECORD_HASH, projectName, values, statuses.submit)
     }
 
     saveValues = (currentBlockNumber, newDuration) => {
@@ -432,12 +434,12 @@ export default class TimeKeepingForm extends ReactiveComponent {
             values.duration = newDuration
             values.blockCount = durationToBlockCount(newDuration)
             values.blockEnd = currentBlockNumber
-            values.blockStart = currentBlockNumber - values.blockCount
+            values.blockStart = blockStart || (currentBlockNumber - values.blockCount)
         } else {
             values.blockEnd = inprogress ? currentBlockNumber : blockEnd
             values.blockCount = values.blockEnd - blockStart
-            values.blockStart = values.blockEnd - values.blockCount
-            values.duration = blockCountToDuration(values.blockEnd - blockStart)
+            values.blockStart = blockStart || values.blockEnd - values.blockCount
+            values.duration = blockCountToDuration(values.blockCount)
         }
         duraIn.value = values.duration
         values.durationValid = BLOCK_DURATION_REGEX.test(values.duration) && values.duration !== DURATION_ZERO
@@ -563,18 +565,31 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
                     type: 'text',
                     required: true,
                 },
+                {
+                    inline: true,
+                    name: 'submit_status',
+                    options: [
+                        { label: 'Save as draft', value: statuses.draft },
+                        { label: 'Submit for approval', value: statuses.submit }
+                    ],
+                    required: true,
+                    type: 'radio-group',
+                },
             ]
         }
 
         fillValues(this.state.inputs, props.values, true)
+
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
-    handleSubmit = (e, { duration }) => {
+    handleSubmit = (e, { duration, submit_status }) => {
         const { hash, projectName, values } = this.props
         const blockCount = durationToBlockCount(duration)
         const blockEnd = values.blockStart + blockCount
         timeKeeping.record.get(hash).then(record => {
-            const { nr_of_breaks, reason_code, submit_status } = { record }
+            const { nr_of_breaks, reason_code } = { record }
             const newValues = {
                 ...values,
                 blockCount,

@@ -161,7 +161,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             ),
             status: 'error'
         }
-        this.setState({ inputs })
+        this.setState({ inputs, submitDisabled: partnerIn.loading })
         if (!partnerIn.loading) return
 
         // check if partner is already invited or accepted
@@ -175,13 +175,13 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             partnerIn.loading = false
             // allows (re-)invitation if user hasn't accepted (!== true) invitation
             partnerIn.invalid = !!accepted
-            if (accepted === null) return this.setState({ inputs })
-
-            partnerIn.message = {
-                content: accepted ? 'Partner already accepted invitation to selected project' : 'Partner has already been invited to selected project',
-                status: accepted ? 'error' : 'warning'
+            if (accepted !== null) {
+                partnerIn.message = {
+                    content: accepted ? 'Partner already accepted invitation to selected project' : 'Partner has already been invited to selected project',
+                    status: accepted ? 'error' : 'warning'
+                }
             }
-            this.setState({ inputs })
+            this.setState({ inputs, submitDisabled: false })
         })
     }
 
