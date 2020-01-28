@@ -108,7 +108,6 @@ function handleDurationChange(e, formValues, i) {
 function handleSubmitTime(hash, projectName, values, status, reason) {
     const { onSubmit } = this.props
     const { blockCount, blockEnd, blockStart, breakCount, duration, projectHash, workerAddress } = values
-    this.setState({ submitDisabled: true })
     const queueProps = {
         address: workerAddress, // for balance check
         type: QUEUE_TYPES.BLOCKCHAIN,
@@ -157,7 +156,7 @@ function handleSubmitTime(hash, projectName, values, status, reason) {
             closeModal(this.confirmId)
             // send task to queue service
             addToQueue(queueProps)
-            this.setState({ message })
+            this.setState({ message, submitDisabled: true })
         },
         size: 'tiny',
         subheader: texts.submitConfirmationMsg,
@@ -583,6 +582,10 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
         this.originalSetState = this.setState
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
+
+    componentWillMount = () => this._mounted = true
+
+    componentWillUnmount = () => this._mounted = false
 
     handleSubmit = (e, { duration, submit_status }) => {
         const { hash, projectName, values } = this.props

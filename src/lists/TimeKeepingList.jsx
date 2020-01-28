@@ -285,8 +285,9 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
     handleApprove = (hash, approve = false) => {
         const { ownerAddress, projectHash } = this.props
-        const { approved, submiteStatus, workerAddress } = this.state.data.get(hash) || {}
-        if (!workerAddress || submiteStatus !== statuses.submit || approved === approve) return
+        const { approved, submit_status, workerAddress } = this.state.data.get(hash) || {}
+        const targetStatus = approve ? statuses.accept : statuses.reject
+        if (!workerAddress || submit_status !== statuses.submit || targetStatus === submit_status) return
 
         // const reason = approve ? null : {.....}
         // timeKeeping.record.approve(workerAddress, projectHash, hash, approve)
