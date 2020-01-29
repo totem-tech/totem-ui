@@ -225,10 +225,10 @@ export const record = {
                 ReasonCodeKey: 0,
                 ReasonCodeTypeKey: 0
             },
-            blockCount,
+            blockCount || 0,
             postingPeriod || 0,
-            blockStart,
-            blockEnd,
+            blockStart || 0,
+            blockEnd || 0,
             breakCount || 0,
         ),
         compact: false,

@@ -64,6 +64,8 @@ const texts = {
     rejectRecord: 'Reject record',
     selectedIdentitiesAlreadyBanned: 'Selected identities are already banned',
     selectProjectForRecords: 'Please select a project to view time records',
+    setAsDraft: 'Set as draft',
+    setAsDraftDetailed: 'Set as draft and force user to submit again',
     timeKeeping: 'Time Keeping',
     timeKeepingBanWarning: 'You are about to ban the following addresses permanently from the project named',
     uhOh: 'Uh oh!',
@@ -86,6 +88,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
         this.getRecords = deferred(this.getRecords, 150)
         this.state = {
+            inProgressHashes: [],
             columns: [
                 // { key: '_projectName', title: wordsCap.project },
                 { key: '_workerName', title: wordsCap.identity },
@@ -193,9 +196,11 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
     getActionContent = (record, hash) => {
         const { isOwner, manage, projectHash, projectName } = this.props
+        const { inProgressHashes } = this.state
         const { approved, duration, locked, start_block, submit_status, total_blocks, workerAddress } = record
-        const editableStatuses = [statuses.dispute, statuses.reject]
+        const editableStatuses = [statuses.draft, statuses.dispute, statuses.reject]
         const isSubmitted = submit_status === statuses.submit
+        const inProgress = inProgressHashes.includes(hash)
         const buttons = [
             {
                 icon: 'eye',
@@ -203,7 +208,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 title: texts.recordDetails,
             },
             {
-                disabled: !editableStatuses.includes(submit_status) || locked || approved,
+                disabled: inProgress || !editableStatuses.includes(submit_status) || locked || approved,
                 hidden: manage,
                 icon: 'pencil',
                 onClick: () => showForm(
@@ -224,22 +229,36 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 title: wordsCap.edit,
             },
             {
-                disabled: !isSubmitted,
-                hidden: !manage,
+                disabled: inProgress || !isSubmitted,
+                hidden: !manage || approved,
                 icon: 'check',
                 onClick: () => this.handleApprove(hash, true),
                 positive: true,
                 title: wordsCap.approve,
             },
             {
-                disabled: !isSubmitted || approved || !isOwner,
+                // set as draft button
+                disabled: inProgress,
+                hidden: !manage || !approved,
+                icon: 'reply',
+                onClick: () => confirm({
+                    content: <h3>{texts.setAsDraftDetailed}?</h3>,
+                    onConfirm: () => this.handleSetAsDraft(hash),
+                    size: 'tiny',
+                }),
+                title: texts.setAsDraft,
+            },
+            {
+                // dispute button
+                disabled: inProgress || !isSubmitted || approved || !isOwner,
                 hidden: !manage,
                 icon: 'bug',
                 onClick: toBeImplemented,
                 title: wordsCap.dispute,
             },
             {
-                disabled: !isSubmitted,
+                // reject button
+                disabled: inProgress || !isSubmitted,
                 hidden: !manage,
                 icon: 'close',
                 onClick: () => confirm({
@@ -285,10 +304,12 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
     handleApprove = (hash, approve = false) => {
         const { ownerAddress, projectHash } = this.props
-        const { approved, submit_status, workerAddress } = this.state.data.get(hash) || {}
+        const { data, inProgressHashes } = this.state
+        const { approved, submit_status, workerAddress } = data.get(hash) || {}
         const targetStatus = approve ? statuses.accept : statuses.reject
         if (!workerAddress || submit_status !== statuses.submit || targetStatus === submit_status) return
-
+        inProgressHashes.push(hash)
+        this.setState({ inProgressHashes })
         // const reason = approve ? null : {.....}
         // timeKeeping.record.approve(workerAddress, projectHash, hash, approve)
         addToQueue({
@@ -297,7 +318,11 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             args: [ownerAddress, workerAddress, projectHash, hash, approve],
             title: `${texts.timeKeeping} - ${approve ? texts.approveRecord : texts.rejectRecord}`,
             description: `${texts.recordId}: ${hash}`,
-            then: this.getRecords
+            then: success => {
+                inProgressHashes.shift(hash)
+                this.setState({ inProgressHashes })
+                success && this.getRecords()
+            },
         })
     }
 
@@ -313,6 +338,46 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             || (!projectHash && ['actionBan'].indexOf(x.key) >= 0))
 
         this.setState({ topLeftMenu: leftMenu })
+    }
+
+    handleSetAsDraft = hash => {
+        const { ownerAddress, projectHash } = this.props
+        const { data, inProgressHashes } = this.state
+        const { approved, end_block, nr_of_breaks, start_block, total_blocks } = data.get(hash) || {}
+        // allow project owner to be able to procees only if approved
+        if (!approved || !identities.find(ownerAddress)) return
+
+        const reason = {
+            ReasonCodeKey: 0,
+            ReasonCodeTypeKey: 0
+        }
+
+        inProgressHashes.push(hash)
+        this.setState({ inProgressHashes })
+        addToQueue({
+            address: ownerAddress, // for balance check
+            type: QUEUE_TYPES.BLOCKCHAIN,
+            func: 'timeKeeping_record_save',
+            title: `${texts.timeKeeping} - ${texts.setAsDraft}`,
+            description: `${texts.recordId}: ${hash}`,
+            args: [
+                ownerAddress,
+                projectHash,
+                hash,
+                statuses.draft,
+                reason,
+                total_blocks,
+                0,
+                start_block,
+                end_block,
+                nr_of_breaks,
+            ],
+            then: success => {
+                inProgressHashes.shift(hash)
+                this.setState({ inProgressHashes })
+                success && this.getRecords()
+            }
+        })
     }
 
     showDetails = (hash, record) => {

@@ -131,8 +131,8 @@ export default class FormBuilder extends ReactiveComponent {
             submitProps.positive = isDefined(positive) ? positive : true
             submitBtn = <Button {...submitProps} />
         }
-        if (!modal || closeText !== null) {
-            const closeProps = React.isValidElement(closeText) ? objCopy(closeText.props) : {}
+        if (modal && closeText !== null) {
+            const closeProps = React.isValidElement(closeText) ? { ...closeText.props } : {}
             closeProps.content = closeProps.content || (isStr(closeText) ? closeText : (success ? 'Close' : 'Cancel'))
             closeProps.negative = isDefined(closeProps.negative) ? closeProps.negative : true
             closeProps.onClick = closeProps.onClick || this.handleClose

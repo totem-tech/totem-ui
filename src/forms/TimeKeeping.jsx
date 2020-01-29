@@ -65,6 +65,7 @@ const texts = {
     noProjectsMsg: 'Create a new project or ask to be invited',
     numberOfBlocks: 'Number of blocks',
     numberOfBreaks: 'Number of breaks',
+    permissionDenied: 'Permission denied',
     recordSubmittedSuccessfully: 'Time record submitted successfully',
     requestQueuedMsg: 'Request has been added to queue. You will be notified of the progress shortly.',
     resetTimer: 'Reset Timer',
@@ -105,14 +106,37 @@ function handleDurationChange(e, formValues, i) {
     this.setState({ inputs: inputs })
 }
 
-function handleSubmitTime(hash, projectName, values, status, reason) {
+function handleSubmitTime(hash, projectName, values, status, reason, checkBanned = true) {
+    const { address } = getSelected()
+    if (checkBanned) return timeKeeping.worker.banned(hash, address).then(banned => {
+        if (banned) return this.setState({
+            message: {
+                header: texts.permissionDenied,
+                showIcon: true,
+                status: 'error',
+            }
+        })
+        return handleSubmitTime.call(this, hash, projectName, values, status, reason, false)
+    })
+
     const { onSubmit } = this.props
     const { blockCount, blockEnd, blockStart, breakCount, duration, projectHash, workerAddress } = values
     const queueProps = {
         address: workerAddress, // for balance check
         type: QUEUE_TYPES.BLOCKCHAIN,
         func: 'timeKeeping_record_save',
-        args: [workerAddress, projectHash, hash, status, reason, blockCount, 0, blockStart, blockEnd, breakCount],
+        args: [
+            workerAddress,
+            projectHash,
+            hash,
+            status,
+            reason,
+            blockCount,
+            0,
+            blockStart,
+            blockEnd,
+            breakCount,
+        ],
         title: texts.tkNewRecord,
         description: `${wordsCap.project}: ${projectName} | ${wordsCap.duration}: ${values.duration}`,
         then: success => {
@@ -125,6 +149,7 @@ function handleSubmitTime(hash, projectName, values, status, reason) {
                     status: success ? 'success' : 'error',
                 },
                 submitDisabled: false,
+                success,
             })
             success && this.handleReset && this.handleReset()
         },
@@ -133,7 +158,7 @@ function handleSubmitTime(hash, projectName, values, status, reason) {
     const message = {
         content: texts.requestQueuedMsg,
         header: texts.addedToQueue,
-        status: 'success',
+        status: 'loading',
         showIcon: true
     }
 
@@ -523,6 +548,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         return (
             <FormBuilder {...{
                 ...this.props,
+                ...this.state,
                 closeText: closeBtn,
                 inputs,
                 message: !inprogress ? message : {
