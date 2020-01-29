@@ -5,7 +5,7 @@ import { ReactiveComponent } from 'oo7-react'
 import { Button } from 'semantic-ui-react'
 import DataTable from '../components/DataTable'
 import FormBuilder from '../components/FormBuilder'
-import { arrUnique, textCapitalize, deferred, copyToClipboard, textEllipsis } from '../utils/utils'
+import { isArr, textCapitalize, deferred, copyToClipboard, textEllipsis } from '../utils/utils'
 // Forms
 import PartnerForm from '../forms/Partner'
 import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'

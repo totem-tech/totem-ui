@@ -183,19 +183,22 @@ export default class DataTable extends ReactiveComponent {
         // include checkbox to select items
         const n = selectedIndexes.length
         const iconName = `${n > 0 ? 'check ' : ''}square${n === 0 || n != totalRows ? ' outline' : ''}`
+        const deselect = n === totalRows || n > 0 && n < totalRows
+        const numRows = deselect ? n : totalRows
+        const title = `${deselect ? texts.deselectAll : texts.selectAll} (${numRows})`
         headers.splice(0, 0, (
             <Table.HeaderCell
                 key="checkbox"
                 onClick={() => this.handleAllSelect(selectedIndexes)}
                 style={styles.checkboxCell}
-                title={n === totalRows || n > 0 && n < totalRows ? texts.deselectAll : texts.selectAll}
+                title={title}
             >
                 <Icon
                     name={iconName}
                     size="large"
                     className="no-margin"
                 />
-            </Table.HeaderCell>
+            </Table.HeaderCell >
         ))
         return headers
     }
