@@ -296,7 +296,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     getRecords = hashList => {
         // only update list if changed
         if (hashList && JSON.stringify(hashList) === JSON.stringify(this.hashList)) return
-        this.hashList = hashList || this.hashList
+        this.hashList = isArr(hashList) ? hashList : this.hashList
         if (this.hashList.length === 0) return this.setState({ data: new Map() })
 
         getTimeRecordsDetails(this.hashList).then(records => {
