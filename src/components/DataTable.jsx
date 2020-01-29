@@ -60,7 +60,7 @@ export default class DataTable extends ReactiveComponent {
     }
 
     getTopContent(totalRows, selectedIndexes) {
-        let { searchable, topLeftMenu, topRightMenu } = this.props
+        let { searchable, selectable, topLeftMenu, topRightMenu } = this.props
         const { keywords, layout } = this.state
         const isMobile = layout === 'mobile'
         topLeftMenu = (topLeftMenu || []).filter(x => !x.hidden)
@@ -81,7 +81,7 @@ export default class DataTable extends ReactiveComponent {
             </Grid.Column>
         )
 
-        const right = topRightMenu && topRightMenu.length > 0 && (
+        const right = selectable && topRightMenu && topRightMenu.length > 0 && (
             <Grid.Column
                 computer={3}
                 floated="right"
@@ -183,19 +183,22 @@ export default class DataTable extends ReactiveComponent {
         // include checkbox to select items
         const n = selectedIndexes.length
         const iconName = `${n > 0 ? 'check ' : ''}square${n === 0 || n != totalRows ? ' outline' : ''}`
+        const deselect = n === totalRows || n > 0 && n < totalRows
+        const numRows = deselect ? n : totalRows
+        const title = `${deselect ? texts.deselectAll : texts.selectAll} (${numRows})`
         headers.splice(0, 0, (
             <Table.HeaderCell
                 key="checkbox"
                 onClick={() => this.handleAllSelect(selectedIndexes)}
                 style={styles.checkboxCell}
-                title={n === totalRows || n > 0 && n < totalRows ? texts.deselectAll : texts.selectAll}
+                title={title}
             >
                 <Icon
                     name={iconName}
                     size="large"
                     className="no-margin"
                 />
-            </Table.HeaderCell>
+            </Table.HeaderCell >
         ))
         return headers
     }

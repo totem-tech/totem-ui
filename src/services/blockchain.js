@@ -1,7 +1,7 @@
 import { addCodecTransform, post } from 'oo7-substrate'
 import timeKeeping from './timeKeeping'
 import project from './project'
-import { validateAddress } from '../utils/convert'
+import { hashToBytes, validateAddress } from '../utils/convert'
 import { setNetworkDefault, denominationInfo } from 'oo7-substrate'
 import { isObj } from '../utils/utils'
 import types from '../utils/totem-polkadot-js-types'
@@ -9,6 +9,18 @@ import types from '../utils/totem-polkadot-js-types'
 // oo7-substrate: register custom types
 Object.keys(types).forEach(key => addCodecTransform(key, types[key]))
 
+// used for archiving
+export const hashTypes = {
+    /// 1000
+    /// 2000
+    projectHash: 3000,
+    timeRecordHash: 4000,
+    /// 5000
+    /// 6000
+    /// 7000
+    /// 8000
+    /// 9000
+}
 export const denominations = Object.freeze({
     Ytx: 24,
     Ztx: 21,
@@ -25,14 +37,20 @@ export let config = Object.freeze({
     unit: 'Transactions',
     ticker: 'XTX'
 })
-
-// getTypes returns a promise with 
-export const getTypes = () => new Promise(resolve => resolve(types))
-
 export const nodes = [
     'wss://node1.totem.live',
 ]
 
+// blockchain throws error!
+export const archiveRecord = (hashOwnerAddress, type, hash, archive = true) => post({
+    sender: validateAddress(hashOwnerAddress),
+    call: calls.archive.archiveRecord(type, hashToBytes(hash), archive),
+    compact: false,
+    longevity: true
+})
+
+// getTypes returns a promise with 
+export const getTypes = () => new Promise(resolve => resolve(types))
 // Replace configs
 export const setConfig = newConfig => {
     if (isObj(newConfig)) {
@@ -41,9 +59,11 @@ export const setConfig = newConfig => {
     denominationInfo.init({ ...config, denominations })
 }
 
+
 // Include all functions here that will be used by Queue Service
 // Only blockchain transactions
 export default {
+    archiveRecord,
     addNewProject: project.add,
     reassignProject: project.reassign,
     removeProject: project.remove,

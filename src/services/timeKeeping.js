@@ -96,58 +96,66 @@ export const getProjects = (_forceUpdate = false) => {
 export const getProjectsBond = new Bond().defaultTo(uuid.v1())
 setTimeout(() => getUserProjectsBond.tie(() => getProjectsBond.changed(uuid.v1())))
 
-// getRecords retrieves records by project
+// getRecords retrieves records either by project or by selected worker
 //
 // Params:
 // @projectHash     string/Bond/Uint8Array
 // @ownerAddress    string/Bond/AccountID
+// @archived        bool: whether to retrieve non-/archived records
 //
 // returns promise, resolves to a Map of records.
-export const getTimeRecords = (projectHash, ownerAddress, pageNo = 1, perPage = 5) => {
-    const { address: workerAddress } = getSelected()
-    const isOwner = ownerAddress === workerAddress
+export const getTimeRecordsDetails = hashList => {
     const result = new Map()
-    // retrieve all time record hashes by project
-    return Bond.promise([record.listByProject(projectHash)]).then(([hashes]) => {
-        if (hashes.length === 0) return result
-        // retrieve individual record details
-        return Bond.promise(hashes.map(hash => record.get(hash))).then(records => {
-            records.filter(r => !!r).map((r, i) => ({
+    if (!hashList || hashList.length === 0) return result
+    // retrieve individual record details
+    return Bond.promise(hashList.map(record.get)).then(records => {
+        records.filter(Boolean)
+            .map((r, i) => ({
                 ...r,
-                hash: hashes[i],
+                hash: hashList[i],
                 workerAddress: r.worker && ss58Encode(r.worker) || '',
             }))
-                // If not project owner, only include own records
-                .filter(r => isOwner || r.workerAddress === workerAddress)
-                .forEach(record => {
-                    const { total_blocks, workerAddress } = record
-                    let { name } = identities.get(workerAddress) || partners.get(workerAddress) || {}
-                    const hash = hashToStr(record.hash)
-                    result.set(hash, {
-                        ...record,
-                        hash,
-                        duration: secondsToDuration(total_blocks * BLOCK_DURATION_SECONDS),
-                        workerName: name,
-                        // status: record.locked_status ? wordsCap.locked : 'submit_status:' + record.submit_status,
-                    })
+            // add extra information including duration in hh:mm:ss format
+            .forEach(record => {
+                const { total_blocks, workerAddress } = record
+                const name = partners.getAddressName(workerAddress)
+                const hash = hashToStr(record.hash)
+                result.set(hash, {
+                    ...record,
+                    hash,
+                    duration: secondsToDuration(total_blocks * BLOCK_DURATION_SECONDS),
+                    workerName: name,
                 })
-            return result
-            /*
-            example Record from blockchain: {
-                locked_status: false
-                posting_period: 0
-                project_hash: [...]
-                reason_code: {ReasonCodeKey: 0, ReasonCodeTypeKey: 0}
-                start_block: 1851599056011264
-                submit_status: 0
-                total_blocks: 3600
-                worker: [...]
-            }
-            */
-        })
+            })
+        return result
+        /*
+        example Record from blockchain: {
+            locked_status: false
+            posting_period: 0
+            project_hash: [...]
+            reason_code: {ReasonCodeKey: 0, ReasonCodeTypeKey: 0}
+            start_block: 1851599056011264
+            submit_status: 0
+            total_blocks: 3600
+            worker: [...]
+        }
+        */
     })
 }
-window.getTimeRecords = getTimeRecords
+window.getTimeRecordsDetails = getTimeRecordsDetails
+
+export const getTimeRecordsBond = (projectHash, archive, workerAddress) => {
+    let func, args
+    if (workerAddress) {
+        func = archive ? record.listArchive : record.list
+        args = [workerAddress]
+    } else {
+        func = archive ? record.listByProjectArchive : record.listByProject
+        args = [projectHash]
+    }
+    return func.apply(null, args)
+}
+window.getTimeRecordsBond = getTimeRecordsBond
 
 export const getProjectWorkers = projectHash => Bond.promise([
     worker.listWorkers(projectHash),
@@ -208,11 +216,17 @@ export const record = {
     // get details of a record
     get: recordHash => runtime.timekeeping.timeRecord(hashToBytes(recordHash)),
     isOwner: (hash, address) => runtime.timeKeeping.timeHashOwner(hashToBytes(hash), ss58Decode(address)),
-    // list of all record hashes booked by worker
+    // list of all record hashes by worker
     list: workerAddress => runtime.timekeeping.workerTimeRecordsHashList(ss58Decode(workerAddress)),
+    // list of all archived record hashes by worker
+    listArchive: workerAddress => runtime.timekeeping.workerTimeRecordsHashListArchive(ss58Decode(workerAddress)),
     // list of all record hashes in a project 
     listByProject: projectHash => runtime.timekeeping.projectTimeRecordsHashList(hashToBytes(projectHash)),
+    // list of all archived record hashes in a project 
+    listByProjectArchive: projectHash => runtime.timekeeping.projectTimeRecordsHashListArchive(hashToBytes(projectHash)),
     // Blockchain transaction
+    // Add or update a time record. To add a new record, must use `NEW_RECORD_HASH`.
+    // 
     // @postingPeriod u16: 15 fiscal periods (0-14) // not yet implemented use default 0
     // add/update record
     save: (workerAddress, projectHash, recordHash, status, reason, blockCount, postingPeriod, blockStart, blockEnd, breakCount) => post({

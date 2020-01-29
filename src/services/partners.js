@@ -47,10 +47,11 @@ export const setPublic = address => {
 
 export default {
     bond,
-    set,
-    setPublic,
+    getAddressName,
     getAll,
     get,
     getByName,
+    set,
+    setPublic,
     remove,
 }

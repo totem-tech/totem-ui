@@ -14,8 +14,9 @@ import ContentSegment from './components/ContentSegment'
 import PageHeader from './components/PageHeader'
 import SidebarLeft, { SidebarItemContent } from './components/SidebarLeft'
 // Services
+import { archiveRecord } from './services/blockchain'
 import ModalService from './services/modal'
-import { resumeQueue } from './services/queue'
+import { resumeQueue, addToQueue } from './services/queue'
 import { sidebarItems, sidebarStateBond } from './services/sidebar'
 import ToastService, { setToast } from './services/toast'
 import { getLayout, layoutBond } from './services/window'
@@ -54,6 +55,7 @@ export class App extends ReactiveComponent {
 		window.Bond = Bond
 		window.DataStorage = DataStorage
 		window.setToast = setToast
+		window.archiveRecord = archiveRecord
 	}
 
 	// unused
