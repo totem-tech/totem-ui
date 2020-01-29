@@ -12,8 +12,7 @@ import { layoutBond } from '../services/window'
 import { openStatuses } from '../services/project'
 
 const words = {
-    invitations: 'invitations',
-    invites: 'invites',
+    archive: 'archive',
     manage: 'manage',
     summary: 'summary',
     unknown: 'unknown'
@@ -56,7 +55,7 @@ export default class TimeKeepingView extends Component {
                             options: [
                                 { label: texts.myRecords, value: 'records' },
                                 { label: wordsCap.manage, value: 'manage' },
-                                // { label: wordsCap.invites, value: 'invites' },
+                                { label: wordsCap.archive, value: 'archive' },
                                 { label: wordsCap.summary, value: 'summary' },
                             ],
                             value: 'records',
@@ -124,12 +123,11 @@ export default class TimeKeepingView extends Component {
         const { ownerAddress, name } = (projectOptions.find(x => x.value === projectHash) || {}).project || {}
         const { address } = getSelected()
         const isOwner = ownerAddress === address
-        // const isMobile = layout === 'mobile'
         let contents = []
         const manage = isOwner && option.includes('manage')
         const showSummary = option.includes('summary')
-        // const showInvites = option.includes('invites')
         const showRecords = option.includes('records') || manage
+        const archive = option.includes('archive')
         const optionInput = findInput(inputs, 'option')
         optionInput.inline = !isMobile
         optionInput.style = { float: isMobile ? '' : 'right' }
@@ -137,7 +135,7 @@ export default class TimeKeepingView extends Component {
         optionInput.options.find(x => x.value === 'records').disabled = manage
         optionInput.options.find(x => x.value === 'manage').hidden = !isOwner
 
-        const recordListProps = { isOwner, manage, ownerAddress, projectHash, projectName: name }
+        const recordListProps = { archive, isOwner, manage, ownerAddress, projectHash, projectName: name }
         if (!loading && showRecords) contents.push({
             content: <ProjectTimeKeepingList {...recordListProps} />,
             key: 'ProjectTimeKeepingList' + JSON.stringify(recordListProps),

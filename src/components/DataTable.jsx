@@ -60,7 +60,7 @@ export default class DataTable extends ReactiveComponent {
     }
 
     getTopContent(totalRows, selectedIndexes) {
-        let { searchable, topLeftMenu, topRightMenu } = this.props
+        let { searchable, selectable, topLeftMenu, topRightMenu } = this.props
         const { keywords, layout } = this.state
         const isMobile = layout === 'mobile'
         topLeftMenu = (topLeftMenu || []).filter(x => !x.hidden)
@@ -81,7 +81,7 @@ export default class DataTable extends ReactiveComponent {
             </Grid.Column>
         )
 
-        const right = topRightMenu && topRightMenu.length > 0 && (
+        const right = selectable && topRightMenu && topRightMenu.length > 0 && (
             <Grid.Column
                 computer={3}
                 floated="right"

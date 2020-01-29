@@ -16,7 +16,7 @@ import SidebarLeft, { SidebarItemContent } from './components/SidebarLeft'
 // Services
 import { archiveRecord } from './services/blockchain'
 import ModalService from './services/modal'
-import { resumeQueue } from './services/queue'
+import { resumeQueue, addToQueue } from './services/queue'
 import { sidebarItems, sidebarStateBond } from './services/sidebar'
 import ToastService, { setToast } from './services/toast'
 import { getLayout, layoutBond } from './services/window'

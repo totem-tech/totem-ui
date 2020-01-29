@@ -9,7 +9,8 @@ import types from '../utils/totem-polkadot-js-types'
 // oo7-substrate: register custom types
 Object.keys(types).forEach(key => addCodecTransform(key, types[key]))
 
-export const archiveHashTypes = {
+// used for archiving
+export const hashTypes = {
     /// 1000
     /// 2000
     projectHash: 3000,
