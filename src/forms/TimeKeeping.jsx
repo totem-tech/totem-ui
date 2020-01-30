@@ -142,6 +142,7 @@ function handleSubmitTime(hash, projectName, values, status, reason, checkBanned
         then: success => {
             isFn(onSubmit) && onSubmit(success, values)
             this.setState({
+                closeText: undefined,
                 message: {
                     content: success ? texts.recordSubmittedSuccessfully : texts.transactionFailed,
                     header: success ? wordsCap.success : wordsCap.error,
@@ -181,7 +182,7 @@ function handleSubmitTime(hash, projectName, values, status, reason, checkBanned
             closeModal(this.confirmId)
             // send task to queue service
             addToQueue(queueProps)
-            this.setState({ message, submitDisabled: true })
+            this.setState({ closeText: wordsCap.close, message, submitDisabled: true })
         },
         size: 'tiny',
         subheader: texts.submitConfirmationMsg,
@@ -442,7 +443,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
 
     handleSubmit() {
         const { inputs, values } = this.state
-        const { projectHash } = this.props
+        const { projectHash } = values
         const projectOption = findInput(inputs, 'projectHash').options
             .find(option => option.value === projectHash) || {}
         const projectName = projectOption.text
@@ -473,8 +474,8 @@ export default class TimeKeepingForm extends ReactiveComponent {
     }
 
     render() {
-        const { onClose } = this.props
-        const { inputs, message, values } = this.state
+        const { closeText: closeTextP, onClose } = this.props
+        const { closeText, inputs, message, values } = this.state
         const { duration, stopped, inprogress, manualEntry } = values
         const durationValid = values && BLOCK_DURATION_REGEX.test(duration) && duration !== DURATION_ZERO
         const done = stopped || manualEntry
@@ -509,6 +510,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
 
         const closeBtn = (
             <Button
+                content={closeText || closeTextP}
                 size="massive"
                 style={btnStyle}
                 onClick={(e, d) => {
@@ -615,7 +617,8 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
     componentWillUnmount = () => this._mounted = false
 
     handleSubmit = (e, { duration, submit_status }) => {
-        const { hash, projectName, values } = this.props
+        const { hash, values } = this.props
+        const { projectName } = values
         const blockCount = durationToBlockCount(duration)
         const blockEnd = values.blockStart + blockCount
         timeKeeping.record.get(hash).then(record => {
@@ -637,7 +640,6 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
 TimeKeepingUpdateForm.propTypes = {
     // record hash
     hash: PropTypes.string.isRequired,
-    projectName: PropTypes.string.isRequired,
     // record values
     values: PropTypes.shape({
         blockCount: PropTypes.number.isRequired,
