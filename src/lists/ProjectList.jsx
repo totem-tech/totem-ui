@@ -55,7 +55,7 @@ const texts = {
     detailsDescLabel: 'Description of Project',
     detailsTotalTimeLabel: 'Total Time',
     detailsStatusLabel: 'Project Status',
-    detailsFirstSeenLabel: 'Project First Used',
+    detailsFirstSeenLabel: 'Project First Used On Block',
     detailsFormHeader: 'Project Details',
     detailsTimeRecordsBtn: 'View Time Records',
     editProject: 'Edit project',
@@ -350,7 +350,7 @@ export default class ProjectList extends Component {
     showDetails = (project, hash) => {
         const data = { ...project }
         data._hash = textEllipsis(hash, 23)
-        data._firstSeen = data.firstSeen ? formatStrTimestamp(data.firstSeen) : words.never
+        data._firstSeen = data.firstSeen ? data.firstSeen : words.never
         const labels = {
             name: texts.detailsNameLabel,
             _hash: texts.detailsHashLabel,

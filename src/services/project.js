@@ -116,6 +116,7 @@ export const getProjects = (_forceUpdate = false) => {
         // in case chat server does not have the project
         Array.from(projects).forEach(([_, project]) => {
             project.ownerAddress = project.ownerAddress || address
+            project.isOwner = true
         })
         _config.updateInProgress = false
         _config.firstAttempt = false
