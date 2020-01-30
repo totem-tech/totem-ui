@@ -1,15 +1,12 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-import { arrSort, isObj, textCapitalize } from '../utils/utils'
+import { textCapitalize } from '../utils/utils'
 import ContentSegment from '../components/ContentSegment'
-import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import ProjectTimeKeepingList from '../lists/TimeKeepingList'
 import TimeKeepingSummary from '../lists/TimeKeepingSummary'
-import { getSelected, selectedAddressBond } from '../services/identity'
-import { getProjects, getProjectsBond } from '../services/timeKeeping'
 import { layoutBond } from '../services/window'
-import { openStatuses } from '../services/project'
+import CheckboxGroup from '../components/CheckboxGroup'
 
 const words = {
     archive: 'archive',
@@ -29,42 +26,22 @@ export default class TimeKeepingView extends Component {
         super(props)
 
         this.state = {
-            values: isObj(props.values) ? props.values : { option: 'records' },
-            inputs: [
-                {
-                    name: 'group',
-                    type: 'group',
-                    inputs: [
-                        {
-                            bond: new Bond(),
-                            className: 'no-margin',
-                            inline: true,
-                            name: 'projectHash',
-                            options: [],
-                            placeholder: texts.selectAProject,
-                            search: true,
-                            selection: true,
-                            type: 'dropdown',
-                            width: 4,
-                        },
-                        {
-                            bond: new Bond(),
-                            multiple: true,
-                            name: 'option',
-                            toggle: true,
-                            options: [
-                                { label: texts.myRecords, value: 'records' },
-                                { label: wordsCap.manage, value: 'manage' },
-                                { label: wordsCap.archive, value: 'archive' },
-                                { label: wordsCap.summary, value: 'summary' },
-                            ],
-                            value: 'records',
-                            type: 'checkbox-group',
-                            width: 12,
-                        },
-                    ],
-                }
-            ],
+            optionsInput: {
+                bond: new Bond(),
+                multiple: true,
+                name: 'option',
+                onChange: (_, { value }) => this.setState({ viewOptions: value }),
+                toggle: true,
+                options: [
+                    { label: texts.myRecords, value: 'records' },
+                    { label: wordsCap.manage, value: 'manage' },
+                    { label: wordsCap.archive, value: 'archive' },
+                    { label: wordsCap.summary, value: 'summary' },
+                ],
+                style: { paddingTop: 7, textAlign: 'center' },
+                value: props.viewOptions,
+            },
+            viewOptions: props.viewOptions
         }
         this.originalSetState = this.setState
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
@@ -72,83 +49,37 @@ export default class TimeKeepingView extends Component {
 
     componentWillMount() {
         this._mounted = true
-        this.bond = Bond.all([getProjectsBond, selectedAddressBond])
-        this.tieId = this.bond.tie(() => this.loadProjectOptions())
         this.tieIdLayout = layoutBond.tie(layout => this.setState({ isMobile: layout === 'mobile' }))
-        fillValues(this.state.inputs, this.props.values, true)
     }
     componentWillUnmount() {
         this._mounted = false
-        this.bond.untie(this.tieId)
         layoutBond.untie(this.tieIdLayout)
     }
 
-    handleChange = (_, values) => setTimeout(() => this.setState({ values }))
-
-    loadProjectOptions = () => {
-        const { inputs, values } = this.state
-        let { projectHash } = values
-        const projectIn = findInput(inputs, 'projectHash')
-        projectIn.loading = true
-        getProjects().then(projects => {
-            const options = Array.from(projects)
-                .filter(([_, { status }]) => openStatuses.includes(status))
-                .map(([hash, project]) => ({
-                    key: hash,
-                    project,
-                    text: (project || {}).name || wordsCap.unknown,
-                    value: hash,
-                }))
-            projectIn.loading = false
-            projectIn.options = arrSort(options, 'text')
-            projectIn.noResultsMessage = options.length > 0 ? undefined : (
-                // user doesn't own any project and never been invited to one
-                <p style={{ whiteSpace: 'pre-wrap' }}>
-                    {texts.createProjectOrRequestInvite}
-                </p>
-            )
-
-            if (!projectHash || !projectIn.options.find(x => x.value === projectHash)) {
-                const { value: projectHash } = projectIn.options[0] || {}
-                values.projectHash = projectHash
-                projectHash && projectIn.bond.changed(projectHash)
-            }
-            this.setState({ inputs, values })
-        }, console.log)
-    }
-
     render() {
-        const { inputs, isMobile, values: { projectHash, option } } = this.state
-        const { loading, options: projectOptions } = findInput(inputs, 'projectHash')
-        const { ownerAddress, name } = (projectOptions.find(x => x.value === projectHash) || {}).project || {}
-        const { address } = getSelected()
-        const isOwner = ownerAddress === address
-        let contents = []
-        const manage = isOwner && option.includes('manage')
-        const showSummary = option.includes('summary')
-        const showRecords = option.includes('records') || manage
-        const archive = option.includes('archive')
-        const optionInput = findInput(inputs, 'option')
-        optionInput.inline = !isMobile
-        optionInput.style = { float: isMobile ? '' : 'right' }
-        optionInput.style.paddingTop = 7
-        optionInput.options.find(x => x.value === 'records').disabled = manage
-        optionInput.options.find(x => x.value === 'manage').hidden = !isOwner
+        const { isMobile, optionsInput, viewOptions } = this.state
+        const contents = []
+        const manage = viewOptions.includes('manage')
+        const showSummary = viewOptions.includes('summary')
+        const showRecords = viewOptions.includes('records') || manage
+        const archive = viewOptions.includes('archive')
+        optionsInput.inline = !isMobile
+        optionsInput.options.find(x => x.value === 'records').disabled = manage
+        optionsInput.options.find(x => x.value === 'archive').hidden = !showRecords
 
-        const recordListProps = { archive, isOwner, manage, ownerAddress, projectHash, projectName: name }
-        if (!loading && showRecords) contents.push({
-            content: <ProjectTimeKeepingList {...recordListProps} />,
-            key: 'ProjectTimeKeepingList' + JSON.stringify(recordListProps),
+        if (showRecords) contents.push({
+            content: <ProjectTimeKeepingList {...{ archive, manage }} />,
+            key: 'ProjectTimeKeepingList' + JSON.stringify({ archive, manage }),
         })
         if (showSummary) contents.push({
             content: <TimeKeepingSummary />,
             header: texts.myTimeKeepingSummary,
-            key: 'TimeKeepingSummary' + projectHash,
+            key: `TimeKeepingSummary`,
         })
 
         return (
             <div>
-                <FormBuilder {...{ inputs, onChange: this.handleChange.bind(this), submitText: null }} />
+                <CheckboxGroup {...optionsInput} />
                 {contents.map(item => (
                     <ContentSegment
                         {...item}
@@ -163,8 +94,8 @@ export default class TimeKeepingView extends Component {
     }
 }
 TimeKeepingView.propTypes = {
-    values: PropTypes.shape({
-        option: PropTypes.string,
-        projectHash: PropTypes.string,
-    })
+    viewOptions: PropTypes.array.isRequired,
+}
+TimeKeepingView.defaultProps = {
+    viewOptions: ['records']
 }

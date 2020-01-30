@@ -12,11 +12,11 @@ import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'
 import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
 // Services
 import { hashTypes } from '../services/blockchain'
-import identities, { getSelected } from '../services/identity'
+import identities, { getSelected, selectedAddressBond } from '../services/identity'
 import { confirm, showForm } from '../services/modal'
 import partners from '../services/partners'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import timeKeeping, { getTimeRecordsDetails, statuses, getTimeRecordsBond } from '../services/timeKeeping'
+import { getTimeRecordsDetails, statuses, getTimeRecordsBond } from '../services/timeKeeping'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -39,10 +39,12 @@ const words = {
     project: 'project',
     reject: 'reject',
     rejected: 'rejected',
+    selected: 'selected',
     status: 'status',
     submitted: 'submitted',
     timer: 'timer',
     yes: 'yes',
+    unarchive: 'unarchive',
     unknown: 'unknown',
     worker: 'worker',
 }
@@ -72,6 +74,7 @@ const texts = {
     timeKeeping: 'Time Keeping',
     timeKeepingBanWarning: 'You are about to ban the following addresses permanently from the project named',
     uhOh: 'Uh oh!',
+    unarchiveRecord: 'Unarchive record',
     whatDoesThisMean: 'What does this mean?',
     whatDoesThisMeanItemOne: 'No further booking or other actions will be accepted from the user(s)',
     whatDoesThisMeanItemTwo: 'Only approved bookings will be visible to you',
@@ -94,7 +97,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         this.state = {
             inProgressHashes: [],
             columns: [
-                // { key: '_projectName', title: wordsCap.project },
+                { collapsing: true, key: 'projectName', title: wordsCap.project },
                 { key: '_workerName', title: wordsCap.identity },
                 { key: 'duration', textAlign: 'center', title: wordsCap.duration },
                 { collapsing: true, key: '_status', textAlign: 'center', title: wordsCap.status },
@@ -107,7 +110,20 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 }
             ],
             data: new Map(),
-            defaultSort: 'status',
+            defaultSort: '_status',
+            defaultSortAsc: false,
+            emptyMessage: {
+                content: (
+                    <p>
+                        {texts.emptyMessage + ' '}
+                        <Button
+                            positive
+                            content={texts.orInviteATeamMember}
+                            onClick={() => showForm(TimeKeepingInviteForm)}
+                        />
+                    </p>
+                )
+            },
             loading: false,
             perPage: 10,
             rowProps: item => {
@@ -120,16 +136,14 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 }
             },
             searchExtraKeys: ['address', 'hash', 'approved'],
+            selectable: true,
             topLeftMenu: [
                 {
                     active: false,
                     content: wordsCap.timer,
                     icon: 'clock outline',
                     key: 1,
-                    onClick: () => showForm(TimeKeepingForm, {
-                        modal: true,
-                        projectHash: this.props.projectHash,
-                    })
+                    onClick: () => showForm(TimeKeepingForm, { projectHash: this.props.projectHash })
                 },
             ],
             topRightMenu: [
@@ -152,12 +166,11 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                     onClick: toBeImplemented //this.handleBan
                 },
                 {
-                    content: wordsCap.archive,
-                    icon: 'file archive',
                     key: 'actionArchive',
                     onClick: selectedHashes => confirm({
-                        content: `${texts.archiveRecord}?`,
-                        onConfirm: () => selectedHashes.forEach(this.handleArchive),
+                        content: `${wordsCap.selected}: ${selectedHashes.length}`,
+                        header: `${this.props.archive ? texts.unarchiveRecord : texts.archiveRecord}?`,
+                        onConfirm: () => selectedHashes.forEach(h => this.handleArchive(h, !this.props.archive)),
                         size: 'mini',
                     }),
                 }
@@ -168,57 +181,46 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
-    componentWillMount() {
-        this._mounted = true
-        const { archive, manage, projectHash } = this.props
-        if (!projectHash) return
-        this.projectHash = projectHash
-        this.bond = Bond.all([
-            getTimeRecordsBond(projectHash, archive, !manage && getSelected().address),
-            identities.bond,
-            partners.bond,
-        ])
-        this.tieId = this.bond.tie(([list]) => this.getRecords(list))
-        this.propsStr = JSON.stringify(this.props)
-    }
-
-    updateHashList = ([hashList]) => {
-        this.getRecords(hashList)
-    }
+    componentWillMount = () => this._mounted = true
 
     componentWillUnmount() {
         this._mounted = false
-        this.bond && this.bond.untie(this.tieId)
-        this.recordsBond && this.recordsBond.untie(this.tieIdRecords)
+        const { bond, tieId, tieIdSelected } = this
+        tieId && bond && bond.untie(tieId)
+        tieIdSelected && selectedAddressBond.untie(tieIdSelected)
     }
 
-    componentWillUpdate() {
-        const { archive, manage, projectHash } = this.props
-        const propsStr = JSON.stringify(this.props)
-        if (this.propsStr === propsStr || !projectHash) return
+    setBond = () => {
+        const { address } = getSelected()
+        const propsStr = JSON.stringify({ ...this.props, address })
+        if (this.propsStr === propsStr) return
 
+        const { archive, manage, projectHash } = this.props
         this.bond && this.bond.untie(this.tieId)
         this.propsStr = propsStr
-        // project hash hasn't changed but other props changed
-        if (this.projectHash !== projectHash) return this.getRecords()
-        this.projectHash = projectHash
-
         this.bond = Bond.all([
-            getTimeRecordsBond(projectHash, archive, !manage && getSelected().address),
+            getTimeRecordsBond(archive, manage, projectHash),
             identities.bond,
             partners.bond,
         ])
         this.tieId = this.bond.tie(([list]) => this.getRecords(list))
+        this.tieIdSelected = selectedAddressBond.tie(this.setBond)
     }
 
     getActionContent = (record, hash) => {
-        const { isOwner, manage, projectHash, projectName } = this.props
+        const { archive, manage } = this.props
         const { inProgressHashes } = this.state
-        const { approved, duration, locked, start_block, submit_status, total_blocks, workerAddress } = record
+        const {
+            approved, duration, locked,
+            projectHash, projectName, projectOwnerAddress,
+            start_block, submit_status, total_blocks,
+            workerAddress
+        } = record
         const editableStatuses = [statuses.draft, statuses.dispute, statuses.reject]
         const isSubmitted = submit_status === statuses.submit
         const inProgress = inProgressHashes.includes(hash)
-        const buttons = [
+        const isOwner = projectOwnerAddress === getSelected().address
+        const buttons = !archive ? [
             {
                 icon: 'eye',
                 onClick: () => this.showDetails(hash, record),
@@ -286,11 +288,18 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 negative: true,
                 title: wordsCap.reject,
             },
-        ].map((x, i) => { x.key = i; return x })
+        ] : [
+                {
+                    disabled: inProgress,
+                    icon: 'reply all',
+                    onClick: () => this.handleArchive(hash, false),
+                    title: wordsCap.unarchive
+                }
+            ]
+
+        return buttons.map((x, i) => { x.key = i + x.title; return x })
             .filter(x => !x.hidden)
             .map((props) => <Button {...props} />)
-
-        return buttons
     }
 
     getRecords = hashList => {
@@ -322,9 +331,8 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     }
 
     handleApprove = (hash, approve = false) => {
-        const { ownerAddress, projectHash } = this.props
         const { data, inProgressHashes } = this.state
-        const { approved, submit_status, workerAddress } = data.get(hash) || {}
+        const { approved, projectHash, projectOwnerAddress, submit_status, workerAddress } = data.get(hash) || {}
         const targetStatus = approve ? statuses.accept : statuses.reject
         if (!workerAddress || submit_status !== statuses.submit || targetStatus === submit_status) return
         inProgressHashes.push(hash)
@@ -334,7 +342,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         addToQueue({
             type: QUEUE_TYPES.BLOCKCHAIN,
             func: 'timeKeeping_record_approve',
-            args: [ownerAddress, workerAddress, projectHash, hash, approve],
+            args: [projectOwnerAddress, workerAddress, projectHash, hash, approve],
             title: `${texts.timeKeeping} - ${approve ? texts.approveRecord : texts.rejectRecord}`,
             description: `${texts.recordId}: ${hash}`,
             then: success => {
@@ -345,10 +353,11 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         })
     }
 
-    handleArchive = hash => {
-        const { manage, ownerAddress } = this.props
+    handleArchive = (hash, archive = true) => {
+        const { manage } = this.props
         const { data, inProgressHashes } = this.state
-        let address = manage ? ownerAddress : (data.get(hash) || {}).workerAddress
+        const { projectOwnerAddress, workerAddress } = data.get(hash) || {}
+        const address = manage ? projectOwnerAddress : workerAddress
         if (!address) return
         inProgressHashes.push(hash)
         this.setState({ inProgressHashes })
@@ -356,7 +365,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         addToQueue({
             type: QUEUE_TYPES.BLOCKCHAIN,
             func: 'archiveRecord',
-            args: [address, hashTypes.timeRecordHash, hash, true],
+            args: [address, hashTypes.timeRecordHash, hash, archive],
             title: texts.archiveRecord,
             description: `${wordsCap.hash}: ${hash}`,
             then: () => {
@@ -370,22 +379,19 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
     }
 
-    handleRowSelect = (selectedKeys) => {
-        const { isOwner, projectHash } = this.props
-        const { topLeftMenu: leftMenu } = this.state
-        leftMenu.forEach(x => x.hidden = selectedKeys.length === 0
-            || (!isOwner && ['actionApprove', 'actionReject'].indexOf(x.key) >= 0)
-            || (!projectHash && ['actionBan'].indexOf(x.key) >= 0))
-
-        this.setState({ topLeftMenu: leftMenu })
-    }
-
     handleSetAsDraft = hash => {
-        const { ownerAddress, projectHash } = this.props
         const { data, inProgressHashes } = this.state
-        const { approved, end_block, nr_of_breaks, start_block, total_blocks } = data.get(hash) || {}
+        const {
+            approved,
+            end_block,
+            nr_of_breaks,
+            projectHash,
+            projectOwnerAddress,
+            start_block,
+            total_blocks,
+        } = data.get(hash) || {}
         // allow project owner to be able to procees only if approved
-        if (!approved || !identities.find(ownerAddress)) return
+        if (!approved || !identities.find(projectOwnerAddress)) return
 
         const reason = {
             ReasonCodeKey: 0,
@@ -395,13 +401,13 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         inProgressHashes.push(hash)
         this.setState({ inProgressHashes })
         addToQueue({
-            address: ownerAddress, // for balance check
+            address: projectOwnerAddress, // for balance check
             type: QUEUE_TYPES.BLOCKCHAIN,
             func: 'timeKeeping_record_save',
             title: `${texts.timeKeeping} - ${texts.setAsDraft}`,
             description: `${texts.recordId}: ${hash}`,
             args: [
-                ownerAddress,
+                projectOwnerAddress,
                 projectHash,
                 hash,
                 statuses.draft,
@@ -449,48 +455,27 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     }
 
     render() {
-        const { isOwner, manage, projectHash } = this.props
-        const listProps = this.state
-
-        const denyManage = manage && !isOwner
-        const msg = { content: texts.emptyMessage }
-
-        if (denyManage) {
-            msg.content = texts.notProjectOwner
-            msg.status = 'error'
-        } else if (!projectHash) {
-            msg.content = texts.selectProjectForRecords
-            msg.status = 'warning'
-        } else if (isOwner) {
-            msg.content = (
-                <p>
-                    {msg.content + ' '}
-                    <Button
-                        positive
-                        content={texts.orInviteATeamMember}
-                        onClick={() => showForm(TimeKeepingInviteForm, { values: { projectHash } })}
-                    />
-                </p>
-            )
-        }
-        listProps.emptyMessage = msg
-        listProps.selectable = true //manage && isOwner
-        listProps.topRightMenu.forEach(item => {
-            const isArchive = item.key === 'actionArchive'
-            item.hidden = manage ? false : !isArchive
+        const { archive, manage } = this.props
+        this.state.topRightMenu.forEach(item => {
+            // un/archive action is always visible
+            if (item.key !== 'actionArchive') {
+                item.hidden = !manage || archive
+                return
+            }
+            item.content = archive ? wordsCap.unarchive : wordsCap.archive
+            item.icon = archive ? 'reply all' : 'file archive'
         })
-        if (denyManage || !projectHash) {
-            listProps.data = new Map()
-        }
-        return <DataTable {...listProps} />
+        this.setBond()
+        return <DataTable {...this.state} />
     }
 }
 ProjectTimeKeepingList.propTypes = {
-    isOwner: PropTypes.bool,
+    // whether to retrieve archives
+    archive: PropTypes.bool,
+    // manage records of projects owned by selected identity
     manage: PropTypes.bool,
+    // manage single project
     projecthash: PropTypes.string,
-    projectName: PropTypes.string,
-    ownerAddress: PropTypes.string,
 }
 ProjectTimeKeepingList.defaultProps = {
     manage: false

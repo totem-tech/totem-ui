@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import { Button, Card, Dropdown, Grid, Icon, Image, Input, Menu, Table } from 'semantic-ui-react'
-import { arrMapSlice, getKeys, isArr, isDefined, isFn, objWithoutKeys, objCopy, search, sort, textCapitalize } from '../utils/utils'
+import { arrMapSlice, getKeys, isArr, isDefined, isFn, objWithoutKeys, objCopy, search, sort, textCapitalize, isBool } from '../utils/utils'
 import Message from '../components/Message'
 import { FormInput } from '../components/FormBuilder'
 import Paginator from './Paginator'
@@ -29,12 +29,13 @@ export default class DataTable extends ReactiveComponent {
     constructor(props) {
         super(props, { layout: layoutBond })
 
+        const { columns, defaultSort, defaultSortAsc, pageNo } = props
         this.state = {
-            pageNo: props.pageNo || 1,
+            pageNo: pageNo,
             keywords: '',
             selectedIndexes: [],
-            sortAsc: true, // ascending/descending sort
-            sortBy: props.defaultSort || ((props.columns || []).find(x => !!x.key) || {}).key,
+            sortAsc: defaultSortAsc, // ascending/descending sort
+            sortBy: defaultSort || (columns.find(x => !!x.key) || {}).key,
         }
     }
 
@@ -301,9 +302,10 @@ DataTable.propTypes = {
             key: PropTypes.string,
             title: PropTypes.string.isRequired
         })
-    ),
+    ).isRequired,
     // Object key to set initial sort by
     defaultSort: PropTypes.string,
+    defaultSortAsc: PropTypes.bool.isRequired,
     emptyMessage: PropTypes.object,
     footerContent: PropTypes.any,
     // loading: PropTypes.bool,
@@ -319,11 +321,14 @@ DataTable.propTypes = {
     topRightMenu: PropTypes.arrayOf(PropTypes.object)
 }
 DataTable.defaultProps = {
+    columns: [],
     data: [],
+    defaultSortAsc: true,
     emptyMessage: {
         content: texts.noDataAvailable,
         status: 'basic'
     },
+    pageNo: 1,
     perPage: 10,
     searchable: true,
     selectable: false,

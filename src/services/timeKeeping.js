@@ -9,7 +9,7 @@ import project, {
 import { getSelected } from './identity'
 import DataStorage from '../utils/DataStorage'
 import { hashToBytes, hashToStr, validateAddress, ss58Decode, ss58Encode } from '../utils/convert'
-import { mapJoin } from '../utils/utils'
+import { isArr, mapJoin, arrUnique } from '../utils/utils'
 import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
 import partners from './partners'
 import identities from './identity'
@@ -104,27 +104,30 @@ setTimeout(() => getUserProjectsBond.tie(() => getProjectsBond.changed(uuid.v1()
 // @archived        bool: whether to retrieve non-/archived records
 //
 // returns promise, resolves to a Map of records.
-export const getTimeRecordsDetails = hashList => {
+export const getTimeRecordsDetails = hashAr => {
     const result = new Map()
-    if (!hashList || hashList.length === 0) return result
-    // retrieve individual record details
-    return Bond.promise(hashList.map(record.get)).then(records => {
-        records.filter(Boolean)
-            .map((r, i) => ({
-                ...r,
-                hash: hashList[i],
-                workerAddress: r.worker && ss58Encode(r.worker) || '',
-            }))
+    if (!isArr(hashAr) || hashAr.length === 0) return result
+    // retrieve all record details
+    return Promise.all([
+        Bond.promise(hashAr.map(record.get)),
+        getProjects(),
+    ]).then(([records, projects]) => {
+        records.map((r, i) => !r ? null : ({
+            ...r,
             // add extra information including duration in hh:mm:ss format
-            .forEach(record => {
-                const { total_blocks, workerAddress } = record
-                const name = partners.getAddressName(workerAddress)
-                const hash = hashToStr(record.hash)
-                result.set(hash, {
-                    ...record,
-                    hash,
-                    duration: secondsToDuration(total_blocks * BLOCK_DURATION_SECONDS),
-                    workerName: name,
+            duration: secondsToDuration(r.total_blocks * BLOCK_DURATION_SECONDS),
+            hash: hashToStr(hashAr[i]),
+            projectHash: hashToStr(r.project_hash),
+            workerAddress: r.worker && ss58Encode(r.worker) || '',
+        })).filter(Boolean)
+            // populate the result Map
+            .forEach(r => {
+                const { name, ownerAddress } = projects.get(r.projectHash) || {}
+                result.set(r.hash, {
+                    ...r,
+                    projectOwnerAddress: ownerAddress,
+                    projectName: name,
+                    workerName: partners.getAddressName(r.workerAddress),
                 })
             })
         return result
@@ -144,17 +147,31 @@ export const getTimeRecordsDetails = hashList => {
 }
 window.getTimeRecordsDetails = getTimeRecordsDetails
 
-export const getTimeRecordsBond = (projectHash, archive, workerAddress) => {
-    let func, args
-    if (workerAddress) {
+// getTimeRecordsBond retrieves list of time record hashes
+//
+// Params:
+// @archive     bool: whether to retrieve archived records
+// @manage      bool: whether to retrieve own records only or all records from owned projects
+// @projectHash string: (optional) if @manage === true, will only retrieve hashes from supplied @projectHash
+//
+// returns      promise: resolves to a single dimentional array of time record hashes (string)
+export const getTimeRecordsBond = (archive = false, manage = false, projectHash = null) => getProjects().then(projects => {
+    let func, args2d
+    if (!manage) {
+        // own records only, from all accepted projects of selected identity
         func = archive ? record.listArchive : record.list
-        args = [workerAddress]
+        args2d = [[getSelected().address]]
     } else {
+        // all records by all workers from projects owned by selected identity
         func = archive ? record.listByProjectArchive : record.listByProject
-        args = [projectHash]
+        args2d = projectHash ? [[projectHash]] : Array.from(projects)
+            .map(([projectHash, { isOwner }]) => isOwner && [projectHash])
+            .filter(Boolean)
     }
-    return func.apply(null, args)
-}
+    return Bond.promise(args2d.map(args => func.apply(null, args)))
+        // flatten array, convert to strings and remove duplicates
+        .then(ar2d => arrUnique(ar2d.flat().map(hashToStr)))
+})
 window.getTimeRecordsBond = getTimeRecordsBond
 
 export const getProjectWorkers = projectHash => Bond.promise([
@@ -315,6 +332,10 @@ export const worker = {
     }),
 }
 const timeKeeping = {
+    getProjects,
+    getProjectWorkers,
+    getTimeRecordsBond,
+    getTimeRecordsDetails,
     project: {
         // timestamp of the very first recorded time on a project
         firstSeen: projectHash => runtime.timekeeping.projectFirstSeen(hashToBytes(projectHash)),
