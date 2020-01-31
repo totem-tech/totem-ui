@@ -67,10 +67,7 @@ export default class TimeKeepingSummary extends ReactiveComponent {
             this.address = address
             const bonds = hashes.map(hash => timeKeeping.worker.totalBlocksByProject(address, hash))
             this.bond = Bond.all(bonds)
-            this.tieIdBlocks = this.bond.tie(aTB => {
-                this.getSummary(aTB)
-            })
-            return
+            return this.tieIdBlocks = this.bond.tie(this.getSummary)
         }
         const sumTotalBlocks = arrTotalBlocks.reduce((sum, next) => sum + next, 0)
         const data = arrTotalBlocks.map((totalBlocks, i) => ({
