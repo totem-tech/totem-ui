@@ -4,7 +4,7 @@ import uuid from 'uuid'
 import { dropMessages, addResponseMessage, isWidgetOpened, toggleWidget } from 'react-chat-widget'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 import { deferred, isFn } from '../utils/utils'
-import { getClient } from '../services/ChatClient'
+import { getClient } from '../services/chatClient'
 import { textCapitalize } from '../utils/utils'
 
 const words = {

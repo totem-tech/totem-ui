@@ -18,7 +18,7 @@ const texts = {
     areYouSure: 'Are you sure?'
 }
 
-export default class ModalService extends ReactiveComponent {
+export class ModalsConainer extends ReactiveComponent {
     constructor() {
         super([], { trigger })
     }
@@ -108,4 +108,11 @@ export const showForm = (FormComponent, props, id) => {
             open={true}
         />
     )
+}
+
+export default {
+    closeModal,
+    confirm,
+    ModalsConainer,
+    showForm,
 }

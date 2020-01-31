@@ -4,7 +4,7 @@ import { App } from './app.jsx'
 import { setNodeUri } from 'oo7-substrate'
 import { getTypes, nodes, setConfig } from './services/blockchain'
 import 'semantic-ui-css/semantic.min.css'
-import client from './services/ChatClient'
+import client from './services/chatClient'
 import storage from './services/storage'
 import { setDefaultConfig } from './utils/polkadotHelper'
 

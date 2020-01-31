@@ -21,7 +21,7 @@ import { getLayout, layoutBond } from './window'
 // store items' "active" status in the localStorage
 const statuses = new DataStorage('totem_sidebar-items-status')
 export const allInactiveBond = new Bond().defaultTo(false)
-export const sidebarStateBond = new Bond()//.defaultTo({ collapsed: false, visible: true })
+export const sidebarStateBond = new Bond().defaultTo({ collapsed: false, visible: true })
     .defaultTo({
         collapsed: false,
         visible: getLayout() !== 'mobile',
@@ -55,8 +55,8 @@ layoutBond.tie(() => {
     const { collapsed, visible } = sidebarStateBond._value || {}
     setSidebarState(collapsed, visible)
 })
-export const gsName = 'getting-started'
-export const sidebarItemNames = []
+const gsName = 'getting-started'
+const sidebarItemNames = []
 export const sidebarItems = [
     {
         active: true,
@@ -269,3 +269,15 @@ export const toggleActive = name => setActive(name, !(getItem(name) || {}).activ
 statuses.setAll(sidebarItems.reduce((map, { active, name }) => map.set(name, active), new Map()))
 // if all items are inactive show getting started module
 sidebarItems.every(x => x.hidden || !x.active) && setActive(gsName)
+
+export default {
+    allInactiveBond,
+    getItem,
+    setActive,
+    setContentProps,
+    scrollTo,
+    setSidebarState,
+    sidebarStateBond,
+    toggleActive,
+    toggleSidebarState,
+}

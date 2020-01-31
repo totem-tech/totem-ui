@@ -5,9 +5,9 @@ import { ReactiveComponent } from 'oo7-react'
 import { ss58Decode } from 'oo7-substrate'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import { deferred, isFn, isObj, textCapitalize } from '../utils/utils'
-import client from '../services/ChatClient'
+import client from '../services/chatClient'
 import storage from '../services/storage'
-import { setPublic } from '../services/partners'
+import { setPublic } from '../services/partner'
 
 const words = {
     identity: 'identity',

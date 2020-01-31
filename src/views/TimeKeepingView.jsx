@@ -97,5 +97,5 @@ TimeKeepingView.propTypes = {
     viewOptions: PropTypes.array.isRequired,
 }
 TimeKeepingView.defaultProps = {
-    viewOptions: ['records']
+    viewOptions: ['records', 'archive']
 }

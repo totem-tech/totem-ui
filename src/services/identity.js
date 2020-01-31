@@ -27,7 +27,6 @@ const _ssSync = () => _secretStore()._sync()
 const _ssForget = address => _secretStore().forget(address)
 
 const identities = new DataStorage('totem_identities', true)
-const updateBond = () => bond.changed(uuid.v1())
 const VALID_KEYS = [
     'cloudBackupStatus', // undefined: never backed up, in-progress, done
     'cloudBackupTS', // most recent successful backup timestamp

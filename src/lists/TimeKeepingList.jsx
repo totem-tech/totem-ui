@@ -14,7 +14,7 @@ import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
 import { hashTypes } from '../services/blockchain'
 import identities, { getSelected, selectedAddressBond } from '../services/identity'
 import { confirm, showForm } from '../services/modal'
-import partners from '../services/partners'
+import partners from '../services/partner'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { getTimeRecordsDetails, statuses, getTimeRecordsBonds } from '../services/timeKeeping'
 

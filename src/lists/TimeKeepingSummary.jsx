@@ -4,7 +4,7 @@ import { ReactiveComponent } from 'oo7-react'
 import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
 import { textCapitalize } from '../utils/utils'
 import DataTable from '../components/DataTable'
-import client from '../services/ChatClient'
+import client from '../services/chatClient'
 import { getSelected, selectedAddressBond } from '../services/identity'
 import timeKeeping, { getProjects } from '../services/timeKeeping'
 

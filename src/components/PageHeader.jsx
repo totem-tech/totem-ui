@@ -10,7 +10,7 @@ import { ss58Decode } from '../utils/convert'
 import IdentityForm from '../forms/Identity'
 import TimeKeepingForm from '../forms/TimeKeeping'
 // services
-import { getUser, getClient, onLogin } from '../services/ChatClient'
+import { getUser, getClient, onLogin } from '../services/chatClient'
 import identities, { getSelected, setSelected } from '../services/identity'
 import { showForm } from '../services/modal'
 import NotificationDropdown from '../services/notification'

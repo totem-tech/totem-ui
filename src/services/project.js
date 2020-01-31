@@ -4,11 +4,11 @@ import { Bond } from 'oo7'
 import { calls, post, runtime } from 'oo7-substrate'
 import identities, { getSelected, selectedAddressBond } from './identity'
 import { hashToBytes, validateAddress, ss58Decode } from '../utils/convert'
-import client from './ChatClient'
+import client from './chatClient'
 import { hashToStr } from '../utils/convert'
 import { arrUnique, isBond, isUint8Arr } from '../utils/utils'
 import timeKeeping from './timeKeeping'
-import partners from './partners'
+import partners from './partner'
 
 const CACHE_PREFIX = 'totem__cache_projects_'
 const cacheStorage = new DataStorage(undefined, true)
