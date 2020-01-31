@@ -17,7 +17,9 @@ const words = {
 const wordsCap = textCapitalize(words)
 const texts = {
     createProjectOrRequestInvite: 'Create a new project or request project owner to be invited',
+    manageArchive: 'Manage (archive)',
     myRecords: 'My records',
+    myRecordsArchive: 'My records (archive)',
     myTimeKeepingSummary: 'My timekeeping summary',
     selectAProject: 'Select a project',
 }
@@ -34,8 +36,9 @@ export default class TimeKeepingView extends Component {
                 toggle: true,
                 options: [
                     { label: texts.myRecords, value: 'records' },
+                    { label: texts.myRecordsArchive, value: 'records-archive' },
                     { label: wordsCap.manage, value: 'manage' },
-                    { label: wordsCap.archive, value: 'archive' },
+                    { label: texts.manageArchive, value: 'manage-archive' },
                     { label: wordsCap.summary, value: 'summary' },
                 ],
                 style: { paddingTop: 7, textAlign: 'center' },
@@ -60,16 +63,31 @@ export default class TimeKeepingView extends Component {
         const { isMobile, optionsInput, viewOptions } = this.state
         const contents = []
         const manage = viewOptions.includes('manage')
+        const manageArchive = viewOptions.includes('manage-archive')
+        const records = viewOptions.includes('records')
+        const recordsArchive = viewOptions.includes('records-archive')
         const showSummary = viewOptions.includes('summary')
-        const showRecords = viewOptions.includes('records') || manage
-        const archive = viewOptions.includes('archive')
         optionsInput.inline = !isMobile
-        optionsInput.options.find(x => x.value === 'records').disabled = manage
-        optionsInput.options.find(x => x.value === 'archive').hidden = !showRecords
 
-        if (showRecords) contents.push({
-            content: <ProjectTimeKeepingList {...{ archive, manage }} />,
-            key: 'ProjectTimeKeepingList' + JSON.stringify({ archive, manage }),
+        if (records) contents.push({
+            content: <ProjectTimeKeepingList />,
+            header: texts.myRecords,
+            key: 'ProjectTimeKeepingList-records',
+        })
+        if (recordsArchive) contents.push({
+            content: <ProjectTimeKeepingList {...{ archive: true }} />,
+            header: texts.myRecordsArchive,
+            key: 'ProjectTimeKeepingList-records-archive',
+        })
+        if (manage) contents.push({
+            content: <ProjectTimeKeepingList {...{ manage: true }} />,
+            header: wordsCap.manage,
+            key: 'ProjectTimeKeepingList-manage',
+        })
+        if (manageArchive) contents.push({
+            content: <ProjectTimeKeepingList {...{ archive: true, manage: true }} />,
+            header: texts.manageArchive,
+            key: 'ProjectTimeKeepingList-manage-archive',
         })
         if (showSummary) contents.push({
             content: <TimeKeepingSummary />,
