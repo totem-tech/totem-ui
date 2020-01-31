@@ -4,7 +4,7 @@
 import React from 'react'
 import uuid from 'uuid'
 import { runtime } from 'oo7-substrate'
-import client from './ChatClient'
+import client from './chatClient'
 import blockchain from './blockchain'
 import storageService from './storage'
 import { find as findIdentity } from './identity'
@@ -51,7 +51,6 @@ export const addToQueue = (queueItem, id, toastId) => {
     setTimeout(() => _processItem(queueItem, id, toastId))
     return id
 }
-window.addToQueue = addToQueue
 
 // save to localStorage
 const _save = () => storageService.queue(queue)
@@ -222,4 +221,11 @@ const _processItem = (queueItem, id, toastId) => {
             queue.delete(id)
             break;
     }
+}
+
+export default {
+    addToQueue,
+    queue,
+    QUEUE_TYPES,
+    resumeQueue,
 }

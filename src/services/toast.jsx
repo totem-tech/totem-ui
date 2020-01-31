@@ -16,7 +16,7 @@ const trigger = new Bond()
 // store timeout IDs so that they can be cancelled if needed
 const timeoutIds = new Map()
 
-export default class ToastService extends Component {
+export class ToastsContainer extends Component {
     componentWillMount() {
         this.bond = Bond.all([totalModalsBond, sidebarStateBond, trigger])
         this.tieId = this.bond.tie(() => this.forceUpdate())
@@ -109,4 +109,11 @@ const styles = {
         top: 61,
         zIndex: 1001
     }
+}
+
+export default {
+    getById,
+    removeToast,
+    setToast,
+    ToastsContainer,
 }

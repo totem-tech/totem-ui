@@ -3,8 +3,8 @@ import { Bond } from 'oo7'
 import PropTypes from 'prop-types'
 import FormInput from './FormInput'
 import { arrUnique, deferred, isFn, hasValue, objWithoutKeys, textCapitalize, arrSort, search } from '../utils/utils'
-import client, { getUser } from '../services/ChatClient'
-import partners from '../services/partners'
+import client, { getUser } from '../services/chatClient'
+import partners from '../services/partner'
 
 const words = {
     add: 'add'

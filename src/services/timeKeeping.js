@@ -11,9 +11,9 @@ import DataStorage from '../utils/DataStorage'
 import { hashToBytes, hashToStr, validateAddress, ss58Decode, ss58Encode } from '../utils/convert'
 import { isArr, mapJoin, arrUnique } from '../utils/utils'
 import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
-import partners from './partners'
+import partners from './partner'
 import identities from './identity'
-import { getUser } from './ChatClient'
+import { getUser } from './chatClient'
 
 // Only stores projects that not owned by the selected identity
 const CACHE_PREFIX = 'totem__cache_timekeeping_projects_'
@@ -107,6 +107,8 @@ setTimeout(() => getUserProjectsBond.tie(() => getProjectsBond.changed(uuid.v1()
 export const getTimeRecordsDetails = hashAr => {
     const result = new Map()
     if (!isArr(hashAr) || hashAr.length === 0) return result
+    // flatten array, convert to strings and remove duplicates
+    hashAr = arrUnique(hashAr.flat().map(hashToStr))
     // retrieve all record details
     return Promise.all([
         Bond.promise(hashAr.map(record.get)),
@@ -145,34 +147,31 @@ export const getTimeRecordsDetails = hashAr => {
         */
     })
 }
-window.getTimeRecordsDetails = getTimeRecordsDetails
 
-// getTimeRecordsBond retrieves list of time record hashes
+// getTimeRecordsBonds get a list of bonds to retrieve time record hashes for gived properties
 //
 // Params:
 // @archive     bool: whether to retrieve archived records
 // @manage      bool: whether to retrieve own records only or all records from owned projects
 // @projectHash string: (optional) if @manage === true, will only retrieve hashes from supplied @projectHash
 //
-// returns      promise: resolves to a single dimentional array of time record hashes (string)
-export const getTimeRecordsBond = (archive = false, manage = false, projectHash = null) => getProjects().then(projects => {
-    let func, args2d
+// returns      promise: resolves to a single dimentional array of bonds which all resolves to time record hashes (bytes)
+export const getTimeRecordsBonds = (archive, manage, projectHash) => getProjects().then(projects => {
+    let func
     if (!manage) {
         // own records only, from all accepted projects of selected identity
         func = archive ? record.listArchive : record.list
-        args2d = [[getSelected().address]]
-    } else {
-        // all records by all workers from projects owned by selected identity
-        func = archive ? record.listByProjectArchive : record.listByProject
-        args2d = projectHash ? [[projectHash]] : Array.from(projects)
-            .map(([projectHash, { isOwner }]) => isOwner && [projectHash])
-            .filter(Boolean)
+        return [func.call(null, getSelected().address)]
     }
-    return Bond.promise(args2d.map(args => func.apply(null, args)))
-        // flatten array, convert to strings and remove duplicates
-        .then(ar2d => arrUnique(ar2d.flat().map(hashToStr)))
+
+    // all records by all workers from projects owned by selected identity
+    func = archive ? record.listByProjectArchive : record.listByProject
+    if (!!projectHash) return [func.call(null, projectHash)]
+    return Array.from(projects)
+        // filter projects
+        .map(([projectHash, { isOwner }]) => isOwner && projectHash).filter(Boolean)
+        .map(h => func.call(null, h))
 })
-window.getTimeRecordsBond = getTimeRecordsBond
 
 export const getProjectWorkers = projectHash => Bond.promise([
     worker.listWorkers(projectHash),
@@ -331,10 +330,10 @@ export const worker = {
         longevity: true
     }),
 }
-const timeKeeping = {
+export default {
     getProjects,
     getProjectWorkers,
-    getTimeRecordsBond,
+    getTimeRecordsBond: getTimeRecordsBonds,
     getTimeRecordsDetails,
     project: {
         // timestamp of the very first recorded time on a project
@@ -345,5 +344,3 @@ const timeKeeping = {
     record,
     worker,
 }
-window.timeKeeping = timeKeeping
-export default timeKeeping

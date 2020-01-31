@@ -30,3 +30,8 @@ window.onresize = () => {
     const size = getLayout()
     if (layoutBond._value !== size) layoutBond.changed(size)
 }
+export default {
+    forceLayout,
+    getLayout,
+    getUrlParam,
+}

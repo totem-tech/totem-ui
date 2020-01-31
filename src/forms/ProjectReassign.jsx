@@ -4,7 +4,7 @@ import { ReactiveComponent } from 'oo7-react'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import { arrSort, isFn, textCapitalize } from '../utils/utils'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import addressbook from '../services/partners';
+import addressbook from '../services/partner';
 import { confirm } from '../services/modal'
 import identityService from '../services/identity'
 

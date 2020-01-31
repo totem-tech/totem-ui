@@ -13,7 +13,7 @@ import {
 	// toggleMsgLoader
 } from 'react-chat-widget'
 import 'react-chat-widget/lib/styles.css'
-import { addToHistory, getClient, getUser, getHistory, getHistoryLimit, onLogin } from '../services/ChatClient'
+import { addToHistory, getClient, getUser, getHistory, getHistoryLimit, onLogin } from '../services/chatClient'
 import { copyToClipboard, objCopy } from '../utils/utils'
 import { getNow } from '../utils/time'
 import TotemLogoCircle from '../assets/totem-button-grey.png';

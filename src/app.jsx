@@ -14,11 +14,15 @@ import ContentSegment from './components/ContentSegment'
 import PageHeader from './components/PageHeader'
 import SidebarLeft, { SidebarItemContent } from './components/SidebarLeft'
 // Services
-import { archiveRecord } from './services/blockchain'
-import ModalService from './services/modal'
-import { resumeQueue, addToQueue } from './services/queue'
-import { sidebarItems, sidebarStateBond } from './services/sidebar'
-import ToastService, { setToast } from './services/toast'
+import chatClient from './services/chatClient'
+import identity from './services/identity'
+import modal, { ModalsConainer } from './services/modal'
+import partner from './services/partner'
+import project from './services/project'
+import queue, { resumeQueue } from './services/queue'
+import sidebar, { sidebarItems, sidebarStateBond } from './services/sidebar'
+import timeKeeping from './services/timeKeeping'
+import toast, { ToastsContainer } from './services/toast'
 import { getLayout, layoutBond } from './services/window'
 // Utils
 import DataStorage from './utils/DataStorage'
@@ -54,8 +58,17 @@ export class App extends ReactiveComponent {
 		window.metadata = metadata
 		window.Bond = Bond
 		window.DataStorage = DataStorage
-		window.setToast = setToast
-		window.archiveRecord = archiveRecord
+		window.services = {
+			chatClient,
+			identity,
+			modal,
+			partner,
+			project,
+			queue,
+			sidebar,
+			timeKeeping,
+			toast,
+		}
 	}
 
 	// unused
@@ -98,8 +111,8 @@ export class App extends ReactiveComponent {
 		return (
 			<div className={classNames}>
 				<ChatWidget />
-				<ModalService />
-				<ToastService isMobile={isMobile} />
+				<ModalsConainer />
+				<ToastsContainer isMobile={isMobile} />
 				<ErrorBoundary><PageHeader {...{ logoSrc, isMobile }} /></ErrorBoundary>
 
 				<Sidebar.Pushable style={styles.pushable}>

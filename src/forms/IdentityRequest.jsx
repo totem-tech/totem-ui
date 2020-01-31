@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
-import client, { getUser } from '../services/ChatClient'
+import client, { getUser } from '../services/chatClient'
 import { arrUnique, isFn, textCapitalize } from '../utils/utils'
 
 const notificationType = 'identity'
