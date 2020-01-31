@@ -16,7 +16,7 @@ import identities, { getSelected, selectedAddressBond } from '../services/identi
 import { confirm, showForm } from '../services/modal'
 import partners from '../services/partners'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import { getTimeRecordsDetails, statuses, getTimeRecordsBond } from '../services/timeKeeping'
+import { getTimeRecordsDetails, statuses, getTimeRecordsBonds } from '../services/timeKeeping'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -181,7 +181,16 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
-    componentWillMount = () => this._mounted = true
+    componentWillMount() {
+        this._mounted = true
+
+        // only update project & identity names
+        // Bond.all([
+        //     identities.bond,
+        //     partners.bond,
+        // ])
+        this.tieIdSelected = selectedAddressBond.tie(this.setBond)
+    }
 
     componentWillUnmount() {
         this._mounted = false
@@ -196,15 +205,12 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         if (this.propsStr === propsStr) return
 
         const { archive, manage, projectHash } = this.props
-        this.bond && this.bond.untie(this.tieId)
-        this.propsStr = propsStr
-        this.bond = Bond.all([
-            getTimeRecordsBond(archive, manage, projectHash),
-            identities.bond,
-            partners.bond,
-        ])
-        this.tieId = this.bond.tie(([list]) => this.getRecords(list))
-        this.tieIdSelected = selectedAddressBond.tie(this.setBond)
+        getTimeRecordsBonds(archive, manage, projectHash).then(bonds => {
+            this.bond && this.bond.untie(this.tieId)
+            this.propsStr = propsStr
+            this.bond = Bond.all(bonds)
+            this.tieId = this.bond.tie(this.getRecords)
+        })
     }
 
     getActionContent = (record, hash) => {
@@ -456,7 +462,9 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
     render() {
         const { archive, manage } = this.props
-        this.state.topRightMenu.forEach(item => {
+        const { columns, topRightMenu } = this.state
+        columns.find(x => x.key === '_workerName').hidden = !manage
+        topRightMenu.forEach(item => {
             // un/archive action is always visible
             if (item.key !== 'actionArchive') {
                 item.hidden = !manage || archive
