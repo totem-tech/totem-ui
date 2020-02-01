@@ -74,6 +74,12 @@ export default class DataTable extends ReactiveComponent {
                 <Input
                     icon='search'
                     onChange={(e, d) => this.setState({ keywords: d.value })}
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={e => {
+                        const keywords = e.dataTransfer.getData("Text")
+                        if (!keywords.trim()) return
+                        this.setState({ keywords })
+                    }}
                     placeholder={wordsCap.search}
                     style={!isMobile ? undefined : styles.searchMobile}
                     type="text"
@@ -150,10 +156,12 @@ export default class DataTable extends ReactiveComponent {
                 {columns.filter(x => !x.hidden).map((cell, j) => (
                     <Table.Cell
                         {...objWithoutKeys(cell, ['title'])}
-                        key={j}
                         content={undefined}
-                        textAlign={cell.textAlign || 'left'}
+                        draggable='true'
+                        key={j}
+                        onDragStart={e => e.dataTransfer.setData("Text", e.target.textContent)}
                         style={objCopy(cell.style, { padding: cell.collapsing ? '0 5px' : undefined })}
+                        textAlign={cell.textAlign || 'left'}
                     >
                         {!cell.content ? item[cell.key] : (
                             isFn(cell.content) ? cell.content(item, key, items, isMap) : cell.content
