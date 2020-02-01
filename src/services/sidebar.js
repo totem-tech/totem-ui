@@ -83,16 +83,24 @@ export const sidebarItems = [
         content: IdentityList,
         icon: 'id badge outline',
         name: 'identities',
-        subHeader: 'Manage your Identities',
+        subHeader: 'Identities are like companies - and you can create as many as you like!',
         subHeaderDetails: (
             <div>
-                In Totem, you can create multiple identites to suit your needs. Identities are private, but you can choose which ones you share
-                There is a default identity which is created for you when you start Totem for the first time. This Identity is your master backup key
-                and you must not lose this. It allows you to backup all your data and also to recover the data on different devices.
-                The other identities you create are used to manage personal or business activities. Each Identity has it's own set of accounting modules,
-                so this means that you can only see the activities of one identity at a time. You can think of an Identity like running a company, grouping things together
-                You can give each shared Identity a name, add tags, and define it any way you want, and you can associate it with partners.
-                Once a identity is stored in this list you can use it all over Totem. To find out more, watch the video!
+                <p>
+                    In Totem, you can create multiple identites to suit your needs. Identities are private, but you can choose which ones you share. 
+                </p>
+                <p>
+                    You can give each shared Identity a name, add tags, and define it any way you want, and you can associate it with partners. You can think of an Identity as behaving like a company. It will associate all your activities in Totem under the Identity in which it was created.
+                </p>
+                <p>
+                    There is a default identity which is created for you when you start Totem for the first time. This Identity is your master backup key and you must record the seed phrase as a backup. Do not lose this phrase! It allows you to backup all your data and also to recover the data on different devices.
+                </p>
+                <p>
+                    Other identities you create are used to manage personal or business activities. Each Identity has it's own set of accounting modules and to keep the information seperate you can only see the activities of one identity at a time. Select the identity you want to view in the top right corner of the header.
+                </p>
+                <p>
+                    Once an Identity is stored in this list you can use it all over Totem. To find out more, watch the video!
+                </p>
             </div>
         ),
         title: 'Identities',
@@ -117,19 +125,18 @@ export const sidebarItems = [
         // headerDividerHidden: true,
         icon: 'tasks',
         name: 'projects',
-        subHeader: 'Manage projects.',
+        subHeader: 'Manage activities.',
         subHeaderDetails:
-            'You can use the project module to account for individual tasks as well as projects. You can invite team members to projects or assign individuals tasks, manage and approve \n' +
-            'all time booked against a task/project. Projects and tasks are then automatically mapped to invoices or other payments, and all accounting will be correctly posted, without you \n' +
-            'needing to do anything else.',
-        title: 'Project Module',
+            'You can use the activity module to account for any activity, task project. You can invite team members to activities or assign individuals an activity, manage and approve \n' +
+            'all time booked against an activity. Activities are then automatically mapped to invoices or other payments, and all accounting will be correctly posted even into your partner\'s accounts.',
+        title: 'Activities',
     },
     {
         content: TimeKeepingView,
         contentArgs: {},
         icon: 'clock outline',
         name: 'timekeeping',
-        subHeader: 'Manage timekeeping against projects and tasks.',
+        subHeader: 'Manage timekeeping against activities that you have been invited to, or that you have created yourself.',
         title: 'Timekeeping',
     },
     {

@@ -12,16 +12,18 @@ const words = {
     archive: 'archive',
     manage: 'manage',
     summary: 'summary',
+    overview: 'overview',
     unknown: 'unknown'
 }
 const wordsCap = textCapitalize(words)
 const texts = {
-    createProjectOrRequestInvite: 'Create a new project or request project owner to be invited',
-    manageArchive: 'Manage (archive)',
-    myRecords: 'My records',
-    myRecordsArchive: 'My records (archive)',
-    myTimeKeepingSummary: 'My timekeeping summary',
-    selectAProject: 'Select a project',
+    createProjectOrRequestInvite: 'Create a new activity or request to be invited to some elses activity',
+    manageTeamTime: 'Manage team timekeeping',
+    manageArchive: 'Team timekeeping archive',
+    myRecords: 'My time records',
+    myRecordsArchive: 'My timekeeping archive',
+    myTimeKeepingSummary: 'My timekeeping overview',
+    selectAProject: 'Select a activity',
 }
 export default class TimeKeepingView extends Component {
     constructor(props) {
@@ -35,11 +37,11 @@ export default class TimeKeepingView extends Component {
                 onChange: (_, { value }) => this.setState({ viewOptions: value }),
                 toggle: true,
                 options: [
+                    { label: wordsCap.overview, style: styles.alignLeft, value: 'summary' },
                     { label: texts.myRecords, style: styles.alignLeft, value: 'records' },
+                    { label: texts.manageTeamTime, style: styles.alignLeft, value: 'manage' },
                     { label: texts.myRecordsArchive, style: styles.alignLeft, value: 'records-archive' },
-                    { label: wordsCap.manage, style: styles.alignLeft, value: 'manage' },
                     { label: texts.manageArchive, style: styles.alignLeft, value: 'manage-archive' },
-                    { label: wordsCap.summary, style: styles.alignLeft, value: 'summary' },
                 ],
                 style: { paddingTop: 7, textAlign: 'center' },
                 value: props.viewOptions,
@@ -62,37 +64,37 @@ export default class TimeKeepingView extends Component {
     render() {
         const { isMobile, optionsInput, viewOptions } = this.state
         const contents = []
+        const showSummary = viewOptions.includes('summary')
         const manage = viewOptions.includes('manage')
-        const manageArchive = viewOptions.includes('manage-archive')
         const records = viewOptions.includes('records')
         const recordsArchive = viewOptions.includes('records-archive')
-        const showSummary = viewOptions.includes('summary')
+        const manageArchive = viewOptions.includes('manage-archive')
         optionsInput.inline = !isMobile
 
+        if (showSummary) contents.push({
+            content: <TimeKeepingSummary />,
+            header: texts.myTimeKeepingSummary,
+            key: `TimeKeepingSummary`,
+        })
         if (records) contents.push({
             content: <ProjectTimeKeepingList />,
             header: texts.myRecords,
             key: 'ProjectTimeKeepingList-records',
+        })
+        if (manage) contents.push({
+            content: <ProjectTimeKeepingList {...{ manage: true }} />,
+            header: texts.manageTeamTime,
+            key: 'ProjectTimeKeepingList-manage',
         })
         if (recordsArchive) contents.push({
             content: <ProjectTimeKeepingList {...{ archive: true }} />,
             header: texts.myRecordsArchive,
             key: 'ProjectTimeKeepingList-records-archive',
         })
-        if (manage) contents.push({
-            content: <ProjectTimeKeepingList {...{ manage: true }} />,
-            header: wordsCap.manage,
-            key: 'ProjectTimeKeepingList-manage',
-        })
         if (manageArchive) contents.push({
             content: <ProjectTimeKeepingList {...{ archive: true, manage: true }} />,
             header: texts.manageArchive,
             key: 'ProjectTimeKeepingList-manage-archive',
-        })
-        if (showSummary) contents.push({
-            content: <TimeKeepingSummary />,
-            header: texts.myTimeKeepingSummary,
-            key: `TimeKeepingSummary`,
         })
 
         return (
