@@ -70,6 +70,8 @@ export default class TimeKeepingView extends Component {
         const recordsArchive = viewOptions.includes('records-archive')
         const manageArchive = viewOptions.includes('manage-archive')
         optionsInput.inline = !isMobile
+        let hideTimer = false
+        const setHideTimer = () => hideTimer = true
 
         if (showSummary) contents.push({
             content: <TimeKeepingSummary />,
@@ -77,25 +79,25 @@ export default class TimeKeepingView extends Component {
             key: `TimeKeepingSummary`,
         })
         if (records) contents.push({
-            content: <ProjectTimeKeepingList />,
+            content: <ProjectTimeKeepingList {...{ hideTimer }} />,
             header: texts.myRecords,
-            key: 'ProjectTimeKeepingList-records',
-        })
+            key: 'ProjectTimeKeepingList-records' + hideTimer,
+        }) | setHideTimer()
         if (manage) contents.push({
-            content: <ProjectTimeKeepingList {...{ manage: true }} />,
+            content: <ProjectTimeKeepingList {...{ hideTimer, manage: true }} />,
             header: texts.manageTeamTime,
-            key: 'ProjectTimeKeepingList-manage',
-        })
+            key: 'ProjectTimeKeepingList-manage' + hideTimer,
+        }) | setHideTimer()
         if (recordsArchive) contents.push({
-            content: <ProjectTimeKeepingList {...{ archive: true }} />,
+            content: <ProjectTimeKeepingList {...{ archive: true, hideTimer }} />,
             header: texts.myRecordsArchive,
-            key: 'ProjectTimeKeepingList-records-archive',
-        })
+            key: 'ProjectTimeKeepingList-records-archive' + hideTimer,
+        }) | setHideTimer()
         if (manageArchive) contents.push({
-            content: <ProjectTimeKeepingList {...{ archive: true, manage: true }} />,
+            content: <ProjectTimeKeepingList {...{ archive: true, hideTimer, manage: true }} />,
             header: texts.manageArchive,
-            key: 'ProjectTimeKeepingList-manage-archive',
-        })
+            key: 'ProjectTimeKeepingList-manage-archive' + hideTimer,
+        }) | setHideTimer()
 
         return (
             <div>

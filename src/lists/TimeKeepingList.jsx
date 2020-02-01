@@ -497,10 +497,10 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     }
 
     render() {
-        const { archive, manage } = this.props
+        const { archive, hideTimer, manage } = this.props
         const { columns, topLeftMenu, topRightMenu } = this.state
         columns.find(x => x.key === '_workerName').hidden = !manage
-        topLeftMenu.find(x => x.key === 'timer').hidden = manage || archive
+        topLeftMenu.find(x => x.key === 'timer').hidden = hideTimer
         topRightMenu.forEach(item => {
             // un/archive action is always visible
             if (item.key !== 'actionArchive') {
@@ -529,6 +529,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 ProjectTimeKeepingList.propTypes = {
     // whether to retrieve archives
     archive: PropTypes.bool,
+    hideTimer: PropTypes.bool,
     // manage records of projects owned by selected identity
     manage: PropTypes.bool,
     // manage single project
@@ -536,5 +537,6 @@ ProjectTimeKeepingList.propTypes = {
 }
 ProjectTimeKeepingList.defaultProps = {
     archive: false,
+    hideTimer: false,
     manage: false,
 }
