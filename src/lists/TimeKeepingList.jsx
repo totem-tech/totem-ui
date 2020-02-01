@@ -142,7 +142,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                     active: false,
                     content: wordsCap.timer,
                     icon: 'clock outline',
-                    key: 1,
+                    key: 'timer',
                     onClick: () => showForm(TimeKeepingForm, { projectHash: this.props.projectHash })
                 },
             ],
@@ -185,18 +185,16 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         this._mounted = true
 
         // only update project & identity names
-        // Bond.all([
-        //     identities.bond,
-        //     partners.bond,
-        // ])
+        this.identitiesBond = Bond.all([identities.bond, partners.bond])
         this.tieIdSelected = selectedAddressBond.tie(this.setBond)
     }
 
     componentWillUnmount() {
         this._mounted = false
-        const { bond, tieId, tieIdSelected } = this
+        const { bond, tieId, tieIdIdentities, tieIdSelected } = this
         tieId && bond && bond.untie(tieId)
-        tieIdSelected && selectedAddressBond.untie(tieIdSelected)
+        tieIdIdentities && this.identitiesBond.untie(tieIdIdentities)
+        selectedAddressBond.untie(tieIdSelected)
     }
 
     setBond = () => {
@@ -210,6 +208,16 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             this.propsStr = propsStr
             this.bond = Bond.all(bonds)
             this.tieId = this.bond.tie(this.getRecords)
+        })
+
+        if (this.manageAddress === address) return
+        this.manageAddress = manage ? address : undefined
+        if (!manage) return
+        this.identitiesBond && this.identitiesBond.untie(this.tieIdIdentities)
+        // update worker names whenever partner or identity list changes
+        this.tieIdIdentities = this.identitiesBond.tie(() => {
+            const { data } = this.state
+            data && data.size > 0 && this.processRecords(data)
         })
     }
 
@@ -314,27 +322,32 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         this.hashList = isArr(hashList) ? hashList : this.hashList
         if (this.hashList.length === 0) return this.setState({ data: new Map() })
 
-        getTimeRecordsDetails(this.hashList).then(records => {
-            Array.from(records).forEach(([_, record]) => this.processRecord(record))
-            this.setState({ data: records })
-        }, console.log)
+        // get individual records details
+        getTimeRecordsDetails(this.hashList).then(this.processRecords)
     }
 
-    // add extra details to record
-    processRecord = record => {
-        const { locked, submit_status, workerAddress, workerName } = record
+    // process record details and add extra information like worker name etc
+    processRecords = records => Array.from(records).forEach(([hash, record]) => {
+        const { locked, projectOwnerAddress, submit_status, workerAddress, workerName } = record
         record.approved = submit_status === statuses.accept
         record.rejected = submit_status === statuses.reject
         record.draft = submit_status === statuses.draft
+        record.workerName = partners.getAddressName(workerAddress)
         // banned = ....
-        record._workerName = workerName || (
+        // if worker is not in the partner or identity lists, show button to add as partner
+        record._workerName = record.workerName || (
             <Button
                 content='Add Partner'
-                onClick={() => showForm(PartnerForm, { values: { address: workerAddress } })}
+                onClick={() => showForm(PartnerForm, {
+                    values: {
+                        address: workerAddress,
+                        associatedIdentity: projectOwnerAddress,
+                    }
+                })}
             />
         )
         record._status = locked ? words.locked : statusTexts[submit_status]
-    }
+    }) | this.setState({ data: records })
 
     handleApprove = (hash, approve = false) => {
         const { data, inProgressHashes } = this.state
@@ -462,8 +475,9 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
     render() {
         const { archive, manage } = this.props
-        const { columns, topRightMenu } = this.state
+        const { columns, topLeftMenu, topRightMenu } = this.state
         columns.find(x => x.key === '_workerName').hidden = !manage
+        topLeftMenu.find(x => x.key === 'timer').hidden = manage || archive
         topRightMenu.forEach(item => {
             // un/archive action is always visible
             if (item.key !== 'actionArchive') {

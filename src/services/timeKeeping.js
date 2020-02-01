@@ -129,7 +129,6 @@ export const getTimeRecordsDetails = hashAr => {
                     ...r,
                     projectOwnerAddress: ownerAddress,
                     projectName: name,
-                    workerName: partners.getAddressName(r.workerAddress),
                 })
             })
         return result
