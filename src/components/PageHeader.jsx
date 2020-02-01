@@ -17,6 +17,7 @@ import NotificationDropdown from '../services/notification'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { toggleSidebarState } from '../services/sidebar'
 import storage from '../services/storage'
+import timeKeeping from '../services/timeKeeping'
 import { setToast } from '../services/toast'
 
 export default class PageHeader extends Component {
@@ -42,7 +43,7 @@ export default class PageHeader extends Component {
 			wallets: identities.getAll()
 		})), isMobile ? 500 : 100)
 
-		storage.timeKeepingBond.tie(() => this.forceUpdate())
+		timeKeeping.formDataBond.tie(() => this.forceUpdate())
 	}
 
 	componentWillUnmount = () => this._mounted = false
@@ -98,7 +99,7 @@ export default class PageHeader extends Component {
 			onEdit: this.handleEdit,
 			onFaucetRequest: this.handleFaucetRequest,
 			onSelection: this.handleSelection,
-			timerActive: storage.timeKeeping().inprogress,
+			timerActive: timeKeeping.formData().inprogress,
 			timerOnClick: () => showForm(TimeKeepingForm, {}),
 			wallets,
 		}

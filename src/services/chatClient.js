@@ -1,6 +1,6 @@
 import io from 'socket.io-client'
 import { isFn } from '../utils/utils'
-import storageService from './storage'
+import storage from './storage'
 
 // chat server port
 // use 3003 for dev.totem.live otherwise 3001
@@ -8,15 +8,26 @@ const port = window.location.hostname === 'dev.totem.live' ? 3003 : 3001
 let instance, socket;
 const postLoginCallbacks = []
 const HISTORY_LIMIT = 100
+const settings = storage.settings
+const moduleKey = 'messaging'
+
+// migrate existing user data
+const deprecatedKey = 'totem_chat-user'
+const oldData = localStorage[deprecatedKey]
+if (oldData) {
+    localStorage.removeItem(deprecatedKey)
+    settings.module.set(moduleKey, { user: JSON.parse(oldData) })
+}
 // retrieves user credentails from local storage
-export const getUser = () => storageService.chatUser()
+export const getUser = () => settings.module(moduleKey).user
 // Retrieves chat history from local storage
-export const getHistory = () => storageService.chatHistory()
+export const getHistory = () => settings.module(moduleKey).chatHistory || []
 export const getHistoryLimit = () => HISTORY_LIMIT
 export const addToHistory = (message, id) => {
-    const history = getHistory()
+    let history = getHistory()
     history.push({ message, id })
-    storageService.chatHistory(history.slice(history.length - HISTORY_LIMIT, history.length))
+    history = history.slice(history.length - HISTORY_LIMIT, history.length)
+    settings.module.set(moduleKey, { chatHistory: history })
 }
 // Adds callback to be executed after login is successful
 export const onLogin = cb => isFn(cb) && postLoginCallbacks.push(cb)
@@ -178,7 +189,7 @@ export class ChatClient {
     register(id, secret, cb) {
         socket.emit('register', id, secret, err => {
             if (!err) {
-                storageService.chatUser(id, secret)
+                storage.chatUser(id, secret)
                 setTimeout(() => _execOnLogin(id))
             }
             isFn(cb) && cb(err)

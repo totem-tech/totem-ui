@@ -3,10 +3,14 @@ import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import { textCapitalize } from '../utils/utils'
 import ContentSegment from '../components/ContentSegment'
+import CheckboxGroup from '../components/CheckboxGroup'
+// lists
 import ProjectTimeKeepingList from '../lists/TimeKeepingList'
 import TimeKeepingSummary from '../lists/TimeKeepingSummary'
+// services
+import storage from '../services/storage'
+import { moduleKey } from '../services/timeKeeping'
 import { layoutBond } from '../services/window'
-import CheckboxGroup from '../components/CheckboxGroup'
 
 const words = {
     archive: 'archive',
@@ -34,7 +38,11 @@ export default class TimeKeepingView extends Component {
                 bond: new Bond(),
                 multiple: true,
                 name: 'option',
-                onChange: (_, { value }) => this.setState({ viewOptions: value }),
+                onChange: (_, { value: viewOptions }) => {
+                    this.setState({ viewOptions })
+                    // update local storage with module settings
+                    storage.settings.module(moduleKey, { ...storage.settings.module(moduleKey), viewOptions })
+                },
                 toggle: true,
                 options: [
                     { label: wordsCap.overview, style: styles.alignLeft, value: 'summary' },
@@ -119,7 +127,7 @@ TimeKeepingView.propTypes = {
     viewOptions: PropTypes.array.isRequired,
 }
 TimeKeepingView.defaultProps = {
-    viewOptions: ['records', 'archive']
+    viewOptions: storage.settings.module(moduleKey).viewOptions || ['records']
 }
 
 const styles = {

@@ -1,14 +1,16 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import { Step, Embed } from 'semantic-ui-react'
-import storage from '../services/storage'
-import { showForm } from '../services/modal'
-import { setToast } from '../services/toast'
-import { addToQueue, QUEUE_TYPES } from '../services/queue'
+// services
+import { getUser } from '../services/chatClient'
 import identityService from '../services/identity'
+import { showForm } from '../services/modal'
+import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import storage from '../services/storage'
+import { setToast } from '../services/toast'
+// forms
 import RegisterForm from '../forms/Register'
 import IdentityForm from '../forms/Identity'
-// import { textCapitalize } from '../utils/utils'
 
 // const words = {}
 // const wordsCap = textCapitalize(words)
@@ -31,27 +33,25 @@ const texts = {
 	video2Title: 'Backup your account. Watch the video:',
 }
 
+const moduleKey = 'getting-started'
 export default class GetingStarted extends ReactiveComponent {
 	constructor() {
 		super([])
 		this.state = {
-			activeIndex: storage.gettingStartedStepIndex()
+			activeIndex: storage.settings.global(moduleKey).activeStep || 0
 		}
-		this.handleIdentity = this.handleIdentity.bind(this)
-		this.handleRegister = this.handleRegister.bind(this)
-		this.requestFaucet = this.requestFaucet.bind(this)
+		this.registerStepIndex = 1
+		this.completedIndex = 999
 	}
 
-	handleIdentity() {
-		showForm(IdentityForm, {
-			values: identityService.getSelected(),
-			onSubmit: success => success && this.setIndex(1)
-		})
-	}
+	handleIdentity = () => showForm(IdentityForm, {
+		values: identityService.getSelected(),
+		onSubmit: success => success && this.setIndex(1)
+	})
 
-	handleRegister() {
-		showForm(RegisterForm, { onSubmit: ok => ok && this.setIndex(999) | this.requestFaucet() })
-	}
+	handleRegister = () => showForm(RegisterForm, {
+		onSubmit: ok => ok && this.setIndex(this.completedIndex) | this.requestFaucet()
+	})
 
 	requestFaucet() {
 		this.faucetMsgId = setToast({ content: texts.faucetRequestSent, status: 'success' }, 10000, this.faucetMsgId)
@@ -62,20 +62,21 @@ export default class GetingStarted extends ReactiveComponent {
 			func: 'faucetRequest',
 			args: [
 				address,
-				(err, txHash) => {
-					!err && this.setIndex(999)
-					setToast({
-						content: err || texts.faucetTransferComplete,
-						status: !!err ? 'error' : 'success'
-					}, 5000, this.faucetMsgId)
-				},
+				(err, txHash) => setToast({
+					content: err || texts.faucetTransferComplete,
+					status: !!err ? 'error' : 'success'
+				}, 5000, this.faucetMsgId),
 			]
 		}, null, this.faucetMsgId)
 	}
 
-	setIndex(index) {
-		storage.gettingStartedStepIndex(index)
-		setTimeout(() => this.setState({ activeIndex: index }))
+	setIndex(activeIndex) {
+		if (activeIndex === this.registerStepIndex && !!(getUser() || {}).id) {
+			// user Already registered
+			activeIndex = this.completedIndex
+		}
+		storage.settings.module.set(moduleKey, { activeIndex })
+		this.setState({ activeIndex })
 	}
 
 	render() {

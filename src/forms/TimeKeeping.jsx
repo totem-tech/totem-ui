@@ -195,7 +195,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
     constructor(props) {
         super(props)
 
-        const values = storage.timeKeeping() || {}
+        const values = timeKeeping.formData() || {}
         const { breakCount, duration, durationValid, inprogress, projectHash, stopped, workerAddress } = values
         values.durationValid = !isDefined(durationValid) ? true : durationValid
         values.duration = duration || DURATION_ZERO
@@ -386,7 +386,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
             values.breakCount = 0
             inputs.find(x => x.name === 'duration').value = DURATION_ZERO
             this.setState({ values, inputs })
-            storage.timeKeeping(values)
+            timeKeeping.formData(values)
         }
 
         !doConfirm ? reset() : confirm({
@@ -470,7 +470,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         duraIn.value = values.duration
         values.durationValid = BLOCK_DURATION_REGEX.test(values.duration) && values.duration !== DURATION_ZERO
         this.setState({ blockNumber: currentBlockNumber, inputs, message: {}, values })
-        storage.timeKeeping(values)
+        timeKeeping.formData(values)
     }
 
     render() {

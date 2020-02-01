@@ -6,12 +6,12 @@ import uuid from 'uuid'
 import { runtime } from 'oo7-substrate'
 import client from './chatClient'
 import blockchain from './blockchain'
-import storageService from './storage'
 import { find as findIdentity } from './identity'
 import { removeToast, setToast } from './toast'
 import { isArr, isFn, isObj, objClean, isBond } from '../utils/utils'
+import DataStorage from '../utils/DataStorage'
 
-const queue = storageService.queue()
+const queue = new DataStorage('totem_queue-data')
 // Minimum balance required to make a transaction
 const MIN_BALANCE = 500
 let txInProgress = false
@@ -19,6 +19,7 @@ const txQueue = []
 export const QUEUE_TYPES = Object.freeze({
     CHATCLIENT: 'chatclient',
     BLOCKCHAIN: 'blockchain',
+    TRANSACTION: 'transaction', // todo use polkadot for tx
 })
 
 export const addToQueue = (queueItem, id, toastId) => {
@@ -47,13 +48,9 @@ export const addToQueue = (queueItem, id, toastId) => {
 
     queueItem = objClean(queueItem, validKeys)
     queue.set(id, queueItem)
-    _save()
     setTimeout(() => _processItem(queueItem, id, toastId))
     return id
 }
-
-// save to localStorage
-const _save = () => storageService.queue(queue)
 
 export const resumeQueue = () => queue.size > 0 && Array.from(queue).forEach((x, i) => setTimeout(() => _processItem(x[1], x[0])))
 
@@ -66,13 +63,13 @@ const _processNextTxItem = () => {
 
 const _processItem = (queueItem, id, toastId) => {
     if (!isObj(queueItem) || Object.keys(queueItem).length === 0 || queueItem.status === 'error') {
-        return queue.delete(id) | _save()
+        return queue.delete(id)
     }
     const next = queueItem.next
     if ('success' === queueItem.status) {
         if (!isObj(next)) {
             // success or faild => remove item from queue
-            return queue.delete(id) | _save()
+            return queue.delete(id)
         }
         // Go to next task
         return _processItem(next, id, toastId)
@@ -94,12 +91,12 @@ const _processItem = (queueItem, id, toastId) => {
             const handlePost = () => {
                 txInProgress = true
                 func = blockchain[queueItem.func]
-                if (!func) return queue.delete(id) | _save();
+                if (!func) return queue.delete(id)
                 // initiate transactional request
                 const bond = func.apply({}, args)
                 if (!isBond(bond)) return
                 queueItem.status = 'loading'
-                setTimeout(() => _save())
+                queue.set(id, rootItem)
 
                 const tieId = bond.tie(result => {
                     if (!isObj(result)) return;
@@ -120,12 +117,12 @@ const _processItem = (queueItem, id, toastId) => {
                         toastId = setToast({ header, content, status }, msgDuration, toastId)
                     }
                     queueItem.status = status
-                    _save()
+                    queue.set(id, rootItem)
                     if (!done) return;
                     isFn(queueItem.then) && queueItem.then(!failed)
                     _processNextTxItem()
                     bond.untie(tieId)
-                    if (finalized) next ? _processItem(next, id, toastId) : queue.delete(id) | _save();
+                    if (finalized) next ? _processItem(next, id, toastId) : queue.delete(id)
                 })
             }
             const { address } = queueItem
@@ -163,7 +160,7 @@ const _processItem = (queueItem, id, toastId) => {
                 const cancelBtn = (
                     <button
                         className="ui button basic mini"
-                        onClick={() => queue.delete(id) | _save() | removeToast(toastId)}
+                        onClick={() => queue.delete(id) | removeToast(toastId)}
                     >
                         cancel request
                     </button>
@@ -191,11 +188,13 @@ const _processItem = (queueItem, id, toastId) => {
             break;
         case QUEUE_TYPES.CHATCLIENT:
             func = client[queueItem.func]
-            if (!func) return queue.delete(id) | _save();
+            if (!func) return queue.delete(id)
             // assume last item is the callback
             const callbackOriginal = args[args.length - 1]
             // Intercept callback to determine whether request has been successful or not
-            const interceptCb = function (err, a, b, c, d, e, f, g, h) {
+            const interceptCb = function () {
+                const args = arguments
+                const err = args[0]
                 const content = (!err ? description : <p>Error: {err} <br /></p>)
                 const status = !err ? 'success' : 'error'
                 const statusText = !err ? 'success' : 'failed'
@@ -206,10 +205,9 @@ const _processItem = (queueItem, id, toastId) => {
                 if (!silent) {
                     toastId = setToast({ header, content, status }, msgDuration, toastId)
                 }
-                setTimeout(() => isFn(callbackOriginal) && callbackOriginal(err, a, b, c, d, e, f, g, h))
+                isFn(callbackOriginal) && setTimeout(() => callbackOriginal(...args))
                 queueItem.status = status
-                // save progress
-                _save()
+                queue.set(id, rootItem)
                 if (err || !isObj(next)) return queue.delete(id)
                 return _processItem(next, id, toastId)
             }
@@ -218,6 +216,7 @@ const _processItem = (queueItem, id, toastId) => {
             func.apply({}, args)
             break;
         default:
+            // invalid queue type
             queue.delete(id)
             break;
     }

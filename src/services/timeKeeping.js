@@ -1,19 +1,21 @@
 import { Bond } from 'oo7'
 import { calls, post, runtime } from 'oo7-substrate'
 import uuid from 'uuid'
+import DataStorage from '../utils/DataStorage'
+import { hashToBytes, hashToStr, validateAddress, ss58Decode, ss58Encode } from '../utils/convert'
+import { isArr, isObj, mapJoin, arrUnique } from '../utils/utils'
+import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
+
+// services
+import { getUser } from './chatClient'
+import identities, { getSelected } from './identity'
+import partners from './partner'
 import project, {
     fetchProjects,
     getProjects as getUserProjects,
     getProjectsBond as getUserProjectsBond
 } from './project'
-import { getSelected } from './identity'
-import DataStorage from '../utils/DataStorage'
-import { hashToBytes, hashToStr, validateAddress, ss58Decode, ss58Encode } from '../utils/convert'
-import { isArr, mapJoin, arrUnique } from '../utils/utils'
-import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
-import partners from './partner'
-import identities from './identity'
-import { getUser } from './chatClient'
+import storage from './storage'
 
 // Only stores projects that not owned by the selected identity
 const CACHE_PREFIX = 'totem__cache_timekeeping_projects_'
@@ -29,6 +31,7 @@ const _config = {
 
 // to sumbit a new time record must submit with this hash
 export const NEW_RECORD_HASH = '0x40518ed7e875ba87d6c7358c06b1cac9d339144f8367a0632af7273423dd124e'
+export const moduleKey = 'time-keeping'
 // record status codes
 export const statuses = {
     draft: 0,
@@ -39,6 +42,19 @@ export const statuses = {
     invoice: 400,
     delete: 999,
 }
+// timeKeeping form values and states for use with the TimeKeeping form
+export const formData = data => {
+    const moduleKey = 'time-keeping'
+    const dataKey = 'TimeKeepingForm'
+    const gs = storage.settings.module(moduleKey) || {}
+    if (isObj(data)) {
+        gs[dataKey] = data
+        storage.settings.module(moduleKey, gs)
+        formDataBond.changed(uuid.v1())
+    }
+    return gs[dataKey] || {}
+}
+export const formDataBond = new Bond().defaultTo(uuid.v1())
 
 // getProjects returns all the projects user owns along with the projects they have been invited to (accepted or not).
 // Retrieved data is cached in localStorage and only updated there is changes to invitation or manually triggered by setting `@_forceUpdate` to `true`.
@@ -330,6 +346,8 @@ export const worker = {
     }),
 }
 export default {
+    formData,
+    formDataBond,
     getProjects,
     getProjectWorkers,
     getTimeRecordsBond: getTimeRecordsBonds,

@@ -10,7 +10,6 @@ import {
 // Components
 import ErrorBoundary from './components/CatchReactErrors'
 import ChatWidget from './components/ChatWidget'
-import ContentSegment from './components/ContentSegment'
 import PageHeader from './components/PageHeader'
 import SidebarLeft, { SidebarItemContent } from './components/SidebarLeft'
 // Services
@@ -21,6 +20,7 @@ import partner from './services/partner'
 import project from './services/project'
 import queue, { resumeQueue } from './services/queue'
 import sidebar, { sidebarItems, sidebarStateBond } from './services/sidebar'
+import storage from './services/storage'
 import timeKeeping from './services/timeKeeping'
 import toast, { ToastsContainer } from './services/toast'
 import { getLayout, layoutBond } from './services/window'
@@ -66,6 +66,7 @@ export class App extends ReactiveComponent {
 			project,
 			queue,
 			sidebar,
+			storage,
 			timeKeeping,
 			toast,
 		}
@@ -91,8 +92,7 @@ export class App extends ReactiveComponent {
 	}
 
 	readyRender() {
-		const { isMobile, sidebarCollapsed } = this.state
-		const { mainContent, mainContentCollapsed } = styles
+		const { isMobile } = this.state
 		const logoSrc = TotemButtonLogo
 		const { collapsed, visible } = sidebarStateBond._value
 		const classNames = [
@@ -124,7 +124,7 @@ export class App extends ReactiveComponent {
 						dimmed={false}
 						id="main-content"
 						fluid
-						style={mainContent}
+						style={styles.mainContent}
 					>
 						{sidebarItems.map(({ name }, i) => <SidebarItemContent key={i + name} name={name} />)}
 					</Sidebar.Pusher>
