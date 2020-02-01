@@ -21,11 +21,10 @@ import { getLayout, layoutBond } from './window'
 // store items' "active" status in the localStorage
 const statuses = new DataStorage('totem_sidebar-items-status')
 export const allInactiveBond = new Bond().defaultTo(false)
-export const sidebarStateBond = new Bond().defaultTo({ collapsed: false, visible: true })
-    .defaultTo({
-        collapsed: false,
-        visible: getLayout() !== 'mobile',
-    })
+export const sidebarStateBond = new Bond().defaultTo({
+    collapsed: false,
+    visible: getLayout() !== 'mobile',
+})
 export const setSidebarState = (collapsed, visible) => {
     const lastState = sidebarStateBond._value
     const isMobile = getLayout() === 'mobile'

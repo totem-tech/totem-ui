@@ -1,7 +1,7 @@
 import React from 'react'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
-import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
+import { BLOCK_DURATION_SECONDS, secondsToDuration, durationToSeconds } from '../utils/time'
 import { textCapitalize } from '../utils/utils'
 import DataTable from '../components/DataTable'
 import client from '../services/chatClient'
@@ -56,28 +56,28 @@ export default class TimeKeepingSummary extends ReactiveComponent {
         }
     }
 
-    componentWillMount() {
-        this.tieId = selectedAddressBond.tie(() => this.getSummary())
-    }
+    componentWillMount = () => this.tieId = selectedAddressBond.tie(this.getSummary)
 
-    componentWillUnmount() {
-        selectedAddressBond.untie(this.tieId)
-    }
+    componentWillUnmount = () => selectedAddressBond.untie(this.tieId) | this.bond && this.bond.untie(this.tieIdBlocks)
 
-    getSummary() {
+    getSummary = arrTotalBlocks => getProjects().then(projects => {
         const { address } = getSelected()
-        getProjects().then(projects => {
-            const hashes = Array.from(projects).map(([hash]) => hash)
+        const hashes = Array.from(projects).map(([hash]) => hash)
+        if (!arrTotalBlocks || address !== this.address) {
+            this.address = address
             const bonds = hashes.map(hash => timeKeeping.worker.totalBlocksByProject(address, hash))
-            Bond.promise(bonds).then(arrTotalBlocks => {
-                console.log({ hashes, arrTotalBlocks })
-            })
-        })
+            this.bond = Bond.all(bonds)
+            return this.tieIdBlocks = this.bond.tie(this.getSummary)
+        }
+        const sumTotalBlocks = arrTotalBlocks.reduce((sum, next) => sum + next, 0)
+        const data = arrTotalBlocks.map((totalBlocks, i) => ({
+            name: projects.get(hashes[i]).name,
+            totalBlocks,
+            totalHours: secondsToDuration(totalBlocks * BLOCK_DURATION_SECONDS),
+            percentage: (totalBlocks * 100 / sumTotalBlocks).toFixed(0) + '%',
+        }))
+        this.setState({ data })
+    })
 
-        this.setState({ emptyMessage: { header: 'To be implemented' } })
-    }
-
-    render() {
-        return <DataTable {...this.state} />
-    }
+    render = () => <DataTable {...this.state} />
 }

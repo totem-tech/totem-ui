@@ -57,9 +57,12 @@ export const getAll = () => _ssKeys().map(identity => ({
 
 export const getSelected = () => {
     const result = identities.search({ selected: true }, true, true)
-    let [address] = Array.from(result)[0] || []
+    let [address] = result.size > 0 && Array.from(result)[0] || []
     if (!address) {
-        address = _ssKeys()[0].address
+        const ssIdentities = _ssKeys()
+        // attempt to prevent error when secretStore is unexpectedly not yet ready!!
+        if (!ssIdentities || ssIdentities.length === 0) return {}
+        address = ssIdentities[0].address
     }
     return find(address)
 }
@@ -84,7 +87,7 @@ export const set = (address, identity = {}) => {
     const { name, uri: seed } = identity
     let create = false
     let existing = _ssFind(address)
-    if (!existing) {
+    if (!existing) {setSelected
         const account = accountFromPhrase(seed)
         if (!account || !name) return
         create = true
