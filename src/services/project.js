@@ -102,7 +102,9 @@ export const getProjects = (_forceUpdate = false) => {
             hashes = hashes.map(h => hashToStr(h))
             const changed = !!hashes.find(hash => !projectsCache.get(hash))
                 || !!Array.from(projectsCache).find(([hash]) => !hashes.includes(hash))
-            !_config.firstAttempt && !_config.updateInProgress && changed && getProjects(true)
+            if (_config.firstAttempt) return
+            if (_config.updateInProgress) return //_config.updatePromise.then(() => getProjects())
+            if (changed) return getProjects(true)
         })
     }
 
@@ -239,4 +241,12 @@ const project = {
     // @projecthash    string/Uint8Array
     status: projecthash => runtime.projects.projectHashStatus(hashToBytes(projecthash)),
 }
-export default project
+export default {
+    fetchProjects,
+    getProject,
+    getProjects,
+    getProjectsBond,
+    openStatuses,
+    statusCodes,
+    ...project,
+}

@@ -61,8 +61,8 @@ export const getProjects = (_forceUpdate = false) => {
             hashes = hashes.map(h => hashToStr(h))
             const changed = !!Array.from(invitedProjects).find(([hash]) => !hashes.includes(hash))
                 || !!hashes.find(hash => !invitedProjects.get(hash))
-
-            !_config.firstAttempt && !_config.updateInProgress && changed && getProjects(true)
+            if (_config.firstAttempt || _config.updateInProgress) return
+            if (changed) return getProjects(true)
         })
     }
 

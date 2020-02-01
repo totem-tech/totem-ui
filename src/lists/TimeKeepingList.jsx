@@ -17,6 +17,7 @@ import { confirm, showForm } from '../services/modal'
 import partners from '../services/partner'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { getTimeRecordsDetails, statuses, getTimeRecordsBonds } from '../services/timeKeeping'
+import { hashToStr } from '../utils/convert'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -60,10 +61,12 @@ const texts = {
     blockEnd: 'End Block',
     blockCount: 'Number Of Blocks',
     cannotBanOwnIdentity: 'You cannot ban your own identity',
-    emptyMessage: 'No records available for this project. Start booking time yourself by cliking the timer button above',
+    emptyMessage: 'No records available for this project. Start booking time by cliking the timer button above',
+    emptyMessageArchive: 'No archived records found',
     orInviteATeamMember: 'or invite a team member',
     notProjectOwner: 'You do not own this project',
     numberOfBreaks: 'Number Of Breaks',
+    projectName: 'Project Name',
     recordDetails: 'Record Details',
     recordId: 'Record ID',
     rejectRecord: 'Reject record',
@@ -112,18 +115,6 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             data: new Map(),
             defaultSort: '_status',
             defaultSortAsc: false,
-            emptyMessage: {
-                content: (
-                    <p>
-                        {texts.emptyMessage + ' '}
-                        <Button
-                            positive
-                            content={texts.orInviteATeamMember}
-                            onClick={() => showForm(TimeKeepingInviteForm)}
-                        />
-                    </p>
-                )
-            },
             loading: false,
             perPage: 10,
             rowProps: item => {
@@ -183,7 +174,6 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
     componentWillMount() {
         this._mounted = true
-
         // only update project & identity names
         this.identitiesBond = Bond.all([identities.bond, partners.bond])
         this.tieIdSelected = selectedAddressBond.tie(this.setBond)
@@ -191,8 +181,8 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
     componentWillUnmount() {
         this._mounted = false
-        const { bond, tieId, tieIdIdentities, tieIdSelected } = this
-        tieId && bond && bond.untie(tieId)
+        const { tieId, tieIdIdentities, tieIdSelected } = this
+        tieId && this.bond.untie(tieId)
         tieIdIdentities && this.identitiesBond.untie(tieIdIdentities)
         selectedAddressBond.untie(tieIdSelected)
     }
@@ -201,11 +191,11 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         const { address } = getSelected()
         const propsStr = JSON.stringify({ ...this.props, address })
         if (this.propsStr === propsStr) return
+        this.propsStr = propsStr
 
         const { archive, manage, projectHash } = this.props
         getTimeRecordsBonds(archive, manage, projectHash).then(bonds => {
             this.bond && this.bond.untie(this.tieId)
-            this.propsStr = propsStr
             this.bond = Bond.all(bonds)
             this.tieId = this.bond.tie(this.getRecords)
         })
@@ -213,7 +203,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         if (this.manageAddress === address) return
         this.manageAddress = manage ? address : undefined
         if (!manage) return
-        this.identitiesBond && this.identitiesBond.untie(this.tieIdIdentities)
+        this.tieIdIdentities && this.identitiesBond.untie(this.tieIdIdentities)
         // update worker names whenever partner or identity list changes
         this.tieIdIdentities = this.identitiesBond.tie(() => {
             const { data } = this.state
@@ -317,6 +307,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     }
 
     getRecords = hashList => {
+        hashList = hashList.flat().map(hashToStr)
         // only update list if changed
         if (hashList && JSON.stringify(hashList) === JSON.stringify(this.hashList)) return
         this.hashList = isArr(hashList) ? hashList : this.hashList
@@ -328,11 +319,12 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
     // process record details and add extra information like worker name etc
     processRecords = records => Array.from(records).forEach(([hash, record]) => {
-        const { locked, projectOwnerAddress, submit_status, workerAddress, workerName } = record
+        const { locked, projectName, projectOwnerAddress, submit_status, workerAddress } = record
         record.approved = submit_status === statuses.accept
         record.rejected = submit_status === statuses.reject
         record.draft = submit_status === statuses.draft
         record.workerName = partners.getAddressName(workerAddress)
+        record.projectName = projectName || wordsCap.unknown
         // banned = ....
         // if worker is not in the partner or identity lists, show button to add as partner
         record._workerName = record.workerName || (
@@ -446,8 +438,13 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     }
 
     showDetails = (hash, record) => {
-        const { _status, duration, end_block, nr_of_breaks, start_block, total_blocks, workerAddress, workerName } = record
+        const { manage } = this.props
+        const {
+            _status, duration, end_block, nr_of_breaks, projectHash, projectName,
+            start_block, total_blocks, workerAddress, workerName
+        } = record
         const inputs = [
+            manage && [texts.projectName, projectName || projectHash],
             [texts.recordId, textEllipsis(hash, 30)],
             [wordsCap.worker, workerName || workerAddress],
             [wordsCap.status, _status],
@@ -456,7 +453,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             [texts.blockCount, total_blocks],
             [texts.blockStart, start_block],
             [texts.blockEnd, end_block],
-        ].map(([label, value, type]) => ({
+        ].filter(Boolean).map(([label, value, type]) => ({
             action: label !== texts.recordId ? undefined : { icon: 'copy', onClick: () => copyToClipboard(hash) },
             label,
             name: label,
@@ -487,6 +484,18 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             item.content = archive ? wordsCap.unarchive : wordsCap.archive
             item.icon = archive ? 'reply all' : 'file archive'
         })
+        this.state.emptyMessage = {
+            content: archive ? texts.emptyMessageArchive : (
+                <p>
+                    {texts.emptyMessage + ' '}
+                    {manage && <Button
+                        positive
+                        content={texts.orInviteATeamMember}
+                        onClick={() => showForm(TimeKeepingInviteForm)}
+                    />}
+                </p>
+            )
+        }
         this.setBond()
         return <DataTable {...this.state} />
     }
@@ -500,5 +509,6 @@ ProjectTimeKeepingList.propTypes = {
     projecthash: PropTypes.string,
 }
 ProjectTimeKeepingList.defaultProps = {
-    manage: false
+    archive: false,
+    manage: false,
 }
