@@ -104,6 +104,8 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 { collapsing: true, key: 'projectName', title: wordsCap.project },
                 { key: '_workerName', title: wordsCap.identity },
                 { key: 'duration', textAlign: 'center', title: wordsCap.duration },
+                { key: 'start_block', title: texts.blockStart },
+                { key: 'end_block', title: texts.blockEnd },
                 { collapsing: true, key: '_status', textAlign: 'center', title: wordsCap.status },
                 {
                     collapsing: true,

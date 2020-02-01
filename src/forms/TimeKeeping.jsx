@@ -196,11 +196,11 @@ export default class TimeKeepingForm extends ReactiveComponent {
         super(props)
 
         const values = storage.timeKeeping() || {}
-        const { breakCount, duration, durationValid, inprogress, projectHash, workerAddress } = values
+        const { breakCount, duration, durationValid, inprogress, projectHash, stopped, workerAddress } = values
         values.durationValid = !isDefined(durationValid) ? true : durationValid
         values.duration = duration || DURATION_ZERO
         values.breakCount = (breakCount || 0)
-        values.workerAddress = workerAddress || getSelected().address
+        values.workerAddress = inprogress || stopped && workerAddress || getSelected().address
         const projectHashSupplied = hasValue(props.projectHash)
         values.projectHash = projectHashSupplied && !inprogress ? props.projectHash : projectHash
 
