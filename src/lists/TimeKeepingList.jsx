@@ -6,6 +6,7 @@ import { Button } from 'semantic-ui-react'
 import DataTable from '../components/DataTable'
 import FormBuilder from '../components/FormBuilder'
 import { isArr, textCapitalize, deferred, copyToClipboard, textEllipsis } from '../utils/utils'
+import { hashToStr } from '../utils/convert'
 // Forms
 import PartnerForm from '../forms/Partner'
 import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'
@@ -17,7 +18,7 @@ import { confirm, showForm } from '../services/modal'
 import partners from '../services/partner'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { getTimeRecordsDetails, statuses, getTimeRecordsBonds } from '../services/timeKeeping'
-import { hashToStr } from '../utils/convert'
+import { getLayout } from '../services/window'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -441,6 +442,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
     showDetails = (hash, record) => {
         const { manage } = this.props
+        const isMobile = getLayout() === 'mobile'
         const {
             _status, duration, end_block, nr_of_breaks, projectHash, projectName,
             start_block, total_blocks, workerAddress, workerName
@@ -469,6 +471,15 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         ]
         const actions = this.getActionContent(record, hash)
             .filter(button => !excludeActionTitles.includes(button.props.title))
+            .map(button => ({
+                ...button,
+                props: {
+                    ...button.props,
+                    content: button.props.title,
+                    fluid: isMobile,
+                    style: { ...button.props.style, margin: 5, }
+                }
+            }))
 
         actions.length > 0 && inputs.push({
             content: <div style={{ textAlign: 'center' }}>{actions}</div>,
@@ -480,7 +491,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             closeText: wordsCap.close,
             header: texts.recordDetails,
             inputs,
-            size: 'mini',
+            size: 'tiny',
             submitText: null,
         })
     }

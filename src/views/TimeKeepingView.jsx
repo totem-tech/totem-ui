@@ -35,11 +35,11 @@ export default class TimeKeepingView extends Component {
                 onChange: (_, { value }) => this.setState({ viewOptions: value }),
                 toggle: true,
                 options: [
-                    { label: texts.myRecords, value: 'records' },
-                    { label: texts.myRecordsArchive, value: 'records-archive' },
-                    { label: wordsCap.manage, value: 'manage' },
-                    { label: texts.manageArchive, value: 'manage-archive' },
-                    { label: wordsCap.summary, value: 'summary' },
+                    { label: texts.myRecords, style: styles.alignLeft, value: 'records' },
+                    { label: texts.myRecordsArchive, style: styles.alignLeft, value: 'records-archive' },
+                    { label: wordsCap.manage, style: styles.alignLeft, value: 'manage' },
+                    { label: texts.manageArchive, style: styles.alignLeft, value: 'manage-archive' },
+                    { label: wordsCap.summary, style: styles.alignLeft, value: 'summary' },
                 ],
                 style: { paddingTop: 7, textAlign: 'center' },
                 value: props.viewOptions,
@@ -116,4 +116,10 @@ TimeKeepingView.propTypes = {
 }
 TimeKeepingView.defaultProps = {
     viewOptions: ['records', 'archive']
+}
+
+const styles = {
+    alignLeft: {
+        textAlign: 'left'
+    }
 }
