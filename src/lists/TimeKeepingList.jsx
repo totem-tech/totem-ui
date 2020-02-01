@@ -224,12 +224,13 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         const isSubmitted = submit_status === statuses.submit
         const inProgress = inProgressHashes.includes(hash)
         const isOwner = projectOwnerAddress === getSelected().address
+        const detailsBtn = {
+            icon: 'eye',
+            onClick: () => this.showDetails(hash, record),
+            title: texts.recordDetails,
+        }
         const buttons = !archive ? [
-            {
-                icon: 'eye',
-                onClick: () => this.showDetails(hash, record),
-                title: texts.recordDetails,
-            },
+            detailsBtn,
             {
                 disabled: inProgress || !editableStatuses.includes(submit_status) || locked || approved,
                 hidden: manage,
@@ -293,6 +294,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 title: wordsCap.reject,
             },
         ] : [
+                detailsBtn,
                 {
                     disabled: inProgress,
                     icon: 'reply all',
@@ -303,7 +305,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
         return buttons.map((x, i) => { x.key = i + x.title; return x })
             .filter(x => !x.hidden)
-            .map((props) => <Button {...props} />)
+            .map(props => <Button {...props} />)
     }
 
     getRecords = hashList => {
@@ -460,6 +462,19 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             type: type || 'text',
             value,
         }))
+
+        const excludeActionTitles = [
+            texts.recordDetails,
+            wordsCap.edit,
+        ]
+        const actions = this.getActionContent(record, hash)
+            .filter(button => !excludeActionTitles.includes(button.props.title))
+
+        actions.length > 0 && inputs.push({
+            content: <div style={{ textAlign: 'center' }}>{actions}</div>,
+            name: 'actions',
+            type: 'html'
+        })
 
         showForm(FormBuilder, {
             closeText: wordsCap.close,
