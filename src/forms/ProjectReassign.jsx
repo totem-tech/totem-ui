@@ -84,8 +84,6 @@ export default class ReassignProjectForm extends ReactiveComponent {
         const { hash, values } = this.props
         const { ownerAddress } = values
         const identityOptions = identityService.getAll()
-            // exclude current owner
-            .filter(({ address }) => address !== ownerAddress)
             // dropdown options
             .map(({ address, name }) => ({
                 key: address,
@@ -93,12 +91,10 @@ export default class ReassignProjectForm extends ReactiveComponent {
                 value: address
             }))
 
-        const addresses = identityOptions.map(({ address }) => address)
         const partnerOptions = Array.from(addressbook.getAll())
-            .map((_, p) => p)
             // exclude any possible duplicates (if any identity is also in partner list)
-            .filter(({ address }) => !addresses.includes(address))
-            .map(({ address, name }) => ({
+            .filter(([address]) => !identityService.find(address))
+            .map(([address, { name }]) => ({
                 key: address,
                 text: name,
                 value: address
@@ -110,7 +106,11 @@ export default class ReassignProjectForm extends ReactiveComponent {
             style: styles.itemHeader,
             text: texts.identityOptionsHeader,
             value: '' // keep
-        }, ...arrSort(identityOptions, 'text'))
+        }, ...arrSort(
+            // exclude current owner
+            identityOptions.filter(({ value }) => value !== ownerAddress),
+            'text'
+        ))
         partnerOptions.length > 0 && options.push({
             key: 'partners',
             style: styles.itemHeader,
@@ -120,6 +120,7 @@ export default class ReassignProjectForm extends ReactiveComponent {
         findInput(inputs, 'ownerAddress').options = identityOptions
         findInput(inputs, 'newOwnerAddress').options = options
         fillValues(inputs, { ...values, hash })
+        this.setState({ inputs })
     }
 
     handleSubmit = (_, values) => {
