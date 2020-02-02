@@ -186,21 +186,17 @@ export class ChatClient {
         this.countries = cb => isFn(cb) && socket.emit('countries', (err, countries) => cb(err, new Map(countries)))
     }
 
-    register(id, secret, cb) {
-        socket.emit('register', id, secret, err => {
-            if (!err) {
-                storage.chatUser(id, secret)
-                setTimeout(() => _execOnLogin(id))
-            }
-            isFn(cb) && cb(err)
-        })
-    }
+    register = (id, secret, cb) => socket.emit('register', id, secret, err => {
+        if (!err) {
+            settings.module.set(moduleKey, { user: { id, secret } })
+            setTimeout(() => _execOnLogin(id))
+        }
+        isFn(cb) && cb(err)
+    })
 
-    login(id, secret, cb) {
-        socket.emit('login', id, secret, err => {
-            isFn(cb) && cb(err)
-            !err && setTimeout(() => _execOnLogin(id))
-        })
-    }
+    login = (id, secret, cb) => socket.emit('login', id, secret, err => {
+        isFn(cb) && cb(err)
+        !err && setTimeout(() => _execOnLogin(id))
+    })
 }
 export default getClient()
