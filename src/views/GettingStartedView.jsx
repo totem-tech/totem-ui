@@ -38,7 +38,7 @@ export default class GetingStarted extends ReactiveComponent {
 	constructor() {
 		super([])
 		this.state = {
-			activeIndex: storage.settings.global(moduleKey).activeStep || 0
+			activeStep: storage.settings.global(moduleKey).activeStep || 0
 		}
 		this.registerStepIndex = 1
 		this.completedIndex = 999
@@ -70,17 +70,17 @@ export default class GetingStarted extends ReactiveComponent {
 		}, null, this.faucetMsgId)
 	}
 
-	setIndex(activeIndex) {
-		if (activeIndex === this.registerStepIndex && !!(getUser() || {}).id) {
+	setIndex(activeStep) {
+		if (activeStep === this.registerStepIndex && !!(getUser() || {}).id) {
 			// user Already registered
-			activeIndex = this.completedIndex
+			activeStep = this.completedIndex
 		}
-		storage.settings.module.set(moduleKey, { activeIndex })
-		this.setState({ activeIndex })
+		storage.settings.global(moduleKey, { activeStep })
+		this.setState({ activeStep })
 	}
 
 	render() {
-		const { activeIndex } = this.state
+		const { activeStep } = this.state
 		return (
 			<React.Fragment>
 				<div>
@@ -92,9 +92,9 @@ export default class GetingStarted extends ReactiveComponent {
 					<div style={{ overflowX: 'auto' }}>
 						<Step.Group fluid ordered>
 							<Step
-								active={activeIndex === 0}
-								completed={activeIndex > 0}
-								disabled={activeIndex !== 0}
+								active={activeStep === 0}
+								completed={activeStep > 0}
+								disabled={activeStep !== 0}
 								onClick={this.handleIdentity}>
 								<Step.Content>
 									<Step.Title>{texts.step1Title}</Step.Title>
@@ -105,9 +105,9 @@ export default class GetingStarted extends ReactiveComponent {
 							</Step>
 
 							<Step
-								active={activeIndex === 1}
-								completed={activeIndex > 1}
-								disabled={activeIndex !== 1}
+								active={activeStep === 1}
+								completed={activeStep > 1}
+								disabled={activeStep !== 1}
 								onClick={this.handleRegister}>
 								<Step.Content>
 									<Step.Title>{texts.step2Title}</Step.Title>
