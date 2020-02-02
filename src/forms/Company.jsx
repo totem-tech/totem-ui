@@ -17,11 +17,11 @@ const wordsCap = textCapitalize(words)
 const texts = {
     companyExistsMsg: 'An entity already exists with the following name. You cannot resubmit.',
     countryLabel: 'Country of Registration',
-    countryPlaceholder: 'Select a country',
+    countryPlaceholder: 'Select a Country',
     header: 'Make Partner Public',
     identityValidationMsg: 'Please enter a valid Totem Identity',
     nameLabel: 'Company or Entity Name',
-    namePlaceholder: 'Enter the trade name',
+    namePlaceholder: 'Enter the trading name',
     regNumLabel: 'Registered Number',
     regNumPlaceholder: 'Enter national registered number of entity',
     submitSuccessMsg: 'Company added successfully',

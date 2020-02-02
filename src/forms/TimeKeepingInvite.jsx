@@ -29,10 +29,10 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             success: false,
             inputs: [
                 {
-                    label: 'Project',
+                    label: 'Activity',
                     name: 'projectHash',
                     options: [],
-                    placeholder: 'Select a project',
+                    placeholder: 'Select an activity',
                     required: true,
                     search: true,
                     selection: true,
@@ -119,7 +119,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             )
             proIn.invalid = proIn.options.length === 0
             proIn.message = !proIn.invalid ? null : {
-                content: 'You must have one or more active projects',
+                content: 'You must have one or more active activities',
                 status: 'error'
             }
             this.setState({ inputs })
@@ -177,7 +177,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             partnerIn.invalid = !!accepted
             if (accepted !== null) {
                 partnerIn.message = {
-                    content: accepted ? 'Partner already accepted invitation to selected project' : 'Partner has already been invited to selected project',
+                    content: accepted ? 'Partner already accepted an invitation to the selected activity' : 'Partner has already been invited to the selected activity',
                     status: accepted ? 'error' : 'warning'
                 }
             }
@@ -209,7 +209,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             type: QUEUE_TYPES.BLOCKCHAIN,
             func: 'timeKeeping_worker_accept',
             args: [projectHash, workerAddress, true],
-            title: 'Time Keeping - accept own invitation',
+            title: 'Timekeeping - accept own invitation',
             description: 'Identity: ' + name,
             then: success => {
                 this.setState({
@@ -256,7 +256,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             type: QUEUE_TYPES.BLOCKCHAIN,
             func: 'timeKeeping_worker_add',
             args: [projectHash, ownerAddress, workerAddress],
-            title: 'Time Keeping - Invite Team Member',
+            title: 'Timekeeping - Invitation to join the Team',
             description: 'Invitee: ' + name,
             next: !!ownIdentity ? acceptOwnInvitationTask : notifyWorkerTask
         })
@@ -274,7 +274,7 @@ TimeKeepingInviteForm.propTypes = {
 }
 TimeKeepingInviteForm.defaultProps = {
     closeText: 'Close',
-    header: 'Time Keeping: Invite Team Member',
+    header: 'Timekeeping - Invitation to join the Team',
     size: 'tiny',
     subheader: '',
     submitText: 'Invite',

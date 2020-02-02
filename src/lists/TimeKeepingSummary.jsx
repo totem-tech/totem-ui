@@ -9,15 +9,16 @@ import { getSelected, selectedAddressBond } from '../services/identity'
 import timeKeeping, { getProjects } from '../services/timeKeeping'
 
 const words = {
-    project: 'project',
+    activity: 'activity',
     percentage: 'percentage',
 }
 const wordsCap = textCapitalize(words)        // const { address } = getSelected()
 
 const texts = {
-    noTimeRecords: 'No time records found for selected identity',
-    totalBlocks: 'Total Blocks',
-    totalHours: 'Total Hours',
+    noTimeRecords: 'This identity has not yet booked time on an activity',
+    totalBlocks: 'Total Time in Blocks',
+    totalHours: 'Total Time in Hours',
+    yourContribution: 'Your Time Contribution versus Total Booked Time',
 
 }
 
@@ -35,7 +36,7 @@ export default class TimeKeepingSummary extends ReactiveComponent {
             columns: [
                 {
                     key: 'name',
-                    title: wordsCap.project,
+                    title: wordsCap.activity,
                 },
                 {
                     key: 'totalHours',
@@ -50,7 +51,7 @@ export default class TimeKeepingSummary extends ReactiveComponent {
                 {
                     key: 'percentage',
                     textAlign: 'center',
-                    title: wordsCap.percentage,
+                    title: texts.yourContribution,
                 }
             ]
         }

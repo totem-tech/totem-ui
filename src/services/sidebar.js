@@ -145,7 +145,7 @@ export const sidebarItems = [
         icon: 'money bill alternate outline',
         header: 'Transfer Transactions',
         name: 'transfer',
-        subHeader: 'Use this module to share transactions with \n another Identity. You can send to any Identity on the network, including your own identities',
+        subHeader: 'Use this module to share your transaction balance with a Partner or another Identity you own.',
         title: 'Transfer',
     },
     // { icon: 'file alternate', title: 'Invoice', subHeader: '', active: false, content: <Invoice /> },

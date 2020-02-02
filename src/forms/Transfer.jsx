@@ -23,13 +23,13 @@ const words = {
 }
 const wordsCap = textCapitalize(words)
 const texts = {
-    amountPlaceholder: 'Enter a number',
-    partnerEmptyMsg1: 'No partner available. Enter an address to add as partner.',
-    partnerEmptyMsg2: 'No match found. Enter a valid address to add as partner.',
-    partnerPlaceholder: 'Select partner',
-    submitErrorHeader: 'Transaction error',
-    submitInprogressHeader: 'Transaction in-progress',
-    submitSuccessHeader: 'Transaction successful',
+    amountPlaceholder: 'Enter a value',
+    partnerEmptyMsg1: 'You do not have any partner yet. Add one in the Partner Module',
+    partnerEmptyMsg2: 'No match found. Enter a valid address to add as a partner.',
+    partnerPlaceholder: 'Select a Partner',
+    submitErrorHeader: 'Transfer error',
+    submitInprogressHeader: 'Transfer in-progress',
+    submitSuccessHeader: 'Transfer successful',
 }
 
 export default class Transfer extends Component {

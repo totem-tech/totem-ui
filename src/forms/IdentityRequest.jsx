@@ -9,7 +9,7 @@ const notificationType = 'identity'
 const childType = 'request'
 const reasonList = [
     'To add your Identity to my Partner list',
-    'Project timekeeping',
+    'Timekeeping on an Activity',
     // add anything else here
     'Custom'
 ]

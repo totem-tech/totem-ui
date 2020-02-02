@@ -20,6 +20,7 @@ import { layoutBond, getLayout } from '../services/window'
 const toBeImplemented = () => alert('To be implemented')
 const words = {
     actions: 'actions',
+    activity: 'actvity',
     abandoned: 'abandoned',
     blocks: 'blocks',
     canceled: 'canceled',
@@ -39,17 +40,18 @@ const words = {
     reopen: 're-open',
     reopened: 're-opened',
     status: 'status',
+    timekeeping: 'timekeeping',
     unknown: 'unknown',
 }
 const wordsCap = textCapitalize(words)
 const texts = {
     areYouSure: 'Are you sure?',
     closeProject: 'Close activity',
-    deleteConfirmMsg1: 'You are about to delete the following project(s):',
-    deleteConfirmMsg2: `This action cannot be undone! 
-        You will lose access to this project data forever! 
-        A better option might be to change the project status.`,
-    deleteConfirmHeader: 'Delete project(s)',
+    deleteConfirmMsg1: 'Warning: You are about to delete the following Activities:',
+    deleteConfirmMsg2: `Warning: This action cannot be undone! 
+        You will lose access to this Activity data forever! 
+        A better option might be to archive the Activity.`,
+    deleteConfirmHeader: 'Delete Activities',
     detailsNameLabel: 'Activity Name',
     detailsHashLabel: 'Activity Unique ID',
     detailsDescLabel: 'Description of Activity',
@@ -58,15 +60,14 @@ const texts = {
     detailsFirstSeenLabel: 'Activity First Used On (this date)',
     detailsFormHeader: 'Activity Details',
     detailsTimeRecordsBtn: 'View Time Records',
-    editProject: 'Edit project',
-    projectCloseReopenWarning: 'You are about to change status of the following projects to: ',
+    editProject: 'Edit Activity',
+    projectCloseReopenWarning: 'You are about to change status of the following Activities to: ',
     projectTeam: 'Activity team - ',
     reassignOwner: 'Re-assign owner',
-    reopenProject: 'Re-open project',
-    timeKeeping: 'Time keeping',
+    reopenProject: 'Re-open activity',
     totalTime: 'Total Time',
-    viewDetails: 'View details',
-    viewTeam: 'View team',
+    viewDetails: 'View Details',
+    viewTeam: 'View Team',
 }
 const statusTexts = []
 statusTexts[statusCodes.open] = wordsCap.open
@@ -234,7 +235,7 @@ export default class ProjectList extends Component {
                         args: [ownerAddress, hash],
                         address: ownerAddress,
                         title: doClose ? texts.closeProject : texts.reopenProject,
-                        description: `${wordsCap.project}: ${name}`,
+                        description: `${wordsCap.activity}: ${name}`,
                         then: success => success && getProjects(true),
                     })
                 })
@@ -262,7 +263,7 @@ export default class ProjectList extends Component {
                 args: [ownerAddress, hash],
                 address: ownerAddress,
                 title: texts.deleteConfirmHeader,
-                description: `${wordsCap.project}: ${name}`,
+                description: `${wordsCap.activity}: ${name}`,
                 then: success => success && getProjects(true),
             })
         })
@@ -386,7 +387,7 @@ export default class ProjectList extends Component {
                         projectName: project.name,
                         ownerAddress: project.ownerAddress,
                     }} />,
-                    header: `${project.name}: ${texts.timeKeeping}`,
+                    header: `${project.name}: ${wordsCap.timekeeping}`,
                 }),
                 type: 'Button',
             }),
