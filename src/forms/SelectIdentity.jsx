@@ -20,7 +20,7 @@ export default class SelectIdentityForm extends ReactiveComponent {
                         text: wallet.name,
                         value: wallet.address
                     })),
-                    placeholder: 'Select identity/wallet',
+                    placeholder: 'Select Identity',
                     required: true,
                     search: true,
                     selection: true,

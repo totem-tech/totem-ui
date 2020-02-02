@@ -38,7 +38,7 @@ const texts = {
         You will lose access to all activity/data related to this Identity.`,
     selectedWalletWarning: 'Cannot remove identity you are currently using',
     showSeed: 'Show seed phrase',
-    txAllocations: 'TX Allocations',
+    txAllocations: 'Transaction Balance',
 }
 
 // Read-only form

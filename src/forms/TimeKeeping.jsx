@@ -29,6 +29,7 @@ const DURATION_ZERO = '00:00:00'
 const blockCountToDuration = blockCount => secondsToDuration(blockCount * BLOCK_DURATION_SECONDS)
 const durationToBlockCount = duration => BLOCK_DURATION_REGEX.test(duration) ? durationToSeconds(duration) / BLOCK_DURATION_SECONDS : 0
 const words = {
+    activity: 'activity',
     close: 'close',
     duration: 'duration',
     error: 'error',
@@ -39,6 +40,7 @@ const words = {
     start: 'start',
     submit: 'submit',
     success: 'success',
+    timekeeping: 'timekeeping',
     unknown: 'unknown',
     update: 'update',
     yes: 'yes',
@@ -49,39 +51,38 @@ const texts = {
     addedToQueue: 'Added to queue',
     areYouSure: 'Are you sure?',
     cancelWarning: 'You have a running timer. Would you like to stop and exit?',
-    checkingProjectStatus: 'Checking project status...',
+    checkingProjectStatus: 'Checking activity status...',
     goBack: 'Go Back',
     hhmmss: 'hh:mm:ss', //????
-    inactiveWorkerHeader1: 'Uninvited project selected!',
+    inactiveWorkerHeader1: 'You are not part of this Team! Request an invitation',
     inactiveWorkerHeader2: 'Action required',
-    inactiveWorkerMsg1: 'Please select a project you have been invited to and already accepted.',
-    inactiveWorkerMsg3: 'You are yet to accept/reject invitation for this project.',
-    inactiveProjectSelected: 'Inactive project selected!',
+    inactiveWorkerMsg1: 'Please select an activity you have been invited to and already accepted.',
+    inactiveWorkerMsg3: 'You are yet to accept/reject invitation for this activity.',
+    inactiveProjectSelected: 'This Activity is inactive!',
     invalidDuration: 'Invalid duration',
-    invalidDurationMsgPart1: 'Please enter a valid duration in the following format:',
+    invalidDurationMsgPart1: 'Please enter a valid duration using the following format:',
     invalidDurationMsgPart2: 'Seconds must be in increments of 5',
     manuallyEnterDuration: 'Manually enter duration',
     noContinueTimer: 'No, continue timer',
-    noProjectsMsg: 'Create a new project or ask to be invited',
+    noProjectsMsg: 'Create a new activity or ask to be invited to the Team',
     numberOfBlocks: 'Number of blocks',
     numberOfBreaks: 'Number of breaks',
     permissionDenied: 'Permission denied',
-    recordSubmittedSuccessfully: 'Time record submitted successfully',
+    recordSubmittedSuccessfully: 'Your Time record has been submitted for approval',
     requestQueuedMsg: 'Request has been added to queue. You will be notified of the progress shortly.',
-    resetTimer: 'Reset Timer',
+    resetTimer: 'Reset the Timer',
     resetTimerWarning: 'You are about to reset your timer. Are you sure?',
-    resumeTimer: 'Resume timer',
-    resumeTimeWarning: 'Would you like to resume timer?',
-    selectAProject: 'Select a project',
-    selectActiveProject: 'Please select an active project',
-    submitConfirmationMsg: 'Please vefiry the following information and click "Proceed" to submit',
+    resumeTimer: 'Resume the timer',
+    resumeTimeWarning: 'Would you like to resume timekeeping on this activity?',
+    selectAProject: 'Select an Activity',
+    selectActiveProject: 'Please select an active Activity',
+    submitConfirmationMsg: 'Please verify the following information and click "Proceed" to submit your time record',
     submitTime: 'Submit time',
     timerStarted: 'Timer started',
-    timeKeeping: 'Time Keeping',
-    timerRunningMsg: 'You may now close the dialog and come back to it anytime by clicking on the clock icon in the header.',
-    tkNewRecord: 'Time Keeping - New Record',
+    timerRunningMsg: 'You may now close the dialog. Return here at anytime by clicking on the clock icon in the header.',
+    tkNewRecord: 'Timekeeping - New Record',
     transactionFailed: 'Blockchain transaction failed!',
-    updateFormHeader: 'Time Keeping: Update Record',
+    updateFormHeader: 'Timekeeping: Update Record',
     workerBannedMsg: 'Permission denied',
 }
 
@@ -138,7 +139,7 @@ function handleSubmitTime(hash, projectName, values, status, reason, checkBanned
             breakCount,
         ],
         title: texts.tkNewRecord,
-        description: `${wordsCap.project}: ${projectName} | ${wordsCap.duration}: ${values.duration}`,
+        description: `${wordsCap.activity}: ${projectName} | ${wordsCap.duration}: ${values.duration}`,
         then: success => {
             isFn(onSubmit) && onSubmit(success, values)
             this.setState({
@@ -167,7 +168,7 @@ function handleSubmitTime(hash, projectName, values, status, reason, checkBanned
         header: `${texts.submitTime}?`,
         inputs: [
             [wordsCap.submit, getAddressName(workerAddress)],
-            [wordsCap.project, projectName],
+            [wordsCap.activity, projectName],
             [wordsCap.duration, duration],
             [texts.numberOfBlocks, blockCount],
             [texts.numberOfBreaks, breakCount],
@@ -214,7 +215,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     clearable: true,
                     disabled: projectHashSupplied,
                     inline: true,
-                    label: wordsCap.project,
+                    label: wordsCap.activity,
                     name: 'projectHash',
                     onChange: this.handleProjectChange,
                     options: [],
@@ -569,7 +570,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
 TimeKeepingForm.defaultProps = {
     closeOnEscape: true,
     closeOnDimmerClick: true,
-    header: texts.timeKeeping,
+    header: wordsCap.timekeeping,
     size: 'tiny'
 }
 

@@ -16,20 +16,20 @@ const words = {
 }
 const wordsCap = textCapitalize(words)
 const texts = {
-    descLabel: 'Project Description',
-    descPlaceholder: 'Enter short description of the project... (max 160 characters)',
-    formHeaderCreate: 'Create a new project',
-    formHeaderUpdate: 'Update project',
-    nameLabel: 'Project Name',
-    namePlaceholder: 'Enter project name',
-    ownerLabel: 'Select a Project Owner Identity',
+    descLabel: 'Activity Description',
+    descPlaceholder: 'Enter short description of the activity... (max 160 characters)',
+    formHeaderCreate: 'Create a new Activity',
+    formHeaderUpdate: 'Update Activity',
+    nameLabel: 'Activity Name',
+    namePlaceholder: 'Enter activity name',
+    ownerLabel: 'Select the owner Identity for this Activity ',
     ownerPlaceholder: 'Select owner',
     submitErrorHeader: 'Request failed',
     submitQueuedMsg: 'Your request has been added to background queue. You may close the dialog now.',
-    submitQueuedHeader: 'Project has been queued',
-    submitSuccessHeader: 'Project saved successfully',
-    submitTitleCreate: 'Create project',
-    submitTitleUpdate: 'Update project',
+    submitQueuedHeader: 'Activity has been queued',
+    submitSuccessHeader: 'Activity saved successfully',
+    submitTitleCreate: 'Create activity',
+    submitTitleUpdate: 'Update activity',
 }
 
 // Create or update project form

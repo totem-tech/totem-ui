@@ -10,18 +10,18 @@ import { addToQueue, QUEUE_TYPES } from '../services/queue'
 const texts = {
     addedToQueueContent: 'You will be notified once request is processed',
     addedToQueueHeader: 'Request has been added to queue',
-    introducingUserIdConflict: 'Introducing user cannot not be a recipient',
-    header: 'Introduce partner',
+    introducingUserIdConflict: 'You cannot introduce a user to themselves!',
+    header: 'Partner introduction',
     recipients: 'Recipient(s)',
-    subheader: 'Recipients will receive notification so that they can share their identity with the introduced user',
+    subheader: 'Recipients will receive a request for permission to share their identity this User',
     submitSuccessHeader: 'Submitted successfully',
     submitSuccessMessage: 'Notification sent to recipient(s)',
-    submitErrorHeader: 'Submit failed',
+    submitErrorHeader: 'Error: Submission failed',
     userId: 'User ID',
     userToIntroduce: 'User to introduce',
 }
 const type = 'identity'
-const childType = 'introduce'
+const childType = 'introduction'
 
 export default class IntroduceUser extends Component {
     constructor(props) {

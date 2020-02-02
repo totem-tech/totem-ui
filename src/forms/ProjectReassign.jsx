@@ -14,21 +14,21 @@ const words = {
 }
 const wordsCap = textCapitalize(words)
 const texts = {
-    confirmHeader: 'Are you sure you want to reassign this project?',
-    confirmMsg: `You are about to assign the ownership of this project to an Identity that does not belong to you. 
-        If you proceed, you will no longer be able to update this project.`,
-    formHeader: 'Re-assign Project Owner',
-    hashLabel: 'Project Unique ID',
+    confirmHeader: 'Are you sure you want to reassign this activity?',
+    confirmMsg: `You are about to assign the ownership of this activity to an Identity that does not belong to you. 
+        If you proceed, you will no longer be able to update or manage this activity.`,
+    formHeader: 'Re-assign Activity Owner',
+    hashLabel: 'Activity Unique ID',
     identityOptionsHeader: 'Select own identity',
-    nameLabel: 'Project Name',
-    newOwnerLabel: 'New Project Owner',
+    nameLabel: 'Activity Name',
+    newOwnerLabel: 'New Activity Owner',
     newOwnerPlaceholder: 'Select new owner',
-    ownerLabel: 'Current Project Owner',
+    ownerLabel: 'Current Activity Owner',
     partnerOptionsHeader: 'Select a partner',
-    queueDescription: 'Project Name: ',
+    queueDescription: 'Acttivity Name: ',
     queuedMsgHeader: 'Re-assign request added to queue',
-    queuedMsgContent: 'Your request to reassign the project has been added to queue. ',
-    queueTitle: 'Re-assign project owner',
+    queuedMsgContent: 'Your request to reassign the activity has been added to queue. ',
+    queueTitle: 'Re-assign activity owner',
 }
 
 export default class ReassignProjectForm extends ReactiveComponent {

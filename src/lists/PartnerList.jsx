@@ -23,12 +23,12 @@ const words = {
 }
 const wordsCap = textCapitalize(words)
 const texts = {
-	introducePartner: 'Introduce partner',
+	introducePartner: 'Introduce a Partner',
 	columnPublicTitle1: 'A public company cannot be changed to private.',
 	columnPublicTitle2: 'Click to add a company with this identity to the public database',
 	partnerName: 'Partner Name',
 	partnerNoUserIdConfirmHeader: 'Partner User ID required',
-	partnerNoUserIdConfirmMsg: 'Selected partner does not include an User ID. Would you like to update partner?',
+	partnerNoUserIdConfirmMsg: 'Selected Partner does not include a User ID. Would you like to update the Partner record?',
 	removePartner: 'Remove Partner?',
 	usedBy: 'Used by',
 }

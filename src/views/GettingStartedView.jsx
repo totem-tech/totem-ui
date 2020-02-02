@@ -15,13 +15,13 @@ import IdentityForm from '../forms/Identity'
 // const words = {}
 // const wordsCap = textCapitalize(words)
 const texts = {
-	faucetRequestSent: 'Registration successful! A faucet request has been sent to get you started.',
-	faucetTransferComplete: 'Faucet transfer complete.',
+	faucetRequestSent: 'Registration successful! You will shortly receive an allocation of transactions get you started.',
+	faucetTransferComplete: 'Allocation complete.',
 	quickGuidePara1: `Totem is currently under heavy development, but you can already use the Identities, Partners, Project 
-		and Timekeeping Modules as well as make basic transfers of your transaction allocations using the Transfer Module.`,
-	quickGuidePara2: `Most of what you do in Totem will consume transaction allocations (XTX for short) but don't worry, 
+		and Timekeeping Modules as well as make basic transfers of your transaction allocations balance using the Transfer Module.`,
+	quickGuidePara2: `Most of what you do in Totem will consume transactions from your balance (XTX for short) but don't worry, 
 		we are nice open source people, and we'll give you plenty to get you started.`,
-	quickGuidePara3: 'If you use them up - no problem! Simply request some more from our automated faucet.',
+	quickGuidePara3: 'If you use up your balance - no problemo! Simply request some more from our automated faucet.',
 	quickGuideTitle: 'A quick guide to getting started with Totem Live Accounting.',
 	step1Description: `This Identities are only known to you. You can create as many as you like in the Identities Module.`,
 	step1Title: 'Edit Default Identity',

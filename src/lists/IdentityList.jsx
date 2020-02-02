@@ -26,12 +26,12 @@ const wordsCapitalized = Object.keys(words).reduce((obj, key) => {
     return obj
 }, {})
 const texts = {
-    emptyMessage: 'No matching identity found', // assumes there will always be an itentity
+    emptyMessage: 'Error: No matching identity found', // assumes there will always be an itentity
     lastBackup: 'Last Backup',
     showDetails: 'Show details',
     shareIdentityDetails: 'Share your identity with other Totem users',
-    txAllocations: 'TX alloctions',
-    updateIdentity: 'Update identity',
+    txAllocations: 'Transaction Balance',
+    updateIdentity: 'Update your identity',
 }
 
 export default class ItentityList extends ReactiveComponent {
