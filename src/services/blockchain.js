@@ -1,6 +1,7 @@
 import { addCodecTransform, post } from 'oo7-substrate'
 import timeKeeping from './timeKeeping'
 import project from './project'
+import storage from './storage'
 import { hashToBytes, validateAddress } from '../utils/convert'
 import { setNetworkDefault, denominationInfo } from 'oo7-substrate'
 import { isObj } from '../utils/utils'
@@ -8,7 +9,7 @@ import types from '../utils/totem-polkadot-js-types'
 
 // oo7-substrate: register custom types
 Object.keys(types).forEach(key => addCodecTransform(key, types[key]))
-
+const moduleKey = 'blockchain'
 // used for archiving
 export const hashTypes = {
     /// 1000
@@ -32,11 +33,11 @@ export const denominations = Object.freeze({
     Ktx: 3,
     Transactions: 0,
 })
-export let config = Object.freeze({
-    primary: 'Gtx',
+let config = {
+    primary: 'Ktx',
     unit: 'Transactions',
     ticker: 'XTX'
-})
+}
 export const nodes = [
     'wss://node1.totem.live',
 ]
@@ -49,13 +50,16 @@ export const archiveRecord = (hashOwnerAddress, type, hash, archive = true) => p
     longevity: true
 })
 
+export const getConfig = () => config
+
 // getTypes returns a promise with 
 export const getTypes = () => new Promise(resolve => resolve(types))
 // Replace configs
 export const setConfig = newConfig => {
     if (isObj(newConfig)) {
-        config = Object.freeze(newConfig)
+        config = { ...config, ...newConfig }
     }
+    storage.settings.module.set(moduleKey, { config })
     denominationInfo.init({ ...config, denominations })
 }
 

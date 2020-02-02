@@ -2,8 +2,6 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
 import { textCapitalize } from '../utils/utils'
-import partners from '../services/partner'
-import identities from '../services/identity'
 
 const words = {
     accept: 'accept',
@@ -38,15 +36,13 @@ ButtonAcceptOrReject.defaultProps = {
 }
 
 // placeholder to potentially use this in the future to make all User IDs clickable and open private chat with user
-export const UserID = ({ userId }) => {
-    return (
-        <Button
-            basic
-            compact
-            content={<b>@{userId}</b>}
-            onClick={(e) => e.stopPropagation() | console.log({ userId })}
-            title={texts.userId}
-            style={{ boxShadow: 'none', padding: 0 }}
-        />
-    )
-}
+export const UserID = ({ userId }) => (
+    <Button
+        basic
+        compact
+        content={<b>@{userId}</b>}
+        onClick={e => e.stopPropagation() | console.log({ userId })}
+        title={texts.userId}
+        style={{ boxShadow: 'none', padding: 0 }}
+    />
+)

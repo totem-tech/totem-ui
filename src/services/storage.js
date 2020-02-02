@@ -44,7 +44,7 @@ storage.settings = {
     }
 }
 // add/update a property to specific module setting
-storage.settings.module.set = (moduleKey, keyValue) => {
+storage.settings.module.set = (moduleKey, keyValue = {}) => {
     const moduleSettings = storage.settings.module(moduleKey)
     storage.settings.module(moduleKey, { ...moduleSettings, ...keyValue })
 }

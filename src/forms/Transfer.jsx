@@ -6,7 +6,7 @@ import { runtime } from 'oo7-substrate'
 import { Pretty } from '../Pretty'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import PartnerForm from '../forms/Partner'
-import { config, denominations } from '../services/blockchain'
+import { getConfig, denominations, setConfig } from '../services/blockchain'
 import identities from '../services/identity'
 import { showForm } from '../services/modal'
 import partners from '../services/partner'
@@ -36,6 +36,7 @@ export default class Transfer extends Component {
     constructor(props) {
         super(props)
 
+        const config = getConfig()
         this.state = {
             denomination: config.primary,
             message: undefined,
@@ -100,10 +101,11 @@ export default class Transfer extends Component {
                             basic
                             className='no-margin'
                             defaultValue={config.primary}
-                            onChange={(_, { value }) => {
+                            onChange={(_, { value: denomination }) => {
                                 const { inputs } = this.state
-                                findInput(inputs, 'amount').min = this.getAmountMin(value)
-                                this.setState({ denomination: value, inputs })
+                                findInput(inputs, 'amount').min = this.getAmountMin(denomination)
+                                // setConfig({ primary: denomination })
+                                this.setState({ denomination, inputs })
                             }}
                             options={Object.keys(denominations).map(key => ({ key, value: key, text: key }))}
                         />
@@ -177,12 +179,14 @@ export default class Transfer extends Component {
         const { uri } = identities.get(from)
         const { name } = partners.get(to)
         const amountXTX = amount * Math.pow(10, denominations[denomination])
-
+        // const primary = getConfig().primary
+        // setConfig({ primary: denomination })
         this.setMessage()
         transfer(to, amountXTX, uri).then(
             hash => this.setMessage(null, hash, name, amount) | this.clearForm(),
             err => this.setMessage(err),
         )
+        // .finally(() => setConfig({ primary }))
     }
 
     // returns the min value acceptable for the selected denomination

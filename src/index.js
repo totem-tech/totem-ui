@@ -11,11 +11,7 @@ import { setDefaultConfig } from './utils/polkadotHelper'
 let hasCountries = storage.countries.getAll().size > 0
 
 // set denomnination info
-setConfig({
-    primary: 'Ktx',
-    unit: 'Transactions',
-    ticker: 'XTX'
-})
+setConfig()
 // set node URLs
 setNodeUri(nodes)
 
