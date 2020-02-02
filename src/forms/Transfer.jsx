@@ -6,7 +6,7 @@ import { runtime } from 'oo7-substrate'
 import { Pretty } from '../Pretty'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import PartnerForm from '../forms/Partner'
-import { getConfig, denominations, setConfig } from '../services/blockchain'
+import { getConfig, denominations } from '../services/blockchain'
 import identities from '../services/identity'
 import { showForm } from '../services/modal'
 import partners from '../services/partner'
@@ -36,9 +36,9 @@ export default class Transfer extends Component {
     constructor(props) {
         super(props)
 
-        const config = getConfig()
+        const primary = 'Transactions' //getConfig().primary
         this.state = {
-            denomination: config.primary,
+            denomination: primary,
             message: undefined,
             onSubmit: this.handleSubmit,
             success: false,
@@ -100,19 +100,21 @@ export default class Transfer extends Component {
                         <Dropdown
                             basic
                             className='no-margin'
-                            defaultValue={config.primary}
+                            defaultValue={primary}
+                            disabled={true}
                             onChange={(_, { value: denomination }) => {
                                 const { inputs } = this.state
                                 findInput(inputs, 'amount').min = this.getAmountMin(denomination)
                                 // setConfig({ primary: denomination })
                                 this.setState({ denomination, inputs })
                             }}
-                            options={Object.keys(denominations).map(key => ({ key, value: key, text: key }))}
+                            options={[{ key: 0, text: primary, value: primary }]}
+                        // options={Object.keys(denominations).map(key => ({ key, text: key, value: key }))}
                         />
                     ),
                     label: wordsCap.amount,
                     labelPosition: 'right', //inline label position
-                    min: this.getAmountMin(config.primary),
+                    min: this.getAmountMin(primary),
                     name: 'amount',
                     placeholder: texts.amountPlaceholder,
                     required: true,
