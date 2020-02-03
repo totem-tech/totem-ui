@@ -2,7 +2,6 @@ import express from 'express'
 import http from 'http'
 import https from 'https'
 import fs from 'fs'
-import { initChatServer } from './chatServer'
 let app = express()
 
 // Reverse Proxy config
@@ -11,8 +10,6 @@ const HTTPS_PORT = process.env.HTTPS_PORT || 443
 // for 
 const SUBDOMAIN = process.env.SUBDOMAIN
 
-// CHAT_SERVER_PORT _must not_ conflict with competing services running on same server
-const CHAT_SERVER_PORT = process.env.CHAT_SERVER_PORT || 3001
 
 const EXECUTION_MODE = process.env.EXECUTION_MODE || 'dev'
 
@@ -45,9 +42,8 @@ const keyFileName = 'privkey.pem'
 
 const devModeCertBasePath = './sslcert/'
 
-let subDomainDot
 // in case there is a subDomain
-SUBDOMAIN ? (subDomainDot = SUBDOMAIN + '.') : (subDomainDot = '')
+const subDomainDot = SUBDOMAIN ? '.' : ''
 
 // Todo make this dynamic for the host
 const prodModeCertBasePath = '/etc/letsencrypt/live/' + subDomainDot + 'totem.live/'
@@ -70,6 +66,3 @@ const options = {
 
 // create main https app server 
 https.createServer(options, app).listen(HTTPS_PORT, () => console.log('\nApp https web server listening on port ', HTTPS_PORT))
-
-// Start chat & data server
-initChatServer(options, app, CHAT_SERVER_PORT)
