@@ -1,18 +1,27 @@
 import React from 'react';
 import { ReactiveComponent } from 'oo7-react';
 import { pretty } from 'oo7-substrate';
+import { isBond } from './utils/utils';
 
 export class Pretty extends ReactiveComponent {
-	constructor () {
-		super(["value", "default", "className"])
+	componentWillMount() {
+		const { value } = this.props
+		if (!isBond(value)) return this.setState({ value })
+		this.bond = value
+		this.tieId = this.bond.tie(value => this.setState({ value }))
 	}
-	render () {
-		if (this.ready() || this.props.default == null) {
-			return (<span className={this.state.className} name={this.props.name}>
-				{(this.props.prefix || '') + pretty(this.state.value) + (this.props.suffix || '')}
-			</span>)
-		} else {
-			return <span>{this.props.default}</span>
-		}
+	componentWillUnmount = () => this.bond && this.bond.untie(this.tieId)
+
+	render() {
+		const { className, default: defaultValue, name, prefix, suffix } = this.props
+		const { value } = this.state
+
+		if (!this.bond.ready() && defaultValue !== null) return <span>{defaultValue}</span>
+
+		return (
+			<span className={className} name={name}>
+				{(prefix || '') + pretty(value || '') + (suffix || '')}
+			</span>
+		)
 	}
 }
