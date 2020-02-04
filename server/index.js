@@ -43,10 +43,10 @@ const keyFileName = 'privkey.pem'
 const devModeCertBasePath = './sslcert/'
 
 // in case there is a subDomain
-const subDomainDot = SUBDOMAIN ? '.' : ''
+const subDomainDot = SUBDOMAIN ? SUBDOMAIN + '.' : ''
 
 // Todo make this dynamic for the host
-const prodModeCertBasePath = '/etc/letsencrypt/live/' + SUBDOMAIN + subDomainDot + 'totem.live/'
+const prodModeCertBasePath = '/etc/letsencrypt/live/' + subDomainDot + 'totem.live/'
 
 let certPath = devModeCertBasePath
 let keyPath = devModeCertBasePath
