@@ -4,7 +4,7 @@ node_modules/.bin/*
 yarn-error.log
 
 # data files
-server/data/*
+server/data
 
 # scripts
 start.sh
