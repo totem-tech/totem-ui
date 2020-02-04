@@ -46,7 +46,7 @@ const devModeCertBasePath = './sslcert/'
 const subDomainDot = SUBDOMAIN ? '.' : ''
 
 // Todo make this dynamic for the host
-const prodModeCertBasePath = '/etc/letsencrypt/live/' + subDomainDot + 'totem.live/'
+const prodModeCertBasePath = '/etc/letsencrypt/live/' + SUBDOMAIN + subDomainDot + 'totem.live/'
 
 let certPath = devModeCertBasePath
 let keyPath = devModeCertBasePath
