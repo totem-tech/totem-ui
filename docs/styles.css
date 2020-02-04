@@ -199,10 +199,10 @@ div.ui.padded.segment {
   display: none;
 }
 
-/* more space for messages */
+/* more space for messages
 #messages .rcw-response {
   max-width: 75%;
-}
+}*/
 
 /* allow new lines in the chat subheader */
 .rcw-header > h4 + span {
