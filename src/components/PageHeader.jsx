@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { runtime } from 'oo7-substrate'
 import { Dropdown, Image, Menu } from 'semantic-ui-react'
-import { Pretty } from '../Pretty'
+import { Pretty } from '../components/Pretty'
 // utils
 import { copyToClipboard, textEllipsis } from '../utils/utils'
 import { ss58Decode } from '../utils/convert'
@@ -12,14 +12,25 @@ import TimeKeepingForm from '../forms/TimeKeeping'
 // services
 import { getUser, getClient, onLogin } from '../services/chatClient'
 import identities, { getSelected, setSelected } from '../services/identity'
+import { translated } from '../services/language'
 import { showForm } from '../services/modal'
 import NotificationDropdown from '../services/notification'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { toggleSidebarState } from '../services/sidebar'
-import storage from '../services/storage'
 import timeKeeping from '../services/timeKeeping'
 import { setToast } from '../services/toast'
 
+// const [words, wordsCap] = translated({}, true)
+const [texts] = translated({
+	addressCopied: 'Address copied to clipboard',
+	connectionFailed: 'Connection failed!',
+	copyAddress: 'Copy Address',
+	faucetRequestSent: 'Faucet request sent',
+	faucetTransferComplete: 'Faucet transfer complete',
+	requestFunds: 'Request Funds',
+	selectAnIdentity: 'Select an identity',
+	updateIdentity: 'Update Identity',
+})
 export default class PageHeader extends Component {
 	constructor(props) {
 		super(props)
@@ -54,7 +65,7 @@ export default class PageHeader extends Component {
 		const { address } = getSelected()
 		if (!address) return;
 		copyToClipboard(address)
-		const msg = { content: 'Address copied to clipboard', status: 'success' }
+		const msg = { content: texts.addressCopied, status: 'success' }
 		this.copiedMsgId = setToast(msg, 2000, this.copiedMsgId)
 	}
 
@@ -67,14 +78,11 @@ export default class PageHeader extends Component {
 		const { address } = getSelected()
 		const client = getClient()
 		if (!client.isConnected()) {
-			const msg = {
-				content: 'Connection failed!',
-				status: 'error'
-			}
+			const msg = { content: texts.connectionFailed, status: 'error' }
 			this.faucetMsgId = setToast(msg, 3000, this.faucetMsgId)
 			return
 		}
-		this.faucetMsgId = setToast({ content: 'Faucet request sent', status: 'loading' }, null, this.faucetMsgId)
+		this.faucetMsgId = setToast({ content: texts.faucetRequestSent, status: 'loading' }, null, this.faucetMsgId)
 
 		addToQueue({
 			type: QUEUE_TYPES.CHATCLIENT,
@@ -83,7 +91,7 @@ export default class PageHeader extends Component {
 				address,
 				(err, txHash) => {
 					this.faucetMsgId = setToast({
-						content: err || `Faucet transfer complete. Transaction hash: ${txHash}`,
+						content: err || texts.faucetTransferComplete,
 						status: !!err ? 'error' : 'success'
 					}, null, this.faucetMsgId)
 				},
@@ -169,9 +177,8 @@ class MobileHeader extends Component {
 							<Menu.Item style={{ paddingRight: 0 }}>
 								<Dropdown
 									labeled
-									noResultsMessage="No wallet available"
 									onChange={onSelection}
-									placeholder="Select an account"
+									placeholder={texts.selectAnIdentity}
 									text={!isMobile ? selected.name : textEllipsis(selected.name, 7, 3, false)}
 									value={selected.address}
 									options={wallets.map(({ address, name }) => ({
@@ -199,19 +206,19 @@ class MobileHeader extends Component {
 							<Dropdown.Menu className="left">
 								<Dropdown.Item
 									icon="pencil"
-									content="Update Identity"
+									content={texts.updateIdentity}
 									onClick={onEdit}
 								/>
 								<Dropdown.Item
 									icon="copy"
-									content="Copy Address"
+									content={texts.copyAddress}
 									onClick={onCopy}
 								/>
 								{id && [
 									<Dropdown.Item
 										key="0"
 										icon="gem"
-										content="Request Funds"
+										content={texts.requestFunds}
 										onClick={onFaucetRequest}
 									/>
 								]}

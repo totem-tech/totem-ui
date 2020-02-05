@@ -1,21 +1,21 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { runtime } from 'oo7-substrate'
-import { Pretty } from '../Pretty'
+import { Pretty } from '../components/Pretty'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import { arrSort, generateHash, isFn, textCapitalize } from '../utils/utils'
 import identities, { getSelected } from '../services/identity'
+import { translated } from '../services/language'
 import { getProjects } from '../services/project'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
-const words = {
+const [words, wordsCap] = translated({
     cancel: 'cancel',
     close: 'close',
     create: 'create',
     update: 'update',
-}
-const wordsCap = textCapitalize(words)
-const texts = {
+}, true)
+const [texts] = translated({
     descLabel: 'Activity Description',
     descPlaceholder: 'Enter short description of the activity... (max 160 characters)',
     formHeaderCreate: 'Create a new Activity',
@@ -30,7 +30,7 @@ const texts = {
     submitSuccessHeader: 'Activity saved successfully',
     submitTitleCreate: 'Create activity',
     submitTitleUpdate: 'Update activity',
-}
+})
 
 // Create or update project form
 export default class ProjectForm extends Component {

@@ -22,7 +22,7 @@ const _secretStore = () => {
 }
 const _ssFind = address => _secretStore().find(address)
 const _ssSubmit = (seed, name) => _secretStore().submit(seed, name)
-const _ssKeys = () => _secretStore()._keys
+const _ssKeys = () => _secretStore()._keys || []
 const _ssSync = () => _secretStore()._sync()
 const _ssForget = address => _secretStore().forget(address)
 
@@ -87,7 +87,8 @@ export const set = (address, identity = {}) => {
     const { name, uri: seed } = identity
     let create = false
     let existing = _ssFind(address)
-    if (!existing) {setSelected
+    if (!existing) {
+        setSelected
         const account = accountFromPhrase(seed)
         if (!account || !name) return
         create = true

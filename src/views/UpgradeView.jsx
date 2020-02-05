@@ -2,10 +2,20 @@ import React from 'react'
 import { Bond } from 'oo7'
 import { If, ReactiveComponent } from 'oo7-react'
 import { calls, runtime } from 'oo7-substrate'
-import { TransactButton } from '../TransactButton'
-import { FileUploadBond } from '../FileUploadBond'
+import { TransactButton } from '../components/TransactButton'
+import { FileUploadBond } from '../components/FileUploadBond'
+import { translated } from '../services/language'
 
-class UpgradeView extends ReactiveComponent {
+const [words, wordsCap] = translated({
+	upgrade: 'upgrade',
+
+}, true)
+const [texts] = translated({
+	selectRuntime: 'Select Runtime'
+
+})
+
+export default class UpgradeView extends ReactiveComponent {
 	constructor() {
 		super()
 		this.conditionBond = runtime.metadata.map(m =>
@@ -18,12 +28,12 @@ class UpgradeView extends ReactiveComponent {
 	render() {
 		const contents = (
 			<div>
-				<div style={{paddingBottom: '20px'}}>
-					<FileUploadBond bond={this.newRuntime} content="Select Runtime" />
+				<div style={{ paddingBottom: '20px' }}>
+					<FileUploadBond bond={this.newRuntime} content={texts.selectRuntime} />
 				</div>
 				<div>
 					<TransactButton
-						content="Upgrade"
+						content={wordsCap.upgrade}
 						icon="warning"
 						tx={{
 							sender: runtime.sudo
@@ -40,5 +50,3 @@ class UpgradeView extends ReactiveComponent {
 		return <If condition={this.conditionBond} then={contents} />
 	}
 }
-
-export default UpgradeView

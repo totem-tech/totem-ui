@@ -48,21 +48,21 @@ class SystemStatus extends ReactiveComponent {
 			<Grid celled stackable>
 				<GridRow>
 					<GridColumn width={2}>
-						<Icon 
-							name="circle" 
+						<Icon
+							name="circle"
 							color={isConnected ? 'green' : 'red'} />
-							{!!isConnected ? 'On' : 'off'}line		
+						{!!isConnected ? 'On' : 'off'}line
 					</GridColumn>
 					<GridColumn width={7}>
-					Totem Network Version : V{this.state.runtime_version_specVersion}
+						Totem Network Version : V{this.state.runtime_version_specVersion}
 					</GridColumn>
 					<GridColumn width={7}>
-					Chain type : {this.state.system_chain}
+						Chain type : {this.state.system_chain}
 					</GridColumn>
 				</GridRow>
 				<GridRow>
-				<GridColumn width={2}>
-						<Icon 
+					<GridColumn width={2}>
+						<Icon
 							name="circle"
 							color={this.state.system_health_is_syncing ? 'green' : 'yellow'}
 						/>
@@ -80,8 +80,8 @@ class SystemStatus extends ReactiveComponent {
 						<Icon
 							name="circle"
 							color={this.state.peers > 0 ? 'green' : 'red'}
-							/>
-							Peers #{this.state.system_health_peers}
+						/>
+						Peers #{this.state.system_health_peers}
 					</GridColumn>
 					<GridColumn width={5}>
 						Block Nr. : {pretty(this.state.chain_height) || 0}
@@ -91,9 +91,9 @@ class SystemStatus extends ReactiveComponent {
 					</GridColumn>
 					<GridColumn width={4}>
 						Authorities : {
-						// (this.state.runtime_core_authorities || []).map((a, i) =>
-						// 	<Identicon key={bytesToHex(a) + i} account={a} size={16} />)
-							}
+							// (this.state.runtime_core_authorities || []).map((a, i) =>
+							// 	<Identicon key={bytesToHex(a) + i} account={a} size={16} />)
+						}
 					</GridColumn>
 				</GridRow>
 			</Grid>,
@@ -101,7 +101,7 @@ class SystemStatus extends ReactiveComponent {
 
 		return (
 			<React.Fragment>
-					{items.map((item, i) => <div key={i}>{item}</div>)}
+				{items.map((item, i) => <div key={i}>{item}</div>)}
 			</React.Fragment>
 		)
 	}

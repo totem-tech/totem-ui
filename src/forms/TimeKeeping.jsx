@@ -16,19 +16,19 @@ import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import { ButtonAcceptOrReject } from '../components/buttons'
 // services
 import identities, { getSelected } from '../services/identity'
+import { translated } from '../services/language'
 import { confirm, closeModal, showForm } from '../services/modal'
 import { handleTKInvitation } from '../services/notification'
 import { getAddressName } from '../services/partner'
 import projectService, { openStatuses } from '../services/project'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import storage from '../services/storage'
 import timeKeeping, { getProjects, getProjectsBond, NEW_RECORD_HASH, statuses } from '../services/timeKeeping'
 
 // Hash that indicates creation of new record
 const DURATION_ZERO = '00:00:00'
 const blockCountToDuration = blockCount => secondsToDuration(blockCount * BLOCK_DURATION_SECONDS)
 const durationToBlockCount = duration => BLOCK_DURATION_REGEX.test(duration) ? durationToSeconds(duration) / BLOCK_DURATION_SECONDS : 0
-const words = {
+const [words, wordsCap] = translated({
     activity: 'activity',
     close: 'close',
     duration: 'duration',
@@ -45,9 +45,8 @@ const words = {
     update: 'update',
     yes: 'yes',
     wallet: 'wallet',
-}
-const wordsCap = textCapitalize(words)
-const texts = {
+}, true)
+const [texts] = translated({
     addedToQueue: 'Added to queue',
     areYouSure: 'Are you sure?',
     cancelWarning: 'You have a running timer. Would you like to stop and exit?',
@@ -84,7 +83,7 @@ const texts = {
     transactionFailed: 'Blockchain transaction failed!',
     updateFormHeader: 'Timekeeping: Update Record',
     workerBannedMsg: 'Permission denied',
-}
+})
 
 function handleDurationChange(e, formValues, i) {
     const { inputs, values } = this.state

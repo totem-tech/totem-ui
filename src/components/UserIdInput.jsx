@@ -1,22 +1,21 @@
 import React, { Component } from 'react'
-import { Bond } from 'oo7'
 import PropTypes from 'prop-types'
 import FormInput from './FormInput'
-import { arrUnique, deferred, isFn, hasValue, objWithoutKeys, textCapitalize, arrSort, search } from '../utils/utils'
+import { arrUnique, isFn, objWithoutKeys, textCapitalize, arrSort } from '../utils/utils'
 import client, { getUser } from '../services/chatClient'
+import { translated } from '../services/language'
 import partners from '../services/partner'
 
-const words = {
+const [words, wordsCap] = translated({
     add: 'add'
-}
-const wordsCap = textCapitalize(words)
-const texts = {
+}, true)
+const [texts] = translated({
     enterUserId: 'Enter User ID',
     enterUserIds: 'Enter User ID(s)',
     invalidUserId: 'Invalid User ID',
     noResultsMessage: 'Type a User ID and press enter to add',
     ownIdEntered: 'Please enter an ID other than your own',
-}
+})
 const noAttrs = [
     'excludeOwnId',
     'includePartners',
@@ -76,7 +75,6 @@ export default class UserIdInput extends Component {
 
         this.state = {
             ...input,
-            // bond: props.bond || new Bond(),
             onChange: this.handleChange,
         }
     }

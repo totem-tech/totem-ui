@@ -4,8 +4,8 @@ import { ReactiveComponent } from 'oo7-react'
 import { Button, Card, Icon, Image, Menu } from 'semantic-ui-react'
 import { isDefined, isFn } from '../utils/utils'
 import { FormInput } from '../components/FormBuilder'
-import Paginator from './Paginator'
-import DataTable, { mapItemsByPage } from './DataTable'
+import Paginator from '../components/Paginator'
+import DataTable, { mapItemsByPage } from '../components/DataTable'
 
 // ToDo: deprecate?? 
 export default class ListFactory extends ReactiveComponent {

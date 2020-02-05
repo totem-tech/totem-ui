@@ -1,6 +1,11 @@
 import React, { Component } from 'react'
 import Message from './Message'
+import { translated } from '../services/language'
 import { getUrlParam } from '../services/window'
+
+const [texts] = translated({
+    errorMsg: 'Something went wrong with this component'
+})
 
 export default class ErrorBoundary extends Component {
     constructor(props) {
@@ -29,7 +34,7 @@ export default class ErrorBoundary extends Component {
         return !hasError ? children : (
             <Message {...{
                 content: debug ? error.stack : undefined,
-                header: !debug ? 'Something went wrong with this component' : error.message,
+                header: !debug ? texts.errorMsg : error.message,
                 status: 'error'
             }} />
         )

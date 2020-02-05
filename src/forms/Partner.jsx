@@ -1,26 +1,26 @@
-import React from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-import { ReactiveComponent } from 'oo7-react'
 import { ss58Decode } from '../utils/convert'
-import { arrSort, deferred, isFn, isObj, textCapitalize } from '../utils/utils'
+import { arrSort, deferred, isFn, isObj } from '../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import addressbook, { getAddressName } from '../services/partner'
-import client from '../services/chatClient'
-import { showForm } from '../services/modal'
-import identityService from '../services/identity'
 import CompanyForm from './Company'
+// services
+import client from '../services/chatClient'
+import identityService from '../services/identity'
+import { showForm } from '../services/modal'
+import { translated } from '../services/language'
+import addressbook, { getAddressName } from '../services/partner'
 
-const words = {
+const [words, wordsCap] = translated({
     business: 'business',
     close: 'close',
     personal: 'personal',
     tags: 'tags',
     private: 'private',
     public: 'public',
-}
-const wordsCap = textCapitalize(words)
-const texts = {
+}, true)
+const [texts] = translated({
     addressAdditionLabel: 'Use ',
     addressLabel: 'Search for Company or Identity',
     addressPlaceholder: 'Search by company details or identity',
@@ -43,9 +43,9 @@ const texts = {
     userIdLabel: 'User ID for this partner',
     userIdPlaceholder: 'Enter User ID for this partner',
     visibilityLabel: 'Decide Partner Visibility (on the network)',
-}
+})
 
-class Partner extends ReactiveComponent {
+class Partner extends Component {
     constructor(props) {
         super(props)
 

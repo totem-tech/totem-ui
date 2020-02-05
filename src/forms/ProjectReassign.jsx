@@ -2,18 +2,19 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import { arrSort, isFn, textCapitalize } from '../utils/utils'
-import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import addressbook from '../services/partner';
-import { confirm } from '../services/modal'
+import { arrSort, isFn } from '../utils/utils'
+// services
 import identityService from '../services/identity'
+import { translated } from '../services/language'
+import { confirm } from '../services/modal'
+import addressbook from '../services/partner';
+import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
-const words = {
+const [words, wordsCap] = translated({
     cancel: 'cancel',
     proceed: 'proceed',
-}
-const wordsCap = textCapitalize(words)
-const texts = {
+}, true)
+const [texts] = translated({
     confirmHeader: 'Are you sure you want to reassign this activity?',
     confirmMsg: `You are about to assign the ownership of this activity to an Identity that does not belong to you. 
         If you proceed, you will no longer be able to update or manage this activity.`,
@@ -25,11 +26,11 @@ const texts = {
     newOwnerPlaceholder: 'Select new owner',
     ownerLabel: 'Current Activity Owner',
     partnerOptionsHeader: 'Select a partner',
-    queueDescription: 'Acttivity Name: ',
+    queueDescription: 'Activity Name: ',
     queuedMsgHeader: 'Re-assign request added to queue',
     queuedMsgContent: 'Your request to reassign the activity has been added to queue. ',
     queueTitle: 'Re-assign activity owner',
-}
+})
 
 export default class ReassignProjectForm extends ReactiveComponent {
     constructor(props) {

@@ -16,7 +16,72 @@ import DataStorage from '../utils/DataStorage'
 import { isBool, isBond } from '../utils/utils'
 import { findInput as findItem } from '../components/FormBuilder'
 // services
+import { translated } from './language'
 import { getLayout, layoutBond } from './window'
+
+// const [words, wordsCap] = translated({
+// }, true)
+const [texts] = translated({
+    gettingStartedTitle: 'Getting Started',
+    identityTitle: 'Identities',
+    identitySubheader: 'Identities are like companies - and you can create as many as you like!',
+    identitySubheaderDetails1: `
+        In Totem, you can create multiple identities to suit your needs. 
+        Identities are private, but you can choose which ones you share.
+    `,
+    identitySubheaderDetails2: `
+        You can give each shared Identity a name, add tags, and define it any way you want, and you can associate it with partners. 
+        You can think of an Identity as behaving like a company. 
+        It will associate all your activities in Totem under the Identity in which it was created.
+    `,
+    identitySubheaderDetails3: `
+        There is a default identity which is created for you when you start Totem for the first time. 
+        This Identity is your master backup key and you must record the seed phrase as a backup. 
+        Do not lose this phrase! It allows you to backup all your data and also to recover the data on different devices.
+    `,
+    identitySubheaderDetails4: `
+        Other identities you create are used to manage personal or business activities. 
+        Each Identity has it's own set of accounting modules. 
+        To keep the information separate you can only see the activities of one identity at a time. 
+        Select the identity you want to view in the top right corner of the header.
+    `,
+    identitySubheaderDetails5: 'Once an Identity is stored in this list you can use it all over Totem. To find out more, watch the video!',
+    partnersTitle: 'Partners',
+    partnersHeader: 'Partner Contact List',
+    partnersSubheader: 'Manage suppliers or customers, or any other party that you have contact with in Totem.',
+    partnersSubheaderDetails: `
+        In Totem, a partner is anyone that you intend to interact with. Each partner has one or more identities,
+        that they can share with you. (see the Identities Module for more information on Identities.)
+        The best way to get someone's identity is to request it, which you can do using the internal messaging service.
+        Click Request, and enter the partner's User ID and hopefully they will share one with you.
+        You can give each shared Partner Identity a new name, add tags, and define it any way you want.
+        Once a partner is stored in this list you can use it all over Totem.
+    `,
+    projectTitle: 'Activities',
+    projectSubheader: 'Manage activities',
+    projectSubheaderDetails: `
+        You can use the activity module to account for any activity, task project.
+        You can invite team members to activities or assign individuals an activity, manage and approve all time booked against an activity. 
+        Activities are then automatically mapped to invoices or other payments, and all accounting will be correctly posted even into your partners' accounts.
+    `,
+    timekeepingTitle: 'Timekeeping',
+    timekeepingSubheader: 'Manage timekeeping against activities that you have been invited to, or that you have created yourself.',
+
+    transferTitle: 'Transfer',
+    transferHeader: 'Transfer Transactions',
+    transferSubheader: 'Use this module to share your transaction balance with a Partner or another Identity you own.',
+    invoicesTitle: 'Manage Invoices',
+    creditNoteTitle: 'Credit Note',
+    purchaseOrderTitle: 'Purchase Order',
+    manageOrderTitle: 'Manage Orders',
+    expenseTitle: 'Expense',
+    disputedItemsTitle: 'Disputed Items',
+    editAccountingTitle: 'Edit Accounting',
+    productsTitle: 'Products',
+    settingsTitle: 'Settings',
+    utilitiesTitle: 'Utilities',
+    utilitiesSubheader: 'Blockchain utilities',
+})
 
 // store items' "active" status in the localStorage
 const statuses = new DataStorage('totem_sidebar-items-status')
@@ -63,7 +128,7 @@ export const sidebarItems = [
         // headerDividerHidden: true,
         icon: 'play circle outline',
         name: gsName,
-        title: 'Getting Started',
+        title: texts.gettingStartedTitle,
     },
     {
         content: KeyRegistryPlayground,
@@ -83,124 +148,106 @@ export const sidebarItems = [
         content: IdentityList,
         icon: 'id badge outline',
         name: 'identities',
-        subHeader: 'Identities are like companies - and you can create as many as you like!',
+        subHeader: texts.identitySubheader,
         subHeaderDetails: (
             <div>
-                <p>
-                    In Totem, you can create multiple identites to suit your needs. Identities are private, but you can choose which ones you share. 
-                </p>
-                <p>
-                    You can give each shared Identity a name, add tags, and define it any way you want, and you can associate it with partners. You can think of an Identity as behaving like a company. It will associate all your activities in Totem under the Identity in which it was created.
-                </p>
-                <p>
-                    There is a default identity which is created for you when you start Totem for the first time. This Identity is your master backup key and you must record the seed phrase as a backup. Do not lose this phrase! It allows you to backup all your data and also to recover the data on different devices.
-                </p>
-                <p>
-                    Other identities you create are used to manage personal or business activities. Each Identity has it's own set of accounting modules and to keep the information seperate you can only see the activities of one identity at a time. Select the identity you want to view in the top right corner of the header.
-                </p>
-                <p>
-                    Once an Identity is stored in this list you can use it all over Totem. To find out more, watch the video!
-                </p>
+                <p>{texts.identitySubheaderDetails1}</p>
+                <p>{texts.identitySubheaderDetails2}</p>
+                <p>{texts.identitySubheaderDetails3}</p>
+                <p>{texts.identitySubheaderDetails4}</p>
+                <p>{texts.identitySubheaderDetails5}</p>
             </div>
         ),
-        title: 'Identities',
+        title: texts.identityTitle,
     },
     {
         content: PartnerList,
         icon: 'users',
-        header: 'Partner Contact List',
+        header: texts.partnersHeader,
         name: 'partners',
-        subHeader: 'Manage suppliers or customers, or any other party that you have contact with in Totem.',
-        subHeaderDetails:
-            'In Totem, a partner is anyone that you intend to interact with. Each partner has one or more identities,\n ' +
-            'that they can share with you. (see the Identities Module for more information on Identities.) \n ' +
-            'The best way to get someone\'s identity is to request it, which you can do using the internal messaging service. \n' +
-            'Click Request, and enter the partner\'s userID and hopefully they will share one with you. \n' +
-            'You can give each shared Partner Identity a new name, add tags, and define it any way you want. \n' +
-            'Once a partner is stored in this list you can use it all over Totem.',
-        title: 'Partners',
+        subHeader: texts.partnersSubheader,
+        subHeaderDetails: texts.partnersSubheaderDetails,
+        title: texts.partnersTitle,
     },
     {
         content: ProjectList,
         // headerDividerHidden: true,
         icon: 'tasks',
         name: 'projects',
-        subHeader: 'Manage activities.',
-        subHeaderDetails:
-            'You can use the activity module to account for any activity, task project. You can invite team members to activities or assign individuals an activity, manage and approve \n' +
-            'all time booked against an activity. Activities are then automatically mapped to invoices or other payments, and all accounting will be correctly posted even into your partner\'s accounts.',
-        title: 'Activities',
+        subHeader: texts.projectSubheader,
+        subHeaderDetails: texts.projectSubheaderDetails,
+        title: texts.projectTitle,
     },
     {
         content: TimeKeepingView,
         contentArgs: {},
         icon: 'clock outline',
         name: 'timekeeping',
-        subHeader: 'Manage timekeeping against activities that you have been invited to, or that you have created yourself.',
-        title: 'Timekeeping',
+        subHeader: texts.timekeepingSubheader,
+        title: texts.timekeepingTitle,
     },
     {
         content: TransferForm,
         contentProps: { style: { maxWidth: 620 } },
         icon: 'money bill alternate outline',
-        header: 'Transfer Transactions',
+        header: texts.transferHeader,
         name: 'transfer',
-        subHeader: 'Use this module to share your transaction balance with a Partner or another Identity you own.',
-        title: 'Transfer',
+        subHeader: texts.transferSubheader,
+        title: texts.transferTitle,
     },
     // { icon: 'file alternate', title: 'Invoice', subHeader: '', active: false, content: <Invoice /> },
     {
         icon: 'file alternate',
         name: 'invoices',
-        title: 'Manage Invoices',
+        title: texts.invoicesTitle,
     },
     {
         icon: 'file alternate outline',
         name: 'credit-note',
-        title: 'Credit Note',
+        title: texts.creditNoteTitle,
     },
     {
         icon: 'exchange',
         name: 'purchase-order',
-        title: 'Purchase Order',
+        title: texts.purchaseOrderTitle,
     },
     {
         icon: 'inbox',
         name: 'manage-orders',
-        title: 'Manage Orders',
+        title: texts.manageOrderTitle,
     },
     {
         icon: 'cc mastercard',
         name: 'expense',
-        title: 'Expense',
+        title: texts.expenseTitle,
     },
     {
         icon: 'exclamation circle',
         name: 'disputed-items',
-        title: 'Disputed Items',
+        title: texts.disputedItemsTitle,
     },
     {
         icon: 'chart bar outline',
         name: 'edit-accounting',
-        title: 'Edit Accounting',
+        title: texts.editAccountingTitle,
     },
     {
         icon: 'lightbulb',
         name: 'products',
-        title: 'Products',
+        title: texts.productsTitle,
     },
     {
         icon: 'cogs',
         name: 'settings',
-        title: 'Settings',
+        title: texts.settingsTitle,
     },
     {
         content: UtilitiesView,
         icon: 'stethoscope',
         name: 'utilities',
-        subHeader: 'Blockchain utilities',
+        subHeader: texts.utilitiesSubheader,
         // subHeaderDetails: 'This is a sample detailed subheader', // for extra information that extends subHeader
-        title: 'Utilities',
+        title: texts.utilitiesTitle,
     }
 ].map(item => {
     const {

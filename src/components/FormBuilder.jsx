@@ -31,7 +31,7 @@ export default class FormBuilder extends ReactiveComponent {
             if (isGroup) return this.getValues(inputs, values)
             let value = values[name]
             value = !(controlled ? hasValue : isDefined)(value) ? input.value : value
-            if (['accountidbond', 'inputbond'].indexOf(typeLC) >= 0 && isBond(bond)) {
+            if (isBond(bond)) {
                 value = bond._value
             }
             values[name] = value
@@ -276,9 +276,7 @@ export const fillValues = (inputs, values, forceFill) => {
             || (!forceFill && hasValue(input.value)) || !type
         )) return
 
-        if (['accountidbond', 'inputbond'].indexOf(type) >= 0) {
-            input.defaultValue = newValue
-        } else if (['checkbox', 'radio'].indexOf(type) >= 0) {
+        if (['checkbox', 'radio'].indexOf(type) >= 0) {
             input.defaultChecked = newValue
         } else if (isGroup) {
             fillValues(input.inputs, values, forceFill)

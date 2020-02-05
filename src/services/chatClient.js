@@ -1,5 +1,6 @@
 import io from 'socket.io-client'
 import { isFn } from '../utils/utils'
+import { translated } from './language'
 import storage from './storage'
 
 // chat server port
@@ -10,6 +11,9 @@ const postLoginCallbacks = []
 const HISTORY_LIMIT = 100
 const settings = storage.settings
 const moduleKey = 'messaging'
+const [texts] = translated({
+    notConnected: 'Messaging server is not connected'
+})
 
 // migrate existing user data
 const deprecatedKey = 'totem_chat-user'
@@ -40,9 +44,6 @@ const _execOnLogin = (userId) => {
 
 // include any ChatClient property that is not a function or event that does not have a callback
 const nonCbs = ['isConnected', 'disconnect']
-const texts = {
-    notConnected: 'Messaging server is not connected'
-}
 // Returns a singleton instance of the websocket client
 // Instantiates the client if not already done
 export const getClient = () => {

@@ -1,15 +1,15 @@
-import React from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-import { ReactiveComponent } from 'oo7-react'
 // import Identicon from 'polkadot-identicon'
 import { generateMnemonic } from 'bip39'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
-import identityService from '../services/identity'
-import { isFn, textCapitalize } from '../utils/utils'
+import { isFn } from '../utils/utils'
 import { ss58Encode } from '../utils/convert'
+import identityService from '../services/identity'
+import { translated } from '../services/language'
 
-const words = {
+const [words, wordsCap] = translated({
     address: 'address',
     create: 'create',
     business: 'business',
@@ -21,21 +21,20 @@ const words = {
     seed: 'seed',
     tags: 'tags',
     update: 'update',
-}
-const wordsCap = textCapitalize(words)
-const texts = {
+}, true)
+const [texts] = translated({
     identityNamePlaceholder: 'A name for the identity',
     restoreInputLabel: 'Restore my existing identity',
-    seedExists: 'Seed alreaedy exists in the identity list',
+    seedExists: 'Seed already exists in the identity list',
     seedPlaceholder: 'Enter existing seed or generate one',
     tagsInputEmptyMessage: 'Enter tag and press enter to add, to tags list',
     tagsPlaceholder: 'Enter tags',
     uniqueNameRequired: 'Please enter an unique name',
     usageType: 'Usage type',
     validSeedRequired: 'Please enter a valid seed',
-}
+})
 
-export default class IdentityForm extends ReactiveComponent {
+export default class IdentityForm extends Component {
     constructor(props) {
         super(props)
 

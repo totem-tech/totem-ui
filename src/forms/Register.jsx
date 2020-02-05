@@ -1,17 +1,16 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import uuid from 'uuid'
-import { dropMessages, addResponseMessage, isWidgetOpened, toggleWidget } from 'react-chat-widget'
-import FormBuilder, { findInput } from '../components/FormBuilder'
-import { deferred, isFn } from '../utils/utils'
+import { dropMessages, addResponseMessage } from 'react-chat-widget'
+import FormBuilder from '../components/FormBuilder'
+import { isFn } from '../utils/utils'
 import { getClient } from '../services/chatClient'
-import { textCapitalize } from '../utils/utils'
+import { translated } from '../services/language'
 
-const words = {
+const [words, wordsCap] = translated({
     register: 'register',
-}
-const wordsCap = textCapitalize(words)
-const texts = {
+}, true)
+const [texts] = translated({
     formHeader: 'Register a Memorable User Name',
     formSubheader: 'Choose an unique alias for use with Totem chat messaging.',
     registrationComplete: 'Registration complete',
@@ -19,11 +18,11 @@ const texts = {
     userId: 'User ID',
     userIdCriteria: 'Please enter an User ID that meets the following criteria:',
     userIdCriteria1: 'starts with a letter',
-    userIdCriteria2: 'contains minimun 3 characters',
+    userIdCriteria2: 'contains minimum 3 characters',
     userIdCriteria3: 'contains only alphanumeric characters',
     userIdPlaceholder: 'Enter your desired ID',
     welcomeMsg: 'Welcome to the Totem trollbox. Please be nice.',
-}
+})
 
 export default class FormRegister extends ReactiveComponent {
     constructor(props) {
@@ -63,7 +62,7 @@ export default class FormRegister extends ReactiveComponent {
 
     handleSubmit = (_, values) => {
         const { onSubmit } = this.props
-        let { userId } = values
+        const { userId } = values
 
         getClient().register(userId, uuid.v1(), err => {
             const success = !err

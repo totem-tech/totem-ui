@@ -1,20 +1,21 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
-import { isFn, isObj, textCapitalize, isArr } from '../utils/utils'
+import { isFn, isObj, isArr } from '../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import addressbook from '../services/partner'
+// services
 import client from '../services/chatClient'
 import identityService from '../services/identity'
+import { translated } from '../services/language'
+import addressbook from '../services/partner'
 
 const notificationType = 'identity'
 const childType = 'share'
-const words = {
+const [words, wordsCap] = translated({
     identities: 'identities',
     partners: 'partners',
-}
-const wordsCap = textCapitalize(words)
-const texts = {
+}, true)
+const [texts] = translated({
     failedMsgHeader: 'Submission Failed!',
     formHeader1: 'Share Identity/Partner',
     formHeader2: 'Share Identity',
@@ -32,7 +33,7 @@ const texts = {
     userIdsLabel: 'Recipient(s)',
     userIdsNoResultMsg: 'Type user ID and press enter to add',
     userIdsPlaceholder: 'Enter User ID(s)',
-}
+})
 
 export default class IdentityShareForm extends ReactiveComponent {
     constructor(props) {

@@ -1,11 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
-import { Button, Card, Dropdown, Grid, Icon, Image, Input, Menu, Table } from 'semantic-ui-react'
-import { arrMapSlice, getKeys, isArr, isDefined, isFn, objWithoutKeys, objCopy, search, sort, textCapitalize, isBool } from '../utils/utils'
+import { Button, Dropdown, Grid, Icon, Input, Table } from 'semantic-ui-react'
+import { arrMapSlice, getKeys, isArr, isFn, objWithoutKeys, objCopy, search, sort } from '../utils/utils'
 import Message from '../components/Message'
-import { FormInput } from '../components/FormBuilder'
 import Paginator from './Paginator'
+import { translated } from '../services/language'
 import { layoutBond } from '../services/window'
 
 const mapItemsByPage = (data, pageNo, perPage, callback) => {
@@ -13,17 +13,16 @@ const mapItemsByPage = (data, pageNo, perPage, callback) => {
     const end = start + perPage - 1
     return arrMapSlice(data, start, end, callback)
 }
-const words = {
+const [words, wordsCap] = translated({
     actions: 'actions',
     search: 'search',
-}
-const wordsCap = textCapitalize(words)
-const texts = {
+}, true)
+const [texts] = translated({
     deselectAll: 'Deselect all',
     noDataAvailable: 'No data available',
     noResultsMsg: 'Your search yielded no results',
     selectAll: 'Select all',
-}
+})
 
 export default class DataTable extends ReactiveComponent {
     constructor(props) {
@@ -42,11 +41,7 @@ export default class DataTable extends ReactiveComponent {
     handleRowSelect(key, selectedIndexes) {
         const { onRowSelect } = this.props
         const index = selectedIndexes.indexOf(key)
-        if (index < 0) {
-            selectedIndexes.push(key)
-        } else {
-            selectedIndexes.splice(index, 1)
-        }
+        index < 0 ? selectedIndexes.push(key) : selectedIndexes.splice(index, 1)
         isFn(onRowSelect) && onRowSelect(selectedIndexes, key)
         this.setState({ selectedIndexes })
     }

@@ -1,26 +1,22 @@
 import React from 'react'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
-import { BLOCK_DURATION_SECONDS, secondsToDuration, durationToSeconds } from '../utils/time'
-import { textCapitalize } from '../utils/utils'
+import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
 import DataTable from '../components/DataTable'
-import client from '../services/chatClient'
 import { getSelected, selectedAddressBond } from '../services/identity'
+import { translated } from '../services/language'
 import timeKeeping, { getProjects } from '../services/timeKeeping'
 
-const words = {
+const [words, wordsCap] = translated({
     activity: 'activity',
     percentage: 'percentage',
-}
-const wordsCap = textCapitalize(words)        // const { address } = getSelected()
-
-const texts = {
+}, true)
+const [texts] = translated({
     noTimeRecords: 'This identity has not yet booked time on an activity',
     totalBlocks: 'Total Time in Blocks',
     totalHours: 'Total Time in Hours',
     yourContribution: 'Your Time Contribution versus Total Booked Time',
-
-}
+})
 
 export default class TimeKeepingSummary extends ReactiveComponent {
     constructor(props) {

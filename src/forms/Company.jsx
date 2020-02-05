@@ -4,17 +4,17 @@ import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { ss58Decode } from 'oo7-substrate'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
-import { deferred, isFn, isObj, textCapitalize } from '../utils/utils'
+import { deferred, isFn, isObj } from '../utils/utils'
 import client from '../services/chatClient'
-import storage from '../services/storage'
+import { translated } from '../services/language'
 import { setPublic } from '../services/partner'
+import storage from '../services/storage'
 
-const words = {
+const [words, wordsCap] = translated({
     identity: 'identity',
     success: 'success',
-}
-const wordsCap = textCapitalize(words)
-const texts = {
+}, true)
+const [texts] = translated({
     companyExistsMsg: 'An entity already exists with the following name. You cannot resubmit.',
     countryLabel: 'Country of Registration',
     countryPlaceholder: 'Select a Country',
@@ -27,7 +27,7 @@ const texts = {
     submitSuccessMsg: 'Company added successfully',
     submitErrorHeader: 'Submission failed',
     subheader: 'Warning: doing this makes this partner visible to all Totem users',
-}
+})
 
 export default class Company extends ReactiveComponent {
     constructor(props) {
@@ -37,13 +37,13 @@ export default class Company extends ReactiveComponent {
         this.state = {
             message: props.message || {},
             success: false,
-            onSubmit: this.handleSubmit.bind(this),
+            onSubmit: this.handleSubmit,
             inputs: [
                 {
                     bond: new Bond(),
                     label: wordsCap.identity,
                     name: 'walletAddress',
-                    onChange: deferred((_, { walletAddress }) => this.checkCompany(walletAddress), 300),
+                    onChange: deferred(this.handleIdentityChange, 300),
                     readOnly: !!walletAddress,
                     type: 'text',
                     validate: (e, { value }) => !ss58Decode(value) ? texts.identityValidationMsg : null,
@@ -81,15 +81,10 @@ export default class Company extends ReactiveComponent {
                 }
             ]
         }
+        fillValues(inputs, props.values)
     }
 
-    componentWillMount() {
-        const { inputs } = this.state
-        fillValues(inputs, this.props.values)
-        this.setState({ inputs })
-    }
-
-    checkCompany(walletAddress) {
+    handleIdentityChange = (_, { walletAddress }) => {
         // check if a company already exists with address
         const { inputs } = this.state
         const wAddrIn = findInput(inputs, 'walletAddress')
@@ -116,7 +111,7 @@ export default class Company extends ReactiveComponent {
 
     }
 
-    handleSubmit(e, values) {
+    handleSubmit = (e, values) => {
         const { onSubmit } = this.props
         client.company(values.walletAddress, values, err => {
             const success = !err
@@ -132,9 +127,7 @@ export default class Company extends ReactiveComponent {
         })
     }
 
-    render() {
-        return <FormBuilder {...{ ...this.props, ...this.state }} />
-    }
+    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
 Company.propTypes = {
     values: PropTypes.shape({

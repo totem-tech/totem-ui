@@ -1,14 +1,14 @@
 import React from 'react'
 import { Label } from 'semantic-ui-react'
 import { Bond } from 'oo7'
-import { If, ReactiveComponent, Rspan} from 'oo7-react'
+import { If, ReactiveComponent, Rspan } from 'oo7-react'
 import { runtime, runtimeUp } from 'oo7-substrate'
-import { Pretty } from '../Pretty'
+import { Pretty } from '../components/Pretty'
 import { isObj, isFn } from '../utils/utils'
 
-class AddressLookup extends ReactiveComponent{
+class AddressLookup extends ReactiveComponent {
     constructor(props) {
-        super(props, {runtimeUp})
+        super(props, { runtimeUp })
     }
 
     render() {

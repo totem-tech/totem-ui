@@ -7,15 +7,40 @@ import { runtime } from 'oo7-substrate'
 import client from './chatClient'
 import blockchain from './blockchain'
 import { find as findIdentity } from './identity'
+import { translated } from './language'
 import { removeToast, setToast } from './toast'
 import { isArr, isFn, isObj, objClean, isBond } from '../utils/utils'
 import DataStorage from '../utils/DataStorage'
 
 const queue = new DataStorage('totem_queue-data')
 // Minimum balance required to make a transaction
-const MIN_BALANCE = 500
+const MIN_BALANCE = 2
 let txInProgress = false
 const txQueue = []
+const [words, wordsCap] = translated({
+    error: 'error',
+    failed: 'failed',
+    or: 'or',
+    otherwise: 'otherwise',
+    transactions: 'transactions',
+    success: 'success',
+}, true)
+const [texts] = translated({
+    cancelRequest: 'cancel request',
+    checkingBalance: 'checking balance',
+    clickToContinue: 'click here to continue',
+    insufficientBalance: 'Insufficient balance',
+    insufficientBalanceMsg1: 'Insufficient balance in the following identity:',
+    insufficientBalanceMsg2: 'Minimum required balance',
+    insufficientBalanceMsg3: 'Once you have sufficient balance reload page',
+    sendingTx: 'Sending transaction',
+    signingTx: 'Signing transaction',
+    txAborted: 'transaction aborted',
+    txFailed: 'Transaction failed',
+    txSuccessful: 'Transaction successful',
+    unknownIdentity: 'Cannot create a transaction from an address that does not belong to you! Supplied address:',
+})
+
 export const QUEUE_TYPES = Object.freeze({
     CHATCLIENT: 'chatclient',
     BLOCKCHAIN: 'blockchain',
@@ -103,12 +128,11 @@ const _processItem = (queueItem, id, toastId) => {
                     const { failed, finalized, sending, signing } = result
                     const done = failed || finalized
                     const status = !done ? 'loading' : (finalized ? 'success' : 'error')
-                    const statusText = finalized ? 'Transaction successful' : (
-                        signing ? 'Signing transaction' : (
-                            sending ? 'Sending transaction' : 'Transaction failed'
-                        )
+                    const statusText = finalized ? texts.txSuccessful : (
+                        signing ? texts.signingTx : (sending ? texts.sendingTx : texts.txFailed)
                     )
-                    const content = <p>{description}<br /> {failed && (`Error ${failed.code}: ${failed.message}`)}</p>
+
+                    const content = <p>{description}<br /> {failed && (`${wordsCap.error} ${failed.code}: ${failed.message}`)}</p>
                     const header = !title ? statusText : `${title}: ${statusText}`
                     // For debugging
                     queueItem.error = failed
@@ -130,8 +154,8 @@ const _processItem = (queueItem, id, toastId) => {
             const wallet = findIdentity(address)
             if (!wallet && !silent) {
                 setToast({
-                    content: `Cannot create a transaction from an address that does not belong to you! Supplied address: ${address}`,
-                    header: `${title}: transaction aborted`,
+                    content: `${texts.unknownIdentity} ${address}`,
+                    header: `${title}: ${wordsCap.txAborted}`,
                     status: 'error'
                 }, 0, toastId)
                 queue.delete(id)
@@ -139,7 +163,7 @@ const _processItem = (queueItem, id, toastId) => {
             }
             if (!silent) {
                 toastId = setToast({
-                    header: `${title}: checking balance`,
+                    header: `${title}: ${texts.checkingBalance}`,
                     content: description,
                     status: 'loading'
                 }, msgDuration, toastId)
@@ -154,7 +178,7 @@ const _processItem = (queueItem, id, toastId) => {
                         className="ui button basic mini"
                         onClick={() => _processItem(queueItem, id, toastId)}
                     >
-                        click here
+                        {texts.clickToContinue}
                     </button>
                 )
                 const cancelBtn = (
@@ -162,7 +186,7 @@ const _processItem = (queueItem, id, toastId) => {
                         className="ui button basic mini"
                         onClick={() => queue.delete(id) | removeToast(toastId)}
                     >
-                        cancel request
+                        {texts.cancelRequest}
                     </button>
                 )
 
@@ -171,17 +195,17 @@ const _processItem = (queueItem, id, toastId) => {
                         content: (
                             <p>
                                 {description} <br />
-                                You must have at least {MIN_BALANCE} Transactions balance in the identity named "{wallet.name}".
-                                This is requied to create a blockchain transaction.
-                                Once you have enough balance {continueBtn} or reload page to continue or {cancelBtn}
+                                {texts.insufficientBalanceMsg1} "${wallet.name}".<br />
+                                {texts.insufficientBalanceMsg2}: {MIN_BALANCE} {wordsCap.transactions}.<br />
+                                {texts.insufficientBalanceMsg3} {words.or} {continueBtn} {words.otherwise} {cancelBtn}<br />
                             </p>
                         ),
-                        header: `${title}: Insufficient balance`,
+                        header: `${title}: ${texts.insufficientBalance}`,
                         status: 'error',
                     }, 0, toastId)
 
                     // For debugging
-                    queueItem.error = 'Insufficient balance'
+                    queueItem.error = texts.insufficientBalance
                 }
                 _processNextTxItem()
             })
@@ -195,9 +219,9 @@ const _processItem = (queueItem, id, toastId) => {
             const interceptCb = function () {
                 const args = arguments
                 const err = args[0]
-                const content = (!err ? description : <p>Error: {err} <br /></p>)
+                const content = (!err ? description : <p>{wordsCap.error}: {err} <br /></p>)
                 const status = !err ? 'success' : 'error'
-                const statusText = !err ? 'success' : 'failed'
+                const statusText = !err ? words.success : words.failed
                 const header = !title ? statusText : `${title}: ${statusText}`
                 // For debugging
                 queueItem.error = err

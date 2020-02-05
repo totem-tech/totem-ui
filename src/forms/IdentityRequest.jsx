@@ -2,26 +2,39 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
+import { arrUnique, isFn } from '../utils/utils'
 import client, { getUser } from '../services/chatClient'
-import { arrUnique, isFn, textCapitalize } from '../utils/utils'
+import { translated } from '../services/language'
 
 const notificationType = 'identity'
 const childType = 'request'
-const reasonList = [
-    'To add your Identity to my Partner list',
-    'Timekeeping on an Activity',
-    // add anything else here
-    'Custom'
-]
-
-const words = {
+const [words, wordsCap] = translated({
+    close: 'close',
+    reason: 'reason',
+    submit: 'submit',
     user: 'user',
-}
-const wordsCap = textCapitalize(words)
-const texts = {
-    userIdsNoResultsMessage: 'Type a UserID and press enter to add',
+}, true)
+const [texts] = translated({
+    customReasonLabel: 'Custom Reason',
+    customReasonPlaceholder: 'Enter a reason for your request',
+    formHeader: 'Request Partner Identity',
+    formSubheader: 'Request one or more user(s) to share a Totem Identity with you.',
+    invalidUserId: 'Invalid User ID',
+    reason1: 'To add your Identity to my Partner list',
+    reason2: 'Timekeeping on an Activity',
+    reason3: 'Custom',
+    reasonPlaceholder: 'Select a reason for this request',
+    successMsg: `Identity request has been sent to selected user(s). You will receive notification once they agree to share their Identity with you.`,
+    successMsgHeader: 'Request sent!',
+    errorMessageHeader: 'Request failed!',
+    userIdsNoResultsMessage: 'Type an User ID and press enter to add',
     userIdsPlaceholder: 'Enter User ID(s)',
-}
+})
+const reasonList = [
+    texts.reason1,
+    texts.reason2,
+    texts.reason3,
+]
 
 export default class IdentityRequestForm extends ReactiveComponent {
     constructor(props) {
@@ -44,11 +57,11 @@ export default class IdentityRequestForm extends ReactiveComponent {
                     type: 'UserIdInput',
                 },
                 {
-                    label: 'Reason',
+                    label: wordsCap.reason,
                     name: 'reason',
                     onChange: (e, values, i) => {
                         const { inputs } = this.state
-                        const showCustom = values.reason === 'Custom'
+                        const showCustom = values.reason === texts.reason3
                         findInput(inputs, 'customReason').hidden = !showCustom
                         this.setState({ inputs })
                     },
@@ -57,7 +70,7 @@ export default class IdentityRequestForm extends ReactiveComponent {
                         text: r,
                         value: r
                     })),
-                    placeholder: 'Select a reason for this request',
+                    placeholder: texts.reasonPlaceholder,
                     required: true,
                     search: true,
                     selection: true,
@@ -65,10 +78,10 @@ export default class IdentityRequestForm extends ReactiveComponent {
                 },
                 {
                     hidden: true,
-                    label: 'Custom Reason',
+                    label: texts.customReasonLabel,
                     name: 'customReason',
                     maxLength: 160,
-                    placeholder: 'Enter a reason for your request',
+                    placeholder: texts.customReasonPlaceholder,
                     required: true,
                     type: 'text',
                     value: '',
@@ -90,7 +103,7 @@ export default class IdentityRequestForm extends ReactiveComponent {
             idsIn.loading = false
             idsIn.invalid = !exists
             idsIn.message = exists ? {} : {
-                content: `User ID "${userId}" not found`,
+                content: texts.invalidUserID,
                 showIcon: true,
                 status: 'error',
             }
@@ -119,16 +132,15 @@ export default class IdentityRequestForm extends ReactiveComponent {
         client.notify(userIds, notificationType, childType, null, data, err => {
             const success = !err
             const message = {
-                content: `Identity request has been sent to ${userIds.length === 1 ? '@' + userIds[0] : 'selected users'}. 
-                    You will receive notification once they agree to share their Identity with you.`,
-                header: 'Request sent!',
+                content: texts.successMsg,
+                header: texts.successMsgHeader,
                 showIcon: true,
                 status: 'success',
             }
             this.setState({
                 loading: false,
                 message: success ? message : {
-                    header: 'Submission Failed!',
+                    header: texts.errorMessageHeader,
                     content: err,
                     showIcon: true,
                     status: 'error',
@@ -139,11 +151,7 @@ export default class IdentityRequestForm extends ReactiveComponent {
         })
     }
 
-    render() {
-        return (
-            <FormBuilder {...{ ...this.props, ...this.state }} />
-        )
-    }
+    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
 IdentityRequestForm.propTypes = {
     values: PropTypes.shape({
@@ -151,9 +159,9 @@ IdentityRequestForm.propTypes = {
     })
 }
 IdentityRequestForm.defaultProps = {
-    closeText: 'Close',
-    header: 'Request Partner Identity',
+    closeText: wordsCap.close,
+    header: texts.formHeader,
     size: 'tiny',
-    subheader: 'Request one or more user(s) to share a Totem Identity with you.',
-    submitText: 'Submit',
+    subheader: texts.formSubheader,
+    submitText: wordsCap.submit,
 }

@@ -9,8 +9,6 @@ import {
 } from '../utils/utils';
 import Message from './Message'
 // Custom Inputs
-import { InputBond } from '../InputBond'
-import { AccountIdBond } from '../AccountIdBond'
 import CheckboxGroup from './CheckboxGroup'
 import UserIdInput from './UserIdInput'
 
@@ -171,9 +169,6 @@ export default class FormInput extends ReactiveComponent {
         const typeLC = type.toLowerCase()
 
         switch (typeLC) {
-            case 'accountidbond':
-                inputEl = <AccountIdBond {...attrs} />
-                break;
             case 'button':
                 inputEl = <Button {...attrs} />
                 break;
@@ -206,12 +201,6 @@ export default class FormInput extends ReactiveComponent {
                 hideLabel = true
                 break
             case 'html': return content || ''
-            case 'inputbond':
-                if (isDefined(attrs.value)) {
-                    attrs.defaultValue = attrs.value
-                }
-                inputEl = <InputBond {...attrs} />
-                break
             case 'textarea':
                 inputEl = <TextArea {...attrs} />
                 break;

@@ -11,19 +11,19 @@ import TimeKeepingList from '../lists/TimeKeepingList'
 import ProjectForm from '../forms/Project'
 import ReassignProjectForm from '../forms/ProjectReassign'
 // services
-import { confirm, showForm, closeModal } from '../services/modal'
+import { translated } from '../services/language'
+import { confirm, showForm } from '../services/modal'
 import { addToQueue } from '../services/queue'
 import projectService, { getProjects, getProjectsBond, openStatuses, statusCodes } from '../services/project'
-import { setContentProps } from '../services/sidebar'
 import { layoutBond, getLayout } from '../services/window'
 
 const toBeImplemented = () => alert('To be implemented')
-const words = {
+const [words, wordsCap] = translated({
     actions: 'actions',
-    activity: 'actvity',
+    activity: 'activity',
     abandoned: 'abandoned',
     blocks: 'blocks',
-    canceled: 'canceled',
+    cancelled: 'cancelled',
     close: 'close',
     closed: 'closed',
     create: 'create',
@@ -42,9 +42,8 @@ const words = {
     status: 'status',
     timekeeping: 'timekeeping',
     unknown: 'unknown',
-}
-const wordsCap = textCapitalize(words)
-const texts = {
+}, true)
+const [texts] = translated({
     areYouSure: 'Are you sure?',
     closeProject: 'Close activity',
     deleteConfirmMsg1: 'Warning: You are about to delete the following Activities:',
@@ -68,7 +67,7 @@ const texts = {
     totalTime: 'Total Time',
     viewDetails: 'View Details',
     viewTeam: 'View Team',
-}
+})
 const statusTexts = []
 statusTexts[statusCodes.open] = wordsCap.open
 statusTexts[statusCodes.reopen] = wordsCap.reopened

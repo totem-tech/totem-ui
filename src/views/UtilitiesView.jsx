@@ -5,7 +5,7 @@ import UpgradeView from './UpgradeView'
 import PageUtilitiesView from './PageUtilitiesView'
 import TransactionsView from './TransactionsView'
 import PokeView from './PokeView'
-import SystemStatus from '../components/SystemStatus'
+import SystemStatus from '../legacies/SystemStatus'
 
 class UtilitiesView extends ReactiveComponent {
     constructor() {

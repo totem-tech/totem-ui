@@ -2,7 +2,7 @@ import React from 'react';
 import { List, Button } from 'semantic-ui-react';
 import { ReactiveComponent } from 'oo7-react';
 import { runtime, addressBook } from 'oo7-substrate';
-import Identicon from 'polkadot-identicon';
+// import Identicon from 'polkadot-identicon';
 
 // deprecated
 export class AddressBookList extends ReactiveComponent {
@@ -25,7 +25,7 @@ export class AddressBookList extends ReactiveComponent {
 						<Button size='small' onClick={() => addressBook().forget(account)}>Delete</Button>
 					</List.Content>
 					<span className='ui avatar image' style={{ minWidth: '36px' }}>
-						<Identicon account={account.account} />
+						{/* <Identicon account={account.account} /> */}
 					</span>
 					<List.Content>
 						<List.Header>{account.name}</List.Header>

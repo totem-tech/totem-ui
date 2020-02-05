@@ -1,9 +1,9 @@
-import React from 'react'
-import { ReactiveComponent } from 'oo7-react'
+import React, { Component } from 'react'
 import { Step, Embed } from 'semantic-ui-react'
 // services
 import { getUser } from '../services/chatClient'
 import identityService from '../services/identity'
+import { translated } from '../services/language'
 import { showForm } from '../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import storage from '../services/storage'
@@ -12,9 +12,8 @@ import { setToast } from '../services/toast'
 import RegisterForm from '../forms/Register'
 import IdentityForm from '../forms/Identity'
 
-// const words = {}
-// const wordsCap = textCapitalize(words)
-const texts = {
+// const [words, wordsCap] = translated({}, true)
+const [texts] = translated({
 	faucetRequestSent: 'Registration successful! You will shortly receive an allocation of transactions get you started.',
 	faucetTransferComplete: 'Allocation complete.',
 	quickGuidePara1: `Totem is currently under heavy development, but you can already use the Identities, Partners, Project 
@@ -31,12 +30,12 @@ const texts = {
 	videoGuidTitle: 'Further essential steps:',
 	video1Title: 'What am I looking at? Watch the video:',
 	video2Title: 'Backup your account. Watch the video:',
-}
+})
 
 const moduleKey = 'getting-started'
-export default class GetingStarted extends ReactiveComponent {
-	constructor() {
-		super([])
+export default class GetingStarted extends Component {
+	constructor(props) {
+		super(props)
 		this.state = {
 			activeStep: storage.settings.global(moduleKey).activeStep || 0
 		}

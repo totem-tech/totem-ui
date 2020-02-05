@@ -4,19 +4,19 @@ import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { Confirm } from 'semantic-ui-react'
 import { isBool, isFn, textCapitalize } from '../utils/utils'
+import { translated } from './language'
 
 export const modals = new Map()
 // Use Bond as a way to trigger update to the ModalService component
 // Stores number of modals currently open
 export const trigger = new Bond().defaultTo(0)
-const words = {
+const [words, wordsCap] = translated({
     ok: 'ok',
     cancel: 'cancel',
-}
-const wordsCap = textCapitalize(words)
-const texts = {
+}, true)
+const [texts] = translated({
     areYouSure: 'Are you sure?'
-}
+})
 
 export class ModalsConainer extends ReactiveComponent {
     constructor() {

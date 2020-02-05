@@ -14,13 +14,34 @@ import identityService from './identity'
 import { confirm, showForm } from './modal'
 import { getProject } from './project'
 import { addToQueue, QUEUE_TYPES } from './queue'
-import { getLayout } from './window'
+import { translated } from './language'
 
 const notifications = new DataStorage('totem_service_notifications', true, false)
 // store unread counts for individual types
 // const unreadCounts = new DataStorage('totem_service_notifications-unread-counts', true, false)
 const triggerBond = new Bond()
 export const newNotificationBond = new Bond()
+const [words, wordsCap] = translated({
+    activity: 'activity',
+    ignore: 'ignore',
+    reason: 'reason',
+    timekeeping: 'timekeeping'
+}, true)
+const [texts] = translated({
+    addPartner: 'Add partner',
+    acceptInvitation: 'accept invitation',
+    acceptedInvitation: 'accepted invitation to activity',
+    indentityIntroduceMsg: 'recommended you to share your identity with the following user: ',
+    identityRequestMsg: 'requested an identity',
+    identityShareMsg: 'Identity received from:',
+    rejectInvitation: 'reject invitation',
+    rejectedInvitation: 'rejected invitation to activity',
+    tkInvitationMsg: 'invited you to start booking time.',
+    tkInviteAcceptMsg: 'accepted your invitation to the following activity',
+    tkInviteRejectMsg: 'rejected your invitation to the following activity',
+    yourIdentity: 'Your identity',
+
+})
 
 client.onNotify((id, senderId, type, childType, message, data, tsCreated, confirmReceived) => {
     if (notifications.get(id)) return
@@ -129,10 +150,9 @@ export default class NotificationDropdown extends ReactiveComponent {
                                 msg.content = (
                                     <div>
                                         <div>
-                                            <b>{userIdBtn} {!isIntroduce ? 'requested an identity from you' :
-                                                'recommended you to share your identity with the following user: '}</b>
+                                            <b>{userIdBtn} {!isIntroduce ? texts.identityRequestMsg : texts.indentityIntroduceMsg}</b>
                                             {isIntroduce ? <UserID userId={recipientId} /> : (
-                                                <div><b>Reason :</b> {data.reason}</div>
+                                                <div><b>{wordsCap.reason} :</b> {data.reason}</div>
                                             )}
                                         </div>
                                         <ButtonAcceptOrReject
@@ -141,7 +161,7 @@ export default class NotificationDropdown extends ReactiveComponent {
                                                 disabledFields: ['userIds'],
                                                 onSubmit: success => success && remove(id),
                                                 values: {
-                                                    introducedBy: isIntroduce ? senderId : null, //ToDo: 
+                                                    introducedBy: isIntroduce ? senderId : null,
                                                     userIds: [recipientId],
                                                 },
                                             })}
@@ -154,20 +174,17 @@ export default class NotificationDropdown extends ReactiveComponent {
                                 msg.icon.name = 'user plus'
                                 msg.content = (
                                     <div>
-                                        <div><b>Identity received from {userIdBtn}</b></div>
+                                        <div><b>{texts.identityShareMsg} {userIdBtn}</b></div>
                                         <ButtonAcceptOrReject
-                                            acceptText='Add Partner'
+                                            acceptText={texts.addPartner}
                                             onClick={accepted => !accepted ? remove(id) : showForm(
                                                 PartnerForm,
                                                 {
                                                     onSubmit: success => success && remove(id),
-                                                    values: {
-                                                        ...data,
-                                                        userId: data.introducedBy || senderId,
-                                                    },
+                                                    values: { ...data, userId: data.introducedBy || senderId },
                                                 }
                                             )}
-                                            rejectText='Ignore'
+                                            rejectText={wordsCap.ignore}
                                         />
                                         <div>{message}</div>
                                     </div>
@@ -181,9 +198,9 @@ export default class NotificationDropdown extends ReactiveComponent {
                                 msg.icon.name = 'clock outline'
                                 msg.content = (
                                     <div>
-                                        {userIdBtn} invited you to start booking time.<br />
-                                        Your identity: <b>{identity.name}</b><br />
-                                        Project: <b>{data.projectName}</b><br />
+                                        {userIdBtn} {texts.tkInvitationMsg}<br />
+                                        {texts.yourIdentity}: <b>{identity.name}</b><br />
+                                        {wordsCap.activity}: <b>{data.projectName}</b><br />
                                         <ButtonAcceptOrReject
                                             onClick={accepted => confirm({
                                                 onConfirm: () => handleTKInvitation(
@@ -201,20 +218,19 @@ export default class NotificationDropdown extends ReactiveComponent {
                                 )
                                 break
                             case 'time_keeping:invitation_response': // data => { projectHash, projectName, workerAddress }
-                                const acceptedStr = data.accepted ? 'accepted' : 'rejected'
                                 msg.header = undefined
                                 msg.icon.name = 'clock outline'
                                 msg.content = (
                                     <div>
-                                        {userIdBtn} {acceptedStr} your invitation to project:
+                                        {userIdBtn} {data.accepted ? texts.tkInviteAcceptMsg : texts.tkInviteRejectMsg}:
                                         <b> {data.projectName}</b>
                                     </div>
                                 )
                                 break
                         }
 
-                        msg.content = <div style={{ whiteSpace: 'pre-wrap', padding: '0 12px 0 55px' }}>{msg.content}</div>
-                        msg.header = <div className="header" style={{ textTransform: 'capitalize' }}>{msg.header}</div>
+                        msg.content = <div style={styles.messageContent}>{msg.content}</div>
+                        msg.header = <div className="header" style={styles.messageHeader}>{msg.header}</div>
                         return (
                             <Dropdown.Item
                                 className="no-padding"
@@ -238,7 +254,6 @@ export const handleTKInvitation = (
     // optional args
     projectOwnerId, projectName, notifyId
 ) => new Promise(resolve => {
-    const acceptedStr = accepted ? 'accepted' : 'rejected'
     const type = 'time_keeping'
     const childType = 'invitation'
     const currentUserId = (getUser() || {}).id
@@ -259,8 +274,8 @@ export const handleTKInvitation = (
         type: QUEUE_TYPES.BLOCKCHAIN,
         func: 'timeKeeping_worker_accept',
         args: [projectHash, workerAddress, accepted],
-        title: `TimeKeeping - ${accepted ? 'accept' : 'reject'} invitation`,
-        description: `Project: ${projectName}`,
+        title: `${wordsCap.timekeeping} - ${accepted ? texts.acceptInvitation : texts.rejectInvitation}`,
+        description: `${wordsCap.activity}: ${projectName}`,
         then: success => !success && resolve(false),
         // no need to notify if rejected or current user is the project owner
         next: !accepted || !projectOwnerId || projectOwnerId === currentUserId ? undefined : {
@@ -271,7 +286,7 @@ export const handleTKInvitation = (
                 [projectOwnerId],
                 type,
                 'invitation_response',
-                `${acceptedStr} invitation to project: "${projectName}"`,
+                `${accepted ? texts.acceptedInvitation : texts.rejectedInvitation}: "${projectName}"`,
                 { accepted, projectHash, projectName, workerAddress },
                 err => {
                     !err && notifyId && remove(notifyId)
@@ -289,3 +304,8 @@ export const handleTKInvitation = (
         addToQueue(getprops(userId, name))
     })
 })
+
+const styles = {
+    messageContent: { whiteSpace: 'pre-wrap', padding: '0 12px 0 55px' },
+    messageHeader: { textTransform: 'capitalize' },
+}

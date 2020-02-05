@@ -5,9 +5,8 @@ import DataStorage from '../utils/DataStorage'
 import identities from './identity'
 
 const partners = new DataStorage('totem_partners', true)
-const bond = new Bond()
-const updateBond = () => setTimeout(() => bond.changed(uuid.v1()))
-updateBond()
+const bond = new Bond().defaultTo(uuid.v1())
+const updateBond = () => bond.changed(uuid.v1())
 
 export const get = address => partners.get(address)
 // returns name of an address if available in identity or partner lists.

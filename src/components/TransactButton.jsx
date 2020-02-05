@@ -3,7 +3,7 @@ const {Bond} = require('oo7');
 const {ReactiveComponent} = require('oo7-react');
 const {post} = require('oo7-substrate');
 const {Button} = require('semantic-ui-react');
-const {TransactionProgressLabel, styleStatus} = require('./TransactionProgressLabel');
+const {TransactionProgressLabel, styleStatus} = require('../legacies/TransactionProgressLabel');
 
 class TransactButton extends ReactiveComponent {
 	constructor () {

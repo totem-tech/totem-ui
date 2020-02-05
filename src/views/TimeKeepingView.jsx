@@ -8,31 +8,32 @@ import CheckboxGroup from '../components/CheckboxGroup'
 import ProjectTimeKeepingList from '../lists/TimeKeepingList'
 import TimeKeepingSummary from '../lists/TimeKeepingSummary'
 // services
+import { translated } from '../services/language'
 import storage from '../services/storage'
 import { moduleKey } from '../services/timeKeeping'
 import { layoutBond } from '../services/window'
 
-const words = {
+const [words, wordsCap] = translated({
     archive: 'archive',
     manage: 'manage',
     summary: 'summary',
     overview: 'overview',
     unknown: 'unknown'
-}
-const wordsCap = textCapitalize(words)
-const texts = {
-    createProjectOrRequestInvite: 'Create a new activity or request to be invited to some elses activity',
+}, true)
+const [texts] = translated({
+    createProjectOrRequestInvite: `Create a new activity or request to be invited to some else's activity`,
     manageTeamTime: 'Manage team timekeeping',
     manageArchive: 'Team timekeeping archive',
     myRecords: 'My time records',
     myRecordsArchive: 'My timekeeping archive',
     myTimeKeepingSummary: 'My timekeeping overview',
     selectAProject: 'Select a activity',
-}
+})
 export default class TimeKeepingView extends Component {
     constructor(props) {
         super(props)
 
+        const style = { textAlign: 'left' }
         this.state = {
             optionsInput: {
                 bond: new Bond(),
@@ -45,11 +46,11 @@ export default class TimeKeepingView extends Component {
                 },
                 toggle: true,
                 options: [
-                    { label: wordsCap.overview, style: styles.alignLeft, value: 'summary' },
-                    { label: texts.myRecords, style: styles.alignLeft, value: 'records' },
-                    { label: texts.manageTeamTime, style: styles.alignLeft, value: 'manage' },
-                    { label: texts.myRecordsArchive, style: styles.alignLeft, value: 'records-archive' },
-                    { label: texts.manageArchive, style: styles.alignLeft, value: 'manage-archive' },
+                    { label: wordsCap.overview, style, value: 'summary' },
+                    { label: texts.myRecords, style, value: 'records' },
+                    { label: texts.manageTeamTime, style, value: 'manage' },
+                    { label: texts.myRecordsArchive, style, value: 'records-archive' },
+                    { label: texts.manageArchive, style, value: 'manage-archive' },
                 ],
                 style: { paddingTop: 7, textAlign: 'center' },
                 value: props.viewOptions,
@@ -128,10 +129,4 @@ TimeKeepingView.propTypes = {
 }
 TimeKeepingView.defaultProps = {
     viewOptions: storage.settings.module(moduleKey).viewOptions || ['records']
-}
-
-const styles = {
-    alignLeft: {
-        textAlign: 'left'
-    }
 }

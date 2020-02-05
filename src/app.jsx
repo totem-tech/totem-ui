@@ -15,6 +15,7 @@ import SidebarLeft, { SidebarItemContent } from './components/SidebarLeft'
 // Services
 import chatClient from './services/chatClient'
 import identity from './services/identity'
+import language from './services/language'
 import modal, { ModalsConainer } from './services/modal'
 import partner from './services/partner'
 import project from './services/project'
@@ -61,6 +62,7 @@ export class App extends ReactiveComponent {
 		window.services = {
 			chatClient,
 			identity,
+			language,
 			modal,
 			partner,
 			project,

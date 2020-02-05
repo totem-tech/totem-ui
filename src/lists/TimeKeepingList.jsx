@@ -5,7 +5,7 @@ import { ReactiveComponent } from 'oo7-react'
 import { Button } from 'semantic-ui-react'
 import DataTable from '../components/DataTable'
 import FormBuilder from '../components/FormBuilder'
-import { isArr, textCapitalize, deferred, copyToClipboard, textEllipsis } from '../utils/utils'
+import { isArr, deferred, copyToClipboard, textEllipsis } from '../utils/utils'
 import { hashToStr } from '../utils/convert'
 // Forms
 import PartnerForm from '../forms/Partner'
@@ -14,6 +14,7 @@ import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
 // Services
 import { hashTypes } from '../services/blockchain'
 import identities, { getSelected, selectedAddressBond } from '../services/identity'
+import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import partners from '../services/partner'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
@@ -22,7 +23,7 @@ import { getLayout } from '../services/window'
 
 const toBeImplemented = () => alert('To be implemented')
 
-const words = {
+const [words, wordsCap] = translated({
     action: 'action',
     activity: 'activity',
     approve: 'approve',
@@ -51,9 +52,8 @@ const words = {
     unarchive: 'unarchive',
     unknown: 'unknown',
     worker: 'worker',
-}
-const wordsCap = textCapitalize(words)
-const texts = {
+}, true)
+const [texts] = translated({
     addPartner: 'Add Partner',
     approveRecord: 'Approve record',
     archiveRecord: 'Archive record',
@@ -83,7 +83,7 @@ const texts = {
     whatDoesThisMean: 'What does this mean?',
     whatDoesThisMeanItemOne: 'No further booking or other actions will be accepted from the Team',
     whatDoesThisMeanItemTwo: 'Only approved bookings will be visible to you',
-}
+})
 const statusTexts = {}
 statusTexts[statuses.draft] = words.draft
 statusTexts[statuses.submit] = words.submitted

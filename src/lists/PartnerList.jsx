@@ -1,17 +1,18 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import { Checkbox, Button, Label } from 'semantic-ui-react'
-import { textEllipsis, textCapitalize } from '../utils/utils'
+import { textEllipsis } from '../utils/utils'
 import DataTable from '../components/DataTable'
+import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
-import addressbook,{ getAddressName } from '../services/partner'
+import addressbook, { getAddressName } from '../services/partner'
 import { layoutBond } from '../services/window'
 import CompanyForm from '../forms/Company'
 import IdentityRequestForm from '../forms/IdentityRequest'
 import PartnerForm from '../forms/Partner'
 import IntroduceUserForm from '../forms/IntroduceUser'
 
-const words = {
+const [words, wordsCap] = translated({
 	add: 'add',
 	delete: 'delete',
 	edit: 'edit',
@@ -20,9 +21,8 @@ const words = {
 	tags: 'tags',
 	update: 'update',
 	usage: 'usage',
-}
-const wordsCap = textCapitalize(words)
-const texts = {
+}, true)
+const [texts] = translated({
 	introducePartner: 'Introduce a Partner',
 	columnPublicTitle1: 'A public company cannot be changed to private.',
 	columnPublicTitle2: 'Click to add a company with this identity to the public database',
@@ -31,7 +31,7 @@ const texts = {
 	partnerNoUserIdConfirmMsg: 'Selected Partner does not include a User ID. Would you like to update the Partner record?',
 	removePartner: 'Remove Partner?',
 	usedBy: 'Used by',
-}
+})
 
 export default class PartnerList extends ReactiveComponent {
 	constructor(props) {

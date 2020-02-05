@@ -1,6 +1,5 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
-import { Button, Icon } from 'semantic-ui-react'
 import {
 	Widget,
 	// addResponseMessage,
@@ -13,14 +12,22 @@ import {
 	// toggleMsgLoader
 } from 'react-chat-widget'
 import 'react-chat-widget/lib/styles.css'
+import { objCopy } from '../utils/utils'
+// import { getNow } from '../utils/time'
+import TotemLogoCircle from '../assets/totem-button-grey.png'
 import { addToHistory, getClient, getUser, getHistory, getHistoryLimit, onLogin } from '../services/chatClient'
-import { copyToClipboard, objCopy } from '../utils/utils'
-import { getNow } from '../utils/time'
-import TotemLogoCircle from '../assets/totem-button-grey.png';
-import Register from '../forms/Register'
-import { showForm } from '../services/modal'
+import { translated } from '../services/language'
 
-const historyLimit = getHistoryLimit()
+const [words, wordsCap] = translated({
+
+}, true)
+const [texts] = translated({
+	loggedInAs: 'Logged in as',
+	loginFailed: 'Login failed',
+	senderPlaceHolder: 'Say something nice...',
+	title: 'totem trollbox',
+})
+// const historyLimit = getHistoryLimit()
 const eventTypes = [
 	'red',    // error
 	'green',  // success
@@ -61,7 +68,7 @@ const MessageEntry = (props) => (
 	</div>
 )
 
-class ChatWidget extends ReactiveComponent {
+export default class ChatWidget extends ReactiveComponent {
 	constructor() {
 		super([])
 		this.state = {
@@ -71,10 +78,6 @@ class ChatWidget extends ReactiveComponent {
 			historyAdded: false,
 			userId: ''
 		}
-
-		this.handleNewUserMessage = this.handleNewUserMessage.bind(this)
-		this.login = this.login.bind(this)
-		this.setupChatClient = this.setupChatClient.bind(this)
 
 		onLogin(userId => this.setState({ userId }))
 	}
@@ -86,7 +89,7 @@ class ChatWidget extends ReactiveComponent {
 		this.login()
 	}
 
-	setupChatClient() {
+	setupChatClient = () => {
 		this.client = getClient()
 
 		// Attempt to log back in on reconnect
@@ -108,16 +111,16 @@ class ChatWidget extends ReactiveComponent {
 
 	}
 
-	handleNewUserMessage(msg) {
-		this.client.message(msg, err => err ? addEventMsg(err) : addToHistory(msg, this.state.userId))
-	}
+	handleNewUserMessage = (msg) => this.client.message(msg,
+		err => err ? addEventMsg(err) : addToHistory(msg, this.state.userId)
+	)
 
-	login() {
+	login = () => {
 		const user = getUser()
 		if (!user) return;
 
 		this.client.login(user.id, user.secret, err => {
-			if (err) return addEventMsg(<div>Login failed: <pre>{err}</pre></div>);
+			if (err) return addEventMsg(<div>{texts.loginFailed}: <pre>{err}</pre></div>);
 			if (!this.state.historyAdded) {
 				getHistory().forEach(e => {
 					e.id === user.id ? addUserMessage(e.message) : addResponseWithId(e.message, e.id)
@@ -134,9 +137,9 @@ class ChatWidget extends ReactiveComponent {
 		return !userId ? '' : (
 			<Widget
 				titleAvatar={TotemLogoCircle}
-				title="totem trollbox"
-				subtitle={userId ? <h5>Logged in as {'@' + userId}</h5> : ''}
-				senderPlaceHolder={"Say something nice..."}
+				title={texts.title}
+				subtitle={userId ? <h5>{texts.loggedInAs} @{userId}</h5> : ''}
+				senderPlaceHolder={texts.senderPlaceHolder}
 				handleNewUserMessage={this.handleNewUserMessage}
 				xbadge={this.state.unreadCount}
 				autofocus={true}
@@ -144,7 +147,6 @@ class ChatWidget extends ReactiveComponent {
 		)
 	}
 }
-export default ChatWidget
 
 const styles = {
 	eventEntry: {

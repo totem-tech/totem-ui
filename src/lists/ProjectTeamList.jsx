@@ -4,27 +4,27 @@ import { ReactiveComponent } from 'oo7-react'
 import { Button } from 'semantic-ui-react'
 import { ButtonAcceptOrReject } from '../components/buttons'
 import DataTable from '../components/DataTable'
-import { textCapitalize } from '../utils/utils'
-import PartnerForm from '../forms/Partner'
 import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
+// services
 import identities, { selectedAddressBond } from '../services/identity'
+import { translated } from '../services/language'
 import { showForm } from '../services/modal'
 import { handleTKInvitation } from '../services/notification'
+import PartnerForm from '../forms/Partner'
 import timeKeeping, { getProjectWorkers } from '../services/timeKeeping'
 
-const words = {
+const [words, wordsCap] = translated({
     accepted: 'accepted',
     invite: 'invite',
     invited: 'invited',
     status: 'status',
     team: 'team',
-}
-const wordsCap = textCapitalize(words)
-const texts = {
+}, true)
+const [texts] = translated({
     addPartner: 'Add Partner',
     userId: 'User ID',
     unknownUser: 'Unknown user',
-}
+})
 
 export default class ProjectTeamList extends ReactiveComponent {
     constructor(props) {

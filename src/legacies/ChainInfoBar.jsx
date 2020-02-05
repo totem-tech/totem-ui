@@ -1,9 +1,9 @@
 import React from 'react'
-import { If, ReactiveComponent, Rspan} from 'oo7-react'
+import { If, ReactiveComponent, Rspan } from 'oo7-react'
 import { bytesToHex } from 'oo7-substrate'
-import Identicon from 'polkadot-identicon'
+// import Identicon from 'polkadot-identicon'
 import { Label } from 'semantic-ui-react'
-import { Pretty } from '../Pretty'
+import { Pretty } from '../components/Pretty'
 import { subscribeAllNSetState, unsubscribeAll } from '../services/data'
 
 class ChainInfoBar extends ReactiveComponent {
@@ -14,36 +14,38 @@ class ChainInfoBar extends ReactiveComponent {
 	}
 
 	componentDidMount() {
-		this.setState({ watchers: subscribeAllNSetState(this, [
-			// the following state variables will be set once value is resolved
-			'chain_height',
-			'chain_lag',
-			'nodeService_status',
-			'system_chain',
-			'system_name',
-			'system_version',
-			'runtime_balances_totalIssuance',
-			'runtime_core_authorities',
-			'runtime_totem_claimsCount',
-			'runtime_version_implName',
-			'runtime_version_implVersion',
-			'runtime_version_specName',
-			'runtime_version_specVersion'
-		])})
+		this.setState({
+			watchers: subscribeAllNSetState(this, [
+				// the following state variables will be set once value is resolved
+				'chain_height',
+				'chain_lag',
+				'nodeService_status',
+				'system_chain',
+				'system_name',
+				'system_version',
+				'runtime_balances_totalIssuance',
+				'runtime_core_authorities',
+				'runtime_totem_claimsCount',
+				'runtime_version_implName',
+				'runtime_version_implVersion',
+				'runtime_version_specName',
+				'runtime_version_specVersion'
+			])
+		})
 
 	}
 
 	componentWillUnmount() {
 		unsubscribeAll(this.state.watchers)
-	}	
+	}
 
 	render() {
-		const isConnected = !!(this.state.nodeService_status||{}).connected
+		const isConnected = !!(this.state.nodeService_status || {}).connected
 		const connected = (
 			<Label color="black">
 				Connected
 				<Label.Detail>
-					<Pretty className="value" value={(this.state.nodeService_status||{}).connected} />
+					<Pretty className="value" value={(this.state.nodeService_status || {}).connected} />
 				</Label.Detail>
 			</Label>
 		)
@@ -51,20 +53,20 @@ class ChainInfoBar extends ReactiveComponent {
 			<div>
 				<If condition={isConnected} then={connected} else={<Label>Not connected</Label>} />
 				<Label color="black">
-					Name 
+					Name
 					<Label.Detail>
-					{this.state.system_name} v{this.state.system_version}
+						{this.state.system_name} v{this.state.system_version}
 						{/* <Pretty className="value" value={this.state.system_name} /> v */}
 						{/* <Pretty className="value" value={this.state.system_version} /> */}
 					</Label.Detail>
 				</Label>
 				<Label>
-					Chain 
+					Chain
 					<Label.Detail>
-					<Pretty className="value" value={this.state.system_chain} />
+						<Pretty className="value" value={this.state.system_chain} />
 					</Label.Detail>
 				</Label>
-				<Label>Runtime 
+				<Label>Runtime
 					<Label.Detail>
 						<Pretty className="value" value={this.state.runtime_version_specName} /> v
 						<Pretty className="value" value={this.state.runtime_version_specVersion} />
@@ -80,16 +82,16 @@ class ChainInfoBar extends ReactiveComponent {
 					</Label.Detail>
 				</Label>
 				<Label>
-					Authorities 
+					Authorities
 					<Label.Detail>
-						<Rspan className="value">
+						{/* <Rspan className="value">
 							{(this.state.runtime_core_authorities || []).map((a, i) => 
 									<Identicon key={bytesToHex(a) + i} account={a} size={16} />)}
-						</Rspan>
+						</Rspan> */}
 					</Label.Detail>
 				</Label>
 				<Label>
-					Total issuance 
+					Total issuance
 					<Label.Detail>
 						<Pretty className="value" value={this.state.runtime_balances_totalIssuance || 0} />
 					</Label.Detail>

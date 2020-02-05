@@ -1,16 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
-import { textCapitalize } from '../utils/utils'
+import { translated } from '../services/language'
 
-const words = {
+const [words, wordsCap] = translated({
     accept: 'accept',
     reject: 'reject',
-}
-const wordsCap = textCapitalize(words)
-const texts = {
+}, true)
+const [texts] = translated({
     userId: 'User ID',
-}
+})
 
 export const ButtonAcceptOrReject = ({ onClick, acceptText, rejectText, style }) => (
     <div title="" style={style || { textAlign: 'center', marginTop: 10 }}>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { ReactiveComponent } from 'oo7-react';
 import { pretty } from 'oo7-substrate';
-import { isBond } from './utils/utils';
+import { isBond } from '../utils/utils';
 
 export class Pretty extends ReactiveComponent {
 	componentWillMount() {

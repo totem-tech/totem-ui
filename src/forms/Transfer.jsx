@@ -3,26 +3,26 @@ import PropTypes from 'prop-types'
 import { Dropdown } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import { runtime } from 'oo7-substrate'
-import { Pretty } from '../Pretty'
+import { Pretty } from '../components/Pretty'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import PartnerForm from '../forms/Partner'
 import { getConfig, denominations } from '../services/blockchain'
 import identities from '../services/identity'
+import { translated } from '../services/language'
 import { showForm } from '../services/modal'
 import partners from '../services/partner'
-import { arrSort, isStr, textCapitalize, textEllipsis } from '../utils/utils'
+import { arrSort, isStr, textEllipsis } from '../utils/utils'
 import { ss58Decode } from '../utils/convert'
 import { transfer } from '../utils/polkadotHelper'
 
-const words = {
+const [words, wordsCap] = translated({
     amount: 'amount',
     identity: 'identity',
     partner: 'partner',
     recipient: 'recipient',
     status: 'status',
-}
-const wordsCap = textCapitalize(words)
-const texts = {
+}, true)
+const [texts] = translated({
     amountPlaceholder: 'Enter a value',
     partnerEmptyMsg1: 'You do not have any partner yet. Add one in the Partner Module',
     partnerEmptyMsg2: 'No match found. Enter a valid address to add as a partner.',
@@ -30,7 +30,7 @@ const texts = {
     submitErrorHeader: 'Transfer error',
     submitInprogressHeader: 'Transfer in-progress',
     submitSuccessHeader: 'Transfer successful',
-}
+})
 
 export default class Transfer extends Component {
     constructor(props) {

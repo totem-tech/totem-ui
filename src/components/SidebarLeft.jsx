@@ -2,12 +2,16 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Icon, Label, Menu, Sidebar } from 'semantic-ui-react'
 import ContentSegment from './ContentSegment'
+import { isBond } from '../utils/utils'
+import { translated } from '../services/language'
 import {
 	allInactiveBond, getItem, setActive, setSidebarState,
 	sidebarItems, sidebarStateBond, toggleActive, toggleSidebarState
 } from '../services/sidebar'
-import { isBond } from '../utils/utils'
 
+const [texts] = translated({
+	closeSidebar: 'Close sidebar',
+})
 export default class SidebarLeft extends Component {
 	componentWillMount = () => {
 		sidebarStateBond.tie(s => this.setState(s))
@@ -51,7 +55,7 @@ export default class SidebarLeft extends Component {
 						>
 							<span>
 								<Icon name={`arrow alternate circle ${collapsed ? 'right' : 'left'} outline`} />
-								{!collapsed && ' Close sidebar'}
+								{!collapsed && ` ${texts.closeSidebar}`}
 							</span>
 						</div>
 					</Menu.Item>

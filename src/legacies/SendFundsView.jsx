@@ -3,20 +3,20 @@ import { Label } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import { calls, runtime, runtimeUp } from 'oo7-substrate'
 import { If, ReactiveComponent } from 'oo7-react'
-import { AccountIdBond, SignerBond } from '../AccountIdBond.jsx'
-import { BalanceBond } from '../BalanceBond.jsx'
-import { TransactButton } from '../TransactButton.jsx'
-import { Pretty } from '../Pretty'
+import { AccountIdBond, SignerBond } from './AccountIdBond.jsx'
+import { BalanceBond } from './BalanceBond.jsx'
+import { TransactButton } from '../components/TransactButton.jsx'
+import { Pretty } from '../components/Pretty'
 
 class SendFundsView extends ReactiveComponent {
 	constructor() {
-		super([], {ensureRuntime: runtimeUp})
+		super([], { ensureRuntime: runtimeUp })
 
 		this.source = new Bond()
 		this.amount = new Bond()
 		this.destination = new Bond()
 	}
-  
+
 	render() {
 		const sourceDetails = (
 			<span>

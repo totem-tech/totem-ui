@@ -6,7 +6,6 @@ import { newSignature, signingKeyPair, verifySignature } from '../utils/naclHelp
 import { encodeBase64, decodeBase64, decodeUTF8, bytesToHex, hashToStr } from '../utils/convert'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
-
 export default class KeyRegistryPlayground extends Component {
     constructor() {
         super()

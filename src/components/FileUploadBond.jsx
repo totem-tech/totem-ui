@@ -1,11 +1,11 @@
 import React from 'react';
-import {Button, Label} from 'semantic-ui-react';
-import {Bond} from 'oo7';
-import {ReactiveComponent} from 'oo7-react';
+import { Button, Label } from 'semantic-ui-react';
+import { Bond } from 'oo7';
+import { ReactiveComponent } from 'oo7-react';
 import * as uuid from 'uuid';
-
+// ToDo: review
 export class FileUploadBond extends ReactiveComponent {
-	constructor () {
+	constructor() {
 		super(['content', 'disabled']);
 
 		this.changed = this.changed.bind(this)
@@ -13,22 +13,22 @@ export class FileUploadBond extends ReactiveComponent {
 		this.id = uuid.v1()
 	}
 
-	changed () {
+	changed() {
 		const fileButton = document.getElementById(this.id)
 		const file = fileButton ? fileButton.files[0] : null
-		
+
 		if (file) {
 			var fileReader = new FileReader()
 			fileReader.onloadend = e => {
 				let fileContents = new Uint8Array(e.target.result)
 				this.props.bond.trigger(fileContents)
-				this.setState({length: fileContents.length})
+				this.setState({ length: fileContents.length })
 			}
 			fileReader.readAsArrayBuffer(file)
 		}
 	}
 
-	render () {
+	render() {
 		return <div>
 			<Button
 				content={this.state.content}

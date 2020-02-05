@@ -2,12 +2,14 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import { isFn, textCapitalize } from '../utils/utils'
+import { isFn } from '../utils/utils'
+import { translated } from '../services/language'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
-// const words = {}
-// const wordsCap = textCapitalize(words)
-const texts = {
+// const [words, wordsCap] = translated({
+//
+// }, true)
+const [texts] = translated({
     addedToQueueContent: 'You will be notified once request is processed',
     addedToQueueHeader: 'Request has been added to queue',
     introducingUserIdConflict: 'You cannot introduce a user to themselves!',
@@ -19,7 +21,7 @@ const texts = {
     submitErrorHeader: 'Error: Submission failed',
     userId: 'User ID',
     userToIntroduce: 'User to introduce',
-}
+})
 const type = 'identity'
 const childType = 'introduction'
 
@@ -28,6 +30,9 @@ export default class IntroduceUser extends Component {
         super(props)
 
         this.state = {
+            message: undefined,
+            onChange: this.handleChange,
+            onSubmit: this.handleSubmit,
             inputs: [
                 {
                     bond: new Bond(),
@@ -49,9 +54,6 @@ export default class IntroduceUser extends Component {
                     type: 'UserIdInput'
                 }
             ],
-            message: undefined,
-            onChange: this.handleChange.bind(this),
-            onSubmit: this.handleSubmit.bind(this),
         }
     }
 
@@ -62,7 +64,7 @@ export default class IntroduceUser extends Component {
     }
 
     // prevent user id being on the recipient list
-    handleChange(_, { userId, recipients }) {
+    handleChange = (_, { userId, recipients }) => {
         const { inputs } = this.state
         const invalid = userId && recipients && recipients.includes(userId)
         const recipientIn = findInput(inputs, 'recipients')
@@ -74,7 +76,7 @@ export default class IntroduceUser extends Component {
         this.setState({ inputs })
     }
 
-    handleSubmit(_, values) {
+    handleSubmit = (_, values) => {
         const { userId, recipients } = values
         const { onSubmit } = this.props
         this.setState({
@@ -105,9 +107,7 @@ export default class IntroduceUser extends Component {
         })
     }
 
-    render() {
-        return <FormBuilder {...{ ...this.props, ...this.state }} />
-    }
+    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
 IntroduceUser.propTypes = {
     values: PropTypes.shape({

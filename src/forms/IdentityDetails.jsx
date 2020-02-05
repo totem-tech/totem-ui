@@ -1,17 +1,17 @@
 // A read only form to display identity details including seed
-import React from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { ReactiveComponent } from 'oo7-react'
+import { Pretty } from '../components/Pretty'
 import { Button } from 'semantic-ui-react'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import identityService from '../services/identity'
-import { copyToClipboard, isFn, textCapitalize } from '../utils/utils'
-import { confirm } from '../services/modal'
-import { Pretty } from '../Pretty'
 import { ss58Decode } from '../utils/convert'
+import { copyToClipboard, isFn } from '../utils/utils'
+import identityService from '../services/identity'
+import { translated } from '../services/language'
+import { confirm } from '../services/modal'
 
 // address is used in some contexts to select the address from local storage. Do not change the text for address
-const words = {
+const [words, wordsCap] = translated({
     address: 'address',
     close: 'close',
     copy: 'copy',
@@ -24,9 +24,8 @@ const words = {
     show: 'show',
     tags: 'tags',
     usage: 'usage',
-}
-const wordsCap = textCapitalize(words)
-const texts = {
+}, true)
+const [texts] = translated({
     cryptoType: 'Identity type',
     hideSeed: 'Hide seed',
     identityDetails: 'Identity details',
@@ -39,10 +38,10 @@ const texts = {
     selectedWalletWarning: 'Cannot remove identity you are currently using',
     showSeed: 'Show seed phrase',
     txAllocations: 'Transaction Balance',
-}
+})
 
 // Read-only form
-export default class IdentityDetails extends ReactiveComponent {
+export default class IdentityDetails extends Component {
     constructor(props) {
         super(props)
 
@@ -51,7 +50,7 @@ export default class IdentityDetails extends ReactiveComponent {
         this.state = {
             closeOnSubmit: true,
             closeText: <Button negative={false} positive content={wordsCap.close} />,
-            onSubmit: this.handleSubmit.bind(this),
+            onSubmit: this.handleSubmit,
             submitText: (
                 <Button
                     icon='trash'
@@ -170,12 +169,12 @@ export default class IdentityDetails extends ReactiveComponent {
         fillValues(inputs, { ...this.identity, uri: this.getUri() })
     }
 
-    getUri() {
+    getUri = () => {
         const { uri } = this.identity
         return this.showSeed ? uri : '*'.repeat(uri.length)
     }
 
-    handleSubmit() {
+    handleSubmit = () => {
         const { onSubmit } = this.props
         const { address, name } = this.identity
         if (address === identityService.getSelected().address) {
@@ -204,9 +203,7 @@ export default class IdentityDetails extends ReactiveComponent {
         })
     }
 
-    render() {
-        return <FormBuilder {...{ ...this.props, ...this.state }} />
-    }
+    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
 IdentityDetails.propTypes = {
     values: PropTypes.shape({

@@ -2,8 +2,8 @@ import React from 'react'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { hexToBytes } from 'oo7-substrate'
-import { TransactButton } from '../TransactButton'
-import { InputBond } from '../InputBond'
+import { TransactButton } from '../components/TransactButton'
+import { InputBond } from '../legacies/InputBond'
 
 class TransactionsView extends ReactiveComponent {
 	constructor() {

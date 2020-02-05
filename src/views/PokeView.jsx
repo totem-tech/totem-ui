@@ -2,8 +2,8 @@ import React from 'react'
 import { Bond } from 'oo7'
 import { If } from 'oo7-react'
 import { calls, runtime, hexToBytes } from 'oo7-substrate'
-import { InputBond } from '../InputBond'
-import { TransactButton } from '../TransactButton'
+import { InputBond } from '../legacies/InputBond'
+import { TransactButton } from '../components/TransactButton'
 
 class PokeView extends React.Component {
 	constructor () {
