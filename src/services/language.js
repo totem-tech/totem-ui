@@ -3,7 +3,7 @@ import { getUrlParam } from './window'
 import { textCapitalize } from '../utils/utils'
 
 const translations = new DataStorage('totem_translations')
-const buildMode = getUrlParam('build-translation-list') == 'true'
+const buildMode = getUrlParam('build-translation-list') == 'true' && window.location.hostname !== 'totem.live'
 export const translated = (strObj = {}, capitalized = false) => {
     // const languageCode = 'en' // use from default settings
     // attempt to build a single list of english texts for translation
