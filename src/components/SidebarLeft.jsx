@@ -9,9 +9,9 @@ import {
 	sidebarItems, sidebarStateBond, toggleActive, toggleSidebarState
 } from '../services/sidebar'
 
-const [texts] = translated({
-	closeSidebar: 'Close sidebar',
-})
+const [_, textsCap] = translated({
+	closeSidebar: 'close sidebar',
+}, true)
 export default class SidebarLeft extends Component {
 	componentWillMount = () => {
 		sidebarStateBond.tie(s => this.setState(s))
@@ -55,7 +55,7 @@ export default class SidebarLeft extends Component {
 						>
 							<span>
 								<Icon name={`arrow alternate circle ${collapsed ? 'right' : 'left'} outline`} />
-								{!collapsed && ` ${texts.closeSidebar}`}
+								{!collapsed && ` ${textsCap.closeSidebar}`}
 							</span>
 						</div>
 					</Menu.Item>

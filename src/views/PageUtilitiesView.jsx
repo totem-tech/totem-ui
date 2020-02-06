@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Button } from 'semantic-ui-react';
+import { Button } from 'semantic-ui-react'
 import { forceClearCachedData, forceRefreshPage } from '../utils/utils'
 import { translated } from '../services/language'
 import { confirm } from '../services/modal'

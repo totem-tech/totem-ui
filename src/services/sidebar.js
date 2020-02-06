@@ -2,13 +2,14 @@ import React from 'react'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
 // Components
-import TransferForm from '../forms/Transfer'
+import GettingStarted from '../views/GettingStartedView'
 import IdentityList from '../lists/IdentityList'
 import PartnerList from '../lists/PartnerList'
 import ProjectList from '../lists/ProjectList'
-import GettingStarted from '../views/GettingStartedView'
-import UtilitiesView from '../views/UtilitiesView'
+import SettingsView from '../views/SettingsView'
 import TimeKeepingView from '../views/TimeKeepingView'
+import TransferForm from '../forms/Transfer'
+import UtilitiesView from '../views/UtilitiesView'
 // temp
 import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
 // utils
@@ -237,6 +238,7 @@ export const sidebarItems = [
         title: texts.productsTitle,
     },
     {
+        content: SettingsView,
         icon: 'cogs',
         name: 'settings',
         title: texts.settingsTitle,

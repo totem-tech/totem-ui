@@ -2,8 +2,6 @@
  * Storage Service: to handle all interactions with browser's localStorage.
  * Typically this should be used by other services
  */
-import { Bond } from 'oo7'
-import uuid from 'uuid'
 import { isObj } from '../utils/utils'
 import DataStorage from '../utils/DataStorage'
 // Local Storage item key prefix for all items
@@ -21,7 +19,7 @@ storage.settings = {
         const gs = settingsStorage.get(key) || {}
         if (!itemKey && !value) return gs
         if (isObj(value)) {
-            gs[itemKey] = value
+            gs[itemKey] = { ...gs[itemKey], ...value }
             settingsStorage.set(key, gs)
         }
         return gs[itemKey] || {}
@@ -41,7 +39,7 @@ storage.settings = {
             settingsStorage.set(key, ms)
         }
         return ms[moduleKey] || {}
-    }
+    },
 }
 // add/update a property to specific module setting
 storage.settings.module.set = (moduleKey, keyValue = {}) => {
