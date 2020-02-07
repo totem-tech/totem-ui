@@ -119,7 +119,7 @@ export default class GetingStarted extends ReactiveComponent {
 						</Step.Group>
 					</div>
 
-					<h3>{texts.videoGuidTitle}</h3>
+					{/* <h3>{texts.videoGuidTitle}</h3>
 					<h5>{texts.video1Title}</h5>
 					<div style={styles.videoContainer}>
 						<Embed
@@ -135,7 +135,7 @@ export default class GetingStarted extends ReactiveComponent {
 							id='1'
 							source='vimeo'
 						/>
-					</div>
+					</div> */}
 				</div>
 			</React.Fragment>
 		)
