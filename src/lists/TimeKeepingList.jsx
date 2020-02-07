@@ -66,7 +66,8 @@ const [texts] = translated({
     cannotBanOwnIdentity: 'You cannot ban your own identity!',
     emptyMessage: 'No time records available.',
     emptyMessageArchive: 'No records have been archived yet',
-    orInviteATeamMember: 'or invite someone to an activity',
+    orInviteATeamMember: 'Invite someone to an activity',
+    noTimeRecords: 'Your team have not yet booked time. Maybe ',
     notProjectOwner: 'You do not own this activity',
     numberOfBreaks: 'Number Of Breaks',
     projectName: 'Activity Name',
@@ -516,12 +517,12 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         this.state.emptyMessage = {
             content: archive ? texts.emptyMessageArchive : (
                 <p>
-                    {texts.emptyMessage + ' '}
+                    {manage ? texts.noTimeRecords : texts.emptyMessage + ' '}
                     {manage && <Button
                         positive
                         content={texts.orInviteATeamMember}
                         onClick={() => showForm(TimeKeepingInviteForm)}
-                    />}
+                    /> + ' ?'}
                 </p>
             )
         }
