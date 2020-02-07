@@ -24,16 +24,13 @@ export default class FormBuilder extends ReactiveComponent {
 
     getValues(inputs = [], values = {}) {
         return inputs.reduce((values, input, i) => {
-            const { bond, inputs, name, controlled, type } = input
+            const { inputs, name, controlled, type } = input
             const typeLC = (type || '').toLowerCase()
             const isGroup = typeLC === 'group'
             if (!isStr(name) || nonValueTypes.includes(type)) return values
             if (isGroup) return this.getValues(inputs, values)
             let value = values[name]
             value = !(controlled ? hasValue : isDefined)(value) ? input.value : value
-            if (isBond(bond)) {
-                value = bond._value
-            }
             values[name] = value
             return values
         }, values)
@@ -45,7 +42,6 @@ export default class FormBuilder extends ReactiveComponent {
         const { onChange: formOnChange } = this.props
         let { values } = this.state
         const { value } = data
-        // const updateBond = isBond(input.bond) && input.type.toLowerCase() !== 'checkbox-group'
         inputs[index]._invalid = data.invalid
         values[name] = value
         if (isDefined(childIndex)) {
@@ -55,7 +51,6 @@ export default class FormBuilder extends ReactiveComponent {
         }
         // update values of other inputs
         values = this.getValues(inputs, values)
-        // updateBond && input.bond.changed(value)
 
         if (!data.invalid) {
             // trigger input items's onchange callback

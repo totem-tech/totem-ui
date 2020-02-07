@@ -96,7 +96,6 @@ export default class Transfer extends Component {
                     type: 'dropdown',
                 },
                 {
-                    // bond: new Bond(),
                     inlineLabel: (
                         <Dropdown
                             basic
@@ -116,7 +115,6 @@ export default class Transfer extends Component {
                     labelPosition: 'right', //inline label position
                     min: this.getAmountMin(primary),
                     name: 'amount',
-                    // onChange: console.log,
                     placeholder: texts.amountPlaceholder,
                     required: true,
                     type: 'number',
