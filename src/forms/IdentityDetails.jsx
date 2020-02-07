@@ -1,10 +1,9 @@
 // A read only form to display identity details including seed
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Pretty } from '../components/Pretty'
+import Currency from '../components/Currency'
 import { Button } from 'semantic-ui-react'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import { ss58Decode } from '../utils/convert'
 import { copyToClipboard, isFn } from '../utils/utils'
 import identityService from '../services/identity'
 import { translated } from '../services/language'
@@ -163,7 +162,7 @@ export default class IdentityDetails extends Component {
         }))
         findInput(inputs, 'txAllocations').content = (
             <label style={{ fontWeight: 'bold', margin: 0 }}>
-                {texts.txAllocations}: <Pretty value={runtime.balances.balance(ss58Decode(address))} />
+                {texts.txAllocations}: <Currency address={address} />
             </label>
         )
         fillValues(inputs, { ...this.identity, uri: this.getUri() })

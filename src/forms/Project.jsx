@@ -1,9 +1,8 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { runtime } from 'oo7-substrate'
-import { Pretty } from '../components/Pretty'
+import Currency from '../components/Currency'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import { arrSort, generateHash, isFn, textCapitalize } from '../utils/utils'
+import { arrSort, generateHash, isFn } from '../utils/utils'
 import identities, { getSelected } from '../services/identity'
 import { translated } from '../services/language'
 import { getProjects } from '../services/project'
@@ -91,9 +90,9 @@ export default class ProjectForm extends Component {
         // populate and auto update ownerAddress dropdown options
         this.tieId = identities.bond.tie(() => {
             const options = identities.getAll().map(({ address, name }) => ({
+                description: <Currency address={address} className='description' />,
                 key: address,
                 text: name,
-                description: <Pretty value={runtime.balances.balance(ss58Decode(address))} />,
                 value: address
             }))
             findInput(inputs, 'ownerAddress').options = arrSort(options, 'text')

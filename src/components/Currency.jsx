@@ -24,19 +24,25 @@ export default class Currency extends Component {
     componentWillUnmount = () => this.bond && this.bond.untie(this.tieId)
 
     render() {
-        const { decimalPlaces, value } = this.state
-        return <span>{(value || 0).toFixed(decimalPlaces)}</span>
+        const { className, decimalPlaces, style } = this.props
+        return (
+            <span {...{ className, style }}>
+                {(this.state.value || 0).toFixed(decimalPlaces)}
+            </span>
+        )
     }
 }
 Currency.propTypes = {
     // @address to retrieve balance from Totem chain.
     // Only used when value is not supplied.
     address: PropTypes.string,
+    className: PropTypes.string,
     decimalPlaces: PropTypes.number,
-    // unit: PropTypes.string,
+    style: PropTypes.object,
+    unit: PropTypes.string,
     value: PropTypes.any, // number or bond
 }
 Currency.defaultProps = {
     decimalPlaces: 0,
-    // unit: 'Transactions'
+    unit: 'Transactions'
 }

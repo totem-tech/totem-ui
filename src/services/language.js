@@ -87,7 +87,6 @@ if (buildMode) {
             'Message.jsx',
             'PageHeader.jsx',
             'Paginator.jsx',
-            'Pretty.jsx',
             'SidebarLeft.jsx',
             'UserIdInput.jsx',
             'buttons.jsx',

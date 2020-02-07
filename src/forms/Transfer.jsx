@@ -2,7 +2,6 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Dropdown } from 'semantic-ui-react'
 import { Bond } from 'oo7'
-import { Currency } from '../components/Currency'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import PartnerForm from '../forms/Partner'
 import { getConfig, denominations } from '../services/blockchain'
@@ -135,7 +134,6 @@ export default class Transfer extends Component {
         // repopulate options if identity list changes
         this.tieIdIdentity = identities.bond.tie(() => {
             fromIn.options = arrSort(identities.getAll().map(({ address, name }) => ({
-                description: <Currency address={address} />,
                 key: address,
                 text: name,
                 value: address,

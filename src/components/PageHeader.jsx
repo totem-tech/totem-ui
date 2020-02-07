@@ -2,10 +2,9 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { runtime } from 'oo7-substrate'
 import { Dropdown, Image, Menu } from 'semantic-ui-react'
-import { Pretty } from '../components/Pretty'
+import Currency from '../components/Currency'
 // utils
 import { copyToClipboard, textEllipsis } from '../utils/utils'
-import { ss58Decode } from '../utils/convert'
 // forms
 import IdentityForm from '../forms/Identity'
 import TimeKeepingForm from '../forms/TimeKeeping'
@@ -184,9 +183,7 @@ class MobileHeader extends Component {
 									options={wallets.map(({ address, name }) => ({
 										key: address,
 										text: name,
-										description: runtime.balances && (
-											<Pretty value={runtime.balances.balance(ss58Decode(address))} />
-										),
+										description: runtime.balances && <Currency address={address} />,
 										value: address
 									}))}
 								/>
