@@ -1,16 +1,18 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import { Button, Label } from 'semantic-ui-react'
-import DataTable from '../components/DataTable'
-import identityService from '../services/identity'
-import { translated } from '../services/language'
-import { showForm } from '../services/modal'
 import { formatStrTimestamp } from '../utils/time'
+// components
+import Currency from '../components/Currency'
+import DataTable from '../components/DataTable'
+// forms
 import IdentityShareForm from '../forms/IdentityShare'
 import IdentityForm from '../forms/Identity'
 import IdentityDetailsForm from '../forms/IdentityDetails'
-import { Pretty } from '../components/Pretty'
-import { ss58Decode } from '../utils/convert'
+// services
+import identityService from '../services/identity'
+import { translated } from '../services/language'
+import { showForm } from '../services/modal'
 
 const [words, wordsCap] = translated({
     actions: 'actions',
@@ -49,7 +51,8 @@ export default class ItentityList extends ReactiveComponent {
                 },
                 {
                     collapsing: true,
-                    content: ({ address }) => <Pretty value={runtime.balances.balance(ss58Decode(address))} />,
+                    content: ({ address }) => <Currency address={address} />,
+                    textAlign: 'center',
                     title: texts.txAllocations,
                 },
                 {

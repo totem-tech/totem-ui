@@ -2,8 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Dropdown } from 'semantic-ui-react'
 import { Bond } from 'oo7'
-import { runtime } from 'oo7-substrate'
-import { Pretty } from '../components/Pretty'
+import { Currency } from '../components/Currency'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import PartnerForm from '../forms/Partner'
 import { getConfig, denominations } from '../services/blockchain'
@@ -136,7 +135,7 @@ export default class Transfer extends Component {
         // repopulate options if identity list changes
         this.tieIdIdentity = identities.bond.tie(() => {
             fromIn.options = arrSort(identities.getAll().map(({ address, name }) => ({
-                description: <Pretty value={runtime.balances.balance(ss58Decode(address))} />,
+                description: <Currency address={address} />,
                 key: address,
                 text: name,
                 value: address,
