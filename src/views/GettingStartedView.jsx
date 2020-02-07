@@ -16,7 +16,7 @@ import IdentityForm from '../forms/Identity'
 const [texts] = translated({
 	faucetRequestSent: 'Registration successful! You will shortly receive an allocation of transactions get you started.',
 	faucetTransferComplete: 'Allocation complete.',
-	quickGuidePara1: `Totem is currently under heavy development, but you can already use the Identities, Partners, Project 
+	quickGuidePara1: `Totem is currently under heavy development, but you can already use the Identities, Partners, Activities 
 		and Timekeeping Modules as well as make basic transfers of your transaction allocations balance using the Transfer Module.`,
 	quickGuidePara2: `Most of what you do in Totem will consume transactions from your balance (XTX for short) but don't worry, 
 		we are nice open source people, and we'll give you plenty to get you started.`,

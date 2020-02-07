@@ -522,7 +522,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                         positive
                         content={texts.orInviteATeamMember}
                         onClick={() => showForm(TimeKeepingInviteForm)}
-                    /> + ' ?'}
+                    />}?
                 </p>
             )
         }
