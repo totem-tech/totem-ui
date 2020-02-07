@@ -13,7 +13,7 @@ import { showForm } from '../services/modal'
 import partners from '../services/partner'
 import { arrSort, isStr, textEllipsis } from '../utils/utils'
 import { ss58Decode } from '../utils/convert'
-import { transfer } from '../utils/polkadotHelper'
+import { connect, getDefaultConfig, transfer } from '../utils/polkadotHelper'
 
 const [words, wordsCap] = translated({
     amount: 'amount',
@@ -31,6 +31,7 @@ const [texts] = translated({
     submitInprogressHeader: 'Transfer in-progress',
     submitSuccessHeader: 'Transfer successful',
 })
+const connection = {}
 
 export default class Transfer extends Component {
     constructor(props) {
@@ -95,7 +96,7 @@ export default class Transfer extends Component {
                     type: 'dropdown',
                 },
                 {
-                    bond: new Bond(),
+                    // bond: new Bond(),
                     inlineLabel: (
                         <Dropdown
                             basic
@@ -105,7 +106,6 @@ export default class Transfer extends Component {
                             onChange={(_, { value: denomination }) => {
                                 const { inputs } = this.state
                                 findInput(inputs, 'amount').min = this.getAmountMin(denomination)
-                                // setConfig({ primary: denomination })
                                 this.setState({ denomination, inputs })
                             }}
                             options={[{ key: 0, text: primary, value: primary }]}
@@ -116,6 +116,7 @@ export default class Transfer extends Component {
                     labelPosition: 'right', //inline label position
                     min: this.getAmountMin(primary),
                     name: 'amount',
+                    // onChange: console.log,
                     placeholder: texts.amountPlaceholder,
                     required: true,
                     type: 'number',
@@ -162,6 +163,17 @@ export default class Transfer extends Component {
         disabledFields && disabledFields.forEach(name => (findInput(inputs, name) || {}).disabled = true)
 
         fillValues(inputs, values)
+
+        if (connection.api) return
+        const config = getDefaultConfig()
+        this.setState({ loading: true })
+        console.log('TransferForm: connecting using Polkadot')
+        connect(config.nodes[0], config.types, false).then(({ api, provider }) => {
+            this.setState({ loading: false })
+            connection.api = api
+            connection.provider = provider
+            console.log('TransferForm: connected using Polkadot', { api, provider })
+        })
     }
 
     componentWillUnmount() {
@@ -180,15 +192,13 @@ export default class Transfer extends Component {
         const { denomination } = this.state
         const { uri } = identities.get(from)
         const { name } = partners.get(to)
-        const amountXTX = amount * Math.pow(10, denominations[denomination])
-        // const primary = getConfig().primary
-        // setConfig({ primary: denomination })
+        // amount in transactions
+        const amountTransations = amount * Math.pow(10, denominations[denomination])
         this.setMessage()
-        transfer(to, amountXTX, uri).then(
-            hash => this.setMessage(null, hash, name, amount) | this.clearForm(),
+        transfer(to, amountTransations, uri, null, connection.api).then(
+            hash => this.setMessage(null, hash, name, amountTransations) | this.clearForm(),
             err => this.setMessage(err),
         )
-        // .finally(() => setConfig({ primary }))
     }
 
     // returns the min value acceptable for the selected denomination

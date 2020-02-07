@@ -41,13 +41,14 @@ export default class FormInput extends ReactiveComponent {
             this.setMessage = deferred(this.setMessage, defer)
         }
 
-        this.bond && this.bond.tie(value => setTimeout(() => this.handleChange({}, { ...this.props, value })))
-
         this.originalSetState = this.setState
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
-    componentWillMount = () => this._mounted = true
+    componentWillMount() {
+        this._mounted = true
+        this.bond && this.bond.tie(value => setTimeout(() => this.handleChange({}, { ...this.props, value })))
+    }
 
     componentWillUnmount = () => this._mounted = false
 

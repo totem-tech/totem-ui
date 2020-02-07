@@ -167,7 +167,6 @@ if (buildMode) {
         }).join(',\n')
         downloadFile(str, 'texts.csv', 'text/csv')
     }, 3000)
-    // setTimeout(() => downloadFile(window.enList, 'texts-en.json', 'text/json'), 6000)
 
     // remove later
     window.getArr = str => `
