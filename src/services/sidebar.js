@@ -49,7 +49,12 @@ const [texts] = translated({
     identitySubheaderDetails5: 'Once an Identity is stored in this list you can use it all over Totem. To find out more, watch the video!',
     partnersTitle: 'Partners',
     partnersHeader: 'Partner Contact List',
-    partnersSubheader: 'Manage suppliers or customers, or any other party that you have contact with in Totem.',
+    partnersSubheader: 'Manage suppliers, customers, and any other party that you have contact with in Totem.',
+    partnersSubheaderDetails1: `In Totem, a partner is anyone that you intend to interact with.`,
+    partnersSubheaderDetails2: `Each partner has one or more identities that they can share with you. The best way to get 
+        someone\'s identity is to request it, which you can do using the request button. Simply enter their userid and click request.`,
+    partnersSubheaderDetails3: `You can give each shared Partner a name, add tags, and define it any way you want. The table can be sorted and searched to suit your needs.`,
+    partnersSubheaderDetails4: `Once a partner is stored here it will become available all over Totem.`,
     partnersSubheaderDetails: `
         In Totem, a partner is anyone that you intend to interact with. Each partner has one or more identities,
         that they can share with you. (see the Identities Module for more information on Identities.)
@@ -60,6 +65,8 @@ const [texts] = translated({
     `,
     projectTitle: 'Activities',
     projectSubheader: 'Manage activities',
+    projectSubheaderDetails1: `You can use the activity module to account for any activity, task project. You can invite team members to activities or assign individuals an activity, manage and approve all time booked against an activity.`,
+    projectSubheaderDetails2: `Activities are then automatically mapped to invoices or other payments, and all accounting will be correctly posted even into your partner\'s accounts.`,
     projectSubheaderDetails: `
         You can use the activity module to account for any activity, task project.
         You can invite team members to activities or assign individuals an activity, manage and approve all time booked against an activity. 
@@ -70,7 +77,8 @@ const [texts] = translated({
 
     transferTitle: 'Transfer',
     transferHeader: 'Transfer Transactions',
-    transferSubheader: 'Use this module to share your transaction balance with a Partner or another Identity you own.',
+    transferSubheader: 'Transfer transaction between your Identities and  Partners.',
+    transferSubheaderDetails: 'You can use the transfer module to send some of your transaction balance to other parties on the Totem Network.',
     invoicesTitle: 'Manage Invoices',
     creditNoteTitle: 'Credit Note',
     purchaseOrderTitle: 'Purchase Order',
@@ -167,26 +175,15 @@ export const sidebarItems = [
         header: texts.partnersHeader,
         name: 'partners',
         subHeader: texts.partnersSubheader,
-        subHeaderDetails: texts.partnersSubheaderDetails,
+        subHeaderDetails: (
+            <div>
+                <p>{texts.partnersSubheaderDetails1}</p>
+                <p>{texts.partnersSubheaderDetails2}</p>
+                <p>{texts.partnersSubheaderDetails3}</p>
+                <p>{texts.partnersSubheaderDetails4}</p>
+            </div>
+        ),
         title: texts.partnersTitle,
-        // subHeader: 'Manage suppliers, customers, and any other party that you have contact with in Totem.',
-        // subHeaderDetails: (
-        //     <div>
-        //         <p>
-        //         In Totem, a partner is anyone that you intend to interact with. 
-        //         </p>
-        //         <p>
-        //         Each partner has one or more identities that they can share with you. The best way to get someone\'s identity is to request it, which you can do using the request button. Simply enter their userid and click request.
-        //         </p>
-        //         <p>
-        //         You can give each shared Partner a name, add tags, and define it any way you want. The table can be sorted and searched to suit your needs.
-        //         </p>
-        //         <p>
-        //         Once a partner is stored here it will become available all over Totem.
-        //         </p>
-        //     </div>
-        // ),
-        // title: 'Partners',
     },
     {
         content: ProjectList,
@@ -194,16 +191,13 @@ export const sidebarItems = [
         icon: 'tasks',
         name: 'projects',
         subHeader: texts.projectSubheader,
-        subHeaderDetails: texts.projectSubheaderDetails,
+        subHeaderDetails: (
+            <div>
+                <p>{texts.projectSubheaderDetails1}</p>
+                <p>{texts.projectSubheaderDetails2}</p>
+            </div>
+        ),
         title: texts.projectTitle,
-        // subHeader: 'Create and manage activities.',
-        // subHeaderDetails: (
-        //     <div>
-        //         <p>You can use the activity module to account for any activity, task project. You can invite team members to activities or assign individuals an activity, manage and approve all time booked against an activity.</p>
-        //         <p>Activities are then automatically mapped to invoices or other payments, and all accounting will be correctly posted even into your partner\'s accounts.</p>
-        //     </div>
-        // ),
-        // title: 'Activities',
     },
     {
         content: TimeKeepingView,
@@ -220,14 +214,8 @@ export const sidebarItems = [
         header: texts.transferHeader,
         name: 'transfer',
         subHeader: texts.transferSubheader,
+        subHeaderDetails: texts.transferSubheaderDetails,
         title: texts.transferTitle,
-        // subHeader: 'Transfer transaction between your Identities and  Partners.',
-        // subHeaderDetails: (
-        //     <div>
-        //         <p>You can use the transfer module to send some of your transaction balance to other parties on the Totem Network</p>
-        //     </div>
-        // ),
-        // title: 'Transfer',
     },
     // { icon: 'file alternate', title: 'Invoice', subHeader: '', active: false, content: <Invoice /> },
     {
