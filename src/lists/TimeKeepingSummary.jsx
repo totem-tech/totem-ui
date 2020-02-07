@@ -12,7 +12,7 @@ const [words, wordsCap] = translated({
     percentage: 'percentage',
 }, true)
 const [texts] = translated({
-    noTimeRecords: 'This identity has not yet booked time on an activity',
+    noTimeRecords: 'You have not yet booked time on an activity',
     totalBlocks: 'Total Time in Blocks',
     totalHours: 'Total Time in Hours',
     yourContribution: 'Your Time Contribution versus Total Booked Time',

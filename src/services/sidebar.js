@@ -169,6 +169,24 @@ export const sidebarItems = [
         subHeader: texts.partnersSubheader,
         subHeaderDetails: texts.partnersSubheaderDetails,
         title: texts.partnersTitle,
+        // subHeader: 'Manage suppliers, customers, and any other party that you have contact with in Totem.',
+        // subHeaderDetails: (
+        //     <div>
+        //         <p>
+        //         In Totem, a partner is anyone that you intend to interact with. 
+        //         </p>
+        //         <p>
+        //         Each partner has one or more identities that they can share with you. The best way to get someone\'s identity is to request it, which you can do using the request button. Simply enter their userid and click request.
+        //         </p>
+        //         <p>
+        //         You can give each shared Partner a name, add tags, and define it any way you want. The table can be sorted and searched to suit your needs.
+        //         </p>
+        //         <p>
+        //         Once a partner is stored here it will become available all over Totem.
+        //         </p>
+        //     </div>
+        // ),
+        // title: 'Partners',
     },
     {
         content: ProjectList,
@@ -178,6 +196,14 @@ export const sidebarItems = [
         subHeader: texts.projectSubheader,
         subHeaderDetails: texts.projectSubheaderDetails,
         title: texts.projectTitle,
+        // subHeader: 'Create and manage activities.',
+        // subHeaderDetails: (
+        //     <div>
+        //         <p>You can use the activity module to account for any activity, task project. You can invite team members to activities or assign individuals an activity, manage and approve all time booked against an activity.</p>
+        //         <p>Activities are then automatically mapped to invoices or other payments, and all accounting will be correctly posted even into your partner\'s accounts.</p>
+        //     </div>
+        // ),
+        // title: 'Activities',
     },
     {
         content: TimeKeepingView,
@@ -195,6 +221,13 @@ export const sidebarItems = [
         name: 'transfer',
         subHeader: texts.transferSubheader,
         title: texts.transferTitle,
+        // subHeader: 'Transfer transaction between your Identities and  Partners.',
+        // subHeaderDetails: (
+        //     <div>
+        //         <p>You can use the transfer module to send some of your transaction balance to other parties on the Totem Network</p>
+        //     </div>
+        // ),
+        // title: 'Transfer',
     },
     // { icon: 'file alternate', title: 'Invoice', subHeader: '', active: false, content: <Invoice /> },
     {
