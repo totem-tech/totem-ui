@@ -3,7 +3,7 @@ import { If, ReactiveComponent, Rspan } from 'oo7-react'
 import { bytesToHex } from 'oo7-substrate'
 // import Identicon from 'polkadot-identicon'
 import { Label } from 'semantic-ui-react'
-import { Pretty } from '../components/Pretty'
+import { Pretty } from './Pretty'
 import { subscribeAllNSetState, unsubscribeAll } from '../services/data'
 
 class ChainInfoBar extends ReactiveComponent {

@@ -6,7 +6,7 @@ import { ReactiveComponent, If, Rspan } from 'oo7-react';
 import { InputBond } from './InputBond.jsx';
 import { TransactButton } from '../components/TransactButton.jsx';
 import { AccountIdBond, SignerBond } from './AccountIdBond.jsx';
-import { Pretty } from '../components/Pretty';
+import { Pretty } from './Pretty';
 
 // hardcoded here TODO: better dealt with dynamically
 const decimal_to_int = 10000;

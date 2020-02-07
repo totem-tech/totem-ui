@@ -3,7 +3,7 @@ import { Icon, Image, List, Label, Header, Segment, Divider, Button, Grid, Input
 import { Bond, TransformBond } from 'oo7';
 import { ReactiveComponent, If, Rspan } from 'oo7-react';
 import { AccountIdBond, SignerBond } from './AccountIdBond.jsx';
-import { Pretty } from '../components/Pretty';
+import { Pretty } from './Pretty';
 
 
 export class LedgerTransactionList extends ReactiveComponent {

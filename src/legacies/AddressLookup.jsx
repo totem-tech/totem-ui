@@ -3,7 +3,7 @@ import { Label } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import { If, ReactiveComponent, Rspan } from 'oo7-react'
 import { runtime, runtimeUp } from 'oo7-substrate'
-import { Pretty } from '../components/Pretty'
+import { Pretty } from './Pretty'
 import { isObj, isFn } from '../utils/utils'
 
 class AddressLookup extends ReactiveComponent {
