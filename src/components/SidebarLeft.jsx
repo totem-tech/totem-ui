@@ -21,10 +21,8 @@ export default class SidebarLeft extends Component {
 	render() {
 		const { isMobile } = this.props
 		const { allInactive, collapsed: c, visible: v } = this.state
-		// if (allInactive) {
 		const collapsed = allInactive ? false : c
 		const visible = allInactive ? true : v
-		// }
 		return (
 			<React.Fragment>
 				{
@@ -82,7 +80,7 @@ SidebarLeft.propTypes = {
 	isMobile: PropTypes.bool.isRequired,
 }
 
-export class SidebarItemContent extends Component {
+export class MainContentItem extends Component {
 	componentWillMount() {
 		const { name } = this.props
 		const { bond } = getItem(name) || {}
@@ -94,24 +92,22 @@ export class SidebarItemContent extends Component {
 	componentWillUnmount = () => this.bond && this.bond.untie(this.tieId)
 
 	render() {
-		const item = getItem(this.props.name)
-		if (!item) return ''
+		const item = getItem(this.props.name) || {}
 		const { active, elementRef, hidden, name } = item
-		return (
+		const show = active && !hidden
+		return !show ? '' : (
 			<div
 				ref={elementRef}
 				key={name}
 				hidden={!active || hidden}
 				style={styles.spaceBelow}
 			>
-				{!active || hidden ? '' : (
-					<ContentSegment {...item} onClose={name => setActive(name, false)} />
-				)}
+				<ContentSegment {...item} onClose={name => setActive(name, false)} />
 			</div>
 		)
 	}
 }
-SidebarItemContent.propTypes = {
+MainContentItem.propTypes = {
 	name: PropTypes.string.isRequired,
 }
 

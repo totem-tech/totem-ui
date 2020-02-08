@@ -7,7 +7,7 @@ import storage from '../services/storage'
 
 const [texts, textsCap] = translated({
     gsCurrencyLabel: 'default currency',
-    gsLanguageLabel: 'default language',
+    gsLanguageLabel: 'default language (experimental)',
     notImplemented: 'not implemented',
     saved: 'saved',
 }, true)

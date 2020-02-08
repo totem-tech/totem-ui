@@ -1,5 +1,5 @@
 import React from 'react'
-import { Container, Dimmer, Loader, Sidebar } from 'semantic-ui-react'
+import { Container, Dimmer, Image, Loader, Sidebar } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import {
@@ -11,7 +11,7 @@ import {
 import ErrorBoundary from './components/CatchReactErrors'
 import ChatWidget from './components/ChatWidget'
 import PageHeader from './components/PageHeader'
-import SidebarLeft, { SidebarItemContent } from './components/SidebarLeft'
+import SidebarLeft, { MainContentItem } from './components/SidebarLeft'
 // Services
 import chatClient from './services/chatClient'
 import identity from './services/identity'
@@ -29,6 +29,7 @@ import { getLayout, layoutBond } from './services/window'
 import DataStorage from './utils/DataStorage'
 // Images
 import TotemButtonLogo from './assets/totem-button-grey.png'
+import PlaceholderImage from './assets/totem-placeholder.png'
 
 export class App extends ReactiveComponent {
 	constructor() {
@@ -128,7 +129,10 @@ export class App extends ReactiveComponent {
 						fluid
 						style={styles.mainContent}
 					>
-						{sidebarItems.map(({ name }, i) => <SidebarItemContent key={i + name} name={name} />)}
+						{sidebarItems.map(({ name }, i) => <MainContentItem key={i + name} name={name} />)}
+						<div className='empty-message'>
+							<Image style={{ margin: 'auto' }} src={PlaceholderImage} />
+						</div>
 					</Sidebar.Pusher>
 				</Sidebar.Pushable>
 			</div >

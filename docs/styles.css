@@ -48,6 +48,9 @@
   margin: 0 !important;
   overflow: auto !important;
 }
+.empty-message:not(:only-child) {
+  display: none;
+}
 /* Fixes the dimmer height being limited due to the use of scrollbar */ 
 .mobile.sidebar-visible .main-content.pusher.container:after {
   position: fixed;
