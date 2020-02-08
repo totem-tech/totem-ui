@@ -28,7 +28,7 @@ class PageUtilitiesView extends Component {
 				<div>
 					<Button
 						content='Download applications texts as CSV for translation'
-						onClick={() => client.errorMessages((_, texts) => translated(texts || {}) | downloadWordsListCSV())}
+						onClick={() => client.errorMessages((_, texts) => translated(texts || []) | downloadWordsListCSV())}
 					/>
 					<h1>Convert TSV to JSON for use with Totem Messaging Service</h1>
 					<FormInput

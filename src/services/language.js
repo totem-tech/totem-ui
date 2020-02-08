@@ -1,14 +1,12 @@
 import DataStorage from '../utils/DataStorage'
 import { getUrlParam } from './window'
-import { downloadFile, textCapitalize } from '../utils/utils'
+import { clearClutter, downloadFile, textCapitalize } from '../utils/utils'
 import storage from './storage'
 
 const translations = new DataStorage('totem_translations')
 const EN = 'EN'
 const moduleKey = 'language'
-const clearClutter = x => x.split('\n').map(y => y.trim()).join(' ')
 export const buildMode = getUrlParam('build-translation-list') == 'true' && window.location.hostname !== 'totem.live'
-
 export const languages = Object.freeze({
     BN: 'Bengali',
     DE: 'German',
@@ -37,7 +35,10 @@ export const translated = (texts = {}, capitalized = false) => {
     // attempt to build a single list of english texts for translation
     if (buildMode) {
         window.enList = window.enList || []
-        Object.values(texts).forEach(text => enList.indexOf(text) === -1 && enList.push(text))
+        Object.values(texts).forEach(text => {
+            text = clearClutter(text)
+            enList.indexOf(text) === -1 && enList.push(text)
+        })
         window.enList = enList.sort()
     }
 
