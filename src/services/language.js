@@ -1,34 +1,35 @@
 import DataStorage from '../utils/DataStorage'
 import { getUrlParam } from './window'
-import { textCapitalize } from '../utils/utils'
+import { downloadFile, textCapitalize } from '../utils/utils'
 import storage from './storage'
 
 const translations = new DataStorage('totem_translations')
-const buildMode = getUrlParam('build-translation-list') == 'true' && window.location.hostname !== 'totem.live'
 const EN = 'EN'
 const moduleKey = 'language'
 const clearClutter = x => x.split('\n').map(y => y.trim()).join(' ')
+export const buildMode = getUrlParam('build-translation-list') == 'true' && window.location.hostname !== 'totem.live'
+
+export const languages = Object.freeze({
+    BN: 'Bengali',
+    DE: 'German',
+    EN: 'English',
+    ES: 'Spanish',
+    HI: 'Hindi',
+    IT: 'Italian',
+    JA: 'Japanese',
+    FR: 'French',
+    NL: 'Dutch',
+    PL: 'Polish',
+    RU: 'Russian',
+    TR: 'Turkish',
+    UK: 'Ukrainian',
+    ZH: 'Chinese',
+})
 // get selected language code
 export const getSelected = () => storage.settings.global(moduleKey).selected || EN
 // set selected language code
 export const setSelected = selected => storage.settings.global(moduleKey, { selected: selected || EN })
-// export const translated = (strObj = {}, capitalized = false) => {
-//     // const languageCode = 'en' // use from default settings
-//     const enList = translations.get(EN) || {}
-//     // attempt to build a single list of english texts for translation
-//     if (buildMode) {
-//         Object.keys(strObj).forEach(key => {
-//             enList[key] = enList[key] || strObj[key]
-//         })
-//         translations.set(EN, enList)
-//     }
 
-//     // const translatedObj = translations.get(languageCode)
-//     // if (languageCode === EN || !translatedObj) return [strObj, capitalized && textCapitalize(strObj)]
-//     // process...
-//     return [strObj, capitalized && textCapitalize(strObj)]
-// }
-//
 export const translated = (texts = {}, capitalized = false) => {
     const en = translations.get(EN) || []
     // list of selected language texts
@@ -54,27 +55,38 @@ export const translated = (texts = {}, capitalized = false) => {
     return [texts, capitalized && textCapitalize(texts)]
 }
 
-export const getEnList = () => {
-    const enList = translations.get(EN) || {}
-    return Object.keys(enList).map(key => enList[key]).sort()
-}
-export const setList = (languageCode, texts) => {
-    if (languageCode === EN) return
-    translations.set(languageCode, texts)
+export const getTexts = langCode => translations.get(langCode)
+export const setTexts = (langCode, texts) => translations.set(langCode, texts)
+export const downloadWordsListCSV = !buildMode ? () => { } : () => {
+    const langCodes = [EN, ...Object.keys(languages).filter(x => x != EN)]
+    const rest = langCodes.slice(1)
+    const cols = textCapitalize('abcdefghijklmnopqrstuvwxyz').split('')
+    const str = langCodes.join(',') + '\n' + (window.enList || []).map((x, i) => {
+        const rowNo = i + 2
+        const functions = rest.map((_, c) => `"=GOOGLETRANSLATE($A${rowNo}, $A$1, ${cols[c + 1]}$1)"`).join(',')
+        return `"${clearClutter(x)}", ` + functions
+    }).join(',\n')
+    downloadFile(str, 'texts-en.csv', 'text/csv')
 }
 
 export default {
     translations,
     translated,
-    getEnList,
-    setList,
+    setTexts,
     getSelected,
     setSelected,
 }
+
 if (buildMode) {
+
+    // remove later
+    window.getArr = str => `
+    [
+        ${ str.split('\n').join(' ').split(' ').filter(Boolean).sort().map(x => `    '${x}',`).join('\n')}
+    ]
+    `
     // list of files that needs translation
-    // todo: services/modal++
-    const files = buildMode && {
+    const files = {
         components: [
             'CatchReactErrors.jsx',
             'ChatWidget.jsx',
@@ -145,48 +157,4 @@ if (buildMode) {
     // import files to force run translated on each file and therefore force rebuild 'en' list
     Object.keys(files).forEach(dir => files[dir].forEach(filename => require(`../${dir}/${filename}`)))
     console.log('Language build mode. English text/words list build done.')
-
-    // todo: move to utils
-    window.downloadFile = (content, fileName, contentType) => {
-        const a = document.createElement("a");
-        const file = new Blob([content], { type: contentType });
-        a.href = URL.createObjectURL(file);
-        a.download = fileName;
-        a.click();
-    }
-
-    setTimeout(() => {
-        const languages = ['EN', 'DE', 'FR', 'BN']
-        const rest = languages.slice(1)
-        const cols = ['A', 'B', 'C', 'D']
-        const str = languages.join(',') + '\n' + window.enList.map((x, i) => {
-            const rowNo = i + 2
-            const functions = rest.map((_, c) => `"=GOOGLETRANSLATE($A${rowNo}, $A$1, ${cols[c + 1]}$1)"`).join(',')
-            return `"${clearClutter(x)}", ` + functions
-        }).join(',\n')
-        downloadFile(str, 'texts.csv', 'text/csv')
-    }, 3000)
-
-    // remove later
-    window.getArr = str => `
-        [
-            ${ str.split('\n').join(' ').split(' ').filter(Boolean).sort().map(x => `    '${x}',`).join('\n')}
-        ]
-    `
-    // assumes first line is column title
-    window.tsvToJson = str => {
-        const res = new Map()
-        const lines = str.split('\n')
-        const langCodes = lines[0].split('\t')
-        lines.slice(1).forEach(line => {
-            const cells = line.split('\t')
-            cells.forEach((text, i) => {
-                const langTexts = res.get(langCodes[i]) || []
-                langTexts.push(text)
-                res.set(langCodes[i], langTexts)
-            })
-        })
-        return res
-    }
-    // localStorage.setItem('totem_translations', JSON.stringify(Array.from(tsvToJson(str))))
 }

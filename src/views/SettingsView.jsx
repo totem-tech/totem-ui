@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { forceRefreshPage } from '../utils/utils'
 import FormBuilder, { findInput } from '../components/FormBuilder'
-import { translated } from '../services/language'
+import { languages, translated } from '../services/language'
 import { getSelected, setSelected } from '../services/language'
 import storage from '../services/storage'
 
@@ -22,12 +22,6 @@ class GlobalSettings extends Component {
     constructor(props) {
         super(props)
         // supported languages || ToDo: use API to retrieve from server
-        const langCodes = {
-            BN: 'Bangla',
-            DE: 'German',
-            EN: 'English',
-            FR: 'French',
-        }
         this.currencies = {
             Transactions: 'Totem Blockchain',
             USD: 'United States Dollar',
@@ -43,15 +37,15 @@ class GlobalSettings extends Component {
                     label: textsCap.gsLanguageLabel,
                     name: 'languageCode',
                     onChange: this.handleLanguageChange,
-                    options: Object.keys(langCodes).map(code => ({
+                    options: Object.keys(languages).sort().map(code => ({
                         key: code,
-                        text: langCodes[code],
+                        text: languages[code],
                         value: code,
                     })),
                     search: true,
                     selection: true,
                     type: 'dropdown',
-                    value: getSelected() || 'EN',
+                    value: getSelected(),
                 },
                 {
                     label: textsCap.gsCurrencyLabel,
