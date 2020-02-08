@@ -131,7 +131,7 @@ export class App extends ReactiveComponent {
 					>
 						{sidebarItems.map(({ name }, i) => <MainContentItem key={i + name} name={name} />)}
 						<div className='empty-message'>
-							<Image style={{ margin: 'auto' }} src={PlaceholderImage} />
+							<Image style={{ margin: '100px auto auto' }} src={PlaceholderImage} />
 						</div>
 					</Sidebar.Pusher>
 				</Sidebar.Pushable>

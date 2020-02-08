@@ -48,7 +48,6 @@ class PageUtilitiesView extends Component {
 								const name = 'translations.json'
 								const type = 'application/json'
 								downloadFile(content, name, type)
-								downloadFile(content, name, type)
 							}}
 						/>
 					)}
