@@ -1,10 +1,11 @@
 import React, { Component } from 'react'
 import { Button } from 'semantic-ui-react'
 import { downloadFile, forceClearCachedData, forceRefreshPage } from '../utils/utils'
+import { tsvToMap } from '../utils/convert'
 import FormInput from '../components/FormInput'
+import client from '../services/chatClient'
 import { buildMode, downloadWordsListCSV, translated } from '../services/language'
 import { confirm } from '../services/modal'
-import { tsvToMap } from '../utils/convert'
 
 const [texts] = translated({
 	forceRefresh: 'Force App Refresh!',
@@ -25,7 +26,10 @@ class PageUtilitiesView extends Component {
 			{/* for admin use only. not translated intentionally */}
 			{buildMode && (
 				<div>
-					<Button content='Download applications texts as CSV for translation' onClick={downloadWordsListCSV} />
+					<Button
+						content='Download applications texts as CSV for translation'
+						onClick={() => client.errorMessages((_, texts) => translated(texts || {}) | downloadWordsListCSV())}
+					/>
 					<h1>Convert TSV to JSON for use with Totem Messaging Service</h1>
 					<FormInput
 						placeholder='TSV file string'

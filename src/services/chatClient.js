@@ -141,6 +141,8 @@ export class ChatClient {
         // Get list of all countries with 3 character codes
         this.countries = cb => isFn(cb) && socket.emit('countries', (err, countries) => cb(err, new Map(countries)))
 
+        this.errorMessages = cb => isFn(cb) && socket.emit('error-messages', cb)
+
         // Request funds
         this.faucetRequest = (address, cb) => isFn(cb) && socket.emit('faucet-request', address, cb)
 
