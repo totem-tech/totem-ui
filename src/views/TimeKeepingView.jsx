@@ -26,10 +26,10 @@ const [words, wordsCap] = translated({
 }, true)
 const [texts] = translated({
     createProjectOrRequestInvite: `Create a new activity or request to be invited to some else's activity`,
-    manageTeamTime: 'Manage team timekeeping',
-    manageArchive: 'Team timekeeping archive',
-    myRecords: 'My time records',
-    myRecordsArchive: 'My timekeeping archive',
+    manageTeamTime: 'Manage team records',
+    manageArchive: 'Team records archive',
+    myRecords: 'My records',
+    myRecordsArchive: 'My records archive',
     myTimeKeepingSummary: 'My timekeeping overview',
     selectAProject: 'Select a activity',
 })
