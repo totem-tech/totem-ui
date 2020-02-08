@@ -1,6 +1,9 @@
 # How to generate translations and use
 
-1. Open https://localhost/?build-translation-list=true or https://dev.totem.live/?build-translation-list=true in a browser. Not allowed from `https://totem.live`.
+1. Open https://localhost/?build-translation-list=true or https://dev.totem.live/?build-translation-list=true in a browser. Not allowed from `https://totem.live`. Make sure the relevant messaging service's start script has the following environment variable:
+```
+    BuildMode="TRUE"
+```
 2. Navigate to `Settings` on sidebar.
 3. Click on `Download applications texts as CSV for translation` button to download a CSV file.
 4. Upload the downloaded CSV file to Google Drive.
