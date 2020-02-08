@@ -49,12 +49,10 @@ const init = () => new Promise((resolve, reject) => {
             })
         })
     })
-    getTypes().then(types => {
-        setDefaultConfig(nodes, types)
-        // if messaging service is still not connected render page anyway
-        !client.isConnected() && reject()
-    })
+    getTypes().then(types => setDefaultConfig(nodes, types))
+    // force resolve in case messaging service is not connected yet
+    setTimeout(resolve, 2000)
 })
 
-init().finally(() => render(<App />, document.getElementById('app')))
+init().then(() => render(<App />, document.getElementById('app')))
 
