@@ -43,7 +43,10 @@ export default class ItentityList extends ReactiveComponent {
                     key: 'usageType',
                     title: wordsCap.usage
                 },
-                { key: '_tags', title: wordsCap.tags },
+                {
+                    key: '_tags',
+                    title: wordsCap.tags
+                },
                 {
                     key: '_cloudBackupTS',
                     textAlign: 'center',
@@ -57,7 +60,7 @@ export default class ItentityList extends ReactiveComponent {
                 },
                 {
                     collapsing: true,
-                    content: this.getActions.bind(this),
+                    content: this.getActions,
                     title: wordsCap.actions
                 }
             ],
@@ -85,7 +88,12 @@ export default class ItentityList extends ReactiveComponent {
                 identity.usageType = identity.usageType || words.personal
                 identity._tagsStr = (identity.tags || []).join(' ')
                 identity._tags = (identity.tags || []).map(tag => (
-                    <Label key={tag} style={{ margin: 1, float: 'left', display: 'inline' }}>
+                    <Label
+                        key={tag}
+                        draggable='true'
+                        onDragStart={e => e.stopPropagation() | e.dataTransfer.setData("Text", e.target.textContent)}
+                        style={{ margin: 1, float: 'left', display: 'inline' }}
+                    >
                         {tag}
                     </Label>
                 ))
@@ -94,11 +102,9 @@ export default class ItentityList extends ReactiveComponent {
         })
     }
 
-    componentWillUnmount() {
-        identityService.bond.untie(this.tieId)
-    }
+    componentWillUnmount = () => identityService.bond.untie(this.tieId)
 
-    getActions(identity) {
+    getActions = identity => {
         const { address, name } = identity
         return (
             <React.Fragment>

@@ -64,7 +64,7 @@ export default class PartnerList extends ReactiveComponent {
 					{
 						collapsing: true,
 						title: wordsCap.edit,
-						content: this.getActions.bind(this),
+						content: this.getActions,
 					},
 				],
 				data: new Map(),
@@ -81,11 +81,9 @@ export default class PartnerList extends ReactiveComponent {
 		this.tieId = addressbook.bond.tie(() => this.getPartners())
 	}
 
-	componentWillUnmount() {
-		addressbook.bond.untie(this.tieId)
-	}
+	componentWillUnmount = () => addressbook.bond.untie(this.tieId)
 
-	getActions(partner) {
+	getActions = partner => {
 		const { address, name, userId } = partner
 		const updatePartnerCb = onSubmit => () => showForm(PartnerForm, {
 			onSubmit,
@@ -139,7 +137,12 @@ export default class PartnerList extends ReactiveComponent {
 			p._associatedIdentity = associatedIdentity && getAddressName(associatedIdentity)
 			p._name = textEllipsis(name, 25, 3, false)
 			p._tags = (tags || []).map(tag => (
-				<Label key={tag} style={{ margin: 1, float: 'left', display: 'inline' }}>
+				<Label
+					key={tag}
+					draggable='true'
+					onDragStart={e => e.stopPropagation() | e.dataTransfer.setData("Text", e.target.textContent)}
+					style={{ margin: 1, float: 'left', display: 'inline' }}
+				>
 					{tag}
 				</Label>
 			))
