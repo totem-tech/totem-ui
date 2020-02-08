@@ -1,14 +1,17 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-import { textCapitalize } from '../utils/utils'
+import { Button } from 'semantic-ui-react'
 import ContentSegment from '../components/ContentSegment'
 import CheckboxGroup from '../components/CheckboxGroup'
+// forms
+import TimeKeepingForm from '../forms/TimeKeeping'
 // lists
 import ProjectTimeKeepingList from '../lists/TimeKeepingList'
 import TimeKeepingSummary from '../lists/TimeKeepingSummary'
 // services
 import { translated } from '../services/language'
+import { showForm } from '../services/modal'
 import storage from '../services/storage'
 import { moduleKey } from '../services/timeKeeping'
 import { layoutBond } from '../services/window'
@@ -16,16 +19,17 @@ import { layoutBond } from '../services/window'
 const [words, wordsCap] = translated({
     archive: 'archive',
     manage: 'manage',
-    summary: 'summary',
     overview: 'overview',
+    summary: 'summary',
+    timer: 'timer',
     unknown: 'unknown'
 }, true)
 const [texts] = translated({
     createProjectOrRequestInvite: `Create a new activity or request to be invited to some else's activity`,
-    manageTeamTime: 'Manage team timekeeping',
-    manageArchive: 'Team timekeeping archive',
-    myRecords: 'My time records',
-    myRecordsArchive: 'My timekeeping archive',
+    manageTeamTime: 'Manage team records',
+    manageArchive: 'Team records archive',
+    myRecords: 'My records',
+    myRecordsArchive: 'My records archive',
     myTimeKeepingSummary: 'My timekeeping overview',
     selectAProject: 'Select a activity',
 })
@@ -52,8 +56,16 @@ export default class TimeKeepingView extends Component {
                     { label: texts.myRecordsArchive, style, value: 'records-archive' },
                     { label: texts.manageArchive, style, value: 'manage-archive' },
                 ],
-                style: { paddingTop: 7, textAlign: 'center' },
+                style: { display: 'inline', paddingTop: 7, textAlign: 'center' },
                 value: props.viewOptions,
+            },
+            timerButton: {
+                active: false,
+                content: wordsCap.timer,
+                icon: 'clock outline',
+                key: 'timer',
+                onClick: () => showForm(TimeKeepingForm, { projectHash: this.props.projectHash }),
+                style: { display: 'inline' }
             },
             viewOptions: props.viewOptions
         }
@@ -71,7 +83,7 @@ export default class TimeKeepingView extends Component {
     }
 
     render() {
-        const { isMobile, optionsInput, viewOptions } = this.state
+        const { isMobile, optionsInput, timerButton, viewOptions } = this.state
         const contents = []
         const showSummary = viewOptions.includes('summary')
         const manage = viewOptions.includes('manage')
@@ -79,8 +91,8 @@ export default class TimeKeepingView extends Component {
         const recordsArchive = viewOptions.includes('records-archive')
         const manageArchive = viewOptions.includes('manage-archive')
         optionsInput.inline = !isMobile
-        let hideTimer = false
-        const setHideTimer = () => hideTimer = true
+        let hideTimer = true
+        //const setHideTimer = () => hideTimer = true
 
         if (showSummary) contents.push({
             content: <TimeKeepingSummary />,
@@ -91,25 +103,26 @@ export default class TimeKeepingView extends Component {
             content: <ProjectTimeKeepingList {...{ hideTimer }} />,
             header: texts.myRecords,
             key: 'ProjectTimeKeepingList-records' + hideTimer,
-        }) | setHideTimer()
+        }) //| setHideTimer()
         if (manage) contents.push({
             content: <ProjectTimeKeepingList {...{ hideTimer, manage: true }} />,
             header: texts.manageTeamTime,
             key: 'ProjectTimeKeepingList-manage' + hideTimer,
-        }) | setHideTimer()
+        }) //| setHideTimer()
         if (recordsArchive) contents.push({
             content: <ProjectTimeKeepingList {...{ archive: true, hideTimer }} />,
             header: texts.myRecordsArchive,
             key: 'ProjectTimeKeepingList-records-archive' + hideTimer,
-        }) | setHideTimer()
+        }) //| setHideTimer()
         if (manageArchive) contents.push({
             content: <ProjectTimeKeepingList {...{ archive: true, hideTimer, manage: true }} />,
             header: texts.manageArchive,
             key: 'ProjectTimeKeepingList-manage-archive' + hideTimer,
-        }) | setHideTimer()
+        }) //| setHideTimer()
 
         return (
             <div>
+                <Button {...timerButton} />
                 <CheckboxGroup {...optionsInput} />
                 {contents.map(item => (
                     <ContentSegment

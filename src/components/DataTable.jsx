@@ -152,7 +152,7 @@ export default class DataTable extends ReactiveComponent {
                     <Table.Cell
                         {...objWithoutKeys(cell, ['title'])}
                         content={undefined}
-                        draggable='true'
+                        draggable={cell.draggable !== false}
                         key={j}
                         onDragStart={e => e.dataTransfer.setData("Text", e.target.textContent)}
                         style={objCopy(cell.style, { padding: cell.collapsing ? '0 5px' : undefined })}

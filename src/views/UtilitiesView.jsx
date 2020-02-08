@@ -1,57 +1,57 @@
-import React from 'react'
-import { ReactiveComponent } from 'oo7-react'
+import React, { Component } from 'react'
 import ContentSegment from '../components/ContentSegment'
 import UpgradeView from './UpgradeView'
 import PageUtilitiesView from './PageUtilitiesView'
-import TransactionsView from './TransactionsView'
-import PokeView from './PokeView'
+// import TransactionsView from './TransactionsView'
+// import PokeView from './PokeView'
 import SystemStatus from '../legacies/SystemStatus'
+import { translated } from '../services/language'
 
-class UtilitiesView extends ReactiveComponent {
-    constructor() {
-        super([])
-    }
+const [texts] = translated({
+    pageUtilsHeader: 'App Tools',
+    pageUtilsSubheader: 'Utilities to help fix issues with the app',
+    statusHeader: 'Network status',
+    statusSubheader: 'Technical information about the Totem Network',
+    upgradeHeader: 'Upgrade',
+    upgradeSubheader: 'Upgrade the runtime using the UpgradeKey module',
+})
 
-    render() {
-        return (
-            <React.Fragment>
-                {subItems.map((item, i) => 
-                    <ContentSegment 
-                        {...item}
-                        active={true}
-                        basic={true}
-                        key={i}
-                        headerTag="h3"
-                        style={{padding:0}}
-                        // vertical={true}
-                    />
-                )}
-            </React.Fragment>
-        )
-    }
+export default class UtilitiesView extends Component {
+    render = () => (
+        <React.Fragment>
+            {subItems.map((item, i) =>
+                <ContentSegment
+                    {...item}
+                    active={true}
+                    basic={true}
+                    key={i}
+                    headerTag="h3"
+                    style={{ padding: 0 }}
+                // vertical={true}
+                />
+            )}
+        </React.Fragment>
+    )
 }
-
-export default UtilitiesView
-
 
 const subItems = [
     {
         content: <PageUtilitiesView />,
         icon: '',
-        header: 'App Tools',
-        subHeader: 'Utilities to help fix issues with the app'
+        header: texts.pageUtilsHeader,
+        subHeader: texts.pageUtilsSubheader,
     },
     {
         content: <SystemStatus />,
         icon: '',
-        header: 'Network status',
-        subHeader: 'Technical information about the Totem Network'
+        header: texts.statusHeader,
+        subHeader: texts.statusSubheader,
     },
     {
         content: <UpgradeView />,
         icon: 'wrench',
-        header: 'Upgrade',
-        subHeader: 'Upgrade the runtime using the UpgradeKey module'
+        header: texts.upgradeHeader,
+        subHeader: texts.upgradeSubheader,
     },
     // {
     //     content: <TransactionsView />,
