@@ -110,15 +110,54 @@ export class ChatClient {
         // this.onDisconnect = cb => socket.on('disonnect', cb)  // doesn't work
         this.disconnect = () => socket.disconnect()
         this.onError = cb => socket.on('error', cb)
-        this.message = (msg, cb) => socket.emit('message', msg, cb)
-        this.onMessage = cb => socket.on('message', cb)
+
+        // Emit chat (Totem trollbox) message to everyone
+        this.message = (msg, cb) => isFn(cb) && socket.emit('message', msg, cb)
+        // receive chat messages
+        this.onMessage = cb => isFn(cb) && socket.on('message', cb)
+
+        // add/get company by wallet address
+        //
+        // Params:
+        // @walletAddress   string
+        // @company         object  : if not supplied will return existing company by @walletAddress 
+        // @cb              function: params =>
+        //                      @err    string/null/object : error message or null if success or existing company if @company not supplied
+        this.company = (walletAddress, company, cb) => socket.emit('company', walletAddress, company, cb)
+        // search companies
+        //
+        // Params:
+        // @keyValues   object: one or more key-value pair to search for
+        // @matchExact  boolean
+        // @matchAll    boolean
+        // @ignoreCase  boolean
+        // @cb          function: params =>
+        //                      @err    string/null : error message or null if success
+        //                      @result Map         : Map of companies with walletAddress as key
+        this.companySearch = (keyValues, matchExact, matchAll, ignoreCase, cb) => isFn(cb) && socket.emit(
+            'company-search', keyValues, matchExact, matchAll, ignoreCase, (err, result) => cb(err, new Map(result))
+        )
+
+        // Get list of all countries with 3 character codes
+        this.countries = cb => isFn(cb) && socket.emit('countries', (err, countries) => cb(err, new Map(countries)))
 
         // Request funds
-        this.faucetRequest = (address, cb) => socket.emit('faucet-request', address, cb)
+        this.faucetRequest = (address, cb) => isFn(cb) && socket.emit('faucet-request', address, cb)
+
         // Funds received
         // this.onFaucetRequest = cb => socket.on('faucet-request', cb)
         // Check if User ID Exists
-        this.idExists = (userId, cb) => socket.emit('id-exists', userId, cb)
+        this.idExists = (userId, cb) => isFn(cb) && socket.emit('id-exists', userId, cb)
+
+        // handleTranslations handles translated text requests
+        //
+        // Params: 
+        // @langCode    string: 2 digit language code
+        // @hash        string: (optional) hash of client's existing translated texts' array to compare whether update is required.
+        // @cb          function: arguments =>
+        //              @error  string/null: error message, if any. Null indicates no error.
+        //              @list   array/null: list of translated texts. Null indicates no update required.
+        this.translations = (langCode, hash, cb) => isFn(cb) && socket.emit('translations', langCode, hash, cb)
 
         // Send notification
         //
@@ -160,31 +199,6 @@ export class ChatClient {
         this.projectsByHashes = (hashArr, cb) => isFn(cb) && socket.emit(
             'projects-by-hashes', hashArr, (err, res, notFoundHashes) => cb(err, new Map(res), notFoundHashes)
         )
-
-        // add/get company by wallet address
-        //
-        // Params:
-        // @walletAddress   string
-        // @company         object  : if not supplied will return existing company by @walletAddress 
-        // @cb              function: params =>
-        //                      @err    string/null/object : error message or null if success or existing company if @company not supplied
-        this.company = (walletAddress, company, cb) => socket.emit('company', walletAddress, company, cb)
-        // search companies
-        //
-        // Params:
-        // @keyValues   object: one or more key-value pair to search for
-        // @matchExact  boolean
-        // @matchAll    boolean
-        // @ignoreCase  boolean
-        // @cb          function: params =>
-        //                      @err    string/null : error message or null if success
-        //                      @result Map         : Map of companies with walletAddress as key
-        this.companySearch = (keyValues, matchExact, matchAll, ignoreCase, cb) => isFn(cb) && socket.emit(
-            'company-search', keyValues, matchExact, matchAll, ignoreCase, (err, result) => cb(err, new Map(result))
-        )
-
-        // Get list of all countries with 3 character codes
-        this.countries = cb => isFn(cb) && socket.emit('countries', (err, countries) => cb(err, new Map(countries)))
     }
 
     register = (id, secret, cb) => socket.emit('register', id, secret, err => {
