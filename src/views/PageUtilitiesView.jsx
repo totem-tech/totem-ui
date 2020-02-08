@@ -21,6 +21,8 @@ class PageUtilitiesView extends Component {
 					content={texts.clearCachedData}
 				/>
 			</div>
+
+			{/* for admin use only. not translated intentionally */}
 			{buildMode && (
 				<div>
 					<Button content='Download applications texts as CSV for translation' onClick={downloadWordsListCSV} />

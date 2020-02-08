@@ -12,7 +12,6 @@ const [words, wordsCap] = translated({
 }, true)
 const [texts] = translated({
 	selectRuntime: 'Select Runtime'
-
 })
 
 export default class UpgradeView extends ReactiveComponent {
