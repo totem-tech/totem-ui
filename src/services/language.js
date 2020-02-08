@@ -68,7 +68,7 @@ export const downloadWordsListCSV = !buildMode ? () => { } : () => {
         const functions = rest.map((_, c) => `"=GOOGLETRANSLATE($A${rowNo}, $A$1, ${cols[c + 1]}$1)"`).join(',')
         return `"${clearClutter(x)}", ` + functions
     }).join(',\n')
-    downloadFile(str, 'texts-en.csv', 'text/csv')
+    downloadFile(str, 'translations.csv', 'text/csv')
 }
 
 export default {
