@@ -31,7 +31,7 @@ const init = () => new Promise((resolve, reject) => {
         const EN = 'EN'
         const engHash = generateHash(getTexts(EN))
         const selected = getSelected()
-        const selectedHash = selected !== EN && generateHash(getTexts(selected))
+        const selectedHash = selected !== EN && generateHash(getTexts(selected) || '')
         client.translations(EN, engHash, (err, texts) => {
             if (err) return console.log('Language check failed:', EN, { texts }) | resolve()
             // update english text list

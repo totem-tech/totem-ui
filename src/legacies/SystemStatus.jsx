@@ -4,8 +4,24 @@ import { bytesToHex, pretty } from 'oo7-substrate'
 import { Icon, Grid, GridRow, GridColumn } from 'semantic-ui-react'
 // import Identicon from 'polkadot-identicon'
 import { subscribeAllNSetState, unsubscribeAll } from '../services/data'
+import { translated } from '../services/language'
 
-class SystemStatus extends ReactiveComponent {
+const [texts, textsCap] = translated({
+	blockchainRuntime: 'Blockchain Runtime',
+	blockNr: 'Block Nr.',
+	chainType: 'Chain type',
+	hostConneced: 'Connected to host',
+	hostDisconnected: 'Disconnected from host',
+	lag: 'lag',
+	networkVersion: 'Totem Network Version',
+	no: 'no',
+	offline: 'offline',
+	online: 'online',
+	peers: 'peers',
+	syncing: 'syncing',
+	yes: 'yes',
+}, true)
+export default class SystemStatus extends ReactiveComponent {
 	constructor(props) {
 		super(props, {
 			lastFinalisedBlock: 0
@@ -51,13 +67,13 @@ class SystemStatus extends ReactiveComponent {
 						<Icon
 							name="circle"
 							color={isConnected ? 'green' : 'red'} />
-						{!!isConnected ? 'On' : 'off'}line
+						{!!isConnected ? textsCap.online : textsCap.offline}
 					</GridColumn>
 					<GridColumn width={7}>
-						Totem Network Version : V{this.state.runtime_version_specVersion}
+						{texts.networkVersion} : V{this.state.runtime_version_specVersion}
 					</GridColumn>
 					<GridColumn width={7}>
-						Chain type : {this.state.system_chain}
+						{texts.chainType} : {this.state.system_chain}
 					</GridColumn>
 				</GridRow>
 				<GridRow>
@@ -66,13 +82,13 @@ class SystemStatus extends ReactiveComponent {
 							name="circle"
 							color={this.state.system_health_is_syncing ? 'green' : 'yellow'}
 						/>
-						Syncing - {this.state.system_health_is_syncing ? 'Yes' : 'No'}
+						{textsCap.syncing} - {this.state.system_health_is_syncing ? textsCap.yes : textsCap.no}
 					</GridColumn>
 					<GridColumn width={7}>
-						{!isConnected && 'Not '}Connected to host : {isConnected && status.connected.split('ws://').join('')}
+						{isConnected ? texts.hostConneced : texts.hostDisconnected} : {isConnected && status.connected.split('ws://').join('')}
 					</GridColumn>
 					<GridColumn width={7}>
-						Blockchain Runtime : {this.state.runtime_version_specName} v{this.state.runtime_version_specVersion}
+						{texts.blockchainRuntime} : {this.state.runtime_version_specName} v{this.state.runtime_version_specVersion}
 					</GridColumn>
 				</GridRow>
 				<GridRow>
@@ -81,19 +97,13 @@ class SystemStatus extends ReactiveComponent {
 							name="circle"
 							color={this.state.peers > 0 ? 'green' : 'red'}
 						/>
-						Peers #{this.state.system_health_peers}
+						{textsCap.peers} #{this.state.system_health_peers}
 					</GridColumn>
 					<GridColumn width={5}>
-						Block Nr. : {pretty(this.state.chain_height) || 0}
+						{texts.blockNr} : {pretty(this.state.chain_height) || 0}
 					</GridColumn>
 					<GridColumn width={5}>
-						Lag : {pretty(this.state.chain_lag) || 0}
-					</GridColumn>
-					<GridColumn width={4}>
-						Authorities : {
-							// (this.state.runtime_core_authorities || []).map((a, i) =>
-							// 	<Identicon key={bytesToHex(a) + i} account={a} size={16} />)
-						}
+						{textsCap.lag} : {pretty(this.state.chain_lag) || 0}
 					</GridColumn>
 				</GridRow>
 			</Grid>,
@@ -106,5 +116,3 @@ class SystemStatus extends ReactiveComponent {
 		)
 	}
 }
-
-export default SystemStatus
