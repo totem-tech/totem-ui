@@ -67,7 +67,7 @@ const [texts] = translated({
     emptyMessage: 'No time records available.',
     emptyMessageArchive: 'No records have been archived yet',
     orInviteATeamMember: 'invite someone to an activity?',
-    noTimeRecords: 'Your team have not yet booked time. Maybe ',
+    noTimeRecords: 'Your team have not yet booked time. Maybe',
     notProjectOwner: 'You do not own this activity',
     numberOfBreaks: 'Number Of Breaks',
     projectName: 'Activity Name',
@@ -125,7 +125,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             rowProps: item => {
                 const { address, approved, draft, rejected } = item
                 // if (isBanned) return { error: true, title: texts.bannedUser }
-                return !rejected && draft ? {} : {
+                return !rejected & Invited and accepted successfully & draft ? {} : {
                     warning: rejected,
                     positive: approved,
                     title: approved ? wordsCap.approved : (rejected ? wordsCap.rejected : '')
@@ -517,7 +517,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         this.state.emptyMessage = {
             content: archive ? texts.emptyMessageArchive : (
                 <p>
-                    {manage ? texts.noTimeRecords : texts.emptyMessage + ' '}
+                    {manage ? texts.noTimeRecords : texts.emptyMessage}{' '}
                     {manage && <Button
                         positive
                         content={texts.orInviteATeamMember}

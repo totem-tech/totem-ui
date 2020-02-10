@@ -22,6 +22,7 @@ const [words, wordsCap] = translated({
 }, true)
 const [texts] = translated({
     addPartner: 'Add Partner',
+    emptyMessage: 'No team member available. Click on the invite button to invite parters.',
     userId: 'User ID',
     unknownUser: 'Unknown user',
 })
@@ -38,7 +39,7 @@ export default class ProjectTeamList extends ReactiveComponent {
                     { key: '_status', textAlign: 'center', title: wordsCap.status },
                 ],
                 data: [],
-                emptyMessage: null,
+                emptyMessage: { content: texts.emptyMessage },
                 rowProps: ({ accepted }) => ({ positive: accepted }),
                 searchExtraKeys: ['address', 'userId'],
                 topLeftMenu: [{

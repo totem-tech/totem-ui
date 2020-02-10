@@ -60,8 +60,8 @@ const [texts] = translated({
     detailsFormHeader: 'Activity Details',
     detailsTimeRecordsBtn: 'View Time Records',
     editProject: 'Edit Activity',
-    projectCloseReopenWarning: 'You are about to change status of the following Activities to: ',
-    projectTeam: 'Activity team - ',
+    projectCloseReopenWarning: 'You are about to change status of the following Activities to:',
+    projectTeam: 'Activity team',
     reassignOwner: 'Re-assign owner',
     reopenProject: 'Re-open activity',
     totalTime: 'Total Time',
@@ -343,7 +343,7 @@ export default class ProjectList extends Component {
         cancelButton: wordsCap.close,
         confirmButton: null,
         content: <ProjectTeamList projectHash={hash} />,
-        header: texts.projectTeam + projectName,
+        header: `${texts.projectTeam} - ${projectName}`,
     })
 
     // show project details in a read-only modal form
