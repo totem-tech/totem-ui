@@ -69,10 +69,10 @@ export default class SystemStatus extends ReactiveComponent {
 						{!!isConnected ? textsCap.online : textsCap.offline}
 					</GridColumn>
 					<GridColumn width={7}>
-						{texts.networkVersion} : v{this.state.runtime_version_authoringVersion}.{this.state.runtime_version_specVersion}.{this.state.runtime_version_implVersion} 
+					{this.state.system_chain} : v{this.state.system_version} 
 					</GridColumn>
 					<GridColumn width={7}>
-						{texts.chainType} : {this.state.system_chain}
+						{texts.chainType} : {this.state.runtime_version_specName}
 					</GridColumn>
 				</GridRow>
 				<GridRow>
@@ -87,7 +87,7 @@ export default class SystemStatus extends ReactiveComponent {
 						{isConnected ? texts.hostConneced : texts.hostDisconnected} : {isConnected && status.connected.split('ws://').join('')}
 					</GridColumn>
 					<GridColumn width={7}>
-						{texts.blockchainRuntime} : {this.state.runtime_version_specName} by {this.state.runtime_version_implName}
+						{texts.blockchainRuntime} : {this.state.runtime_version_implName}
 					</GridColumn>
 				</GridRow>
 				<GridRow>
