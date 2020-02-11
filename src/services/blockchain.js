@@ -4,24 +4,19 @@ import project from './project'
 import storage from './storage'
 import { hashToBytes, validateAddress } from '../utils/convert'
 import { setNetworkDefault, denominationInfo } from 'oo7-substrate'
-import { isObj } from '../utils/utils'
+import { connect } from '../utils/polkadotHelper'
 import types from '../utils/totem-polkadot-js-types'
+import { isObj } from '../utils/utils'
 
 // oo7-substrate: register custom types
 Object.keys(types).forEach(key => addCodecTransform(key, types[key]))
 const moduleKey = 'blockchain'
-// used for archiving
-export const hashTypes = {
-    /// 1000
-    /// 2000
-    projectHash: 3000,
-    timeRecordHash: 4000,
-    /// 5000
-    /// 6000
-    /// 7000
-    /// 8000
-    /// 9000
+let config = {
+    primary: 'Ktx',
+    unit: 'Transactions',
+    ticker: 'XTX'
 }
+let connection
 export const denominations = Object.freeze({
     Ytx: 24,
     Ztx: 21,
@@ -32,11 +27,17 @@ export const denominations = Object.freeze({
     Mtx: 6,
     Ktx: 3,
     Transactions: 0,
-})
-let config = {
-    primary: 'Ktx',
-    unit: 'Transactions',
-    ticker: 'XTX'
+})// used for archiving
+export const hashTypes = {
+    /// 1000
+    /// 2000
+    projectHash: 3000,
+    timeRecordHash: 4000,
+    /// 5000
+    /// 6000
+    /// 7000
+    /// 8000
+    /// 9000
 }
 export const nodes = [
     'wss://node1.totem.live',
@@ -51,6 +52,16 @@ export const archiveRecord = (hashOwnerAddress, type, hash, archive = true) => p
 })
 
 export const getConfig = () => config
+
+export const getConnection = () => new Promise((resolve, reject) => {
+    if (connection) return resolve(connection)
+    console.log('Polkadot: connecting to', config.nodes[0])
+    return connect(config.nodes[0], config.types, true).then(({ api, provider }) => {
+        connection = { api, provider }
+        console.log('Connected using Polkadot', { api, provider })
+        return connection
+    })
+})
 
 // getTypes returns a promise with 
 export const getTypes = () => new Promise(resolve => resolve(types))

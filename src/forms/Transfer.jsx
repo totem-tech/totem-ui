@@ -4,7 +4,7 @@ import { Dropdown } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import PartnerForm from '../forms/Partner'
-import { getConfig, denominations } from '../services/blockchain'
+import { getConfig, getConnection, denominations } from '../services/blockchain'
 import identities from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
@@ -159,16 +159,16 @@ export default class Transfer extends Component {
 
         fillValues(inputs, values)
 
-        if (connection.api) return
-        const config = getDefaultConfig()
-        this.setState({ loading: true })
-        console.log('TransferForm: connecting using Polkadot')
-        connect(config.nodes[0], config.types, false).then(({ api, provider }) => {
-            this.setState({ loading: false })
-            connection.api = api
-            connection.provider = provider
-            console.log('TransferForm: connected using Polkadot', { api, provider })
-        })
+        // if (connection.api) return
+        // const config = getDefaultConfig()
+        // this.setState({ loading: true })
+        // console.log('TransferForm: connecting using Polkadot')
+        // connect(config.nodes[0], config.types, false).then(({ api, provider }) => {
+        //     this.setState({ loading: false })
+        //     connection.api = api
+        //     connection.provider = provider
+        //     console.log('TransferForm: connected using Polkadot', { api, provider })
+        // })
     }
 
     componentWillUnmount() {
@@ -190,10 +190,12 @@ export default class Transfer extends Component {
         // amount in transactions
         const amountTransations = amount * Math.pow(10, denominations[denomination])
         this.setMessage()
-        transfer(to, amountTransations, uri, null, connection.api).then(
+
+        getConnection().then(({ api }) => transfer(to, amountTransations, uri, null, api).then(
             hash => this.setMessage(null, hash, name, amountTransations) | this.clearForm(),
             err => this.setMessage(err),
-        )
+        ), err => this.setMessage(err))
+
     }
 
     // returns the min value acceptable for the selected denomination
