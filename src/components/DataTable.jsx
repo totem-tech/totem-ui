@@ -138,7 +138,7 @@ export default class DataTable extends ReactiveComponent {
         const { pageNo } = this.state
 
         return mapItemsByPage(filteredData, pageNo, perPage, (item, key, items, isMap) => (
-            <Table.Row key={key} {...(isFn(rowProps) ? rowProps(item, key, items, isMap) : rowProps || {})}>
+            <Table.Row key={key + JSON.stringify(items || '')} {...(isFn(rowProps) ? rowProps(item, key, items, isMap) : rowProps || {})}>
                 {selectable && ( /* include checkbox to select items */
                     <Table.Cell onClick={() => this.handleRowSelect(key, selectedIndexes)} style={styles.checkboxCell}>
                         <Icon
