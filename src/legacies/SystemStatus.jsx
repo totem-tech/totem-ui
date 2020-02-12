@@ -31,7 +31,6 @@ export default class SystemStatus extends ReactiveComponent {
 	componentDidMount() {
 		this.setState({
 			watchers: subscribeAllNSetState(this, [
-				'runtime_version_specVersion', // network version
 				'system_health_is_syncing',
 				'chain_height',
 				'chain_lag',
@@ -42,11 +41,11 @@ export default class SystemStatus extends ReactiveComponent {
 				'system_version',
 				'runtime_balances_totalIssuance',
 				'runtime_core_authorities',
-				'runtime_totem_claimsCount',
+				'runtime_version_specVersion', // network version
 				'runtime_version_implName',
 				'runtime_version_implVersion',
 				'runtime_version_specName',
-				'runtime_version_specVersion'
+				'runtime_version_authoringVersion'
 			])
 		})
 	}
@@ -70,10 +69,10 @@ export default class SystemStatus extends ReactiveComponent {
 						{!!isConnected ? textsCap.online : textsCap.offline}
 					</GridColumn>
 					<GridColumn width={7}>
-						{texts.networkVersion} : V{this.state.runtime_version_specVersion}
+					{this.state.system_chain} : v{this.state.system_version} 
 					</GridColumn>
 					<GridColumn width={7}>
-						{texts.chainType} : {this.state.system_chain}
+						{texts.chainType} : {this.state.runtime_version_specName}
 					</GridColumn>
 				</GridRow>
 				<GridRow>
@@ -88,7 +87,7 @@ export default class SystemStatus extends ReactiveComponent {
 						{isConnected ? texts.hostConneced : texts.hostDisconnected} : {isConnected && status.connected.split('ws://').join('')}
 					</GridColumn>
 					<GridColumn width={7}>
-						{texts.blockchainRuntime} : {this.state.runtime_version_specName} v{this.state.runtime_version_specVersion}
+						{texts.blockchainRuntime} : {this.state.runtime_version_implName}
 					</GridColumn>
 				</GridRow>
 				<GridRow>
