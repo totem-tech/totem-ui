@@ -111,8 +111,9 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 { collapsing: true, key: '_status', textAlign: 'center', title: wordsCap.status },
                 {
                     collapsing: true,
-                    style: { padding: '0px 5px' },
                     content: this.getActionContent,
+                    draggable: false,
+                    style: { padding: '0px 5px' },
                     textAlign: 'center',
                     title: wordsCap.action,
                 }

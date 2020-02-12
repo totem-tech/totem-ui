@@ -138,7 +138,10 @@ export default class DataTable extends ReactiveComponent {
         const { pageNo } = this.state
 
         return mapItemsByPage(filteredData, pageNo, perPage, (item, key, items, isMap) => (
-            <Table.Row key={key + JSON.stringify(items || '')} {...(isFn(rowProps) ? rowProps(item, key, items, isMap) : rowProps || {})}>
+            <Table.Row
+                key={key + (!isMap ? JSON.stringify(item) : '')}
+                {...(isFn(rowProps) ? rowProps(item, key, items, isMap) : rowProps || {})}
+            >
                 {selectable && ( /* include checkbox to select items */
                     <Table.Cell onClick={() => this.handleRowSelect(key, selectedIndexes)} style={styles.checkboxCell}>
                         <Icon
@@ -154,7 +157,7 @@ export default class DataTable extends ReactiveComponent {
                         content={undefined}
                         draggable={cell.draggable !== false}
                         key={j}
-                        onDragStart={e => e.dataTransfer.setData("Text", e.target.textContent)}
+                        onDragStart={cell.draggable === false ? undefined : e => e.dataTransfer.setData("Text", e.target.textContent)}
                         style={objCopy(cell.style, { padding: cell.collapsing ? '0 5px' : undefined })}
                         textAlign={cell.textAlign || 'left'}
                     >
@@ -219,7 +222,7 @@ export default class DataTable extends ReactiveComponent {
                     <Paginator
                         total={totalPages}
                         current={pageNo}
-                        navLimit={navLimit || 5}
+                        navLimit={navLimit}
                         float={isMobile ? undefined : 'right'}
                         onSelect={pageNo => { this.setState({ pageNo }); isFn(pageOnSelect) && pageOnSelect(pageNo); }}
                     />
@@ -311,6 +314,8 @@ DataTable.propTypes = {
     defaultSortAsc: PropTypes.bool.isRequired,
     emptyMessage: PropTypes.object,
     footerContent: PropTypes.any,
+    // total of page numbers to be visible including current
+    navLimit: PropTypes.number,
     // loading: PropTypes.bool,
     perPage: PropTypes.number,
     rowProps: PropTypes.oneOfType([
@@ -331,6 +336,7 @@ DataTable.defaultProps = {
         content: texts.noDataAvailable,
         status: 'basic'
     },
+    navLimit: 5,
     pageNo: 1,
     perPage: 10,
     searchable: true,

@@ -135,6 +135,7 @@ export default class ProjectList extends Component {
                             title: texts.viewDetails,
                         }
                     ]).map(props => <Button {...props} />),
+                    draggable: false,
                     textAlign: 'center',
                     title: wordsCap.actions,
                 },
