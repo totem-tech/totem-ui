@@ -89,7 +89,7 @@ export default class IdentityShareForm extends ReactiveComponent {
 
     componentWillMount() {
         // prefill and disable fields 
-        const { disabledFields, includePartners, includeOwnIdentities, values } = this.props
+        const { includePartners, includeOwnIdentities, values } = this.props
         const { address, userIds } = values
         const { inputs } = this.state
         const identityIn = findInput(inputs, 'address')
@@ -135,9 +135,6 @@ export default class IdentityShareForm extends ReactiveComponent {
             identityIn.label = texts.identityLabel3
             header = texts.formHeader3
         }
-
-        // disable fields
-        inputs.forEach(input => input.disabled = disabledFields.includes(input.name))
 
         // add User Ids as options if supplied in values
         if (isArr(userIds) && userIds.length > 0) {
@@ -203,14 +200,14 @@ export default class IdentityShareForm extends ReactiveComponent {
 }
 
 IdentityShareForm.propTypes = {
-    disabledFields: PropTypes.arrayOf(PropTypes.string),
+    inputsDisabled: PropTypes.arrayOf(PropTypes.string),
     // determines whether to include partner list as well as user owned identities
     includePartners: PropTypes.bool,
     includeOwnIdentities: PropTypes.bool,
     values: PropTypes.object,
 }
 IdentityShareForm.defaultProps = {
-    disabledFields: [],
+    inputsDisabled: [],
     includePartners: false,
     includeOwnIdentities: true,
     size: 'tiny',

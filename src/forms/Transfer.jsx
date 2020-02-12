@@ -4,14 +4,14 @@ import { Dropdown } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import PartnerForm from '../forms/Partner'
-import { getConfig, getConnection, denominations } from '../services/blockchain'
+import { getConnection, denominations } from '../services/blockchain'
 import identities from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
 import partners from '../services/partner'
 import { arrSort, isStr, textEllipsis } from '../utils/utils'
 import { ss58Decode } from '../utils/convert'
-import { connect, getDefaultConfig, transfer } from '../utils/polkadotHelper'
+import { transfer } from '../utils/polkadotHelper'
 
 const [words, wordsCap] = translated({
     amount: 'amount',
@@ -29,7 +29,6 @@ const [texts] = translated({
     submitInprogressHeader: 'Transfer in-progress',
     submitSuccessHeader: 'Transfer successful',
 })
-const connection = {}
 
 export default class Transfer extends Component {
     constructor(props) {
@@ -125,13 +124,13 @@ export default class Transfer extends Component {
 
     componentWillMount() {
         const { inputs } = this.state
-        const { disabledFields, values } = this.props
+        const { values } = this.props
         const fromIn = findInput(inputs, 'from')
         // change value when selected address changes
         this.tieIdSelected = identities.selectedAddressBond.tie(() => {
             fromIn.bond.changed(identities.getSelected().address)
         })
-        // repopulate options if identity list changes
+        // re-/populate options if identity list changes
         this.tieIdIdentity = identities.bond.tie(() => {
             fromIn.options = arrSort(identities.getAll().map(({ address, name }) => ({
                 key: address,
@@ -154,21 +153,7 @@ export default class Transfer extends Component {
             this.setState({ inputs })
         })
 
-        // disable inputs
-        disabledFields && disabledFields.forEach(name => (findInput(inputs, name) || {}).disabled = true)
-
-        fillValues(inputs, values)
-
-        // if (connection.api) return
-        // const config = getDefaultConfig()
-        // this.setState({ loading: true })
-        // console.log('TransferForm: connecting using Polkadot')
-        // connect(config.nodes[0], config.types, false).then(({ api, provider }) => {
-        //     this.setState({ loading: false })
-        //     connection.api = api
-        //     connection.provider = provider
-        //     console.log('TransferForm: connected using Polkadot', { api, provider })
-        // })
+        // fillValues(inputs, values)
     }
 
     componentWillUnmount() {
@@ -190,11 +175,10 @@ export default class Transfer extends Component {
         // amount in transactions
         const amountTransations = amount * Math.pow(10, denominations[denomination])
         this.setMessage()
-
+        const errCb = err => this.setMessage(err)
         getConnection().then(({ api }) => transfer(to, amountTransations, uri, null, api).then(
-            hash => this.setMessage(null, hash, name, amountTransations) | this.clearForm(),
-            err => this.setMessage(err),
-        ), err => this.setMessage(err))
+            hash => this.setMessage(null, hash, name, amountTransations) | this.clearForm(), errCb,
+        ), errCb)
 
     }
 
@@ -233,8 +217,6 @@ export default class Transfer extends Component {
 }
 
 Transfer.propTypes = {
-    // array of input names to be disabled
-    disabledFields: PropTypes.array,
     values: PropTypes.shape({
         amount: PropTypes.number,
         from: PropTypes.string,
@@ -242,5 +224,5 @@ Transfer.propTypes = {
     })
 }
 Transfer.defaultProps = {
-    disabledFields: ['from']
+    inputsDisabled: ['from']
 }

@@ -53,15 +53,16 @@ export const archiveRecord = (hashOwnerAddress, type, hash, archive = true) => p
 
 export const getConfig = () => config
 
-export const getConnection = () => new Promise((resolve, reject) => {
-    if (connection) return resolve(connection)
-    console.log('Polkadot: connecting to', config.nodes[0])
-    return connect(config.nodes[0], config.types, true).then(({ api, provider }) => {
+export const getConnection = () => {
+    if (connection) return new Promise(resolve => resolve(connection))
+    const nodeUrl = nodes[0]
+    console.log('Polkadot: connecting to', nodeUrl)
+    return connect(nodeUrl, config.types, true).then(({ api, provider }) => {
         connection = { api, provider }
         console.log('Connected using Polkadot', { api, provider })
         return connection
     })
-})
+}
 
 // getTypes returns a promise with 
 export const getTypes = () => new Promise(resolve => resolve(types))

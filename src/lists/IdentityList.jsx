@@ -114,7 +114,7 @@ export default class ItentityList extends ReactiveComponent {
                 <Button
                     icon='share'
                     onClick={() => showForm(IdentityShareForm, {
-                        disabledFields: ['address'],
+                        inputsDisabled: ['address'],
                         includeOwnIdentities: true,
                         includePartners: false,
                         size: 'tiny',

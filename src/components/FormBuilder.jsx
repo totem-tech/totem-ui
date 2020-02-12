@@ -10,33 +10,32 @@ export default class FormBuilder extends ReactiveComponent {
     constructor(props) {
         super(props)
 
+        const { inputsDisabled = [], inputs, open } = props
+        inputs.forEach(x => ({ ...x, controlled: isDefined(x.value) }))
+        // disable inputs
+        inputsDisabled.forEach(name => (findInput(inputs, name) || {}).disabled = true)
+
         this.state = {
-            inputs: props.inputs,
-            open: props.open,
-            values: this.getValues(props.inputs)
+            inputs,
+            open,
+            values: this.getValues(inputs)
         }
-        this.state.inputs.forEach(x => ({ ...x, controlled: isDefined(x.value) }))
 
-        this.handleChange = this.handleChange.bind(this)
-        this.handleClose = this.handleClose.bind(this)
-        this.handleSubmit = this.handleSubmit.bind(this)
     }
 
-    getValues(inputs = [], values = {}) {
-        return inputs.reduce((values, input, i) => {
-            const { inputs, name, controlled, type } = input
-            const typeLC = (type || '').toLowerCase()
-            const isGroup = typeLC === 'group'
-            if (!isStr(name) || nonValueTypes.includes(type)) return values
-            if (isGroup) return this.getValues(inputs, values)
-            let value = values[name]
-            value = !(controlled ? hasValue : isDefined)(value) ? input.value : value
-            values[name] = value
-            return values
-        }, values)
-    }
+    getValues = (inputs = [], values = {}) => inputs.reduce((values, input, i) => {
+        const { inputs, name, controlled, type } = input
+        const typeLC = (type || '').toLowerCase()
+        const isGroup = typeLC === 'group'
+        if (!isStr(name) || nonValueTypes.includes(type)) return values
+        if (isGroup) return this.getValues(inputs, values)
+        let value = values[name]
+        value = !(controlled ? hasValue : isDefined)(value) ? input.value : value
+        values[name] = value
+        return values
+    }, values)
 
-    handleChange(e, data, index, input, childIndex) {
+    handleChange = (e, data, index, input, childIndex) => {
         const { name, onChange: onInputChange } = input
         let { inputs } = this.state
         const { onChange: formOnChange } = this.props
@@ -61,23 +60,19 @@ export default class FormBuilder extends ReactiveComponent {
         this.setState({ inputs, values })
     }
 
-    handleClose(e) {
+    handleClose = e => {
         e.preventDefault()
         const { onClose } = this.props
         if (isFn(onClose)) return onClose();
         this.setState({ open: !this.state.open })
     }
 
-    handleSubmit(e) {
+    handleSubmit = e => {
         const { onSubmit } = this.props
         const { values } = this.state
         e.preventDefault()
         if (!isFn(onSubmit)) return;
         onSubmit(e, values)
-    }
-
-    handleReset(e) {
-        e.preventDefault()
     }
 
     render() {
@@ -223,6 +218,8 @@ FormBuilder.propTypes = {
         PropTypes.element
     ]),
     defaultOpen: PropTypes.bool,
+    // disable inputs on load
+    inputsDisabled: PropTypes.arrayOf(PropTypes.string),
     header: PropTypes.string,
     headerIcon: PropTypes.string,
     hideFooter: PropTypes.bool,

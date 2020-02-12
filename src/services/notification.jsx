@@ -158,7 +158,7 @@ export default class NotificationDropdown extends ReactiveComponent {
                                         <ButtonAcceptOrReject
                                             acceptText='Share'
                                             onClick={accepted => !accepted ? remove(id) : showForm(IdentityShareForm, {
-                                                disabledFields: ['userIds'],
+                                                inputsDisabled: ['userIds'],
                                                 onSubmit: success => success && remove(id),
                                                 values: {
                                                     introducedBy: isIntroduce ? senderId : null,
