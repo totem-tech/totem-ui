@@ -6,6 +6,7 @@ git submodule update --recursive --remote
 # Set envirnment variables and run
 HTTP_PORT="int: 80" \
 HTTPS_PORT="int: 443" \
-SUBDOMAIN="string: dev" \
-EXECUTION_MODE="string: dev" \ 
-yarn run dev
+CertPath="string: /path/to/cert/file.pem" \
+KeyPath="string: /path/to/key/file.pem" \
+REVERSE_PROXY="string: TRUE" \
+yarn run dev # dev: development mode, prod: production mode
