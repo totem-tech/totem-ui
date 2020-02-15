@@ -51,11 +51,20 @@ export default class TimeKeepingSummary extends ReactiveComponent {
                 }
             ]
         }
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
-    componentWillMount = () => this.tieId = selectedAddressBond.tie(this.getSummary)
+    componentWillMount() {
+        this._mounted = true
+        this.tieId = selectedAddressBond.tie(this.getSummary)
+    }
 
-    componentWillUnmount = () => selectedAddressBond.untie(this.tieId) | this.bond && this.bond.untie(this.tieIdBlocks)
+    componentWillUnmount() {
+        this._mounted = false
+        selectedAddressBond.untie(this.tieId)
+        this.bond && this.bond.untie(this.tieIdBlocks)
+    }
 
     getSummary = arrTotalBlocks => getProjects().then(projects => {
         const { address } = getSelected()
@@ -71,7 +80,7 @@ export default class TimeKeepingSummary extends ReactiveComponent {
             name: projects.get(hashes[i]).name,
             totalBlocks,
             totalHours: secondsToDuration(totalBlocks * BLOCK_DURATION_SECONDS),
-            percentage: (totalBlocks * 100 / sumTotalBlocks).toFixed(0) + '%',
+            percentage: totalBlocks === 0 ? '0%' : (totalBlocks * 100 / sumTotalBlocks).toFixed(0) + '%',
         }))
         this.setState({ data })
     })
