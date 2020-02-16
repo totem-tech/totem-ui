@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { Button } from 'semantic-ui-react'
-import { downloadFile, forceClearCachedData, forceRefreshPage } from '../utils/utils'
+import { downloadFile } from '../utils/utils'
 import { tsvToMap } from '../utils/convert'
 import FormInput from '../components/FormInput'
 import client from '../services/chatClient'
@@ -11,6 +11,15 @@ const [texts] = translated({
 	forceRefresh: 'Force App Refresh!',
 	clearCachedData: 'Clear Cached Data',
 })
+
+// forceClearCachedData removes any cached data from localStorage
+export const forceClearCachedData = () => {
+	const keys = ['totem__cache_', 'totem__static']
+	Object.keys(localStorage).forEach(key => keys.includes(key) && localStorage.removeItem(key))
+	forceRefreshPage()
+}
+// force refresh page from server
+export const forceRefreshPage = () => window.location.reload(true)
 
 class PageUtilitiesView extends Component {
 	render = () => (
