@@ -7,7 +7,7 @@ import { runtime } from 'oo7-substrate'
 import { ss58Decode } from '../utils/convert'
 import DataStorage from '../utils/DataStorage'
 import { transfer, signAndSend } from '../utils/polkadotHelper'
-import { isArr, isFn, isObj, objClean, isBond } from '../utils/utils'
+import { isArr, isFn, isObj, isStr, objClean, isBond } from '../utils/utils'
 // services
 import client from './chatClient'
 import blockchain, { getConnection } from './blockchain'
@@ -48,6 +48,8 @@ const [texts] = translated({
     txSuccessful: 'Transaction successful',
     txInvalidSender: 'Cannot create a transaction from an identity that does not belong to you!',
 
+    txStorageInvalidFunc: 'Invalid function name supplied.',
+
     txTransferTitle: 'Transfer funds',
     txTransferMissingArgs: 'One or more of the following arguments is missing or invalid: sender identity, recipient identity and amount',
 })
@@ -69,18 +71,19 @@ export const addToQueue = (queueItem, id, toastId) => {
     const validKeys = [
         // @type            string: name of the service. Currently supported: blockchain, chatclient
         'type',
-        // @args            array: arguments supplied to func
+        // @args            array: arguments to be supplied to func
         'args',
-        // @func            string  : name of the function within the service.
-        //                          - For blockchain service, must return an instance of Bond returned by substrate package's post() function
-        //                          - For ChatClient, the callback must be the last item in the @args array.
-        //                                 AND the first argument to the callback must be:
-        //                                 -- a string with error message to indicate request failure.
-        //                                 -- OR, falsy to indicate request success
+        // @func            string  : name of the function to be excuted. Depends on the @type of the task.
+        //                          1. TX_TRANSER: unused
+        //                          2. TX_STORAGE: path to the PolkadotJS API function as string. Eg: 'api.tx.timekeeping.authoriseTime'
+        //                          3. CHATCLIENT: chat client instances method property name
         'func',
-        // @then            function: For transaction types first argument will be a boolean value indicating success/failure of the transaction
+        // @then            function: Callback to be executed once task execution is done (status: 'success' or 'error').
+        //                          Arguments:
+        //                          @success    boolean: indicates success/failure of the task
+        //                          @args       array: arguments returned by invoking @func
         'then',
-        // @address         string/bond: optionally for blockchain @type, include source address to check balance before making blockchain call
+        // @address         string: optionally for blockchain @type, include source address to check balance before making blockchain call
         'address',
         // @title           string: short title for the task. Eg: 'Create project'
         'title',
@@ -159,7 +162,11 @@ const _processItem = (currentTask, id, toastId) => {
     let func = null
     switch ((currentTask.type || '').toLowerCase()) {
         case QUEUE_TYPES.TX_TRANSFER:
-            handleTXTransfer(id, rootTask, currentTask, toastId)
+            handleTxTransfer(id, rootTask, currentTask, toastId)
+            break
+        case QUEUE_TYPES.TX_STORAGE:
+            handleTxStorage(id, rootTask, currentTask, toastId)
+            break
         case QUEUE_TYPES.BLOCKCHAIN:
             // defer tx task to avoid errors
             if (txInProgress) return txQueue.push({ queueItem: currentTask, id, toastId });
@@ -327,7 +334,7 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
     }
 }
 
-const handleTXTransfer = (id, rootTask, task, toastId) => {
+const handleTxTransfer = (id, rootTask, task, toastId) => {
     const { args, silent, toastDuration: duration } = task
     const [senderAddress, recipientAddress, amount] = args
     const sender = findIdentity(senderAddress)
@@ -340,8 +347,9 @@ const handleTXTransfer = (id, rootTask, task, toastId) => {
         ],
         header: texts.txTransferTitle
     }
-    const _setToastNSaveCb = status =>
-        arg0 => setToastNSaveCb(id, rootTask, task, status, msg, toastId, silent, duration)(arg0)
+    const _setToastNSaveCb = status => arg0 =>
+        setToastNSaveCb(id, rootTask, task, status, msg, toastId, silent, duration)(arg0)
+
     _setToastNSaveCb(!sender || invalid ? ERROR : LOADING)(
         !sender ? texts.txInvalidSender : (invalid ? texts.txTransferMissingArgs : '')
     )
@@ -352,13 +360,26 @@ const handleTXTransfer = (id, rootTask, task, toastId) => {
             .then(_setToastNSaveCb(SUCCESS), _setToastNSaveCb(ERROR))
     )
 }
+const handleTxStorage = (id, rootTask, task, toastId) => {
+    const { address, args, func, } = task
+    const txFunc = eval(func)
+    const _setToastNSaveCb = status => arg0 =>
+        setToastNSaveCb(id, rootTask, task, status, msg, toastId, silent, duration)(arg0)
 
-const handleBlockchainStorageRead = (func, args) => { }
-const handleBlockchainStorageWrite = (func, args) => { }
+    if (!isStr(func) || !func.startsWith('api.tx.') || !isFn(txFunc)) {
+        // invalid function name supplied
+        return _setToastNSaveCb(ERROR)(texts.txStorageInvalidFunc)
+    }
+
+    getConnection().then(({ api }) => {
+        const tx = txFunc.apply(null, args)
+        signAndSend(api, address, tx)
+            .then(_setToastNSaveCb(SUCCESS), _setToastNSaveCb(ERROR))
+    })
+}
 
 export default {
     addToQueue,
-    handleTXTransfer,
     queue,
     QUEUE_TYPES,
     resumeQueue,

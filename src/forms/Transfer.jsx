@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import { Dropdown } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
-
 import { arrSort, isStr, textEllipsis } from '../utils/utils'
 import { ss58Decode } from '../utils/convert'
 import PartnerForm from '../forms/Partner'
