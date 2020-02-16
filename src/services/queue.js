@@ -4,13 +4,17 @@
 import React from 'react'
 import uuid from 'uuid'
 import { runtime } from 'oo7-substrate'
+import { ss58Decode } from '../utils/convert'
+import DataStorage from '../utils/DataStorage'
+import { transfer, signAndSend } from '../utils/polkadotHelper'
+import { isArr, isFn, isObj, objClean, isBond } from '../utils/utils'
+// services
 import client from './chatClient'
-import blockchain from './blockchain'
+import blockchain, { getConnection } from './blockchain'
 import { find as findIdentity } from './identity'
+import { getAddressName } from './partner'
 import { translated } from './language'
 import { removeToast, setToast } from './toast'
-import { isArr, isFn, isObj, objClean, isBond } from '../utils/utils'
-import DataStorage from '../utils/DataStorage'
 
 const queue = new DataStorage('totem_queue-data')
 // Minimum balance required to make a transaction
@@ -18,12 +22,16 @@ const MIN_BALANCE = 2
 let txInProgress = false
 const txQueue = []
 const [words, wordsCap] = translated({
+    amount: 'amount',
     error: 'error',
     failed: 'failed',
+    inProgress: 'in-progress',
     or: 'or',
     otherwise: 'otherwise',
-    transactions: 'transactions',
+    sender: 'sender',
+    recipient: 'recipient',
     success: 'success',
+    transactions: 'transactions',
 }, true)
 const [texts] = translated({
     cancelRequest: 'cancel request',
@@ -38,37 +46,76 @@ const [texts] = translated({
     txAborted: 'transaction aborted',
     txFailed: 'Transaction failed',
     txSuccessful: 'Transaction successful',
-    unknownIdentity: 'Cannot create a transaction from an address that does not belong to you! Supplied address:',
+    txInvalidSender: 'Cannot create a transaction from an identity that does not belong to you!',
+
+    txTransferTitle: 'Transfer funds',
+    txTransferMissingArgs: 'One or more of the following arguments is missing or invalid: sender identity, recipient identity and amount',
 })
 
 export const QUEUE_TYPES = Object.freeze({
     CHATCLIENT: 'chatclient',
     BLOCKCHAIN: 'blockchain',
-    TRANSACTION: 'transaction', // todo use polkadot for tx
+    // transaction to transfer funds
+    TX_TRANSFER: 'tx_transfer', // todo use polkadot for tx
+    // transaction to create/update storage data
+    TX_STORAGE: 'tx_storage',
 })
 
 export const addToQueue = (queueItem, id, toastId) => {
     // prevent adding the same task again
     if (queue.get(id)) return;
     id = id || uuid.v1()
+    toastId = toastId || uuid.v1()
     const validKeys = [
-        'type',         // @type        string : name of the service. Currently supported: blockchain, chatclient
-        'args',         // @args        array  : arguments supplied to func
-        'func',         // @func        string : name of the function within the service.
-        'then',         // @func        function: variable arguments depending on the type of task. 
-        //                                      For type 'blockchain': boolean value indicating success/failure
-        //                      - For blockchain service, must return an instance of Bond returned by substrate package's post() function
-        //                      - For ChatClient, the callback must be the last item in the @args array
-        //                              AND the first argument to the callback must be:
-        //                                  - a string with error message to indicate request failure.
-        //                                  - OR, falsy to indicate request success
-        'address',      // @address     string/bond: optionally for blockchain @type, include source address to check balance before making blockchain call
-        'title',        // @title       string : operation title. Eg: 'Create project'
-        'description',  // @description string : short description about the operation. Eg: project name etc...
-        'keepToast',    // @keepToast   bool   : if falsy, will autohide toast
-        'silent',       // @silent      bool   : If true, enables silent mode and no toasts will be displayed.
-        //                      This is particularly usefull when executing tasks that user didn't initiate or should not be bothered with.
-        'next',         // @next        object : next operation in this series of queue. Same keys as @validKeys
+        // @type            string: name of the service. Currently supported: blockchain, chatclient
+        'type',
+        // @args            array: arguments supplied to func
+        'args',
+        // @func            string  : name of the function within the service.
+        //                          - For blockchain service, must return an instance of Bond returned by substrate package's post() function
+        //                          - For ChatClient, the callback must be the last item in the @args array.
+        //                                 AND the first argument to the callback must be:
+        //                                 -- a string with error message to indicate request failure.
+        //                                 -- OR, falsy to indicate request success
+        'func',
+        // @then            function: For transaction types first argument will be a boolean value indicating success/failure of the transaction
+        'then',
+        // @address         string/bond: optionally for blockchain @type, include source address to check balance before making blockchain call
+        'address',
+        // @title           string: short title for the task. Eg: 'Create project'
+        'title',
+        // @description     string: short description about the task to very briefly describle what this task is about/for. Eg: project name etc.
+        //                          if a child task and title not supplied will use the root task's title and description. 
+        //                          Root task is the very first task in a queue item.
+        'description',
+        // @toastId         string: (optional) if a valid existing toast ID is supplied will replace/re-use the toast message instead of creating a new toast.
+        //                          If not supplied, a new ID will be generated.
+        //                          Only root task's toast ID will be used. Child tasks will inherit the root task's toast ID.
+        'toastId',
+        // @toastDuration   number: (optional) duration, in milliseconds, of toast message visibility.
+        //                          - 0 (zero) : implies no auto close. User has to manually close by clicking on the close (x) icon.
+        //                          - undefined/falsy : will use default value set in the Toast service
+        'toastDuration',
+        // @silent          bool: (optional) If true, enables silent mode and no toast messages will be displayed.
+        //                          This is particularly usefull when executing tasks that user didn't initiate or should not be bothered with.
+        'silent',
+        // @status          string: (internal) indicates the status of the queue item.
+        //                          Uses the same status strings as toast messages to display relevant background color.
+        //                          Typically, status will be set by the queue service.
+        //                          However, by resetting status to undefined will force the queue service to attempt to execute this task again.
+        //                          Please read the `statuses used` bellow to understand the implications of setting a status manually.
+        //
+        //                          Statuses used:
+        //                          - 'error'  : task execution failed. User can force execute
+        //                          - 'loading': task is currently being executed. If page is reloaded with this state, it will be executed again on page reload
+        //                          - 'success': task completed successfully.
+        //                          - undefined/falsy: task execution was never attempted. This is typically the inital status.
+        'status',
+        // @errorMessage   string: (internal) if an error occured during execution or task failed with an error message will be stored here.
+        'errorMessage',
+        // @next            object: (optional) next task in this queue. Same keys as @validKeys
+        //                          Will only be executed if the parent task was successful.
+        'next',
     ]
 
     queueItem = objClean(queueItem, validKeys)
@@ -86,12 +133,12 @@ const _processNextTxItem = () => {
     setTimeout(() => _processItem(queueItem, id, toastId))
 }
 
-const _processItem = (queueItem, id, toastId) => {
-    if (!isObj(queueItem) || Object.keys(queueItem).length === 0 || queueItem.status === 'error') {
+const _processItem = (currentTask, id, toastId) => {
+    if (!isObj(currentTask) || Object.keys(currentTask).length === 0 || currentTask.status === 'error') {
         return queue.delete(id)
     }
-    const next = queueItem.next
-    if ('success' === queueItem.status) {
+    const next = currentTask.next
+    if ('success' === currentTask.status) {
         if (!isObj(next)) {
             // success or faild => remove item from queue
             return queue.delete(id)
@@ -101,27 +148,30 @@ const _processItem = (queueItem, id, toastId) => {
     }
 
     // Execute current task
-    const rootItem = queue.get(id)
-    queueItem.title = queueItem.title || rootItem.title
-    queueItem.description = queueItem.description || rootItem.description
-    const args = isArr(queueItem.args) ? queueItem.args : [queueItem.args]
-    const { title, description } = queueItem
+    const rootTask = queue.get(id)
+    // queueItem.title = queueItem.title || rootItem.title
+    // queueItem.description = queueItem.description || rootItem.description
+    let { args, description, silent, title, toastDuration } = currentTask
+    currentTask.args = isArr(args) ? args : [args]
+    currentTask.description = description || rootTask.description
+    currentTask.silent = currentTask.silent || rootTask.silent
+    currentTask.title = title || rootTask.title
     let func = null
-    const msgDuration = rootItem.keepToast ? 0 : null
-    const silent = queueItem.silent || rootItem.silent
-    switch ((queueItem.type || '').toLowerCase()) {
+    switch ((currentTask.type || '').toLowerCase()) {
+        case QUEUE_TYPES.TX_TRANSFER:
+            handleTXTransfer(id, rootTask, currentTask, toastId)
         case QUEUE_TYPES.BLOCKCHAIN:
             // defer tx task to avoid errors
-            if (txInProgress) return txQueue.push({ queueItem, id, toastId });
+            if (txInProgress) return txQueue.push({ queueItem: currentTask, id, toastId });
             const handlePost = () => {
                 txInProgress = true
-                func = blockchain[queueItem.func]
+                func = blockchain[currentTask.func]
                 if (!func) return queue.delete(id)
                 // initiate transactional request
                 const bond = func.apply({}, args)
                 if (!isBond(bond)) return
-                queueItem.status = 'loading'
-                queue.set(id, rootItem)
+                currentTask.status = 'loading'
+                queue.set(id, rootTask)
 
                 const tieId = bond.tie(result => {
                     if (!isObj(result)) return;
@@ -135,26 +185,26 @@ const _processItem = (queueItem, id, toastId) => {
                     const content = <p>{description}<br /> {failed && (`${wordsCap.error} ${failed.code}: ${failed.message}`)}</p>
                     const header = !title ? statusText : `${title}: ${statusText}`
                     // For debugging
-                    queueItem.error = failed
+                    currentTask.error = failed
 
                     if (!silent) {
-                        toastId = setToast({ header, content, status }, msgDuration, toastId)
+                        toastId = setToast({ header, content, status }, toastDuration, toastId)
                     }
-                    queueItem.status = status
-                    queue.set(id, rootItem)
+                    currentTask.status = status
+                    queue.set(id, rootTask)
                     if (!done) return;
-                    isFn(queueItem.then) && queueItem.then(!failed)
+                    isFn(currentTask.then) && currentTask.then(!failed)
                     _processNextTxItem()
                     bond.untie(tieId)
                     if (finalized) next ? _processItem(next, id, toastId) : queue.delete(id)
                 })
             }
-            const { address } = queueItem
+            const { address } = currentTask
             if (!address) return handlePost();
             const wallet = findIdentity(address)
             if (!wallet && !silent) {
                 setToast({
-                    content: `${texts.unknownIdentity} ${address}`,
+                    content: `${texts.txInvalidSender} : ${address}`,
                     header: `${title}: ${wordsCap.txAborted}`,
                     status: 'error'
                 }, 0, toastId)
@@ -166,7 +216,7 @@ const _processItem = (queueItem, id, toastId) => {
                     header: `${title}: ${texts.checkingBalance}`,
                     content: description,
                     status: 'loading'
-                }, msgDuration, toastId)
+                }, toastDuration, toastId)
             }
 
             txInProgress = true
@@ -176,7 +226,7 @@ const _processItem = (queueItem, id, toastId) => {
                 const continueBtn = (
                     <button
                         className="ui button basic mini"
-                        onClick={() => _processItem(queueItem, id, toastId)}
+                        onClick={() => _processItem(currentTask, id, toastId)}
                     >
                         {texts.clickToContinue}
                     </button>
@@ -205,13 +255,13 @@ const _processItem = (queueItem, id, toastId) => {
                     }, 0, toastId)
 
                     // For debugging
-                    queueItem.error = texts.insufficientBalance
+                    currentTask.error = texts.insufficientBalance
                 }
                 _processNextTxItem()
             })
             break;
         case QUEUE_TYPES.CHATCLIENT:
-            func = client[queueItem.func]
+            func = client[currentTask.func]
             if (!func) return queue.delete(id)
             // assume last item is the callback
             const callbackOriginal = args[args.length - 1]
@@ -224,14 +274,14 @@ const _processItem = (queueItem, id, toastId) => {
                 const statusText = !err ? words.success : words.failed
                 const header = !title ? statusText : `${title}: ${statusText}`
                 // For debugging
-                queueItem.error = err
+                currentTask.error = err
 
                 if (!silent) {
-                    toastId = setToast({ header, content, status }, msgDuration, toastId)
+                    toastId = setToast({ header, content, status }, toastDuration, toastId)
                 }
                 isFn(callbackOriginal) && setTimeout(() => callbackOriginal(...args))
-                queueItem.status = status
-                queue.set(id, rootItem)
+                currentTask.status = status
+                queue.set(id, rootTask)
                 if (err || !isObj(next)) return queue.delete(id)
                 return _processItem(next, id, toastId)
             }
@@ -246,8 +296,69 @@ const _processItem = (queueItem, id, toastId) => {
     }
 }
 
+const statusTitles = {
+    loading: words.inProgress,
+    success: words.success,
+    error: words.error,
+}
+const ERROR = 'error'
+const SUCCESS = 'success'
+const LOADING = 'loading'
+const attachKey = (ar = []) => !isArr(ar) ? ar : <div>{ar.map((x, i) => <p key={i} style={{ margin: 0 }}>{x}</p>)}</div>
+const setMessage = (task, msg = {}, duration, id, silent = false) => silent ? null : setToast({
+    ...msg,
+    content: msg.content ? attachKey(msg.content) : task.description,
+    header: `${msg.header || task.title}: ${statusTitles[task.status]}`,
+    status: task.status,
+}, duration, id)
+
+const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, duration) => function (err) {
+    const args = arguments
+    const error = status === error
+    const done = [SUCCESS, error].includes(status)
+    task.status = status
+    task.errorMessage = !error ? undefined : err
+    error && msg.content.unshift(`${wordsCap.error}: ${task.errorMessage}`)
+    task.toastId = setMessage(task, msg, duration, toastId, silent)
+    queue.set(id, rootTask)
+    if (done) {
+        isFn(task.then) && task.then(status === SUCCESS, args)
+        _processNextTxItem()
+    }
+}
+
+const handleTXTransfer = (id, rootTask, task, toastId) => {
+    const { args, silent, toastDuration: duration } = task
+    const [senderAddress, recipientAddress, amount] = args
+    const sender = findIdentity(senderAddress)
+    const invalid = !ss58Decode(senderAddress) || !ss58Decode(recipientAddress) || !amount
+    const msg = {
+        content: [
+            `${wordsCap.sender}: ${sender.name}`,
+            `${wordsCap.recipient}: ${getAddressName(recipientAddress)}`,
+            `${wordsCap.amount}: ${amount}`,
+        ],
+        header: texts.txTransferTitle
+    }
+    const _setToastNSaveCb = status =>
+        arg0 => setToastNSaveCb(id, rootTask, task, status, msg, toastId, silent, duration)(arg0)
+    _setToastNSaveCb(!sender || invalid ? ERROR : LOADING)(
+        !sender ? texts.txInvalidSender : (invalid ? texts.txTransferMissingArgs : '')
+    )
+    if (!sender || invalid) return
+
+    getConnection().then(({ api }) =>
+        transfer(recipientAddress, amount, senderAddress, null, api)
+            .then(_setToastNSaveCb(SUCCESS), _setToastNSaveCb(ERROR))
+    )
+}
+
+const handleBlockchainStorageRead = (func, args) => { }
+const handleBlockchainStorageWrite = (func, args) => { }
+
 export default {
     addToQueue,
+    handleTXTransfer,
     queue,
     QUEUE_TYPES,
     resumeQueue,

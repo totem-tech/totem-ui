@@ -3,15 +3,17 @@ import PropTypes from 'prop-types'
 import { Dropdown } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
+
+import { arrSort, isStr, textEllipsis } from '../utils/utils'
+import { ss58Decode } from '../utils/convert'
 import PartnerForm from '../forms/Partner'
-import { getConnection, denominations } from '../services/blockchain'
+// services
+import { denominations } from '../services/blockchain'
 import identities from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
 import partners from '../services/partner'
-import { arrSort, isStr, textEllipsis } from '../utils/utils'
-import { ss58Decode } from '../utils/convert'
-import { transfer } from '../utils/polkadotHelper'
+import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
 const [words, wordsCap] = translated({
     amount: 'amount',
@@ -120,9 +122,12 @@ export default class Transfer extends Component {
                 }
             ],
         }
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
     componentWillMount() {
+        this._mounted = true
         const { inputs } = this.state
         const { values } = this.props
         const fromIn = findInput(inputs, 'from')
@@ -153,10 +158,11 @@ export default class Transfer extends Component {
             this.setState({ inputs })
         })
 
-        // fillValues(inputs, values)
+        fillValues(inputs, values)
     }
 
     componentWillUnmount() {
+        this._mounted = false
         identities.bond.untie(this.tieIdIdentity)
         identities.selectedAddressBond.untie(this.tieIdSelected)
         partners.bond.untie(this.tieIdPartner)
@@ -170,15 +176,20 @@ export default class Transfer extends Component {
 
     handleSubmit = (_, { amount, from, to }) => {
         const { denomination } = this.state
-        const { uri } = identities.get(from)
         const { name } = partners.get(to)
         // amount in transactions
-        const amountTransations = amount * Math.pow(10, denominations[denomination])
+        const amountXTX = amount * Math.pow(10, denominations[denomination])
         this.setMessage()
-        const errCb = err => this.setMessage(err)
-        getConnection().then(({ api }) => transfer(to, amountTransations, uri, null, api).then(
-            hash => this.setMessage(null, hash, name, amountTransations) | this.clearForm(), errCb,
-        ), errCb)
+
+        addToQueue({
+            type: QUEUE_TYPES.TX_TRANSFER,
+            args: [from, to, amount],
+            then: (success, args) => {
+                if (!success) return this.setMessage(args[0])
+                this.setMessage(null, args[0], name, amountXTX)
+                this.clearForm()
+            }
+        })
 
     }
 

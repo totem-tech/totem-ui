@@ -13,6 +13,7 @@ import ChatWidget from './components/ChatWidget'
 import PageHeader from './components/PageHeader'
 import SidebarLeft, { MainContentItem } from './components/SidebarLeft'
 // Services
+import blockchain from './services/blockchain'
 import chatClient from './services/chatClient'
 import identity from './services/identity'
 import language, { translated } from './services/language'
@@ -65,6 +66,7 @@ export class App extends ReactiveComponent {
 		window.Bond = Bond
 		window.DataStorage = DataStorage
 		window.services = {
+			blockchain,
 			chatClient,
 			identity,
 			language,

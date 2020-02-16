@@ -16,7 +16,7 @@ let config = {
     unit: 'Transactions',
     ticker: 'XTX'
 }
-let connection
+export const connection = { api: null, provider: null }
 export const denominations = Object.freeze({
     Ytx: 24,
     Ztx: 21,
@@ -54,12 +54,14 @@ export const archiveRecord = (hashOwnerAddress, type, hash, archive = true) => p
 export const getConfig = () => config
 
 export const getConnection = () => {
-    if (connection) return new Promise(resolve => resolve(connection))
+    if (connection.api && connection.api._isConnected.value) return new Promise(resolve => resolve(connection))
     const nodeUrl = nodes[0]
     console.log('Polkadot: connecting to', nodeUrl)
     return connect(nodeUrl, config.types, true).then(({ api, provider }) => {
-        connection = { api, provider }
         console.log('Connected using Polkadot', { api, provider })
+        connection.api = api
+        connection.provider = provider
+        window.connection = connection
         return connection
     })
 }
@@ -79,6 +81,7 @@ export const setConfig = newConfig => {
 // Include all functions here that will be used by Queue Service
 // Only blockchain transactions
 export default {
+    getConnection,
     archiveRecord,
     addNewProject: project.add,
     reassignProject: project.reassign,
