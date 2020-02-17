@@ -1,7 +1,7 @@
-import React from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import uuid from 'uuid'
 import { Bond } from 'oo7'
-import { ReactiveComponent } from 'oo7-react'
 import { Button } from 'semantic-ui-react'
 import DataTable from '../components/DataTable'
 import FormBuilder from '../components/FormBuilder'
@@ -94,11 +94,15 @@ statusTexts[statuses.accept] = words.approved
 statusTexts[statuses.invoice] = words.invoiced
 statusTexts[statuses.delete] = words.deleted
 
-export default class ProjectTimeKeepingList extends ReactiveComponent {
+// trigger refresh on not-archived records tables if multiple open at the same time 
+const updateTriggerBond = new Bond()
+const inProgressHashesBond = new Bond()
+
+export default class ProjectTimeKeepingList extends Component {
     constructor(props) {
         super(props)
 
-        this.getRecords = deferred(this.getRecords, 150)
+        // this.getRecords = deferred(this.getRecords, 150)
         this.hashList = []
         this.state = {
             inProgressHashes: [],
@@ -183,14 +187,19 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         // only update project & identity names
         this.identitiesBond = Bond.all([identities.bond, partners.bond])
         this.tieIdSelected = selectedAddressBond.tie(this.setBond)
+        this.tieIdHashes = inProgressHashesBond.tie(ar => this.setState({ inProgressHashes: ar }))
+        if (!this.props.archive) {
+            this.tieIdTrigger = updateTriggerBond.tie(this.getRecords)
+        }
     }
 
     componentWillUnmount() {
         this._mounted = false
-        const { tieId, tieIdIdentities, tieIdSelected } = this
-        tieId && this.bond.untie(tieId)
-        tieIdIdentities && this.identitiesBond.untie(tieIdIdentities)
-        selectedAddressBond.untie(tieIdSelected)
+        this.tieId && this.bond.untie(this.tieId)
+        this.tieIdIdentities && this.identitiesBond.untie(this.tieIdIdentities)
+        selectedAddressBond.untie(this.tieIdSelected)
+        inProgressHashesBond.untie(this.tieIdHashes)
+        this.tieIdTrigger && updateTriggerBond.untie(this.tieIdTrigger)
     }
 
     setBond = () => {
@@ -250,11 +259,13 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                             blockStart: start_block,
                             duration,
                             projectHash,
+                            projectName,
+                            status: submit_status,
                             workerAddress,
                         },
                         hash,
                         projectName,
-                        onSubmit: this.getRecords
+                        onSubmit: ok => ok && this.updateTrigger()
                     }),
                 title: wordsCap.edit,
             },
@@ -314,14 +325,14 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             .map(props => <Button {...props} />)
     }
 
-    getRecords = hashList => {
+    getRecords = deferred(hashList => {
         hashList = (isArr(hashList) ? hashList : this.hashList).flat().map(hashToStr)
         this.hashList = hashList
         if (this.hashList.length === 0) return this.setState({ data: new Map() })
 
         // get individual records details
         getTimeRecordsDetails(this.hashList).then(this.processRecords)
-    }
+    }, 150)
 
     // process record details and add extra information like worker name etc
     processRecords = records => Array.from(records).forEach(([hash, record]) => {
@@ -352,15 +363,13 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         const { projectHash, projectOwnerAddress, submit_status, workerAddress } = data.get(hash) || {}
         const targetStatus = approve ? statuses.accept : statuses.reject
         if (!workerAddress || submit_status !== statuses.submit || targetStatus === submit_status) return
-        inProgressHashes.push(hash)
-        this.setState({ inProgressHashes })
+        inProgressHashesBond.changed(inProgressHashes.concat(hash))
         const task = recordTasks.approve(projectOwnerAddress, workerAddress, projectHash, hash, approve, null, {
             title: `${wordsCap.timekeeping} - ${approve ? texts.approveRecord : texts.rejectRecord}`,
             description: `${texts.recordId}: ${hash}`,
             then: success => {
-                inProgressHashes.shift(hash)
-                this.setState({ inProgressHashes })
-                success && this.getRecords()
+                inProgressHashesBond.changed(inProgressHashes.filter(h => h !== hash))
+                success && this.updateTrigger()
             },
         })
         addToQueue(task)
@@ -428,7 +437,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 then: success => {
                     inProgressHashes.shift(hash)
                     this.setState({ inProgressHashes })
-                    success && this.getRecords()
+                    success && this.updateTrigger()
                 },
             }
         )
@@ -490,6 +499,8 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             submitText: null,
         })
     }
+
+    updateTrigger = () => this.props.archive ? this.getRecords() : updateTriggerBond.changed(uuid.v1())
 
     render() {
         const { archive, hideTimer, manage } = this.props

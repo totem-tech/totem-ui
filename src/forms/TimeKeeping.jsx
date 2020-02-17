@@ -21,7 +21,7 @@ import { confirm, closeModal, showForm } from '../services/modal'
 import { handleTKInvitation } from '../services/notification'
 import { getAddressName } from '../services/partner'
 import projectService, { openStatuses } from '../services/project'
-import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import { addToQueue } from '../services/queue'
 import timeKeeping, { getProjects, getProjectsBond, NEW_RECORD_HASH, recordTasks, statuses } from '../services/timeKeeping'
 
 // Hash that indicates creation of new record
@@ -51,6 +51,7 @@ const [texts] = translated({
     areYouSure: 'Are you sure?',
     cancelWarning: 'You have a running timer. Would you like to stop and exit?',
     checkingProjectStatus: 'Checking activity status...',
+    durationChangeRequired: 'Rejected record requires duration change in order to re-sumbit',
     goBack: 'Go Back',
     hhmmss: 'hh:mm:ss', //????
     inactiveWorkerHeader1: 'You are not part of this Team! Request an invitation',
@@ -572,9 +573,10 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
             values: props.values || {},
             inputs: [
                 {
+                    bond: new Bond(),
                     label: wordsCap.duration,
                     name: 'duration',
-                    onChange: deferred(handleDurationChange, 300, this),
+                    onChange: deferred(this.handleDurationChange, 300),
                     type: 'text',
                     required: true,
                 },
@@ -601,9 +603,23 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
 
     componentWillUnmount = () => this._mounted = false
 
+    handleDurationChange = (e, values, i) => {
+        handleDurationChange.call(this, e, values, i)
+        if (this.state.inputs[i].invalid) return
+        const { inputs } = this.state
+        const { duration } = values
+        const { values: { duration: durationOriginal, status } } = this.props
+        const input = inputs[i]
+        input.invalid = status === statuses.reject && duration === durationOriginal
+        input.message = !input.invalid ? null : {
+            content: texts.durationChangeRequired,
+            status: 'error',
+        }
+        this.setState({ inputs })
+    }
+
     handleSubmit = (e, { duration, submit_status }) => {
-        const { hash, values } = this.props
-        const { projectName } = values
+        const { hash, projectName, values } = this.props
         const blockCount = durationToBlockCount(duration)
         const blockEnd = values.blockStart + blockCount
         timeKeeping.record.get(hash).then(record => {
@@ -632,6 +648,8 @@ TimeKeepingUpdateForm.propTypes = {
         blockStart: PropTypes.number.isRequired,
         duration: PropTypes.string.isRequired,
         projectHash: PropTypes.string.isRequired,
+        projectName: PropTypes.string.isRequired,
+        status: PropTypes.number.isRequired,
         workerAddress: PropTypes.string.isRequired,
     }).isRequired
 }
