@@ -4,7 +4,7 @@
 import React from 'react'
 import uuid from 'uuid'
 import { runtime } from 'oo7-substrate'
-import { ss58Decode } from '../utils/convert'
+import { addressToStr, ss58Decode } from '../utils/convert'
 import DataStorage from '../utils/DataStorage'
 import { transfer, signAndSend } from '../utils/polkadotHelper'
 import { isArr, isFn, isObj, isStr, objClean, isBond } from '../utils/utils'
@@ -345,10 +345,14 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
 }
 
 const handleTxTransfer = (id, rootTask, task, toastId) => {
+    // convert address to string. if invalid will be empty string.
+    task.address = addressToStr(task.address)
+    task.args[0] = addressToStr(task.args[0])
+
     const { address: senderAddress, args, silent, toastDuration } = task
     const [recipientAddress, amount] = args
     const sender = findIdentity(senderAddress)
-    const invalid = !ss58Decode(senderAddress) || !ss58Decode(recipientAddress) || !amount
+    const invalid = !senderAddress || !recipientAddress || !amount
     const msg = {
         content: [
             `${wordsCap.sender}: ${sender.name}`,
@@ -371,6 +375,8 @@ const handleTxTransfer = (id, rootTask, task, toastId) => {
     )
 }
 const handleTxStorage = (id, rootTask, task, toastId) => {
+    // convert address to string. if invalid will be empty string.
+    task.address = addressToStr(task.address)
     const { address, args, description, func, silent, title, toastDuration } = task
     const msg = {
         content: [description],

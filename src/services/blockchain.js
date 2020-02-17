@@ -1,6 +1,5 @@
 import { addCodecTransform, post } from 'oo7-substrate'
-// import timeKeeping from './timeKeeping'
-// import project from './project'
+import project from './project'
 import storage from './storage'
 import { hashToBytes, validateAddress } from '../utils/convert'
 import { setNetworkDefault, denominationInfo } from 'oo7-substrate'
@@ -82,26 +81,26 @@ export const setConfig = newConfig => {
 // Only blockchain transactions
 export default {
     getConnection,
-    // archiveRecord,
-    // addNewProject: project.add,
-    // reassignProject: project.reassign,
-    // removeProject: project.remove,
-    // closeProject: project.close,
-    // reopenProject: project.reopen,
+    archiveRecord,
+    addNewProject: project.add,
+    reassignProject: project.reassign,
+    removeProject: project.remove,
+    closeProject: project.close,
+    reopenProject: project.reopen,
     //// timeKeeping_record_save: timeKeeping.record.save,
     //// timeKeeping_record_approve: timeKeeping.record.approve,
-    // timeKeeping_worker_add: timeKeeping.worker.add,
-    // timeKeeping_worker_accept: timeKeeping.worker.accept,
-    // transfer: (addressFrom, addressTo, amount) => post({
-    //     sender: runtime.indices.tryIndex(validateAddress(addressFrom)),
-    //     call: calls.balances.transfer(runtime.indices.tryIndex(validateAddress(addressTo)), amount),
-    //     compact: false,
-    //     longevity: true
-    // }),
-    // registerKey: (address, signPubKey, data, signature) => post({
-    //     sender: validateAddress(address),
-    //     call: calls.keyregistry.registerKeys(signPubKey, data, signature),
-    //     compact: false,
-    //     longevity: true
-    // })
+    //// timeKeeping_worker_add: timeKeeping.worker.add,
+    //// timeKeeping_worker_accept: timeKeeping.worker.accept,
+    transfer: (addressFrom, addressTo, amount) => post({
+        sender: runtime.indices.tryIndex(validateAddress(addressFrom)),
+        call: calls.balances.transfer(runtime.indices.tryIndex(validateAddress(addressTo)), amount),
+        compact: false,
+        longevity: true
+    }),
+    registerKey: (address, signPubKey, data, signature) => post({
+        sender: validateAddress(address),
+        call: calls.keyregistry.registerKeys(signPubKey, data, signature),
+        compact: false,
+        longevity: true
+    })
 }

@@ -2,7 +2,7 @@ import { Bond } from 'oo7'
 import { calls, post, runtime } from 'oo7-substrate'
 import uuid from 'uuid'
 import DataStorage from '../utils/DataStorage'
-import { hashToBytes, hashToStr, validateAddress, ss58Decode, ss58Encode } from '../utils/convert'
+import { addressToStr, hashToBytes, hashToStr, validateAddress, ss58Decode, ss58Encode } from '../utils/convert'
 import { isArr, isObj, mapJoin, arrUnique } from '../utils/utils'
 import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
 // services
@@ -252,7 +252,7 @@ export const recordTasks = {
     // add/update record
     save: (address, projectHash, recordHash, status, reason, blockCount, postingPeriod, blockStart, blockEnd, breakCount, queueProps) => ({
         ...queueProps,
-        address,
+        address: address,
         func: 'api.tx.timekeeping.submitTime',
         type: TX_STORAGE,
         args: [
@@ -334,30 +334,30 @@ export const record = {
 }
 
 export const worker = {
-    // Blockchain transaction
-    // (worker) accept invitation to a project
-    accept: (projectHash, workerAddress, accepted) => post({
-        sender: validateAddress(workerAddress),
-        call: calls.timekeeping.workerAcceptanceProject(hashToBytes(projectHash), accepted),
-        compact: false,
-        longevity: true
-    }),
+    // // Blockchain transaction
+    // // (worker) accept invitation to a project
+    // accept: (projectHash, workerAddress, accepted) => post({
+    //     sender: validateAddress(workerAddress),
+    //     call: calls.timekeeping.workerAcceptanceProject(hashToBytes(projectHash), accepted),
+    //     compact: false,
+    //     longevity: true
+    // }),
     // status of invitation
     accepted: (projectHash, workerAddress) => runtime.timekeeping.workerProjectsBacklogStatus([
         hashToBytes(projectHash),
         ss58Decode(workerAddress)
     ]),
-    // Blockchain transaction
-    // (project owner) invite a worker to join a project
-    add: (projectHash, ownerAddress, workerAddress) => post({
-        sender: validateAddress(ownerAddress),
-        call: calls.timekeeping.notifyProjectWorker(
-            ss58Decode(workerAddress),
-            hashToBytes(projectHash),
-        ),
-        compact: false,
-        longevity: true
-    }),
+    // // Blockchain transaction
+    // // (project owner) invite a worker to join a project
+    // add: (projectHash, ownerAddress, workerAddress) => post({
+    //     sender: validateAddress(ownerAddress),
+    //     call: calls.timekeeping.notifyProjectWorker(
+    //         ss58Decode(workerAddress),
+    //         hashToBytes(projectHash),
+    //     ),
+    //     compact: false,
+    //     longevity: true
+    // }),
     // check if worker is banned. undefined: not banned, object: banned
     banned: (projectHash, address) => runtime.timekeeping.projectWorkersBanList([
         hashToBytes(projectHash),
@@ -395,6 +395,31 @@ export const worker = {
         ),
         compact: false,
         longevity: true
+    }),
+}
+
+export const workerTasks = {
+    // (worker) accept invitation to a project
+    accept: (projectHash, workerAddress, accepted, queueProps = {}) => ({
+        ...queueProps,
+        address: workerAddress,
+        func: 'api.tx.timekeeping.workerAcceptanceProject',
+        type: TX_STORAGE,
+        args: [
+            hashToStr(projectHash),
+            accepted,
+        ],
+    }),
+    // (project owner) invite a worker to join a project
+    add: (projectHash, ownerAddress, workerAddress, queueProps = {}) => ({
+        ...queueProps,
+        address: ownerAddress,
+        func: 'api.tx.timekeeping.notifyProjectWorker',
+        type: TX_STORAGE,
+        args: [
+            addressToStr(workerAddress),
+            hashToStr(projectHash),
+        ],
     }),
 }
 export default {
