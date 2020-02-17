@@ -2,12 +2,13 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { ReactiveComponent } from 'oo7-react'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import { arrSort, isFn } from '../utils/utils'
+import { arrSort, isFn, textEllipsis } from '../utils/utils'
 // services
 import identityService from '../services/identity'
 import { translated } from '../services/language'
 import { confirm } from '../services/modal'
-import addressbook from '../services/partner';
+import addressbook from '../services/partner'
+import { tasks } from '../services/project'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
 const [words, wordsCap] = translated({
@@ -24,6 +25,7 @@ const [texts] = translated({
     nameLabel: 'Activity Name',
     newOwnerLabel: 'New Activity Owner',
     newOwnerPlaceholder: 'Select new owner',
+    newOwnerReassignSelfMsg: 'Cannot reassign activity to yourself',
     ownerLabel: 'Current Activity Owner',
     partnerOptionsHeader: 'Select a partner',
     queueDescription: 'Activity Name: ',
@@ -69,6 +71,7 @@ export default class ReassignProjectForm extends ReactiveComponent {
                 {
                     label: texts.newOwnerLabel,
                     name: 'newOwnerAddress',
+                    onChange: this.handleNewOwnerChange,
                     placeholder: texts.newOwnerPlaceholder,
                     search: ['text', 'value'], // search both name and project hash
                     selection: true,
@@ -78,16 +81,21 @@ export default class ReassignProjectForm extends ReactiveComponent {
                 }
             ]
         }
+
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
     componentWillMount() {
+        this._mounted = true
         const { inputs } = this.state
         const { hash, values } = this.props
         const { ownerAddress } = values
         const identityOptions = identityService.getAll()
             // dropdown options
             .map(({ address, name }) => ({
-                key: address,
+                description: textEllipsis(address, 15),
+                key: 'identity-' + address,
                 text: name,
                 value: address
             }))
@@ -96,7 +104,8 @@ export default class ReassignProjectForm extends ReactiveComponent {
             // exclude any possible duplicates (if any identity is also in partner list)
             .filter(([address]) => !identityService.find(address))
             .map(([address, { name }]) => ({
-                key: address,
+                description: textEllipsis(address, 15),
+                key: 'partner-' + address,
                 text: name,
                 value: address
             }))
@@ -124,16 +133,28 @@ export default class ReassignProjectForm extends ReactiveComponent {
         this.setState({ inputs })
     }
 
+    componentWillUnmount() {
+        this._mounted = false
+    }
+
+    handleNewOwnerChange = (_, { ownerAddress, newOwnerAddress }) => {
+        const valid = !ownerAddress || ownerAddress !== newOwnerAddress
+        const { inputs } = this.state
+        const input = findInput(inputs, 'newOwnerAddress')
+        input.invalid = !valid
+        input.message = valid ? null : {
+            content: newOwnerReassignSelfMsg,
+            status: 'error'
+        }
+        this.setState({ inputs })
+    }
+
     handleSubmit = (_, values) => {
         const { values: project, onSubmit } = this.props
         const { hash, name, ownerAddress, newOwnerAddress } = values
         // confirm if re-assigning to someone else
         const doConfirm = !!identityService.find(newOwnerAddress)
-        const task = {
-            address: ownerAddress, // for balance check
-            type: QUEUE_TYPES.BLOCKCHAIN,
-            func: 'reassignProject',
-            args: [ownerAddress, newOwnerAddress, hash],
+        const task = tasks.reassign(ownerAddress, newOwnerAddress, hash, {
             title: texts.queueTitle,
             description: texts.queueDescription + name,
             next: {
@@ -146,7 +167,7 @@ export default class ReassignProjectForm extends ReactiveComponent {
                     err => isFn(onSubmit) && onSubmit(values, !err)
                 ]
             }
-        }
+        })
         const proceed = () => addToQueue(task) | this.setState({
             message: {
                 header: texts.queuedMsgHeader,

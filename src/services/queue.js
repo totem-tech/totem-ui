@@ -19,7 +19,7 @@ import { removeToast, setToast } from './toast'
 
 const queue = new DataStorage('totem_queue-data')
 // Minimum balance required to make a transaction
-const MIN_BALANCE = 2
+const MIN_BALANCE = 140
 let txInProgress = false
 const txQueue = []
 const [words, wordsCap] = translated({
@@ -32,6 +32,8 @@ const [words, wordsCap] = translated({
     sender: 'sender',
     recipient: 'recipient',
     success: 'success',
+    successful: 'successful',
+    transaction: 'transaction',
     transactions: 'transactions',
 }, true)
 const [texts] = translated({
@@ -128,7 +130,7 @@ export const addToQueue = (queueItem, id, toastId) => {
 
     queueItem = objClean(queueItem, validKeys)
     queue.set(id, queueItem)
-    setTimeout(() => _processItem(queueItem, id, toastId))
+    setTimeout(() => _processTask(queueItem, id, toastId))
     return id
 }
 
@@ -137,16 +139,16 @@ export const addToQueue = (queueItem, id, toastId) => {
 
 // }
 
-export const resumeQueue = () => queue.size > 0 && Array.from(queue).forEach((x, i) => setTimeout(() => _processItem(x[1], x[0])))
+export const resumeQueue = () => queue.size > 0 && Array.from(queue).forEach((x, i) => setTimeout(() => _processTask(x[1], x[0])))
 
 const _processNextTxItem = () => {
     txInProgress = false
     if (txQueue.length === 0) return;
     const { queueItem, id, toastId } = txQueue.shift()
-    setTimeout(() => _processItem(queueItem, id, toastId))
+    setTimeout(() => _processTask(queueItem, id, toastId))
 }
 
-const _processItem = (currentTask, id, toastId) => {
+const _processTask = (currentTask, id, toastId) => {
     if (!isObj(currentTask) || Object.keys(currentTask).length === 0 || currentTask.status === 'error') {
         return queue.delete(id)
     }
@@ -157,7 +159,7 @@ const _processItem = (currentTask, id, toastId) => {
             return queue.delete(id)
         }
         // Go to next task
-        return _processItem(next, id, toastId)
+        return _processTask(next, id, toastId)
     }
 
     // Execute current task
@@ -213,7 +215,7 @@ const _processItem = (currentTask, id, toastId) => {
                     isFn(currentTask.then) && currentTask.then(!failed)
                     _processNextTxItem()
                     bond.untie(tieId)
-                    if (finalized) next ? _processItem(next, id, toastId) : queue.delete(id)
+                    if (finalized) next ? _processTask(next, id, toastId) : queue.delete(id)
                 })
             }
             const { address } = currentTask
@@ -243,7 +245,7 @@ const _processItem = (currentTask, id, toastId) => {
                 const continueBtn = (
                     <button
                         className="ui button basic mini"
-                        onClick={() => _processItem(currentTask, id, toastId)}
+                        onClick={() => _processTask(currentTask, id, toastId)}
                     >
                         {texts.clickToContinue}
                     </button>
@@ -300,7 +302,7 @@ const _processItem = (currentTask, id, toastId) => {
                 currentTask.status = status
                 queue.set(id, rootTask)
                 if (err || !isObj(next)) return queue.delete(id)
-                return _processItem(next, id, toastId)
+                return _processTask(next, id, toastId)
             }
             args[args.length === 0 ? 0 : args.length - 1] = interceptCb
             // initiate request
@@ -315,7 +317,7 @@ const _processItem = (currentTask, id, toastId) => {
 
 const statusTitles = {
     loading: words.inProgress,
-    success: words.success,
+    success: words.successful,
     error: words.error,
 }
 const ERROR = 'error'
@@ -325,7 +327,7 @@ const attachKey = (ar = []) => !isArr(ar) ? ar : <div>{ar.map((x, i) => <p key={
 const setMessage = (task, msg = {}, duration, id, silent = false) => silent ? null : setToast({
     ...msg,
     content: msg.content ? attachKey(msg.content) : task.description,
-    header: `${msg.header || task.title}: ${statusTitles[task.status]}`,
+    header: `${msg.header || task.title}: ${task.type.startsWith('tx_') ? words.transaction : ''} ${statusTitles[task.status]}`,
     status: task.status,
 }, duration, id)
 
@@ -341,6 +343,7 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
     queue.set(id, rootTask)
     if (!done) return
     isFn(task.then) && task.then(status === SUCCESS, args)
+    if (isObj(task.next)) return _processTask(task.next, id, toastId)
     _processNextTxItem()
 }
 
@@ -361,17 +364,24 @@ const handleTxTransfer = (id, rootTask, task, toastId) => {
         ],
         header: texts.txTransferTitle
     }
-    const _setToastNSaveCb = status => arg0 =>
-        setToastNSaveCb(id, rootTask, task, status, msg, toastId, silent, toastDuration)(arg0)
+    const _save = status => arg0 => setToastNSaveCb(
+        id, rootTask, task, status, msg, toastId, silent, toastDuration
+    )(arg0)
 
-    _setToastNSaveCb(!sender || invalid ? ERROR : LOADING)(
+    _save(!sender || invalid ? ERROR : LOADING)(
         !sender ? texts.txForeignIdentity : (invalid ? texts.txTransferMissingArgs : '')
     )
     if (!sender || invalid) return
 
     getConnection().then(({ api }) =>
-        transfer(recipientAddress, amount, senderAddress, null, api)
-            .then(_setToastNSaveCb(SUCCESS), _setToastNSaveCb(ERROR))
+        transfer(
+            recipientAddress,
+            amount,
+            senderAddress,
+            null,
+            api
+        ).then(_save(SUCCESS), _save(ERROR)),
+        _save(ERROR)
     )
 }
 const handleTxStorage = (id, rootTask, task, toastId) => {
@@ -382,20 +392,22 @@ const handleTxStorage = (id, rootTask, task, toastId) => {
         content: [description],
         header: title,
     }
-    const _setToastNSaveCb = status => arg0 =>
+    const _save = status => arg0 =>
         setToastNSaveCb(id, rootTask, task, status, msg, toastId, silent, toastDuration)(arg0)
 
-    _setToastNSaveCb(LOADING)()
+    _save(LOADING)()
     getConnection().then(({ api }) => {
         const txFunc = eval(func)
         if (!isStr(func) || !func.startsWith('api.tx.') || !isFn(txFunc)) {
             // invalid function name supplied
-            return _setToastNSaveCb(ERROR)(texts.txStorageInvalidFunc)
+            return _save(ERROR)(texts.txStorageInvalidFunc)
         }
-        const tx = txFunc.apply(null, args)
-        signAndSend(api, address, tx)
-            .then(_setToastNSaveCb(SUCCESS), _setToastNSaveCb(ERROR))
-    })
+        api.query.balances.freeBalance(address).then(balance => {
+            if (parseInt(balance) < MIN_BALANCE) return _save(ERROR)(texts.insufficientBalance)
+            const tx = txFunc.apply(null, args)
+            signAndSend(api, address, tx).then(_save(SUCCESS), _save(ERROR))
+        })
+    }, _save(ERROR))
 }
 
 export default {

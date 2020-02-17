@@ -5,7 +5,7 @@ import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import { arrSort, generateHash, isFn } from '../utils/utils'
 import identities, { getSelected } from '../services/identity'
 import { translated } from '../services/language'
-import { getProjects } from '../services/project'
+import { getProjects, tasks } from '../services/project'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
 const [words, wordsCap] = translated({
@@ -124,6 +124,7 @@ export default class ProjectForm extends Component {
             submitDisabled: true
         })
 
+        console.log({ values })
         const clientTask = {
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'project',
@@ -152,15 +153,11 @@ export default class ProjectForm extends Component {
         }
 
         // Send transaction to blockchain first, then add to external storage
-        const blockchainTask = {
-            address: ownerAddress,
-            type: QUEUE_TYPES.BLOCKCHAIN,
-            func: 'addNewProject',
-            args: [ownerAddress, hash],
+        const blockchainTask = tasks.add(ownerAddress, hash, {
             title,
             description,
             next: clientTask
-        }
+        })
 
         addToQueue(create ? blockchainTask : clientTask)
     }

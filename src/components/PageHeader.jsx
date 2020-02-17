@@ -4,7 +4,7 @@ import { runtime } from 'oo7-substrate'
 import { Dropdown, Image, Menu } from 'semantic-ui-react'
 import Currency from '../components/Currency'
 // utils
-import { copyToClipboard, textEllipsis } from '../utils/utils'
+import { arrSort, copyToClipboard, textEllipsis } from '../utils/utils'
 // forms
 import IdentityForm from '../forms/Identity'
 import TimeKeepingForm from '../forms/TimeKeeping'
@@ -180,12 +180,15 @@ class MobileHeader extends Component {
 									placeholder={texts.selectAnIdentity}
 									text={!isMobile ? selected.name : textEllipsis(selected.name, 7, 3, false)}
 									value={selected.address}
-									options={wallets.map(({ address, name }) => ({
-										key: address,
-										text: name,
-										description: runtime.balances && <Currency address={address} />,
-										value: address
-									}))}
+									options={arrSort(
+										wallets.map(({ address, name }) => ({
+											key: address,
+											text: name,
+											description: runtime.balances && <Currency address={address} />,
+											value: address
+										})),
+										'text'
+									)}
 								/>
 							</Menu.Item>
 						)}
