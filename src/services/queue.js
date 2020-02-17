@@ -11,6 +11,7 @@ import { isArr, isFn, isObj, isStr, objClean, isBond } from '../utils/utils'
 // services
 import client from './chatClient'
 import blockchain, { getConnection } from './blockchain'
+import { set as setHistory } from './history'
 import { find as findIdentity } from './identity'
 import { getAddressName } from './partner'
 import { translated } from './language'
@@ -46,7 +47,9 @@ const [texts] = translated({
     txAborted: 'transaction aborted',
     txFailed: 'Transaction failed',
     txSuccessful: 'Transaction successful',
-    txInvalidSender: 'Cannot create a transaction from an identity that does not belong to you!',
+    txForeignIdentity: 'Cannot create a transaction from an identity that does not belong to you!',
+    txInvalidSender: 'Invalid or no sender address supplied',
+
 
     txStorageInvalidFunc: 'Invalid function name supplied.',
 
@@ -74,16 +77,18 @@ export const addToQueue = (queueItem, id, toastId) => {
         // @args            array: arguments to be supplied to func
         'args',
         // @func            string  : name of the function to be excuted. Depends on the @type of the task.
-        //                          1. TX_TRANSER: unused
+        //                          1. TX_TRANSER: 
         //                          2. TX_STORAGE: path to the PolkadotJS API function as string. Eg: 'api.tx.timekeeping.authoriseTime'
         //                          3. CHATCLIENT: chat client instances method property name
         'func',
         // @then            function: Callback to be executed once task execution is done (status: 'success' or 'error').
+        //                          Not preserved on page reload
         //                          Arguments:
         //                          @success    boolean: indicates success/failure of the task
         //                          @args       array: arguments returned by invoking @func
         'then',
-        // @address         string: optionally for blockchain @type, include source address to check balance before making blockchain call
+        // @address         string: address to initiate a transaction with.
+        //                          Required for transaction types. 
         'address',
         // @title           string: short title for the task. Eg: 'Create project'
         'title',
@@ -126,6 +131,11 @@ export const addToQueue = (queueItem, id, toastId) => {
     setTimeout(() => _processItem(queueItem, id, toastId))
     return id
 }
+
+// identityHasPendingTask checks if any unfinished task is queued with a given identity 
+// export const identityHasPendingTask = address => {
+
+// }
 
 export const resumeQueue = () => queue.size > 0 && Array.from(queue).forEach((x, i) => setTimeout(() => _processItem(x[1], x[0])))
 
@@ -319,24 +329,24 @@ const setMessage = (task, msg = {}, duration, id, silent = false) => silent ? nu
     status: task.status,
 }, duration, id)
 
-const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, duration) => function (err) {
+const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, duration) => function (errMsg) {
     const args = arguments
-    const error = status === error
-    const done = [SUCCESS, error].includes(status)
+    const hasError = status === ERROR
+    const done = [SUCCESS, ERROR].includes(status)
     task.status = status
-    task.errorMessage = !error ? undefined : err
-    error && msg.content.unshift(`${wordsCap.error}: ${task.errorMessage}`)
+    task.errorMessage = !hasError ? undefined : (errMsg.startsWith(wordsCap.error) ? '' : wordsCap.error + ': ') + errMsg
+
+    hasError && msg.content.unshift(`${task.errorMessage}`)
     task.toastId = setMessage(task, msg, duration, toastId, silent)
     queue.set(id, rootTask)
-    if (done) {
-        isFn(task.then) && task.then(status === SUCCESS, args)
-        _processNextTxItem()
-    }
+    if (!done) return
+    isFn(task.then) && task.then(status === SUCCESS, args)
+    _processNextTxItem()
 }
 
 const handleTxTransfer = (id, rootTask, task, toastId) => {
-    const { args, silent, toastDuration: duration } = task
-    const [senderAddress, recipientAddress, amount] = args
+    const { address: senderAddress, args, silent, toastDuration } = task
+    const [recipientAddress, amount] = args
     const sender = findIdentity(senderAddress)
     const invalid = !ss58Decode(senderAddress) || !ss58Decode(recipientAddress) || !amount
     const msg = {
@@ -348,10 +358,10 @@ const handleTxTransfer = (id, rootTask, task, toastId) => {
         header: texts.txTransferTitle
     }
     const _setToastNSaveCb = status => arg0 =>
-        setToastNSaveCb(id, rootTask, task, status, msg, toastId, silent, duration)(arg0)
+        setToastNSaveCb(id, rootTask, task, status, msg, toastId, silent, toastDuration)(arg0)
 
     _setToastNSaveCb(!sender || invalid ? ERROR : LOADING)(
-        !sender ? texts.txInvalidSender : (invalid ? texts.txTransferMissingArgs : '')
+        !sender ? texts.txForeignIdentity : (invalid ? texts.txTransferMissingArgs : '')
     )
     if (!sender || invalid) return
 
@@ -361,17 +371,21 @@ const handleTxTransfer = (id, rootTask, task, toastId) => {
     )
 }
 const handleTxStorage = (id, rootTask, task, toastId) => {
-    const { address, args, func, } = task
-    const txFunc = eval(func)
-    const _setToastNSaveCb = status => arg0 =>
-        setToastNSaveCb(id, rootTask, task, status, msg, toastId, silent, duration)(arg0)
-
-    if (!isStr(func) || !func.startsWith('api.tx.') || !isFn(txFunc)) {
-        // invalid function name supplied
-        return _setToastNSaveCb(ERROR)(texts.txStorageInvalidFunc)
+    const { address, args, description, func, silent, title, toastDuration } = task
+    const msg = {
+        content: [description],
+        header: title,
     }
+    const _setToastNSaveCb = status => arg0 =>
+        setToastNSaveCb(id, rootTask, task, status, msg, toastId, silent, toastDuration)(arg0)
 
+    _setToastNSaveCb(LOADING)()
     getConnection().then(({ api }) => {
+        const txFunc = eval(func)
+        if (!isStr(func) || !func.startsWith('api.tx.') || !isFn(txFunc)) {
+            // invalid function name supplied
+            return _setToastNSaveCb(ERROR)(texts.txStorageInvalidFunc)
+        }
         const tx = txFunc.apply(null, args)
         signAndSend(api, address, tx)
             .then(_setToastNSaveCb(SUCCESS), _setToastNSaveCb(ERROR))

@@ -5,11 +5,11 @@ import { setNodeUri } from 'oo7-substrate'
 import { getTypes, nodes, setConfig } from './services/blockchain'
 import 'semantic-ui-css/semantic.min.css'
 import client from './services/chatClient'
-import identities from './services/identity'
 import { getSelected, getTexts, setTexts } from './services/language'
 import storage from './services/storage'
-import { setDefaultConfig, setKeyring } from './utils/polkadotHelper'
+import { setDefaultConfig } from './utils/polkadotHelper'
 import { generateHash } from './utils/utils'
+// import { getConnection } from './services/blockchain'
 
 
 const init = () => new Promise((resolve, reject) => {
@@ -50,13 +50,14 @@ const init = () => new Promise((resolve, reject) => {
             })
         })
     })
-    getTypes().then(types => setDefaultConfig(nodes, types))
+    getTypes().then(types => {
+        setDefaultConfig(nodes, types)
+        // getConnection().then(() => {
+
+        // })
+    })
     // force resolve in case messaging service is not connected yet
-    setTimeout(() => {
-        const seeds = identities.getAll().map(x => x.uri)
-        setKeyring(seeds)
-        !translationChecked && resolve()
-    }, 2000)
+    setTimeout(() => resolve(), 2000)
 })
 
 init().then(() => render(<App />, document.getElementById('app')))

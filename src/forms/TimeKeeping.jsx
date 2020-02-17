@@ -5,7 +5,7 @@ import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import { chain } from 'oo7-substrate'
 import { Button, Icon } from 'semantic-ui-react'
-import { deferred, hasValue, isDefined, isFn, objCopy, objWithoutKeys, textCapitalize } from '../utils/utils'
+import { deferred, hasValue, isDefined, isFn, objCopy } from '../utils/utils'
 import {
     BLOCK_DURATION_SECONDS,
     BLOCK_DURATION_REGEX,
@@ -22,7 +22,7 @@ import { handleTKInvitation } from '../services/notification'
 import { getAddressName } from '../services/partner'
 import projectService, { openStatuses } from '../services/project'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import timeKeeping, { getProjects, getProjectsBond, NEW_RECORD_HASH, statuses } from '../services/timeKeeping'
+import timeKeeping, { getProjects, getProjectsBond, NEW_RECORD_HASH, recordTasks, statuses } from '../services/timeKeeping'
 
 // Hash that indicates creation of new record
 const DURATION_ZERO = '00:00:00'
@@ -121,22 +121,7 @@ function handleSubmitTime(hash, projectName, values, status, reason, checkBanned
 
     const { onSubmit } = this.props
     const { blockCount, blockEnd, blockStart, breakCount, duration, projectHash, workerAddress } = values
-    const queueProps = {
-        address: workerAddress, // for balance check
-        type: QUEUE_TYPES.BLOCKCHAIN,
-        func: 'timeKeeping_record_save',
-        args: [
-            workerAddress,
-            projectHash,
-            hash,
-            status,
-            reason,
-            blockCount,
-            0,
-            blockStart,
-            blockEnd,
-            breakCount,
-        ],
+    const queueProps = recordTasks.save(workerAddress, projectHash, hash, status, reason, blockCount, 0, blockStart, blockEnd, breakCount, {
         title: texts.tkNewRecord,
         description: `${wordsCap.activity}: ${projectName} | ${wordsCap.duration}: ${values.duration}`,
         then: success => {
@@ -154,7 +139,41 @@ function handleSubmitTime(hash, projectName, values, status, reason, checkBanned
             })
             success && this.handleReset && this.handleReset()
         },
-    }
+    })
+    // const queueProps = {
+    //     address: workerAddress, // for balance check
+    //     type: QUEUE_TYPES.BLOCKCHAIN,
+    //     func: 'timeKeeping_record_save',
+    //     args: [
+    //         workerAddress,
+    //         projectHash,
+    //         hash,
+    //         status,
+    //         reason,
+    //         blockCount,
+    //         0,
+    //         blockStart,
+    //         blockEnd,
+    //         breakCount,
+    //     ],
+    //     title: texts.tkNewRecord,
+    //     description: `${wordsCap.activity}: ${projectName} | ${wordsCap.duration}: ${values.duration}`,
+    //     then: success => {
+    //         isFn(onSubmit) && onSubmit(success, values)
+    //         this.setState({
+    //             closeText: undefined,
+    //             message: {
+    //                 content: success ? texts.recordSubmittedSuccessfully : texts.transactionFailed,
+    //                 header: success ? wordsCap.success : wordsCap.error,
+    //                 showIcon: true,
+    //                 status: success ? 'success' : 'error',
+    //             },
+    //             submitDisabled: false,
+    //             success,
+    //         })
+    //         success && this.handleReset && this.handleReset()
+    //     },
+    // }
 
     const message = {
         content: texts.requestQueuedMsg,

@@ -17,8 +17,8 @@ import identities, { getSelected, selectedAddressBond } from '../services/identi
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import partners from '../services/partner'
+import { getTimeRecordsDetails, statuses, getTimeRecordsBonds, recordTasks } from '../services/timeKeeping'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import { getTimeRecordsDetails, statuses, getTimeRecordsBonds } from '../services/timeKeeping'
 import { getLayout } from '../services/window'
 
 const toBeImplemented = () => alert('To be implemented')
@@ -315,10 +315,8 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
     }
 
     getRecords = hashList => {
-        hashList = hashList.flat().map(hashToStr)
-        // only update list if changed
-        if (hashList && JSON.stringify(hashList) === JSON.stringify(this.hashList)) return
-        this.hashList = isArr(hashList) ? hashList : this.hashList
+        hashList = (isArr(hashList) ? hashList : this.hashList).flat().map(hashToStr)
+        this.hashList = hashList
         if (this.hashList.length === 0) return this.setState({ data: new Map() })
 
         // get individual records details
@@ -351,17 +349,12 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
     handleApprove = (hash, approve = false) => {
         const { data, inProgressHashes } = this.state
-        const { approved, projectHash, projectOwnerAddress, submit_status, workerAddress } = data.get(hash) || {}
+        const { projectHash, projectOwnerAddress, submit_status, workerAddress } = data.get(hash) || {}
         const targetStatus = approve ? statuses.accept : statuses.reject
         if (!workerAddress || submit_status !== statuses.submit || targetStatus === submit_status) return
         inProgressHashes.push(hash)
         this.setState({ inProgressHashes })
-        // const reason = approve ? null : {.....}
-        // timeKeeping.record.approve(workerAddress, projectHash, hash, approve)
-        addToQueue({
-            type: QUEUE_TYPES.BLOCKCHAIN,
-            func: 'timeKeeping_record_approve',
-            args: [projectOwnerAddress, workerAddress, projectHash, hash, approve],
+        const task = recordTasks.approve(projectOwnerAddress, workerAddress, projectHash, hash, approve, null, {
             title: `${wordsCap.timekeeping} - ${approve ? texts.approveRecord : texts.rejectRecord}`,
             description: `${texts.recordId}: ${hash}`,
             then: success => {
@@ -370,6 +363,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 success && this.getRecords()
             },
         })
+        addToQueue(task)
     }
 
     handleArchive = (hash, archive = true) => {

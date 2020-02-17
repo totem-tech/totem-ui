@@ -5,7 +5,6 @@ import DataStorage from '../utils/DataStorage'
 import { hashToBytes, hashToStr, validateAddress, ss58Decode, ss58Encode } from '../utils/convert'
 import { isArr, isObj, mapJoin, arrUnique } from '../utils/utils'
 import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
-
 // services
 import { getUser } from './chatClient'
 import identities, { getSelected } from './identity'
@@ -32,6 +31,7 @@ const _config = {
 // to sumbit a new time record must submit with this hash
 export const NEW_RECORD_HASH = '0x40518ed7e875ba87d6c7358c06b1cac9d339144f8367a0632af7273423dd124e'
 export const moduleKey = 'time-keeping'
+const TX_STORAGE = 'tx_storage'
 // record status codes
 export const statuses = {
     draft: 0,
@@ -44,7 +44,6 @@ export const statuses = {
 }
 // timeKeeping form values and states for use with the TimeKeeping form
 export const formData = data => {
-    const moduleKey = 'time-keeping'
     const dataKey = 'TimeKeepingForm'
     const gs = storage.settings.module(moduleKey) || {}
     if (isObj(data)) {
@@ -219,6 +218,57 @@ export const getProjectWorkers = projectHash => Bond.promise([
     return { isOwner, ownerAddress, workers }
 })
 
+export const recordTasks = {
+    // Blockchain transaction
+    // (project owner) approve/reject a time record
+    //
+    // Params:
+    // @workerAddress   string/bond
+    // @projectHash     string/bond/Uint8Array
+    // @recordHash      string/bond/Uint8Array
+    // @status          integer: default 0
+    // @reason          object: {ReasonCode: integer, ReasonCodeType: integer}
+    approve: (ownerAddress, workerAddress, projectHash, recordHash, accepted, reason, queueProps = {}) => ({
+        ...queueProps,
+        address: ownerAddress,
+        func: 'api.tx.timekeeping.authoriseTime',
+        type: TX_STORAGE,
+        args: [
+            workerAddress,
+            hashToStr(projectHash),
+            hashToStr(recordHash),
+            accepted ? statuses.accept : statuses.reject,
+            reason || {
+                ReasonCodeKey: 0,
+                ReasonCodeTypeKey: 0
+            },
+        ],
+    }),
+    // Add or update a time record. To add a new record, must use `NEW_RECORD_HASH`.
+    // 
+    // @postingPeriod u16: 15 fiscal periods (0-14) // not yet implemented use default 0
+    // add/update record
+    save: (workerAddress, projectHash, recordHash, status, reason, blockCount, postingPeriod, blockStart, blockEnd, breakCount, queueProps) => ({
+        ...queueProps,
+        address: workerAddress,
+        func: 'api.tx.timekeeping.submitTime',
+        type: TX_STORAGE,
+        args: [
+            hashToStr(projectHash),
+            hashToStr(recordHash || NEW_RECORD_HASH),
+            status || 0,
+            reason || {
+                ReasonCodeKey: 0,
+                ReasonCodeTypeKey: 0
+            },
+            blockCount || 0,
+            postingPeriod || 0,
+            blockStart || 0,
+            blockEnd || 0,
+            breakCount || 0,
+        ],
+    }),
+}
 export const record = {
     // Blockchain transaction
     // (project owner) approve/reject a time record

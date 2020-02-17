@@ -8,6 +8,10 @@ import DataStorage from '../utils/DataStorage'
 const PREFIX = 'totem_'
 const PREFIX_STATIC = PREFIX + 'static_'
 const storage = {}
+// contain a list of all localStorage keys that are for temporary/non-crucial data. Eg: cached data, country list, language data
+// const tempStorageKeys = []
+
+// export const addTempStorageKey = key => !tempStorageKeys.includes(key) && tempStorageKeys.push(key)
 
 storage.countries = new DataStorage(PREFIX_STATIC + 'countries', true)
 

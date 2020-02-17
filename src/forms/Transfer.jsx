@@ -182,7 +182,8 @@ export default class Transfer extends Component {
 
         addToQueue({
             type: QUEUE_TYPES.TX_TRANSFER,
-            args: [from, to, amount],
+            args: [to, amount],
+            address: from,
             then: (success, args) => {
                 if (!success) return this.setMessage(args[0])
                 this.setMessage(null, args[0], name, amountXTX)
