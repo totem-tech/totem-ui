@@ -114,7 +114,7 @@ export default class FormBuilder extends ReactiveComponent {
         if (submitText !== null) {
             let submitProps = React.isValidElement(submitText) ? objCopy(submitText.props) : {}
             const { content, disabled, onClick, positive } = submitProps
-            const shouldDisable = isFormInvalid(inputs, values) || submitDisabled || message.error || success
+            const shouldDisable = isFormInvalid(inputs, values) || submitDisabled || success
             submitProps.content = content || (!isStr(submitText) ? content : submitText)
             submitProps.disabled = isBool(disabled) ? disabled : shouldDisable
             submitProps.onClick = isFn(onClick) ? onClick : this.handleSubmit

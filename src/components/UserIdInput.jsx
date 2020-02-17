@@ -10,6 +10,7 @@ const [words, wordsCap] = translated({
     add: 'add'
 }, true)
 const [texts] = translated({
+    validatingUserId: 'Checking if User ID exists...',
     enterUserId: 'Enter User ID',
     enterUserIds: 'Enter User ID(s)',
     invalidUserId: 'Invalid User ID',
@@ -77,6 +78,8 @@ export default class UserIdInput extends Component {
             ...input,
             onChange: this.handleChange,
         }
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
     componentWillMount() {
@@ -128,13 +131,14 @@ export default class UserIdInput extends Component {
                 showIcon: true,
                 status: 'warning'
             },
+            noResultsMessage: isOwnId ? texts.noResultsMessage : texts.validatingUserId,
             open: !isOwnId,
             searchQuery: '',
             value,
         })
-
+        isFn(onChange) && onChange(e, { ...data, invalid: true, value })
         // trigger a value change
-        if (isOwnId) return isFn(onChange) && onChange(e, { ...data, invalid: isOwnId, value })
+        if (isOwnId) return
 
         // check if User ID is valid
         client.idExists(userId, exists => {
@@ -161,9 +165,10 @@ export default class UserIdInput extends Component {
                 })
             }
             // trigger a value change
-            isFn(onChange) && onChange(e, { ...data, value })
+            isFn(onChange) && onChange(e, { ...data, invalid: false, value })
             this.setState({
                 ...input,
+                noResultsMessage: texts.noResultsMessage,
                 open: exists && multiple,
                 value,
                 searchQuery: '',

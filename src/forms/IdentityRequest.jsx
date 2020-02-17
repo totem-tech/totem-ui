@@ -43,7 +43,7 @@ export default class IdentityRequestForm extends ReactiveComponent {
         this.state = {
             loading: false,
             message: {},
-            onSubmit: this.handleSubmit.bind(this),
+            onSubmit: this.handleSubmit,
             success: false,
             inputs: [
                 {
@@ -91,40 +91,8 @@ export default class IdentityRequestForm extends ReactiveComponent {
 
         fillValues(this.state.inputs, props.values)
     }
-    handleAddUser(e, data) {
-        const { value: userId } = data
-        const { inputs } = this.state
-        const idsIn = findInput(inputs, 'userIds')
-        idsIn.loading = true
-        this.setState({ inputs })
 
-        // check if User ID is valid
-        client.idExists(userId, exists => {
-            idsIn.loading = false
-            idsIn.invalid = !exists
-            idsIn.message = exists ? {} : {
-                content: texts.invalidUserID,
-                showIcon: true,
-                status: 'error',
-            }
-
-            if (exists && (getUser() || {}).id !== userId) {
-                idsIn.value = arrUnique([...idsIn.value, userId])
-                idsIn.options = idsIn.value.map(id => ({
-                    key: id,
-                    text: id,
-                    value: id,
-                }))
-            } else {
-                // not valid or entered own userId => remove from values
-                idsIn.value.splice(idsIn.value.indexOf(userId), 1)
-            }
-
-            this.setState({ inputs })
-        })
-    }
-
-    handleSubmit(e, values) {
+    handleSubmit = (e, values) => {
         const { onSubmit } = this.props
         const { userIds, reason, customReason } = values
         const data = { reason: reason === 'Custom' ? customReason : reason }
