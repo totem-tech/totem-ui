@@ -1,21 +1,23 @@
 import React, { Component } from 'react'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput } from '../components/FormBuilder'
-import identities from '../services/identity'
 import { newSignature, signingKeyPair, verifySignature } from '../utils/naclHelper'
 import { encodeBase64, decodeBase64, decodeUTF8, bytesToHex, hashToStr } from '../utils/convert'
+// services
+import identities from '../services/identity'
+import { tasks } from '../services/blockchain'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
 export default class KeyRegistryPlayground extends Component {
     constructor() {
         super()
         this.state = {
-            onSubmit: this.handleSubmit.bind(this),
+            onSubmit: this.handleSubmit,
             inputs: [
                 {
                     label: 'Identity',
                     name: 'address',
-                    onChange: this.generateSignature.bind(this),
+                    onChange: this.generateSignature,
                     options: identities.getAll().map(({ address, name }) => ({
                         key: address,
                         text: name,
@@ -29,7 +31,7 @@ export default class KeyRegistryPlayground extends Component {
                 {
                     label: 'Message',
                     name: 'data',
-                    onChange: this.generateSignature.bind(this),
+                    onChange: this.generateSignature,
                     required: true,
                     type: 'text',
                     value: '',
@@ -91,7 +93,7 @@ export default class KeyRegistryPlayground extends Component {
         }
     }
 
-    generateSignature(e, { data, address }) {
+    generateSignature = (e, { data, address }) => {
         if (!data || !address) return
         const { inputs } = this.state
         const identity = identities.find(address)
@@ -109,15 +111,11 @@ export default class KeyRegistryPlayground extends Component {
         Object.keys(newValues).forEach(key => findInput(inputs, key).bond.changed(newValues[key]))
     }
 
-    handleSubmit(e, { address, dataHex, publicHex, signatureHex }) {
+    handleSubmit = (e, { address, dataHex, publicHex, signatureHex }) => {
         this.setState({ loading: true })
-        addToQueue({
-            address, // for balance check
-            type: QUEUE_TYPES.BLOCKCHAIN,
+        addToQueue(tasks.registerKey(address, publicHex, dataHex, signatureHex, {
             title: 'Register Key',
-            func: 'registerKey',
-            args: [address, publicHex, dataHex, signatureHex],
-            then: (success) => {
+            then: success => {
                 this.setState({
                     loading: false,
                     message: {
@@ -126,10 +124,8 @@ export default class KeyRegistryPlayground extends Component {
                     }
                 })
             }
-        })
+        }))
     }
 
-    render() {
-        return <FormBuilder {...this.state} />
-    }
+    render = () => <FormBuilder {...this.state} />
 }

@@ -12,7 +12,7 @@ import PartnerForm from '../forms/Partner'
 import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'
 import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
 // Services
-import { hashTypes } from '../services/blockchain'
+import { hashTypes, tasks } from '../services/blockchain'
 import identities, { getSelected, selectedAddressBond } from '../services/identity'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
@@ -375,17 +375,14 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         inProgressHashes.push(hash)
         this.setState({ inProgressHashes })
 
-        addToQueue({
-            type: QUEUE_TYPES.BLOCKCHAIN,
-            func: 'archiveRecord',
-            args: [address, hashTypes.timeRecordHash, hash, archive],
+        addToQueue(tasks.archiveRecord(address, hashTypes.timeRecordHash, hash, archive, {
             title: texts.archiveRecord,
             description: `${wordsCap.hash}: ${hash}`,
             then: () => {
                 inProgressHashes.shift(hash)
                 this.setState({ inProgressHashes })
             }
-        })
+        }))
     }
 
     handleBan = (selectedHashes) => {

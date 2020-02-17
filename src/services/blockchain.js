@@ -1,7 +1,7 @@
 import { addCodecTransform, post } from 'oo7-substrate'
 import project from './project'
 import storage from './storage'
-import { hashToBytes, validateAddress } from '../utils/convert'
+import { hashToStr, validateAddress } from '../utils/convert'
 import { setNetworkDefault, denominationInfo } from 'oo7-substrate'
 import { connect } from '../utils/polkadotHelper'
 import types from '../utils/totem-polkadot-js-types'
@@ -10,6 +10,7 @@ import { isObj } from '../utils/utils'
 // oo7-substrate: register custom types
 Object.keys(types).forEach(key => addCodecTransform(key, types[key]))
 const moduleKey = 'blockchain'
+const TX_STORAGE = 'tx_storage'
 let config = {
     primary: 'Ktx',
     unit: 'Transactions',
@@ -42,13 +43,50 @@ export const nodes = [
     'wss://node1.totem.live',
 ]
 
-// blockchain throws error!
-export const archiveRecord = (hashOwnerAddress, type, hash, archive = true) => post({
-    sender: validateAddress(hashOwnerAddress),
-    call: calls.archive.archiveRecord(type, hashToBytes(hash), archive),
-    compact: false,
-    longevity: true
-})
+// Save general (not specific to a module or used by multiple modules) data to blockchain storage.
+// Each function returns a task (an object) that can be used to create a queued transaction.
+// Make sure to supply appropriate `title` and `descrption` properties to `@queueProps`
+// and use the `addToQueue(task)` function from queue service to add the task to the queue
+export const tasks = {
+    // un-/archive a record. See @hashTypes for a list of supported types.
+    //
+    // Props: 
+    // @hashOwnerAddress    string
+    // @type                int: type code. See @hashTypes
+    // @hash                string: hash of the record to be un-/archived
+    // @archive             boolean: indicates archive or unarchive action
+    // @queueProps          string: provide task specific properties (eg: description, title, then, next...)
+    archiveRecord: (hashOwnerAddress, type, hash, archive = true, queueProps = {}) => ({
+        ...queueProps,
+        address: hashOwnerAddress,
+        func: 'api.tx.archive.archiveRecord',
+        type: TX_STORAGE,
+        args: [
+            type,
+            hashToStr(hash),
+            archive,
+        ],
+    }),
+    // add a key to the key registry
+    //
+    // Props: 
+    // @address     string
+    // @signPubKey  string
+    // @data        string
+    // @signature   string
+    // @queueProps  string: provide task specific properties (eg: description, title, then, next...)
+    registerKey: (address, signPubKey, data, signature, queueProps = {}) => ({
+        ...queueProps,
+        address: address,
+        func: 'api.tx.keyregistry.registerKeys',
+        type: TX_STORAGE,
+        args: [
+            signPubKey,
+            data,
+            signature,
+        ],
+    })
+}
 
 export const getConfig = () => config
 
@@ -81,7 +119,7 @@ export const setConfig = newConfig => {
 // Only blockchain transactions
 export default {
     getConnection,
-    archiveRecord,
+    tasks,
     addNewProject: project.add,
     reassignProject: project.reassign,
     removeProject: project.remove,
@@ -91,16 +129,16 @@ export default {
     //// timeKeeping_record_approve: timeKeeping.record.approve,
     //// timeKeeping_worker_add: timeKeeping.worker.add,
     //// timeKeeping_worker_accept: timeKeeping.worker.accept,
-    transfer: (addressFrom, addressTo, amount) => post({
-        sender: runtime.indices.tryIndex(validateAddress(addressFrom)),
-        call: calls.balances.transfer(runtime.indices.tryIndex(validateAddress(addressTo)), amount),
-        compact: false,
-        longevity: true
-    }),
-    registerKey: (address, signPubKey, data, signature) => post({
-        sender: validateAddress(address),
-        call: calls.keyregistry.registerKeys(signPubKey, data, signature),
-        compact: false,
-        longevity: true
-    })
+    // transfer: (addressFrom, addressTo, amount) => post({
+    //     sender: runtime.indices.tryIndex(validateAddress(addressFrom)),
+    //     call: calls.balances.transfer(runtime.indices.tryIndex(validateAddress(addressTo)), amount),
+    //     compact: false,
+    //     longevity: true
+    // }),
+    // registerKey: (address, signPubKey, data, signature) => post({
+    //     sender: validateAddress(address),
+    //     call: calls.keyregistry.registerKeys(signPubKey, data, signature),
+    //     compact: false,
+    //     longevity: true
+    // })
 }
