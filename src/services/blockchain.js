@@ -88,7 +88,7 @@ export default {
     // removeProject: project.remove,
     // closeProject: project.close,
     // reopenProject: project.reopen,
-    // timeKeeping_record_save: timeKeeping.record.save,
+    //// timeKeeping_record_save: timeKeeping.record.save,
     //// timeKeeping_record_approve: timeKeeping.record.approve,
     // timeKeeping_worker_add: timeKeeping.worker.add,
     // timeKeeping_worker_accept: timeKeeping.worker.accept,

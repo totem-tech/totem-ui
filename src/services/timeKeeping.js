@@ -246,11 +246,13 @@ export const recordTasks = {
     }),
     // Add or update a time record. To add a new record, must use `NEW_RECORD_HASH`.
     // 
+    // Params:
+    // @address         string: worker's address (create or update) or owner address (only set as draft)
     // @postingPeriod u16: 15 fiscal periods (0-14) // not yet implemented use default 0
     // add/update record
-    save: (workerAddress, projectHash, recordHash, status, reason, blockCount, postingPeriod, blockStart, blockEnd, breakCount, queueProps) => ({
+    save: (address, projectHash, recordHash, status, reason, blockCount, postingPeriod, blockStart, blockEnd, breakCount, queueProps) => ({
         ...queueProps,
-        address: workerAddress,
+        address,
         func: 'api.tx.timekeeping.submitTime',
         type: TX_STORAGE,
         args: [
@@ -270,30 +272,30 @@ export const recordTasks = {
     }),
 }
 export const record = {
-    // Blockchain transaction
-    // (project owner) approve/reject a time record
-    //
-    // Params:
-    // @workerAddress   string/bond
-    // @projectHash     string/bond/Uint8Array
-    // @recordHash      string/bond/Uint8Array
-    // @status          integer: default 0
-    // @reason          object: {ReasonCode: integer, ReasonCodeType: integer}
-    approve: (ownerAddress, workerAddress, projectHash, recordHash, accepted, reason) => post({
-        sender: validateAddress(ownerAddress),
-        call: calls.timekeeping.authoriseTime(
-            ss58Decode(workerAddress),
-            hashToBytes(projectHash),
-            hashToBytes(recordHash),
-            accepted ? statuses.accept : statuses.reject,
-            reason || {
-                ReasonCodeKey: 0,
-                ReasonCodeTypeKey: 0
-            },
-        ),
-        compact: false,
-        longevity: true
-    }),
+    // // Blockchain transaction
+    // // (project owner) approve/reject a time record
+    // //
+    // // Params:
+    // // @workerAddress   string/bond
+    // // @projectHash     string/bond/Uint8Array
+    // // @recordHash      string/bond/Uint8Array
+    // // @status          integer: default 0
+    // // @reason          object: {ReasonCode: integer, ReasonCodeType: integer}
+    // approve: (ownerAddress, workerAddress, projectHash, recordHash, accepted, reason) => post({
+    //     sender: validateAddress(ownerAddress),
+    //     call: calls.timekeeping.authoriseTime(
+    //         ss58Decode(workerAddress),
+    //         hashToBytes(projectHash),
+    //         hashToBytes(recordHash),
+    //         accepted ? statuses.accept : statuses.reject,
+    //         reason || {
+    //             ReasonCodeKey: 0,
+    //             ReasonCodeTypeKey: 0
+    //         },
+    //     ),
+    //     compact: false,
+    //     longevity: true
+    // }),
     // get details of a record
     get: recordHash => runtime.timekeeping.timeRecord(hashToBytes(recordHash)),
     isOwner: (hash, address) => runtime.timeKeeping.timeHashOwner(hashToBytes(hash), ss58Decode(address)),
@@ -305,30 +307,30 @@ export const record = {
     listByProject: projectHash => runtime.timekeeping.projectTimeRecordsHashList(hashToBytes(projectHash)),
     // list of all archived record hashes in a project 
     listByProjectArchive: projectHash => runtime.timekeeping.projectTimeRecordsHashListArchive(hashToBytes(projectHash)),
-    // Blockchain transaction
-    // Add or update a time record. To add a new record, must use `NEW_RECORD_HASH`.
-    // 
-    // @postingPeriod u16: 15 fiscal periods (0-14) // not yet implemented use default 0
-    // add/update record
-    save: (workerAddress, projectHash, recordHash, status, reason, blockCount, postingPeriod, blockStart, blockEnd, breakCount) => post({
-        sender: validateAddress(workerAddress),
-        call: calls.timekeeping.submitTime(
-            hashToBytes(projectHash),
-            hashToBytes(recordHash || NEW_RECORD_HASH),
-            status || 0,
-            reason || {
-                ReasonCodeKey: 0,
-                ReasonCodeTypeKey: 0
-            },
-            blockCount || 0,
-            postingPeriod || 0,
-            blockStart || 0,
-            blockEnd || 0,
-            breakCount || 0,
-        ),
-        compact: false,
-        longevity: true
-    }),
+    // // Blockchain transaction
+    // // Add or update a time record. To add a new record, must use `NEW_RECORD_HASH`.
+    // // 
+    // // @postingPeriod u16: 15 fiscal periods (0-14) // not yet implemented use default 0
+    // // add/update record
+    // save: (workerAddress, projectHash, recordHash, status, reason, blockCount, postingPeriod, blockStart, blockEnd, breakCount) => post({
+    //     sender: validateAddress(workerAddress),
+    //     call: calls.timekeeping.submitTime(
+    //         hashToBytes(projectHash),
+    //         hashToBytes(recordHash || NEW_RECORD_HASH),
+    //         status || 0,
+    //         reason || {
+    //             ReasonCodeKey: 0,
+    //             ReasonCodeTypeKey: 0
+    //         },
+    //         blockCount || 0,
+    //         postingPeriod || 0,
+    //         blockStart || 0,
+    //         blockEnd || 0,
+    //         breakCount || 0,
+    //     ),
+    //     compact: false,
+    //     longevity: true
+    // }),
 }
 
 export const worker = {

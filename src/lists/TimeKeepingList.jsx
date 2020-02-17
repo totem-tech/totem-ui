@@ -398,6 +398,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             approved,
             end_block,
             nr_of_breaks,
+            posting_period,
             projectHash,
             projectOwnerAddress,
             start_block,
@@ -413,30 +414,28 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
         inProgressHashes.push(hash)
         this.setState({ inProgressHashes })
-        addToQueue({
-            address: projectOwnerAddress, // for balance check
-            type: QUEUE_TYPES.BLOCKCHAIN,
-            func: 'timeKeeping_record_save',
-            title: `${wordsCap.timekeeping} - ${texts.setAsDraft}`,
-            description: `${texts.recordId}: ${hash}`,
-            args: [
-                projectOwnerAddress,
-                projectHash,
-                hash,
-                statuses.draft,
-                reason,
-                total_blocks,
-                0,
-                start_block,
-                end_block,
-                nr_of_breaks,
-            ],
-            then: success => {
-                inProgressHashes.shift(hash)
-                this.setState({ inProgressHashes })
-                success && this.getRecords()
+        const task = recordTasks.save(
+            projectOwnerAddress,
+            projectHash,
+            hash,
+            statuses.draft,
+            reason,
+            total_blocks,
+            posting_period || 0,
+            start_block,
+            end_block,
+            nr_of_breaks,
+            {
+                title: `${wordsCap.timekeeping} - ${texts.setAsDraft}`,
+                description: `${texts.recordId}: ${hash}`,
+                then: success => {
+                    inProgressHashes.shift(hash)
+                    this.setState({ inProgressHashes })
+                    success && this.getRecords()
+                },
             }
-        })
+        )
+        addToQueue(task)
     }
 
     showDetails = (hash, record) => {

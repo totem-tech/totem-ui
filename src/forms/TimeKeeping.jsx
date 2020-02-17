@@ -140,40 +140,6 @@ function handleSubmitTime(hash, projectName, values, status, reason, checkBanned
             success && this.handleReset && this.handleReset()
         },
     })
-    // const queueProps = {
-    //     address: workerAddress, // for balance check
-    //     type: QUEUE_TYPES.BLOCKCHAIN,
-    //     func: 'timeKeeping_record_save',
-    //     args: [
-    //         workerAddress,
-    //         projectHash,
-    //         hash,
-    //         status,
-    //         reason,
-    //         blockCount,
-    //         0,
-    //         blockStart,
-    //         blockEnd,
-    //         breakCount,
-    //     ],
-    //     title: texts.tkNewRecord,
-    //     description: `${wordsCap.activity}: ${projectName} | ${wordsCap.duration}: ${values.duration}`,
-    //     then: success => {
-    //         isFn(onSubmit) && onSubmit(success, values)
-    //         this.setState({
-    //             closeText: undefined,
-    //             message: {
-    //                 content: success ? texts.recordSubmittedSuccessfully : texts.transactionFailed,
-    //                 header: success ? wordsCap.success : wordsCap.error,
-    //                 showIcon: true,
-    //                 status: success ? 'success' : 'error',
-    //             },
-    //             submitDisabled: false,
-    //             success,
-    //         })
-    //         success && this.handleReset && this.handleReset()
-    //     },
-    // }
 
     const message = {
         content: texts.requestQueuedMsg,
