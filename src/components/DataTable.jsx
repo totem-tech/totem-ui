@@ -68,6 +68,12 @@ export default class DataTable extends ReactiveComponent {
             <Grid.Column key="0" tablet={16} computer={5} style={{ padding: 0 }}>
                 <Input
                     icon='search'
+                    iconPosition='left'
+                    action={!keywords ? undefined : {
+                        basic: true,
+                        icon: { className: 'no-margin', name: 'close' },
+                        onClick: () => this.setState({ keywords: '' })
+                    }}
                     onChange={(e, d) => this.setState({ keywords: d.value })}
                     onDragOver={e => e.preventDefault()}
                     onDrop={e => {

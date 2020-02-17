@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { forceRefreshPage, generateHash } from '../utils/utils'
+import { arrSort, generateHash } from '../utils/utils'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 import client from '../services/chatClient'
 import { getSelected, getTexts, languages, setSelected, setTexts, translated } from '../services/language'
@@ -16,6 +16,7 @@ export default class SettingsView extends Component {
     render = () => <GlobalSettings />
 }
 
+const forceRefreshPage = () => window.location.reload(true)
 const savedMsg = { content: texts.saved, status: 'success' }
 const notImplementedMsg = { content: texts.notImplemented, status: 'warning' }
 class GlobalSettings extends Component {
@@ -37,11 +38,14 @@ class GlobalSettings extends Component {
                     label: textsCap.gsLanguageLabel,
                     name: 'languageCode',
                     onChange: this.handleLanguageChange,
-                    options: Object.keys(languages).sort().map(code => ({
-                        key: code,
-                        text: languages[code],
-                        value: code,
-                    })),
+                    options: arrSort(
+                        Object.keys(languages).sort().map(code => ({
+                            key: code,
+                            text: languages[code],
+                            value: code,
+                        })),
+                        'text',
+                    ),
                     search: true,
                     selection: true,
                     type: 'dropdown',
@@ -51,12 +55,15 @@ class GlobalSettings extends Component {
                     label: textsCap.gsCurrencyLabel,
                     name: 'currency',
                     onChange: this.handleCurrencyChange,
-                    options: Object.keys(this.currencies).map(value => ({
-                        description: this.currencies[value],
-                        key: value,
-                        text: value,
-                        value
-                    })),
+                    options: arrSort(
+                        Object.keys(this.currencies).map(value => ({
+                            description: this.currencies[value],
+                            key: value,
+                            text: value,
+                            value
+                        })),
+                        'text',
+                    ),
                     search: true,
                     selection: true,
                     type: 'dropdown',

@@ -19,7 +19,7 @@ export const forceClearCachedData = () => {
 	forceRefreshPage()
 }
 // force refresh page from server
-export const forceRefreshPage = () => window.location.reload(true)
+const forceRefreshPage = () => window.location.reload(true)
 
 class PageUtilitiesView extends Component {
 	render = () => (
