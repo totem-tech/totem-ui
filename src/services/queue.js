@@ -61,7 +61,7 @@ const [texts] = translated({
 
 export const QUEUE_TYPES = Object.freeze({
     CHATCLIENT: 'chatclient',
-    BLOCKCHAIN: 'blockchain',
+    BLOCKCHAIN: 'blockchain', // deprecated
     // transaction to transfer funds
     TX_TRANSFER: 'tx_transfer', // todo use polkadot for tx
     // transaction to create/update storage data
@@ -180,104 +180,105 @@ const _processTask = (currentTask, id, toastId) => {
             handleTxStorage(id, rootTask, currentTask, toastId)
             break
         case QUEUE_TYPES.BLOCKCHAIN:
-            // defer tx task to avoid errors
-            if (txInProgress) return txQueue.push({ queueItem: currentTask, id, toastId });
-            const handlePost = () => {
-                txInProgress = true
-                func = blockchain[currentTask.func]
-                if (!func) return queue.delete(id)
-                // initiate transactional request
-                const bond = func.apply({}, args)
-                if (!isBond(bond)) return
-                currentTask.status = 'loading'
-                queue.set(id, rootTask)
+            alert('deprecated queue type used')
+            // // defer tx task to avoid errors
+            // if (txInProgress) return txQueue.push({ queueItem: currentTask, id, toastId });
+            // const handlePost = () => {
+            //     txInProgress = true
+            //     func = blockchain[currentTask.func]
+            //     if (!func) return queue.delete(id)
+            //     // initiate transactional request
+            //     const bond = func.apply({}, args)
+            //     if (!isBond(bond)) return
+            //     currentTask.status = 'loading'
+            //     queue.set(id, rootTask)
 
-                const tieId = bond.tie(result => {
-                    if (!isObj(result)) return;
-                    const { failed, finalized, sending, signing } = result
-                    const done = failed || finalized
-                    const status = !done ? 'loading' : (finalized ? 'success' : 'error')
-                    const statusText = finalized ? texts.txSuccessful : (
-                        signing ? texts.signingTx : (sending ? texts.sendingTx : texts.txFailed)
-                    )
+            //     const tieId = bond.tie(result => {
+            //         if (!isObj(result)) return;
+            //         const { failed, finalized, sending, signing } = result
+            //         const done = failed || finalized
+            //         const status = !done ? 'loading' : (finalized ? 'success' : 'error')
+            //         const statusText = finalized ? texts.txSuccessful : (
+            //             signing ? texts.signingTx : (sending ? texts.sendingTx : texts.txFailed)
+            //         )
 
-                    const content = <p>{description}<br /> {failed && (`${wordsCap.error} ${failed.code}: ${failed.message}`)}</p>
-                    const header = !title ? statusText : `${title}: ${statusText}`
-                    // For debugging
-                    currentTask.error = failed
+            //         const content = <p>{description}<br /> {failed && (`${wordsCap.error} ${failed.code}: ${failed.message}`)}</p>
+            //         const header = !title ? statusText : `${title}: ${statusText}`
+            //         // For debugging
+            //         currentTask.error = failed
 
-                    if (!silent) {
-                        toastId = setToast({ header, content, status }, toastDuration, toastId)
-                    }
-                    currentTask.status = status
-                    queue.set(id, rootTask)
-                    if (!done) return;
-                    isFn(currentTask.then) && currentTask.then(!failed)
-                    _processNextTxItem()
-                    bond.untie(tieId)
-                    if (finalized) next ? _processTask(next, id, toastId) : queue.delete(id)
-                })
-            }
-            const { address } = currentTask
-            if (!address) return handlePost();
-            const wallet = findIdentity(address)
-            if (!wallet && !silent) {
-                setToast({
-                    content: `${texts.txInvalidSender} : ${address}`,
-                    header: `${title}: ${wordsCap.txAborted}`,
-                    status: 'error'
-                }, 0, toastId)
-                queue.delete(id)
-                return
-            }
-            if (!silent) {
-                toastId = setToast({
-                    header: `${title}: ${texts.checkingBalance}`,
-                    content: description,
-                    status: 'loading'
-                }, toastDuration, toastId)
-            }
+            //         if (!silent) {
+            //             toastId = setToast({ header, content, status }, toastDuration, toastId)
+            //         }
+            //         currentTask.status = status
+            //         queue.set(id, rootTask)
+            //         if (!done) return;
+            //         isFn(currentTask.then) && currentTask.then(!failed)
+            //         _processNextTxItem()
+            //         bond.untie(tieId)
+            //         if (finalized) next ? _processTask(next, id, toastId) : queue.delete(id)
+            //     })
+            // }
+            // const { address } = currentTask
+            // if (!address) return handlePost();
+            // const wallet = findIdentity(address)
+            // if (!wallet && !silent) {
+            //     setToast({
+            //         content: `${texts.txInvalidSender} : ${address}`,
+            //         header: `${title}: ${wordsCap.txAborted}`,
+            //         status: 'error'
+            //     }, 0, toastId)
+            //     queue.delete(id)
+            //     return
+            // }
+            // if (!silent) {
+            //     toastId = setToast({
+            //         header: `${title}: ${texts.checkingBalance}`,
+            //         content: description,
+            //         status: 'loading'
+            //     }, toastDuration, toastId)
+            // }
 
-            txInProgress = true
-            runtime.balances.balance(address).then(balance => {
-                const hasEnough = balance >= MIN_BALANCE
-                if (hasEnough) return handlePost();
-                const continueBtn = (
-                    <button
-                        className="ui button basic mini"
-                        onClick={() => _processTask(currentTask, id, toastId)}
-                    >
-                        {texts.clickToContinue}
-                    </button>
-                )
-                const cancelBtn = (
-                    <button
-                        className="ui button basic mini"
-                        onClick={() => queue.delete(id) | removeToast(toastId)}
-                    >
-                        {texts.cancelRequest}
-                    </button>
-                )
+            // txInProgress = true
+            // runtime.balances.balance(address).then(balance => {
+            //     const hasEnough = balance >= MIN_BALANCE
+            //     if (hasEnough) return handlePost();
+            //     const continueBtn = (
+            //         <button
+            //             className="ui button basic mini"
+            //             onClick={() => _processTask(currentTask, id, toastId)}
+            //         >
+            //             {texts.clickToContinue}
+            //         </button>
+            //     )
+            //     const cancelBtn = (
+            //         <button
+            //             className="ui button basic mini"
+            //             onClick={() => queue.delete(id) | removeToast(toastId)}
+            //         >
+            //             {texts.cancelRequest}
+            //         </button>
+            //     )
 
-                if (!silent) {
-                    toastId = setToast({
-                        content: (
-                            <p>
-                                {description} <br />
-                                {texts.insufficientBalanceMsg1} "${wallet.name}".<br />
-                                {texts.insufficientBalanceMsg2}: {MIN_BALANCE} {wordsCap.transactions}.<br />
-                                {texts.insufficientBalanceMsg3} {words.or} {continueBtn} {words.otherwise} {cancelBtn}<br />
-                            </p>
-                        ),
-                        header: `${title}: ${texts.insufficientBalance}`,
-                        status: 'error',
-                    }, 0, toastId)
+            //     if (!silent) {
+            //         toastId = setToast({
+            //             content: (
+            //                 <p>
+            //                     {description} <br />
+            //                     {texts.insufficientBalanceMsg1} "${wallet.name}".<br />
+            //                     {texts.insufficientBalanceMsg2}: {MIN_BALANCE} {wordsCap.transactions}.<br />
+            //                     {texts.insufficientBalanceMsg3} {words.or} {continueBtn} {words.otherwise} {cancelBtn}<br />
+            //                 </p>
+            //             ),
+            //             header: `${title}: ${texts.insufficientBalance}`,
+            //             status: 'error',
+            //         }, 0, toastId)
 
-                    // For debugging
-                    currentTask.error = texts.insufficientBalance
-                }
-                _processNextTxItem()
-            })
+            //         // For debugging
+            //         currentTask.error = texts.insufficientBalance
+            //     }
+            //     _processNextTxItem()
+            // })
             break;
         case QUEUE_TYPES.CHATCLIENT:
             func = client[currentTask.func]
@@ -344,6 +345,7 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
     if (!done) return
     isFn(task.then) && task.then(status === SUCCESS, args)
     if (isObj(task.next)) return _processTask(task.next, id, toastId)
+    queue.delete(id)
     _processNextTxItem()
 }
 
