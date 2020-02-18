@@ -22,28 +22,38 @@ export const setLimit = (newLimit, trigger = true) => {
     if (history.size <= limit || limit === null) return
 
     const arr = Array.from(history.getAll())
-    history.setAll(new Map(arr.slice(arr.length - limit)))
+    const limitted = arr.slice(arr.length - limit)
+    history.setAll(new Map(limitted))
     trigger && updateBond()
 }
 
-const acceptedActions = ['client.faucetRequest']
-const notifyTypes = {
-    identity: ['request', 'share']
+const actionIcons = {
+    'api.tx.': 'connectdevelop',
+    'client.faucetRequest': 'money',
+    'client.project': 'tasks',
+}
+const notifyTypesIcons = {
+    identity: {
+        request: 'download',
+        share: 'upload',
+    }
 }
 // checks if action should be logged. All transaction related actions are accepted.
+// returns appropriate icon name if valid
 export const historyWorthy = (func, args) => {
-    if (func.startsWith('api.tx.') || acceptedActions.includes(func)) return true
+    if (func.startsWith('api.tx.')) return actionIcons['api.tx.']
     switch (func) {
         case 'client.project':
             // only log project creation and update actions
             const [hash, project] = args
-            return !!hash && isObj(project)
+            if (!hash || !isObj(project)) return false
+            break
         case 'client.notify':
             const [_, type, childType] = args
-            const childTypes = notifyTypes[type]
-            if (childTypes === true || childTypes.includes(childType)) return true
-        default: return false
+            const childTypes = notifyTypesIcons[type]
+            return isStr(childTypes) ? childTypes : childTypes[childType]
     }
+    return actionIcons[func] || false
 }
 
 // add or update a history item. Each item represents an individual successful or failed queued task 
@@ -81,7 +91,8 @@ export const save = (
     timestamp = new Date().toISOString(),
     id = uuid.v1(),
 ) => {
-    if (!historyWorthy(action, data)) return
+    const icon = historyWorthy(action, data)
+    if (!icon) return
 
     history.set(id, {
         identity,
@@ -93,6 +104,7 @@ export const save = (
         message,
         groupId,
         timestamp,
+        icon,
     })
     setLimit(limit, false)
     updateBond()

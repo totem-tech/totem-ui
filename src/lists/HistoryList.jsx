@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Button } from 'semantic-ui-react'
+import { Button, Icon } from 'semantic-ui-react'
 import DataTable from '../components/DataTable'
 import { formatStrTimestamp } from '../utils/time'
 // services
@@ -17,6 +17,7 @@ const [texts, textsCap] = translated({
     identity: 'identity',
     message: 'message',
     title: 'title',
+    type: 'type',
 }, true)
 
 export default class HistoryList extends Component {
@@ -25,6 +26,11 @@ export default class HistoryList extends Component {
 
         this.state = {
             columns: [
+                {
+                    collapsing: true,
+                    content: ({ icon }) => <Icon className='no-margin' name={icon || 'history'} />,
+                    title: '',
+                },
                 {
                     collapsing: true,
                     key: '_timestamp',
@@ -39,6 +45,7 @@ export default class HistoryList extends Component {
                 {
                     key: 'description',
                     style: {
+                        minWidth: 200,
                         whiteSpace: 'pre-wrap',
                     },
                     title: textsCap.description,

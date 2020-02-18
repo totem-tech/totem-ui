@@ -303,6 +303,9 @@ const handleTxTransfer = (id, rootTask, task, toastId) => {
         ],
         header: texts.txTransferTitle
     }
+    task.title = texts.txTransferTitle
+    task.description = msg.content.join('\n')
+    task.func = 'api.tx.balances.transfer'
     const _save = status => arg0 => setToastNSaveCb(
         id, rootTask, task, status, msg, toastId, silent, toastDuration
     )(arg0)

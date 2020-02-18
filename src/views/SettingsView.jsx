@@ -111,7 +111,7 @@ class GlobalSettings extends Component {
     }
 
     handleHistoryLimitChange = (_, { historyLimit }) => {
-        setLimit(historyLimit === wordsCap.unlimited ? null : historyLimit)
+        setLimit(historyLimit === wordsCap.unlimited ? null : historyLimit, true)
         this.setInputMessage('historyLimit', savedMsg)
     }
 
