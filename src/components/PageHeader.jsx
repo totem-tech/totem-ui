@@ -22,12 +22,10 @@ import { setToast } from '../services/toast'
 // const [words, wordsCap] = translated({}, true)
 const [texts] = translated({
 	addressCopied: 'Address copied to clipboard',
-	connectionFailed: 'Connection failed!',
 	copyAddress: 'Copy Address',
-	faucetRequestSent: 'Faucet request sent',
-	faucetTransferComplete: 'Faucet transfer complete',
+	faucetRequest: 'Faucet request',
+	faucetRequestDetails: 'Requested transaction allocations',
 	requestFunds: 'Request Funds',
-	selectAnIdentity: 'Select an identity',
 	updateIdentity: 'Update Identity',
 })
 export default class PageHeader extends Component {
@@ -73,30 +71,13 @@ export default class PageHeader extends Component {
 		onSubmit: () => this.forceUpdate()
 	})
 
-	handleFaucetRequest = () => {
-		const { address } = getSelected()
-		const client = getClient()
-		if (!client.isConnected()) {
-			const msg = { content: texts.connectionFailed, status: 'error' }
-			this.faucetMsgId = setToast(msg, 3000, this.faucetMsgId)
-			return
-		}
-		this.faucetMsgId = setToast({ content: texts.faucetRequestSent, status: 'loading' }, null, this.faucetMsgId)
-
-		addToQueue({
-			type: QUEUE_TYPES.CHATCLIENT,
-			func: 'faucetRequest',
-			args: [
-				address,
-				(err, txHash) => {
-					this.faucetMsgId = setToast({
-						content: err || texts.faucetTransferComplete,
-						status: !!err ? 'error' : 'success'
-					}, null, this.faucetMsgId)
-				},
-			]
-		}, null, this.faucetMsgId)
-	}
+	handleFaucetRequest = () => addToQueue({
+		type: QUEUE_TYPES.CHATCLIENT,
+		func: 'faucetRequest',
+		title: texts.faucetRequest,
+		description: texts.faucetRequestDetails,
+		args: [getSelected().address]
+	})
 
 	render() {
 		const { id, wallets } = this.state
@@ -177,7 +158,6 @@ class MobileHeader extends Component {
 								<Dropdown
 									labeled
 									onChange={onSelection}
-									placeholder={texts.selectAnIdentity}
 									text={!isMobile ? selected.name : textEllipsis(selected.name, 7, 3, false)}
 									value={selected.address}
 									options={arrSort(
