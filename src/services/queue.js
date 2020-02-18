@@ -6,7 +6,7 @@ import uuid from 'uuid'
 import { addressToStr } from '../utils/convert'
 import DataStorage from '../utils/DataStorage'
 import { transfer, signAndSend } from '../utils/polkadotHelper'
-import { isArr, isFn, isObj, isStr, objClean } from '../utils/utils'
+import { hasValue, isArr, isFn, isObj, isStr, objClean } from '../utils/utils'
 // services
 import { getClient } from './chatClient'
 import { getConnection } from './blockchain'
@@ -196,7 +196,13 @@ const statusTitles = {
 const ERROR = 'error'
 const SUCCESS = 'success'
 const LOADING = 'loading'
-const attachKey = (ar = []) => !isArr(ar) ? ar : <div>{ar.map((x, i) => <p key={i} style={{ margin: 0 }}>{x}</p>)}</div>
+const attachKey = (ar = []) => !isArr(ar) ? ar : (
+    <div>
+        {ar.filter(Boolean).map((x, i) => (
+            <p key={i} style={{ margin: 0 }}>{x}</p>
+        ))}
+    </div>
+)
 const setMessage = (task, msg = {}, duration, id, silent = false) => silent ? null : setToast({
     ...msg,
     content: msg.content ? attachKey(msg.content) : task.description,
@@ -204,17 +210,22 @@ const setMessage = (task, msg = {}, duration, id, silent = false) => silent ? nu
     status: task.status,
 }, duration, id)
 
-const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, duration) => function (errMsg) {
+const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, duration) => function () {
     const cbArgs = arguments
-    const hasError = status === ERROR
+    const errMsg = status === ERROR ? cbArgs[0] : ''
     const done = [SUCCESS, ERROR].includes(status)
     task.status = status
-    task.errorMessage = !hasError ? undefined : (errMsg.startsWith(wordsCap.error) ? '' : wordsCap.error + ': ') + errMsg
+    task.errorMessage = !isStr(errMsg) ? undefined : (
+        `${errMsg.startsWith(wordsCap.error) ? '' : wordsCap.error + ': '}${errMsg}`
+    )
+    const hasError = status === ERROR && task.errorMessage
 
-    hasError && msg.content.unshift(`${task.errorMessage}`)
+    hasError && msg.content.unshift(task.errorMessage)
     task.toastId = setMessage(task, msg, duration, toastId, silent)
     queue.set(id, rootTask)
+
     if (!done) return
+
     try {
         isFn(task.then) && task.then(status === SUCCESS, cbArgs)
     } catch (_) {
@@ -240,24 +251,24 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
 }
 
 const handleChatClient = (id, rootTask, task, toastId) => {
-    try {
-        const { args, description, title, silent, toastDuration } = task
-        const client = getClient()
-        const msg = {
-            content: [description],
-            header: title,
-        }
-        const _save = status => arg0 => setToastNSaveCb(
-            id, rootTask, task, status, msg, toastId, silent, toastDuration
-        )(arg0)
+    const { args, description, title, silent, toastDuration } = task
+    const client = getClient()
+    const msg = {
+        content: [description],
+        header: title,
+    }
+    const _save = status => arg0 => setToastNSaveCb(
+        id, rootTask, task, status, msg, toastId, silent, toastDuration
+    )(arg0)
 
+    try {
         let func = task.func
         func = (func.startsWith('client.') ? '' : 'client.') + func
         func = eval(func)
         eval(client) // just make sure client variable isn't removed by accident
         if (!func || !isFn(func)) return _save(ERROR)(texts.invalidFunc)
         let cbIndex = args.length === 0 ? 0 : args.length - 1
-        if (hasValue(args[cbIndex])) {
+        if (hasValue(args[cbIndex]) && !isFn(args[cbIndex])) {
             cbIndex++
         }
         if (!isFn(args[cbIndex])) {
@@ -265,37 +276,40 @@ const handleChatClient = (id, rootTask, task, toastId) => {
             args[cbIndex] = () => { }
         }
         _save(LOADING)()
+        const t = resolve => err => {
+            console.log({ resolve, err })
+        }
         // initiate request
-        func.promise.apply(null, args).then(_save(SUCCESS), _save(ERROR))
+        func.promise.apply(null, args).then(_save(SUCCESS), _save(ERROR))//.then(t(true), t(false))
     } catch (err) {
         _save(ERROR)(err)
     }
 }
 
 const handleTxTransfer = (id, rootTask, task, toastId) => {
+    // convert addresses to string. if invalid will be empty string.
+    // sender address
+    task.address = addressToStr(task.address)
+    // recipient address
+    task.args[0] = addressToStr(task.args[0])
+
+    const { address: senderAddress, args, silent, toastDuration } = task
+    const [recipientAddress, amount] = args
+    const sender = findIdentity(senderAddress)
+    const invalid = !senderAddress || !recipientAddress || !amount
+    const msg = {
+        content: [
+            `${wordsCap.sender}: ${sender.name}`,
+            `${wordsCap.recipient}: ${getAddressName(recipientAddress)}`,
+            `${wordsCap.amount}: ${amount}`,
+        ],
+        header: texts.txTransferTitle
+    }
+    const _save = status => arg0 => setToastNSaveCb(
+        id, rootTask, task, status, msg, toastId, silent, toastDuration
+    )(arg0)
+
     try {
-        // convert addresses to string. if invalid will be empty string.
-        // sender address
-        task.address = addressToStr(task.address)
-        // recipient address
-        task.args[0] = addressToStr(task.args[0])
-
-        const { address: senderAddress, args, silent, toastDuration } = task
-        const [recipientAddress, amount] = args
-        const sender = findIdentity(senderAddress)
-        const invalid = !senderAddress || !recipientAddress || !amount
-        const msg = {
-            content: [
-                `${wordsCap.sender}: ${sender.name}`,
-                `${wordsCap.recipient}: ${getAddressName(recipientAddress)}`,
-                `${wordsCap.amount}: ${amount}`,
-            ],
-            header: texts.txTransferTitle
-        }
-        const _save = status => arg0 => setToastNSaveCb(
-            id, rootTask, task, status, msg, toastId, silent, toastDuration
-        )(arg0)
-
         _save(!sender || invalid ? ERROR : LOADING)(
             !sender ? texts.txForeignIdentity : (invalid ? texts.txTransferMissingArgs : '')
         )
@@ -317,17 +331,18 @@ const handleTxTransfer = (id, rootTask, task, toastId) => {
     }
 }
 const handleTxStorage = (id, rootTask, task, toastId) => {
+    // convert address to string. if invalid will be empty string.
+    task.address = addressToStr(task.address)
+    const { address, args, description, func, silent, title, toastDuration } = task
+    const msg = {
+        content: [description],
+        header: title,
+    }
+    const _save = status => arg0 => setToastNSaveCb(
+        id, rootTask, task, status, msg, toastId, silent, toastDuration
+    )(arg0)
+
     try {
-        // convert address to string. if invalid will be empty string.
-        task.address = addressToStr(task.address)
-        const { address, args, description, func, silent, title, toastDuration } = task
-        const msg = {
-            content: [description],
-            header: title,
-        }
-        const _save = status => arg0 => setToastNSaveCb(
-            id, rootTask, task, status, msg, toastId, silent, toastDuration
-        )(arg0)
         if (!isStr(func) || !func.startsWith('api.tx.')) return _save(ERROR)(texts.invalidFunc)
 
         _save(LOADING)()
