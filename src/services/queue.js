@@ -3,19 +3,18 @@
  */
 import React from 'react'
 import uuid from 'uuid'
-import { runtime } from 'oo7-substrate'
-import { addressToStr, ss58Decode } from '../utils/convert'
+import { addressToStr } from '../utils/convert'
 import DataStorage from '../utils/DataStorage'
 import { transfer, signAndSend } from '../utils/polkadotHelper'
-import { isArr, isFn, isObj, isStr, objClean, isBond } from '../utils/utils'
+import { isArr, isFn, isObj, isStr, objClean } from '../utils/utils'
 // services
-import client from './chatClient'
-import blockchain, { getConnection } from './blockchain'
-import { set as setHistory } from './history'
-import { find as findIdentity } from './identity'
+import { getClient } from './chatClient'
+import { getConnection } from './blockchain'
+import { save as addToHistory } from './history'
+import { find as findIdentity, getSelected } from './identity'
 import { getAddressName } from './partner'
 import { translated } from './language'
-import { removeToast, setToast } from './toast'
+import { setToast } from './toast'
 
 const queue = new DataStorage('totem_queue-data')
 // Minimum balance required to make a transaction
@@ -53,7 +52,7 @@ const [texts] = translated({
     txInvalidSender: 'Invalid or no sender address supplied',
 
 
-    txStorageInvalidFunc: 'Invalid function name supplied.',
+    invalidFunc: 'Invalid function name supplied.',
 
     txTransferTitle: 'Transfer funds',
     txTransferMissingArgs: 'One or more of the following arguments is missing or invalid: sender identity, recipient identity and amount',
@@ -164,14 +163,11 @@ const _processTask = (currentTask, id, toastId) => {
 
     // Execute current task
     const rootTask = queue.get(id)
-    // queueItem.title = queueItem.title || rootItem.title
-    // queueItem.description = queueItem.description || rootItem.description
     let { args, description, silent, title, toastDuration } = currentTask
     currentTask.args = isArr(args) ? args : [args]
     currentTask.description = description || rootTask.description
     currentTask.silent = currentTask.silent || rootTask.silent
     currentTask.title = title || rootTask.title
-    let func = null
     switch ((currentTask.type || '').toLowerCase()) {
         case QUEUE_TYPES.TX_TRANSFER:
             handleTxTransfer(id, rootTask, currentTask, toastId)
@@ -181,133 +177,9 @@ const _processTask = (currentTask, id, toastId) => {
             break
         case QUEUE_TYPES.BLOCKCHAIN:
             alert('deprecated queue type used')
-            // // defer tx task to avoid errors
-            // if (txInProgress) return txQueue.push({ queueItem: currentTask, id, toastId });
-            // const handlePost = () => {
-            //     txInProgress = true
-            //     func = blockchain[currentTask.func]
-            //     if (!func) return queue.delete(id)
-            //     // initiate transactional request
-            //     const bond = func.apply({}, args)
-            //     if (!isBond(bond)) return
-            //     currentTask.status = 'loading'
-            //     queue.set(id, rootTask)
-
-            //     const tieId = bond.tie(result => {
-            //         if (!isObj(result)) return;
-            //         const { failed, finalized, sending, signing } = result
-            //         const done = failed || finalized
-            //         const status = !done ? 'loading' : (finalized ? 'success' : 'error')
-            //         const statusText = finalized ? texts.txSuccessful : (
-            //             signing ? texts.signingTx : (sending ? texts.sendingTx : texts.txFailed)
-            //         )
-
-            //         const content = <p>{description}<br /> {failed && (`${wordsCap.error} ${failed.code}: ${failed.message}`)}</p>
-            //         const header = !title ? statusText : `${title}: ${statusText}`
-            //         // For debugging
-            //         currentTask.error = failed
-
-            //         if (!silent) {
-            //             toastId = setToast({ header, content, status }, toastDuration, toastId)
-            //         }
-            //         currentTask.status = status
-            //         queue.set(id, rootTask)
-            //         if (!done) return;
-            //         isFn(currentTask.then) && currentTask.then(!failed)
-            //         _processNextTxItem()
-            //         bond.untie(tieId)
-            //         if (finalized) next ? _processTask(next, id, toastId) : queue.delete(id)
-            //     })
-            // }
-            // const { address } = currentTask
-            // if (!address) return handlePost();
-            // const wallet = findIdentity(address)
-            // if (!wallet && !silent) {
-            //     setToast({
-            //         content: `${texts.txInvalidSender} : ${address}`,
-            //         header: `${title}: ${wordsCap.txAborted}`,
-            //         status: 'error'
-            //     }, 0, toastId)
-            //     queue.delete(id)
-            //     return
-            // }
-            // if (!silent) {
-            //     toastId = setToast({
-            //         header: `${title}: ${texts.checkingBalance}`,
-            //         content: description,
-            //         status: 'loading'
-            //     }, toastDuration, toastId)
-            // }
-
-            // txInProgress = true
-            // runtime.balances.balance(address).then(balance => {
-            //     const hasEnough = balance >= MIN_BALANCE
-            //     if (hasEnough) return handlePost();
-            //     const continueBtn = (
-            //         <button
-            //             className="ui button basic mini"
-            //             onClick={() => _processTask(currentTask, id, toastId)}
-            //         >
-            //             {texts.clickToContinue}
-            //         </button>
-            //     )
-            //     const cancelBtn = (
-            //         <button
-            //             className="ui button basic mini"
-            //             onClick={() => queue.delete(id) | removeToast(toastId)}
-            //         >
-            //             {texts.cancelRequest}
-            //         </button>
-            //     )
-
-            //     if (!silent) {
-            //         toastId = setToast({
-            //             content: (
-            //                 <p>
-            //                     {description} <br />
-            //                     {texts.insufficientBalanceMsg1} "${wallet.name}".<br />
-            //                     {texts.insufficientBalanceMsg2}: {MIN_BALANCE} {wordsCap.transactions}.<br />
-            //                     {texts.insufficientBalanceMsg3} {words.or} {continueBtn} {words.otherwise} {cancelBtn}<br />
-            //                 </p>
-            //             ),
-            //             header: `${title}: ${texts.insufficientBalance}`,
-            //             status: 'error',
-            //         }, 0, toastId)
-
-            //         // For debugging
-            //         currentTask.error = texts.insufficientBalance
-            //     }
-            //     _processNextTxItem()
-            // })
             break;
         case QUEUE_TYPES.CHATCLIENT:
-            func = client[currentTask.func]
-            if (!func) return queue.delete(id)
-            // assume last item is the callback
-            const callbackOriginal = args[args.length - 1]
-            // Intercept callback to determine whether request has been successful or not
-            const interceptCb = function () {
-                const args = arguments
-                const err = args[0]
-                const content = (!err ? description : <p>{wordsCap.error}: {err} <br /></p>)
-                const status = !err ? 'success' : 'error'
-                const statusText = !err ? words.success : words.failed
-                const header = !title ? statusText : `${title}: ${statusText}`
-                // For debugging
-                currentTask.error = err
-
-                if (!silent) {
-                    toastId = setToast({ header, content, status }, toastDuration, toastId)
-                }
-                isFn(callbackOriginal) && setTimeout(() => callbackOriginal(...args))
-                currentTask.status = status
-                queue.set(id, rootTask)
-                if (err || !isObj(next)) return queue.delete(id)
-                return _processTask(next, id, toastId)
-            }
-            args[args.length === 0 ? 0 : args.length - 1] = interceptCb
-            // initiate request
-            func.apply({}, args)
+            handleChatClient(id, rootTask, currentTask, toastId)
             break;
         default:
             // invalid queue type
@@ -333,7 +205,7 @@ const setMessage = (task, msg = {}, duration, id, silent = false) => silent ? nu
 }, duration, id)
 
 const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, duration) => function (errMsg) {
-    const args = arguments
+    const cbArgs = arguments
     const hasError = status === ERROR
     const done = [SUCCESS, ERROR].includes(status)
     task.status = status
@@ -343,73 +215,135 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
     task.toastId = setMessage(task, msg, duration, toastId, silent)
     queue.set(id, rootTask)
     if (!done) return
-    isFn(task.then) && task.then(status === SUCCESS, args)
+    try {
+        isFn(task.then) && task.then(status === SUCCESS, cbArgs)
+    } catch (_) {
+        // ignore any error occured by invoking the `then` function
+    }
+
+    const { args, description, errorMessage, func, title, type } = task
+    addToHistory(
+        [QUEUE_TYPES.TX_STORAGE, QUEUE_TYPES.TX_TRANSFER].includes(type) ? task.address : getSelected().address,
+        func,
+        args,
+        title,
+        description,
+        status,
+        errorMessage,
+        id,
+    )
+
     if (isObj(task.next)) return _processTask(task.next, id, toastId)
+    // delete root item if no error occured
     queue.delete(id)
     _processNextTxItem()
 }
 
-const handleTxTransfer = (id, rootTask, task, toastId) => {
-    // convert address to string. if invalid will be empty string.
-    task.address = addressToStr(task.address)
-    task.args[0] = addressToStr(task.args[0])
+const handleChatClient = (id, rootTask, task, toastId) => {
+    try {
+        const { args, description, title, silent, toastDuration } = task
+        const client = getClient()
+        const msg = {
+            content: [description],
+            header: title,
+        }
+        const _save = status => arg0 => setToastNSaveCb(
+            id, rootTask, task, status, msg, toastId, silent, toastDuration
+        )(arg0)
 
-    const { address: senderAddress, args, silent, toastDuration } = task
-    const [recipientAddress, amount] = args
-    const sender = findIdentity(senderAddress)
-    const invalid = !senderAddress || !recipientAddress || !amount
-    const msg = {
-        content: [
-            `${wordsCap.sender}: ${sender.name}`,
-            `${wordsCap.recipient}: ${getAddressName(recipientAddress)}`,
-            `${wordsCap.amount}: ${amount}`,
-        ],
-        header: texts.txTransferTitle
+        let func = task.func
+        func = (func.startsWith('client.') ? '' : 'client.') + func
+        func = eval(func)
+        eval(client) // just make sure client variable isn't removed by accident
+        if (!func || !isFn(func)) return _save(ERROR)(texts.invalidFunc)
+        let cbIndex = args.length === 0 ? 0 : args.length - 1
+        if (hasValue(args[cbIndex])) {
+            cbIndex++
+        }
+        if (!isFn(args[cbIndex])) {
+            // add a placeholder callback if not supplied, otherwise, messaging service will ignore the request
+            args[cbIndex] = () => { }
+        }
+        _save(LOADING)()
+        // initiate request
+        func.promise.apply(null, args).then(_save(SUCCESS), _save(ERROR))
+    } catch (err) {
+        _save(ERROR)(err)
     }
-    const _save = status => arg0 => setToastNSaveCb(
-        id, rootTask, task, status, msg, toastId, silent, toastDuration
-    )(arg0)
+}
 
-    _save(!sender || invalid ? ERROR : LOADING)(
-        !sender ? texts.txForeignIdentity : (invalid ? texts.txTransferMissingArgs : '')
-    )
-    if (!sender || invalid) return
+const handleTxTransfer = (id, rootTask, task, toastId) => {
+    try {
+        // convert addresses to string. if invalid will be empty string.
+        // sender address
+        task.address = addressToStr(task.address)
+        // recipient address
+        task.args[0] = addressToStr(task.args[0])
 
-    getConnection().then(({ api }) =>
-        transfer(
-            recipientAddress,
-            amount,
-            senderAddress,
-            null,
-            api
-        ).then(_save(SUCCESS), _save(ERROR)),
-        _save(ERROR)
-    )
+        const { address: senderAddress, args, silent, toastDuration } = task
+        const [recipientAddress, amount] = args
+        const sender = findIdentity(senderAddress)
+        const invalid = !senderAddress || !recipientAddress || !amount
+        const msg = {
+            content: [
+                `${wordsCap.sender}: ${sender.name}`,
+                `${wordsCap.recipient}: ${getAddressName(recipientAddress)}`,
+                `${wordsCap.amount}: ${amount}`,
+            ],
+            header: texts.txTransferTitle
+        }
+        const _save = status => arg0 => setToastNSaveCb(
+            id, rootTask, task, status, msg, toastId, silent, toastDuration
+        )(arg0)
+
+        _save(!sender || invalid ? ERROR : LOADING)(
+            !sender ? texts.txForeignIdentity : (invalid ? texts.txTransferMissingArgs : '')
+        )
+        if (!sender || invalid) return
+
+        getConnection().then(({ api }) =>
+            transfer(
+                recipientAddress,
+                amount,
+                senderAddress,
+                null,
+                api
+            ).then(_save(SUCCESS), _save(ERROR)),
+            _save(ERROR)
+        )
+
+    } catch (err) {
+        _save(ERROR)(err)
+    }
 }
 const handleTxStorage = (id, rootTask, task, toastId) => {
-    // convert address to string. if invalid will be empty string.
-    task.address = addressToStr(task.address)
-    const { address, args, description, func, silent, title, toastDuration } = task
-    const msg = {
-        content: [description],
-        header: title,
-    }
-    const _save = status => arg0 =>
-        setToastNSaveCb(id, rootTask, task, status, msg, toastId, silent, toastDuration)(arg0)
-
-    _save(LOADING)()
-    getConnection().then(({ api }) => {
-        const txFunc = eval(func)
-        if (!isStr(func) || !func.startsWith('api.tx.') || !isFn(txFunc)) {
-            // invalid function name supplied
-            return _save(ERROR)(texts.txStorageInvalidFunc)
+    try {
+        // convert address to string. if invalid will be empty string.
+        task.address = addressToStr(task.address)
+        const { address, args, description, func, silent, title, toastDuration } = task
+        const msg = {
+            content: [description],
+            header: title,
         }
-        api.query.balances.freeBalance(address).then(balance => {
-            if (parseInt(balance) < MIN_BALANCE) return _save(ERROR)(texts.insufficientBalance)
-            const tx = txFunc.apply(null, args)
-            signAndSend(api, address, tx).then(_save(SUCCESS), _save(ERROR))
-        })
-    }, _save(ERROR))
+        const _save = status => arg0 => setToastNSaveCb(
+            id, rootTask, task, status, msg, toastId, silent, toastDuration
+        )(arg0)
+        if (!isStr(func) || !func.startsWith('api.tx.')) return _save(ERROR)(texts.invalidFunc)
+
+        _save(LOADING)()
+        getConnection().then(({ api }) => {
+            const txFunc = eval(func)
+            if (!isFn(txFunc)) _save(ERROR)(texts.invalidFunc)
+
+            api.query.balances.freeBalance(address).then(balance => {
+                if (parseInt(balance) < MIN_BALANCE) return _save(ERROR)(texts.insufficientBalance)
+                const tx = txFunc.apply(null, args)
+                signAndSend(api, address, tx).then(_save(SUCCESS), _save(ERROR))
+            })
+        }, _save(ERROR))
+    } catch (err) {
+        _save(ERROR)(err)
+    }
 }
 
 export default {
