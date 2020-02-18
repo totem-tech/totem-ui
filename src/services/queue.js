@@ -199,7 +199,7 @@ const LOADING = 'loading'
 const attachKey = (ar = []) => !isArr(ar) ? ar : (
     <div>
         {ar.filter(Boolean).map((x, i) => (
-            <p key={i} style={{ margin: 0 }}>{x}</p>
+            <div key={i} style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{x}</div>
         ))}
     </div>
 )
@@ -215,9 +215,7 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
     const errMsg = status === ERROR ? cbArgs[0] : ''
     const done = [SUCCESS, ERROR].includes(status)
     task.status = status
-    task.errorMessage = !isStr(errMsg) ? undefined : (
-        `${errMsg.startsWith(wordsCap.error) ? '' : wordsCap.error + ': '}${errMsg}`
-    )
+    task.errorMessage = !isStr(errMsg) ? undefined : errMsg
     const hasError = status === ERROR && task.errorMessage
 
     hasError && msg.content.unshift(task.errorMessage)
@@ -235,7 +233,7 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
     const { args, description, errorMessage, func, title, type } = task
     addToHistory(
         [QUEUE_TYPES.TX_STORAGE, QUEUE_TYPES.TX_TRANSFER].includes(type) ? task.address : getSelected().address,
-        func,
+        (type === QUEUE_TYPES.CHATCLIENT ? 'client.' : '') + func,
         args,
         title,
         description,

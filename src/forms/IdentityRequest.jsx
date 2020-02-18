@@ -5,6 +5,7 @@ import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import { arrUnique, isFn } from '../utils/utils'
 import client, { getUser } from '../services/chatClient'
 import { translated } from '../services/language'
+import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
 const notificationType = 'identity'
 const childType = 'request'
@@ -27,6 +28,7 @@ const [texts] = translated({
     successMsg: `Identity request has been sent to selected user(s). You will receive notification once they agree to share their Identity with you.`,
     successMsgHeader: 'Request sent!',
     errorMessageHeader: 'Request failed!',
+    userIds: 'User ID(s)',
     userIdsNoResultsMessage: 'Type an User ID and press enter to add',
     userIdsPlaceholder: 'Enter User ID(s)',
 })
@@ -97,7 +99,7 @@ export default class IdentityRequestForm extends ReactiveComponent {
         const { userIds, reason, customReason } = values
         const data = { reason: reason === 'Custom' ? customReason : reason }
         this.setState({ loading: true })
-        client.notify(userIds, notificationType, childType, null, data, err => {
+        const callback = err => {
             const success = !err
             const message = {
                 content: texts.successMsg,
@@ -116,6 +118,20 @@ export default class IdentityRequestForm extends ReactiveComponent {
                 success
             })
             isFn(onSubmit) && onSubmit(success, values)
+        }
+        addToQueue({
+            type: QUEUE_TYPES.CHATCLIENT,
+            func: 'notify',
+            title: texts.formHeader,
+            description: `${texts.userIds} : ${userIds}`,
+            args: [
+                userIds,
+                notificationType,
+                childType,
+                null,
+                data,
+                callback,
+            ]
         })
     }
 

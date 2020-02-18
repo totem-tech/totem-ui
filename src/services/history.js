@@ -1,23 +1,49 @@
 import DataStorage from '../utils/DataStorage'
 import uuid from 'uuid'
+import { Bond } from 'oo7'
+import { isObj, isStr, isValidNumber } from '../utils/utils'
 
 const KEY = 'totem_history'
 const history = new DataStorage(KEY, true)
-let limit = 500
+export let limit = 500
 
-export const clear = () => history.setAll(new Map())
+export const bond = new Bond().defaultTo(uuid.v1())
+const updateBond = () => bond.changed(uuid.v1())
+export const clearAll = () => history.setAll(new Map()) | updateBond()
 
-export const getAll = history.getAll
+export const getAll = () => history.getAll()
 
-export const remove = id => history.remove(id)
+export const remove = id => history.delete(id) | updateBond()
 
 // number of actions to keep
 // use null for unlimited history
-export const setLimit = newLimit => limit = newLimit === null || isValidNumber(newLimit) ? newLimit : limit
+export const setLimit = (newLimit, trigger = true) => {
+    limit = newLimit === null || isValidNumber(newLimit) ? newLimit : limit
+    if (history.size <= limit || limit === null) return
 
-// list of ChatClient property names that should be logged along with their appropriate title
-export const historyWorthyClientFuncs = {
+    const arr = Array.from(history.getAll())
+    history.setAll(new Map(arr.slice(arr.length - limit)))
+    trigger && updateBond()
+}
 
+const acceptedActions = ['client.faucetRequest']
+const notifyTypes = {
+    identity: ['request', 'share']
+}
+// checks if action should be logged. All transaction related actions are accepted.
+export const historyWorthy = (func, args) => {
+    if (func.startsWith('api.tx.') || acceptedActions.includes(func)) return true
+    switch (func) {
+        case 'client.project':
+            // only log project creation and update actions
+            const [hash, project] = args
+            return !!hash && isObj(project)
+        case 'client.notify':
+            const [_, type, childType] = args
+            const childTypes = notifyTypes[type]
+            if (childTypes === true || childTypes.includes(childType)) return true
+        default: return false
+    }
 }
 
 // add or update a history item. Each item represents an individual successful or failed queued task 
@@ -55,6 +81,8 @@ export const save = (
     timestamp = new Date().toISOString(),
     id = uuid.v1(),
 ) => {
+    if (!historyWorthy(action, data)) return
+
     history.set(id, {
         identity,
         action,
@@ -66,10 +94,7 @@ export const save = (
         groupId,
         timestamp,
     })
-
-    if (limit != null && history.size > limit) {
-        const arr = Array.from(history.getAll())
-        history.setAll(new Map(arr.slice(arr.length - limit)))
-    }
+    setLimit(limit, false)
+    updateBond()
     return id
 }
