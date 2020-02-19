@@ -7,6 +7,7 @@ import { bond, clearAll, getAll, remove } from '../services/history'
 import { translated } from '../services/language'
 import { confirm } from '../services/modal'
 import { getAddressName } from '../services/partner'
+import { clearClutter } from '../utils/utils'
 
 const [texts, textsCap] = translated({
     action: 'action',
@@ -97,9 +98,9 @@ export default class HistoryList extends Component {
         this.tieId = bond.tie(() => {
             const data = getAll()
             Array.from(data).forEach(([_, item]) => {
-                const { identity, timestamp } = item
-                item._identity = getAddressName(identity)
-                item._timestamp = timestamp.replace(/\T|\Z/g, ' ').split('.')[0]
+                item.message = clearClutter(item.message)
+                item._identity = getAddressName(item.identity)
+                item._timestamp = item.timestamp.replace(/\T|\Z/g, ' ').split('.')[0]
             })
             this.setState({ data })
         })

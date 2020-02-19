@@ -33,7 +33,7 @@ export default class Company extends ReactiveComponent {
     constructor(props) {
         super(props)
 
-        const { walletAddress } = props.values || {}
+        const { identity } = props.values || {}
         this.state = {
             message: props.message || {},
             success: false,
@@ -42,9 +42,9 @@ export default class Company extends ReactiveComponent {
                 {
                     bond: new Bond(),
                     label: wordsCap.identity,
-                    name: 'walletAddress',
+                    name: 'identity',
                     onChange: deferred(this.handleIdentityChange, 300),
-                    readOnly: !!walletAddress,
+                    readOnly: !!identity,
                     type: 'text',
                     validate: (e, { value }) => !ss58Decode(value) ? texts.identityValidationMsg : null,
                     value: ''
@@ -68,11 +68,12 @@ export default class Company extends ReactiveComponent {
                 {
                     label: texts.countryLabel,
                     name: 'country',
-                    options: Array.from(storage.countries.getAll()).map(([_, { code, name }]) => ({
-                        key: code,
-                        text: name,
-                        value: code
-                    })),
+                    options: Array.from(storage.countries.getAll())
+                        .map(([_, { code, name }]) => ({
+                            key: code,
+                            text: name,
+                            value: code
+                        })),
                     placeholder: texts.countryPlaceholder,
                     required: true,
                     selection: true,
@@ -81,21 +82,22 @@ export default class Company extends ReactiveComponent {
                 }
             ]
         }
-        fillValues(inputs, props.values)
+        fillValues(this.state.inputs, props.values)
     }
 
-    handleIdentityChange = (_, { walletAddress }) => {
+    handleIdentityChange = (_, { identity }) => {
         // check if a company already exists with address
         const { inputs } = this.state
-        const wAddrIn = findInput(inputs, 'walletAddress')
-        wAddrIn.loading = true
-        this.setState({ inputs })
+        const input = findInput(inputs, 'identity')
+        input.loading = true
+        input.message = null
+        this.setState({ inputs, submitDisabled: true })
 
-        client.company(walletAddress, null, (_, company) => {
+        client.company(identity, null, (_, company) => {
             const exists = isObj(company)
-            wAddrIn.loading = false
-            wAddrIn.invalid = exists
-            wAddrIn.message = !exists ? null : {
+            input.loading = false
+            input.invalid = exists
+            input.message = !exists ? null : {
                 content: (
                     <div>
                         {texts.companyExistsMsg}
@@ -105,27 +107,27 @@ export default class Company extends ReactiveComponent {
                 showIcon: true,
                 status: 'error',
             }
-            this.setState({ inputs })
-            exists && setPublic(walletAddress)
+            this.setState({ inputs, submitDisabled: false })
+            // if a company already exists associated with this address
+            // update partner accordingly
+            exists && setPublic(identity)
         })
 
     }
 
-    handleSubmit = (e, values) => {
+    handleSubmit = (e, values) => client.company(values.identity, values, err => {
         const { onSubmit } = this.props
-        client.company(values.walletAddress, values, err => {
-            const success = !err
-            const message = {
-                content: success ? texts.submitSuccessMsg : err,
-                header: success ? wordsCap.success : texts.submitErrorHeader,
-                showIcon: true,
-                status: success ? 'success' : 'error'
-            }
-            this.setState({ success, message })
+        const success = !err
+        const message = {
+            content: success ? texts.submitSuccessMsg : err,
+            header: success ? wordsCap.success : texts.submitErrorHeader,
+            showIcon: true,
+            status: success ? 'success' : 'error'
+        }
+        this.setState({ success, message })
 
-            isFn(onSubmit) && onSubmit(e, values, success)
-        })
-    }
+        isFn(onSubmit) && onSubmit(e, values, success)
+    })
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
@@ -134,7 +136,7 @@ Company.propTypes = {
         country: PropTypes.string,
         name: PropTypes.string,
         registrationNumber: PropTypes.string,
-        walletAddress: PropTypes.string.isRequired
+        identity: PropTypes.string.isRequired
     })
 }
 Company.defaultProps = {

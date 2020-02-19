@@ -55,7 +55,7 @@ export default class PartnerList extends ReactiveComponent {
 									checked={isPublic}
 									toggle
 									onChange={(_, { checked }) => checked && showForm(CompanyForm, {
-										values: { name, walletAddress: address },
+										values: { name, identity: address },
 										onSubmit: (e, v, success) => success && addressbook.setPublic(address),
 									})}
 								/>

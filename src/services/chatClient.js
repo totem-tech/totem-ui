@@ -119,23 +119,23 @@ export class ChatClient {
         // add/get company by wallet address
         //
         // Params:
-        // @walletAddress   string
-        // @company         object  : if not supplied will return existing company by @walletAddress 
+        // @identity        string
+        // @company         object  : if not supplied will return existing company by @identity 
         // @cb              function: params =>
         //                      @err    string/null/object : error message or null if success or existing company if @company not supplied
-        this.company = (walletAddress, company, cb) => socket.emit('company', walletAddress, company, cb)
+        this.company = (identity, company, cb) => socket.emit('company', identity, company, cb)
         // search companies
         //
         // Params:
-        // @keyValues   object: one or more key-value pair to search for
+        // @query       string/object
         // @matchExact  boolean
         // @matchAll    boolean
         // @ignoreCase  boolean
         // @cb          function: params =>
         //                      @err    string/null : error message or null if success
-        //                      @result Map         : Map of companies with walletAddress as key
-        this.companySearch = (keyValues, matchExact, matchAll, ignoreCase, cb) => isFn(cb) && socket.emit(
-            'company-search', keyValues, matchExact, matchAll, ignoreCase, (err, result) => cb(err, new Map(result))
+        //                      @result Map         : Map of companies with identity as key
+        this.companySearch = (query, matchExact, matchAll, ignoreCase, cb) => isFn(cb) && socket.emit(
+            'company-search', query, matchExact, matchAll, ignoreCase, (err, result) => cb(err, new Map(result))
         )
 
         // Get list of all countries with 3 character codes
