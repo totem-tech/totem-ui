@@ -48,10 +48,11 @@ export const getConnection = () => {
     if (connection.api && connection.api._isConnected.value) return new Promise(resolve => resolve(connection))
     const nodeUrl = nodes[0]
     console.log('Polkadot: connecting to', nodeUrl)
-    return connect(nodeUrl, config.types, true).then(({ api, provider }) => {
+    return connect(nodeUrl, config.types, true).then(({ api, keyring, provider }) => {
         console.log('Connected using Polkadot', { api, provider })
         connection.api = api
         connection.provider = provider
+        connection.keyring = keyring
         window.connection = connection
         return connection
     })

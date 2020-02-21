@@ -45,6 +45,7 @@ class GlobalSettings extends Component {
                     onChange: this.handleLanguageChange,
                     options: arrSort(
                         Object.keys(languages).sort().map(code => ({
+                            description: code,
                             key: code,
                             text: languages[code],
                             value: code,

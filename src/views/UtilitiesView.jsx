@@ -2,10 +2,11 @@ import React, { Component } from 'react'
 import ContentSegment from '../components/ContentSegment'
 import UpgradeView from './UpgradeView'
 import PageUtilitiesView from './PageUtilitiesView'
+import AdminUtilsForm from '../forms/AdminUtils'
 // import TransactionsView from './TransactionsView'
 // import PokeView from './PokeView'
 import SystemStatus from '../legacies/SystemStatus'
-import { translated } from '../services/language'
+import { buildMode, translated } from '../services/language'
 
 const [texts] = translated({
     pageUtilsHeader: 'App Tools',
@@ -41,6 +42,10 @@ const subItems = [
         header: texts.pageUtilsHeader,
         subHeader: texts.pageUtilsSubheader,
     },
+    !buildMode ? null : {
+        content: AdminUtilsForm,
+        header: 'Admin Tools'
+    },
     {
         content: <SystemStatus />,
         icon: '',
@@ -65,4 +70,4 @@ const subItems = [
     //     header: 'Poke',
     //     subHeader: 'Set a particular key of storage to a particular value'
     // }
-]
+].filter(Boolean)
