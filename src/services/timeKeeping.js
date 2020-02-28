@@ -2,10 +2,9 @@ import { Bond } from 'oo7'
 import { calls, post, runtime } from 'oo7-substrate'
 import uuid from 'uuid'
 import DataStorage from '../utils/DataStorage'
-import { hashToBytes, hashToStr, validateAddress, ss58Decode, ss58Encode } from '../utils/convert'
+import { addressToStr, hashToBytes, hashToStr, ss58Decode, ss58Encode } from '../utils/convert'
 import { isArr, isObj, mapJoin, arrUnique } from '../utils/utils'
 import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
-
 // services
 import { getUser } from './chatClient'
 import identities, { getSelected } from './identity'
@@ -32,6 +31,7 @@ const _config = {
 // to sumbit a new time record must submit with this hash
 export const NEW_RECORD_HASH = '0x40518ed7e875ba87d6c7358c06b1cac9d339144f8367a0632af7273423dd124e'
 export const moduleKey = 'time-keeping'
+const TX_STORAGE = 'tx_storage'
 // record status codes
 export const statuses = {
     draft: 0,
@@ -44,7 +44,6 @@ export const statuses = {
 }
 // timeKeeping form values and states for use with the TimeKeeping form
 export const formData = data => {
-    const moduleKey = 'time-keeping'
     const dataKey = 'TimeKeepingForm'
     const gs = storage.settings.module(moduleKey) || {}
     if (isObj(data)) {
@@ -219,31 +218,8 @@ export const getProjectWorkers = projectHash => Bond.promise([
     return { isOwner, ownerAddress, workers }
 })
 
+// retrieve data from blockchain storage
 export const record = {
-    // Blockchain transaction
-    // (project owner) approve/reject a time record
-    //
-    // Params:
-    // @workerAddress   string/bond
-    // @projectHash     string/bond/Uint8Array
-    // @recordHash      string/bond/Uint8Array
-    // @status          integer: default 0
-    // @reason          object: {ReasonCode: integer, ReasonCodeType: integer}
-    approve: (ownerAddress, workerAddress, projectHash, recordHash, accepted, reason) => post({
-        sender: validateAddress(ownerAddress),
-        call: calls.timekeeping.authoriseTime(
-            ss58Decode(workerAddress),
-            hashToBytes(projectHash),
-            hashToBytes(recordHash),
-            accepted ? statuses.accept : statuses.reject,
-            reason || {
-                ReasonCodeKey: 0,
-                ReasonCodeTypeKey: 0
-            },
-        ),
-        compact: false,
-        longevity: true
-    }),
     // get details of a record
     get: recordHash => runtime.timekeeping.timeRecord(hashToBytes(recordHash)),
     isOwner: (hash, address) => runtime.timeKeeping.timeHashOwner(hashToBytes(hash), ss58Decode(address)),
@@ -255,16 +231,60 @@ export const record = {
     listByProject: projectHash => runtime.timekeeping.projectTimeRecordsHashList(hashToBytes(projectHash)),
     // list of all archived record hashes in a project 
     listByProjectArchive: projectHash => runtime.timekeeping.projectTimeRecordsHashListArchive(hashToBytes(projectHash)),
-    // Blockchain transaction
+}
+
+// Save timekeeping record related data to blockchain storage.
+// Each function returns a task (an object) that can be used to create a queued transaction.
+// Make sure to supply appropriate `title` and `descrption` properties to `@queueProps`
+// and use the `addToQueue(task)` function from queue service to add the task to the queue
+export const recordTasks = {
+    // (project owner) approve/reject a time record
+    //
+    // Params:
+    // @workerAddress   string/bond
+    // @projectHash     string/bond/Uint8Array
+    // @recordHash      string/bond/Uint8Array
+    // @status          integer: default 0
+    // @reason          object: {ReasonCode: integer, ReasonCodeType: integer}
+    // @queueProps      object: provide task specific properties (eg: description, title, then, next...)
+    approve: (ownerAddress, workerAddress, projectHash, recordHash, accepted, reason, queueProps = {}) => ({
+        ...queueProps,
+        address: ownerAddress,
+        func: 'api.tx.timekeeping.authoriseTime',
+        type: TX_STORAGE,
+        args: [
+            workerAddress,
+            hashToStr(projectHash),
+            hashToStr(recordHash),
+            accepted ? statuses.accept : statuses.reject,
+            reason || {
+                ReasonCodeKey: 0,
+                ReasonCodeTypeKey: 0
+            },
+        ],
+    }),
     // Add or update a time record. To add a new record, must use `NEW_RECORD_HASH`.
     // 
-    // @postingPeriod u16: 15 fiscal periods (0-14) // not yet implemented use default 0
-    // add/update record
-    save: (workerAddress, projectHash, recordHash, status, reason, blockCount, postingPeriod, blockStart, blockEnd, breakCount) => post({
-        sender: validateAddress(workerAddress),
-        call: calls.timekeeping.submitTime(
-            hashToBytes(projectHash),
-            hashToBytes(recordHash || NEW_RECORD_HASH),
+    // Params:
+    // @address         string: worker's address (create or update) or owner address (only set as draft)
+    // @projectHash     string
+    // @recordHash      string: leave empty to create a new record, otherwise, use existing record's hash
+    // @status          int: record status code
+    // @reason          object: valid properties => ReasonCodeKey, ReasonCodeTypeKey
+    // @postingPeriod   u16: 15 fiscal periods (0-14) // not yet implemented use default 0
+    // @blockStart      int: block number when timekeeeping started
+    // @blockEnd        int: block number when timekeeping ended
+    // @blockCount      int: total number of blocks worker has been active
+    // @breakCount      int: number of breaks taken during record period
+    // @queueProps      object: provide task specific properties (eg: description, title, then, next...)
+    save: (address, projectHash, recordHash, status, reason, blockCount, postingPeriod, blockStart, blockEnd, breakCount, queueProps) => ({
+        ...queueProps,
+        address: address,
+        func: 'api.tx.timekeeping.submitTime',
+        type: TX_STORAGE,
+        args: [
+            hashToStr(projectHash),
+            hashToStr(recordHash || NEW_RECORD_HASH),
             status || 0,
             reason || {
                 ReasonCodeKey: 0,
@@ -275,52 +295,22 @@ export const record = {
             blockStart || 0,
             blockEnd || 0,
             breakCount || 0,
-        ),
-        compact: false,
-        longevity: true
+        ],
     }),
 }
 
+// retrieve data from blockchain storage
 export const worker = {
-    // Blockchain transaction
-    // (worker) accept invitation to a project
-    accept: (projectHash, workerAddress, accepted) => post({
-        sender: validateAddress(workerAddress),
-        call: calls.timekeeping.workerAcceptanceProject(hashToBytes(projectHash), accepted),
-        compact: false,
-        longevity: true
-    }),
     // status of invitation
     accepted: (projectHash, workerAddress) => runtime.timekeeping.workerProjectsBacklogStatus([
         hashToBytes(projectHash),
         ss58Decode(workerAddress)
     ]),
-    // Blockchain transaction
-    // (project owner) invite a worker to join a project
-    add: (projectHash, ownerAddress, workerAddress) => post({
-        sender: validateAddress(ownerAddress),
-        call: calls.timekeeping.notifyProjectWorker(
-            ss58Decode(workerAddress),
-            hashToBytes(projectHash),
-        ),
-        compact: false,
-        longevity: true
-    }),
     // check if worker is banned. undefined: not banned, object: banned
     banned: (projectHash, address) => runtime.timekeeping.projectWorkersBanList([
         hashToBytes(projectHash),
         ss58Decode(address)
     ]),
-    // ban project worker
-    banWorker: (projectHash, ownerAddress, recordHash) => post({
-        sender: validateAddress(ownerAddress),
-        call: calls.timekeeping.banWorker(
-            hashToBytes(projectHash),
-            hashToBytes(recordHash)
-        ),
-        compact: false,
-        longevity: true
-    }),
     // workers that have been invited to but hasn't responded yet
     listInvited: projectHash => runtime.timekeeping.projectInvitesList(hashToBytes(projectHash)),
     // workers that has accepted invitation
@@ -334,15 +324,81 @@ export const worker = {
         ss58Decode(address),
         hashToBytes(projectHash)
     ]),
+}
+
+// Save timekeeping worker related data to blockchain storage.
+// Each function returns a task (an object) that can be used to create a queued transaction.
+// Make sure to supply appropriate `title` and `descrption` properties to `@queueProps`
+// and use the `addToQueue(task)` function from queue service to add the task to the queue
+export const workerTasks = {
+    // (worker) accept invitation to a project
+    //
+    // Params:
+    // @projectHash     string
+    // @workerAddress   string
+    // @accepted        boolean: indicates acceptence or rejection
+    // @queueProps      object: provide task specific properties (eg: description, title, then, next...)
+    accept: (projectHash, workerAddress, accepted, queueProps = {}) => ({
+        ...queueProps,
+        address: workerAddress,
+        func: 'api.tx.timekeeping.workerAcceptanceProject',
+        type: TX_STORAGE,
+        args: [
+            hashToStr(projectHash),
+            accepted,
+        ],
+    }),
+    // (project owner) invite a worker to join a project
+    //
+    // Params: 
+    // @projecthash     string
+    // @ownerAddress    string
+    // @workerAddress   string
+    // @queueProps      string: provide task specific properties (eg: description, title, then, next...)
+    add: (projectHash, ownerAddress, workerAddress, queueProps = {}) => ({
+        ...queueProps,
+        address: ownerAddress,
+        func: 'api.tx.timekeeping.notifyProjectWorker',
+        type: TX_STORAGE,
+        args: [
+            addressToStr(workerAddress),
+            hashToStr(projectHash),
+        ],
+    }),
+    // ban project worker
+    //
+    // Params:
+    // @projectHash     string
+    // @ownerAddress    string
+    // @recordHash      string
+    // @queueProps      object: provide task specific properties (eg: description, title, then, next...)
+    banWorker: (projectHash, ownerAddress, recordHash, queueProps = {}) => ({
+        ...queueProps,
+        address: ownerAddress,
+        func: 'api.tx.timekeeping.banWorker',
+        type: TX_STORAGE,
+        args: [
+            hashToStr(projectHash),
+            hashToStr(recordHash)
+        ],
+    }),
     // unban project worker
-    unbanWorker: (projectHash, ownerAddress, workerAddress) => post({
-        sender: validateAddress(ownerAddress),
-        call: calls.timekeeping.banWorker(
-            hashToBytes(projectHash),
-            ss58Decode(workerAddress),
-        ),
-        compact: false,
-        longevity: true
+    //
+    // Params:
+    // @projectHash     string
+    // @ownerAddress    string
+    // @ownerAddress    string
+    // @recordHash      string
+    // @queueProps      object: provide task specific properties (eg: description, title, then, next...)
+    unbanWorker: (projectHash, ownerAddress, workerAddress, queueProps = {}) => ({
+        ...queueProps,
+        address: ownerAddress,
+        func: 'api.tx.timekeeping.banWorker',
+        type: TX_STORAGE,
+        args: [
+            hashToStr(projectHash),
+            addressToStr(workerAddress),
+        ],
     }),
 }
 export default {
@@ -359,5 +415,7 @@ export default {
         totalBlocks: projectHash => runtime.timekeeping.totalBlocksPerProject(hashToBytes(projectHash)),
     },
     record,
+    recordTasks,
     worker,
+    workerTasks,
 }

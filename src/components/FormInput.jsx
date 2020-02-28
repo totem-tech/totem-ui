@@ -6,7 +6,7 @@ import { ReactiveComponent } from 'oo7-react'
 import {
     deferred, hasValue, isArr, isBond, isDefined, isFn, isPromise,
     isStr, isValidNumber, objWithoutKeys, searchRanked,
-} from '../utils/utils';
+} from '../utils/utils'
 import Message from './Message'
 // Custom Inputs
 import CheckboxGroup from './CheckboxGroup'
@@ -22,7 +22,7 @@ const VALIDATION_MESSAGES = Object.freeze({
     validNumber: () => 'Please enter a valid number'
 })
 const NON_ATTRIBUTES = Object.freeze([
-    'bond', 'controlled', 'defer', 'hidden', 'inline', 'integer', 'invalid', '_invalid', 'inlineLabel', 'label',
+    'bond', 'controlled', 'defer', 'elementRef', 'hidden', 'inline', 'integer', 'invalid', '_invalid', 'inlineLabel', 'label',
     'trueValue', 'falseValue', 'styleContainer', 'useInput', 'validate'
 ])
 export const nonValueTypes = Object.freeze([
@@ -71,7 +71,7 @@ export default class FormInput extends ReactiveComponent {
 
         // Forces the synthetic event and it's value to persist
         // Required for use with deferred function
-        event && isFn(event.persist) && event.persist();
+        event && isFn(event.persist) && event.persist()
         const typeLower = (type || '').toLowerCase()
         const isCheck = ['checkbox', 'radio'].indexOf(typeLower) >= 0
         const hasVal = hasValue(isCheck ? checked : value)
@@ -154,8 +154,8 @@ export default class FormInput extends ReactiveComponent {
 
     render() {
         const {
-            bond, content, error, hidden, inline, inlineLabel, label, message: externalMsg,
-            required, styleContainer, type, useInput, width
+            bond, content, elementRef, error, hidden, inline, inlineLabel, label, message: externalMsg,
+            name, required, styleContainer, type, useInput, width
         } = this.props
         if (hidden) return ''
         const { message: internalMsg } = this.state
@@ -165,6 +165,7 @@ export default class FormInput extends ReactiveComponent {
         // Remove attributes that are used by the form or Form.Field but
         // shouldn't be used or may cause error when using with inputEl
         let attrs = objWithoutKeys(this.props, NON_ATTRIBUTES)
+        attrs.ref = elementRef
         attrs.onChange = this.handleChange
         let isGroup = false
         const typeLC = type.toLowerCase()
@@ -172,42 +173,44 @@ export default class FormInput extends ReactiveComponent {
         switch (typeLC) {
             case 'button':
                 inputEl = <Button {...attrs} />
-                break;
+                break
             case 'checkbox':
             case 'radio':
                 attrs.toggle = typeLC !== 'radio' && attrs.toggle
                 attrs.type = "checkbox"
-                delete attrs.value;
+                delete attrs.value
                 hideLabel = true
                 inputEl = <Form.Checkbox {...attrs} label={label} />
-                break;
+                break
             case 'checkbox-group':
             case 'radio-group':
                 attrs.inline = inline
                 attrs.bond = bond
                 attrs.radio = typeLC === 'radio-group' ? true : attrs.radio
                 inputEl = <CheckboxGroup {...attrs} />
-                break;
+                break
             case 'dropdown':
                 if (attrs.search && isArr(attrs.search)) {
                     attrs.search = searchRanked(attrs.search)
                 }
                 inputEl = <Dropdown {...attrs} />
-                break;
+                break
             case 'group':
                 isGroup = true
                 inputEl = attrs.inputs.map((subInput, i) => <FormInput key={i} {...subInput} />)
-                break;
+                break
             case 'hidden':
                 hideLabel = true
                 break
             case 'html': return content || ''
             case 'textarea':
                 inputEl = <TextArea {...attrs} />
-                break;
+                break
             case 'useridinput':
                 inputEl = <UserIdInput {...attrs} />
                 break
+            case 'file':
+                delete attrs.value
             default:
                 attrs.fluid = !useInput ? undefined : attrs.fluid
                 attrs.label = inlineLabel || attrs.label
@@ -229,7 +232,7 @@ export default class FormInput extends ReactiveComponent {
                 style={styleContainer}
                 width={width}
             >
-                {!hideLabel && label && <label>{label}</label>}
+                {!hideLabel && label && <label htmlFor={name}>{label}</label>}
                 {inputEl}
                 {message && <Message {...message} />}
             </Form.Field>
@@ -305,6 +308,8 @@ FormInput.propTypes = {
     onChange: PropTypes.func,
     placeholder: PropTypes.string,
     readOnly: PropTypes.bool,
+    // element ref
+    elementRef: PropTypes.any,
     required: PropTypes.bool,
     slider: PropTypes.bool,         // For checkbox/radio
     toggle: PropTypes.bool,         // For checkbox/radio

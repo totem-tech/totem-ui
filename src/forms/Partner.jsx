@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-import { ss58Decode } from '../utils/convert'
+import { ss58Decode, addressToStr } from '../utils/convert'
 import { arrSort, deferred, isFn, isObj } from '../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import CompanyForm from './Company'
@@ -232,41 +232,26 @@ class Partner extends Component {
 
     handleAddressSearchChange = deferred((_, { searchQuery }) => {
         if (!searchQuery) return
-        const isValidAddress = !!ss58Decode(searchQuery)
         const { inputs } = this.state
         const addressIn = findInput(inputs, 'address')
+        const isValidAddress = !!addressToStr(searchQuery)
         addressIn.allowAdditions = false
+
         const handleResult = (err, companies) => {
-            addressIn.options = err ? [] : Array.from(companies).map(([address, company]) => {
-                return {
-                    company, // keep
-                    key: [...Object.keys(company).map(k => company[k]), address].join(' '), // also used for searching
-                    description: `${company.country} | ${getAddressName(address)}`,
-                    text: company.name,
-                    // searchableStr: ,
-                    value: address,
-                }
-            })
+            addressIn.allowAdditions = !err && companies.size === 0 && isValidAddress
+            addressIn.options = err ? [] : Array.from(companies).map(([address, company]) => ({
+                company, // keep
+                key: [...Object.keys(company).map(k => company[k]), address].join(' '), // also used for searching
+                description: `${company.country} | ${getAddressName(address)}`,
+                text: company.name,
+                // searchableStr: ,
+                value: address,
+            }))
             addressIn.message = !err ? null : { content: err, status: 'error' }
             this.setState({ inputs })
         }
-        const searchCompany = () => {
-            const query = {
-                country: searchQuery,
-                name: searchQuery,
-                registrationNumber: searchQuery,
-            }
-            client.companySearch(query, false, false, true, handleResult)
-        }
-        !isValidAddress ? searchCompany() : client.company(searchQuery, null, (err, company) => {
-            if (!err && isObj(company)) {
-                // searchQuery is exact match for a company wallet address
-                return handleResult(null, new Map([[searchQuery, company]]))
-            }
-            // valid address but not a company >> allow user to add as option
-            addressIn.allowAdditions = true
-            this.setState({ inputs })
-        })
+
+        client.companySearch(searchQuery, false, false, true, handleResult)
     }, 300)
 
     handleAddTag = (_, data) => {
@@ -317,7 +302,7 @@ class Partner extends Component {
             size: 'tiny',
             values: {
                 name,
-                walletAddress: address,
+                identity: address,
             }
         })
     }

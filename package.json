@@ -6,11 +6,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "npm-run-all --parallel webpack-dev server",
-    "build": "npm-run-all --parallel webpack-prod server",
-    "webpack-dev": "webpack --mode development --watch --debug",
-    "webpack-prod": "webpack --mode production --watch --debug",
+    "prod": "npm-run-all --parallel webpack-prod server",
     "server": "nodemon --watch src/ --watch server/ --ignore server/data/ --verbose --exec ./node_modules/.bin/babel-node ./server/index.js --ext jsx,js --presets env,react",
-    "server-faucet": "nodemon --watch server-faucet/ --watch server/ --verbose --exec ./node_modules/.bin/babel-node ./server-faucet/index.js --ext jsx,js --presets env,react"
+    "webpack-dev": "webpack --mode development --watch --debug",
+    "webpack-prod": "webpack --mode production --watch --debug"
   },
   "babel": {
     "plugins": [
@@ -56,6 +55,7 @@
     "create-hash": "^1.2.0",
     "css-loader": "^3.4.2",
     "file-loader": "^5.0.2",
+    "ignore-loader": "^0.1.2",
     "node-localstorage": "^2.1.5",
     "npm-run-all": "^4.1.5",
     "oo7": "^0.7.12",

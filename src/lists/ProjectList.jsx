@@ -1,8 +1,7 @@
 import React, { Component } from 'react'
 import { Bond } from 'oo7'
 import { Button } from 'semantic-ui-react'
-import { copyToClipboard, textEllipsis, textCapitalize } from '../utils/utils'
-import { formatStrTimestamp } from '../utils/time'
+import { copyToClipboard, textEllipsis } from '../utils/utils'
 // components
 import DataTable from '../components/DataTable'
 import FormBuilder, { findInput } from '../components/FormBuilder'
@@ -14,7 +13,7 @@ import ReassignProjectForm from '../forms/ProjectReassign'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import { addToQueue } from '../services/queue'
-import projectService, { getProjects, getProjectsBond, openStatuses, statusCodes } from '../services/project'
+import projectService, { getProjects, getProjectsBond, openStatuses, statusCodes, tasks } from '../services/project'
 import { layoutBond, getLayout } from '../services/window'
 
 const toBeImplemented = () => alert('To be implemented')
@@ -46,7 +45,7 @@ const [words, wordsCap] = translated({
 const [texts] = translated({
     areYouSure: 'Are you sure?',
     closeProject: 'Close activity',
-    deleteConfirmMsg1: 'Warning: You are about to delete the following Activities:',
+    deleteConfirmMsg1: 'You are about to delete the following Activities:',
     deleteConfirmMsg2: `Warning: This action cannot be undone! 
         You will lose access to this Activity data forever! 
         A better option might be to archive the Activity.`,
@@ -135,6 +134,7 @@ export default class ProjectList extends Component {
                             title: texts.viewDetails,
                         }
                     ]).map(props => <Button {...props} />),
+                    draggable: false,
                     textAlign: 'center',
                     title: wordsCap.actions,
                 },
@@ -206,7 +206,6 @@ export default class ProjectList extends Component {
         const doClose = selectedHashes.every(key => openStatuses.indexOf((projects.get(key) || {}).status) >= 0)
         const targetStatus = doClose ? statusCodes.close : statusCodes.reopen
         const targetStatusText = statusTexts[doClose ? statusCodes.close : statusCodes.reopen]
-        const func = doClose ? 'closeProject' : 'reopenProject'
         const targetHashes = selectedHashes.reduce((hashArr, hash) => {
             const { status } = projects.get(hash) || {}
             const isOpen = openStatuses.includes(status)
@@ -228,15 +227,12 @@ export default class ProjectList extends Component {
                     const { name, ownerAddress, status } = projects.get(hash) || {}
                     // ignore if project is already at target status or project no longer exists
                     if (status === targetStatus || !name) return;
-                    addToQueue({
-                        type: 'blockchain',
-                        func,
-                        args: [ownerAddress, hash],
-                        address: ownerAddress,
+                    const taskFn = doClose ? tasks.close : tasks.reopen
+                    addToQueue(taskFn(ownerAddress, hash, {
                         title: doClose ? texts.closeProject : texts.reopenProject,
                         description: `${wordsCap.activity}: ${name}`,
                         then: success => success && getProjects(true),
-                    })
+                    }))
                 })
 
                 const menuItemText = doClose ? wordsCap.reopen : wordsCap.close
@@ -256,15 +252,11 @@ export default class ProjectList extends Component {
             // ignore if project is already at target status or project not longer exists in the list
             if (status === targetStatus || !name) return;
             projectNames.push(name)
-            queueItems.push({
-                type: 'blockchain',
-                func: 'removeProject',
-                args: [ownerAddress, hash],
-                address: ownerAddress,
+            queueItems.push(tasks.remove(ownerAddress, hash, {
                 title: texts.deleteConfirmHeader,
                 description: `${wordsCap.activity}: ${name}`,
                 then: success => success && getProjects(true),
-            })
+            }))
         })
         if (projectNames.length === 0) return
         confirm({

@@ -1,7 +1,7 @@
-import React from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import uuid from 'uuid'
 import { Bond } from 'oo7'
-import { ReactiveComponent } from 'oo7-react'
 import { Button } from 'semantic-ui-react'
 import DataTable from '../components/DataTable'
 import FormBuilder from '../components/FormBuilder'
@@ -12,13 +12,13 @@ import PartnerForm from '../forms/Partner'
 import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'
 import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
 // Services
-import { hashTypes } from '../services/blockchain'
+import { hashTypes, tasks } from '../services/blockchain'
 import identities, { getSelected, selectedAddressBond } from '../services/identity'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import partners from '../services/partner'
+import { getTimeRecordsDetails, statuses, getTimeRecordsBonds, recordTasks } from '../services/timeKeeping'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import { getTimeRecordsDetails, statuses, getTimeRecordsBonds } from '../services/timeKeeping'
 import { getLayout } from '../services/window'
 
 const toBeImplemented = () => alert('To be implemented')
@@ -94,11 +94,15 @@ statusTexts[statuses.accept] = words.approved
 statusTexts[statuses.invoice] = words.invoiced
 statusTexts[statuses.delete] = words.deleted
 
-export default class ProjectTimeKeepingList extends ReactiveComponent {
+// trigger refresh on not-archived records tables if multiple open at the same time 
+const updateTriggerBond = new Bond()
+const inProgressHashesBond = new Bond()
+
+export default class ProjectTimeKeepingList extends Component {
     constructor(props) {
         super(props)
 
-        this.getRecords = deferred(this.getRecords, 150)
+        // this.getRecords = deferred(this.getRecords, 150)
         this.hashList = []
         this.state = {
             inProgressHashes: [],
@@ -111,8 +115,9 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                 { collapsing: true, key: '_status', textAlign: 'center', title: wordsCap.status },
                 {
                     collapsing: true,
-                    style: { padding: '0px 5px' },
                     content: this.getActionContent,
+                    draggable: false,
+                    style: { padding: '0px 5px' },
                     textAlign: 'center',
                     title: wordsCap.action,
                 }
@@ -182,14 +187,19 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         // only update project & identity names
         this.identitiesBond = Bond.all([identities.bond, partners.bond])
         this.tieIdSelected = selectedAddressBond.tie(this.setBond)
+        this.tieIdHashes = inProgressHashesBond.tie(ar => this.setState({ inProgressHashes: ar }))
+        if (!this.props.archive) {
+            this.tieIdTrigger = updateTriggerBond.tie(this.getRecords)
+        }
     }
 
     componentWillUnmount() {
         this._mounted = false
-        const { tieId, tieIdIdentities, tieIdSelected } = this
-        tieId && this.bond.untie(tieId)
-        tieIdIdentities && this.identitiesBond.untie(tieIdIdentities)
-        selectedAddressBond.untie(tieIdSelected)
+        this.tieId && this.bond.untie(this.tieId)
+        this.tieIdIdentities && this.identitiesBond.untie(this.tieIdIdentities)
+        selectedAddressBond.untie(this.tieIdSelected)
+        inProgressHashesBond.untie(this.tieIdHashes)
+        this.tieIdTrigger && updateTriggerBond.untie(this.tieIdTrigger)
     }
 
     setBond = () => {
@@ -249,11 +259,13 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
                             blockStart: start_block,
                             duration,
                             projectHash,
+                            projectName,
+                            status: submit_status,
                             workerAddress,
                         },
                         hash,
                         projectName,
-                        onSubmit: this.getRecords
+                        onSubmit: ok => ok && this.updateTrigger()
                     }),
                 title: wordsCap.edit,
             },
@@ -313,16 +325,14 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             .map(props => <Button {...props} />)
     }
 
-    getRecords = hashList => {
-        hashList = hashList.flat().map(hashToStr)
-        // only update list if changed
-        if (hashList && JSON.stringify(hashList) === JSON.stringify(this.hashList)) return
-        this.hashList = isArr(hashList) ? hashList : this.hashList
+    getRecords = deferred(hashList => {
+        hashList = (isArr(hashList) ? hashList : this.hashList).flat().map(hashToStr)
+        this.hashList = hashList
         if (this.hashList.length === 0) return this.setState({ data: new Map() })
 
         // get individual records details
         getTimeRecordsDetails(this.hashList).then(this.processRecords)
-    }
+    }, 150)
 
     // process record details and add extra information like worker name etc
     processRecords = records => Array.from(records).forEach(([hash, record]) => {
@@ -350,25 +360,19 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
     handleApprove = (hash, approve = false) => {
         const { data, inProgressHashes } = this.state
-        const { approved, projectHash, projectOwnerAddress, submit_status, workerAddress } = data.get(hash) || {}
+        const { projectHash, projectOwnerAddress, submit_status, workerAddress } = data.get(hash) || {}
         const targetStatus = approve ? statuses.accept : statuses.reject
         if (!workerAddress || submit_status !== statuses.submit || targetStatus === submit_status) return
-        inProgressHashes.push(hash)
-        this.setState({ inProgressHashes })
-        // const reason = approve ? null : {.....}
-        // timeKeeping.record.approve(workerAddress, projectHash, hash, approve)
-        addToQueue({
-            type: QUEUE_TYPES.BLOCKCHAIN,
-            func: 'timeKeeping_record_approve',
-            args: [projectOwnerAddress, workerAddress, projectHash, hash, approve],
+        inProgressHashesBond.changed(inProgressHashes.concat(hash))
+        const task = recordTasks.approve(projectOwnerAddress, workerAddress, projectHash, hash, approve, null, {
             title: `${wordsCap.timekeeping} - ${approve ? texts.approveRecord : texts.rejectRecord}`,
             description: `${texts.recordId}: ${hash}`,
             then: success => {
-                inProgressHashes.shift(hash)
-                this.setState({ inProgressHashes })
-                success && this.getRecords()
+                inProgressHashesBond.changed(inProgressHashes.filter(h => h !== hash))
+                success && this.updateTrigger()
             },
         })
+        addToQueue(task)
     }
 
     handleArchive = (hash, archive = true) => {
@@ -380,17 +384,14 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
         inProgressHashes.push(hash)
         this.setState({ inProgressHashes })
 
-        addToQueue({
-            type: QUEUE_TYPES.BLOCKCHAIN,
-            func: 'archiveRecord',
-            args: [address, hashTypes.timeRecordHash, hash, archive],
+        addToQueue(tasks.archiveRecord(address, hashTypes.timeRecordHash, hash, archive, {
             title: texts.archiveRecord,
             description: `${wordsCap.hash}: ${hash}`,
             then: () => {
                 inProgressHashes.shift(hash)
                 this.setState({ inProgressHashes })
             }
-        })
+        }))
     }
 
     handleBan = (selectedHashes) => {
@@ -403,6 +404,7 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             approved,
             end_block,
             nr_of_breaks,
+            posting_period,
             projectHash,
             projectOwnerAddress,
             start_block,
@@ -418,30 +420,28 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
 
         inProgressHashes.push(hash)
         this.setState({ inProgressHashes })
-        addToQueue({
-            address: projectOwnerAddress, // for balance check
-            type: QUEUE_TYPES.BLOCKCHAIN,
-            func: 'timeKeeping_record_save',
-            title: `${wordsCap.timekeeping} - ${texts.setAsDraft}`,
-            description: `${texts.recordId}: ${hash}`,
-            args: [
-                projectOwnerAddress,
-                projectHash,
-                hash,
-                statuses.draft,
-                reason,
-                total_blocks,
-                0,
-                start_block,
-                end_block,
-                nr_of_breaks,
-            ],
-            then: success => {
-                inProgressHashes.shift(hash)
-                this.setState({ inProgressHashes })
-                success && this.getRecords()
+        const task = recordTasks.save(
+            projectOwnerAddress,
+            projectHash,
+            hash,
+            statuses.draft,
+            reason,
+            total_blocks,
+            posting_period || 0,
+            start_block,
+            end_block,
+            nr_of_breaks,
+            {
+                title: `${wordsCap.timekeeping} - ${texts.setAsDraft}`,
+                description: `${texts.recordId}: ${hash}`,
+                then: success => {
+                    inProgressHashes.shift(hash)
+                    this.setState({ inProgressHashes })
+                    success && this.updateTrigger()
+                },
             }
-        })
+        )
+        addToQueue(task)
     }
 
     showDetails = (hash, record) => {
@@ -499,6 +499,8 @@ export default class ProjectTimeKeepingList extends ReactiveComponent {
             submitText: null,
         })
     }
+
+    updateTrigger = () => this.props.archive ? this.getRecords() : updateTriggerBond.changed(uuid.v1())
 
     render() {
         const { archive, hideTimer, manage } = this.props

@@ -5,13 +5,15 @@ import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import { arrSort, generateHash, isFn } from '../utils/utils'
 import identities, { getSelected } from '../services/identity'
 import { translated } from '../services/language'
-import { getProjects } from '../services/project'
+import { getProjects, tasks } from '../services/project'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
 const [words, wordsCap] = translated({
     cancel: 'cancel',
     close: 'close',
     create: 'create',
+    description: 'description',
+    name: 'name',
     update: 'update',
 }, true)
 const [texts] = translated({
@@ -29,6 +31,7 @@ const [texts] = translated({
     submitSuccessHeader: 'Activity saved successfully',
     submitTitleCreate: 'Create activity',
     submitTitleUpdate: 'Update activity',
+    saveDetailsTitle: 'Save Activity details to messaging service',
 })
 
 // Create or update project form
@@ -109,9 +112,9 @@ export default class ProjectForm extends Component {
         const { onSubmit, hash: existingHash } = this.props
         const create = !existingHash
         const hash = existingHash || generateHash(values)
-        const { name: projectName, ownerAddress } = values
+        const { description: desc, name: projectName, ownerAddress } = values
         const title = create ? texts.submitTitleCreate : texts.submitTitleUpdate
-        const description = `${texts.nameLabel}: ${projectName}`
+        const description = `${wordsCap.name}: ${projectName}` + '\n' + `${wordsCap.description}: ${desc}`
         const message = {
             content: texts.submitQueuedMsg,
             header: texts.submitQueuedHeader,
@@ -127,7 +130,7 @@ export default class ProjectForm extends Component {
         const clientTask = {
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'project',
-            title,
+            title: texts.saveDetailsTitle,
             description,
             args: [
                 hash,
@@ -152,15 +155,11 @@ export default class ProjectForm extends Component {
         }
 
         // Send transaction to blockchain first, then add to external storage
-        const blockchainTask = {
-            address: ownerAddress,
-            type: QUEUE_TYPES.BLOCKCHAIN,
-            func: 'addNewProject',
-            args: [ownerAddress, hash],
+        const blockchainTask = tasks.add(ownerAddress, hash, {
             title,
             description,
             next: clientTask
-        }
+        })
 
         addToQueue(create ? blockchainTask : clientTask)
     }

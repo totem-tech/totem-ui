@@ -16,7 +16,11 @@ module.exports = {
       {
         test: /\.(png|woff|woff2|eot|ttf|svg)$/,
         loader: 'url-loader?limit=100000'
-      }
+      },
+      {
+        test: /\.(md)$/,
+        loader: 'ignore-loader',
+      },
     ]
   },
   resolve: {
@@ -33,5 +37,5 @@ module.exports = {
   // solves "Can't resolve 'fs'" error
   node: {
     fs: "empty"
- }
+  }
 };

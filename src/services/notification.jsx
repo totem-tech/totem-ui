@@ -1,20 +1,23 @@
-import React from 'react'
+import React, { Component } from 'react'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
-import { ReactiveComponent } from 'oo7-react'
 import { Dropdown } from 'semantic-ui-react'
+import { deferred } from '../utils/utils'
+import DataStorage from '../utils/DataStorage'
+// components
 import { ButtonAcceptOrReject, UserID } from '../components/buttons'
 import Message from '../components/Message'
-import { deferred } from '../utils/utils'
+// forms
 import IdentityShareForm from '../forms/IdentityShare'
 import PartnerForm from '../forms/Partner'
-import DataStorage from '../utils/DataStorage'
+// services
 import client, { getUser } from './chatClient'
 import identityService from './identity'
+import { translated } from './language'
 import { confirm, showForm } from './modal'
 import { getProject } from './project'
 import { addToQueue, QUEUE_TYPES } from './queue'
-import { translated } from './language'
+import { workerTasks } from './timeKeeping'
 
 const notifications = new DataStorage('totem_service_notifications', true, false)
 // store unread counts for individual types
@@ -74,9 +77,9 @@ export const toggleRead = id => {
 
 export const remove = id => setTimeout(() => notifications.delete(id) | triggerBond.changed(uuid.v1()))
 
-export default class NotificationDropdown extends ReactiveComponent {
-    constructor() {
-        super([])
+export default class NotificationDropdown extends Component {
+    constructor(props) {
+        super(props)
 
         this.state = {
             blinkClass: '',
@@ -158,7 +161,7 @@ export default class NotificationDropdown extends ReactiveComponent {
                                         <ButtonAcceptOrReject
                                             acceptText='Share'
                                             onClick={accepted => !accepted ? remove(id) : showForm(IdentityShareForm, {
-                                                disabledFields: ['userIds'],
+                                                inputsDisabled: ['userIds'],
                                                 onSubmit: success => success && remove(id),
                                                 values: {
                                                     introducedBy: isIntroduce ? senderId : null,
@@ -269,11 +272,7 @@ export const handleTKInvitation = (
         return match ? xNotifyId : null
     }, null)
 
-    const getprops = (projectOwnerId, projectName) => ({
-        address: workerAddress, // for automatic balance check 
-        type: QUEUE_TYPES.BLOCKCHAIN,
-        func: 'timeKeeping_worker_accept',
-        args: [projectHash, workerAddress, accepted],
+    const getprops = (projectOwnerId, projectName) => workerTasks.accept(projectHash, workerAddress, accepted, {
         title: `${wordsCap.timekeeping} - ${accepted ? texts.acceptInvitation : texts.rejectInvitation}`,
         description: `${wordsCap.activity}: ${projectName}`,
         then: success => !success && resolve(false),

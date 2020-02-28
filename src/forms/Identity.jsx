@@ -70,16 +70,6 @@ export default class IdentityForm extends Component {
                 {
                     bond: new Bond(),
                     hidden: true,
-                    // icon: (
-                    //     <i style={{ opacity: 1 }} className="icon">
-                    //         <Identicon
-                    //             account={this.addressBond}
-                    //             size={28}
-                    //             style={{ marginTop: '5px' }}
-                    //         />
-                    //     </i>
-                    // ),
-                    // iconPosition: 'left',
                     label: wordsCap.seed,
                     name: 'uri',
                     placeholder: texts.seedPlaceholder,

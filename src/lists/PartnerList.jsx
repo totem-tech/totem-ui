@@ -43,7 +43,11 @@ export default class PartnerList extends ReactiveComponent {
 					{ key: '_name', title: texts.partnerName },
 					{ collapsing: true, key: 'type', title: wordsCap.usage },
 					{ key: '_associatedIdentity', title: texts.usedBy, style: { maxWidth: 200 } },
-					{ key: '_tags', title: wordsCap.tags },
+					{
+						key: '_tags',
+						draggable: false, // individual tags are draggable
+						title: wordsCap.tags
+					},
 					{
 						content: ({ address, name, isPublic }) => (
 							<div title={isPublic ? texts.columnPublicTitle1 : texts.columnPublicTitle2}>
@@ -51,7 +55,7 @@ export default class PartnerList extends ReactiveComponent {
 									checked={isPublic}
 									toggle
 									onChange={(_, { checked }) => checked && showForm(CompanyForm, {
-										values: { name, walletAddress: address },
+										values: { name, identity: address },
 										onSubmit: (e, v, success) => success && addressbook.setPublic(address),
 									})}
 								/>
@@ -63,8 +67,9 @@ export default class PartnerList extends ReactiveComponent {
 					},
 					{
 						collapsing: true,
-						title: wordsCap.edit,
 						content: this.getActions,
+						draggable: false,
+						title: wordsCap.edit,
 					},
 				],
 				data: new Map(),

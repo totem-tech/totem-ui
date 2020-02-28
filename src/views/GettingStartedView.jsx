@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { Step, Embed } from 'semantic-ui-react'
 // services
 import { getUser } from '../services/chatClient'
-import identityService from '../services/identity'
+import identityService, { getSelected } from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
@@ -12,10 +12,10 @@ import { setToast } from '../services/toast'
 import RegisterForm from '../forms/Register'
 import IdentityForm from '../forms/Identity'
 
-// const [words, wordsCap] = translated({}, true)
 const [texts] = translated({
-	faucetRequestSent: 'Registration successful! You will shortly receive an allocation of transactions get you started.',
-	faucetTransferComplete: 'Allocation complete.',
+	faucetRequest: 'Faucet request',
+	faucetRequestDetails: 'Transaction allocations to get you started',
+	registrationSuccess: 'Registration successful! You will shortly receive an allocation of transactions to get you started.',
 	quickGuidePara1: `Totem is currently under heavy development, but you can already use the Identities, Partners, Activities 
 		and Timekeeping Modules as well as make basic transfers of your transaction allocations balance using the Transfer Module.`,
 	quickGuidePara2: `Most of what you do in Totem will consume transactions from your balance (XTX for short) but don't worry, 
@@ -44,35 +44,31 @@ export default class GetingStarted extends Component {
 	}
 
 	handleIdentity = () => showForm(IdentityForm, {
-		values: identityService.getSelected(),
-		onSubmit: success => success && this.setIndex(1)
+		values: getSelected(),
+		onSubmit: success => success && this.setIndex(1) | this.handleRegister()
 	})
 
 	handleRegister = () => showForm(RegisterForm, {
-		onSubmit: ok => ok && this.setIndex(this.completedIndex) | this.requestFaucet()
+		onSubmit: ok => {
+			if (!ok) return
+			this.setIndex(this.state.activeStep + 1)
+			setToast({ content: texts.registrationSuccess, status: 'success' })
+			this.requestFaucet()
+		}
 	})
 
-	requestFaucet() {
-		this.faucetMsgId = setToast({ content: texts.faucetRequestSent, status: 'success' }, 10000, this.faucetMsgId)
-		const { address } = identityService.getSelected()
-
-		addToQueue({
-			type: QUEUE_TYPES.CHATCLIENT,
-			func: 'faucetRequest',
-			args: [
-				address,
-				(err, txHash) => setToast({
-					content: err || texts.faucetTransferComplete,
-					status: !!err ? 'error' : 'success'
-				}, 5000, this.faucetMsgId),
-			]
-		}, null, this.faucetMsgId)
-	}
+	requestFaucet = () => addToQueue({
+		type: QUEUE_TYPES.CHATCLIENT,
+		func: 'faucetRequest',
+		title: texts.faucetRequest,
+		description: texts.faucetRequestDetails,
+		args: [getSelected().address]
+	})
 
 	setIndex(activeStep) {
 		if (activeStep === this.registerStepIndex && !!(getUser() || {}).id) {
 			// user Already registered
-			activeStep = this.completedIndex
+			activeStep++
 		}
 		storage.settings.global(moduleKey, { activeStep })
 		this.setState({ activeStep })

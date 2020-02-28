@@ -13,7 +13,7 @@ import { showForm } from '../services/modal'
 import partners from '../services/partner'
 import { getProjects, openStatuses } from '../services/project'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import timeKeeping from '../services/timeKeeping'
+import timeKeeping, { workerTasks } from '../services/timeKeeping'
 
 const notificationType = 'time_keeping'
 const childType = 'invitation'
@@ -220,6 +220,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
         const { project } = findInput(inputs, 'projectHash').options.find(x => x.value === projectHash)
         const { name: projectName, ownerAddress } = project
         const ownIdentity = identities.get(workerAddress)
+        const isOwner = ownIdentity && workerAddress === ownerAddress
         const { name, userId } = ownIdentity || partners.get(workerAddress)
         this.setState({
             submitDisabled: true,
@@ -232,27 +233,24 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             }
         })
 
-        const acceptOwnInvitationTask = {
-            address: workerAddress, // for automatic balance check 
-            type: QUEUE_TYPES.BLOCKCHAIN,
-            func: 'timeKeeping_worker_accept',
-            args: [projectHash, workerAddress, true],
+        const selfInviteThen = success => {
+            this.setState({
+                submitDisabled: false,
+                loading: false,
+                success,
+                message: {
+                    header: success ? texts.invitedAndAccepted : texts.txFailed,
+                    showIcon: true,
+                    status: success ? 'success' : 'error'
+                }
+            })
+            isFn(onSubmit) && onSubmit(success, values)
+        }
+        const acceptOwnInvitationTask = workerTasks.accept(projectHash, workerAddress, true, {
             title: texts.queueTitleOwnAccept,
             description: `${wordsCap.identity}: ${name}`,
-            then: success => {
-                this.setState({
-                    submitDisabled: false,
-                    loading: false,
-                    success,
-                    message: {
-                        header: success ? texts.invitedAndAccepted : texts.txFailed,
-                        showIcon: true,
-                        status: success ? 'success' : 'error'
-                    }
-                })
-                isFn(onSubmit) && onSubmit(success, values)
-            },
-        }
+            then: selfInviteThen,
+        })
         const notifyWorkerTask = {
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'notify',
@@ -279,15 +277,12 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             ],
         }
 
-        addToQueue({
-            address: ownerAddress, // for balance check
-            type: QUEUE_TYPES.BLOCKCHAIN,
-            func: 'timeKeeping_worker_add',
-            args: [projectHash, ownerAddress, workerAddress],
+        addToQueue(workerTasks.add(projectHash, ownerAddress, workerAddress, {
             title: texts.queueTitleInviteTeamMember,
             description: `${wordsCap.invitee}: ${name}`,
-            next: !!ownIdentity ? acceptOwnInvitationTask : notifyWorkerTask
-        })
+            then: isOwner && selfInviteThen,
+            next: isOwner ? null : (ownIdentity ? acceptOwnInvitationTask : notifyWorkerTask)
+        }))
     }
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />

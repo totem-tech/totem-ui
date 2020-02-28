@@ -5,15 +5,18 @@ import { isFn, isObj, isArr } from '../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 // services
 import client from '../services/chatClient'
-import identityService from '../services/identity'
+import identities from '../services/identity'
 import { translated } from '../services/language'
-import addressbook from '../services/partner'
+import partners from '../services/partner'
+import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
 const notificationType = 'identity'
 const childType = 'share'
 const [words, wordsCap] = translated({
     identities: 'identities',
+    identity: 'identity',
     partners: 'partners',
+    partner: 'partner',
 }, true)
 const [texts] = translated({
     failedMsgHeader: 'Submission Failed!',
@@ -42,7 +45,7 @@ export default class IdentityShareForm extends ReactiveComponent {
         this.state = {
             header: texts.formHeader1,
             message: {},
-            onSubmit: this.handleSubmit.bind(this),
+            onSubmit: this.handleSubmit,
             success: false,
             inputs: [
                 {
@@ -89,7 +92,7 @@ export default class IdentityShareForm extends ReactiveComponent {
 
     componentWillMount() {
         // prefill and disable fields 
-        const { disabledFields, includePartners, includeOwnIdentities, values } = this.props
+        const { includePartners, includeOwnIdentities, values } = this.props
         const { address, userIds } = values
         const { inputs } = this.state
         const identityIn = findInput(inputs, 'address')
@@ -103,7 +106,7 @@ export default class IdentityShareForm extends ReactiveComponent {
                 value: '' // keep
             })
             identityIn.options.push(
-                ...identityService.getAll().map(({ address, name }) => ({
+                ...identities.getAll().map(({ address, name }) => ({
                     key: address,
                     name, // keep
                     text: name,
@@ -118,7 +121,7 @@ export default class IdentityShareForm extends ReactiveComponent {
                 value: '' // keep
             })
             identityIn.options.push(
-                ...Array.from(addressbook.getAll()).map(([address, { name }]) => ({
+                ...Array.from(partners.getAll()).map(([address, { name }]) => ({
                     key: address,
                     name, // keep
                     text: name,
@@ -135,9 +138,6 @@ export default class IdentityShareForm extends ReactiveComponent {
             identityIn.label = texts.identityLabel3
             header = texts.formHeader3
         }
-
-        // disable fields
-        inputs.forEach(input => input.disabled = disabledFields.includes(input.name))
 
         // add User Ids as options if supplied in values
         if (isArr(userIds) && userIds.length > 0) {
@@ -166,16 +166,17 @@ export default class IdentityShareForm extends ReactiveComponent {
         })
     }
 
-    handleSubmit(e, values) {
+    handleSubmit = (e, values) => {
         const { onSubmit } = this.props
         const { inputs } = this.state
         const { address, name, userIds } = values
+        const sharePartner = !identities.find(address)
         const data = {
             address,
             name: name || findInput(inputs, 'address').options.find(x => x.value === address).name,
         }
         this.setState({ loading: true })
-        client.notify(userIds, notificationType, childType, null, data, err => {
+        const callback = err => {
             const success = !err
             const message = {
                 content: texts.successMsgContent,
@@ -194,23 +195,36 @@ export default class IdentityShareForm extends ReactiveComponent {
                 success,
             })
             isFn(onSubmit) && onSubmit(success, values)
+        }
+        addToQueue({
+            type: QUEUE_TYPES.CHATCLIENT,
+            func: 'notify',
+            title: sharePartner ? texts.formHeader3 : texts.formHeader2,
+            description: `${sharePartner ? wordsCap.partner : wordsCap.identity}: ${data.name}`
+                + '\n' + `${texts.userIdsLabel}: ${userIds.join()}`,
+            args: [
+                userIds,
+                notificationType,
+                childType,
+                null,
+                data,
+                callback
+            ]
         })
     }
 
-    render() {
-        return <FormBuilder {...{ ...this.props, ...this.state }} />
-    }
+    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
 
 IdentityShareForm.propTypes = {
-    disabledFields: PropTypes.arrayOf(PropTypes.string),
+    inputsDisabled: PropTypes.arrayOf(PropTypes.string),
     // determines whether to include partner list as well as user owned identities
     includePartners: PropTypes.bool,
     includeOwnIdentities: PropTypes.bool,
     values: PropTypes.object,
 }
 IdentityShareForm.defaultProps = {
-    disabledFields: [],
+    inputsDisabled: [],
     includePartners: false,
     includeOwnIdentities: true,
     size: 'tiny',

@@ -1,8 +1,9 @@
 // Store and manage identities
 import { Bond } from 'oo7'
 import { secretStore } from 'oo7-substrate'
-import DataStorage from '../utils/DataStorage'
 import uuid from 'uuid'
+import DataStorage from '../utils/DataStorage'
+import { keyring } from '../utils/polkadotHelper'
 import { objClean } from '../utils/utils'
 
 // catch errors from secretstore
@@ -70,6 +71,7 @@ export const getSelected = () => {
 export const find = addressOrName => {
     const found = _ssFind(addressOrName)
     if (!found) return
+
     return {
         ...found,
         ...identities.get(found.address),
@@ -80,6 +82,8 @@ export const find = addressOrName => {
 export const remove = address => {
     _ssForget(address)
     identities.delete(address)
+    // remove from PolkadotJS keyring
+    keyring.remove(address)
 }
 
 // add/update
@@ -88,7 +92,6 @@ export const set = (address, identity = {}) => {
     let create = false
     let existing = _ssFind(address)
     if (!existing) {
-        setSelected
         const account = accountFromPhrase(seed)
         if (!account || !name) return
         create = true
@@ -96,6 +99,8 @@ export const set = (address, identity = {}) => {
         _ssSubmit(seed, name)
         existing = _ssFind(name)
         address = existing.address
+        // add to PolkadotJS keyring
+        keyring.add([seed])
     }
     identities.set(address, {
         ...identities.get(address),
@@ -122,6 +127,11 @@ export const setSelected = address => {
     identities.set(address, identity)
     selectedAddressBond.changed(uuid.v1())
 }
+
+// export const migrate
+
+// add seeds to PolkadotJS keyring
+setTimeout(() => keyring.add(getAll().map(x => x.uri)), 2000)
 
 export default {
     accountFromPhrase,

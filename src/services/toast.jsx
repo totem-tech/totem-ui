@@ -4,7 +4,7 @@
 import React, { Component } from 'react'
 import { Bond } from 'oo7'
 import uuid from 'uuid'
-import { isObj, isStr } from '../utils/utils'
+import { deferred, isObj, isStr } from '../utils/utils'
 import Message from '../components/Message'
 import { trigger as totalModalsBond } from './modal'
 import { sidebarStateBond } from './sidebar'
@@ -14,7 +14,7 @@ const toasts = new Map()
 // Use Bond as a way to trigger update to the ToastService component
 const trigger = new Bond()
 // store timeout IDs so that they can be cancelled if needed
-const timeoutIds = new Map()
+const closeCbs = new Map()
 
 export class ToastsContainer extends Component {
     componentWillMount() {
@@ -70,13 +70,8 @@ export const setToast = (message, duration, id) => {
     // if text supplied use it as message content, without header
     message = !isStr(message) ? message : { content: message }
     if (!isObj(message) || (!message.header && !message.content)) return;
-    const autoClose = duration !== 0
-    const timeoutId = timeoutIds.get(id)
     id = id || uuid.v1()
-    if (timeoutId) {
-        // clear existing timeout
-        clearTimeout(timeoutId)
-    }
+    const autoClose = duration !== 0
     const handleClose = () => removeToast(id)
     const props = {
         ...message,
@@ -86,7 +81,10 @@ export const setToast = (message, duration, id) => {
     }
     toasts.set(id, <Message {...props} />)
     trigger.trigger(uuid.v1())
-    autoClose && timeoutIds.set(id, setTimeout(handleClose, duration || DURATION))
+    if (autoClose) {
+        const deferredClose = closeCbs.get(id) || closeCbs.set(id, deferred(handleClose, duration || DURATION)).get(id)
+        deferredClose()
+    }
     return id
 }
 

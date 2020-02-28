@@ -13,9 +13,10 @@ import ChatWidget from './components/ChatWidget'
 import PageHeader from './components/PageHeader'
 import SidebarLeft, { MainContentItem } from './components/SidebarLeft'
 // Services
+import blockchain from './services/blockchain'
 import chatClient from './services/chatClient'
 import identity from './services/identity'
-import language from './services/language'
+import language, { translated } from './services/language'
 import modal, { ModalsConainer } from './services/modal'
 import partner from './services/partner'
 import project from './services/project'
@@ -31,6 +32,10 @@ import DataStorage from './utils/DataStorage'
 import TotemButtonLogo from './assets/totem-button-grey.png'
 import PlaceholderImage from './assets/totem-placeholder.png'
 
+const [texts] = translated({
+	failedMsg: 'Connection failed! Please check your internet connection.',
+	connectingMsg: 'Connecting to Totem blockchain network...',
+})
 export class App extends ReactiveComponent {
 	constructor() {
 		super([], {
@@ -61,6 +66,7 @@ export class App extends ReactiveComponent {
 		window.Bond = Bond
 		window.DataStorage = DataStorage
 		window.services = {
+			blockchain,
 			chatClient,
 			identity,
 			language,
@@ -85,11 +91,9 @@ export class App extends ReactiveComponent {
 
 	unreadyRender() {
 		const { status } = this.state
-		const failedMsg = 'Connection failed! Please check your internet connection.'
-		const connectingMsg = 'Connecting to Totem blockchain network...'
 		return (
 			<Dimmer active style={{ height: '100%', position: 'fixed' }}>
-				{!!status.error ? failedMsg : <Loader indeterminate>{connectingMsg}</Loader>}
+				{!!status.error ? texts.failedMsg : <Loader indeterminate>{texts.connectingMsg}</Loader>}
 			</Dimmer>
 		)
 	}

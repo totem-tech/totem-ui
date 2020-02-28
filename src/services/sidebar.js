@@ -3,6 +3,7 @@ import uuid from 'uuid'
 import { Bond } from 'oo7'
 // Components
 import GettingStarted from '../views/GettingStartedView'
+import HistoryList from '../lists/HistoryList'
 import IdentityList from '../lists/IdentityList'
 import PartnerList from '../lists/PartnerList'
 import ProjectList from '../lists/ProjectList'
@@ -24,6 +25,8 @@ import { getLayout, layoutBond } from './window'
 // }, true)
 const [texts] = translated({
     gettingStartedTitle: 'Getting Started',
+    historyTitle: 'History',
+    historySubheader: 'Enlists actions recently taken by you. This data is only stored locally on your computer.',
     identityTitle: 'Identities',
     identitySubheader: 'Identities are like companies - and you can create as many as you like!',
     identitySubheaderDetails1: `
@@ -259,6 +262,13 @@ export const sidebarItems = [
         title: texts.productsTitle,
     },
     {
+        content: HistoryList,
+        icon: 'history',
+        name: 'history',
+        title: texts.historyTitle,
+        subHeader: texts.historySubheader
+    },
+    {
         content: SettingsView,
         icon: 'cogs',
         name: 'settings',
@@ -269,7 +279,6 @@ export const sidebarItems = [
         icon: 'stethoscope',
         name: 'utilities',
         subHeader: texts.utilitiesSubheader,
-        // subHeaderDetails: 'This is a sample detailed subheader', // for extra information that extends subHeader
         title: texts.utilitiesTitle,
     }
 ].map(item => {

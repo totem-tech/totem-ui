@@ -17,21 +17,28 @@ window.forceLayout = forceLayout
 export const getLayout = () => _forcedSize || (window.innerWidth <= 991 ? 'mobile' : 'desktop')
 export const layoutBond = new Bond().defaultTo(getLayout())
 
+// getUrlParam reads the URL parameters
+//
+// Params:
+// @name    string: (optional) if supplied will return a specific paramenter as string.
+//                  Otherwise, will return an object containing all the URL parameters with respective values.
+//
+// returns  string/object
 export const getUrlParam = name => {
     const params = {}
-    window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function (m, key, value) {
-        params[key] = value
-    })
-
-    return name ? params[name] : params
+    const regex = /[?&]+([^=&]+)=([^&]*)/gi
+    window.location.href.replace(regex, (_, key, value) => params[key] = value)
+    return name ? params[name] || '' : params
 }
 
 window.onresize = () => {
     const size = getLayout()
     if (layoutBond._value !== size) layoutBond.changed(size)
 }
+
 export default {
     forceLayout,
     getLayout,
     getUrlParam,
+    layoutBond,
 }

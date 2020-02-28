@@ -9,6 +9,7 @@ import { getSelected, getTexts, setTexts } from './services/language'
 import storage from './services/storage'
 import { setDefaultConfig } from './utils/polkadotHelper'
 import { generateHash } from './utils/utils'
+// import { getConnection } from './services/blockchain'
 
 
 const init = () => new Promise((resolve, reject) => {
@@ -49,9 +50,14 @@ const init = () => new Promise((resolve, reject) => {
             })
         })
     })
-    getTypes().then(types => setDefaultConfig(nodes, types))
+    getTypes().then(types => {
+        setDefaultConfig(nodes, types)
+        // getConnection().then(() => {
+
+        // })
+    })
     // force resolve in case messaging service is not connected yet
-    setTimeout(resolve, 2000)
+    setTimeout(() => resolve(), 2000)
 })
 
 init().then(() => render(<App />, document.getElementById('app')))

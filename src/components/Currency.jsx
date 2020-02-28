@@ -8,9 +8,12 @@ export default class Currency extends Component {
     constructor(props) {
         super(props)
         this.state = { value: '' }
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
     componentWillMount() {
+        this._mounted = true
         let { address, value } = this.props
         if (!value && ss58Decode(address)) {
             value = runtime.balances.balance(address)
@@ -21,7 +24,10 @@ export default class Currency extends Component {
         this.tieId = this.bond.tie(value => this.setState({ value: parseFloat(value) }))
     }
 
-    componentWillUnmount = () => this.bond && this.bond.untie(this.tieId)
+    componentWillUnmount() {
+        this._mounted = false
+        this.bond && this.bond.untie(this.tieId)
+    }
 
     render() {
         const { className, decimalPlaces, style } = this.props

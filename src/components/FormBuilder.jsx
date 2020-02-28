@@ -10,33 +10,32 @@ export default class FormBuilder extends ReactiveComponent {
     constructor(props) {
         super(props)
 
+        const { inputsDisabled = [], inputs, open } = props
+        inputs.forEach(x => ({ ...x, controlled: isDefined(x.value) }))
+        // disable inputs
+        inputsDisabled.forEach(name => (findInput(inputs, name) || {}).disabled = true)
+
         this.state = {
-            inputs: props.inputs,
-            open: props.open,
-            values: this.getValues(props.inputs)
+            inputs,
+            open,
+            values: this.getValues(inputs)
         }
-        this.state.inputs.forEach(x => ({ ...x, controlled: isDefined(x.value) }))
 
-        this.handleChange = this.handleChange.bind(this)
-        this.handleClose = this.handleClose.bind(this)
-        this.handleSubmit = this.handleSubmit.bind(this)
     }
 
-    getValues(inputs = [], values = {}) {
-        return inputs.reduce((values, input, i) => {
-            const { inputs, name, controlled, type } = input
-            const typeLC = (type || '').toLowerCase()
-            const isGroup = typeLC === 'group'
-            if (!isStr(name) || nonValueTypes.includes(type)) return values
-            if (isGroup) return this.getValues(inputs, values)
-            let value = values[name]
-            value = !(controlled ? hasValue : isDefined)(value) ? input.value : value
-            values[name] = value
-            return values
-        }, values)
-    }
+    getValues = (inputs = [], values = {}) => inputs.reduce((values, input, i) => {
+        const { inputs, name, controlled, type } = input
+        const typeLC = (type || '').toLowerCase()
+        const isGroup = typeLC === 'group'
+        if (!isStr(name) || nonValueTypes.includes(type)) return values
+        if (isGroup) return this.getValues(inputs, values)
+        let value = values[name]
+        value = !(controlled ? hasValue : isDefined)(value) ? input.value : value
+        values[name] = value
+        return values
+    }, values)
 
-    handleChange(e, data, index, input, childIndex) {
+    handleChange = (e, data, index, input, childIndex) => {
         const { name, onChange: onInputChange } = input
         let { inputs } = this.state
         const { onChange: formOnChange } = this.props
@@ -61,14 +60,14 @@ export default class FormBuilder extends ReactiveComponent {
         this.setState({ inputs, values })
     }
 
-    handleClose(e) {
+    handleClose = e => {
         e.preventDefault()
         const { onClose } = this.props
         if (isFn(onClose)) return onClose();
         this.setState({ open: !this.state.open })
     }
 
-    handleSubmit(e) {
+    handleSubmit = e => {
         const { onSubmit } = this.props
         const { values } = this.state
         e.preventDefault()
@@ -76,12 +75,8 @@ export default class FormBuilder extends ReactiveComponent {
         onSubmit(e, values)
     }
 
-    handleReset(e) {
-        e.preventDefault()
-    }
-
     render() {
-        const {
+        let {
             closeOnEscape,
             closeOnDimmerClick,
             closeOnSubmit,
@@ -106,7 +101,7 @@ export default class FormBuilder extends ReactiveComponent {
             trigger,
             widths
         } = this.props
-        const { inputs, open: sOpen, values } = this.state
+        let { inputs, open: sOpen, values } = this.state
         // whether the 'open' status is controlled or uncontrolled
         let modalOpen = isFn(onClose) ? open : sOpen
         if (success && closeOnSubmit) {
@@ -114,12 +109,31 @@ export default class FormBuilder extends ReactiveComponent {
             isFn(onClose) && onClose({}, {})
         }
         const message = isObj(msg) && msg || {}
+        inputs = inputs.map((input, i) => {
+            const { hidden, inputs: childInputs, name, type } = input || {}
+            const isGroup = (type || '').toLowerCase() === 'group'
+            return {
+                ...input,
+                hidden: !isFn(hidden) ? hidden : !!hidden(values, i),
+                inputs: !isGroup || !isArr(childInputs) ? undefined : childInputs.map((childInput, childIndex) => ({
+                    ...childInput,
+                    onChange: (e, data) => this.handleChange(e, data, i, childInput, childIndex),
+                    useInput: true,
+                })),
+                key: i + name,
+                onChange: isGroup ? undefined : (e, data) => this.handleChange(e, data, i, input),
+            }
+        })
 
         let submitBtn, closeBtn
+        const shouldDisable = submitDisabled || success || isFormInvalid(inputs, values)
+        submitText = !isFn(submitText) ? submitText : submitText(values, shouldDisable)
         if (submitText !== null) {
-            let submitProps = React.isValidElement(submitText) ? objCopy(submitText.props) : {}
+            const submitProps = !isObj(submitText) ? {} : (
+                React.isValidElement(submitText) ? { ...submitText.props } : submitText
+            )
+
             const { content, disabled, onClick, positive } = submitProps
-            const shouldDisable = isFormInvalid(inputs, values) || submitDisabled || message.error || success
             submitProps.content = content || (!isStr(submitText) ? content : submitText)
             submitProps.disabled = isBool(disabled) ? disabled : shouldDisable
             submitProps.onClick = isFn(onClick) ? onClick : this.handleSubmit
@@ -144,22 +158,7 @@ export default class FormBuilder extends ReactiveComponent {
                 warning={message.status === 'warning'}
                 widths={widths}
             >
-                {Array.isArray(inputs) && inputs.map((input, i) => {
-                    const isGroup = (input.type || '').toLowerCase() === 'group'
-                    return (
-                        <FormInput
-                            key={i}
-                            {...input}
-                            inputs={!isGroup || !isArr(input.inputs) ? undefined : input.inputs.map((childInput, childIndex) => {
-                                const cin = objWithoutKeys(childInput, ['onChange'])
-                                cin.onChange = (e, data) => this.handleChange(e, data, i, childInput, childIndex)
-                                cin.useInput = true
-                                return cin
-                            })}
-                            onChange={isGroup ? undefined : (e, data) => this.handleChange(e, data, i, input)}
-                        />
-                    )
-                })}
+                {inputs.map(props => <FormInput {...props} />)}
                 {/* Include submit button if not a modal */}
                 {!modal && !hideFooter && (
                     <div>
@@ -223,6 +222,8 @@ FormBuilder.propTypes = {
         PropTypes.element
     ]),
     defaultOpen: PropTypes.bool,
+    // disable inputs on load
+    inputsDisabled: PropTypes.arrayOf(PropTypes.string),
     header: PropTypes.string,
     headerIcon: PropTypes.string,
     hideFooter: PropTypes.bool,
@@ -240,8 +241,19 @@ FormBuilder.propTypes = {
     subheader: PropTypes.string,
     submitDisabled: PropTypes.bool,
     submitText: PropTypes.oneOfType([
+        PropTypes.element,
+        // @submitText can be a function
+        //
+        // Params: 
+        // @values          object: all input values in a single object
+        // @shouldDisable   boolean: whether the button should be disabled according to FormBuild's default logic
+        // 
+        // Expected return: one fo the following
+        //          - string: button text
+        //          - button properties as object: any property supported by Semantic UI's Button component and HTML <button>
+        //          - React element: a valid JSX element
+        PropTypes.func,
         PropTypes.string,
-        PropTypes.element
     ]),
     success: PropTypes.bool,
     trigger: PropTypes.element,

@@ -1,22 +1,28 @@
 import React, { Component } from 'react'
-import { forceRefreshPage, generateHash } from '../utils/utils'
+import { arrSort, generateHash } from '../utils/utils'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 import client from '../services/chatClient'
+import { limit, setLimit } from '../services/history'
 import { getSelected, getTexts, languages, setSelected, setTexts, translated } from '../services/language'
 import storage from '../services/storage'
 
-const [texts, textsCap] = translated({
-    gsCurrencyLabel: 'default currency',
-    gsLanguageLabel: 'default language (experimental)',
-    notImplemented: 'not implemented',
+const [words, wordsCap] = translated({
+    unlimited: 'unlimited',
     saved: 'saved',
 }, true)
+const [texts] = translated({
+    gsCurrencyLabel: 'Default Currency',
+    gsLanguageLabel: 'Default Language (experimental)',
+    historyLimitLabel: 'History Limit',
+    notImplemented: 'Not implemented',
+})
 const moduleKey = 'setttings'
 export default class SettingsView extends Component {
     render = () => <GlobalSettings />
 }
 
-const savedMsg = { content: texts.saved, status: 'success' }
+const forceRefreshPage = () => window.location.reload(true)
+const savedMsg = { content: wordsCap.saved, status: 'success' }
 const notImplementedMsg = { content: texts.notImplemented, status: 'warning' }
 class GlobalSettings extends Component {
     constructor(props) {
@@ -34,33 +40,53 @@ class GlobalSettings extends Component {
             submitText: null,
             inputs: [
                 {
-                    label: textsCap.gsLanguageLabel,
+                    label: texts.gsLanguageLabel,
                     name: 'languageCode',
                     onChange: this.handleLanguageChange,
-                    options: Object.keys(languages).sort().map(code => ({
-                        key: code,
-                        text: languages[code],
-                        value: code,
-                    })),
+                    options: arrSort(
+                        Object.keys(languages).sort().map(code => ({
+                            description: code,
+                            key: code,
+                            text: languages[code],
+                            value: code,
+                        })),
+                        'text',
+                    ),
                     search: true,
                     selection: true,
                     type: 'dropdown',
                     value: getSelected(),
                 },
                 {
-                    label: textsCap.gsCurrencyLabel,
+                    label: texts.gsCurrencyLabel,
                     name: 'currency',
                     onChange: this.handleCurrencyChange,
-                    options: Object.keys(this.currencies).map(value => ({
-                        description: this.currencies[value],
-                        key: value,
-                        text: value,
-                        value
-                    })),
+                    options: arrSort(
+                        Object.keys(this.currencies).map(value => ({
+                            description: this.currencies[value],
+                            key: value,
+                            text: value,
+                            value
+                        })),
+                        'text',
+                    ),
                     search: true,
                     selection: true,
                     type: 'dropdown',
                     value: storage.settings.global(moduleKey).currency || Object.keys(this.currencies)[0]
+                },
+                {
+                    label: texts.historyLimitLabel,
+                    name: 'historyLimit',
+                    onChange: this.handleHistoryLimitChange,
+                    options: [wordsCap.unlimited, 0, 5, 100, 500, 1000].map((limit, i) => ({
+                        key: i,
+                        text: limit,
+                        value: limit,
+                    })),
+                    selection: true,
+                    type: 'dropdown',
+                    value: limit,
                 }
             ]
         }
@@ -83,6 +109,11 @@ class GlobalSettings extends Component {
             // reload page
             forceRefreshPage()
         })
+    }
+
+    handleHistoryLimitChange = (_, { historyLimit }) => {
+        setLimit(historyLimit === wordsCap.unlimited ? null : historyLimit, true)
+        this.setInputMessage('historyLimit', savedMsg)
     }
 
     setInputMessage = (inputName, message, autoHide = true, delay = 2000) => {

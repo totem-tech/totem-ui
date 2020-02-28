@@ -45,6 +45,7 @@ export default class ItentityList extends ReactiveComponent {
                 },
                 {
                     key: '_tags',
+                    draggable: false, // individual tags are draggable
                     title: wordsCap.tags
                 },
                 {
@@ -55,12 +56,14 @@ export default class ItentityList extends ReactiveComponent {
                 {
                     collapsing: true,
                     content: ({ address }) => <Currency address={address} />,
+                    draggable: false,
                     textAlign: 'center',
                     title: texts.txAllocations,
                 },
                 {
                     collapsing: true,
                     content: this.getActions,
+                    draggable: false,
                     title: wordsCap.actions
                 }
             ],
@@ -111,7 +114,7 @@ export default class ItentityList extends ReactiveComponent {
                 <Button
                     icon='share'
                     onClick={() => showForm(IdentityShareForm, {
-                        disabledFields: ['address'],
+                        inputsDisabled: ['address'],
                         includeOwnIdentities: true,
                         includePartners: false,
                         size: 'tiny',

@@ -1,20 +1,20 @@
 # How to generate translations and use
 
-1. Open https://localhost/?build-translation-list=true or https://dev.totem.live/?build-translation-list=true in a browser. Not allowed from `https://totem.live`. Make sure the relevant messaging service's start script has the following environment variable:
+1. Open https://localhost/?build-mode=true or https://dev.totem.live/?build-mode=true in a browser. Not allowed from `https://totem.live`. Make sure the relevant messaging service's start script has the following environment variable:
 ```
     BuildMode="TRUE"
 ```
 2. Navigate to `Settings` on sidebar.
-3. Click on `Download applications texts as CSV for translation` button to download a CSV file.
-4. Upload the downloaded CSV file to Google Drive.
-5. Open the uploaded file using Google Sheets.
-6. Wait for all texts translations to complete. (Hint: no `loading...` texts)
-7. At this stage, correct any translation error or if do manual translation by third party here. Just make sure that headers with language codes are untouched.
-8. Download the sheet as Tab Separated Value (TSV) file. DO NOT USE .csv here.
-9. Open the downloaded .tsv file in a text editior and copy all texts.
-10. Go back to web page opened in (1) and navigate to `Settings`.
-11. Paste all texts exactly as is into the text area below the title `Convert TSV to JSON for use with Totem Messaging Service`.
-12. Click `Download JSON` to download a .json file.
+3. Select action from Dropdown: `Download a list of all texts for translation`
+4. Click on `Download File` button to download a CSV file.
+5. Upload the downloaded CSV file to Google Drive.
+6. Open the uploaded file using Google Sheets.
+7. Wait for all texts translations to complete. (Hint: no `loading...` texts)
+8. At this stage, correct any translation error or if do manual translation by third party here. Just make sure that headers with language codes are untouched.
+9. Download the sheet as Tab Separated Value (TSV) file. DO NOT USE .csv here.
+10. Repeat step (1) and (2)
+11. Select action from Dropdown: `Convert translations.tsv to translations.json`
+12. Click `Download File` to download a .json file.
 13. Copy the JSON file to the `Totem Messaging Service`'s data directory. (Hint: look at the `STORAGE_PATH` environment variable in your `.sh` start script)
 14. Restart `Totem Messaging Service` and voila! You have got multi-lingual support!
 

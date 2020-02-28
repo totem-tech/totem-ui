@@ -6,7 +6,7 @@ import storage from './storage'
 const translations = new DataStorage('totem_translations')
 const EN = 'EN'
 const moduleKey = 'language'
-export const buildMode = getUrlParam('build-translation-list') == 'true' && window.location.hostname !== 'totem.live'
+export const buildMode = getUrlParam('build-mode').toLowerCase() == 'true' && window.location.hostname !== 'totem.live'
 export const languages = Object.freeze({
     BN: 'Bengali',
     DE: 'German',
