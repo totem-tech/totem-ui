@@ -138,27 +138,25 @@ export const addToQueue = (queueItem, id, toastId) => {
 
 // }
 
-export const resumeQueue = () => queue.size > 0 && Array.from(queue).forEach((x, i) => setTimeout(() => _processTask(x[1], x[0])))
+export const resumeQueue = () => queue.size > 0 && Array.from(queue.getAll()).forEach((x, i) =>
+    setTimeout(() => _processTask(x[1], x[0], null, true))
+)
 
-const _processNextTxItem = () => {
-    txInProgress = false
-    if (txQueue.length === 0) return;
-    const { queueItem, id, toastId } = txQueue.shift()
-    setTimeout(() => _processTask(queueItem, id, toastId))
-}
-
-const _processTask = (currentTask, id, toastId) => {
+const _processTask = (currentTask, id, toastId, allowRepeat) => {
     if (!isObj(currentTask) || Object.keys(currentTask).length === 0 || currentTask.status === 'error') {
         return queue.delete(id)
     }
     const next = currentTask.next
-    if ('success' === currentTask.status) {
-        if (!isObj(next)) {
-            // success or faild => remove item from queue
+    switch (currentTask.status) {
+        case SUCCESS:
+            // execute `next` or delete queue item
+            if (isObj(next)) return _processTask(next, id, toastId, allowRepeat)
+        case ERROR:
             return queue.delete(id)
-        }
-        // Go to next task
-        return _processTask(next, id, toastId)
+        case LOADING:
+            currentTask.status = allowRepeat ? undefined : LOADING
+            // repeat current task (ie: on page reload) or ignore and assume it's currently running
+            return allowRepeat && _processTask(currentTask, id, toastId, allowRepeat)
     }
 
     // Execute current task
@@ -214,6 +212,7 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
     const cbArgs = arguments
     const errMsg = status === ERROR ? cbArgs[0] : ''
     const done = [SUCCESS, ERROR].includes(status)
+    const success = status === SUCCESS
     task.status = status
     task.errorMessage = !isStr(errMsg) ? undefined : errMsg
     const hasError = status === ERROR && task.errorMessage
@@ -225,9 +224,10 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
     if (!done) return
 
     try {
-        isFn(task.then) && task.then(status === SUCCESS, cbArgs)
-    } catch (_) {
+        isFn(task.then) && task.then(success, cbArgs)
+    } catch (err) {
         // ignore any error occured by invoking the `then` function
+        console.log('Unexpected error occured while executing queue .then()', { rootTask, err })
     }
 
     const { args, description, errorMessage, func, title, type } = task
@@ -242,10 +242,14 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
         id,
     )
 
-    if (isObj(task.next)) return _processTask(task.next, id, toastId)
-    // delete root item if no error occured
-    queue.delete(id)
-    _processNextTxItem()
+    if (isObj(task.next)) {
+        // execute next only if current task issuccessful
+        success && _processTask(task.next, id, toastId)
+        return
+    } else {
+        // delete root item if no error occured
+        queue.delete(id)
+    }
 }
 
 const handleChatClient = (id, rootTask, task, toastId) => {
@@ -274,11 +278,8 @@ const handleChatClient = (id, rootTask, task, toastId) => {
             args[cbIndex] = () => { }
         }
         _save(LOADING)()
-        const t = resolve => err => {
-            console.log({ resolve, err })
-        }
         // initiate request
-        func.promise.apply(null, args).then(_save(SUCCESS), _save(ERROR))//.then(t(true), t(false))
+        func.promise.apply(null, args).then(_save(SUCCESS), _save(ERROR))
     } catch (err) {
         _save(ERROR)(err)
     }
@@ -324,7 +325,7 @@ const handleTxTransfer = (id, rootTask, task, toastId) => {
                 null,
                 api
             ).then(_save(SUCCESS), _save(ERROR)),
-            _save(ERROR)
+            console.log // ignore connection error
         )
 
     } catch (err) {
@@ -356,7 +357,7 @@ const handleTxStorage = (id, rootTask, task, toastId) => {
                 const tx = txFunc.apply(null, args)
                 signAndSend(api, address, tx).then(_save(SUCCESS), _save(ERROR))
             })
-        }, _save(ERROR))
+        }, console.log) // ignore connection error
     } catch (err) {
         _save(ERROR)(err)
     }
