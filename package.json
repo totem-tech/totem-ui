@@ -17,8 +17,15 @@
       "babel-plugin-transform-object-rest-spread"
     ],
     "presets": [
-      "env",
-      "react"
+      "react",
+      [
+        "env",
+        {
+          "targets": {
+            "node": "current"
+          }
+        }
+      ]
     ]
   },
   "keywords": [

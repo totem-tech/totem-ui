@@ -173,16 +173,15 @@ const _processTask = (currentTask, id, toastId, allowRepeat) => {
         case QUEUE_TYPES.TX_STORAGE:
             handleTxStorage(id, rootTask, currentTask, toastId)
             break
-        case QUEUE_TYPES.BLOCKCHAIN:
-            alert('deprecated queue type used')
-            break;
         case QUEUE_TYPES.CHATCLIENT:
             handleChatClient(id, rootTask, currentTask, toastId)
-            break;
+            break
+        case QUEUE_TYPES.BLOCKCHAIN:
+            alert('deprecated queue type used')
         default:
             // invalid queue type
             queue.delete(id)
-            break;
+            break
     }
 }
 
