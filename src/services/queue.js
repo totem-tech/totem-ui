@@ -274,11 +274,8 @@ const handleChatClient = (id, rootTask, task, toastId) => {
             args[cbIndex] = () => { }
         }
         _save(LOADING)()
-        const t = resolve => err => {
-            console.log({ resolve, err })
-        }
         // initiate request
-        func.promise.apply(null, args).then(_save(SUCCESS), _save(ERROR))//.then(t(true), t(false))
+        func.promise.apply(null, args).then(_save(SUCCESS), _save(ERROR))
     } catch (err) {
         _save(ERROR)(err)
     }
