@@ -224,12 +224,9 @@ export const tasks = {
     remove: (ownerAddress, hash, queueProps = {}) => ({
         ...queueProps,
         address: ownerAddress,
-        func: 'api.tx.projects.setStatusProject',
+        func: 'api.tx.projects.removeProject',
         type: TX_STORAGE,
-        args: [
-            hashToStr(hash),
-            statusCodes.delete,
-        ],
+        args: [hashToStr(hash)],
     }),
     // reopens a project
     //
