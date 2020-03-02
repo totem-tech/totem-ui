@@ -158,6 +158,15 @@ export default class ProjectForm extends Component {
         const blockchainTask = tasks.add(ownerAddress, hash, {
             title,
             description,
+            then: (ok, [err]) => !ok && this.setState({
+                message: {
+                    content: err,
+                    header: texts.submitErrorHeader,
+                    showIcon: true,
+                    status: 'error'
+                },
+                submitDisabled: false,
+            }),
             next: clientTask
         })
 

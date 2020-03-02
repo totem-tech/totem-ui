@@ -98,7 +98,7 @@ export default class HistoryList extends Component {
         this.tieId = bond.tie(() => {
             const data = getAll()
             Array.from(data).forEach(([_, item]) => {
-                item.message = clearClutter(item.message)
+                item.message = clearClutter(item.message || '')
                 item._identity = getAddressName(item.identity)
                 item._timestamp = item.timestamp.replace(/\T|\Z/g, ' ').split('.')[0]
             })

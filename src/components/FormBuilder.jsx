@@ -323,12 +323,15 @@ export const isFormInvalid = (inputs = [], values) => inputs.reduce((invalid, in
         || ['button'].indexOf(inType) >= 0) return invalid;
 
     // if input is set invalid externally or internally by FormInput
-    if (input.invalid || input._invalid) return true;
+    if (input.invalid || input._invalid) return true
+
 
     // Use recursion to validate input groups
     if (isGroup) return isFormInvalid(input.inputs, values);
     values = values || {}
     const value = isDefined(values[input.name]) ? values[input.name] : input.value
+    // dropdown's value must exist in the options list
+    if (inType === 'dropdown') return !input.options.find(x => x.value === value)
     return isCheckbox && isRequired ? !value : !hasValue(value)
 }, false)
 
