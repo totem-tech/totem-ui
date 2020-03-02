@@ -26,7 +26,7 @@ import { getLayout, layoutBond } from './window'
 const [texts] = translated({
     gettingStartedTitle: 'Getting Started',
     historyTitle: 'History',
-    historySubheader: 'Enlists actions recently taken by you. This data is only stored locally on your computer.',
+    historySubheader: 'History List of actions recently taken by you. This data is only stored locally on your computer.',
     identityTitle: 'Identities',
     identitySubheader: 'Identities are like companies - and you can create as many as you like!',
     identitySubheaderDetails1: `
