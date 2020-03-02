@@ -22,7 +22,7 @@ const [texts] = translated({
 		we are nice open source people, and we'll give you plenty to get you started.`,
 	quickGuidePara3: 'If you use up your balance - no problemo! Simply request some more from our automated faucet.',
 	quickGuideTitle: 'A quick guide to getting started with Totem Live Accounting.',
-	step1Description: `This Identities are only known to you. You can create as many as you like in the Identities Module.`,
+	step1Description: `Identities are only known to you. You can create as many as you like in the Identities Module.`,
 	step1Title: 'Edit Default Identity',
 	stepsTitle: `Only 2 short steps to begin. Let's go!`,
 	step2Description: `Chat is how you communicate with other Totem users. Choose a unique name (preferably not your own name!)`,
