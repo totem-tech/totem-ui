@@ -470,7 +470,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         const doneItems = ['workerAddress', 'reset']
         inputs.filter(x => doneItems.indexOf(x.name) >= 0).forEach(x => x.hidden = !done)
         inputs.find(x => x.name === 'projectHash').disabled = inprogress
-        duraIn.icon = manualEntry ? 'pen' : null
+        duraIn.icon = manualEntry ? 'pencil' : null
         // Show resume item when timer is stopped
         duraIn.action = !stopped || manualEntry ? undefined : {
             icon: 'play',
