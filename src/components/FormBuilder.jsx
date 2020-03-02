@@ -330,8 +330,6 @@ export const isFormInvalid = (inputs = [], values) => inputs.reduce((invalid, in
     if (isGroup) return isFormInvalid(input.inputs, values);
     values = values || {}
     const value = isDefined(values[input.name]) ? values[input.name] : input.value
-    // dropdown's value must exist in the options list
-    if (inType === 'dropdown') return !input.options.find(x => x.value === value)
     return isCheckbox && isRequired ? !value : !hasValue(value)
 }, false)
 
