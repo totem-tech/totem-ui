@@ -221,7 +221,13 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
     if (!done) return
 
     try {
-        isFn(task.then) && task.then(success, cbArgs)
+        if (task.type === QUEUE_TYPES.CHATCLIENT) {
+            const args = task.args
+            const taskCb = args[args.length - 1]
+            if (isFn(taskCb)) taskCb.apply({}, cbArgs)
+        } else {
+            isFn(task.then) && task.then(success, cbArgs)
+        }
     } catch (err) {
         // ignore any error occured by invoking the `then` function
         console.log('Unexpected error occured while executing queue .then()', { rootTask, err })
