@@ -16,6 +16,7 @@ let config = {
     ticker: 'XTX'
 }
 const connection = { api: null, provider: null }
+let connectionPromsie
 export const denominations = Object.freeze({
     Ytx: 24,
     Ztx: 21,
@@ -43,28 +44,29 @@ export const nodes = [
 ]
 
 export const getConfig = () => config
-
-export const getConnection = () => {
-    if (connection.api && connection.api._isConnected.value) return new Promise(resolve => resolve(connection))
+export const getConnection = async () => {
+    if (connection.api && connection.api._isConnected.value) return connection
+    if (connectionPromsie) {
+        await connectionPromsie
+        return connection
+    }
     const nodeUrl = nodes[0]
     console.log('Polkadot: connecting to', nodeUrl)
-    return connect(nodeUrl, config.types, true).then(({ api, keyring, provider }) => {
-        console.log('Connected using Polkadot', { api, provider })
-        connection.api = api
-        connection.provider = provider
-        connection.keyring = keyring
-        window.connection = connection
-        return connection
-    })
+    connectionPromsie = connect(nodeUrl, config.types, true)
+    const { api, keyring, provider } = await connectionPromsie
+    console.log('Connected using Polkadot', { api, provider })
+    connection.api = api
+    connection.provider = provider
+    connection.keyring = keyring
+    connectionPromsie = null
+    return connection
 }
 // getTypes returns a promise with 
 export const getTypes = () => new Promise(resolve => resolve(types))
 
 // Replace configs
 export const setConfig = newConfig => {
-    if (isObj(newConfig)) {
-        config = { ...config, ...newConfig }
-    }
+    config = { ...config, ...newConfig }
     storage.settings.module.set(moduleKey, { config })
     denominationInfo.init({ ...config, denominations })
 }

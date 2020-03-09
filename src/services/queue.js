@@ -16,11 +16,9 @@ import { getAddressName } from './partner'
 import { translated } from './language'
 import { setToast } from './toast'
 
-const queue = new DataStorage('totem_queue-data')
+const queue = new DataStorage('totem_queue-data', true)
 // Minimum balance required to make a transaction
 const MIN_BALANCE = 140
-let txInProgress = false
-const txQueue = []
 const [words, wordsCap] = translated({
     amount: 'amount',
     error: 'error',
