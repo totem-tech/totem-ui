@@ -15,7 +15,7 @@ const [texts] = translated({
     noTimeRecords: 'You have not yet booked time on an activity',
     totalBlocks: 'Total Time in Blocks',
     totalHours: 'Total Time in Hours',
-    yourContribution: 'Your Time Contribution versus Total Booked Time',
+    yourContribution: 'How Your Time is Divided',
 })
 
 export default class TimeKeepingSummary extends ReactiveComponent {
