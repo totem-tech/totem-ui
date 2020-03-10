@@ -135,13 +135,13 @@ export default class AdminUtils extends Component {
         const companies = (
             csvToArr(text, null, ',')
                 .map((com, i) => [
-                    com.address,// || accountFromPhrase(`${seed}/${uuid.v1()}`),
+                    com.address,
                     {
                         ...objWithoutKeys(com, ['address']),
                         country: this.getCountry(com.country),
                     }
                 ])
-        )//.slice(0, 100)
+        )
         let updateEvery = parseInt(companies.length / 100) || 1
         const message = {
             content: 'Starting conversion...',
