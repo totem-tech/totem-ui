@@ -19,6 +19,7 @@ import { setToast } from './toast'
 const queue = new DataStorage('totem_queue-data', true)
 // Minimum balance required to make a transaction
 const MIN_BALANCE = 140
+const inprogressIds = {}
 const [words, wordsCap] = translated({
     amount: 'amount',
     error: 'error',
@@ -34,27 +35,16 @@ const [words, wordsCap] = translated({
     transactions: 'transactions',
 }, true)
 const [texts] = translated({
-    cancelRequest: 'cancel request',
-    checkingBalance: 'checking balance',
-    clickToContinue: 'click here to continue',
     insufficientBalance: 'Insufficient balance',
-    insufficientBalanceMsg1: 'Insufficient balance in the following identity:',
-    insufficientBalanceMsg2: 'Minimum required balance',
-    insufficientBalanceMsg3: 'Once you have sufficient balance reload page',
-    sendingTx: 'Sending transaction',
-    signingTx: 'Signing transaction',
-    txAborted: 'transaction aborted',
-    txFailed: 'Transaction failed',
-    txSuccessful: 'Transaction successful',
     txForeignIdentity: 'Cannot create a transaction from an identity that does not belong to you!',
     txInvalidSender: 'Invalid or no sender address supplied',
-
-
     invalidFunc: 'Invalid function name supplied.',
-
     txTransferTitle: 'Transfer funds',
     txTransferMissingArgs: 'One or more of the following arguments is missing or invalid: sender identity, recipient identity and amount',
 })
+
+// if one or more tasks in progress, warn before user attempts to leave/reload page
+window.onbeforeunload = () => Object.keys(inprogressIds).length > 0
 
 export const QUEUE_TYPES = Object.freeze({
     CHATCLIENT: 'chatclient',
@@ -218,7 +208,12 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
     task.toastId = setMessage(task, msg, duration, toastId, silent)
     queue.set(id, rootTask)
 
-    if (!done) return
+    if (!done) {
+        inprogressIds[id] = true
+        console.log(inprogressIds)
+        return
+    }
+    delete inprogressIds[id]
 
     try {
         if (task.type === QUEUE_TYPES.CHATCLIENT) {
@@ -346,6 +341,9 @@ const handleTxStorage = (id, rootTask, task, toastId) => {
     const _save = status => arg0 => setToastNSaveCb(
         id, rootTask, task, status, msg, toastId, silent, toastDuration
     )(arg0)
+
+    // make sure identity is owned by user and a transaction can be created
+    if (!findIdentity(address)) return _save(ERROR)(texts.txForeignIdentity)
 
     try {
         if (!isStr(func) || !func.startsWith('api.tx.')) return _save(ERROR)(texts.invalidFunc)
