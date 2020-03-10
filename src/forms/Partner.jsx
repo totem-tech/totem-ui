@@ -21,7 +21,7 @@ const [words, wordsCap] = translated({
     public: 'public',
 }, true)
 const [texts] = translated({
-    addressAdditionLabel: 'Use ',
+    addressAdditionLabel: 'Use',
     addressLabel: 'Search for Company or Identity',
     addressPlaceholder: 'Search by company details or identity',
     addressValidationMsg1: 'Partner already exists with the following name:',
@@ -81,7 +81,7 @@ class Partner extends Component {
                 },
                 {
                     allowAdditions: false,
-                    additionLabel: texts.addressAdditionLabel,
+                    additionLabel: texts.addressAdditionLabel + ' ',
                     bond: new Bond(),
                     clearable: true,
                     // disable when adding new and address is prefilled (possibly from notification)
