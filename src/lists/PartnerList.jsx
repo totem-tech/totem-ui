@@ -106,7 +106,7 @@ export default class PartnerList extends ReactiveComponent {
 						confirm({
 							content: texts.partnerNoUserIdConfirmMsg,
 							header: texts.partnerNoUserIdConfirmHeader,
-							onConfirm: updatePartnerCb((success, { userId }) => success && introduce(userId)),
+							onConfirm: updatePartnerCb((success, { userId }) => success && userId && introduce(userId)),
 							size: 'tiny',
 						})
 					}}
