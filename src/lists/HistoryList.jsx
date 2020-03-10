@@ -12,8 +12,10 @@ import { clearClutter } from '../utils/utils'
 const [texts, textsCap] = translated({
     action: 'action',
     clearAll: 'Clear All',
+    close: 'close',
     delete: 'delete',
     description: 'description',
+    errorMessageHeader: 'Error message',
     executionTime: 'Execution time',
     identity: 'identity',
     message: 'message',
@@ -51,26 +53,49 @@ export default class HistoryList extends Component {
                     },
                     title: textsCap.description,
                 },
-                {
-                    key: 'message',
-                    style: {
-                        whiteSpace: 'pre-wrap',
-                        maxWidth: 250,
-                    },
-                    title: textsCap.message
-                },
+                // {
+                //     key: 'message',
+                //     style: {
+                //         whiteSpace: 'pre-wrap',
+                //         minWidth: 150,
+                //         maxWidth: 250,
+                //     },
+                //     title: textsCap.message
+                // },
                 {
                     collapsing: true,
-                    content: (_, id) => (
-                        <Button
-                            icon='close'
-                            onClick={() => remove(id)}
-                            title={textsCap.delete}
-                        />
-                    ),
+                    content: ({ message }, id) => [
+                        {
+                            icon: 'close',
+                            onClick: () => remove(id),
+                            title: textsCap.delete,
+                        },
+                        {
+                            disabled: !message,
+                            icon: 'exclamation circle',
+                            negative: true,
+                            onClick: !message ? undefined : () => confirm({
+                                cancelButton: textsCap.close,
+                                confirmButton: null,
+                                content: (
+                                    <pre style={{
+                                        color: 'red',
+                                        margin: 0,
+                                        whiteSpace: 'pre-wrap',
+                                    }}>
+                                        {message}
+                                    </pre>
+                                ),
+                                header: texts.errorMessageHeader,
+                                size: 'tiny',
+                            }),
+                            title: texts.errorMessageHeader
+                        }
+                    ]
+                        .map((props, i) => <Button {...props} key={i} />),
                     textAlign: 'center',
                     title: textsCap.action
-                }
+                },
             ],
             data: new Map(),
             defaultSort: '_timestamp',
