@@ -306,6 +306,7 @@ export const worker = {
         hashToBytes(projectHash),
         ss58Decode(workerAddress)
     ]),
+    acceptedList: arr => Bond.all(arr.map(({ projectHash: p, workerAddress: w }) => worker.accepted(p, w))),
     // check if worker is banned. undefined: not banned, object: banned
     banned: (projectHash, address) => runtime.timekeeping.projectWorkersBanList([
         hashToBytes(projectHash),
@@ -406,7 +407,7 @@ export default {
     formDataBond,
     getProjects,
     getProjectWorkers,
-    getTimeRecordsBond: getTimeRecordsBonds,
+    getTimeRecordsBonds,
     getTimeRecordsDetails,
     project: {
         // timestamp of the very first recorded time on a project
