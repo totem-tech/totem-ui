@@ -5,7 +5,7 @@ import storage from './storage'
 
 const translations = new DataStorage('totem_translations')
 const EN = 'EN'
-const moduleKey = 'language'
+const MODULE_KEY = 'language'
 export const buildMode = getUrlParam('build-mode').toLowerCase() == 'true' && window.location.hostname !== 'totem.live'
 export const languages = Object.freeze({
     BN: 'Bengali',
@@ -25,9 +25,9 @@ export const languages = Object.freeze({
     ZH: 'Chinese',
 })
 // get selected language code
-export const getSelected = () => storage.settings.global(moduleKey).selected || EN
+export const getSelected = () => storage.settings.global(MODULE_KEY).selected || EN
 // set selected language code
-export const setSelected = selected => storage.settings.global(moduleKey, { selected: selected || EN })
+export const setSelected = selected => storage.settings.global(MODULE_KEY, { selected: selected || EN })
 
 export const translated = (texts = {}, capitalized = false) => {
     const en = translations.get(EN) || []

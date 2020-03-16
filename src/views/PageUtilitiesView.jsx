@@ -8,7 +8,7 @@ import { confirm } from '../services/modal'
 const [texts] = translated({
 	backupData: 'Backup data',
 	clearCachedData: 'Clear Cached Data',
-	confirmBackupContent: 'You are about to download all your Totem application data as JSON file',
+	confirmBackupContent: 'You are about to download your Totem application data as JSON file. The following information will be backed up: history, identities, partners and settings',
 	confirmHeader: 'Are you sure?',
 	confirmRestoreContent: 'You are about to replace application data with the JSON file. This is potentially dangerour and you can loose your identity and other data.',
 	forceRefresh: 'Force App Refresh!',
@@ -41,24 +41,28 @@ export default class PageUtilitiesView extends Component {
 						header: texts.confirmHeader,
 						size: 'tiny',
 						onConfirm: () => {
-							const ignored = [
-								'_cache_',
-								'_history',
-								'_notifications',
-								'_queue',
-								'_sidebar',
-								'_static_',
-								'_translations',
+							// LocalStorage keys to backup
+							// if changed, dont forget to update `texts.confirmBackupContent`
+							const backupKeys = [
+								'totem_history',
+								'totem_identities',
+								'totem_partners',
+								'secretStore', // ToDo: deprecate by migrating completely to identities
+								'totem_settings',
 							]
-							const shouldIgnore = key => ignored.reduce((ignore, keyword) => ignore || key.includes(keyword), false)
 							const keys = Object.keys(localStorage)
-								.map(key => shouldIgnore(key) ? null : key)
+								.map(key => !backupKeys.includes(key) ? null : key)
 								.filter(Boolean)
+								.sort()
 							const data = keys.reduce((data, key) => {
 								data[key] = JSON.parse(localStorage[key])
 								return data
 							}, {})
-							downloadFile(JSON.stringify(data), 'totem-backup.json', 'application/json')
+							downloadFile(
+								JSON.stringify(data),
+								`totem-backup-${new Date().toISOString()}.json`,
+								'application/json'
+							)
 						},
 					})
 				}} />
@@ -66,6 +70,7 @@ export default class PageUtilitiesView extends Component {
 					content: texts.restoreBackup,
 					negative: true,
 					onClick: () => alert('To be implemented'),
+					// restore to merge only. DO NOT REMOVE new data
 					// onClick: () => confirm({
 					// content: texts.confirmRestoreContent,
 					// header: texts.confirmHeader,

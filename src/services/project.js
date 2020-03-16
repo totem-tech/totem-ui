@@ -2,18 +2,19 @@ import DataStorage from '../utils/DataStorage'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
 import { runtime } from 'oo7-substrate'
-import identities, { getSelected, selectedAddressBond } from './identity'
-import { hashToBytes, ss58Decode } from '../utils/convert'
-import client from './chatClient'
-import { hashToStr } from '../utils/convert'
+import { hashToBytes, hashToStr, ss58Decode } from '../utils/convert'
 import { arrUnique, isBond, isUint8Arr } from '../utils/utils'
-import timeKeeping from './timeKeeping'
+// services
+import client from './chatClient'
+import identities, { getSelected, selectedAddressBond } from './identity'
 import partners from './partner'
+import storage from './storage'
+import timeKeeping from './timeKeeping'
 
-const CACHE_PREFIX = 'totem__cache_projects_'
-const cacheStorage = new DataStorage(undefined, true)
+export const MODULE_KEY = 'projects'
+// read or write to cache storage
+const cacheRW = (key, value) => storage.cache(MODULE_KEY, key, value)
 const TX_STORAGE = 'tx_storage'
-// let _config.address, projectsBond, projectsBondTieId;
 const _config = {
     address: undefined,
     firstAttempt: true,
@@ -96,8 +97,10 @@ export const getProject = projectHash => fetchProjects([projectHash]).then(proje
 export const getProjects = (_forceUpdate = false) => {
     _forceUpdate = _forceUpdate || _config.firstAttempt
     const { address } = getSelected()
-    cacheStorage.name = CACHE_PREFIX + address
-    const projectsCache = cacheStorage.getAll()
+    const key = 'projects-' + address
+    const cachedAr = cacheRW(key) || []
+    const projectsCache = new Map(cachedAr)
+
     if (_config.address !== address) {
         _config.address = address
         // update projects list whenever list of projects changes
@@ -106,7 +109,7 @@ export const getProjects = (_forceUpdate = false) => {
         _config.tieId = _config.hashesBond.tie(hashes => {
             hashes = hashes.map(h => hashToStr(h))
             const changed = !!hashes.find(hash => !projectsCache.get(hash))
-                || !!Array.from(projectsCache).find(([hash]) => !hashes.includes(hash))
+                || !!cachedAr.find(([hash]) => !hashes.includes(hash))
             if (_config.firstAttempt) return
             if (_config.updateInProgress) return //_config.updatePromise.then(() => getProjects())
             if (changed) return getProjects(true)
@@ -127,7 +130,7 @@ export const getProjects = (_forceUpdate = false) => {
         })
         _config.updateInProgress = false
         _config.firstAttempt = false
-        cacheStorage.setAll(projects)
+        cacheRW(key, projects)
         _forceUpdate && getProjectsBond.changed(uuid.v1())
         return projects
     })

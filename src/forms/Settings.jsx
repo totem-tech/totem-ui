@@ -16,15 +16,12 @@ const [texts] = translated({
     historyLimitLabel: 'History Limit',
     notImplemented: 'Not implemented',
 })
-const moduleKey = 'setttings'
-export default class SettingsView extends Component {
-    render = () => <GlobalSettings />
-}
-
+const gs = (key, value) => storage.settings.global(key, value)
 const forceRefreshPage = () => window.location.reload(true)
 const savedMsg = { content: wordsCap.saved, status: 'success' }
 const notImplementedMsg = { content: texts.notImplemented, status: 'warning' }
-class GlobalSettings extends Component {
+
+export default class Settings extends Component {
     constructor(props) {
         super(props)
         // supported languages || ToDo: use API to retrieve from server
@@ -73,7 +70,7 @@ class GlobalSettings extends Component {
                     search: true,
                     selection: true,
                     type: 'dropdown',
-                    value: storage.settings.global(moduleKey).currency || Object.keys(this.currencies)[0]
+                    value: gs('currency') || Object.keys(this.currencies)[0]
                 },
                 {
                     label: texts.historyLimitLabel,
@@ -94,7 +91,7 @@ class GlobalSettings extends Component {
 
     handleCurrencyChange = (_, { currency }) => {
         const doSave = Object.keys(this.currencies)[0] === currency
-        doSave && storage.settings.global(moduleKey, { currency })
+        doSave && gs('currency', currency)
         this.setInputMessage('currency', doSave ? savedMsg : notImplementedMsg)
     }
 

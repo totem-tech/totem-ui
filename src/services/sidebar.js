@@ -7,7 +7,7 @@ import HistoryList from '../lists/HistoryList'
 import IdentityList from '../lists/IdentityList'
 import PartnerList from '../lists/PartnerList'
 import ProjectList from '../lists/ProjectList'
-import SettingsView from '../views/SettingsView'
+import SettingsForm from '../forms/Settings'
 import TimeKeepingView from '../views/TimeKeepingView'
 import TransferForm from '../forms/Transfer'
 import UtilitiesView from '../views/UtilitiesView'
@@ -19,10 +19,9 @@ import { isBool, isBond } from '../utils/utils'
 import { findInput as findItem } from '../components/FormBuilder'
 // services
 import { translated } from './language'
+import storage from './storage'
 import { getLayout, layoutBond } from './window'
 
-// const [words, wordsCap] = translated({
-// }, true)
 const [texts] = translated({
     gettingStartedTitle: 'Getting Started',
     historyTitle: 'History',
@@ -96,12 +95,19 @@ const [texts] = translated({
 })
 
 // store items' "active" status in the localStorage
-const statuses = new DataStorage('totem_sidebar-items-status')
+const MODULE_KEY = 'sidebar'
+const rw = value => storage.settings.module(MODULE_KEY, value)
+const statuses = new DataStorage()
+statuses.setAll(new Map((rw() || {}).items || []))
+statuses.bond.tie(() => rw({ items: Array.from(statuses.getAll()) }))
+
 export const allInactiveBond = new Bond().defaultTo(false)
-export const sidebarStateBond = new Bond().defaultTo({
+export const sidebarStateBond = new Bond().defaultTo((rw() || {}).status || {
     collapsed: false,
     visible: getLayout() !== 'mobile',
 })
+// save to local storage to preseve state
+sidebarStateBond.tie(status => rw({ status }))
 export const setSidebarState = (collapsed, visible) => {
     const lastState = sidebarStateBond._value
     const isMobile = getLayout() === 'mobile'
@@ -269,7 +275,7 @@ export const sidebarItems = [
         subHeader: texts.historySubheader
     },
     {
-        content: SettingsView,
+        content: SettingsForm,
         icon: 'cogs',
         name: 'settings',
         title: texts.settingsTitle,
@@ -334,15 +340,14 @@ export const setContentProps = (name, props = {}, scrollToItem = true) => {
 
 export const scrollTo = name => {
     const item = getItem(name)
-    const activeItems = sidebarItems.filter(({ active, hidden }) => !hidden && active).length
+    const activeItems = sidebarItems.filter(x => !x.hidden && x.active).length
     if (!item || !item.active || item.hidden || activeItems === 1) return
     // Scroll down to the content segment if more than one item active
     setTimeout(() => {
         const elRef = item.elementRef
         if (!elRef || !elRef.current) return
-        document.getElementById('main-content').scrollTo(0,
-            elRef.current.offsetTop - 15
-        )
+        document.getElementById('main-content')
+            .scrollTo(0, elRef.current.offsetTop - 15)
     }, 100)
     return item
 }

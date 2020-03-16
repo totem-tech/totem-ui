@@ -9,8 +9,9 @@ const port = window.location.hostname === 'dev.totem.live' ? 3003 : 3001
 let instance, socket;
 const postLoginCallbacks = []
 const HISTORY_LIMIT = 100
-const settings = storage.settings
-const moduleKey = 'messaging'
+const MODULE_KEY = 'messaging'
+// read or write to messaging settings storage
+const rw = value => storage.settings.module(MODULE_KEY, value)
 const [texts] = translated({
     notConnected: 'Messaging server is not connected'
 })
@@ -20,18 +21,18 @@ const deprecatedKey = 'totem_chat-user'
 const oldData = localStorage[deprecatedKey]
 if (oldData) {
     localStorage.removeItem(deprecatedKey)
-    settings.module.set(moduleKey, { user: JSON.parse(oldData) })
+    rw({ user: JSON.parse(oldData) })
 }
 // retrieves user credentails from local storage
-export const getUser = () => settings.module(moduleKey).user
+export const getUser = () => rw().user
 // Retrieves chat history from local storage
-export const getHistory = () => settings.module(moduleKey).chatHistory || []
+export const getHistory = () => rw().history || []
 export const getHistoryLimit = () => HISTORY_LIMIT
 export const addToHistory = (message, id) => {
     let history = getHistory()
     history.push({ message, id })
     history = history.slice(history.length - HISTORY_LIMIT, history.length)
-    settings.module.set(moduleKey, { chatHistory: history })
+    rw({ history })
 }
 // Adds callback to be executed after login is successful
 export const onLogin = cb => isFn(cb) && postLoginCallbacks.push(cb)
@@ -205,7 +206,7 @@ export class ChatClient {
 
     register = (id, secret, cb) => socket.emit('register', id, secret, err => {
         if (!err) {
-            settings.module.set(moduleKey, { user: { id, secret } })
+            rw({ user: { id, secret } })
             setTimeout(() => _execOnLogin(id))
         }
         isFn(cb) && cb(err)

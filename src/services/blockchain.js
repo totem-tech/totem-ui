@@ -8,7 +8,7 @@ import { isObj } from '../utils/utils'
 
 // oo7-substrate: register custom types
 Object.keys(types).forEach(key => addCodecTransform(key, types[key]))
-const moduleKey = 'blockchain'
+const MODULE_KEY = 'blockchain'
 const TX_STORAGE = 'tx_storage'
 let config = {
     primary: 'Ktx',
@@ -67,7 +67,7 @@ export const getTypes = () => new Promise(resolve => resolve(types))
 // Replace configs
 export const setConfig = newConfig => {
     config = { ...config, ...newConfig }
-    storage.settings.module.set(moduleKey, { config })
+    storage.settings.module(MODULE_KEY, { config })
     denominationInfo.init({ ...config, denominations })
 }
 

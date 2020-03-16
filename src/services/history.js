@@ -5,8 +5,8 @@ import { isObj, isStr, isValidNumber } from '../utils/utils'
 import storage from './storage'
 
 const key = 'history'
-const moduleKey = 'totem_' + key
-const history = new DataStorage(moduleKey, true)
+const MODULE_KEY = 'totem_' + key
+const history = new DataStorage(MODULE_KEY, true)
 export let limit = 500
 
 export const bond = new Bond().defaultTo(uuid.v1())
@@ -45,7 +45,7 @@ const notifyTypesIcons = {
 // if enabled, user's usage data will be anonymously sent to Totem servers for analytical purposes
 export const historyDataDonation = (enable = false) => {
     if (!isBool(enable)) return storage.settings.global(key).donate
-    storage.settings.global(moduleKey, { donate })
+    storage.settings.global(MODULE_KEY, { donate })
 }
 // checks if action should be logged. All transaction related actions are accepted.
 // returns appropriate icon name if valid
