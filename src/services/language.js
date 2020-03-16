@@ -3,7 +3,7 @@ import { getUrlParam } from './window'
 import { clearClutter, downloadFile, textCapitalize } from '../utils/utils'
 import storage from './storage'
 
-const translations = new DataStorage('totem_translations')
+const translations = new DataStorage('totem_static_translations')
 const EN = 'EN'
 const MODULE_KEY = 'language'
 export const buildMode = getUrlParam('build-mode').toLowerCase() == 'true' && window.location.hostname !== 'totem.live'
