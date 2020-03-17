@@ -36,6 +36,7 @@ export default class IntroduceUser extends Component {
             inputs: [
                 {
                     bond: new Bond(),
+                    includeFromChat: true,
                     includePartners: true,
                     label: texts.userToIntroduce,
                     multiple: false,

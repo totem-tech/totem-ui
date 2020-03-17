@@ -95,7 +95,12 @@ export default class ItentityList extends ReactiveComponent {
                         key={tag}
                         draggable='true'
                         onDragStart={e => e.stopPropagation() | e.dataTransfer.setData("Text", e.target.textContent)}
-                        style={{ margin: 1, float: 'left', display: 'inline' }}
+                        style={{
+                            cursor: 'grab',
+                            display: 'inline',
+                            float: 'left',
+                            margin: 1,
+                        }}
                     >
                         {tag}
                     </Label>
