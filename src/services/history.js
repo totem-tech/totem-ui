@@ -58,10 +58,7 @@ const notifyTypesIcons = {
 
 // enable/disable history data donation
 // if enabled, user's usage data will be anonymously sent to Totem servers for analytical purposes
-export const historyDataDonation = (enable = false) => {
-    if (!isBool(enable)) return storage.settings.global(key).donate
-    storage.settings.global(MODULE_KEY, { donate })
-}
+export const historyDataDonation = enable => (isBool(enable) ? rw({ donate }) : rw()).donate
 
 // checks if action should be logged. All transaction related actions are accepted.
 // returns appropriate icon name if valid

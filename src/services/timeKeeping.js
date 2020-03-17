@@ -20,7 +20,7 @@ export const NEW_RECORD_HASH = '0x40518ed7e875ba87d6c7358c06b1cac9d339144f8367a0
 export const MODULE_KEY = 'time-keeping'
 const TX_STORAGE = 'tx_storage'
 // read/write to module settings storage
-const rw = value => storage.settings.module(MODULE_KEY, value)
+const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 // read or write to cache storage
 const cacheRW = (key, value) => storage.cache(MODULE_KEY, key, value)
 const _config = {

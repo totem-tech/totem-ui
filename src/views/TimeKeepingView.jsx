@@ -33,6 +33,7 @@ const [texts] = translated({
     myTimeKeepingSummary: 'My timekeeping overview',
     selectAProject: 'Select a activity',
 })
+const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 export default class TimeKeepingView extends Component {
     constructor(props) {
         super(props)
@@ -46,7 +47,7 @@ export default class TimeKeepingView extends Component {
                 onChange: (_, { value: viewOptions }) => {
                     this.setState({ viewOptions })
                     // update local storage with module settings
-                    storage.settings.module(MODULE_KEY, { ...storage.settings.module(MODULE_KEY), viewOptions })
+                    rw({ viewOptions })
                 },
                 toggle: true,
                 options: [
@@ -141,5 +142,5 @@ TimeKeepingView.propTypes = {
     viewOptions: PropTypes.array.isRequired,
 }
 TimeKeepingView.defaultProps = {
-    viewOptions: storage.settings.module(MODULE_KEY).viewOptions || ['records']
+    viewOptions: rw().viewOptions || ['records']
 }

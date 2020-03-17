@@ -18,7 +18,8 @@ const [texts] = translated({
     historyLimitLabel: 'History limit',
     notImplemented: 'Not implemented',
 })
-const gs = (key, value) => storage.settings.global(key, value)
+// read/write to global settings
+const rwg = (key, value) => storage.settings.global(key, value)
 const forceRefreshPage = () => window.location.reload(true)
 const savedMsg = { content: wordsCap.saved, status: 'success' }
 const notImplementedMsg = { content: texts.notImplemented, status: 'warning' }
@@ -72,7 +73,7 @@ export default class Settings extends Component {
                     search: true,
                     selection: true,
                     type: 'dropdown',
-                    value: gs('currency') || Object.keys(this.currencies)[0]
+                    value: rwg('currency') || Object.keys(this.currencies)[0]
                 },
                 {
                     label: texts.historyLimitLabel,
@@ -106,7 +107,7 @@ export default class Settings extends Component {
 
     handleCurrencyChange = (_, { currency }) => {
         const doSave = Object.keys(this.currencies)[0] === currency
-        doSave && gs('currency', currency)
+        doSave && rwg('currency', currency)
         this.setInputMessage('currency', doSave ? savedMsg : notImplementedMsg)
     }
 

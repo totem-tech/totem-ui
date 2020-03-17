@@ -12,6 +12,16 @@ const CACHE_KEY = PREFIX + 'cache'
 const storage = {}
 const cache = new DataStorage(CACHE_KEY)
 const settings = new DataStorage(PREFIX + 'settings', true)
+// LocalStorage items that are essential for the applicaiton to run. 
+export const essentialKeys = [
+    'totem_history',
+    'totem_identities',
+    // notifications are essential because user may need to respond to them in case they are migrating to a new device.
+    'totem_notifications',
+    'totem_partners',
+    'secretStore', // ToDo: deprecate by migrating completely to identities
+    'totem_settings',
+]
 
 // Read/write to storage
 //
@@ -63,12 +73,25 @@ storage.settings = {
 storage.cache = (moduleKey, itemKey, value) => rw(cache, moduleKey, itemKey, value)
 
 // removes cache and static data
+// Caution: can remove 
 storage.clearNonEssentialData = () => {
-    const keys = [CACHE_KEY]
-    Object.keys(localStorage)
-        .map(key => {
-            if (!keys.includes(key) && !key.startsWith(PREFIX_STATIC)) return
-            localStorage.removeItem(key)
-        })
+    const keys = [
+        CACHE_KEY,
+        //deprecated
+        'totem_service_notifications',
+        'totem_translations',
+        'totem_sidebar-items-status',
+    ]
+    const partialKeys = [
+        '_static_',
+        '_cache_',
+    ]
+    const shouldRemove = key => essentialKeys.includes(key) && ( // makes sure essential keys are not removed
+        keys.includes(key) ||
+        partialKeys.reduce((remove, pKey) => remove || key.includes(pKey), false)
+    )
+
+    Object.keys(localStorage).forEach(key => shouldRemove(key) && localStorage.removeItem(key))
 }
+
 export default storage

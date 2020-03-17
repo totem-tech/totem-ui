@@ -2,23 +2,24 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import FormInput from './FormInput'
 import { arrUnique, isFn, objWithoutKeys, textCapitalize, arrSort } from '../utils/utils'
-import client, { getUser } from '../services/chatClient'
+import client, { getUser, getHistory } from '../services/chatClient'
 import { translated } from '../services/language'
 import partners from '../services/partner'
 
-const [words, wordsCap] = translated({
-    add: 'add'
-}, true)
-const [texts] = translated({
-    validatingUserId: 'Checking if User ID exists...',
+const [texts, textsCap] = translated({
+    add: 'add',
     enterUserId: 'Enter User ID',
     enterUserIds: 'Enter User ID(s)',
+    fromChatHistory: 'From recent chats',
     invalidUserId: 'Invalid User ID',
     noResultsMessage: 'Type a User ID and press enter to add',
+    partner: 'partner',
+    validatingUserId: 'Checking if User ID exists...',
     ownIdEntered: 'Please enter an ID other than your own',
-})
+}, true)
 const noAttrs = [
     'excludeOwnId',
+    'includeFromChat',
     'includePartners',
     'message',
     'multiple',
@@ -41,7 +42,7 @@ export default class UserIdInput extends Component {
     constructor(props) {
         super(props)
 
-        const { allowAdditions, clearable, includePartners, multiple, options, value } = props
+        const { allowAdditions, clearable, includePartners, includeFromChat, multiple, options, value } = props
         let input = {
             defer: null,
             inlineLabel: { icon: { className: 'no-margin', name: 'at' } },
@@ -55,8 +56,8 @@ export default class UserIdInput extends Component {
         }
 
         // use dropdown
-        if (multiple || includePartners || options) input = {
-            additionLabel: `${wordsCap.add} @`,
+        if (multiple || includeFromChat || includePartners || options) input = {
+            additionLabel: `${textsCap.add} @`,
             allowAdditions,
             clearable,
             multiple: multiple,
@@ -84,28 +85,44 @@ export default class UserIdInput extends Component {
 
     componentWillMount() {
         this._mounted = true
-        let { includePartners, multiple, value } = this.props
-        value = value || (multiple ? [] : '')
-        if (!includePartners) return this.setState({ value })
-
         let { options } = this.state
-        const userIds = options.map(({ userId }) => userId)
-        const partnersArr = Array.from(partners.getAll())
-            .map(([_, p]) => p)
-            .filter(({ userId }) => {
-                if (!userId || userIds.includes(userId)) return
-                userIds.push(userId)
-                return true
-            })
-        options.push(...partnersArr.map(({ name, userId }) => ({
-            key: userId,
-            text: userId,
-            description: name,
-            value: userId,
-        })))
+        let { excludeOwnId, includeFromChat, includePartners, multiple, value } = this.props
+        value = value || (multiple ? [] : '')
+        console.log({ multiple })
+        if (!options) return this.setState({ value })
 
-        // sort by userId
-        options = arrSort(options, 'text')
+        const userIds = options.map(({ userId }) => userId)
+        if (includePartners) {
+            const partnerOptions = []
+            Array.from(partners.getAll())
+                .forEach(([_, { name, userId }]) => {
+                    if (!userId || userIds.includes(userId)) return
+                    userIds.push(userId) // prevents dupplicates
+                    partnerOptions.push({
+                        description: name,
+                        icon: 'users',
+                        key: userId,
+                        text: userId,
+                        title: textsCap.partner,
+                        value: userId,
+                    })
+                    return true
+                })
+            options = options.concat(arrSort(partnerOptions, 'text'))
+        }
+        if (includeFromChat) {
+            const historyUserIds = arrUnique(getHistory().map(x => x.id))
+                .filter(id => !userIds.includes(id))
+            const huiOptions = arrSort(historyUserIds.map(id => ({
+                icon: 'chat',
+                key: id,
+                text: id,
+                title: texts.fromChatHistory,
+                value: id,
+            })), 'text')
+            options = options.concat(huiOptions)
+        }
+        if (excludeOwnId) options = options.filter(x => x.value !== (getUser() || {}).id)
         this.setState({ options, value })
     }
 
@@ -225,13 +242,13 @@ export default class UserIdInput extends Component {
 
     render() {
         let { invalid, loading, options } = this.state
+        const { multiple } = this.props
         invalid = invalid || this.props.invalid
         loading = loading || this.props.loading
-        // options = this.props.options || options
         return <FormInput {...{
             ...objWithoutKeys(
                 this.props,
-                !options ? noAttrsTextField : noAttrs
+                !multiple ? noAttrsTextField : noAttrs
             ),
             ...this.state,
             invalid,
@@ -244,6 +261,8 @@ UserIdInput.propTypes = {
     allowAdditions: PropTypes.bool,
     clearable: PropTypes.bool,
     excludeOwnId: PropTypes.bool,
+    // if `@multiple` === true, include user ids from chat history
+    includeFromChat: PropTypes.bool,
     // if `@multiple` === true, include partners with user ids
     includePartners: PropTypes.bool,
     multiple: PropTypes.bool,
@@ -255,7 +274,14 @@ UserIdInput.defaultProps = {
     allowAdditions: true,
     clearable: true,
     excludeOwnId: true,
+    includeFromChat: false,
     includePartners: false,
     multiple: false,
     newUser: false,
+}
+
+const styles = {
+    optionCategory: {
+        background: 'gray',
+    }
 }

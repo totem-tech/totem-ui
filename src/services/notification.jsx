@@ -19,7 +19,8 @@ import { getProject } from './project'
 import { addToQueue, QUEUE_TYPES } from './queue'
 import { workerTasks } from './timeKeeping'
 
-const notifications = new DataStorage('totem_service_notifications', true, false)
+const MODULE_KEY = 'totem_notifications'
+const notifications = new DataStorage(MODULE_KEY, true, false)
 // store unread counts for individual types
 // const unreadCounts = new DataStorage('totem_service_notifications-unread-counts', true, false)
 const triggerBond = new Bond()
