@@ -1,5 +1,5 @@
 import io from 'socket.io-client'
-import { isFn } from '../utils/utils'
+import { isFn, isValidNumber, isDefined } from '../utils/utils'
 import { translated } from './language'
 import storage from './storage'
 
@@ -8,10 +8,10 @@ import storage from './storage'
 const port = window.location.hostname === 'dev.totem.live' ? 3003 : 3001
 let instance, socket;
 const postLoginCallbacks = []
-const HISTORY_LIMIT = 100
+const HISTORY_LIMIT = 100 // default limit
 const MODULE_KEY = 'messaging'
 // read or write to messaging settings storage
-const rw = value => storage.settings.module(MODULE_KEY, value)
+const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 const [texts] = translated({
     notConnected: 'Messaging server is not connected'
 })
@@ -23,16 +23,45 @@ if (oldData) {
     localStorage.removeItem(deprecatedKey)
     rw({ user: JSON.parse(oldData) })
 }
+
+// add new message to chat history
+export const addToHistory = (message, id) => {
+    // save history
+    rw({ history: [...getHistory(), { message, id }] })
+    // apply history limit
+    historyLimit()
+}
 // retrieves user credentails from local storage
 export const getUser = () => rw().user
 // Retrieves chat history from local storage
 export const getHistory = () => rw().history || []
-export const getHistoryLimit = () => HISTORY_LIMIT
-export const addToHistory = (message, id) => {
+
+// get/set number of chat messages to store.
+// All existing and new chat messages will be visible on the chat widget despite the limit, until page is reloaded.
+//
+// Params:
+// @newLimit    number: use '0' (zero) to store unlimited items
+//
+// returns      nubmer
+export const historyLimit = newLimit => {
+    let limit = rw().historyLimit
+    if (!isDefined(limit)) limit = HISTORY_LIMIT
+    // save to local storage
+    if (isValidNumber(newLimit)) {
+        limit = newLimit
+        rw({ historyLimit: limit })
+    }
+    console.log({ limit })
+    if (limit === 0) return limit
+
     let history = getHistory()
-    history.push({ message, id })
-    history = history.slice(history.length - HISTORY_LIMIT, history.length)
+    if (history.length <= limit) return limit
+
+    // limit number of items immediately
+    history = history.slice(history.length - limit)
     rw({ history })
+    console.log({ history })
+    return limit
 }
 // Adds callback to be executed after login is successful
 export const onLogin = cb => isFn(cb) && postLoginCallbacks.push(cb)

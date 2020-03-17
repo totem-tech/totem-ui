@@ -1,13 +1,15 @@
 import uuid from 'uuid'
 import { Bond } from 'oo7'
 import DataStorage from '../utils/DataStorage'
-import { isObj, isStr, isValidNumber } from '../utils/utils'
+import { isObj, isStr, isValidNumber, isDefined } from '../utils/utils'
 import storage from './storage'
 
 const key = 'history'
 const MODULE_KEY = 'totem_' + key
 const history = new DataStorage(MODULE_KEY, true)
-export let limit = 500
+const LIMIT = 500 // default number of items to store
+// read/write to module settings
+const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 
 export const bond = new Bond().defaultTo(uuid.v1())
 const updateBond = () => bond.changed(uuid.v1())
@@ -17,16 +19,29 @@ export const getAll = () => history.getAll()
 
 export const remove = id => history.delete(id) | updateBond()
 
-// number of actions to keep
+// set number of actions to store and apply to history items
 // use null for unlimited history
-export const setLimit = (newLimit, trigger = true) => {
-    limit = newLimit === null || isValidNumber(newLimit) ? newLimit : limit
-    if (history.size <= limit || limit === null) return
+//
+// Params:
+// @newLimit    number: number of items to store. Use '0' (zero) to save unlimited items
+// @trigger     boolean: whether to trigger update on the history list (if open)
+//
+// Returns      number
+export const limit = (newLimit, trigger = true) => {
+    let limit = rw().limit
+    if (!isDefined(limit)) limit = LIMIT
+    if (limit != newLimit && isValidNumber(newLimit)) {
+        limit = newLimit
+        rw({ limit })
+    }
+
+    if (limit === 0 || history.size <= limit) return limit
 
     const arr = Array.from(history.getAll())
     const limitted = arr.slice(arr.length - limit)
     history.setAll(new Map(limitted))
     trigger && updateBond()
+    return limit
 }
 
 const actionIcons = {
@@ -47,6 +62,7 @@ export const historyDataDonation = (enable = false) => {
     if (!isBool(enable)) return storage.settings.global(key).donate
     storage.settings.global(MODULE_KEY, { donate })
 }
+
 // checks if action should be logged. All transaction related actions are accepted.
 // returns appropriate icon name if valid
 export const historyWorthy = (func, args) => {
@@ -102,7 +118,8 @@ export const save = (
 ) => {
     const icon = historyWorthy(action, data)
     if (!icon) return
-
+    // id alredy exists remove it from history to re-appear at the end of the list
+    if (history.get(id)) history.delete(id)
     history.set(id, {
         identity,
         action,
@@ -115,7 +132,8 @@ export const save = (
         timestamp,
         icon,
     })
-    setLimit(limit, false)
+    // apply history limit
+    limit(undefined, false)
     updateBond()
     return id
 }

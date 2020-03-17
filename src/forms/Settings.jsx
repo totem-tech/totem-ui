@@ -1,8 +1,9 @@
 import React, { Component } from 'react'
-import { arrSort, generateHash } from '../utils/utils'
 import FormBuilder, { findInput } from '../components/FormBuilder'
-import client from '../services/chatClient'
-import { limit, setLimit } from '../services/history'
+import { arrSort, generateHash } from '../utils/utils'
+// services
+import client, { historyLimit as chatHistoryLimit } from '../services/chatClient'
+import { limit as historyItemsLimit } from '../services/history'
 import { getSelected, getTexts, languages, setSelected, setTexts, translated } from '../services/language'
 import storage from '../services/storage'
 
@@ -11,9 +12,10 @@ const [words, wordsCap] = translated({
     saved: 'saved',
 }, true)
 const [texts] = translated({
-    gsCurrencyLabel: 'Default Currency',
-    gsLanguageLabel: 'Default Language (experimental)',
-    historyLimitLabel: 'History Limit',
+    chatLimitLabel: 'Chat message limit',
+    gsCurrencyLabel: 'Default currency',
+    gsLanguageLabel: 'Default language (experimental)',
+    historyLimitLabel: 'History limit',
     notImplemented: 'Not implemented',
 })
 const gs = (key, value) => storage.settings.global(key, value)
@@ -76,15 +78,28 @@ export default class Settings extends Component {
                     label: texts.historyLimitLabel,
                     name: 'historyLimit',
                     onChange: this.handleHistoryLimitChange,
-                    options: [wordsCap.unlimited, 0, 5, 100, 500, 1000].map((limit, i) => ({
+                    options: [0, 10, 50, 100, 500, 1000].map((limit, i) => ({
                         key: i,
-                        text: limit,
+                        text: limit || wordsCap.unlimited,
                         value: limit,
                     })),
                     selection: true,
                     type: 'dropdown',
-                    value: limit,
-                }
+                    value: historyItemsLimit(),
+                },
+                {
+                    label: texts.chatLimitLabel,
+                    name: 'chatMsgLimit',
+                    onChange: this.handleChatLimitChange,
+                    options: [0, 10, 50, 100, 500, 1000].map((limit, i) => ({
+                        key: i,
+                        text: limit || wordsCap.unlimited,
+                        value: limit,
+                    })),
+                    selection: true,
+                    type: 'dropdown',
+                    value: chatHistoryLimit(),
+                },
             ]
         }
     }
@@ -93,6 +108,16 @@ export default class Settings extends Component {
         const doSave = Object.keys(this.currencies)[0] === currency
         doSave && gs('currency', currency)
         this.setInputMessage('currency', doSave ? savedMsg : notImplementedMsg)
+    }
+
+    handleChatLimitChange = (_, { chatMsgLimit }) => {
+        chatHistoryLimit(chatMsgLimit)
+        this.setInputMessage('chatMsgLimit', savedMsg)
+    }
+
+    handleHistoryLimitChange = (_, { historyLimit: limit }) => {
+        historyItemsLimit(limit === wordsCap.unlimited ? null : limit, true)
+        this.setInputMessage('historyLimit', savedMsg)
     }
 
     handleLanguageChange = (_, { languageCode }) => {
@@ -106,11 +131,6 @@ export default class Settings extends Component {
             // reload page
             forceRefreshPage()
         })
-    }
-
-    handleHistoryLimitChange = (_, { historyLimit }) => {
-        setLimit(historyLimit === wordsCap.unlimited ? null : historyLimit, true)
-        this.setInputMessage('historyLimit', savedMsg)
     }
 
     setInputMessage = (inputName, message, autoHide = true, delay = 2000) => {
