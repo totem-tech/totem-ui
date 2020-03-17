@@ -10,7 +10,7 @@ import client from '../services/chatClient'
 import identityService from '../services/identity'
 import { showForm } from '../services/modal'
 import { translated } from '../services/language'
-import addressbook, { getAddressName } from '../services/partner'
+import addressbook, { getAddressName, getAllTags } from '../services/partner'
 
 const [words, wordsCap] = translated({
     business: 'business',
@@ -131,10 +131,10 @@ class Partner extends Component {
                     noResultsMessage: texts.tagsNoResultsMsg,
                     multiple: true,
                     onAddItem: this.handleAddTag,
-                    options: (values.tags || []).map(tag => ({
+                    options: getAllTags().map(tag => ({
                         key: tag,
                         text: tag,
-                        value: tag
+                        value: tag,
                     })),
                     placeholder: texts.tagsPlaceholder,
                     type: 'dropdown',
