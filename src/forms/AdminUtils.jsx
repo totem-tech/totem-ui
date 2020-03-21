@@ -44,8 +44,8 @@ export default class AdminUtils extends Component {
                             value: 'language',
                         },
                         {
-                            accept: '.csv',
-                            text: 'Convert companies.csv to companies.json',
+                            accept: '.tsv',
+                            text: 'Convert companies.tsv to companies.json',
                             value: 'companies',
                         },
                     ].map(x => ({ ...x, key: x.value })),
@@ -56,7 +56,7 @@ export default class AdminUtils extends Component {
                 },
                 {
                     hidden: ({ action }) => action !== 'companies',
-                    label: 'Seed for adress generation',
+                    label: 'Seed for address generation',
                     name: 'seed',
                     placeholder: 'Enter a seed (without derivation path) to generate missing addresses',
                     required: true,
@@ -78,9 +78,11 @@ export default class AdminUtils extends Component {
                 {
                     accept: '*/*',
                     hidden: ({ action }) => !action || action === 'language-download',
+                    label: 'Upload file',
                     name: 'file',
                     multiple: false,
                     onChange: this.handleFileChange,
+                    required: true,
                     type: 'file',
                     useInput: true,
                 },
@@ -100,9 +102,19 @@ export default class AdminUtils extends Component {
     }
 
     getCountry = codeOrName => {
-        codeOrName = codeOrName.toUpperCase()
-        const country = this.countries.find(([code, { name }]) => code === codeOrName || name.toUpperCase() === codeOrName)
-        return !!country ? country[0] : ''
+        if (!codeOrName) return ''
+        let country = storage.countries.get(codeOrName)
+        country = country || storage.countries.find(
+            {
+                code: codeOrName,
+                code3: codeOrName,
+                name: codeOrName,
+            },
+            true,
+            false,
+            true
+        )
+        return country && country.code || ''
     }
 
     handleSubmit = (e, { action, filename, seed, seedStartNum, text }) => {
@@ -132,27 +144,30 @@ export default class AdminUtils extends Component {
         let counterAddr = 0
         let updateCount = 0
         let error = false
-        const companies = (
-            csvToArr(text, null, ',')
-                .map((com, i) => [
-                    com.address,
-                    {
-                        ...objWithoutKeys(com, ['address']),
-                        country: this.getCountry(com.country),
-                    }
-                ])
-        )
-        let updateEvery = parseInt(companies.length / 100) || 1
+        let notFoundCountries = {}
+        seed = seed.trim()
         const message = {
-            content: 'Starting conversion...',
+            content: 'Conversion started.... This may take a while to complete',
             showIcon: true,
             status: 'loading',
         }
+        const companies = (
+            csvToArr(text, null, '\t')
+                .map((com, i) => {
+                    let country = this.getCountry(com.country)
+                    if (!country) {
+                        com.country = com.country
+                        notFoundCountries[com.country] = 1
+                    }
+                    return [com.address, objWithoutKeys(com, ['address'])]
+                })
+        )
+        let updateEvery = parseInt(companies.length / 100) || 1
         this.setState({ message, submitDisabled: true })
 
         const process = keyring => companies.forEach(([address], i) => setTimeout(() => {
             if (error || !keyring) return
-            const seedFull = `${seed}/1/${++seedStartNum}`
+            const seedFull = `${seed}${seed.endsWith('/') ? '' : '/'}1/${++seedStartNum}`
             try {
                 if (!address) {
                     const pair = keyring.addFromUri(seedFull)
@@ -162,14 +177,28 @@ export default class AdminUtils extends Component {
                 counter++
 
                 if (counter % updateEvery === 0) {
-                    message.header = `${counter}/${companies.length} companies processed. 
-                    ${counterAddr} new address generated`
-                    message.content = <Progress percent={counter / companies.length} indicating />
-                    this.setState({ message })
                     updateCount++
+                    message.header = `${counter}/${companies.length} companies processed. ${counterAddr} new address generated`
+                    console.log('progress', (counter / companies.length * 100).toFixed(2), '%')
+                    message.content = (
+                        <progress {...{
+                            value: counter / companies.length,
+                            max: 1,
+                            style: { width: '100%' }
+                        }} />
+                    )
+                    this.setState({ message })
                 }
                 if (counter >= companies.length) {
                     console.timeEnd('companies')
+                    notFoundCountries = Object.keys(notFoundCountries)
+                    if (notFoundCountries.length > 0) {
+                        console.log({ notFoundCountries })
+                        alert(`
+                            Warning: the following countries did not match correct 2/3 letter country codes or full name:
+                            ${notFoundCountries.join()}
+                        `)
+                    }
                     this.handleSubmit(e, { filename: 'companies.json', text: companies })
                     return this.setState({ message: null, submitDisabled: false })
                 }
@@ -184,7 +213,7 @@ export default class AdminUtils extends Component {
             }
         }))
 
-        console.time('companies') | process(keyring.keyring)
+        console.time('companies') | setTimeout(() => process(keyring.keyring), 300)
     }
 
     handleFileChange = (e, { action }) => {

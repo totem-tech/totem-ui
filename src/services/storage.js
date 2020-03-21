@@ -86,7 +86,7 @@ storage.clearNonEssentialData = () => {
         '_static_',
         '_cache_',
     ]
-    const shouldRemove = key => essentialKeys.includes(key) && ( // makes sure essential keys are not removed
+    const shouldRemove = key => !essentialKeys.includes(key) && ( // makes sure essential keys are not removed
         keys.includes(key) ||
         partialKeys.reduce((remove, pKey) => remove || key.includes(pKey), false)
     )
