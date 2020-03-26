@@ -179,24 +179,6 @@ export const tasks = {
         type: TX_STORAGE,
         args: [hashToStr(hash)],
     }),
-    // close a project
-    //
-    // Params:
-    // @ownerAddress    string/Bond: current owner of the project
-    // @hash            string: unique hash/ID of the project
-    // @queueProps      string: provide task specific properties (eg: description, title, then, next...)
-    //
-    // returns          object
-    close: (ownerAddress, hash, queueProps = {}) => ({
-        ...queueProps,
-        address: ownerAddress,
-        func: 'api.tx.projects.setStatusProject',
-        type: TX_STORAGE,
-        args: [
-            hashToStr(hash),
-            statusCodes.close,
-        ],
-    }),
     // transfer ownership of a project to a new owner address 
     //
     // Params:
@@ -231,7 +213,7 @@ export const tasks = {
         type: TX_STORAGE,
         args: [hashToStr(hash)],
     }),
-    // reopens a project
+    // change project status
     //
     // Params:
     // @ownerAddress    string/Bond: current owner of the project
@@ -239,68 +221,14 @@ export const tasks = {
     // @queueProps      string: provide task specific properties (eg: description, title, then, next...)
     //
     // returns          object
-    reopen: (ownerAddress, hash, queueProps = {}) => ({
+    setStatus: (ownerAddress, hash, statusCode, queueProps = {}) => ({
         ...queueProps,
         address: ownerAddress,
         func: 'api.tx.projects.setStatusProject',
         type: TX_STORAGE,
         args: [
             hashToStr(hash),
-            statusCodes.reopen,
-        ],
-    }),
-    // puts a project on hold
-    //
-    // Params:
-    // @ownerAddress    string/Bond: current owner of the project
-    // @hash            string     : unique hash/ID of the project
-    // @queueProps      string: provide task specific properties (eg: description, title, then, next...)
-    //
-    // returns          object
-    onhold: (ownerAddress, hash, queueProps = {}) => ({
-        ...queueProps,
-        address: ownerAddress,
-        func: 'api.tx.projects.setStatusProject',
-        type: TX_STORAGE,
-        args: [
-            hashToStr(hash),
-            statusCodes.onHold,
-        ],
-    }),
-    // abandons a project
-    //
-    // Params:
-    // @ownerAddress    string/Bond: current owner of the project
-    // @hash            string     : unique hash/ID of the project
-    // @queueProps      string: provide task specific properties (eg: description, title, then, next...)
-    //
-    // returns          object
-    abandon: (ownerAddress, hash, queueProps = {}) => ({
-        ...queueProps,
-        address: ownerAddress,
-        func: 'api.tx.projects.setStatusProject',
-        type: TX_STORAGE,
-        args: [
-            hashToStr(hash),
-            statusCodes.abandon,
-        ],
-    }),
-    // cancels a project
-    //
-    // Params:
-    // @ownerAddress    string/Bond: current owner of the project
-    // @hash            string     : unique hash/ID of the project
-    // @queueProps      string: provide task specific properties (eg: description, title, then, next...)
-    //
-    // returns          object
-    cancel: (ownerAddress, hash, queueProps = {}) => ({
-        ...queueProps,
-        address: ownerAddress,
-        func: 'api.tx.projects.setStatusProject',
-        type: TX_STORAGE,
-        args: [
-            hashToStr(hash),
-            statusCodes.cancel,
+            statusCode,
         ],
     }),
 }
@@ -311,6 +239,6 @@ export default {
     getProjectsBond,
     openStatuses,
     statusCodes,
-    ...project, // todo: remove?
+    ...project,
     tasks,
 }

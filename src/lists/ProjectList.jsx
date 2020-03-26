@@ -227,8 +227,8 @@ export default class ProjectList extends Component {
                     const { name, ownerAddress, status } = projects.get(hash) || {}
                     // ignore if project is already at target status or project no longer exists
                     if (status === targetStatus || !name) return;
-                    const taskFn = doClose ? tasks.close : tasks.reopen
-                    addToQueue(taskFn(ownerAddress, hash, {
+                    const statusCode = doClose ? statusCodes.close : statusCodes.reopen
+                    addToQueue(tasks.setStatus(ownerAddress, hash, statusCode, {
                         title: doClose ? texts.closeProject : texts.reopenProject,
                         description: `${wordsCap.activity}: ${name}`,
                         then: success => success && getProjects(true),
