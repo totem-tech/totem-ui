@@ -25,13 +25,14 @@ const [texts] = translated({
     namePlaceholder: 'Enter activity name',
     ownerLabel: 'Select the owner Identity for this Activity ',
     ownerPlaceholder: 'Select owner',
+    saveBONSAIToken: 'Save BONSAI auth token',
+    saveDetailsTitle: 'Save Activity details to messaging service',
     submitErrorHeader: 'Request failed',
     submitQueuedMsg: 'Your request has been added to background queue. You may close the dialog now.',
     submitQueuedHeader: 'Activity has been queued',
     submitSuccessHeader: 'Activity saved successfully',
     submitTitleCreate: 'Create activity',
     submitTitleUpdate: 'Update activity',
-    saveDetailsTitle: 'Save Activity details to messaging service',
 })
 
 // Create or update project form
@@ -112,6 +113,7 @@ export default class ProjectForm extends Component {
         const { onSubmit, hash: existingHash } = this.props
         const create = !existingHash
         const hash = existingHash || generateHash(values)
+        const token = generateHash(values)
         const { description: desc, name: projectName, ownerAddress } = values
         const title = create ? texts.submitTitleCreate : texts.submitTitleUpdate
         const description = `${wordsCap.name}: ${projectName}` + '\n' + `${wordsCap.description}: ${desc}`
@@ -121,56 +123,60 @@ export default class ProjectForm extends Component {
             status: 'loading',
             showIcon: true
         }
-
-        this.setState({
-            message,
-            submitDisabled: true
+        const thenSubmitError = (ok, [err]) => !ok && this.setState({
+            message: {
+                content: err,
+                header: texts.submitErrorHeader,
+                showIcon: true,
+                status: 'error'
+            },
+            submitDisabled: false,
         })
 
-        const clientTask = {
-            type: QUEUE_TYPES.CHATCLIENT,
-            func: 'project',
-            title: texts.saveDetailsTitle,
-            description,
-            args: [
-                hash,
-                values,
-                create,
-                err => {
-                    isFn(onSubmit) && onSubmit(!err, values)
-                    this.setState({
-                        message: {
-                            content: err || '',
-                            header: err ? texts.submitErrorHeader : texts.submitSuccessHeader,
-                            showIcon: true,
-                            status: !err ? 'success' : 'warning',
-                        },
-                        submitDisabled: false,
-                        success: !err,
-                    })
-                    // trigger cache update
-                    !err && getProjects(true)
-                }
-            ],
-        }
+        this.setState({ message, submitDisabled: true })
+
+        // save auth token to blockchain and then store data to off-chain DB
+        const updateTask = tasks.saveBONSAIToken(ownerAddress, hash, token, {
+            title: texts.saveBONSAIToken,
+            description: token,
+            then: thenSubmitError,
+            next: {
+                type: QUEUE_TYPES.CHATCLIENT,
+                func: 'project',
+                title: texts.saveDetailsTitle,
+                description,
+                args: [
+                    hash,
+                    values,
+                    create,
+                    err => {
+                        isFn(onSubmit) && onSubmit(!err, values)
+                        this.setState({
+                            message: {
+                                content: err || '',
+                                header: err ? texts.submitErrorHeader : texts.submitSuccessHeader,
+                                showIcon: true,
+                                status: !err ? 'success' : 'warning',
+                            },
+                            submitDisabled: false,
+                            success: !err,
+                        })
+                        // trigger cache update
+                        !err && getProjects(true)
+                    }
+                ],
+            },
+        })
 
         // Send transaction to blockchain first, then add to external storage
-        const blockchainTask = tasks.add(ownerAddress, hash, {
+        const createTask = tasks.add(ownerAddress, hash, {
             title,
             description,
-            then: (ok, [err]) => !ok && this.setState({
-                message: {
-                    content: err,
-                    header: texts.submitErrorHeader,
-                    showIcon: true,
-                    status: 'error'
-                },
-                submitDisabled: false,
-            }),
-            next: clientTask
+            then: thenSubmitError,
+            next: updateTask
         })
 
-        addToQueue(create ? blockchainTask : clientTask)
+        addToQueue(create ? createTask : updateTask)
     }
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />

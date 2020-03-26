@@ -1,10 +1,10 @@
-import DataStorage from '../utils/DataStorage'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
 import { runtime } from 'oo7-substrate'
 import { hashToBytes, hashToStr, ss58Decode } from '../utils/convert'
 import { arrUnique, isBond, isUint8Arr } from '../utils/utils'
 // services
+import { hashTypes } from './blockchain'
 import client from './chatClient'
 import identities, { getSelected, selectedAddressBond } from './identity'
 import partners from './partner'
@@ -212,6 +212,25 @@ export const tasks = {
         func: 'api.tx.projects.removeProject',
         type: TX_STORAGE,
         args: [hashToStr(hash)],
+    }),
+    // save BONSAI token for a project
+    //
+    // Params:
+    // @ownerAddress    string
+    // @projectHash     string: project ID
+    // @token           string: hash generated using project details (same properties that are stored on the off-chain database)
+    //
+    // Returns          object
+    saveBONSAIToken: (ownerAddress, projectHash, token, queueProps = {}) => ({
+        ...queueProps,
+        address: ownerAddress,
+        func: 'api.tx.bonsai.updateRecord',
+        type: TX_STORAGE,
+        args: [
+            hashToStr(hashTypes.projectHash),
+            hashToStr(projectHash),
+            hashToStr(token),
+        ],
     }),
     // change project status
     //
