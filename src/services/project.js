@@ -227,7 +227,7 @@ export const tasks = {
         func: 'api.tx.bonsai.updateRecord',
         type: TX_STORAGE,
         args: [
-            hashToStr(hashTypes.projectHash),
+            hashTypes.projectHash,
             hashToStr(projectHash),
             hashToStr(token),
         ],
