@@ -31,13 +31,13 @@ const [texts] = translated({
 	video1Title: 'What am I looking at? Watch the video:',
 	video2Title: 'Backup your account. Watch the video:',
 })
-
-const moduleKey = 'getting-started'
+const MODULE_KEY = 'getting-started'
+const rwg = value => storage.settings.module(MODULE_KEY, value) || {}
 export default class GetingStarted extends Component {
 	constructor(props) {
 		super(props)
 		this.state = {
-			activeStep: storage.settings.global(moduleKey).activeStep || 0
+			activeStep: rwg().activeStep || 0
 		}
 		this.registerStepIndex = 1
 		this.completedIndex = 999
@@ -70,7 +70,7 @@ export default class GetingStarted extends Component {
 			// user Already registered
 			activeStep++
 		}
-		storage.settings.global(moduleKey, { activeStep })
+		rwg({ activeStep })
 		this.setState({ activeStep })
 	}
 

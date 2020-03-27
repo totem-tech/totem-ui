@@ -1,13 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
-import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import { arrSort, isFn, textEllipsis } from '../utils/utils'
+import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
+import PartnerForm from '../forms/Partner'
 // services
-import identityService from '../services/identity'
+import identities from '../services/identity'
 import { translated } from '../services/language'
-import { confirm } from '../services/modal'
-import addressbook from '../services/partner'
+import { confirm, showForm } from '../services/modal'
+import partners from '../services/partner'
 import { tasks } from '../services/project'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
@@ -69,6 +71,7 @@ export default class ReassignProjectForm extends ReactiveComponent {
                     type: 'dropdown',
                 },
                 {
+                    bond: new Bond(),
                     label: texts.newOwnerLabel,
                     name: 'newOwnerAddress',
                     onChange: this.handleNewOwnerChange,
@@ -78,6 +81,20 @@ export default class ReassignProjectForm extends ReactiveComponent {
                     required: true,
                     type: 'dropdown',
 
+                },
+                {
+                    content: 'Add partner',
+                    fluid: true,
+                    name: 'addPartnerButton',
+                    onClick: () => showForm(PartnerForm, {
+                        onSubmit: (ok, { address }) => {
+                            if (!ok) return
+                            const { inputs } = this.state
+                            const newOwnerIn = findInput(inputs, 'newOwnerAddress')
+                            newOwnerIn.bond.changed(address)
+                        }
+                    }),
+                    type: 'button'
                 }
             ]
         }
@@ -88,53 +105,57 @@ export default class ReassignProjectForm extends ReactiveComponent {
 
     componentWillMount() {
         this._mounted = true
-        const { inputs } = this.state
-        const { hash, values } = this.props
-        const { ownerAddress } = values
-        const identityOptions = identityService.getAll()
-            // dropdown options
-            .map(({ address, name }) => ({
-                description: textEllipsis(address, 15),
-                key: 'identity-' + address,
-                text: name,
-                value: address
-            }))
+        this.bond = Bond.all([identities.bond, partners.bond])
+        this.tieId = this.bond.tie(() => {
+            const { inputs } = this.state
+            const { hash, values } = this.props
+            const { ownerAddress } = values
+            const identityOptions = identities.getAll()
+                // dropdown options
+                .map(({ address, name }) => ({
+                    description: textEllipsis(address, 15),
+                    key: 'identity-' + address,
+                    text: name,
+                    value: address
+                }))
 
-        const partnerOptions = Array.from(addressbook.getAll())
-            // exclude any possible duplicates (if any identity is also in partner list)
-            .filter(([address]) => !identityService.find(address))
-            .map(([address, { name }]) => ({
-                description: textEllipsis(address, 15),
-                key: 'partner-' + address,
-                text: name,
-                value: address
-            }))
+            const partnerOptions = Array.from(partners.getAll())
+                // exclude any possible duplicates (if any identity is also in partner list)
+                .filter(([address]) => !identities.find(address))
+                .map(([address, { name }]) => ({
+                    description: textEllipsis(address, 15),
+                    key: 'partner-' + address,
+                    text: name,
+                    value: address
+                }))
 
-        const options = []
-        identityOptions.length > 0 && options.push({
-            key: 'identities',
-            style: styles.itemHeader,
-            text: texts.identityOptionsHeader,
-            value: '' // keep
-        }, ...arrSort(
-            // exclude current owner
-            identityOptions.filter(({ value }) => value !== ownerAddress),
-            'text'
-        ))
-        partnerOptions.length > 0 && options.push({
-            key: 'partners',
-            style: styles.itemHeader,
-            text: texts.partnerOptionsHeader,
-            value: '' // keep
-        }, ...arrSort(partnerOptions, 'text'))
-        findInput(inputs, 'ownerAddress').options = identityOptions
-        findInput(inputs, 'newOwnerAddress').options = options
-        fillValues(inputs, { ...values, hash })
-        this.setState({ inputs })
+            const options = []
+            identityOptions.length > 0 && options.push({
+                key: 'identities',
+                style: styles.itemHeader,
+                text: texts.identityOptionsHeader,
+                value: '' // keep
+            }, ...arrSort(
+                // exclude current owner
+                identityOptions.filter(({ value }) => value !== ownerAddress),
+                'text'
+            ))
+            partnerOptions.length > 0 && options.push({
+                key: 'partners',
+                style: styles.itemHeader,
+                text: texts.partnerOptionsHeader,
+                value: '' // keep
+            }, ...arrSort(partnerOptions, 'text'))
+            findInput(inputs, 'ownerAddress').options = identityOptions
+            findInput(inputs, 'newOwnerAddress').options = options
+            fillValues(inputs, { ...values, hash })
+            this.setState({ inputs })
+        })
     }
 
     componentWillUnmount() {
         this._mounted = false
+        this.bond.untie(this.tieId)
     }
 
     handleNewOwnerChange = (_, { ownerAddress, newOwnerAddress }) => {
@@ -153,7 +174,7 @@ export default class ReassignProjectForm extends ReactiveComponent {
         const { values: project, onSubmit } = this.props
         const { hash, name, ownerAddress, newOwnerAddress } = values
         // confirm if re-assigning to someone else
-        const doConfirm = !!identityService.find(newOwnerAddress)
+        const doConfirm = !!identities.find(newOwnerAddress)
         const task = tasks.reassign(ownerAddress, newOwnerAddress, hash, {
             title: texts.queueTitle,
             description: texts.queueDescription + name,

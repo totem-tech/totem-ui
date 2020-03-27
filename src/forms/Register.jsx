@@ -50,6 +50,7 @@ export default class FormRegister extends ReactiveComponent {
                         style: { textAlign: 'left' },
                     },
                     name: 'userId',
+                    multiple: false,
                     newUser: true,
                     placeholder: texts.userIdPlaceholder,
                     type: 'UserIdInput',
