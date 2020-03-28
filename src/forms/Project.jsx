@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import Currency from '../components/Currency'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import { arrSort, generateHash, isFn } from '../utils/utils'
+import { arrSort, generateHash, isFn, objClean } from '../utils/utils'
 import identities, { getSelected } from '../services/identity'
 import { translated } from '../services/language'
 import { getProjects, tasks } from '../services/project'
@@ -34,6 +34,7 @@ const [texts] = translated({
     submitTitleCreate: 'Create activity',
     submitTitleUpdate: 'Update activity',
 })
+const validKeys = ['name', 'ownerAddress', 'description']
 
 // Create or update project form
 export default class ProjectForm extends Component {
@@ -113,7 +114,8 @@ export default class ProjectForm extends Component {
         const { onSubmit, hash: existingHash } = this.props
         const create = !existingHash
         const hash = existingHash || generateHash(values)
-        const token = generateHash(values)
+        const token = generateHash(objClean(values, validKeys))
+        console.log({ token, data: objClean(values, validKeys) })
         const { description: desc, name: projectName, ownerAddress } = values
         const title = create ? texts.submitTitleCreate : texts.submitTitleUpdate
         const description = `${wordsCap.name}: ${projectName}` + '\n' + `${wordsCap.description}: ${desc}`
