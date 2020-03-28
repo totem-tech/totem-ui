@@ -3,9 +3,9 @@ import { getUrlParam } from './window'
 import { clearClutter, downloadFile, textCapitalize } from '../utils/utils'
 import storage from './storage'
 
-const translations = new DataStorage('totem_translations')
+const translations = new DataStorage('totem_static_translations')
 const EN = 'EN'
-const moduleKey = 'language'
+const MODULE_KEY = 'language'
 export const buildMode = getUrlParam('build-mode').toLowerCase() == 'true' && window.location.hostname !== 'totem.live'
 export const languages = Object.freeze({
     BN: 'Bengali',
@@ -24,10 +24,11 @@ export const languages = Object.freeze({
     UK: 'Ukrainian',
     ZH: 'Chinese',
 })
+const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 // get selected language code
-export const getSelected = () => storage.settings.global(moduleKey).selected || EN
+export const getSelected = () => rw().selected || EN
 // set selected language code
-export const setSelected = selected => storage.settings.global(moduleKey, { selected: selected || EN })
+export const setSelected = selected => rw({ selected: selected || EN })
 
 export const translated = (texts = {}, capitalized = false) => {
     const en = translations.get(EN) || []
@@ -94,8 +95,8 @@ if (buildMode) {
             'ChatWidget.jsx',
             'CheckboxGroup.jsx',
             'ContentSegment.jsx',
+            'Currency.jsx',
             'DataTable.jsx',
-            'FileUploadBond.jsx',
             'FormBuilder.jsx',
             'FormInput.jsx',
             'Message.jsx',
@@ -106,6 +107,7 @@ if (buildMode) {
             'buttons.jsx',
         ],
         forms: [
+            'AdminUtils.jsx',
             'Company.jsx',
             'Identity.jsx',
             'IdentityDetails.jsx',
@@ -117,11 +119,13 @@ if (buildMode) {
             'Project.jsx',
             'ProjectReassign.jsx',
             'Register.jsx',
+            'Settings.jsx',
             'TimeKeeping.jsx',
             'TimeKeepingInvite.jsx',
             'Transfer.jsx',
         ],
         lists: [
+            'HistoryList.jsx',
             'IdentityList.jsx',
             'PartnerList.jsx',
             'ProjectList.jsx',
@@ -133,6 +137,7 @@ if (buildMode) {
             'blockchain.js',
             'chatClient.js',
             'data.js',
+            'history.js',
             'identity.js',
             'language.js',
             'modal.jsx',

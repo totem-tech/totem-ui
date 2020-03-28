@@ -20,16 +20,20 @@ export default class Paginator extends ReactiveComponent {
         start = start < 1 ? 1 : start
         let end = start + navLimit
         end = end > total ? total + (edging ? 1 : 0) : end
-        return Array(end - start).fill(0).map((_, i) => (
-            <Menu.Item
-                active={current === start + i}
-                as="a"
-                key={i}
-                onClick={() => this.handleClick(start + i)}
-            >
-                {start + i}
-            </Menu.Item>
-        ))
+        return Array(end - start).fill(0).map((_, i) => {
+            const num = start + i
+            const isCurrent = num === current
+            return (
+                <Menu.Item
+                    active={isCurrent}
+                    as="a"
+                    key={num}
+                    onClick={() => this.handleClick(num)}
+                >
+                    {!isCurrent ? num : <b>{num}</b>}
+                </Menu.Item>
+            )
+        })
 
     }
 

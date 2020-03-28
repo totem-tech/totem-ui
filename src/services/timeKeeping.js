@@ -1,9 +1,8 @@
 import { Bond } from 'oo7'
-import { calls, post, runtime } from 'oo7-substrate'
+import { runtime } from 'oo7-substrate'
 import uuid from 'uuid'
-import DataStorage from '../utils/DataStorage'
 import { addressToStr, hashToBytes, hashToStr, ss58Decode, ss58Encode } from '../utils/convert'
-import { isArr, isObj, mapJoin, arrUnique } from '../utils/utils'
+import { arrUnique, isArr, isObj, mapJoin } from '../utils/utils'
 import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
 // services
 import { getUser } from './chatClient'
@@ -16,9 +15,14 @@ import project, {
 } from './project'
 import storage from './storage'
 
-// Only stores projects that not owned by the selected identity
-const CACHE_PREFIX = 'totem__cache_timekeeping_projects_'
-const cacheStorage = new DataStorage(undefined, true)
+// to sumbit a new time record must submit with this hash
+export const NEW_RECORD_HASH = '0x40518ed7e875ba87d6c7358c06b1cac9d339144f8367a0632af7273423dd124e'
+export const MODULE_KEY = 'time-keeping'
+const TX_STORAGE = 'tx_storage'
+// read/write to module settings storage
+const rw = value => storage.settings.module(MODULE_KEY, value) || {}
+// read or write to cache storage
+const cacheRW = (key, value) => storage.cache(MODULE_KEY, key, value)
 const _config = {
     address: undefined,
     firstAttempt: true,
@@ -27,11 +31,6 @@ const _config = {
     updateInProgress: false,
     updatePromise: undefined,
 }
-
-// to sumbit a new time record must submit with this hash
-export const NEW_RECORD_HASH = '0x40518ed7e875ba87d6c7358c06b1cac9d339144f8367a0632af7273423dd124e'
-export const moduleKey = 'time-keeping'
-const TX_STORAGE = 'tx_storage'
 // record status codes
 export const statuses = {
     draft: 0,
@@ -43,15 +42,9 @@ export const statuses = {
     delete: 999,
 }
 // timeKeeping form values and states for use with the TimeKeeping form
-export const formData = data => {
-    const dataKey = 'TimeKeepingForm'
-    const gs = storage.settings.module(moduleKey) || {}
-    if (isObj(data)) {
-        gs[dataKey] = data
-        storage.settings.module(moduleKey, gs)
-        formDataBond.changed(uuid.v1())
-    }
-    return gs[dataKey] || {}
+export const formData = formData => {
+    if (isObj(formData)) rw({ formData }) | formDataBond.changed(uuid.v1())
+    return rw().formData || {}
 }
 export const formDataBond = new Bond().defaultTo(uuid.v1())
 
@@ -63,8 +56,9 @@ export const formDataBond = new Bond().defaultTo(uuid.v1())
 export const getProjects = (_forceUpdate = false) => {
     _forceUpdate = _forceUpdate || _config.firstAttempt
     const { address } = getSelected()
-    cacheStorage.name = CACHE_PREFIX + address
-    const invitedProjects = cacheStorage.getAll()
+    const key = 'projects-' + address
+    const cachedAr = cacheRW(key) || []
+    const invitedProjects = new Map(cachedAr)
 
     if (_config.address !== address) {
         _config.firstAttempt = true
@@ -74,8 +68,8 @@ export const getProjects = (_forceUpdate = false) => {
         // listen for changes to user invitations and update projects list
         _config.tieId = _config.hashesBond.tie(hashes => {
             hashes = hashes.map(h => hashToStr(h))
-            const changed = !!Array.from(invitedProjects).find(([hash]) => !hashes.includes(hash))
-                || !!hashes.find(hash => !invitedProjects.get(hash))
+            const changed = !!hashes.find(hash => !invitedProjects.get(hash))
+                || !!cachedAr[address].find(([hash]) => !hashes.includes(hash))
             if (_config.firstAttempt || _config.updateInProgress) return
             if (changed) return getProjects(true)
         })
@@ -99,7 +93,8 @@ export const getProjects = (_forceUpdate = false) => {
             return fetchProjects(hashes).then(invitedProjects => {
                 _config.updateInProgress = false
                 _config.firstAttempt = false
-                cacheStorage.setAll(invitedProjects)
+
+                cacheRW(key, invitedProjects)
                 return mapJoin(userProjects, invitedProjects)
             })
         })
@@ -306,6 +301,7 @@ export const worker = {
         hashToBytes(projectHash),
         ss58Decode(workerAddress)
     ]),
+    acceptedList: arr => Bond.all(arr.map(({ projectHash: p, workerAddress: w }) => worker.accepted(p, w))),
     // check if worker is banned. undefined: not banned, object: banned
     banned: (projectHash, address) => runtime.timekeeping.projectWorkersBanList([
         hashToBytes(projectHash),
@@ -406,7 +402,7 @@ export default {
     formDataBond,
     getProjects,
     getProjectWorkers,
-    getTimeRecordsBond: getTimeRecordsBonds,
+    getTimeRecordsBonds,
     getTimeRecordsDetails,
     project: {
         // timestamp of the very first recorded time on a project

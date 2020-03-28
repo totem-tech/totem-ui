@@ -6,8 +6,10 @@ import { generateMnemonic } from 'bip39'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import { isFn } from '../utils/utils'
 import { ss58Encode } from '../utils/convert'
+// services
 import identityService from '../services/identity'
 import { translated } from '../services/language'
+import { getAllTags } from '../services/partner'
 
 const [words, wordsCap] = translated({
     address: 'address',
@@ -41,19 +43,19 @@ export default class IdentityForm extends Component {
         this.values = { ...props.values }
         this.addressBond = new Bond().defaultTo(this.values.address)
         this.doUpdate = !!this.values.address
-        this.validateUri = this.validateUri.bind(this)
+        this.validateUri = this.validateUri
 
         this.state = {
             message: props.message,
             onChange: (_, values) => this.values = values,
-            onSubmit: this.handleSubmit.bind(this),
+            onSubmit: this.handleSubmit,
             submitText: wordsCap.create,
             success: false,
             inputs: [
                 {
                     hidden: this.doUpdate,
                     name: 'restore',
-                    onChange: this.handleRestoreChange.bind(this),
+                    onChange: this.handleRestoreChange,
                     options: [
                         { label: texts.restoreInputLabel, value: true },
                     ],
@@ -64,7 +66,7 @@ export default class IdentityForm extends Component {
                     name: 'name',
                     placeholder: texts.identityNamePlaceholder,
                     required: true,
-                    validate: this.validateName.bind(this),
+                    validate: this.validateName,
                     value: '',
                 },
                 {
@@ -107,11 +109,11 @@ export default class IdentityForm extends Component {
                     name: 'tags',
                     noResultsMessage: texts.tagsInputEmptyMessage,
                     multiple: true,
-                    onAddItem: this.handleAddTag.bind(this),
-                    options: (this.values.tags || []).map(tag => ({
+                    onAddItem: this.handleAddTag,
+                    options: getAllTags().map(tag => ({
                         key: tag,
                         text: tag,
-                        value: tag
+                        value: tag,
                     })),
                     placeholder: texts.tagsPlaceholder,
                     type: 'dropdown',
@@ -124,7 +126,7 @@ export default class IdentityForm extends Component {
         fillValues(this.state.inputs, this.values)
     }
 
-    handleAddTag(_, data) {
+    handleAddTag = (_, data) => {
         const { inputs } = this.state
         inputs.find(x => x.name === 'tags').options.push({
             key: data.value,
@@ -134,7 +136,7 @@ export default class IdentityForm extends Component {
         this.setState({ inputs })
     }
 
-    handleRestoreChange(_, { restore }) {
+    handleRestoreChange = (_, { restore }) => {
         const { inputs } = this.state
         const uriInput = findInput(inputs, 'uri')
         uriInput.action = restore ? undefined : this.generateBtn
@@ -148,7 +150,7 @@ export default class IdentityForm extends Component {
         this.setState({ inputs })
     }
 
-    handleSubmit() {
+    handleSubmit = () => {
         const { onSubmit } = this.props
         const { values } = this
         identityService.set(values.address, values)
@@ -170,14 +172,14 @@ export default class IdentityForm extends Component {
         this.setState({ inputs })
     }
 
-    validateName(_, { value: name }) {
+    validateName = (_, { value: name }) => {
         const existing = identityService.find(name)
         if (existing && existing.address !== this.values.address) {
             return texts.uniqueNameRequired
         }
     }
 
-    validateUri(_, { value: seed }) {
+    validateUri = (_, { value: seed }) => {
         const { inputs } = this.state
         const account = identityService.accountFromPhrase(seed)
         if (!account) {

@@ -13,7 +13,7 @@ import TimeKeepingSummary from '../lists/TimeKeepingSummary'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
 import storage from '../services/storage'
-import { moduleKey } from '../services/timeKeeping'
+import { MODULE_KEY } from '../services/timeKeeping'
 import { layoutBond } from '../services/window'
 
 const [words, wordsCap] = translated({
@@ -33,6 +33,7 @@ const [texts] = translated({
     myTimeKeepingSummary: 'My timekeeping overview',
     selectAProject: 'Select a activity',
 })
+const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 export default class TimeKeepingView extends Component {
     constructor(props) {
         super(props)
@@ -46,7 +47,7 @@ export default class TimeKeepingView extends Component {
                 onChange: (_, { value: viewOptions }) => {
                     this.setState({ viewOptions })
                     // update local storage with module settings
-                    storage.settings.module(moduleKey, { ...storage.settings.module(moduleKey), viewOptions })
+                    rw({ viewOptions })
                 },
                 toggle: true,
                 options: [
@@ -141,5 +142,5 @@ TimeKeepingView.propTypes = {
     viewOptions: PropTypes.array.isRequired,
 }
 TimeKeepingView.defaultProps = {
-    viewOptions: storage.settings.module(moduleKey).viewOptions || ['records']
+    viewOptions: rw().viewOptions || ['records']
 }

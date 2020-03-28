@@ -164,7 +164,11 @@ export default class DataTable extends ReactiveComponent {
                         draggable={cell.draggable !== false}
                         key={j}
                         onDragStart={cell.draggable === false ? undefined : e => e.dataTransfer.setData("Text", e.target.textContent)}
-                        style={objCopy(cell.style, { padding: cell.collapsing ? '0 5px' : undefined })}
+                        style={{
+                            cursor: cell.draggable !== false ? 'grab' : undefined,
+                            padding: cell.collapsing ? '0 5px' : undefined,
+                            ...cell.style
+                        }}
                         textAlign={cell.textAlign || 'left'}
                     >
                         {!cell.content ? item[cell.key] : (
