@@ -32,21 +32,23 @@ const [texts] = translated({
 	video2Title: 'Backup your account. Watch the video:',
 })
 const MODULE_KEY = 'getting-started'
-// read/write to global settings
-const rwg = value => storage.settings.module(MODULE_KEY, value) || {}
+// read/write to module settings
+const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 // old localStorage key for active step 
 const legacyKey = 'totem_getting-started-step-index'
 // migrate to new location and remove legacy key
-if (localStorage.getItem(legacyKey)) {
-	rwg({ activeStep: localStorage.getItem(legacyKey) })
+if (localStorage.getItem(legacyKey) || (storage.settings.global(MODULE_KEY) || {}).activeStep) {
 	localStorage.removeItem(legacyKey)
+	storage.settings.global(MODULE_KEY, null)
+	const activeStep = parseInt(localStorage.getItem(legacyKey) || storage.settings.global(MODULE_KEY).activeStep)
+	rw({ activeStep })
 }
 
 export default class GetingStarted extends Component {
 	constructor(props) {
 		super(props)
 		this.state = {
-			activeStep: rwg().activeStep || 0
+			activeStep: rw().activeStep || 0
 		}
 		this.registerStepIndex = 1
 	}
@@ -83,7 +85,7 @@ export default class GetingStarted extends Component {
 			// user Already registered => mark register step as done
 			activeStep++
 		}
-		rwg({ activeStep })
+		rw({ activeStep })
 		this.setState({ activeStep })
 		return activeStep
 	}
