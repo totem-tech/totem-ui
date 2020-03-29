@@ -213,22 +213,23 @@ export class ChatClient {
         //
         // Params:
         // @cb function: callback function
-        //          Params:
+        //          Arguments:
+        //          @id         string: notification ID
         //          @senderId   string: sender user ID
         //          @type       string: parent notification type
         //          @childType  string: child notification type
-        //          @data       object: information specific to the notification @type
-        //          @tsCreated  date  : notification creation timestamp
-        this.onNotify = cb => isFn(cb) && socket.on('notify', (id, senderId, type, childType, message, data, tsCreated, cbConfrim) =>
-            cb(id, senderId, type, childType, message, data, tsCreated, cbConfrim)
-        )
+        //          @message    string: notification message
+        //          @data       object: information specific to the notification @type and @childType
+        //          @tsCreated  date: notification creation timestamp
+        //          @cbConfirm  function: a function to confirm receipt
+        this.onNotify = cb => isFn(cb) && socket.on('notify', cb)
 
         // add/get/update project
         //
         // Params:
         // @hash    string: A hash string generated using the project details as seed. Will be used as ID/key.
         // @project object
-        // @create  bool    : whether to create or update project
+        // @create  bool: whether to create or update project
         // @cb      function
         this.project = (hash, project, create, cb) => socket.emit('project', hash, project, create, cb)
         // retrieve projects by an array of hashes
