@@ -11,16 +11,23 @@ import { clearClutter } from '../utils/utils'
 
 const [texts, textsCap] = translated({
     action: 'action',
+    address: 'totem address',
     clearAll: 'Clear All',
     close: 'close',
+    data: 'data',
     delete: 'delete',
+    techDetails: 'technical details',
     description: 'description',
     errorMessageHeader: 'Error message',
     executionTime: 'Execution time',
+    groupId: 'group id',
     identity: 'identity',
     message: 'message',
+    status: 'success',
     title: 'title',
+    timestamp: 'timestamp',
     type: 'type',
+    dataHash: 'data hash',
 }, true)
 
 export default class HistoryList extends Component {
@@ -64,7 +71,18 @@ export default class HistoryList extends Component {
                 // },
                 {
                     collapsing: true,
-                    content: ({ message }, id) => [
+                    content: ({ 
+                        action,
+                        address, 
+                        description,
+                        groupId,
+                        _identity, 
+                        message, 
+                        status,
+                        _timestamp,
+                        title,
+                        dataHash
+                    }, id) => [
                         {
                             icon: 'close',
                             onClick: () => remove(id),
@@ -90,6 +108,30 @@ export default class HistoryList extends Component {
                                 size: 'tiny',
                             }),
                             title: texts.errorMessageHeader
+                        },
+                        {
+                            icon: 'eye',
+                            onClick: () => confirm({
+                                cancelButton: textsCap.close,
+                                confirmButton: null,
+                                content: (
+                                    <div style={{
+                                        color: 'black',
+                                        margin: 0,
+                                    }}>
+                                        {textsCap.identity} : {_identity} <br/>
+                                        {textsCap.address} : {address} <br/>
+                                        {textsCap.timestamp} : {_timestamp} <br/>
+                                        {textsCap.action} : {action} <br/>
+                                        {textsCap.status} : {status} <br/>
+                                        {textsCap.groupId} : {groupId} <br/>
+                                        {textsCap.dataHash} : {dataHash} <br/>
+                                    </div>
+                                ),
+                                header: textsCap.techDetails,
+                                size: 'tiny',
+                            }),
+                            title: textsCap.techDetails
                         }
                     ]
                         .map((props, i) => <Button {...props} key={i} />),
@@ -125,7 +167,14 @@ export default class HistoryList extends Component {
             Array.from(data).forEach(([_, item]) => {
                 item.message = clearClutter(item.message || '')
                 item._identity = getAddressName(item.identity)
+                item.address = item.identity
                 item._timestamp = item.timestamp.replace(/\T|\Z/g, ' ').split('.')[0]
+                item.action = item.action
+                item.title = item.title
+                item.description = item.description
+                item.status = item.status
+                item.groupId = item.groupId
+                item.dataHash = item.data[0]
             })
             this.setState({ data })
         })
