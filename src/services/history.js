@@ -109,7 +109,7 @@ export const save = (
     description,
     status = 'success',
     message,
-    groupId,
+    groupId, // the root ID of a series of queued task
     timestamp = new Date().toISOString(),
     id = uuid.v1(),
 ) => {
