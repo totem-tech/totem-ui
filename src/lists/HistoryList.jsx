@@ -39,7 +39,13 @@ export default class HistoryList extends Component {
             columns: [
                 {
                     collapsing: true,
-                    content: ({ icon }) => <Icon className='no-margin' name={icon || 'history'} />,
+                    content: ({ icon, status }) => (
+                        <Icon
+                            className='no-margin'
+                            loading={status === 'loading'}
+                            name={status === 'loading' ? 'spinner' : icon || 'history'}
+                        />
+                    ),
                     title: '',
                 },
                 {
@@ -53,14 +59,14 @@ export default class HistoryList extends Component {
                     title: textsCap.identity,
                 },
                 { key: 'title', title: textsCap.title },
-                // {
-                //     key: 'description',
-                //     style: {
-                //         minWidth: 200,
-                //         whiteSpace: 'pre-wrap',
-                //     },
-                //     title: textsCap.description,
-                // },
+                {
+                    key: 'description',
+                    style: {
+                        minWidth: 200,
+                        whiteSpace: 'pre-wrap',
+                    },
+                    title: textsCap.description,
+                },
                 {
                     collapsing: true,
                     content: (item, id) => [

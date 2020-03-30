@@ -110,12 +110,12 @@ export const save = (
     status = 'success',
     message,
     groupId, // the root ID of a series of queued task
-    timestamp = new Date().toISOString(),
     id = uuid.v1(),
+    timestamp = new Date().toISOString(),
 ) => {
     const icon = historyWorthy(action, data)
     if (!icon) return
-    // id alredy exists remove it from history to re-appear at the end of the list
+    // id already exists remove it from history to re-appear at the end of the list
     if (history.get(id)) history.delete(id)
     history.set(id, {
         identity,
