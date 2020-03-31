@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { Step, Embed } from 'semantic-ui-react'
 // services
 import { getUser } from '../services/chatClient'
-import identityService, { getSelected } from '../services/identity'
+import { getSelected } from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
@@ -32,20 +32,34 @@ const [texts] = translated({
 	video2Title: 'Backup your account. Watch the video:',
 })
 const MODULE_KEY = 'getting-started'
-const rwg = value => storage.settings.module(MODULE_KEY, value) || {}
+// read/write to module settings
+const rw = value => storage.settings.module(MODULE_KEY, value) || {}
+// old localStorage key for active step 
+const legacyKey = 'totem_getting-started-step-index'
+// migrate to new location and remove legacy key
+if (localStorage.getItem(legacyKey) || (storage.settings.global(MODULE_KEY) || {}).activeStep) {
+	localStorage.removeItem(legacyKey)
+	storage.settings.global(MODULE_KEY, null)
+	const activeStep = parseInt(localStorage.getItem(legacyKey) || storage.settings.global(MODULE_KEY).activeStep)
+	rw({ activeStep })
+}
+
 export default class GetingStarted extends Component {
 	constructor(props) {
 		super(props)
 		this.state = {
-			activeStep: rwg().activeStep || 0
+			activeStep: rw().activeStep || 0
 		}
 		this.registerStepIndex = 1
-		this.completedIndex = 999
 	}
 
 	handleIdentity = () => showForm(IdentityForm, {
 		values: getSelected(),
-		onSubmit: success => success && this.setIndex(1) | this.handleRegister()
+		onSubmit: success => {
+			if (!success) return
+			// automatically open register form only if user isn't registered yet
+			if (this.setIndex(1) === 1) this.handleRegister()
+		}
 	})
 
 	handleRegister = () => showForm(RegisterForm, {
@@ -66,12 +80,14 @@ export default class GetingStarted extends Component {
 	})
 
 	setIndex(activeStep) {
-		if (activeStep === this.registerStepIndex && !!(getUser() || {}).id) {
-			// user Already registered
+		const { id } = getUser() || {}
+		if (activeStep === this.registerStepIndex && id) {
+			// user Already registered => mark register step as done
 			activeStep++
 		}
-		rwg({ activeStep })
+		rw({ activeStep })
 		this.setState({ activeStep })
+		return activeStep
 	}
 
 	render() {

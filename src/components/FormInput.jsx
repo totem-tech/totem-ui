@@ -154,8 +154,8 @@ export default class FormInput extends ReactiveComponent {
 
     render() {
         const {
-            bond, content, elementRef, error, hidden, inline, inlineLabel, label, message: externalMsg,
-            name, required, styleContainer, type, useInput, width
+            bond, content, elementRef, error, hidden, inline, inlineLabel, invalid, label,
+            message: externalMsg, name, required, styleContainer, type, useInput, width
         } = this.props
         if (hidden) return ''
         const { message: internalMsg } = this.state
@@ -227,7 +227,7 @@ export default class FormInput extends ReactiveComponent {
 
         return (
             <Form.Field
-                error={message && message.status === 'error' || error}
+                error={message && message.status === 'error' || error || invalid}
                 required={required}
                 style={styleContainer}
                 width={width}

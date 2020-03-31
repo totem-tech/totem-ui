@@ -46,7 +46,7 @@ export default class PageUtilitiesView extends Component {
 							<div>
 								{texts.confirmBackupContent}
 								<ul>
-									{texts.confirmBackupTypes.split(',').map(str => <li>{str}</li>)}
+									{texts.confirmBackupTypes.split(',').map((str, i) => <li key={i}>{str}</li>)}
 								</ul>
 							</div>
 						),

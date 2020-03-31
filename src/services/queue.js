@@ -156,11 +156,12 @@ const _processTask = (currentTask, id, toastId, allowRepeat) => {
 
     // Execute current task
     const rootTask = queue.get(id)
-    let { args, description, silent, title, toastDuration } = currentTask
+    let { args, description, id: cid, title } = currentTask
     currentTask.args = isArr(args) ? args : [args]
     currentTask.description = description || rootTask.description
     currentTask.silent = currentTask.silent || rootTask.silent
     currentTask.title = title || rootTask.title
+    currentTask.id = cid || uuid.v1()
     switch ((currentTask.type || '').toLowerCase()) {
         case QUEUE_TYPES.TX_TRANSFER:
             handleTxTransfer(id, rootTask, currentTask, toastId)
@@ -218,21 +219,6 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
     if (!status === LOADING) {
         inprogressIds[id] = true
     }
-    if (!done) return
-    delete inprogressIds[id]
-
-    try {
-        if (task.type === QUEUE_TYPES.CHATCLIENT) {
-            const args = task.args
-            const taskCb = args[args.length - 1]
-            if (isFn(taskCb)) taskCb.apply({}, cbArgs)
-        } else {
-            isFn(task.then) && task.then(success, cbArgs)
-        }
-    } catch (err) {
-        // ignore any error occured by invoking the `then` function
-        console.log('Unexpected error occured while executing queue .then()', { rootTask, err })
-    }
 
     const { args, description, errorMessage, func, title, type } = task
     addToHistory(
@@ -244,7 +230,24 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
         status,
         errorMessage,
         id,
+        task.id,
     )
+
+    if (!done) return
+    delete inprogressIds[id]
+
+    try {
+        if (task.type === QUEUE_TYPES.CHATCLIENT) { // redundant??
+            const args = task.args
+            const taskCb = args[args.length - 1]
+            if (isFn(taskCb)) taskCb.apply({}, cbArgs)
+        } else {
+            isFn(task.then) && task.then(success, cbArgs)
+        }
+    } catch (err) {
+        // ignore any error occured by invoking the `then` function
+        console.log('Unexpected error occured while executing queue .then()', { rootTask, err })
+    }
 
     if (isObj(task.next)) {
         // execute next only if current task issuccessful
@@ -255,6 +258,7 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
         queue.delete(id)
     }
 }
+
 
 const handleChatClient = (id, rootTask, task, toastId) => {
     const { args, description, title, silent, toastDuration } = task
