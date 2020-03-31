@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { Button, Icon } from 'semantic-ui-react'
 import DataTable from '../components/DataTable'
-import { formatStrTimestamp } from '../utils/time'
+import { format } from '../utils/time'
 import FormBuilder from '../components/FormBuilder'
 // services
 import { bond, clearAll, getAll, remove } from '../services/history'
@@ -124,7 +124,7 @@ export default class HistoryList extends Component {
                 // add identity name if available
                 item._identity = getAddressName(item.identity)
                 // Make time more human friendly
-                item._timestamp = item.timestamp.replace(/\T|\Z/g, ' ').split('.')[0]
+                item._timestamp = format(item.timestamp)
             })
             this.setState({ data })
         })
