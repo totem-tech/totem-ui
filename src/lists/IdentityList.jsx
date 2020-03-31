@@ -1,7 +1,7 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import { Button, Label } from 'semantic-ui-react'
-import { formatStrTimestamp } from '../utils/time'
+import { format } from '../utils/time'
 // components
 import Currency from '../components/Currency'
 import DataTable from '../components/DataTable'
@@ -71,7 +71,7 @@ export default class ItentityList extends ReactiveComponent {
             emptyMessage: {
                 content: texts.emptyMessage
             },
-            searchExtraKeys: ['_tagsStr'],
+            searchExtraKeys: ['address', '_tagsStr'],
             topLeftMenu: [
                 {
                     content: wordsCap.create,
@@ -87,7 +87,7 @@ export default class ItentityList extends ReactiveComponent {
             const data = identityService.getAll()
             this.allBackupDone = data.reduce((done, { cloudBackupTS }) => !done ? false : !!cloudBackupTS, true)
             data.forEach(identity => {
-                identity._cloudBackupTS = formatStrTimestamp(identity.cloudBackupTS) || words.never
+                identity._cloudBackupTS = format(identity.cloudBackupTS) || words.never
                 identity.usageType = identity.usageType || words.personal
                 identity._tagsStr = (identity.tags || []).join(' ')
                 identity._tags = (identity.tags || []).map(tag => (
@@ -95,7 +95,12 @@ export default class ItentityList extends ReactiveComponent {
                         key={tag}
                         draggable='true'
                         onDragStart={e => e.stopPropagation() | e.dataTransfer.setData("Text", e.target.textContent)}
-                        style={{ margin: 1, float: 'left', display: 'inline' }}
+                        style={{
+                            cursor: 'grab',
+                            display: 'inline',
+                            float: 'left',
+                            margin: 1,
+                        }}
                     >
                         {tag}
                     </Label>

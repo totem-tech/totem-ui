@@ -16,11 +16,10 @@ import { getAddressName } from './partner'
 import { translated } from './language'
 import { setToast } from './toast'
 
-const queue = new DataStorage('totem_queue-data')
+const queue = new DataStorage('totem_queue-data', true)
 // Minimum balance required to make a transaction
 const MIN_BALANCE = 140
-let txInProgress = false
-const txQueue = []
+const inprogressIds = {}
 const [words, wordsCap] = translated({
     amount: 'amount',
     error: 'error',
@@ -36,26 +35,21 @@ const [words, wordsCap] = translated({
     transactions: 'transactions',
 }, true)
 const [texts] = translated({
-    cancelRequest: 'cancel request',
-    checkingBalance: 'checking balance',
-    clickToContinue: 'click here to continue',
     insufficientBalance: 'Insufficient balance',
-    insufficientBalanceMsg1: 'Insufficient balance in the following identity:',
-    insufficientBalanceMsg2: 'Minimum required balance',
-    insufficientBalanceMsg3: 'Once you have sufficient balance reload page',
-    sendingTx: 'Sending transaction',
-    signingTx: 'Signing transaction',
-    txAborted: 'transaction aborted',
-    txFailed: 'Transaction failed',
-    txSuccessful: 'Transaction successful',
     txForeignIdentity: 'Cannot create a transaction from an identity that does not belong to you!',
     txInvalidSender: 'Invalid or no sender address supplied',
-
-
     invalidFunc: 'Invalid function name supplied.',
-
     txTransferTitle: 'Transfer funds',
     txTransferMissingArgs: 'One or more of the following arguments is missing or invalid: sender identity, recipient identity and amount',
+})
+
+// if one or more tasks in progress, warn before user attempts to leave/reload page
+window.addEventListener('beforeunload', function (e) {
+    if (Object.keys(inprogressIds).length === 0) return
+    // Cancel the event
+    e.preventDefault() // If you prevent default behavior in Mozilla Firefox prompt will always be shown
+    // Chrome requires returnValue to be set
+    e.returnValue = ''
 })
 
 export const QUEUE_TYPES = Object.freeze({
@@ -133,16 +127,17 @@ export const addToQueue = (queueItem, id, toastId) => {
     return id
 }
 
-// identityHasPendingTask checks if any unfinished task is queued with a given identity 
-// export const identityHasPendingTask = address => {
-
-// }
-
-export const resumeQueue = () => queue.size > 0 && Array.from(queue.getAll()).forEach((x, i) =>
-    setTimeout(() => _processTask(x[1], x[0], null, true))
-)
+export const resumeQueue = () => {
+    const queueItems = queue.getAll()
+    if (!queueItems.size) return
+    Array.from(queueItems)
+        .forEach((x, i) =>
+            setTimeout(() => _processTask(x[1], x[0], null, true))
+        )
+}
 
 const _processTask = (currentTask, id, toastId, allowRepeat) => {
+    toastId = toastId || uuid.v1()
     if (!isObj(currentTask) || Object.keys(currentTask).length === 0 || currentTask.status === 'error') {
         return queue.delete(id)
     }
@@ -161,11 +156,12 @@ const _processTask = (currentTask, id, toastId, allowRepeat) => {
 
     // Execute current task
     const rootTask = queue.get(id)
-    let { args, description, silent, title, toastDuration } = currentTask
+    let { args, description, id: cid, title } = currentTask
     currentTask.args = isArr(args) ? args : [args]
     currentTask.description = description || rootTask.description
     currentTask.silent = currentTask.silent || rootTask.silent
     currentTask.title = title || rootTask.title
+    currentTask.id = cid || uuid.v1()
     switch ((currentTask.type || '').toLowerCase()) {
         case QUEUE_TYPES.TX_TRANSFER:
             handleTxTransfer(id, rootTask, currentTask, toastId)
@@ -220,13 +216,8 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
     task.toastId = setMessage(task, msg, duration, toastId, silent)
     queue.set(id, rootTask)
 
-    if (!done) return
-
-    try {
-        isFn(task.then) && task.then(success, cbArgs)
-    } catch (err) {
-        // ignore any error occured by invoking the `then` function
-        console.log('Unexpected error occured while executing queue .then()', { rootTask, err })
+    if (!status === LOADING) {
+        inprogressIds[id] = true
     }
 
     const { args, description, errorMessage, func, title, type } = task
@@ -239,7 +230,24 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
         status,
         errorMessage,
         id,
+        task.id,
     )
+
+    if (!done) return
+    delete inprogressIds[id]
+
+    try {
+        if (task.type === QUEUE_TYPES.CHATCLIENT) { // redundant??
+            const args = task.args
+            const taskCb = args[args.length - 1]
+            if (isFn(taskCb)) taskCb.apply({}, cbArgs)
+        } else {
+            isFn(task.then) && task.then(success, cbArgs)
+        }
+    } catch (err) {
+        // ignore any error occured by invoking the `then` function
+        console.log('Unexpected error occured while executing queue .then()', { rootTask, err })
+    }
 
     if (isObj(task.next)) {
         // execute next only if current task issuccessful
@@ -250,6 +258,7 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
         queue.delete(id)
     }
 }
+
 
 const handleChatClient = (id, rootTask, task, toastId) => {
     const { args, description, title, silent, toastDuration } = task
@@ -284,7 +293,7 @@ const handleChatClient = (id, rootTask, task, toastId) => {
     }
 }
 
-const handleTxTransfer = (id, rootTask, task, toastId) => {
+const handleTxTransfer = async (id, rootTask, task, toastId) => {
     // convert addresses to string. if invalid will be empty string.
     // sender address
     task.address = addressToStr(task.address)
@@ -310,28 +319,33 @@ const handleTxTransfer = (id, rootTask, task, toastId) => {
         id, rootTask, task, status, msg, toastId, silent, toastDuration
     )(arg0)
 
+    _save(!sender || invalid ? ERROR : LOADING)(
+        !sender ? texts.txForeignIdentity : (invalid ? texts.txTransferMissingArgs : '')
+    )
+    if (!sender || invalid) return
+    let api
     try {
-        _save(!sender || invalid ? ERROR : LOADING)(
-            !sender ? texts.txForeignIdentity : (invalid ? texts.txTransferMissingArgs : '')
-        )
-        if (!sender || invalid) return
+        api = (await getConnection()).api
+    } catch (err) {
+        console.log('handleTxTransfer: connectcion error', err)
+        return
+    }
 
-        getConnection().then(({ api }) =>
-            transfer(
-                recipientAddress,
-                amount,
-                senderAddress,
-                null,
-                api
-            ).then(_save(SUCCESS), _save(ERROR)),
-            console.log // ignore connection error
+    try {
+        _save(LOADING)()
+        const result = await transfer(
+            recipientAddress,
+            amount,
+            senderAddress,
+            null,
+            api
         )
-
+        _save(SUCCESS)(result)
     } catch (err) {
         _save(ERROR)(err)
     }
 }
-const handleTxStorage = (id, rootTask, task, toastId) => {
+const handleTxStorage = async (id, rootTask, task, toastId) => {
     // convert address to string. if invalid will be empty string.
     task.address = addressToStr(task.address)
     const { address, args, description, func, silent, title, toastDuration } = task
@@ -343,20 +357,27 @@ const handleTxStorage = (id, rootTask, task, toastId) => {
         id, rootTask, task, status, msg, toastId, silent, toastDuration
     )(arg0)
 
+    // make sure identity is owned by user and a transaction can be created
+    if (!findIdentity(address)) return _save(ERROR)(texts.txForeignIdentity)
+    if (!isStr(func) || !func.startsWith('api.tx.')) return _save(ERROR)(texts.invalidFunc)
+    let api
     try {
-        if (!isStr(func) || !func.startsWith('api.tx.')) return _save(ERROR)(texts.invalidFunc)
+        api = (await getConnection()).api
+    } catch (err) {
+        console.log('handleTxTransfer: connectcion error', err)
+        return
+    }
 
+    try {
         _save(LOADING)()
-        getConnection().then(({ api }) => {
-            const txFunc = eval(func)
-            if (!isFn(txFunc)) _save(ERROR)(texts.invalidFunc)
+        const txFunc = eval(func)
+        if (!isFn(txFunc)) _save(ERROR)(texts.invalidFunc)
 
-            api.query.balances.freeBalance(address).then(balance => {
-                if (parseInt(balance) < MIN_BALANCE) return _save(ERROR)(texts.insufficientBalance)
-                const tx = txFunc.apply(null, args)
-                signAndSend(api, address, tx).then(_save(SUCCESS), _save(ERROR))
-            })
-        }, console.log) // ignore connection error
+        const balance = await api.query.balances.freeBalance(address)
+        if (parseInt(balance) < MIN_BALANCE) return _save(ERROR)(texts.insufficientBalance)
+        const tx = txFunc.apply(null, args)
+        const result = await signAndSend(api, address, tx)
+        _save(SUCCESS)(result)
     } catch (err) {
         _save(ERROR)(err)
     }

@@ -49,6 +49,8 @@ const [words, wordsCap] = translated({
 const [texts] = translated({
     addedToQueue: 'Added to queue',
     areYouSure: 'Are you sure?',
+    blockEnd: 'End block',
+    blockStart: 'Start block',
     cancelWarning: 'You have a running timer. Would you like to stop and exit?',
     checkingProjectStatus: 'Checking activity status...',
     durationChangeRequired: 'Rejected record requires duration change in order to re-sumbit',
@@ -157,6 +159,8 @@ function handleSubmitTime(hash, projectName, values, status, reason, checkBanned
             [wordsCap.duration, duration],
             [texts.numberOfBlocks, blockCount],
             [texts.numberOfBreaks, breakCount],
+            [texts.blockStart, blockStart],
+            [texts.blockEnd, blockEnd],
         ].map(x => ({
             readOnly: true,
             label: x[0],
@@ -212,6 +216,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     type: 'dropdown',
                 },
                 {
+                    bond: new Bond(),
                     label: wordsCap.identity,
                     name: 'workerAddress',
                     type: 'dropdown',
@@ -219,6 +224,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     required: true,
                     search: true,
                     selection: true,
+                    value: '',
                 },
                 {
                     autoComplete: 'off',
@@ -283,9 +289,14 @@ export default class TimeKeepingForm extends ReactiveComponent {
 
     // check if project is active (status = open or reopened)
     handleProjectChange = (_, values, index) => {
-        const { projectHash } = values
+        let { projectHash, workerAddress } = values
         const { inputs } = this.state
-        if (!projectHash) return
+        const isValidProject = projectHash && (inputs[index].options || []).find(x => x.value === projectHash)
+        if (!isValidProject) {
+            // project hash doesnt exists in the options
+            if (projectHash) inputs[index].bond.changed(null)
+            return
+        }
 
         inputs[index].loading = true
         inputs[index].message = {
@@ -298,7 +309,8 @@ export default class TimeKeepingForm extends ReactiveComponent {
         // check if project status is open/reopened
         projectService.status(projectHash).then(statusCode => {
             const projectActive = openStatuses.includes(statusCode)
-            const { address: workerAddress } = getSelected()
+            const { address } = getSelected()
+            workerAddress = workerAddress || address
             inputs[index].invalid = !projectActive
             inputs[index].message = projectActive ? undefined : {
                 content: texts.selectActiveProject,
@@ -323,10 +335,12 @@ export default class TimeKeepingForm extends ReactiveComponent {
                         <div>
                             {texts.inactiveWorkerMsg3} <br />
                             <ButtonAcceptOrReject
-                                onClick={ok => handleTKInvitation(projectHash, workerAddress, ok).then(success => {
-                                    // force trigger change
-                                    success && inputs[index].bond.changed(projectHash)
-                                })}
+                                onClick={ok => handleTKInvitation(projectHash, workerAddress, ok)
+                                    .then(success => {
+                                        // force trigger change
+                                        success && inputs[index].bond.changed(projectHash)
+                                    })
+                                }
                             />
                         </div>
                     ),
@@ -335,6 +349,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     status: 'error',
                 }
                 this.setState({ inputs, submitDisabled: false })
+                if (!inputs[index].message) this.setIdentityOptions()
             })
         })
     }
@@ -450,13 +465,49 @@ export default class TimeKeepingForm extends ReactiveComponent {
         } else {
             values.blockEnd = inprogress ? currentBlockNumber : blockEnd
             values.blockCount = values.blockEnd - blockStart
-            values.blockStart = blockStart || values.blockEnd - values.blockCount
+            values.blockStart = blockStart || (values.blockEnd - values.blockCount)
             values.duration = blockCountToDuration(values.blockCount)
+        }
+        if (values.blockEnd - values.blockStart < values.blockCount) {
+            // hacky fix
+            values.blockStart = values.blockEnd - values.blockCount
         }
         duraIn.value = values.duration
         values.durationValid = BLOCK_DURATION_REGEX.test(values.duration) && values.duration !== DURATION_ZERO
         this.setState({ blockNumber: currentBlockNumber, inputs, message: {}, values })
         timeKeeping.formData(values)
+    }
+
+    setIdentityOptions = () => {
+        const { inputs, values } = this.state
+        const { projectHash, workerAddress } = values
+        if (!projectHash) return
+        const identityIn = findInput(inputs, 'workerAddress')
+        const allIdentities = identities.getAll()
+        const ar = allIdentities.map(({ address }) => ({ projectHash, workerAddress: address }))
+
+        timeKeeping.worker.acceptedList(ar).then(acceptedAr => {
+            const options = allIdentities
+                // filter accepted projects
+                .filter((_, i) => !!acceptedAr[i])
+                .map(({ address, name }) => ({
+                    key: address,
+                    text: name,
+                    value: address,
+                }))
+            identityIn.options = options
+
+            let value = workerAddress
+            // if only option, preselect it
+            if (options.length === 1) {
+                value = options[0].value
+            } else if (!options.find(x => x.value === value)) {
+                // if existing value is not in options list
+                value = null
+            }
+            identityIn.bond.changed(value)
+            this.setState({ inputs })
+        })
     }
 
     render() {
@@ -488,12 +539,12 @@ export default class TimeKeepingForm extends ReactiveComponent {
         }
 
         // set wallet options
-        inputs.find(x => x.name === 'workerAddress')
-            .options = identities.getAll().map((wallet, key) => ({
-                key,
-                text: wallet.name,
-                value: wallet.address
-            }))
+        // inputs.find(x => x.name === 'workerAddress')
+        //     .options = identities.getAll().map((wallet, key) => ({
+        //         key,
+        //         text: wallet.name,
+        //         value: wallet.address
+        //     }))
 
         const closeBtn = (
             <Button
@@ -530,7 +581,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     <React.Fragment>
                         <Icon name="clock outline" loading={true} style={{ background: 'transparent' }} />
                         Stop
-                </React.Fragment>
+                    </React.Fragment>
                 )}
             </Button>
         )

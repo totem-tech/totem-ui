@@ -18,12 +18,14 @@ const init = () => new Promise((resolve, reject) => {
     // set node URLs
     setNodeUri(nodes)
 
-    let hasCountries = storage.countries.getAll().size > 0
+    const countries = storage.countries.getAll()
+    const countriesHash = generateHash(countries)
+    let hasCountries = countries.size > 0
     let translationChecked = false
     client.onConnect(() => {
         // Retrieve a list of countries and store in the browser local storage
-        !hasCountries && client.countries((_, countries) => {
-            storage.countries.setAll(countries)
+        !hasCountries && client.countries(countriesHash, (_, countries) => {
+            countries && storage.countries.setAll(countries)
             hasCountries = true
         })
 

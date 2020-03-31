@@ -10,7 +10,7 @@ import client from '../services/chatClient'
 import identityService from '../services/identity'
 import { showForm } from '../services/modal'
 import { translated } from '../services/language'
-import addressbook, { getAddressName } from '../services/partner'
+import addressbook, { getAddressName, getAllTags } from '../services/partner'
 
 const [words, wordsCap] = translated({
     business: 'business',
@@ -21,7 +21,7 @@ const [words, wordsCap] = translated({
     public: 'public',
 }, true)
 const [texts] = translated({
-    addressAdditionLabel: 'Use ',
+    addressAdditionLabel: 'Use',
     addressLabel: 'Search for Company or Identity',
     addressPlaceholder: 'Search by company details or identity',
     addressValidationMsg1: 'Partner already exists with the following name:',
@@ -81,7 +81,7 @@ class Partner extends Component {
                 },
                 {
                     allowAdditions: false,
-                    additionLabel: texts.addressAdditionLabel,
+                    additionLabel: texts.addressAdditionLabel + ' ',
                     bond: new Bond(),
                     clearable: true,
                     // disable when adding new and address is prefilled (possibly from notification)
@@ -131,10 +131,10 @@ class Partner extends Component {
                     noResultsMessage: texts.tagsNoResultsMsg,
                     multiple: true,
                     onAddItem: this.handleAddTag,
-                    options: (values.tags || []).map(tag => ({
+                    options: getAllTags().map(tag => ({
                         key: tag,
                         text: tag,
-                        value: tag
+                        value: tag,
                     })),
                     placeholder: texts.tagsPlaceholder,
                     type: 'dropdown',

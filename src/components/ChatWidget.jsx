@@ -15,19 +15,15 @@ import 'react-chat-widget/lib/styles.css'
 import { objCopy } from '../utils/utils'
 // import { getNow } from '../utils/time'
 import TotemLogoCircle from '../assets/totem-button-grey.png'
-import { addToHistory, getClient, getUser, getHistory, getHistoryLimit, onLogin } from '../services/chatClient'
+import { addToHistory, getClient, getUser, getHistory, onLogin } from '../services/chatClient'
 import { translated } from '../services/language'
 
-const [words, wordsCap] = translated({
-
-}, true)
 const [texts] = translated({
 	loggedInAs: 'Logged in as',
 	loginFailed: 'Login failed',
 	senderPlaceHolder: 'Say something nice...',
 	title: 'totem trollbox',
 })
-// const historyLimit = getHistoryLimit()
 const eventTypes = [
 	'red',    // error
 	'green',  // success

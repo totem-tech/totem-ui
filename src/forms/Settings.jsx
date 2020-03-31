@@ -1,8 +1,9 @@
 import React, { Component } from 'react'
-import { arrSort, generateHash } from '../utils/utils'
 import FormBuilder, { findInput } from '../components/FormBuilder'
-import client from '../services/chatClient'
-import { limit, setLimit } from '../services/history'
+import { arrSort, generateHash } from '../utils/utils'
+// services
+import client, { historyLimit as chatHistoryLimit } from '../services/chatClient'
+import { limit as historyItemsLimit } from '../services/history'
 import { getSelected, getTexts, languages, setSelected, setTexts, translated } from '../services/language'
 import storage from '../services/storage'
 
@@ -11,20 +12,19 @@ const [words, wordsCap] = translated({
     saved: 'saved',
 }, true)
 const [texts] = translated({
-    gsCurrencyLabel: 'Default Currency',
-    gsLanguageLabel: 'Default Language (experimental)',
-    historyLimitLabel: 'History Limit',
+    chatLimitLabel: 'Chat message limit',
+    gsCurrencyLabel: 'Default currency',
+    gsLanguageLabel: 'Default language (experimental)',
+    historyLimitLabel: 'History limit',
     notImplemented: 'Not implemented',
 })
-const moduleKey = 'setttings'
-export default class SettingsView extends Component {
-    render = () => <GlobalSettings />
-}
-
+// read/write to global settings
+const rwg = (key, value) => storage.settings.global(key, value)
 const forceRefreshPage = () => window.location.reload(true)
 const savedMsg = { content: wordsCap.saved, status: 'success' }
 const notImplementedMsg = { content: texts.notImplemented, status: 'warning' }
-class GlobalSettings extends Component {
+
+export default class Settings extends Component {
     constructor(props) {
         super(props)
         // supported languages || ToDo: use API to retrieve from server
@@ -73,29 +73,52 @@ class GlobalSettings extends Component {
                     search: true,
                     selection: true,
                     type: 'dropdown',
-                    value: storage.settings.global(moduleKey).currency || Object.keys(this.currencies)[0]
+                    value: rwg('currency') || Object.keys(this.currencies)[0]
                 },
                 {
                     label: texts.historyLimitLabel,
                     name: 'historyLimit',
                     onChange: this.handleHistoryLimitChange,
-                    options: [wordsCap.unlimited, 0, 5, 100, 500, 1000].map((limit, i) => ({
+                    options: [0, 10, 50, 100, 500, 1000].map((limit, i) => ({
                         key: i,
-                        text: limit,
+                        text: limit || wordsCap.unlimited,
                         value: limit,
                     })),
                     selection: true,
                     type: 'dropdown',
-                    value: limit,
-                }
+                    value: historyItemsLimit(),
+                },
+                {
+                    label: texts.chatLimitLabel,
+                    name: 'chatMsgLimit',
+                    onChange: this.handleChatLimitChange,
+                    options: [0, 10, 50, 100, 500, 1000].map((limit, i) => ({
+                        key: i,
+                        text: limit || wordsCap.unlimited,
+                        value: limit,
+                    })),
+                    selection: true,
+                    type: 'dropdown',
+                    value: chatHistoryLimit(),
+                },
             ]
         }
     }
 
     handleCurrencyChange = (_, { currency }) => {
         const doSave = Object.keys(this.currencies)[0] === currency
-        doSave && storage.settings.global(moduleKey, { currency })
+        doSave && rwg('currency', currency)
         this.setInputMessage('currency', doSave ? savedMsg : notImplementedMsg)
+    }
+
+    handleChatLimitChange = (_, { chatMsgLimit }) => {
+        chatHistoryLimit(chatMsgLimit)
+        this.setInputMessage('chatMsgLimit', savedMsg)
+    }
+
+    handleHistoryLimitChange = (_, { historyLimit: limit }) => {
+        historyItemsLimit(limit === wordsCap.unlimited ? null : limit, true)
+        this.setInputMessage('historyLimit', savedMsg)
     }
 
     handleLanguageChange = (_, { languageCode }) => {
@@ -109,11 +132,6 @@ class GlobalSettings extends Component {
             // reload page
             forceRefreshPage()
         })
-    }
-
-    handleHistoryLimitChange = (_, { historyLimit }) => {
-        setLimit(historyLimit === wordsCap.unlimited ? null : historyLimit, true)
-        this.setInputMessage('historyLimit', savedMsg)
     }
 
     setInputMessage = (inputName, message, autoHide = true, delay = 2000) => {
