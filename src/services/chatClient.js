@@ -51,7 +51,6 @@ export const historyLimit = newLimit => {
         limit = newLimit
         rw({ historyLimit: limit })
     }
-    console.log({ limit })
     if (limit === 0) return limit
 
     let history = getHistory()
@@ -60,7 +59,6 @@ export const historyLimit = newLimit => {
     // limit number of items immediately
     history = history.slice(history.length - limit)
     rw({ history })
-    console.log({ history })
     return limit
 }
 // Adds callback to be executed after login is successful
