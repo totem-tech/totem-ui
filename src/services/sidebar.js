@@ -1,13 +1,14 @@
 import React from 'react'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
-// Components
+// Views (including lists and forms)
 import GettingStarted from '../views/GettingStartedView'
 import HistoryList from '../lists/HistoryList'
 import IdentityList from '../lists/IdentityList'
 import PartnerList from '../lists/PartnerList'
 import ProjectList from '../lists/ProjectList'
 import SettingsForm from '../forms/Settings'
+import TaskForm from '../forms/Task'
 import TimeKeepingView from '../views/TimeKeepingView'
 import TransferForm from '../forms/Transfer'
 import UtilitiesView from '../views/UtilitiesView'
@@ -210,11 +211,13 @@ export const sidebarItems = [
     },
     {
         content: TimeKeepingView,
-        contentArgs: {},
         icon: 'clock outline',
         name: 'timekeeping',
         subHeader: texts.timekeepingSubheader,
         title: texts.timekeepingTitle,
+    },
+    {
+        content: TaskForm,
     },
     {
         content: TransferForm,
@@ -290,7 +293,6 @@ export const sidebarItems = [
 ].map(item => {
     const {
         active = false,
-        // indicates contentArgs is variable and forces content to be re-rendered
         bond = new Bond().defaultTo(uuid.v1()),
         contentProps = {},
         title,
