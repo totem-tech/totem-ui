@@ -226,3 +226,7 @@ div.ui.padded.segment {
 .ui.message .icon.close {
   z-index: 1
 }
+
+input[readonly] {
+  cursor: not-allowed;
+}
