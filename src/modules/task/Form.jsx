@@ -4,15 +4,18 @@ import {Dropdown, Checkbox} from 'semantic-ui-react'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
 // services
 import {convertTo, currencies, currencyDefault, selected as selectedCurrency} from '../../services/currency'
-import {bond, getSelected} from '../../services/identity'
+import {bond, get as getIdentity, getSelected} from '../../services/identity'
 import {translated} from '../../services/language'
 import partners from '../../services/partner'
-import { arrSort } from '../../utils/utils'
+import { arrSort, isDefined } from '../../utils/utils'
 
 const [texts, textsCap] = translated({
+    advancedLabel: 'advanced Options',
     assignee: 'assignee',
     assigneePlaceholder: 'select a partner identity',
     assignToPartner: 'assign to a partner',
+    assigneeTypeConflict: 'Task type and parter type must be the same.',
+    business: 'business',
     buyLabel: 'payment direction',
     buyOptionLabelBuy: 'i will receive the reward',
     buyOptionLabelSell: 'i will pay the reward',
@@ -20,12 +23,14 @@ const [texts, textsCap] = translated({
     description: 'description',
     descriptionPlaceholder: 'enter description about the task',
     formHeader: 'create task',
+    marketplace: 'marketplace',
     myself: 'myself',
+    personal: 'personal',
     publishToMarketPlace: 'publish to marketplace',
     rewardLabel: 'reward amount',
     rewardPlaceholder: 'enter reward amount',
-    showAdvancedLabel: 'show advanced options',
     tags: 'tags',
+    taskType: 'task type',
     title: 'title',
     titlePlaceholder: 'enter a short title'
 }, true)
@@ -37,21 +42,23 @@ export default class Form extends Component {
         // list of input names
         this.names = Object.freeze({
             advancedGroup: 'advancedGroup',
-            buy: 'buy',
             assignee: 'assignee',
+            business: 'business',
+            buy: 'buy',
             currency: 'currency',
             description: 'description',
             publish: 'publish',
             reward: 'reward',
-            showAdvanced: 'showAdvanced',
             tags: 'tags',
             title: 'title',
         })
 
         this.currency = selectedCurrency()
+        const publishDefault = 'no'
         
         this.state = {
             onChange: (_, values) => this.setState({values}),
+            onSubmit: this.handleSubmit,
             values: {},
             inputs: [
                 {
@@ -65,38 +72,16 @@ export default class Form extends Component {
                     value: '',
                 },
                 {
-                    label: textsCap.description,
-                    max: 500,
-                    min: 3,
-                    name: this.names.description,
-                    placeholder: texts.descriptionPlaceholder,
-                    required: true,
-                    type: 'textarea',
-                    value: '',
-                },
-                {
                     inline: true,
-                    multiple: false,
-                    name: this.names.publish,
-                    onChange: this.handlePublishChange,
-                    radio: true,
+                    label: textsCap.taskType,
+                    name: this.names.business,
                     options: [
-                        { label: textsCap.assignToPartner, value: false },
-                        { label: textsCap.publishToMarketPlace, value: true },
+                        { label: textsCap.business, value: 1},
+                        { label: textsCap.personal, value: 0},
                     ],
-                    type: 'checkbox-group',
-                    value: true,
-                },
-                {
-                    hidden: true,
-                    label: textsCap.assignee,
-                    name: this.names.assignee,
-                    options: [],
-                    placeholder: textsCap.assigneePlaceholder,
+                    radio: true,
                     required: true,
-                    selection: true,
-                    search: true,
-                    type: 'dropdown',
+                    type: 'checkbox-group',
                 },
                 {
                     bond: new Bond(),
@@ -126,18 +111,55 @@ export default class Form extends Component {
                     value: 0,
                 },
                 {
-                    label: textsCap.showAdvancedLabel,
-                    name: this.names.showAdvanced,
-                    onChange: this.toggleAdvanced,
-                    type: 'Checkbox',
+                    bond: new Bond(),
+                    hidden:  (values, i) => {
+                        return !isDefined(values[this.names.business]) || values[this.names.publish] === 'yes' 
+                    },
+                    label: textsCap.assignee,
+                    name: this.names.assignee,
+                    options: [],
+                    placeholder: textsCap.assigneePlaceholder,
+                    required: true,
+                    selection: true,
+                    search: true,
+                    type: 'dropdown',
+                    validate: (_, {value}) => {
+                        console.log({value, identity: getIdentity(value), value})
+                        if (getIdentity(value)) return
+                        const isBusiness = !!values[this.names.business]
+                        const assigneeIsBusiness = partners.get(value).type === 'business'
+                        return isBusiness === assigneeIsBusiness ? null : textsCap.assigneeTypeConflict
+
+                    }
                 },
                 {
-                    // hidden: true,
+                    accordion: {
+                        collapsed: true,
+                        styled: false, // enable/disable the boxed layout
+                    },
+                    icon: 'pen',
                     inline: false,
+                    label: textsCap.advancedLabel,
                     name: this.names.advancedGroup,
                     type: 'group',
-                    widths: 16,
+                    styleContainer: {width: '100%'},
+                    grouped: true,
                     inputs: [
+                        {
+                            inline: true,
+                            label: textsCap.marketplace,
+                            multiple: false,
+                            name: this.names.publish,
+                            onChange: this.handlePublishChange,
+                            options: [
+                                { label: textsCap.assignToPartner, value: 'no' },
+                                { label: textsCap.publishToMarketPlace, value: 'yes' },
+                            ],
+                            radio: true,
+                            required: true,
+                            type: 'checkbox-group',
+                            value: publishDefault,
+                        },
                         {
                             inline: true,
                             label: textsCap.buyLabel,
@@ -148,6 +170,17 @@ export default class Form extends Component {
                             ],
                             radio: true,
                             type: 'checkbox-group',
+                            value: true,
+                        },
+                        {
+                            label: textsCap.description,
+                            max: 500,
+                            min: 3,
+                            name: this.names.description,
+                            placeholder: textsCap.descriptionPlaceholder,
+                            required: false,
+                            type: 'textarea',
+                            value: '',
                         },
                         {
                             allowAdditions: true,
@@ -170,7 +203,7 @@ export default class Form extends Component {
                             selection: true,
                             search: true,
                             type: 'dropdown',
-                        }
+                        },
                     ],
                 },
             ]
@@ -225,20 +258,14 @@ export default class Form extends Component {
 
     handlePublishChange = (_, values) => {
         const {inputs} = this.state
-        const publish = values[this.names.publish]
+        const publish = values[this.names.publish] === 'yes'
         const assigneeIn = findInput(inputs, this.names.assignee)
         assigneeIn.hidden = publish
         this.setState({inputs})
     }
 
     handleSubmit = (_, values) => {
-
-    }
-    toggleAdvanced = () => {
-        const {inputs} = this.state
-        const aGroupIn = findInput(inputs, this.names.advancedGroup)
-        aGroupIn.hidden = !aGroupIn.hidden
-        this.setState({inputs})
+        console.log({values})
     }
 
     render =()=> <FormBuilder {...{...this.props, ...this.state}} />

@@ -6,6 +6,6 @@ import TaskForm from './Form'
 
 export default (
     <div>
-        <button onClick={()=> showForm(TaskForm)}>Create</button>
+        <button onClick={()=> showForm(TaskForm, {size: 'tiny'})}>Create</button>
     </div>
 )
