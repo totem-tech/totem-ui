@@ -8,7 +8,8 @@ import IdentityList from '../lists/IdentityList'
 import PartnerList from '../lists/PartnerList'
 import ProjectList from '../lists/ProjectList'
 import SettingsForm from '../forms/Settings'
-import TaskForm from '../forms/Task'
+import TaskForm from '../modules/task/Form'
+import TaskList from '../modules/task/List'
 import TimeKeepingView from '../views/TimeKeepingView'
 import TransferForm from '../forms/Transfer'
 import UtilitiesView from '../views/UtilitiesView'
@@ -25,8 +26,10 @@ import { getLayout, layoutBond } from './window'
 
 const [texts] = translated({
     gettingStartedTitle: 'Getting Started',
+
     historyTitle: 'History',
     historySubheader: 'History List of actions recently taken by you. This data is only stored locally on your computer.',
+
     identityTitle: 'Identities',
     identitySubheader: 'Identities are like companies - and you can create as many as you like!',
     identitySubheaderDetails1: `
@@ -50,6 +53,7 @@ const [texts] = translated({
         Select the identity you want to view in the top right corner of the header.
     `,
     identitySubheaderDetails5: 'Once an Identity is stored in this list you can use it all over Totem. To find out more, watch the video!',
+
     partnersTitle: 'Partners',
     partnersHeader: 'Partner Contact List',
     partnersSubheader: 'Manage suppliers, customers, and any other party that you have contact with in Totem.',
@@ -66,6 +70,7 @@ const [texts] = translated({
         You can give each shared Partner Identity a new name, add tags, and define it any way you want.
         Once a partner is stored in this list you can use it all over Totem.
     `,
+
     projectTitle: 'Activities',
     projectSubheader: 'Manage activities',
     projectSubheaderDetails1: `You can use the activity module to account for any activity, task project. You can invite team members to activities or assign individuals an activity, manage and approve all time booked against an activity.`,
@@ -75,6 +80,10 @@ const [texts] = translated({
         You can invite team members to activities or assign individuals an activity, manage and approve all time booked against an activity. 
         Activities are then automatically mapped to invoices or other payments, and all accounting will be correctly posted even into your partners' accounts.
     `,
+
+    tasksTitle: 'Tasks',
+    tasksSubheader: 'Create and manage tasks',
+
     timekeepingTitle: 'Timekeeping',
     timekeepingSubheader: 'Manage timekeeping against activities that you have been invited to, or that you have created yourself.',
 
@@ -82,6 +91,7 @@ const [texts] = translated({
     transferHeader: 'Transfer Transactions',
     transferSubheader: 'Transfer transaction between your Identities and  Partners.',
     transferSubheaderDetails: 'You can use the transfer module to send some of your transaction balance to other parties on the Totem Network.',
+
     invoicesTitle: 'Manage Invoices',
     creditNoteTitle: 'Credit Note',
     purchaseOrderTitle: 'Purchase Order',
@@ -198,7 +208,7 @@ export const sidebarItems = [
     {
         content: ProjectList,
         // headerDividerHidden: true,
-        icon: 'tasks',
+        icon: 'briefcase',
         name: 'projects',
         subHeader: texts.projectSubheader,
         subHeaderDetails: (
@@ -217,7 +227,11 @@ export const sidebarItems = [
         title: texts.timekeepingTitle,
     },
     {
-        content: TaskForm,
+        content: TaskList,
+        icon: 'tasks',
+        name: 'tasks',
+        title: texts.tasksTitle,
+        subHeader: texts.tasksSubheader,
     },
     {
         content: TransferForm,
