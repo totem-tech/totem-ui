@@ -189,7 +189,7 @@ export default class FormInput extends Component {
                 inputEl = <CheckboxGroup {...attrs} />
                 break
             case 'dropdown':
-                if (attrs.search && isArr(attrs.search)) {
+                if (isArr(attrs.search)) {
                     attrs.search = searchRanked(attrs.search)
                 }
                 inputEl = <Dropdown {...attrs} />

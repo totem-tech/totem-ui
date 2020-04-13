@@ -2,6 +2,7 @@ import io from 'socket.io-client'
 import { isFn, isValidNumber, isDefined } from '../utils/utils'
 import { translated } from './language'
 import storage from './storage'
+import { isArr } from '../../../totem-message-service/src/utils/utils'
 
 // chat server port
 // use 3003 for dev.totem.live otherwise 3001
@@ -147,24 +148,26 @@ export class ChatClient {
         // add/get company by wallet address
         //
         // Params:
-        // @identity        string
-        // @company         object  : if not supplied will return existing company by @identity 
-        // @cb              function: params =>
-        //                      @err    string/null/object : error message or null if success or existing company if @company not supplied
-        this.company = (identity, company, cb) => socket.emit('company', identity, company, cb)
+        // @hash       string
+        // @company    object  : if not supplied will return existing company by @identity 
+        //                 required keys:
+        //                       'countryCode',          // 2 letter country code
+        //                       'identity',
+        //                       'name',                 // name of the company
+        //                       'registrationNumber',   // company registration number for the above country
+        // @cb         function: params =>
+        //                 @err    string/null/object : error message or null if success or existing company if @company not supplied
+        this.company = (hash, company, cb) => isFn(cb) && socket.emit('company', hash, company, cb)
         // search companies
         //
         // Params:
-        // @query       string/object
-        // @matchExact  boolean
-        // @matchAll    boolean
-        // @ignoreCase  boolean
-        // @cb          function: params =>
+        // @query           string
+        // @findIdentity    boolean: if false will search for both identity and parentIdentity
+        // @cb              function: params =>
         //                      @err    string/null : error message or null if success
         //                      @result Map         : Map of companies with identity as key
-        this.companySearch = (query, matchExact, matchAll, ignoreCase, cb) => isFn(cb) && socket.emit(
-            'company-search', query, matchExact, matchAll, ignoreCase, (err, result) => cb(err, new Map(result))
-        )
+        this.companySearch = (query, findIdentity, cb) => isFn(cb) &&
+            socket.emit('company-search', query, findIdentity, (err, result) => cb(err, new Map(result)))
 
         // Get list of all countries
         //
