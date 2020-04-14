@@ -32,7 +32,7 @@ const [texts] = translated({
     updateIdentity: 'Update your identity',
 })
 
-export default class ItentityList extends ReactiveComponent {
+export default class IdentityList extends ReactiveComponent {
     constructor(props) {
         super(props)
 
