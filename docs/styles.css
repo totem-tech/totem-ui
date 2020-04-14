@@ -40,7 +40,106 @@
 
 /*
  * New styles
- */
+*/
+
+/* iphone XR */
+ @media only screen 
+    and (device-width : 414px) 
+    and (device-height : 896px) 
+    and (-webkit-device-pixel-ratio : 2) { 
+      .ui.container {
+        width: auto !important;
+        margin-left: 1em !important;
+        margin-right: 1em !important;
+      }
+      
+      .ui.grid.container {
+        width: auto !important;
+      }
+      
+      .ui.relaxed.grid.container {
+        width: auto !important;
+      }
+      
+      .ui.very.relaxed.grid.container {
+        width: auto !important;
+      }
+}
+
+/* iphone XS */
+@media only screen 
+and (device-width : 375px) 
+and (device-height : 812px) 
+and (-webkit-device-pixel-ratio : 3) { 
+  .ui.container {
+    width: auto !important;
+    margin-left: 1em !important;
+    margin-right: 1em !important;
+  }
+  
+  .ui.grid.container {
+    width: auto !important;
+  }
+  
+  .ui.relaxed.grid.container {
+    width: auto !important;
+  }
+  
+  .ui.very.relaxed.grid.container {
+    width: auto !important;
+  }
+}
+
+/* iphone XS Max */
+@media only screen 
+and (device-width : 414px) 
+and (device-height : 896px) 
+and (-webkit-device-pixel-ratio : 3) { 
+  .ui.container {
+    width: auto !important;
+    margin-left: 1em !important;
+    margin-right: 1em !important;
+  }
+  
+  .ui.grid.container {
+    width: auto !important;
+  }
+  
+  .ui.relaxed.grid.container {
+    width: auto !important;
+  }
+  
+  .ui.very.relaxed.grid.container {
+    width: auto !important;
+  }
+}
+
+
+
+ @media only screen and (max-width: 767px) {
+  .ui.container {
+    width: auto !important;
+    margin-left: 1em !important;
+    margin-right: 1em !important;
+  }
+
+  .ui.grid.container {
+    width: auto !important;
+  }
+
+  .ui.relaxed.grid.container {
+    width: auto !important;
+  }
+
+  .ui.very.relaxed.grid.container {
+    width: auto !important;
+  }
+}
+
+
+
+
+
 #app, #app > div {
   height: 100%;
 }
@@ -225,4 +324,8 @@ div.ui.padded.segment {
 /* forces close icon to be over content */
 .ui.message .icon.close {
   z-index: 1
+}
+
+input[readonly] {
+  cursor: not-allowed;
 }

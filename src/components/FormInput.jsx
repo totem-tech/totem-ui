@@ -1,11 +1,9 @@
-import React from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Button, Dropdown, Form, Input, TextArea } from 'semantic-ui-react'
-import { Bond } from 'oo7'
-import { ReactiveComponent } from 'oo7-react'
+import { Accordion, Button, Dropdown, Form, Icon, Input, TextArea } from 'semantic-ui-react'
 import {
-    deferred, hasValue, isArr, isBond, isDefined, isFn, isPromise,
-    isStr, isValidNumber, objWithoutKeys, searchRanked,
+    deferred, hasValue, isArr, isBond, isDefined, isFn, isObj, isPromise,
+    isStr, isValidNumber, objWithoutKeys, searchRanked, isBool,
 } from '../utils/utils'
 import Message from './Message'
 // Custom Inputs
@@ -21,8 +19,9 @@ const VALIDATION_MESSAGES = Object.freeze({
     requiredField: () => 'Required field',
     validNumber: () => 'Please enter a valid number'
 })
+// properties exclude from being used in the DOM
 const NON_ATTRIBUTES = Object.freeze([
-    'bond', 'controlled', 'defer', 'elementRef', 'hidden', 'inline', 'integer', 'invalid', '_invalid', 'inlineLabel', 'label',
+    'bond', 'collapsed', 'controlled', 'defer', 'elementRef', 'hidden', 'inline', 'integer', 'invalid', '_invalid', 'inlineLabel', 'label',
     'trueValue', 'falseValue', 'styleContainer', 'useInput', 'validate'
 ])
 export const nonValueTypes = Object.freeze([
@@ -30,7 +29,7 @@ export const nonValueTypes = Object.freeze([
     'html',
 ])
 
-export default class FormInput extends ReactiveComponent {
+export default class FormInput extends Component {
     constructor(props) {
         super(props)
 
@@ -154,7 +153,7 @@ export default class FormInput extends ReactiveComponent {
 
     render() {
         const {
-            bond, content, elementRef, error, hidden, inline, inlineLabel, invalid, label,
+            accordion, bond, content, elementRef, error, hidden, inline, inlineLabel, invalid, label,
             message: externalMsg, name, required, styleContainer, type, useInput, width
         } = this.props
         if (hidden) return ''
@@ -190,7 +189,7 @@ export default class FormInput extends ReactiveComponent {
                 inputEl = <CheckboxGroup {...attrs} />
                 break
             case 'dropdown':
-                if (attrs.search && isArr(attrs.search)) {
+                if (isArr(attrs.search)) {
                     attrs.search = searchRanked(attrs.search)
                 }
                 inputEl = <Dropdown {...attrs} />
@@ -218,24 +217,43 @@ export default class FormInput extends ReactiveComponent {
                 inputEl = <El {...attrs} />
         }
 
-        if (isGroup) return (
-            <Form.Group inline={inline} style={styleContainer} widths={attrs.widths}>
+        if (!isGroup) return (
+                <Form.Field
+                    error={message && message.status === 'error' || error || invalid}
+                    required={required}
+                    style={styleContainer}
+                    width={width}
+                >
+                    {!hideLabel && label && <label htmlFor={name}>{label}</label>}
+                    {inputEl}
+                    {message && <Message {...message} />}
+                </Form.Field>
+            )
+
+        let groupEl = (
+            <Form.Group style={styleContainer} {...attrs}>
                 {inputEl}
                 {message && <Message {...message} />}
             </Form.Group>
         )
-
+        
+        if (!isObj(accordion)) return groupEl
+        // use accordion if label is supplied
+        let { collapsed } = this.state
+        if (!isBool(collapsed)) collapsed = accordion.collapsed
         return (
-            <Form.Field
-                error={message && message.status === 'error' || error || invalid}
-                required={required}
-                style={styleContainer}
-                width={width}
-            >
-                {!hideLabel && label && <label htmlFor={name}>{label}</label>}
-                {inputEl}
-                {message && <Message {...message} />}
-            </Form.Field>
+            <Accordion {...objWithoutKeys(accordion, NON_ATTRIBUTES)}>
+                <Accordion.Title
+                    active={ !collapsed }
+                    content={ accordion.title || label }
+                    icon={ accordion.icon || 'dropdown' }
+                    onClick={()=> {
+                        this.setState({ collapsed: !collapsed })
+                        accordion.onC
+                    }}
+                />
+                <Accordion.Content {...{ active:!collapsed, content: groupEl }} />
+            </Accordion>
         )
     }
 }

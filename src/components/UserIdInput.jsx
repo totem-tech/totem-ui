@@ -35,8 +35,6 @@ const noAttrsTextField = [
 const invalidIcon = { color: 'red', name: 'warning circle', size: 'large' }
 const validIcon = { color: 'green', name: 'check circle', size: 'large' }
 const userIdRegex = /^[a-z][a-z0-9]+$/
-// eliminates any characters that are not allowed, including digits at the beginning
-const getId = str => str.toLowerCase().replace(/(^[0-9]+)|[^a-z0-9]/gi, '')
 
 export default class UserIdInput extends Component {
     constructor(props) {
@@ -88,7 +86,6 @@ export default class UserIdInput extends Component {
         let { options } = this.state
         let { excludeOwnId, includeFromChat, includePartners, multiple, value } = this.props
         value = value || (multiple ? [] : '')
-        console.log({ multiple })
         if (!options) return this.setState({ value })
 
         const userIds = options.map(({ userId }) => userId)
