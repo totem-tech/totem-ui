@@ -10,29 +10,29 @@ import partners from '../../services/partner'
 import { arrSort, isDefined } from '../../utils/utils'
 
 const [texts, textsCap] = translated({
-    advancedLabel: 'advanced Options',
-    assignee: 'assignee',
-    assigneePlaceholder: 'select a partner identity',
+    advancedLabel: 'advanced options',
+    assignee: 'select a partner to assign task',
+    assigneePlaceholder: 'select from partner list',
     assignToPartner: 'assign to a partner',
-    assigneeTypeConflict: 'Task type and parter type must be the same.',
+    assigneeTypeConflict: 'task type and parter type must be the same.',
     business: 'business',
-    buyLabel: 'payment direction',
-    buyOptionLabelBuy: 'i will receive the reward',
-    buyOptionLabelSell: 'i will pay the reward',
+    buyLabel: 'task type',
+    buyOptionLabelBuy: 'buying',
+    buyOptionLabelSell: 'selling',
     currency: 'currency',
-    description: 'description',
-    descriptionPlaceholder: 'enter description about the task',
-    formHeader: 'create task',
+    description: 'detailed description',
+    descriptionPlaceholder: 'enter more details about the task',
+    formHeader: 'create a new task',
     marketplace: 'marketplace',
     myself: 'myself',
     personal: 'personal',
     publishToMarketPlace: 'publish to marketplace',
-    rewardLabel: 'reward amount',
-    rewardPlaceholder: 'enter reward amount',
-    tags: 'tags',
-    taskType: 'task type',
-    title: 'title',
-    titlePlaceholder: 'enter a short title'
+    bountyLabel: 'bounty amount',
+    bountyPlaceholder: 'enter bounty amount',
+    tags: 'categorise with tags',
+    taskType: 'task relationship',
+    title: 'task title',
+    titlePlaceholder: 'enter a very short task description'
 }, true)
 
 export default class Form extends Component {
@@ -48,7 +48,7 @@ export default class Form extends Component {
             currency: 'currency',
             description: 'description',
             publish: 'publish',
-            reward: 'reward',
+            bounty: 'bounty',
             tags: 'tags',
             title: 'title',
         })
@@ -72,20 +72,8 @@ export default class Form extends Component {
                     value: '',
                 },
                 {
-                    inline: true,
-                    label: textsCap.taskType,
-                    name: this.names.business,
-                    options: [
-                        { label: textsCap.business, value: 1},
-                        { label: textsCap.personal, value: 0},
-                    ],
-                    radio: true,
-                    required: true,
-                    type: 'checkbox-group',
-                },
-                {
                     bond: new Bond(),
-                    label: textsCap.rewardLabel,
+                    label: textsCap.bountyLabel,
                     inlineLabel: (
                         <Dropdown {...{
                             basic: true,
@@ -100,20 +88,36 @@ export default class Form extends Component {
                                 value,
                             })),
                         }}/>
-                    ),
+                        ),
                     labelPosition: 'right',
-                    min: 0, // allows reward-free tasks
-                    name: this.names.reward,
-                    placeholder: textsCap.rewardPlaceholder,
+                    min: 0, // allows bounty-free tasks
+                    name: this.names.bounty,
+                    placeholder: textsCap.bountyPlaceholder,
                     required: true,
                     type: 'number',
                     useInput: true,
                     value: 0,
                 },
                 {
+                    inline: true,
+                    label: textsCap.marketplace,
+                    multiple: false,
+                    name: this.names.publish,
+                    onChange: this.handlePublishChange,
+                    options: [
+                        { label: textsCap.assignToPartner, value: 'no' },
+                        { label: textsCap.publishToMarketPlace, value: 'yes' },
+                    ],
+                    radio: true,
+                    required: true,
+                    type: 'checkbox-group',
+                    value: publishDefault,
+                },
+                {
                     bond: new Bond(),
                     hidden:  (values, i) => {
-                        return !isDefined(values[this.names.business]) || values[this.names.publish] === 'yes' 
+                        // return !isDefined(values[this.names.business]) || values[this.names.publish] === 'yes' 
+                        return values[this.names.publish] === 'yes' ? true : false
                     },
                     label: textsCap.assignee,
                     name: this.names.assignee,
@@ -129,7 +133,7 @@ export default class Form extends Component {
                         const isBusiness = !!values[this.names.business]
                         const assigneeIsBusiness = partners.get(value).type === 'business'
                         return isBusiness === assigneeIsBusiness ? null : textsCap.assigneeTypeConflict
-
+                        
                     }
                 },
                 {
@@ -147,18 +151,15 @@ export default class Form extends Component {
                     inputs: [
                         {
                             inline: true,
-                            label: textsCap.marketplace,
-                            multiple: false,
-                            name: this.names.publish,
-                            onChange: this.handlePublishChange,
+                            label: textsCap.taskType,
+                            name: this.names.business,
                             options: [
-                                { label: textsCap.assignToPartner, value: 'no' },
-                                { label: textsCap.publishToMarketPlace, value: 'yes' },
+                                { label: textsCap.business, value: 1},
+                                { label: textsCap.personal, value: 0},
                             ],
                             radio: true,
                             required: true,
                             type: 'checkbox-group',
-                            value: publishDefault,
                         },
                         {
                             inline: true,
@@ -240,19 +241,19 @@ export default class Form extends Component {
 
     handleCurrencyLabelChange = async (_, {value})=> {
         const {inputs, values} = this.state
-        const name = this.names.reward
-        const rewardIn = findInput(inputs, name)
+        const name = this.names.bounty
+        const bountyIn = findInput(inputs, name)
         let msg = null
         // check if selected currency is supported by attempting a conversion
         try {
             await convertTo(0, value, currencyDefault)
             this.currency = value
-            rewardIn.bond.changed(values[name])
+            bountyIn.bond.changed(values[name])
         } catch(error) {
             msg = { content: error, status: 'error'}
         }
-        rewardIn.invalid = !!msg
-        rewardIn.message = msg
+        bountyIn.invalid = !!msg
+        bountyIn.message = msg
         this.setState({inputs})                                
     }
 
