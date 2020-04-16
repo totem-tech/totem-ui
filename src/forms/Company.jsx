@@ -3,12 +3,11 @@ import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import { ss58Decode } from 'oo7-substrate'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
-import { deferred, isFn } from '../utils/utils'
+import { deferred, isFn, generateHash } from '../utils/utils'
 import client from '../services/chatClient'
 import { translated } from '../services/language'
 import { setPublic } from '../services/partner'
 import storage from '../services/storage'
-import { generateHash } from '../../../totem-message-service/src/utils/utils'
 
 const [words, wordsCap] = translated({
     identity: 'identity',

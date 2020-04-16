@@ -7,7 +7,7 @@ import {convertTo, currencies, currencyDefault, selected as selectedCurrency} fr
 import {bond, get as getIdentity, getSelected} from '../../services/identity'
 import {translated} from '../../services/language'
 import partners from '../../services/partner'
-import { arrSort, isDefined } from '../../utils/utils'
+import { arrSort } from '../../utils/utils'
 
 const [texts, textsCap] = translated({
     advancedLabel: 'advanced options',
