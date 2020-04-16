@@ -14,7 +14,9 @@ const [texts, textsCap] = translated({
     assignee: 'select a partner to assign task',
     assigneePlaceholder: 'select from partner list',
     assignToPartner: 'assign to a partner',
-    assigneeTypeConflict: 'task type and parter type must be the same.',
+    assigneeTypeConflict: 'task relationship type and parter type must be the same',
+    bountyLabel: 'bounty amount',
+    bountyPlaceholder: 'enter bounty amount',
     business: 'business',
     buyLabel: 'task type',
     buyOptionLabelBuy: 'buying',
@@ -23,16 +25,19 @@ const [texts, textsCap] = translated({
     description: 'detailed description',
     descriptionPlaceholder: 'enter more details about the task',
     formHeader: 'create a new task',
+    goods: 'goods',
+    inventory: 'inventory',
     marketplace: 'marketplace',
     myself: 'myself',
     personal: 'personal',
     publishToMarketPlace: 'publish to marketplace',
-    bountyLabel: 'bounty amount',
-    bountyPlaceholder: 'enter bounty amount',
+    services:'services',
     tags: 'categorise with tags',
+    tagsNoResultMsg: 'type tag and press ENTER to add',
     taskType: 'task relationship',
     title: 'task title',
-    titlePlaceholder: 'enter a very short task description'
+    titlePlaceholder: 'enter a very short task description',
+    productTypeLabel: 'product type'
 }, true)
 
 export default class Form extends Component {
@@ -51,13 +56,13 @@ export default class Form extends Component {
             bounty: 'bounty',
             tags: 'tags',
             title: 'title',
+            productType: 'productType',
         })
 
         this.currency = selectedCurrency()
-        const publishDefault = 'no'
         
         this.state = {
-            onChange: (_, values) => this.setState({values}),
+            onChange: (_, values) => this.setState({ values }),
             onSubmit: this.handleSubmit,
             values: {},
             inputs: [
@@ -111,14 +116,11 @@ export default class Form extends Component {
                     radio: true,
                     required: true,
                     type: 'checkbox-group',
-                    value: publishDefault,
+                    value: 'no',
                 },
                 {
                     bond: new Bond(),
-                    hidden:  (values, i) => {
-                        // return !isDefined(values[this.names.business]) || values[this.names.publish] === 'yes' 
-                        return values[this.names.publish] === 'yes' ? true : false
-                    },
+                    hidden:  (values, i) => values[this.names.publish] === 'yes',
                     label: textsCap.assignee,
                     name: this.names.assignee,
                     options: [],
@@ -127,13 +129,12 @@ export default class Form extends Component {
                     selection: true,
                     search: true,
                     type: 'dropdown',
-                    validate: (_, {value}) => {
-                        console.log({value, identity: getIdentity(value), value})
+                    validate: (_, { value }) => {
                         if (getIdentity(value)) return
-                        const isBusiness = !!values[this.names.business]
+                        const { values } = this.state
+                        const isBusiness = values[this.names.business] === 'yes'
                         const assigneeIsBusiness = partners.get(value).type === 'business'
                         return isBusiness === assigneeIsBusiness ? null : textsCap.assigneeTypeConflict
-                        
                     }
                 },
                 // Advanced section (Form type "group" with accordion)
@@ -151,12 +152,13 @@ export default class Form extends Component {
                     grouped: true,
                     inputs: [
                         {
+                            bond: new Bond(),
                             inline: true,
                             label: textsCap.taskType,
                             name: this.names.business,
                             options: [
-                                { label: textsCap.business, value: 1},
-                                { label: textsCap.personal, value: 0},
+                                { label: textsCap.business, value: 'yes' },
+                                { label: textsCap.personal, value: 'no' },
                             ],
                             radio: true,
                             required: true,
@@ -167,12 +169,25 @@ export default class Form extends Component {
                             label: textsCap.buyLabel,
                             name: this.names.buy,
                             options: [
-                                { label: textsCap.buyOptionLabelBuy, value: true },
-                                { label: textsCap.buyOptionLabelSell, value: false },
+                                { label: textsCap.buyOptionLabelBuy, value: 'yes' },
+                                { label: textsCap.buyOptionLabelSell, value: 'no' },
                             ],
                             radio: true,
                             type: 'checkbox-group',
-                            value: true,
+                            value: 'yes',
+                        },
+                        {
+                            inline: true,
+                            label: textsCap.productTypeLabel,
+                            name: this.names.productType,
+                            options: [
+                                { label: textsCap.goods, value: 'goods' },
+                                { label: textsCap.inventory, value: 'inventory' },
+                                { label: textsCap.services, value: 'services' },
+                            ],
+                            radio: true,
+                            type: 'checkbox-group',
+                            value: 'services',
                         },
                         {
                             label: textsCap.description,
@@ -186,12 +201,14 @@ export default class Form extends Component {
                         },
                         {
                             allowAdditions: true,
+                            noResultsMessage: textsCap.tagsNoResultMsg,
                             label: textsCap.tags,
                             multiple: true,
                             name: this.names.tags,
-                            onAddItem: (_, {value}) => {
+                            onAddItem: (_, { value }) => {
                                 const {inputs} = this.state
                                 const tagsIn = findInput(inputs, this.names.tags)
+                                value = value.toLowerCase()
                                 // option already exists
                                 if (tagsIn.options.find(x => x.value === value)) return
                                 tagsIn.options = arrSort([...tagsIn.options, {
@@ -270,7 +287,7 @@ export default class Form extends Component {
         console.log({values})
     }
 
-    render =()=> <FormBuilder {...{...this.props, ...this.state}} />
+    render = () => <FormBuilder {...{...this.props, ...this.state}} />
 }
 Form.defaultProps = {
     header: textsCap.formHeader,
