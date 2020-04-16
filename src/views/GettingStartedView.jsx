@@ -55,11 +55,8 @@ export default class GetingStarted extends Component {
 
 	handleIdentity = () => showForm(IdentityForm, {
 		values: getSelected(),
-		onSubmit: success => {
-			if (!success) return
-			// automatically open register form only if user isn't registered yet
-			if (this.setIndex(1) === 1) this.handleRegister()
-		}
+		// automatically open register form only if user isn't already registered
+		onSubmit: ok => ok && this.setIndex(1) === this.registerStepIndex && this.handleRegister()
 	})
 
 	handleRegister = () => showForm(RegisterForm, {

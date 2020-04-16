@@ -32,6 +32,8 @@ export const getAllTags = () => {
     return arrUnique([...iTags, ...pTags]).sort()
 }
 export const getByName = name => partners.find({ name }, true, true, true)
+// returns first matching partner with userId
+export const getByUserId = id => (Array.from(partners.getAll()).find(([_, { userId }]) => userId === id) || [])[1]
 export const remove = address => partners.delete(address) | updateBond()
 // Add/update partner
 export const set = (address, name, tags, type, userId, visibility, associatedIdentity) => {
@@ -62,7 +64,8 @@ export default {
     getAll,
     get,
     getByName,
+    getByUserId,
+    remove,
     set,
     setPublic,
-    remove,
 }

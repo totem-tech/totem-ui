@@ -136,6 +136,7 @@ export default class Form extends Component {
                         
                     }
                 },
+                // Advanced section (Form type "group" with accordion)
                 {
                     accordion: {
                         collapsed: true,
