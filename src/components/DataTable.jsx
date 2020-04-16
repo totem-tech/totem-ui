@@ -242,7 +242,7 @@ export default class DataTable extends ReactiveComponent {
     }
 
     render() {
-        let { data, columns: columnsOriginal, emptyMessage, footerContent, perPage, searchExtraKeys } = this.props
+        let { data, columns: columnsOriginal, emptyMessage, footerContent, perPage, searchExtraKeys, tableProps } = this.props
         let { keywords, pageNo, selectedIndexes, sortAsc, sortBy } = this.state
         keywords = keywords.trim()
         const columns = columnsOriginal.filter(x => !!x && !x.hidden)
@@ -279,16 +279,12 @@ export default class DataTable extends ReactiveComponent {
                 <div style={styles.tableContent}>
                     {totalRows === 0 && emptyMessage && <Message {...emptyMessage} />}
                     {totalRows > 0 && (
-                        <Table celled selectable sortable unstackable singleLine>
+                        <Table {...tableProps}>
                             <Table.Header>
-                                <Table.Row>
-                                    {headers}
-                                </Table.Row>
+                                <Table.Row>{headers}</Table.Row>
                             </Table.Header>
 
-                            <Table.Body>
-                                {rows}
-                            </Table.Body>
+                            <Table.Body>{rows}</Table.Body>
 
                             {!footerContent && totalPages <= 1 ? undefined : (
                                 <Table.Footer>
@@ -335,6 +331,7 @@ DataTable.propTypes = {
     searchable: PropTypes.bool,
     searchExtraKeys: PropTypes.array,
     selectable: PropTypes.bool,
+    tableProps: PropTypes.object.isRequired, // table element props
     topLeftMenu: PropTypes.arrayOf(PropTypes.object),
     topRightMenu: PropTypes.arrayOf(PropTypes.object)
 }
@@ -351,6 +348,13 @@ DataTable.defaultProps = {
     perPage: 10,
     searchable: true,
     selectable: false,
+    tableProps: {
+        celled: true,
+        selectable: true,
+        sortable: true,
+        unstackable: true,
+        singleLine: true,
+    }
 }
 
 const styles = {
