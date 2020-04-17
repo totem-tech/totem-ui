@@ -37,7 +37,7 @@ const [texts, textsCap] = translated({
     taskType: 'task relationship',
     title: 'task title',
     titlePlaceholder: 'enter a very short task description',
-    productTypeLabel: 'product type'
+    orderTypeLabel: 'order type'
 }, true)
 
 export default class Form extends Component {
@@ -56,7 +56,7 @@ export default class Form extends Component {
             bounty: 'bounty',
             tags: 'tags',
             title: 'title',
-            productType: 'productType',
+            orderType: 'orderType',
         })
 
         this.currency = selectedCurrency()
@@ -141,7 +141,7 @@ export default class Form extends Component {
                 {
                     accordion: {
                         collapsed: true,
-                        styled: false, // enable/disable the boxed layout
+                        styled: true, // enable/disable the boxed layout
                     },
                     icon: 'pen',
                     inline: false,
@@ -151,19 +151,19 @@ export default class Form extends Component {
                     styleContainer: {width: '100%'},
                     grouped: true,
                     inputs: [
-                        {
-                            bond: new Bond(),
-                            inline: true,
-                            label: textsCap.taskType,
-                            name: this.names.business,
-                            options: [
-                                { label: textsCap.business, value: 'yes' },
-                                { label: textsCap.personal, value: 'no' },
-                            ],
-                            radio: true,
-                            required: true,
-                            type: 'checkbox-group',
-                        },
+                        // {
+                        //     bond: new Bond(),
+                        //     inline: true,
+                        //     label: textsCap.taskType,
+                        //     name: this.names.business,
+                        //     options: [
+                        //         { label: textsCap.business, value: 'yes' },
+                        //         { label: textsCap.personal, value: 'no' },
+                        //     ],
+                        //     radio: true,
+                        //     required: true,
+                        //     type: 'checkbox-group',
+                        // },
                         {
                             inline: true,
                             label: textsCap.buyLabel,
@@ -175,19 +175,21 @@ export default class Form extends Component {
                             radio: true,
                             type: 'checkbox-group',
                             value: 'yes',
+                            hidden: true,
                         },
                         {
                             inline: true,
-                            label: textsCap.productTypeLabel,
-                            name: this.names.productType,
+                            label: textsCap.orderTypeLabel,
+                            name: this.names.orderType,
                             options: [
                                 { label: textsCap.goods, value: 'goods' },
-                                { label: textsCap.inventory, value: 'inventory' },
                                 { label: textsCap.services, value: 'services' },
+                                { label: textsCap.inventory, value: 'inventory' },
                             ],
                             radio: true,
                             type: 'checkbox-group',
                             value: 'services',
+                            hidden: true,
                         },
                         {
                             label: textsCap.description,
