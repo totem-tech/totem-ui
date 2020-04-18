@@ -6,7 +6,7 @@ import { isBond } from '../utils/utils'
 import { translated } from '../services/language'
 import {
 	allInactiveBond, getItem, setActive, setSidebarState,
-	sidebarItems, sidebarStateBond, toggleActive, toggleSidebarState
+	sidebarItems, sidebarStateBond, scrollTo, toggleActive, toggleSidebarState
 } from '../services/sidebar'
 
 const [_, textsCap] = translated({
@@ -95,12 +95,13 @@ export class MainContentItem extends Component {
 		const item = getItem(this.props.name) || {}
 		const { active, elementRef, hidden, name } = item
 		const show = active && !hidden
+		item.style = {...item.style, height: '100%'}
 		return !show ? '' : (
 			<div
-				ref={elementRef}
+				hidden={!show}
 				key={name}
-				hidden={!active || hidden}
 				style={styles.spaceBelow}
+				ref={elementRef}
 			>
 				<ContentSegment {...item} onClose={name => setActive(name, false)} />
 			</div>
@@ -122,8 +123,9 @@ class SidebarMenuItem extends Component {
 	componentWillUnmount = () => this.tieId && this.props.bond.untie(this.tieId)
 
 	handleClick = e => {
-		e.stopPropagation()
 		const { isMobile, name } = this.props
+		e.stopPropagation()
+		if (e.shiftKey && getItem(name).active) return scrollTo(name)
 		const { active } = toggleActive(name)
 		active && isMobile && toggleSidebarState()
 	}

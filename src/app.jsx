@@ -25,7 +25,7 @@ import sidebar, { sidebarItems, sidebarStateBond } from './services/sidebar'
 import storage from './services/storage'
 import timeKeeping from './services/timeKeeping'
 import toast, { ToastsContainer } from './services/toast'
-import { getLayout, layoutBond } from './services/window'
+import { getLayout, gridCollumnsBond, layoutBond } from './services/window'
 // Utils
 import DataStorage from './utils/DataStorage'
 // Images
@@ -36,11 +36,13 @@ const [texts] = translated({
 	failedMsg: 'Connection failed! Please check your internet connection.',
 	connectingMsg: 'Connecting to Totem blockchain network...',
 })
+
 export class App extends ReactiveComponent {
 	constructor() {
 		super([], {
 			ensureRuntime: runtimeUp,
 			isMobile: layoutBond.map(layout => layout === 'mobile'),
+			numCol: gridCollumnsBond,
 		})
 		this.state = {
 			sidebarCollapsed: false,
@@ -99,7 +101,7 @@ export class App extends ReactiveComponent {
 	}
 
 	readyRender() {
-		const { isMobile } = this.state
+		const { isMobile, numCol } = this.state
 		const logoSrc = TotemButtonLogo
 		const { collapsed, visible } = sidebarStateBond._value
 		const classNames = [
@@ -131,7 +133,7 @@ export class App extends ReactiveComponent {
 						dimmed={false}
 						id="main-content"
 						fluid
-						style={styles.mainContent}
+						style={{ ...styles.mainContent, ...getGridStyle(numCol) }}
 					>
 						{sidebarItems.map(({ name }, i) => <MainContentItem key={i + name} name={name} />)}
 						<div className='empty-message'>
@@ -144,6 +146,12 @@ export class App extends ReactiveComponent {
 	}
 }
 
+const getGridStyle = (numCol = 1) => numCol <= 1 ? {} : {
+	display: 'grid',
+    gridTemplateColumns: `repeat(${numCol}, 1fr)`,
+    gridGap: '15px',
+    gridAutoRows: 'auto',
+}
 const styles = {
 	mainContent: {
 		overflow: 'hidden auto',
@@ -158,4 +166,5 @@ const styles = {
 		overflow: 'hidden',
 		WebkitOverflow: 'hidden',
 	},
+	
 }

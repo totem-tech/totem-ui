@@ -6,22 +6,20 @@ import client, { historyLimit as chatHistoryLimit } from '../services/chatClient
 import { convertTo, currencies, currencyDefault, selected as selectedCurrency } from '../services/currency'
 import { limit as historyItemsLimit } from '../services/history'
 import { getSelected, getTexts, languages, setSelected, setTexts, translated } from '../services/language'
-import storage from '../services/storage'
+import { gridCollumns } from '../services/window'
 
-const [words, wordsCap] = translated({
+const [texts, textsCap] = translated({
+    columns: 'columns',
+    chatLimitLabel: 'chat message limit',
+    gridColumnsLabel: 'number of columns on main content (experimental)',
+    gsCurrencyLabel: 'default currency',
+    gsLanguageLabel: 'default language (experimental)',
+    historyLimitLabel: 'history limit',
     unlimited: 'unlimited',
     saved: 'saved',
 }, true)
-const [texts] = translated({
-    chatLimitLabel: 'Chat message limit',
-    gsCurrencyLabel: 'Default currency',
-    gsLanguageLabel: 'Default language (experimental)',
-    historyLimitLabel: 'History limit',
-})
-// read/write to global settings
-const rwg = (key, value) => storage.settings.global(key, value)
 const forceRefreshPage = () => window.location.reload(true)
-const savedMsg = { content: wordsCap.saved, status: 'success' }
+const savedMsg = { content: textsCap.saved, status: 'success' }
 
 export default class Settings extends Component {
     constructor(props) {
@@ -33,7 +31,7 @@ export default class Settings extends Component {
             submitText: null,
             inputs: [
                 {
-                    label: texts.gsLanguageLabel,
+                    label: textsCap.gsLanguageLabel,
                     name: 'languageCode',
                     onChange: this.handleLanguageChange,
                     options: arrSort(
@@ -51,7 +49,7 @@ export default class Settings extends Component {
                     value: getSelected(),
                 },
                 {
-                    label: texts.gsCurrencyLabel,
+                    label: textsCap.gsCurrencyLabel,
                     name: 'currency',
                     onChange: this.handleCurrencyChange,
                     options: arrSort(
@@ -69,12 +67,12 @@ export default class Settings extends Component {
                     value: selectedCurrency()
                 },
                 {
-                    label: texts.historyLimitLabel,
+                    label: textsCap.historyLimitLabel,
                     name: 'historyLimit',
                     onChange: this.handleHistoryLimitChange,
                     options: [0, 10, 50, 100, 500, 1000].map((limit, i) => ({
                         key: i,
-                        text: limit || wordsCap.unlimited,
+                        text: limit || textsCap.unlimited,
                         value: limit,
                     })),
                     selection: true,
@@ -82,17 +80,31 @@ export default class Settings extends Component {
                     value: historyItemsLimit(),
                 },
                 {
-                    label: texts.chatLimitLabel,
+                    label: textsCap.chatLimitLabel,
                     name: 'chatMsgLimit',
                     onChange: this.handleChatLimitChange,
                     options: [0, 10, 50, 100, 500, 1000].map((limit, i) => ({
                         key: i,
-                        text: limit || wordsCap.unlimited,
+                        text: limit || textsCap.unlimited,
                         value: limit,
                     })),
                     selection: true,
                     type: 'dropdown',
                     value: chatHistoryLimit(),
+                },
+                {
+                    label: textsCap.gridColumnsLabel,
+                    name: 'gridCols',
+                    onChange: this.handleGridCollumnsChange,
+                    options: [1, 2, 3, 4].map(n => ({
+                        icon: 'th',
+                        key: n,
+                        text: `${n} ${texts.columns}`,
+                        value: n,
+                    })),
+                    selection: true,
+                    type: 'dropdown',
+                    value: gridCollumns(),
                 },
             ]
         }
@@ -115,8 +127,13 @@ export default class Settings extends Component {
         this.setInputMessage('chatMsgLimit', savedMsg)
     }
 
+    handleGridCollumnsChange = (_, {gridCols}) => {
+        gridCollumns(gridCols)
+        this.setInputMessage('gridCols', savedMsg)
+    }
+
     handleHistoryLimitChange = (_, { historyLimit: limit }) => {
-        historyItemsLimit(limit === wordsCap.unlimited ? null : limit, true)
+        historyItemsLimit(limit === textsCap.unlimited ? null : limit, true)
         this.setInputMessage('historyLimit', savedMsg)
     }
 
