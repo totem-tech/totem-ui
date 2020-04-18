@@ -25,7 +25,7 @@ import sidebar, { sidebarItems, sidebarStateBond } from './services/sidebar'
 import storage from './services/storage'
 import timeKeeping from './services/timeKeeping'
 import toast, { ToastsContainer } from './services/toast'
-import { getLayout, gridCollumnsBond, layoutBond } from './services/window'
+import { getLayout, gridColumnsBond, layoutBond } from './services/window'
 // Utils
 import DataStorage from './utils/DataStorage'
 // Images
@@ -42,7 +42,7 @@ export class App extends ReactiveComponent {
 		super([], {
 			ensureRuntime: runtimeUp,
 			isMobile: layoutBond.map(layout => layout === 'mobile'),
-			numCol: gridCollumnsBond,
+			numCol: gridColumnsBond,
 		})
 		this.state = {
 			sidebarCollapsed: false,

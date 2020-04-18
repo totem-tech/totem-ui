@@ -6,9 +6,10 @@ import client, { historyLimit as chatHistoryLimit } from '../services/chatClient
 import { convertTo, currencies, currencyDefault, selected as selectedCurrency } from '../services/currency'
 import { limit as historyItemsLimit } from '../services/history'
 import { getSelected, getTexts, languages, setSelected, setTexts, translated } from '../services/language'
-import { gridCollumns } from '../services/window'
+import { gridColumns } from '../services/window'
 
 const [texts, textsCap] = translated({
+    column: 'column',
     columns: 'columns',
     chatLimitLabel: 'chat message limit',
     gridColumnsLabel: 'number of columns on main content (experimental)',
@@ -97,14 +98,14 @@ export default class Settings extends Component {
                     name: 'gridCols',
                     onChange: this.handleGridCollumnsChange,
                     options: [1, 2, 3, 4].map(n => ({
-                        icon: 'th',
+                        icon: n === 1 ? 'bars' : 'grid layout',
                         key: n,
-                        text: `${n} ${texts.columns}`,
+                        text: `${n} ${ n > 1 ? texts.columns : texts.column }`,
                         value: n,
                     })),
                     selection: true,
                     type: 'dropdown',
-                    value: gridCollumns(),
+                    value: gridColumns(),
                 },
             ]
         }
@@ -128,7 +129,7 @@ export default class Settings extends Component {
     }
 
     handleGridCollumnsChange = (_, {gridCols}) => {
-        gridCollumns(gridCols)
+        gridColumns(gridCols)
         this.setInputMessage('gridCols', savedMsg)
     }
 

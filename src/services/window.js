@@ -36,12 +36,12 @@ export const getUrlParam = name => {
 }
 
 // Main content grid column count
-export const gridCollumns = numCol => {
-    const value = isDefined(numCol) ? { gridCollumns: numCol } : undefined
-    value && gridCollumnsBond.changed(numCol)
+export const gridColumns = numCol => {
+    const value = isDefined(numCol) ? { gridColumns: numCol } : undefined
+    value && gridColumnsBond.changed(numCol)
     return rw(value).gridColumns || 1
 }
-export const gridCollumnsBond = new Bond().defaultTo(gridCollumns())
+export const gridColumnsBond = new Bond().defaultTo(gridColumns())
 
 // set layout name on window resize 
 window.onresize = () => {
