@@ -2,7 +2,6 @@ import io from 'socket.io-client'
 import { isFn, isValidNumber, isDefined } from '../utils/utils'
 import { translated } from './language'
 import storage from './storage'
-import { isArr } from '../../../totem-message-service/src/utils/utils'
 
 // chat server port
 // use 3003 for dev.totem.live otherwise 3001

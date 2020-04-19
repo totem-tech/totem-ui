@@ -7,32 +7,37 @@ import {convertTo, currencies, currencyDefault, selected as selectedCurrency} fr
 import {bond, get as getIdentity, getSelected} from '../../services/identity'
 import {translated} from '../../services/language'
 import partners from '../../services/partner'
-import { arrSort, isDefined } from '../../utils/utils'
+import { arrSort } from '../../utils/utils'
 
 const [texts, textsCap] = translated({
-    advancedLabel: 'advanced Options',
-    assignee: 'assignee',
-    assigneePlaceholder: 'select a partner identity',
+    advancedLabel: 'advanced options',
+    assignee: 'select a partner to assign task',
+    assigneePlaceholder: 'select from partner list',
     assignToPartner: 'assign to a partner',
-    assigneeTypeConflict: 'Task type and parter type must be the same.',
+    assigneeTypeConflict: 'task relationship type and parter type must be the same',
+    bountyLabel: 'bounty amount',
+    bountyPlaceholder: 'enter bounty amount',
     business: 'business',
-    buyLabel: 'payment direction',
-    buyOptionLabelBuy: 'i will receive the reward',
-    buyOptionLabelSell: 'i will pay the reward',
+    buyLabel: 'task type',
+    buyOptionLabelBuy: 'buying',
+    buyOptionLabelSell: 'selling',
     currency: 'currency',
-    description: 'description',
-    descriptionPlaceholder: 'enter description about the task',
-    formHeader: 'create task',
+    description: 'detailed description',
+    descriptionPlaceholder: 'enter more details about the task',
+    formHeader: 'create a new task',
+    goods: 'goods',
+    inventory: 'inventory',
     marketplace: 'marketplace',
     myself: 'myself',
     personal: 'personal',
     publishToMarketPlace: 'publish to marketplace',
-    rewardLabel: 'reward amount',
-    rewardPlaceholder: 'enter reward amount',
-    tags: 'tags',
-    taskType: 'task type',
-    title: 'title',
-    titlePlaceholder: 'enter a short title'
+    services:'services',
+    tags: 'categorise with tags',
+    tagsNoResultMsg: 'type tag and press ENTER to add',
+    taskType: 'task relationship',
+    title: 'task title',
+    titlePlaceholder: 'enter a very short task description',
+    orderTypeLabel: 'order type'
 }, true)
 
 export default class Form extends Component {
@@ -48,16 +53,16 @@ export default class Form extends Component {
             currency: 'currency',
             description: 'description',
             publish: 'publish',
-            reward: 'reward',
+            bounty: 'bounty',
             tags: 'tags',
             title: 'title',
+            orderType: 'orderType',
         })
 
         this.currency = selectedCurrency()
-        const publishDefault = 'no'
         
         this.state = {
-            onChange: (_, values) => this.setState({values}),
+            onChange: (_, values) => this.setState({ values }),
             onSubmit: this.handleSubmit,
             values: {},
             inputs: [
@@ -72,20 +77,8 @@ export default class Form extends Component {
                     value: '',
                 },
                 {
-                    inline: true,
-                    label: textsCap.taskType,
-                    name: this.names.business,
-                    options: [
-                        { label: textsCap.business, value: 1},
-                        { label: textsCap.personal, value: 0},
-                    ],
-                    radio: true,
-                    required: true,
-                    type: 'checkbox-group',
-                },
-                {
                     bond: new Bond(),
-                    label: textsCap.rewardLabel,
+                    label: textsCap.bountyLabel,
                     inlineLabel: (
                         <Dropdown {...{
                             basic: true,
@@ -100,21 +93,34 @@ export default class Form extends Component {
                                 value,
                             })),
                         }}/>
-                    ),
+                        ),
                     labelPosition: 'right',
-                    min: 0, // allows reward-free tasks
-                    name: this.names.reward,
-                    placeholder: textsCap.rewardPlaceholder,
+                    min: 0, // allows bounty-free tasks
+                    name: this.names.bounty,
+                    placeholder: textsCap.bountyPlaceholder,
                     required: true,
                     type: 'number',
                     useInput: true,
                     value: 0,
                 },
                 {
+                    inline: true,
+                    label: textsCap.marketplace,
+                    multiple: false,
+                    name: this.names.publish,
+                    onChange: this.handlePublishChange,
+                    options: [
+                        { label: textsCap.assignToPartner, value: 'no' },
+                        { label: textsCap.publishToMarketPlace, value: 'yes' },
+                    ],
+                    radio: true,
+                    required: true,
+                    type: 'checkbox-group',
+                    value: 'no',
+                },
+                {
                     bond: new Bond(),
-                    hidden:  (values, i) => {
-                        return !isDefined(values[this.names.business]) || values[this.names.publish] === 'yes' 
-                    },
+                    hidden:  (values, i) => values[this.names.publish] === 'yes',
                     label: textsCap.assignee,
                     name: this.names.assignee,
                     options: [],
@@ -123,19 +129,19 @@ export default class Form extends Component {
                     selection: true,
                     search: true,
                     type: 'dropdown',
-                    validate: (_, {value}) => {
-                        console.log({value, identity: getIdentity(value), value})
+                    validate: (_, { value }) => {
                         if (getIdentity(value)) return
-                        const isBusiness = !!values[this.names.business]
+                        const { values } = this.state
+                        const isBusiness = values[this.names.business] === 'yes'
                         const assigneeIsBusiness = partners.get(value).type === 'business'
                         return isBusiness === assigneeIsBusiness ? null : textsCap.assigneeTypeConflict
-
                     }
                 },
+                // Advanced section (Form type "group" with accordion)
                 {
                     accordion: {
                         collapsed: true,
-                        styled: false, // enable/disable the boxed layout
+                        styled: true, // enable/disable the boxed layout
                     },
                     icon: 'pen',
                     inline: false,
@@ -145,32 +151,45 @@ export default class Form extends Component {
                     styleContainer: {width: '100%'},
                     grouped: true,
                     inputs: [
-                        {
-                            inline: true,
-                            label: textsCap.marketplace,
-                            multiple: false,
-                            name: this.names.publish,
-                            onChange: this.handlePublishChange,
-                            options: [
-                                { label: textsCap.assignToPartner, value: 'no' },
-                                { label: textsCap.publishToMarketPlace, value: 'yes' },
-                            ],
-                            radio: true,
-                            required: true,
-                            type: 'checkbox-group',
-                            value: publishDefault,
-                        },
+                        // {
+                        //     bond: new Bond(),
+                        //     inline: true,
+                        //     label: textsCap.taskType,
+                        //     name: this.names.business,
+                        //     options: [
+                        //         { label: textsCap.business, value: 'yes' },
+                        //         { label: textsCap.personal, value: 'no' },
+                        //     ],
+                        //     radio: true,
+                        //     required: true,
+                        //     type: 'checkbox-group',
+                        // },
                         {
                             inline: true,
                             label: textsCap.buyLabel,
                             name: this.names.buy,
                             options: [
-                                { label: textsCap.buyOptionLabelBuy, value: true },
-                                { label: textsCap.buyOptionLabelSell, value: false },
+                                { label: textsCap.buyOptionLabelBuy, value: 'yes' },
+                                { label: textsCap.buyOptionLabelSell, value: 'no' },
                             ],
                             radio: true,
                             type: 'checkbox-group',
-                            value: true,
+                            value: 'yes',
+                            hidden: true,
+                        },
+                        {
+                            inline: true,
+                            label: textsCap.orderTypeLabel,
+                            name: this.names.orderType,
+                            options: [
+                                { label: textsCap.goods, value: 'goods' },
+                                { label: textsCap.services, value: 'services' },
+                                { label: textsCap.inventory, value: 'inventory' },
+                            ],
+                            radio: true,
+                            type: 'checkbox-group',
+                            value: 'services',
+                            hidden: true,
                         },
                         {
                             label: textsCap.description,
@@ -184,12 +203,14 @@ export default class Form extends Component {
                         },
                         {
                             allowAdditions: true,
+                            noResultsMessage: textsCap.tagsNoResultMsg,
                             label: textsCap.tags,
                             multiple: true,
                             name: this.names.tags,
-                            onAddItem: (_, {value}) => {
+                            onAddItem: (_, { value }) => {
                                 const {inputs} = this.state
                                 const tagsIn = findInput(inputs, this.names.tags)
+                                value = value.toLowerCase()
                                 // option already exists
                                 if (tagsIn.options.find(x => x.value === value)) return
                                 tagsIn.options = arrSort([...tagsIn.options, {
@@ -240,19 +261,19 @@ export default class Form extends Component {
 
     handleCurrencyLabelChange = async (_, {value})=> {
         const {inputs, values} = this.state
-        const name = this.names.reward
-        const rewardIn = findInput(inputs, name)
+        const name = this.names.bounty
+        const bountyIn = findInput(inputs, name)
         let msg = null
         // check if selected currency is supported by attempting a conversion
         try {
             await convertTo(0, value, currencyDefault)
             this.currency = value
-            rewardIn.bond.changed(values[name])
+            bountyIn.bond.changed(values[name])
         } catch(error) {
             msg = { content: error, status: 'error'}
         }
-        rewardIn.invalid = !!msg
-        rewardIn.message = msg
+        bountyIn.invalid = !!msg
+        bountyIn.message = msg
         this.setState({inputs})                                
     }
 
@@ -268,7 +289,7 @@ export default class Form extends Component {
         console.log({values})
     }
 
-    render =()=> <FormBuilder {...{...this.props, ...this.state}} />
+    render = () => <FormBuilder {...{...this.props, ...this.state}} />
 }
 Form.defaultProps = {
     header: textsCap.formHeader,

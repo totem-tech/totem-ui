@@ -34,7 +34,10 @@ const [texts, textsCap] = translated({
 export default class HistoryList extends Component {
     constructor(props) {
         super(props)
-
+        
+        // makes columns resizable
+        const headerProps = { style: { resize: 'both',overflow: 'auto'} }
+        
         this.state = {
             columns: [
                 {
@@ -58,8 +61,13 @@ export default class HistoryList extends Component {
                     key: '_identity',
                     title: textsCap.identity,
                 },
-                { key: 'title', title: textsCap.title },
                 {
+                    headerProps,
+                    key: 'title',
+                    title: textsCap.title,
+                },
+                {
+                    headerProps,
                     key: 'description',
                     style: {
                         minWidth: 200,

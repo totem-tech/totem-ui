@@ -35,6 +35,12 @@ const noAttrsTextField = [
 const invalidIcon = { color: 'red', name: 'warning circle', size: 'large' }
 const validIcon = { color: 'green', name: 'check circle', size: 'large' }
 const userIdRegex = /^[a-z][a-z0-9]+$/
+// removes surrounding whitespaces, removes '@' at the beginning and transforms to lowercase
+export const getRawUserID = userId => {
+    userId = userId.trim()
+    if (!userId.startsWith('@')) return userId
+    return userId.split('').slice(1).join('').toLowerCase()
+}
 
 export default class UserIdInput extends Component {
     constructor(props) {
@@ -128,6 +134,7 @@ export default class UserIdInput extends Component {
     }
 
     handleAddUser = (e, data) => {
+        data.value = getRawUserID(data.value)
         const { value: userId } = data
         const { excludeOwnId, multiple, onChange } = this.props
         const isOwnId = excludeOwnId && (getUser() || {}).id === userId
@@ -174,7 +181,7 @@ export default class UserIdInput extends Component {
                 // add newly added user id as an option
                 !optionExists && input.options.push({
                     key: userId,
-                    text: userId,
+                    text: '@' + userId,
                     value: userId
                 })
             }
@@ -193,6 +200,7 @@ export default class UserIdInput extends Component {
     handleChange = (e, data) => {
         const { onChange } = this.props
         const { type } = this.state
+        if (type !== 'dropdown') data.value = getRawUserID(data.value)
         const { value } = data
         const s = { value }
         if (type === 'dropdown') {
@@ -204,10 +212,10 @@ export default class UserIdInput extends Component {
         isFn(onChange) && onChange(e, data)
     }
 
-    handleSearchChange = (_, { searchQuery: s }) => this.setState({ searchQuery: s.toLowerCase() })
+    handleSearchChange = (_, { searchQuery: s }) => this.setState({ searchQuery: getRawUserID(s) })
 
     validateTextField = (e, data) => {
-        data.value = data.value.toLowerCase()
+        data.value = getRawUserID(data.value)
         const { value } = data
         const { excludeOwnId, newUser, onChange } = this.props
         const isOwnId = excludeOwnId && (getUser() || {}).id === value

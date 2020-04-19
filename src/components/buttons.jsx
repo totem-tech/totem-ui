@@ -1,15 +1,14 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
+import { getRawUserID } from './UserIdInput'
 import { translated } from '../services/language'
+import { getByUserId } from '../services/partner'
 
 const [words, wordsCap] = translated({
     accept: 'accept',
     reject: 'reject',
 }, true)
-const [texts] = translated({
-    userId: 'User ID',
-})
 
 export const ButtonAcceptOrReject = ({ onClick, acceptText, rejectText, style }) => (
     <div title="" style={style || { textAlign: 'center', marginTop: 10 }}>
@@ -39,9 +38,9 @@ export const UserID = ({ userId }) => (
     <Button
         basic
         compact
-        content={<b>@{userId}</b>}
+        content={<b>@{getRawUserID(userId)}</b>}
         onClick={e => e.stopPropagation() | console.log({ userId })}
-        title={texts.userId}
+        title={(getByUserId(userId) || {}).name}
         style={{ boxShadow: 'none', padding: 0 }}
     />
 )

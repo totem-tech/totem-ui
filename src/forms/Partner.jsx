@@ -237,8 +237,11 @@ class Partner extends Component {
         const addressIn = findInput(inputs, 'address')
         const isValidAddress = !!addressToStr(searchQuery)
         addressIn.allowAdditions = false
-
-        const handleResult = (err, companies) => {
+        addressIn.loading = true
+        this.setState({inputs})
+        
+        client.companySearch(searchQuery, false, (err, companies) => {
+            addressIn.loading = false
             addressIn.allowAdditions = !err && companies.size === 0 && isValidAddress
             addressIn.options = err ? [] : Array.from(companies).map(([hash, company]) => {
                 const identityName = getAddressName(company.address)
@@ -246,16 +249,14 @@ class Partner extends Component {
                     company, // keep
                     hash,
                     description: `${identityName}${identityName ? ' | ' : ''}${company.countryCode}`,
-                    key: [company.name, company.identity].join(' '), // also used for DropDown's search
+                    key: Object.values(company).join(' '), // also used for DropDown's search
                     text: company.name,
                     value: company.identity,
                 }
             })
             addressIn.message = !err ? null : { content: err, status: 'error' }
             this.setState({ inputs })
-        }
-
-        client.companySearch(searchQuery, false, handleResult)
+        })
     }, 300)
 
     handleAddTag = (_, data) => {

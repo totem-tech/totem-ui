@@ -69,7 +69,7 @@ export const getProjects = (_forceUpdate = false) => {
         _config.tieId = _config.hashesBond.tie(hashes => {
             hashes = hashes.map(h => hashToStr(h))
             const changed = !!hashes.find(hash => !invitedProjects.get(hash))
-                || !!cachedAr[address].find(([hash]) => !hashes.includes(hash))
+                || !!(cachedAr[address] || []).find(([hash]) => !hashes.includes(hash))
             if (_config.firstAttempt || _config.updateInProgress) return
             if (changed) return getProjects(true)
         })
