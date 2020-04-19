@@ -1,8 +1,8 @@
 
-# init submodules if not already done
+# init submodules if not already done (should be done once)
 git submodule init
 # update submodules recursively
-git submodule update --recursive --remote
+git pull && git submodule sync && git submodule update --init --recursive --remote && \
 # Set envirnment variables and run
 HTTP_PORT="int: 80" \
 HTTPS_PORT="int: 443" \
