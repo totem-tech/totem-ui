@@ -151,6 +151,7 @@ export default class Form extends Component {
                     styleContainer: {width: '100%'},
                     grouped: true,
                     inputs: [
+                        // Everything is now assumed to be B2B for accounting purposes
                         // {
                         //     bond: new Bond(),
                         //     inline: true,
@@ -175,7 +176,7 @@ export default class Form extends Component {
                             radio: true,
                             type: 'checkbox-group',
                             value: 'yes',
-                            hidden: true,
+                            hidden: true,  // only show if this is an purchase order
                         },
                         {
                             inline: true,
@@ -189,7 +190,7 @@ export default class Form extends Component {
                             radio: true,
                             type: 'checkbox-group',
                             value: 'services',
-                            hidden: true,
+                            hidden: true, // only show if this is an purchase order
                         },
                         {
                             label: textsCap.description,
