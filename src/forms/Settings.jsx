@@ -97,7 +97,7 @@ export default class Settings extends Component {
                     label: textsCap.gridColumnsLabel,
                     name: 'gridCols',
                     onChange: this.handleGridCollumnsChange,
-                    options: [1, 2, 3, 4].map(n => ({
+                    options: [1, 2, 3, 4, 5, 6].map(n => ({
                         icon: n === 1 ? 'bars' : 'grid layout',
                         key: n,
                         text: `${n} ${ n > 1 ? texts.columns : texts.column }`,
