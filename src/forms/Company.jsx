@@ -1,10 +1,9 @@
-import React from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-import { ReactiveComponent } from 'oo7-react'
 import { ss58Decode } from 'oo7-substrate'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
-import { deferred, isFn, isObj } from '../utils/utils'
+import { deferred, isFn, generateHash } from '../utils/utils'
 import client from '../services/chatClient'
 import { translated } from '../services/language'
 import { setPublic } from '../services/partner'
@@ -29,7 +28,7 @@ const [texts] = translated({
     subheader: 'Warning: doing this makes this partner visible to all Totem users',
 })
 
-export default class Company extends ReactiveComponent {
+export default class Company extends Component {
     constructor(props) {
         super(props)
 
@@ -50,6 +49,7 @@ export default class Company extends ReactiveComponent {
                     value: ''
                 },
                 {
+                    bond: new Bond(),
                     label: texts.nameLabel,
                     name: 'name',
                     placeholder: texts.namePlaceholder,
@@ -58,6 +58,7 @@ export default class Company extends ReactiveComponent {
                     value: ''
                 },
                 {
+                    // bond: new Bond(),
                     label: texts.regNumLabel,
                     name: 'registrationNumber',
                     placeholder: texts.regNumPlaceholder,
@@ -67,9 +68,10 @@ export default class Company extends ReactiveComponent {
                 },
                 {
                     label: texts.countryLabel,
-                    name: 'country',
+                    name: 'countryCode',
                     options: Array.from(storage.countries.getAll())
                         .map(([_, { code, name }]) => ({
+                            description: code,
                             key: code,
                             text: name,
                             value: code
@@ -77,9 +79,9 @@ export default class Company extends ReactiveComponent {
                     placeholder: texts.countryPlaceholder,
                     required: true,
                     selection: true,
-                    search: true,
+                    search: ['text', 'description'],
                     type: 'dropdown'
-                }
+                },
             ]
         }
         fillValues(this.state.inputs, props.values)
@@ -93,15 +95,15 @@ export default class Company extends ReactiveComponent {
         input.message = null
         this.setState({ inputs, submitDisabled: true })
 
-        client.company(identity, null, (_, company) => {
-            const exists = isObj(company)
+        client.companySearch(identity, true, (_, result) => {
+            const exists = result.size > 0
             input.loading = false
-            input.invalid = exists
+            input.invalid = !!exists
             input.message = !exists ? null : {
                 content: (
                     <div>
                         {texts.companyExistsMsg}
-                        <div><b>{company.name}</b></div>
+                        <div><b>{Array.from(result)[0][1].name}</b></div>
                     </div>
                 ),
                 showIcon: true,
@@ -112,10 +114,9 @@ export default class Company extends ReactiveComponent {
             // update partner accordingly
             exists && setPublic(identity)
         })
-
     }
 
-    handleSubmit = (e, values) => client.company(values.identity, values, err => {
+    handleSubmit = (e, values) => client.company(generateHash(values), values, err => {
         const { onSubmit } = this.props
         const success = !err
         const message = {
@@ -133,7 +134,7 @@ export default class Company extends ReactiveComponent {
 }
 Company.propTypes = {
     values: PropTypes.shape({
-        country: PropTypes.string,
+        countryCode: PropTypes.string,
         name: PropTypes.string,
         registrationNumber: PropTypes.string,
         identity: PropTypes.string.isRequired

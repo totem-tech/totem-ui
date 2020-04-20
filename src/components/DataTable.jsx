@@ -151,20 +151,24 @@ export default class DataTable extends ReactiveComponent {
                 {selectable && ( /* include checkbox to select items */
                     <Table.Cell onClick={() => this.handleRowSelect(key, selectedIndexes)} style={styles.checkboxCell}>
                         <Icon
+                            className="no-margin"
                             name={(selectedIndexes.indexOf(key) >= 0 ? 'check ' : '') + 'square outline'}
                             size="large"
-                            className="no-margin"
                         />
                     </Table.Cell>
                 )}
                 {columns.filter(x => !x.hidden).map((cell, j) => (
                     <Table.Cell
-                        {...objWithoutKeys(cell, ['title'])}
+                        {...objWithoutKeys(cell, ['headerProps', 'title'])}
                         content={undefined}
                         draggable={cell.draggable !== false}
                         key={j}
                         onDragStart={cell.draggable === false ? undefined : e => e.dataTransfer.setData("Text", e.target.textContent)}
-                        style={objCopy(cell.style, { padding: cell.collapsing ? '0 5px' : undefined })}
+                        style={{
+                            cursor: cell.draggable !== false ? 'grab' : undefined,
+                            padding: cell.collapsing ? '0 5px' : undefined,
+                            ...cell.style
+                        }}
                         textAlign={cell.textAlign || 'left'}
                     >
                         {!cell.content ? item[cell.key] : (
@@ -182,10 +186,11 @@ export default class DataTable extends ReactiveComponent {
 
         const headers = columns.filter(x => !x.hidden).map((x, i) => (
             <Table.HeaderCell
+                {...x.headerProps}
                 key={i}
                 onClick={() => x.key && this.setState({ sortBy: x.key, sortAsc: sortBy === x.key ? !sortAsc : true })}
                 sorted={sortBy !== x.key ? null : (sortAsc ? 'ascending' : 'descending')}
-                style={styles.columnHeader}
+                style={{ ...((x.headerProps || {}).style), ...styles.columnHeader }}
                 textAlign="center"
             >
                 {x.title}
@@ -238,7 +243,7 @@ export default class DataTable extends ReactiveComponent {
     }
 
     render() {
-        let { data, columns: columnsOriginal, emptyMessage, footerContent, perPage, searchExtraKeys } = this.props
+        let { data, columns: columnsOriginal, emptyMessage, footerContent, perPage, searchExtraKeys, tableProps } = this.props
         let { keywords, pageNo, selectedIndexes, sortAsc, sortBy } = this.state
         keywords = keywords.trim()
         const columns = columnsOriginal.filter(x => !!x && !x.hidden)
@@ -275,16 +280,12 @@ export default class DataTable extends ReactiveComponent {
                 <div style={styles.tableContent}>
                     {totalRows === 0 && emptyMessage && <Message {...emptyMessage} />}
                     {totalRows > 0 && (
-                        <Table celled selectable sortable unstackable singleLine>
+                        <Table {...tableProps}>
                             <Table.Header>
-                                <Table.Row>
-                                    {headers}
-                                </Table.Row>
+                                <Table.Row>{headers}</Table.Row>
                             </Table.Header>
 
-                            <Table.Body>
-                                {rows}
-                            </Table.Body>
+                            <Table.Body>{rows}</Table.Body>
 
                             {!footerContent && totalPages <= 1 ? undefined : (
                                 <Table.Footer>
@@ -310,6 +311,7 @@ DataTable.propTypes = {
     columns: PropTypes.arrayOf(
         PropTypes.shape({
             content: PropTypes.any,
+            headerProps: PropTypes.object,
             hidden: PropTypes.bool,
             key: PropTypes.string,
             title: PropTypes.string.isRequired
@@ -331,6 +333,7 @@ DataTable.propTypes = {
     searchable: PropTypes.bool,
     searchExtraKeys: PropTypes.array,
     selectable: PropTypes.bool,
+    tableProps: PropTypes.object.isRequired, // table element props
     topLeftMenu: PropTypes.arrayOf(PropTypes.object),
     topRightMenu: PropTypes.arrayOf(PropTypes.object)
 }
@@ -347,6 +350,13 @@ DataTable.defaultProps = {
     perPage: 10,
     searchable: true,
     selectable: false,
+    tableProps: {
+        celled: true,
+        selectable: true,
+        sortable: true,
+        unstackable: true,
+        singleLine: true,
+    }
 }
 
 const styles = {

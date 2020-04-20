@@ -7,13 +7,13 @@ import { subscribeAllNSetState, unsubscribeAll } from '../services/data'
 import { translated } from '../services/language'
 
 const [texts, textsCap] = translated({
-	blockchainRuntime: 'Blockchain Runtime',
+	blockchainRuntime: 'Connected Host Runtime Version',
 	blockNr: 'Block Nr.',
 	chainType: 'Chain type',
 	hostConneced: 'Connected to host',
 	hostDisconnected: 'Disconnected from host',
 	lag: 'lag',
-	networkVersion: 'Totem Network Version',
+	networkVersion: 'Current Hot Upgrade',
 	no: 'no',
 	offline: 'offline',
 	online: 'online',
@@ -41,10 +41,10 @@ export default class SystemStatus extends ReactiveComponent {
 				'system_version',
 				'runtime_balances_totalIssuance',
 				'runtime_core_authorities',
-				'runtime_version_specVersion', // network version
 				'runtime_version_implName',
 				'runtime_version_implVersion',
 				'runtime_version_specName',
+				'runtime_version_specVersion', // network version
 				'runtime_version_authoringVersion'
 			])
 		})
@@ -69,7 +69,7 @@ export default class SystemStatus extends ReactiveComponent {
 						{!!isConnected ? textsCap.online : textsCap.offline}
 					</GridColumn>
 					<GridColumn width={7}>
-					{this.state.system_chain} : v{this.state.system_version} 
+					{texts.networkVersion} : {this.state.system_chain} v{this.state.runtime_version_authoringVersion}.{this.state.runtime_version_specVersion}.{this.state.runtime_version_implVersion} 
 					</GridColumn>
 					<GridColumn width={7}>
 						{texts.chainType} : {this.state.runtime_version_specName}
@@ -87,7 +87,8 @@ export default class SystemStatus extends ReactiveComponent {
 						{isConnected ? texts.hostConneced : texts.hostDisconnected} : {isConnected && status.connected.split('ws://').join('')}
 					</GridColumn>
 					<GridColumn width={7}>
-						{texts.blockchainRuntime} : {this.state.runtime_version_implName}
+						{texts.blockchainRuntime} : v{this.state.system_version}
+						
 					</GridColumn>
 				</GridRow>
 				<GridRow>

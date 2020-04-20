@@ -10,7 +10,7 @@ export default class ContentSegment extends Component {
 
 		this.state = {
 			content: this.getContent(props),
-			contentArgs: props.contentArgs,
+			contentProps: props.contentProps,
 			showSubHeader: false,
 		}
 		this.originalSetState = this.setState
@@ -22,12 +22,12 @@ export default class ContentSegment extends Component {
 		const { bond } = this.props
 		if (!isBond(bond)) return
 		this.tieId = bond.tie(() => {
-			const { contentArgs: argsS } = this.state
-			const { contentArgs: argsP } = this.props
+			const { contentProps: argsS } = this.state
+			const { contentProps: argsP } = this.props
 			const content = this.getContent()
 			// if arguments changed then force re-render
 			const doReRender = isObj(argsP) && JSON.stringify(argsS) === JSON.stringify(argsP)
-			this.setState({ content: doReRender ? '' : content, contentArgs: argsP })
+			this.setState({ content: doReRender ? '' : content, contentProps: argsP })
 
 			doReRender && setTimeout(() => this.setState({ content }))
 		})
@@ -153,6 +153,7 @@ ContentSegment.propTypes = {
 		PropTypes.string,
 		PropTypes.number
 	]),
+	// arguments to supply to content element, if @content is a component class/function
 	contentProps: PropTypes.object,
 	compact: PropTypes.bool,
 	header: PropTypes.string,

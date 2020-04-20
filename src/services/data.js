@@ -35,6 +35,7 @@ const settings = {
     },
     runtime_core_authorities: { bond: () => runtime.core.authorities },
     runtime_balances_totalIssuance: { bond: () => runtime.balances.totalIssuance },
+    runtime_version_authoringVersion: { bond: () => runtime.version.authoringVersion },
     runtime_version_implName: { bond: () => runtime.version.implName },
     runtime_version_implVersion: { bond: () => runtime.version.implVersion },
     runtime_version_specName: { bond: () => runtime.version.specName },

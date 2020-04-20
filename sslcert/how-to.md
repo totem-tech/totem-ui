@@ -2,10 +2,13 @@
 
 ```bash
 cd sslcert
-openssl req -new -newkey rsa:4096 -nodes -keyout totem.key -out totem.csr
-openssl x509 -req -sha256 -days 365 -in totem.csr -signkey totem.key -out fullchain.pem
-mv totem.key privkey.pem
-rm totem.csr
+# Use 'localhost' for the 'Common name'
+openssl req -new -x509 -sha256 -nodes -newkey rsa:4096 -days 365 -keyout privkey.pem -out fullchain.pem
+
+# Add the cert to your keychain
+open fullchain.pem
+
+# you will need to get your OS to trust these certs.
 ```
 
 To get around permission denied issue: 

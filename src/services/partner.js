@@ -1,6 +1,6 @@
 import { Bond } from 'oo7'
 import uuid from 'uuid'
-import { textEllipsis } from '../utils/utils'
+import { textEllipsis, arrUnique } from '../utils/utils'
 import DataStorage from '../utils/DataStorage'
 import identities from './identity'
 
@@ -19,7 +19,21 @@ export const getAddressName = address => (identities.find(address) || {}).name
     // display the address itself with ellipsis
     || textEllipsis(address, 15, 5)
 export const getAll = () => partners.getAll()
+// returns an array of unique tags used in partner and identity modules
+export const getAllTags = () => {
+    const iTags = identities.getAll()
+        .map(x => x.tags)
+        .filter(tags => tags && tags.length > 0)
+        .flat()
+    const pTags = Array.from(getAll())
+        .map(([_, p]) => p.tags)
+        .filter(tags => tags && tags.length > 0)
+        .flat()
+    return arrUnique([...iTags, ...pTags]).sort()
+}
 export const getByName = name => partners.find({ name }, true, true, true)
+// returns first matching partner with userId
+export const getByUserId = id => (Array.from(partners.getAll()).find(([_, { userId }]) => userId === id) || [])[1]
 export const remove = address => partners.delete(address) | updateBond()
 // Add/update partner
 export const set = (address, name, tags, type, userId, visibility, associatedIdentity) => {
@@ -50,7 +64,8 @@ export default {
     getAll,
     get,
     getByName,
+    getByUserId,
+    remove,
     set,
     setPublic,
-    remove,
 }

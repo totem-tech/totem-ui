@@ -10,7 +10,7 @@ import client from '../services/chatClient'
 import identityService from '../services/identity'
 import { showForm } from '../services/modal'
 import { translated } from '../services/language'
-import addressbook, { getAddressName } from '../services/partner'
+import addressbook, { getAddressName, getAllTags } from '../services/partner'
 
 const [words, wordsCap] = translated({
     business: 'business',
@@ -21,7 +21,7 @@ const [words, wordsCap] = translated({
     public: 'public',
 }, true)
 const [texts] = translated({
-    addressAdditionLabel: 'Use ',
+    addressAdditionLabel: 'Use',
     addressLabel: 'Search for Company or Identity',
     addressPlaceholder: 'Search by company details or identity',
     addressValidationMsg1: 'Partner already exists with the following name:',
@@ -81,7 +81,7 @@ class Partner extends Component {
                 },
                 {
                     allowAdditions: false,
-                    additionLabel: texts.addressAdditionLabel,
+                    additionLabel: texts.addressAdditionLabel + ' ',
                     bond: new Bond(),
                     clearable: true,
                     // disable when adding new and address is prefilled (possibly from notification)
@@ -131,10 +131,10 @@ class Partner extends Component {
                     noResultsMessage: texts.tagsNoResultsMsg,
                     multiple: true,
                     onAddItem: this.handleAddTag,
-                    options: (values.tags || []).map(tag => ({
+                    options: getAllTags().map(tag => ({
                         key: tag,
                         text: tag,
-                        value: tag
+                        value: tag,
                     })),
                     placeholder: texts.tagsPlaceholder,
                     type: 'dropdown',
@@ -199,13 +199,14 @@ class Partner extends Component {
         this.setState({ inputs })
 
         // check if address is aleady public
-        client.company(address, null, (_, company) => {
+        client.companySearch(address, true, (_, result) => {
+            const exists = result.size > 0
             addressIn.loading = false
-            findInput(inputs, 'visibility').hidden = !!company
-            findInput(inputs, 'name').hidden = !!company
+            findInput(inputs, 'visibility').hidden = exists
+            findInput(inputs, 'name').hidden = exists
 
             // make sure addressbook is also updated
-            this.doUpdate && company && addressbook.setPublic(address)
+            this.doUpdate && exists && addressbook.setPublic(address)
             this.setState({ inputs, values })
         })
     }
@@ -236,22 +237,26 @@ class Partner extends Component {
         const addressIn = findInput(inputs, 'address')
         const isValidAddress = !!addressToStr(searchQuery)
         addressIn.allowAdditions = false
-
-        const handleResult = (err, companies) => {
+        addressIn.loading = true
+        this.setState({inputs})
+        
+        client.companySearch(searchQuery, false, (err, companies) => {
+            addressIn.loading = false
             addressIn.allowAdditions = !err && companies.size === 0 && isValidAddress
-            addressIn.options = err ? [] : Array.from(companies).map(([address, company]) => ({
-                company, // keep
-                key: [...Object.keys(company).map(k => company[k]), address].join(' '), // also used for searching
-                description: `${company.country} | ${getAddressName(address)}`,
-                text: company.name,
-                // searchableStr: ,
-                value: address,
-            }))
+            addressIn.options = err ? [] : Array.from(companies).map(([hash, company]) => {
+                const identityName = getAddressName(company.address)
+                return {
+                    company, // keep
+                    hash,
+                    description: `${identityName}${identityName ? ' | ' : ''}${company.countryCode}`,
+                    key: Object.values(company).join(' '), // also used for DropDown's search
+                    text: company.name,
+                    value: company.identity,
+                }
+            })
             addressIn.message = !err ? null : { content: err, status: 'error' }
             this.setState({ inputs })
-        }
-
-        client.companySearch(searchQuery, false, false, true, handleResult)
+        })
     }, 300)
 
     handleAddTag = (_, data) => {
@@ -326,9 +331,7 @@ class Partner extends Component {
         if (addressbook.getByName(name)) return texts.nameValidationMsg
     }
 
-    render() {
-        return <FormBuilder {...{ ...this.props, ...this.state }} />
-    }
+    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
 Partner.propTypes = {
     closeOnSubmit: PropTypes.bool,

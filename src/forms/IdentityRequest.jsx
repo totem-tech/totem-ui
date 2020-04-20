@@ -1,9 +1,7 @@
-import React from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { ReactiveComponent } from 'oo7-react'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
-import { arrUnique, isFn } from '../utils/utils'
-import client, { getUser } from '../services/chatClient'
+import { isFn } from '../utils/utils'
 import { translated } from '../services/language'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
@@ -38,7 +36,7 @@ const reasonList = [
     texts.reason3,
 ]
 
-export default class IdentityRequestForm extends ReactiveComponent {
+export default class IdentityRequestForm extends Component {
     constructor(props) {
         super(props)
 
@@ -49,7 +47,8 @@ export default class IdentityRequestForm extends ReactiveComponent {
             success: false,
             inputs: [
                 {
-                    includePartners: false,
+                    includePartners: true,
+                    includeFromChat: true,
                     label: wordsCap.user,
                     name: 'userIds',
                     multiple: true,

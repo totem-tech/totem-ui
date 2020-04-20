@@ -465,6 +465,7 @@ export default class ProjectTimeKeepingList extends Component {
             action: label !== texts.recordId ? undefined : { icon: 'copy', onClick: () => copyToClipboard(hash) },
             label,
             name: label,
+            readOnly: true,
             type: type || 'text',
             value,
         }))
