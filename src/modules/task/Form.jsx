@@ -1,9 +1,9 @@
 import React, {Component} from 'react'
 import {Bond} from 'oo7'
-import {Dropdown, Checkbox} from 'semantic-ui-react'
+import {Dropdown} from 'semantic-ui-react'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
 // services
-import {convertTo, currencies, currencyDefault, selected as selectedCurrency} from '../../services/currency'
+import {convertTo, currencyDefault, getTickers, selected as selectedCurrency} from '../../services/currency'
 import {bond, get as getIdentity, getSelected} from '../../services/identity'
 import {translated} from '../../services/language'
 import partners from '../../services/partner'
@@ -60,7 +60,6 @@ export default class Form extends Component {
         })
 
         this.currency = selectedCurrency()
-        
         this.state = {
             onChange: (_, values) => this.setState({ values }),
             onSubmit: this.handleSubmit,
@@ -79,24 +78,11 @@ export default class Form extends Component {
                 {
                     bond: new Bond(),
                     label: textsCap.bountyLabel,
-                    inlineLabel: (
-                        <Dropdown {...{
-                            basic: true,
-                            className:'no-margin',
-                            defaultValue: this.currency,
-                            direction: 'left',
-                            onChange: this.handleCurrencyLabelChange,
-                            options: Object.keys(currencies).map(value => ({
-                                key: value,
-                                text: value,
-                                title: currencies[value], // description causes texts to overlap
-                                value,
-                            })),
-                        }}/>
-                        ),
+                    inlineLabel: null,
                     labelPosition: 'right',
                     min: 0, // allows bounty-free tasks
                     name: this.names.bounty,
+                    onChange: this.handleBountyChange,
                     placeholder: textsCap.bountyPlaceholder,
                     required: true,
                     type: 'number',
@@ -258,24 +244,52 @@ export default class Form extends Component {
             assigneeIn.options = arrSort(options, 'text')
             this.setState({inputs})
         })
+
+        const { inputs } = this.state
+        const bountyIn = findInput(inputs, this.names.bounty)
+        getTickers().then(currencies => {
+            console.log({tickers: Object.keys(currencies)})
+            bountyIn.inlineLabel = (
+                <Dropdown {...{
+                    basic: true,
+                    className:'no-margin',
+                    defaultValue: this.currency,
+                    direction: 'left',
+                    onChange: this.handleCurrencyLabelChange,
+                    options: arrSort(Object.keys(currencies).map(value => ({
+                        key: value,
+                        text: value,
+                        title: value === 'USD' ? 'United States Dollar' : currencies[value], // description causes texts to overlap
+                        value,
+                    })), 'text'),
+                    search: true,
+                    selection: true,
+                }}/>
+            )
+            this.setState({ inputs })
+        })
     }
 
-    handleCurrencyLabelChange = async (_, {value})=> {
-        const {inputs, values} = this.state
+    handleBountyChange = (_, values) => {
+        const { inputs } = this.state
+        const bountyIn = findInput(inputs, this.names.bounty)
+        if (this.currency === currencyDefault) {
+            if(!bountyIn.message) return
+            bountyIn.message = null
+            return this.setState({ inputs })
+        }
+
+        // ToDo: convert and display message with amount in XTX
+        // ToDo: use input group for currency dropwdown to enable search by ticker and name
+        // convertTo
+    }
+
+    handleCurrencyLabelChange = async (_, { value })=> {
+        const { inputs, values } = this.state
         const name = this.names.bounty
         const bountyIn = findInput(inputs, name)
-        let msg = null
-        // check if selected currency is supported by attempting a conversion
-        try {
-            await convertTo(0, value, currencyDefault)
-            this.currency = value
-            bountyIn.bond.changed(values[name])
-        } catch(error) {
-            msg = { content: error, status: 'error'}
-        }
-        bountyIn.invalid = !!msg
-        bountyIn.message = msg
-        this.setState({inputs})                                
+        this.currency = value
+        bountyIn.bond.changed(values[name])
     }
 
     handlePublishChange = (_, values) => {

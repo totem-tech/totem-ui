@@ -3,7 +3,7 @@ import FormBuilder, { findInput } from '../components/FormBuilder'
 import { arrSort, generateHash } from '../utils/utils'
 // services
 import client, { historyLimit as chatHistoryLimit } from '../services/chatClient'
-import { convertTo, currencies, currencyDefault, selected as selectedCurrency } from '../services/currency'
+import { getTickers, selected as selectedCurrency } from '../services/currency'
 import { limit as historyItemsLimit } from '../services/history'
 import { getSelected, getTexts, languages, setSelected, setTexts, translated } from '../services/language'
 import { gridColumns } from '../services/window'
@@ -53,15 +53,7 @@ export default class Settings extends Component {
                     label: textsCap.gsCurrencyLabel,
                     name: 'currency',
                     onChange: this.handleCurrencyChange,
-                    options: arrSort(
-                        Object.keys(currencies).map(value => ({
-                            description: currencies[value],
-                            key: value,
-                            text: value,
-                            value
-                        })),
-                        'text',
-                    ),
+                    options: [],
                     search: true,
                     selection: true,
                     type: 'dropdown',
@@ -111,16 +103,26 @@ export default class Settings extends Component {
         }
     }
 
+    componentWillMount () {
+        const { inputs } = this.state
+        const currencyIn = findInput(inputs, 'currency')
+        getTickers().then(currencies => {
+            currencyIn.options = arrSort(
+                Object.keys(currencies).map(value => ({
+                    description: currencies[value],
+                    key: value,
+                    text: value,
+                    value
+                })),
+                'text',
+            )
+            this.setState({ inputs })
+        })
+    }
+
     handleCurrencyChange = async (_, { currency }) => {
-        let msg = savedMsg
-        try{
-            // check if currency conversion is supported
-            await convertTo(0, currency, currencyDefault)
-            selectedCurrency(currency)
-        } catch(e) {
-            msg = { content: e, status: 'error'}
-        }
-        this.setInputMessage('currency', msg, 0)
+        selectedCurrency(currency)
+        this.setInputMessage('currency', savedMsg, 0)
     }
 
     handleChatLimitChange = (_, { chatMsgLimit }) => {

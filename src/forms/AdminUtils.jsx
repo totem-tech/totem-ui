@@ -127,7 +127,7 @@ export default class AdminUtils extends Component {
                 name = 'translations.json'
                 break
             case 'language-download':
-                return client.errorMessages((_, texts) => {
+                return client.languageErrorMessages((_, texts) => {
                     translated(texts || '')
                     downloadWordsListCSV()
                 })
