@@ -3,9 +3,13 @@ import FormBuilder, { findInput } from '../components/FormBuilder'
 import { arrSort, generateHash } from '../utils/utils'
 // services
 import client, { historyLimit as chatHistoryLimit } from '../services/chatClient'
-import { getTickers, selected as selectedCurrency } from '../services/currency'
+import {
+    getTickers,
+    getSelected as getSelectedCurrency,
+    setSelected as setSelectedCurrency
+} from '../services/currency'
 import { limit as historyItemsLimit } from '../services/history'
-import { getSelected, getTexts, languages, setSelected, setTexts, translated } from '../services/language'
+import { getSelected as getSelectedLanguage, getTexts, languages, setSelected, setTexts, translated } from '../services/language'
 import { gridColumns } from '../services/window'
 
 const [texts, textsCap] = translated({
@@ -47,7 +51,7 @@ export default class Settings extends Component {
                     search: true,
                     selection: true,
                     type: 'dropdown',
-                    value: getSelected(),
+                    value: getSelectedLanguage(),
                 },
                 {
                     label: textsCap.gsCurrencyLabel,
@@ -57,7 +61,7 @@ export default class Settings extends Component {
                     search: true,
                     selection: true,
                     type: 'dropdown',
-                    value: selectedCurrency()
+                    value: getSelectedCurrency()
                 },
                 {
                     label: textsCap.historyLimitLabel,
@@ -121,7 +125,7 @@ export default class Settings extends Component {
     }
 
     handleCurrencyChange = async (_, { currency }) => {
-        selectedCurrency(currency)
+        await setSelectedCurrency(currency)
         this.setInputMessage('currency', savedMsg, 0)
     }
 
@@ -143,7 +147,7 @@ export default class Settings extends Component {
     handleLanguageChange = (_, { languageCode }) => {
         setSelected(languageCode)
         this.setInputMessage('languageCode', savedMsg, 0)
-        const selected = getSelected()
+        const selected = getSelectedLanguage()
         if (selected === 'EN') return forceRefreshPage()
         const selectedHash = generateHash(getTexts(selected) || '')
         client.translations(selected, selectedHash, (err, texts) => {

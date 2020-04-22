@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Accordion, Button, Dropdown, Form, Icon, Input, TextArea } from 'semantic-ui-react'
+import { Accordion, Button, Dropdown, Form, Input, TextArea } from 'semantic-ui-react'
 import {
     deferred, hasValue, isArr, isBond, isDefined, isFn, isObj, isPromise,
     isStr, isValidNumber, objWithoutKeys, searchRanked, isBool,
@@ -51,7 +51,7 @@ export default class FormInput extends Component {
 
     componentWillUnmount = () => this._mounted = false
 
-    handleChange = (event, data) => {
+    handleChange = (event = {}, data = {}) => {
         const {
             falseValue: no,
             integer,
@@ -231,10 +231,15 @@ export default class FormInput extends Component {
             )
 
         let groupEl = (
-            <Form.Group style={styleContainer} {...attrs}>
-                {inputEl}
+            <div>
+                <Form.Group
+                    {...objWithoutKeys(attrs, ['inputs'])}
+                    style={ {...styleContainer, ...attrs.style }}
+                >
+                    {inputEl}
+                </Form.Group>
                 {message && <Message {...message} />}
-            </Form.Group>
+            </div>
         )
         
         if (!isObj(accordion)) return groupEl
