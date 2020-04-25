@@ -23,6 +23,18 @@ export const essentialKeys = [
     'totem_settings',
 ]
 
+// generates user data for backup, excluding non-essential items such as cache etc...
+export const generateBackupData = () => {
+    const keys = Object.keys(localStorage)
+        .map(key => !essentialKeys.includes(key) ? null : key)
+        .filter(Boolean)
+        .sort()
+    return keys.reduce((data, key) => {
+        data[key] = JSON.parse(localStorage[key])
+        return data
+    }, {})
+}
+
 // Read/write to storage
 //
 // @storage DataStorege instance:

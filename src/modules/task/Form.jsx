@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
 // services
-import { 
+import {
     convertTo,
     currencyDefault,
     getTickers,
@@ -41,7 +41,7 @@ const [texts, textsCap] = translated({
     myself: 'myself',
     personal: 'personal',
     publishToMarketPlace: 'publish to marketplace',
-    services:'services',
+    services: 'services',
     tags: 'categorise with tags',
     tagsNoResultMsg: 'type tag and press ENTER to add',
     taskType: 'task relationship',
@@ -112,14 +112,14 @@ export default class Form extends Component {
                             options: [],
                             search: true,
                             selection: true,
-                            style:{
+                            style: {
                                 minWidth: 0, // fixes overflow issue
                                 marginBottom: 0, // removes margin on popup open
                             },
                             type: 'dropdown',
                             width: 4,
                             value: getSelectedCurrency(),
-                        },                        
+                        },
                     ]
                 },
                 {
@@ -139,7 +139,7 @@ export default class Form extends Component {
                 },
                 {
                     bond: new Bond(),
-                    hidden:  (values, i) => values[this.names.publish] === 'yes',
+                    hidden: (values, i) => values[this.names.publish] === 'yes',
                     label: textsCap.assignee,
                     name: this.names.assignee,
                     options: [],
@@ -160,14 +160,14 @@ export default class Form extends Component {
                 {
                     accordion: {
                         collapsed: true,
-                        styled: true, // enable/disable the boxed layout
+                        styled: true,
                     },
                     icon: 'pen',
                     inline: false,
                     label: textsCap.advancedLabel,
                     name: this.names.advancedGroup,
                     type: 'group',
-                    styleContainer: {width: '100%'},
+                    // styleContainer: {width: '100%'},
                     grouped: true,
                     inputs: [
                         // Everything is now assumed to be B2B for accounting purposes
@@ -228,7 +228,7 @@ export default class Form extends Component {
                             name: this.names.tags,
                             noResultsMessage: textsCap.tagsNoResultMsg,
                             onAddItem: (_, { value }) => {
-                                const {inputs} = this.state
+                                const { inputs } = this.state
                                 const tagsIn = findInput(inputs, this.names.tags)
                                 value = value.toLowerCase()
                                 // option already exists
@@ -238,7 +238,7 @@ export default class Form extends Component {
                                     text: value,
                                     value,
                                 }], 'text')
-                                this.setState({inputs})
+                                this.setState({ inputs })
                             },
                             options: [],
                             selection: true,
@@ -249,29 +249,29 @@ export default class Form extends Component {
                 },
             ]
         }
-		this.originalSetState = this.setState
-		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
     componentWillMount() {
         this._mounted = true
         // connect to blockchain beforehand to speed up currency convertion
-        getConnection().then(({api}) => this.api = api)
+        getConnection().then(({ api }) => this.api = api)
 
         this.bond = Bond.all([bond, partners.bond])
         this.tieId = this.bond.tie(() => {
-            const {inputs} = this.state
+            const { inputs } = this.state
             const assigneeIn = findInput(inputs, this.names.assignee)
             const selected = getSelected()
             const options = Array.from(partners.getAll())
-                .map(([address, {name, userId}]) => !userId ? null : {
+                .map(([address, { name, userId }]) => !userId ? null : {
                     description: userId,
                     key: address,
                     text: name,
                     value: address,
                 })
                 .filter(Boolean)
-            if (!options.find(x => x.address === selected.address )) {
+            if (!options.find(x => x.address === selected.address)) {
                 options.push(({
                     description: texts.myself,
                     key: selected.address,
@@ -281,7 +281,7 @@ export default class Form extends Component {
             }
 
             assigneeIn.options = arrSort(options, 'text')
-            this.setState({inputs})
+            this.setState({ inputs })
         })
 
         const { inputs } = this.state
@@ -297,7 +297,7 @@ export default class Form extends Component {
             this.setState({ inputs })
         })
     }
-    
+
     componentWillUnmount() {
         this._mounted = false
     }
@@ -318,7 +318,7 @@ export default class Form extends Component {
         this.setState({ submitDisabled: requireConversion })
 
         try {
-            this.amountXTX = Math.ceil(await convertTo(bounty, currency,  currencyDefault))
+            this.amountXTX = Math.ceil(await convertTo(bounty, currency, currencyDefault))
             const { address } = getSelected()
             const balance = parseInt(await this.api.query.balances.freeBalance(address))
             const estimatedTxFee = 160
@@ -346,22 +346,22 @@ export default class Form extends Component {
     }, 300)
 
     handlePublishChange = (_, values) => {
-        const {inputs} = this.state
+        const { inputs } = this.state
         const publish = values[this.names.publish] === 'yes'
         const assigneeIn = findInput(inputs, this.names.assignee)
         assigneeIn.hidden = publish
-        this.setState({inputs})
+        this.setState({ inputs })
     }
 
     handleSubmit = (_, values) => {
-        console.log({values})
+        console.log({ values })
     }
 
     // updateAmountXTX = deferred(async () => {
 
     // })
 
-    render = () => <FormBuilder {...{...this.props, ...this.state}} />
+    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
 Form.propTypes = {
     values: PropTypes.object,

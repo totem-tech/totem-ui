@@ -125,7 +125,7 @@ export default class ProjectForm extends Component {
             status: 'loading',
             showIcon: true
         }
-        const thenSubmitError = (ok, [err]) => !ok && this.setState({
+        const handleTxError = (ok, [err]) => !ok && this.setState({
             message: {
                 content: err,
                 header: texts.submitErrorHeader,
@@ -141,7 +141,7 @@ export default class ProjectForm extends Component {
         const updateTask = tasks.saveBONSAIToken(ownerAddress, hash, token, {
             title: texts.saveBONSAIToken,
             description: token,
-            then: thenSubmitError,
+            then: handleTxError,
             next: {
                 type: QUEUE_TYPES.CHATCLIENT,
                 func: 'project',
@@ -174,7 +174,7 @@ export default class ProjectForm extends Component {
         const createTask = tasks.add(ownerAddress, hash, {
             title,
             description,
-            then: thenSubmitError,
+            then: handleTxError,
             next: updateTask
         })
 

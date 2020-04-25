@@ -3,8 +3,9 @@ import { Button } from 'semantic-ui-react'
 import { downloadFile } from '../utils/utils'
 // services
 import { translated } from '../services/language'
-import { confirm } from '../services/modal'
-import storage, { essentialKeys } from '../services/storage'
+import { confirm, showForm } from '../services/modal'
+import storage, { generateBackupData } from '../services/storage'
+import RestoreUserDataForm from '../forms/RestoreUserData'
 
 const [texts] = translated({
 	backupData: 'Backup data',
@@ -54,16 +55,16 @@ export default class PageUtilitiesView extends Component {
 						size: 'tiny',
 						onConfirm: () => {
 							// LocalStorage keys to backup
-							const keys = Object.keys(localStorage)
-								.map(key => !essentialKeys.includes(key) ? null : key)
-								.filter(Boolean)
-								.sort()
-							const data = keys.reduce((data, key) => {
-								data[key] = JSON.parse(localStorage[key])
-								return data
-							}, {})
+							// const keys = Object.keys(localStorage)
+							// 	.map(key => !essentialKeys.includes(key) ? null : key)
+							// 	.filter(Boolean)
+							// 	.sort()
+							// const data = keys.reduce((data, key) => {
+							// 	data[key] = JSON.parse(localStorage[key])
+							// 	return data
+							// }, {})
 							downloadFile(
-								JSON.stringify(data),
+								JSON.stringify(generateBackupData()),
 								`totem-backup-${new Date().toISOString()}.json`,
 								'application/json'
 							)
@@ -73,15 +74,7 @@ export default class PageUtilitiesView extends Component {
 				<Button {...{
 					content: texts.restoreBackup,
 					negative: true,
-					onClick: () => alert('To be implemented'),
-					// restore to merge only. DO NOT REMOVE new data
-					// onClick: () => confirm({
-					// content: texts.confirmRestoreContent,
-					// header: texts.confirmHeader,
-					// size: 'tiny',
-					// onConfirm: () => {
-					// }
-					// })
+					onClick: () => showForm(RestoreUserDataForm),
 				}} />
 			</div>
 		</div>
