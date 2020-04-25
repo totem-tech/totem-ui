@@ -23,19 +23,26 @@ export default class FormBuilder extends ReactiveComponent {
 
     }
 
-    getValues = (inputs = [], values = {}) => inputs.reduce((values, input, i) => {
+    getValues = (inputs = [], values = {}, inputName, newValue) => inputs.reduce((values, input, i) => {
         const { controlled, inputs: childInputs, mergeValues = true, name, type } = input
         const typeLC = (type || '').toLowerCase()
         const isGroup = typeLC === 'group'
+        let value
         if (!isStr(name) || nonValueTypes.includes(type)) return values
         if (isGroup) {
-            if (mergeValues) return this.getValues(childInputs, values)
-            values[name] = this.getValues(childInputs, {})
+            const newValues = this.getValues(childInputs, mergeValues ? values : {}, inputName, newValue)
+            if (mergeValues) return newValues
+            values[name] = newValues
             return values
         }
-        let value = values[name]
+        if (inputName && name === inputName) {
+            // for value grouping
+            values[name] = newValue
+        } //else {
+        value = values[name]
         value = !(controlled ? hasValue : isDefined)(value) ? input.value : value
         values[name] = value
+        //}
         return values
     }, values)
 
@@ -46,14 +53,11 @@ export default class FormBuilder extends ReactiveComponent {
         let { values } = this.state
         const { value } = data
         input._invalid = data.invalid
-        // values[name] = value
         input.value = value
-        values = this.getValues(inputs, values)
+        values = this.getValues(inputs, values, name, value)
 
-        if (!data.invalid) {
-            // trigger input items's onchange callback
-            isFn(onInputChange) && onInputChange(e, values, index, childIndex)
-        }
+        // trigger input items's onchange callback
+        isFn(onInputChange) && !data.invalid && onInputChange(e, values, index, childIndex)
         // trigger form's onchange callback
         isFn(formOnChange) && formOnChange(e, values, index, childIndex)
         this.setState({ inputs, values })

@@ -1,7 +1,7 @@
-import React, { Component } from 'react'
-import { Icon } from 'semantic-ui-react'
+import React from 'react'
+import { Accordion, Icon, Table } from 'semantic-ui-react'
 import FormBuilder, { findInput, showMessage } from '../components/FormBuilder'
-import { objClean, textCapitalize, isValidNumber } from '../utils/utils'
+import { objClean, textCapitalize, arrSort } from '../utils/utils'
 import { getUser } from '../services/chatClient'
 import { translated } from '../services/language'
 import { essentialKeys, generateBackupData } from '../services/storage'
@@ -10,7 +10,11 @@ const [_, textsCap] = translated({
 	fileLabel: 'restore file',
 	formHeader: 'restore backup',
 }, true)
-export default class RestoreUserData extends FormBuilder {
+// data that can be merged (must be 2D array that represents a Map)
+const mergeables = ['totem_identities', 'totem_partners']
+const diffIgnoreKeys = { totem_partners: ['address'] }
+
+export default class RestoreBackup extends FormBuilder {
 	constructor(props) {
 		super(props)
 
@@ -50,8 +54,8 @@ export default class RestoreUserData extends FormBuilder {
 			const file = e.target.files[0]
 			var reader = new FileReader()
 			reader.onload = file => {
-				if (!this.generateInputs(file.target.result))
-					file.target.value = null
+				if (this.generateInputs(file.target.result)) return
+				file.target.value = null
 			}
 			reader.readAsText(file)
 		} catch (err) {
@@ -77,7 +81,7 @@ export default class RestoreUserData extends FormBuilder {
 		restoreOptionsIn.inputs = Object.keys(this.backupData).map(key => {
 			const exists = !!this.existingData[key]
 			const numExists = (this.existingData[key] || []).length
-			const allowMerge = exists && ['totem_identities', 'totem_partners'].includes(key)
+			const allowMerge = exists && mergeables.includes(key)
 			const label = textCapitalize(key.split('totem_').join(''))
 			const options = [
 				{ label: !exists || numExists <= 0 ? 'Restore' : 'Override', value: 'override' },
@@ -112,53 +116,121 @@ export default class RestoreUserData extends FormBuilder {
 		return restoreOptionsIn.inputs.length > 0
 	}
 
-	generateRadiosForMerging = (a, b, parentName) => {
+	generateObjDiffHtml = (a = {}, b = {}, ignoreKeys = []) => {
+		const objDiff = Object.keys({ ...a, ...b }).reduce((objDiff, key) => {
+			objDiff[key] = [
+				JSON.stringify(a[key], null, 4),
+				JSON.stringify(b[key], null, 4),
+			]
+			return objDiff
+		}, {})
+
+		return (
+			<Table basic celled compact definition>
+				<Table.Header>
+					<Table.Row>
+						<Table.HeaderCell />
+						<Table.HeaderCell>Current Value</Table.HeaderCell>
+						<Table.HeaderCell>Backup Value</Table.HeaderCell>
+					</Table.Row>
+				</Table.Header>
+				<Table.Body>
+					{Object.keys(objDiff).sort().map(key => {
+						if (ignoreKeys.includes(key)) return undefined
+						const values = objDiff[key]
+						const conflict = values[0] !== values[1]
+						return (
+							<Table.Row key={key} positive={!conflict} negative={conflict}>
+								<Table.Cell><b>{key}</b></Table.Cell>
+								<Table.Cell>{values[0]}</Table.Cell>
+								<Table.Cell>{values[1]}</Table.Cell>
+							</Table.Row>
+						)
+					})}
+				</Table.Body>
+			</Table>
+		)
+	}
+
+	generateRadiosForMerging = (a = [], b = [], name) => {
 		const bMap = new Map(b)
 		const processed = {}
-		const labelWithTitle = value => (
-			<label title={JSON.stringify(value, null, 4)}>
-				{value.name} <Icon name='info circle' color='yellow' />
-			</label>
-		)
-		return a.map(([keyA, valueA = {}]) => {
+		const addOption = (value = {}) => ({
+			label: value === null ? 'Ignore' : value.name,
+			value,
+		})
+		const dataInputs = a.map(([keyA, valueA = {}]) => {
 			const valueB = bMap.get(keyA)
 			const identical = JSON.stringify(valueA) === JSON.stringify(valueB)
-			const show = valueB && !identical
+			const conflict = valueB && !identical
+			const value = conflict ? null : valueA // null value indicates conflict
 			const options = [
-				{ label: labelWithTitle(valueA), value: valueA },
-				show && { label: labelWithTitle(valueB), value: valueB }
+				addOption(valueA),
+				conflict && addOption(valueB),
+				addOption(null), // ignore option
 			].filter(Boolean)
 			processed[keyA] = true
-			return {
+			const input = {
 				inline: true,
-				hidden: !show, // hide unique items
 				label: keyA,
 				name: keyA,
 				options,
 				radio: true,
 				required: true,
 				type: 'checkbox-group',
-				value: !show ? valueA : undefined,
+				value,
 			}
+			return !conflict ? input : [
+				input,
+				{
+					accordion: {
+						collapsed: true,
+						style: { marginBottom: 15, marginTop: -5 },
+						styled: true,
+					},
+					label: 'Compare',
+					name: 'compare-' + keyA,
+					type: 'group',
+					inputs: [{
+						content: (
+							<div style={{
+								marginBottom: -25,
+								marginTop: -18,
+								overflowX: 'auto',
+								width: '100%',
+							}}>
+								{this.generateObjDiffHtml(valueA, valueB, diffIgnoreKeys[name])}
+							</div>
+						),
+						name: '',
+						type: 'html'
+					}]
+				},
+			]
 		}).concat( // find any remaining items in b
 			b.map(([keyB, valueB]) => !processed[keyB] && {
-				hidden: true, // hide unique items
+				inline: true,
 				label: keyB,
 				name: keyB,
-				options: [{ label: labelWithTitle(valueB), value: keyB }],
+				options: [
+					addOption(valueB),
+					addOption(null), // ignore option
+				],
 				radio: true,
 				required: true,
 				type: 'checkbox-group',
 				value: valueB,
 			}).filter(Boolean)
-		)
+		).flat()
+
+		return arrSort(dataInputs, 'value', true)
 	}
 
-	handleRestoreOptionChange = (e, values, index, childIndex) => {
+	handleRestoreOptionChange = (_, values, index, childIndex) => {
 		const { inputs } = this.state
 		const restoreOptionsIn = inputs[index]
 		const input = restoreOptionsIn.inputs[childIndex]
-		if (values[input.name] !== 'merge') return
+		if (!mergeables.includes(input.name)) return
 		const dataB = this.backupData[input.name]
 		const dataC = this.existingData[input.name]
 		const childInputs = this.generateRadiosForMerging(dataB, dataC, input.name)
@@ -168,13 +240,15 @@ export default class RestoreUserData extends FormBuilder {
 		const exists = !!optionGroupIn.name
 
 		optionGroupIn.accordion = !hasConflict ? undefined : {
-			collapsed: false,
+			collapsed: ['ignore', 'override'].includes(values[input.name]),
 			styled: true, // enable/disable the boxed layout
 		}
 		optionGroupIn.grouped = true // forces full width child inputs
 		optionGroupIn.mergeValues = false // false => create an object with child input values
 		optionGroupIn.inputs = childInputs
-		optionGroupIn.label = !hasConflict ? undefined : `Merge conflicts for ${input.label}`
+		const numConflicts = childInputs.filter(x => x.value === null).length
+		optionGroupIn.label = !hasConflict ? undefined
+			: `${input.label}: ${numConflicts} / ${childInputs.length} conflicts`
 		optionGroupIn.name = optionGroupName
 		optionGroupIn.type = 'group'
 		if (!exists) {
@@ -188,7 +262,7 @@ export default class RestoreUserData extends FormBuilder {
 	}
 }
 
-RestoreUserData.defaultProps = {
+RestoreBackup.defaultProps = {
 	...FormBuilder.defaultProps,
 	header: textsCap.formHeader,
 	size: 'tiny'
