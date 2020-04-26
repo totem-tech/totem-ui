@@ -24,14 +24,14 @@ export default class FormBuilder extends ReactiveComponent {
     }
 
     getValues = (inputs = [], values = {}, inputName, newValue) => inputs.reduce((values, input, i) => {
-        const { controlled, inputs: childInputs, mergeValues = true, name, type } = input
+        const { controlled, inputs: childInputs, groupValues, name, type } = input
         const typeLC = (type || '').toLowerCase()
         const isGroup = typeLC === 'group'
         let value
         if (!isStr(name) || nonValueTypes.includes(type)) return values
         if (isGroup) {
-            const newValues = this.getValues(childInputs, mergeValues ? values : {}, inputName, newValue)
-            if (mergeValues) return newValues
+            const newValues = this.getValues(childInputs, groupValues ? {} : values, inputName, newValue)
+            if (!groupValues) return newValues
             values[name] = newValues
             return values
         }
@@ -312,32 +312,33 @@ export const resetValues = (inputs = []) => inputs.map(input => {
     return input
 })
 
-export const isFormInvalid = (inputs = [], values) => inputs.reduce((invalid, input) => {
+export const isInputInvalid = (formValues = {}, input) => {
     const inType = (input.type || 'text').toLowerCase()
     const isCheckbox = ['checkbox', 'radio'].indexOf(inType) >= 0
     const isGroup = inType === 'group'
     const isRequired = !!input.required
     // ignore current input if conditions met
-    if (// one of the previous inputs was invalid 
-        invalid
+    if (
         // input's type is invalid
-        || !inType
+        !inType
         // current input is hidden
         || (inType === 'hidden' || input.hidden === true)
         // current input is not required and does not have a value
-        || (!isGroup && !isRequired && !hasValue(values[input.name]))
+        || (!isGroup && !isRequired && !hasValue(formValues[input.name]))
         // not a valid input type
-        || ['button'].indexOf(inType) >= 0) return invalid;
+        || ['button'].indexOf(inType) >= 0) return false;
 
     // if input is set invalid externally or internally by FormInput
     if (input.invalid || input._invalid) return true
 
-
     // Use recursion to validate input groups
-    if (isGroup) return isFormInvalid(input.inputs, values);
-    values = values || {}
-    const value = isDefined(values[input.name]) ? values[input.name] : input.value
+    if (isGroup) return isFormInvalid(input.inputs, !input.groupValues ? formValues : formValues[input.name] || {})
+    const value = isDefined(formValues[input.name]) ? formValues[input.name] : input.value
     return isCheckbox && isRequired ? !value : !hasValue(value)
+}
+
+export const isFormInvalid = (inputs = [], values = {}) => inputs.reduce((invalid, input) => {
+    return invalid || isInputInvalid(values, input)
 }, false)
 
 // findInput returns the first item matching supplied name.

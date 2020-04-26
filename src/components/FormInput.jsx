@@ -57,7 +57,7 @@ const NON_ATTRIBUTES = Object.freeze([
 	'_invalid',
 	'inlineLabel',
 	'label',
-	'mergeValues',
+	'groupValues',
 	'trueValue',
 	'falseValue',
 	'styleContainer',

@@ -16,6 +16,7 @@ const diffIgnoreKeys = {
 	totem_identities: ['address'],
 	totem_partners: ['address'],
 }
+const ignoreIndicator = '__ignore__'
 
 export default class RestoreBackup extends FormBuilder {
 	constructor(props) {
@@ -155,23 +156,23 @@ export default class RestoreBackup extends FormBuilder {
 		)
 	}
 
-	generateRadiosForMerging = (a = [], b = [], name) => {
+	generateRadiosForMerging = (a = [], b = [], name, doMerge) => {
 		const aMap = new Map(a)
 		const bMap = new Map(b)
 		const processed = {}
 		const addOption = (value = {}) => ({
-			label: value === null ? 'Ignore' : value.name,
+			label: value === ignoreIndicator ? 'Ignore' : value.name,
 			value,
 		})
 		const dataInputs = a.map(([keyA, valueA = {}]) => {
 			const valueB = bMap.get(keyA)
 			const identical = JSON.stringify(valueA) === JSON.stringify(valueB)
 			const conflict = valueB && !identical
-			const value = conflict ? null : valueA // null value indicates conflict
+			const value = conflict ? null : valueA // forces make a selection if there is a conflict
 			const options = [
 				addOption(valueA),
 				conflict && addOption(valueB),
-				addOption(null), // ignore option
+				addOption(ignoreIndicator), // ignore option
 			].filter(Boolean)
 			processed[keyA] = true
 			return {
@@ -180,37 +181,10 @@ export default class RestoreBackup extends FormBuilder {
 				name: keyA,
 				options,
 				radio: true,
-				required: true,
+				required: doMerge,
 				type: 'checkbox-group',
 				value,
 			}
-			// return !conflict ? input : [
-			// 	input,
-			// 	{
-			// 		accordion: {
-			// 			collapsed: true,
-			// 			style: { marginBottom: 15, marginTop: -5 },
-			// 			styled: true,
-			// 		},
-			// 		label: 'Compare',
-			// 		name: 'compare-' + keyA,
-			// 		type: 'group',
-			// 		inputs: [{
-			// 			content: (
-			// 				<div style={{
-			// 					marginBottom: -25,
-			// 					marginTop: -18,
-			// 					overflowX: 'auto',
-			// 					width: '100%',
-			// 				}}>
-			// 					{this.generateObjDiffHtml(valueA, valueB, diffIgnoreKeys[name])}
-			// 				</div>
-			// 			),
-			// 			name: '',
-			// 			type: 'html'
-			// 		}]
-			// 	},
-			// ]
 		}).concat( // find any remaining items in b
 			b.map(([keyB, valueB]) => !processed[keyB] && {
 				inline: true,
@@ -218,16 +192,17 @@ export default class RestoreBackup extends FormBuilder {
 				name: keyB,
 				options: [
 					addOption(valueB),
-					addOption(null), // ignore option
+					addOption(ignoreIndicator), // ignore option
 				],
 				radio: true,
-				required: true,
+				required: doMerge,
 				type: 'checkbox-group',
 				value: valueB,
 			}).filter(Boolean)
 		)
 		const conflicts = dataInputs.filter(x => x.value === null)
-			.map(input => [
+			.reduce((ar, input) => ([
+				...ar,
 				input,
 				{
 					accordion: {
@@ -247,8 +222,8 @@ export default class RestoreBackup extends FormBuilder {
 								width: '100%',
 							}}>
 								{this.generateObjDiffHtml(
-									aMap.get(input.name),//valueA,
-									bMap.get(input.name),//valueB,
+									aMap.get(input.name),
+									bMap.get(input.name),
 									diffIgnoreKeys[name],
 								)}
 							</div>
@@ -257,11 +232,10 @@ export default class RestoreBackup extends FormBuilder {
 						type: 'html'
 					}]
 				}
-			])
-			.flat()
+			]), [])
 		return [
 			...conflicts, // place conflicts on top
-			...dataInputs.filter(x => x.value != null),
+			...dataInputs.filter(x => x.value !== null),
 		]
 	}
 
@@ -272,22 +246,21 @@ export default class RestoreBackup extends FormBuilder {
 		if (!mergeables.includes(input.name)) return
 		const dataB = this.backupData[input.name]
 		const dataC = this.existingData[input.name]
-		const childInputs = this.generateRadiosForMerging(dataB, dataC, input.name)
-		const hasConflict = !!childInputs.find(x => !x.hidden)
+		const childInputs = this.generateRadiosForMerging(dataB, dataC, input.name, values[input.name] === 'merge')
+		const numConflicts = childInputs.filter(x => x.value === null).length
+		const hasConflict = numConflicts > 0
 		const optionGroupName = `${input.name}-group`
 		const optionGroupIn = findInput(inputs, optionGroupName) || {}
 		const exists = !!optionGroupIn.name
 
-		optionGroupIn.accordion = !hasConflict ? undefined : {
-			collapsed: ['ignore', 'override'].includes(values[input.name]),
+		optionGroupIn.accordion = {
+			collapsed: !hasConflict || ['ignore', 'override'].includes(values[input.name]),
 			styled: true, // enable/disable the boxed layout
 		}
 		optionGroupIn.grouped = true // forces full width child inputs
-		optionGroupIn.mergeValues = false // false => create an object with child input values
+		optionGroupIn.groupValues = true // true => create an object with child input values
 		optionGroupIn.inputs = childInputs
-		const numConflicts = childInputs.filter(x => x.value === null).length
-		optionGroupIn.label = !hasConflict ? undefined
-			: `${input.label}: ${numConflicts} / ${childInputs.length} conflicts`
+		optionGroupIn.label = `${input.label}: ${numConflicts} / ${childInputs.length} conflicts`
 		optionGroupIn.name = optionGroupName
 		optionGroupIn.type = 'group'
 		if (!exists) {
