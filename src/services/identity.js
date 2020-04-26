@@ -18,14 +18,24 @@ const _secretStore = () => {
 }
 
 const MODULE_KEY = 'identity'
+const DEFAULT_NAME = 'Default'
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 const identities = new DataStorage('totem_identities', true)
-const REQUIRED_KEYS = Object.freeze(['address', 'name', 'type', 'uri'])
+const USAGE_TYPES = Object.freeze({
+    PERSONAL: 'personal',
+    BUSINESS: 'business',
+})
+const REQUIRED_KEYS = Object.freeze([
+    'address',
+    'name',
+    'type',
+    'uri',
+])
 const VALID_KEYS = Object.freeze([
     ...REQUIRED_KEYS,
     'cloudBackupStatus', // undefined: never backed up, in-progress, done
     'cloudBackupTS', // most recent successful backup timestamp
-    //???? 'fileBackupTS' // most recent file backup timestamp
+    'fileBackupTS', // most recent file backup timestamp
     'tags',
     'usageType',
 ])
@@ -33,10 +43,12 @@ const VALID_KEYS = Object.freeze([
 export const bond = identities.bond
 export const selectedAddressBond = new Bond().defaultTo(uuid.v1())
 
-export const addFromUri = uri => {
+export const addFromUri = (uri, type = 'sr25519') => {
     try {
-        return keyring.addFromUri(uri).toJson()
-    } catch (_) { }
+        return keyring.keyring.addFromUri(uri, null, type).toJson()
+    } catch (err) {
+        console.log('services.identity.addFromUri()', err)
+    }
 }
 
 export const generateUri = generateMnemonic
@@ -55,14 +67,17 @@ export const remove = address => identities.delete(address)
 
 // add/update
 export const set = (address, identity = {}) => {
+    const { type, usageType } = identity
     // add to PolkadotJS keyring
     !identities.get(address) && keyring.add([identity.uri])
-    const cIdentity = objClean({
-        ...identities.get(address),
+    identity.type = type || 'sr25519'
+    if (!Object.keys(USAGE_TYPES).includes(usageType)) identity.usageType = usageType.PERSONAL
+    identity = objClean({
+        ...identities.get(address), //  merge with existing values
         ...identity
     }, VALID_KEYS)
-    identities.set(address, cIdentity)
-    return cIdentity
+    identities.set(address, identity)
+    return identity
 }
 
 export const setSelected = address => {
@@ -77,29 +92,45 @@ export const setSelected = address => {
     identities.set(address, identity)
     selectedAddressBond.changed(uuid.v1())
 }
-
-setTimeout(() => {
-    const ssIdentities = getAll()
-    const ssKeys = _secretStore()._keys
-    // add seeds to PolkadotJS keyring
-    keyring.add(ssIdentities.map(x => x.uri))
-
-    // migrate from secretStore
-    if (rw().secretStoreDeprecated || ssKeys.length === 0) return
-    console.log('Migrating secretStore identities')
+const deprecateSecretStore = (ssKeys) => {
+    console.log('Identity service: Migrating secretStore identities')
     const arr = ssKeys.map(ssKey => {
         const { address } = ssKey
         return [
             address,
-            {
-                ...objClean(ssKey, REQUIRED_KEYS), // remove non-essential keys
-                ...identities.find(address)
-            }
+            objClean(
+                { ...ssKey, ...identities.find(address) },
+                REQUIRED_KEYS
+            ),
         ]
     })
     identities.setAll(new Map(arr))
+}
+const init = () => {
+    const ssKeys = _secretStore()._keys
+    let identities = getAll()
+    const hasMissingProps = identities.filter(x => !x.name || !x.uri).length > 0
+    const shouldInit = !hasMissingProps && identities.length === 0 && ssKeys.length <= 1
+
+    if (shouldInit) {
+        console.log('Identity service: Creating default identity for first time user')
+        const uri = generateUri() + '/totem/0/0'
+        const { address } = addFromUri(uri)
+        const identity = {
+            address,
+            name: DEFAULT_NAME,
+            usageType: USAGE_TYPES.PERSONAL,
+            uri,
+        }
+        set(address, identity)
+    } else if (!rw().secretStoreDeprecated) deprecateSecretStore(ssKeys)
+
     rw({ secretStoreDeprecated: true })
-}, 2000)
+
+    // add seeds to PolkadotJS keyring
+    keyring.add(getAll().map(x => x.uri))
+}
+setTimeout(init, 2000)
 
 export default {
     addFromUri,

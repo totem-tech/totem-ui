@@ -150,7 +150,7 @@ export default class IdentityForm extends Component {
     handleSubmit = () => {
         const { onSubmit } = this.props
         const { values } = this
-        identityService.set(values.address, values)
+        identityService.set(values.address, { ...values })
         isFn(onSubmit) && onSubmit(true, values)
         this.setState({ success: true })
     }
@@ -170,16 +170,14 @@ export default class IdentityForm extends Component {
     }
 
     validateName = (_, { value: name }) => {
-        const existing = identityService.find(name)
-        if (existing && existing.address !== this.values.address) {
-            return texts.uniqueNameRequired
-        }
+        const { address } = identityService.find(name) || {}
+        if (address && address !== this.values.address) return texts.uniqueNameRequired
     }
 
     validateUri = (_, { value: seed }) => {
         const { inputs } = this.state
         const { address } = identityService.addFromUri(seed) || {}
-        if (!account) {
+        if (!address) {
             this.addressBond.changed('')
             return texts.validSeedRequired
         }
