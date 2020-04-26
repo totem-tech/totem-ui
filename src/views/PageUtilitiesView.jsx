@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import { Button } from 'semantic-ui-react'
 import { downloadFile } from '../utils/utils'
 // services
+import identities from '../services/identity'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import storage, { generateBackupData } from '../services/storage'
@@ -53,11 +54,21 @@ export default class PageUtilitiesView extends Component {
 						),
 						header: texts.confirmHeader,
 						size: 'tiny',
-						onConfirm: () => downloadFile(
-							JSON.stringify(generateBackupData()),
-							`totem-backup-${new Date().toISOString()}.json`,
-							'application/json'
-						),
+						onConfirm: () => {
+							const timestamp = new Date().toISOString()
+							downloadFile(
+								JSON.stringify(generateBackupData()),
+								`totem-backup-${timestamp}.json`,
+								'application/json'
+							)
+							identities.getAll().forEach(identity => identities.set(
+								identity.address,
+								{
+									...identity,
+									fileBackupTS: timestamp
+								}
+							))
+						},
 					})
 				}} />
 				<Button {...{

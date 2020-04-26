@@ -71,7 +71,7 @@ export const set = (address, identity = {}) => {
     // add to PolkadotJS keyring
     !identities.get(address) && keyring.add([identity.uri])
     identity.type = type || 'sr25519'
-    if (!Object.keys(USAGE_TYPES).includes(usageType)) identity.usageType = usageType.PERSONAL
+    if (!Object.keys(USAGE_TYPES).includes(usageType)) identity.usageType = USAGE_TYPES.PERSONAL
     identity = objClean({
         ...identities.get(address), //  merge with existing values
         ...identity
