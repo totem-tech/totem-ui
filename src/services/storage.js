@@ -19,7 +19,6 @@ export const essentialKeys = [
     // notifications are essential because user may need to respond to them in case they are migrating to a new device.
     'totem_notifications',
     'totem_partners',
-    'secretStore', // ToDo: deprecate by migrating completely to identities
     'totem_settings',
 ]
 

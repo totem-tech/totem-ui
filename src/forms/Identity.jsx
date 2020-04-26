@@ -1,11 +1,8 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-// import Identicon from 'polkadot-identicon'
-import { generateMnemonic } from 'bip39'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import { isFn } from '../utils/utils'
-import { ss58Encode } from '../utils/convert'
 // services
 import identityService from '../services/identity'
 import { translated } from '../services/language'
@@ -163,11 +160,11 @@ export default class IdentityForm extends Component {
         const { restore } = this.values
         if (restore) return
         if (!this.doUpdate) {
-            seed = seed || generateMnemonic()
+            seed = seed || identityService.generateUri()
             seed = seed.split('/totem/')[0] + `/totem/${usageType === 'personal' ? 0 : 1}/0`
         }
-        const account = identityService.accountFromPhrase(seed)
-        this.addressBond.changed(account ? ss58Encode(account) : '')
+        const { address } = identityService.addFromUri(seed) || {}
+        this.addressBond.changed(address)
         findInput(inputs, 'uri').bond.changed(seed)
         this.setState({ inputs })
     }
@@ -181,12 +178,11 @@ export default class IdentityForm extends Component {
 
     validateUri = (_, { value: seed }) => {
         const { inputs } = this.state
-        const account = identityService.accountFromPhrase(seed)
+        const { address } = identityService.addFromUri(seed) || {}
         if (!account) {
             this.addressBond.changed('')
             return texts.validSeedRequired
         }
-        const address = ss58Encode(account)
         if (identityService.find(address)) return texts.seedExists
         this.values.address = address
         this.addressBond.changed(address)

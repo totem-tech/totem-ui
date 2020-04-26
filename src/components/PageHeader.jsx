@@ -44,13 +44,10 @@ export default class PageHeader extends Component {
 	}
 
 	componentWillMount() {
-		const { isMobile } = this.props
 		this._mounted = true
-		// force delay loading identities to avoid secretStore loading error (especially, on mobile)
-		setTimeout(() => identities.bond.tie(() => this.setState({
+		identities.bond.tie(() => this.setState({
 			wallets: identities.getAll()
-		})), isMobile ? 500 : 100)
-
+		}))
 		timeKeeping.formDataBond.tie(() => this.forceUpdate())
 	}
 
