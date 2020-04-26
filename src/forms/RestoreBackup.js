@@ -12,7 +12,10 @@ const [_, textsCap] = translated({
 }, true)
 // data that can be merged (must be 2D array that represents a Map)
 const mergeables = ['totem_identities', 'totem_partners']
-const diffIgnoreKeys = { totem_partners: ['address'] }
+const diffIgnoreKeys = {
+	totem_identities: ['address'],
+	totem_partners: ['address'],
+}
 
 export default class RestoreBackup extends FormBuilder {
 	constructor(props) {
@@ -153,6 +156,7 @@ export default class RestoreBackup extends FormBuilder {
 	}
 
 	generateRadiosForMerging = (a = [], b = [], name) => {
+		const aMap = new Map(a)
 		const bMap = new Map(b)
 		const processed = {}
 		const addOption = (value = {}) => ({
@@ -170,7 +174,7 @@ export default class RestoreBackup extends FormBuilder {
 				addOption(null), // ignore option
 			].filter(Boolean)
 			processed[keyA] = true
-			const input = {
+			return {
 				inline: true,
 				label: keyA,
 				name: keyA,
@@ -180,33 +184,33 @@ export default class RestoreBackup extends FormBuilder {
 				type: 'checkbox-group',
 				value,
 			}
-			return !conflict ? input : [
-				input,
-				{
-					accordion: {
-						collapsed: true,
-						style: { marginBottom: 15, marginTop: -5 },
-						styled: true,
-					},
-					label: 'Compare',
-					name: 'compare-' + keyA,
-					type: 'group',
-					inputs: [{
-						content: (
-							<div style={{
-								marginBottom: -25,
-								marginTop: -18,
-								overflowX: 'auto',
-								width: '100%',
-							}}>
-								{this.generateObjDiffHtml(valueA, valueB, diffIgnoreKeys[name])}
-							</div>
-						),
-						name: '',
-						type: 'html'
-					}]
-				},
-			]
+			// return !conflict ? input : [
+			// 	input,
+			// 	{
+			// 		accordion: {
+			// 			collapsed: true,
+			// 			style: { marginBottom: 15, marginTop: -5 },
+			// 			styled: true,
+			// 		},
+			// 		label: 'Compare',
+			// 		name: 'compare-' + keyA,
+			// 		type: 'group',
+			// 		inputs: [{
+			// 			content: (
+			// 				<div style={{
+			// 					marginBottom: -25,
+			// 					marginTop: -18,
+			// 					overflowX: 'auto',
+			// 					width: '100%',
+			// 				}}>
+			// 					{this.generateObjDiffHtml(valueA, valueB, diffIgnoreKeys[name])}
+			// 				</div>
+			// 			),
+			// 			name: '',
+			// 			type: 'html'
+			// 		}]
+			// 	},
+			// ]
 		}).concat( // find any remaining items in b
 			b.map(([keyB, valueB]) => !processed[keyB] && {
 				inline: true,
@@ -221,9 +225,44 @@ export default class RestoreBackup extends FormBuilder {
 				type: 'checkbox-group',
 				value: valueB,
 			}).filter(Boolean)
-		).flat()
-
-		return arrSort(dataInputs, 'value', true)
+		)
+		const conflicts = dataInputs.filter(x => x.value === null)
+			.map(input => [
+				input,
+				{
+					accordion: {
+						collapsed: true,
+						style: { marginBottom: 15, marginTop: -5 },
+						styled: true,
+					},
+					label: 'Compare',
+					name: 'compare-' + input.name,
+					type: 'group',
+					inputs: [{
+						content: (
+							<div style={{
+								marginBottom: -25,
+								marginTop: -18,
+								overflowX: 'auto',
+								width: '100%',
+							}}>
+								{this.generateObjDiffHtml(
+									aMap.get(input.name),//valueA,
+									bMap.get(input.name),//valueB,
+									diffIgnoreKeys[name],
+								)}
+							</div>
+						),
+						name: '',
+						type: 'html'
+					}]
+				}
+			])
+			.flat()
+		return [
+			...conflicts, // place conflicts on top
+			...dataInputs.filter(x => x.value != null),
+		]
 	}
 
 	handleRestoreOptionChange = (_, values, index, childIndex) => {
