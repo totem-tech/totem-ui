@@ -1,7 +1,7 @@
 import React from 'react'
 import { Accordion, Icon, Table } from 'semantic-ui-react'
 import FormBuilder, { findInput, showMessage } from '../components/FormBuilder'
-import { objClean, textCapitalize, arrSort } from '../utils/utils'
+import { objClean, textCapitalize, arrSort, objWithoutKeys } from '../utils/utils'
 import { getUser } from '../services/chatClient'
 import { translated } from '../services/language'
 import { essentialKeys, generateBackupData } from '../services/storage'
@@ -12,8 +12,9 @@ const [_, textsCap] = translated({
 }, true)
 // data that can be merged (must be 2D array that represents a Map)
 const mergeables = ['totem_identities', 'totem_partners']
+// ignore meta data or unnecessary fields when comparing between current and backed up data
 const diffIgnoreKeys = {
-	totem_identities: ['address'],
+	totem_identities: ['address', 'cloudBackupStatus', 'cloudBackupTS', 'fileBackupTS'],
 	totem_partners: ['address'],
 }
 const ignoreIndicator = '__ignore__'
@@ -157,6 +158,7 @@ export default class RestoreBackup extends FormBuilder {
 	}
 
 	generateRadiosForMerging = (a = [], b = [], name, doMerge) => {
+		const ignoredKeys = diffIgnoreKeys[name]
 		const aMap = new Map(a)
 		const bMap = new Map(b)
 		const processed = {}
@@ -166,7 +168,9 @@ export default class RestoreBackup extends FormBuilder {
 		})
 		const dataInputs = a.map(([keyA, valueA = {}]) => {
 			const valueB = bMap.get(keyA)
-			const identical = JSON.stringify(valueA) === JSON.stringify(valueB)
+			const strA = JSON.stringify(objWithoutKeys(valueA, ignoredKeys))
+			const strB = JSON.stringify(objWithoutKeys(valueB, ignoredKeys))
+			const identical = strA === strB
 			const conflict = valueB && !identical
 			const value = conflict ? null : valueA // forces make a selection if there is a conflict
 			const options = [
@@ -224,7 +228,7 @@ export default class RestoreBackup extends FormBuilder {
 								{this.generateObjDiffHtml(
 									aMap.get(input.name),
 									bMap.get(input.name),
-									diffIgnoreKeys[name],
+									ignoredKeys,
 								)}
 							</div>
 						),
