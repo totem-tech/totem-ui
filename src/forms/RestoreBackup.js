@@ -1,38 +1,59 @@
-import React from 'react'
-import { Accordion, Icon, Table } from 'semantic-ui-react'
+import React, { Component } from 'react'
+import uuid from 'uuid'
+import { Table } from 'semantic-ui-react'
 import FormBuilder, { findInput, showMessage } from '../components/FormBuilder'
-import { objClean, textCapitalize, arrSort, objWithoutKeys } from '../utils/utils'
-import { getUser } from '../services/chatClient'
+import { objClean, textCapitalize, isFn, objWithoutKeys, hasValue } from '../utils/utils'
+import { getUser, setUser } from '../services/chatClient'
 import { translated } from '../services/language'
+import { confirm } from '../services/modal'
 import { essentialKeys, generateBackupData } from '../services/storage'
 
 const [_, textsCap] = translated({
+	backupValue: 'backup value',
+	chatUserId: 'Chat User ID',
+	compare: 'compare',
+	confirmText: 'This action is irreversible',
+	conflicts: 'conflicts',
+	currentValue: 'current value',
 	fileLabel: 'restore file',
 	formHeader: 'restore backup',
+	ignore: 'ignore',
+	keepUnchanged: 'keep unchanged',
+	merge: 'merge',
+	preserveUser: 'Preserve current credentials',
+	remove: 'remove',
+	restore: 'restore',
+	restoreFromBackup: 'restore from backup',
+	restoreUser: 'Restore credentials from backup',
+	submitNoAction: 'No actionable item selected',
 }, true)
 // data that can be merged (must be 2D array that represents a Map)
-const mergeables = ['totem_identities', 'totem_partners']
+const MERGEABLES = ['totem_identities', 'totem_partners']
 // ignore meta data or unnecessary fields when comparing between current and backed up data
 const diffIgnoreKeys = {
 	totem_identities: ['address', 'cloudBackupStatus', 'cloudBackupTS', 'fileBackupTS'],
 	totem_partners: ['address'],
 }
-const ignoreIndicator = '__ignore__'
+// special values
+const IGNORE = '__ignore__'
+const MERGE = '__merge__'
+const REMOVE = '__remove__'
+const OVERRIDE = '__override__'
+const VALUE_KEY_PREFIX = '__values__'
 
-export default class RestoreBackup extends FormBuilder {
+export default class RestoreBackup extends Component {
 	constructor(props) {
 		super(props)
 
 		this.names = {
 			file: 'file',
 			restoreOpitons: 'restoreOptions',
+			userId: 'userId', // dynamically created if backup contains a different User ID
 		}
 		this.backupData = null
 		this.existingData = null
 		this.state = {
-			onSumbit: this.handleSumbitFile,
-			submitDisabled: true,
-			values: {},
+			onSubmit: this.handleSubmit,
 			inputs: [
 				{
 					accept: '.json',
@@ -68,11 +89,44 @@ export default class RestoreBackup extends FormBuilder {
 		}
 	}
 
-	handleSumbit = (_, values) => {
-		// show a list of supported data types to be restored
-		// if there is a conflict, include a check box to override or merge
-		// for identity and partner, show individual merge/override
-		console.log({ _, values })
+	handleSubmit = (_, values) => {
+		const { onSubmit } = this.props
+		// select only data categories and not ignored
+		const dataKeys = Object.keys(this.backupData)
+			.filter(key => hasValue(values[key]) && values[key] !== IGNORE)
+		const user = values[this.names.userId]
+		const noAction = !user && dataKeys.every(key => values[key] === IGNORE)
+		if (noAction) return this.setState({
+			message: {
+				header: textsCap.submitNoAction,
+				showIcon: true,
+				status: 'warning',
+			}
+		})
+		const execute = () => {
+			dataKeys.forEach(key => {
+				let value = this.backupData[key]
+				if (values[key] === MERGE) {
+					const valueObj = values[VALUE_KEY_PREFIX + key]
+					// generate a 2D array for use with Map
+					value = Object.keys(valueObj)
+						.filter(key => valueObj[key] !== REMOVE)
+						.map(key => [key, valueObj[key]])
+				}
+				localStorage.setItem(key, JSON.stringify(value))
+			})
+			if (user) setUser(user)
+			this.setState({ success: true })
+			isFn(onSubmit) && onSubmit(true, values)
+			// reload page to reflect changes
+			window.location.reload(true)
+		}
+
+		confirm({
+			content: textsCap.confirmText,
+			onConfirm: execute,
+			size: 'mini',
+		})
 	}
 
 	generateInputs = str => {
@@ -86,15 +140,16 @@ export default class RestoreBackup extends FormBuilder {
 		restoreOptionsIn.inputs = Object.keys(this.backupData).map(key => {
 			const exists = !!this.existingData[key]
 			const numExists = (this.existingData[key] || []).length
-			const allowMerge = exists && mergeables.includes(key)
+			const allowMerge = exists && MERGEABLES.includes(key)
 			const label = textCapitalize(key.split('totem_').join(''))
 			const options = [
-				{ label: !exists || numExists <= 0 ? 'Restore' : 'Override', value: 'override' },
-				allowMerge && numExists > 0 && { label: 'Merge', value: 'merge' },
-				{ label: 'Ignore', value: 'ignore' }
+				{ label: !exists || numExists <= 0 ? textsCap.restoreFromBackup : textsCap.restore, value: OVERRIDE },
+				allowMerge && numExists > 0 && { label: textsCap.merge, value: MERGE },
+				{ label: textsCap.ignore, value: IGNORE }
 			].filter(Boolean)
 			return {
 				inline: true,
+				key: uuid.v1(),
 				label,
 				name: key,
 				onChange: this.handleRestoreOptionChange,
@@ -106,26 +161,25 @@ export default class RestoreBackup extends FormBuilder {
 		})
 		// add options whether to keep existing user credentials
 		if (user.id && user.id !== backupUser.id) restoreOptionsIn.inputs.push({
-			label: 'Chat User ID',
-			name: 'userId',
+			label: textsCap.chatUserId,
+			name: this.names.userId,
 			options: [
-				{ label: `Preserve current User ID: ${user.id}`, value: user.id },
-				backupUser.id && { label: `User ID from backup: ${backupUser.id}`, value: backupUser.id }
+				{ label: `${textsCap.preserveUser}: ${user.id}`, value: user },
+				backupUser.id && { label: `${restoreUser}: ${backupUser.id}`, value: backupUser }
 			].filter(Boolean),
 			required: true,
 			radio: true,
 			type: 'checkbox-group',
 		})
 		this.setState({ inputs })
-		console.log({ backedUpData: this.backupData, existingData: this.existingData, inputs: restoreOptionsIn.inputs })
 		return restoreOptionsIn.inputs.length > 0
 	}
 
-	generateObjDiffHtml = (a = {}, b = {}, ignoreKeys = []) => {
-		const objDiff = Object.keys({ ...a, ...b }).reduce((objDiff, key) => {
+	generateObjDiffHtml = (current = {}, backup = {}, ignoreKeys = []) => {
+		const objDiff = Object.keys({ ...current, ...backup }).reduce((objDiff, key) => {
 			objDiff[key] = [
-				JSON.stringify(a[key], null, 4),
-				JSON.stringify(b[key], null, 4),
+				JSON.stringify(current[key], null, 4),
+				JSON.stringify(backup[key], null, 4),
 			]
 			return objDiff
 		}, {})
@@ -135,8 +189,8 @@ export default class RestoreBackup extends FormBuilder {
 				<Table.Header>
 					<Table.Row>
 						<Table.HeaderCell />
-						<Table.HeaderCell>Current Value</Table.HeaderCell>
-						<Table.HeaderCell>Backup Value</Table.HeaderCell>
+						<Table.HeaderCell>{textsCap.currentValue}</Table.HeaderCell>
+						<Table.HeaderCell>{textsCap.backupValue}</Table.HeaderCell>
 					</Table.Row>
 				</Table.Header>
 				<Table.Body>
@@ -157,32 +211,28 @@ export default class RestoreBackup extends FormBuilder {
 		)
 	}
 
-	generateRadiosForMerging = (a = [], b = [], name, doMerge) => {
+	generateValueOptions = (current = [], backup = [], name, doMerge) => {
 		const ignoredKeys = diffIgnoreKeys[name]
-		const aMap = new Map(a)
-		const bMap = new Map(b)
+		const currentMap = new Map(current)
+		const backupMap = new Map(backup)
 		const processed = {}
-		const addOption = (value = {}) => ({
-			label: value === ignoreIndicator ? 'Ignore' : value.name,
-			value,
-		})
-		const dataInputs = a.map(([keyA, valueA = {}]) => {
-			const valueB = bMap.get(keyA)
-			const strA = JSON.stringify(objWithoutKeys(valueA, ignoredKeys))
+		const dataInputs = current.map(([keyC, valueC = {}]) => {
+			const valueB = backupMap.get(keyC)
+			const strC = JSON.stringify(objWithoutKeys(valueC, ignoredKeys))
 			const strB = JSON.stringify(objWithoutKeys(valueB, ignoredKeys))
-			const identical = strA === strB
+			const identical = strC === strB
 			const conflict = valueB && !identical
-			const value = conflict ? null : valueA // forces make a selection if there is a conflict
+			const value = conflict ? null : valueC // forces make a selection if there is a conflict
 			const options = [
-				addOption(valueA),
-				conflict && addOption(valueB),
-				addOption(ignoreIndicator), // ignore option
+				{ label: textsCap.keepUnchanged, value: valueC },
+				{ disabled: !conflict, label: textsCap.restoreFromBackup, value: valueB },
+				{ label: textsCap.remove, value: REMOVE }, // ignore option
 			].filter(Boolean)
-			processed[keyA] = true
+			processed[keyC] = true
 			return {
 				inline: true,
-				label: keyA,
-				name: keyA,
+				label: valueC.name || valueB.name || keyC,
+				name: keyC,
 				options,
 				radio: true,
 				required: doMerge,
@@ -190,13 +240,14 @@ export default class RestoreBackup extends FormBuilder {
 				value,
 			}
 		}).concat( // find any remaining items in b
-			b.map(([keyB, valueB]) => !processed[keyB] && {
+			backup.map(([keyB, valueB]) => !processed[keyB] && {
 				inline: true,
-				label: keyB,
+				label: valueB.name || keyB,
 				name: keyB,
 				options: [
-					addOption(valueB),
-					addOption(ignoreIndicator), // ignore option
+					{ disabled: true, label: textsCap.keepUnchanged, value: 'keep-input-disabled' },
+					{ label: textsCap.restoreFromBackup, value: valueB },
+					{ label: textsCap.remove, value: REMOVE }, // ignore option
 				],
 				radio: true,
 				required: doMerge,
@@ -214,7 +265,7 @@ export default class RestoreBackup extends FormBuilder {
 						style: { marginBottom: 15, marginTop: -5 },
 						styled: true,
 					},
-					label: 'Compare',
+					label: textsCap.compare,
 					name: 'compare-' + input.name,
 					type: 'group',
 					inputs: [{
@@ -226,8 +277,8 @@ export default class RestoreBackup extends FormBuilder {
 								width: '100%',
 							}}>
 								{this.generateObjDiffHtml(
-									aMap.get(input.name),
-									bMap.get(input.name),
+									currentMap.get(input.name),
+									backupMap.get(input.name),
 									ignoredKeys,
 								)}
 							</div>
@@ -237,6 +288,7 @@ export default class RestoreBackup extends FormBuilder {
 					}]
 				}
 			]), [])
+
 		return [
 			...conflicts, // place conflicts on top
 			...dataInputs.filter(x => x.value !== null),
@@ -247,35 +299,36 @@ export default class RestoreBackup extends FormBuilder {
 		const { inputs } = this.state
 		const restoreOptionsIn = inputs[index]
 		const input = restoreOptionsIn.inputs[childIndex]
-		if (!mergeables.includes(input.name)) return
+		if (!MERGEABLES.includes(input.name)) return
 		const dataB = this.backupData[input.name]
 		const dataC = this.existingData[input.name]
-		const childInputs = this.generateRadiosForMerging(dataB, dataC, input.name, values[input.name] === 'merge')
-		const numConflicts = childInputs.filter(x => x.value === null).length
-		const hasConflict = numConflicts > 0
-		const optionGroupName = `${input.name}-group`
+		const optionGroupName = `${VALUE_KEY_PREFIX}${input.name}`
 		const optionGroupIn = findInput(inputs, optionGroupName) || {}
 		const exists = !!optionGroupIn.name
-
+		const valueInputs = this.generateValueOptions(dataC, dataB, input.name, values[input.name] === MERGE)
+		const numConflicts = valueInputs.filter(x => x.value === null).length
+		const hasConflict = numConflicts > 0
+		optionGroupIn.key = uuid.v1()
+		optionGroupIn.hidden = values[input.name] !== MERGE
 		optionGroupIn.accordion = {
-			collapsed: !hasConflict || ['ignore', 'override'].includes(values[input.name]),
+			collapsed: !hasConflict || [IGNORE, OVERRIDE].includes(values[input.name]),
 			styled: true, // enable/disable the boxed layout
 		}
 		optionGroupIn.grouped = true // forces full width child inputs
 		optionGroupIn.groupValues = true // true => create an object with child input values
-		optionGroupIn.inputs = childInputs
-		optionGroupIn.label = `${input.label}: ${numConflicts} / ${childInputs.length} conflicts`
+		optionGroupIn.inputs = valueInputs
+		optionGroupIn.label = `${input.label}: ${numConflicts} / ${valueInputs.length} ${textsCap.conflicts}`
 		optionGroupIn.name = optionGroupName
 		optionGroupIn.type = 'group'
-		if (!exists) {
-			restoreOptionsIn.inputs = [
-				...restoreOptionsIn.inputs.slice(0, childIndex + 1),
-				optionGroupIn,
-				...restoreOptionsIn.inputs.slice(childIndex + 1),
-			]
-		}
+		restoreOptionsIn.inputs = exists ? restoreOptionsIn.inputs : [
+			...restoreOptionsIn.inputs.slice(0, childIndex + 1),
+			optionGroupIn, // puts compare inputs right after the current input
+			...restoreOptionsIn.inputs.slice(childIndex + 1),
+		]
 		this.setState({ inputs })
 	}
+
+	render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
 
 RestoreBackup.defaultProps = {

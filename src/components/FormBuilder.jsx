@@ -113,14 +113,14 @@ export default class FormBuilder extends ReactiveComponent {
         const message = isObj(msg) && msg || {}
         // recursive interceptor for infinite level of child inputs
         const addInterceptor = index => (input, i) => {
-            const { hidden, inputs: childInputs, name, type } = input || {}
+            const { hidden, inputs: childInputs, key, name, type } = input || {}
             const isGroup = (type || '').toLowerCase() === 'group' && isArr(childInputs)
             index = isDefined(index) ? index : null
             return {
                 ...input,
                 hidden: !isFn(hidden) ? hidden : !!hidden(values, i),
                 inputs: !isGroup ? undefined : childInputs.map(addInterceptor(index ? index : i)),
-                key: i + name,
+                key: key || i + name,
                 onChange: isGroup ? undefined : (e, data) => this.handleChange(
                     e,
                     data,

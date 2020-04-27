@@ -1,5 +1,5 @@
 import io from 'socket.io-client'
-import { isFn, isValidNumber, isDefined } from '../utils/utils'
+import { isFn, isValidNumber, isDefined, objClean } from '../utils/utils'
 import { translated } from './language'
 import storage from './storage'
 
@@ -33,6 +33,7 @@ export const addToHistory = (message, id) => {
 }
 // retrieves user credentails from local storage
 export const getUser = () => rw().user
+export const setUser = user => rw({ user })
 // Retrieves chat history from local storage
 export const getHistory = () => rw().history || []
 
@@ -267,7 +268,7 @@ export class ChatClient {
 
     register = (id, secret, cb) => socket.emit('register', id, secret, err => {
         if (!err) {
-            rw({ user: { id, secret } })
+            setUser({ id, secret })
             setTimeout(() => _execOnLogin(id))
         }
         isFn(cb) && cb(err)
