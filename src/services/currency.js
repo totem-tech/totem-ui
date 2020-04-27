@@ -7,7 +7,7 @@ const MODULE_KEY = 'currency'
 // read or write to currency settings storage
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 // read or write to cache storage
-const rwCache = value => storage.cache(MODULE_KEY, value) || {}
+const rwCache = (key, value) => storage.cache(MODULE_KEY, key, value) || {}
 let lastUpdated = null
 const updateFrequencyMs = 24 * 60 * 60 * 1000
 
@@ -24,7 +24,7 @@ export const currencyDefault = 'XTX'
 // @to      string: currency ticker to convert to
 //
 // retuns   number
-export const convertTo = async(amount, from, to) => {
+export const convertTo = async (amount, from, to) => {
     let convertedAmount, error
     await client.currencyConvert.promise(from, to, amount, (err, result) => {
         convertedAmount = result
@@ -49,7 +49,7 @@ export const getTickers = async () => await updateTickers() || rw().tickers || {
 //
 // Params:
 // @value   string: currency code/ticker
-export const setSelected = async (value) => {  
+export const setSelected = async (value) => {
     const currencies = await getTickers()
     const newValue = currencies[value] ? { selected: value } : undefined
     newValue && bond.changed(value)
@@ -58,9 +58,9 @@ export const setSelected = async (value) => {
 
 export const updateTickers = async (timeout = 2000) => {
     if (lastUpdated && new Date() - lastUpdated < updateFrequencyMs) return
-    console.log('Updating list of currencies')
 
-    const tickersHash = generateHash(Object.keys(rwCache().tickers || {}).sort())
+    const sortedTickers = Object.keys(rwCache().tickers || {}).sort()
+    const tickersHash = generateHash(sortedTickers)
     let tickers = null
     await client.currencyList.promise(tickersHash, ((err, currencyList) => {
         err && console.error('Failed to retrieve currencies', err)
@@ -70,8 +70,9 @@ export const updateTickers = async (timeout = 2000) => {
             tickers[c.currency] = c.name || c.currency
             return tickers
         }, {})
-        rw({ tickers })
+        rwCache('tickers', tickers)
         lastUpdated = new Date()
+        console.log('Currency: tickers list updated', tickers)
     }))
     return tickers
 }
