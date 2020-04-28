@@ -43,7 +43,7 @@ export const getSelected = () => rw().selected || currencyDefault
 // get list of currency tickers
 //
 // Returns  object: key => ticker, value => currency name, if available, or ticker 
-export const getTickers = async () => await updateTickers() || rw().tickers || { XTX: 'Transaction' }
+export const getTickers = async () => await updateTickers() || rwCache().tickers || { XTX: 'Transaction' }
 
 // get/set default currency
 //
