@@ -2,9 +2,11 @@ import React, { Component } from 'react'
 import { Button } from 'semantic-ui-react'
 import { downloadFile } from '../utils/utils'
 // services
+import identities from '../services/identity'
 import { translated } from '../services/language'
-import { confirm } from '../services/modal'
-import storage, { essentialKeys } from '../services/storage'
+import { confirm, showForm } from '../services/modal'
+import storage, { generateBackupData } from '../services/storage'
+import RestoreBackupForm from '../forms/RestoreBackup'
 
 const [texts] = translated({
 	backupData: 'Backup data',
@@ -53,35 +55,26 @@ export default class PageUtilitiesView extends Component {
 						header: texts.confirmHeader,
 						size: 'tiny',
 						onConfirm: () => {
-							// LocalStorage keys to backup
-							const keys = Object.keys(localStorage)
-								.map(key => !essentialKeys.includes(key) ? null : key)
-								.filter(Boolean)
-								.sort()
-							const data = keys.reduce((data, key) => {
-								data[key] = JSON.parse(localStorage[key])
-								return data
-							}, {})
+							const timestamp = new Date().toISOString()
 							downloadFile(
-								JSON.stringify(data),
-								`totem-backup-${new Date().toISOString()}.json`,
+								JSON.stringify(generateBackupData()),
+								`totem-backup-${timestamp}.json`,
 								'application/json'
 							)
+							identities.getAll().forEach(identity => identities.set(
+								identity.address,
+								{
+									...identity,
+									fileBackupTS: timestamp
+								}
+							))
 						},
 					})
 				}} />
 				<Button {...{
 					content: texts.restoreBackup,
 					negative: true,
-					onClick: () => alert('To be implemented'),
-					// restore to merge only. DO NOT REMOVE new data
-					// onClick: () => confirm({
-					// content: texts.confirmRestoreContent,
-					// header: texts.confirmHeader,
-					// size: 'tiny',
-					// onConfirm: () => {
-					// }
-					// })
+					onClick: () => showForm(RestoreBackupForm),
 				}} />
 			</div>
 		</div>

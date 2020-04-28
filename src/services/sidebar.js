@@ -363,7 +363,7 @@ export const scrollTo = name => {
         const elRef = item.elementRef
         if (!elRef || !elRef.current) return
         document.getElementById('main-content')
-            .scrollTo(0, elRef.current.offsetTop - 15)
+            .scrollTo(elRef.current.offsetLeft, elRef.current.offsetTop - 15)
     }, 100)
     return item
 }

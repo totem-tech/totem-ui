@@ -10,7 +10,7 @@ export default class FormBuilder extends ReactiveComponent {
     constructor(props) {
         super(props)
 
-        const { inputsDisabled = [], inputs, open } = props
+        const { inputsDisabled = [], inputs = [], open } = props
         inputs.forEach(x => ({ ...x, controlled: isDefined(x.value) }))
         // disable inputs
         inputsDisabled.forEach(name => (findInput(inputs, name) || {}).disabled = true)
@@ -23,38 +23,41 @@ export default class FormBuilder extends ReactiveComponent {
 
     }
 
-    getValues = (inputs = [], values = {}) => inputs.reduce((values, input, i) => {
-        const { inputs, name, controlled, type } = input
+    getValues = (inputs = [], values = {}, inputName, newValue) => inputs.reduce((values, input, i) => {
+        const { controlled, inputs: childInputs, groupValues, name, type } = input
         const typeLC = (type || '').toLowerCase()
         const isGroup = typeLC === 'group'
+        let value
         if (!isStr(name) || nonValueTypes.includes(type)) return values
-        if (isGroup) return this.getValues(inputs, values)
-        let value = values[name]
+        if (isGroup) {
+            const newValues = this.getValues(childInputs, groupValues ? {} : values, inputName, newValue)
+            if (!groupValues) return newValues
+            values[name] = newValues
+            return values
+        }
+        if (inputName && name === inputName) {
+            // for value grouping
+            values[name] = newValue
+        } //else {
+        value = values[name]
         value = !(controlled ? hasValue : isDefined)(value) ? input.value : value
         values[name] = value
+        //}
         return values
     }, values)
 
-    handleChange = (e, data, index, input, childIndex) => {
+    handleChange = (e, data, input, index, childIndex) => {
         const { name, onChange: onInputChange } = input
         let { inputs } = this.state
         const { onChange: formOnChange } = this.props
         let { values } = this.state
         const { value } = data
-        inputs[index]._invalid = data.invalid
-        values[name] = value
-        if (isDefined(childIndex)) {
-            inputs[index].inputs[childIndex].value = value
-        } else {
-            inputs[index].value = value
-        }
-        // update values of other inputs
-        values = this.getValues(inputs, values)
+        input._invalid = data.invalid
+        input.value = value
+        values = this.getValues(inputs, values, name, value)
 
-        if (!data.invalid) {
-            // trigger input items's onchange callback
-            isFn(onInputChange) && onInputChange(e, values, index, childIndex)
-        }
+        // trigger input items's onchange callback
+        isFn(onInputChange) && !data.invalid && onInputChange(e, values, index, childIndex)
         // trigger form's onchange callback
         isFn(formOnChange) && formOnChange(e, values, index, childIndex)
         this.setState({ inputs, values })
@@ -68,11 +71,10 @@ export default class FormBuilder extends ReactiveComponent {
     }
 
     handleSubmit = e => {
+        e.preventDefault()
         const { onSubmit } = this.props
         const { values } = this.state
-        e.preventDefault()
-        if (!isFn(onSubmit)) return;
-        onSubmit(e, values)
+        isFn(onSubmit) && onSubmit(e, values)
     }
 
     render() {
@@ -109,21 +111,26 @@ export default class FormBuilder extends ReactiveComponent {
             isFn(onClose) && onClose({}, {})
         }
         const message = isObj(msg) && msg || {}
-        inputs = inputs.map((input, i) => {
-            const { hidden, inputs: childInputs, name, type } = input || {}
-            const isGroup = (type || '').toLowerCase() === 'group'
+        // recursive interceptor for infinite level of child inputs
+        const addInterceptor = index => (input, i) => {
+            const { hidden, inputs: childInputs, key, name, type } = input || {}
+            const isGroup = (type || '').toLowerCase() === 'group' && isArr(childInputs)
+            index = isDefined(index) ? index : null
             return {
                 ...input,
                 hidden: !isFn(hidden) ? hidden : !!hidden(values, i),
-                inputs: !isGroup || !isArr(childInputs) ? undefined : childInputs.map((childInput, childIndex) => ({
-                    ...childInput,
-                    onChange: (e, data) => this.handleChange(e, data, i, childInput, childIndex),
-                    useInput: true,
-                })),
-                key: i + name,
-                onChange: isGroup ? undefined : (e, data) => this.handleChange(e, data, i, input),
+                inputs: !isGroup ? undefined : childInputs.map(addInterceptor(index ? index : i)),
+                key: key || i + name,
+                onChange: isGroup ? undefined : (e, data) => this.handleChange(
+                    e,
+                    data,
+                    input,
+                    index ? index : i,
+                    index ? i : undefined
+                ),
             }
-        })
+        }
+        inputs = inputs.map(addInterceptor())
 
         let submitBtn, closeBtn
         const shouldDisable = submitDisabled || success || isFormInvalid(inputs, values)
@@ -305,32 +312,33 @@ export const resetValues = (inputs = []) => inputs.map(input => {
     return input
 })
 
-export const isFormInvalid = (inputs = [], values) => inputs.reduce((invalid, input) => {
+export const isInputInvalid = (formValues = {}, input) => {
     const inType = (input.type || 'text').toLowerCase()
     const isCheckbox = ['checkbox', 'radio'].indexOf(inType) >= 0
     const isGroup = inType === 'group'
     const isRequired = !!input.required
     // ignore current input if conditions met
-    if (// one of the previous inputs was invalid 
-        invalid
+    if (
         // input's type is invalid
-        || !inType
+        !inType
         // current input is hidden
         || (inType === 'hidden' || input.hidden === true)
         // current input is not required and does not have a value
-        || (!isGroup && !isRequired && !hasValue(values[input.name]))
+        || (!isGroup && !isRequired && !hasValue(formValues[input.name]))
         // not a valid input type
-        || ['button'].indexOf(inType) >= 0) return invalid;
+        || ['button'].indexOf(inType) >= 0) return false;
 
     // if input is set invalid externally or internally by FormInput
     if (input.invalid || input._invalid) return true
 
-
     // Use recursion to validate input groups
-    if (isGroup) return isFormInvalid(input.inputs, values);
-    values = values || {}
-    const value = isDefined(values[input.name]) ? values[input.name] : input.value
+    if (isGroup) return isFormInvalid(input.inputs, !input.groupValues ? formValues : formValues[input.name] || {})
+    const value = isDefined(formValues[input.name]) ? formValues[input.name] : input.value
     return isCheckbox && isRequired ? !value : !hasValue(value)
+}
+
+export const isFormInvalid = (inputs = [], values = {}) => inputs.reduce((invalid, input) => {
+    return invalid || isInputInvalid(values, input)
 }, false)
 
 // findInput returns the first item matching supplied name.
@@ -340,6 +348,18 @@ export const findInput = (inputs, name) => inputs.find(x => x.name === name) || 
         return input || findInput(group.inputs || [], name)
     }, undefined)
 )
+// show message on a input or if input name not found/undefined, show form message
+// Should be used with a form component and be invoked with .call/.apply
+export function showMessage(inputName, content, status, header) {
+    const { inputs } = this.state
+    const message = { content, header, status }
+    const input = findInput(inputs, inputName)
+    if (!input) this.setState({ message })
+
+    input.message = message
+    input.invalid = status === 'error'
+    this.setState({ inputs })
+}
 
 const styles = {
     closeButton: {

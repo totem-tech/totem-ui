@@ -1,11 +1,8 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-// import Identicon from 'polkadot-identicon'
-import { generateMnemonic } from 'bip39'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import { isFn } from '../utils/utils'
-import { ss58Encode } from '../utils/convert'
 // services
 import identityService from '../services/identity'
 import { translated } from '../services/language'
@@ -153,7 +150,7 @@ export default class IdentityForm extends Component {
     handleSubmit = () => {
         const { onSubmit } = this.props
         const { values } = this
-        identityService.set(values.address, values)
+        identityService.set(values.address, { ...values })
         isFn(onSubmit) && onSubmit(true, values)
         this.setState({ success: true })
     }
@@ -163,30 +160,27 @@ export default class IdentityForm extends Component {
         const { restore } = this.values
         if (restore) return
         if (!this.doUpdate) {
-            seed = seed || generateMnemonic()
+            seed = seed || identityService.generateUri()
             seed = seed.split('/totem/')[0] + `/totem/${usageType === 'personal' ? 0 : 1}/0`
         }
-        const account = identityService.accountFromPhrase(seed)
-        this.addressBond.changed(account ? ss58Encode(account) : '')
+        const { address } = identityService.addFromUri(seed) || {}
+        this.addressBond.changed(address)
         findInput(inputs, 'uri').bond.changed(seed)
         this.setState({ inputs })
     }
 
     validateName = (_, { value: name }) => {
-        const existing = identityService.find(name)
-        if (existing && existing.address !== this.values.address) {
-            return texts.uniqueNameRequired
-        }
+        const { address } = identityService.find(name) || {}
+        if (address && address !== this.values.address) return texts.uniqueNameRequired
     }
 
     validateUri = (_, { value: seed }) => {
         const { inputs } = this.state
-        const account = identityService.accountFromPhrase(seed)
-        if (!account) {
+        const { address } = identityService.addFromUri(seed) || {}
+        if (!address) {
             this.addressBond.changed('')
             return texts.validSeedRequired
         }
-        const address = ss58Encode(account)
         if (identityService.find(address)) return texts.seedExists
         this.values.address = address
         this.addressBond.changed(address)

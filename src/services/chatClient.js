@@ -1,5 +1,5 @@
 import io from 'socket.io-client'
-import { isFn, isValidNumber, isDefined } from '../utils/utils'
+import { isFn, isValidNumber, isDefined, objClean } from '../utils/utils'
 import { translated } from './language'
 import storage from './storage'
 
@@ -33,6 +33,7 @@ export const addToHistory = (message, id) => {
 }
 // retrieves user credentails from local storage
 export const getUser = () => rw().user
+export const setUser = user => rw({ user })
 // Retrieves chat history from local storage
 export const getHistory = () => rw().history || []
 
@@ -175,7 +176,25 @@ export class ChatClient {
         // @cb      function
         this.countries = (hash, cb) => isFn(cb) && socket.emit('countries', hash, (err, countries) => cb(err, new Map(countries)))
 
-        this.errorMessages = cb => isFn(cb) && socket.emit('error-messages', cb)
+        // Currency conversion
+        //
+        // Params:
+        // @from    string: source currency ticker
+        // @to      string: target currency ticker
+        // @amount  number: amount in source currency
+        // @cb      function: args:
+        //              @err                string: message in case of error. Otherwise, null.
+        //              @convertedAmount    number: amount in target currency
+        this.currencyConvert = (from, to, amount, cb) => isFn(cb) && socket.emit('currency-convert', from, to, amount, cb)
+
+        // Get a list of all supported currencies
+        // 
+        // Params:
+        // @tickersHash string: (optional) hash generated using the sorted array of currency tickers
+        // @calblack    function: args =>
+        //                  @err    string: message in case of error. Otherwise, null.
+        //                  @list   map: list of all currenies (objects)
+        this.currencyList = (hash, cb) => isFn(cb) && socket.emit('currency-list', hash, (err, list) => cb(err, new Map(list)))
 
         // Request funds
         this.faucetRequest = (address, cb) => isFn(cb) && socket.emit('faucet-request', address, cb)
@@ -185,7 +204,16 @@ export class ChatClient {
         // Check if User ID Exists
         this.idExists = (userId, cb) => isFn(cb) && socket.emit('id-exists', userId, cb)
 
-        // handleTranslations handles translated text requests
+        // FOR BUILD MODE ONLY
+        // Retrieve a list of error messages used in the messaging service
+        //
+        // Params:
+        // @cb      function: args => 
+        //                  @err        string: error message if request fails
+        //                  @messages   array
+        this.languageErrorMessages = cb => isFn(cb) && socket.emit('language-error-messages', cb)
+
+        // retrieve a list of translated application texts for a specific language
         //
         // Params: 
         // @langCode    string: 2 digit language code
@@ -193,7 +221,7 @@ export class ChatClient {
         // @cb          function: arguments =>
         //              @error  string/null: error message, if any. Null indicates no error.
         //              @list   array/null: list of translated texts. Null indicates no update required.
-        this.translations = (langCode, hash, cb) => isFn(cb) && socket.emit('translations', langCode, hash, cb)
+        this.languageTranslations = (langCode, hash, cb) => isFn(cb) && socket.emit('language-translations', langCode, hash, cb)
 
         // Send notification
         //
@@ -240,7 +268,7 @@ export class ChatClient {
 
     register = (id, secret, cb) => socket.emit('register', id, secret, err => {
         if (!err) {
-            rw({ user: { id, secret } })
+            setUser({ id, secret })
             setTimeout(() => _execOnLogin(id))
         }
         isFn(cb) && cb(err)
