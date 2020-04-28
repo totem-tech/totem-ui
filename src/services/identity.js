@@ -1,123 +1,88 @@
 // Store and manage identities
 import { Bond } from 'oo7'
+import { generateMnemonic } from 'bip39'
 import { secretStore } from 'oo7-substrate'
 import uuid from 'uuid'
 import DataStorage from '../utils/DataStorage'
 import { keyring } from '../utils/polkadotHelper'
 import { objClean } from '../utils/utils'
+import storage from './storage'
 
 // catch errors from secretstore
 const _secretStore = () => {
     try {
         return secretStore()
     } catch (e) {
-        return {
-            //
-            accountFromPhrase: () => { },
-            find: () => { },
-            forget: () => { },
-            submit: () => { },
-            _key: [],
-        }
+        return { _key: [] }
     }
 }
-const _ssFind = address => _secretStore().find(address)
-const _ssSubmit = (seed, name) => _secretStore().submit(seed, name)
-const _ssKeys = () => _secretStore()._keys || []
-const _ssSync = () => _secretStore()._sync()
-const _ssForget = address => _secretStore().forget(address)
 
+const MODULE_KEY = 'identity'
+const DEFAULT_NAME = 'Default'
+const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 const identities = new DataStorage('totem_identities', true)
-const VALID_KEYS = [
+const USAGE_TYPES = Object.freeze({
+    PERSONAL: 'personal',
+    BUSINESS: 'business',
+})
+const REQUIRED_KEYS = Object.freeze([
+    'address',
+    'name',
+    'type',
+    'uri',
+])
+const VALID_KEYS = Object.freeze([
+    ...REQUIRED_KEYS,
     'cloudBackupStatus', // undefined: never backed up, in-progress, done
     'cloudBackupTS', // most recent successful backup timestamp
-    //???? 'fileBackupTS' // most recent file backup timestamp
+    'fileBackupTS', // most recent file backup timestamp
     'tags',
     'usageType',
-]
+])
 
 export const bond = identities.bond
 export const selectedAddressBond = new Bond().defaultTo(uuid.v1())
 
-export const accountFromPhrase = seed => _secretStore().accountFromPhrase(seed)
-
-export const get = address => {
-    const identity = _ssFind(address)
-    return !identity ? null : {
-        ...identity,
-        ...identities.get(address)
+export const addFromUri = (uri, type = 'sr25519') => {
+    try {
+        return keyring.keyring.addFromUri(uri, null, type).toJson()
+    } catch (err) {
+        console.log('services.identity.addFromUri()', err)
     }
 }
 
-// returns array
-export const getAll = () => _ssKeys().map(identity => ({
-    ...identity,
-    // add extra information
-    ...identities.get(identity.address)
-}))
+export const generateUri = generateMnemonic
 
-export const getSelected = () => {
-    const result = identities.search({ selected: true }, true, true)
-    let [address] = result.size > 0 && Array.from(result)[0] || []
-    if (!address) {
-        const ssIdentities = _ssKeys()
-        // attempt to prevent error when secretStore is unexpectedly not yet ready!!
-        if (!ssIdentities || ssIdentities.length === 0) return {}
-        address = ssIdentities[0].address
-    }
-    return find(address)
-}
+export const get = address => identities.get(address)
 
-export const find = addressOrName => {
-    const found = _ssFind(addressOrName)
-    if (!found) return
+// todo: migrate from array to map for consistency
+export const getAll = () => Array.from(identities.getAll()).map(([_, x]) => x)
 
-    return {
-        ...found,
-        ...identities.get(found.address),
-    }
-}
+export const getSelected = () => identities.find({ selected: true }, true, true) || getAll()[0]
 
-// Delete wallet permanently
-export const remove = address => {
-    _ssForget(address)
-    identities.delete(address)
-    // remove from PolkadotJS keyring
-    keyring.remove(address)
-}
+export const find = addressOrName => identities.find({ address: addressOrName, name: addressOrName }, true, false, true)
+
+// Permanent remove identity from localStorage
+export const remove = address => identities.delete(address)
 
 // add/update
 export const set = (address, identity = {}) => {
-    const { name, uri: seed } = identity
-    let create = false
-    let existing = _ssFind(address)
-    if (!existing) {
-        const account = accountFromPhrase(seed)
-        if (!account || !name) return
-        create = true
-        // create new identity
-        _ssSubmit(seed, name)
-        existing = _ssFind(name)
-        address = existing.address
-        // add to PolkadotJS keyring
-        keyring.add([seed])
-    }
-    identities.set(address, {
-        ...identities.get(address),
-        // get rid of any unaccepted keys
-        ...objClean(identity, VALID_KEYS),
-    })
-
-    // update name in secretStore
-    if (!create && !!name && name !== existing.name) {
-        existing.name = name
-        _ssSync()
-    }
+    const { type, usageType } = identity
+    // add to PolkadotJS keyring
+    !identities.get(address) && keyring.add([identity.uri])
+    identity.type = type || 'sr25519'
+    if (!Object.keys(USAGE_TYPES).includes(usageType)) identity.usageType = USAGE_TYPES.PERSONAL
+    identity = objClean({
+        ...identities.get(address), //  merge with existing values
+        ...identity
+    }, VALID_KEYS)
+    identities.set(address, identity)
+    return identity
 }
 
 export const setSelected = address => {
-    if (!_ssFind(address)) return
-    const identity = identities.get(address) || {}
+    const identity = identities.get(address)
+    if (!identity) return
     const selected = identities.search({ selected: true }, true, true)
     Array.from(selected).forEach(([addr, next]) => {
         next.selected = false
@@ -127,19 +92,55 @@ export const setSelected = address => {
     identities.set(address, identity)
     selectedAddressBond.changed(uuid.v1())
 }
+const deprecateSecretStore = (ssKeys) => {
+    console.log('Identity service: Migrating secretStore identities')
+    const arr = ssKeys.map(ssKey => {
+        const { address } = ssKey
+        return [
+            address,
+            objClean(
+                { ...ssKey, ...identities.find(address) },
+                REQUIRED_KEYS
+            ),
+        ]
+    })
+    identities.setAll(new Map(arr))
+}
+const init = () => {
+    const ssKeys = _secretStore()._keys
+    let identities = getAll()
+    const hasMissingProps = identities.filter(x => !x.name || !x.uri).length > 0
+    const shouldInit = !hasMissingProps && identities.length === 0 && ssKeys.length <= 1
 
-// export const migrate
+    if (shouldInit) {
+        console.log('Identity service: Creating default identity for first time user')
+        const uri = generateUri() + '/totem/0/0'
+        const { address } = addFromUri(uri)
+        const identity = {
+            address,
+            name: DEFAULT_NAME,
+            usageType: USAGE_TYPES.PERSONAL,
+            uri,
+        }
+        set(address, identity)
+    } else if (!rw().secretStoreDeprecated) deprecateSecretStore(ssKeys)
 
-// add seeds to PolkadotJS keyring
-setTimeout(() => keyring.add(getAll().map(x => x.uri)), 2000)
+    rw({ secretStoreDeprecated: true })
+
+    // add seeds to PolkadotJS keyring
+    keyring.add(getAll().map(x => x.uri))
+}
+setTimeout(init, 2000)
 
 export default {
-    accountFromPhrase,
+    addFromUri,
     bond,
     find,
+    generateUri,
     get,
     getAll,
     getSelected,
+    keyring,
     remove,
     selectedAddressBond,
     set,

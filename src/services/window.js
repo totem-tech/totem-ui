@@ -1,10 +1,14 @@
 import { Bond } from 'oo7'
+import { isDefined } from '../utils/utils'
+import storage from './storage'
 
+const MODULE_KEY = 'window'
 const _validSizes = [
     'desktop',
     'mobile',
 ]
 let _forcedSize = ''
+const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 // forceLayout enforces and reverts a specific layout size and ignores layout change when window resizes
 //
 // Params:
@@ -31,6 +35,15 @@ export const getUrlParam = name => {
     return name ? params[name] || '' : params
 }
 
+// Main content grid column count
+export const gridColumns = numCol => {
+    const value = isDefined(numCol) ? { gridColumns: numCol } : undefined
+    value && gridColumnsBond.changed(numCol)
+    return rw(value).gridColumns || 1
+}
+export const gridColumnsBond = new Bond().defaultTo(gridColumns())
+
+// set layout name on window resize 
 window.onresize = () => {
     const size = getLayout()
     if (layoutBond._value !== size) layoutBond.changed(size)

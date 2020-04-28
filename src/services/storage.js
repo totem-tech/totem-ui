@@ -19,9 +19,20 @@ export const essentialKeys = [
     // notifications are essential because user may need to respond to them in case they are migrating to a new device.
     'totem_notifications',
     'totem_partners',
-    'secretStore', // ToDo: deprecate by migrating completely to identities
     'totem_settings',
 ]
+
+// generates user data for backup, excluding non-essential items such as cache etc...
+export const generateBackupData = () => {
+    const keys = Object.keys(localStorage)
+        .map(key => !essentialKeys.includes(key) ? null : key)
+        .filter(Boolean)
+        .sort()
+    return keys.reduce((data, key) => {
+        data[key] = JSON.parse(localStorage[key])
+        return data
+    }, {})
+}
 
 // Read/write to storage
 //
