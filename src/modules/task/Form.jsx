@@ -350,7 +350,6 @@ export default class Form extends Component {
                 status: gotBalance ? 'success' : 'error',
             }
         } catch (e) {
-            console.log({ error: e, type: typeof e })
             bountyIn.invalid = true
             bountyGrpIn.message = {
                 content: e,
@@ -373,10 +372,6 @@ export default class Form extends Component {
     handleSubmit = (_, values) => {
         console.log({ values })
     }
-
-    // updateAmountXTX = deferred(async () => {
-
-    // })
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
