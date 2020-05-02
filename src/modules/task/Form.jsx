@@ -297,6 +297,10 @@ export default class Form extends Component {
             currencyIn.deburr = true
             this.setState({ inputs })
         })
+
+        // force balance check on-load
+        findInput(this.state.inputs, this.names.bounty).bond.changed(0)
+
     }
 
     componentWillUnmount() {
