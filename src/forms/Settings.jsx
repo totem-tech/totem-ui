@@ -96,7 +96,7 @@ export default class Settings extends Component {
                     options: [1, 2, 3, 4, 5, 6].map(n => ({
                         icon: n === 1 ? 'bars' : 'grid layout',
                         key: n,
-                        text: `${n} ${ n > 1 ? texts.columns : texts.column }`,
+                        text: `${n} ${n > 1 ? texts.columns : texts.column}`,
                         value: n,
                     })),
                     selection: true,
@@ -107,7 +107,7 @@ export default class Settings extends Component {
         }
     }
 
-    componentWillMount () {
+    componentWillMount() {
         const { inputs } = this.state
         const currencyIn = findInput(inputs, 'currency')
         getTickers().then(currencies => {
@@ -126,7 +126,7 @@ export default class Settings extends Component {
 
     handleCurrencyChange = async (_, { currency }) => {
         await setSelectedCurrency(currency)
-        this.setInputMessage('currency', savedMsg, 0)
+        this.setInputMessage('currency', savedMsg)
     }
 
     handleChatLimitChange = (_, { chatMsgLimit }) => {
@@ -134,7 +134,7 @@ export default class Settings extends Component {
         this.setInputMessage('chatMsgLimit', savedMsg)
     }
 
-    handleGridCollumnsChange = (_, {gridCols}) => {
+    handleGridCollumnsChange = (_, { gridCols }) => {
         gridColumns(gridCols)
         this.setInputMessage('gridCols', savedMsg)
     }
@@ -150,7 +150,7 @@ export default class Settings extends Component {
         const selected = getSelectedLanguage()
         if (selected === 'EN') return forceRefreshPage()
         const selectedHash = generateHash(getTexts(selected) || '')
-        client.translations(selected, selectedHash, (err, texts) => {
+        client.languageTranslations(selected, selectedHash, (err, texts) => {
             if (texts !== null) setTexts(selected, texts)
             // reload page
             forceRefreshPage()

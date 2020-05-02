@@ -39,6 +39,7 @@ export const convertTo = async (amount, from, to) => {
 // Params:
 // @value   string: currency code/ticker
 export const getSelected = () => rw().selected || currencyDefault
+bond.changed(getSelected())
 
 // get list of currency tickers
 //
@@ -52,7 +53,7 @@ export const getTickers = async () => await updateTickers() || rwCache().tickers
 export const setSelected = async (value) => {
     const currencies = await getTickers()
     const newValue = currencies[value] ? { selected: value } : undefined
-    newValue && bond.changed(value)
+    newValue && setTimeout(() => bond.changed(value))
     return rw(newValue).selected || currencyDefault
 }
 

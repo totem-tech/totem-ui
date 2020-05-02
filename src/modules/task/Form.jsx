@@ -2,7 +2,10 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
+import Currency from '../../components/Currency'
+import { arrSort, deferred } from '../../utils/utils'
 // services
+import { getConnection } from '../../services/blockchain'
 import {
     convertTo,
     currencyDefault,
@@ -12,12 +15,10 @@ import {
 import { bond, get as getIdentity, getSelected } from '../../services/identity'
 import { translated } from '../../services/language'
 import partners from '../../services/partner'
-import { arrSort, deferred } from '../../utils/utils'
-import { getConnection } from '../../services/blockchain'
 
 const [texts, textsCap] = translated({
     advancedLabel: 'advanced options',
-    amountXTXMgs: 'amount to be changed',
+    amountRequired: 'amount required',
     assignee: 'select a partner to assign task',
     assigneePlaceholder: 'select from partner list',
     assignToPartner: 'assign to a partner',
@@ -256,7 +257,7 @@ export default class Form extends Component {
     componentWillMount() {
         this._mounted = true
         // connect to blockchain beforehand to speed up currency convertion
-        getConnection().then(({ api }) => this.api = api)
+        getConnection()
 
         this.bond = Bond.all([bond, partners.bond])
         this.tieId = this.bond.tie(() => {
@@ -308,40 +309,52 @@ export default class Form extends Component {
         const currency = values[this.names.currency]
         const bountyGrpIn = findInput(inputs, this.names.bountyGroup)
         const bountyIn = findInput(inputs, this.names.bounty)
-        const requireConversion = bounty > 0 && currency !== currencyDefault
-        if (!requireConversion) {
-            bountyGrpIn.message = null
-            bountyIn.invalid = false
-            return this.setState({ inputs, submitDisabled: false })
-        }
+        const currencySelected = getSelectedCurrency()
+        const { address } = getSelected()
         bountyIn.loading = true
-        this.setState({ submitDisabled: requireConversion })
+        this.setState({ inputs, submitDisabled: true })
 
         try {
-            this.amountXTX = Math.ceil(await convertTo(bounty, currency, currencyDefault))
-            const { address } = getSelected()
-            const balance = parseInt(await this.api.query.balances.freeBalance(address))
+            this.amountXTX = bounty === 0 ? 0 : Math.ceil(await convertTo(bounty, currency, currencyDefault))
+            const { api } = await getConnection()
+            const balance = parseInt(await api.query.balances.freeBalance(address))
             const estimatedTxFee = 160
             const gotBalance = balance - estimatedTxFee - this.amountXTX >= 0
-            bountyIn.loading = false
             bountyIn.invalid = !gotBalance
             bountyGrpIn.message = {
                 content: (
                     <div>
-                        {textsCap.amountXTXMgs}: {this.amountXTX + estimatedTxFee} {currencyDefault} <br />
-                        {textsCap.balance}: {balance} {currencyDefault}
+                        <div>
+                            <Currency {... {
+                                prefix: `${textsCap.amountRequired}: `,
+                                value: this.amountXTX + estimatedTxFee,
+                                unit: currencyDefault,
+                                unitDisplayed: currencySelected
+                            }} />
+                        </div>
+                        <div>
+                            <Currency {... {
+                                prefix: `${textsCap.balance}: `,
+                                value: balance,
+                                unit: currencyDefault,
+                                unitDisplayed: currencySelected
+                            }} />
+                        </div>
                     </div>
                 ),
                 header: !gotBalance ? textsCap.insufficientBalance : undefined,
                 status: gotBalance ? 'success' : 'error',
             }
         } catch (e) {
+            console.log({ error: e, type: typeof e })
+            bountyIn.invalid = true
             bountyGrpIn.message = {
                 content: e,
                 header: textsCap.conversionErrorHeader,
                 status: 'error'
             }
         }
+        bountyIn.loading = false
         this.setState({ inputs, submitDisabled: false })
     }, 300)
 

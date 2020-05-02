@@ -9,6 +9,7 @@ import { transfer, signAndSend } from '../utils/polkadotHelper'
 import { hasValue, isArr, isFn, isObj, isStr, objClean } from '../utils/utils'
 // services
 import { getClient } from './chatClient'
+import { currencyDefault } from './currency'
 import { getConnection } from './blockchain'
 import { save as addToHistory } from './history'
 import { find as findIdentity, getSelected } from './identity'
@@ -308,7 +309,7 @@ const handleTxTransfer = async (id, rootTask, task, toastId) => {
         content: [
             `${wordsCap.sender}: ${sender.name}`,
             `${wordsCap.recipient}: ${getAddressName(recipientAddress)}`,
-            `${wordsCap.amount}: ${amount}`,
+            `${wordsCap.amount}: ${amount} ${currencyDefault}`,
         ],
         header: texts.txTransferTitle
     }

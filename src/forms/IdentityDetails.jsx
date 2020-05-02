@@ -5,6 +5,8 @@ import Currency from '../components/Currency'
 import { Button } from 'semantic-ui-react'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import { copyToClipboard, isFn } from '../utils/utils'
+// services
+import { currencyDefault, getSelected } from '../services/currency'
 import identityService from '../services/identity'
 import { translated } from '../services/language'
 import { confirm } from '../services/modal'
@@ -13,6 +15,7 @@ import { confirm } from '../services/modal'
 const [words, wordsCap] = translated({
     address: 'address',
     close: 'close',
+    converted: 'converted',
     copy: 'copy',
     identity: 'identity',
     name: 'name',
@@ -145,7 +148,7 @@ export default class IdentityDetails extends Component {
                 {
                     name: 'txAllocations',
                     type: 'html'
-                }
+                },
             ],
         }
     }
@@ -162,7 +165,19 @@ export default class IdentityDetails extends Component {
         }))
         findInput(inputs, 'txAllocations').content = (
             <label style={{ fontWeight: 'bold', margin: 0 }}>
-                {texts.txAllocations}: <Currency address={address} />
+                {texts.txAllocations}:
+                <Currency {...{
+                    address,
+                    prefix: ' ',
+                    unitDisplayed: currencyDefault,
+                }} />
+                {getSelected() !== currencyDefault && (
+                    // display amount in selected currency if not XTX
+                    <Currency {...{
+                        address,
+                        prefix: ` | ${wordsCap.converted}: `,
+                    }} />
+                )}
             </label>
         )
         fillValues(inputs, { ...this.identity, uri: this.getUri() })
