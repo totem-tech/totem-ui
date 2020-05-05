@@ -111,8 +111,8 @@ export default class Settings extends Component {
         const { inputs } = this.state
         const currencyIn = findInput(inputs, 'currency')
         getCurrencies().then(currencies => {
-            currencyIn.options = currencies.map(({ nameInLanguage, ISO }) => ({
-                description: ISO,
+            currencyIn.options = currencies.map(({ currency, nameInLanguage, ISO }) => ({
+                description: currency,
                 key: ISO,
                 text: nameInLanguage,
                 value: ISO

@@ -289,9 +289,9 @@ export default class Form extends Component {
         const { inputs } = this.state
         const currencyIn = findInput(inputs, this.names.currency)
         getCurrencies().then(currencies => {
-            currencyIn.options = currencies.map(({ nameInLanguage, ISO }) => ({
+            currencyIn.options = currencies.map(({ currency, nameInLanguage, ISO }) => ({
                 key: ISO,
-                text: ISO,
+                text: currency,
                 value: ISO,
                 name: nameInLanguage,
             }))
