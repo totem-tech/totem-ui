@@ -194,7 +194,7 @@ export class ChatClient {
         // @calblack    function: args =>
         //                  @err    string: message in case of error. Otherwise, null.
         //                  @list   map: list of all currenies (objects)
-        this.currencyList = (hash, cb) => isFn(cb) && socket.emit('currency-list', hash, (err, list) => cb(err, new Map(list)))
+        this.currencyList = (hash, cb) => isFn(cb) && socket.emit('currency-list', hash, cb)
 
         // Request funds
         this.faucetRequest = (address, cb) => isFn(cb) && socket.emit('faucet-request', address, cb)

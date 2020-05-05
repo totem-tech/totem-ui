@@ -4,7 +4,7 @@ import { arrSort, generateHash } from '../utils/utils'
 // services
 import client, { historyLimit as chatHistoryLimit } from '../services/chatClient'
 import {
-    getTickers,
+    getCurrencies,
     getSelected as getSelectedCurrency,
     setSelected as setSelectedCurrency
 } from '../services/currency'
@@ -110,16 +110,14 @@ export default class Settings extends Component {
     componentWillMount() {
         const { inputs } = this.state
         const currencyIn = findInput(inputs, 'currency')
-        getTickers().then(currencies => {
-            currencyIn.options = arrSort(
-                Object.keys(currencies).map(value => ({
-                    description: currencies[value],
-                    key: value,
-                    text: value,
-                    value
-                })),
-                'text',
-            )
+        getCurrencies().then(currencies => {
+            currencyIn.options = currencies.map(({ nameInLanguage, ISO }) => ({
+                description: ISO,
+                key: ISO,
+                text: nameInLanguage,
+                value: ISO
+            }))
+            currencyIn.search = ['text', 'description']
             this.setState({ inputs })
         })
     }
