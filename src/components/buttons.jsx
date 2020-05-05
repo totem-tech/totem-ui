@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
 import { getRawUserID } from './UserIdInput'
@@ -33,6 +33,19 @@ ButtonAcceptOrReject.defaultProps = {
     rejectText: wordsCap.reject
 }
 
+export const Reveal = ({ content, hiddenContent, style, defaultVisible = false, El = 'div' }) => {
+    const [visible, setVisible] = useState(defaultVisible)
+    return (
+        <El
+            onMouseEnter={() => !visible && setVisible(true)}
+            onMouseLeave={() => visible && setVisible(false)}
+            style={style}
+        >
+            {visible ? hiddenContent : content}
+        </El>
+    )
+}
+
 // placeholder to potentially use this in the future to make all User IDs clickable and open private chat with user
 export const UserID = ({ userId }) => (
     <Button
@@ -44,3 +57,4 @@ export const UserID = ({ userId }) => (
         style={{ boxShadow: 'none', padding: 0 }}
     />
 )
+

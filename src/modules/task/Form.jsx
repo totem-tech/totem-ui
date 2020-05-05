@@ -9,7 +9,7 @@ import { getConnection } from '../../services/blockchain'
 import {
     convertTo,
     currencyDefault,
-    getTickers,
+    getCurrencies,
     getSelected as getSelectedCurrency
 } from '../../services/currency'
 import { bond, get as getIdentity, getSelected } from '../../services/identity'
@@ -50,6 +50,7 @@ const [texts, textsCap] = translated({
     titlePlaceholder: 'enter a very short task description',
     orderTypeLabel: 'order type',
 }, true)
+const estimatedTxFee = 160
 
 export default class Form extends Component {
     constructor(props) {
@@ -287,14 +288,15 @@ export default class Form extends Component {
 
         const { inputs } = this.state
         const currencyIn = findInput(inputs, this.names.currency)
-        getTickers().then(currencies => {
-            currencyIn.options = arrSort(Object.keys(currencies).map(value => ({
-                key: value,
-                text: value,
-                title: currencies[value],
-                value,
-            })), 'text')
-            currencyIn.deburr = true
+        getCurrencies().then(currencies => {
+            currencyIn.options = currencies.map(({ nameInLanguage, ISO }) => ({
+                key: ISO,
+                text: ISO,
+                value: ISO,
+                name: nameInLanguage,
+            }))
+            currencyIn.deburr = true // ???
+            currencyIn.search = ['text', 'name']
             this.setState({ inputs })
         })
 
@@ -317,32 +319,37 @@ export default class Form extends Component {
         const { address } = getSelected()
         bountyIn.loading = true
         this.setState({ inputs, submitDisabled: true })
+        const getCurrencyEl = (prefix, suffix, value, unit, unitDisplayed) => (
+            <Currency {... { prefix, suffix, value, unit, unitDisplayed }} />
+        )
 
         try {
             this.amountXTX = bounty === 0 ? 0 : Math.ceil(await convertTo(bounty, currency, currencyDefault))
             const { api } = await getConnection()
-            const balance = parseInt(await api.query.balances.freeBalance(address))
-            const estimatedTxFee = 160
-            const gotBalance = balance - estimatedTxFee - this.amountXTX >= 0
+            const balanceXTX = parseInt(await api.query.balances.freeBalance(address))
+            const amountTotalXTX = this.amountXTX + estimatedTxFee
+            const gotBalance = balanceXTX - estimatedTxFee - this.amountXTX >= 0
             bountyIn.invalid = !gotBalance
             bountyGrpIn.message = {
                 content: (
                     <div>
-                        <div>
-                            <Currency {... {
-                                prefix: `${textsCap.amountRequired}: `,
-                                value: this.amountXTX + estimatedTxFee,
-                                unit: currencyDefault,
-                                unitDisplayed: currencySelected
-                            }} />
+                        <div title={`${textsCap.amountRequired}: ${amountTotalXTX} ${currencyDefault}`}>
+                            {getCurrencyEl(
+                                `${textsCap.amountRequired}: `,
+                                null,
+                                amountTotalXTX,
+                                currencyDefault,
+                                currencySelected,
+                            )}
                         </div>
-                        <div>
-                            <Currency {... {
-                                prefix: `${textsCap.balance}: `,
-                                value: balance,
-                                unit: currencyDefault,
-                                unitDisplayed: currencySelected
-                            }} />
+                        <div title={`${textsCap.balance}: ${balanceXTX} ${currencyDefault}`}>
+                            {getCurrencyEl(
+                                `${textsCap.balance}: `,
+                                null,
+                                balanceXTX,
+                                currencyDefault,
+                                currencySelected,
+                            )}
                         </div>
                     </div>
                 ),

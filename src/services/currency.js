@@ -1,5 +1,5 @@
 import { Bond } from 'oo7'
-import { generateHash, isMap } from '../utils/utils'
+import { generateHash, isMap, arrSort } from '../utils/utils'
 import client from './chatClient'
 import storage from './storage'
 
@@ -13,7 +13,7 @@ const updateFrequencyMs = 24 * 60 * 60 * 1000
 
 // selected currency bond
 export const bond = new Bond()
-//  default currency
+// default currency
 export const currencyDefault = 'XTX'
 
 // convert currency 
@@ -34,46 +34,41 @@ export const convertTo = async (amount, from, to) => {
     return convertedAmount
 }
 
-// get default currency
-//
-// Params:
-// @value   string: currency code/ticker
+// get selected currency code
 export const getSelected = () => rw().selected || currencyDefault
 bond.changed(getSelected())
 
-// get list of currency tickers
-//
-// Returns  object: key => ticker, value => currency name, if available, or ticker 
-export const getTickers = async () => await updateTickers() || rwCache().tickers || { XTX: 'Transaction' }
+// get list of currencies 
+export const getCurrencies = async () => await updateCurrencies() || rwCache().currencies
 
 // get/set default currency
 //
 // Params:
-// @value   string: currency code/ticker
-export const setSelected = async (value) => {
-    const currencies = await getTickers()
-    const newValue = currencies[value] ? { selected: value } : undefined
-    newValue && setTimeout(() => bond.changed(value))
+// @ISO   string: currency code
+export const setSelected = async (ISO) => {
+    const currencies = await getCurrencies()
+    const exists = currencies.find(x => x.ISO === ISO)
+    const newValue = exists ? { selected: ISO } : undefined
+    newValue && setTimeout(() => bond.changed(ISO))
     return rw(newValue).selected || currencyDefault
 }
 
-export const updateTickers = async (timeout = 2000) => {
+export const updateCurrencies = async () => {
     if (lastUpdated && new Date() - lastUpdated < updateFrequencyMs) return
 
-    const sortedTickers = Object.keys(rwCache().tickers || {}).sort()
+    const sortedTickers = rwCache().currencies
     const tickersHash = generateHash(sortedTickers)
-    let tickers = null
-    await client.currencyList.promise(tickersHash, ((err, currencyList) => {
+    let currencies = null
+    await client.currencyList.promise(tickersHash, ((err, currencies = []) => {
         err && console.error('Failed to retrieve currencies', err)
-        if (!isMap(currencyList) || currencyList.size === 0) return
-
-        tickers = Array.from(currencyList).reduce((tickers, [_, c]) => {
-            tickers[c.currency] = c.name || c.currency
-            return tickers
-        }, {})
-        rwCache('tickers', tickers)
+        if (currencies.size === 0) return
+        currencies.forEach(x => {
+            x.nameInLanguage = x.nameInLanguage || x.currency
+            x.ISO = x.ISO || x.currency
+        })
+        rwCache('currencies', arrSort(currencies, 'ISO'))
         lastUpdated = new Date()
-        console.log('Currency: tickers list updated', tickers)
+        console.log({ currencies })
     }))
-    return tickers
+    return currencies
 }
