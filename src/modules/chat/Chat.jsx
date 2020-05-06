@@ -4,7 +4,7 @@ import InboxView from './InboxView'
 import FormInput from '../../components/FormInput'
 import { getInboxKey, getMessages, newInbox, send } from './service'
 import { translated } from '../../services/language'
-import { confirm } from '../../services/modal'
+import { getUser } from '../../services/chatClient'
 
 const [_, textsCap] = translated({
     inputPlaceholder: 'type something and press enter to send',
@@ -44,7 +44,7 @@ Chat.defaultProps = {
 const refs = {}
 const MessageInput = props => {
     const { receiverIds, sending, setSending } = props
-    const [draft, setDraft] = useState()
+    const [draft, setDraft] = useState('')
     const inboxKey = getInboxKey(receiverIds)
 
     const handleSend = async (e) => {

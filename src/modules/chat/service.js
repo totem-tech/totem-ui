@@ -5,6 +5,7 @@ import client, { getUser } from '../../services/chatClient'
 import { arrUnique } from '../../utils/utils'
 
 const PREFIX = 'totem_'
+const EVERYBODY = 'everybody'
 const inboxBonds = {} // notifies when a specific inbox view requires update
 const chatHistory = new DataStorage(PREFIX + 'chat-history', true)
 
@@ -36,7 +37,7 @@ const saveMessage = (message = '', senderId, receiverIds, encrypted, timestamp, 
 
 // returns inbox storage key
 export const getInboxKey = receiverIds => {
-    if (receiverIds.length === 1) return receiverIds[0]
+    if (receiverIds.length === 1 && receiverIds[0] === EVERYBODY) return EVERYBODY
     const { id: userId } = getUser() || {}
     return arrUnique([...receiverIds, userId]).sort().join()
 }

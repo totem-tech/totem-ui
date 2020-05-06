@@ -77,7 +77,7 @@ const ChatMessages = props => {
                                 borderRadius: 10,
                                 boxShadow: 'none',
                                 color,
-                                margin: '3px 0',
+                                margin: '1px 0',
                                 padding: '7px 15px',
                                 width: 'auto'
                             },
