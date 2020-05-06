@@ -1,31 +1,11 @@
-import React, { Component } from 'react'
-import PropTypes from 'prop-types'
+import React from 'react'
 import { Divider } from 'semantic-ui-react'
-import Message from './Message'
-import { UserID } from './buttons'
-import client, { getUser } from '../services/chatClient'
-import chat from './chat'
-
-const randomize = (limit = 10) => parseInt(Math.random(limit) * limit)
-
-export default class Chat extends Component {
-    state = {
-        userId: `user${randomize()}`,
-        messages: new Array(10).fill(0).map(i => ({
-            from: `user${randomize(5)}`,
-            to: `user${randomize()}`,
-            message: randomize() % 2 === 0 ? 'hi' : 'hello'
-        }))
-    }
-
-    render = () => <ChatView {...this.state} />
-}
-
-Chat.propTypes = {}
-Chat.defaultProps = {}
+import Message from '../../components/Message'
+import { UserID } from '../../components/buttons'
+import { getUser } from '../../services/chatClient'
 
 const userColor = {}
-const currentUserColor = 'black'
+const randomize = (limit = 10) => parseInt(Math.random(limit) * limit)
 const colors = [
     'blue',
     'brown',
@@ -40,16 +20,37 @@ const colors = [
     'grey',
     'black',
 ]
-export const ChatView = props => {
-    const { isPrivate = false, messages, userId } = props
+const iconStyle = {
+    fontSize: 18,
+    width: 18,
+}
+const icons = {
+    error: {
+        color: 'red',
+        name: 'exclamation triangle',
+        style: iconStyle,
+    },
+    loading: {
+        color: 'yellow',
+        name: 'spinner',
+        loading: true,
+        style: iconStyle,
+    }
+}
+const ChatMessages = props => {
+    const { messages, receiverIds } = props
+    const userId = (getUser() || {}).id
+    const isPrivate = receiverIds.length === 1 && receiverIds[0] !== 'everyone'
     return (
-        <div className='totem-chat'>
-            {messages.map(({ from, to, message }, i) => {
-                const isSender = from === userId
-                let bgColor = isSender ? currentUserColor : userColor[from]
+        <div className='messages'>
+            {messages.map(({ message, senderId, status }, i) => {
+                const isSender = senderId === userId
+                let bgColor = isSender ? 'green' : (
+                    isPrivate ? 'blue' : userColor[senderId]
+                )
                 if (!bgColor) {
                     bgColor = colors[randomize(colors.length)]
-                    userColor[from] = bgColor
+                    userColor[senderId] = bgColor
                 }
                 const color = bgColor === 'black' ? 'white' : 'black'
                 return (
@@ -59,24 +60,26 @@ export const ChatView = props => {
                             compact: true,
                             content: (
                                 <span>
-                                    {isPrivate ? '' : (
+                                    {isPrivate || isSender ? '' : (
                                         <UserID {...{
                                             basic: color !== 'white',
                                             secondary: color === 'white',
                                             suffix: ': ',
-                                            userId: from,
+                                            userId: senderId,
                                         }}
                                         />
                                     )}
                                     {message}
                                 </span>
                             ),
+                            icon: icons[status],
                             style: {
                                 borderRadius: 10,
                                 boxShadow: 'none',
                                 color,
                                 margin: '3px 0',
                                 padding: '7px 15px',
+                                width: 'auto'
                             },
                             key: i,
                         }} />
@@ -87,3 +90,4 @@ export const ChatView = props => {
         </div>
     )
 }
+export default ChatMessages

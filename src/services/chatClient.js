@@ -29,14 +29,13 @@ if (oldData) {
 // migrate trollbox chat history storage
 const oldHistory = rw().history
 if (oldHistory && oldHistory.length > 0) {
-    historyStorage.set('everyone', oldHistory)
     rw({ history: null })
 }
 
 // add new message to chat history
 export const addToHistory = (message, id) => {
     // save history
-    historyStorage.set('everyone', [...historyStorage.get('everyone'), { message, id }])
+    // historyStorage.set('everyone', [...historyStorage.get('everyone'), { message, id }])
     // apply history limit
     // historyLimit()
 }
@@ -225,11 +224,26 @@ export class ChatClient {
         // @cb          function: arguments =>
         //              @error  string/null: error message, if any. Null indicates no error.
         //              @list   array/null: list of translated texts. Null indicates no update required.
-        this.languageTranslations = (langCode, hash, cb) => isFn(cb) && socket.emit('language-translations', langCode, hash, cb)
+        this.languageTranslations = (langCode, hash, cb) => isFn(cb)
+            && socket.emit('language-translations', langCode, hash, cb)
 
-        // Emit chat (Totem trollbox) message to everyone
-        this.message = (msg, cb) => isFn(cb) && socket.emit('message', msg, cb)
+        // Send chat messages
+        //
+        // Params:
+        // @userIds    array: User IDs without '@' sign
+        // @message    string: encrypted or plain text message
+        // @encrypted  bool: determines whether @message requires decryption
+        this.message = (receiverIds, msg, encrypted, cb) => isFn(cb)
+            && socket.emit('message', receiverIds, msg, encrypted, cb)
         // receive chat messages
+        //
+        // 
+        // Params:
+        // @cb  function: callback arguments => 
+        //          @senderId       string: 
+        //          @receiverIds    array: User IDs without '@' sign
+        //          @message        string: encrypted or plain text message
+        //          @encrypted      bool: determines whether @message requires decryption
         this.onMessage = cb => isFn(cb) && socket.on('message', cb)
 
         // Send notification
@@ -243,9 +257,8 @@ export class ChatClient {
         // @cb          function : callback function
         //                         Params:
         //                         @err string: error message if failed or rejected
-        this.notify = (toUserIds, type, childType, message, data, cb) => isFn(cb) && socket.emit(
-            'notify', toUserIds, type, childType, message, data, cb
-        )
+        this.notify = (toUserIds, type, childType, message, data, cb) => isFn(cb)
+            && socket.emit('notify', toUserIds, type, childType, message, data, cb)
         // Receive notification. 
         //
         // Params:
@@ -260,11 +273,6 @@ export class ChatClient {
         //          @tsCreated  date: notification creation timestamp
         //          @cbConfirm  function: a function to confirm receipt
         this.onNotify = cb => isFn(cb) && socket.on('notify', cb)
-
-        // Emit chat message to specific user(s)
-        this.pm = (userIds, msg, encrypted, cb) => isFn(cb) && socket.emit('pm', userIds, msg, encrypted, cb)
-        // receive chat messages
-        this.pmReceived = cb => isFn(cb) && socket.on('pm', cb)
 
         // add/get/update project
         //

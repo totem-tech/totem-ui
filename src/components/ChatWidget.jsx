@@ -92,8 +92,9 @@ export default class ChatWidget extends ReactiveComponent {
 		this.client.onReconnect(this.login)
 
 		this.client.onMessage((msg, id) => {
+			console.log({ msg, id })
 			id === this.state.userId ? addUserMessage(msg) : addResponseWithId(msg, id)
-			addToHistory(msg, id)
+			// addToHistory(msg, id)
 			// !isWidgetOpened() && this.setState({unreadCount: this.state.unreadCount++})
 		})
 
@@ -104,11 +105,10 @@ export default class ChatWidget extends ReactiveComponent {
 			// addEventMsg('chat server offline at : ' + getNow())
 			this.setState({ showOfflineMsg: false })
 		})
-
 	}
 
-	handleNewUserMessage = (msg) => this.client.message(msg,
-		err => err ? addEventMsg(err) : addToHistory(msg, this.state.userId)
+	handleNewUserMessage = (msg) => this.client.message('everyone', msg, false,
+		err => err && addEventMsg(err)// : addToHistory(msg, this.state.userId)
 	)
 
 	login = () => {
