@@ -8,13 +8,6 @@ const PREFIX = 'totem_'
 const inboxBonds = {} // notifies when a specific inbox view requires update
 const chatHistory = new DataStorage(PREFIX + 'chat-history', true)
 
-// returns inbox storage key
-const getInboxKey = receiverIds => {
-    if (receiverIds.length === 1) return receiverIds[0]
-    const { id: userId } = getUser() || {}
-    return arrUnique([...receiverIds, userId]).sort().join()
-}
-
 const saveMessage = (message = '', senderId, receiverIds, encrypted, timestamp, status = 'success', id) => {
     receiverIds = receiverIds.sort()
     const key = getInboxKey(receiverIds)
@@ -41,6 +34,13 @@ const saveMessage = (message = '', senderId, receiverIds, encrypted, timestamp, 
     return messageItem
 }
 
+// returns inbox storage key
+export const getInboxKey = receiverIds => {
+    if (receiverIds.length === 1) return receiverIds[0]
+    const { id: userId } = getUser() || {}
+    return arrUnique([...receiverIds, userId]).sort().join()
+}
+
 export const getMessages = receiverIds => {
     const { id: userId } = getUser() || {}
     if (!userId) return []
@@ -63,12 +63,16 @@ export const send = async (receiverIds, message, encrypted = false) => {
         status,
         msgId,
     )
-    saveMsg('loading', null)
-    await client.message.promise(receiverIds, message, false, (err, ts) => {
-        error = err
-        timestamp = ts
-    })
-    saveMsg(error ? 'error' : 'success', timestamp)
+    userId && saveMsg('loading', null)
+    try {
+        await client.message.promise(receiverIds, message, false, (err, ts) => {
+            error = err
+            timestamp = ts
+        })
+    } catch (err) {
+        alert(err)
+    }
+    userId && saveMsg(error ? 'error' : 'success', timestamp)
     return error
 }
 
