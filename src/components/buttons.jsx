@@ -4,6 +4,7 @@ import { Button } from 'semantic-ui-react'
 import { getRawUserID } from './UserIdInput'
 import { translated } from '../services/language'
 import { getByUserId } from '../services/partner'
+import { objWithoutKeys } from '../utils/utils'
 
 const [words, wordsCap] = translated({
     accept: 'accept',
@@ -47,14 +48,15 @@ export const Reveal = ({ content, hiddenContent, style, defaultVisible = false, 
 }
 
 // placeholder to potentially use this in the future to make all User IDs clickable and open private chat with user
-export const UserID = ({ userId }) => (
+export const UserID = (props = { prefix: '', suffix: '', userId: '' }) => (
     <Button
         basic
         compact
-        content={<b>@{getRawUserID(userId)}</b>}
-        onClick={e => e.stopPropagation() | console.log({ userId })}
-        title={(getByUserId(userId) || {}).name}
-        style={{ boxShadow: 'none', padding: 0 }}
+        content={<b>{props.prefix}@{getRawUserID(props.userId)}{props.suffix}</b>}
+        onClick={e => e.stopPropagation()}
+        title={(getByUserId(props.userId) || {}).name}
+        style={{ boxShadow: 'none', padding: 0, ...props.style }}
+        {...objWithoutKeys(props, ['prefix', 'style', 'suffix', 'userId'])}
     />
 )
 

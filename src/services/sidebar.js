@@ -15,6 +15,7 @@ import TransferForm from '../forms/Transfer'
 import UtilitiesView from '../views/UtilitiesView'
 // temp
 import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
+import Chat from '../components/Chat'
 // utils
 import DataStorage from '../utils/DataStorage'
 import { isBool, isBond } from '../utils/utils'
@@ -292,6 +293,12 @@ export const sidebarItems = [
         subHeader: texts.historySubheader
     },
     {
+        content: Chat,
+        icon: 'chat',
+        name: 'chat',
+        title: 'Chat',
+    },
+    {
         content: SettingsForm,
         icon: 'cogs',
         name: 'settings',
@@ -303,7 +310,7 @@ export const sidebarItems = [
         name: 'utilities',
         subHeader: texts.utilitiesSubheader,
         title: texts.utilitiesTitle,
-    }
+    },
 ].map(item => {
     const {
         active = false,

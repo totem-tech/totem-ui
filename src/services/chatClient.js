@@ -1,5 +1,6 @@
 import io from 'socket.io-client'
 import { isFn, isValidNumber, isDefined, objClean } from '../utils/utils'
+import DataStorage from '../utils/DataStorage'
 import { translated } from './language'
 import storage from './storage'
 
@@ -10,32 +11,40 @@ let instance, socket;
 const postLoginCallbacks = []
 const HISTORY_LIMIT = 100 // default limit
 const MODULE_KEY = 'messaging'
+const PREFIX = 'totem_'
 // read or write to messaging settings storage
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
+const historyStorage = new DataStorage(PREFIX + 'chat-history')
 const [texts] = translated({
     notConnected: 'Messaging server is not connected'
 })
 
 // migrate existing user data
-const deprecatedKey = 'totem_chat-user'
+const deprecatedKey = PREFIX + 'chat-user'
 const oldData = localStorage[deprecatedKey]
 if (oldData) {
     localStorage.removeItem(deprecatedKey)
     rw({ user: JSON.parse(oldData) })
 }
+// migrate trollbox chat history storage
+const oldHistory = rw().history
+if (oldHistory && oldHistory.length > 0) {
+    historyStorage.set('everyone', oldHistory)
+    rw({ history: null })
+}
 
 // add new message to chat history
 export const addToHistory = (message, id) => {
     // save history
-    rw({ history: [...getHistory(), { message, id }] })
+    historyStorage.set('everyone', [...historyStorage.get('everyone'), { message, id }])
     // apply history limit
-    historyLimit()
+    // historyLimit()
 }
 // retrieves user credentails from local storage
 export const getUser = () => rw().user
 export const setUser = user => rw({ user })
 // Retrieves chat history from local storage
-export const getHistory = () => rw().history || []
+export const getHistory = (userId = 'everyone') => historyStorage.get(userId) || []
 
 // get/set number of chat messages to store.
 // All existing and new chat messages will be visible on the chat widget despite the limit, until page is reloaded.
@@ -140,11 +149,6 @@ export class ChatClient {
         this.disconnect = () => socket.disconnect()
         this.onError = cb => socket.on('error', cb)
 
-        // Emit chat (Totem trollbox) message to everyone
-        this.message = (msg, cb) => isFn(cb) && socket.emit('message', msg, cb)
-        // receive chat messages
-        this.onMessage = cb => isFn(cb) && socket.on('message', cb)
-
         // add/get company by wallet address
         //
         // Params:
@@ -223,6 +227,11 @@ export class ChatClient {
         //              @list   array/null: list of translated texts. Null indicates no update required.
         this.languageTranslations = (langCode, hash, cb) => isFn(cb) && socket.emit('language-translations', langCode, hash, cb)
 
+        // Emit chat (Totem trollbox) message to everyone
+        this.message = (msg, cb) => isFn(cb) && socket.emit('message', msg, cb)
+        // receive chat messages
+        this.onMessage = cb => isFn(cb) && socket.on('message', cb)
+
         // Send notification
         //
         // Params:
@@ -251,6 +260,11 @@ export class ChatClient {
         //          @tsCreated  date: notification creation timestamp
         //          @cbConfirm  function: a function to confirm receipt
         this.onNotify = cb => isFn(cb) && socket.on('notify', cb)
+
+        // Emit chat message to specific user(s)
+        this.pm = (userIds, msg, encrypted, cb) => isFn(cb) && socket.emit('pm', userIds, msg, encrypted, cb)
+        // receive chat messages
+        this.pmReceived = cb => isFn(cb) && socket.on('pm', cb)
 
         // add/get/update project
         //
