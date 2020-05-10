@@ -1,8 +1,8 @@
 import React, { createRef, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
-import InboxView from './InboxView'
+import ChatMessages from './ChatMessages'
 import FormInput from '../../components/FormInput'
-import { getInboxKey, getMessages, newInbox, send } from './service'
+import { getInboxKey, getMessages, newInbox, send } from './chat'
 import { translated } from '../../services/language'
 import { getUser } from '../../services/chatClient'
 
@@ -11,72 +11,96 @@ const [_, textsCap] = translated({
     loginRequired: 'login/registration required',
     messageError: 'error'
 }, true)
+const data = {}
+const EVERYONE = 'everyone'
+const focusNScroll = inboxKey => setTimeout(() => {
+    const { inputRef, messagesRef } = data[inboxKey]
+    inputRef && inputRef.focus()
+    if (messagesRef) messagesRef.scrollTo(0, messagesRef.scrollHeight)
+})
 
-function Chat(props) {
-    const { receiverIds } = props
+export default function Chat(props) {
+    const { receiverIds, style, subtitle, title } = props
     const [messages, setMessages] = useState(getMessages(receiverIds))
-    const [sending, setSending] = useState(false)
+    const inboxKey = getInboxKey(receiverIds) // conversation identifier
+    data[inboxKey] = data[inboxKey] || {}
+
+    const handleSend = draft => {
+        send(receiverIds, draft, false)
+        focusNScroll(inboxKey)
+    }
 
     useEffect(() => {
-        // on mount
         let mounted = true
         let bond = newInbox(receiverIds)
-        let tieId = bond.tie(() => mounted && setMessages(getMessages(receiverIds)))
-        // on unmount
+        const tieId = bond.tie(() => mounted && setMessages(getMessages(receiverIds)))
+
         return () => {
             mounted = false
             bond.untie(tieId)
         }
-    })
+    }, []) // keep [] to prevent useEffect from being inboked on every render
+
+    focusNScroll(inboxKey)
+
     return (
-        <div className='totem-chat'>
-            <InboxView {...{ messages, receiverIds }} />
-            <MessageInput {...{ receiverIds, sending, setSending }} />
-        </div>
+        <div className='totem-chat' style={style}>
+            {title && (
+                <div style={{
+                    background: '#1b1c1d',
+                    borderBottom: '1px solid #babbbc',
+                    color: 'white',
+                    padding: 5,
+                    textAlign: 'center',
+                }}>
+                    <h1 style={{ margin: 0 }}>{title}</h1>
+                    <h4 style={{ margin: 0 }}>{subtitle}</h4>
+                </div>
+            )}
+            <ChatMessages {...{
+                isPrivate: receiverIds.length === 1 && !receiverIds.includes(EVERYONE),
+                onRef: ref => data[inboxKey].messagesRef = ref,
+                messages: messages.length > 0 ? messages : [{
+                    message: textsCap.inputPlaceholder
+                }],
+            }} />
+            <MessageInput {... {
+                onRef: ref => data[inboxKey].inputRef = ref,
+                onSubmit: handleSend,
+            }} />
+        </div >
     )
 }
-export default Chat
-Chat.propTypes = {}
+Chat.propTypes = {
+    style: PropTypes.object,
+    receiverIds: PropTypes.array,
+}
 Chat.defaultProps = {
-    receiverIds: ['everyone'],
+    receiverIds: [EVERYONE],
 }
 
-const refs = {}
-const MessageInput = props => {
-    const { receiverIds, sending, setSending } = props
-    const [draft, setDraft] = useState('')
-    const inboxKey = getInboxKey(receiverIds)
-
-    const handleSend = async (e) => {
+const MessageInput = ({ onRef, onSubmit }) => {
+    const [value, setValue] = useState('')
+    const handleSubmit = e => {
         e.preventDefault()
-        setSending(true)
-        await send(receiverIds, draft)
-        setSending(false)
-        setDraft('')
-        refs[inboxKey] && refs[inboxKey].focus()
+        if (value.trim().length === 0) return
+        onSubmit(value)
+        setValue('')
     }
-
     return (
-        <form onSubmit={handleSend}>
+        <form onSubmit={handleSubmit}>
             <FormInput {...{
-                action: {
-                    disabled: sending,
-                    loading: sending,
-                    icon: 'chat',
-                    onClick: handleSend
-                },
+                action: { icon: 'chat', onClick: handleSubmit },
+                autoComplete: 'off',
                 autoFocus: true,
-                disabled: sending,
-                elementRef: r => {
-                    refs[inboxKey] = r
-                },
+                elementRef: onRef,
                 fluid: true,
                 name: 'message',
-                onChange: (_, { value }) => setDraft(value),
+                onChange: (_, { value }) => setValue(value),
                 placeholder: textsCap.inputPlaceholder,
                 type: 'text',
                 useInput: true,
-                value: draft,
+                value,
             }} />
         </form>
     )

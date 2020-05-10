@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import FormInput from './FormInput'
 import { arrUnique, isFn, objWithoutKeys, textCapitalize, arrSort } from '../utils/utils'
+import { getChatUserIds } from '../modules/chat/chat'
 import client, { getUser, getHistory } from '../services/chatClient'
 import { translated } from '../services/language'
 import partners from '../services/partner'
@@ -114,7 +115,7 @@ export default class UserIdInput extends Component {
             options = options.concat(arrSort(partnerOptions, 'text'))
         }
         if (includeFromChat) {
-            const historyUserIds = arrUnique(getHistory().map(x => x.id))
+            const historyUserIds = getChatUserIds()
                 .filter(id => !userIds.includes(id))
             const huiOptions = arrSort(historyUserIds.map(id => ({
                 icon: 'chat',

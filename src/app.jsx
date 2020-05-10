@@ -10,6 +10,7 @@ import {
 // Components
 import ErrorBoundary from './components/CatchReactErrors'
 import ChatWidget from './components/ChatWidget'
+import ChatIcon from './modules/chat/Widget'
 import PageHeader from './components/PageHeader'
 import SidebarLeft, { MainContentItem } from './components/SidebarLeft'
 // Services
@@ -120,6 +121,7 @@ export class App extends ReactiveComponent {
 		return (
 			<div className={classNames}>
 				<ChatWidget />
+				<ChatIcon />
 				<ModalsConainer />
 				<ToastsContainer isMobile={isMobile} />
 				<ErrorBoundary><PageHeader {...{ logoSrc, isMobile }} /></ErrorBoundary>
@@ -148,9 +150,9 @@ export class App extends ReactiveComponent {
 
 const getGridStyle = (numCol = 1) => numCol <= 1 ? {} : {
 	display: 'grid',
-    gridTemplateColumns: `repeat(${numCol}, 1fr)`,
-    gridGap: '15px',
-    gridAutoRows: 'auto',
+	gridTemplateColumns: `repeat(${numCol}, 1fr)`,
+	gridGap: '15px',
+	gridAutoRows: 'auto',
 }
 const styles = {
 	mainContent: {
@@ -166,5 +168,5 @@ const styles = {
 		overflow: 'hidden',
 		WebkitOverflow: 'hidden',
 	},
-	
+
 }

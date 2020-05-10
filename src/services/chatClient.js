@@ -26,19 +26,9 @@ if (oldData) {
     localStorage.removeItem(deprecatedKey)
     rw({ user: JSON.parse(oldData) })
 }
-// migrate trollbox chat history storage
-const oldHistory = rw().history
-if (oldHistory && oldHistory.length > 0) {
-    rw({ history: null })
-}
+// remove trollbox chat history items
+if (rw().history) rw({ history: null })
 
-// add new message to chat history
-export const addToHistory = (message, id) => {
-    // save history
-    // historyStorage.set('everyone', [...historyStorage.get('everyone'), { message, id }])
-    // apply history limit
-    // historyLimit()
-}
 // retrieves user credentails from local storage
 export const getUser = () => rw().user
 export const setUser = user => rw({ user })
@@ -106,7 +96,7 @@ export const getClient = () => {
                 const args = [...arguments]
                 return new Promise((resolve, reject) => {
                     try {
-                        if (!instance.isConnected()) return reject(texts.notConnected)
+                        // if (!instance.isConnected()) return reject(texts.notConnected)
                         // last argument must be a callback
                         let callbackIndex = args.length - 1
                         const originalCallback = args[callbackIndex]

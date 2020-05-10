@@ -6,6 +6,7 @@ import { getUser } from '../../services/chatClient'
 
 const userColor = {}
 const randomize = (limit = 10) => parseInt(Math.random(limit) * limit)
+const EVERYONE = 'everyone'
 const colors = [
     'blue',
     'brown',
@@ -37,13 +38,21 @@ const icons = {
         style: iconStyle,
     }
 }
-const ChatMessages = props => {
-    const { messages, receiverIds } = props
+
+export default function ChatMessages(props) {
+    const { isPrivate, messages, onRef } = props
     const userId = (getUser() || {}).id
-    const isPrivate = receiverIds.length === 1 && receiverIds[0] !== 'everyone'
+    const { innerHeight } = window
     return (
-        <div className='messages'>
-            {messages.map(({ message, senderId, status }, i) => {
+        <div {...{
+            className: 'messages',
+            ref: onRef,
+            style: {
+                maxHeight: innerHeight / 2,
+                overflowY: 'auto',
+            }
+        }}>
+            {messages.map(({ errorMessage, message, senderId, status }, i) => {
                 const isSender = senderId === userId
                 let bgColor = isSender ? 'green' : (
                     isPrivate ? 'blue' : userColor[senderId]
@@ -54,13 +63,17 @@ const ChatMessages = props => {
                 }
                 const color = bgColor === 'black' ? 'white' : 'black'
                 return (
-                    <div key={i} style={{ textAlign: isSender ? 'right' : 'left' }}>
+                    <div {...{
+                        key: i,
+                        style: { textAlign: isSender ? 'right' : 'left' },
+                        title: errorMessage
+                    }}>
                         <Message {...{
                             color: bgColor,
                             compact: true,
                             content: (
                                 <span>
-                                    {isPrivate || isSender ? '' : (
+                                    {isPrivate || isSender || !senderId ? '' : (
                                         <UserID {...{
                                             basic: color !== 'white',
                                             secondary: color === 'white',
@@ -77,7 +90,7 @@ const ChatMessages = props => {
                                 borderRadius: 10,
                                 boxShadow: 'none',
                                 color,
-                                margin: '1px 0',
+                                margin: '1px 10px',
                                 padding: '7px 15px',
                                 width: 'auto'
                             },
@@ -90,4 +103,3 @@ const ChatMessages = props => {
         </div>
     )
 }
-export default ChatMessages
