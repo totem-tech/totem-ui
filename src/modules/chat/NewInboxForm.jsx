@@ -51,7 +51,7 @@ export default function NewInboxForm(props) {
         const name = values[names.name]
         const inboxKey = getInboxKey(receiverIds)
         if (!!inboxBonds[inboxKey]) return setMessage({
-            content: textsCap.inboxExists,
+            header: textsCap.inboxExists,
             showIcon: true,
             status: 'error',
         })

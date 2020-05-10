@@ -34,8 +34,8 @@ export default function ChatWidget(props) {
                         background: 'white',
                         border: '1px solid #babbbc',
                         borderRadius: 5,
-                        bottom: 60,
-                        maxWidth: 'calc( 100% - 30px)',
+                        bottom: 65,
+                        maxWidth: 'calc( 100% - 30px )',
                         margin: '0 15px',
                         position: 'fixed',
                         right: 0,
@@ -51,15 +51,20 @@ export default function ChatWidget(props) {
 
             {open && (
                 <div style={{
-                    bottom: 15,
+                    bottom: 10,
                     position: 'fixed',
-                    right: 60,
+                    right: 70,
                     zIndex: 1
                 }}>
                     <div style={{
-                        whiteSpace: 'nowrap',
-                        width: window.innerWidth - 60,
                         overflowX: 'auto',
+                        textAlign: 'right',
+                        whiteSpace: 'nowrap',
+                        width: window.innerWidth - 90,
+
+                        position: 'absolute',
+                        right: 0,
+                        top: -45,
                     }}>
                         {[...inboxKeys.filter(x => x !== EVERYONE), EVERYONE,].map(key => (
                             <Button {...{
@@ -93,7 +98,7 @@ export default function ChatWidget(props) {
             }}>
                 <Button {...{
                     circular: true,
-                    icon: { name: 'chat', size: 'large' },
+                    icon: { name: 'chat', size: 'big' },
                     onClick: () => {
                         !open && !openInboxKey && setOpenInboxKey(EVERYONE)
                         setOpen(!open)

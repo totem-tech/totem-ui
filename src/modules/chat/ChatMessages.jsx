@@ -65,8 +65,11 @@ export default function ChatMessages(props) {
                 return (
                     <div {...{
                         key: i,
-                        style: { textAlign: isSender ? 'right' : 'left' },
-                        title: errorMessage
+                        style: {
+                            padding: '5px 0',
+                            textAlign: isSender ? 'right' : 'left',
+                        },
+                        title: errorMessage,
                     }}>
                         <Message {...{
                             color: bgColor,
