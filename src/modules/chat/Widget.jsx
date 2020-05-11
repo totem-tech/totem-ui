@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Button } from 'semantic-ui-react'
-import Chat from './Chat'
+import Chat from './Inbox'
 import NewInboxForm from './NewInboxForm'
 import { inboxBonds, newInboxBond, inboxSettings } from './chat'
 import { getUser } from '../../services/chatClient'
@@ -32,19 +32,18 @@ export default function ChatWidget(props) {
                     receiverIds={openInboxKey.split(',')}
                     style={{
                         background: 'white',
-                        border: '1px solid #babbbc',
-                        borderRadius: 5,
+                        boxShadow: '0 2px 10px 1px #b5b5b5',
+                        borderRadius: 10,
                         bottom: 65,
                         maxWidth: 'calc( 100% - 30px )',
                         margin: '0 15px',
+                        overflow: 'hidden',
                         position: 'fixed',
                         right: 0,
                         width: 400,
-                        zIndex: 1
+                        zIndex: 1,
                     }}
-                    title={openInboxKey === EVERYONE ? 'Totem Trollbox' : (
-                        inboxSettings(openInboxKey).name || openInboxKey
-                    )}
+                    title={openInboxKey === EVERYONE ? 'Totem Trollbox' : ''}
                     subtitle={id && openInboxKey === EVERYONE && `Logged in as @${id}`}
                 />
             )}

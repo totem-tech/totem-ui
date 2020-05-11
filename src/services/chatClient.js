@@ -35,6 +35,7 @@ export const setUser = user => rw({ user })
 // Retrieves chat history from local storage
 export const getHistory = (userId = 'everyone') => historyStorage.get(userId) || []
 
+// Deprecated
 // get/set number of chat messages to store.
 // All existing and new chat messages will be visible on the chat widget despite the limit, until page is reloaded.
 //

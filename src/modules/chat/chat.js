@@ -1,7 +1,7 @@
 import DataStorage from '../../utils/DataStorage'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
-import { arrUnique, isObj } from '../../utils/utils'
+import { arrUnique, isObj, isValidNumber, isDefined } from '../../utils/utils'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import client, { getUser } from '../../services/chatClient'
 import storage from '../../services/storage'
@@ -12,6 +12,12 @@ const EVERYONE = 'everyone'
 const chatHistory = new DataStorage(PREFIX + MODULE_KEY, true)
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
+export const historyLimit = limit => {
+    limit = rw(
+        !isValidNumber(limit) ? undefined : { historyLimit: limit }
+    ).historyLimit
+    return isDefined(limit) ? limit : 100
+}
 const existingKeys = Array.from(chatHistory.getAll()).map(x => x[0])
 // notifies when a specific inbox view requires update
 export const inboxBonds = existingKeys.reduce((obj, key) => {
@@ -27,6 +33,7 @@ const saveMessage = msg => {
     receiverIds = receiverIds.sort()
     const key = getInboxKey(receiverIds)
     const messages = chatHistory.get(key) || []
+    const limit = historyLimit()
     let msgItem = messages.find(x => x.id === id)
     if (id && msgItem) {
         // update existing item
@@ -45,7 +52,10 @@ const saveMessage = msg => {
         }
         messages.push(msgItem)
     }
-    chatHistory.set(key, messages)
+    chatHistory.set(
+        key,
+        messages.length > limit ? messages.slice(messages.length - limit) : messages
+    )
     inboxBonds[key] = inboxBonds[key] || new Bond()
     inboxBonds[key].changed(uuid.v1())
     return msgItem
@@ -83,6 +93,7 @@ export const inboxSettings = (inboxKey, value) => {
     let settings = rw()
     if (!isObj(value)) return settings[inboxKey] || {}
     settings[inboxKey] = { ...settings[inboxKey], ...value }
+    setTimeout(() => inboxBonds[inboxKey].changed(uuid.v1()))
     return rw(settings)[inboxKey] || {}
 }
 

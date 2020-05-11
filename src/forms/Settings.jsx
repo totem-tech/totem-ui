@@ -2,7 +2,8 @@ import React, { Component } from 'react'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 import { arrSort, generateHash } from '../utils/utils'
 // services
-import client, { historyLimit as chatHistoryLimit } from '../services/chatClient'
+import client from '../services/chatClient'
+import { historyLimit as chatHistoryLimit } from '../modules/chat/chat'
 import {
     getCurrencies,
     getSelected as getSelectedCurrency,

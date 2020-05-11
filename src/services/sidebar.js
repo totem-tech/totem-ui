@@ -15,7 +15,6 @@ import TransferForm from '../forms/Transfer'
 import UtilitiesView from '../views/UtilitiesView'
 // temp
 import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
-import Chat from '../modules/chat/Chat'
 // utils
 import DataStorage from '../utils/DataStorage'
 import { isBool, isBond } from '../utils/utils'
@@ -291,12 +290,6 @@ export const sidebarItems = [
         name: 'history',
         title: texts.historyTitle,
         subHeader: texts.historySubheader
-    },
-    {
-        content: Chat,
-        icon: 'chat',
-        name: 'chat',
-        title: 'Chat',
     },
     {
         content: SettingsForm,
