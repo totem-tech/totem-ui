@@ -75,7 +75,7 @@ export default function ChatWidget(props) {
                                 ),
                                 key,
                                 icon: {
-                                    name: key !== EVERYONE && key.split(',').length === 1 ? 'chat' : 'group',
+                                    name: key === EVERYONE ? 'globe' : key.split(',').length === 1 ? 'chat' : 'group',
                                     color: key === openInboxKey ? 'green' : undefined
                                 },
                                 onClick: () => setOpenInboxKey(openInboxKey === key ? '' : key),
@@ -97,7 +97,10 @@ export default function ChatWidget(props) {
             }}>
                 <Button {...{
                     circular: true,
-                    icon: { name: 'chat', size: 'big' },
+                    icon: {
+                        name: open ? 'close' : 'chat',
+                        size: 'big',
+                    },
                     onClick: () => {
                         !open && !openInboxKey && setOpenInboxKey(EVERYONE)
                         setOpen(!open)
