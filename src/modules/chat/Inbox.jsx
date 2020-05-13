@@ -1,22 +1,25 @@
-import React, { createRef, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
+import { textEllipsis, arrUnique } from '../../utils/utils'
 import ChatMessages from './InboxMessages'
+import { editName } from './NewInboxForm'
 import FormInput from '../../components/FormInput'
-import { getInboxKey, getMessages, inboxSettings, newInbox, send } from './chat'
+import { UserID } from '../../components/buttons'
+import { getInboxKey, getMessages, inboxSettings, newInbox, send, removeInboxMessages, removeInbox, hiddenInboxKeys } from './chat'
 import { translated } from '../../services/language'
 import { confirm } from '../../services/modal'
-import { textEllipsis, arrUnique } from '../../utils/utils'
-import FormBuilder from '../../components/FormBuilder'
-import { UserID } from '../../components/buttons'
-import { editName } from './NewInboxForm'
+import { getLayout } from '../../services/window'
 
 const [_, textsCap] = translated({
     close: 'close',
     inputPlaceholder: 'type something and press enter to send',
     loginRequired: 'login/registration required',
     members: 'members',
-    messageError: 'error'
+    messageError: 'error',
+    remove: 'remove',
+    removeMessages: 'remove messages',
+    removeConversation: 'remove conversation',
 }, true)
 const data = {}
 const EVERYONE = 'everyone'
@@ -28,10 +31,12 @@ const focusNScroll = inboxKey => setTimeout(() => {
 
 export default function Chat(props) {
     const { receiverIds, style, subtitle, title } = props
-    const isGroup = receiverIds.length > 1 || receiverIds.includes(EVERYONE)
+    const isTrollbox = receiverIds.includes(EVERYONE)
+    const isGroup = receiverIds.length > 1 || isTrollbox
     const [messages, setMessages] = useState(getMessages(receiverIds))
     const [showTools, setShowTools] = useState(false)
     const inboxKey = getInboxKey(receiverIds) // conversation identifier
+    const isMobile = getLayout() === 'mobile'
     data[inboxKey] = data[inboxKey] || {}
 
     const handleSend = draft => {
@@ -56,8 +61,8 @@ export default function Chat(props) {
         <div className='totem-chat' style={style}>
             <div
                 {...{
-                    onMouseEnter: () => isGroup && setShowTools(true),
-                    onMouseLeave: () => isGroup && setShowTools(false),
+                    onMouseEnter: () => setShowTools(true),
+                    onMouseLeave: () => setShowTools(false),
                     style: {
                         background: 'rgba(0,0,0,.6)',
                         color: 'white',
@@ -66,9 +71,16 @@ export default function Chat(props) {
                     }
                 }}
             >
-                <h1 style={{ margin: 0 }}>
+                <h1 {...{
+                    style: {
+                        margin: 0,
+                        overflowX: 'hidden',
+                        textAlign: showTools ? 'left' : 'center',
+                    },
+                    onClick: () => isMobile && setShowTools(!showTools),
+                }}>
                     {title || inboxSettings(inboxKey).name || textEllipsis(`@${inboxKey}`, 16, 3, false)}
-                    {isGroup && showTools && (
+                    {showTools && (
                         <div style={{
                             display: 'inline',
                             position: 'absolute',
@@ -76,7 +88,7 @@ export default function Chat(props) {
                             top: 0,
                         }}>
 
-                            {!receiverIds.includes(EVERYONE) && (
+                            {isGroup && !isTrollbox && (
                                 <Button {...{
                                     circular: true,
                                     icon: 'pencil',
@@ -85,20 +97,68 @@ export default function Chat(props) {
                                     size: 'mini',
                                 }} />
                             )}
+                            {messages.length > 0 && (
+                                <React.Fragment>
+                                    {isGroup && (
+                                        <Button {...{
+                                            circular: true,
+                                            icon: 'group',
+                                            inverted: true,
+                                            key: 'showMembers',
+                                            onClick: e => showMembers(inboxKey, messages),
+                                            size: 'mini',
+                                        }} />
+                                    )}
+
+                                    <Button {...{
+                                        circular: true,
+                                        icon: 'trash',
+                                        inverted: true,
+                                        key: 'removeMessages',
+                                        onClick: () => confirm({
+                                            confirmButton: <Button negative content={textsCap.remove} />,
+                                            header: textsCap.removeMessages,
+                                            onConfirm: () => removeInboxMessages(inboxKey),
+                                            size: 'mini',
+                                        }),
+                                        size: 'mini',
+                                    }} />
+                                </React.Fragment>
+                            )}
+
                             <Button {...{
                                 circular: true,
-                                icon: 'group',
+                                icon: 'hide',
                                 inverted: true,
-                                onClick: e => showMembers(inboxKey, messages),
+                                key: 'hideConversation',
+                                onClick: () => {
+                                    hiddenInboxKeys([...hiddenInboxKeys(), inboxKey])
+                                },
                                 size: 'mini',
                             }} />
+
+                            {!isTrollbox && (
+                                <Button {...{
+                                    circular: true,
+                                    icon: 'close',
+                                    inverted: true,
+                                    key: 'removeConversation',
+                                    onClick: () => messages.length === 0 ? removeInbox(inboxKey) : confirm({
+                                        confirmButton: <Button negative content={textsCap.remove} />,
+                                        header: textsCap.removeConversation,
+                                        onConfirm: () => removeInbox(inboxKey),
+                                        size: 'mini',
+                                    }),
+                                    size: 'mini',
+                                }} />
+                            )}
                         </div>
                     )}
                 </h1>
                 {subtitle && <h4 style={{ margin: 0 }}>{subtitle}</h4>}
             </div>
             <ChatMessages {...{
-                isPrivate: receiverIds.length === 1 && !receiverIds.includes(EVERYONE),
+                isPrivate: receiverIds.length === 1 && !isTrollbox,
                 onRef: ref => data[inboxKey].messagesRef = ref,
                 messages: messages.length > 0 ? messages : [{
                     message: textsCap.inputPlaceholder

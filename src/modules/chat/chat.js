@@ -1,7 +1,7 @@
 import DataStorage from '../../utils/DataStorage'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
-import { arrUnique, isObj, isValidNumber, isDefined } from '../../utils/utils'
+import { arrUnique, isObj, isValidNumber, isDefined, isArr } from '../../utils/utils'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import client, { getUser } from '../../services/chatClient'
 import storage from '../../services/storage'
@@ -10,24 +10,28 @@ const PREFIX = 'totem_'
 const MODULE_KEY = 'chat-history'
 const EVERYONE = 'everyone'
 const chatHistory = new DataStorage(PREFIX + MODULE_KEY, true)
+// notifies when new conversation is created, hidden or unhidden
+export const newInboxBond = new Bond()
+// notifies when a specific inbox view requires update
+export const inboxBonds = {}
+const generateInboxBonds = () => {
+    const hiddenKeys = hiddenInboxKeys()
+    const allKeys = Array.from(chatHistory.getAll())
+        .map(([key]) => key)
+        .filter(key => key !== EVERYONE)
+        .concat(EVERYONE) // pushes to the end
+    allKeys.forEach(key => {
+        if (hiddenKeys.includes(key)) {
+            delete inboxBonds[key]
+            return
+        }
+
+        inboxBonds[key] = inboxBonds[key] || new Bond()
+    })
+}
+
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
-export const historyLimit = limit => {
-    limit = rw(
-        !isValidNumber(limit) ? undefined : { historyLimit: limit }
-    ).historyLimit
-    return isDefined(limit) ? limit : 100
-}
-const existingKeys = Array.from(chatHistory.getAll()).map(x => x[0])
-// notifies when a specific inbox view requires update
-export const inboxBonds = existingKeys.reduce((obj, key) => {
-    obj[key] = new Bond()
-    return obj
-}, {})
-if (!existingKeys.includes(EVERYONE)) existingKeys.push(EVERYONE)
-
-export const newInboxBond = new Bond() // notifies on new conversation
-
 const saveMessage = msg => {
     let { message, senderId, receiverIds, encrypted, timestamp, status = 'success', id, errorMessage } = msg
     receiverIds = receiverIds.sort()
@@ -61,8 +65,16 @@ const saveMessage = msg => {
     return msgItem
 }
 
+// unique user ids from all messages in chat history
+export const getChatUserIds = (includeTrollbox = true) => arrUnique(Object.keys(inboxBonds)
+    .filter(key => key !== EVERYONE)
+    .map(key => key.split(','))
+    .flat()
+    .concat(includeTrollbox ? getTrollboxUserIds() : []))
+
 // returns inbox storage key
 export const getInboxKey = receiverIds => {
+    receiverIds = arrUnique(receiverIds).sort()
     const { id: userId } = getUser() || {}
     const index = receiverIds.indexOf(userId)
     if (index >= 0) receiverIds.splice(index, 1)
@@ -74,12 +86,6 @@ export const getInboxKey = receiverIds => {
     return arrUnique([...receiverIds, userId]).sort().join()
 }
 
-export const getChatUserIds = (includeTrollbox = true) => arrUnique(Object.keys(inboxBonds)
-    .filter(key => key !== EVERYONE)
-    .map(key => key.split(','))
-    .flat()
-    .concat(includeTrollbox ? getTrollboxUserIds() : []))
-
 export const getMessages = receiverIds => {
     const { id: userId } = getUser() || {}
     if (!userId) return []
@@ -88,20 +94,58 @@ export const getMessages = receiverIds => {
     return msgs
 }
 
-// get/set inbox specific settings
-export const inboxSettings = (inboxKey, value) => {
-    let settings = rw()
-    if (!isObj(value)) return settings[inboxKey] || {}
-    settings[inboxKey] = { ...settings[inboxKey], ...value }
-    setTimeout(() => inboxBonds[inboxKey].changed(uuid.v1()))
-    return rw(settings)[inboxKey] || {}
-}
-
+// unique user ids from Trollbox chat history
 export const getTrollboxUserIds = () => {
     const messages = chatHistory.get(EVERYONE) || []
     return arrUnique(messages.map(x => x.senderId))
 }
 
+// get/set hidden inbox keys list
+export const hiddenInboxKeys = arr => {
+    arr = isArr(arr) ? { hiddenInboxes: arrUnique(arr) } : undefined
+    const generate = !!arr
+    arr = rw(arr).hiddenInboxes || []
+    if (generate) {
+        generateInboxBonds()
+        newInboxBond.changed(uuid.v1())
+    }
+    return arr
+}
+
+// get/set limit per inbox
+export const historyLimit = limit => {
+    limit = rw(
+        !isValidNumber(limit) ? undefined : { historyLimit: limit }
+    ).historyLimit
+    return isDefined(limit) ? limit : 100
+}
+
+// get/set inbox specific settings
+export const inboxSettings = (inboxKey, value, triggerReload = false) => {
+    let settings = rw()
+    if (!isObj(value) && value !== null) return settings[inboxKey] || {}
+    settings[inboxKey] = { ...settings[inboxKey], ...value }
+    setTimeout(() => {
+        value !== null && inboxBonds[inboxKey].changed(uuid.v1())
+        triggerReload && newInboxBond.changed(uuid.v1())
+    })
+
+    return rw(settings)[inboxKey] || {}
+}
+
+// create/get inbox key
+export const newInbox = (receiverIds = [], name, notify = false) => {
+    const key = getInboxKey(receiverIds)
+    if (!inboxBonds[key]) {
+        chatHistory.set(key, [])
+        name && inboxSettings(key, { name, ignore: false }, notify)
+    }
+    hiddenInboxKeys(hiddenInboxKeys().filter(x => x !== key))
+    generateInboxBonds()
+    return inboxBonds[key]
+}
+
+// send message
 export const send = (receiverIds, message, encrypted = false) => {
     const { id: senderId } = getUser() || {}
     if (!senderId) return
@@ -135,17 +179,13 @@ export const send = (receiverIds, message, encrypted = false) => {
     })
 }
 
-// create/get inbox key
-export const newInbox = (receiverIds = [], name, notify = false) => {
-    const key = getInboxKey(receiverIds)
-    if (!inboxBonds[key]) {
-        inboxBonds[key] = new Bond()
-        chatHistory.set(key, [])
-        name && inboxSettings(key, { name, ignore: false })
-        notify && setTimeout(() => newInboxBond.changed(uuid.v1()))
-    }
-    return inboxBonds[key]
+export const removeInbox = inboxKey => {
+    chatHistory.delete(inboxKey)
+    delete inboxBonds[inboxKey]
+    generateInboxBonds()
+    inboxSettings(inboxKey, null, true)
 }
+export const removeInboxMessages = inboxKey => chatHistory.set(inboxKey, []) | inboxBonds[inboxKey].changed(uuid.v1())
 
 // handle message received
 client.onMessage((m, s, r, e) => {
@@ -158,7 +198,18 @@ client.onMessage((m, s, r, e) => {
     })
 })
 
+generateInboxBonds()
 export default {
+    inboxBonds,
+    newInboxBond,
+    getMessages,
+    getChatUserIds,
+    getInboxKey,
+    getTrollboxUserIds,
+    historyLimit,
+    inboxSettings,
     newInbox,
     send,
+    removeInbox,
+    removeInboxMessages,
 }

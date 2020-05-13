@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react'
 import { Button } from 'semantic-ui-react'
 import Chat from './Inbox'
 import NewInboxForm from './NewInboxForm'
-import { inboxBonds, newInboxBond, inboxSettings } from './chat'
+import { inboxBonds, inboxSettings, newInboxBond } from './chat'
 import { getUser } from '../../services/chatClient'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
 import { textEllipsis } from '../../utils/utils'
 
-const [_, textsCap] = translated({
-    totemTrollbox: 'totem trollbox'
-}, true)
+const [texts] = translated({
+    totemTrollbox: 'Totem Trollbox'
+})
 
 const EVERYONE = 'everyone'
 export default function ChatWidget(props) {
@@ -20,7 +20,14 @@ export default function ChatWidget(props) {
     const { id } = getUser() || {}
 
     useEffect(() => {
-        const tieId = newInboxBond.tie(() => setInboxKeys(Object.keys(inboxBonds)))
+        const tieId = newInboxBond.tie(() => {
+            const newKeys = Object.keys(inboxBonds)
+            console.log('newInboxBond', { newKeys })
+            if (!newKeys.includes(openInboxKey)) setOpenInboxKey(
+                newKeys.length === 0 ? undefined : newKeys[newKeys.length - 1]
+            )
+            setInboxKeys(newKeys)
+        })
         return () => newInboxBond.untie(tieId)
     }, [])
 
@@ -33,7 +40,7 @@ export default function ChatWidget(props) {
                     style={{
                         background: 'white',
                         boxShadow: '0 2px 10px 1px #b5b5b5',
-                        borderRadius: 10,
+                        borderRadius: 5,
                         bottom: 65,
                         maxWidth: 'calc( 100% - 30px )',
                         margin: '0 15px',
@@ -65,10 +72,10 @@ export default function ChatWidget(props) {
                         right: 0,
                         top: -45,
                     }}>
-                        {[...inboxKeys.filter(x => x !== EVERYONE), EVERYONE,].map(key => (
+                        {inboxKeys.map(key => (
                             <Button {...{
                                 content: textEllipsis(
-                                    key === EVERYONE ? textsCap.totemTrollbox : inboxSettings(key).name || `@${key}`,
+                                    key === EVERYONE ? texts.totemTrollbox : inboxSettings(key).name || `@${key}`,
                                     20,
                                     3,
                                     false,
@@ -83,8 +90,11 @@ export default function ChatWidget(props) {
                             }} />
                         ))}
                         <Button {...{
-                            icon: 'plus',
-                            onClick: () => showForm(NewInboxForm, { closeOnSubmit: true }),
+                            icon: 'search plus',
+                            onClick: () => showForm(NewInboxForm, {
+                                closeOnSubmit: true,
+                                onSubmit: (success, values) => success && setOpenInboxKey(values.inboxKey)
+                            }),
                         }} />
                     </div>
                 </div>
@@ -102,8 +112,10 @@ export default function ChatWidget(props) {
                         size: 'big',
                     },
                     onClick: () => {
-                        !open && !openInboxKey && setOpenInboxKey(EVERYONE)
                         setOpen(!open)
+                        !open && !openInboxKey && inboxKeys.length > 0
+                            && setOpenInboxKey(inboxKeys[inboxKeys.length - 1])
+
                     },
                 }} />
             </div>
