@@ -16,16 +16,12 @@ const EVERYONE = 'everyone'
 export default function ChatWidget(props) {
     const [open, setOpen] = useState(props.open)
     const [inboxKeys, setInboxKeys] = useState(Object.keys(inboxBonds))
-    const [openInboxKey, setOpenInboxKey] = useState()
+    const [openInboxKey, setOpenInboxKey] = useState(inboxKeys[inboxKeys.length - 1])
     const { id } = getUser() || {}
 
     useEffect(() => {
         const tieId = newInboxBond.tie(() => {
             const newKeys = Object.keys(inboxBonds)
-            console.log('newInboxBond', { newKeys })
-            if (!newKeys.includes(openInboxKey)) setOpenInboxKey(
-                newKeys.length === 0 ? undefined : newKeys[newKeys.length - 1]
-            )
             setInboxKeys(newKeys)
         })
         return () => newInboxBond.untie(tieId)
@@ -33,7 +29,7 @@ export default function ChatWidget(props) {
 
     return (
         <div className='chat-container'>
-            {open && openInboxKey && (
+            {open && inboxKeys.includes(openInboxKey) && (
                 <Chat
                     key={openInboxKey}
                     receiverIds={openInboxKey.split(',')}
@@ -113,8 +109,7 @@ export default function ChatWidget(props) {
                     },
                     onClick: () => {
                         setOpen(!open)
-                        !open && !openInboxKey && inboxKeys.length > 0
-                            && setOpenInboxKey(inboxKeys[inboxKeys.length - 1])
+                        !open && !inboxKeys.includes(openInboxKey) && setOpenInboxKey(inboxKeys[inboxKeys.length - 1])
 
                     },
                 }} />

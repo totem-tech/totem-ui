@@ -300,6 +300,9 @@ div.ui.padded.segment {
 .mobile.sidebar-visible .rcw-widget-container {
   display: none;
 }
+#app > .mobile.sidebar-visible > .chat-container {
+    display: none;
+}
 
 /* more space for messages
 #messages .rcw-response {
