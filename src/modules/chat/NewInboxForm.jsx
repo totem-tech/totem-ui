@@ -19,16 +19,18 @@ export default function NewInboxForm(props) {
         receiverIds: 'receiverIds'
     }
     const [success, setSuccess] = useState(false)
+    const hiddenKeys = hiddenInboxKeys()
     const [inputs, setInputs] = useState([
         {
             autoFocus: true,
             excludeOwnId: true,
             includeFromChat: true,
+            includePartners: true,
             multiple: true,
             name: names.receiverIds,
-            options: hiddenInboxKeys().map(key => ({
+            options: hiddenKeys.map(key => ({
                 icon: key === EVERYONE ? 'globe' : (
-                    key.split(',').length > 1 ? 'group' : 'user'
+                    key.split(',').length > 1 ? 'group' : 'chat'
                 ),
                 key,
                 text: key === EVERYONE ? textsCap.totemTrollbox : (
@@ -37,19 +39,21 @@ export default function NewInboxForm(props) {
                 value: key,
             })),
             onChange: (_, values) => {
-                const userIds = values[names.receiverIds]
+                const userIds = values[names.receiverIds].map(x => x.split(',')).flat()
                 const nameIn = findInput(inputs, names.name)
                 const inboxKey = getInboxKey(userIds)
                 const hideName = !inboxKey || inboxKey.split(',').length <= 1
+                const value = hideName ? '' : inboxSettings(inboxKey).name || nameIn.value
                 nameIn.hidden = hideName
                 nameIn.required = !hideName
-                nameIn.value = hideName ? '' : nameIn.value
+                nameIn.bond.changed(value)
                 setInputs(inputs)
             },
             required: true,
             type: 'UserIdInput',
         },
         {
+            bond: new Bond(),
             hidden: true,
             label: textsCap.nameLabel,
             maxLength: 16,
@@ -63,11 +67,11 @@ export default function NewInboxForm(props) {
 
     const handleSubmit = (_, values) => {
         const { onSubmit } = props
-        const receiverIds = values[names.receiverIds]
-        receiverIds.forEach((id, index) => {
-            if (!id.includes(',')) return
-            receiverIds[index] = id.split(',')
-        })
+        const receiverIds = values[names.receiverIds].map(x => x.split(',')).flat()
+        // receiverIds.forEach((id, index) => {
+        //     if (!id.includes(',')) return
+        //     receiverIds[index] = id.split(',')
+        // })
         const name = values[names.name]
         const inboxKey = getInboxKey(receiverIds)
         newInbox(receiverIds, receiverIds.length > 1 ? name : null, true)
@@ -105,7 +109,7 @@ export const editName = inboxKey => {
                 type: 'text',
                 value: inboxSettings(inboxKey).name || '',
             }],
-            onSubmit: (_, { name }) => inboxSettings(inboxKey, { name }, true) | closeModal(formId),
+            onSubmit: (_, { name }) => inboxSettings(inboxKey, { name }) | closeModal(formId),
             size: 'mini',
         }
     )

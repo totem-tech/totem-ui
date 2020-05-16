@@ -9,8 +9,7 @@ import {
 
 // Components
 import ErrorBoundary from './components/CatchReactErrors'
-import ChatWidget from './components/ChatWidget'
-import ChatIcon from './modules/chat/Widget'
+import ChatWidget from './modules/chat/Widget'
 import PageHeader from './components/PageHeader'
 import SidebarLeft, { MainContentItem } from './components/SidebarLeft'
 // Services
@@ -121,7 +120,6 @@ export class App extends ReactiveComponent {
 		return (
 			<div className={classNames}>
 				<ChatWidget />
-				<ChatIcon />
 				<ModalsConainer />
 				<ToastsContainer isMobile={isMobile} />
 				<ErrorBoundary><PageHeader {...{ logoSrc, isMobile }} /></ErrorBoundary>

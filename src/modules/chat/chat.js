@@ -10,18 +10,19 @@ const PREFIX = 'totem_'
 const MODULE_KEY = 'chat-history'
 const EVERYONE = 'everyone'
 const chatHistory = new DataStorage(PREFIX + MODULE_KEY, true)
+// read/write to module settings
+const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 // notifies when new conversation is created, hidden or unhidden
 export const newInboxBond = new Bond()
 // notifies when a specific inbox view requires update
 export const inboxBonds = {}
 const generateInboxBonds = () => {
-    const hiddenKeys = hiddenInboxKeys()
     const allKeys = Array.from(chatHistory.getAll())
         .map(([key]) => key)
-        .filter(key => key !== EVERYONE)
-        .concat(EVERYONE) // pushes to the end
+    if (!allKeys.includes(EVERYONE)) allKeys.push(EVERYONE)
+
     allKeys.forEach(key => {
-        if (hiddenKeys.includes(key)) {
+        if (inboxSettings(key).hide) {
             delete inboxBonds[key]
             return
         }
@@ -30,8 +31,6 @@ const generateInboxBonds = () => {
     })
 }
 
-// read/write to module settings
-const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 const saveMessage = msg => {
     let { message, senderId, receiverIds, encrypted, timestamp, status = 'success', id, errorMessage } = msg
     receiverIds = receiverIds.sort()
@@ -101,15 +100,10 @@ export const getTrollboxUserIds = () => {
 }
 
 // get/set hidden inbox keys list
-export const hiddenInboxKeys = arr => {
-    arr = isArr(arr) ? { hiddenInboxes: arrUnique(arr) } : undefined
-    const generate = !!arr
-    arr = rw(arr).hiddenInboxes || []
-    if (generate) {
-        generateInboxBonds()
-        newInboxBond.changed(uuid.v1())
-    }
-    return arr
+export const hiddenInboxKeys = () => {
+    const allKeys = Array.from(chatHistory.getAll()).map(x => x[0])
+    const settings = rw()
+    return allKeys.filter(key => settings[key] && settings[key].hide)
 }
 
 // get/set limit per inbox
@@ -123,26 +117,26 @@ export const historyLimit = limit => {
 // get/set inbox specific settings
 export const inboxSettings = (inboxKey, value, triggerReload = false) => {
     let settings = rw()
-    if (!isObj(value) && value !== null) return settings[inboxKey] || {}
+    const remove = value !== null
+    if (!isObj(value) && remove) return settings[inboxKey] || {}
     settings[inboxKey] = { ...settings[inboxKey], ...value }
-    setTimeout(() => {
-        value !== null && inboxBonds[inboxKey].changed(uuid.v1())
-        triggerReload && newInboxBond.changed(uuid.v1())
-    })
+    settings = rw(settings)
+    inboxBonds[inboxKey] && inboxBonds[inboxKey].changed(uuid.v1())
+    generateInboxBonds()
+    triggerReload && newInboxBond.changed(uuid.v1())
 
-    return rw(settings)[inboxKey] || {}
+    return settings[inboxKey] || {}
 }
 
 // create/get inbox key
-export const newInbox = (receiverIds = [], name, notify = false) => {
-    const key = getInboxKey(receiverIds)
-    if (!inboxBonds[key]) {
-        chatHistory.set(key, [])
-        name && inboxSettings(key, { name, ignore: false }, notify)
-    }
-    hiddenInboxKeys(hiddenInboxKeys().filter(x => x !== key))
-    generateInboxBonds()
-    return inboxBonds[key]
+export const newInbox = (receiverIds = [], name, reload = false) => {
+    const inboxKey = getInboxKey(receiverIds)
+    let settings = inboxSettings(inboxKey)
+    reload = reload || settings.hide
+    !chatHistory.get(inboxKey) && chatHistory.set(inboxKey, [])
+    inboxSettings(inboxKey, { ...settings, hide: false, name }, reload)
+    !inboxBonds[inboxKey] && generateInboxBonds()
+    return inboxBonds[inboxKey]
 }
 
 // send message
@@ -182,19 +176,19 @@ export const send = (receiverIds, message, encrypted = false) => {
 export const removeInbox = inboxKey => {
     chatHistory.delete(inboxKey)
     delete inboxBonds[inboxKey]
-    generateInboxBonds()
-    inboxSettings(inboxKey, null, true)
+    newInboxBond.changed(uuid.v1)
 }
 export const removeInboxMessages = inboxKey => chatHistory.set(inboxKey, []) | inboxBonds[inboxKey].changed(uuid.v1())
 
 // handle message received
-client.onMessage((m, s, r, e) => {
+client.onMessage((m, s, r, e, t) => {
     newInbox(r, null, true)
     saveMessage({
         message: m,
         senderId: s,
         receiverIds: r,
         encrypted: e,
+        timestamp: t,
     })
 })
 

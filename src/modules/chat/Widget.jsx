@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react'
-import { Button } from 'semantic-ui-react'
+import { Button, Icon } from 'semantic-ui-react'
 import Chat from './Inbox'
 import NewInboxForm from './NewInboxForm'
 import { inboxBonds, inboxSettings, newInboxBond } from './chat'
-import { getUser } from '../../services/chatClient'
+import { getUser, loginBond } from '../../services/chatClient'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
 import { textEllipsis } from '../../utils/utils'
 
-const [texts] = translated({
-    totemTrollbox: 'Totem Trollbox'
-})
+const [texts, textsCap] = translated({
+    offline: 'offline',
+    loggedInAs: 'Logged in as',
+    online: 'online',
+    totemTrollbox: 'Totem Trollbox',
+}, true)
 
 const EVERYONE = 'everyone'
 export default function ChatWidget(props) {
@@ -18,13 +21,18 @@ export default function ChatWidget(props) {
     const [inboxKeys, setInboxKeys] = useState(Object.keys(inboxBonds))
     const [openInboxKey, setOpenInboxKey] = useState(inboxKeys[inboxKeys.length - 1])
     const { id } = getUser() || {}
+    const [online, setOnline] = useState(loginBond._value)
 
     useEffect(() => {
         const tieId = newInboxBond.tie(() => {
             const newKeys = Object.keys(inboxBonds)
             setInboxKeys(newKeys)
         })
-        return () => newInboxBond.untie(tieId)
+        const tieIdLogin = loginBond.tie(online => setOnline(online))
+        return () => {
+            newInboxBond.untie(tieId)
+            loginBond.untie(tieIdLogin)
+        }
     }, [])
 
     return (
@@ -46,8 +54,8 @@ export default function ChatWidget(props) {
                         width: 400,
                         zIndex: 1,
                     }}
-                    title={openInboxKey === EVERYONE ? 'Totem Trollbox' : ''}
-                    subtitle={id && openInboxKey === EVERYONE && `Logged in as @${id}`}
+                    title={openInboxKey === EVERYONE ? texts.totemTrollbox : ''}
+                    subtitle={id && openInboxKey === EVERYONE && `${textsCap.loggedInAs} @${id}`}
                 />
             )}
 
@@ -78,7 +86,7 @@ export default function ChatWidget(props) {
                                 ),
                                 key,
                                 icon: {
-                                    name: key === EVERYONE ? 'globe' : key.split(',').length === 1 ? 'chat' : 'group',
+                                    name: key === EVERYONE ? 'globe' : key.split(',').length === 1 ? 'user' : 'group',
                                     color: key === openInboxKey ? 'green' : undefined
                                 },
                                 onClick: () => setOpenInboxKey(openInboxKey === key ? '' : key),
@@ -104,6 +112,7 @@ export default function ChatWidget(props) {
                 <Button {...{
                     circular: true,
                     icon: {
+                        color: online ? undefined : 'red',
                         name: open ? 'close' : 'chat',
                         size: 'big',
                     },
@@ -112,6 +121,7 @@ export default function ChatWidget(props) {
                         !open && !inboxKeys.includes(openInboxKey) && setOpenInboxKey(inboxKeys[inboxKeys.length - 1])
 
                     },
+                    title: online ? textsCap.online : textsCap.offline,
                 }} />
             </div>
         </div>

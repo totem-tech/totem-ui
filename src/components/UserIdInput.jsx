@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import FormInput from './FormInput'
 import { arrUnique, isFn, objWithoutKeys, textCapitalize, arrSort } from '../utils/utils'
 import { getChatUserIds } from '../modules/chat/chat'
-import client, { getUser, getHistory } from '../services/chatClient'
+import client, { getUser } from '../services/chatClient'
 import { translated } from '../services/language'
 import partners from '../services/partner'
 
@@ -95,7 +95,7 @@ export default class UserIdInput extends Component {
         value = value || (multiple ? [] : '')
         if (!options) return this.setState({ value })
 
-        const userIds = options.map(({ userId }) => userId)
+        const userIds = options.map(x => x.value)
         if (includePartners) {
             const partnerOptions = []
             Array.from(partners.getAll())

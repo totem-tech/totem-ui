@@ -1,12 +1,21 @@
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
-import { Button } from 'semantic-ui-react'
-import { textEllipsis, arrUnique } from '../../utils/utils'
+import { Button, Icon } from 'semantic-ui-react'
+import { textEllipsis, arrUnique, arrReverse } from '../../utils/utils'
 import ChatMessages from './InboxMessages'
 import { editName } from './NewInboxForm'
 import FormInput from '../../components/FormInput'
 import { UserID } from '../../components/buttons'
-import { getInboxKey, getMessages, inboxSettings, newInbox, send, removeInboxMessages, removeInbox, hiddenInboxKeys } from './chat'
+import {
+    getInboxKey,
+    getMessages,
+    inboxBonds,
+    inboxSettings,
+    send,
+    removeInboxMessages,
+    removeInbox,
+} from './chat'
+import client, { loginBond } from '../../services/chatClient'
 import { translated } from '../../services/language'
 import { confirm } from '../../services/modal'
 import { getLayout } from '../../services/window'
@@ -44,7 +53,7 @@ export default function Chat(props) {
 
     useEffect(() => {
         let mounted = true
-        let bond = newInbox(receiverIds)
+        let bond = inboxBonds[inboxKey]
         const tieId = bond.tie(() => mounted && setMessages(getMessages(receiverIds)))
 
         return () => {
@@ -57,7 +66,15 @@ export default function Chat(props) {
 
     return (
         <div className='totem-chat' style={style}>
-            <InboxHeader {...{ inboxKey, isGroup, isTrollbox, messages, subtitle, title }} />
+            <InboxHeader {...{
+                inboxKey,
+                isGroup,
+                isTrollbox,
+                messages,
+                receiverIds,
+                subtitle,
+                title,
+            }} />
             <ChatMessages {...{
                 isPrivate: receiverIds.length === 1 && !isTrollbox,
                 onRef: ref => data[inboxKey].messagesRef = ref,
@@ -80,9 +97,30 @@ Chat.defaultProps = {
     receiverIds: [EVERYONE],
 }
 
-const InboxHeader = ({ inboxKey, isGroup, isTrollbox, messages, subtitle, title }) => {
+const InboxHeader = ({ inboxKey, isGroup, isTrollbox, messages, receiverIds, subtitle, title }) => {
     const isMobile = getLayout() === 'mobile'
     const [showTools, setShowTools] = useState(false)
+    const [online, setOnline] = useState(false)
+
+    !isGroup && useEffect(() => {
+        let isMounted = true
+        const frequency = 30000
+        const friend = receiverIds[0]
+        const checkOnline = () => {
+            if (!loginBond._value) return setOnline(false)
+            const { timestamp } = arrReverse(messages).find(m => m.senderId === friend) || {}
+            const tsDiff = new Date() - new Date(timestamp)
+            // received a message from opponent within the frequency duration => assume online
+            if (tsDiff < frequency) return setOnline(true)
+            client.isUserOnline(receiverIds[0], (_, online) => isMounted && setOnline(!!online))
+        }
+        const intervalId = setInterval(checkOnline, frequency)
+        checkOnline()
+        return () => {
+            isMounted = false
+            clearInterval(intervalId)
+        }
+    }, [])
     return (
         <div
             {...{
@@ -96,14 +134,20 @@ const InboxHeader = ({ inboxKey, isGroup, isTrollbox, messages, subtitle, title 
                 }
             }}
         >
+            {!isGroup && online && (
+                <div style={{ position: 'absolute', top: 15 }}>
+                    <Icon {...{ color: 'green', name: 'circle' }} />
+                </div>
+            )}
             <h1 {...{
                 style: {
                     margin: 0,
                     overflowX: 'hidden',
-                    color: showTools ? 'black' : undefined,
+                    color: showTools ? 'grey' : undefined,
                 },
                 onClick: () => isMobile && setShowTools(!showTools),
             }}>
+
                 {title || inboxSettings(inboxKey).name || textEllipsis(`@${inboxKey}`, 16, 3, false)}
                 {showTools && (
                     <div style={{
@@ -112,7 +156,6 @@ const InboxHeader = ({ inboxKey, isGroup, isTrollbox, messages, subtitle, title 
                         right: 5,
                         top: 0,
                     }}>
-
                         {isGroup && !isTrollbox && (
                             <Button {...{
                                 circular: true,
@@ -156,7 +199,7 @@ const InboxHeader = ({ inboxKey, isGroup, isTrollbox, messages, subtitle, title 
                             icon: 'hide',
                             inverted: true,
                             key: 'hideConversation',
-                            onClick: () => hiddenInboxKeys([...hiddenInboxKeys(), inboxKey]),
+                            onClick: () => inboxSettings(inboxKey, { hide: true }, true),
                             size: 'mini',
                         }} />
 

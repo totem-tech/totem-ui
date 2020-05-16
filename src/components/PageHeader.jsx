@@ -9,7 +9,7 @@ import { arrSort, copyToClipboard, textEllipsis } from '../utils/utils'
 import IdentityForm from '../forms/Identity'
 import TimeKeepingForm from '../forms/TimeKeeping'
 // services
-import { getUser, getClient, onLogin } from '../services/chatClient'
+import { getUser, loginBond } from '../services/chatClient'
 import identities, { getSelected, setSelected } from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
@@ -37,8 +37,6 @@ export default class PageHeader extends Component {
 			wallets: [],
 		}
 
-		// Update user ID after registration
-		!this.state.id && onLogin(id => id && this.setState({ id }))
 		this.originalSetState = this.setState
 		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
 	}
@@ -49,6 +47,15 @@ export default class PageHeader extends Component {
 			wallets: identities.getAll()
 		}))
 		timeKeeping.formDataBond.tie(() => this.forceUpdate())
+
+		// Update user ID after registration
+		if (this.state.id) return
+		this.tieIdLogin = loginBond.tie(success => {
+			if (!success) return
+			const { id } = getUser()
+			this.setState({ id })
+			loginBond.untie(this.tieIdLogin)
+		})
 	}
 
 	componentWillUnmount = () => this._mounted = false
