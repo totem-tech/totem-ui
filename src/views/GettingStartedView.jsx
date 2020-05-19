@@ -47,8 +47,10 @@ if (localStorage.getItem(legacyKey) || (storage.settings.global(MODULE_KEY) || {
 export default class GetingStarted extends Component {
 	constructor(props) {
 		super(props)
+
+		const isRegistered = !!(getUser() || {}).id
 		this.state = {
-			activeStep: rw().activeStep || 0
+			activeStep: isRegistered ? 2 : rw().activeStep || 0
 		}
 		this.registerStepIndex = 1
 	}
@@ -60,6 +62,7 @@ export default class GetingStarted extends Component {
 	})
 
 	handleRegister = () => showForm(RegisterForm, {
+		closeOnSubmit: true,
 		onSubmit: ok => {
 			if (!ok) return
 			this.setIndex(this.state.activeStep + 1)

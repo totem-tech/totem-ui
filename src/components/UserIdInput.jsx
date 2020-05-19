@@ -163,7 +163,7 @@ export default class UserIdInput extends Component {
         if (isOwnId) return
 
         // check if User ID is valid
-        client.idExists(userId, exists => {
+        client.idExists(userId, (err, exists) => {
             const input = this.state
             input.loading = false
             input.message = exists ? undefined : {
@@ -238,12 +238,12 @@ export default class UserIdInput extends Component {
             triggerChagne(true)
             return true
         }
-        const cb = exists => {
-            const invalid = newUser ? exists : !exists
+        client.idExists(value, (err, exists) => {
+            const invalid = err ? true : (
+                newUser ? exists : !exists
+            )
             triggerChagne(invalid)
-            return invalid
-        }
-        client.idExists.promise(value).then(cb, cb)
+        })
     }
 
     render() {

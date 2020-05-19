@@ -238,13 +238,7 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
     delete inprogressIds[id]
 
     try {
-        if (task.type === QUEUE_TYPES.CHATCLIENT) { // redundant??
-            const args = task.args
-            const taskCb = args[args.length - 1]
-            if (isFn(taskCb)) taskCb.apply({}, cbArgs)
-        } else {
-            isFn(task.then) && task.then(success, cbArgs)
-        }
+        isFn(task.then) && task.then(success, cbArgs)
     } catch (err) {
         // ignore any error occured by invoking the `then` function
         console.log('Unexpected error occured while executing queue .then()', { rootTask, err })
@@ -277,15 +271,7 @@ const handleChatClient = (id, rootTask, task, toastId) => {
         func = (func.startsWith('client.') ? '' : 'client.') + func
         func = eval(func)
         eval(client) // just make sure client variable isn't removed by accident
-        if (!func || !isFn(func)) return _save(ERROR)(texts.invalidFunc)
-        let cbIndex = args.length === 0 ? 0 : args.length - 1
-        if (hasValue(args[cbIndex]) && !isFn(args[cbIndex])) {
-            cbIndex++
-        }
-        if (!isFn(args[cbIndex])) {
-            // add a placeholder callback if not supplied, otherwise, messaging service will ignore the request
-            args[cbIndex] = () => { }
-        }
+        if (!isFn(func)) return _save(ERROR)(texts.invalidFunc)
         _save(LOADING)()
         // initiate request
         func.promise.apply(null, args).then(_save(SUCCESS), _save(ERROR))

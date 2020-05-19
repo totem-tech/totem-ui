@@ -41,18 +41,18 @@ export const getClient = () => {
     //
     // Example: use of client.message
     //     without promise:
-    //          client.messate('hello universe!', err => console.log({err}))
+    //          client.messate('hello universe!', (err, arg0, arg1) => console.log({err, arg0, arg1}))
     //     with promise:
     //          client.message.promise('hello universe!').then(
-    //              console.log, // success callback
-    //              console.log, // error callback will always have the error/first argument
+    //              console.log, // success callback excluding the error message
+    //              console.log, // error callback with only error message
     //          )
     //
     Object.keys(instance).forEach(key => {
-        const prop = instance[key]
-        if (!isFn(prop) || nonCbs.includes(key)) return
-        prop.promise = function () {
-            const args = arguments
+        const func = instance[key]
+        if (!isFn(func) || nonCbs.includes(key)) return
+        func.promise = function () {
+            const args = [...arguments]
             return new Promise((resolve, reject) => {
                 try {
                     // last argument must be a callback
@@ -61,22 +61,22 @@ export const getClient = () => {
                     // if last argument is not a callback increment index to add a new callback
                     if (!isFn(originalCallback)) callbackIndex++
                     args[callbackIndex] = function () {
-                        const cbArgs = arguments
+                        const cbArgs = [...arguments]
                         // first argument indicates whether there is an error.
                         const err = cbArgs[0]
                         isFn(originalCallback) && originalCallback.apply({}, cbArgs)
-                        const fn = !!err ? reject : resolve
-                        fn.apply({}, cbArgs)
+                        if (!!err) return reject(err)
+                        // resolver only takes a single argument
+                        resolve(cbArgs.length <= 2 ? cbArgs[1] : cbArgs.slice(1))
                     }
 
-                    prop.apply(instance, args)
+                    func.apply(instance, args)
                 } catch (err) {
                     reject(err)
                 }
             })
         }
     })
-
 
     // automatically login to messaging service
     const { id, secret } = getUser() || {}
@@ -247,9 +247,11 @@ export class ChatClient {
     }
 
     register = (id, secret, cb) => isFn(cb) && socket.emit('register', id, secret, err => {
-        if (err) return cb(err)
-        setUser({ id, secret })
-        loginBond.changed(true)
+        if (!err) {
+            setUser({ id, secret })
+            loginBond.changed(true)
+        }
+        cb(err)
     })
 
     login = (id, secret, cb) => isFn(cb) && socket.emit('login', id, secret, cb)

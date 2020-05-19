@@ -43,17 +43,20 @@ const saveMessage = msg => {
         msgItem.status = status
         msgItem.timestamp = timestamp
     } else {
-        msgItem = {
-            senderId,
-            receiverIds,
-            message,
-            encrypted,
-            timestamp,
-            status,
-            id: id || uuid.v1(),
-            errorMessage,
+        msgItem = messages.find(x => x.senderId === senderId && x.timestamp === timestamp && x.status === status)
+        if (!msgItem) {
+            msgItem = {
+                senderId,
+                receiverIds,
+                message,
+                encrypted,
+                timestamp,
+                status,
+                id: id || uuid.v1(),
+                errorMessage,
+            }
+            messages.push(msgItem)
         }
-        messages.push(msgItem)
     }
     chatHistory.set(
         key,
@@ -145,7 +148,7 @@ export const send = (receiverIds, message, encrypted = false) => {
     if (!senderId) return
     const id = uuid.v1()
     let status = 'loading'
-    const saveMsg = (status, timestamp, error) => saveMessage({
+    const saveMsg = (status, timestamp, errorMessage) => saveMessage({
         message,
         senderId,
         receiverIds,
@@ -153,7 +156,7 @@ export const send = (receiverIds, message, encrypted = false) => {
         timestamp,
         status,
         id,
-        error,
+        errorMessage,
     })
     saveMsg(status, null)
 
@@ -162,13 +165,12 @@ export const send = (receiverIds, message, encrypted = false) => {
             receiverIds,
             message,
             false,
-            (err, timestamp) => saveMsg(err ? 'error' : 'success', timestamp, err)
+            (err, timestamp) => {
+                saveMsg(err ? 'error' : 'success', timestamp, err)
+            }
         ],
         func: 'message',
         silent: true,
-        then: () => {
-
-        },
         type: QUEUE_TYPES.CHATCLIENT,
     })
 }
