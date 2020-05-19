@@ -21,23 +21,115 @@ const generateInboxBonds = () => {
         .map(([key]) => key)
     if (!allKeys.includes(EVERYONE)) allKeys.push(EVERYONE)
 
-    allKeys.forEach(key => {
-        if (inboxSettings(key).hide) {
-            delete inboxBonds[key]
+    allKeys.forEach(inboxKey => {
+        if (inboxSettings(inboxKey).hide) {
+            delete inboxBonds[inboxKey]
             return
         }
-
-        inboxBonds[key] = inboxBonds[key] || new Bond()
+        if (inboxBonds[inboxKey]) return
+        inboxBonds[inboxKey] = new Bond()
     })
+}
+
+// unique user ids from all messages in chat history
+export const getChatUserIds = (includeTrollbox = true) => arrUnique(Object.keys(inboxBonds)
+    .filter(key => key !== EVERYONE)
+    .map(key => key.split(','))
+    .flat()
+    .concat(includeTrollbox ? getTrollboxUserIds() : []))
+
+// returns inbox storage key
+export const getInboxKey = receiverIds => {
+    receiverIds = arrUnique(receiverIds).sort()
+    const { id: userId } = getUser() || {}
+    const index = receiverIds.indexOf(userId)
+    if (index >= 0) receiverIds.splice(index, 1)
+    // Trollbox
+    if (receiverIds.includes(EVERYONE)) return EVERYONE
+    // Trollbox
+    if (receiverIds.includes('trollbox')) return EVERYONE
+    // Private chat
+    if (receiverIds.length === 1) return receiverIds[0]
+    // Group chat
+    return arrUnique([...receiverIds, userId]).sort().join()
+}
+
+export const getMessages = receiverIds => {
+    const { id: userId } = getUser() || {}
+    if (!userId) return []
+    const key = getInboxKey(receiverIds)
+    return chatHistory.get(key) || []
+}
+
+// unique user ids from Trollbox chat history
+export const getTrollboxUserIds = () => {
+    const messages = chatHistory.get(EVERYONE) || []
+    return arrUnique(messages.map(x => x.senderId))
+}
+
+// get/set hidden inbox keys list
+export const hiddenInboxKeys = () => {
+    const allKeys = Array.from(chatHistory.getAll()).map(x => x[0])
+    const settings = rw().inbox || {}
+    return allKeys.filter(key => settings[key] && settings[key].hide)
+}
+
+// get/set limit per inbox
+export const historyLimit = limit => {
+    limit = rw(
+        !isValidNumber(limit) ? undefined : { historyLimit: limit }
+    ).historyLimit
+    return isDefined(limit) ? limit : 100
+}
+
+// get/set inbox specific settings
+export const inboxSettings = (inboxKey, value, triggerReload = false) => {
+    let settings = rw().inbox || {}
+    const remove = value !== null
+    if (!isObj(value) && remove) return settings[inboxKey] || {}
+    settings[inboxKey] = { ...settings[inboxKey], ...value }
+    settings = rw({ inbox: settings })
+    inboxBonds[inboxKey] && inboxBonds[inboxKey].changed(uuid.v1())
+    generateInboxBonds()
+    triggerReload && newInboxBond.changed(uuid.v1())
+
+    return settings[inboxKey] || {}
+}
+
+// create/get inbox key
+export const newInbox = (receiverIds = [], name, reload = false) => {
+    const inboxKey = getInboxKey(receiverIds)
+    let settings = inboxSettings(inboxKey)
+    reload = reload || settings.hide
+    !chatHistory.get(inboxKey) && chatHistory.set(inboxKey, [])
+    inboxSettings(inboxKey, { ...settings, hide: false, name }, reload)
+    return inboxBonds[inboxKey]
+}
+
+export const removeInbox = inboxKey => {
+    chatHistory.delete(inboxKey)
+    delete inboxBonds[inboxKey]
+    newInboxBond.changed(uuid.v1)
+}
+
+export const removeInboxMessages = inboxKey => chatHistory.set(inboxKey, []) | inboxBonds[inboxKey].changed(uuid.v1())
+
+export const removeMessage = (inboxKey, id) => {
+    const messages = chatHistory.get(inboxKey)
+    const index = messages.findIndex(msg => msg.id === id)
+    if (index === -1) return
+    messages.splice(index, 1)
+    chatHistory.set(inboxKey, messages)
 }
 
 const saveMessage = msg => {
     let { message, senderId, receiverIds, encrypted, timestamp, status = 'success', id, errorMessage } = msg
     receiverIds = receiverIds.sort()
-    const key = getInboxKey(receiverIds)
-    const messages = chatHistory.get(key) || []
+    const inboxKey = getInboxKey(receiverIds)
+    const messages = chatHistory.get(inboxKey) || []
     const limit = historyLimit()
     let msgItem = messages.find(x => x.id === id)
+    const { id: userId } = getUser() || {}
     if (id && msgItem) {
         // update existing item
         msgItem.status = status
@@ -59,87 +151,17 @@ const saveMessage = msg => {
         }
     }
     chatHistory.set(
-        key,
+        inboxKey,
         messages.length > limit ? messages.slice(messages.length - limit) : messages
     )
-    inboxBonds[key] = inboxBonds[key] || new Bond()
-    inboxBonds[key].changed(uuid.v1())
+    // new mesage received
+    if (senderId !== userId) inboxSettings(inboxKey, { unread: true }, true)
+    if (timestamp) rw({ lastMessageTS: timestamp })
+    if (!inboxBonds[inboxKey]) {
+        inboxBonds[inboxKey] = newInbox(receiverIds, null, true)
+    }
+    inboxBonds[inboxKey].changed(uuid.v1())
     return msgItem
-}
-
-// unique user ids from all messages in chat history
-export const getChatUserIds = (includeTrollbox = true) => arrUnique(Object.keys(inboxBonds)
-    .filter(key => key !== EVERYONE)
-    .map(key => key.split(','))
-    .flat()
-    .concat(includeTrollbox ? getTrollboxUserIds() : []))
-
-// returns inbox storage key
-export const getInboxKey = receiverIds => {
-    receiverIds = arrUnique(receiverIds).sort()
-    const { id: userId } = getUser() || {}
-    const index = receiverIds.indexOf(userId)
-    if (index >= 0) receiverIds.splice(index, 1)
-    // Trollbox
-    if (receiverIds.includes(EVERYONE)) return EVERYONE
-    // Private chat
-    if (receiverIds.length === 1) return receiverIds[0]
-    // Group chat
-    return arrUnique([...receiverIds, userId]).sort().join()
-}
-
-export const getMessages = receiverIds => {
-    const { id: userId } = getUser() || {}
-    if (!userId) return []
-    const key = getInboxKey(receiverIds)
-    const msgs = chatHistory.get(key) || []
-    return msgs
-}
-
-// unique user ids from Trollbox chat history
-export const getTrollboxUserIds = () => {
-    const messages = chatHistory.get(EVERYONE) || []
-    return arrUnique(messages.map(x => x.senderId))
-}
-
-// get/set hidden inbox keys list
-export const hiddenInboxKeys = () => {
-    const allKeys = Array.from(chatHistory.getAll()).map(x => x[0])
-    const settings = rw()
-    return allKeys.filter(key => settings[key] && settings[key].hide)
-}
-
-// get/set limit per inbox
-export const historyLimit = limit => {
-    limit = rw(
-        !isValidNumber(limit) ? undefined : { historyLimit: limit }
-    ).historyLimit
-    return isDefined(limit) ? limit : 100
-}
-
-// get/set inbox specific settings
-export const inboxSettings = (inboxKey, value, triggerReload = false) => {
-    let settings = rw()
-    const remove = value !== null
-    if (!isObj(value) && remove) return settings[inboxKey] || {}
-    settings[inboxKey] = { ...settings[inboxKey], ...value }
-    settings = rw(settings)
-    inboxBonds[inboxKey] && inboxBonds[inboxKey].changed(uuid.v1())
-    generateInboxBonds()
-    triggerReload && newInboxBond.changed(uuid.v1())
-
-    return settings[inboxKey] || {}
-}
-
-// create/get inbox key
-export const newInbox = (receiverIds = [], name, reload = false) => {
-    const inboxKey = getInboxKey(receiverIds)
-    let settings = inboxSettings(inboxKey)
-    reload = reload || settings.hide
-    !chatHistory.get(inboxKey) && chatHistory.set(inboxKey, [])
-    inboxSettings(inboxKey, { ...settings, hide: false, name }, reload)
-    !inboxBonds[inboxKey] && generateInboxBonds()
-    return inboxBonds[inboxKey]
 }
 
 // send message
@@ -147,6 +169,7 @@ export const send = (receiverIds, message, encrypted = false) => {
     const { id: senderId } = getUser() || {}
     if (!senderId) return
     const id = uuid.v1()
+    const inboxKey = getInboxKey(receiverIds)
     let status = 'loading'
     const saveMsg = (status, timestamp, errorMessage) => saveMessage({
         message,
@@ -165,22 +188,13 @@ export const send = (receiverIds, message, encrypted = false) => {
             receiverIds,
             message,
             false,
-            (err, timestamp) => {
-                saveMsg(err ? 'error' : 'success', timestamp, err)
-            }
+            (err, timestamp) => err ? saveMsg('error', timestamp, err) : removeMessage(inboxKey, id),
         ],
         func: 'message',
         silent: true,
         type: QUEUE_TYPES.CHATCLIENT,
     })
 }
-
-export const removeInbox = inboxKey => {
-    chatHistory.delete(inboxKey)
-    delete inboxBonds[inboxKey]
-    newInboxBond.changed(uuid.v1)
-}
-export const removeInboxMessages = inboxKey => chatHistory.set(inboxKey, []) | inboxBonds[inboxKey].changed(uuid.v1())
 
 // handle message received
 client.onMessage((m, s, r, e, t) => {
@@ -191,6 +205,15 @@ client.onMessage((m, s, r, e, t) => {
         receiverIds: r,
         encrypted: e,
         timestamp: t,
+    })
+})
+
+client.onConnect(() => {
+    // retrieve any unread recent messages  // // check & retrieve any unread mesages
+    const { lastMessageTS } = rw()
+    client.messagesGetRecent(lastMessageTS, (err, messages = []) => {
+        if (err) return console.log('Failed to retrieve recent inbox messages', err)
+        messages.forEach(saveMessage)
     })
 })
 

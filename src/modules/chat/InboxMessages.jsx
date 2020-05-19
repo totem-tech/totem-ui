@@ -6,7 +6,6 @@ import { getUser } from '../../services/chatClient'
 
 const userColor = {}
 const randomize = (limit = 10) => parseInt(Math.random(limit) * limit)
-const EVERYONE = 'everyone'
 const colors = [
     'blue',
     'brown',
@@ -48,7 +47,7 @@ export default function ChatMessages(props) {
             className: 'messages',
             ref: onRef,
             style: {
-                maxHeight: innerHeight / 2,
+                maxHeight: innerHeight * 0.7,
                 overflowY: 'auto',
             }
         }}>

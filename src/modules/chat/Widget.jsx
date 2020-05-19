@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { Button, Icon } from 'semantic-ui-react'
+import { textEllipsis } from '../../utils/utils'
 import Chat from './Inbox'
 import NewInboxForm from './NewInboxForm'
 import { inboxBonds, inboxSettings, newInboxBond } from './chat'
 import { getUser, loginBond } from '../../services/chatClient'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
-import { textEllipsis } from '../../utils/utils'
 
 const [texts, textsCap] = translated({
     offline: 'offline',
@@ -34,7 +34,7 @@ export default function ChatWidget(props) {
             loginBond.untie(tieIdLogin)
         }
     }, [])
-
+    if (!id) return ''
     return (
         <div className='chat-container'>
             {open && inboxKeys.includes(openInboxKey) && (
@@ -45,7 +45,7 @@ export default function ChatWidget(props) {
                         background: 'white',
                         boxShadow: '0 2px 10px 1px #b5b5b5',
                         borderRadius: 5,
-                        bottom: 65,
+                        bottom: 60,
                         maxWidth: 'calc( 100% - 30px )',
                         margin: '0 15px',
                         overflow: 'hidden',
@@ -58,61 +58,86 @@ export default function ChatWidget(props) {
                     subtitle={id && openInboxKey === EVERYONE && `${textsCap.loggedInAs} @${id}`}
                 />
             )}
+            <WidgetButtons {...{ inboxKeys, online, open, openInboxKey, setOpen, setOpenInboxKey }} />
+        </div>
+    )
+}
 
+const WidgetButtons = ({ inboxKeys, online, open, openInboxKey, setOpen, setOpenInboxKey }) => {
+    const settingsAr = inboxKeys.map(key => inboxSettings(key))
+    const hasUnread = settingsAr.find(({ unread }) => unread)
+    return (
+        <div>
             {open && (
                 <div style={{
-                    bottom: 10,
+                    bottom: 5,
                     position: 'fixed',
-                    right: 70,
+                    right: 125,
                     zIndex: 1
                 }}>
                     <div style={{
                         overflowX: 'auto',
-                        textAlign: 'right',
-                        whiteSpace: 'nowrap',
-                        width: window.innerWidth - 90,
-
+                        paddingBottom: 2,
                         position: 'absolute',
                         right: 0,
+                        textAlign: 'right',
                         top: -45,
+                        whiteSpace: 'nowrap',
+                        width: window.innerWidth - 135,
                     }}>
-                        {inboxKeys.map(key => (
-                            <Button {...{
-                                content: textEllipsis(
-                                    key === EVERYONE ? texts.totemTrollbox : inboxSettings(key).name || `@${key}`,
-                                    20,
-                                    3,
-                                    false,
-                                ),
-                                key,
-                                icon: {
-                                    name: key === EVERYONE ? 'globe' : key.split(',').length === 1 ? 'user' : 'group',
-                                    color: key === openInboxKey ? 'green' : undefined
-                                },
-                                onClick: () => setOpenInboxKey(openInboxKey === key ? '' : key),
-                                style: { display: 'inline' }
-                            }} />
-                        ))}
-                        <Button {...{
-                            icon: 'search plus',
-                            onClick: () => showForm(NewInboxForm, {
-                                closeOnSubmit: true,
-                                onSubmit: (success, values) => success && setOpenInboxKey(values.inboxKey)
-                            }),
-                        }} />
+                        {inboxKeys.map((inboxKey, i) => {
+                            const { name, unread } = settingsAr[i]
+                            return (
+                                <Button {...{
+                                    content: textEllipsis(
+                                        inboxKey === EVERYONE ? texts.totemTrollbox : name || `@${inboxKey}`,
+                                        20,
+                                        3,
+                                        false,
+                                    ),
+                                    key: inboxKey,
+                                    icon: {
+                                        color: inboxKey === openInboxKey ? 'green' : (
+                                            unread ? 'orange' : undefined
+                                        ),
+                                        name: inboxKey === EVERYONE ? 'globe' : (
+                                            inboxKey.split(',').length === 1 ? 'user' : 'group'
+                                        ),
+                                    },
+                                    onClick: () => setOpenInboxKey(openInboxKey === inboxKey ? '' : inboxKey),
+                                    style: { display: 'inline' }
+                                }} />
+                            )
+                        })}
                     </div>
                 </div>
             )}
+
             <div style={{
-                bottom: 15,
+                bottom: 5,
                 position: 'fixed',
-                right: 15,
+                right: 5,
                 zIndex: 2
             }}>
+                {open && (
+                    <Button {...{
+                        circular: true,
+                        icon: {
+                            name: 'search plus',
+                            size: 'big',
+                        },
+                        onClick: () => showForm(NewInboxForm, {
+                            closeOnSubmit: true,
+                            onSubmit: (success, values) => success && setOpenInboxKey(values.inboxKey)
+                        }),
+                    }} />
+                )}
                 <Button {...{
                     circular: true,
                     icon: {
-                        color: online ? undefined : 'red',
+                        color: !online ? 'red' : (
+                            hasUnread ? 'orange' : undefined
+                        ),
                         name: open ? 'close' : 'chat',
                         size: 'big',
                     },

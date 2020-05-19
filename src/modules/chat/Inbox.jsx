@@ -32,6 +32,7 @@ const [_, textsCap] = translated({
 }, true)
 const data = {}
 const EVERYONE = 'everyone'
+// focus message input and scroll to bottom of the message list
 const focusNScroll = inboxKey => setTimeout(() => {
     const { inputRef, messagesRef } = data[inboxKey]
     inputRef && inputRef.focus()
@@ -55,6 +56,8 @@ export default function Chat(props) {
         let mounted = true
         let bond = inboxBonds[inboxKey]
         const tieId = bond.tie(() => mounted && setMessages(getMessages(receiverIds)))
+
+        inboxSettings(inboxKey, { unread: false }, true)
 
         return () => {
             mounted = false

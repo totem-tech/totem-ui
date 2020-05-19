@@ -191,8 +191,22 @@ export class ChatClient {
         // @userIds    array: User IDs without '@' sign
         // @message    string: encrypted or plain text message
         // @encrypted  bool: determines whether @message requires decryption
-        this.message = (receiverIds, msg, encrypted, cb) => isFn(cb)
-            && socket.emit('message', receiverIds, msg, encrypted, cb)
+        this.message = (receiverIds, msg, encrypted, cb) => isFn(cb) && socket.emit('message',
+            receiverIds,
+            msg,
+            encrypted,
+            cb,
+        )
+
+        // Send chat messages
+        //
+        // Params:
+        // @lastMsgTs   string: timestamp of most recent message sent/received
+        // @cb          function: args =>
+        //                  @err        string: error message, if any
+        //                  @messages   array: most recent messages
+        this.messagesGetRecent = (lastMsgTs, cb) => isFn(cb) && socket.emit('messages-get-recent', lastMsgTs, cb)
+
         // receive chat messages
         //
         // 

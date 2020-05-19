@@ -1,14 +1,15 @@
 import React, { useState } from 'react'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
-import { getInboxKey, newInbox, inboxSettings, hiddenInboxKeys } from './chat'
+import { getInboxKey, hiddenInboxKeys, inboxBonds, inboxSettings, newInbox } from './chat'
 import { translated } from '../../services/language'
-import { isFn } from '../../utils/utils'
+import { isFn, arrSort } from '../../utils/utils'
 import { showForm, closeModal } from '../../services/modal'
 
 const [_, textsCap] = translated({
     header: 'open chat',
     nameLabel: 'name (only visible to you)',
     namePlaceholder: 'enter a name for the group chat',
+    open: 'open',
     totemTrollbox: 'Totem Trollbox',
     updateName: 'update group name',
 }, true)
@@ -19,7 +20,8 @@ export default function NewInboxForm(props) {
         receiverIds: 'receiverIds'
     }
     const [success, setSuccess] = useState(false)
-    const hiddenKeys = hiddenInboxKeys()
+
+    const inboxKeys = hiddenInboxKeys().concat(Object.keys(inboxBonds))
     const [inputs, setInputs] = useState([
         {
             autoFocus: true,
@@ -28,16 +30,19 @@ export default function NewInboxForm(props) {
             includePartners: true,
             multiple: true,
             name: names.receiverIds,
-            options: hiddenKeys.map(key => ({
-                icon: key === EVERYONE ? 'globe' : (
-                    key.split(',').length > 1 ? 'group' : 'chat'
-                ),
-                key,
-                text: key === EVERYONE ? textsCap.totemTrollbox : (
-                    inboxSettings(key).name || key.replace(',', ', ')
-                ),
-                value: key,
-            })),
+            options: arrSort(
+                inboxKeys.map(key => ({
+                    icon: key === EVERYONE ? 'globe' : (
+                        key.split(',').length > 1 ? 'group' : 'chat'
+                    ),
+                    key,
+                    text: key === EVERYONE ? textsCap.totemTrollbox : (
+                        inboxSettings(key).name || key.replace(',', ', ')
+                    ),
+                    value: key,
+                })),
+                'text',
+            ),
             onChange: (_, values) => {
                 const userIds = values[names.receiverIds].map(x => x.split(',')).flat()
                 const nameIn = findInput(inputs, names.name)
@@ -68,10 +73,6 @@ export default function NewInboxForm(props) {
     const handleSubmit = (_, values) => {
         const { onSubmit } = props
         const receiverIds = values[names.receiverIds].map(x => x.split(',')).flat()
-        // receiverIds.forEach((id, index) => {
-        //     if (!id.includes(',')) return
-        //     receiverIds[index] = id.split(',')
-        // })
         const name = values[names.name]
         const inboxKey = getInboxKey(receiverIds)
         newInbox(receiverIds, receiverIds.length > 1 ? name : null, true)
@@ -92,6 +93,7 @@ NewInboxForm.defaultProps = {
     closeOnSubmit: true,
     header: textsCap.header,
     size: 'mini',
+    submitText: textsCap.open,
 }
 
 // edit group inbox name
