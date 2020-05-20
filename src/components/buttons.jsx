@@ -50,6 +50,7 @@ export const Reveal = ({ content, hiddenContent, style, defaultVisible = false, 
 // placeholder to potentially use this in the future to make all User IDs clickable and open private chat with user
 export const UserID = props => {
     const { prefix, style, suffix, userId = '' } = props
+    if (!userId) return ''
     return (
         <Button
             basic

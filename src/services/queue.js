@@ -139,9 +139,8 @@ export const resumeQueue = () => {
 
 const _processTask = (currentTask, id, toastId, allowRepeat) => {
     toastId = toastId || uuid.v1()
-    if (!isObj(currentTask) || Object.keys(currentTask).length === 0 || currentTask.status === 'error') {
-        return queue.delete(id)
-    }
+    if (!isObj(currentTask)) return queue.delete(id)
+
     const next = currentTask.next
     switch (currentTask.status) {
         case SUCCESS:

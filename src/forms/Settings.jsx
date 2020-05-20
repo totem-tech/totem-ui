@@ -16,7 +16,7 @@ import { gridColumns } from '../services/window'
 const [texts, textsCap] = translated({
     column: 'column',
     columns: 'columns',
-    chatLimitLabel: 'chat message limit',
+    chatLimitLabel: 'chat message limit per conversation',
     gridColumnsLabel: 'number of columns on main content (experimental)',
     gsCurrencyLabel: 'default currency',
     gsLanguageLabel: 'default language (experimental)',

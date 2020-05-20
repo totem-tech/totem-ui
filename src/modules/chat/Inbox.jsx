@@ -12,6 +12,7 @@ import {
     inboxBonds,
     inboxSettings,
     send,
+    setOpen,
     removeInboxMessages,
     removeInbox,
 } from './chat'
@@ -55,13 +56,15 @@ export default function Chat(props) {
     useEffect(() => {
         let mounted = true
         let bond = inboxBonds[inboxKey]
-        const tieId = bond.tie(() => mounted && setMessages(getMessages(receiverIds)))
+        const tieId = bond && bond.tie(() => mounted && setMessages(getMessages(receiverIds)))
 
         inboxSettings(inboxKey, { unread: false }, true)
+        setOpen(inboxKey, true)
 
         return () => {
             mounted = false
-            bond.untie(tieId)
+            bond && bond.untie(tieId)
+            setOpen(inboxKey, false)
         }
     }, []) // keep [] to prevent useEffect from being inboked on every render
 
@@ -168,33 +171,32 @@ const InboxHeader = ({ inboxKey, isGroup, isTrollbox, messages, receiverIds, sub
                                 size: 'mini',
                             }} />
                         )}
-                        {messages.length > 0 && (
-                            <React.Fragment>
-                                {isGroup && (
-                                    <Button {...{
-                                        circular: true,
-                                        icon: 'group',
-                                        inverted: true,
-                                        key: 'showMembers',
-                                        onClick: e => showMembers(inboxKey, messages),
-                                        size: 'mini',
-                                    }} />
-                                )}
 
-                                <Button {...{
-                                    circular: true,
-                                    icon: 'trash',
-                                    inverted: true,
-                                    key: 'removeMessages',
-                                    onClick: () => confirm({
-                                        confirmButton: <Button negative content={textsCap.remove} />,
-                                        header: textsCap.removeMessages,
-                                        onConfirm: () => removeInboxMessages(inboxKey),
-                                        size: 'mini',
-                                    }),
+                        {isGroup && (
+                            <Button {...{
+                                circular: true,
+                                icon: 'group',
+                                inverted: true,
+                                key: 'showMembers',
+                                onClick: e => showMembers(inboxKey, messages),
+                                size: 'mini',
+                            }} />
+                        )}
+
+                        {messages.length > 0 && (
+                            <Button {...{
+                                circular: true,
+                                icon: 'trash',
+                                inverted: true,
+                                key: 'removeMessages',
+                                onClick: () => confirm({
+                                    confirmButton: <Button negative content={textsCap.remove} />,
+                                    header: textsCap.removeMessages,
+                                    onConfirm: () => removeInboxMessages(inboxKey),
                                     size: 'mini',
-                                }} />
-                            </React.Fragment>
+                                }),
+                                size: 'mini',
+                            }} />
                         )}
 
                         <Button {...{

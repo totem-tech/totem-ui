@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
+import { isFn, arrSort } from '../../utils/utils'
 import { getInboxKey, hiddenInboxKeys, inboxBonds, inboxSettings, newInbox } from './chat'
 import { translated } from '../../services/language'
-import { isFn, arrSort } from '../../utils/utils'
 import { showForm, closeModal } from '../../services/modal'
+import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 
 const [_, textsCap] = translated({
     header: 'open chat',
@@ -111,7 +112,17 @@ export const editName = inboxKey => {
                 type: 'text',
                 value: inboxSettings(inboxKey).name || '',
             }],
-            onSubmit: (_, { name }) => inboxSettings(inboxKey, { name }) | closeModal(formId),
+            onSubmit: (_, { name }) => {
+                const receiverIds = inboxKey.split(',')
+                addToQueue({
+                    args: [receiverIds, name],
+                    func: 'messageGroupName',
+                    silent: true,
+                    type: QUEUE_TYPES.CHATCLIENT,
+                })
+                inboxSettings(inboxKey, { name }, true)
+                closeModal(formId)
+            },
             size: 'mini',
         }
     )

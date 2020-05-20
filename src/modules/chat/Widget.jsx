@@ -90,7 +90,9 @@ const WidgetButtons = ({ inboxKeys, online, open, openInboxKey, setOpen, setOpen
                             return (
                                 <Button {...{
                                     content: textEllipsis(
-                                        inboxKey === EVERYONE ? texts.totemTrollbox : name || `@${inboxKey}`,
+                                        inboxKey === EVERYONE ? texts.totemTrollbox : (
+                                            name || `@${inboxKey}`
+                                        ),
                                         20,
                                         3,
                                         false,
@@ -108,7 +110,7 @@ const WidgetButtons = ({ inboxKeys, online, open, openInboxKey, setOpen, setOpen
                                     style: { display: 'inline' }
                                 }} />
                             )
-                        })}
+                        }).reverse()}
                     </div>
                 </div>
             )}

@@ -12,16 +12,29 @@ const EVERYONE = 'everyone'
 const chatHistory = new DataStorage(PREFIX + MODULE_KEY, true)
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
-// notifies when new conversation is created, hidden or unhidden
-export const newInboxBond = new Bond()
 // notifies when a specific inbox view requires update
 export const inboxBonds = {}
+// notifies when new conversation is created, hidden or unhidden
+export const newInboxBond = new Bond()
+export let openInboxKeys = []
+export const pendingMessages = {};
+// on page lod remove any message with status 'loading' (unsent messages), as queue service will attempt to resend them
+(() => {
+    const allMsgs = chatHistory.getAll()
+    Array.from(allMsgs)
+        .forEach(([key, messages]) => chatHistory.set(
+            key,
+            messages.filter(x => x.status !== 'loading'))
+        )
+})()
+
 const generateInboxBonds = () => {
     const allKeys = Array.from(chatHistory.getAll())
         .map(([key]) => key)
     if (!allKeys.includes(EVERYONE)) allKeys.push(EVERYONE)
 
     allKeys.forEach(inboxKey => {
+        pendingMessages[inboxKey] = pendingMessages[inboxKey] || []
         if (inboxSettings(inboxKey).hide) {
             delete inboxBonds[inboxKey]
             return
@@ -40,7 +53,7 @@ export const getChatUserIds = (includeTrollbox = true) => arrUnique(Object.keys(
 
 // returns inbox storage key
 export const getInboxKey = receiverIds => {
-    receiverIds = arrUnique(receiverIds).sort()
+    receiverIds = arrUnique(receiverIds)
     const { id: userId } = getUser() || {}
     const index = receiverIds.indexOf(userId)
     if (index >= 0) receiverIds.splice(index, 1)
@@ -51,14 +64,18 @@ export const getInboxKey = receiverIds => {
     // Private chat
     if (receiverIds.length === 1) return receiverIds[0]
     // Group chat
-    return arrUnique([...receiverIds, userId]).sort().join()
+    return arrUnique([...receiverIds, userId])
+        .filter(Boolean)
+        .sort()
+        .join()
 }
 
 export const getMessages = receiverIds => {
     const { id: userId } = getUser() || {}
     if (!userId) return []
-    const key = getInboxKey(receiverIds)
-    return chatHistory.get(key) || []
+    const inboxKey = getInboxKey(receiverIds)
+    const messages = chatHistory.get(inboxKey) || []
+    return [...messages, ...pendingMessages[inboxKey]]
 }
 
 // unique user ids from Trollbox chat history
@@ -85,14 +102,14 @@ export const historyLimit = limit => {
 // get/set inbox specific settings
 export const inboxSettings = (inboxKey, value, triggerReload = false) => {
     let settings = rw().inbox || {}
-    const remove = value !== null
-    if (!isObj(value) && remove) return settings[inboxKey] || {}
+    const remove = value === null
+    if (!isObj(value) && !remove) return settings[inboxKey] || {}
+
     settings[inboxKey] = { ...settings[inboxKey], ...value }
-    settings = rw({ inbox: settings })
+    settings = rw({ inbox: settings }).inbox
     inboxBonds[inboxKey] && inboxBonds[inboxKey].changed(uuid.v1())
     generateInboxBonds()
     triggerReload && newInboxBond.changed(uuid.v1())
-
     return settings[inboxKey] || {}
 }
 
@@ -120,16 +137,18 @@ export const removeMessage = (inboxKey, id) => {
     if (index === -1) return
     messages.splice(index, 1)
     chatHistory.set(inboxKey, messages)
+    // inboxBonds[inboxKey].changed(uuid.v1())
 }
 
 const saveMessage = msg => {
-    let { message, senderId, receiverIds, encrypted, timestamp, status = 'success', id, errorMessage } = msg
+    let { action, message, senderId, receiverIds, encrypted, timestamp, status = 'success', id, errorMessage } = msg
     receiverIds = receiverIds.sort()
     const inboxKey = getInboxKey(receiverIds)
     const messages = chatHistory.get(inboxKey) || []
     const limit = historyLimit()
     let msgItem = messages.find(x => x.id === id)
     const { id: userId } = getUser() || {}
+    const newSettings = {}
     if (id && msgItem) {
         // update existing item
         msgItem.status = status
@@ -138,29 +157,38 @@ const saveMessage = msg => {
         msgItem = messages.find(x => x.senderId === senderId && x.timestamp === timestamp && x.status === status)
         if (!msgItem) {
             msgItem = {
-                senderId,
-                receiverIds,
-                message,
+                action,
                 encrypted,
-                timestamp,
-                status,
-                id: id || uuid.v1(),
                 errorMessage,
+                id: id || uuid.v1(),
+                message,
+                receiverIds,
+                senderId,
+                status,
+                timestamp,
             }
             messages.push(msgItem)
         }
     }
-    chatHistory.set(
-        inboxKey,
-        messages.length > limit ? messages.slice(messages.length - limit) : messages
-    )
-    // new mesage received
-    if (senderId !== userId) inboxSettings(inboxKey, { unread: true }, true)
-    if (timestamp) rw({ lastMessageTS: timestamp })
-    if (!inboxBonds[inboxKey]) {
-        inboxBonds[inboxKey] = newInbox(receiverIds, null, true)
+
+    if (isObj(action)) {
+        switch (action.type) {
+            case 'message-group-name':
+                const [name] = action.data || []
+                const { name: oldName } = inboxSettings(inboxKey)
+                if (name && name !== oldName) newSettings.name = name
+        }
     }
+    chatHistory.set(inboxKey, messages.slice(messages.length - limit))
+    // new mesage received
+    if (senderId !== userId && !openInboxKeys.includes(inboxKey)) newSettings.unread = true
+    if (timestamp) rw({ lastMessageTS: timestamp })
+    // if (!inboxBonds[inboxKey]) {
+    //     inboxBonds[inboxKey] = newInbox(receiverIds, null, true)
+    // }
+    generateInboxBonds()
     inboxBonds[inboxKey].changed(uuid.v1())
+    if (Object.keys(newSettings).length) inboxSettings(inboxKey, newSettings, true)
     return msgItem
 }
 
@@ -168,27 +196,40 @@ const saveMessage = msg => {
 export const send = (receiverIds, message, encrypted = false) => {
     const { id: senderId } = getUser() || {}
     if (!senderId) return
-    const id = uuid.v1()
+    const tempId = uuid.v1()
     const inboxKey = getInboxKey(receiverIds)
-    let status = 'loading'
-    const saveMsg = (status, timestamp, errorMessage) => saveMessage({
-        message,
-        senderId,
-        receiverIds,
-        encrypted,
-        timestamp,
-        status,
-        id,
-        errorMessage,
-    })
-    saveMsg(status, null)
+    const saveMsg = (id, status, timestamp, errorMessage) => {
+        const msg = {
+            message,
+            senderId,
+            receiverIds,
+            encrypted,
+            timestamp,
+            status,
+            id,
+            errorMessage,
+        }
+        if (status === 'error') return saveMessage(msg)
+        const removePending = status === 'success'
+        let msgs = pendingMessages[inboxKey] || []
+        if (removePending) {
+            msgs = msgs.filter(m => m.id === id)
+        } else {
+            msgs.push(msg)
+        }
+        pendingMessages[inboxKey] = msgs
+        inboxBonds[inboxKey].changed(uuid.v1())
+    }
+
+    saveMsg(tempId, 'loading')
 
     addToQueue({
         args: [
             receiverIds,
             message,
             false,
-            (err, timestamp) => err ? saveMsg('error', timestamp, err) : removeMessage(inboxKey, id),
+            (err, timestamp, id) => saveMsg(id, err ? 'error' : 'success', timestamp, err),
+            // (err, timestamp) => err ? saveMsg('error', timestamp, err) : removeMessage(inboxKey, id),
         ],
         func: 'message',
         silent: true,
@@ -196,25 +237,58 @@ export const send = (receiverIds, message, encrypted = false) => {
     })
 }
 
+export const setOpen = (inboxKey, open = true) => {
+    if (open) {
+        openInboxKeys = [...openInboxKeys, inboxKey]
+        return
+    }
+    openInboxKeys = openInboxKeys.filter(k => k !== inboxKey)
+}
+
+// retrieve unread messages on re/connect
+client.onConnect(() => {
+    // retrieve any unread recent messages  // // check & retrieve any unread mesages
+    const { lastMessageTS } = rw()
+    client.messageGetRecent(lastMessageTS, (err, messages = []) => {
+        if (err) return console.log('Failed to retrieve recent inbox messages', err)
+        messages.forEach(saveMessage)
+    })
+})
+
 // handle message received
-client.onMessage((m, s, r, e, t) => {
+client.onMessage((m, s, r, e, t, id, action) => {
     newInbox(r, null, true)
     saveMessage({
-        message: m,
-        senderId: s,
-        receiverIds: r,
+        action,
+        id,
         encrypted: e,
+        message: m,
+        receiverIds: r,
+        senderId: s,
         timestamp: t,
     })
 })
 
-client.onConnect(() => {
-    // retrieve any unread recent messages  // // check & retrieve any unread mesages
-    const { lastMessageTS } = rw()
-    client.messagesGetRecent(lastMessageTS, (err, messages = []) => {
-        if (err) return console.log('Failed to retrieve recent inbox messages', err)
-        messages.forEach(saveMessage)
-    })
+// handle group name change
+client.onMessageGroupName((receiverIds, groupName, senderId, timestamp, id) => {
+    // const inboxKey = getInboxKey(receiverIds)
+    // const history = chatHistory.get(inboxKey)
+    // const settings = inboxSettings(inboxKey)
+    // if (settings.name === groupName) return
+    // const reload = history && !settings.hide
+    // history && saveMessage({
+    //     id,
+    //     message: '',
+    //     senderId,
+    //     receiverIds,
+    //     encrypted: false,
+    //     timestamp,
+    //     action: {
+    //         data: [groupName],
+    //         type: 'message-group-name',
+    //     },
+    // })
+    // inboxSettings(inboxKey, { name: groupName }, reload)
 })
 
 generateInboxBonds()

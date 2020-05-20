@@ -1,9 +1,15 @@
 import React from 'react'
 import { Divider } from 'semantic-ui-react'
+import { isObj } from '../../utils/utils'
 import Message from '../../components/Message'
 import { UserID } from '../../components/buttons'
 import { getUser } from '../../services/chatClient'
+import { translated } from '../../services/language'
 
+const [texts, textsCap] = translated({
+    changedGroupName: 'changed group name',
+    you: 'you',
+}, true)
 const userColor = {}
 const randomize = (limit = 10) => parseInt(Math.random(limit) * limit)
 const colors = [
@@ -51,8 +57,26 @@ export default function ChatMessages(props) {
                 overflowY: 'auto',
             }
         }}>
-            {messages.map(({ errorMessage, message, senderId, status }, i) => {
+            {messages.map(({ action, errorMessage, message, senderId, status }, i) => {
                 const isSender = senderId === userId
+                if (isObj(action) && !!action.type) {
+                    const { data, type } = action
+                    switch (type) {
+                        case 'message-group-name':
+                            return (
+                                <div
+                                    key={i}
+                                    style={{ textAlign: 'center', color: 'grey' }}
+                                >
+                                    <i>
+                                        {isSender ? textsCap.you : <UserID userId={senderId} />}
+                                        {texts.changedGroupName}: {data[0]}
+                                    </i>
+                                </div>
+                            )
+                    }
+                    return ''
+                }
                 let bgColor = isSender ? 'green' : (
                     isPrivate ? 'blue' : userColor[senderId]
                 )

@@ -59,7 +59,8 @@ export const getClient = () => {
                     let callbackIndex = args.length - 1
                     const originalCallback = args[callbackIndex]
                     // if last argument is not a callback increment index to add a new callback
-                    if (!isFn(originalCallback)) callbackIndex++
+                    // on page reload callbacks stored by queue service will become null, due to JSON spec
+                    if (!isFn(originalCallback) && originalCallback !== null) callbackIndex++
                     args[callbackIndex] = function () {
                         const cbArgs = [...arguments]
                         // first argument indicates whether there is an error.
@@ -198,15 +199,6 @@ export class ChatClient {
             cb,
         )
 
-        // Send chat messages
-        //
-        // Params:
-        // @lastMsgTs   string: timestamp of most recent message sent/received
-        // @cb          function: args =>
-        //                  @err        string: error message, if any
-        //                  @messages   array: most recent messages
-        this.messagesGetRecent = (lastMsgTs, cb) => isFn(cb) && socket.emit('messages-get-recent', lastMsgTs, cb)
-
         // receive chat messages
         //
         // 
@@ -217,6 +209,25 @@ export class ChatClient {
         //          @message        string: encrypted or plain text message
         //          @encrypted      bool: determines whether @message requires decryption
         this.onMessage = cb => isFn(cb) && socket.on('message', cb)
+
+        // Send chat messages
+        //
+        // Params:
+        // @lastMsgTs   string: timestamp of most recent message sent/received
+        // @cb          function: args =>
+        //                  @err        string: error message, if any
+        //                  @messages   array: most recent messages
+        this.messageGetRecent = (lastMsgTs, cb) => isFn(cb) && socket.emit('message-get-recent', lastMsgTs, cb)
+
+        // Set group name
+        this.messageGroupName = (receiverIds, name, cb) => isFn(cb) && socket.emit('message-group-name',
+            receiverIds,
+            name,
+            cb,
+        )
+
+        // On group name change
+        this.onMessageGroupName = cb => isFn(cb) && socket.on('message-group-name', cb)
 
         // Send notification
         //
