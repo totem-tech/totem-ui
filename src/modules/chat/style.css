@@ -16,6 +16,17 @@
     width: 400px;
     z-index: 1;
 }
+.totem-chat .messages {
+    height: calc( 100% - 103px );
+    overflow-y: auto;
+}
+.totem-chat .messages > div {
+    position: absolute;
+    bottom: 38px;
+    left: 0;
+    width: 100%;
+    max-height: calc( 100% - 38px );
+}
 
 #app > .chat-visible #main-content {
     margin-top: 45px;
