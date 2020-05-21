@@ -47,13 +47,14 @@ const icons = {
 export default function ChatMessages(props) {
     const { isPrivate, messages, onRef } = props
     const userId = (getUser() || {}).id
-    const { innerHeight } = window
+    // const { innerHeight } = window
     return (
         <div {...{
             className: 'messages',
             ref: onRef,
             style: {
-                maxHeight: innerHeight * 0.7,
+                height: 'calc( 100% - 103px )',
+                // maxHeight: innerHeight * 0.7,
                 overflowY: 'auto',
             }
         }}>

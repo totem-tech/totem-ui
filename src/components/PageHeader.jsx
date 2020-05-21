@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { Component, useState } from 'react'
 import PropTypes from 'prop-types'
 import { runtime } from 'oo7-substrate'
 import { Dropdown, Image, Menu } from 'semantic-ui-react'
@@ -18,6 +18,7 @@ import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { toggleSidebarState } from '../services/sidebar'
 import timeKeeping from '../services/timeKeeping'
 import { setToast } from '../services/toast'
+import { visibleBond } from '../modules/chat/Widget'
 
 // const [words, wordsCap] = translated({}, true)
 const [texts] = translated({
@@ -34,6 +35,7 @@ export default class PageHeader extends Component {
 
 		this.state = {
 			id: (getUser() || {}).id,
+			isLoggedIn: !!loginBond._value,
 			wallets: [],
 		}
 
@@ -49,12 +51,9 @@ export default class PageHeader extends Component {
 		timeKeeping.formDataBond.tie(() => this.forceUpdate())
 
 		// Update user ID after registration
-		if (this.state.id) return
-		this.tieIdLogin = loginBond.tie(success => {
-			if (!success) return
+		this.tieIdLogin = loginBond.tie(isLoggedIn => {
 			const { id } = getUser()
-			this.setState({ id })
-			loginBond.untie(this.tieIdLogin)
+			this.setState({ id, isLoggedIn })
 		})
 	}
 
@@ -84,9 +83,10 @@ export default class PageHeader extends Component {
 	})
 
 	render() {
-		const { id, wallets } = this.state
+		const { id, isLoggedIn, wallets } = this.state
 		const viewProps = {
 			id,
+			isLoggedIn,
 			onCopy: this.handleCopy,
 			onEdit: this.handleEdit,
 			onFaucetRequest: this.handleFaucetRequest,
@@ -108,44 +108,50 @@ PageHeader.defaultProps = {
 	logoSrc: 'https://react.semantic-ui.com/images/wireframe/image.png'
 }
 
-class MobileHeader extends Component {
-	constructor(props) {
-		super(props)
-		this.state = { showTools: false }
-	}
+const MobileHeader = props => {
+	const [showTools, setShowTools] = useState(false)
+	const {
+		id: userId,
+		isLoggedIn,
+		isMobile,
+		logoSrc,
+		onCopy,
+		onEdit,
+		onFaucetRequest,
+		onSelection,
+		timerActive,
+		timerOnClick,
+		wallets,
+	} = props
+	const selected = getSelected()
 
-	render() {
-		const { showTools } = this.state
-		const {
-			id,
-			isMobile,
-			logoSrc,
-			onCopy,
-			onEdit,
-			onFaucetRequest,
-			onSelection,
-			timerActive,
-			timerOnClick,
-			wallets,
-		} = this.props
-		const selected = getSelected()
+	return (
+		<div>
+			<Menu attached="top" inverted>
+				{isMobile && (
+					<Menu.Item
+						icon={{ name: 'sidebar', size: 'big', className: 'no-margin' }}
+						// on mobile when sidebar is visible toggle is not neccessary on-document-click it is already triggered
+						onClick={toggleSidebarState}
+					/>
+				)}
+				<Menu.Item>
+					<Image size="mini" src={logoSrc} />
+				</Menu.Item>
+				<Menu.Menu position="right">
 
-		return (
-			<div>
-				<Menu attached="top" inverted>
-					{isMobile && (
-						<Menu.Item
-							icon={{ name: 'sidebar', size: 'big', className: 'no-margin' }}
-							// on mobile when sidebar is visible toggle is not neccessary on-document-click it is already triggered
-							onClick={toggleSidebarState}
-						/>
-					)}
-					<Menu.Item>
-						<Image size="mini" src={logoSrc} />
-					</Menu.Item>
-					<Menu.Menu position="right">
-						<NotificationDropdown />
-						{id && (
+					{!isMobile && <NotificationDropdown />}
+					{userId && !isMobile && (
+						<React.Fragment>
+							<Menu.Item
+								icon={{
+									className: 'no-margin',
+									color: !isLoggedIn ? 'red' : undefined,
+									name: 'chat',
+									size: 'big'
+								}}
+								onClick={() => visibleBond.changed(!visibleBond._value)}
+							/>
 							<Menu.Item
 								icon={{
 									className: 'no-margin',
@@ -155,63 +161,61 @@ class MobileHeader extends Component {
 								}}
 								onClick={timerOnClick}
 							/>
-						)}
+						</React.Fragment>
+					)}
 
-						{wallets && wallets.length > 0 && (
-							<Menu.Item style={{ paddingRight: 0 }}>
-								<Dropdown
-									labeled
-									onChange={onSelection}
-									text={!isMobile ? selected.name : textEllipsis(selected.name, 7, 3, false)}
-									value={selected.address}
-									options={arrSort(
-										wallets.map(({ address, name }) => ({
-											key: address,
-											text: name,
-											description: runtime.balances && <Currency address={address} />,
-											value: address
-										})),
-										'text'
-									)}
-								/>
-							</Menu.Item>
-						)}
-					</Menu.Menu>
-					<Menu.Menu fixed="right">
+					<Menu.Item style={{ paddingRight: 0 }}>
 						<Dropdown
-							item
-							icon={{
-								name: 'chevron circle ' + (showTools ? 'up' : 'down'),
-								size: 'large',
-								className: 'no-margin'
-							}}
-							onClick={() => this.setState({ showTools: !showTools })}
-						>
-							<Dropdown.Menu className="left">
+							labeled
+							onChange={onSelection}
+							text={!isMobile ? selected.name : textEllipsis(selected.name, 7, 3, false)}
+							value={selected.address}
+							options={arrSort(
+								wallets.map(({ address, name }) => ({
+									key: address,
+									text: name,
+									description: runtime.balances && <Currency address={address} />,
+									value: address
+								})),
+								'text'
+							)}
+						/>
+					</Menu.Item>
+				</Menu.Menu>
+				<Menu.Menu fixed="right">
+					<Dropdown
+						item
+						icon={{
+							name: 'chevron circle ' + (showTools ? 'up' : 'down'),
+							size: 'large',
+							className: 'no-margin'
+						}}
+						onClick={() => setShowTools(!showTools)}
+					>
+						<Dropdown.Menu className="left">
+							<Dropdown.Item
+								icon="pencil"
+								content={texts.updateIdentity}
+								onClick={onEdit}
+							/>
+							<Dropdown.Item
+								icon="copy"
+								content={texts.copyAddress}
+								onClick={onCopy}
+							/>
+							{userId && [
 								<Dropdown.Item
-									icon="pencil"
-									content={texts.updateIdentity}
-									onClick={onEdit}
+									key="0"
+									icon="gem"
+									content={texts.requestFunds}
+									onClick={onFaucetRequest}
 								/>
-								<Dropdown.Item
-									icon="copy"
-									content={texts.copyAddress}
-									onClick={onCopy}
-								/>
-								{id && [
-									<Dropdown.Item
-										key="0"
-										icon="gem"
-										content={texts.requestFunds}
-										onClick={onFaucetRequest}
-									/>
-								]}
-							</Dropdown.Menu>
-						</Dropdown>
+							]}
+						</Dropdown.Menu>
+					</Dropdown>
 
-					</Menu.Menu>
-				</Menu>
-			</div>
-		)
-	}
+				</Menu.Menu>
+			</Menu>
+		</div>
+	)
 }

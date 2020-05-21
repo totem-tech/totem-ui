@@ -1,0 +1,32 @@
+.chat-buttons {
+    position: fixed;
+    top: 66px;
+    right: 25px;
+    z-index: 1;
+}
+.totem-chat {
+    background: 'white';
+    bottom: 0px;
+    height: calc( 100% - 63px );
+    max-width: calc( 100% - 30px );
+    overflow: hidden;
+    position: fixed;
+    right: 0px;
+    top: 61px;
+    width: 400px;
+    z-index: 1;
+}
+
+#app > .chat-visible #main-content {
+    margin-top: 45px;
+    padding-top: 0 !important;
+}
+#app > .inbox-visible:not(.sidebar-collapsed):not(.mobile) #main-content {
+    width: calc( 100% - 635px );
+}
+#app > .inbox-visible.sidebar-collapsed:not(.mobile) #main-content {
+    width: calc( 100% - 460px );
+}
+#app > .inbox-visible:not(.sidebar-collapsed):not(.mobile) .chat-buttons {
+    right: 423px;
+}

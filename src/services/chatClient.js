@@ -22,7 +22,7 @@ if (oldData) {
 // remove trollbox chat history items
 if (rw().history) rw({ history: null })
 
-export const loginBond = new Bond
+export const loginBond = new Bond()
 // retrieves user credentails from local storage
 export const getUser = () => rw().user
 export const setUser = user => rw({ user }) // user = {id, secret}
@@ -84,10 +84,12 @@ export const getClient = () => {
     if (!id) return instance
 
     instance.onConnect(() => instance.login(id, secret, err => {
-        loginBond.changed(!err)
         err && console.log('Login failed', err)
+        loginBond.changed(!err)
     }))
-    instance.onConnectError(() => loginBond.changed(false))
+    instance.onConnectError(() => {
+        loginBond.changed(false)
+    })
     return instance
 }
 
