@@ -118,6 +118,7 @@ export default class NotificationDropdown extends Component {
 
         return items.size === 0 ? '' : (
             <Dropdown
+                as='a'
                 className={classNames}
                 icon={{ className: 'no-margin', name: 'bell', size: 'large' }}
                 item
@@ -125,8 +126,13 @@ export default class NotificationDropdown extends Component {
                 onClose={() => this.setState({ open: false })}
                 onOpen={() => this.setState({ open: true })}
                 scrolling
+
             >
-                <Dropdown.Menu className='notifictaions' direction="left" style={style}>
+                <Dropdown.Menu
+                    className='notifictaions'
+                    direction="left"
+                    style={style}
+                >
 
                     {Array.from(items).filter(([_, { deleted }]) => !deleted).reverse().map(([id, notification]) => {
                         const { senderId, type, childType, message, data, tsCreated, read } = notification

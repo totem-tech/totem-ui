@@ -137,11 +137,10 @@ and (-webkit-device-pixel-ratio : 3) {
 }
 
 
-
-
-
 #app, #app > div {
   height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 .mobile .pusher.main-content {
   margin: 0 !important;
@@ -165,6 +164,10 @@ and (-webkit-device-pixel-ratio : 3) {
 .ui.left.visible.sidebar > a {
   white-space: nowrap;
   overflow: hidden;
+}
+/* hide footer bar when mobile sidebar is open */
+.mobile.sidebar-visible > .ui.menu.bottom {
+    display: none;
 }
 /* Main content width and positioning when sidebar is collapsed (icon-only mode) */
 #app > :not(.mobile) .ui.visible.left.sidebar.very.thin ~ .pusher.main-content {

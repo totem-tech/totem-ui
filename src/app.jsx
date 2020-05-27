@@ -1,5 +1,5 @@
 import React from 'react'
-import { Container, Dimmer, Image, Loader, Sidebar } from 'semantic-ui-react'
+import { Container, Dimmer, Image, Loader, Menu, Sidebar } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import {
@@ -10,7 +10,7 @@ import {
 // Components
 import ErrorBoundary from './components/CatchReactErrors'
 import ChatWidget from './modules/chat/Widget'
-import PageHeader from './components/PageHeader'
+import PageHeader, { HeaderMenuButtons } from './components/PageHeader'
 import SidebarLeft, { MainContentItem } from './components/SidebarLeft'
 // Services
 import blockchain from './services/blockchain'
@@ -122,10 +122,14 @@ export class App extends ReactiveComponent {
 				<ChatWidget />
 				<ModalsConainer />
 				<ToastsContainer isMobile={isMobile} />
-				<ErrorBoundary><PageHeader {...{ logoSrc, isMobile }} /></ErrorBoundary>
+				<ErrorBoundary>
+					<PageHeader {...{ logoSrc, isMobile }} />
+				</ErrorBoundary>
 
 				<Sidebar.Pushable style={styles.pushable}>
-					<SidebarLeft isMobile={isMobile} />
+					<ErrorBoundary>
+						<SidebarLeft isMobile={isMobile} />
+					</ErrorBoundary>
 
 					<Sidebar.Pusher
 						as={Container}
@@ -133,7 +137,11 @@ export class App extends ReactiveComponent {
 						dimmed={false}
 						id="main-content"
 						fluid
-						style={{ ...styles.mainContent, ...getGridStyle(numCol) }}
+						style={{
+							...styles.mainContent,
+							paddingBottom: isMobile ? 55 : 15,
+							...getGridStyle(numCol),
+						}}
 					>
 						{sidebarItems.map(({ name }, i) => <MainContentItem key={i + name} name={name} />)}
 						<div className='empty-message'>
@@ -141,7 +149,7 @@ export class App extends ReactiveComponent {
 						</div>
 					</Sidebar.Pusher>
 				</Sidebar.Pushable>
-			</div >
+			</div>
 		)
 	}
 }
@@ -162,7 +170,7 @@ const styles = {
 	},
 	pushable: {
 		margin: 0,
-		height: 'calc(100% - 61px)',
+		height: 'calc(100% - 59px)',
 		overflow: 'hidden',
 		WebkitOverflow: 'hidden',
 	},
