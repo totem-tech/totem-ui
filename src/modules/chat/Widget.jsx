@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Bond } from 'oo7'
 import { Button, Icon } from 'semantic-ui-react'
 import { textEllipsis } from '../../utils/utils'
-import Chat from './Inbox'
+import Inbox from './Inbox'
 import NewInboxForm from './NewInboxForm'
 import { inboxBonds, inboxSettings, newInboxBond } from './chat'
 import { getUser, loginBond } from '../../services/chatClient'
@@ -53,25 +53,25 @@ export default function ChatWidget() {
             visibleBond.untie(tieIdVisible)
         }
     }, [])
+    // return ''
 
     return !id || !visible ? '' : (
         <div className='chat-container'>
             {visible && inboxKeys.includes(openInboxKey) && (
-                <Chat
-                    key={openInboxKey}
+                <Inbox
                     receiverIds={openInboxKey.split(',')}
                     title={openInboxKey === EVERYONE ? texts.totemTrollbox : ''}
                     subtitle={id && `${textsCap.loggedInAs} @${id}`}
                 />
             )}
-            <WidgetButtons {...{
+            {/* <WidgetButtons {...{
                 inboxKeys,
                 online,
                 openInboxKey,
                 setOpenInboxKey,
                 setVisible,
                 visible,
-            }} />
+            }} /> */}
         </div>
     )
 }

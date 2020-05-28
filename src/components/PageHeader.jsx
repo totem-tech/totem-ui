@@ -18,7 +18,7 @@ import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { toggleSidebarState } from '../services/sidebar'
 import timeKeeping from '../services/timeKeeping'
 import { setToast } from '../services/toast'
-import { visibleBond } from '../modules/chat/Widget'
+import { visibleBond } from '../modules/chat/ChatBar'
 
 // const [words, wordsCap] = translated({}, true)
 const [texts] = translated({
@@ -54,7 +54,6 @@ export default class PageHeader extends Component {
 		this.tieIdLogin = loginBond.tie(isLoggedIn => {
 			const { id } = getUser()
 			this.setState({ id, isLoggedIn })
-			console.log({ isLoggedIn }, 'controller')
 		})
 	}
 
@@ -124,7 +123,6 @@ const PageHeaderView = props => {
 	} = props
 	const selected = getSelected()
 	const buttons = <HeaderMenuButtons {...{ isLoggedIn, isRegistered }} />
-	console.log({ isLoggedIn }, 'view')
 	const topBar = (
 		<Menu
 			attached="top"
@@ -232,7 +230,6 @@ const PageHeaderView = props => {
 
 export const HeaderMenuButtons = ({ isLoggedIn, isRegistered }) => {
 	const [timerInProgress, setTimerActive] = useState(timeKeeping.formData().inprogress)
-	console.log({ isLoggedIn })
 	useEffect(() => {
 		const tieIdTimer = timeKeeping.formDataBond.tie(() => {
 			const active = timeKeeping.formData().inprogress

@@ -31,6 +31,7 @@ import DataStorage from './utils/DataStorage'
 // Images
 import TotemButtonLogo from './assets/totem-button-grey.png'
 import PlaceholderImage from './assets/totem-placeholder.png'
+import ChatBar from './modules/chat/ChatBar'
 
 const [texts] = translated({
 	failedMsg: 'Connection failed! Please check your internet connection.',
@@ -149,6 +150,7 @@ export class App extends ReactiveComponent {
 						</div>
 					</Sidebar.Pusher>
 				</Sidebar.Pushable>
+				<ChatBar {...{ isMobile, inverted: false }} />
 			</div>
 		)
 	}

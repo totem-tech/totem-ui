@@ -11,8 +11,8 @@ import {
     getMessages,
     inboxBonds,
     inboxSettings,
+    openInboxBond,
     send,
-    setOpen,
     removeInboxMessages,
     removeInbox,
 } from './chat'
@@ -40,12 +40,17 @@ const focusNScroll = inboxKey => setTimeout(() => {
     if (messagesRef) messagesRef.scrollTo(0, messagesRef.scrollHeight)
 })
 
-export default function Chat(props) {
-    const { receiverIds, style, subtitle, title } = props
+export default function Inbox(props) {
+    let {
+        inboxKey,
+        receiverIds, // if not supplied use default open inbox
+        style,
+        subtitle,
+        title,
+    } = props
     const isTrollbox = receiverIds.includes(EVERYONE)
     const isGroup = receiverIds.length > 1 || isTrollbox
-    const [messages, setMessages] = useState(getMessages(receiverIds))
-    const inboxKey = getInboxKey(receiverIds) // conversation identifier
+    const [messages, setMessages] = useState(props.messages || getMessages(inboxKey))
     data[inboxKey] = data[inboxKey] || {}
 
     const handleSend = draft => {
@@ -56,21 +61,17 @@ export default function Chat(props) {
     useEffect(() => {
         let mounted = true
         let bond = inboxBonds[inboxKey]
-        const tieId = bond && bond.tie(() => mounted && setMessages(getMessages(receiverIds)))
+        const tieId = bond && bond.tie(() => mounted && setMessages(getMessages(inboxKey)))
 
-        inboxSettings(inboxKey, { unread: false }, true)
-        setOpen(inboxKey, true)
-
+        bond && inboxSettings(inboxKey, { unread: false }, true)
         return () => {
             mounted = false
             bond && bond.untie(tieId)
-            setOpen(inboxKey, false)
         }
     }, []) // keep [] to prevent useEffect from being inboked on every render
 
     focusNScroll(inboxKey)
-
-    return (
+    return !inboxKey ? '' : (
         <div className='totem-chat' style={style}>
             <InboxHeader {...{
                 inboxKey,
@@ -95,12 +96,9 @@ export default function Chat(props) {
         </div >
     )
 }
-Chat.propTypes = {
+Inbox.propTypes = {
     style: PropTypes.object,
     receiverIds: PropTypes.array,
-}
-Chat.defaultProps = {
-    receiverIds: [EVERYONE],
 }
 
 const InboxHeader = ({ inboxKey, isGroup, isTrollbox, messages, receiverIds, subtitle, title }) => {
@@ -108,7 +106,8 @@ const InboxHeader = ({ inboxKey, isGroup, isTrollbox, messages, receiverIds, sub
     const [showTools, setShowTools] = useState(false)
     const [online, setOnline] = useState(false)
 
-    !isGroup && useEffect(() => {
+    useEffect(() => {
+        if (!isGroup) return () => { }
         let isMounted = true
         const frequency = 30000
         const friend = receiverIds[0]
@@ -124,7 +123,7 @@ const InboxHeader = ({ inboxKey, isGroup, isTrollbox, messages, receiverIds, sub
         checkOnline()
         return () => {
             isMounted = false
-            clearInterval(intervalId)
+            intervalId && clearInterval(intervalId)
         }
     }, [])
     return (
@@ -230,7 +229,7 @@ const InboxHeader = ({ inboxKey, isGroup, isTrollbox, messages, receiverIds, sub
         </div>
     )
 }
-const MessageInput = ({ onRef, onSubmit }) => {
+const MessageInput = ({ onRef, onSubmit, style }) => {
     const [value, setValue] = useState('')
     const handleSubmit = e => {
         e.preventDefault()
@@ -239,7 +238,7 @@ const MessageInput = ({ onRef, onSubmit }) => {
         setValue('')
     }
     return (
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} style={style}>
             <FormInput {...{
                 action: { icon: 'chat', onClick: handleSubmit },
                 autoComplete: 'off',

@@ -16,9 +16,9 @@ const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 export const inboxBonds = {}
 // notifies when new conversation is created, hidden or unhidden
 export const newInboxBond = new Bond()
-export let openInboxKeys = []
+export const openInboxBond = new Bond()
 export const pendingMessages = {};
-// on page lod remove any message with status 'loading' (unsent messages), as queue service will attempt to resend them
+// on page load remove any message with status 'loading' (unsent messages), as queue service will attempt to resend them
 (() => {
     const allMsgs = chatHistory.getAll()
     Array.from(allMsgs)
@@ -70,10 +70,9 @@ export const getInboxKey = receiverIds => {
         .join()
 }
 
-export const getMessages = receiverIds => {
+export const getMessages = inboxKey => {
     const { id: userId } = getUser() || {}
     if (!userId) return []
-    const inboxKey = getInboxKey(receiverIds)
     const messages = chatHistory.get(inboxKey) || []
     return [...messages, ...pendingMessages[inboxKey]]
 }
@@ -181,7 +180,7 @@ const saveMessage = msg => {
     }
     chatHistory.set(inboxKey, messages.slice(messages.length - limit))
     // new mesage received
-    if (senderId !== userId && !openInboxKeys.includes(inboxKey)) newSettings.unread = true
+    if (senderId !== userId && !openInboxBond._value === inboxKey) newSettings.unread = true
     if (timestamp) rw({ lastMessageTS: timestamp })
     // if (!inboxBonds[inboxKey]) {
     //     inboxBonds[inboxKey] = newInbox(receiverIds, null, true)
@@ -228,21 +227,14 @@ export const send = (receiverIds, message, encrypted = false) => {
             receiverIds,
             message,
             false,
-            (err, timestamp, id) => saveMsg(id, err ? 'error' : 'success', timestamp, err),
-            // (err, timestamp) => err ? saveMsg('error', timestamp, err) : removeMessage(inboxKey, id),
+            (err, timestamp, id) => {
+                saveMsg(id, err ? 'error' : 'success', timestamp, err)
+            },
         ],
         func: 'message',
         silent: true,
         type: QUEUE_TYPES.CHATCLIENT,
     })
-}
-
-export const setOpen = (inboxKey, open = true) => {
-    if (open) {
-        openInboxKeys = [...openInboxKeys, inboxKey]
-        return
-    }
-    openInboxKeys = openInboxKeys.filter(k => k !== inboxKey)
 }
 
 // retrieve unread messages on re/connect
@@ -269,29 +261,8 @@ client.onMessage((m, s, r, e, t, id, action) => {
     })
 })
 
-// handle group name change
-client.onMessageGroupName((receiverIds, groupName, senderId, timestamp, id) => {
-    // const inboxKey = getInboxKey(receiverIds)
-    // const history = chatHistory.get(inboxKey)
-    // const settings = inboxSettings(inboxKey)
-    // if (settings.name === groupName) return
-    // const reload = history && !settings.hide
-    // history && saveMessage({
-    //     id,
-    //     message: '',
-    //     senderId,
-    //     receiverIds,
-    //     encrypted: false,
-    //     timestamp,
-    //     action: {
-    //         data: [groupName],
-    //         type: 'message-group-name',
-    //     },
-    // })
-    // inboxSettings(inboxKey, { name: groupName }, reload)
-})
-
 generateInboxBonds()
+openInboxBond.changed(Object.keys(inboxBonds).reverse()[0])
 export default {
     inboxBonds,
     newInboxBond,

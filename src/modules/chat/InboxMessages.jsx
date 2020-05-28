@@ -51,78 +51,80 @@ export default function ChatMessages(props) {
         <div {...{
             className: 'messages',
             ref: onRef,
+            style: {
+                height: 'calc(100% - 84px)',
+                overflowX: 'auto',
+            }
         }}>
-            <div>
-                {messages.map(({ action, errorMessage, message, senderId, status }, i) => {
-                    const isSender = senderId === userId
-                    if (isObj(action) && !!action.type) {
-                        const { data, type } = action
-                        switch (type) {
-                            case 'message-group-name':
-                                return (
-                                    <div
-                                        key={i}
-                                        style={{ textAlign: 'center', color: 'grey' }}
-                                    >
-                                        <i>
-                                            {isSender ? textsCap.you : <UserID userId={senderId} />}
-                                            {texts.changedGroupName}: {data[0]}
-                                        </i>
-                                    </div>
-                                )
-                        }
-                        return ''
+            {messages.map(({ action, errorMessage, message, senderId, status }, i) => {
+                const isSender = senderId === userId
+                if (isObj(action) && !!action.type) {
+                    const { data, type } = action
+                    switch (type) {
+                        case 'message-group-name':
+                            return (
+                                <div
+                                    key={i}
+                                    style={{ textAlign: 'center', color: 'grey' }}
+                                >
+                                    <i>
+                                        {isSender ? textsCap.you : <UserID userId={senderId} />}
+                                        {texts.changedGroupName}: {data[0]}
+                                    </i>
+                                </div>
+                            )
                     }
-                    let bgColor = isSender ? 'green' : (
-                        isPrivate ? 'blue' : userColor[senderId]
-                    )
-                    if (!bgColor) {
-                        bgColor = colors[randomize(colors.length)]
-                        userColor[senderId] = bgColor
-                    }
-                    const color = bgColor === 'black' ? 'white' : 'black'
-                    return (
-                        <div {...{
-                            key: i,
+                    return ''
+                }
+                let bgColor = isSender ? 'green' : (
+                    isPrivate ? 'blue' : userColor[senderId]
+                )
+                if (!bgColor) {
+                    bgColor = colors[randomize(colors.length)]
+                    userColor[senderId] = bgColor
+                }
+                const color = bgColor === 'black' ? 'white' : 'black'
+                return (
+                    <div {...{
+                        key: i,
+                        style: {
+                            padding: '5px 0',
+                            textAlign: isSender ? 'right' : 'left',
+                        },
+                        title: errorMessage,
+                    }}>
+                        <Message {...{
+                            color: bgColor,
+                            compact: true,
+                            content: (
+                                <span>
+                                    {isPrivate || isSender || !senderId ? '' : (
+                                        <UserID {...{
+                                            basic: color !== 'white',
+                                            secondary: color === 'white',
+                                            suffix: ': ',
+                                            userId: senderId,
+                                        }}
+                                        />
+                                    )}
+                                    {message}
+                                </span>
+                            ),
+                            icon: icons[status],
                             style: {
-                                padding: '5px 0',
-                                textAlign: isSender ? 'right' : 'left',
+                                borderRadius: 10,
+                                boxShadow: 'none',
+                                color,
+                                margin: '1px 10px',
+                                padding: '7px 15px',
+                                width: 'auto'
                             },
-                            title: errorMessage,
-                        }}>
-                            <Message {...{
-                                color: bgColor,
-                                compact: true,
-                                content: (
-                                    <span>
-                                        {isPrivate || isSender || !senderId ? '' : (
-                                            <UserID {...{
-                                                basic: color !== 'white',
-                                                secondary: color === 'white',
-                                                suffix: ': ',
-                                                userId: senderId,
-                                            }}
-                                            />
-                                        )}
-                                        {message}
-                                    </span>
-                                ),
-                                icon: icons[status],
-                                style: {
-                                    borderRadius: 10,
-                                    boxShadow: 'none',
-                                    color,
-                                    margin: '1px 10px',
-                                    padding: '7px 15px',
-                                    width: 'auto'
-                                },
-                                key: i,
-                            }} />
-                            <Divider hidden style={{ margin: 0 }} />
-                        </div>
-                    )
-                })}
-            </div>
+                            key: i,
+                        }} />
+                        <Divider hidden style={{ margin: 0 }} />
+                    </div>
+                )
+            })}
         </div>
     )
 }

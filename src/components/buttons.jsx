@@ -49,14 +49,17 @@ export const Reveal = ({ content, hiddenContent, style, defaultVisible = false, 
 
 // placeholder to potentially use this in the future to make all User IDs clickable and open private chat with user
 export const UserID = props => {
-    const { prefix, style, suffix, userId = '' } = props
+    const { onClick, prefix, style, suffix, userId = '' } = props
     if (!userId) return ''
     return (
         <Button
             basic
             compact
             content={<b>{prefix}@{getRawUserID(userId)}{suffix}</b>}
-            onClick={e => e.stopPropagation()}
+            onClick={e => {
+                if (onClick === null) return // prevent any action
+                e.stopPropagation()
+            }}
             title={(getByUserId(userId) || {}).name}
             style={{ boxShadow: 'none', padding: 0, ...style }}
             {...objWithoutKeys(props, ['prefix', 'style', 'suffix', 'userId'])}
