@@ -3,9 +3,10 @@ import { Bond } from 'oo7'
 import Inbox from './Inbox'
 import InboxList from './InboxList'
 import { getInboxKey, openInboxBond, getMessages } from './chat'
+// import './style.css'
 
 const EVERYONE = 'everyone'
-export const visibleBond = new Bond().defaultTo(false)
+export const visibleBond = new Bond().defaultTo(true)
 
 export default function ChatBar({ isMobile, inverted = false }) {
     const [visible, setVisible] = useState(visibleBond._value)
@@ -18,11 +19,9 @@ export default function ChatBar({ isMobile, inverted = false }) {
             setHiding(!show) // animate
             setTimeout(() => {
                 setVisible(show)
-                const classList = document.getElementById('app').classList
-                if (show)
-                    classList.add('chat-visible')
-                else
-                    classList.remove('chat-visible')
+                document
+                    .getElementById('app')
+                    .classList[show ? 'add' : 'remove']('chat-visible')
             }, 200)
         })
 
@@ -42,12 +41,12 @@ export default function ChatBar({ isMobile, inverted = false }) {
             width: width,
             zIndex: 1,
         }}>
-            <ChatContents {...{ inverted, visible }} />
+            <ChatContents {...{ inverted, isMobile, visible }} />
         </div>
     )
 }
 
-const ChatContents = ({ inverted, visible }) => {
+const ChatContents = ({ inverted, isMobile, visible }) => {
     const [receiverIds, setReceiverIds] = useState((openInboxBond._value || '').split(','))
     const inboxKey = getInboxKey(receiverIds)
 
@@ -61,15 +60,17 @@ const ChatContents = ({ inverted, visible }) => {
             <InboxList {...{
                 inboxKey,
                 inverted,
-                style: { height: '30%', overflowX: 'auto' },
+                style: {
+                    height: isMobile ? '30%' : '40%',
+                    overflowX: 'auto',
+                },
             }} />
             {receiverIds.length > 0 && (
                 <Inbox {...{
                     key: inboxKey,
                     receiverIds,
                     inboxKey,
-                    // messages: getMessages(inboxKey),
-                    style: { height: '70%' }
+                    style: { height: isMobile ? '70%' : '60%' }
                 }} />
             )}
         </div>

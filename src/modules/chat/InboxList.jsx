@@ -50,7 +50,7 @@ export default function InboxList(props) {
                         },
                     }} />
                 </div>
-                <div style={{ display: 'inline-block', float: 'right', width: 'calc( 100% - 40px )' }} >
+                <div style={{ display: 'inline-block', float: 'right', width: 'calc( 100% - 41px )' }} >
                     <FormInput {...{
                         icon: 'search',
                         name: 'keywords',

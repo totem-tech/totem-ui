@@ -242,7 +242,7 @@ export const HeaderMenuButtons = ({ isLoggedIn, isRegistered }) => {
 		<React.Fragment>
 			<NotificationDropdown />
 			<Menu.Item
-				disabled={!isLoggedIn}
+				disabled={!isRegistered}
 				icon={{
 					className: 'no-margin',
 					color: !isLoggedIn ? 'red' : undefined,

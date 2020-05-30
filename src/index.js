@@ -1,9 +1,9 @@
+import 'semantic-ui-css/semantic.min.css'
 import React from 'react'
 import { render } from 'react-dom'
 import { App } from './app.jsx'
 import { setNodeUri } from 'oo7-substrate'
 import { getTypes, nodes, setConfig } from './services/blockchain'
-import 'semantic-ui-css/semantic.min.css'
 import client from './services/chatClient'
 import { getSelected, getTexts, setTexts } from './services/language'
 import storage from './services/storage'
@@ -52,10 +52,10 @@ const init = () => new Promise((resolve, reject) => {
             })
         })
     })
-    
+
     // set Polkadot blockchain types
     getTypes().then(types => setDefaultConfig(nodes, types))
-    
+
     // force resolve in case messaging service is not connected yet
     setTimeout(() => resolve(), 2000)
 })

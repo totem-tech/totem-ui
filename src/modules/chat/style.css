@@ -1,7 +1,7 @@
 /* resize #main-content accordingly */
-#app.chat-visible > :not(.mobile).ui.visible.left.sidebar.very.thin ~ .pusher.main-content {
+#app.chat-visible > :not(.mobile) .pushable > .ui.visible.left.sidebar.very.thin ~ .pusher.main-content {
     max-width: calc(100% - 460px) !important;
 }
-/* #app.chat-visible > .mobile.ui.visible.left.sidebar.very.thin ~ .pusher.main-content {
-    max-width: 0px !important;
-} */
+#app.chat-visible > :not(.mobile) .pushable > .ui.visible.left.sidebar.wide ~ .pusher.main-content {
+    max-width: calc(100% - 635px) !important;
+}
