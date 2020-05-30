@@ -178,13 +178,10 @@ const saveMessage = msg => {
                 if (name && name !== oldName) newSettings.name = name
         }
     }
-    chatHistory.set(inboxKey, messages.slice(messages.length - limit))
+    chatHistory.set(inboxKey, messages.slice(-limit))
     // new mesage received
     if (senderId !== userId && !openInboxBond._value === inboxKey) newSettings.unread = true
     if (timestamp) rw({ lastMessageTS: timestamp })
-    // if (!inboxBonds[inboxKey]) {
-    //     inboxBonds[inboxKey] = newInbox(receiverIds, null, true)
-    // }
     generateInboxBonds()
     inboxBonds[inboxKey].changed(uuid.v1())
     if (Object.keys(newSettings).length) inboxSettings(inboxKey, newSettings, true)
@@ -257,6 +254,7 @@ client.onMessage((m, s, r, e, t, id, action) => {
         message: m,
         receiverIds: r,
         senderId: s,
+        status: 'success',
         timestamp: t,
     })
 })

@@ -5,17 +5,25 @@ import InboxList from './InboxList'
 import { getInboxKey, openInboxBond, getMessages } from './chat'
 
 const EVERYONE = 'everyone'
-export const visibleBond = new Bond().defaultTo(true)
+export const visibleBond = new Bond().defaultTo(false)
 
 export default function ChatBar({ isMobile, inverted = false }) {
     const [visible, setVisible] = useState(visibleBond._value)
     const [hiding, setHiding] = useState(false)
     const width = isMobile ? window.innerWidth : 400
 
+
     useEffect(() => {
         const tieId = visibleBond.tie(show => {
-            setHiding(!show)
-            setTimeout(() => setVisible(show), 200)
+            setHiding(!show) // animate
+            setTimeout(() => {
+                setVisible(show)
+                const classList = document.getElementById('app').classList
+                if (show)
+                    classList.add('chat-visible')
+                else
+                    classList.remove('chat-visible')
+            }, 200)
         })
 
         return () => visibleBond.untie(tieId)
@@ -28,10 +36,10 @@ export default function ChatBar({ isMobile, inverted = false }) {
             top: 61,
             bottom: isMobile ? 54 : 0,
             background: inverted ? '#1b1c1d' : 'white',
-            border: '1px solid #1b1c1d',
+            boxShadow: '3px 8px 8px 8px grey',
             color: inverted ? 'white' : 'black',
-            width: width,
             transition: 'all 0.2s linear',
+            width: width,
             zIndex: 1,
         }}>
             <ChatContents {...{ inverted, visible }} />
