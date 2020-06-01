@@ -26,11 +26,8 @@ export default function InboxList(props) {
     let filteredKeys = (!keywords.trim() ? inboxKeys : inboxKeys
         .filter(k => k.includes(keywords) || (names[inboxKeys.indexOf(k)] || '').toLowerCase().includes(keywords))
     )
-        // sort by last message timestamp
-        .map(key => ({
-            key,
-            ts: (msgs[inboxKeys.indexOf(key)][0] || {}).timestamp
-        }))
+    // sort by last message timestamp
+    filteredKeys = filteredKeys.map(key => ({ key, ts: (msgs[inboxKeys.indexOf(key)][0] || {}).timestamp }))
     filteredKeys = arrSort(filteredKeys, 'ts', true, false).map(x => x.key)
 
     !openInboxBond._value && openInboxBond.changed(inboxKeys[0])

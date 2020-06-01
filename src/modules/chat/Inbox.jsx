@@ -16,6 +16,7 @@ import {
     removeInboxMessages,
     removeInbox,
     newInboxBond,
+    getTrollboxUserIds,
 } from './chat'
 import client, { loginBond, getUser } from '../../services/chatClient'
 import { translated } from '../../services/language'
@@ -86,7 +87,7 @@ export default function Inbox(props) {
             }} />
             {showMembers ? (
                 <div>
-                    {receiverIds.sort().map(id => (
+                    {(!isTrollbox ? receiverIds : getTrollboxUserIds()).sort().map(id => (
                         <Message {...{
                             content: <UserID userId={id} />,
                             header: (getByUserId(id) || {}).name,
