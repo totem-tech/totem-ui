@@ -1,7 +1,6 @@
 import React, { Component, useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import { runtime } from 'oo7-substrate'
-import { Dropdown, Image, Menu } from 'semantic-ui-react'
+import { Dropdown, Icon, Image, Menu } from 'semantic-ui-react'
 import Currency from '../components/Currency'
 // utils
 import { arrSort, copyToClipboard, textEllipsis } from '../utils/utils'
@@ -18,7 +17,7 @@ import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { toggleSidebarState } from '../services/sidebar'
 import timeKeeping from '../services/timeKeeping'
 import { setToast } from '../services/toast'
-import { visibleBond as chatVisibleBond } from '../modules/chat/chat'
+import { unreadCountBond, visibleBond as chatVisibleBond } from '../modules/chat/chat'
 
 // const [words, wordsCap] = translated({}, true)
 const [texts] = translated({
@@ -230,27 +229,51 @@ const PageHeaderView = props => {
 
 export const HeaderMenuButtons = ({ isLoggedIn, isRegistered }) => {
 	const [timerInProgress, setTimerActive] = useState(timeKeeping.formData().inprogress)
+	const [unreadCount, setUnreadCount] = useState(unreadCountBond._value)
+
 	useEffect(() => {
 		const tieIdTimer = timeKeeping.formDataBond.tie(() => {
 			const active = timeKeeping.formData().inprogress
 			if (active !== timerInProgress) setTimerActive(active)
 		})
+		const tieIdUnread = unreadCountBond.tie(unread => {
+			setUnreadCount(unread)
+			console.log({ unread })
+		})
 
-		return () => timeKeeping.formDataBond.untie(tieIdTimer)
+		return () => {
+			timeKeeping.formDataBond.untie(tieIdTimer)
+			unreadCountBond.untie(tieIdUnread)
+		}
 	}, [])
+	console.log({ unreadCount, isSmall: unreadCount < 10 })
 	return (
 		<React.Fragment>
 			<NotificationDropdown />
 			<Menu.Item
 				disabled={!isRegistered}
-				icon={{
+				onClick={() => chatVisibleBond.changed(!chatVisibleBond._value)}
+			>
+				<Icon {...{
 					className: 'no-margin',
-					color: !isLoggedIn ? 'red' : undefined,
+					color: !isLoggedIn ? 'red' : (unreadCount > 0 ? 'orange' : undefined),
 					name: 'chat',
 					size: 'big'
-				}}
-				onClick={() => chatVisibleBond.changed(!chatVisibleBond._value)}
-			/>
+				}} />
+				{unreadCount > 0 && (
+					<div style={{
+						position: 'absolute',
+						left: unreadCount < 10 ? 28 : (
+							unreadCount < 100 ? 25 : 21
+						),
+						top: 22,
+						color: 'white',
+						fontWeight: 'bold',
+					}}>
+						{unreadCount}
+					</div>
+				)}
+			</Menu.Item>
 			<Menu.Item
 				disabled={!isRegistered}
 				icon={{

@@ -18,16 +18,8 @@ export const inboxBonds = {}
 export const newInboxBond = new Bond()
 export const openInboxBond = new Bond()
 export const visibleBond = new Bond().defaultTo(false)
-export const pendingMessages = {};
-// on page load remove any message with status 'loading' (unsent messages), as queue service will attempt to resend them
-(() => {
-    const allMsgs = chatHistory.getAll()
-    Array.from(allMsgs)
-        .forEach(([key, messages]) => chatHistory.set(
-            key,
-            messages.filter(x => x.status !== 'loading'))
-        )
-})()
+export const unreadCountBond = new Bond()
+export const pendingMessages = {}
 
 const generateInboxBonds = () => {
     const allKeys = Array.from(chatHistory.getAll())
@@ -84,6 +76,14 @@ export const getTrollboxUserIds = () => {
     return arrUnique(messages.map(x => x.senderId))
 }
 
+export const getUnreadCount = () => Object.keys(inboxBonds)
+    .filter(k => !visibleBond._value || k !== openInboxBond._value)
+    .reduce((count, key) => {
+        const { unread } = inboxSettings(key)
+        return count + (unread || 0)
+    }, 0)
+window.getUnreadCount = getUnreadCount
+
 // get/set hidden inbox keys list
 export const hiddenInboxKeys = () => {
     const allKeys = Array.from(chatHistory.getAll()).map(x => x[0])
@@ -104,12 +104,18 @@ export const inboxSettings = (inboxKey, value, triggerReload = false) => {
     let settings = rw().inbox || {}
     if (value === null) delete settings[inboxKey]
     if (!isObj(value)) return settings[inboxKey] || {}
+    const oldUnread = settings.unread
 
     settings[inboxKey] = { ...settings[inboxKey], ...value }
     settings = rw({ inbox: settings }).inbox
-    inboxBonds[inboxKey] && inboxBonds[inboxKey].changed(uuid.v1())
+
     generateInboxBonds()
-    triggerReload && newInboxBond.changed(uuid.v1())
+    inboxBonds[inboxKey] && inboxBonds[inboxKey].changed(uuid.v1())
+    //update unread count bond
+    if (triggerReload) {
+        unreadCountBond.changed(getUnreadCount())
+        newInboxBond.changed(uuid.v1())
+    }
     return settings[inboxKey] || {}
 }
 
@@ -141,7 +147,7 @@ export const removeMessage = (inboxKey, id) => {
     if (index === -1) return
     messages.splice(index, 1)
     chatHistory.set(inboxKey, messages)
-    // inboxBonds[inboxKey].changed(uuid.v1())
+    inboxBonds[inboxKey].changed(uuid.v1())
 }
 
 const saveMessage = msg => {
@@ -152,6 +158,7 @@ const saveMessage = msg => {
     const limit = historyLimit()
     let msgItem = messages.find(x => x.id === id)
     const { id: userId } = getUser() || {}
+    const settings = inboxSettings(inboxKey)
     const newSettings = {}
     if (id && msgItem) {
         // update existing item
@@ -178,14 +185,16 @@ const saveMessage = msg => {
     if (isObj(action)) switch (action.type) {
         case 'message-group-name':
             const [name] = action.data || []
-            const { name: oldName } = inboxSettings(inboxKey)
+            const { name: oldName } = settings
             if (!name || name === oldName) break
             newSettings.name = name
     }
 
     chatHistory.set(inboxKey, messages.slice(-limit))
     // new mesage received
-    if (senderId !== userId && openInboxBond._value !== inboxKey) newSettings.unread = true
+    if (senderId !== userId && openInboxBond._value !== inboxKey) {
+        newSettings.unread = (settings.unread || 0) + 1
+    }
     if (timestamp) rw({ lastMessageTS: timestamp })
     generateInboxBonds()
     inboxBonds[inboxKey].changed(uuid.v1())
@@ -265,9 +274,20 @@ client.onMessage((m, s, r, e, t, id, action) => {
         status: 'success',
         timestamp: t,
     })
-})
+});
 
-generateInboxBonds()
+// on page load remove any message with status 'loading' (unsent messages), as queue service will attempt to resend them
+(() => {
+    const allMsgs = chatHistory.getAll()
+    Array.from(allMsgs)
+        .forEach(([key, messages]) => chatHistory.set(
+            key,
+            messages.filter(x => x.status !== 'loading'))
+        )
+
+    generateInboxBonds()
+    unreadCountBond.changed(getUnreadCount())
+})()
 export default {
     inboxBonds,
     newInboxBond,

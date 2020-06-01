@@ -330,7 +330,6 @@ export default class RestoreBackup extends Component {
 
 	render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
-console.log({ RestoreBackup })
 RestoreBackup.defaultProps = {
 	header: textsCap.formHeader,
 	size: 'tiny'

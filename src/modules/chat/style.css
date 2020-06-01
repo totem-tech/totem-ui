@@ -35,6 +35,17 @@
     float: right;
     width: calc( 100% - 81px );
 }
+.chat-container .inbox-list .unread-count {
+    color: white;
+    font-weight: bold;
+    position: absolute;
+    left: 24px;
+    top: 11px;
+}
+.chat-container .inbox-list .unread-count.compact {
+    top: 4px;
+    left: 20px;
+}
 
 /* inobx */ 
 .chat-container .inbox {

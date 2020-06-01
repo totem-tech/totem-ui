@@ -64,7 +64,7 @@ export default function Inbox(props) {
         let bond = inboxBonds[inboxKey]
         const tieId = bond && bond.tie(() => mounted && setMessages(getMessages(inboxKey)))
 
-        bond && inboxSettings(inboxKey, { unread: false }, true)
+        bond && inboxSettings(inboxKey, { unread: 0 }, true)
         return () => {
             mounted = false
             bond && bond.untie(tieId)
@@ -147,7 +147,7 @@ const InboxHeader = ({
     useEffect(() => {
         if (isGroup) return () => { }
         let isMounted = true
-        const frequency = 30000
+        const frequency = 60000 // miliseconds
         const friend = receiverIds[0]
         const checkOnline = () => {
             if (!isMounted) return

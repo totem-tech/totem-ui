@@ -18,10 +18,16 @@ export default function InboxList(props) {
     const { inverted, style } = props
     const [inboxKeys, setInboxKeys] = useState(Object.keys(inboxBonds))
     const [compact, setCompact] = useState(false)
-    const iconSize = compact ? 28 : 42
-    const names = inboxKeys.map(key => key === EVERYONE ? textsCap.trollbox : inboxSettings(key).name)
-    const msgs = inboxKeys.map(key => getMessages(key).reverse())
     const [kw, setKeywords] = useState('')
+    const iconSize = compact ? 18 : 28
+    const names = []
+    const msgs = []
+    const allSettings = []
+    inboxKeys.forEach((key, i) => {
+        allSettings[i] = inboxSettings(key)
+        names[i] = key === EVERYONE ? textsCap.trollbox : allSettings[i].name
+        msgs[i] = getMessages(key).reverse()
+    })
     const keywords = kw.trim().toLowerCase()
     let filteredKeys = (!keywords.trim() ? inboxKeys : inboxKeys
         .filter(k => k.includes(keywords) || (names[inboxKeys.indexOf(k)] || '').toLowerCase().includes(keywords))
@@ -80,18 +86,29 @@ export default function InboxList(props) {
                 const name = names[index] || key
                 const isActive = openInboxBond._value === key
                 const lastMsg = (msgs[index] || [])[0]
+                const { unread } = allSettings[index]
 
                 return (
                     <Message {...{
-                        content: compact || !lastMsg ? undefined : (
-                            <UserID {...{
-                                onClick: null,
-                                suffix: `: ${lastMsg.message}`,
-                                userId: lastMsg.senderId,
-                            }} />
+                        content: (
+                            <div>
+                                {unread > 0 && (
+                                    <div className={`unread-count ${compact ? 'compact' : ''}`}>
+                                        {unread}
+                                    </div>
+                                )}
+                                {compact || !lastMsg ? '' : (
+                                    <UserID {...{
+                                        onClick: null,
+                                        suffix: `: ${lastMsg.message}`,
+                                        userId: lastMsg.senderId,
+                                    }} />
+                                )}
+                            </div>
                         ),
                         header: name,
                         icon: {
+                            color: !isActive && allSettings[index].unread ? 'orange' : undefined,
                             name: 'chat',
                             style: {
                                 fontSize: iconSize,
