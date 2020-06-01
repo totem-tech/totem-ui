@@ -18,7 +18,7 @@ import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { toggleSidebarState } from '../services/sidebar'
 import timeKeeping from '../services/timeKeeping'
 import { setToast } from '../services/toast'
-import { visibleBond } from '../modules/chat/ChatBar'
+import { visibleBond as chatVisibleBond } from '../modules/chat/chat'
 
 // const [words, wordsCap] = translated({}, true)
 const [texts] = translated({
@@ -249,7 +249,7 @@ export const HeaderMenuButtons = ({ isLoggedIn, isRegistered }) => {
 					name: 'chat',
 					size: 'big'
 				}}
-				onClick={() => visibleBond.changed(!visibleBond._value)}
+				onClick={() => chatVisibleBond.changed(!chatVisibleBond._value)}
 			/>
 			<Menu.Item
 				disabled={!isRegistered}

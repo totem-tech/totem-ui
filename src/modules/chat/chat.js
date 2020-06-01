@@ -17,6 +17,7 @@ export const inboxBonds = {}
 // notifies when new conversation is created, hidden or unhidden
 export const newInboxBond = new Bond()
 export const openInboxBond = new Bond()
+export const visibleBond = new Bond().defaultTo(false)
 export const pendingMessages = {};
 // on page load remove any message with status 'loading' (unsent messages), as queue service will attempt to resend them
 (() => {
@@ -74,7 +75,7 @@ export const getMessages = inboxKey => {
     const { id: userId } = getUser() || {}
     if (!userId) return []
     const messages = chatHistory.get(inboxKey) || []
-    return [...messages, ...pendingMessages[inboxKey]]
+    return [...messages, ...(pendingMessages[inboxKey] || [])]
 }
 
 // unique user ids from Trollbox chat history
@@ -101,8 +102,8 @@ export const historyLimit = limit => {
 // get/set inbox specific settings
 export const inboxSettings = (inboxKey, value, triggerReload = false) => {
     let settings = rw().inbox || {}
-    const remove = value === null
-    if (!isObj(value) && !remove) return settings[inboxKey] || {}
+    if (value === null) delete settings[inboxKey]
+    if (!isObj(value)) return settings[inboxKey] || {}
 
     settings[inboxKey] = { ...settings[inboxKey], ...value }
     settings = rw({ inbox: settings }).inbox
@@ -115,10 +116,14 @@ export const inboxSettings = (inboxKey, value, triggerReload = false) => {
 // create/get inbox key
 export const newInbox = (receiverIds = [], name, reload = false) => {
     const inboxKey = getInboxKey(receiverIds)
-    let settings = inboxSettings(inboxKey)
+    let settings = {
+        ...inboxSettings(inboxKey),
+        hide: false,
+    }
+    settings.name = settings.name || name
     reload = reload || settings.hide
     !chatHistory.get(inboxKey) && chatHistory.set(inboxKey, [])
-    inboxSettings(inboxKey, { ...settings, hide: false, name }, reload)
+    inboxSettings(inboxKey, settings, reload)
     return inboxBonds[inboxKey]
 }
 
@@ -170,17 +175,17 @@ const saveMessage = msg => {
         }
     }
 
-    if (isObj(action)) {
-        switch (action.type) {
-            case 'message-group-name':
-                const [name] = action.data || []
-                const { name: oldName } = inboxSettings(inboxKey)
-                if (name && name !== oldName) newSettings.name = name
-        }
+    if (isObj(action)) switch (action.type) {
+        case 'message-group-name':
+            const [name] = action.data || []
+            const { name: oldName } = inboxSettings(inboxKey)
+            if (!name || name === oldName) break
+            newSettings.name = name
     }
+
     chatHistory.set(inboxKey, messages.slice(-limit))
     // new mesage received
-    if (senderId !== userId && !openInboxBond._value === inboxKey) newSettings.unread = true
+    if (senderId !== userId && openInboxBond._value !== inboxKey) newSettings.unread = true
     if (timestamp) rw({ lastMessageTS: timestamp })
     generateInboxBonds()
     inboxBonds[inboxKey].changed(uuid.v1())
@@ -246,6 +251,9 @@ client.onConnect(() => {
 
 // handle message received
 client.onMessage((m, s, r, e, t, id, action) => {
+    const inboxKey = getInboxKey(r)
+    // prevent saving trollbox messages if hidden
+    if (inboxKey === EVERYONE && inboxSettings(inboxKey).hide) return
     newInbox(r, null, true)
     saveMessage({
         action,
@@ -260,7 +268,6 @@ client.onMessage((m, s, r, e, t, id, action) => {
 })
 
 generateInboxBonds()
-openInboxBond.changed(Object.keys(inboxBonds).reverse()[0])
 export default {
     inboxBonds,
     newInboxBond,

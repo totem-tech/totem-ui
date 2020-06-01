@@ -1,56 +1,72 @@
 import React, { useState, useEffect } from 'react'
-import { inboxBonds, newInboxBond, inboxSettings, openInboxBond, getMessages } from './chat'
+import { Button, Icon } from 'semantic-ui-react'
+import { arrSort } from '../../utils/utils'
+import { translated } from '../../services/language'
+import { showForm } from '../../services/modal'
 import FormInput from '../../components/FormInput'
 import Message from '../../components/Message'
-import { Button, Icon } from 'semantic-ui-react'
 import { UserID } from '../../components/buttons'
-import { arrSort } from '../../utils/utils'
+import { inboxBonds, newInboxBond, inboxSettings, openInboxBond, getMessages } from './chat'
+import NewInboxForm from './NewInboxForm'
+
+const EVERYONE = 'everyone'
+const [_, textsCap] = translated({
+    trollbox: 'Totem Trollbox'
+}, true)
 
 export default function InboxList(props) {
     const { inverted, style } = props
     const [inboxKeys, setInboxKeys] = useState(Object.keys(inboxBonds))
-    const [keywords, setKeywords] = useState('')
     const [compact, setCompact] = useState(false)
     const iconSize = compact ? 28 : 42
-    const names = inboxKeys.map(key => inboxSettings(key).name)
+    const names = inboxKeys.map(key => key === EVERYONE ? textsCap.trollbox : inboxSettings(key).name)
     const msgs = inboxKeys.map(key => getMessages(key).reverse())
-    let filteredKeys = (!keywords ? inboxKeys : inboxKeys
-        .filter(k => k.includes(keywords) || names[inboxKeys.indexOf(key)].includes(keywords))
+    const [kw, setKeywords] = useState('')
+    const keywords = kw.trim().toLowerCase()
+    let filteredKeys = (!keywords.trim() ? inboxKeys : inboxKeys
+        .filter(k => k.includes(keywords) || (names[inboxKeys.indexOf(k)] || '').toLowerCase().includes(keywords))
     )
-
-    // generate object to filter by last message timestamp
-    filteredKeys = filteredKeys.map(key => ({
-        key,
-        ts: (msgs[inboxKeys.indexOf(key)][0] || {}).timestamp
-    }))
+        // sort by last message timestamp
+        .map(key => ({
+            key,
+            ts: (msgs[inboxKeys.indexOf(key)][0] || {}).timestamp
+        }))
     filteredKeys = arrSort(filteredKeys, 'ts', true, false).map(x => x.key)
 
+    !openInboxBond._value && openInboxBond.changed(inboxKeys[0])
+
     useEffect(() => {
-        const tieId = newInboxBond.tie(() => {
-            const keys = Object.keys(inboxBonds)
-            if (JSON.stringify(keys) === JSON.stringify(inboxKeys)) return
-            setInboxKeys(keys)
-        })
-        return () => newInboxBond.untie(tieId)
+        let isMounted = true
+        const tieId = newInboxBond.tie(() => isMounted && setInboxKeys(Object.keys(inboxBonds)))
+        return () => {
+            isMounted = false
+            newInboxBond.untie(tieId)
+        }
     }, [])
 
     return (
-        <div style={style}>
-            <div>
-                <div style={{ display: 'inline-block' }}>
-                    <Button {...{
-                        color: inverted ? 'black' : undefined,
-                        icon: compact ? 'address card' : 'address book',
-                        onClick: () => setCompact(!compact),
-                        style: {
-                            border: 'none',
-                            borderRadius: 0,
-                            margin: 0,
-                            padding: 11.75,
+        <div className='inbox-list' style={style}>
+            <div style={{ marginBottom: -13 }}>
+                <Button.Group {...{
+                    buttons: [
+                        {
+                            icon: compact ? 'address card' : 'bars',
+                            key: 0,
+                            onClick: () => setCompact(!compact),
+                            style: { padding: 11.75 },
                         },
-                    }} />
-                </div>
-                <div style={{ display: 'inline-block', float: 'right', width: 'calc( 100% - 41px )' }} >
+                        {
+                            icon: 'search plus',
+                            key: 1,
+                            onClick: () => showForm(NewInboxForm, {
+                                onSubmit: (ok, { inboxKey }) => ok && openInboxBond.changed(inboxKey)
+                            }),
+                            style: { padding: 11.75 },
+                        }
+                    ],
+                    style: { display: 'inline-block' }
+                }} />
+                <div className='search' >
                     <FormInput {...{
                         icon: 'search',
                         name: 'keywords',
@@ -58,7 +74,7 @@ export default function InboxList(props) {
                         placeholder: 'Search',
                         style: { width: '100%' },
                         type: 'text',
-                        value: keywords,
+                        value: kw,
                     }} />
                 </div>
             </div>
@@ -86,7 +102,7 @@ export default function InboxList(props) {
                             }
                         },
                         color: inverted ? 'black' : undefined,
-                        key,
+                        key: key + lastMsg,
                         onClick: () => openInboxBond.changed(key),
                         positive: isActive,
                         style: {

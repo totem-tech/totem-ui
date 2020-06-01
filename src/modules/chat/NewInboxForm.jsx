@@ -98,7 +98,7 @@ NewInboxForm.defaultProps = {
 }
 
 // edit group inbox name
-export const editName = inboxKey => {
+export const editName = (inboxKey, onSubmit) => {
     const formId = showForm(
         FormBuilder,
         {
@@ -122,6 +122,7 @@ export const editName = inboxKey => {
                 })
                 inboxSettings(inboxKey, { name }, true)
                 closeModal(formId)
+                isFn(onSubmit) && onSubmit(true)
             },
             size: 'mini',
         }

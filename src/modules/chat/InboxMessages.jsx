@@ -50,11 +50,7 @@ export default function ChatMessages(props) {
     return (
         <div {...{
             className: 'messages',
-            ref: onRef,
-            style: {
-                height: 'calc(100% - 84px)',
-                overflowX: 'auto',
-            }
+            ref: onRef
         }}>
             {messages.map(({ action, errorMessage, message, senderId, status }, i) => {
                 const isSender = senderId === userId
@@ -68,7 +64,7 @@ export default function ChatMessages(props) {
                                     style={{ textAlign: 'center', color: 'grey' }}
                                 >
                                     <i>
-                                        {isSender ? textsCap.you : <UserID userId={senderId} />}
+                                        {isSender ? textsCap.you : <UserID userId={senderId} suffix=' ' />}
                                         {texts.changedGroupName}: {data[0]}
                                     </i>
                                 </div>

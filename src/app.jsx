@@ -9,8 +9,7 @@ import {
 
 // Components
 import ErrorBoundary from './components/CatchReactErrors'
-import ChatWidget from './modules/chat/Widget'
-import PageHeader, { HeaderMenuButtons } from './components/PageHeader'
+import PageHeader from './components/PageHeader'
 import SidebarLeft, { MainContentItem } from './components/SidebarLeft'
 // Services
 import blockchain from './services/blockchain'
@@ -120,7 +119,6 @@ export class App extends ReactiveComponent {
 
 		return (
 			<div className={classNames}>
-				<ChatWidget />
 				<ModalsConainer />
 				<ToastsContainer isMobile={isMobile} />
 				<ErrorBoundary>

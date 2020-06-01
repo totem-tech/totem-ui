@@ -2,16 +2,17 @@ import React, { useState, useEffect } from 'react'
 import { Bond } from 'oo7'
 import Inbox from './Inbox'
 import InboxList from './InboxList'
-import { getInboxKey, openInboxBond, getMessages } from './chat'
-// import './style.css'
+import { getInboxKey, openInboxBond, visibleBond } from './chat'
+import './style.css'
 
-const EVERYONE = 'everyone'
-export const visibleBond = new Bond().defaultTo(true)
-
-export default function ChatBar({ isMobile, inverted = false }) {
+export default function ChatBar({ inverted = false }) {
     const [visible, setVisible] = useState(visibleBond._value)
     const [hiding, setHiding] = useState(false)
-    const width = isMobile ? window.innerWidth : 400
+    const className = [
+        'chat-container',
+        inverted ? 'inverted' : '',
+        hiding ? 'hiding' : '',
+    ].filter(Boolean).join(' ')
 
 
     useEffect(() => {
@@ -29,24 +30,13 @@ export default function ChatBar({ isMobile, inverted = false }) {
     }, [])
 
     return (
-        <div className='chat-container' style={{
-            position: 'fixed',
-            right: !visible || hiding ? -width : 0,
-            top: 61,
-            bottom: isMobile ? 54 : 0,
-            background: inverted ? '#1b1c1d' : 'white',
-            boxShadow: '3px 8px 8px 8px grey',
-            color: inverted ? 'white' : 'black',
-            transition: 'all 0.2s linear',
-            width: width,
-            zIndex: 1,
-        }}>
-            <ChatContents {...{ inverted, isMobile, visible }} />
+        <div className={className}>
+            <ChatContents {...{ inverted, visible }} />
         </div>
     )
 }
 
-const ChatContents = ({ inverted, isMobile, visible }) => {
+const ChatContents = ({ inverted, visible }) => {
     const [receiverIds, setReceiverIds] = useState((openInboxBond._value || '').split(','))
     const inboxKey = getInboxKey(receiverIds)
 
@@ -56,21 +46,16 @@ const ChatContents = ({ inverted, isMobile, visible }) => {
     }, [])
 
     return !visible ? '' : (
-        <div style={{ height: '100%', position: 'relative' }}>
+        <div className='chat-contents'>
             <InboxList {...{
                 inboxKey,
                 inverted,
-                style: {
-                    height: isMobile ? '30%' : '40%',
-                    overflowX: 'auto',
-                },
             }} />
             {receiverIds.length > 0 && (
                 <Inbox {...{
                     key: inboxKey,
                     receiverIds,
                     inboxKey,
-                    style: { height: isMobile ? '70%' : '60%' }
                 }} />
             )}
         </div>

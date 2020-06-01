@@ -15,8 +15,9 @@ import {
     send,
     removeInboxMessages,
     removeInbox,
+    newInboxBond,
 } from './chat'
-import client, { loginBond } from '../../services/chatClient'
+import client, { loginBond, getUser } from '../../services/chatClient'
 import { translated } from '../../services/language'
 import { confirm } from '../../services/modal'
 import { getLayout } from '../../services/window'
@@ -24,14 +25,17 @@ import Message from '../../components/Message'
 import partners, { getByUserId } from '../../services/partner'
 
 const [_, textsCap] = translated({
+    archiveConversation: 'archive conversation',
     close: 'close',
     inputPlaceholder: 'type something and press enter to send',
+    loggedInAs: 'logged in as',
     loginRequired: 'login/registration required',
     members: 'members',
     messageError: 'error',
     remove: 'remove',
     removeMessages: 'remove messages',
     removeConversation: 'remove conversation',
+    trollbox: 'Totem Trollbox'
 }, true)
 const data = {}
 const EVERYONE = 'everyone'
@@ -47,20 +51,13 @@ export default function Inbox(props) {
         inboxKey,
         receiverIds, // if not supplied use default open inbox
         style,
-        subtitle,
         title,
     } = props
     data[inboxKey] = data[inboxKey] || {}
-    const isTrollbox = receiverIds.includes(EVERYONE)
-    const isGroup = receiverIds.length > 1 || isTrollbox
     const [messages, setMessages] = useState(props.messages || getMessages(inboxKey))
     const [showMembers, setShowMembers] = useState(false)
-
-    const handleSend = draft => {
-        send(receiverIds, draft, false)
-        focusNScroll(inboxKey)
-    }
-
+    const isTrollbox = receiverIds.includes(EVERYONE)
+    const isGroup = receiverIds.length > 1 || isTrollbox
     useEffect(() => {
         let mounted = true
         let bond = inboxBonds[inboxKey]
@@ -73,17 +70,18 @@ export default function Inbox(props) {
         }
     }, []) // keep [] to prevent useEffect from being inboked on every render
 
+    // focus and scoll down to latest msg
     focusNScroll(inboxKey)
     return !inboxKey ? '' : (
-        <div className='totem-chat' style={style}>
+        <div {...{ className: 'inbox', style }}>
             <InboxHeader {...{
                 inboxKey,
                 isGroup,
                 isTrollbox,
                 messages,
                 receiverIds,
-                toggleMembers: () => setShowMembers(!showMembers),
-                subtitle,
+                setShowMembers,
+                showMembers,
                 title,
             }} />
             {showMembers ? (
@@ -111,7 +109,10 @@ export default function Inbox(props) {
             {!showMembers && (
                 <MessageInput {... {
                     onRef: ref => data[inboxKey].inputRef = ref,
-                    onSubmit: handleSend,
+                    onSubmit: draft => {
+                        send(receiverIds, draft, false)
+                        focusNScroll(inboxKey)
+                    },
                 }} />
             )}
         </div >
@@ -123,26 +124,43 @@ Inbox.propTypes = {
 }
 
 const InboxHeader = ({
-    inboxKey, isGroup, isTrollbox, messages, receiverIds, toggleMembers, subtitle, title
+    inboxKey,
+    isGroup,
+    isTrollbox,
+    messages,
+    receiverIds,
+    showMembers,
+    setShowMembers,
+    title,
 }) => {
-    const [showTools, setShowTools] = useState(false)
-    const [online, setOnline] = useState(false)
     const [expanded, setExpanded] = useState(false)
+    const [online, setOnline] = useState(false)
+    const [showTools, setShowTools] = useState(false)
     const isMobile = getLayout() === 'mobile'
     const toolIconSize = isMobile ? undefined : 'mini'
+    const toggleExpanded = () => {
+        document.getElementById('app').classList[expanded ? 'remove' : 'add']('chat-expanded')
+        setExpanded(!expanded)
+    }
 
     useEffect(() => {
-        if (!isGroup) return () => { }
+        if (isGroup) return () => { }
         let isMounted = true
         const frequency = 30000
         const friend = receiverIds[0]
         const checkOnline = () => {
+            if (!isMounted) return
             if (!loginBond._value) return setOnline(false)
             const { timestamp } = arrReverse(messages).find(m => m.senderId === friend) || {}
             const tsDiff = new Date() - new Date(timestamp)
             // received a message from opponent within the frequency duration => assume online
             if (tsDiff < frequency) return setOnline(true)
-            client.isUserOnline(receiverIds[0], (_, online) => isMounted && setOnline(!!online))
+            client.isUserOnline(
+                receiverIds[0],
+                (_, online) => {
+                    setOnline(!!online)
+                },
+            )
         }
         const intervalId = setInterval(checkOnline, frequency)
         checkOnline()
@@ -152,112 +170,131 @@ const InboxHeader = ({
         }
     }, [])
     return (
-        <div {...{
-            style: {
-                background: 'rgba(0,0,0,.6)',
-                color: 'white',
-                padding: 5,
-                textAlign: 'center',
-            }
-        }}>
-            {!isGroup && online && (
-                <div style={{ position: 'absolute', top: 15 }}>
-                    <Icon {...{ color: 'green', name: 'circle' }} />
+        <div className='header-container'>
+            {!isGroup && (
+                <div className='online-indicator'>
+                    <Icon {...{
+                        color: online ? 'green' : 'red',
+                        name: 'circle',
+                    }} />
                 </div>
             )}
-            <h1 {...{
-                style: {
-                    margin: 0,
-                    position: 'relative',
-                    overflowX: 'hidden',
-                    color: showTools ? 'grey' : undefined,
-                },
-                onClick: () => setShowTools(!showTools),
-            }}>
+            <h1 className='header'>
+                <span style={{ opacity: showTools ? 0.1 : 1 }}>
+                    {inboxKey === EVERYONE ? textsCap.trollbox : (
+                        title || inboxSettings(inboxKey).name || textEllipsis(`@${inboxKey}`, 16, 3, false)
+                    )}
+                </span>
 
-                {title || inboxSettings(inboxKey).name || textEllipsis(`@${inboxKey}`, 16, 3, false)}
-                {showTools && (
-                    <div style={{
-                        display: 'inline',
-                        position: 'absolute',
-                        right: 5,
-                        top: -5,
-                    }}>
-                        {isGroup && !isTrollbox && (
-                            <Button {...{
-                                circular: true,
-                                icon: 'pencil',
-                                inverted: true,
-                                onClick: e => e.preventDefault() | editName(inboxKey),
-                                size: toolIconSize,
-                                title: 'edit name',
-                            }} />
-                        )}
+                <div style={{
+                    display: 'inline',
+                    position: 'absolute',
+                    right: 5,
+                    top: -5,
+                }}>
+                    {showTools && (
+                        <React.Fragment>
+                            {isGroup && !isTrollbox && (
+                                <Button {...{
+                                    active: false,
+                                    circular: true,
+                                    icon: 'pencil',
+                                    inverted: true,
+                                    onClick: () => editName(
+                                        inboxKey,
+                                        () => setShowTools(false)
+                                    ),
+                                    size: toolIconSize,
+                                    title: 'edit name',
+                                }} />
+                            )}
 
-                        {isGroup && (
-                            <Button {...{
-                                circular: true,
-                                icon: 'group',
-                                inverted: true,
-                                key: 'showMembers',
-                                onClick: e => e.preventDefault() | toggleMembers(),
-                                size: toolIconSize,
-                                title: 'members'
-                            }} />
-                        )}
+                            {isGroup && (
+                                <Button {...{
+                                    active: false,
+                                    circular: true,
+                                    icon: 'group',
+                                    inverted: !showMembers,
+                                    key: 'showMembers',
+                                    onClick: () => setShowMembers(!showMembers),
+                                    size: toolIconSize,
+                                    title: 'members'
+                                }} />
+                            )}
 
-                        {messages.length > 0 && (
+                            {messages.length > 0 && (
+                                <Button {...{
+                                    active: false,
+                                    circular: true,
+                                    icon: 'trash',
+                                    inverted: true,
+                                    key: 'removeMessages',
+                                    onClick: () => confirm({
+                                        confirmButton: <Button negative content={textsCap.remove} />,
+                                        header: textsCap.removeMessages,
+                                        onConfirm: e => removeInboxMessages(inboxKey),
+                                        size: 'mini',
+                                    }),
+                                    size: toolIconSize,
+                                }} />
+                            )}
+
                             <Button {...{
+                                active: false,
                                 circular: true,
-                                icon: 'trash',
+                                icon: 'hide',
                                 inverted: true,
-                                key: 'removeMessages',
+                                key: 'hideConversation',
                                 onClick: () => confirm({
-                                    confirmButton: <Button negative content={textsCap.remove} />,
-                                    header: textsCap.removeMessages,
-                                    onConfirm: e => e.preventDefault() | removeInboxMessages(inboxKey),
-                                    size: 'mini',
+                                    content: textsCap.archiveConversation,
+                                    onConfirm: () => {
+                                        inboxSettings(inboxKey, { hide: true }, true)
+                                        openInboxBond.changed(null)
+                                    },
+                                    size: 'mini'
                                 }),
                                 size: toolIconSize,
                             }} />
-                        )}
 
-                        <Button {...{
-                            circular: true,
-                            icon: 'hide',
-                            inverted: true,
-                            key: 'hideConversation',
-                            onClick: e => e.preventDefault() | inboxSettings(inboxKey, { hide: true }, true),
-                            size: toolIconSize,
-                        }} />
-
-                        {!isTrollbox && (
-                            <Button {...{
-                                circular: true,
-                                icon: 'close',
-                                inverted: true,
-                                key: 'removeConversation',
-                                onClick: e => {
-                                    e.preventDefault()
-                                    messages.length === 0 ? removeInbox(inboxKey) : confirm({
+                            {!isTrollbox && (
+                                <Button {...{
+                                    active: false,
+                                    circular: true,
+                                    icon: 'close',
+                                    inverted: true,
+                                    key: 'removeConversation',
+                                    onClick: () => messages.length === 0 ? removeInbox(inboxKey) : confirm({
                                         confirmButton: <Button negative content={textsCap.remove} />,
                                         header: textsCap.removeConversation,
                                         onConfirm: () => removeInbox(inboxKey),
                                         size: 'mini',
-                                    })
-                                },
+                                    }),
+                                    size: toolIconSize,
+                                }} />
+                            )}
+                            <Button {...{
+                                active: false,
+                                circular: true,
+                                icon: 'arrows alternate vertical',
+                                inverted: !expanded,
+                                onClick: toggleExpanded,
                                 size: toolIconSize,
                             }} />
-                        )}
-                        <Button {...{
-                            circular: true,
-                            icon: !expanded ? 'expand' : 'window close',
-                            size: toolIconSize,
-                        }} />
-                    </div>
-                )}
+                        </React.Fragment>
+                    )}
+                    <Button {...{
+                        active: false,
+                        circular: true,
+                        icon: 'cog',
+                        inverted: !showTools,
+                        onClick: () => setShowTools(!showTools),
+                        size: toolIconSize,
+                    }} />
+                </div>
             </h1>
-            <h4 style={{ margin: 0 }}>{subtitle}</h4>
+            <h4 style={{ margin: 0 }}>
+                {textsCap.loggedInAs}: @{(getUser() || {}).id}
+            </h4>
         </div>
     )
 }
@@ -287,27 +324,4 @@ const MessageInput = ({ onRef, onSubmit, style }) => {
             }} />
         </form>
     )
-}
-
-export const showMembers = (inboxKey, messages) => {
-    let members = inboxKey.split(',')
-    if (members.includes(EVERYONE)) {
-        members = arrUnique(messages.map(x => x.senderId))
-    }
-    confirm({
-        cancelButton: textsCap.close,
-        confirmButton: null,
-        header: textsCap.members,
-        content: (
-            <ol style={{ margin: 0 }}>
-                {members.sort()
-                    .map(id => (
-                        <li key={id}>
-                            <UserID userId={id} />
-                        </li>
-                    ))}
-            </ol>
-        ),
-        size: 'mini',
-    })
 }
