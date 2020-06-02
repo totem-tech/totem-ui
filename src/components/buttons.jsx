@@ -52,17 +52,22 @@ export const UserID = props => {
     const { onClick, prefix, style, suffix, userId = '' } = props
     if (!userId) return ''
     return (
-        <Button
-            basic
-            compact
-            content={<b>{prefix}@{getRawUserID(userId)}{suffix}</b>}
-            onClick={e => {
+        <Button {...{
+            ...objWithoutKeys(props, ['onClick', 'prefix', 'style', 'suffix', 'userId']),
+            basic: true,
+            compact: true,
+            content: <b>{prefix}@{getRawUserID(userId)}{suffix}</b>,
+            onClick: e => {
                 if (onClick === null) return // prevent any action
                 e.stopPropagation()
-            }}
-            title={(getByUserId(userId) || {}).name}
-            style={{ boxShadow: 'none', padding: 0, ...style }}
-            {...objWithoutKeys(props, ['prefix', 'style', 'suffix', 'userId'])}
-        />
+                // ToDo: open modal with options to add to partner, send/request identity and start/reopen chat
+            },
+            title: (getByUserId(userId) || {}).name,
+            style: {
+                boxShadow: 'none',
+                padding: 0,
+                ...style,
+            },
+        }} />
     )
 }

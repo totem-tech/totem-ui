@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Button, Icon } from 'semantic-ui-react'
-import { textEllipsis, arrUnique, arrReverse } from '../../utils/utils'
-import ChatMessages from './InboxMessages'
+import { textEllipsis, arrReverse } from '../../utils/utils'
+import InboxMessages from './InboxMessages'
 import { editName } from './NewInboxForm'
 import FormInput from '../../components/FormInput'
 import { UserID } from '../../components/buttons'
 import {
-    getInboxKey,
     getMessages,
     inboxBonds,
     inboxSettings,
@@ -15,7 +14,6 @@ import {
     send,
     removeInboxMessages,
     removeInbox,
-    newInboxBond,
     getTrollboxUserIds,
 } from './chat'
 import client, { loginBond, getUser } from '../../services/chatClient'
@@ -23,11 +21,13 @@ import { translated } from '../../services/language'
 import { confirm } from '../../services/modal'
 import { getLayout } from '../../services/window'
 import Message from '../../components/Message'
-import partners, { getByUserId } from '../../services/partner'
+import { getByUserId } from '../../services/partner'
 
 const [_, textsCap] = translated({
     archiveConversation: 'archive conversation',
     close: 'close',
+    changeGroupName: 'change group name',
+    expand: 'expand',
     inputPlaceholder: 'type something and press enter to send',
     loggedInAs: 'logged in as',
     loginRequired: 'login/registration required',
@@ -36,6 +36,9 @@ const [_, textsCap] = translated({
     remove: 'remove',
     removeMessages: 'remove messages',
     removeConversation: 'remove conversation',
+    shrink: 'shrink',
+    toolsHide: 'hide tools',
+    toolsShow: 'show tools',
     trollbox: 'Totem Trollbox'
 }, true)
 const data = {}
@@ -51,7 +54,6 @@ export default function Inbox(props) {
     let {
         inboxKey,
         receiverIds, // if not supplied use default open inbox
-        style,
         title,
     } = props
     data[inboxKey] = data[inboxKey] || {}
@@ -59,6 +61,19 @@ export default function Inbox(props) {
     const [showMembers, setShowMembers] = useState(false)
     const isTrollbox = receiverIds.includes(EVERYONE)
     const isGroup = receiverIds.length > 1 || isTrollbox
+    const header = (
+        <InboxHeader {...{
+            inboxKey,
+            isGroup,
+            isTrollbox,
+            messages,
+            receiverIds,
+            setShowMembers,
+            showMembers,
+            title,
+        }} />
+    )
+
     useEffect(() => {
         let mounted = true
         let bond = inboxBonds[inboxKey]
@@ -73,55 +88,50 @@ export default function Inbox(props) {
 
     // focus and scoll down to latest msg
     focusNScroll(inboxKey)
-    return !inboxKey ? '' : (
-        <div {...{ className: 'inbox', style }}>
-            <InboxHeader {...{
-                inboxKey,
-                isGroup,
-                isTrollbox,
-                messages,
-                receiverIds,
-                setShowMembers,
-                showMembers,
-                title,
-            }} />
-            {showMembers ? (
-                <div>
-                    {(!isTrollbox ? receiverIds : getTrollboxUserIds()).sort().map(id => (
-                        <Message {...{
-                            content: <UserID userId={id} />,
-                            header: (getByUserId(id) || {}).name,
-                            icon: 'user',
-                            key: id,
-                            size: 'mini',
-                            style: { margin: 0 },
-                        }} />
-                    ))}
-                </div>
-            ) : (
-                    <ChatMessages {...{
-                        isPrivate: receiverIds.length === 1 && !isTrollbox,
-                        onRef: ref => data[inboxKey].messagesRef = ref,
-                        messages: messages.length > 0 ? messages : [{
-                            message: textsCap.inputPlaceholder
-                        }],
+
+    if (showMembers) return (
+        <div className='inbox'>
+            {header}
+            <div>
+                {(!isTrollbox ? receiverIds : getTrollboxUserIds()).sort().map(id => (
+                    <Message {...{
+                        className: 'member-list-item',
+                        content: <UserID userId={id} />,
+                        header: (getByUserId(id) || {}).name,
+                        icon: 'user',
+                        key: id,
+                        size: 'mini',
+                        style: {
+                            // margin: 0
+                        },
                     }} />
-                )}
-            {!showMembers && (
-                <MessageInput {... {
-                    onRef: ref => data[inboxKey].inputRef = ref,
-                    onSubmit: draft => {
-                        send(receiverIds, draft, false)
-                        focusNScroll(inboxKey)
-                    },
-                }} />
-            )}
+                ))}
+            </div>
+        </div>
+    )
+    return (
+        <div className='inbox'>
+            {header}
+            <InboxMessages {...{
+                isPrivate: receiverIds.length === 1 && !isTrollbox,
+                onRef: ref => data[inboxKey].messagesRef = ref,
+                messages: messages.length > 0 ? messages : [{
+                    message: textsCap.inputPlaceholder
+                }],
+            }} />
+            <MessageInput {... {
+                onRef: ref => data[inboxKey].inputRef = ref,
+                onSubmit: draft => {
+                    send(receiverIds, draft, false)
+                    focusNScroll(inboxKey)
+                },
+            }} />
         </div >
     )
 }
 Inbox.propTypes = {
-    style: PropTypes.object,
-    receiverIds: PropTypes.array,
+    inboxKey: PropTypes.string.isRequired,
+    receiverIds: PropTypes.array.isRequired,
 }
 
 const InboxHeader = ({
@@ -147,14 +157,14 @@ const InboxHeader = ({
     useEffect(() => {
         if (isGroup) return () => { }
         let isMounted = true
-        const frequency = 60000 // miliseconds
+        const frequency = 60000 // check user status every 60 seconds
         const friend = receiverIds[0]
         const checkOnline = () => {
             if (!isMounted) return
             if (!loginBond._value) return setOnline(false)
             const { timestamp } = arrReverse(messages).find(m => m.senderId === friend) || {}
             const tsDiff = new Date() - new Date(timestamp)
-            // received a message from opponent within the frequency duration => assume online
+            // received a message from friend within the frequency duration => assume online
             if (tsDiff < frequency) return setOnline(true)
             client.isUserOnline(
                 receiverIds[0],
@@ -170,14 +180,12 @@ const InboxHeader = ({
             intervalId && clearInterval(intervalId)
         }
     }, [])
+
     return (
         <div className='header-container'>
-            {!isGroup && (
+            {!isGroup && online && (
                 <div className='online-indicator'>
-                    <Icon {...{
-                        color: online ? 'green' : 'red',
-                        name: 'circle',
-                    }} />
+                    <Icon {...{ color: 'green', name: 'circle' }} />
                 </div>
             )}
             <h1 className='header'>
@@ -187,12 +195,7 @@ const InboxHeader = ({
                     )}
                 </span>
 
-                <div style={{
-                    display: 'inline',
-                    position: 'absolute',
-                    right: 5,
-                    top: -5,
-                }}>
+                <div className='tools'>
                     {showTools && (
                         <React.Fragment>
                             {isGroup && !isTrollbox && (
@@ -206,7 +209,7 @@ const InboxHeader = ({
                                         () => setShowTools(false)
                                     ),
                                     size: toolIconSize,
-                                    title: 'edit name',
+                                    title: textsCap.changeGroupName,
                                 }} />
                             )}
 
@@ -219,7 +222,7 @@ const InboxHeader = ({
                                     key: 'showMembers',
                                     onClick: () => setShowMembers(!showMembers),
                                     size: toolIconSize,
-                                    title: 'members'
+                                    title: textsCap.members
                                 }} />
                             )}
 
@@ -237,6 +240,7 @@ const InboxHeader = ({
                                         size: 'mini',
                                     }),
                                     size: toolIconSize,
+                                    title: textsCap.removeMessages
                                 }} />
                             )}
 
@@ -255,6 +259,7 @@ const InboxHeader = ({
                                     size: 'mini'
                                 }),
                                 size: toolIconSize,
+                                title: textsCap.archiveConversation
                             }} />
 
                             {!isTrollbox && (
@@ -280,6 +285,7 @@ const InboxHeader = ({
                                 inverted: !expanded,
                                 onClick: toggleExpanded,
                                 size: toolIconSize,
+                                title: expanded ? textsCap.shrink : textsCap.expand,
                             }} />
                         </React.Fragment>
                     )}
@@ -290,16 +296,18 @@ const InboxHeader = ({
                         inverted: !showTools,
                         onClick: () => setShowTools(!showTools),
                         size: toolIconSize,
+                        title: showTools ? textsCap.toolsHide : textsCap.toolsShow,
                     }} />
                 </div>
             </h1>
-            <h4 style={{ margin: 0 }}>
+            <h4 className='subheader'>
                 {textsCap.loggedInAs}: @{(getUser() || {}).id}
             </h4>
         </div>
     )
 }
-const MessageInput = ({ onRef, onSubmit, style }) => {
+
+const MessageInput = ({ onRef, onSubmit }) => {
     const [value, setValue] = useState('')
     const handleSubmit = e => {
         e.preventDefault()
@@ -308,7 +316,7 @@ const MessageInput = ({ onRef, onSubmit, style }) => {
         setValue('')
     }
     return (
-        <form onSubmit={handleSubmit} style={style}>
+        <form onSubmit={handleSubmit}>
             <FormInput {...{
                 action: { icon: 'chat', onClick: handleSubmit },
                 autoComplete: 'off',

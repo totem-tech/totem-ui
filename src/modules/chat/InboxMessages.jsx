@@ -1,5 +1,4 @@
 import React from 'react'
-import { Divider } from 'semantic-ui-react'
 import { isObj } from '../../utils/utils'
 import Message from '../../components/Message'
 import { UserID } from '../../components/buttons'
@@ -24,27 +23,22 @@ const colors = [
     'violet',
     'yellow',
     'grey',
-    'black',
+    // 'black',
 ]
-const iconStyle = {
-    fontSize: 18,
-    width: 18,
-}
+
 const icons = {
     error: {
         color: 'red',
         name: 'exclamation triangle',
-        style: iconStyle,
     },
     loading: {
         color: 'yellow',
         name: 'spinner',
         loading: true,
-        style: iconStyle,
     }
 }
 
-export default function ChatMessages(props) {
+export default function InboxMessages(props) {
     const { isPrivate, messages, onRef } = props
     const userId = (getUser() || {}).id
     return (
@@ -59,12 +53,14 @@ export default function ChatMessages(props) {
                     switch (type) {
                         case 'message-group-name':
                             return (
-                                <div
-                                    key={i}
-                                    style={{ textAlign: 'center', color: 'grey' }}
-                                >
+                                <div key={i} className='message-group-name'>
                                     <i>
-                                        {isSender ? textsCap.you : <UserID userId={senderId} suffix=' ' />}
+                                        {isSender ? textsCap.you : (
+                                            <UserID {...{
+                                                suffix: ' ',
+                                                userId: senderId,
+                                            }} />
+                                        )}
                                         {texts.changedGroupName}: {data[0]}
                                     </i>
                                 </div>
@@ -83,13 +79,11 @@ export default function ChatMessages(props) {
                 return (
                     <div {...{
                         key: i,
-                        style: {
-                            padding: '5px 0',
-                            textAlign: isSender ? 'right' : 'left',
-                        },
+                        className: 'message-wrap' + (isSender ? ' user' : ''),
                         title: errorMessage,
                     }}>
                         <Message {...{
+                            className: 'message',
                             color: bgColor,
                             compact: true,
                             content: (
@@ -107,17 +101,9 @@ export default function ChatMessages(props) {
                                 </span>
                             ),
                             icon: icons[status],
-                            style: {
-                                borderRadius: 10,
-                                boxShadow: 'none',
-                                color,
-                                margin: '1px 10px',
-                                padding: '7px 15px',
-                                width: 'auto'
-                            },
                             key: i,
+                            style: { color }
                         }} />
-                        <Divider hidden style={{ margin: 0 }} />
                     </div>
                 )
             })}

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import { Bond } from 'oo7'
 import Inbox from './Inbox'
 import InboxList from './InboxList'
 import { getInboxKey, openInboxBond, visibleBond } from './chat'

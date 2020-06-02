@@ -10,13 +10,16 @@
     width: 400px;
     z-index: 1;
 }
+#app > .mobile .chat-container {
+    width: 100%;
+}
 .chat-container.inverted {
     background: #1b1c1d;
     color: white;
 }
 #app:not(.chat-visible) .chat-container,
 #app.chat-visible .chat-container.hiding {
-    right: -400px;
+    right: -410px;
 }
 .mobile .chat-container {
     bottom: 54px;
@@ -38,13 +41,15 @@
 .chat-container .inbox-list .unread-count {
     color: white;
     font-weight: bold;
+    left: 0;
     position: absolute;
-    left: 24px;
+    text-align: center;
     top: 11px;
+    width: 60px;
 }
 .chat-container .inbox-list .unread-count.compact {
     top: 4px;
-    left: 20px;
+    width: 47px;
 }
 
 /* inobx */ 
@@ -58,6 +63,9 @@
     position: relative;
     text-align: center;
 }
+.chat-container.inverted .inbox .header-container {
+    background: grey;
+}
 .chat-container .inbox .header-container .online-indicator {
     position: absolute;
     top: 15px;
@@ -67,14 +75,48 @@
     position: relative;
     overflow-x: hidden;
 }
-.chat-container.inverted .inbox .header-container {
-    background: grey;
+.chat-container .inbox .header-container .header .tools{
+    display: inline;
+    position: absolute;
+    right: 5px;
+    top: -5px;
 }
-
+.chat-container .inbox .header-container .subheader {
+    margin: 0;
+}
+.chat-container .inbox .member-list-item {
+    margin: 0;
+}
+.chat-container .inbox .member-list-item .icon {
+    font-size: 25px !important;
+    width: 25px !important;
+}
 /* message list */
-.chat-container .inbox .messages {
+.chat-container .messages {
     height: calc(100% - 104px);
     overflow-x: auto;
+}
+.chat-container .messages .message-group-name {
+    text-align: center;
+    color: grey;
+}
+.chat-container .messages .message-wrap {
+    padding: '5px 0';
+    text-align: left;
+}
+.chat-container .messages .message-wrap.user {
+    text-align: right;
+}
+.chat-container .messages .message-wrap .message {
+    border-radius: 10px;
+    box-shadow: none;
+    margin: 2px 10px;
+    padding: 7px 15px;
+    width: auto;
+}
+.chat-container .messages .message-wrap .message .icon {
+    font-size: 18px;
+    width: 18px !important;
 }
 
 /* resize #main-content accordingly */

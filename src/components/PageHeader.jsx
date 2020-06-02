@@ -121,7 +121,7 @@ const PageHeaderView = props => {
 		wallets,
 	} = props
 	const selected = getSelected()
-	const buttons = <HeaderMenuButtons {...{ isLoggedIn, isRegistered }} />
+	const buttons = <HeaderMenuButtons {...{ isLoggedIn, isMobile, isRegistered }} />
 	const topBar = (
 		<Menu
 			attached="top"
@@ -144,12 +144,12 @@ const PageHeaderView = props => {
 				<Image size="mini" src={logoSrc} />
 			</Menu.Item>
 			<Menu.Menu position="right">
-				{!isMobile && buttons}
+				{!isMobile && isRegistered && buttons}
 				<Dropdown
 					item
 					labeled
 					onChange={onSelection}
-					text={textEllipsis(selected.name, isMobile ? 30 : 50, 3, false)}
+					text={textEllipsis(selected.name, isMobile ? 25 : 50, 3, false)}
 					value={selected.address}
 					style={{ paddingRight: 0 }}
 					options={arrSort(
@@ -208,7 +208,7 @@ const PageHeaderView = props => {
 		</Menu>
 	)
 
-	if (!isMobile) return topBar
+	if (!isMobile || !isRegistered) return topBar
 
 	return (
 		<React.Fragment>
@@ -226,8 +226,7 @@ const PageHeaderView = props => {
 	)
 }
 
-
-export const HeaderMenuButtons = ({ isLoggedIn, isRegistered }) => {
+export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 	const [timerInProgress, setTimerActive] = useState(timeKeeping.formData().inprogress)
 	const [unreadCount, setUnreadCount] = useState(unreadCountBond._value)
 
@@ -236,22 +235,17 @@ export const HeaderMenuButtons = ({ isLoggedIn, isRegistered }) => {
 			const active = timeKeeping.formData().inprogress
 			if (active !== timerInProgress) setTimerActive(active)
 		})
-		const tieIdUnread = unreadCountBond.tie(unread => {
-			setUnreadCount(unread)
-			console.log({ unread })
-		})
+		const tieIdUnread = unreadCountBond.tie(unread => setUnreadCount(unread))
 
 		return () => {
 			timeKeeping.formDataBond.untie(tieIdTimer)
 			unreadCountBond.untie(tieIdUnread)
 		}
 	}, [])
-	console.log({ unreadCount, isSmall: unreadCount < 10 })
 	return (
 		<React.Fragment>
 			<NotificationDropdown />
 			<Menu.Item
-				disabled={!isRegistered}
 				onClick={() => chatVisibleBond.changed(!chatVisibleBond._value)}
 			>
 				<Icon {...{
@@ -262,20 +256,19 @@ export const HeaderMenuButtons = ({ isLoggedIn, isRegistered }) => {
 				}} />
 				{unreadCount > 0 && (
 					<div style={{
-						position: 'absolute',
-						left: unreadCount < 10 ? 28 : (
-							unreadCount < 100 ? 25 : 21
-						),
-						top: 22,
 						color: 'white',
 						fontWeight: 'bold',
+						left: 0,
+						position: 'absolute',
+						top: isMobile ? 18 : 22,
+						textAlign: 'center',
+						width: '100%',
 					}}>
 						{unreadCount}
 					</div>
 				)}
 			</Menu.Item>
 			<Menu.Item
-				disabled={!isRegistered}
 				icon={{
 					className: 'no-margin',
 					loading: timerInProgress,

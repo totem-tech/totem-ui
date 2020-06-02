@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { Button, Icon } from 'semantic-ui-react'
+import { Button } from 'semantic-ui-react'
 import { arrSort } from '../../utils/utils'
+import Message from '../../components/Message'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
 import FormInput from '../../components/FormInput'
-import Message from '../../components/Message'
-import { UserID } from '../../components/buttons'
 import { inboxBonds, newInboxBond, inboxSettings, openInboxBond, getMessages } from './chat'
 import NewInboxForm from './NewInboxForm'
 
@@ -97,13 +96,7 @@ export default function InboxList(props) {
                                         {unread}
                                     </div>
                                 )}
-                                {compact || !lastMsg ? '' : (
-                                    <UserID {...{
-                                        onClick: null,
-                                        suffix: `: ${lastMsg.message}`,
-                                        userId: lastMsg.senderId,
-                                    }} />
-                                )}
+                                {!compact && lastMsg && `${lastMsg.senderId}: ${lastMsg.message}`}
                             </div>
                         ),
                         header: name,
