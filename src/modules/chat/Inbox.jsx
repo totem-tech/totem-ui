@@ -226,24 +226,6 @@ const InboxHeader = ({
                                 }} />
                             )}
 
-                            {messages.length > 0 && (
-                                <Button {...{
-                                    active: false,
-                                    circular: true,
-                                    icon: 'trash',
-                                    inverted: true,
-                                    key: 'removeMessages',
-                                    onClick: () => confirm({
-                                        confirmButton: <Button negative content={textsCap.remove} />,
-                                        header: textsCap.removeMessages,
-                                        onConfirm: e => removeInboxMessages(inboxKey),
-                                        size: 'mini',
-                                    }),
-                                    size: toolIconSize,
-                                    title: textsCap.removeMessages
-                                }} />
-                            )}
-
                             <Button {...{
                                 active: false,
                                 circular: true,
@@ -262,11 +244,29 @@ const InboxHeader = ({
                                 title: textsCap.archiveConversation
                             }} />
 
+                            {messages.length > 0 && (
+                                <Button {...{
+                                    active: false,
+                                    circular: true,
+                                    icon: 'erase',
+                                    inverted: true,
+                                    key: 'removeMessages',
+                                    onClick: () => confirm({
+                                        confirmButton: <Button negative content={textsCap.remove} />,
+                                        header: textsCap.removeMessages,
+                                        onConfirm: e => removeInboxMessages(inboxKey),
+                                        size: 'mini',
+                                    }),
+                                    size: toolIconSize,
+                                    title: textsCap.removeMessages
+                                }} />
+                            )}
+
                             {!isTrollbox && (
                                 <Button {...{
                                     active: false,
                                     circular: true,
-                                    icon: 'close',
+                                    icon: 'trash',
                                     inverted: true,
                                     key: 'removeConversation',
                                     onClick: () => messages.length === 0 ? removeInbox(inboxKey) : confirm({
@@ -276,6 +276,7 @@ const InboxHeader = ({
                                         size: 'mini',
                                     }),
                                     size: toolIconSize,
+                                    title: textsCap.removeConversation
                                 }} />
                             )}
                             <Button {...{
@@ -292,7 +293,7 @@ const InboxHeader = ({
                     <Button {...{
                         active: false,
                         circular: true,
-                        icon: 'cog',
+                        icon: showTools ? 'close' : 'cog',
                         inverted: !showTools,
                         onClick: () => setShowTools(!showTools),
                         size: toolIconSize,
