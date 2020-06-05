@@ -61,7 +61,7 @@ const InboxMessage = props => {
         switch (type) {
             case 'message-group-name':
                 return (
-                    <div key={i} className='message-group-name'>
+                    <div className='message-group-name'>
                         <i>
                             {isSender ? textsCap.you : (
                                 <UserID {...{
