@@ -24,7 +24,7 @@ const TimeSince = props => {
     const [formatted, setFormatted] = useState(txt)
 
     autoUpdate && useEffect(() => {
-        const mounted = true
+        let mounted = true
         const update = delay => setTimeout(() => {
             if (!mounted) return
             const res = formatSince(time)
@@ -32,7 +32,7 @@ const TimeSince = props => {
             update(res[1])
         }, delay)
         update(delayMS)
-        return () => { }
+        return () => mounted = false
     }, [])
 
     return !time ? '' : <div {...props}>{formatted}</div >

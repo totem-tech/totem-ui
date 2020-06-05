@@ -55,7 +55,6 @@ export default function InboxMessages(props) {
 const InboxMessage = props => {
     const { action, errorMessage, message, senderId, status, timestamp, isPrivate, userId } = props
     const isSender = senderId === userId
-    const [showTime, setShowTime] = useState(false)
 
     if (isObj(action) && !!action.type) {
         const { data, type } = action
@@ -77,6 +76,7 @@ const InboxMessage = props => {
         }
         return ''
     }
+
     let bgColor = isSender ? 'green' : (
         isPrivate ? 'blue' : userColor[senderId]
     )
@@ -85,6 +85,8 @@ const InboxMessage = props => {
         userColor[senderId] = bgColor
     }
     const color = bgColor === 'black' ? 'white' : 'black'
+    const [showTime, setShowTime] = useState(false)
+
     return (
         <div {...{
             className: 'message-wrap' + (isSender ? ' user' : ''),

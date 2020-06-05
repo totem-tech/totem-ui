@@ -15,7 +15,9 @@ export default function ChatBar({ inverted = false }) {
 
 
     useEffect(() => {
+        let mounted = true
         const tieId = visibleBond.tie(show => {
+            if (!mounted) return
             setHiding(!show) // animate
             setTimeout(() => {
                 setVisible(show)
@@ -25,7 +27,10 @@ export default function ChatBar({ inverted = false }) {
             }, 200)
         })
 
-        return () => visibleBond.untie(tieId)
+        return () => {
+            mounted = false
+            visibleBond.untie(tieId)
+        }
     }, [])
 
     return (
@@ -40,8 +45,12 @@ const ChatContents = ({ inverted, visible }) => {
     const inboxKey = getInboxKey(receiverIds)
 
     useEffect(() => {
-        const tieIdOpenInbox = openInboxBond.tie(key => setReceiverIds((key || '').split(',')))
-        return () => openInboxBond.untie(tieIdOpenInbox)
+        let mounted = true
+        const tieIdOpenInbox = openInboxBond.tie(key => mounted && setReceiverIds((key || '').split(',')))
+        return () => {
+            mounted = false
+            openInboxBond.untie(tieIdOpenInbox)
+        }
     }, [])
 
     return !visible ? '' : (
