@@ -87,6 +87,9 @@ export default function InboxList(props) {
             </div>
             {filteredKeys.map(key => {
                 const index = inboxKeys.indexOf(key)
+                const isTrollbox = key === EVERYONE
+                const isGroup = key.split(',').length > 1
+                const icon = isTrollbox ? 'globe' : (isGroup ? 'group' : 'chat')
                 const name = names[index] || key
                 const isActive = openInboxBond._value === key
                 const lastMsg = (msgs[index] || [])[0]
@@ -107,7 +110,7 @@ export default function InboxList(props) {
                         header: name,
                         icon: {
                             color: !isActive && allSettings[index].unread ? 'orange' : undefined,
-                            name: 'chat',
+                            name: icon,
                             style: {
                                 fontSize: iconSize,
                                 width: iconSize,
