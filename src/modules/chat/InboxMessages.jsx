@@ -63,13 +63,8 @@ const InboxMessage = props => {
                 return (
                     <div className='message-group-name'>
                         <i>
-                            {isSender ? textsCap.you : (
-                                <UserID {...{
-                                    suffix: ' ',
-                                    userId: senderId,
-                                }} />
-                            )}
-                            {texts.changedGroupName}: {data[0]}
+                            {isSender ? textsCap.you : <UserID {...{ userId: senderId }} />}
+                            {' ' + texts.changedGroupName}: {data[0]}
                         </i>
                     </div>
                 )

@@ -16,10 +16,13 @@ const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 export const inboxBonds = {}
 // notifies when new conversation is created, hidden or unhidden
 export const newInboxBond = new Bond()
-export const openInboxBond = new Bond()
+export const openInboxBond = new Bond().defaultTo(rw().openInboxKey)
 export const visibleBond = new Bond().defaultTo(false)
 export const unreadCountBond = new Bond()
 export const pendingMessages = {}
+
+// remember last open inbox key
+openInboxBond.tie(key => rw({ openInboxKey: key }))
 
 const generateInboxBonds = () => {
     const allKeys = Array.from(chatHistory.getAll())
