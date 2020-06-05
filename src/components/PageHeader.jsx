@@ -26,7 +26,6 @@ import {
 	visibleBond as chatVisibleBond,
 } from '../modules/chat/chat'
 
-// const [words, wordsCap] = translated({}, true)
 const [texts] = translated({
 	addressCopied: 'Address copied to clipboard',
 	copyAddress: 'Copy Address',
@@ -269,17 +268,19 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 				}}
 				onClick={() => showForm(TimeKeepingForm, {})}
 			/>
-			{unreadNotifCount > 0 && (
-				<Menu.Item {...{
-					className: blink ? 'blink' : '',
-					onClick: () => setBlink(false) | notifVisibleBond.changed(!notifVisibleBond._value),
-					style: { background: 'red' }
-				}}>
-					<Icon {...{
-						className: 'no-margin',
-						name: 'bell',
-						size: 'big',
-					}} />
+
+			<Menu.Item {...{
+				className: blink ? 'blink' : '',
+				onClick: () => setBlink(false) | notifVisibleBond.changed(!notifVisibleBond._value),
+				style: { background: unreadNotifCount > 0 ? 'red' : '' }
+			}}>
+				<Icon {...{
+					className: 'no-margin',
+					color: !unreadNotifCount ? 'grey' : undefined,
+					name: 'bell',
+					size: 'big',
+				}} />
+				{unreadNotifCount > 0 && (
 					<div style={{
 						color: 'red',
 						fontWeight: 'bold',
@@ -291,8 +292,9 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 					}}>
 						{unreadNotifCount}
 					</div>
-				</Menu.Item>
-			)}
+				)}
+			</Menu.Item>
+
 			<Menu.Item onClick={() => {
 				chatVisibleBond.changed(!chatVisibleBond._value)
 				notifVisibleBond.changed(false)

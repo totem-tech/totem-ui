@@ -85,7 +85,10 @@ export const toggleRead = id => {
     unreadCountBond.changed(getUnreadCount())
 }
 
-export const remove = id => setTimeout(() => notifications.delete(id))
+export const remove = id => setTimeout(() => {
+    notifications.delete(id)
+    if (!notifications.size) visibleBond.changed(false)
+})
 
 // NotificationList
 export default ({ forceVisible = false, float = true, isMobile }) => {
