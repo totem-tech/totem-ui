@@ -72,8 +72,8 @@
  }
 .chat-container .inbox .header-container .header {
     margin: 0;
+    overflow: hidden;
     position: relative;
-    overflow-x: hidden;
 }
 .chat-container .inbox .header-container .header .tools{
     display: inline;

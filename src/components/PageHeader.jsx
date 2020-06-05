@@ -269,17 +269,17 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 				}}
 				onClick={() => showForm(TimeKeepingForm, {})}
 			/>
-			<Menu.Item {...{
-				className: blink ? 'blink' : '',
-				onClick: () => setBlink(false) | notifVisibleBond.changed(!notifVisibleBond._value),
-				style: { background: 'red' }
-			}}>
-				<Icon {...{
-					className: 'no-margin',
-					name: 'bell',
-					size: 'big',
-				}} />
-				{unreadNotifCount > 0 && (
+			{unreadNotifCount > 0 && (
+				<Menu.Item {...{
+					className: blink ? 'blink' : '',
+					onClick: () => setBlink(false) | notifVisibleBond.changed(!notifVisibleBond._value),
+					style: { background: 'red' }
+				}}>
+					<Icon {...{
+						className: 'no-margin',
+						name: 'bell',
+						size: 'big',
+					}} />
 					<div style={{
 						color: 'red',
 						fontWeight: 'bold',
@@ -291,8 +291,8 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 					}}>
 						{unreadNotifCount}
 					</div>
-				)}
-			</Menu.Item>
+				</Menu.Item>
+			)}
 			<Menu.Item onClick={() => {
 				chatVisibleBond.changed(!chatVisibleBond._value)
 				notifVisibleBond.changed(false)

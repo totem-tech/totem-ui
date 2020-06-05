@@ -82,7 +82,6 @@ export const getUnreadCount = () => Object.keys(inboxBonds)
         const { unread } = inboxSettings(key)
         return count + (unread || 0)
     }, 0)
-window.getUnreadCount = getUnreadCount
 
 // get/set hidden inbox keys list
 export const hiddenInboxKeys = () => {
@@ -104,7 +103,6 @@ export const inboxSettings = (inboxKey, value, triggerReload = false) => {
     let settings = rw().inbox || {}
     if (value === null) delete settings[inboxKey]
     if (!isObj(value)) return settings[inboxKey] || {}
-    const oldUnread = settings.unread
 
     settings[inboxKey] = { ...settings[inboxKey], ...value }
     settings = rw({ inbox: settings }).inbox
