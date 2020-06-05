@@ -12,12 +12,19 @@ import { getUser, loginBond } from '../services/chatClient'
 import identities, { getSelected, setSelected } from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
-import NotificationDropdown from '../services/notification'
+import {
+	newNotificationBond,
+	visibleBond as notifVisibleBond,
+	unreadCountBond as unreadNotifCountBond,
+} from '../services/notification'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { toggleSidebarState } from '../services/sidebar'
 import timeKeeping from '../services/timeKeeping'
 import { setToast } from '../services/toast'
-import { unreadCountBond, visibleBond as chatVisibleBond } from '../modules/chat/chat'
+import {
+	unreadCountBond as unreadMsgCountBond,
+	visibleBond as chatVisibleBond,
+} from '../modules/chat/chat'
 
 // const [words, wordsCap] = translated({}, true)
 const [texts] = translated({
@@ -133,13 +140,6 @@ const PageHeaderView = props => {
 				width: '100%',
 			}}
 		>
-			{isMobile && (
-				<Menu.Item
-					icon={{ name: 'sidebar', size: 'big', className: 'no-margin' }}
-					// on mobile when sidebar is visible toggle is not neccessary on-document-click it is already triggered
-					onClick={toggleSidebarState}
-				/>
-			)}
 			<Menu.Item>
 				<Image size="mini" src={logoSrc} />
 			</Menu.Item>
@@ -228,46 +228,38 @@ const PageHeaderView = props => {
 
 export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 	const [timerInProgress, setTimerActive] = useState(timeKeeping.formData().inprogress)
-	const [unreadCount, setUnreadCount] = useState(unreadCountBond._value)
+	const [unreadMsgCount, setUnreadMsgCount] = useState(unreadMsgCountBond._value)
+	const [unreadNotifCount, setUnreadNotifCount] = useState(unreadNotifCountBond._value)
+	const [blink, setBlink] = useState(false)
 
 	useEffect(() => {
 		const tieIdTimer = timeKeeping.formDataBond.tie(() => {
 			const active = timeKeeping.formData().inprogress
 			if (active !== timerInProgress) setTimerActive(active)
 		})
-		const tieIdUnread = unreadCountBond.tie(unread => setUnreadCount(unread))
+		const tieIdUnreadMsg = unreadMsgCountBond.tie(unread => setUnreadMsgCount(unread))
+		const tieIdUnreadNotif = unreadNotifCountBond.tie(unread => setUnreadNotifCount(unread))
+		const tieIdNew = newNotificationBond.tie(() => {
+			setBlink(true)
+			setTimeout(() => setBlink(false), 5000)
+		})
 
 		return () => {
 			timeKeeping.formDataBond.untie(tieIdTimer)
-			unreadCountBond.untie(tieIdUnread)
+			unreadMsgCountBond.untie(tieIdUnreadMsg)
+			unreadNotifCountBond.untie(tieIdUnreadNotif)
+			newNotificationBond.untie(tieIdNew)
 		}
 	}, [])
 	return (
 		<React.Fragment>
-			<NotificationDropdown />
-			<Menu.Item
-				onClick={() => chatVisibleBond.changed(!chatVisibleBond._value)}
-			>
-				<Icon {...{
-					className: 'no-margin',
-					color: !isLoggedIn ? 'red' : (unreadCount > 0 ? 'orange' : undefined),
-					name: 'chat',
-					size: 'big'
-				}} />
-				{unreadCount > 0 && (
-					<div style={{
-						color: 'white',
-						fontWeight: 'bold',
-						left: 0,
-						position: 'absolute',
-						top: isMobile ? 18 : 22,
-						textAlign: 'center',
-						width: '100%',
-					}}>
-						{unreadCount}
-					</div>
-				)}
-			</Menu.Item>
+			{isMobile && (
+				<Menu.Item
+					icon={{ name: 'sidebar', size: 'big', className: 'no-margin' }}
+					// on mobile when sidebar is visible toggle is not neccessary on-document-click it is already triggered
+					onClick={toggleSidebarState}
+				/>
+			)}
 			<Menu.Item
 				icon={{
 					className: 'no-margin',
@@ -277,6 +269,51 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 				}}
 				onClick={() => showForm(TimeKeepingForm, {})}
 			/>
+			<Menu.Item {...{
+				className: blink ? 'blink' : '',
+				onClick: () => setBlink(false) | notifVisibleBond.changed(!notifVisibleBond._value),
+				style: { background: 'red' }
+			}}>
+				<Icon {...{
+					className: 'no-margin',
+					name: 'bell',
+					size: 'big',
+				}} />
+				{unreadNotifCount > 0 && (
+					<div style={{
+						color: 'red',
+						fontWeight: 'bold',
+						left: 0,
+						position: 'absolute',
+						textAlign: 'center',
+						top: 22,
+						width: '100%',
+					}}>
+						{unreadNotifCount}
+					</div>
+				)}
+			</Menu.Item>
+			<Menu.Item onClick={() => chatVisibleBond.changed(!chatVisibleBond._value)}>
+				<Icon {...{
+					className: 'no-margin',
+					color: !isLoggedIn ? 'red' : (unreadMsgCount > 0 ? 'orange' : undefined),
+					name: 'chat',
+					size: 'big'
+				}} />
+				{unreadMsgCount > 0 && (
+					<div style={{
+						color: 'white',
+						fontWeight: 'bold',
+						left: 0,
+						position: 'absolute',
+						top: isMobile ? 18 : 22,
+						textAlign: 'center',
+						width: '100%',
+					}}>
+						{unreadMsgCount}
+					</div>
+				)}
+			</Menu.Item>
 		</React.Fragment>
 	)
 }

@@ -169,6 +169,9 @@ and (-webkit-device-pixel-ratio : 3) {
 .mobile.sidebar-visible > .ui.menu.bottom {
     display: none;
 }
+.mobile.sidebar-visible > .notification-list {
+  display: none;
+}
 /* Main content width and positioning when sidebar is collapsed (icon-only mode) */
 #app > :not(.mobile) .ui.visible.left.sidebar.very.thin ~ .pusher.main-content {
   -webkit-transform: translate3d(60px, 0, 0);
@@ -200,27 +203,6 @@ and (-webkit-device-pixel-ratio : 3) {
 
 .no-margin {
   margin: 0 !important;
-}
-.notification-dropdown.ui.dropdown .menu.notifictaions {
-  position: fixed !important;
-  top: 60px !important;
-}
-.notification-dropdown.has-unread.ui.item.scrolling.dropdown {
-  background: red;
-}
-#app .desktop .notification-dropdown.ui.dropdown .menu.notifictaions {
-  left: calc(100% - 400px) !important;
-}
-#app .desktop .notification-dropdown .menu.notifictaions .item {
-  max-width: 400px;
-} 
-.no-padding, .ui.menu .notification-dropdown.item .menu.notifictaions.visible .item.no-padding {
-  padding: 0 !important;
-}
-.ui.menu .ui.notification-dropdown.dropdown .menu > .item > .message i:not(.close) {
-  float: left;
-  font-size: 40px !important;
-  margin-right: 5px !important;
 }
 .blink {
   animation: blinker 1s linear infinite;

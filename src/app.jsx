@@ -17,6 +17,7 @@ import chatClient from './services/chatClient'
 import identity from './services/identity'
 import language, { translated } from './services/language'
 import modal, { ModalsConainer } from './services/modal'
+import NotificationList from './services/notification'
 import partner from './services/partner'
 import project from './services/project'
 import queue, { resumeQueue } from './services/queue'
@@ -123,6 +124,10 @@ export class App extends ReactiveComponent {
 				<ToastsContainer isMobile={isMobile} />
 				<ErrorBoundary>
 					<PageHeader {...{ logoSrc, isMobile }} />
+				</ErrorBoundary>
+
+				<ErrorBoundary>
+					<NotificationList {...{ isMobile }} />
 				</ErrorBoundary>
 
 				<Sidebar.Pushable style={styles.pushable}>
