@@ -293,7 +293,10 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 					</div>
 				)}
 			</Menu.Item>
-			<Menu.Item onClick={() => chatVisibleBond.changed(!chatVisibleBond._value)}>
+			<Menu.Item onClick={() => {
+				chatVisibleBond.changed(!chatVisibleBond._value)
+				notifVisibleBond.changed(false)
+			}}>
 				<Icon {...{
 					className: 'no-margin',
 					color: !isLoggedIn ? 'red' : (unreadMsgCount > 0 ? 'orange' : undefined),

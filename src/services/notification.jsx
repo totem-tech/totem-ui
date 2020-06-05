@@ -6,6 +6,7 @@ import { deferred } from '../utils/utils'
 import DataStorage from '../utils/DataStorage'
 // components
 import { ButtonAcceptOrReject, UserID } from '../components/buttons'
+import TimeSince from '../components/TimeSince'
 import Message from '../components/Message'
 // forms
 import IdentityShareForm from '../forms/IdentityShare'
@@ -109,7 +110,7 @@ export default ({ forceVisible = false, float = true, isMobile }) => {
                 top: !isMobile ? 63 : undefined,
                 right: 0,
                 width: !isMobile ? 400 : '100%',
-                zIndex: 1,
+                zIndex: 2,
             }}
         >
             {forceVisible || visible && Array.from(items).map(NotificationItem).filter(Boolean)}
@@ -225,7 +226,22 @@ export const NotificationItem = ([id, notification]) => {
             break
     }
 
-    msg.content = <div style={styles.messageContent}>{msg.content}</div>
+    msg.content = (
+        <div style={styles.messageContent}>
+            {msg.content}
+            <TimeSince {...{
+                style: {
+                    bottom: 0,
+                    color: 'grey',
+                    fontSize: 11,
+                    fontStyle: 'italic',
+                    left: 5,
+                    position: 'absolute',
+                },
+                time: tsCreated
+            }} />
+        </div>
+    )
     msg.header = <div className="header" style={styles.messageHeader}>{msg.header}</div>
     return <Message {...msg} />
 }
@@ -257,7 +273,7 @@ export const handleTKInvitation = (
         then: success => !success && resolve(false),
         // no need to notify if rejected or current user is the project owner
         next: !accepted || !projectOwnerId || projectOwnerId === currentUserId ? undefined : {
-            address: workerAddress, // for automatic balance check 
+            address: workerAddress, // for automatic balance check
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'notify',
             args: [
