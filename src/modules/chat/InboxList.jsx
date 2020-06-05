@@ -10,7 +10,10 @@ import NewInboxForm from './NewInboxForm'
 
 const EVERYONE = 'everyone'
 const [_, textsCap] = translated({
-    trollbox: 'Totem Trollbox'
+    compact: 'compact',
+    detailed: 'detailed',
+    startChat: 'start chat',
+    trollbox: 'Totem Trollbox',
 }, true)
 
 export default function InboxList(props) {
@@ -56,6 +59,7 @@ export default function InboxList(props) {
                             key: 0,
                             onClick: () => setCompact(!compact),
                             style: { padding: 11.75 },
+                            title: compact ? textsCap.detailed : textsCap.compact
                         },
                         {
                             icon: 'search plus',
@@ -64,6 +68,7 @@ export default function InboxList(props) {
                                 onSubmit: (ok, { inboxKey }) => ok && openInboxBond.changed(inboxKey)
                             }),
                             style: { padding: 11.75 },
+                            title: textsCap.startChat,
                         }
                     ],
                     style: { display: 'inline-block' }

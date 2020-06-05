@@ -1,18 +1,22 @@
 import React, { useState } from 'react'
+import { Bond } from 'oo7'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
-import { isFn, arrSort } from '../../utils/utils'
+import { isFn, arrSort, textEllipsis } from '../../utils/utils'
 import { getInboxKey, hiddenInboxKeys, inboxBonds, inboxSettings, newInbox } from './chat'
 import { translated } from '../../services/language'
 import { showForm, closeModal } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 
 const [_, textsCap] = translated({
-    header: 'open chat',
-    nameLabel: 'name (only visible to you)',
+    group: 'group',
+    header: 'start chat',
+    nameLabel: 'group name',
     namePlaceholder: 'enter a name for the group chat',
     open: 'open',
+    subheader: 'start new or re-open archived chat',
     totemTrollbox: 'Totem Trollbox',
     updateName: 'update group name',
+    userIdsHint: 'To start a group chat enter multiple User IDs',
 }, true)
 const EVERYONE = 'everyone'
 export default function NewInboxForm(props) {
@@ -29,19 +33,24 @@ export default function NewInboxForm(props) {
             excludeOwnId: true,
             includeFromChat: true,
             includePartners: true,
+            message: { content: textsCap.userIdsHint },
             multiple: true,
             name: names.receiverIds,
             options: arrSort(
-                inboxKeys.map(key => ({
-                    icon: key === EVERYONE ? 'globe' : (
-                        key.split(',').length > 1 ? 'group' : 'chat'
-                    ),
-                    key,
-                    text: key === EVERYONE ? textsCap.totemTrollbox : (
-                        inboxSettings(key).name || key.replace(',', ', ')
-                    ),
-                    value: key,
-                })),
+                inboxKeys.map(key => {
+                    const isGroup = key.split(',').length > 1
+                    const isTrollbox = key === EVERYONE
+                    const groupName = inboxSettings(key).name
+                    const members = textEllipsis(key.replace(/\,/g, ', '), 30, 3, false)
+                    const text = isTrollbox ? textsCap.totemTrollbox : groupName || members
+                    return {
+                        description: groupName && members,
+                        icon: isTrollbox ? 'globe' : (isGroup ? 'group' : 'chat'),
+                        key,
+                        text: `${isGroup ? textsCap.group + ': ' : ''}${text}`,
+                        value: key,
+                    }
+                }),
                 'text',
             ),
             onChange: (_, values) => {
@@ -52,8 +61,8 @@ export default function NewInboxForm(props) {
                 const value = hideName ? '' : inboxSettings(inboxKey).name || nameIn.value
                 nameIn.hidden = hideName
                 nameIn.required = !hideName
-                nameIn.bond.changed(value)
                 setInputs(inputs)
+                nameIn.bond.changed(value)
             },
             required: true,
             type: 'UserIdInput',
@@ -93,7 +102,8 @@ export default function NewInboxForm(props) {
 NewInboxForm.defaultProps = {
     closeOnSubmit: true,
     header: textsCap.header,
-    size: 'mini',
+    size: 'tiny',
+    subheader: textsCap.subheader,
     submitText: textsCap.open,
 }
 
