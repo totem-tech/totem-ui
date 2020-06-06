@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-import FormBuilder, { findInput } from '../../components/FormBuilder'
+import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import { isFn, arrSort, textEllipsis } from '../../utils/utils'
 import { getInboxKey, hiddenInboxKeys, inboxBonds, inboxSettings, newInbox } from './chat'
 import { translated } from '../../services/language'
@@ -90,6 +91,12 @@ export default function NewInboxForm(props) {
         isFn(onSubmit) && onSubmit(true, { inboxKey, ...values })
     }
 
+    useEffect(() => {
+        const { values } = props
+        if (values) fillValues(inputs, values)
+        return () => { }
+    }, [])
+
     return (
         <FormBuilder {...{
             ...props,
@@ -105,6 +112,9 @@ NewInboxForm.defaultProps = {
     size: 'tiny',
     subheader: textsCap.subheader,
     submitText: textsCap.open,
+}
+NewInboxForm.propTypes = {
+    values: PropTypes.Object
 }
 
 // edit group inbox name

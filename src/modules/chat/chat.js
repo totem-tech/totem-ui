@@ -17,7 +17,7 @@ export const inboxBonds = {}
 // notifies when new conversation is created, hidden or unhidden
 export const newInboxBond = new Bond()
 export const openInboxBond = new Bond().defaultTo(rw().openInboxKey)
-export const visibleBond = new Bond().defaultTo(false)
+export const visibleBond = new Bond()
 export const unreadCountBond = new Bond()
 export const pendingMessages = {}
 

@@ -21,6 +21,10 @@
 #app.chat-visible .chat-container.hiding {
     right: -410px;
 }
+#app:not(.chat-visible) .chat-container,
+#app.chat-visible .chat-container.hiding {
+    right: -110%;
+}
 .mobile .chat-container {
     bottom: 54px;
 }
@@ -50,6 +54,14 @@
 .chat-container .inbox-list .unread-count.compact {
     top: 4px;
     width: 47px;
+}
+.chat-container .inbox-list .message {
+    border-radius: 0;
+    cursor: pointer;
+    margin: 0;
+    overflow: hidden;
+    padding: 8px 10px;
+    white-space: nowrap;
 }
 
 /* inobx */ 

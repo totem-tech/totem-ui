@@ -30,6 +30,7 @@ export default function InboxList(props) {
         names[i] = key === EVERYONE ? textsCap.trollbox : allSettings[i].name
         msgs[i] = getMessages(key).reverse()
     })
+
     const keywords = kw.trim().toLowerCase()
     let filteredKeys = (!keywords.trim() ? inboxKeys : inboxKeys
         .filter(k => k.includes(keywords) || (names[inboxKeys.indexOf(k)] || '').toLowerCase().includes(keywords))
@@ -38,6 +39,7 @@ export default function InboxList(props) {
     filteredKeys = filteredKeys.map(key => ({ key, ts: (msgs[inboxKeys.indexOf(key)][0] || {}).timestamp }))
     filteredKeys = arrSort(filteredKeys, 'ts', true, false).map(x => x.key)
 
+    // select the first item if none already selected
     !openInboxBond._value && openInboxBond.changed(inboxKeys[0])
 
     useEffect(() => {
@@ -92,7 +94,7 @@ export default function InboxList(props) {
                 const icon = isTrollbox ? 'globe' : (isGroup ? 'group' : 'chat')
                 const name = names[index] || key
                 const isActive = openInboxBond._value === key
-                const lastMsg = (msgs[index] || [])[0]
+                const lastMsg = !compact && (msgs[index] || []).filter(m => !!m.message)[0]
                 const { unread } = allSettings[index]
 
                 return (
@@ -104,7 +106,7 @@ export default function InboxList(props) {
                                         {unread}
                                     </div>
                                 )}
-                                {!compact && lastMsg && `${lastMsg.senderId}: ${lastMsg.message}`}
+                                {lastMsg && `${lastMsg.senderId}: ${lastMsg.message}`}
                             </div>
                         ),
                         header: name,
@@ -117,20 +119,12 @@ export default function InboxList(props) {
                             }
                         },
                         color: inverted ? 'black' : undefined,
-                        key: key + lastMsg,
+                        key: JSON.stringify({ key, ...msgs[index][0] }),
                         onClick: () => openInboxBond.changed(key),
                         positive: isActive,
-                        style: {
-                            borderRadius: 0,
-                            cursor: 'pointer',
-                            margin: 0,
-                            overflow: 'hidden',
-                            padding: '5px 10px',
-                            whiteSpace: 'nowrap',
-                        },
                     }} />
                 )
             })}
-        </div >
+        </div>
     )
 }
