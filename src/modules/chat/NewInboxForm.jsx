@@ -119,6 +119,7 @@ NewInboxForm.propTypes = {
 
 // edit group inbox name
 export const editName = (inboxKey, onSubmit) => {
+    const originalName = inboxSettings(inboxKey).name || ''
     const formId = showForm(
         FormBuilder,
         {
@@ -126,13 +127,18 @@ export const editName = (inboxKey, onSubmit) => {
             inputs: [{
                 label: textsCap.nameLabel,
                 maxLength: 16,
+                minLength: 3,
                 name: 'name',
                 placeholder: textsCap.namePlaceholder,
                 required: false,
                 type: 'text',
-                value: inboxSettings(inboxKey).name || '',
+                validate: (_, { value }) => !value || value === originalName,
+                value: originalName,
             }],
             onSubmit: (_, { name }) => {
+                closeModal(formId)
+                if (name === originalName) return
+
                 const receiverIds = inboxKey.split(',')
                 addToQueue({
                     args: [receiverIds, name],
@@ -141,7 +147,6 @@ export const editName = (inboxKey, onSubmit) => {
                     type: QUEUE_TYPES.CHATCLIENT,
                 })
                 inboxSettings(inboxKey, { name }, true)
-                closeModal(formId)
                 isFn(onSubmit) && onSubmit(true)
             },
             size: 'mini',
