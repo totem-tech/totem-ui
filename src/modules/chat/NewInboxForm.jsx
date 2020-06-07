@@ -132,7 +132,6 @@ export const editName = (inboxKey, onSubmit) => {
                 placeholder: textsCap.namePlaceholder,
                 required: false,
                 type: 'text',
-                validate: (_, { value }) => !value || value === originalName,
                 value: originalName,
             }],
             onSubmit: (_, { name }) => {

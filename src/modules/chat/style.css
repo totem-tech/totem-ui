@@ -6,7 +6,7 @@
     position: fixed;
     right: 0px;
     top: 61px;
-    transition: all 0.2s linear;
+    transition: all 0.35s ease;
     width: 400px;
     z-index: 1;
 }
@@ -21,9 +21,9 @@
 #app.chat-visible .chat-container.hiding {
     right: -410px;
 }
-#app:not(.chat-visible) .chat-container,
-#app.chat-visible .chat-container.hiding {
-    right: -110%;
+#app:not(.chat-visible) .mobile .chat-container,
+#app.chat-visible .mobile .chat-container.hiding {
+    right: -100%;
 }
 .mobile .chat-container {
     bottom: 54px;

@@ -24,7 +24,7 @@ export default function ChatBar({ inverted = false }) {
                 document
                     .getElementById('app')
                     .classList[show ? 'add' : 'remove']('chat-visible')
-            }, 200)
+            }, 350)
         })
 
         return () => {
