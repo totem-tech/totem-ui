@@ -95,7 +95,7 @@ export class MainContentItem extends Component {
 		const item = getItem(this.props.name) || {}
 		const { active, elementRef, hidden, name } = item
 		const show = active && !hidden
-		item.style = {...item.style, height: '100%'}
+		item.style = { ...item.style, height: '100%' }
 		return !show ? '' : (
 			<div
 				hidden={!show}
@@ -120,7 +120,7 @@ class SidebarMenuItem extends Component {
 		this.tieId = bond.tie(() => this.forceUpdate())
 	}
 
-	componentWillUnmount = () => this.tieId && this.props.bond.untie(this.tieId)
+	componentWillUnmount = () => this.props.bond && this.props.bond.untie(this.tieId)
 
 	handleClick = e => {
 		const { isMobile, name } = this.props

@@ -14,7 +14,8 @@ const cache = new DataStorage(CACHE_KEY)
 const settings = new DataStorage(PREFIX + 'settings', true)
 // LocalStorage items that are essential for the applicaiton to run. 
 export const essentialKeys = [
-    'totem_history',
+    'totem_chat-history', // chat history
+    'totem_history', // user activity history
     'totem_identities',
     // notifications are essential because user may need to respond to them in case they are migrating to a new device.
     'totem_notifications',

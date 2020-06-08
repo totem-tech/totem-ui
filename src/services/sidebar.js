@@ -18,7 +18,6 @@ import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
 // utils
 import DataStorage from '../utils/DataStorage'
 import { isBool, isBond } from '../utils/utils'
-import { findInput as findItem } from '../components/FormBuilder'
 // services
 import { translated } from './language'
 import storage from './storage'
@@ -303,7 +302,7 @@ export const sidebarItems = [
         name: 'utilities',
         subHeader: texts.utilitiesSubheader,
         title: texts.utilitiesTitle,
-    }
+    },
 ].map(item => {
     const {
         active = false,
@@ -326,10 +325,11 @@ export const sidebarItems = [
     }
 })
 
-export const getItem = name => findItem(sidebarItems, name)
+export const findItem = name => sidebarItems.find(x => x.name === name)
+export const getItem = name => findItem(name)
 
 export const setActive = (name, active = true, contentProps, hidden) => {
-    const item = findItem(sidebarItems, name)
+    const item = findItem(name)
     if (!item) return
     item.active = active
     item.hidden = isBool(hidden) ? hidden : item.hidden
@@ -343,7 +343,7 @@ export const setActive = (name, active = true, contentProps, hidden) => {
 }
 
 export const setContentProps = (name, props = {}, scrollToItem = true) => {
-    const item = findItem(sidebarItems, name)
+    const item = findItem(name)
     if (!item) return
 
     if (!item.active) return setActive(name, true, props)

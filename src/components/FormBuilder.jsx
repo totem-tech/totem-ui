@@ -1,12 +1,11 @@
-import React from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Button, Form, Header, Icon, Modal } from 'semantic-ui-react'
-import { ReactiveComponent } from 'oo7-react'
 import { isDefined, isArr, isBool, isBond, isFn, isObj, isStr, objCopy, objWithoutKeys, hasValue } from '../utils/utils'
 import Message from '../components/Message'
 import FormInput, { nonValueTypes } from './FormInput'
 
-export default class FormBuilder extends ReactiveComponent {
+export default class FormBuilder extends Component {
     constructor(props) {
         super(props)
 

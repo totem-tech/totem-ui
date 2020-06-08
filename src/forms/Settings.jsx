@@ -2,7 +2,8 @@ import React, { Component } from 'react'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 import { arrSort, generateHash } from '../utils/utils'
 // services
-import client, { historyLimit as chatHistoryLimit } from '../services/chatClient'
+import client from '../services/chatClient'
+import { historyLimit as chatHistoryLimit } from '../modules/chat/chat'
 import {
     getCurrencies,
     getSelected as getSelectedCurrency,
@@ -15,7 +16,7 @@ import { gridColumns } from '../services/window'
 const [texts, textsCap] = translated({
     column: 'column',
     columns: 'columns',
-    chatLimitLabel: 'chat message limit',
+    chatLimitLabel: 'chat message limit per conversation',
     gridColumnsLabel: 'number of columns on main content (experimental)',
     gsCurrencyLabel: 'default currency',
     gsLanguageLabel: 'default language (experimental)',
@@ -111,8 +112,8 @@ export default class Settings extends Component {
         const { inputs } = this.state
         const currencyIn = findInput(inputs, 'currency')
         getCurrencies().then(currencies => {
-            currencyIn.options = currencies.map(({ nameInLanguage, ISO }) => ({
-                description: ISO,
+            currencyIn.options = currencies.map(({ currency, nameInLanguage, ISO }) => ({
+                description: currency,
                 key: ISO,
                 text: nameInLanguage,
                 value: ISO

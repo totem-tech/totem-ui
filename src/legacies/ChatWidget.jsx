@@ -15,7 +15,7 @@ import 'react-chat-widget/lib/styles.css'
 import { objCopy } from '../utils/utils'
 // import { getNow } from '../utils/time'
 import TotemLogoCircle from '../assets/totem-button-grey.png'
-import { addToHistory, getClient, getUser, getHistory, onLogin } from '../services/chatClient'
+// import { getClient, getUser, getHistory, onLogin } from '../services/chatClient'
 import { translated } from '../services/language'
 
 const [texts] = translated({
@@ -75,57 +75,57 @@ export default class ChatWidget extends ReactiveComponent {
 			userId: ''
 		}
 
-		onLogin(userId => this.setState({ userId }))
+		// onLogin(userId => this.setState({ userId }))
 	}
 
 	componentDidMount() {
 		// Setup chat client 
-		!this.client && this.setupChatClient()
-		// attempt to login
-		this.login()
+		// !this.client && this.setupChatClient()
+		// // attempt to login
+		// this.login()
 	}
 
 	setupChatClient = () => {
-		this.client = getClient()
+		// this.client = getClient()
 
-		// Attempt to log back in on reconnect
-		this.client.onReconnect(this.login)
+		// // Attempt to log back in on reconnect
+		// this.client.onReconnect(this.login)
 
-		this.client.onMessage((msg, id) => {
-			id === this.state.userId ? addUserMessage(msg) : addResponseWithId(msg, id)
-			addToHistory(msg, id)
-			// !isWidgetOpened() && this.setState({unreadCount: this.state.unreadCount++})
-		})
+		// this.client.onMessage((msg, id) => {
+		// 	console.log({ msg, id })
+		// 	id === this.state.userId ? addUserMessage(msg) : addResponseWithId(msg, id)
+		// 	// addToHistory(msg, id)
+		// 	// !isWidgetOpened() && this.setState({unreadCount: this.state.unreadCount++})
+		// })
 
-		this.client.onConnectError(err => {
-			// Prevents showing 'offline' more than once until status changes back to online
-			if (!this.state.showOfflineMsg) return;
+		// this.client.onConnectError(err => {
+		// 	// Prevents showing 'offline' more than once until status changes back to online
+		// 	if (!this.state.showOfflineMsg) return;
 
-			// addEventMsg('chat server offline at : ' + getNow())
-			this.setState({ showOfflineMsg: false })
-		})
-
+		// 	// addEventMsg('chat server offline at : ' + getNow())
+		// 	this.setState({ showOfflineMsg: false })
+		// })
 	}
 
-	handleNewUserMessage = (msg) => this.client.message(msg,
-		err => err ? addEventMsg(err) : addToHistory(msg, this.state.userId)
+	handleNewUserMessage = (msg) => this.client.message('everyone', msg, false,
+		err => err && addEventMsg(err)// : addToHistory(msg, this.state.userId)
 	)
 
 	login = () => {
-		const user = getUser()
-		if (!user) return;
+		// const user = getUser()
+		// if (!user) return;
 
-		this.client.login(user.id, user.secret, err => {
-			if (err) return addEventMsg(<div>{texts.loginFailed}: <pre>{err}</pre></div>);
-			if (!this.state.historyAdded) {
-				getHistory().forEach(e => {
-					e.id === user.id ? addUserMessage(e.message) : addResponseWithId(e.message, e.id)
-				})
-			}
+		// this.client.login(user.id, user.secret, err => {
+		// 	if (err) return addEventMsg(<div>{texts.loginFailed}: <pre>{err}</pre></div>);
+		// 	if (!this.state.historyAdded) {
+		// 		getHistory().forEach(e => {
+		// 			e.id === user.id ? addUserMessage(e.message) : addResponseWithId(e.message, e.id)
+		// 		})
+		// 	}
 
-			// addEventMsg('chat server online at : ' + getNow(), 1)
-			this.setState({ userId: user.id, showOfflineMsg: true, historyAdded: true })
-		})
+		// 	// addEventMsg('chat server online at : ' + getNow(), 1)
+		// 	this.setState({ userId: user.id, showOfflineMsg: true, historyAdded: true })
+		// })
 	}
 
 	render() {

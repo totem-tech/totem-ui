@@ -86,7 +86,7 @@ export default class FormInput extends Component {
 		this.bond && this.bond.tie(value => setTimeout(() => this.handleChange({}, { ...this.props, value })))
 	}
 
-	componentWillUnmount = () => (this._mounted = false)
+	componentWillUnmount = () => this._mounted = false
 
 	handleChange = (event = {}, data = {}) => {
 		const {
@@ -274,19 +274,18 @@ export default class FormInput extends Component {
 				inputEl = <El {...attrs} />
 		}
 
-		if (!isGroup)
-			return (
-				<Form.Field
-					error={(message && message.status === 'error') || error || invalid}
-					required={required}
-					style={styleContainer}
-					width={width}
-				>
-					{!hideLabel && label && <label htmlFor={name}>{label}</label>}
-					{inputEl}
-					{message && <Message {...message} />}
-				</Form.Field>
-			)
+		if (!isGroup) return (
+			<Form.Field
+				error={(message && message.status === 'error') || error || invalid}
+				required={required}
+				style={styleContainer}
+				width={width}
+			>
+				{!hideLabel && label && <label htmlFor={name}>{label}</label>}
+				{inputEl}
+				{message && <Message {...message} />}
+			</Form.Field>
+		)
 
 		let groupEl = (
 			<div>

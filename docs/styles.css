@@ -137,11 +137,10 @@ and (-webkit-device-pixel-ratio : 3) {
 }
 
 
-
-
-
 #app, #app > div {
   height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 .mobile .pusher.main-content {
   margin: 0 !important;
@@ -165,6 +164,13 @@ and (-webkit-device-pixel-ratio : 3) {
 .ui.left.visible.sidebar > a {
   white-space: nowrap;
   overflow: hidden;
+}
+/* hide footer bar when mobile sidebar is open */
+.mobile.sidebar-visible > .ui.menu.bottom {
+    display: none;
+}
+.mobile.sidebar-visible > .notification-list {
+  display: none;
 }
 /* Main content width and positioning when sidebar is collapsed (icon-only mode) */
 #app > :not(.mobile) .ui.visible.left.sidebar.very.thin ~ .pusher.main-content {
@@ -197,27 +203,6 @@ and (-webkit-device-pixel-ratio : 3) {
 
 .no-margin {
   margin: 0 !important;
-}
-.notification-dropdown.ui.dropdown .menu.notifictaions {
-  position: fixed !important;
-  top: 60px !important;
-}
-.notification-dropdown.has-unread.ui.item.scrolling.dropdown {
-  background: red;
-}
-#app .desktop .notification-dropdown.ui.dropdown .menu.notifictaions {
-  left: calc(100% - 400px) !important;
-}
-#app .desktop .notification-dropdown .menu.notifictaions .item {
-  max-width: 400px;
-} 
-.no-padding, .ui.menu .notification-dropdown.item .menu.notifictaions.visible .item.no-padding {
-  padding: 0 !important;
-}
-.ui.menu .ui.notification-dropdown.dropdown .menu > .item > .message i:not(.close) {
-  float: left;
-  font-size: 40px !important;
-  margin-right: 5px !important;
 }
 .blink {
   animation: blinker 1s linear infinite;
@@ -299,6 +284,9 @@ div.ui.padded.segment {
 /* hide when mobile sidebar is open */
 .mobile.sidebar-visible .rcw-widget-container {
   display: none;
+}
+#app > .mobile.sidebar-visible > .chat-container {
+    display: none;
 }
 
 /* more space for messages

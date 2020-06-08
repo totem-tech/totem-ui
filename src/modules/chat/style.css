@@ -1,0 +1,148 @@
+.chat-container {
+    color: black;
+    background: white;
+    bottom: 0px;
+    box-Shadow: 3px 8px 8px 8px grey;
+    position: fixed;
+    right: 0px;
+    top: 61px;
+    transition: all 0.35s ease;
+    width: 400px;
+    z-index: 1;
+}
+#app > .mobile .chat-container {
+    width: 100%;
+}
+.chat-container.inverted {
+    background: #1b1c1d;
+    color: white;
+}
+#app:not(.chat-visible) .chat-container,
+#app.chat-visible .chat-container.hiding {
+    right: -410px;
+}
+#app:not(.chat-visible) .mobile .chat-container,
+#app.chat-visible .mobile .chat-container.hiding {
+    right: -100%;
+}
+.mobile .chat-container {
+    bottom: 54px;
+}
+.chat-container .chat-contents {
+    height: 100%;
+    position: relative;
+}
+
+/* inbox/contact list */
+.chat-container .inbox-list{
+    height: 40%;
+    overflow-x: auto;
+}
+.chat-container .inbox-list div.search {
+    float: right;
+    width: calc( 100% - 81px );
+}
+.chat-container .inbox-list .unread-count {
+    color: white;
+    font-weight: bold;
+    left: 0;
+    position: absolute;
+    text-align: center;
+    top: 11px;
+    width: 60px;
+}
+.chat-container .inbox-list .unread-count.compact {
+    top: 4px;
+    width: 47px;
+}
+.chat-container .inbox-list .message {
+    border-radius: 0;
+    cursor: pointer;
+    margin: 0;
+    overflow: hidden;
+    padding: 8px 10px;
+    white-space: nowrap;
+}
+
+/* inobx */ 
+.chat-container .inbox {
+    height: 60%;
+}
+.chat-container .inbox .header-container {
+    background: #1b1c1d;
+    color: white;
+    padding: 5px;
+    position: relative;
+    text-align: center;
+}
+.chat-container.inverted .inbox .header-container {
+    background: grey;
+}
+.chat-container .inbox .header-container .online-indicator {
+    position: absolute;
+    top: 15px;
+ }
+.chat-container .inbox .header-container .header {
+    margin: 0;
+    overflow: hidden;
+    position: relative;
+}
+.chat-container .inbox .header-container .header .tools{
+    display: inline;
+    position: absolute;
+    right: 5px;
+    top: -6px;
+}
+.chat-container .inbox .header-container .subheader {
+    margin: 0;
+}
+.chat-container .inbox .member-list-item {
+    margin: 0;
+}
+.chat-container .inbox .member-list-item .icon {
+    font-size: 25px !important;
+    width: 25px !important;
+}
+/* message list */
+.chat-container .messages {
+    height: calc(100% - 104px);
+    overflow-x: auto;
+}
+.chat-container .messages .message-group-name {
+    text-align: center;
+    color: grey;
+}
+.chat-container .messages .message-wrap {
+    padding: '5px 0';
+    text-align: left;
+}
+.chat-container .messages .message-wrap.user {
+    text-align: right;
+}
+.chat-container .messages .message-wrap .message {
+    border-radius: 10px;
+    box-shadow: none;
+    margin: 2px 10px;
+    padding: 7px 15px;
+    width: auto;
+}
+.chat-container .messages .message-wrap .message .icon {
+    font-size: 18px;
+    width: 18px !important;
+}
+
+/* resize #main-content accordingly */
+#app.chat-visible > :not(.mobile) .pushable > .ui.visible.left.sidebar.very.thin ~ .pusher.main-content {
+    max-width: calc(100% - 460px) !important;
+}
+#app.chat-visible > :not(.mobile) .pushable > .ui.visible.left.sidebar.wide ~ .pusher.main-content {
+    max-width: calc(100% - 635px) !important;
+}
+
+/* expanded view */
+#app.chat-expanded .chat-container .inbox {
+    height: 100% !important;
+}
+#app.chat-expanded .chat-container .inbox-list {
+    display: none;
+}

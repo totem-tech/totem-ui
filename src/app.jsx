@@ -1,5 +1,5 @@
 import React from 'react'
-import { Container, Dimmer, Image, Loader, Sidebar } from 'semantic-ui-react'
+import { Container, Dimmer, Image, Loader, Menu, Sidebar } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import { ReactiveComponent } from 'oo7-react'
 import {
@@ -9,7 +9,6 @@ import {
 
 // Components
 import ErrorBoundary from './components/CatchReactErrors'
-import ChatWidget from './components/ChatWidget'
 import PageHeader from './components/PageHeader'
 import SidebarLeft, { MainContentItem } from './components/SidebarLeft'
 // Services
@@ -18,6 +17,7 @@ import chatClient from './services/chatClient'
 import identity from './services/identity'
 import language, { translated } from './services/language'
 import modal, { ModalsConainer } from './services/modal'
+import NotificationList from './services/notification'
 import partner from './services/partner'
 import project from './services/project'
 import queue, { resumeQueue } from './services/queue'
@@ -31,6 +31,7 @@ import DataStorage from './utils/DataStorage'
 // Images
 import TotemButtonLogo from './assets/totem-button-grey.png'
 import PlaceholderImage from './assets/totem-placeholder.png'
+import ChatBar from './modules/chat/ChatBar'
 
 const [texts] = translated({
 	failedMsg: 'Connection failed! Please check your internet connection.',
@@ -119,13 +120,20 @@ export class App extends ReactiveComponent {
 
 		return (
 			<div className={classNames}>
-				<ChatWidget />
 				<ModalsConainer />
 				<ToastsContainer isMobile={isMobile} />
-				<ErrorBoundary><PageHeader {...{ logoSrc, isMobile }} /></ErrorBoundary>
+				<ErrorBoundary>
+					<PageHeader {...{ logoSrc, isMobile }} />
+				</ErrorBoundary>
+
+				<ErrorBoundary>
+					<NotificationList {...{ isMobile }} />
+				</ErrorBoundary>
 
 				<Sidebar.Pushable style={styles.pushable}>
-					<SidebarLeft isMobile={isMobile} />
+					<ErrorBoundary>
+						<SidebarLeft isMobile={isMobile} />
+					</ErrorBoundary>
 
 					<Sidebar.Pusher
 						as={Container}
@@ -133,7 +141,11 @@ export class App extends ReactiveComponent {
 						dimmed={false}
 						id="main-content"
 						fluid
-						style={{ ...styles.mainContent, ...getGridStyle(numCol) }}
+						style={{
+							...styles.mainContent,
+							paddingBottom: isMobile ? 55 : 15,
+							...getGridStyle(numCol),
+						}}
 					>
 						{sidebarItems.map(({ name }, i) => <MainContentItem key={i + name} name={name} />)}
 						<div className='empty-message'>
@@ -141,16 +153,17 @@ export class App extends ReactiveComponent {
 						</div>
 					</Sidebar.Pusher>
 				</Sidebar.Pushable>
-			</div >
+				<ChatBar {...{ isMobile, inverted: false }} />
+			</div>
 		)
 	}
 }
 
 const getGridStyle = (numCol = 1) => numCol <= 1 ? {} : {
 	display: 'grid',
-    gridTemplateColumns: `repeat(${numCol}, 1fr)`,
-    gridGap: '15px',
-    gridAutoRows: 'auto',
+	gridTemplateColumns: `repeat(${numCol}, 1fr)`,
+	gridGap: '15px',
+	gridAutoRows: 'auto',
 }
 const styles = {
 	mainContent: {
@@ -162,9 +175,9 @@ const styles = {
 	},
 	pushable: {
 		margin: 0,
-		height: 'calc(100% - 61px)',
+		height: 'calc(100% - 59px)',
 		overflow: 'hidden',
 		WebkitOverflow: 'hidden',
 	},
-	
+
 }

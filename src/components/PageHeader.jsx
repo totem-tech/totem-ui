@@ -1,7 +1,6 @@
-import React, { Component } from 'react'
+import React, { Component, useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import { runtime } from 'oo7-substrate'
-import { Dropdown, Image, Menu } from 'semantic-ui-react'
+import { Dropdown, Icon, Image, Menu } from 'semantic-ui-react'
 import Currency from '../components/Currency'
 // utils
 import { arrSort, copyToClipboard, textEllipsis } from '../utils/utils'
@@ -9,17 +8,24 @@ import { arrSort, copyToClipboard, textEllipsis } from '../utils/utils'
 import IdentityForm from '../forms/Identity'
 import TimeKeepingForm from '../forms/TimeKeeping'
 // services
-import { getUser, getClient, onLogin } from '../services/chatClient'
+import { getUser, loginBond } from '../services/chatClient'
 import identities, { getSelected, setSelected } from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
-import NotificationDropdown from '../services/notification'
+import {
+	newNotificationBond,
+	visibleBond as notifVisibleBond,
+	unreadCountBond as unreadNotifCountBond,
+} from '../services/notification'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { toggleSidebarState } from '../services/sidebar'
 import timeKeeping from '../services/timeKeeping'
 import { setToast } from '../services/toast'
+import {
+	unreadCountBond as unreadMsgCountBond,
+	visibleBond as chatVisibleBond,
+} from '../modules/chat/chat'
 
-// const [words, wordsCap] = translated({}, true)
 const [texts] = translated({
 	addressCopied: 'Address copied to clipboard',
 	copyAddress: 'Copy Address',
@@ -34,11 +40,10 @@ export default class PageHeader extends Component {
 
 		this.state = {
 			id: (getUser() || {}).id,
+			isLoggedIn: !!loginBond._value,
 			wallets: [],
 		}
 
-		// Update user ID after registration
-		!this.state.id && onLogin(id => id && this.setState({ id }))
 		this.originalSetState = this.setState
 		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
 	}
@@ -49,6 +54,12 @@ export default class PageHeader extends Component {
 			wallets: identities.getAll()
 		}))
 		timeKeeping.formDataBond.tie(() => this.forceUpdate())
+
+		// Update user ID after registration
+		this.tieIdLogin = loginBond.tie(isLoggedIn => {
+			const { id } = getUser()
+			this.setState({ id, isLoggedIn })
+		})
 	}
 
 	componentWillUnmount = () => this._mounted = false
@@ -77,18 +88,18 @@ export default class PageHeader extends Component {
 	})
 
 	render() {
-		const { id, wallets } = this.state
+		const { id, isLoggedIn, wallets } = this.state
 		const viewProps = {
-			id,
+			userId: id,
+			isLoggedIn,
+			isRegistered: !!id,
+			wallets,
 			onCopy: this.handleCopy,
 			onEdit: this.handleEdit,
 			onFaucetRequest: this.handleFaucetRequest,
 			onSelection: this.handleSelection,
-			timerActive: timeKeeping.formData().inprogress,
-			timerOnClick: () => showForm(TimeKeepingForm, {}),
-			wallets,
 		}
-		return <MobileHeader {...this.props} {...viewProps} />
+		return <PageHeaderView {...this.props} {...viewProps} />
 	}
 }
 
@@ -101,110 +112,213 @@ PageHeader.defaultProps = {
 	logoSrc: 'https://react.semantic-ui.com/images/wireframe/image.png'
 }
 
-class MobileHeader extends Component {
-	constructor(props) {
-		super(props)
-		this.state = { showTools: false }
-	}
-
-	render() {
-		const { showTools } = this.state
-		const {
-			id,
-			isMobile,
-			logoSrc,
-			onCopy,
-			onEdit,
-			onFaucetRequest,
-			onSelection,
-			timerActive,
-			timerOnClick,
-			wallets,
-		} = this.props
-		const selected = getSelected()
-
-		return (
-			<div>
-				<Menu attached="top" inverted>
-					{isMobile && (
-						<Menu.Item
-							icon={{ name: 'sidebar', size: 'big', className: 'no-margin' }}
-							// on mobile when sidebar is visible toggle is not neccessary on-document-click it is already triggered
-							onClick={toggleSidebarState}
-						/>
+const PageHeaderView = props => {
+	const [showTools, setShowTools] = useState(false)
+	const {
+		userId,
+		isLoggedIn,
+		isMobile,
+		isRegistered,
+		logoSrc,
+		onCopy,
+		onEdit,
+		onFaucetRequest,
+		onSelection,
+		wallets,
+	} = props
+	const selected = getSelected()
+	const buttons = <HeaderMenuButtons {...{ isLoggedIn, isMobile, isRegistered }} />
+	const topBar = (
+		<Menu
+			attached="top"
+			inverted
+			style={{
+				border: 'none',
+				borderRadius: 0,
+				margin: 0,
+				width: '100%',
+			}}
+		>
+			<Menu.Item>
+				<Image size="mini" src={logoSrc} />
+			</Menu.Item>
+			<Menu.Menu position="right">
+				{!isMobile && isRegistered && buttons}
+				<Dropdown
+					item
+					labeled
+					onChange={onSelection}
+					text={textEllipsis(selected.name, isMobile ? 25 : 50, 3, false)}
+					value={selected.address}
+					style={{ paddingRight: 0 }}
+					options={arrSort(
+						wallets.map(({ address, name }) => ({
+							key: address,
+							text: (
+								<div>
+									{name}
+									<Currency {...{
+										address: address,
+										style: {
+											color: 'grey',
+											fontWeight: 'normal',
+											paddingLeft: 15,
+											textAlign: 'right',
+										}
+									}} />
+								</div>
+							),
+							value: address
+						})),
+						'text'
 					)}
-					<Menu.Item>
-						<Image size="mini" src={logoSrc} />
-					</Menu.Item>
-					<Menu.Menu position="right">
-						<NotificationDropdown />
-						{id && (
-							<Menu.Item
-								icon={{
-									className: 'no-margin',
-									loading: timerActive,
-									name: 'clock outline',
-									size: 'big'
-								}}
-								onClick={timerOnClick}
+				/>
+				<Dropdown
+					item
+					icon={{
+						name: 'chevron circle ' + (showTools ? 'up' : 'down'),
+						size: 'large',
+						className: 'no-margin'
+					}}
+					onClick={() => setShowTools(!showTools)}
+				>
+					<Dropdown.Menu className="left">
+						<Dropdown.Item
+							icon="pencil"
+							content={texts.updateIdentity}
+							onClick={onEdit}
+						/>
+						<Dropdown.Item
+							icon="copy"
+							content={texts.copyAddress}
+							onClick={onCopy}
+						/>
+						{userId && [
+							<Dropdown.Item
+								key="0"
+								icon="gem"
+								content={texts.requestFunds}
+								onClick={onFaucetRequest}
 							/>
-						)}
+						]}
+					</Dropdown.Menu>
+				</Dropdown>
+			</Menu.Menu>
+		</Menu>
+	)
 
-						{wallets && wallets.length > 0 && (
-							<Menu.Item style={{ paddingRight: 0 }}>
-								<Dropdown
-									labeled
-									onChange={onSelection}
-									text={!isMobile ? selected.name : textEllipsis(selected.name, 7, 3, false)}
-									value={selected.address}
-									options={arrSort(
-										wallets.map(({ address, name }) => ({
-											key: address,
-											text: name,
-											description: runtime.balances && <Currency address={address} />,
-											value: address
-										})),
-										'text'
-									)}
-								/>
-							</Menu.Item>
-						)}
-					</Menu.Menu>
-					<Menu.Menu fixed="right">
-						<Dropdown
-							item
-							icon={{
-								name: 'chevron circle ' + (showTools ? 'up' : 'down'),
-								size: 'large',
-								className: 'no-margin'
-							}}
-							onClick={() => this.setState({ showTools: !showTools })}
-						>
-							<Dropdown.Menu className="left">
-								<Dropdown.Item
-									icon="pencil"
-									content={texts.updateIdentity}
-									onClick={onEdit}
-								/>
-								<Dropdown.Item
-									icon="copy"
-									content={texts.copyAddress}
-									onClick={onCopy}
-								/>
-								{id && [
-									<Dropdown.Item
-										key="0"
-										icon="gem"
-										content={texts.requestFunds}
-										onClick={onFaucetRequest}
-									/>
-								]}
-							</Dropdown.Menu>
-						</Dropdown>
+	if (!isMobile || !isRegistered) return topBar
 
-					</Menu.Menu>
-				</Menu>
-			</div>
-		)
-	}
+	return (
+		<React.Fragment>
+			{topBar}
+			<Menu
+				direction='bottom'
+				fixed='bottom'
+				inverted
+				vertical={false}
+				widths={5}
+			>
+				{buttons}
+			</Menu>
+		</React.Fragment>
+	)
+}
+
+export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
+	const [timerInProgress, setTimerActive] = useState(timeKeeping.formData().inprogress)
+	const [unreadMsgCount, setUnreadMsgCount] = useState(unreadMsgCountBond._value)
+	const [unreadNotifCount, setUnreadNotifCount] = useState(unreadNotifCountBond._value)
+	const [blink, setBlink] = useState(false)
+
+	useEffect(() => {
+		const tieIdTimer = timeKeeping.formDataBond.tie(() => {
+			const active = timeKeeping.formData().inprogress
+			if (active !== timerInProgress) setTimerActive(active)
+		})
+		const tieIdUnreadMsg = unreadMsgCountBond.tie(unread => setUnreadMsgCount(unread))
+		const tieIdUnreadNotif = unreadNotifCountBond.tie(unread => setUnreadNotifCount(unread))
+		const tieIdNew = newNotificationBond.tie(() => {
+			setBlink(true)
+			setTimeout(() => setBlink(false), 5000)
+		})
+
+		return () => {
+			timeKeeping.formDataBond.untie(tieIdTimer)
+			unreadMsgCountBond.untie(tieIdUnreadMsg)
+			unreadNotifCountBond.untie(tieIdUnreadNotif)
+			newNotificationBond.untie(tieIdNew)
+		}
+	}, [])
+	return (
+		<React.Fragment>
+			{isMobile && (
+				<Menu.Item
+					icon={{ name: 'sidebar', size: 'big', className: 'no-margin' }}
+					// on mobile when sidebar is visible toggle is not neccessary on-document-click it is already triggered
+					onClick={toggleSidebarState}
+				/>
+			)}
+			<Menu.Item
+				icon={{
+					className: 'no-margin',
+					loading: timerInProgress,
+					name: 'clock outline',
+					size: 'big'
+				}}
+				onClick={() => showForm(TimeKeepingForm, {})}
+			/>
+
+			<Menu.Item {...{
+				className: blink ? 'blink' : '',
+				onClick: () => setBlink(false) | notifVisibleBond.changed(!notifVisibleBond._value),
+				style: { background: unreadNotifCount > 0 ? 'red' : '' }
+			}}>
+				<Icon {...{
+					className: 'no-margin',
+					color: !unreadNotifCount ? 'grey' : undefined,
+					name: 'bell',
+					size: 'big',
+				}} />
+				{unreadNotifCount > 0 && (
+					<div style={{
+						color: 'red',
+						fontWeight: 'bold',
+						left: 0,
+						position: 'absolute',
+						textAlign: 'center',
+						top: 22,
+						width: '100%',
+					}}>
+						{unreadNotifCount}
+					</div>
+				)}
+			</Menu.Item>
+
+			<Menu.Item onClick={() => {
+				chatVisibleBond.changed(!chatVisibleBond._value)
+				notifVisibleBond.changed(false)
+			}}>
+				<Icon {...{
+					className: 'no-margin',
+					color: !isLoggedIn ? 'red' : (unreadMsgCount > 0 ? 'orange' : undefined),
+					name: 'chat',
+					size: 'big'
+				}} />
+				{unreadMsgCount > 0 && (
+					<div style={{
+						color: 'white',
+						fontWeight: 'bold',
+						left: 0,
+						position: 'absolute',
+						top: isMobile ? 18 : 22,
+						textAlign: 'center',
+						width: '100%',
+					}}>
+						{unreadMsgCount}
+					</div>
+				)}
+			</Menu.Item>
+		</React.Fragment>
+	)
 }
