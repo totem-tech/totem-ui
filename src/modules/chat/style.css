@@ -123,8 +123,12 @@
     border-radius: 10px;
     box-shadow: none;
     margin: 2px 10px;
+    max-width: 80%;
     padding: 7px 15px;
     width: auto;
+}
+.chat-container .messages .message-wrap .message .content {
+    text-align: left;
 }
 .chat-container .messages .message-wrap .message .icon {
     font-size: 18px;
