@@ -85,8 +85,7 @@ export default function NewInboxForm(props) {
         const { onSubmit } = props
         const receiverIds = values[names.receiverIds].map(x => x.split(',')).flat()
         const name = values[names.name]
-        const inboxKey = getInboxKey(receiverIds)
-        newInbox(receiverIds, receiverIds.length > 1 ? name : null, true)
+        const inboxKey = newInbox(receiverIds, receiverIds.length > 1 ? name : null, true)
         setSuccess(true)
         isFn(onSubmit) && onSubmit(true, { inboxKey, ...values })
     }

@@ -132,7 +132,7 @@ export const newInbox = (receiverIds = [], name, reload = false) => {
     reload = reload || settings.hide
     !chatHistory.get(inboxKey) && chatHistory.set(inboxKey, [])
     inboxSettings(inboxKey, settings, reload)
-    return inboxBonds[inboxKey]
+    return inboxKey
 }
 
 export const removeInbox = inboxKey => {

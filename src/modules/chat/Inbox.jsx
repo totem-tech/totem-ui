@@ -15,13 +15,14 @@ import {
     removeInboxMessages,
     removeInbox,
     getTrollboxUserIds,
+    newInbox,
 } from './chat'
 import client, { loginBond, getUser } from '../../services/chatClient'
 import { translated } from '../../services/language'
 import { confirm } from '../../services/modal'
-import { getLayout } from '../../services/window'
 import Message from '../../components/Message'
 import { getByUserId } from '../../services/partner'
+import { getLayout } from '../../services/window'
 
 const [_, textsCap] = translated({
     archiveConversation: 'archive conversation',
@@ -33,13 +34,15 @@ const [_, textsCap] = translated({
     loginRequired: 'login/registration required',
     members: 'members',
     messageError: 'error',
+    privateChat: 'private chat',
     remove: 'remove',
     removeMessages: 'remove messages',
     removeConversation: 'remove conversation',
     shrink: 'shrink',
     toolsHide: 'hide tools',
     toolsShow: 'show tools',
-    trollbox: 'Totem Trollbox'
+    trollbox: 'Totem Trollbox',
+    you: 'you',
 }, true)
 const data = {}
 const EVERYONE = 'everyone'
@@ -61,6 +64,7 @@ export default function Inbox(props) {
     const [showMembers, setShowMembers] = useState(false)
     const isTrollbox = receiverIds.includes(EVERYONE)
     const isGroup = receiverIds.length > 1 || isTrollbox
+    const { id: userId } = getUser() || {}
     const header = (
         <InboxHeader {...{
             inboxKey,
@@ -93,19 +97,39 @@ export default function Inbox(props) {
         <div className='inbox'>
             {header}
             <div>
-                {(!isTrollbox ? receiverIds : getTrollboxUserIds()).sort().map(id => (
-                    <Message {...{
-                        className: 'member-list-item',
-                        content: <UserID userId={id} />,
-                        header: (getByUserId(id) || {}).name,
-                        icon: 'user',
-                        key: id,
-                        size: 'mini',
-                        style: {
-                            // margin: 0
-                        },
-                    }} />
-                ))}
+                {(!isTrollbox ? receiverIds : getTrollboxUserIds())
+                    .sort().map(id => {
+                        const isSelf = userId === id
+                        return (
+                            <Message {...{
+                                className: 'member-list-item',
+                                content: (
+                                    <div>
+                                        <UserID userId={id} onClick={isSelf ? null : undefined} />
+                                        {!isSelf && (
+                                            <Button {...{
+                                                circular: true,
+                                                className: 'button-action',
+                                                disabled: isSelf,
+                                                icon: 'chat',
+                                                onClick: () => openInboxBond.changed(newInbox([id])),
+                                                size: 'mini',
+                                                style: { width: 'auto' },
+                                                title: textsCap.privateChat,
+                                            }} />
+                                        )}
+                                    </div>
+                                ),
+                                header: isSelf ? textsCap.you : (getByUserId(id) || {}).name,
+                                icon: {
+                                    className: 'user-icon',
+                                    name: 'user'
+                                },
+                                key: id,
+                                size: 'mini',
+                            }} />
+                        )
+                    })}
             </div>
         </div>
     )
@@ -149,6 +173,7 @@ const InboxHeader = ({
     const [showTools, setShowTools] = useState(false)
     const isMobile = getLayout() === 'mobile'
     const toolIconSize = isMobile ? undefined : 'mini'
+    const { id: userId } = getUser() || {}
     const toggleExpanded = () => {
         document.getElementById('app').classList[expanded ? 'remove' : 'add']('chat-expanded')
         setExpanded(!expanded)
@@ -302,7 +327,7 @@ const InboxHeader = ({
                 </div>
             </h1>
             <h4 className='subheader'>
-                {textsCap.loggedInAs}: @{(getUser() || {}).id}
+                {textsCap.loggedInAs}: @{userId}
             </h4>
         </div>
     )
