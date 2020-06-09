@@ -79,12 +79,16 @@ export const getTrollboxUserIds = () => {
     return arrUnique(messages.map(x => x.senderId))
 }
 
-export const getUnreadCount = () => Object.keys(inboxBonds)
-    .filter(k => !visibleBond._value || k !== openInboxBond._value)
-    .reduce((count, key) => {
+export const getUnreadCount = () => {
+
+    const keys = Object.keys(inboxBonds)
+        .filter(k => !visibleBond._value || k !== openInboxBond._value)
+    console.log({ keys })
+    return keys.reduce((count, key) => {
         const { unread } = inboxSettings(key)
         return count + (unread || 0)
     }, 0)
+}
 
 // get/set hidden inbox keys list
 export const hiddenInboxKeys = () => {
@@ -193,7 +197,7 @@ const saveMessage = msg => {
 
     chatHistory.set(inboxKey, messages.slice(-limit))
     // new mesage received
-    if (senderId !== userId && openInboxBond._value !== inboxKey) {
+    if (senderId !== userId && !visibleBond._value || openInboxBond._value !== inboxKey) {
         newSettings.unread = (settings.unread || 0) + 1
     }
     if (timestamp) rw({ lastMessageTS: timestamp })

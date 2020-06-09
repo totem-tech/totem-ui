@@ -48,11 +48,11 @@
     left: 0;
     position: absolute;
     text-align: center;
-    top: 11px;
+    top: 15px;
     width: 60px;
 }
 .chat-container .inbox-list .unread-count.compact {
-    top: 4px;
+    top: 6px;
     width: 47px;
 }
 .chat-container .inbox-list .message {
