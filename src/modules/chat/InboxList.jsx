@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react'
+import uuid from 'uuid'
 import { Button } from 'semantic-ui-react'
 import { arrSort } from '../../utils/utils'
 import Message from '../../components/Message'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
 import FormInput from '../../components/FormInput'
-import { inboxBonds, newInboxBond, inboxSettings, openInboxBond, getMessages } from './chat'
+import { inboxBonds, newInboxBond, inboxSettings, openInboxBond, getMessages, newMsgBond } from './chat'
 import NewInboxForm from './NewInboxForm'
 
 const EVERYONE = 'everyone'
 const [_, textsCap] = translated({
     compact: 'compact',
     detailed: 'detailed',
+    searchPlaceholder: 'search conversations',
     startChat: 'start chat',
     trollbox: 'Totem Trollbox',
 }, true)
@@ -19,6 +21,7 @@ const [_, textsCap] = translated({
 export default function InboxList(props) {
     const { inverted, style } = props
     const [inboxKeys, setInboxKeys] = useState(Object.keys(inboxBonds))
+    const [key, setKey] = useState(uuid.v1())
     const [compact, setCompact] = useState(false)
     const [kw, setKeywords] = useState('')
     const iconSize = compact ? 18 : 28
@@ -36,7 +39,7 @@ export default function InboxList(props) {
         .filter(k => k.includes(keywords) || (names[inboxKeys.indexOf(k)] || '').toLowerCase().includes(keywords))
     )
     // sort by last message timestamp
-    filteredKeys = filteredKeys.map(key => ({ key, ts: (msgs[inboxKeys.indexOf(key)][0] || {}).timestamp }))
+    filteredKeys = filteredKeys.map(key => ({ key, ts: (msgs[inboxKeys.indexOf(key)][0] || {}).timestamp || '' }))
     filteredKeys = arrSort(filteredKeys, 'ts', true, false).map(x => x.key)
 
     // select the first item if none already selected
@@ -45,14 +48,17 @@ export default function InboxList(props) {
     useEffect(() => {
         let isMounted = true
         const tieId = newInboxBond.tie(() => isMounted && setInboxKeys(Object.keys(inboxBonds)))
+        // update list every time new message is received/sent
+        const tieIdMsg = newMsgBond.tie(key => setTimeout(() => setKey(key)))
         return () => {
             isMounted = false
             newInboxBond.untie(tieId)
+            newMsgBond.untie(tieIdMsg)
         }
     }, [])
 
     return (
-        <div className='inbox-list' style={style}>
+        <div {...{ className: 'inbox-list', key, style }}>
             <div style={{ marginBottom: -13 }}>
                 <Button.Group {...{
                     buttons: [
@@ -64,7 +70,7 @@ export default function InboxList(props) {
                             title: compact ? textsCap.detailed : textsCap.compact
                         },
                         {
-                            icon: 'search plus',
+                            icon: 'plus',
                             key: 1,
                             onClick: () => showForm(NewInboxForm, {
                                 onSubmit: (ok, { inboxKey }) => ok && openInboxBond.changed(inboxKey)
@@ -80,7 +86,7 @@ export default function InboxList(props) {
                         icon: 'search',
                         name: 'keywords',
                         onChange: (_, { value }) => setKeywords(value),
-                        placeholder: 'Search',
+                        placeholder: textsCap.searchPlaceholder,
                         style: { width: '100%' },
                         type: 'text',
                         value: kw,
@@ -103,7 +109,7 @@ export default function InboxList(props) {
                             <div>
                                 {unread > 0 && (
                                     <div className={`unread-count ${compact ? 'compact' : ''}`}>
-                                        {unread}
+                                        ( {unread} )
                                     </div>
                                 )}
                                 {lastMsg && `${lastMsg.senderId}: ${lastMsg.message}`}
@@ -111,7 +117,6 @@ export default function InboxList(props) {
                         ),
                         header: name,
                         icon: {
-                            color: !isActive && allSettings[index].unread ? 'orange' : undefined,
                             name: icon,
                             style: {
                                 fontSize: iconSize,
@@ -121,7 +126,7 @@ export default function InboxList(props) {
                         color: inverted ? 'black' : undefined,
                         key: JSON.stringify({ key, ...msgs[index][0] }),
                         onClick: () => openInboxBond.changed(key),
-                        positive: isActive,
+                        status: isActive ? 'success' : unread ? 'info' : '',
                     }} />
                 )
             })}

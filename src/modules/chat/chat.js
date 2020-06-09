@@ -16,6 +16,7 @@ const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 export const inboxBonds = {}
 // notifies when new conversation is created, hidden or unhidden
 export const newInboxBond = new Bond()
+export const newMsgBond = new Bond()
 export const openInboxBond = new Bond().defaultTo(rw().openInboxKey)
 export const visibleBond = new Bond()
 export const unreadCountBond = new Bond()
@@ -79,16 +80,12 @@ export const getTrollboxUserIds = () => {
     return arrUnique(messages.map(x => x.senderId))
 }
 
-export const getUnreadCount = () => {
-
-    const keys = Object.keys(inboxBonds)
-        .filter(k => !visibleBond._value || k !== openInboxBond._value)
-    console.log({ keys })
-    return keys.reduce((count, key) => {
+export const getUnreadCount = () => Object.keys(inboxBonds)
+    .filter(k => !visibleBond._value || k !== openInboxBond._value)
+    .reduce((count, key) => {
         const { unread } = inboxSettings(key)
         return count + (unread || 0)
     }, 0)
-}
 
 // get/set hidden inbox keys list
 export const hiddenInboxKeys = () => {
@@ -142,6 +139,7 @@ export const removeInbox = inboxKey => {
     chatHistory.delete(inboxKey)
     delete inboxBonds[inboxKey]
     newInboxBond.changed(uuid.v1)
+    openInboxBond.changed(null)
 }
 
 export const removeInboxMessages = inboxKey => chatHistory.set(inboxKey, []) | inboxBonds[inboxKey].changed(uuid.v1())
@@ -243,9 +241,7 @@ export const send = (receiverIds, message, encrypted = false) => {
             receiverIds,
             message,
             false,
-            (err, timestamp, id) => {
-                saveMsg(id, err ? 'error' : 'success', timestamp, err)
-            },
+            (err, timestamp, id) => saveMsg(id, err ? 'error' : 'success', timestamp, err),
         ],
         func: 'message',
         silent: true,
@@ -279,6 +275,7 @@ client.onMessage((m, s, r, e, t, id, action) => {
         status: 'success',
         timestamp: t,
     })
+    newMsgBond.changed(id)
 });
 
 // on page load remove any message with status 'loading' (unsent messages), as queue service will attempt to resend them

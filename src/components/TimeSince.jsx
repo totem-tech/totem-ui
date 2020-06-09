@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
+import { format } from '../utils/time'
 import { translated } from '../services/language'
 
 const [texts] = translated({
@@ -19,7 +20,7 @@ const [texts] = translated({
 })
 
 const TimeSince = props => {
-    const { time, autoUpdate = true } = props
+    const { autoUpdate = true, time } = props
     let [txt, delayMS] = formatSince(time)
     const [formatted, setFormatted] = useState(txt)
 
@@ -35,11 +36,25 @@ const TimeSince = props => {
         return () => mounted = false
     }, [])
 
-    return !time ? '' : <div {...props}>{formatted}</div >
+    return !time ? '' : <div {...props} title={props.title || format(time)}>{formatted}</div >
+}
+TimeSince.propTypes = {
+    autoUpdate: PropTypes.bool,
+    time: PropTypes.string,
 }
 export default TimeSince
 
-const formatSince = time => {
+// formatSince timestamp into the following format: XX UNIT ago
+//
+// Params:
+// @time    string: timestamp (YYYY:MM:ddThh:mm:ssZ...)
+//
+// Returns array:   [
+//                      0: formatted string,
+//                      1: update frequency: milliseconds representing 1 unit of the formatted string
+//                          Eg: if formatted string is in seconds update frequency will be 1 second.
+//                  ]
+export const formatSince = time => {
     const fmt = (num, unit) => {
         const unitTxt = texts[`${unit}${num < 2 ? '' : 's'}`]
         return `${parseInt(num)} ${unitTxt} ${texts.ago}`

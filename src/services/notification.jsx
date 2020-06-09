@@ -31,6 +31,7 @@ export const unreadCountBond = new Bond().defaultTo(getUnreadCount())
 const [words, wordsCap] = translated({
     activity: 'activity',
     ignore: 'ignore',
+    share: 'share',
     reason: 'reason',
     timekeeping: 'timekeeping'
 }, true)
@@ -72,7 +73,9 @@ client.onNotify((id, senderId, type, childType, message, data, tsCreated, confir
 })
 
 function getUnreadCount() {
-    return Array.from(notifications.getAll())
+    const all = notifications.getAll()
+    if (!all.size) return -1
+    return Array.from(all)
         .map(([_, { read }]) => !read)
         .filter(Boolean)
         .length
@@ -133,7 +136,7 @@ export const NotificationItem = ([id, notification]) => {
         key: id,
         onClick: () => toggleRead(id),
         onDismiss: e => e.stopPropagation() | remove(id),
-        status: read ? undefined : 'success',
+        status: read ? undefined : 'info',
         style: {
             margin: 0,
             textAlign: 'left',
@@ -156,7 +159,8 @@ export const NotificationItem = ([id, notification]) => {
                         )}
                     </div>
                     <ButtonAcceptOrReject
-                        acceptText='Share'
+                        acceptColor='blue'
+                        acceptText={wordsCap.share}
                         onClick={accepted => !accepted ? remove(id) : showForm(IdentityShareForm, {
                             inputsDisabled: ['userIds'],
                             onSubmit: success => success && remove(id),
@@ -176,6 +180,7 @@ export const NotificationItem = ([id, notification]) => {
                 <div>
                     <div><b>{texts.identityShareMsg} {userIdBtn}</b></div>
                     <ButtonAcceptOrReject
+                        acceptColor='blue'
                         acceptText={texts.addPartner}
                         onClick={accepted => !accepted ? remove(id) : showForm(
                             PartnerForm,
@@ -202,6 +207,7 @@ export const NotificationItem = ([id, notification]) => {
                     {texts.yourIdentity}: <b>{identity.name}</b><br />
                     {wordsCap.activity}: <b>{data.projectName}</b><br />
                     <ButtonAcceptOrReject
+                        acceptColor='blue'
                         onClick={accepted => confirm({
                             onConfirm: () => handleTKInvitation(
                                 data.projectHash,
