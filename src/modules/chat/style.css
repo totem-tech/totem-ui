@@ -38,9 +38,20 @@
     height: 40%;
     overflow-x: auto;
 }
-.chat-container .inbox-list div.search {
-    float: right;
-    width: calc( 100% - 81px );
+.chat-container .inbox-list div.tools {
+    display: table;
+    width: 100%;
+}
+.chat-container .inbox-list div.search,
+.chat-container .inbox-list div.buttons {
+    display: table-cell;
+    vertical-align: top;
+}
+.chat-container .inbox-list div.buttons .button {
+    padding-top: 13px;
+}
+.chat-container .inbox-list div.search .input {
+    width: 100%;
 }
 .chat-container .inbox-list .unread-count {
     font-weight: bold;

@@ -11,8 +11,10 @@ import NewInboxForm from './NewInboxForm'
 
 const EVERYONE = 'everyone'
 const [_, textsCap] = translated({
+    allConvos: 'all conversations',
     compact: 'compact',
     detailed: 'detailed',
+    noResultMsg: 'Your search yielded no results',
     searchPlaceholder: 'search conversations',
     startChat: 'start chat',
     trollbox: 'Totem Trollbox',
@@ -20,6 +22,7 @@ const [_, textsCap] = translated({
 
 export default function InboxList(props) {
     const { inverted, style } = props
+    const [showAll, setShowAll] = useState(false)
     const [inboxKeys, setInboxKeys] = useState(Object.keys(inboxBonds))
     const [key, setKey] = useState(uuid.v1())
     const [compact, setCompact] = useState(false)
@@ -59,77 +62,92 @@ export default function InboxList(props) {
 
     return (
         <div {...{ className: 'inbox-list', key, style }}>
-            <div style={{ marginBottom: -13 }}>
+            <div className='tools'>
                 <Button.Group {...{
+                    fluid: true,
+                    className: 'buttons',
+                    widths: 3,
                     buttons: [
                         {
                             icon: compact ? 'address card' : 'bars',
                             key: 0,
                             onClick: () => setCompact(!compact),
-                            style: { padding: 11.75 },
                             title: compact ? textsCap.detailed : textsCap.compact
                         },
                         {
-                            icon: 'plus',
+                            active: showAll,
+                            icon: 'history',
                             key: 1,
+                            onClick: () => setShowAll(!showAll),
+                            title: textsCap.allConvos,
+                        },
+                        {
+                            icon: 'plus',
+                            key: 2,
                             onClick: () => showForm(NewInboxForm, {
                                 onSubmit: (ok, { inboxKey }) => ok && openInboxBond.changed(inboxKey)
                             }),
-                            style: { padding: 11.75 },
                             title: textsCap.startChat,
                         }
                     ],
-                    style: { display: 'inline-block' }
                 }} />
                 <div className='search' >
                     <FormInput {...{
-                        icon: 'search',
+                        action: !kw ? undefined : {
+                            basic: true,
+                            icon: 'close',
+                            onClick: () => setKeywords(''),
+                        },
+                        icon: kw ? undefined : 'search',
                         name: 'keywords',
                         onChange: (_, { value }) => setKeywords(value),
                         placeholder: textsCap.searchPlaceholder,
-                        style: { width: '100%' },
                         type: 'text',
                         value: kw,
                     }} />
                 </div>
             </div>
-            {filteredKeys.map(key => {
-                const index = inboxKeys.indexOf(key)
-                const isTrollbox = key === EVERYONE
-                const isGroup = key.split(',').length > 1
-                const icon = isTrollbox ? 'globe' : (isGroup ? 'group' : 'chat')
-                const name = names[index] || key
-                const isActive = openInboxBond._value === key
-                const lastMsg = !compact && (msgs[index] || []).filter(m => !!m.message)[0]
-                const { unread } = allSettings[index]
+            <div>
+                {!showAll && filteredKeys.map(key => {
+                    const index = inboxKeys.indexOf(key)
+                    const isTrollbox = key === EVERYONE
+                    const isGroup = key.split(',').length > 1
+                    const icon = isTrollbox ? 'globe' : (isGroup ? 'group' : 'chat')
+                    const name = names[index] || key
+                    const isActive = openInboxBond._value === key
+                    const lastMsg = !compact && (msgs[index] || []).filter(m => !!m.message)[0]
+                    const { unread } = allSettings[index]
 
-                return (
-                    <Message {...{
-                        content: (
-                            <div>
-                                {unread > 0 && (
-                                    <div className={`unread-count ${compact ? 'compact' : ''}`}>
-                                        ( {unread} )
-                                    </div>
-                                )}
-                                {lastMsg && `${lastMsg.senderId}: ${lastMsg.message}`}
-                            </div>
-                        ),
-                        header: name,
-                        icon: {
-                            name: icon,
-                            style: {
-                                fontSize: iconSize,
-                                width: iconSize,
-                            }
-                        },
-                        color: inverted ? 'black' : undefined,
-                        key: JSON.stringify({ key, ...msgs[index][0] }),
-                        onClick: () => openInboxBond.changed(key),
-                        status: isActive ? 'success' : unread ? 'info' : '',
-                    }} />
-                )
-            })}
-        </div>
+                    return (
+                        <Message {...{
+                            content: (
+                                <div>
+                                    {unread > 0 && (
+                                        <div className={`unread-count ${compact ? 'compact' : ''}`}>
+                                            ( {unread} )
+                                        </div>
+                                    )}
+                                    {lastMsg && `${lastMsg.senderId}: ${lastMsg.message}`}
+                                </div>
+                            ),
+                            header: name,
+                            icon: {
+                                name: icon,
+                                style: {
+                                    fontSize: iconSize,
+                                    width: iconSize,
+                                }
+                            },
+                            color: inverted ? 'black' : undefined,
+                            key: JSON.stringify({ key, ...msgs[index][0] }),
+                            onClick: () => openInboxBond.changed(key),
+                            status: isActive ? 'success' : unread ? 'info' : '',
+                        }} />
+                    )
+                })}
+
+                <Message className='empty-message' content={textsCap.noResultMsg} />
+            </div>
+        </div >
     )
 }
