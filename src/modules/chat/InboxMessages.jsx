@@ -7,7 +7,7 @@ import { translated } from '../../services/language'
 import TimeSince from '../../components/TimeSince'
 
 const [texts, textsCap] = translated({
-    changedGroupName: 'changed group name',
+    changedGroupName: 'changed group name to',
     you: 'you',
 }, true)
 const userColor = {}
@@ -53,7 +53,7 @@ export default function InboxMessages(props) {
 }
 
 const InboxMessage = props => {
-    const { action, errorMessage, message, senderId, status, timestamp, isPrivate, userId } = props
+    const { action, errorMessage, id, message, senderId, status, timestamp, isPrivate, userId } = props
     const isSender = senderId === userId
 
     if (isObj(action) && !!action.type) {
@@ -61,10 +61,10 @@ const InboxMessage = props => {
         switch (type) {
             case 'message-group-name':
                 return (
-                    <div className='message-group-name'>
+                    <div {...{ className: 'message-group-name', id }}>
                         <i>
                             {isSender ? textsCap.you + ' ' : <UserID {...{ userId: senderId }} />}
-                            {texts.changedGroupName}: {data[0]}
+                            {texts.changedGroupName} <b>{data[0]}</b>
                         </i>
                     </div>
                 )
@@ -85,6 +85,7 @@ const InboxMessage = props => {
     return (
         <div {...{
             className: 'message-wrap' + (isSender ? ' user' : ''),
+            id,
             title: errorMessage,
         }}>
             <Message {...{

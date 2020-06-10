@@ -75,7 +75,7 @@ export default function InboxList(props) {
                             title: compact ? textsCap.detailed : textsCap.compact
                         },
                         {
-                            active: showAll,
+                            color: showAll ? 'grey' : undefined,
                             icon: 'history',
                             key: 1,
                             onClick: () => setShowAll(!showAll),
@@ -91,7 +91,7 @@ export default function InboxList(props) {
                         }
                     ],
                 }} />
-                <div className='search' >
+                <div className='search'>
                     <FormInput {...{
                         action: !kw ? undefined : {
                             basic: true,

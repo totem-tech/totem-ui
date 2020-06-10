@@ -72,7 +72,8 @@ export default function NewInboxForm(props) {
             bond: new Bond(),
             hidden: true,
             label: textsCap.nameLabel,
-            maxLength: 16,
+            minLength: 3,
+            maxLength: 18,
             name: names.name,
             placeholder: textsCap.namePlaceholder,
             required: true,
@@ -125,7 +126,7 @@ export const editName = (inboxKey, onSubmit) => {
             header: textsCap.updateName,
             inputs: [{
                 label: textsCap.nameLabel,
-                maxLength: 16,
+                maxLength: 18,
                 minLength: 3,
                 name: 'name',
                 placeholder: textsCap.namePlaceholder,

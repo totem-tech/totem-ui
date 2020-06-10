@@ -122,6 +122,7 @@
 /* message list */
 .chat-container .messages {
     height: calc(100% - 104px);
+    padding: 10px 0;
     overflow-x: auto;
 }
 .chat-container .messages .message-group-name {
