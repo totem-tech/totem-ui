@@ -178,7 +178,7 @@ const InboxHeader = ({
             <h1 className='header'>
                 <span style={{ opacity: showTools ? 0.1 : 1 }}>
                     {inboxKey === EVERYONE ? textsCap.trollbox : (
-                        title || inboxSettings(inboxKey).name || textEllipsis(`@${inboxKey}`, 16, 3, false)
+                        title || inboxSettings(inboxKey).name || textEllipsis(`Chatting with @${inboxKey}`, 16, 3, false)
                     )}
                 </span>
 
@@ -368,7 +368,7 @@ const MessageInput = ({ onRef, onSubmit }) => {
     return (
         <form onSubmit={handleSubmit}>
             <FormInput {...{
-                action: { icon: 'chat', onClick: handleSubmit },
+                action: { icon: 'paper plane outline', onClick: handleSubmit },
                 autoComplete: 'off',
                 autoFocus: true,
                 elementRef: onRef,

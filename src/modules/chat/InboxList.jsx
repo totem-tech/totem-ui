@@ -34,7 +34,8 @@ export default function InboxList(props) {
     const [key, setKey] = useState(uuid.v1())
     const [compact, setCompact] = useState(false)
     const [query, setQuery] = useState('')
-    const iconSize = compact ? 18 : 28
+    const iconSize = compact ? 14 : 18
+    const iconWidth = compact ? 16 : 20
     const names = []
     const msgs = []
     inboxKeys.forEach((key, i) => {
@@ -220,7 +221,7 @@ export default function InboxList(props) {
                                 name: icon,
                                 style: {
                                     fontSize: iconSize,
-                                    width: iconSize,
+                                    width: iconWidth,
                                 }
                             },
                             color: inverted ? 'black' : undefined,

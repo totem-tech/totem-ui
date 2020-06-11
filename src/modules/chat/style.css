@@ -2,7 +2,9 @@
     color: black;
     background: white;
     bottom: 0px;
-    box-Shadow: 3px 8px 8px 8px grey;
+    box-shadow: 3px 8px 8px 8px #80808059;
+    font-size: 12px;
+    font-weight: 100;
     position: fixed;
     right: 0px;
     top: 61px;
