@@ -302,10 +302,8 @@ const MemberList = ({ header, isTrollbox, receiverIds }) => {
         const checkOnline = () => {
             if (!isMounted) return
             if (!loginBond._value) return setOnline(false)
-            client.isUserOnline(receiverIds, (err, online) => {
-                console.log(online)
-                !err && setOnline(online)
-            })
+            const userIds = !isTrollbox ? receiverIds : getTrollboxUserIds()
+            client.isUserOnline(userIds, (err, online) => !err && setOnline(online))
         }
         const intervalId = setInterval(checkOnline, frequency)
         checkOnline()

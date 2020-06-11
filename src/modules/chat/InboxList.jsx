@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import uuid from 'uuid'
 import { Button } from 'semantic-ui-react'
-import { arrSort, deferred } from '../../utils/utils'
+import { arrSort, deferred, textEllipsis } from '../../utils/utils'
 import Message from '../../components/Message'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
@@ -213,7 +213,7 @@ export default function InboxList(props) {
                             ),
                             header: (
                                 <span>
-                                    {name} {flag && <b><i>( {flag} )</i></b>}
+                                    {textEllipsis(name, 30, 3, false)} {flag && <b><i>( {flag} )</i></b>}
                                 </span>
                             ),
                             icon: {
