@@ -361,9 +361,9 @@ const MessageInput = ({ onRef, onSubmit }) => {
     const [value, setValue] = useState('')
     const handleSubmit = e => {
         e.preventDefault()
-        if (value.trim().length === 0) return
+        if (!value.trim()) return
         onSubmit(value)
-        // setValue('')
+        setValue('')
     }
     return (
         <form onSubmit={handleSubmit}>

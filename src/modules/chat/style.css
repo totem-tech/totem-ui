@@ -40,15 +40,6 @@
     height: 40%;
     overflow-x: auto;
 }
-.chat-container .inbox-list div.tools {
-    display: table;
-    width: 100%;
-}
-.chat-container .inbox-list div.search,
-.chat-container .inbox-list div.buttons {
-    display: table-cell;
-    vertical-align: top;
-}
 .chat-container .inbox-list div.search .input {
     width: 100%;
 }
@@ -127,6 +118,10 @@
     padding: 10px 0;
     position: relative;
     overflow-x: auto;
+}
+.chat-container .messages.amimate-scroll {
+    scroll-behavior: smooth;
+    transition: all 0.5s ease;
 }
 .chat-container .messages .message-group-name {
     text-align: center;
