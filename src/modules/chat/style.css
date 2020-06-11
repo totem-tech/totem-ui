@@ -36,7 +36,7 @@
 }
 
 /* inbox/contact list */
-.chat-container .inbox-list{
+.chat-container .inbox-list {
     height: 40%;
     overflow-x: auto;
 }
@@ -46,25 +46,26 @@
 .chat-container .inbox-list div.search .input input {
     padding: 10px;
 }
-.chat-container .inbox-list .unread-count {
-    font-weight: bold;
-    right: 0;
+.inbox-list .list-item .actions {
     position: absolute;
-    text-align: center;
-    top: 0;
-    width: 45px;
-    height: 100%;
-    padding-top: 15px;
+    right: 5px;
+    top: 5px;
 }
-.chat-container .inbox-list .unread-count.compact {
-    padding-top: 7px;
+.inbox-list.compact .list-item .actions {
+    top: 3px;
 }
-.chat-container .inbox-list .message {
+#app > div.desktop .inbox-list .list-item:not(:hover) .actions {
+    display: none;
+}
+.inbox-list .list-item .actions .button {
+    width: auto !important;
+}
+.chat-container .inbox-list .list-item {
     border-radius: 0;
     cursor: pointer;
     margin: 0;
     overflow: hidden;
-    padding: 8px 10px;
+    padding: 10px;
     white-space: nowrap;
 }
 
@@ -74,6 +75,7 @@
 }
 .chat-container .inbox .header-container {
     background: #1b1c1d;
+    border-radius: 5px;
     color: white;
     padding: 5px;
     position: relative;
@@ -82,20 +84,24 @@
 .chat-container.inverted .inbox .header-container {
     background: grey;
 }
-.chat-container .inbox .header-container .online-indicator {
-    position: absolute;
-    top: 15px;
- }
 .chat-container .inbox .header-container .header {
     margin: 0;
     overflow: hidden;
     position: relative;
 }
-.chat-container .inbox .header-container .header .tools{
+.chat-container .inbox .header .tools {
     display: inline;
     position: absolute;
-    right: 5px;
     top: -6px;
+}
+.chat-container .inbox .header .tools.right {
+    right: 0;
+}
+.chat-container .inbox .header .tools.left {
+    left: 0;
+}
+#app:not(.chat-expanded) .chat-container .inbox .header .tools.left {
+    display: none;
 }
 .chat-container .inbox .header-container .subheader {
     margin: 0;
@@ -114,7 +120,7 @@
 }
 /* message list */
 .chat-container .messages {
-    height: calc(100% - 104px);
+    height: calc(100% - 99px);
     padding: 10px 0;
     position: relative;
     overflow-x: auto;

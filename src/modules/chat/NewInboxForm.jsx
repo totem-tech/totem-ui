@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import { isFn, arrSort, textEllipsis } from '../../utils/utils'
-import { getInboxKey, hiddenInboxKeys, inboxBonds, inboxSettings, newInbox } from './chat'
+import { getInboxKey, hiddenInboxKeys, inboxBonds, inboxSettings, createInbox } from './chat'
 import { translated } from '../../services/language'
 import { showForm, closeModal } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
@@ -86,7 +86,7 @@ export default function NewInboxForm(props) {
         const { onSubmit } = props
         const receiverIds = values[names.receiverIds].map(x => x.split(',')).flat()
         const name = receiverIds.length > 1 ? values[names.name] : null
-        const inboxKey = newInbox(receiverIds, name, true)
+        const inboxKey = createInbox(receiverIds, name, true)
         setSuccess(true)
         isFn(onSubmit) && onSubmit(true, { inboxKey, ...values })
     }
