@@ -72,7 +72,8 @@ export default function NewInboxForm(props) {
             bond: new Bond(),
             hidden: true,
             label: textsCap.nameLabel,
-            maxLength: 16,
+            minLength: 3,
+            maxLength: 18,
             name: names.name,
             placeholder: textsCap.namePlaceholder,
             required: true,
@@ -84,16 +85,14 @@ export default function NewInboxForm(props) {
     const handleSubmit = (_, values) => {
         const { onSubmit } = props
         const receiverIds = values[names.receiverIds].map(x => x.split(',')).flat()
-        const name = values[names.name]
-        const inboxKey = getInboxKey(receiverIds)
-        newInbox(receiverIds, receiverIds.length > 1 ? name : null, true)
+        const name = receiverIds.length > 1 ? values[names.name] : null
+        const inboxKey = newInbox(receiverIds, name, true)
         setSuccess(true)
         isFn(onSubmit) && onSubmit(true, { inboxKey, ...values })
     }
 
-    useEffect(() => {
-        const { values } = props
-        if (values) fillValues(inputs, values)
+    props.values && useEffect(() => {
+        fillValues(inputs, props.values)
         return () => { }
     }, [])
 
@@ -114,7 +113,7 @@ NewInboxForm.defaultProps = {
     submitText: textsCap.open,
 }
 NewInboxForm.propTypes = {
-    values: PropTypes.Object
+    values: PropTypes.object
 }
 
 // edit group inbox name
@@ -126,7 +125,7 @@ export const editName = (inboxKey, onSubmit) => {
             header: textsCap.updateName,
             inputs: [{
                 label: textsCap.nameLabel,
-                maxLength: 16,
+                maxLength: 18,
                 minLength: 3,
                 name: 'name',
                 placeholder: textsCap.namePlaceholder,

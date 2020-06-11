@@ -35,12 +35,12 @@ export default function ChatBar({ inverted = false }) {
 
     return (
         <div className={className}>
-            <ChatContents {...{ inverted, visible }} />
+            <ChatContents {...{ hiding, inverted, visible }} />
         </div>
     )
 }
 
-const ChatContents = ({ inverted, visible }) => {
+const ChatContents = ({ hiding, inverted, visible }) => {
     const [receiverIds, setReceiverIds] = useState((openInboxBond._value || '').split(','))
     const inboxKey = getInboxKey(receiverIds)
 
@@ -61,9 +61,10 @@ const ChatContents = ({ inverted, visible }) => {
             }} />
             {receiverIds.length > 0 && (
                 <Inbox {...{
+                    hiding,
+                    inboxKey,
                     key: inboxKey,
                     receiverIds,
-                    inboxKey,
                 }} />
             )}
         </div>

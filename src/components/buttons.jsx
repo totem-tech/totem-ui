@@ -11,14 +11,14 @@ const [words, wordsCap] = translated({
     reject: 'reject',
 }, true)
 
-export const ButtonAcceptOrReject = ({ onClick, acceptText, rejectText, style }) => (
-    <div title="" style={style || { textAlign: 'center', marginTop: 10 }}>
+export const ButtonAcceptOrReject = ({ onClick, acceptText, rejectText, style, acceptColor, rejectColor }) => (
+    <div title="" style={{ textAlign: 'center', marginTop: 10, ...style }}>
         <Button.Group>
-            <Button positive onClick={(e) => e.stopPropagation() | onClick(true)}>
+            <Button color={acceptColor} onClick={(e) => e.stopPropagation() | onClick(true)}>
                 {acceptText}
             </Button>
             <Button.Or onClick={e => e.stopPropagation()} />
-            <Button negative onClick={(e) => e.stopPropagation() | onClick(false)}>
+            <Button color={rejectColor} onClick={(e) => e.stopPropagation() | onClick(false)}>
                 {rejectText}
             </Button>
         </Button.Group>
@@ -26,11 +26,15 @@ export const ButtonAcceptOrReject = ({ onClick, acceptText, rejectText, style })
 )
 ButtonAcceptOrReject.propTypes = {
     onClick: PropTypes.func.isRequired,
+    acceptColor: PropTypes.string, // colors supported by SemanticUI buttons
     acceptText: PropTypes.string,
+    rejectColor: PropTypes.string, // colors supported by SemanticUI buttons
     rejectText: PropTypes.string
 }
 ButtonAcceptOrReject.defaultProps = {
+    acceptColor: 'green',
     acceptText: wordsCap.accept,
+    rejectColor: 'red',
     rejectText: wordsCap.reject
 }
 

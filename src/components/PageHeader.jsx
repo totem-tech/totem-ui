@@ -271,18 +271,19 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 
 			<Menu.Item {...{
 				className: blink ? 'blink' : '',
+				disabled: unreadNotifCount === -1,
 				onClick: () => setBlink(false) | notifVisibleBond.changed(!notifVisibleBond._value),
-				style: { background: unreadNotifCount > 0 ? 'red' : '' }
+				style: { background: unreadNotifCount > 0 ? '#2185d0' : '' }
 			}}>
 				<Icon {...{
 					className: 'no-margin',
-					color: !unreadNotifCount ? 'grey' : undefined,
+					color: unreadNotifCount === -1 ? 'grey' : undefined,
 					name: 'bell',
 					size: 'big',
 				}} />
 				{unreadNotifCount > 0 && (
 					<div style={{
-						color: 'red',
+						color: '#2185d0',
 						fontWeight: 'bold',
 						left: 0,
 						position: 'absolute',
@@ -301,7 +302,7 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 			}}>
 				<Icon {...{
 					className: 'no-margin',
-					color: !isLoggedIn ? 'red' : (unreadMsgCount > 0 ? 'orange' : undefined),
+					color: !isLoggedIn ? 'red' : (unreadMsgCount > 0 ? 'blue' : undefined),
 					name: 'chat',
 					size: 'big'
 				}} />

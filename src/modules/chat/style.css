@@ -2,7 +2,9 @@
     color: black;
     background: white;
     bottom: 0px;
-    box-Shadow: 3px 8px 8px 8px grey;
+    box-shadow: 3px 8px 8px 8px #80808059;
+    font-size: 12px;
+    font-weight: 100;
     position: fixed;
     right: 0px;
     top: 61px;
@@ -38,22 +40,33 @@
     height: 40%;
     overflow-x: auto;
 }
-.chat-container .inbox-list div.search {
-    float: right;
-    width: calc( 100% - 81px );
+.chat-container .inbox-list div.tools {
+    display: table;
+    width: 100%;
+}
+.chat-container .inbox-list div.search,
+.chat-container .inbox-list div.buttons {
+    display: table-cell;
+    vertical-align: top;
+}
+.chat-container .inbox-list div.buttons .button {
+    padding-top: 13px;
+}
+.chat-container .inbox-list div.search .input {
+    width: 100%;
 }
 .chat-container .inbox-list .unread-count {
-    color: white;
     font-weight: bold;
-    left: 0;
+    right: 0;
     position: absolute;
     text-align: center;
-    top: 11px;
-    width: 60px;
+    top: 0;
+    width: 45px;
+    height: 100%;
+    padding-top: 15px;
 }
 .chat-container .inbox-list .unread-count.compact {
-    top: 4px;
-    width: 47px;
+    padding-top: 7px;
 }
 .chat-container .inbox-list .message {
     border-radius: 0;
@@ -99,13 +112,20 @@
 .chat-container .inbox .member-list-item {
     margin: 0;
 }
-.chat-container .inbox .member-list-item .icon {
+.chat-container .inbox .member-list-item .user-icon {
     font-size: 25px !important;
     width: 25px !important;
+}
+.chat-container .inbox .member-list-item .button-action {
+    position: absolute;
+    top: 10px;
+    right: 5px;
 }
 /* message list */
 .chat-container .messages {
     height: calc(100% - 104px);
+    padding: 10px 0;
+    position: relative;
     overflow-x: auto;
 }
 .chat-container .messages .message-group-name {
@@ -123,8 +143,17 @@
     border-radius: 10px;
     box-shadow: none;
     margin: 2px 10px;
+    max-width: 80%;
     padding: 7px 15px;
     width: auto;
+}
+/* highlights a searched message */
+.chat-container .messages .message-wrap.blink .message {
+    background: yellow !important;
+    color: black !important;
+}
+.chat-container .messages .message-wrap .message .content {
+    text-align: left;
 }
 .chat-container .messages .message-wrap .message .icon {
     font-size: 18px;
