@@ -18,14 +18,12 @@ export const inboxBonds = {}
 export const newInboxBond = new Bond()
 export const newMsgBond = new Bond()
 export const openInboxBond = new Bond().defaultTo(rw().openInboxKey)
-export const visibleBond = new Bond()
-export const unreadCountBond = new Bond()
+openInboxBond.tie(key => rw({ openInboxKey: key })) // remember last open inbox key
 export const pendingMessages = {}
+export const unreadCountBond = new Bond().defaultTo(getUnreadCount())
+export const visibleBond = new Bond().defaultTo(false)
 
-// remember last open inbox key
-openInboxBond.tie(key => rw({ openInboxKey: key }))
-
-const generateInboxBonds = () => {
+const generateInboxBonds = (onload = false) => {
     const allKeys = Array.from(chatHistory.getAll())
         .map(([key]) => key)
     if (!allKeys.includes(EVERYONE)) allKeys.push(EVERYONE)
@@ -39,7 +37,9 @@ const generateInboxBonds = () => {
         if (inboxBonds[inboxKey]) return
         inboxBonds[inboxKey] = new Bond()
     })
+    onload && newInbox([EVERYONE])
 }
+setTimeout(() => generateInboxBonds(true))
 
 // unique user ids from all messages in chat history
 export const getChatUserIds = (includeTrollbox = true) => arrUnique(Object.keys(inboxBonds)
@@ -80,12 +80,14 @@ export const getTrollboxUserIds = () => {
     return arrUnique(messages.map(x => x.senderId))
 }
 
-export const getUnreadCount = () => Object.keys(inboxBonds)
-    .filter(k => !visibleBond._value || k !== openInboxBond._value)
-    .reduce((count, key) => {
-        const { unread } = inboxSettings(key)
-        return count + (unread || 0)
-    }, 0)
+export function getUnreadCount() {
+    return Object.keys(inboxBonds)
+        .filter(k => !visibleBond._value || k !== openInboxBond._value)
+        .reduce((count, key) => {
+            const { unread } = inboxSettings(key)
+            return count + (unread || 0)
+        }, 0)
+}
 
 // get/set hidden inbox keys list
 export const hiddenInboxKeys = () => {
@@ -121,24 +123,29 @@ export const inboxSettings = (inboxKey, value, triggerReload = false) => {
     return settings[inboxKey] || {}
 }
 
+// all inbox settings
+export const inboxesSettings = () => rw().inbox || {}
+
 // create/get inbox key
 export const newInbox = (receiverIds = [], name, reload = false) => {
     const inboxKey = getInboxKey(receiverIds)
     let settings = {
         ...inboxSettings(inboxKey),
-        hide: false,
+        deleted: false, // force undelete
+        hide: false, // force unarchive
     }
-    settings.name = settings.name || name
-    reload = reload || settings.hide
+    settings.name = name || settings.name
     !chatHistory.get(inboxKey) && chatHistory.set(inboxKey, [])
     inboxSettings(inboxKey, settings, reload)
+    openInboxBond.changed(inboxKey)
     return inboxKey
 }
 
 export const removeInbox = inboxKey => {
     chatHistory.delete(inboxKey)
     delete inboxBonds[inboxKey]
-    newInboxBond.changed(uuid.v1)
+    inboxSettings(inboxKey, { deleted: true })
+    newInboxBond.changed(uuid.v1())
     openInboxBond.changed(null)
 }
 
@@ -276,23 +283,16 @@ client.onMessage((m, s, r, e, t, id, action) => {
         timestamp: t,
     })
     newMsgBond.changed(id)
-});
+})
 
-// on page load remove any message with status 'loading' (unsent messages), as queue service will attempt to resend them
-(() => {
-    const allMsgs = chatHistory.getAll()
-    Array.from(allMsgs)
-        .forEach(([key, messages]) => chatHistory.set(
-            key,
-            messages.filter(x => x.status !== 'loading'))
-        )
-
-    generateInboxBonds()
-    unreadCountBond.changed(getUnreadCount())
-})()
 export default {
     inboxBonds,
     newInboxBond,
+    newMsgBond,
+    openInboxBond,
+    pendingMessages,
+    visibleBond,
+    unreadCountBond,
     getMessages,
     getChatUserIds,
     getInboxKey,

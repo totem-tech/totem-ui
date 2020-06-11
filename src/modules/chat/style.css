@@ -123,6 +123,7 @@
 .chat-container .messages {
     height: calc(100% - 104px);
     padding: 10px 0;
+    position: relative;
     overflow-x: auto;
 }
 .chat-container .messages .message-group-name {
@@ -143,6 +144,11 @@
     max-width: 80%;
     padding: 7px 15px;
     width: auto;
+}
+/* highlights a searched message */
+.chat-container .messages .message-wrap.blink .message {
+    background: yellow !important;
+    color: black !important;
 }
 .chat-container .messages .message-wrap .message .content {
     text-align: left;

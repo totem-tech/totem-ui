@@ -62,6 +62,7 @@ export default function Inbox(props) {
         receiverIds, // if not supplied use default open inbox
         title,
     } = props
+    if (!inboxKey) return ''
     data[inboxKey] = data[inboxKey] || {}
     const [messages, setMessages] = useState(props.messages || getMessages(inboxKey))
     const [showMembers, setShowMembers] = useState(false)
@@ -190,10 +191,7 @@ const InboxHeader = ({
                                     circular: true,
                                     icon: 'pencil',
                                     inverted: true,
-                                    onClick: () => editName(
-                                        inboxKey,
-                                        () => setShowTools(false)
-                                    ),
+                                    onClick: () => editName(inboxKey, () => setShowTools(false)),
                                     size: toolIconSize,
                                     title: textsCap.changeGroupName,
                                 }} />
