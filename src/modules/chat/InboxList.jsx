@@ -213,9 +213,9 @@ export default function InboxList(props) {
                                 </div>
                             ),
                             header: (
-                                <span>
+                                <div className='header'>
                                     {textEllipsis(name, 30, 3, false)} {flag && <b><i>( {flag} )</i></b>}
-                                </span>
+                                </div>
                             ),
                             icon: {
                                 name: icon,
