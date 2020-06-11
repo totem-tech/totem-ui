@@ -49,11 +49,11 @@
     display: table-cell;
     vertical-align: top;
 }
-.chat-container .inbox-list div.buttons .button {
-    padding-top: 13px;
-}
 .chat-container .inbox-list div.search .input {
     width: 100%;
+}
+.chat-container .inbox-list div.search .input input {
+    padding: 10px;
 }
 .chat-container .inbox-list .unread-count {
     font-weight: bold;
