@@ -256,7 +256,7 @@ const InboxHeader = ({
                                     onClick: () => messages.length === 0 ? removeInbox(inboxKey) : confirm({
                                         confirmButton: <Button negative content={textsCap.remove} />,
                                         header: textsCap.removeConversation,
-                                        onConfirm: () => removeInbox(inboxKey),
+                                        onConfirm: () => removeInbox(inboxKey) | openInboxBond.changed(null),
                                         size: 'mini',
                                     }),
                                     size: toolIconSize,
@@ -363,7 +363,7 @@ const MessageInput = ({ onRef, onSubmit }) => {
         e.preventDefault()
         if (value.trim().length === 0) return
         onSubmit(value)
-        setValue('')
+        // setValue('')
     }
     return (
         <form onSubmit={handleSubmit}>

@@ -2,7 +2,7 @@ import express from 'express'
 import http from 'http'
 import https from 'https'
 import fs from 'fs'
-
+import compression from 'compression'
 const app = express()
 // Reverse Proxy config
 // HTTPS_PORT _must not_ be 443 if it is behind a reverse proxy
@@ -16,6 +16,9 @@ const REVERSE_PROXY = process.env.REVERSE_PROXY === 'TRUE'
 const npmEnv = JSON.parse(process.env.npm_config_argv)
 // value set in `webpack --mode`. Expected value: 'production' or 'developement'
 const mode = npmEnv.original[1]
+
+// compress all responses
+app.use(compression())
 
 // Serve 'dist' directory
 app.use(express.static('dist'))

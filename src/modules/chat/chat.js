@@ -26,7 +26,12 @@ export const visibleBond = new Bond().defaultTo(false)
 const generateInboxBonds = (onload = false) => {
     const allKeys = Array.from(chatHistory.getAll())
         .map(([key]) => key)
-    if (!allKeys.includes(EVERYONE)) allKeys.push(EVERYONE)
+    const s = inboxSettings(EVERYONE)
+    const showTrollbox = !s.hide && !s.deleted
+    if (onload && !allKeys.includes(EVERYONE) && showTrollbox) {
+        allKeys.push(EVERYONE)
+        newInbox([EVERYONE])
+    }
 
     allKeys.forEach(inboxKey => {
         pendingMessages[inboxKey] = pendingMessages[inboxKey] || []
@@ -37,7 +42,6 @@ const generateInboxBonds = (onload = false) => {
         if (inboxBonds[inboxKey]) return
         inboxBonds[inboxKey] = new Bond()
     })
-    onload && newInbox([EVERYONE])
 }
 setTimeout(() => generateInboxBonds(true))
 
