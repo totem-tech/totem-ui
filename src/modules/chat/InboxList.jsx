@@ -21,6 +21,9 @@ import {
 import NewInboxForm, { editName } from './NewInboxForm'
 
 const EVERYONE = 'everyone'
+const ALL_ONLINE = 'green'
+const SOME_ONLINE = 'yellow'
+const OFFLINE = 'grey'
 const [texts, textsCap] = translated({
     actionsHide: 'hide actions',
     actionsShow: 'show actions',
@@ -114,15 +117,18 @@ export default function InboxList(props) {
             if (!isMounted) return
             const { id: userId } = getUser() || {}
             const inboxes = Object.keys(inboxBonds).filter(x => x !== EVERYONE)
-            const inboxUserIds = inboxes.map(x => x.split(','))
-            const userIds = arrUnique(inboxUserIds.flat()).filter(x => x !== userId)
+            const inboxUserIds = inboxes.map(x => x.split(',').filter(x => x !== userId))
+            const userIds = arrUnique(inboxUserIds.flat())
             userIds.length > 0 && client.isUserOnline(userIds, (err, online) => {
                 if (!isMounted) return
                 const s = {}
                 if (!err) {
                     for (let i = 0; i < inboxes.length; i++) {
                         // mark online if at least one user is online in group chat
-                        s[inboxes[i]] = !!inboxUserIds[i].find(id => online[id])
+                        const numbOnline = inboxUserIds[i].filter(id => online[id]).length
+                        s[inboxes[i]] = !numbOnline ? OFFLINE : (
+                            numbOnline === inboxUserIds[i].length ? ALL_ONLINE : SOME_ONLINE
+                        )
                     }
                 }
                 setStatus(s)
@@ -165,7 +171,7 @@ export default function InboxList(props) {
                         filteredMsgId: filteredMsgIds[key],
                         inboxMsgs: msgs[key],
                         inverted,
-                        online: status[key],
+                        status: status[key],
                         query,
                         settings: allSettings[key],
                     }} />
@@ -252,7 +258,7 @@ const ToolsBar = ({ compact, setCompact, inverted, query, onSeachChange, showAll
     )
 }
 
-const InboxListItem = ({ compact, filteredMsgId, inboxMsgs = [], inboxKey, inverted, online, query, settings, name }) => {
+const InboxListItem = ({ compact, filteredMsgId, inboxMsgs = [], inboxKey, inverted, status, query, settings, name }) => {
     const isTrollbox = inboxKey === EVERYONE
     const isGroup = inboxKey.split(',').length > 1
     const icon = isTrollbox ? 'globe' : (isGroup ? 'group' : 'user')
@@ -305,11 +311,11 @@ const InboxListItem = ({ compact, filteredMsgId, inboxMsgs = [], inboxKey, inver
                             <Label {...{
                                 icon: {
                                     className: !unread && 'no-margin' || '',
-                                    color: online ? 'green' : undefined,
+                                    color: status,
                                     name: icon,
                                 },
                                 content: unread > 0 && unread,
-                                title: inboxKey === EVERYONE ? '' : online ? textsCap.online : textsCap.offline,
+                                title: status === OFFLINE ? textsCap.offline : textsCap.online,
                             }} />
                             <b>{textEllipsis(name, 30, 3, false) + ' '}</b>
                             <i>
