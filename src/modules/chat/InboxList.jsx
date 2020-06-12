@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Button } from 'semantic-ui-react'
+import { Button, Label } from 'semantic-ui-react'
 import { arrSort, textEllipsis } from '../../utils/utils'
 import FormInput from '../../components/FormInput'
 import Message from '../../components/Message'
@@ -34,10 +34,9 @@ const [texts, textsCap] = translated({
     // tools
     archiveConversation: 'archive conversation',
     changeGroupName: 'change group name',
-    toolsHide: 'hide tools',
-    toolsShow: 'show tools',
+    actionsHide: 'hide actions',
+    actionsShow: 'show actions',
     expand: 'expand',
-    shrink: 'shrink',
     remove: 'remove',
     removeMessages: 'remove messages',
     removeConversation: 'remove conversation',
@@ -153,6 +152,7 @@ export default function InboxList(props) {
 }
 
 const ToolsBar = ({ compact, setCompact, inverted, query, onSeachChange, showAll, setShowAll }) => {
+    const [open, setOpen] = useState(openInboxBond._value)
     const buttons = [
         {
             active: compact,
@@ -165,6 +165,7 @@ const ToolsBar = ({ compact, setCompact, inverted, query, onSeachChange, showAll
         {
             active: compact,
             color: inverted ? 'grey' : 'black',
+            disabled: !open,
             icon: 'arrows alternate vertical',
             key: 'expand',
             onClick: () => document.getElementById('app').classList.add('chat-expanded'),
@@ -189,6 +190,15 @@ const ToolsBar = ({ compact, setCompact, inverted, query, onSeachChange, showAll
             title: textsCap.startChat,
         }
     ]
+
+    useEffect(() => {
+        let mounted = true
+        const tieId = openInboxBond.tie(open => mounted && setOpen(open))
+        return () => {
+            mounted = false
+            openInboxBond.untie(tieId)
+        }
+    }, [])
 
     return (
         <div className='tools'>
@@ -316,6 +326,7 @@ const InboxActions = ({ inboxKey, inverted, isGroup, isTrollbox, numMsgs, settin
                 circular: true,
                 icon: 'pencil',
                 inverted,
+                key: 'editName',
                 onClick: e => e.stopPropagation() | editName(inboxKey, () => setShowActions(false)),
                 size: toolIconSize,
                 title: textsCap.changeGroupName,
@@ -388,7 +399,7 @@ const InboxActions = ({ inboxKey, inverted, isGroup, isTrollbox, numMsgs, settin
                 inverted,
                 onClick: e => e.stopPropagation() | setShowActions(!showActions),
                 size: toolIconSize,
-                title: showActions ? textsCap.toolsHide : textsCap.toolsShow,
+                title: showActions ? textsCap.actionsHide : textsCap.actionsShow,
             }} />
         </span>
     )

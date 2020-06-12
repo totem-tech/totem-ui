@@ -62,11 +62,15 @@
 }
 .chat-container .inbox-list .list-item {
     border-radius: 0;
+    box-shadow: none;
     cursor: pointer;
     margin: 0;
     overflow: hidden;
     padding: 10px;
     white-space: nowrap;
+}
+.chat-container .inbox-list .list-item:not(:last-child) {
+    border-bottom: 1px solid #d1caca;
 }
 
 /* inobx */ 

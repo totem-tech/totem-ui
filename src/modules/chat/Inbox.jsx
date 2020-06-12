@@ -30,18 +30,9 @@ const [_, textsCap] = translated({
     offline: 'offline',
     online: 'online',
     privateChat: 'private chat',
+    showConvList: 'show conversation list',
     trollbox: 'Totem Trollbox',
     you: 'you',
-    // tools
-    archiveConversation: 'archive conversation',
-    toolsHide: 'hide tools',
-    toolsShow: 'show tools',
-    changeGroupName: 'change group name',
-    expand: 'expand',
-    shrink: 'shrink',
-    remove: 'remove',
-    removeMessages: 'remove messages',
-    removeConversation: 'remove conversation',
 }, true)
 const data = {}
 const EVERYONE = 'everyone'
@@ -132,7 +123,7 @@ const InboxHeader = ({ inboxKey, isGroup, showMembers, setShowMembers, title }) 
                         inverted: false,
                         onClick: () => document.getElementById('app').classList.remove('chat-expanded'),
                         size: toolIconSize,
-                        title: textsCap.shrink,
+                        title: textsCap.showConvList,
                     }} />
                 </div>
                 <span>
