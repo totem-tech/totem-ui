@@ -66,11 +66,24 @@
     cursor: pointer;
     margin: 0;
     overflow: hidden;
-    padding: 10px;
+    padding: 5px 10px;
+    position: relative;
     white-space: nowrap;
 }
 .chat-container .inbox-list .list-item:not(:last-child) {
     border-bottom: 1px solid #d1caca;
+}
+.chat-container .inbox-list .list-item * {
+    text-align: left;
+}
+.chat-container .inbox-list .list-item .label {
+    margin-right: 5px;
+}
+.chat-container .inbox-list .list-item .preview {
+    margin-left: 40px;
+}
+.chat-container .inbox-list .list-item b {
+    font-weight: bold;
 }
 
 /* inobx */ 

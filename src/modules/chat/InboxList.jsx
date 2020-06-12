@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { Button, Label } from 'semantic-ui-react'
-import { arrSort, textEllipsis } from '../../utils/utils'
+import { arrSort, textEllipsis, arrUnique } from '../../utils/utils'
 import FormInput from '../../components/FormInput'
+import ErrorBoundary from '../../components/CatchReactErrors'
 import Message from '../../components/Message'
+import client, { getUser } from '../../services/chatClient'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
 import {
@@ -14,49 +16,51 @@ import {
     createInbox,
     removeInboxMessages,
     removeInbox,
+    inboxBonds,
 } from './chat'
 import NewInboxForm, { editName } from './NewInboxForm'
 
 const EVERYONE = 'everyone'
 const [texts, textsCap] = translated({
+    actionsHide: 'hide actions',
+    actionsShow: 'show actions',
     archived: 'archived',
+    archiveConversation: 'archive conversation',
+    changeGroupName: 'change group name',
     compact: 'compact',
     deleted: 'deleted',
     detailed: 'detailed',
+    expand: 'expand',
     jumpToMsg: 'jump to message',
     noResultMsg: 'Your search yielded no results',
+    offline: 'offline',
+    online: 'online',
+    remove: 'remove',
+    removeMessages: 'remove messages',
+    removeConversation: 'remove conversation',
     searchPlaceholder: 'search conversations',
     showActive: 'active conversations',
     showAll: 'all conversations',
     startChat: 'start chat',
     trollbox: 'Totem Trollbox',
-
-    // tools
-    archiveConversation: 'archive conversation',
-    changeGroupName: 'change group name',
-    actionsHide: 'hide actions',
-    actionsShow: 'show actions',
-    expand: 'expand',
-    remove: 'remove',
-    removeMessages: 'remove messages',
-    removeConversation: 'remove conversation',
 }, true)
 
 export default function InboxList(props) {
     const { inverted } = props
     const allSettings = inboxesSettings()
     const getAllInboxKeys = () => Object.keys(inboxesSettings())
+    const names = {}
+    const msgs = {}
+    const [compact, setCompact] = useState(false)
     const [showAll, setShowAll] = useState(false)
     const [inboxKeys, setInboxKeys] = useState(getAllInboxKeys())
     let [filteredKeys, setFilteredKeys] = useState(inboxKeys)
     const [filteredMsgIds, setFilteredMsgIds] = useState({})
-    // const [key, setKey] = useState(uuid.v1())
-    const [compact, setCompact] = useState(false)
+    const [status, setStatus] = useState({})
     const [query, setQuery] = useState('')
-    const names = {}
-    const msgs = {}
+
     inboxKeys.forEach(key => {
-        names[key] = key === EVERYONE ? textsCap.trollbox : allSettings[key].name
+        names[key] = (key === EVERYONE ? textsCap.trollbox : allSettings[key].name) || key
         msgs[key] = getMessages(key).reverse() // latest first
     })
     // handle query change
@@ -90,9 +94,9 @@ export default function InboxList(props) {
         // sort by last message timestamp
         filteredKeys = filteredKeys.map(key => ({
             key,
-            ts: ((msgs[key] || [])[0] || {}).timestamp || 'z', // 'z' => empty inboxes at top
+            sort: showAll ? names[key] : ((msgs[key] || [])[0] || {}).timestamp || 'z', // 'z' => empty inboxes at top
         }))
-        filteredKeys = arrSort(filteredKeys, 'ts', true).map(x => x.key)
+        filteredKeys = arrSort(filteredKeys, 'sort', !showAll).map(x => x.key)
     }
 
     useEffect(() => {
@@ -104,16 +108,36 @@ export default function InboxList(props) {
             setFilteredKeys(keys)
             setQuery('')
         })
+
+        // check online status of active private and group chat user ids
+        const checkStatus = () => {
+            if (!isMounted) return
+            const { id: userId } = getUser() || {}
+            const inboxes = Object.keys(inboxBonds).filter(x => x !== EVERYONE)
+            const inboxUserIds = inboxes.map(x => x.split(','))
+            const userIds = arrUnique(inboxUserIds.flat()).filter(x => x !== userId)
+            userIds.length > 0 && client.isUserOnline(userIds, (err, online) => {
+                if (!isMounted) return
+                const s = {}
+                if (!err) {
+                    for (let i = 0; i < inboxes.length; i++) {
+                        // mark online if at least one user is online in group chat
+                        s[inboxes[i]] = !!inboxUserIds[i].find(id => online[id])
+                    }
+                }
+                setStatus(s)
+                setTimeout(() => checkStatus(), 60000)
+            })
+        }
+        checkStatus()
         return () => {
             isMounted = false
             newInboxBond.untie(tieId)
         }
     }, [])
-
     return (
         <div {...{
             className: 'inbox-list' + (compact ? ' compact' : ''),
-            // key,
             style: {
                 // full height if no inbox is selected
                 height: openInboxBond._value ? undefined : '100%'
@@ -134,12 +158,14 @@ export default function InboxList(props) {
                         compact,
                         inboxKeys,
                         inboxKey: key,
+                        key,
                         // makes sure to update item when new message is received
-                        key: JSON.stringify({ key, ...(msgs[key] || [])[0] }),
-                        name: names[key] || key,
+                        // key: JSON.stringify({ key, online: status[key], ...(msgs[key] || [])[0] }),
+                        name: names[key],
                         filteredMsgId: filteredMsgIds[key],
                         inboxMsgs: msgs[key],
                         inverted,
+                        online: status[key],
                         query,
                         settings: allSettings[key],
                     }} />
@@ -226,12 +252,10 @@ const ToolsBar = ({ compact, setCompact, inverted, query, onSeachChange, showAll
     )
 }
 
-const InboxListItem = ({ compact, filteredMsgId, inboxMsgs = [], inboxKey, inverted, query, settings, name }) => {
-    const iconSize = compact ? 14 : 18
-    const iconWidth = compact ? 16 : 20
+const InboxListItem = ({ compact, filteredMsgId, inboxMsgs = [], inboxKey, inverted, online, query, settings, name }) => {
     const isTrollbox = inboxKey === EVERYONE
     const isGroup = inboxKey.split(',').length > 1
-    const icon = isTrollbox ? 'globe' : (isGroup ? 'group' : 'chat')
+    const icon = isTrollbox ? 'globe' : (isGroup ? 'group' : 'user')
     const isActive = openInboxBond._value === inboxKey
     const lastMsg = !compact && (inboxMsgs || []).filter(m => !!m.message)[0]
     const qMsg = (inboxMsgs || []).find(x => x.id === filteredMsgId) // searched message
@@ -263,55 +287,66 @@ const InboxListItem = ({ compact, filteredMsgId, inboxMsgs = [], inboxKey, inver
     }
 
     return (
-        <Message {...{
-            className: 'list-item',
-            content: (
-                <div>
-                    <InboxActions {...{
-                        inboxKey,
-                        inverted,
-                        isGroup,
-                        isTrollbox,
-                        numMsgs: inboxMsgs.length,
-                        settings,
-                    }} />
-                    {!qMsg && lastMsg && `${lastMsg.senderId}: ${lastMsg.message}`}
-                    { /* highlight searched keywords */
-                        qMsg && qIndex >= 0 && (
-                            <span>
-                                {qMsg.senderId}: {qMsg.message.slice(0, qIndex)}
-                                <b {...{
-                                    onClick: handleHighlightedClick,
-                                    style: { background: 'yellow' },
-                                    title: textsCap.jumpToMsg,
-                                }}>
-                                    {qMsg.message.slice(qIndex, qIndex + query.length)}
-                                </b>
-                                {qMsg.message.slice(qIndex + query.length)}
-                            </span>
+        <ErrorBoundary>
+            <Message {...{
+                className: 'list-item',
+                content: (
+                    <div>
+                        <InboxActions {...{
+                            inboxKey,
+                            inverted,
+                            isGroup,
+                            isTrollbox,
+                            numMsgs: inboxMsgs.length,
+                            settings,
+                        }} />
+
+                        <div className='title'>
+                            <Label {...{
+                                icon: {
+                                    className: !unread && 'no-margin' || '',
+                                    color: online ? 'green' : undefined,
+                                    name: icon,
+                                },
+                                content: unread > 0 && unread,
+                                title: inboxKey === EVERYONE ? '' : online ? textsCap.online : textsCap.offline,
+                            }} />
+                            <b>{textEllipsis(name, 30, 3, false) + ' '}</b>
+                            <i>
+                                {flag && (
+                                    <Label {...{
+                                        color: hide ? 'grey' : 'red',
+                                        content: flag,
+                                        size: 'mini',
+                                    }} />
+                                )}
+                            </i>
+                        </div>
+                        {compact || !qMsg && !lastMsg ? '' : (
+                            <div className='preview'>
+                                <b>@{(lastMsg || qMsg).senderId}</b>: {' '}
+                                {!qMsg ? lastMsg.message : (
+                                    <span>
+                                        {qMsg.message.slice(0, qIndex)}
+                                        <b {...{
+                                            onClick: handleHighlightedClick,
+                                            style: { background: 'yellow' },
+                                            title: textsCap.jumpToMsg,
+                                        }}>
+                                            {qMsg.message.slice(qIndex, qIndex + query.length)}
+                                        </b>
+                                        {qMsg.message.slice(qIndex + query.length)}
+                                    </span>
+                                )}
+                            </div>
                         )}
-                </div>
-            ),
-            header: (
-                <div className='header'>
-                    {textEllipsis(name, 30, 3, false)}
-                    <i>
-                        {flag && ` ( ${flag} )`}
-                        {unread > 0 && ` ( ${unread} )`}
-                    </i>
-                </div>
-            ),
-            icon: {
-                name: icon,
-                style: {
-                    fontSize: iconSize,
-                    width: iconWidth,
-                }
-            },
-            color: inverted ? 'black' : undefined,
-            onClick: handleClick,
-            status: isActive ? 'success' : unread ? 'info' : '',
-        }} />
+                    </div>
+                ),
+                color: inverted ? 'black' : undefined,
+                onClick: handleClick,
+                status: isActive ? 'success' : unread ? 'info' : '',
+            }} />
+        </ErrorBoundary>
     )
 }
 
