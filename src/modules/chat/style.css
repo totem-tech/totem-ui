@@ -127,8 +127,8 @@
     margin: 0;
 }
 .chat-container .inbox .member-list-item .user-icon {
-    font-size: 25px !important;
-    width: 25px !important;
+    font-size: 18px !important;
+    width: 18px !important;
 }
 .chat-container .inbox .member-list-item .button-action {
     position: absolute;
