@@ -93,8 +93,7 @@ export const remove = id => setTimeout(() => {
     if (!notifications.size) visibleBond.changed(false)
 })
 
-// NotificationList
-export default ({ forceVisible = false, float = true, isMobile }) => {
+export default function NotificationList({ forceVisible = false, float = true, isMobile }) {
     const [items, setItems] = useState(notifications.getAll())
     const [visible, setVisible] = useState(visibleBond._value)
 
@@ -119,7 +118,10 @@ export default ({ forceVisible = false, float = true, isMobile }) => {
                 zIndex: 2,
             }}
         >
-            {forceVisible || visible && Array.from(items).map(NotificationItem).filter(Boolean)}
+            {forceVisible || visible && Array.from(items)
+                .reverse() // latest first
+                .map(NotificationItem)
+                .filter(Boolean)}
         </div>
     )
 }

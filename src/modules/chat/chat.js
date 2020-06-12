@@ -18,15 +18,21 @@ export const inboxBonds = {}
 export const newInboxBond = new Bond()
 export const newMsgBond = new Bond()
 export const openInboxBond = new Bond().defaultTo(rw().openInboxKey)
-openInboxBond.tie(key => rw({ openInboxKey: key })) // remember last open inbox key
 export const pendingMessages = {}
 export const unreadCountBond = new Bond().defaultTo(getUnreadCount())
-export const visibleBond = new Bond().defaultTo(false)
+export const visibleBond = new Bond().defaultTo(!!rw().visible)
+openInboxBond.tie(key => rw({ openInboxKey: key })) // remember last open inbox key
+visibleBond.tie(visible => rw({ visible }))
 
 const generateInboxBonds = (onload = false) => {
     const allKeys = Array.from(chatHistory.getAll())
         .map(([key]) => key)
-    if (!allKeys.includes(EVERYONE)) allKeys.push(EVERYONE)
+    const s = inboxSettings(EVERYONE)
+    const showTrollbox = !s.hide && !s.deleted
+    if (onload && !allKeys.includes(EVERYONE) && showTrollbox) {
+        allKeys.push(EVERYONE)
+        createInbox([EVERYONE])
+    }
 
     allKeys.forEach(inboxKey => {
         pendingMessages[inboxKey] = pendingMessages[inboxKey] || []
@@ -37,7 +43,6 @@ const generateInboxBonds = (onload = false) => {
         if (inboxBonds[inboxKey]) return
         inboxBonds[inboxKey] = new Bond()
     })
-    onload && newInbox([EVERYONE])
 }
 setTimeout(() => generateInboxBonds(true))
 
@@ -127,7 +132,7 @@ export const inboxSettings = (inboxKey, value, triggerReload = false) => {
 export const inboxesSettings = () => rw().inbox || {}
 
 // create/get inbox key
-export const newInbox = (receiverIds = [], name, reload = false) => {
+export const createInbox = (receiverIds = [], name, reload = false) => {
     const inboxKey = getInboxKey(receiverIds)
     let settings = {
         ...inboxSettings(inboxKey),
@@ -137,7 +142,6 @@ export const newInbox = (receiverIds = [], name, reload = false) => {
     settings.name = name || settings.name
     !chatHistory.get(inboxKey) && chatHistory.set(inboxKey, [])
     inboxSettings(inboxKey, settings, reload)
-    openInboxBond.changed(inboxKey)
     return inboxKey
 }
 
@@ -202,7 +206,8 @@ const saveMessage = msg => {
 
     chatHistory.set(inboxKey, messages.slice(-limit))
     // new mesage received
-    if (senderId !== userId && !visibleBond._value || openInboxBond._value !== inboxKey) {
+    const isVisible = visibleBond._value && openInboxBond._value === inboxKey
+    if (senderId !== userId && !isVisible) {
         newSettings.unread = (settings.unread || 0) + 1
     }
     if (timestamp) rw({ lastMessageTS: timestamp })
@@ -271,7 +276,7 @@ client.onMessage((m, s, r, e, t, id, action) => {
     const inboxKey = getInboxKey(r)
     // prevent saving trollbox messages if hidden
     if (inboxKey === EVERYONE && inboxSettings(inboxKey).hide) return
-    newInbox(r, null, true)
+    createInbox(r, null, true)
     saveMessage({
         action,
         id,
@@ -299,7 +304,7 @@ export default {
     getTrollboxUserIds,
     historyLimit,
     inboxSettings,
-    newInbox,
+    newInbox: createInbox,
     send,
     removeInbox,
     removeInboxMessages,

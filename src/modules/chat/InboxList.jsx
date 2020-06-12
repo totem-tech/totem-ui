@@ -1,17 +1,24 @@
 import React, { useState, useEffect } from 'react'
-import uuid from 'uuid'
 import { Button } from 'semantic-ui-react'
-import { arrSort, deferred, textEllipsis } from '../../utils/utils'
+import { arrSort, textEllipsis } from '../../utils/utils'
+import FormInput from '../../components/FormInput'
 import Message from '../../components/Message'
 import { translated } from '../../services/language'
-import { showForm } from '../../services/modal'
-import FormInput from '../../components/FormInput'
-import { inboxBonds, newInboxBond, inboxSettings, openInboxBond, getMessages, newMsgBond, inboxesSettings, newInbox } from './chat'
-import NewInboxForm from './NewInboxForm'
+import { confirm, showForm } from '../../services/modal'
+import {
+    newInboxBond,
+    inboxSettings,
+    openInboxBond,
+    getMessages,
+    inboxesSettings,
+    createInbox,
+    removeInboxMessages,
+    removeInbox,
+} from './chat'
+import NewInboxForm, { editName } from './NewInboxForm'
 
 const EVERYONE = 'everyone'
 const [texts, textsCap] = translated({
-    allConvos: 'all conversations',
     archived: 'archived',
     compact: 'compact',
     deleted: 'deleted',
@@ -19,8 +26,21 @@ const [texts, textsCap] = translated({
     jumpToMsg: 'jump to message',
     noResultMsg: 'Your search yielded no results',
     searchPlaceholder: 'search conversations',
+    showActive: 'active conversations',
+    showAll: 'all conversations',
     startChat: 'start chat',
     trollbox: 'Totem Trollbox',
+
+    // tools
+    archiveConversation: 'archive conversation',
+    changeGroupName: 'change group name',
+    toolsHide: 'hide tools',
+    toolsShow: 'show tools',
+    expand: 'expand',
+    shrink: 'shrink',
+    remove: 'remove',
+    removeMessages: 'remove messages',
+    removeConversation: 'remove conversation',
 }, true)
 
 export default function InboxList(props) {
@@ -31,19 +51,17 @@ export default function InboxList(props) {
     const [inboxKeys, setInboxKeys] = useState(getAllInboxKeys())
     let [filteredKeys, setFilteredKeys] = useState(inboxKeys)
     const [filteredMsgIds, setFilteredMsgIds] = useState({})
-    const [key, setKey] = useState(uuid.v1())
+    // const [key, setKey] = useState(uuid.v1())
     const [compact, setCompact] = useState(false)
     const [query, setQuery] = useState('')
-    const iconSize = compact ? 14 : 18
-    const iconWidth = compact ? 16 : 20
-    const names = []
-    const msgs = []
-    inboxKeys.forEach((key, i) => {
-        names[i] = key === EVERYONE ? textsCap.trollbox : allSettings[key].name
-        msgs[i] = getMessages(key).reverse() // latest first
+    const names = {}
+    const msgs = {}
+    inboxKeys.forEach(key => {
+        names[key] = key === EVERYONE ? textsCap.trollbox : allSettings[key].name
+        msgs[key] = getMessages(key).reverse() // latest first
     })
     // handle query change
-    const handleChange = async (_, { value }) => {
+    const handleSearchChange = async (_, { value }) => {
         setQuery(value)
         if (!value) {
             setFilteredKeys(inboxKeys)
@@ -53,10 +71,9 @@ export default function InboxList(props) {
         const q = value.trim().toLowerCase()
         const msgsIds = {}
         let keys = inboxKeys.filter(key => {
-            const index = inboxKeys.indexOf(key)
-            const keyOrNameMatch = key.includes(q) || (names[inboxKeys.indexOf(key)] || '')
+            const keyOrNameMatch = key.includes(q) || (names[key] || '')
                 .toLowerCase().includes(q)
-            const msg = (msgs[index] || []).find(m => (m.message || '').includes(q))
+            const msg = (msgs[key] || []).find(m => (m.message || '').includes(q))
             msgsIds[key] = msg && msg.id
             return keyOrNameMatch || msg
         })
@@ -74,7 +91,7 @@ export default function InboxList(props) {
         // sort by last message timestamp
         filteredKeys = filteredKeys.map(key => ({
             key,
-            ts: ((msgs[inboxKeys.indexOf(key)] || [])[0] || {}).timestamp || 'z', // 'z' => empty inboxes at top
+            ts: ((msgs[key] || [])[0] || {}).timestamp || 'z', // 'z' => empty inboxes at top
         }))
         filteredKeys = arrSort(filteredKeys, 'ts', true).map(x => x.key)
     }
@@ -88,152 +105,291 @@ export default function InboxList(props) {
             setFilteredKeys(keys)
             setQuery('')
         })
-        // update list every time new message is received/sent
-        const tieIdMsg = newMsgBond.tie(key => setTimeout(() => setKey(key)))
         return () => {
             isMounted = false
             newInboxBond.untie(tieId)
-            newMsgBond.untie(tieIdMsg)
         }
     }, [])
 
     return (
         <div {...{
-            className: 'inbox-list',
+            className: 'inbox-list' + (compact ? ' compact' : ''),
             // key,
             style: {
                 // full height if no inbox is selected
                 height: openInboxBond._value ? undefined : '100%'
             },
         }}>
-            <div className='tools'>
-                <Button.Group {...{
-                    fluid: true,
-                    className: 'buttons',
-                    widths: 3,
-                    buttons: [
-                        {
-                            icon: compact ? 'address card' : 'bars',
-                            key: 0,
-                            onClick: () => setCompact(!compact),
-                            title: compact ? textsCap.detailed : textsCap.compact
-                        },
-                        {
-                            color: showAll ? 'grey' : undefined,
-                            icon: 'history',
-                            key: 1,
-                            onClick: () => {
-                                setShowAll(!showAll)
-                            },
-                            title: textsCap.allConvos,
-                        },
-                        {
-                            icon: 'plus',
-                            key: 2,
-                            onClick: () => showForm(NewInboxForm, {
-                                onSubmit: (ok, { inboxKey }) => ok && openInboxBond.changed(inboxKey)
-                            }),
-                            title: textsCap.startChat,
-                        }
-                    ],
-                }} />
-                <div className='search'>
-                    <FormInput {...{
-                        action: !query ? undefined : {
-                            basic: true,
-                            icon: 'close',
-                            onClick: () => handleChange({}, { value: '' }),
-                        },
-                        icon: query ? undefined : 'search',
-                        name: 'keywords',
-                        onChange: handleChange,
-                        placeholder: textsCap.searchPlaceholder,
-                        type: 'text',
-                        value: query,
+            <ToolsBar {...{
+                compact,
+                setCompact,
+                inverted,
+                query,
+                onSeachChange: handleSearchChange,
+                showAll,
+                setShowAll,
+            }} />
+            <div className='list'>
+                {filteredKeys.map(key => (
+                    <InboxListItem {...{
+                        compact,
+                        inboxKeys,
+                        inboxKey: key,
+                        // makes sure to update item when new message is received
+                        key: JSON.stringify({ key, ...(msgs[key] || [])[0] }),
+                        name: names[key] || key,
+                        filteredMsgId: filteredMsgIds[key],
+                        inboxMsgs: msgs[key],
+                        inverted,
+                        query,
+                        settings: allSettings[key],
                     }} />
-                </div>
-            </div>
-            <div>
-                {filteredKeys.map(key => {
-                    const index = inboxKeys.indexOf(key)
-                    const isTrollbox = key === EVERYONE
-                    const isGroup = key.split(',').length > 1
-                    const icon = isTrollbox ? 'globe' : (isGroup ? 'group' : 'chat')
-                    const name = names[index] || key
-                    const isActive = openInboxBond._value === key
-                    const inboxMsgs = msgs[index] || []
-                    const lastMsg = !compact && (inboxMsgs || []).filter(m => !!m.message)[0]
-                    const qMsg = (inboxMsgs || []).find(x => x.id === filteredMsgIds[key]) // searched message
-                    const qIndex = qMsg && qMsg.message.toLowerCase().indexOf(query.toLowerCase())
-                    const { hide, deleted, unread } = allSettings[key] || {}
-                    const flag = deleted ? texts.deleted : hide && texts.archived
-                    const handleClick = () => {
-                        const inboxKey = openInboxBond._value === key ? null : key
-                        inboxKey && newInbox(key.split(','))
-                        openInboxBond.changed(inboxKey)
-                    }
-                    const handleHighlightedClick = e => {
-                        e.stopPropagation()
-                        newInbox(key.split(',')) // makes sure inbox is not deleted or archived
-                        openInboxBond.changed(key)
-                        // scroll to message
-                        setTimeout(() => {
-                            const msgEl = document.getElementById(qMsg.id)
-                            if (!msgEl) return
-                            msgEl.classList.add('blink')
-                            document.querySelector('.chat-container .messages')
-                                .scrollTo(0, msgEl.offsetTop)
-                            setTimeout(() => msgEl.classList.remove('blink'), 5000)
-                        }, 500)
-                    }
-
-                    return (
-                        <Message {...{
-                            content: (
-                                <div>
-                                    {unread > 0 && (
-                                        <div className={`unread-count ${compact ? 'compact' : ''}`}>
-                                            ( {unread} )
-                                        </div>
-                                    )}
-                                    {!qMsg && lastMsg && `${lastMsg.senderId}: ${lastMsg.message}`}
-                                    {qMsg && qIndex >= 0 && (
-                                        <span>
-                                            {qMsg.senderId}: {qMsg.message.slice(0, qIndex)}
-                                            <b {...{
-                                                onClick: handleHighlightedClick,
-                                                style: { background: 'yellow' },
-                                                title: textsCap.jumpToMsg,
-                                            }}>
-                                                {qMsg.message.slice(qIndex, qIndex + query.length)}
-                                            </b>
-                                            {qMsg.message.slice(qIndex + query.length)}
-                                        </span>
-                                    )}
-                                </div>
-                            ),
-                            header: (
-                                <span>
-                                    {textEllipsis(name, 30, 3, false)} {flag && <b><i>( {flag} )</i></b>}
-                                </span>
-                            ),
-                            icon: {
-                                name: icon,
-                                style: {
-                                    fontSize: iconSize,
-                                    width: iconWidth,
-                                }
-                            },
-                            color: inverted ? 'black' : undefined,
-                            key: JSON.stringify({ key, ...inboxMsgs[0] }),
-                            onClick: handleClick,
-                            status: isActive ? 'success' : unread ? 'info' : '',
-                        }} />
-                    )
-                })}
+                ))}
 
                 <Message className='empty-message' content={textsCap.noResultMsg} />
             </div>
         </div >
+    )
+}
+
+const ToolsBar = ({ compact, setCompact, inverted, query, onSeachChange, showAll, setShowAll }) => {
+    const buttons = [
+        {
+            active: compact,
+            color: inverted ? 'grey' : 'black',
+            icon: compact ? 'address card' : 'bars',
+            key: 'compact',
+            onClick: () => setCompact(!compact),
+            title: compact ? textsCap.detailed : textsCap.compact
+        },
+        {
+            active: compact,
+            color: inverted ? 'grey' : 'black',
+            icon: 'arrows alternate vertical',
+            key: 'expand',
+            onClick: () => document.getElementById('app').classList.add('chat-expanded'),
+            title: textsCap.expand
+        },
+        {
+            active: showAll,
+            color: inverted ? 'grey' : 'black',
+            icon: 'history',
+            key: 'all',
+            onClick: () => setShowAll(!showAll),
+            title: !showAll ? textsCap.showAll : textsCap.showActive,
+        },
+        {
+            active: false,
+            color: inverted ? 'grey' : 'black',
+            icon: 'plus',
+            key: 'new',
+            onClick: () => showForm(NewInboxForm, {
+                onSubmit: (ok, { inboxKey }) => ok && openInboxBond.changed(inboxKey)
+            }),
+            title: textsCap.startChat,
+        }
+    ]
+
+    return (
+        <div className='tools'>
+            <div className='search'>
+                <FormInput {...{
+                    action: !query ? undefined : {
+                        basic: true,
+                        icon: 'close',
+                        onClick: () => onSeachChange({}, { value: '' }),
+                    },
+                    icon: query ? undefined : 'search',
+                    name: 'keywords',
+                    onChange: onSeachChange,
+                    placeholder: textsCap.searchPlaceholder,
+                    type: 'text',
+                    value: query,
+                }} />
+            </div>
+            <Button.Group {...{
+                fluid: true,
+                widths: buttons.length,
+                buttons,
+            }} />
+        </div>
+    )
+}
+
+const InboxListItem = ({ compact, filteredMsgId, inboxMsgs = [], inboxKey, inverted, query, settings, name }) => {
+    const iconSize = compact ? 14 : 18
+    const iconWidth = compact ? 16 : 20
+    const isTrollbox = inboxKey === EVERYONE
+    const isGroup = inboxKey.split(',').length > 1
+    const icon = isTrollbox ? 'globe' : (isGroup ? 'group' : 'chat')
+    const isActive = openInboxBond._value === inboxKey
+    const lastMsg = !compact && (inboxMsgs || []).filter(m => !!m.message)[0]
+    const qMsg = (inboxMsgs || []).find(x => x.id === filteredMsgId) // searched message
+    const qIndex = qMsg && qMsg.message.toLowerCase().indexOf(query.toLowerCase())
+    const { hide, deleted, unread } = settings || {}
+    const flag = deleted ? texts.deleted : hide && texts.archived
+    const handleClick = () => {
+        const key = openInboxBond._value === inboxKey ? null : inboxKey
+        key && createInbox(key.split(','))
+        openInboxBond.changed(key)
+    }
+    const handleHighlightedClick = e => {
+        e.stopPropagation()
+        createInbox(inboxKey.split(',')) // makes sure inbox is not deleted or archived
+        openInboxBond.changed(inboxKey)
+        // scroll to message
+        setTimeout(() => {
+            const msgEl = document.getElementById(qMsg.id)
+            const msgsEl = document.querySelector('.chat-container .messages')
+            if (!msgEl || !msgsEl) return
+            msgEl.classList.add('blink')
+            msgsEl.classList.add('amimate-scroll')
+            msgsEl.scrollTo(0, msgEl.offsetTop)
+            setTimeout(() => {
+                msgEl.classList.remove('blink')
+                msgsEl.classList.remove('amimate-scroll')
+            }, 5000)
+        }, 500)
+    }
+
+    return (
+        <Message {...{
+            className: 'list-item',
+            content: (
+                <div>
+                    <InboxActions {...{
+                        inboxKey,
+                        inverted,
+                        isGroup,
+                        isTrollbox,
+                        numMsgs: inboxMsgs.length,
+                        settings,
+                    }} />
+                    {!qMsg && lastMsg && `${lastMsg.senderId}: ${lastMsg.message}`}
+                    { /* highlight searched keywords */
+                        qMsg && qIndex >= 0 && (
+                            <span>
+                                {qMsg.senderId}: {qMsg.message.slice(0, qIndex)}
+                                <b {...{
+                                    onClick: handleHighlightedClick,
+                                    style: { background: 'yellow' },
+                                    title: textsCap.jumpToMsg,
+                                }}>
+                                    {qMsg.message.slice(qIndex, qIndex + query.length)}
+                                </b>
+                                {qMsg.message.slice(qIndex + query.length)}
+                            </span>
+                        )}
+                </div>
+            ),
+            header: (
+                <div className='header'>
+                    {textEllipsis(name, 30, 3, false)}
+                    <i>
+                        {flag && ` ( ${flag} )`}
+                        {unread > 0 && ` ( ${unread} )`}
+                    </i>
+                </div>
+            ),
+            icon: {
+                name: icon,
+                style: {
+                    fontSize: iconSize,
+                    width: iconWidth,
+                }
+            },
+            color: inverted ? 'black' : undefined,
+            onClick: handleClick,
+            status: isActive ? 'success' : unread ? 'info' : '',
+        }} />
+    )
+}
+
+const InboxActions = ({ inboxKey, inverted, isGroup, isTrollbox, numMsgs, settings }) => {
+    const [showActions, setShowActions] = useState(false)
+    const { hide, deleted } = settings || {}
+    const toolIconSize = 'mini'
+    const actions = [
+        isGroup && !isTrollbox && (
+            <Button {...{
+                active: false,
+                circular: true,
+                icon: 'pencil',
+                inverted,
+                onClick: e => e.stopPropagation() | editName(inboxKey, () => setShowActions(false)),
+                size: toolIconSize,
+                title: textsCap.changeGroupName,
+            }} />
+        ),
+        !deleted && !hide && (
+            <Button {...{
+                active: false,
+                circular: true,
+                icon: 'hide',
+                inverted,
+                key: 'hideConversation',
+                onClick: e => e.stopPropagation() | confirm({
+                    content: textsCap.archiveConversation,
+                    onConfirm: () => {
+                        inboxSettings(inboxKey, { hide: true }, true)
+                        openInboxBond.changed(null)
+                    },
+                    size: 'mini'
+                }),
+                size: toolIconSize,
+                title: textsCap.archiveConversation
+            }} />
+        ),
+        numMsgs > 0 && (
+            <Button {...{
+                active: false,
+                circular: true,
+                icon: 'erase',
+                inverted,
+                key: 'removeMessages',
+                onClick: e => e.stopPropagation() | confirm({
+                    confirmButton: <Button negative content={textsCap.remove} />,
+                    header: textsCap.removeMessages,
+                    onConfirm: e => removeInboxMessages(inboxKey),
+                    size: 'mini',
+                }),
+                size: toolIconSize,
+                title: textsCap.removeMessages
+            }} />
+        ),
+        !deleted && !isTrollbox && (
+            <Button {...{
+                active: false,
+                circular: true,
+                icon: 'trash',
+                inverted,
+                key: 'removeConversation',
+                onClick: e => {
+                    e.stopPropagation()
+                    numMsgs === 0 ? removeInbox(inboxKey) : confirm({
+                        confirmButton: <Button negative content={textsCap.remove} />,
+                        header: textsCap.removeConversation,
+                        onConfirm: () => removeInbox(inboxKey) | openInboxBond.changed(null),
+                        size: 'mini',
+                    })
+                },
+                size: toolIconSize,
+                title: textsCap.removeConversation
+            }} />
+        ),
+    ].filter(Boolean)
+    return !actions.length ? '' : (
+        <span className='actions'>
+            {showActions && actions}
+            <Button {...{
+                active: showActions,
+                circular: true,
+                icon: showActions ? 'close' : 'cog',
+                inverted,
+                onClick: e => e.stopPropagation() | setShowActions(!showActions),
+                size: toolIconSize,
+                title: showActions ? textsCap.toolsHide : textsCap.toolsShow,
+            }} />
+        </span>
     )
 }
