@@ -41,9 +41,14 @@ export default function ChatBar({ inverted = false }) {
 }
 
 const ChatContents = ({ hiding, inverted, visible }) => {
+    const [expanded, setExpandedOrg] = useState(false)
     const [receiverIds, setReceiverIds] = useState((openInboxBond._value || '').split(','))
     const inboxKey = getInboxKey(receiverIds)
 
+    const setExpanded = expanded => {
+        document.getElementById('app').classList[expanded ? 'add' : 'remove']('chat-expanded')
+        setExpandedOrg(expanded)
+    }
     useEffect(() => {
         let mounted = true
         const tieIdOpenInbox = openInboxBond.tie(key => mounted && setReceiverIds((key || '').split(',')))
@@ -56,15 +61,18 @@ const ChatContents = ({ hiding, inverted, visible }) => {
     return !visible ? '' : (
         <div className='chat-contents'>
             <InboxList {...{
-                inboxKey,
+                expanded,
                 inverted,
+                setExpanded,
             }} />
             {receiverIds.length > 0 && (
                 <Inbox {...{
+                    expanded,
                     hiding,
                     inboxKey,
                     key: inboxKey,
                     receiverIds,
+                    setExpanded,
                 }} />
             )}
         </div>

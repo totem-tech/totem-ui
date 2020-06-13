@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
-import { Button } from 'semantic-ui-react'
+import { Button, Icon } from 'semantic-ui-react'
 import { textEllipsis } from '../../utils/utils'
 import InboxMessages from './InboxMessages'
 import FormInput from '../../components/FormInput'
@@ -45,9 +45,11 @@ const focusNScroll = inboxKey => setTimeout(() => {
 
 export default function Inbox(props) {
     let {
+        expanded,
         hiding, // indicates hiding animation in progress
         inboxKey,
         receiverIds, // if not supplied use default open inbox
+        setExpanded,
         title,
     } = props
     if (!inboxKey) return ''
@@ -58,8 +60,10 @@ export default function Inbox(props) {
     const isGroup = receiverIds.length > 1 || isTrollbox
     const header = (
         <InboxHeader {...{
+            expanded,
             inboxKey,
             isGroup,
+            setExpanded,
             setShowMembers,
             showMembers,
             title,
@@ -107,25 +111,21 @@ Inbox.propTypes = {
     receiverIds: PropTypes.array.isRequired,
 }
 
-const InboxHeader = ({ inboxKey, isGroup, showMembers, setShowMembers, title }) => {
-    const isMobile = getLayout() === 'mobile'
-    const toolIconSize = isMobile ? undefined : 'mini'
+const InboxHeader = ({
+    expanded,
+    inboxKey,
+    isGroup,
+    setExpanded,
+    setShowMembers,
+    showMembers,
+    title,
+}) => {
+    const size = 'tiny'
     const { id: userId } = getUser() || {}
 
     return (
         <div className='header-container'>
             <h1 className='header'>
-                <div className='tools left'>
-                    <Button {...{
-                        active: false,
-                        circular: true,
-                        icon: 'chevron down',
-                        inverted: false,
-                        onClick: () => document.getElementById('app').classList.remove('chat-expanded'),
-                        size: toolIconSize,
-                        title: textsCap.showConvList,
-                    }} />
-                </div>
                 <span>
                     {inboxKey === EVERYONE ? textsCap.trollbox : (
                         title || inboxSettings(inboxKey).name || textEllipsis(`Chatting with @${inboxKey}`, 16, 3, false)
@@ -134,17 +134,20 @@ const InboxHeader = ({ inboxKey, isGroup, showMembers, setShowMembers, title }) 
 
                 <div className='tools right'>
                     {isGroup && (
-                        <Button {...{
-                            active: false,
-                            circular: true,
-                            icon: 'group',
-                            inverted: !showMembers,
+                        <Icon {...{
+                            name: 'group',
                             key: 'showMembers',
                             onClick: () => setShowMembers(!showMembers),
-                            size: toolIconSize,
+                            size,
                             title: textsCap.members
                         }} />
                     )}
+                    <Icon {...{
+                        name: 'chevron ' + (expanded ? 'down' : 'up'),
+                        onClick: () => setExpanded(!expanded),
+                        size,
+                        title: textsCap.showConvList,
+                    }} />
                 </div>
             </h1>
             <h4 className='subheader'>
@@ -191,7 +194,7 @@ const MemberList = ({ header, isTrollbox, receiverIds }) => {
                                         {!isSelf && (
                                             <Button {...{
                                                 circular: true,
-                                                className: 'button-action',
+                                                className: 'button-action dark-grey',
                                                 disabled: isSelf,
                                                 icon: 'chat',
                                                 onClick: () => openInboxBond.changed(createInbox([memberId])),

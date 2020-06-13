@@ -9,6 +9,7 @@ import storage from '../../services/storage'
 const PREFIX = 'totem_'
 const MODULE_KEY = 'chat-history'
 const EVERYONE = 'everyone'
+const TROLLBOX = 'trollbox' // alternative ID for trollbox
 const chatHistory = new DataStorage(PREFIX + MODULE_KEY, true)
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
@@ -23,6 +24,22 @@ export const unreadCountBond = new Bond().defaultTo(getUnreadCount())
 export const visibleBond = new Bond().defaultTo(!!rw().visible)
 openInboxBond.tie(key => rw({ openInboxKey: key })) // remember last open inbox key
 visibleBond.tie(visible => rw({ visible }))
+
+// create/get inbox key
+export const createInbox = (receiverIds = [], name, reload = false) => {
+    const inboxKey = getInboxKey(receiverIds)
+    let settings = inboxSettings(inboxKey)
+    settings = {
+        ...settings,
+        createdTS: settings.createdTS || new Date(),
+        deleted: false, // force undelete
+        hide: false, // force unarchive
+    }
+    settings.name = name || settings.name
+    !chatHistory.get(inboxKey) && chatHistory.set(inboxKey, [])
+    inboxSettings(inboxKey, settings, reload)
+    return inboxKey
+}
 
 const generateInboxBonds = (onload = false) => {
     const allKeys = Array.from(chatHistory.getAll())
@@ -62,7 +79,7 @@ export const getInboxKey = receiverIds => {
     // Trollbox
     if (receiverIds.includes(EVERYONE)) return EVERYONE
     // Trollbox
-    if (receiverIds.includes('trollbox')) return EVERYONE
+    if (receiverIds.includes(TROLLBOX)) return EVERYONE
     // Private chat
     if (receiverIds.length === 1) return receiverIds[0]
     // Group chat
@@ -131,20 +148,6 @@ export const inboxSettings = (inboxKey, value, triggerReload = false) => {
 // all inbox settings
 export const inboxesSettings = () => rw().inbox || {}
 
-// create/get inbox key
-export const createInbox = (receiverIds = [], name, reload = false) => {
-    const inboxKey = getInboxKey(receiverIds)
-    let settings = {
-        ...inboxSettings(inboxKey),
-        deleted: false, // force undelete
-        hide: false, // force unarchive
-    }
-    settings.name = name || settings.name
-    !chatHistory.get(inboxKey) && chatHistory.set(inboxKey, [])
-    inboxSettings(inboxKey, settings, reload)
-    return inboxKey
-}
-
 export const removeInbox = inboxKey => {
     chatHistory.delete(inboxKey)
     delete inboxBonds[inboxKey]
@@ -169,52 +172,53 @@ const saveMessage = msg => {
     receiverIds = receiverIds.sort()
     const inboxKey = getInboxKey(receiverIds)
     const messages = chatHistory.get(inboxKey) || []
-    const limit = historyLimit()
     let msgItem = messages.find(x => x.id === id)
+    if (msgItem) return // prevent saving duplicate
+
+    const limit = historyLimit()
     const { id: userId } = getUser() || {}
-    const settings = inboxSettings(inboxKey)
-    const newSettings = {}
-    if (id && msgItem) {
-        // update existing item
-        msgItem.status = status
-        msgItem.timestamp = timestamp
-    } else {
-        msgItem = messages.find(x => x.senderId === senderId && x.timestamp === timestamp && x.status === status)
-        if (!msgItem) {
-            msgItem = {
-                action,
-                encrypted,
-                errorMessage,
-                id: id || uuid.v1(),
-                message,
-                receiverIds,
-                senderId,
-                status,
-                timestamp,
-            }
-            messages.push(msgItem)
-        }
+    let settings = {
+        ...inboxSettings(inboxKey),
+        lastMessageTS: timestamp,
     }
+    const { name: oldName, unread } = settings
 
+    messages.push({
+        action,
+        encrypted,
+        errorMessage,
+        id: id || ('local-' + uuid.v1()), // local only should be used when message failed to send
+        message,
+        receiverIds,
+        senderId,
+        status,
+        timestamp,
+    })
+
+    // handle special messages
     if (isObj(action)) switch (action.type) {
-        case 'message-group-name':
+        case 'message-group-name': // group name change
             const [name] = action.data || []
-            const { name: oldName } = settings
             if (!name || name === oldName) break
-            newSettings.name = name
+            settings.name = name
     }
 
-    chatHistory.set(inboxKey, messages.slice(-limit))
+    chatHistory.set(inboxKey, !limit ? messages : messages.slice(-limit))
     // new mesage received
     const isVisible = visibleBond._value && openInboxBond._value === inboxKey
     if (senderId !== userId && !isVisible) {
-        newSettings.unread = (settings.unread || 0) + 1
+        settings.unread = (unread || 0) + 1
     }
-    if (timestamp) rw({ lastMessageTS: timestamp })
+    // update settings
+    inboxSettings(inboxKey, settings, true)
+
+    // Store (global) last received (including own) message timestamp.
+    // This is used to retrieve missed messages from server
+    rw({ lastMessageTS: timestamp })
+    // makes sure inbox bonds are generated
     generateInboxBonds()
+    // update received inbox bond to make sure message list is updated, if it's visible
     inboxBonds[inboxKey].changed(uuid.v1())
-    if (Object.keys(newSettings).length) inboxSettings(inboxKey, newSettings, true)
-    return msgItem
 }
 
 // send message
