@@ -17,20 +17,18 @@ import {
 import client, { loginBond, getUser } from '../../services/chatClient'
 import { translated } from '../../services/language'
 import Message from '../../components/Message'
-import { getByUserId } from '../../services/partner'
-import { getLayout } from '../../services/window'
 
-const [_, textsCap] = translated({
+const [texts, textsCap] = translated({
     close: 'close',
+    inConvWith: 'in conversation with',
     inputPlaceholder: 'type something and press enter to send',
-    loggedInAs: 'logged in as',
     loginRequired: 'login/registration required',
     members: 'members',
     messageError: 'error',
     offline: 'offline',
     online: 'online',
-    privateChat: 'private chat',
     showConvList: 'show conversation list',
+    pmBtnTitle: 'start back-channel',
     trollbox: 'Totem Trollbox',
     you: 'you',
 }, true)
@@ -45,12 +43,9 @@ const focusNScroll = inboxKey => setTimeout(() => {
 
 export default function Inbox(props) {
     let {
-        expanded,
         hiding, // indicates hiding animation in progress
         inboxKey,
         receiverIds, // if not supplied use default open inbox
-        setExpanded,
-        title,
     } = props
     if (!inboxKey) return ''
     data[inboxKey] = data[inboxKey] || {}
@@ -60,13 +55,12 @@ export default function Inbox(props) {
     const isGroup = receiverIds.length > 1 || isTrollbox
     const header = (
         <InboxHeader {...{
-            expanded,
+            key: inboxKey,
             inboxKey,
             isGroup,
-            setExpanded,
+            isTrollbox,
             setShowMembers,
             showMembers,
-            title,
         }} />
     )
 
@@ -112,47 +106,46 @@ Inbox.propTypes = {
 }
 
 const InboxHeader = ({
-    expanded,
     inboxKey,
     isGroup,
-    setExpanded,
+    isTrollbox,
     setShowMembers,
     showMembers,
-    title,
 }) => {
-    const size = 'tiny'
     const { id: userId } = getUser() || {}
 
     return (
-        <div className='header-container'>
-            <h1 className='header'>
-                <span>
-                    {inboxKey === EVERYONE ? textsCap.trollbox : (
-                        title || inboxSettings(inboxKey).name || textEllipsis(`Chatting with @${inboxKey}`, 16, 3, false)
+        <div className='header'>
+            <div>
+                <b>@{userId}</b> {texts.inConvWith}
+            </div>
+            <div>
+                <b>
+                    {isTrollbox ? textsCap.trollbox : inboxSettings(inboxKey).name || (
+                        isGroup ? textEllipsis(`${inboxKey}`, 18, 3, false) : <UserID userId={inboxKey} />
                     )}
-                </span>
+                </b>
 
                 <div className='tools right'>
                     {isGroup && (
                         <Icon {...{
                             name: 'group',
-                            key: 'showMembers',
                             onClick: () => setShowMembers(!showMembers),
-                            size,
                             title: textsCap.members
                         }} />
                     )}
-                    <Icon {...{
-                        name: 'chevron ' + (expanded ? 'down' : 'up'),
-                        onClick: () => setExpanded(!expanded),
-                        size,
+                    <i {...{
+                        className: 'expand icon',
+                        onClick: () => {
+                            const { classList } = document.getElementById('app')
+                            const expandedClass = 'chat-expanded'
+                            const expanded = classList.value.includes(expandedClass)
+                            classList[!expanded ? 'add' : 'remove'](expandedClass)
+                        },
                         title: textsCap.showConvList,
                     }} />
                 </div>
-            </h1>
-            <h4 className='subheader'>
-                {textsCap.loggedInAs}: @{userId}
-            </h4>
+            </div>
         </div>
     )
 }
@@ -160,15 +153,14 @@ const InboxHeader = ({
 const MemberList = ({ header, isTrollbox, receiverIds }) => {
     const { id: userId } = getUser() || {}
     const [online, setOnline] = useState({})
-
     useEffect(() => {
         let isMounted = true
         const frequency = 60000 // check user status every 60 seconds
         const checkOnline = () => {
             if (!isMounted) return
             if (!loginBond._value) return setOnline(false)
-            const userIds = !isTrollbox ? receiverIds : getTrollboxUserIds()
-            client.isUserOnline(userIds, (err, online) => !err && setOnline(online))
+            const userIds = (!isTrollbox ? receiverIds : getTrollboxUserIds()).filter(id => id !== userId)
+            userIds.length && client.isUserOnline(userIds, (err, online) => !err && setOnline(online))
         }
         const intervalId = setInterval(checkOnline, frequency)
         checkOnline()
@@ -177,6 +169,7 @@ const MemberList = ({ header, isTrollbox, receiverIds }) => {
             intervalId && clearInterval(intervalId)
         }
     }, [])
+
     return (
         <div className='inbox'>
             {header}
@@ -185,6 +178,7 @@ const MemberList = ({ header, isTrollbox, receiverIds }) => {
                     .sort()
                     .map(memberId => {
                         const isSelf = userId === memberId
+                        const memberOnline = isSelf ? loginBond._value : online[memberId]
                         return (
                             <Message {...{
                                 className: 'member-list-item',
@@ -192,25 +186,21 @@ const MemberList = ({ header, isTrollbox, receiverIds }) => {
                                     <div>
                                         <UserID userId={memberId} onClick={isSelf ? null : undefined} />
                                         {!isSelf && (
-                                            <Button {...{
-                                                circular: true,
-                                                className: 'button-action dark-grey',
-                                                disabled: isSelf,
-                                                icon: 'chat',
+                                            <div {...{
+                                                className: 'button-action',
                                                 onClick: () => openInboxBond.changed(createInbox([memberId])),
-                                                size: 'mini',
-                                                style: { width: 'auto' },
-                                                title: textsCap.privateChat,
-                                            }} />
+                                            }}>
+                                                {textsCap.pmBtnTitle}
+                                                <i className='icon chat dark-grey' />
+                                            </div>
                                         )}
                                     </div>
                                 ),
-                                header: isSelf ? textsCap.you : (getByUserId(memberId) || {}).name,
                                 icon: {
                                     className: 'user-icon',
-                                    color: online[memberId] ? 'green' : 'red',
+                                    color: memberOnline ? 'green' : undefined,
                                     name: 'user',
-                                    title: online[memberId] ? textsCap.online : textsCap.offline,
+                                    title: memberOnline ? textsCap.online : textsCap.offline,
                                 },
                                 key: memberId,
                                 size: 'mini',
@@ -218,7 +208,7 @@ const MemberList = ({ header, isTrollbox, receiverIds }) => {
                         )
                     })}
             </div>
-        </div>
+        </div >
     )
 }
 

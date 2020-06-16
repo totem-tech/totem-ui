@@ -57,6 +57,12 @@ button.dark-grey .icon,
 #app.chat-expanded .chat-container .inbox-list {
     height: auto;
 }
+#app.chat-expanded .chat-container .inbox-list .list { 
+    display: none;
+}
+#app.chat-expanded .mobile .chat-container .inbox-list {
+    display: none;
+}
 .chat-container .inbox-list div.search .input {
     width: 100%;
 }
@@ -155,29 +161,38 @@ button.dark-grey .icon,
 .chat-container .inbox {
     height: 60%;
 }
-.chat-container .inbox .header-container {
+.chat-container .inbox .header {
     background: #434446;
     color: white;
-    padding: 5px;
+    font-size: 115%;
+    padding: 10px 15px;
     position: relative;
-    text-align: center;
+    text-align: left;
 }
-.chat-container.inverted .inbox .header-container {
+.chat-container.inverted .inbox .header {
     background: grey;
-}
-.chat-container .inbox .header-container .header {
-    margin: 0;
-    overflow: hidden;
-    position: relative;
 }
 .chat-container .inbox .header .tools.right {
     display: inline;
     position: absolute;
     right: 0;
-    top: -6px;
+    top: 17px;
 }
-.chat-container .inbox .header-container .subheader {
-    margin: 0;
+.chat-container .inbox .header .tools.right .icon {
+    font-size: 22px;
+    cursor: pointer;
+    
+}
+.chat-container .inbox .header .tools.right .expand.icon:before {
+    content: "\f077";
+}
+#app.chat-expanded .chat-container .inbox .header .expand.icon:before {
+    content: "\f078";
+}
+
+/* fix for small font size */
+.chat-container .inbox b {
+    font-weight: 800;
 }
 .chat-container .inbox .member-list-item {
     height: 40px;
@@ -190,9 +205,15 @@ button.dark-grey .icon,
     width: 18px !important;
 }
 .chat-container .inbox .member-list-item .button-action {
+    color: #075d6a;
+    cursor: pointer;
+    font-size: 15px;
     position: absolute;
-    top: 10px;
     right: 5px;
+    top: 10px;
+}
+.chat-container .inbox .member-list-item .button-action .icon {
+    font-size: 22px;
 }
 /* message list */
 .chat-container .messages {

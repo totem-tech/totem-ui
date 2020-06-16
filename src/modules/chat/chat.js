@@ -26,7 +26,7 @@ openInboxBond.tie(key => rw({ openInboxKey: key })) // remember last open inbox 
 visibleBond.tie(visible => rw({ visible }))
 
 // create/get inbox key
-export const createInbox = (receiverIds = [], name, reload = false) => {
+export const createInbox = (receiverIds = [], name, reload = false, setOpen = false) => {
     const inboxKey = getInboxKey(receiverIds)
     let settings = inboxSettings(inboxKey)
     settings = {
@@ -38,6 +38,8 @@ export const createInbox = (receiverIds = [], name, reload = false) => {
     settings.name = name || settings.name
     !chatHistory.get(inboxKey) && chatHistory.set(inboxKey, [])
     inboxSettings(inboxKey, settings, reload)
+    setOpen && openInboxBond.changed(inboxKey)
+    setOpen && visibleBond.changed(true)
     return inboxKey
 }
 

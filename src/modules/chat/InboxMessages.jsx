@@ -63,7 +63,7 @@ const InboxMessage = props => {
                 return (
                     <div {...{ className: 'message-group-name', id }}>
                         <i>
-                            {isSender ? textsCap.you + ' ' : <UserID {...{ userId: senderId }} />}
+                            {isSender ? textsCap.you + ' ' : <UserID {...{ suffix: ' ', userId: senderId }} />}
                             {texts.changedGroupName} <b>{data[0]}</b>
                         </i>
                     </div>
@@ -96,12 +96,9 @@ const InboxMessage = props => {
                     <span>
                         {isPrivate || isSender || !senderId ? '' : (
                             <UserID {...{
-                                basic: color !== 'white',
-                                secondary: color === 'white',
                                 suffix: ': ',
                                 userId: senderId,
-                            }}
-                            />
+                            }} />
                         )}
                         {message}
                         {showTime && (

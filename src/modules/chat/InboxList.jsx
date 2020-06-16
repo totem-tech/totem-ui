@@ -46,8 +46,11 @@ const [texts, textsCap] = translated({
     trollbox: 'Totem Trollbox',
 }, true)
 
+// force show inbox list
+const removeExpand = () => document.getElementById('app').classList.remove('chat-expanded')
+
 export default function InboxList(props) {
-    const { expanded, setExpanded, inverted } = props
+    const { inverted } = props
     const allSettings = inboxesSettings()
     const getAllInboxKeys = () => Object.keys(inboxesSettings())
     const names = {}
@@ -66,7 +69,7 @@ export default function InboxList(props) {
     })
     // handle query change
     const handleSearchChange = async (_, { value }) => {
-        setExpanded(false)
+        removeExpand()
         setQuery(value)
         if (!value) {
             setFilteredKeys(inboxKeys)
@@ -153,29 +156,27 @@ export default function InboxList(props) {
                 query,
                 onSeachChange: handleSearchChange,
                 showAll,
-                toggleShowAll: () => setShowAll(!showAll) | setExpanded(false),
+                toggleShowAll: () => setShowAll(!showAll) | removeExpand(),
             }} />
-            {!expanded && (
-                <div className='list'>
-                    {filteredKeys.map(key => (
-                        <InboxListItem {...{
-                            active: openKey === key,
-                            inboxKeys,
-                            inboxKey: key,
-                            key,
-                            name: names[key],
-                            filteredMsgId: filteredMsgIds[key],
-                            inboxMsgs: msgs[key],
-                            inverted,
-                            status: status[key],
-                            query,
-                            settings: allSettings[key],
-                        }} />
-                    ))}
+            <div className='list'>
+                {filteredKeys.map(key => (
+                    <InboxListItem {...{
+                        active: openKey === key,
+                        inboxKeys,
+                        inboxKey: key,
+                        key,
+                        name: names[key],
+                        filteredMsgId: filteredMsgIds[key],
+                        inboxMsgs: msgs[key],
+                        inverted,
+                        status: status[key],
+                        query,
+                        settings: allSettings[key],
+                    }} />
+                ))}
 
-                    <Message className='empty-message' content={textsCap.noResultMsg} />
-                </div>
-            )}
+                <Message className='empty-message' content={textsCap.noResultMsg} />
+            </div>
         </div >
     )
 }
