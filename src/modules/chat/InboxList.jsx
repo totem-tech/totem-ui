@@ -7,6 +7,7 @@ import Message from '../../components/Message'
 import client, { getUser } from '../../services/chatClient'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
+import { layoutBond, MOBILE, getLayout } from '../../services/window'
 import {
     newInboxBond,
     inboxSettings,
@@ -47,7 +48,8 @@ const [texts, textsCap] = translated({
 }, true)
 
 // force show inbox list
-const removeExpand = () => document.getElementById('app').classList.remove('chat-expanded')
+const expandInbox = (expand = false) => document.getElementById('app')
+    .classList[expand ? 'add' : 'remove']('inbox-expanded')
 
 export default function InboxList(props) {
     const { inverted } = props
@@ -59,17 +61,16 @@ export default function InboxList(props) {
     let [filteredKeys, setFilteredKeys] = useState(inboxKeys)
     const [filteredMsgIds, setFilteredMsgIds] = useState({})
     const [openKey, setOpenKey] = useState(openInboxBond._value)
+    const [query, setQuery] = useState('')
     const [showAll, setShowAll] = useState(false)
     const [status, setStatus] = useState({})
-    const [query, setQuery] = useState('')
-
     inboxKeys.forEach(key => {
         names[key] = (key === EVERYONE ? textsCap.trollbox : allSettings[key].name) || key
         msgs[key] = getMessages(key).reverse() // latest first
     })
     // handle query change
     const handleSearchChange = async (_, { value }) => {
-        removeExpand()
+        expandInbox()
         setQuery(value)
         if (!value) {
             setFilteredKeys(inboxKeys)
@@ -106,6 +107,7 @@ export default function InboxList(props) {
 
     useEffect(() => {
         let isMounted = true
+        let ignoredFirst = false
         const tieId = newInboxBond.tie(() => {
             if (!isMounted) return
             const keys = getAllInboxKeys()
@@ -113,7 +115,12 @@ export default function InboxList(props) {
             setFilteredKeys(keys)
             setQuery('')
         })
-        const tieIdOpenKey = openInboxBond.tie(key => isMounted && setOpenKey(key))
+        const tieIdOpenKey = openInboxBond.tie(key => {
+            if (!isMounted) return
+            setOpenKey(key)
+            ignoredFirst && getLayout() === MOBILE && expandInbox(!!key)
+            ignoredFirst = true
+        })
 
         // check online status of active private and group chat user ids
         const checkStatus = () => {
@@ -156,7 +163,7 @@ export default function InboxList(props) {
                 query,
                 onSeachChange: handleSearchChange,
                 showAll,
-                toggleShowAll: () => setShowAll(!showAll) | removeExpand(),
+                toggleShowAll: () => setShowAll(!showAll) | expandInbox(),
             }} />
             <div className='list'>
                 {filteredKeys.map(key => (

@@ -82,14 +82,16 @@ export default function Inbox(props) {
     if (showMembers) return <MemberList {...{ header, isTrollbox, receiverIds }} />
     return (
         <div className='inbox'>
-            {header}
-            <InboxMessages {...{
-                isPrivate: receiverIds.length === 1 && !isTrollbox,
-                onRef: ref => data[inboxKey].messagesRef = ref,
-                messages: messages.length > 0 ? messages : [{
-                    message: textsCap.inputPlaceholder
-                }],
-            }} />
+            <div className='inbox-wrap'>
+                {header}
+                <InboxMessages {...{
+                    isPrivate: receiverIds.length === 1 && !isTrollbox,
+                    onRef: ref => data[inboxKey].messagesRef = ref,
+                    messages: messages.length > 0 ? messages : [{
+                        message: textsCap.inputPlaceholder
+                    }],
+                }} />
+            </div>
             <MessageInput {... {
                 onRef: ref => data[inboxKey].inputRef = ref,
                 onSubmit: draft => {
@@ -101,8 +103,8 @@ export default function Inbox(props) {
     )
 }
 Inbox.propTypes = {
-    inboxKey: PropTypes.string.isRequired,
-    receiverIds: PropTypes.array.isRequired,
+    inboxKey: PropTypes.string,
+    receiverIds: PropTypes.array,
 }
 
 const InboxHeader = ({
@@ -138,7 +140,7 @@ const InboxHeader = ({
                         className: 'expand icon',
                         onClick: () => {
                             const { classList } = document.getElementById('app')
-                            const expandedClass = 'chat-expanded'
+                            const expandedClass = 'inbox-expanded'
                             const expanded = classList.value.includes(expandedClass)
                             classList[!expanded ? 'add' : 'remove'](expandedClass)
                         },
@@ -221,7 +223,7 @@ const MessageInput = ({ onRef, onSubmit }) => {
         setValue('')
     }
     return (
-        <form onSubmit={handleSubmit}>
+        <form className='input-wrap' onSubmit={handleSubmit}>
             <FormInput {...{
                 action: { icon: 'paper plane outline', onClick: handleSubmit },
                 autoComplete: 'off',

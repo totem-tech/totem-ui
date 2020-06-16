@@ -34,6 +34,10 @@
     height: 100%;
     position: relative;
 }
+/* fix for small font size */
+.chat-container b {
+    font-weight: 800;
+}
 
 /* cusotm icon and button colors */
 button.dark-grey .icon,
@@ -54,14 +58,17 @@ button.dark-grey .icon,
     height: 40%;
     overflow-y: auto;
 }
-#app.chat-expanded .chat-container .inbox-list {
+#app.inbox-expanded .chat-container .inbox-list {
     height: auto;
 }
-#app.chat-expanded .chat-container .inbox-list .list { 
+#app.inbox-expanded .chat-container .inbox-list .list { 
     display: none;
 }
-#app.chat-expanded .mobile .chat-container .inbox-list {
+#app.inbox-expanded .mobile .chat-container .inbox-list {
     display: none;
+}
+#app:not(.inbox-expanded) .mobile .chat-container .inbox-list {
+    height: calc(100% - 58px);
 }
 .chat-container .inbox-list div.search .input {
     width: 100%;
@@ -161,6 +168,9 @@ button.dark-grey .icon,
 .chat-container .inbox {
     height: 60%;
 }
+.chat-container .inbox-wrap {
+    height: 100%;
+}
 .chat-container .inbox .header {
     background: #434446;
     color: white;
@@ -186,13 +196,15 @@ button.dark-grey .icon,
 .chat-container .inbox .header .tools.right .expand.icon:before {
     content: "\f077";
 }
-#app.chat-expanded .chat-container .inbox .header .expand.icon:before {
+#app.inbox-expanded .chat-container .inbox .header .expand.icon:before {
     content: "\f078";
 }
-
-/* fix for small font size */
-.chat-container .inbox b {
-    font-weight: 800;
+#app.inbox-expanded .chat-container .inbox {
+    height: 100%;
+}
+#app:not(.inbox-expanded) > .mobile .chat-container .inbox {
+    height: 58px;
+    overflow: hidden;
 }
 .chat-container .inbox .member-list-item {
     height: 40px;
@@ -217,8 +229,8 @@ button.dark-grey .icon,
 }
 /* message list */
 .chat-container .messages {
-    height: calc(100% - 99px);
-    padding: 10px 0;
+    height: calc(100% - 92px);
+    padding: 5px 0 0;
     position: relative;
     overflow-x: auto;
 }
@@ -260,7 +272,16 @@ button.dark-grey .icon,
 }
 
 /* message input */
-.chat-container .inbox input {
+.chat-container .inbox .input-wrap {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+}
+#app:not(.inbox-expanded) > .mobile .chat-container .inbox .input-wrap {
+    display: none;
+}
+.chat-container .inbox .input-wrap input {
     border-radius: 0;
 }
 
@@ -270,4 +291,10 @@ button.dark-grey .icon,
 }
 #app.chat-visible > :not(.mobile) .pushable > .ui.visible.left.sidebar.wide ~ .pusher.main-content {
     max-width: calc(100% - 635px) !important;
+}
+
+/* hide scrollbars */
+.chat-container .inbox .messages::-webkit-scrollbar,
+.chat-container .inbox-list::-webkit-scrollbar {
+    width: 0px;
 }
