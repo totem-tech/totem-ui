@@ -60,7 +60,7 @@ export default class Currency extends Component {
         })
 
         try {
-            valueConverted = await convertTo(value, unit, unitDisplayed)
+            valueConverted = !value ? 0 : await convertTo(value, unit, unitDisplayed)
             error = undefined
         } catch (err) {
             console.log('Currency conversion failed: ', { err })
@@ -70,7 +70,7 @@ export default class Currency extends Component {
         this.setState({
             error,
             value,
-            valueConverted: round(valueConverted, decimalPlaces)
+            valueConverted: round(valueConverted, decimalPlaces),
         })
     }
 
