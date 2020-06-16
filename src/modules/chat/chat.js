@@ -108,8 +108,8 @@ export function getUnreadCount() {
     return Object.keys(inboxBonds)
         .filter(k => !visibleBond._value || k !== openInboxBond._value)
         .reduce((count, key) => {
-            const { unread } = inboxSettings(key)
-            return count + (unread || 0)
+            const { deleted, hide, unread } = inboxSettings(key)
+            return count + (!deleted && !hide && unread || 0)
         }, 0)
 }
 
@@ -153,7 +153,7 @@ export const inboxesSettings = () => rw().inbox || {}
 export const removeInbox = inboxKey => {
     chatHistory.delete(inboxKey)
     delete inboxBonds[inboxKey]
-    inboxSettings(inboxKey, { deleted: true })
+    inboxSettings(inboxKey, { deleted: true, unread: 0 })
     newInboxBond.changed(uuid.v1())
     openInboxBond.changed(null)
 }

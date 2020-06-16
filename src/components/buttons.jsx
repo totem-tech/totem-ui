@@ -121,7 +121,7 @@ export const UserID = props => {
                     <Button {...{
                         circular: true,
                         icon: 'chat',
-                        onClick: () => closeModal(modalId) | createInbox([rawId], null, true, true),
+                        onClick: () => closeModal(modalId) | createInbox([rawId], null, false, true),
                         size: 'mini'
                     }} />
                 </div>
