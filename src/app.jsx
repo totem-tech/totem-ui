@@ -42,7 +42,7 @@ const [texts] = translated({
 export class App extends ReactiveComponent {
 	constructor() {
 		super([], {
-			// ensureRuntime: runtimeUp,
+			ensureRuntime: runtimeUp,
 			isMobile: layoutBond.map(layout => layout === 'mobile'),
 			numCol: gridColumnsBond,
 		})

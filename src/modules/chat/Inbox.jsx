@@ -225,7 +225,11 @@ const MessageInput = ({ onRef, onSubmit }) => {
     return (
         <form className='input-wrap' onSubmit={handleSubmit}>
             <FormInput {...{
-                action: { icon: 'paper plane outline', onClick: handleSubmit },
+                action: {
+                    className: 'dark-grey',
+                    icon: 'paper plane outline',
+                    onClick: handleSubmit,
+                },
                 autoComplete: 'off',
                 autoFocus: true,
                 elementRef: onRef,
