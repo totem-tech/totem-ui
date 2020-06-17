@@ -1,15 +1,16 @@
 import DataStorage from '../../utils/DataStorage'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
-import { arrUnique, isObj, isValidNumber, isDefined, isArr } from '../../utils/utils'
+import { arrUnique, isObj, isValidNumber, isDefined } from '../../utils/utils'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import client, { getUser } from '../../services/chatClient'
 import storage from '../../services/storage'
 
 const PREFIX = 'totem_'
 const MODULE_KEY = 'chat-history'
-const EVERYONE = 'everyone'
-const TROLLBOX = 'trollbox' // alternative ID for trollbox
+export const TROLLBOX = 'everyone'
+export const TROLLBOX_ALT = 'trollbox' // alternative ID for trollbox
+export const SUPPORT = 'support'
 const chatHistory = new DataStorage(PREFIX + MODULE_KEY, true)
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
@@ -46,11 +47,11 @@ export const createInbox = (receiverIds = [], name, reload = false, setOpen = fa
 const generateInboxBonds = (onload = false) => {
     const allKeys = Array.from(chatHistory.getAll())
         .map(([key]) => key)
-    const s = inboxSettings(EVERYONE)
+    const s = inboxSettings(TROLLBOX)
     const showTrollbox = !s.hide && !s.deleted
-    if (onload && !allKeys.includes(EVERYONE) && showTrollbox) {
-        allKeys.push(EVERYONE)
-        createInbox([EVERYONE])
+    if (onload && !allKeys.includes(TROLLBOX) && showTrollbox) {
+        allKeys.push(TROLLBOX)
+        createInbox([TROLLBOX])
     }
 
     allKeys.forEach(inboxKey => {
@@ -67,7 +68,7 @@ setTimeout(() => generateInboxBonds(true))
 
 // unique user ids from all messages in chat history
 export const getChatUserIds = (includeTrollbox = true) => arrUnique(Object.keys(inboxBonds)
-    .filter(key => key !== EVERYONE)
+    .filter(key => key !== TROLLBOX)
     .map(key => key.split(','))
     .flat()
     .concat(includeTrollbox ? getTrollboxUserIds() : []))
@@ -79,11 +80,11 @@ export const getInboxKey = receiverIds => {
     const index = receiverIds.indexOf(userId)
     if (index >= 0) receiverIds.splice(index, 1)
     // Trollbox
-    if (receiverIds.includes(EVERYONE)) return EVERYONE
+    if (receiverIds.includes(TROLLBOX)) return TROLLBOX
     // Trollbox
-    if (receiverIds.includes(TROLLBOX)) return EVERYONE
+    if (receiverIds.includes(TROLLBOX_ALT)) return TROLLBOX
     // Private chat
-    if (receiverIds.length === 1) return receiverIds[0]
+    if (!receiverIds.includes(SUPPORT) && receiverIds.length === 1) return receiverIds[0]
     // Group chat
     return arrUnique([...receiverIds, userId])
         .filter(Boolean)
@@ -100,7 +101,7 @@ export const getMessages = inboxKey => {
 
 // unique user ids from Trollbox chat history
 export const getTrollboxUserIds = () => {
-    const messages = chatHistory.get(EVERYONE) || []
+    const messages = chatHistory.get(TROLLBOX) || []
     return arrUnique(messages.map(x => x.senderId))
 }
 
@@ -240,8 +241,8 @@ export const send = (receiverIds, message, encrypted = false) => {
             id,
             errorMessage,
         }
-        if (status === 'error') return saveMessage(msg)
-        const removePending = status === 'success'
+        if (status === 'error') saveMessage(msg)
+        const removePending = ['error', 'success'].includes(status)
         let msgs = pendingMessages[inboxKey] || []
         if (removePending) {
             msgs = msgs.filter(m => m.id === id)
@@ -281,7 +282,7 @@ client.onConnect(() => {
 client.onMessage((m, s, r, e, t, id, action) => {
     const inboxKey = getInboxKey(r)
     // prevent saving trollbox messages if hidden
-    if (inboxKey === EVERYONE && inboxSettings(inboxKey).hide) return
+    if (inboxKey === TROLLBOX && inboxSettings(inboxKey).hide) return
     createInbox(r, null, true)
     saveMessage({
         action,

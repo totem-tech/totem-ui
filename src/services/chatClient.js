@@ -108,6 +108,15 @@ export class ChatClient {
         this.disconnect = () => socket.disconnect()
         this.onError = cb => socket.on('error', cb)
 
+        // check if logged in user has the role 'support'
+        // if true, user will receive all support messages sent by other users
+        //
+        // Params:
+        // @cb  function: callback args=>
+        //                  @err    string: error message, if any
+        //                  @yes    boolean: true indicates user is a support member
+        this.amISupport = cb => isFn(cb) && socket.emit('am-i-support', cb)
+
         // add/get company by wallet address
         //
         // Params:

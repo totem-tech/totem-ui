@@ -3,10 +3,19 @@ import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import { isFn, arrSort, textEllipsis } from '../../utils/utils'
-import { getInboxKey, hiddenInboxKeys, inboxBonds, inboxSettings, createInbox } from './chat'
+// services
+import client, { getUser } from '../../services/chatClient'
 import { translated } from '../../services/language'
 import { showForm, closeModal } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
+import {
+    createInbox,
+    getInboxKey,
+    hiddenInboxKeys,
+    inboxBonds,
+    inboxSettings,
+    SUPPORT,
+} from './chat'
 
 const [_, textsCap] = translated({
     group: 'group',
@@ -25,12 +34,12 @@ export default function NewInboxForm(props) {
         name: 'name',
         receiverIds: 'receiverIds'
     }
-    const [success, setSuccess] = useState(false)
-
     const inboxKeys = hiddenInboxKeys().concat(Object.keys(inboxBonds))
+    const [success, setSuccess] = useState(false)
     const [inputs, setInputs] = useState([
         {
             autoFocus: true,
+            bond: new Bond(),
             excludeOwnId: true,
             includeFromChat: true,
             includePartners: true,
@@ -55,10 +64,10 @@ export default function NewInboxForm(props) {
                 'text',
             ),
             onChange: (_, values) => {
-                const userIds = values[names.receiverIds].map(x => x.split(',')).flat()
+                let userIds = values[names.receiverIds].map(x => x.split(',')).flat()
                 const nameIn = findInput(inputs, names.name)
                 const inboxKey = getInboxKey(userIds)
-                const hideName = !inboxKey || inboxKey.split(',').length <= 1
+                const hideName = !inboxKey || inboxKey.split(',').length <= 1 || userIds.includes(SUPPORT)
                 const value = hideName ? '' : inboxSettings(inboxKey).name || nameIn.value
                 nameIn.hidden = hideName
                 nameIn.required = !hideName
@@ -82,18 +91,32 @@ export default function NewInboxForm(props) {
         },
     ])
 
-    const handleSubmit = (_, values) => {
+    const handleSubmit = async (_, values) => {
         const { onSubmit } = props
-        const receiverIds = values[names.receiverIds].map(x => x.split(',')).flat()
+        let receiverIds = values[names.receiverIds].map(x => x.split(',')).flat()
+        const { id: ownId } = getUser() || {}
+        const isSupport = receiverIds.includes(SUPPORT)
+        if (isSupport) {
+            let userIsSupport = false
+            await client.amISupport((_, yes) => userIsSupport = !!yes)
+            if (isSupport) {
+                receiverIds = [
+                    SUPPORT,
+                    !userIsSupport ? null : receiverIds.filter(id => ![SUPPORT, ownId].includes(id))[0]
+                ].filter(Boolean)
+            }
+        }
         const name = receiverIds.length > 1 ? values[names.name] : null
         const inboxKey = createInbox(receiverIds, name, true)
         setSuccess(true)
         isFn(onSubmit) && onSubmit(true, { inboxKey, ...values })
     }
 
-    props.values && useEffect(() => {
-        fillValues(inputs, props.values)
-        return () => { }
+    useEffect(() => {
+        let mounted = true
+        props.values && fillValues(inputs, props.values)
+
+        return () => mounted = false
     }, [])
 
     return (

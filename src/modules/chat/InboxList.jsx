@@ -7,21 +7,22 @@ import Message from '../../components/Message'
 import client, { getUser } from '../../services/chatClient'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
-import { layoutBond, MOBILE, getLayout } from '../../services/window'
+import { MOBILE, getLayout } from '../../services/window'
 import {
-    newInboxBond,
-    inboxSettings,
-    openInboxBond,
-    getMessages,
-    inboxesSettings,
     createInbox,
+    getMessages,
+    inboxSettings,
+    inboxBonds,
+    inboxesSettings,
+    newInboxBond,
+    openInboxBond,
     removeInboxMessages,
     removeInbox,
-    inboxBonds,
+    SUPPORT,
+    TROLLBOX,
 } from './chat'
 import NewInboxForm, { editName } from './NewInboxForm'
 
-const EVERYONE = 'everyone'
 const ALL_ONLINE = 'green'
 const SOME_ONLINE = 'yellow'
 const OFFLINE = 'grey'
@@ -44,19 +45,37 @@ const [texts, textsCap] = translated({
     removeConversation: 'remove conversation',
     searchPlaceholder: 'search conversations',
     showHidden: 'show hidden',
+    support: 'Totem Support',
     trollbox: 'Totem Trollbox',
 }, true)
 
 // force show inbox list
 const expandInbox = (expand = false) => document.getElementById('app')
     .classList[expand ? 'add' : 'remove']('inbox-expanded')
+const inboxExpanded = () => document.getElementById('app')
+    .classList.value.includes('inbox-expanded')
+
+export const getInboxName = (inboxKey, settings = inboxSettings(inboxKey)) => {
+    const { id: ownId } = getUser() || {}
+    const receiverIds = inboxKey.split(',')
+    let name = receiverIds.includes(TROLLBOX) ? textsCap.trollbox : settings.name
+    if (receiverIds.includes(SUPPORT)) {
+        const otherUsers = receiverIds.filter(id => ![SUPPORT, ownId].includes(id))
+        const isSupportMember = otherUsers.length > 0
+        // for support member display name as follows: "Totem support: UserID", otherwise "Totem Support"
+        return textsCap.support + (!isSupportMember ? '' : `: ${otherUsers[0]}`)
+    }
+    return name
+}
 
 export default function InboxList(props) {
     const { inverted } = props
     const allSettings = inboxesSettings()
     const getAllInboxKeys = () => Object.keys(inboxesSettings())
+    const { id: ownId } = getUser() || {}
     const names = {}
     const msgs = {}
+    // states
     const [inboxKeys, setInboxKeys] = useState(getAllInboxKeys())
     let [filteredKeys, setFilteredKeys] = useState(inboxKeys)
     const [filteredMsgIds, setFilteredMsgIds] = useState({})
@@ -64,8 +83,9 @@ export default function InboxList(props) {
     const [query, setQuery] = useState('')
     const [showAll, setShowAll] = useState(false)
     const [status, setStatus] = useState({})
+
     inboxKeys.forEach(key => {
-        names[key] = (key === EVERYONE ? textsCap.trollbox : allSettings[key].name) || key
+        names[key] = getInboxName(key, allSettings[key]) || key
         msgs[key] = getMessages(key).reverse() // latest first
     })
     // handle query change
@@ -125,9 +145,8 @@ export default function InboxList(props) {
         // check online status of active private and group chat user ids
         const checkStatus = () => {
             if (!isMounted) return
-            const { id: userId } = getUser() || {}
-            const inboxes = Object.keys(inboxBonds).filter(x => x !== EVERYONE)
-            const inboxUserIds = inboxes.map(x => x.split(',').filter(x => x !== userId))
+            const inboxes = Object.keys(inboxBonds).filter(x => x !== TROLLBOX)
+            const inboxUserIds = inboxes.map(x => x.split(',').filter(id => ![ownId, SUPPORT].includes(id)))
             const userIds = arrUnique(inboxUserIds.flat())
             userIds.length > 0 && client.isUserOnline(userIds, (err, online) => {
                 if (!isMounted) return
@@ -252,10 +271,15 @@ const InboxListItem = ({
     settings,
     name,
 }) => {
-
-    const isTrollbox = inboxKey === EVERYONE
-    const isGroup = inboxKey.split(',').length > 1
-    const icon = isTrollbox ? 'globe' : (isGroup ? 'group' : 'user')
+    const isTrollbox = inboxKey === TROLLBOX
+    const receiverIds = inboxKey.split(',')
+    const isSupport = receiverIds.includes(SUPPORT)
+    const isGroup = receiverIds.length > 1
+    const icon = isTrollbox ? 'globe' : (
+        isSupport ? 'heartbeat' : ( // alts: ambulance, heartbeat, user doctor
+            isGroup ? 'group' : 'user'
+        )
+    )
     const lastMsg = (inboxMsgs || []).filter(m => !!m.message)[0]
     const qMsg = (inboxMsgs || []).find(x => x.id === filteredMsgId) // searched message
     const qIndex = qMsg && qMsg.message.toLowerCase().indexOf(query.toLowerCase())
@@ -286,11 +310,14 @@ const InboxListItem = ({
             <div {...{
                 className: 'list-item' + (active ? ' active' : ''),
                 onClick: () => {
+                    const isMobile = getLayout() === MOBILE
+                    const isOpen = openInboxBond._value === inboxKey
+                    if (isMobile && isOpen && !inboxExpanded()) return expandInbox(true)
                     const key = openInboxBond._value === inboxKey ? null : inboxKey
                     key && createInbox(key.split(','))
                     openInboxBond.changed(key)
                 }
-            }} >
+            }}>
                 <div className='left'>
                     <Label {...{
                         icon: {

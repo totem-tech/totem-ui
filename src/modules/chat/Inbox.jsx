@@ -6,17 +6,20 @@ import InboxMessages from './InboxMessages'
 import FormInput from '../../components/FormInput'
 import { UserID } from '../../components/buttons'
 import {
+    createInbox,
     getMessages,
+    getTrollboxUserIds,
     inboxBonds,
     inboxSettings,
     openInboxBond,
     send,
-    getTrollboxUserIds,
-    createInbox,
+    SUPPORT,
+    TROLLBOX,
 } from './chat'
 import client, { loginBond, getUser } from '../../services/chatClient'
 import { translated } from '../../services/language'
 import Message from '../../components/Message'
+import { getInboxName } from './InboxList'
 
 const [texts, textsCap] = translated({
     close: 'close',
@@ -33,7 +36,6 @@ const [texts, textsCap] = translated({
     you: 'you',
 }, true)
 const data = {}
-const EVERYONE = 'everyone'
 // focus message input and scroll to bottom of the message list
 const focusNScroll = inboxKey => setTimeout(() => {
     const { inputRef, messagesRef } = data[inboxKey]
@@ -51,14 +53,13 @@ export default function Inbox(props) {
     data[inboxKey] = data[inboxKey] || {}
     const [messages, setMessages] = useState(props.messages || getMessages(inboxKey))
     const [showMembers, setShowMembers] = useState(false)
-    const isTrollbox = receiverIds.includes(EVERYONE)
-    const isGroup = receiverIds.length > 1 || isTrollbox
+    const isTrollbox = receiverIds.includes(TROLLBOX)
+    const isGroup = !receiverIds.includes(SUPPORT) && receiverIds.length > 1 || isTrollbox
     const header = (
         <InboxHeader {...{
             key: inboxKey,
             inboxKey,
             isGroup,
-            isTrollbox,
             setShowMembers,
             showMembers,
         }} />
@@ -110,7 +111,6 @@ Inbox.propTypes = {
 const InboxHeader = ({
     inboxKey,
     isGroup,
-    isTrollbox,
     setShowMembers,
     showMembers,
 }) => {
@@ -123,8 +123,8 @@ const InboxHeader = ({
             </div>
             <div>
                 <b>
-                    {isTrollbox ? textsCap.trollbox : inboxSettings(inboxKey).name || (
-                        isGroup ? textEllipsis(`${inboxKey}`, 18, 3, false) : <UserID userId={inboxKey} />
+                    {getInboxName(inboxKey) || (
+                        isGroup ? textEllipsis(`${inboxKey}`, 21, 3, false) : <UserID userId={inboxKey} />
                     )}
                 </b>
 

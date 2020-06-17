@@ -80,7 +80,7 @@ const InboxMessage = props => {
         userColor[senderId] = bgColor
     }
     const color = bgColor === 'black' ? 'white' : 'black'
-    const [showTime, setShowTime] = useState(false)
+    const [showDetails, setShowDetails] = useState(false)
 
     return (
         <div {...{
@@ -101,7 +101,8 @@ const InboxMessage = props => {
                             }} />
                         )}
                         {message}
-                        {showTime && (
+                        {errorMessage && showDetails && <div><i>{errorMessage}</i></div>}
+                        {showDetails && (
                             <TimeSince {...{
                                 style: {
                                     fontStyle: 'italic',
@@ -114,7 +115,7 @@ const InboxMessage = props => {
                     </span>
                 ),
                 icon: icons[status],
-                onClick: () => setShowTime(!showTime),
+                onClick: () => setShowDetails(!showDetails),
                 style: {
                     color,
                     cursor: 'pointer',
