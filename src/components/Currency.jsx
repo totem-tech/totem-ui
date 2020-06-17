@@ -23,7 +23,7 @@ export default class Currency extends Component {
         let { address, value } = this.props
         const isNum = isValidNumber(value)
         if (!isNum && ss58Decode(address)) {
-            value = runtime.balances.balance(address)
+            value = runtime.balances && runtime.balances.balance(address) || 0
         }
         if (isBond(value)) {
             this.bond = value
