@@ -99,12 +99,10 @@ export default function NewInboxForm(props) {
         if (isSupport) {
             let userIsSupport = false
             await client.amISupport((_, yes) => userIsSupport = !!yes)
-            if (isSupport) {
-                receiverIds = [
-                    SUPPORT,
-                    !userIsSupport ? null : receiverIds.filter(id => ![SUPPORT, ownId].includes(id))[0]
-                ].filter(Boolean)
-            }
+            receiverIds = [
+                SUPPORT,
+                !userIsSupport ? null : receiverIds.filter(id => ![SUPPORT, ownId].includes(id))[0]
+            ].filter(Boolean)
         }
         const name = receiverIds.length > 1 ? values[names.name] : null
         const inboxKey = createInbox(receiverIds, name, true)
@@ -112,11 +110,10 @@ export default function NewInboxForm(props) {
         isFn(onSubmit) && onSubmit(true, { inboxKey, ...values })
     }
 
-    useEffect(() => {
-        let mounted = true
-        props.values && fillValues(inputs, props.values)
-
-        return () => mounted = false
+    props.values && useEffect(() => {
+        // on mount prefill values
+        fillValues(inputs, props.values)
+        return () => { }
     }, [])
 
     return (

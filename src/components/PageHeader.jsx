@@ -13,6 +13,10 @@ import identities, { getSelected, setSelected } from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
 import {
+	unreadCountBond as unreadMsgCountBond,
+	visibleBond as chatVisibleBond,
+} from '../modules/chat/chat'
+import {
 	newNotificationBond,
 	visibleBond as notifVisibleBond,
 	unreadCountBond as unreadNotifCountBond,
@@ -21,10 +25,6 @@ import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { toggleSidebarState } from '../services/sidebar'
 import timeKeeping from '../services/timeKeeping'
 import { setToast } from '../services/toast'
-import {
-	unreadCountBond as unreadMsgCountBond,
-	visibleBond as chatVisibleBond,
-} from '../modules/chat/chat'
 
 const [texts] = translated({
 	addressCopied: 'Address copied to clipboard',
@@ -229,13 +229,10 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 	const [timerInProgress, setTimerActive] = useState(timeKeeping.formData().inprogress)
 	const [unreadMsgCount, setUnreadMsgCount] = useState(unreadMsgCountBond._value)
 	const [unreadNotifCount, setUnreadNotifCount] = useState(unreadNotifCountBond._value)
-	const [blink, setBlink] = useState(false)
+	const [blink, setBlink] = useState(false) // blink notification icon
 
 	useEffect(() => {
-		const tieIdTimer = timeKeeping.formDataBond.tie(() => {
-			const active = timeKeeping.formData().inprogress
-			if (active !== timerInProgress) setTimerActive(active)
-		})
+		const tieIdTimer = timeKeeping.formDataBond.tie(() => setTimerActive(!!timeKeeping.formData().inprogress))
 		const tieIdUnreadMsg = unreadMsgCountBond.tie(unread => setUnreadMsgCount(unread))
 		const tieIdUnreadNotif = unreadNotifCountBond.tie(unread => setUnreadNotifCount(unread))
 		const tieIdNew = newNotificationBond.tie(() => {
@@ -255,10 +252,10 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 			{isMobile && (
 				<Menu.Item
 					icon={{ name: 'sidebar', size: 'big', className: 'no-margin' }}
-					// on mobile when sidebar is visible toggle is not neccessary on-document-click it is already triggered
-					onClick={toggleSidebarState}
+					onClick={() => chatVisibleBond.changed(false) | toggleSidebarState()}
 				/>
 			)}
+
 			<Menu.Item
 				icon={{
 					className: 'no-margin',
