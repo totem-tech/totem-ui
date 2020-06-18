@@ -70,22 +70,26 @@ export const UserID = props => {
     const { onClick, prefix, style, suffix, userId } = props
     const rawId = getRawUserID(userId)
     const isOwnId = (getUser() || {}).id === rawId
+    const allowClick = onClick !== null && !isOwnId
     if (!rawId) return ''
+
     const handleClick = e => {
-        if (onClick === null || isOwnId) return // prevent any action
         e.stopPropagation()
         const { address, name = '' } = getByUserId(rawId) || {}
         const buttons = [
             !name && {
                 content: textsCap.partnerAdd,
+                icon: 'user plus',
                 onClick: () => showForm(PartnerForm, { values: { userId: rawId } }),
             },
             {
                 content: textsCap.identityRequest,
+                icon: 'download',
                 onClick: () => showForm(IdentityRequestForm, { values: { userIds: [rawId] } }),
             },
             {
                 content: textsCap.identityShare,
+                icon: 'share',
                 onClick: () => showForm(IdentityShareForm, { values: { userIds: [rawId] } }),
             },
         ].filter(Boolean)
@@ -111,7 +115,12 @@ export const UserID = props => {
                         </div>
                     )}
                     <div>
-                        {buttons.map(props => <Button key={props.content} {...props} />)}
+                        {buttons.map(props => <Button {...{
+                            fluid: true,
+                            key: props.content,
+                            style: { margin: '3px 0' },
+                            ...props,
+                        }} />)}
                     </div>
                 </div>
             ),
@@ -126,15 +135,15 @@ export const UserID = props => {
                     }} />
                 </div>
             ),
-            size: 'tiny'
+            size: 'mini',
         })
     }
     return (
         <span {...{
             ...objWithoutKeys(props, ['prefix', 'suffix', 'userId']),
-            onClick: handleClick,
+            onClick: allowClick ? handleClick : undefined,
             style: {
-                cursor: 'pointer',
+                cursor: allowClick && 'pointer',
                 padding: 0,
                 ...style,
             },
