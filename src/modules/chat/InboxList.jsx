@@ -29,23 +29,24 @@ const OFFLINE = 'grey'
 const [texts, textsCap] = translated({
     actionsHide: 'hide actions',
     actionsShow: 'show actions',
-    archived: 'archived',
+    archived: 'archived - reopen?',
     archiveConversation: 'archive conversation',
     changeGroupName: 'change group name',
-    deleted: 'deleted',
+    deleted: 'deleted - restart?',
     detailed: 'detailed',
     expand: 'expand',
     jumpToMsg: 'jump to message',
     newChat: 'new conversation',
-    noResultMsg: 'your search yielded no results',
+    noResultMsg: 'no results found for your search',
     offline: 'offline',
     online: 'online',
-    remove: 'remove',
-    removeMessages: 'remove messages',
-    removeConversation: 'remove conversation',
+    remove: 'clear',
+    removeMessages: 'clear all messages',
+    removeConversation: 'trash conversation',
     searchPlaceholder: 'search conversations',
-    showHidden: 'show hidden',
+    showHidden: 'show archived',
     support: 'totem support',
+    trash: 'trash',
     trollbox: 'totem global conversation',
 }, true)
 
@@ -406,7 +407,7 @@ const InboxActions = ({ inboxKey, isGroup, isTrollbox, numMsgs, settings }) => {
             onClick: e => {
                 e.stopPropagation()
                 numMsgs === 0 ? removeInbox(inboxKey) : confirm({
-                    confirmButton: <Button negative content={textsCap.remove} />,
+                    confirmButton: <Button negative content={textsCap.trash} />,
                     header: textsCap.removeConversation,
                     onConfirm: () => removeInbox(inboxKey) | openInboxBond.changed(null),
                     size: 'mini',

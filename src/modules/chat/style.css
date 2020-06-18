@@ -244,6 +244,9 @@ button.dark-grey .icon,
     padding: 8px 10px;
     border-radius: 0;
 }
+.chat-container .inbox .member-list-item {
+    font-size: 16px !important;
+}
 .chat-container .inbox .member-list-item .user-icon {
     font-size: 16px !important;
     width: 18px !important;
@@ -295,14 +298,6 @@ button.dark-grey .icon,
 
 .chat-container .ui.brown.message {
     background-color: 'white' !important;
-}
-
-.chat-container .messages .message-wrap.user .colour-you {
-    background: #B2FFCA !important;
-}
-
-.chat-container .messages .message-wrap .message .colour-them {
-    background: #B2F5FF !important;
 }
 
 /* highlights a searched message */
