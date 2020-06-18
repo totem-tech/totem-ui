@@ -20,17 +20,19 @@ import client, { loginBond, getUser } from '../../services/chatClient'
 import { translated } from '../../services/language'
 import Message from '../../components/Message'
 import { getInboxName } from './InboxList'
+import { getLayout, MOBILE } from '../../services/window'
 
 const [texts, textsCap] = translated({
     close: 'close',
     inConvWith: 'in conversation with',
     inputPlaceholder: 'type something and press enter to send',
     loginRequired: 'login/registration required',
-    members: 'members',
     messageError: 'error',
     offline: 'offline',
     online: 'online',
+    returnToInbox: 'return to conversation',
     showConvList: 'show conversation list',
+    showMembers: 'show members',
     pmBtnTitle: 'start back-channel',
     trollbox: 'Totem Trollbox',
     you: 'you',
@@ -115,9 +117,16 @@ const InboxHeader = ({
     showMembers,
 }) => {
     const { id: userId } = getUser() || {}
-
+    const expandedClass = 'inbox-expanded'
+    const isInboxExpanded = () => document.getElementById('app')
+        .classList.value.includes(expandedClass)
+    const expandInbox = expand => document.getElementById('app')
+        .classList[expand ? 'add' : 'remove'](expandedClass)
     return (
-        <div className='header'>
+        <div {...{
+            className: 'header',
+            onClick: () => getLayout() === MOBILE && !isInboxExpanded() && expandInbox(true),
+        }}>
             <div>
                 <b>@{userId}</b> {texts.inConvWith}
             </div>
@@ -131,19 +140,19 @@ const InboxHeader = ({
                 <div className='tools right'>
                     {isGroup && (
                         <Icon {...{
-                            name: 'group',
-                            onClick: () => setShowMembers(!showMembers),
-                            title: textsCap.members
+                            name: showMembers ? 'envelope' : 'group',
+                            onClick: e => {
+                                e.stopPropagation()
+                                const isMobile = getLayout() === MOBILE
+                                setShowMembers(!showMembers)
+                                isMobile && expandInbox(true)
+                            },
+                            title: showMembers ? textsCap.returnToInbox : textsCap.showMembers
                         }} />
                     )}
                     <i {...{
                         className: 'expand icon',
-                        onClick: () => {
-                            const { classList } = document.getElementById('app')
-                            const expandedClass = 'inbox-expanded'
-                            const expanded = classList.value.includes(expandedClass)
-                            classList[!expanded ? 'add' : 'remove'](expandedClass)
-                        },
+                        onClick: e => e.stopPropagation() | expandInbox(!isInboxExpanded()),
                         title: textsCap.showConvList,
                     }} />
                 </div>
