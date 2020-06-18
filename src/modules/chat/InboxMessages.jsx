@@ -72,8 +72,8 @@ const InboxMessage = props => {
         return ''
     }
 
-    let bgColor = isSender ? 'green' : (
-        isPrivate ? 'blue' : userColor[senderId]
+    let bgColor = isSender ? 'colour-you' : (
+        isPrivate ? 'colour-them' : userColor[senderId]
     )
     if (!bgColor) {
         bgColor = colors[randomize(colors.length)]

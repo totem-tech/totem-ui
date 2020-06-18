@@ -31,8 +31,8 @@ const [texts, textsCap] = translated({
     offline: 'offline',
     online: 'online',
     showConvList: 'show conversation list',
-    pmBtnTitle: 'start back-channel',
-    trollbox: 'Totem Trollbox',
+    pmBtnTitle: 'open back-channel',
+    trollbox: 'totem global conversation',
     you: 'you',
 }, true)
 const data = {}
@@ -188,13 +188,16 @@ const MemberList = ({ header, isTrollbox, receiverIds }) => {
                                     <div>
                                         <UserID userId={memberId} onClick={isSelf ? null : undefined} />
                                         {!isSelf && (
-                                            <div {...{
+                                            <Button {...{
                                                 className: 'button-action',
                                                 onClick: () => openInboxBond.changed(createInbox([memberId])),
-                                            }}>
-                                                {textsCap.pmBtnTitle}
-                                                <i className='icon chat dark-grey' />
-                                            </div>
+                                                content: textsCap.pmBtnTitle,
+                                                icon: 'chat',
+                                                labelPosition: 'right',
+                                              active: false,
+                                              basic: true,
+                                              style: { textAlign: 'right' }
+                                            }} />
                                         )}
                                     </div>
                                 ),

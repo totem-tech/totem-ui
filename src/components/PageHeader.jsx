@@ -254,7 +254,7 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 		<React.Fragment>
 			{isMobile && (
 				<Menu.Item
-					icon={{ name: 'sidebar', size: 'big', className: 'no-margin' }}
+					icon={{ name: 'sidebar', size: 'large', className: 'no-margin' }}
 					// on mobile when sidebar is visible toggle is not neccessary on-document-click it is already triggered
 					onClick={toggleSidebarState}
 				/>
@@ -264,7 +264,7 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 					className: 'no-margin',
 					loading: timerInProgress,
 					name: 'clock outline',
-					size: 'big'
+					size: 'large'
 				}}
 				onClick={() => showForm(TimeKeepingForm, {})}
 			/>
@@ -279,7 +279,7 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 					className: 'no-margin',
 					color: unreadNotifCount === -1 ? 'grey' : undefined,
 					name: 'bell',
-					size: 'big',
+					size: 'large',
 				}} />
 				{unreadNotifCount > 0 && (
 					<div style={{
@@ -304,7 +304,7 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 					className: 'no-margin',
 					color: !isLoggedIn ? 'red' : (unreadMsgCount > 0 ? 'blue' : undefined),
 					name: 'chat',
-					size: 'big'
+					size: 'large'
 				}} />
 				{unreadMsgCount > 0 && (
 					<div style={{

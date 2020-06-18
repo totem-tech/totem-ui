@@ -36,7 +36,7 @@ const [texts, textsCap] = translated({
     detailed: 'detailed',
     expand: 'expand',
     jumpToMsg: 'jump to message',
-    newChat: 'new discussion',
+    newChat: 'new conversation',
     noResultMsg: 'your search yielded no results',
     offline: 'offline',
     online: 'online',
@@ -45,8 +45,8 @@ const [texts, textsCap] = translated({
     removeConversation: 'remove conversation',
     searchPlaceholder: 'search conversations',
     showHidden: 'show hidden',
-    support: 'Totem Support',
-    trollbox: 'Totem Trollbox',
+    support: 'totem support',
+    trollbox: 'totem global conversation',
 }, true)
 
 // force show inbox list
@@ -222,16 +222,14 @@ const ToolsBar = ({ query, onSeachChange, showAll, toggleShowAll }) => (
                         icon: 'find',
                         key: 'all',
                         onClick: toggleShowAll,
+                        labelPosition: 'left',
                     },
                     {
                         active: false,
                         basic: true,
-                        content: (
-                            <span>
-                                {textsCap.newChat}
-                                <Icon name='edit' />
-                            </span>
-                        ),
+                        content: textsCap.newChat,
+                        labelPosition: 'right',
+                        icon: 'edit',
                         key: 'new',
                         onClick: () => showForm(NewInboxForm, {
                             onSubmit: (ok, { inboxKey }) => ok && openInboxBond.changed(inboxKey)
@@ -430,8 +428,8 @@ const InboxActions = ({ inboxKey, isGroup, isTrollbox, numMsgs, settings }) => {
             ].map(action => (
                 <Button {...{
                     ...action,
-                    circular: true,
-                    className: 'dark-grey',
+                    circular: false,
+                    // className: 'dark-grey',
                     key: action.icon,
                     size: 'tiny'
                 }} />
