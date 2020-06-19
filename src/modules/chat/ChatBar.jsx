@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Inbox from './Inbox'
 import InboxList from './InboxList'
-import { getInboxKey, openInboxBond, visibleBond } from './chat'
+import { openInboxBond, visibleBond } from './chat'
 import './style.css'
 
 export default function ChatBar({ inverted = false }) {

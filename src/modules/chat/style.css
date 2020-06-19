@@ -29,7 +29,7 @@
     right: -100%;
 }
 .mobile .chat-container {
-    bottom: 54px;
+    bottom: 48px;
 }
 .chat-container .chat-contents {
     height: 100%;
@@ -70,7 +70,7 @@ button.dark-grey .icon,
     display: none;
 }
 #app:not(.inbox-expanded) .mobile .chat-container .inbox-list {
-    height: calc(100% - 58px);
+    height: calc(100% - 57px);
 }
 .chat-container .inbox-list div.search .input {
     width: 100%;
