@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
-import { Button, Icon } from 'semantic-ui-react'
+import { Icon } from 'semantic-ui-react'
 import { textEllipsis } from '../../utils/utils'
 import InboxMessages from './InboxMessages'
 import FormInput from '../../components/FormInput'
 import { UserID } from '../../components/buttons'
 import {
     createInbox,
+    expandedBond,
     getMessages,
     getTrollboxUserIds,
-    inboxBonds,
-    inboxSettings,
     openInboxBond,
     send,
     SUPPORT,
     TROLLBOX,
+    newMsgBond,
 } from './chat'
 import client, { loginBond, getUser } from '../../services/chatClient'
 import { translated } from '../../services/language'
@@ -57,16 +57,15 @@ export default function Inbox(props) {
     const [showMembers, setShowMembers] = useState(false)
     const isTrollbox = receiverIds.includes(TROLLBOX)
     const isGroup = !receiverIds.includes(SUPPORT) && receiverIds.length > 1 || isTrollbox
+    const isMobile = getLayout() === MOBILE
 
     useEffect(() => {
         let mounted = true
-        let bond = inboxBonds[inboxKey]
-        const tieId = bond && bond.tie(() => mounted && setMessages(getMessages(inboxKey)))
+        const tieId = newMsgBond.tie(([key]) => mounted && key === inboxKey && setMessages(getMessages(inboxKey)))
 
-        bond && inboxSettings(inboxKey, { unread: 0 }, true)
         return () => {
             mounted = false
-            bond && bond.untie(tieId)
+            newMsgBond.untie(tieId)
             elementRefs[inboxKey] = {}
         }
     }, []) // keep [] to prevent useEffect from being inboked on every render
@@ -81,6 +80,7 @@ export default function Inbox(props) {
                     key: inboxKey,
                     inboxKey,
                     isGroup,
+                    isMobile,
                     setShowMembers,
                     showMembers,
                 }} />
@@ -111,51 +111,42 @@ Inbox.propTypes = {
     receiverIds: PropTypes.array,
 }
 
-const InboxHeader = ({ inboxKey, isGroup, setShowMembers, showMembers }) => {
-    const { id: userId } = getUser() || {}
-    const expandedClass = 'inbox-expanded'
-    const isInboxExpanded = () => document.getElementById('app')
-        .classList.value.includes(expandedClass)
-    const expandInbox = expand => document.getElementById('app')
-        .classList[expand ? 'add' : 'remove'](expandedClass)
-    return (
-        <div {...{
-            className: 'header',
-            onClick: () => getLayout() === MOBILE && !isInboxExpanded() && expandInbox(true),
-        }}>
-            <div>
-                <b>@{userId}</b> {texts.inConvWith}
-            </div>
-            <div>
-                <b>
-                    {getInboxName(inboxKey) || (
-                        isGroup ? textEllipsis(`${inboxKey}`, 21, 3, false) : <UserID userId={inboxKey} />
-                    )}
-                </b>
+const InboxHeader = ({ inboxKey, isGroup, isMobile, setShowMembers, showMembers }) => (
+    <div {...{
+        className: 'header',
+        onClick: () => isMobile && !expandedBond._value && expandedBond.changed(true),
+    }}>
+        <div>
+            <b>@{(getUser() || {}).id}</b> {texts.inConvWith}
+        </div>
+        <div>
+            <b>
+                {getInboxName(inboxKey) || (
+                    isGroup ? textEllipsis(`${inboxKey}`, 21, 3, false) : <UserID userId={inboxKey} />
+                )}
+            </b>
 
-                <div className='tools right'>
-                    {isGroup && (
-                        <Icon {...{
-                            name: showMembers ? 'envelope' : 'group',
-                            onClick: e => {
-                                e.stopPropagation()
-                                const isMobile = getLayout() === MOBILE
-                                setShowMembers(!showMembers)
-                                isMobile && expandInbox(true)
-                            },
-                            title: showMembers ? textsCap.returnToInbox : textsCap.showMembers
-                        }} />
-                    )}
-                    <i {...{
-                        className: 'expand icon',
-                        onClick: e => e.stopPropagation() | expandInbox(!isInboxExpanded()),
-                        title: textsCap.showConvList,
+            <div className='tools right'>
+                {isGroup && (
+                    <Icon {...{
+                        name: showMembers ? 'envelope' : 'group',
+                        onClick: e => {
+                            e.stopPropagation()
+                            setShowMembers(!showMembers)
+                            isMobile && !expandedBond._value && expandedBond.changed(true)
+                        },
+                        title: showMembers ? textsCap.returnToInbox : textsCap.showMembers
                     }} />
-                </div>
+                )}
+                <i {...{
+                    className: 'expand icon',
+                    onClick: e => e.stopPropagation() | expandedBond.changed(!expandedBond._value),
+                    title: textsCap.showConvList,
+                }} />
             </div>
         </div>
-    )
-}
+    </div>
+)
 
 const MemberList = ({ isTrollbox, receiverIds }) => {
     const { id: ownId } = getUser() || {}

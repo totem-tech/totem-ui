@@ -11,11 +11,11 @@ import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import {
     createInbox,
     getInboxKey,
-    hiddenInboxKeys,
-    inboxBonds,
     inboxSettings,
     SUPPORT,
+    inboxesSettings,
 } from './chat'
+import { getInboxName } from './InboxList'
 
 const [_, textsCap] = translated({
     group: 'group',
@@ -24,17 +24,19 @@ const [_, textsCap] = translated({
     namePlaceholder: 'enter a name for the group chat',
     open: 'open',
     subheader: 'start new or re-open archived chat',
+    totemSupport: 'Totem Support',
     totemTrollbox: 'Totem Trollbox',
     updateName: 'update group name',
     userIdsHint: 'To start a group chat enter multiple User IDs',
 }, true)
 const EVERYONE = 'everyone'
+
 export default function NewInboxForm(props) {
     const names = {
         name: 'name',
         receiverIds: 'receiverIds'
     }
-    const inboxKeys = hiddenInboxKeys().concat(Object.keys(inboxBonds))
+    const inboxKeys = Object.keys(inboxesSettings())
     const [success, setSuccess] = useState(false)
     const [inputs, setInputs] = useState([
         {
@@ -48,14 +50,16 @@ export default function NewInboxForm(props) {
             name: names.receiverIds,
             options: arrSort(
                 inboxKeys.map(key => {
-                    const isGroup = key.split(',').length > 1
+                    const receiverIds = key.split(',')
                     const isTrollbox = key === EVERYONE
-                    const groupName = inboxSettings(key).name
+                    const isSupport = receiverIds.includes(SUPPORT)
+                    const isGroup = !isSupport && key.split(',').length > 1
+                    const name = getInboxName(key)
                     const members = textEllipsis(key.replace(/\,/g, ', '), 30, 3, false)
-                    const text = isTrollbox ? textsCap.totemTrollbox : groupName || members
+                    const text = name || members
                     return {
-                        description: groupName && members,
-                        icon: isTrollbox ? 'globe' : (isGroup ? 'group' : 'chat'),
+                        description: !isSupport && !isTrollbox && name && members,
+                        icon: isSupport ? 'heartbeat' : isTrollbox ? 'globe' : (isGroup ? 'group' : 'chat'),
                         key,
                         text: `${isGroup ? textsCap.group + ': ' : ''}${text}`,
                         value: key,
@@ -164,7 +168,7 @@ export const editName = (inboxKey, onSubmit) => {
                     silent: true,
                     type: QUEUE_TYPES.CHATCLIENT,
                 })
-                inboxSettings(inboxKey, { name }, true)
+                inboxSettings(inboxKey, { name })
                 isFn(onSubmit) && onSubmit(true)
             },
             size: 'mini',
