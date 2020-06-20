@@ -271,7 +271,10 @@ button.dark-grey .icon,
 #app .mobile .chat-container .inbox .scroll-to-bottom {
     bottom: 90px;
 }
-.chat-container .inbox .scroll-to-bottom.hidden { display: none }
+.chat-container .inbox .scroll-to-bottom:not(.visible),
+#app:not(.inbox-expanded) .mobile .chat-container .inbox .scroll-to-bottom {
+    display: none
+}
 
 /* message list */
 .chat-container .messages {

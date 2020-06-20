@@ -40,7 +40,6 @@ const [texts, textsCap] = translated({
 
 export default function Inbox(props) {
     let {
-        hiding, // indicates hiding animation in progress
         inboxKey,
         receiverIds, // if not supplied use default open inbox
     } = props
@@ -56,7 +55,8 @@ export default function Inbox(props) {
     const scrollToBottom = (animate = false, force = false) => setTimeout(() => {
         const msgsEl = document.querySelector(msgsSelector)
         const btnWrapEl = document.querySelector(scrollBtnSelector)
-        if (!btnWrapEl.classList.value.includes('hidden') && !force) return
+        // prevent scroll if scroll button is visible and not forced
+        if (btnWrapEl.classList.value.includes('visible') && !force) return
         const animateClass = 'animate-scroll'
         animate && msgsEl.classList.add(animateClass)
         msgsEl && msgsEl.scrollTo(0, msgsEl.scrollHeight)
@@ -64,25 +64,28 @@ export default function Inbox(props) {
     })
     // on message list scroll show/hide scroll button
     const handleScroll = () => {
-        const { scrollHeight, scrollTop, offsetHeight, offsetTop } = document.querySelector(msgsSelector) || {}
+        const { scrollHeight, scrollTop, offsetHeight } = document.querySelector(msgsSelector) || {}
         const showBtn = (scrollHeight - offsetHeight - scrollTop) > offsetHeight
         const btnWrapEl = document.querySelector(scrollBtnSelector)
-        btnWrapEl.classList[showBtn ? 'remove' : 'add']('hidden')
+        btnWrapEl.classList[showBtn ? 'add' : 'remove']('visible')
     }
 
     useEffect(() => {
         let mounted = true
         // whenever a new message for current inbox is retrieved update message list
-        const tieId = newMsgBond.tie(([key]) => mounted && key === inboxKey && setMessages(getMessages(inboxKey)))
+        const tieId = newMsgBond.tie(([key]) => {
+            if (!mounted || key !== inboxKey) return
+            setMessages(getMessages(inboxKey))
+            scrollToBottom()
+        })
         // focus and scoll down to latest msg
+        scrollToBottom(false, true)
 
         return () => {
             mounted = false
             newMsgBond.untie(tieId)
         }
     }, []) // keep [] to prevent useEffect from being inboked on every render
-
-    !hiding && scrollToBottom()
 
     return (
         <div className='inbox'>
@@ -106,7 +109,7 @@ export default function Inbox(props) {
                             onScroll: handleScroll
                         }} />
 
-                        <div className='scroll-to-bottom hidden'>
+                        <div className='scroll-to-bottom'>
                             <Button {...{
                                 circular: true,
                                 color: 'black',

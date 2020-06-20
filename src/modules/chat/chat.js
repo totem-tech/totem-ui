@@ -178,7 +178,7 @@ const saveMessage = msg => {
     chatHistory.set(inboxKey, !limit ? messages : messages.slice(-limit))
     const resetCount = visibleBond._value && openInboxBond._value === inboxKey
         && getLayout() !== MOBILE || expandedBond._value
-        && !!document.querySelector('.chat-container .inbox .scroll-to-bottom.hidden')
+        && !!document.querySelector('.chat-container .inbox .scroll-to-bottom:not(.visible)')
     settings.unread = resetCount ? 0 : (senderId !== userId ? 1 : 0) + unread || 0
 
     // update settings
