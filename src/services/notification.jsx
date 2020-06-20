@@ -110,7 +110,7 @@ export default function NotificationList({ forceVisible = false, float = true, i
         <div
             className='notification-list'
             style={!float ? {} : {
-                bottom: isMobile ? 54 : undefined,
+                bottom: isMobile ? 48 : undefined,
                 position: 'fixed',
                 top: !isMobile ? 63 : undefined,
                 right: 0,
