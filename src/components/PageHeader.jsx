@@ -13,10 +13,6 @@ import identities, { getSelected, setSelected } from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
 import {
-	unreadCountBond as unreadMsgCountBond,
-	visibleBond as chatVisibleBond,
-} from '../modules/chat/chat'
-import {
 	newNotificationBond,
 	visibleBond as notifVisibleBond,
 	unreadCountBond as unreadNotifCountBond,
@@ -25,6 +21,10 @@ import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { toggleSidebarState } from '../services/sidebar'
 import timeKeeping from '../services/timeKeeping'
 import { setToast } from '../services/toast'
+import {
+	unreadCountBond as unreadMsgCountBond,
+	visibleBond as chatVisibleBond,
+} from '../modules/chat/chat'
 
 const [texts] = translated({
 	addressCopied: 'Address copied to clipboard',
@@ -229,11 +229,13 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 	const [timerInProgress, setTimerActive] = useState(timeKeeping.formData().inprogress)
 	const [unreadMsgCount, setUnreadMsgCount] = useState(unreadMsgCountBond._value)
 	const [unreadNotifCount, setUnreadNotifCount] = useState(unreadNotifCountBond._value)
-	const [blink, setBlink] = useState(false) // blink notification icon
-	const size = 'large'
+	const [blink, setBlink] = useState(false)
 
 	useEffect(() => {
-		const tieIdTimer = timeKeeping.formDataBond.tie(() => setTimerActive(!!timeKeeping.formData().inprogress))
+		const tieIdTimer = timeKeeping.formDataBond.tie(() => {
+			const active = timeKeeping.formData().inprogress
+			if (active !== timerInProgress) setTimerActive(active)
+		})
 		const tieIdUnreadMsg = unreadMsgCountBond.tie(unread => setUnreadMsgCount(unread))
 		const tieIdUnreadNotif = unreadNotifCountBond.tie(unread => setUnreadNotifCount(unread))
 		const tieIdNew = newNotificationBond.tie(() => {
@@ -252,17 +254,17 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 		<React.Fragment>
 			{isMobile && (
 				<Menu.Item
-					icon={{ name: 'sidebar', size, className: 'no-margin' }}
-					onClick={() => chatVisibleBond.changed(false) | toggleSidebarState()}
+					icon={{ name: 'sidebar', size: 'large', className: 'no-margin' }}
+					// on mobile when sidebar is visible toggle is not neccessary on-document-click it is already triggered
+					onClick={toggleSidebarState}
 				/>
 			)}
-
 			<Menu.Item
 				icon={{
 					className: 'no-margin',
 					loading: timerInProgress,
 					name: 'clock outline',
-					size
+					size: 'large'
 				}}
 				onClick={() => showForm(TimeKeepingForm, {})}
 			/>
@@ -277,7 +279,7 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 					className: 'no-margin',
 					color: unreadNotifCount === -1 ? 'grey' : undefined,
 					name: 'bell',
-					size,
+					size: 'large',
 				}} />
 				{unreadNotifCount > 0 && (
 					<div style={{
@@ -302,15 +304,15 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 					className: 'no-margin',
 					color: !isLoggedIn ? 'red' : (unreadMsgCount > 0 ? 'blue' : undefined),
 					name: 'chat',
-					size
+					size: 'large'
 				}} />
 				{unreadMsgCount > 0 && (
 					<div style={{
 						color: 'white',
-						fontWeight: 'bold',
+						fontWeight: 'normal',
 						left: 0,
 						position: 'absolute',
-						top: isMobile ? 18 : 22,
+						top: isMobile ? 16 : 22,
 						textAlign: 'center',
 						width: '100%',
 					}}>
