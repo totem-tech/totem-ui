@@ -37,13 +37,6 @@ const [texts, textsCap] = translated({
     trollbox: 'totem global conversation',
     you: 'you',
 }, true)
-const elementRefs = {}
-// focus message input and scroll to bottom of the message list
-const focusNScroll = inboxKey => setTimeout(() => {
-    const { inputRef, messagesRef } = elementRefs[inboxKey]
-    inputRef && inputRef.focus()
-    messagesRef && messagesRef.scrollTo(0, messagesRef.scrollHeight)
-})
 
 export default function Inbox(props) {
     let {
@@ -52,26 +45,44 @@ export default function Inbox(props) {
         receiverIds, // if not supplied use default open inbox
     } = props
     if (!inboxKey) return ''
-    elementRefs[inboxKey] = elementRefs[inboxKey] || {}
     const [messages, setMessages] = useState(props.messages || getMessages(inboxKey))
     const [showMembers, setShowMembers] = useState(false)
     const isTrollbox = receiverIds.includes(TROLLBOX)
     const isGroup = !receiverIds.includes(SUPPORT) && receiverIds.length > 1 || isTrollbox
     const isMobile = getLayout() === MOBILE
+    const msgsSelector = '.chat-container .inbox .messages'
+    const scrollBtnSelector = '.chat-container .inbox .scroll-to-bottom'
+    // scroll to bottom of the message list
+    const scrollToBottom = (animate = false, force = false) => setTimeout(() => {
+        const msgsEl = document.querySelector(msgsSelector)
+        const btnWrapEl = document.querySelector(scrollBtnSelector)
+        if (!btnWrapEl.classList.value.includes('hidden') && !force) return
+        const animateClass = 'animate-scroll'
+        animate && msgsEl.classList.add(animateClass)
+        msgsEl && msgsEl.scrollTo(0, msgsEl.scrollHeight)
+        animate && setTimeout(() => msgsEl.classList.remove(animateClass), 500)
+    })
+    // on message list scroll show/hide scroll button
+    const handleScroll = () => {
+        const { scrollHeight, scrollTop, offsetHeight, offsetTop } = document.querySelector(msgsSelector) || {}
+        const showBtn = (scrollHeight - offsetHeight - scrollTop) > offsetHeight
+        const btnWrapEl = document.querySelector(scrollBtnSelector)
+        btnWrapEl.classList[showBtn ? 'remove' : 'add']('hidden')
+    }
 
     useEffect(() => {
         let mounted = true
+        // whenever a new message for current inbox is retrieved update message list
         const tieId = newMsgBond.tie(([key]) => mounted && key === inboxKey && setMessages(getMessages(inboxKey)))
+        // focus and scoll down to latest msg
 
         return () => {
             mounted = false
             newMsgBond.untie(tieId)
-            elementRefs[inboxKey] = {}
         }
     }, []) // keep [] to prevent useEffect from being inboked on every render
 
-    // focus and scoll down to latest msg
-    !hiding && focusNScroll(inboxKey)
+    !hiding && scrollToBottom()
 
     return (
         <div className='inbox'>
@@ -85,23 +96,32 @@ export default function Inbox(props) {
                     showMembers,
                 }} />
                 {showMembers ? <MemberList {...{ isTrollbox, receiverIds }} /> : (
-                    <InboxMessages {...{
-                        isPrivate: receiverIds.length === 1 && !isTrollbox,
-                        onRef: ref => elementRefs[inboxKey].messagesRef = ref,
-                        messages: messages.length > 0 ? messages : [{
-                            message: textsCap.inputPlaceholder
-                        }],
-                    }} />
+                    <React.Fragment>
+                        <InboxMessages {...{
+                            className: 'messages',
+                            isPrivate: receiverIds.length === 1 && !isTrollbox,
+                            messages: messages.length > 0 ? messages : [{
+                                message: textsCap.inputPlaceholder
+                            }],
+                            onScroll: handleScroll
+                        }} />
+
+                        <div className='scroll-to-bottom hidden'>
+                            <Button {...{
+                                circular: true,
+                                color: 'black',
+                                icon: 'chevron down',
+                                onClick: () => scrollToBottom(true, true),
+                            }} />
+                        </div>
+                    </React.Fragment>
                 )}
             </div>
             {!showMembers && (
-                <MessageInput {... {
-                    onRef: ref => elementRefs[inboxKey].inputRef = ref,
-                    onSubmit: draft => {
-                        send(receiverIds, draft, false)
-                        focusNScroll(inboxKey)
-                    },
-                }} />
+                <MessageInput
+                    className='input-wrap'
+                    onSubmit={draft => send(receiverIds, draft, false) | scrollToBottom()}
+                />
             )}
         </div >
     )
@@ -216,7 +236,7 @@ const MemberList = ({ isTrollbox, receiverIds }) => {
     )
 }
 
-const MessageInput = ({ onRef, onSubmit }) => {
+const MessageInput = ({ className, onSubmit }) => {
     const [value, setValue] = useState('')
     const handleSubmit = e => {
         e.preventDefault()
@@ -225,7 +245,7 @@ const MessageInput = ({ onRef, onSubmit }) => {
         setValue('')
     }
     return (
-        <form className='input-wrap' onSubmit={handleSubmit}>
+        <form {...{ className, onSubmit: handleSubmit }}>
             <FormInput {...{
                 action: {
                     className: 'dark-grey',
@@ -234,7 +254,6 @@ const MessageInput = ({ onRef, onSubmit }) => {
                 },
                 autoComplete: 'off',
                 autoFocus: true,
-                elementRef: onRef,
                 fluid: true,
                 maxLength: 160,
                 name: 'message',

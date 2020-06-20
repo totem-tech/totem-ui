@@ -263,25 +263,30 @@ button.dark-grey .icon,
 .chat-container .inbox .member-list-item .button-action .icon {
     font-size: 16px;
 }
+.chat-container .inbox .scroll-to-bottom {
+    bottom: 45px;
+    position: fixed;
+    right: 5px;
+}
+#app .mobile .chat-container .inbox .scroll-to-bottom {
+    bottom: 90px;
+}
+.chat-container .inbox .scroll-to-bottom.hidden { display: none }
+
 /* message list */
 .chat-container .messages {
-    height: calc(100% - 92px);
-    padding: 5px 0 0;
-    position: relative;
-    overflow-x: auto;
     background: #EDE8E3;
+    height: calc(100% - 92px);
+    overflow-x: auto;
+    position: relative;
 }
-.chat-container .messages.amimate-scroll {
+.chat-container .messages.animate-scroll {
     scroll-behavior: smooth;
-    transition: all 0.5s ease;
+    transition: all 0.3s ease;
 }
 .chat-container .messages .action-message {
     text-align: center;
     color: grey;
-}
-.chat-container .messages .message-wrap {
-    padding: '5px 0';
-    text-align: left !important;
 }
 .chat-container .messages .message-wrap.user {
     text-align: right !important;
@@ -289,11 +294,14 @@ button.dark-grey .icon,
 .chat-container .messages .message-wrap .message {
     border-radius: 10px;
     box-shadow: none;
-    margin: 2px 10px;
+    margin: 5px 10px 0;
     max-width: 80%;
     overflow-x: auto;
     padding: 7px 15px;
     width: auto;
+}
+.chat-container .messages .message-wrap:last-child {
+    margin-bottom: 5px;
 }
 
 .chat-container .ui.brown.message {

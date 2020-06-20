@@ -231,11 +231,13 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 	const [unreadNotifCount, setUnreadNotifCount] = useState(unreadNotifCountBond._value)
 	const [notifBlink, setNotifBlink] = useState(false)
 	const countStyle = {
-		color: '#2185d0',
+		color: 'white',
+		fontSize: 13,
+		fontWeight: 'bold',
 		left: 0,
 		position: 'absolute',
 		textAlign: 'center',
-		top: isMobile ? 16 : 22,
+		top: isMobile ? 17 : 22,
 		width: '100%',
 	}
 
@@ -290,7 +292,7 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 					name: 'bell',
 					size: 'large',
 				}} />
-				{unreadNotifCount > 0 && <div style={countStyle}>{unreadNotifCount}</div>}
+				{unreadNotifCount > 0 && <div style={{ ...countStyle, color: '#2185d0' }}>{unreadNotifCount}</div>}
 			</Menu.Item>
 
 			<Menu.Item onClick={() => {
