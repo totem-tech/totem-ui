@@ -15,6 +15,7 @@ import {
     SUPPORT,
     TROLLBOX,
     newMsgBond,
+    inboxSettings,
 } from './chat'
 import client, { loginBond, getUser } from '../../services/chatClient'
 import { translated } from '../../services/language'
@@ -55,12 +56,18 @@ export default function Inbox(props) {
     const scrollToBottom = (animate = false, force = false) => setTimeout(() => {
         const msgsEl = document.querySelector(msgsSelector)
         const btnWrapEl = document.querySelector(scrollBtnSelector)
+        const isMobile = getLayout() === MOBILE
+        const expanded = document.getElementById('app').classList.value.includes('inbox-expanded')
         // prevent scroll if scroll button is visible and not forced
         if (btnWrapEl.classList.value.includes('visible') && !force) return
         const animateClass = 'animate-scroll'
         animate && msgsEl.classList.add(animateClass)
         msgsEl && msgsEl.scrollTo(0, msgsEl.scrollHeight)
-        animate && setTimeout(() => msgsEl.classList.remove(animateClass), 500)
+        setTimeout(() => {
+            msgsEl.classList.remove(animateClass)
+            // mark inbox as read
+            if (!isMobile || expanded) inboxSettings(inboxKey, { unread: 0 })
+        }, 500)
     })
     // on message list scroll show/hide scroll button
     const handleScroll = () => {
