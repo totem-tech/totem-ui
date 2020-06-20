@@ -72,8 +72,8 @@ export const UserID = props => {
     const isOwnId = (getUser() || {}).id === rawId
     const allowClick = onClick !== null && !isOwnId
     if (!rawId) return ''
-
     const handleClick = e => {
+        // if (onClick === null || isOwnId) return // prevent any action
         e.stopPropagation()
         const { address, name = '' } = getByUserId(rawId) || {}
         const buttons = [
@@ -135,7 +135,7 @@ export const UserID = props => {
                     }} />
                 </div>
             ),
-            size: 'mini',
+            size: 'tiny'
         })
     }
     return (

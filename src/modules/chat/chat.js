@@ -5,26 +5,26 @@ import { arrUnique, isObj, isValidNumber, isDefined } from '../../utils/utils'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import client, { getUser } from '../../services/chatClient'
 import storage from '../../services/storage'
-import { getLayout, MOBILE } from '../../services/window'
 
 const PREFIX = 'totem_'
 const MODULE_KEY = 'chat-history'
 export const TROLLBOX = 'everyone'
 export const TROLLBOX_ALT = 'trollbox' // alternative ID for trollbox
 export const SUPPORT = 'support'
-// messages storage
 const chatHistory = new DataStorage(PREFIX + MODULE_KEY, true)
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
-// inbox expanded view
-export const expandedBond = new Bond().defaultTo(false)
+// notifies when a specific inbox view requires update
+export const inboxBonds = {}
 // notifies when new conversation is created, hidden or unhidden
-export const inboxListBond = new Bond()
-export const newMsgBond = new Bond() // value : [inboxkey, unique id]
+export const newInboxBond = new Bond()
+export const newMsgBond = new Bond()
 export const openInboxBond = new Bond().defaultTo(rw().openInboxKey)
 export const pendingMessages = {}
 export const unreadCountBond = new Bond().defaultTo(getUnreadCount())
 export const visibleBond = new Bond().defaultTo(!!rw().visible)
+openInboxBond.tie(key => rw({ openInboxKey: key })) // remember last open inbox key
+visibleBond.tie(visible => rw({ visible }))
 
 // create/get inbox key
 export const createInbox = (receiverIds = [], name, reload = false, setOpen = false) => {
@@ -44,8 +44,30 @@ export const createInbox = (receiverIds = [], name, reload = false, setOpen = fa
     return inboxKey
 }
 
+const generateInboxBonds = (onload = false) => {
+    const allKeys = Array.from(chatHistory.getAll())
+        .map(([key]) => key)
+    const s = inboxSettings(TROLLBOX)
+    const showTrollbox = !s.hide && !s.deleted
+    if (onload && !allKeys.includes(TROLLBOX) && showTrollbox) {
+        allKeys.push(TROLLBOX)
+        createInbox([TROLLBOX])
+    }
+
+    allKeys.forEach(inboxKey => {
+        pendingMessages[inboxKey] = pendingMessages[inboxKey] || []
+        if (inboxSettings(inboxKey).hide) {
+            delete inboxBonds[inboxKey]
+            return
+        }
+        if (inboxBonds[inboxKey]) return
+        inboxBonds[inboxKey] = new Bond()
+    })
+}
+setTimeout(() => generateInboxBonds(true))
+
 // unique user ids from all messages in chat history
-export const getChatUserIds = (includeTrollbox = true) => arrUnique(Object.keys(inboxesSettings())
+export const getChatUserIds = (includeTrollbox = true) => arrUnique(Object.keys(inboxBonds)
     .filter(key => key !== TROLLBOX)
     .map(key => key.split(','))
     .flat()
@@ -70,10 +92,12 @@ export const getInboxKey = receiverIds => {
         .join()
 }
 
-export const getMessages = inboxKey => [
-    ...chatHistory.get(inboxKey) || [],
-    ...(pendingMessages[inboxKey] || [])
-]
+export const getMessages = inboxKey => {
+    const { id: userId } = getUser() || {}
+    if (!userId) return []
+    const messages = chatHistory.get(inboxKey) || []
+    return [...messages, ...(pendingMessages[inboxKey] || [])]
+}
 
 // unique user ids from Trollbox chat history
 export const getTrollboxUserIds = () => {
@@ -82,12 +106,19 @@ export const getTrollboxUserIds = () => {
 }
 
 export function getUnreadCount() {
-    const allSettings = rw().inbox || {}
-    return Object.keys(allSettings)
+    return Object.keys(inboxBonds)
+        .filter(k => !visibleBond._value || k !== openInboxBond._value)
         .reduce((count, key) => {
-            const { deleted, hide, unread } = allSettings[key]
+            const { deleted, hide, unread } = inboxSettings(key)
             return count + (!deleted && !hide && unread || 0)
         }, 0)
+}
+
+// get/set hidden inbox keys list
+export const hiddenInboxKeys = () => {
+    const allKeys = Array.from(chatHistory.getAll()).map(x => x[0])
+    const settings = rw().inbox || {}
+    return allKeys.filter(key => settings[key] && settings[key].hide)
 }
 
 // get/set limit per inbox
@@ -99,23 +130,22 @@ export const historyLimit = limit => {
 }
 
 // get/set inbox specific settings
-export function inboxSettings(inboxKey, value) {
+export const inboxSettings = (inboxKey, value, triggerReload = false) => {
     let settings = rw().inbox || {}
-    let iSettings = settings[inboxKey] || {}
     if (value === null) delete settings[inboxKey]
-    if (!isObj(value)) return iSettings || {}
-    const { deleted, hide, name, unread } = iSettings
-    settings[inboxKey] = { ...iSettings, ...value }
+    if (!isObj(value)) return settings[inboxKey] || {}
+
+    settings[inboxKey] = { ...settings[inboxKey], ...value }
     settings = rw({ inbox: settings }).inbox
-    iSettings = settings[inboxKey]
 
-    // update unread count bond
-    unread !== iSettings.unread && unreadCountBond.changed(getUnreadCount())
-
-
-    inboxListBond.changed(uuid.v1())
-
-    return iSettings || {}
+    generateInboxBonds()
+    inboxBonds[inboxKey] && inboxBonds[inboxKey].changed(uuid.v1())
+    //update unread count bond
+    if (triggerReload) {
+        unreadCountBond.changed(getUnreadCount())
+        newInboxBond.changed(uuid.v1())
+    }
+    return settings[inboxKey] || {}
 }
 
 // all inbox settings
@@ -123,12 +153,13 @@ export const inboxesSettings = () => rw().inbox || {}
 
 export const removeInbox = inboxKey => {
     chatHistory.delete(inboxKey)
+    delete inboxBonds[inboxKey]
     inboxSettings(inboxKey, { deleted: true, unread: 0 })
-    inboxListBond.changed(uuid.v1())
+    newInboxBond.changed(uuid.v1())
     openInboxBond.changed(null)
 }
 
-export const removeInboxMessages = inboxKey => chatHistory.set(inboxKey, []) | newMsgBond.changed([inboxKey, uuid.v1()])
+export const removeInboxMessages = inboxKey => chatHistory.set(inboxKey, []) | inboxBonds[inboxKey].changed(uuid.v1())
 
 export const removeMessage = (inboxKey, id) => {
     const messages = chatHistory.get(inboxKey)
@@ -136,7 +167,7 @@ export const removeMessage = (inboxKey, id) => {
     if (index === -1) return
     messages.splice(index, 1)
     chatHistory.set(inboxKey, messages)
-    newMsgBond.changed([inboxKey, id])
+    inboxBonds[inboxKey].changed(uuid.v1())
 }
 
 const saveMessage = msg => {
@@ -176,17 +207,21 @@ const saveMessage = msg => {
     }
 
     chatHistory.set(inboxKey, !limit ? messages : messages.slice(-limit))
-    const resetCount = visibleBond._value && openInboxBond._value === inboxKey
-        && getLayout() !== MOBILE || expandedBond._value
-    settings.unread = resetCount ? 0 : (senderId !== userId ? 1 : 0) + unread || 0
-
+    // new mesage received
+    const isVisible = visibleBond._value && openInboxBond._value === inboxKey
+    if (senderId !== userId && !isVisible) {
+        settings.unread = (unread || 0) + 1
+    }
     // update settings
-    inboxSettings(inboxKey, settings)
+    inboxSettings(inboxKey, settings, true)
 
     // Store (global) last received (including own) message timestamp.
     // This is used to retrieve missed messages from server
     rw({ lastMessageTS: timestamp })
     // makes sure inbox bonds are generated
+    generateInboxBonds()
+    // update received inbox bond to make sure message list is updated, if it's visible
+    inboxBonds[inboxKey].changed(uuid.v1())
 }
 
 // send message
@@ -215,7 +250,7 @@ export const send = (receiverIds, message, encrypted = false) => {
             msgs.push(msg)
         }
         pendingMessages[inboxKey] = msgs
-        newMsgBond.changed([inboxKey, id])
+        inboxBonds[inboxKey].changed(uuid.v1())
     }
 
     saveMsg(tempId, 'loading')
@@ -259,31 +294,12 @@ client.onMessage((m, s, r, e, t, id, action) => {
         status: 'success',
         timestamp: t,
     })
-    setTimeout(() => newMsgBond.changed([inboxKey, id]))
+    newMsgBond.changed(id)
 })
 
-// initialize
-[(() => {
-    const allSettings = rw().inbox || {}
-    if (!allSettings[getInboxKey([SUPPORT])]) createInbox([SUPPORT])
-    if (!allSettings[getInboxKey([TROLLBOX])]) createInbox([TROLLBOX], false, true)
-
-    // automatically mark inbox as read
-    Bond.all([expandedBond, openInboxBond, visibleBond]).tie(([expanded, inboxKey, visible]) => {
-        const doUpdate = visible && inboxKey && (getLayout() !== MOBILE || expanded) && inboxSettings(inboxKey).unread
-        doUpdate && inboxSettings(inboxKey, { unread: 0 })
-    })
-    // add/remove 'inbox-expanded' class for styling purposes
-    expandedBond.tie(expand => document.getElementById('app').classList[expand ? 'add' : 'remove']('inbox-expanded'))
-    // remember last open inbox key
-    openInboxBond.tie(key => rw({ openInboxKey: key }))
-    // remember if chat is visible
-    visibleBond.tie(visible => rw({ visible }))
-})()]
-
 export default {
-    expandedBond,
-    inboxListBond,
+    inboxBonds,
+    newInboxBond,
     newMsgBond,
     openInboxBond,
     pendingMessages,

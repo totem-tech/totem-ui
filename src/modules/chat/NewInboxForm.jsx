@@ -11,11 +11,11 @@ import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import {
     createInbox,
     getInboxKey,
+    hiddenInboxKeys,
+    inboxBonds,
     inboxSettings,
     SUPPORT,
-    inboxesSettings,
 } from './chat'
-import { getInboxName } from './InboxList'
 
 const [_, textsCap] = translated({
     group: 'group',
@@ -24,19 +24,17 @@ const [_, textsCap] = translated({
     namePlaceholder: 'enter a name for the group chat',
     open: 'open',
     subheader: 'start new or re-open archived chat',
-    totemSupport: 'Totem Support',
     totemTrollbox: 'Totem Trollbox',
     updateName: 'update group name',
     userIdsHint: 'To start a group chat enter multiple User IDs',
 }, true)
 const EVERYONE = 'everyone'
-
 export default function NewInboxForm(props) {
     const names = {
         name: 'name',
         receiverIds: 'receiverIds'
     }
-    const inboxKeys = Object.keys(inboxesSettings())
+    const inboxKeys = hiddenInboxKeys().concat(Object.keys(inboxBonds))
     const [success, setSuccess] = useState(false)
     const [inputs, setInputs] = useState([
         {
@@ -50,16 +48,14 @@ export default function NewInboxForm(props) {
             name: names.receiverIds,
             options: arrSort(
                 inboxKeys.map(key => {
-                    const receiverIds = key.split(',')
+                    const isGroup = key.split(',').length > 1
                     const isTrollbox = key === EVERYONE
-                    const isSupport = receiverIds.includes(SUPPORT)
-                    const isGroup = !isSupport && key.split(',').length > 1
-                    const name = getInboxName(key)
+                    const groupName = inboxSettings(key).name
                     const members = textEllipsis(key.replace(/\,/g, ', '), 30, 3, false)
-                    const text = name || members
+                    const text = isTrollbox ? textsCap.totemTrollbox : groupName || members
                     return {
-                        description: !isSupport && !isTrollbox && name && members,
-                        icon: isSupport ? 'heartbeat' : isTrollbox ? 'globe' : (isGroup ? 'group' : 'chat'),
+                        description: groupName && members,
+                        icon: isTrollbox ? 'globe' : (isGroup ? 'group' : 'chat'),
                         key,
                         text: `${isGroup ? textsCap.group + ': ' : ''}${text}`,
                         value: key,
@@ -103,10 +99,12 @@ export default function NewInboxForm(props) {
         if (isSupport) {
             let userIsSupport = false
             await client.amISupport((_, yes) => userIsSupport = !!yes)
-            receiverIds = [
-                SUPPORT,
-                !userIsSupport ? null : receiverIds.filter(id => ![SUPPORT, ownId].includes(id))[0]
-            ].filter(Boolean)
+            if (isSupport) {
+                receiverIds = [
+                    SUPPORT,
+                    !userIsSupport ? null : receiverIds.filter(id => ![SUPPORT, ownId].includes(id))[0]
+                ].filter(Boolean)
+            }
         }
         const name = receiverIds.length > 1 ? values[names.name] : null
         const inboxKey = createInbox(receiverIds, name, true)
@@ -114,10 +112,11 @@ export default function NewInboxForm(props) {
         isFn(onSubmit) && onSubmit(true, { inboxKey, ...values })
     }
 
-    props.values && useEffect(() => {
-        // on mount prefill values
-        fillValues(inputs, props.values)
-        return () => { }
+    useEffect(() => {
+        let mounted = true
+        props.values && fillValues(inputs, props.values)
+
+        return () => mounted = false
     }, [])
 
     return (
@@ -168,7 +167,7 @@ export const editName = (inboxKey, onSubmit) => {
                     silent: true,
                     type: QUEUE_TYPES.CHATCLIENT,
                 })
-                inboxSettings(inboxKey, { name })
+                inboxSettings(inboxKey, { name }, true)
                 isFn(onSubmit) && onSubmit(true)
             },
             size: 'mini',
