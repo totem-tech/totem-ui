@@ -242,64 +242,6 @@ div.ui.padded.segment {
   font-weight: normal;
 }
 
-/* Chat Message Customisation */
-.rcw-conversation-container .rcw-title {
-  font-size: 20px !important;
-  padding: 5px 0px !important;
-}
-
-.rcw-conversation-container .rcw-header {
-  background-color:#17537d  !important;
-}
-
-.rcw-conversation-container .rcw-header span {
-  padding: 0px 50px  !important;
-}
-
-
-.rcw-full-screen .rcw-close-button {
-  background-color:#17537d  !important;
-}
-
-.rcw-conversation-container .rcw-close-button {
-  background-color:#17537d  !important;
-}
-
-.rcw-launcher {
-  background-color:#17537d  !important;
-}
-
-.rcw-client {
-  background-color:#177d2440  !important;
-}
-
-.rcw-widget-container {
-  transition: all 0.5s ease;
-}
-/* pushes chat launcher icon up when bottom status bar is visible */
-/* #app .sidebar-collapsed .rcw-widget-container {
-  margin-bottom: 73px;
-} */
-
-/* hide when mobile sidebar is open */
-.mobile.sidebar-visible .rcw-widget-container {
-  display: none;
-}
-#app > .mobile.sidebar-visible > .chat-container {
-    display: none;
-}
-
-/* more space for messages
-#messages .rcw-response {
-  max-width: 75%;
-}*/
-
-/* allow new lines in the chat subheader */
-.rcw-header > h4 + span {
-  white-space: pre-line;
-}
-
-
 /*
  * Form Builder
  */
@@ -316,4 +258,22 @@ div.ui.padded.segment {
 
 input[readonly] {
   cursor: not-allowed;
+}
+
+
+/* Page header:
+ * identity dropdown style fix
+ */
+.identity-dropdown .menu {
+    display: table !important;
+}
+.identity-dropdown .menu:not(.visible) { 
+  display: none !important;
+}
+.identity-dropdown .menu > .item {
+    display: table-row !important;
+}
+.identity-dropdown .menu .item > * {
+    display: table-cell;
+    padding: 10px 15px;
 }

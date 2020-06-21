@@ -92,7 +92,7 @@ export default function Inbox(props) {
             mounted = false
             newMsgBond.untie(tieId)
         }
-    }, []) // keep [] to prevent useEffect from being inboked on every render
+    }, []) // keep [] to prevent useEffect from being invoked on every render
 
     return (
         <div className='inbox'>

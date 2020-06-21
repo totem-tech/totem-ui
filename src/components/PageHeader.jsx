@@ -145,6 +145,8 @@ const PageHeaderView = props => {
 			<Menu.Menu position="right">
 				{!isMobile && isRegistered && buttons}
 				<Dropdown
+					className='identity-dropdown'
+					direction='left'
 					item
 					labeled
 					onChange={onSelection}
@@ -155,18 +157,24 @@ const PageHeaderView = props => {
 						wallets.map(({ address, name }) => ({
 							key: address,
 							text: (
-								<div>
-									{name}
+								<React.Fragment>
+									<div style={{
+										color: 'black',
+										fontWeight: 'bold',
+										marginRight: 15,
+									}}>
+										{name}
+									</div>
+
 									<Currency {...{
 										address: address,
+										EL: 'div',
 										style: {
 											color: 'grey',
-											fontWeight: 'normal',
-											paddingLeft: 15,
 											textAlign: 'right',
 										}
 									}} />
-								</div>
+								</React.Fragment>
 							),
 							value: address
 						})),

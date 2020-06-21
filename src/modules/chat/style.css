@@ -16,6 +16,9 @@
 #app > .mobile .chat-container {
     width: 100%;
 }
+#app > .mobile.sidebar-visible > .chat-container {
+    display: none;
+}
 .chat-container.inverted {
     background: #1b1c1d;
     color: white;
