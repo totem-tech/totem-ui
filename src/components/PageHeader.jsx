@@ -126,7 +126,7 @@ const PageHeaderView = props => {
 		onSelection,
 		wallets,
 	} = props
-	const selected = getSelected()
+	const selected = getSelected() || {}
 	const buttons = <HeaderMenuButtons {...{ isLoggedIn, isMobile, isRegistered }} />
 	const topBar = (
 		<Menu
