@@ -73,7 +73,9 @@ export default function InboxList(props) {
     // states
     const [allSettings, setAllSettings] = useState(inboxesSettings())
     const [inboxKeys, setInboxKeys] = useState(getAllInboxKeys())
+    // inbox keys after filtering
     let [filteredKeys, setFilteredKeys] = useState(inboxKeys)
+    // IDs of messages containing searched query. Full-text, case-insensitive
     const [filteredMsgIds, setFilteredMsgIds] = useState({})
     const [openKey, setOpenKey] = useState(openInboxBond._value)
     const [query, setQuery] = useState('')
@@ -98,7 +100,7 @@ export default function InboxList(props) {
         let keys = inboxKeys.filter(key => {
             const keyOrNameMatch = key.includes(q) || (names[key] || '')
                 .toLowerCase().includes(q)
-            const msg = (msgs[key] || []).find(m => (m.message || '').includes(q))
+            const msg = (msgs[key] || []).find(m => (m.message || '').toLowerCase().includes(q))
             msgsIds[key] = msg && msg.id
             return keyOrNameMatch || msg
         })
@@ -285,9 +287,11 @@ const InboxListItem = ({
     const { senderId } = lastMsg || qMsg || {}
 
     const handleHighlightedClick = e => {
+        const isMobile = getLayout() === MOBILE
         e.stopPropagation()
         createInbox(inboxKey.split(',')) // makes sure inbox is not deleted or archived
         openInboxBond.changed(inboxKey)
+        isMobile && expandedBond.changed(true)
         // scroll to message
         setTimeout(() => {
             const msgEl = document.getElementById(qMsg.id)

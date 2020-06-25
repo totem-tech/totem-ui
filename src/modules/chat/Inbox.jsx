@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
-import { Icon } from 'semantic-ui-react'
+import { Button, Icon } from 'semantic-ui-react'
 import { textEllipsis } from '../../utils/utils'
 import InboxMessages from './InboxMessages'
 import FormInput from '../../components/FormInput'
