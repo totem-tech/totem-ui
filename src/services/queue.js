@@ -6,7 +6,7 @@ import uuid from 'uuid'
 import { addressToStr } from '../utils/convert'
 import DataStorage from '../utils/DataStorage'
 import { transfer, signAndSend } from '../utils/polkadotHelper'
-import { hasValue, isArr, isFn, isObj, isStr, objClean } from '../utils/utils'
+import { hasValue, isArr, isFn, isObj, isStr, objClean, isValidNumber } from '../utils/utils'
 // services
 import { getClient } from './chatClient'
 import { currencyDefault } from './currency'
@@ -19,7 +19,7 @@ import { setToast } from './toast'
 
 const queue = new DataStorage('totem_queue-data')
 // Minimum balance required to make a transaction
-const MIN_BALANCE = 140
+const MIN_BALANCE = 140 // an guesstimated transaction fee. PolkadotJS V2 required to pre-calculate fee.
 const inprogressIds = {}
 const [words, wordsCap] = translated({
     amount: 'amount',
@@ -86,6 +86,8 @@ export const addToQueue = (queueItem, id, toastId) => {
         // @address         string: address to initiate a transaction with.
         //                          Required for transaction types. 
         'address',
+        // @amountXTX       number: minimum required amount in addition to transactin fee
+        'amountXTX',
         // @title           string: short title for the task. Eg: 'Create project'
         'title',
         // @description     string: short description about the task to very briefly describle what this task is about/for. Eg: project name etc.
@@ -331,9 +333,14 @@ const handleTxTransfer = async (id, rootTask, task, toastId) => {
     }
 }
 const handleTxStorage = async (id, rootTask, task, toastId) => {
-    // convert address to string. if invalid will be empty string.
-    task.address = addressToStr(task.address)
-    const { address, args, description, func, silent, title, toastDuration } = task
+    if (!isStr(task.address) || !task.address.startsWith('0x')) {
+        // force convert to hex string
+        task.address = addressToStr(task.address)
+    }
+    if (!isValidNumber(task.amountXTX)) {
+        task.amountXTX = 0
+    }
+    const { address, amountXTX, args, description, func, silent, title, toastDuration } = task
     const msg = {
         content: [description],
         header: title,
@@ -359,7 +366,7 @@ const handleTxStorage = async (id, rootTask, task, toastId) => {
         if (!isFn(txFunc)) _save(ERROR)(texts.invalidFunc)
 
         const balance = await api.query.balances.freeBalance(address)
-        if (parseInt(balance) < MIN_BALANCE) return _save(ERROR)(texts.insufficientBalance)
+        if (parseInt(balance) < (amountXTX + MIN_BALANCE)) return _save(ERROR)(texts.insufficientBalance)
         const tx = txFunc.apply(null, args)
         const result = await signAndSend(api, address, tx)
         _save(SUCCESS)(result)
