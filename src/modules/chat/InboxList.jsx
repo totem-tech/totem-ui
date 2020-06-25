@@ -29,24 +29,25 @@ const OFFLINE = 'grey'
 const [texts, textsCap] = translated({
     actionsHide: 'hide actions',
     actionsShow: 'show actions',
-    archived: 'archived',
+    archived: 'archived - reopen?',
     archiveConversation: 'archive conversation',
     changeGroupName: 'change group name',
-    deleted: 'deleted',
+    deleted: 'deleted - restart?',
     detailed: 'detailed',
     expand: 'expand',
     jumpToMsg: 'jump to message',
-    newChat: 'new discussion',
-    noResultMsg: 'your search yielded no results',
+    newChat: 'new conversation',
+    noResultMsg: 'no results found for your search',
     offline: 'offline',
     online: 'online',
-    remove: 'remove',
-    removeMessages: 'remove messages',
-    removeConversation: 'remove conversation',
+    remove: 'clear',
+    removeMessages: 'clear all messages',
+    removeConversation: 'trash conversation',
     searchPlaceholder: 'search conversations',
-    showHidden: 'show hidden',
-    support: 'Totem Support',
-    trollbox: 'Totem Trollbox',
+    showHidden: 'show archived',
+    support: 'totem support',
+    trash: 'trash',
+    trollbox: 'totem global conversation',
     you: 'you',
 }, true)
 
@@ -221,16 +222,14 @@ const ToolsBar = ({ query, onSeachChange, showAll, toggleShowAll }) => (
                         icon: 'find',
                         key: 'all',
                         onClick: toggleShowAll,
+                        labelPosition: 'left',
                     },
                     {
                         active: false,
                         basic: true,
-                        content: (
-                            <span>
-                                {textsCap.newChat}
-                                <Icon name='edit' />
-                            </span>
-                        ),
+                        content: textsCap.newChat,
+                        labelPosition: 'right',
+                        icon: 'edit',
                         key: 'new',
                         onClick: () => showForm(NewInboxForm, {
                             onSubmit: (ok, { inboxKey }) => ok && openInboxBond.changed(inboxKey)
@@ -410,7 +409,7 @@ const InboxActions = ({ inboxKey, isGroup, isSupport, isTrollbox, numMsgs, setti
             onClick: e => {
                 e.stopPropagation()
                 numMsgs === 0 ? removeInbox(inboxKey) : confirm({
-                    confirmButton: <Button negative content={textsCap.remove} />,
+                    confirmButton: <Button negative content={textsCap.trash} />,
                     header: textsCap.removeConversation,
                     onConfirm: () => removeInbox(inboxKey) | openInboxBond.changed(null),
                     size: 'mini',
@@ -432,8 +431,8 @@ const InboxActions = ({ inboxKey, isGroup, isSupport, isTrollbox, numMsgs, setti
             ].map(action => (
                 <Button {...{
                     ...action,
-                    circular: true,
-                    className: 'dark-grey',
+                    // circular: true,
+                    // className: 'dark-grey',
                     key: action.icon,
                     size: 'tiny'
                 }} />

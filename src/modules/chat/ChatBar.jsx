@@ -6,13 +6,12 @@ import './style.css'
 
 export default function ChatBar({ inverted = false }) {
     const [visible, setVisible] = useState(visibleBond._value)
-    const [hiding, setHiding] = useState(false)
     const [inboxKey, setInboxKey] = useState(openInboxBond._value)
     const receiverIds = (inboxKey || '').split(',')
+    const container = 'chat-container'
     const className = [
-        'chat-container',
+        container,
         inverted ? 'inverted' : '',
-        hiding ? 'hiding' : '',
     ].filter(Boolean).join(' ')
 
 
@@ -21,10 +20,13 @@ export default function ChatBar({ inverted = false }) {
         const tieIdOpenInbox = openInboxBond.tie(key => mounted && setInboxKey(key))
         const tieId = visibleBond.tie(show => {
             if (!mounted) return
-            setHiding(!show) // animate
+            document.querySelector('.' + container)
+                .classList[show ? 'remove' : 'add']('hiding')
+
             setTimeout(() => {
                 setVisible(show)
-                document.getElementById('app').classList[show ? 'add' : 'remove']('chat-visible')
+                document.getElementById('app')
+                    .classList[show ? 'add' : 'remove']('chat-visible')
             }, 350)
         })
 
@@ -42,7 +44,6 @@ export default function ChatBar({ inverted = false }) {
                     <InboxList {...{ inverted, inboxKey }} />
                     {receiverIds.length > 0 && (
                         <Inbox {...{
-                            hiding,
                             inboxKey,
                             key: inboxKey,
                             receiverIds,

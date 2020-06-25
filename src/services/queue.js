@@ -214,6 +214,8 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
 
     hasError && msg.content.unshift(task.errorMessage)
     task.toastId = setMessage(task, msg, duration, toastId, silent)
+
+    // save progress
     queue.set(id, rootTask)
 
     if (!status === LOADING) {
@@ -243,14 +245,11 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
         console.log('Unexpected error occured while executing queue .then()', { rootTask, err })
     }
 
-    if (isObj(task.next)) {
-        // execute next only if current task issuccessful
-        success && _processTask(task.next, id, toastId)
-        return
-    } else {
-        // delete root item if no error occured
-        queue.delete(id)
-    }
+    // execute next only if current task is successful
+    success && isObj(task.next) && _processTask(task.next, id, toastId)
+
+    // delete root item if no error occured
+    queue.delete(id)
 }
 
 

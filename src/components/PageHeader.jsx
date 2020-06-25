@@ -126,7 +126,7 @@ const PageHeaderView = props => {
 		onSelection,
 		wallets,
 	} = props
-	const selected = getSelected()
+	const selected = getSelected() || {}
 	const buttons = <HeaderMenuButtons {...{ isLoggedIn, isMobile, isRegistered }} />
 	const topBar = (
 		<Menu
@@ -145,6 +145,8 @@ const PageHeaderView = props => {
 			<Menu.Menu position="right">
 				{!isMobile && isRegistered && buttons}
 				<Dropdown
+					className='identity-dropdown'
+					direction='left'
 					item
 					labeled
 					onChange={onSelection}
@@ -155,18 +157,24 @@ const PageHeaderView = props => {
 						wallets.map(({ address, name }) => ({
 							key: address,
 							text: (
-								<div>
-									{name}
+								<React.Fragment>
+									<div style={{
+										color: 'black',
+										fontWeight: 'bold',
+										marginRight: 15,
+									}}>
+										{name}
+									</div>
+
 									<Currency {...{
 										address: address,
+										EL: 'div',
 										style: {
 											color: 'grey',
-											fontWeight: 'normal',
-											paddingLeft: 15,
 											textAlign: 'right',
 										}
 									}} />
-								</div>
+								</React.Fragment>
 							),
 							value: address
 						})),
@@ -229,15 +237,25 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 	const [timerInProgress, setTimerActive] = useState(timeKeeping.formData().inprogress)
 	const [unreadMsgCount, setUnreadMsgCount] = useState(unreadMsgCountBond._value)
 	const [unreadNotifCount, setUnreadNotifCount] = useState(unreadNotifCountBond._value)
-	const [blink, setBlink] = useState(false) // blink notification icon
+	const [notifBlink, setNotifBlink] = useState(false)
+	const countStyle = {
+		color: 'white',
+		fontSize: 13,
+		fontWeight: 'bold',
+		left: 0,
+		position: 'absolute',
+		textAlign: 'center',
+		top: isMobile ? 17 : 22,
+		width: '100%',
+	}
 
 	useEffect(() => {
 		const tieIdTimer = timeKeeping.formDataBond.tie(() => setTimerActive(!!timeKeeping.formData().inprogress))
 		const tieIdUnreadMsg = unreadMsgCountBond.tie(unread => setUnreadMsgCount(unread))
 		const tieIdUnreadNotif = unreadNotifCountBond.tie(unread => setUnreadNotifCount(unread))
 		const tieIdNew = newNotificationBond.tie(() => {
-			setBlink(true)
-			setTimeout(() => setBlink(false), 5000)
+			setNotifBlink(true)
+			setTimeout(() => setNotifBlink(false), 5000)
 		})
 
 		return () => {
@@ -247,12 +265,13 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 			newNotificationBond.untie(tieIdNew)
 		}
 	}, [])
+
 	return (
 		<React.Fragment>
 			{isMobile && (
 				<Menu.Item
-					icon={{ name: 'sidebar', size: 'big', className: 'no-margin' }}
-					onClick={() => chatVisibleBond.changed(false) | toggleSidebarState()}
+					icon={{ name: 'sidebar', size: 'large', className: 'no-margin' }}
+					onClick={toggleSidebarState}
 				/>
 			)}
 
@@ -261,36 +280,24 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 					className: 'no-margin',
 					loading: timerInProgress,
 					name: 'clock outline',
-					size: 'big'
+					size: 'large'
 				}}
 				onClick={() => showForm(TimeKeepingForm, {})}
 			/>
 
 			<Menu.Item {...{
-				className: blink ? 'blink' : '',
+				className: notifBlink ? 'blink' : '',
 				disabled: unreadNotifCount === -1,
-				onClick: () => setBlink(false) | notifVisibleBond.changed(!notifVisibleBond._value),
+				onClick: () => setNotifBlink(false) | notifVisibleBond.changed(!notifVisibleBond._value),
 				style: { background: unreadNotifCount > 0 ? '#2185d0' : '' }
 			}}>
 				<Icon {...{
 					className: 'no-margin',
 					color: unreadNotifCount === -1 ? 'grey' : undefined,
 					name: 'bell',
-					size: 'big',
+					size: 'large',
 				}} />
-				{unreadNotifCount > 0 && (
-					<div style={{
-						color: '#2185d0',
-						fontWeight: 'bold',
-						left: 0,
-						position: 'absolute',
-						textAlign: 'center',
-						top: 22,
-						width: '100%',
-					}}>
-						{unreadNotifCount}
-					</div>
-				)}
+				{unreadNotifCount > 0 && <div style={{ ...countStyle, color: '#2185d0' }}>{unreadNotifCount}</div>}
 			</Menu.Item>
 
 			<Menu.Item onClick={() => {
@@ -301,21 +308,9 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 					className: 'no-margin',
 					color: !isLoggedIn ? 'red' : (unreadMsgCount > 0 ? 'blue' : undefined),
 					name: 'chat',
-					size: 'big'
+					size: 'large'
 				}} />
-				{unreadMsgCount > 0 && (
-					<div style={{
-						color: 'white',
-						fontWeight: 'bold',
-						left: 0,
-						position: 'absolute',
-						top: isMobile ? 18 : 22,
-						textAlign: 'center',
-						width: '100%',
-					}}>
-						{unreadMsgCount}
-					</div>
-				)}
+				{unreadMsgCount > 0 && <div style={countStyle}>{unreadMsgCount}</div>}
 			</Menu.Item>
 		</React.Fragment>
 	)

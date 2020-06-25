@@ -75,16 +75,16 @@ export default class Currency extends Component {
     }
 
     render = () => {
-        const { className, prefix, style, suffix, unitDisplayed } = this.props
+        const { className, EL = 'span', prefix, style, suffix, unitDisplayed } = this.props
         const { error, valueConverted } = this.state
         return !valueConverted ? '' : (
-            <span {...{
+            <EL {...{
                 className,
                 style: { color: error ? 'red' : '', ...style },
                 title: error,
             }}>
                 {prefix}{valueConverted} {unitDisplayed || getSelected()}{suffix}
-            </span>
+            </EL>
         )
     }
 }

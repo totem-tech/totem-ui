@@ -2,8 +2,9 @@
     color: black;
     background: white;
     bottom: 0px;
-    box-shadow: 3px 8px 8px 8px #80808059;
-    font-size: 12px;
+    box-shadow: 3px 3px 5px 3px #979797;
+    /* box-shadow: 3px 3px 5px 3px rgba(67,68,70 1); */
+    font-size: 14px;
     font-weight: 100;
     position: fixed;
     right: 0px;
@@ -14,6 +15,9 @@
 }
 #app > .mobile .chat-container {
     width: 100%;
+}
+#app > .mobile.sidebar-visible > .chat-container {
+    display: none;
 }
 .chat-container.inverted {
     background: #1b1c1d;
@@ -28,18 +32,19 @@
     right: -100%;
 }
 .mobile .chat-container {
-    bottom: 54px;
+    bottom: 48px;
 }
 .chat-container .chat-contents {
     height: 100%;
     position: relative;
 }
+
 /* fix for small font size */
 .chat-container b {
-    font-weight: 800;
+    font-weight: 400;
 }
 
-/* cusotm icon and button colors */
+/* custom icon and button colors */
 button.dark-grey .icon,
 .icon.dark-grey {
     color: #434446 !important;
@@ -68,7 +73,7 @@ button.dark-grey .icon,
     display: none;
 }
 #app:not(.inbox-expanded) .mobile .chat-container .inbox-list {
-    height: calc(100% - 58px);
+    height: calc(100% - 57px);
 }
 .chat-container .inbox-list div.search .input {
     width: 100%;
@@ -79,13 +84,17 @@ button.dark-grey .icon,
 }
 .chat-container .inbox-list div.search .input input {
     border-radius: 0;
-    padding: 10px;
+    padding-top: 10px;
+    padding-bottom: 13px;
+    padding-left: 18px;
 }
 .chat-container .inbox-list .tools .actions button {
-    color: #075d6a !important;
+    /* color: #075d6a !important; */
+    color: #434446 !important;
     border: none;
     border-radius: 0;
     text-align: left;
+    font-size: 14px;
 }
 .chat-container .inbox-list .tools .actions button:hover {
     background: #F2F2F2 !important;
@@ -100,7 +109,7 @@ button.dark-grey .icon,
     cursor: pointer;
     margin: 0;
     overflow: hidden;
-    padding: 5px 10px;
+    padding: 7px 17px;
     position: relative;
     white-space: nowrap;
 }
@@ -108,7 +117,7 @@ button.dark-grey .icon,
     background: #F2F2F2;
 }
 .chat-container .inbox-list .list-item.active {
-    background: #B2FFCA
+    background: #C7F2C7
 }
 .chat-container .inbox-list .list-item:not(:last-child) {
     border-bottom: 1px solid #d1caca;
@@ -122,6 +131,9 @@ button.dark-grey .icon,
     padding-left: 70px;
     white-space: nowrap;
     width: 100%;
+    font-size: 12px;
+    font-weight: 100;
+    line-height: 17px;
 }
 .chat-container .inbox-list .list-item .left {
     left: 5px;
@@ -129,15 +141,24 @@ button.dark-grey .icon,
     top: 7px;
 }
 .chat-container .inbox-list .list-item .preview {
-    margin-top: -5px;
+    font-size: 12px;
+    color: #979797;
+    /* margin-top: 5px; */
 }
 .chat-container .inbox-list .list-item .left .label {
     overflow: hidden;
     white-space: nowrap;
     width: 70px;
 }
+.ui.mini.label, .ui.mini.labels .label {
+    margin-left: 9px;
+    font-size: 9px;
+    font-weight: 100 !important;
+    font-style: normal;
+}
 .chat-container .inbox-list .list-item .left .label .icon {
-    font-size: 15px;
+    font-size: 13px;
+    margin: 3px;
 }
 .chat-container .inbox-list .list-item .actions {
     position: absolute;
@@ -145,7 +166,17 @@ button.dark-grey .icon,
     top: 2px;
 }
 .chat-container .inbox-list .list-item .actions .icon {
-    font-size: 15px;
+    font-size: 14px;
+    background: none;
+    font-weight: 100 !important;
+    color: #979797 !important;
+    padding-top: 8px;
+    padding-left: 0px;
+    padding-right: 10px;
+    padding-bottom: 0px;
+}
+.chat-container .inbox-list .list-item .actions .icon:hover {
+    color: #434446 !important;
 }
 #app > div.desktop .chat-container .inbox-list .list-item:not(:hover) .actions {
     display: none;
@@ -161,10 +192,10 @@ button.dark-grey .icon,
     margin-right: 5px;
 }
 .chat-container .inbox-list .list-item b {
-    font-weight: bold;
+    font-weight: 400;
 }
 
-/* inobx */ 
+/* inbox */ 
 .chat-container .inbox {
     height: 60%;
 }
@@ -174,13 +205,16 @@ button.dark-grey .icon,
 .chat-container .inbox .header {
     background: #434446;
     color: white;
-    font-size: 115%;
     padding: 10px 15px;
     position: relative;
     text-align: left;
 }
+.chat-container .inbox .header b {
+    font-weight: 800;
+    color: #F2F2F2;
+}
 .chat-container.inverted .inbox .header {
-    background: grey;
+    background: #979797;
 }
 .chat-container .inbox .header .tools.right {
     display: inline;
@@ -189,9 +223,10 @@ button.dark-grey .icon,
     top: 17px;
 }
 .chat-container .inbox .header .tools.right .icon {
-    font-size: 22px;
+    font-size: 16px;
+    padding-top: 3px;
+    padding-right: 15px;
     cursor: pointer;
-    
 }
 .chat-container .inbox .header .tools.right .expand.icon:before {
     content: "\f077";
@@ -212,52 +247,73 @@ button.dark-grey .icon,
     padding: 8px 10px;
     border-radius: 0;
 }
+.chat-container .inbox .member-list-item {
+    font-size: 16px !important;
+}
 .chat-container .inbox .member-list-item .user-icon {
-    font-size: 18px !important;
+    font-size: 16px !important;
     width: 18px !important;
 }
 .chat-container .inbox .member-list-item .button-action {
-    color: #075d6a;
     cursor: pointer;
-    font-size: 15px;
+    font-size: 12px;
     position: absolute;
-    right: 5px;
-    top: 10px;
+    right: 1px;
+    top: 4px;
+    border-radius: 0px !important;
+    border: 0px !important;
 }
 .chat-container .inbox .member-list-item .button-action .icon {
-    font-size: 22px;
+    font-size: 16px;
 }
+.chat-container .inbox .scroll-to-bottom {
+    bottom: 45px;
+    position: fixed;
+    right: 5px;
+}
+#app .mobile .chat-container .inbox .scroll-to-bottom {
+    bottom: 90px;
+}
+.chat-container .inbox .scroll-to-bottom:not(.visible),
+#app:not(.inbox-expanded) .mobile .chat-container .inbox .scroll-to-bottom {
+    display: none
+}
+
 /* message list */
 .chat-container .messages {
+    background: #EDE8E3;
     height: calc(100% - 92px);
-    padding: 5px 0 0;
-    position: relative;
     overflow-x: auto;
+    position: relative;
 }
-.chat-container .messages.amimate-scroll {
+.chat-container .messages.animate-scroll {
     scroll-behavior: smooth;
-    transition: all 0.5s ease;
+    transition: all 0.3s ease;
 }
-.chat-container .messages .message-group-name {
+.chat-container .messages .action-message {
     text-align: center;
     color: grey;
 }
-.chat-container .messages .message-wrap {
-    padding: '5px 0';
-    text-align: left;
-}
 .chat-container .messages .message-wrap.user {
-    text-align: right;
+    text-align: right !important;
 }
 .chat-container .messages .message-wrap .message {
     border-radius: 10px;
     box-shadow: none;
-    margin: 2px 10px;
+    margin: 5px 10px 0;
     max-width: 80%;
     overflow-x: auto;
     padding: 7px 15px;
     width: auto;
 }
+.chat-container .messages .message-wrap:last-child {
+    margin-bottom: 5px;
+}
+
+.chat-container .ui.brown.message {
+    background-color: 'white' !important;
+}
+
 /* highlights a searched message */
 .chat-container .messages .message-wrap.blink .message {
     background: yellow !important;
@@ -267,7 +323,7 @@ button.dark-grey .icon,
     text-align: left;
 }
 .chat-container .messages .message-wrap .message .icon {
-    font-size: 18px;
+    font-size: 16px;
     width: 18px !important;
 }
 

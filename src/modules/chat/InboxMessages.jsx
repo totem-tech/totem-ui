@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { Button } from 'semantic-ui-react'
 import { isObj } from '../../utils/utils'
-import Message from '../../components/Message'
 import { UserID } from '../../components/buttons'
+import Message from '../../components/Message'
+import TimeSince from '../../components/TimeSince'
 import { getUser } from '../../services/chatClient'
 import { translated } from '../../services/language'
-import TimeSince from '../../components/TimeSince'
 
 const [texts, textsCap] = translated({
     changedGroupName: 'changed group name to',
@@ -40,15 +41,12 @@ const icons = {
 }
 
 export default function InboxMessages(props) {
-    const { isPrivate, messages, onRef } = props
+    const { className, isPrivate, messages, onScroll } = props
     const userId = (getUser() || {}).id
     return (
-        <div {...{
-            className: 'messages',
-            ref: onRef
-        }}>
+        <div {...{ className, onScroll, }}>
             {messages.map((message, key) => <InboxMessage {...{ key, isPrivate, userId, ...message }} />)}
-        </div>
+        </ div>
     )
 }
 
@@ -56,12 +54,12 @@ const InboxMessage = props => {
     const { action, errorMessage, id, message, senderId, status, timestamp, isPrivate, userId } = props
     const isSender = senderId === userId
 
-    if (isObj(action) && !!action.type) {
+    if (isObj(action)) {
         const { data, type } = action
         switch (type) {
             case 'message-group-name':
                 return (
-                    <div {...{ className: 'message-group-name', id }}>
+                    <div {...{ className: 'action-message', id }}>
                         <i>
                             {isSender ? textsCap.you + ' ' : <UserID {...{ suffix: ' ', userId: senderId }} />}
                             {texts.changedGroupName} <b>{data[0]}</b>
@@ -69,7 +67,6 @@ const InboxMessage = props => {
                     </div>
                 )
         }
-        return ''
     }
 
     let bgColor = isSender ? 'green' : (
@@ -82,7 +79,7 @@ const InboxMessage = props => {
     const color = bgColor === 'black' ? 'white' : 'black'
     const [showDetails, setShowDetails] = useState(false)
 
-    return (
+    return !message ? '' : (
         <div {...{
             className: 'message-wrap' + (isSender ? ' user' : ''),
             id,

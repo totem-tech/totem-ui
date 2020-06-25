@@ -15,6 +15,7 @@ import {
     SUPPORT,
     TROLLBOX,
     newMsgBond,
+    inboxSettings,
 } from './chat'
 import client, { loginBond, getUser } from '../../services/chatClient'
 import { translated } from '../../services/language'
@@ -33,45 +34,65 @@ const [texts, textsCap] = translated({
     returnToInbox: 'return to conversation',
     showConvList: 'show conversation list',
     showMembers: 'show members',
-    pmBtnTitle: 'start back-channel',
-    trollbox: 'Totem Trollbox',
+    pmBtnTitle: 'open back-channel',
+    trollbox: 'totem global conversation',
     you: 'you',
 }, true)
-const elementRefs = {}
-// focus message input and scroll to bottom of the message list
-const focusNScroll = inboxKey => setTimeout(() => {
-    const { inputRef, messagesRef } = elementRefs[inboxKey]
-    inputRef && inputRef.focus()
-    messagesRef && messagesRef.scrollTo(0, messagesRef.scrollHeight)
-})
 
 export default function Inbox(props) {
     let {
-        hiding, // indicates hiding animation in progress
         inboxKey,
         receiverIds, // if not supplied use default open inbox
     } = props
     if (!inboxKey) return ''
-    elementRefs[inboxKey] = elementRefs[inboxKey] || {}
     const [messages, setMessages] = useState(props.messages || getMessages(inboxKey))
     const [showMembers, setShowMembers] = useState(false)
     const isTrollbox = receiverIds.includes(TROLLBOX)
     const isGroup = !receiverIds.includes(SUPPORT) && receiverIds.length > 1 || isTrollbox
     const isMobile = getLayout() === MOBILE
+    const msgsSelector = '.chat-container .inbox .messages'
+    const scrollBtnSelector = '.chat-container .inbox .scroll-to-bottom'
+    // scroll to bottom of the message list
+    const scrollToBottom = (animate = false, force = false) => setTimeout(() => {
+        const msgsEl = document.querySelector(msgsSelector)
+        const btnWrapEl = document.querySelector(scrollBtnSelector)
+        const isMobile = getLayout() === MOBILE
+        const expanded = document.getElementById('app').classList.value.includes('inbox-expanded')
+        // prevent scroll if scroll button is visible and not forced
+        if (btnWrapEl.classList.value.includes('visible') && !force) return
+        const animateClass = 'animate-scroll'
+        animate && msgsEl.classList.add(animateClass)
+        msgsEl && msgsEl.scrollTo(0, msgsEl.scrollHeight)
+        setTimeout(() => {
+            msgsEl.classList.remove(animateClass)
+            // mark inbox as read
+            if (!isMobile || expanded) inboxSettings(inboxKey, { unread: 0 })
+        }, 500)
+    })
+    // on message list scroll show/hide scroll button
+    const handleScroll = () => {
+        const { scrollHeight, scrollTop, offsetHeight } = document.querySelector(msgsSelector) || {}
+        const showBtn = (scrollHeight - offsetHeight - scrollTop) > offsetHeight
+        const btnWrapEl = document.querySelector(scrollBtnSelector)
+        btnWrapEl.classList[showBtn ? 'add' : 'remove']('visible')
+    }
 
     useEffect(() => {
         let mounted = true
-        const tieId = newMsgBond.tie(([key]) => mounted && key === inboxKey && setMessages(getMessages(inboxKey)))
+        // whenever a new message for current inbox is retrieved update message list
+        const tieId = newMsgBond.tie(([key]) => {
+            if (!mounted || key !== inboxKey) return
+            setMessages(getMessages(inboxKey))
+            scrollToBottom()
+        })
+        // focus and scoll down to latest msg
+        scrollToBottom(false, true)
 
         return () => {
             mounted = false
             newMsgBond.untie(tieId)
-            elementRefs[inboxKey] = {}
         }
-    }, []) // keep [] to prevent useEffect from being inboked on every render
-
-    // focus and scoll down to latest msg
-    !hiding && focusNScroll(inboxKey)
+    }, []) // keep [] to prevent useEffect from being invoked on every render
 
     return (
         <div className='inbox'>
@@ -85,23 +106,32 @@ export default function Inbox(props) {
                     showMembers,
                 }} />
                 {showMembers ? <MemberList {...{ isTrollbox, receiverIds }} /> : (
-                    <InboxMessages {...{
-                        isPrivate: receiverIds.length === 1 && !isTrollbox,
-                        onRef: ref => elementRefs[inboxKey].messagesRef = ref,
-                        messages: messages.length > 0 ? messages : [{
-                            message: textsCap.inputPlaceholder
-                        }],
-                    }} />
+                    <React.Fragment>
+                        <InboxMessages {...{
+                            className: 'messages',
+                            isPrivate: receiverIds.length === 1 && !isTrollbox,
+                            messages: messages.length > 0 ? messages : [{
+                                message: textsCap.inputPlaceholder
+                            }],
+                            onScroll: handleScroll
+                        }} />
+
+                        <div className='scroll-to-bottom'>
+                            <Button {...{
+                                circular: true,
+                                color: 'black',
+                                icon: 'chevron down',
+                                onClick: () => scrollToBottom(true, true),
+                            }} />
+                        </div>
+                    </React.Fragment>
                 )}
             </div>
             {!showMembers && (
-                <MessageInput {... {
-                    onRef: ref => elementRefs[inboxKey].inputRef = ref,
-                    onSubmit: draft => {
-                        send(receiverIds, draft, false)
-                        focusNScroll(inboxKey)
-                    },
-                }} />
+                <MessageInput
+                    className='input-wrap'
+                    onSubmit={draft => send(receiverIds, draft, false) | scrollToBottom()}
+                />
             )}
         </div >
     )
@@ -114,7 +144,11 @@ Inbox.propTypes = {
 const InboxHeader = ({ inboxKey, isGroup, isMobile, setShowMembers, showMembers }) => (
     <div {...{
         className: 'header',
-        onClick: () => isMobile && !expandedBond._value && expandedBond.changed(true),
+        onClick: () => {
+            if (!isMobile || expandedBond._value) return
+            expandedBond.changed(true)
+            setShowMembers(false)
+        },
     }}>
         <div>
             <b>@{(getUser() || {}).id}</b> {texts.inConvWith}
@@ -129,11 +163,12 @@ const InboxHeader = ({ inboxKey, isGroup, isMobile, setShowMembers, showMembers 
             <div className='tools right'>
                 {isGroup && (
                     <Icon {...{
-                        name: showMembers ? 'envelope' : 'group',
+                        name: showMembers ? 'undo' : 'group',
                         onClick: e => {
                             e.stopPropagation()
+                            const doExpand = isMobile && !expandedBond._value
                             setShowMembers(!showMembers)
-                            isMobile && !expandedBond._value && expandedBond.changed(true)
+                            doExpand && expandedBond.changed(true)
                         },
                         title: showMembers ? textsCap.returnToInbox : textsCap.showMembers
                     }} />
@@ -182,13 +217,17 @@ const MemberList = ({ isTrollbox, receiverIds }) => {
                                 <div>
                                     <UserID userId={memberId} onClick={isSelf ? null : undefined} />
                                     {!isSelf && (
-                                        <div {...{
+                                        <Button {...{
                                             className: 'button-action',
                                             onClick: () => openInboxBond.changed(createInbox([memberId])),
-                                        }}>
-                                            {textsCap.pmBtnTitle}
-                                            <i className='icon chat dark-grey' />
-                                        </div>
+                                            content: textsCap.pmBtnTitle,
+                                            icon: 'chat',
+                                            labelPosition: 'right',
+                                            active: false,
+                                            basic: true,
+                                            style: { textAlign: 'right' }
+                                        }} />
+
                                     )}
                                 </div>
                             ),
@@ -207,7 +246,7 @@ const MemberList = ({ isTrollbox, receiverIds }) => {
     )
 }
 
-const MessageInput = ({ onRef, onSubmit }) => {
+const MessageInput = ({ className, onSubmit }) => {
     const [value, setValue] = useState('')
     const handleSubmit = e => {
         e.preventDefault()
@@ -216,7 +255,7 @@ const MessageInput = ({ onRef, onSubmit }) => {
         setValue('')
     }
     return (
-        <form className='input-wrap' onSubmit={handleSubmit}>
+        <form {...{ className, onSubmit: handleSubmit }}>
             <FormInput {...{
                 action: {
                     className: 'dark-grey',
@@ -225,7 +264,6 @@ const MessageInput = ({ onRef, onSubmit }) => {
                 },
                 autoComplete: 'off',
                 autoFocus: true,
-                elementRef: onRef,
                 fluid: true,
                 maxLength: 160,
                 name: 'message',
