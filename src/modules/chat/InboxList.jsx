@@ -131,7 +131,6 @@ export default function InboxList(props) {
             const keys = getAllInboxKeys()
             setInboxKeys(keys)
             setFilteredKeys(keys)
-            setQuery('')
             setAllSettings(inboxesSettings())
         })
         const tieIdOpenKey = openInboxBond.tie(key => {
@@ -289,20 +288,21 @@ const InboxListItem = ({
     const handleHighlightedClick = e => {
         const isMobile = getLayout() === MOBILE
         e.stopPropagation()
+        e.preventDefault()
         createInbox(inboxKey.split(',')) // makes sure inbox is not deleted or archived
-        openInboxBond.changed(inboxKey)
-        isMobile && expandedBond.changed(true)
+        openInboxBond._value !== inboxKey && openInboxBond.changed(inboxKey)
+        isMobile && !expandedBond._value && expandedBond.changed(true)
         // scroll to message
         setTimeout(() => {
             const msgEl = document.getElementById(qMsg.id)
             const msgsEl = document.querySelector('.chat-container .messages')
             if (!msgEl || !msgsEl) return
             msgEl.classList.add('blink')
-            msgsEl.classList.add('amimate-scroll')
+            msgsEl.classList.add('animate-scroll')
             msgsEl.scrollTo(0, msgEl.offsetTop)
             setTimeout(() => {
                 msgEl.classList.remove('blink')
-                msgsEl.classList.remove('amimate-scroll')
+                msgsEl.classList.remove('animate-scroll')
             }, 5000)
         }, 500)
     }

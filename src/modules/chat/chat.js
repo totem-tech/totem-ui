@@ -111,8 +111,6 @@ export function inboxSettings(inboxKey, value) {
 
     // update unread count bond
     unread !== iSettings.unread && unreadCountBond.changed(getUnreadCount())
-
-
     inboxListBond.changed(uuid.v1())
 
     return iSettings || {}
