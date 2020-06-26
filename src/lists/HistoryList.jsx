@@ -34,10 +34,10 @@ const [texts, textsCap] = translated({
 export default class HistoryList extends Component {
     constructor(props) {
         super(props)
-        
+
         // makes columns resizable
-        const headerProps = { style: { resize: 'both',overflow: 'auto'} }
-        
+        const headerProps = { style: { resize: 'both', overflow: 'auto' } }
+
         this.state = {
             columns: [
                 {
@@ -144,13 +144,14 @@ export default class HistoryList extends Component {
     }
 
     showDetails = (item, id) => {
+        const errMsg = `${item.message}` // in case message is an Error object
         const x = [
             // title describes what the task is about
             [textsCap.action, item.title],
             // description about the task that is displayed in the queue toast message
             [textsCap.description, item.description, 'textarea'],
             // show error message only if available
-            item.message && [textsCap.errorMessage, item.message, 'textarea', { invalid: item.status === 'error' }],
+            errMsg && [textsCap.errorMessage, errMsg, 'textarea', { invalid: item.status === 'error' }],
             // blockchain or chat client function path in string format
             [textsCap.function, item.action],
             // user's identity that was used to create the transaction

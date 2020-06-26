@@ -1,9 +1,9 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-import FormBuilder, { findInput } from '../../components/FormBuilder'
+import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import Currency from '../../components/Currency'
-import { arrSort, deferred } from '../../utils/utils'
+import { arrSort, deferred, isObj } from '../../utils/utils'
 // services
 import { getConnection } from '../../services/blockchain'
 import {
@@ -12,67 +12,75 @@ import {
     getCurrencies,
     getSelected as getSelectedCurrency
 } from '../../services/currency'
-import { bond, get as getIdentity, getSelected } from '../../services/identity'
+import { bond, getSelected } from '../../services/identity'
 import { translated } from '../../services/language'
 import partners from '../../services/partner'
+import { BLOCK_DURATION_SECONDS } from '../../utils/time'
+import { createTaskOrder, updateTaskOrder, PRODUCT_HASH_LABOUR } from './task'
+import { addToQueue } from '../../services/queue'
 
 const [texts, textsCap] = translated({
+    addedToQueue: 'request added to queue',
     advancedLabel: 'advanced options',
     amountRequired: 'amount required',
     assignee: 'select a partner to assign task',
     assigneePlaceholder: 'select from partner list',
     assignToPartner: 'assign to a partner',
-    assigneeTypeConflict: 'task relationship type and parter type must be the same',
     balance: 'balance',
     bountyLabel: 'bounty amount',
     bountyPlaceholder: 'enter bounty amount',
-    business: 'business',
-    buyLabel: 'task type',
-    buyOptionLabelBuy: 'buying',
-    buyOptionLabelSell: 'selling',
     conversionErrorHeader: 'currency conversion failed',
     currency: 'currency',
+    deadlineLabel: 'deadline',
+    deadlineMinErrorMsg: 'deadline must be at least 48 hours from now',
+    dueDateLabel: 'due date',
+    dueDateMinErrorMsg: 'due date must be equal or after deadline',
     description: 'detailed description',
     descriptionPlaceholder: 'enter more details about the task',
+    featureNotImplemented: 'This feature is yet to be implemented. Please stay tuned.',
     formHeader: 'create a new task',
+    formHeaderUpdate: 'update task',
     goods: 'goods',
     insufficientBalance: 'insufficient balance',
     inventory: 'inventory',
     marketplace: 'marketplace',
     myself: 'myself',
-    personal: 'personal',
     publishToMarketPlace: 'publish to marketplace',
     services: 'services',
+    submitFailed: 'submission failed',
     tags: 'categorise with tags',
     tagsNoResultMsg: 'type tag and press ENTER to add',
-    taskType: 'task relationship',
     title: 'task title',
     titlePlaceholder: 'enter a very short task description',
     orderTypeLabel: 'order type',
 }, true)
-const estimatedTxFee = 160
+const estimatedTxFee = 140
+const deadlineMinMS = 48 * 60 * 60 * 1000
 
-export default class Form extends Component {
+export default class TaskForm extends Component {
     constructor(props) {
         super(props)
 
+        const { values } = this.props
         // list of input names
         this.names = Object.freeze({
             advancedGroup: 'advancedGroup',
             assignee: 'assignee',
             bounty: 'bounty',
             bountyGroup: 'bountyGroup',
-            business: 'business',
-            buy: 'buy',
             currency: 'currency',
+            deadline: 'deadline',
+            dueDate: 'dueDate',
             description: 'description',
             orderType: 'orderType',
             publish: 'publish',
+            isSell: 'isSell',
             tags: 'tags',
             title: 'title',
         })
 
         this.state = {
+            header: !values || !values.hash ? textsCap.formHeader : textsCap.formHeaderUpdate,
             onChange: (_, values) => this.setState({ values }),
             onSubmit: this.handleSubmit,
             values: {},
@@ -137,11 +145,13 @@ export default class Form extends Component {
                     radio: true,
                     required: true,
                     type: 'checkbox-group',
+                    // remove validation once implemented
+                    validate: (_, { value }) => value === 'yes' && textsCap.featureNotImplemented,
                     value: 'no',
                 },
                 {
                     bond: new Bond(),
-                    hidden: (values, i) => values[this.names.publish] === 'yes',
+                    hidden: values => values[this.names.publish] === 'yes',
                     label: textsCap.assignee,
                     name: this.names.assignee,
                     options: [],
@@ -150,16 +160,9 @@ export default class Form extends Component {
                     selection: true,
                     search: true,
                     type: 'dropdown',
-                    validate: (_, { value }) => {
-                        if (getIdentity(value)) return
-                        const { values } = this.state
-                        const isBusiness = values[this.names.business] === 'yes'
-                        const assigneeIsBusiness = partners.get(value).type === 'business'
-                        return isBusiness === assigneeIsBusiness ? null : textsCap.assigneeTypeConflict
-                    }
                 },
-                // Advanced section (Form type "group" with accordion)
                 {
+                    // Advanced section (Form type "group" with accordion)
                     accordion: {
                         collapsed: true,
                         styled: true,
@@ -172,32 +175,10 @@ export default class Form extends Component {
                     // styleContainer: {width: '100%'},
                     grouped: true,
                     inputs: [
-                        // Everything is now assumed to be B2B for accounting purposes
-                        // {
-                        //     bond: new Bond(),
-                        //     inline: true,
-                        //     label: textsCap.taskType,
-                        //     name: this.names.business,
-                        //     options: [
-                        //         { label: textsCap.business, value: 'yes' },
-                        //         { label: textsCap.personal, value: 'no' },
-                        //     ],
-                        //     radio: true,
-                        //     required: true,
-                        //     type: 'checkbox-group',
-                        // },
                         {
-                            hidden: true,  // only show if this is a purchase order
-                            inline: true,
-                            label: textsCap.buyLabel,
-                            name: this.names.buy,
-                            options: [
-                                { label: textsCap.buyOptionLabelBuy, value: 'yes' },
-                                { label: textsCap.buyOptionLabelSell, value: 'no' },
-                            ],
-                            radio: true,
-                            type: 'checkbox-group',
-                            value: 'yes',
+                            name: this.names.isSell,
+                            type: 'hidden',
+                            value: 0,// buy order
                         },
                         {
                             hidden: true, // only show if this is a purchase order
@@ -205,9 +186,9 @@ export default class Form extends Component {
                             label: textsCap.orderTypeLabel,
                             name: this.names.orderType,
                             options: [
-                                { label: textsCap.goods, value: 'goods' },
-                                { label: textsCap.services, value: 'services' },
-                                { label: textsCap.inventory, value: 'inventory' },
+                                { label: textsCap.services, value: 0 },
+                                { label: textsCap.inventory, value: 1 },
+                                { label: textsCap.goods, value: 2 }, // assets
                             ],
                             radio: true,
                             type: 'checkbox-group',
@@ -249,17 +230,53 @@ export default class Form extends Component {
                         },
                     ],
                 },
+                {
+                    label: textsCap.deadlineLabel,
+                    name: this.names.deadline,
+                    onChange: (_, values) => {
+                        const dueDate = values[this.names.dueDate]
+                        if (!dueDate) return
+                        const deadline = values[this.names.deadline]
+                        const diffMS = new Date(dueDate) - new Date(deadline)
+                        if (diffMS >= 0) return
+                        const { inputs } = this.state
+                        // due date is before deadline => reset as change is required
+                        const dueDateIn = findInput(inputs, this.names.dueDate)
+                        dueDateIn.bond.changed('')
+                    },
+                    type: 'datetime-local',
+                    validate: (_, { value: deadline }) => {
+                        if (!deadline) return
+                        const diffMS = new Date(deadline) - new Date()
+                        return diffMS < deadlineMinMS && textsCap.deadlineMinErrorMsg
+                    },
+                    value: '',
+                },
+                {
+                    bond: new Bond(),
+                    label: textsCap.dueDateLabel,
+                    name: this.names.dueDate,
+                    type: 'datetime-local',
+                    validate: (_, { value: dueDate }) => {
+                        if (!dueDate) return
+                        const { values } = this.state
+                        const deadline = values[this.names.deadline]
+                        const diffMS = new Date(dueDate) - new Date(deadline)
+                        return diffMS < 0 && textsCap.dueDateMinErrorMsg
+                    },
+                    value: '',
+                },
             ]
         }
+
+        isObj(values) && fillValues(inputs, values)
+
         this.originalSetState = this.setState
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
     componentWillMount() {
         this._mounted = true
-        // connect to blockchain beforehand to speed up currency convertion
-        getConnection()
-
         this.bond = Bond.all([bond, partners.bond])
         this.tieId = this.bond.tie(() => {
             const { inputs } = this.state
@@ -300,9 +317,6 @@ export default class Form extends Component {
             this.setState({ inputs })
         })
 
-        // force balance check on-load
-        findInput(this.state.inputs, this.names.bounty).bond.changed(0)
-
     }
 
     componentWillUnmount() {
@@ -311,20 +325,25 @@ export default class Form extends Component {
 
     handleBountyChange = deferred(async (_, values) => {
         const { inputs } = this.state
-        const bounty = values[this.names.bounty]
-        const currency = values[this.names.currency]
         const bountyGrpIn = findInput(inputs, this.names.bountyGroup)
         const bountyIn = findInput(inputs, this.names.bounty)
+        const bounty = values[this.names.bounty]
+        if (!bounty) {
+            bountyIn.invalid = false
+            bountyGrpIn.message = null
+            return this.setState({ inputs, submitDisabled: false })
+        }
+        const currency = values[this.names.currency]
         const currencySelected = getSelectedCurrency()
         const { address } = getSelected()
         bountyIn.loading = true
         this.setState({ inputs, submitDisabled: true })
         const getCurrencyEl = (prefix, suffix, value, unit, unitDisplayed) => (
-            <Currency {... { prefix, suffix, value, unit, unitDisplayed }} />
+            <Currency {... { decimalPlaces: 4, prefix, suffix, value, unit, unitDisplayed }} />
         )
 
         try {
-            this.amountXTX = bounty === 0 ? 0 : Math.ceil(await convertTo(bounty, currency, currencyDefault))
+            this.amountXTX = Math.ceil(await convertTo(bounty, currency, currencyDefault))
             const { api } = await getConnection()
             const balanceXTX = parseInt(await api.query.balances.freeBalance(address))
             const amountTotalXTX = this.amountXTX + estimatedTxFee
@@ -370,22 +389,58 @@ export default class Form extends Component {
 
     handlePublishChange = (_, values) => {
         const { inputs } = this.state
-        const publish = values[this.names.publish] === 'yes'
         const assigneeIn = findInput(inputs, this.names.assignee)
+        const publish = values[this.names.publish] === 'yes'
         assigneeIn.hidden = publish
         this.setState({ inputs })
     }
 
     handleSubmit = (_, values) => {
-        console.log({ values })
+        const { values: valuesOrg = {} } = this.props
+        const { address } = getSelected()
+        const deadlineBlocks = Math.ceil(values[this.names.deadline] / BLOCK_DURATION_SECONDS)
+        const dueDateBlocks = Math.ceil(values[this.names.dueDate] / BLOCK_DURATION_SECONDS)
+        const assignee = values[this.names.assignee]
+        const orderClosed = !!assignee ? 1 : 0
+        const create = !valuesOrg.hash
+        const fn = !create ? updateTaskOrder : createTaskOrder
+        const description = values[this.names.title]
+        const title = create ? textsCap.formHeader : textsCap.formHeaderUpdate
+        const args = [
+            address,
+            address,
+            assignee || address,
+            values[this.names.isSell],
+            this.amountXTX,
+            orderClosed,
+            values[this.names.orderType],
+            deadlineBlocks,
+            dueDateBlocks,
+            [[PRODUCT_HASH_LABOUR, this.amountXTX, 1]], // single item order
+        ]
+        const then = (success, [errMsg]) => this.setState({
+            message: !errMsg ? null : {
+                content: `${errMsg}`,
+                header: textsCap.submitFailed,
+                showIcon: true,
+                status: 'error',
+            },
+            submitDisabled: false,
+            success,
+        })
+        this.setState({
+            submitDisabled: true,
+            message: {
+                header: textsCap.addedToQueue,
+                showIcon: true,
+                status: 'loading',
+            },
+        })
+        addToQueue(fn.apply(null, [...args, { description, then, title }]))
     }
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
-Form.propTypes = {
+TaskForm.propTypes = {
     values: PropTypes.object,
-}
-Form.defaultProps = {
-    header: textsCap.formHeader,
-    subheader: '',
 }

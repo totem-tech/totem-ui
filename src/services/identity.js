@@ -130,7 +130,7 @@ const init = () => {
     // add seeds to PolkadotJS keyring
     keyring.add(getAll().map(x => x.uri))
 }
-setTimeout(init, 2000)
+setTimeout(init, 2000) // 2 seconds delay for secretStore to load
 
 export default {
     addFromUri,

@@ -207,7 +207,7 @@ const setMessage = (task, msg = {}, duration, id, silent = false) => silent ? nu
 
 const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, duration) => function () {
     const cbArgs = arguments
-    const errMsg = status === ERROR ? cbArgs[0] : ''
+    const errMsg = status === ERROR ? `${cbArgs[0]}` : ''
     const done = [SUCCESS, ERROR].includes(status)
     const success = status === SUCCESS
     task.status = status
@@ -286,6 +286,7 @@ const handleTxTransfer = async (id, rootTask, task, toastId) => {
     task.address = addressToStr(task.address)
     // recipient address
     task.args[0] = addressToStr(task.args[0])
+    task.func = 'api.tx.balances.transfer'
 
     const { address: senderAddress, args, silent, toastDuration } = task
     const [recipientAddress, amount] = args
@@ -301,7 +302,6 @@ const handleTxTransfer = async (id, rootTask, task, toastId) => {
     }
     task.title = texts.txTransferTitle
     task.description = msg.content.join('\n')
-    task.func = 'api.tx.balances.transfer'
     const _save = status => arg0 => setToastNSaveCb(
         id, rootTask, task, status, msg, toastId, silent, toastDuration
     )(arg0)

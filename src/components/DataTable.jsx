@@ -77,13 +77,13 @@ export default class DataTable extends ReactiveComponent {
                     onChange={(e, d) => this.setState({ keywords: d.value })}
                     onDragOver={e => e.preventDefault()}
                     onDrop={e => {
-                        const keywords = e.dataTransfer.getData("Text")
+                        const keywords = e.dataTransfer.getData('Text')
                         if (!keywords.trim()) return
                         this.setState({ keywords })
                     }}
                     placeholder={wordsCap.search}
                     style={!isMobile ? undefined : styles.searchMobile}
-                    type="text"
+                    type='search' // enables escape to clear
                     value={keywords}
                 />
             </Grid.Column>
