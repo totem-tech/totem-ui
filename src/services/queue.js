@@ -207,11 +207,13 @@ const setMessage = (task, msg = {}, duration, id, silent = false) => silent ? nu
 
 const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, duration) => function () {
     const cbArgs = arguments
-    const errMsg = status === ERROR ? `${cbArgs[0]}` : ''
+    const errMsg = status === ERROR ? cbArgs[0] : ''
     const done = [SUCCESS, ERROR].includes(status)
     const success = status === SUCCESS
     task.status = status
-    task.errorMessage = !isStr(errMsg) ? undefined : errMsg
+    task.errorMessage = isStr(errMsg) ? errMsg : (
+        errMsg instanceof Error ? `${errMsg}` : undefined
+    )
     const hasError = status === ERROR && task.errorMessage
 
     hasError && msg.content.unshift(task.errorMessage)
