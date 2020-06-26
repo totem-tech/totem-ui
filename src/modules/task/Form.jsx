@@ -62,6 +62,7 @@ export default class TaskForm extends Component {
         super(props)
 
         const { values } = this.props
+        this.amountXTX = 0
         // list of input names
         this.names = Object.freeze({
             advancedGroup: 'advancedGroup',
@@ -192,7 +193,7 @@ export default class TaskForm extends Component {
                             ],
                             radio: true,
                             type: 'checkbox-group',
-                            value: 'services',
+                            value: 0, // default: service
                         },
                         {
                             label: textsCap.description,
@@ -428,6 +429,8 @@ export default class TaskForm extends Component {
             submitDisabled: false,
             success,
         })
+        const queueProps = fn.apply(null, [...args, { description, then, title }])
+        addToQueue(queueProps)
         this.setState({
             submitDisabled: true,
             message: {
@@ -436,7 +439,6 @@ export default class TaskForm extends Component {
                 status: 'loading',
             },
         })
-        addToQueue(fn.apply(null, [...args, { description, then, title }]))
     }
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
