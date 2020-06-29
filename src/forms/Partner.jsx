@@ -28,7 +28,11 @@ const [texts] = translated({
     addressValidationMsg2: 'Please enter a valid Totem Identity',
     associatedIdentityLabel: 'Associated with your identity',
     associatedIdentityPlaceholder: 'Select one of your identities',
-    companyFormOnOpenMsg: `You have chosen to make this partner public. Please ensure you fill in the correct details. Click cancel to abort making public.`,
+    companyFormOnOpenMsg: `
+        You have chosen to make this partner public.
+        Please ensure you fill in the correct details.
+        Click cancel to abort making public.
+    `,
     header1: 'Add partner',
     header2: 'Update partner',
     nameLabel: 'Enter Partner Name',
@@ -238,8 +242,8 @@ class Partner extends Component {
         const isValidAddress = !!addressToStr(searchQuery)
         addressIn.allowAdditions = false
         addressIn.loading = true
-        this.setState({inputs})
-        
+        this.setState({ inputs })
+
         client.companySearch(searchQuery, false, (err, companies) => {
             addressIn.loading = false
             addressIn.allowAdditions = !err && companies.size === 0 && isValidAddress

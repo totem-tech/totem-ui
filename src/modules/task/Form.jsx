@@ -1,9 +1,11 @@
 import React, { Component } from 'react'
+import { Button } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import Currency from '../../components/Currency'
 import { arrSort, deferred, isObj } from '../../utils/utils'
+import PartnerForm from '../../forms/Partner'
 // services
 import { getConnection } from '../../services/blockchain'
 import {
@@ -16,8 +18,9 @@ import { bond, getSelected } from '../../services/identity'
 import { translated } from '../../services/language'
 import partners from '../../services/partner'
 import { BLOCK_DURATION_SECONDS } from '../../utils/time'
-import { createTaskOrder, updateTaskOrder, PRODUCT_HASH_LABOUR } from './task'
+import { createOrUpdateTask, PRODUCT_HASH_LABOUR } from './task'
 import { addToQueue } from '../../services/queue'
+import { showForm } from '../../services/modal'
 
 const [texts, textsCap] = translated({
     addedToQueue: 'request added to queue',
@@ -26,6 +29,7 @@ const [texts, textsCap] = translated({
     assignee: 'select a partner to assign task',
     assigneePlaceholder: 'select from partner list',
     assignToPartner: 'assign to a partner',
+    assigneeErrUserIdRequired: 'partner does not have an User ID associated.',
     balance: 'balance',
     bountyLabel: 'bounty amount',
     bountyPlaceholder: 'enter bounty amount',
@@ -45,6 +49,7 @@ const [texts, textsCap] = translated({
     inventory: 'inventory',
     marketplace: 'marketplace',
     myself: 'myself',
+    orderTypeLabel: 'order type',
     publishToMarketPlace: 'publish to marketplace',
     services: 'services',
     submitFailed: 'submission failed',
@@ -52,7 +57,7 @@ const [texts, textsCap] = translated({
     tagsNoResultMsg: 'type tag and press ENTER to add',
     title: 'task title',
     titlePlaceholder: 'enter a very short task description',
-    orderTypeLabel: 'order type',
+    updatePartner: 'update partner',
 }, true)
 const estimatedTxFee = 140
 const deadlineMinMS = 48 * 60 * 60 * 1000
@@ -113,7 +118,7 @@ export default class TaskForm extends Component {
                             required: true,
                             type: 'number',
                             useInput: true,
-                            value: 0,
+                            value: '',
                             width: 12,
                         },
                         {
@@ -147,7 +152,7 @@ export default class TaskForm extends Component {
                     required: true,
                     type: 'checkbox-group',
                     // remove validation once implemented
-                    validate: (_, { value }) => value === 'yes' && textsCap.featureNotImplemented,
+                    validate: (_, { value: publish }) => publish === 'yes' && textsCap.featureNotImplemented,
                     value: 'no',
                 },
                 {
@@ -161,6 +166,35 @@ export default class TaskForm extends Component {
                     selection: true,
                     search: true,
                     type: 'dropdown',
+                    validate: (_, { value: assignee }) => {
+                        if (!assignee) return
+                        const partner = partners.get(assignee) || {}
+                        const { inputs } = this.state
+                        const assigneeIn = findInput(inputs, this.names.assignee)
+                        return partner.userId ? null : (
+                            <div>
+                                {textsCap.assigneeErrUserIdRequired}
+                                <div>
+                                    <Button {...{
+                                        content: textsCap.updatePartner,
+                                        onClick: e => {
+                                            e.preventDefault() // prevents form being submitted
+                                            showForm(PartnerForm, {
+                                                values: partner,
+                                                onSubmit: (success, { userId }) => {
+                                                    // partner wasn't updated with an user Id
+                                                    if (!success || !userId) return
+                                                    // force assignee to be re-validated
+                                                    assigneeIn.bond.changed('')
+                                                    assigneeIn.bond.changed(assignee)
+                                                }
+                                            })
+                                        },
+                                    }} />
+                                </div>
+                            </div>
+                        )
+                    },
                 },
                 {
                     // Advanced section (Form type "group" with accordion)
@@ -235,16 +269,16 @@ export default class TaskForm extends Component {
                     label: textsCap.deadlineLabel,
                     name: this.names.deadline,
                     onChange: (_, values) => {
-                        const dueDate = values[this.names.dueDate]
-                        if (!dueDate) return
-                        const deadline = values[this.names.deadline]
-                        const diffMS = new Date(dueDate) - new Date(deadline)
-                        if (diffMS >= 0) return
                         const { inputs } = this.state
-                        // due date is before deadline => reset as change is required
                         const dueDateIn = findInput(inputs, this.names.dueDate)
+                        const dueDate = values[this.names.dueDate]
+                        const deadline = values[this.names.deadline]
+                        if (!dueDate) return dueDateIn.bond.changed(deadline)
+                        // forces due date to be re-validated
                         dueDateIn.bond.changed('')
+                        dueDateIn.bond.changed(dueDate)
                     },
+                    required: true,
                     type: 'datetime-local',
                     validate: (_, { value: deadline }) => {
                         if (!deadline) return
@@ -255,8 +289,10 @@ export default class TaskForm extends Component {
                 },
                 {
                     bond: new Bond(),
+                    hidden: values => !values[this.names.deadline], // hide if deadline is not selected
                     label: textsCap.dueDateLabel,
                     name: this.names.dueDate,
+                    required: true,
                     type: 'datetime-local',
                     validate: (_, { value: dueDate }) => {
                         if (!dueDate) return
@@ -284,21 +320,14 @@ export default class TaskForm extends Component {
             const assigneeIn = findInput(inputs, this.names.assignee)
             const selected = getSelected()
             const options = Array.from(partners.getAll())
-                .map(([address, { name, userId }]) => !userId ? null : {
+                // exclude selected identity
+                .map(([address, { name, userId }]) => address === selected.address ? null : {
                     description: userId,
                     key: address,
                     text: name,
                     value: address,
                 })
                 .filter(Boolean)
-            if (!options.find(x => x.address === selected.address)) {
-                options.push(({
-                    description: texts.myself,
-                    key: selected.address,
-                    text: selected.name,
-                    value: selected.address,
-                }))
-            }
 
             assigneeIn.options = arrSort(options, 'text')
             this.setState({ inputs })
@@ -317,34 +346,33 @@ export default class TaskForm extends Component {
             currencyIn.search = ['text', 'name']
             this.setState({ inputs })
         })
-
     }
 
     componentWillUnmount() {
         this._mounted = false
     }
 
+    // check if use has enough balance for the transaction including pre-funding amount (bounty)
     handleBountyChange = deferred(async (_, values) => {
         const { inputs } = this.state
         const bountyGrpIn = findInput(inputs, this.names.bountyGroup)
         const bountyIn = findInput(inputs, this.names.bounty)
         const bounty = values[this.names.bounty]
-        if (!bounty) {
-            bountyIn.invalid = false
-            bountyGrpIn.message = null
-            return this.setState({ inputs, submitDisabled: false })
-        }
         const currency = values[this.names.currency]
         const currencySelected = getSelectedCurrency()
         const { address } = getSelected()
-        bountyIn.loading = true
-        this.setState({ inputs, submitDisabled: true })
         const getCurrencyEl = (prefix, suffix, value, unit, unitDisplayed) => (
             <Currency {... { decimalPlaces: 4, prefix, suffix, value, unit, unitDisplayed }} />
         )
+        bountyIn.loading = true
+        this.setState({ inputs, submitDisabled: true })
 
         try {
-            this.amountXTX = Math.ceil(await convertTo(bounty, currency, currencyDefault))
+            // no need to convert currency if amount is zero or XTX is the selected currency
+            const requireConversion = bounty && currency !== currencyDefault
+            this.amountXTX = Math.ceil(
+                !requireConversion ? bounty : await convertTo(bounty, currency, currencyDefault)
+            )
             const { api } = await getConnection()
             const balanceXTX = parseInt(await api.query.balances.freeBalance(address))
             const amountTotalXTX = this.amountXTX + estimatedTxFee
@@ -397,16 +425,22 @@ export default class TaskForm extends Component {
     }
 
     handleSubmit = (_, values) => {
-        const { values: valuesOrg = {} } = this.props
+        const { hash } = this.props.values || {}
         const { address } = getSelected()
-        const deadlineBlocks = Math.ceil(values[this.names.deadline] / BLOCK_DURATION_SECONDS)
-        const dueDateBlocks = Math.ceil(values[this.names.dueDate] / BLOCK_DURATION_SECONDS)
+        const deadlineMS = new Date(values[this.names.deadline]) - new Date()
+        const dueDateMS = new Date(values[this.names.dueDate]) - new Date()
+        const deadlineBlocks = Math.ceil(deadlineMS / 1000 / BLOCK_DURATION_SECONDS)
+        const dueDateBlocks = Math.ceil(dueDateMS / 1000 / BLOCK_DURATION_SECONDS)
+        console.log({
+            deadlineMS,
+            dueDateMS,
+            deadlineBlocks,
+            dueDateBlocks,
+        })
         const assignee = values[this.names.assignee]
         const orderClosed = !!assignee ? 1 : 0
-        const create = !valuesOrg.hash
-        const fn = !create ? updateTaskOrder : createTaskOrder
         const description = values[this.names.title]
-        const title = create ? textsCap.formHeader : textsCap.formHeaderUpdate
+        const title = !hash ? textsCap.formHeader : textsCap.formHeaderUpdate
         const args = [
             address,
             address,
@@ -417,7 +451,8 @@ export default class TaskForm extends Component {
             values[this.names.orderType],
             deadlineBlocks,
             dueDateBlocks,
-            [[PRODUCT_HASH_LABOUR, this.amountXTX, 1]], // single item order
+            [[PRODUCT_HASH_LABOUR, this.amountXTX, 1, 1]], // single item order
+            hash,
         ]
         const then = (success, [errMsg]) => this.setState({
             message: !errMsg ? null : {
@@ -429,7 +464,7 @@ export default class TaskForm extends Component {
             submitDisabled: false,
             success,
         })
-        const queueProps = fn.apply(null, [...args, { description, then, title }])
+        const queueProps = createOrUpdateTask.apply(null, [...args, { description, then, title }])
         addToQueue(queueProps)
         this.setState({
             submitDisabled: true,
