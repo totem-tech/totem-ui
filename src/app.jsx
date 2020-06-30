@@ -29,6 +29,7 @@ import { getLayout, gridColumnsBond, layoutBond } from './services/window'
 // Utils
 import DataStorage from './utils/DataStorage'
 import naclHelper from './utils/naclHelper'
+import polkadotHelper from './utils/polkadotHelper'
 // Images
 import TotemButtonLogo from './assets/totem-button-grey.png'
 import PlaceholderImage from './assets/totem-placeholder.png'
@@ -61,7 +62,8 @@ export class App extends ReactiveComponent {
 
 		// For debug only.
 		window.utils = {
-			naclHelper
+			naclHelper,
+			polkadotHelper,
 		}
 		window.runtime = runtime
 		window.secretStore = secretStore
