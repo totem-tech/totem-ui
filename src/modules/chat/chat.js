@@ -234,9 +234,9 @@ export const send = (receiverIds, message, encrypted = false) => {
 
 // retrieve unread messages on re/connect
 client.onConnect(() => {
-    // retrieve any unread recent messages  // // check & retrieve any unread mesages
-    const { lastMessageTS } = rw()
-    client.messageGetRecent(lastMessageTS, (err, messages = []) => {
+    if (!(getUser() || {}).id) return // ignore if not registered
+    // check & retrieve any unread mesages
+    client.messageGetRecent(rw().lastMessageTS, (err, messages = []) => {
         if (err) return console.log('Failed to retrieve recent inbox messages', err)
         messages.forEach(saveMessage)
     })

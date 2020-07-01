@@ -262,7 +262,7 @@ export class ChatClient {
         // @cb          function : callback function
         //                         Params:
         //                         @err string: error message if failed or rejected
-        this.notify = (toUserIds, type, childType, message, data, cb) => isFn(cb) && socket.emit('notify',
+        this.notify = (toUserIds, type, childType, message, data, cb) => isFn(cb) && socket.emit('notification',
             toUserIds,
             type,
             childType,
@@ -283,7 +283,28 @@ export class ChatClient {
         //          @data       object: information specific to the notification @type and @childType
         //          @tsCreated  date: notification creation timestamp
         //          @cbConfirm  function: a function to confirm receipt
-        this.onNotify = cb => isFn(cb) && socket.on('notify', cb)
+        this.onNotify = cb => isFn(cb) && socket.on('notification', cb)
+        this.notificationGetRecent = (ts, cb) => isFn(cb) && socket.emit(
+            'notification-get-recent',
+            ts,
+            (err, result) => cb(err, new Map(result))
+        )
+        // Mark notification as read or deleted
+        //
+        // Params:
+        // @id      string: Notification ID
+        // @read    boolean: marks as read or unread
+        // @deleted boolean: marks as deleted or undeleted
+        // @cb      function: callback args =>
+        //              @err    string: error message, if any
+        //              @
+        this.notificationSetStatus = (id, read, deleted, cb) => isFn(cb) && socket.emit(
+            'notification-set-status',
+            id,
+            read,
+            deleted,
+            cb
+        )
 
         // add/get/update project
         //

@@ -1,33 +1,17 @@
-import React, { Component, useState, useEffect } from 'react'
-import uuid from 'uuid'
-import { Bond } from 'oo7'
-import { Dropdown, Icon } from 'semantic-ui-react'
-import { deferred } from '../utils/utils'
-import DataStorage from '../utils/DataStorage'
+import React from 'react'
 // components
-import { ButtonAcceptOrReject, UserID } from '../components/buttons'
-import TimeSince from '../components/TimeSince'
-import Message from '../components/Message'
+import { ButtonAcceptOrReject, UserID } from '../../components/buttons'
+import TimeSince from '../../components/TimeSince'
+import Message from '../../components/Message'
 // forms
-import IdentityShareForm from '../forms/IdentityShare'
-import PartnerForm from '../forms/Partner'
+import IdentityShareForm from '../../forms/IdentityShare'
+import PartnerForm from '../../forms/Partner'
 // services
-import client, { getUser } from './chatClient'
-import identityService from './identity'
-import { translated } from './language'
-import { confirm, showForm } from './modal'
-import { getProject } from './project'
-import { addToQueue, QUEUE_TYPES } from './queue'
-import { workerTasks } from './timeKeeping'
+import identityService from '../../services/identity'
+import { translated } from '../../services/language'
+import { confirm, showForm } from '../../services/modal'
+import { handleTKInvitation, remove, toggleRead } from './notification'
 
-const MODULE_KEY = 'totem_notifications'
-const notifications = new DataStorage(MODULE_KEY, true, false)
-// store unread counts for individual types
-// const unreadCounts = new DataStorage('totem_service_notifications-unread-counts', true, false)
-
-export const newNotificationBond = new Bond()
-export const visibleBond = new Bond().defaultTo(false)
-export const unreadCountBond = new Bond().defaultTo(getUnreadCount())
 const [words, wordsCap] = translated({
     activity: 'activity',
     ignore: 'ignore',
@@ -50,84 +34,10 @@ const [texts] = translated({
     yourIdentity: 'Your identity',
 })
 
-client.onNotify((id, senderId, type, childType, message, data, tsCreated, confirmReceived) => {
-    if (notifications.get(id)) return
-    const newNotification = {
-        id,
-        senderId,
-        type,
-        childType,
-        message,
-        data,
-        tsCreated,
-        deleted: false,
-        read: false,
-    }
-    setTimeout(() => {
-        confirmReceived(true)
-        notifications.set(id, newNotification)
-        unreadCountBond.changed(getUnreadCount())
-        newNotificationBond.changed(newNotification)
-        console.log('Notification received!', id, senderId, tsCreated)
-    })
-})
 
-function getUnreadCount() {
-    const all = notifications.getAll()
-    if (!all.size) return -1
-    return Array.from(all)
-        .map(([_, { read }]) => !read)
-        .filter(Boolean)
-        .length
-}
-
-export const toggleRead = id => {
-    const item = notifications.get(id)
-    item.read = !item.read
-    notifications.set(id, item)
-    unreadCountBond.changed(getUnreadCount())
-}
-
-export const remove = id => setTimeout(() => {
-    notifications.delete(id)
-    if (!notifications.size) visibleBond.changed(false)
-})
-
-export default function NotificationList({ forceVisible = false, float = true, isMobile }) {
-    const [items, setItems] = useState(notifications.getAll())
-    const [visible, setVisible] = useState(visibleBond._value)
-
-    useEffect(() => {
-        const tieId = notifications.bond.tie(() => setItems(notifications.getAll()))
-        const tieIdVisible = visibleBond.tie(visible => setVisible(visible))
-        return () => {
-            notifications.bond.untie(tieId)
-            visibleBond.untie(tieIdVisible)
-        }
-    }, [])
-
-    return (
-        <div
-            className='notification-list'
-            style={!float ? {} : {
-                bottom: isMobile ? 48 : undefined,
-                position: 'fixed',
-                top: !isMobile ? 63 : undefined,
-                right: 0,
-                width: !isMobile ? 400 : '100%',
-                zIndex: 2,
-            }}
-        >
-            {forceVisible || visible && Array.from(items)
-                .reverse() // latest first
-                .map(NotificationItem)
-                .filter(Boolean)}
-        </div>
-    )
-}
-
-export const NotificationItem = ([id, notification]) => {
-    const { senderId, type, childType, message, data, tsCreated, read } = notification
+export default function NotificationItem({ id, notification }) {
+    const { from, type, childType, message, data, tsCreated, read } = notification
+    const senderId = from || notification.senderId // (previously used)
     const userIdBtn = <UserID userId={senderId} />
     const typeSpaced = type.replace('_', ' ')
     const msg = {
@@ -200,7 +110,10 @@ export const NotificationItem = ([id, notification]) => {
         case 'time_keeping:invitation': // data => { projectHash, projectName, workerAddress }
             // wrong user id used to send invitation. address does not belong to user
             const identity = identityService.find(data.workerAddress)
-            if (!identity) return remove(id)
+            if (!identity) {
+                remove(id)
+                return ''
+            }
             msg.header = undefined
             msg.icon.name = 'clock outline'
             msg.content = (
@@ -253,62 +166,9 @@ export const NotificationItem = ([id, notification]) => {
             }} />
         </div>
     )
-    msg.header = <div className="header" style={styles.messageHeader}>{msg.header}</div>
+    msg.header = <div className="header" style={styles.messageHeader}>{msg.header} {id}</div>
     return <Message {...msg} />
 }
-
-// respond to time keeping invitation
-export const handleTKInvitation = (
-    projectHash, workerAddress, accepted,
-    // optional args
-    projectOwnerId, projectName, notifyId
-) => new Promise(resolve => {
-    const type = 'time_keeping'
-    const childType = 'invitation'
-    const currentUserId = (getUser() || {}).id
-    // find notification if not supplied
-    notifyId = notifyId || Array.from(notifications.search({
-        senderId: projectOwnerId,
-        type,
-        childType
-    })).reduce((notifyId, [xNotifyId, xNotification]) => {
-        if (!!notifyId) return notifyId
-        const { data: { projectHash: hash, workerAddress: address } } = xNotification
-        const match = hash === projectHash && address === workerAddress
-        return match ? xNotifyId : null
-    }, null)
-
-    const getprops = (projectOwnerId, projectName) => workerTasks.accept(projectHash, workerAddress, accepted, {
-        title: `${wordsCap.timekeeping} - ${accepted ? texts.acceptInvitation : texts.rejectInvitation}`,
-        description: `${wordsCap.activity}: ${projectName}`,
-        then: success => !success && resolve(false),
-        // no need to notify if rejected or current user is the project owner
-        next: !accepted || !projectOwnerId || projectOwnerId === currentUserId ? undefined : {
-            address: workerAddress, // for automatic balance check
-            type: QUEUE_TYPES.CHATCLIENT,
-            func: 'notify',
-            args: [
-                [projectOwnerId],
-                type,
-                'invitation_response',
-                `${accepted ? texts.acceptedInvitation : texts.rejectedInvitation}: "${projectName}"`,
-                { accepted, projectHash, projectName, workerAddress },
-                err => {
-                    !err && notifyId && remove(notifyId)
-                    resolve(!err)
-                }
-            ]
-        }
-    })
-
-    if (!!projectOwnerId && !!projectName) return addToQueue(getprops(projectOwnerId, projectName))
-
-    // retrieve project details to get project name and owners user id
-    getProject(projectHash).then(project => {
-        const { name, userId } = project || {}
-        addToQueue(getprops(userId, name))
-    })
-})
 
 const styles = {
     messageContent: {

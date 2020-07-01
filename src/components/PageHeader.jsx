@@ -20,7 +20,7 @@ import {
 	newNotificationBond,
 	visibleBond as notifVisibleBond,
 	unreadCountBond as unreadNotifCountBond,
-} from '../services/notification'
+} from '../modules/notification/notification'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { toggleSidebarState } from '../services/sidebar'
 import timeKeeping from '../services/timeKeeping'
