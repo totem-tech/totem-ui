@@ -7,7 +7,7 @@ import Currency from '../../components/Currency'
 import { arrSort, deferred, isObj } from '../../utils/utils'
 import PartnerForm from '../../forms/Partner'
 // services
-import { getConnection } from '../../services/blockchain'
+import { getConnection, getCurrentBlock } from '../../services/blockchain'
 import {
     convertTo,
     currencyDefault,
@@ -52,7 +52,8 @@ const [texts, textsCap] = translated({
     orderTypeLabel: 'order type',
     publishToMarketPlace: 'publish to marketplace',
     services: 'services',
-    submitFailed: 'submission failed',
+    submitFailed: 'failed to create task',
+    submitSuccess: 'task created successfully',
     tags: 'categorise with tags',
     tagsNoResultMsg: 'type tag and press ENTER to add',
     title: 'task title',
@@ -424,19 +425,14 @@ export default class TaskForm extends Component {
         this.setState({ inputs })
     }
 
-    handleSubmit = (_, values) => {
+    handleSubmit = async (_, values) => {
         const { hash } = this.props.values || {}
         const { address } = getSelected()
+        const currentBlock = await getCurrentBlock()
         const deadlineMS = new Date(values[this.names.deadline]) - new Date()
         const dueDateMS = new Date(values[this.names.dueDate]) - new Date()
-        const deadlineBlocks = Math.ceil(deadlineMS / 1000 / BLOCK_DURATION_SECONDS)
-        const dueDateBlocks = Math.ceil(dueDateMS / 1000 / BLOCK_DURATION_SECONDS)
-        console.log({
-            deadlineMS,
-            dueDateMS,
-            deadlineBlocks,
-            dueDateBlocks,
-        })
+        const deadlineBlocks = Math.ceil(deadlineMS / 1000 / BLOCK_DURATION_SECONDS) + currentBlock
+        const dueDateBlocks = Math.ceil(dueDateMS / 1000 / BLOCK_DURATION_SECONDS) + currentBlock
         const assignee = values[this.names.assignee]
         const orderClosed = !!assignee ? 1 : 0
         const description = values[this.names.title]
@@ -454,12 +450,12 @@ export default class TaskForm extends Component {
             [[PRODUCT_HASH_LABOUR, this.amountXTX, 1, 1]], // single item order
             hash,
         ]
-        const then = (success, [errMsg]) => this.setState({
-            message: !errMsg ? null : {
-                content: `${errMsg}`,
-                header: textsCap.submitFailed,
+        const then = (success, [err]) => this.setState({
+            message: {
+                content: !success && `${err}`, // error can be string or Error object.
+                header: success ? textsCap.submitSuccess : textsCap.submitFailed,
                 showIcon: true,
-                status: 'error',
+                status: success ? 'success' : 'error',
             },
             submitDisabled: false,
             success,

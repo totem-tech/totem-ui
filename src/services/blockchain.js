@@ -61,6 +61,14 @@ export const getConnection = async () => {
     connectionPromsie = null
     return connection
 }
+
+// get current block number
+export const getCurrentBlock = async () => {
+    const { api } = await getConnection()
+    const res = await api.rpc.chain.getBlock()
+    return parseInt(res.block.get('header').get('number'))
+}
+
 // getTypes returns a promise with 
 export const getTypes = () => new Promise(resolve => resolve(types))
 
@@ -122,6 +130,7 @@ export default {
     denominations,
     getConfig,
     getConnection,
+    getCurrentBlock,
     getTypes,
     hashTypes,
     nodes,

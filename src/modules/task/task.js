@@ -18,16 +18,14 @@ export const createOrUpdateTask = (
     amountXTX = 0,
     isClosed = 1, // 0 = open, 1 = closed
     orderType = 0, // 0: service order, 1: inventory order, 2: asset order extensible
-    deadline = DEADLINE_MIN_BLOCKS, // must be equal or higher than 11520 blocks
-    dueDate = deadline, // must be equal or higher than deadline
+    deadline, // must be equal or higher than `currentBlockNumber + 11520` blocks. 
+    dueDate, // must be equal or higher than deadline
     // 2D array of order items (will be converted to objects): [[productHash, unitRate, qty, unitOfMeasure]]
     // Or, array of OrderItemStruct (see utils => polkadot types) objects 
     orderItems = [],
     hash, // (optional) determines whether to create or update
     queueProps,
 ) => {
-    deadline = deadline >= DEADLINE_MIN_BLOCKS ? deadline : DEADLINE_MIN_BLOCKS
-    dueDate = dueDate >= deadline ? dueDate : deadline
     const func = !!hash ? 'api.tx.orders.changeSpfso' : 'api.tx.orders.createSpfso'
     const args = [
         addressToStr(addrApprover),
@@ -39,7 +37,7 @@ export const createOrUpdateTask = (
         deadline,
         dueDate,
         orderItems.map(item => !isArr(item) ? item : {
-            "ProductKey": item[0],
+            "ProductHash": item[0],
             "UnitPrice": item[1],
             "Quantity": item[2],
             "UnitOfMeasure": item[3],
