@@ -15,6 +15,7 @@ import TransferForm from '../forms/Transfer'
 import UtilitiesView from '../views/UtilitiesView'
 // temp
 import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
+import EventList from '../modules/Event/EventList'
 // utils
 import DataStorage from '../utils/DataStorage'
 import { isBool, isBond } from '../utils/utils'
@@ -302,6 +303,12 @@ export const sidebarItems = [
         name: 'utilities',
         subHeader: texts.utilitiesSubheader,
         title: texts.utilitiesTitle,
+    },
+    {
+        content: EventList,
+        icon: 'history',
+        name: 'Events',
+        title: 'Events'
     },
 ].map(item => {
     const {

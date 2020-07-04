@@ -80,7 +80,7 @@ export default class TaskForm extends Component {
             dueDate: 'dueDate',
             description: 'description',
             orderType: 'orderType',
-            publish: 'publish',
+            publish: 'published',
             isSell: 'isSell',
             tags: 'tags',
             title: 'title',
@@ -198,6 +198,44 @@ export default class TaskForm extends Component {
                     },
                 },
                 {
+                    label: textsCap.deadlineLabel,
+                    name: this.names.deadline,
+                    onChange: (_, values) => {
+                        const { inputs } = this.state
+                        const dueDateIn = findInput(inputs, this.names.dueDate)
+                        const dueDate = values[this.names.dueDate]
+                        const deadline = values[this.names.deadline]
+                        if (!dueDate) return dueDateIn.bond.changed(deadline)
+                        // forces due date to be re-validated
+                        dueDateIn.bond.changed('')
+                        dueDateIn.bond.changed(dueDate)
+                    },
+                    required: true,
+                    type: 'datetime-local',
+                    validate: (_, { value: deadline }) => {
+                        if (!deadline) return
+                        const diffMS = new Date(deadline) - new Date()
+                        return diffMS < deadlineMinMS && textsCap.deadlineMinErrorMsg
+                    },
+                    value: '',
+                },
+                {
+                    bond: new Bond(),
+                    hidden: values => !values[this.names.deadline], // hide if deadline is not selected
+                    label: textsCap.dueDateLabel,
+                    name: this.names.dueDate,
+                    required: true,
+                    type: 'datetime-local',
+                    validate: (_, { value: dueDate }) => {
+                        if (!dueDate) return
+                        const { values } = this.state
+                        const deadline = values[this.names.deadline]
+                        const diffMS = new Date(dueDate) - new Date(deadline)
+                        return diffMS < 0 && textsCap.dueDateMinErrorMsg
+                    },
+                    value: '',
+                },
+                {
                     // Advanced section (Form type "group" with accordion)
                     accordion: {
                         collapsed: true,
@@ -266,44 +304,6 @@ export default class TaskForm extends Component {
                         },
                     ],
                 },
-                {
-                    label: textsCap.deadlineLabel,
-                    name: this.names.deadline,
-                    onChange: (_, values) => {
-                        const { inputs } = this.state
-                        const dueDateIn = findInput(inputs, this.names.dueDate)
-                        const dueDate = values[this.names.dueDate]
-                        const deadline = values[this.names.deadline]
-                        if (!dueDate) return dueDateIn.bond.changed(deadline)
-                        // forces due date to be re-validated
-                        dueDateIn.bond.changed('')
-                        dueDateIn.bond.changed(dueDate)
-                    },
-                    required: true,
-                    type: 'datetime-local',
-                    validate: (_, { value: deadline }) => {
-                        if (!deadline) return
-                        const diffMS = new Date(deadline) - new Date()
-                        return diffMS < deadlineMinMS && textsCap.deadlineMinErrorMsg
-                    },
-                    value: '',
-                },
-                {
-                    bond: new Bond(),
-                    hidden: values => !values[this.names.deadline], // hide if deadline is not selected
-                    label: textsCap.dueDateLabel,
-                    name: this.names.dueDate,
-                    required: true,
-                    type: 'datetime-local',
-                    validate: (_, { value: dueDate }) => {
-                        if (!dueDate) return
-                        const { values } = this.state
-                        const deadline = values[this.names.deadline]
-                        const diffMS = new Date(dueDate) - new Date(deadline)
-                        return diffMS < 0 && textsCap.dueDateMinErrorMsg
-                    },
-                    value: '',
-                },
             ]
         }
 
@@ -355,6 +355,8 @@ export default class TaskForm extends Component {
 
     // check if use has enough balance for the transaction including pre-funding amount (bounty)
     handleBountyChange = deferred(async (_, values) => {
+        // turn publish value into binary
+        values[this.names.publish] = values[this.names.publish] === 'yes' ? 1 : 0
         const { inputs } = this.state
         const bountyGrpIn = findInput(inputs, this.names.bountyGroup)
         const bountyIn = findInput(inputs, this.names.bounty)
@@ -450,6 +452,7 @@ export default class TaskForm extends Component {
             [[PRODUCT_HASH_LABOUR, this.amountXTX, 1, 1]], // single item order
             hash,
         ]
+        // return console.log({ args, values })
         const then = (success, [err]) => this.setState({
             message: {
                 content: !success && `${err}`, // error can be string or Error object.

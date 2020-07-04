@@ -6,7 +6,7 @@ export const PRODUCT_HASH_LABOUR = generateHash('labour')
 const TX_STORAGE = 'tx_storage'
 const DEADLINE_MIN_BLOCKS = 111520
 
-// Create/update task order (queue item)
+// Create/update task order (queue-able object)
 //
 // Params:
 // @addrOrigin
