@@ -1,10 +1,14 @@
 import React, { Component, useState, useEffect, useReducer } from 'react'
 import PropTypes from 'prop-types'
+// components
 import DataTable from '../../components/DataTable'
-import { showForm } from '../../services/modal'
+// forms
 import TaskForm from './Form'
+// services
 import { getConnection } from '../../services/blockchain'
 import { translated } from '../../services/language'
+import { showForm } from '../../services/modal'
+import { selectedAddressBond, getSelected } from '../../services/identity'
 
 const [texts, textsCap] = translated({
     actions: 'actions',
@@ -22,58 +26,73 @@ const listTypes = Object.freeze({
     fullfiller: 'fullfiller',
 })
 
-export default function List(props) {
-    const [state, dispatch] = useReducer(reducer, getListProps())
+export default class List extends Component {
+    constructor(props) {
+        super(props)
 
-    useEffect(() => {
-        getConnection().then(({ api }) => {
+        this.listType = listTypes[props.listType] || listTypes.owner
+        this.selectedAddress = null
+        this.state = {
+            columns: [
+                { key: 'title', title: textsCap.title },
+                { key: '_owner', title: textsCap.taskOwner },
+                { key: '_assignee', title: textsCap.assignee },
+                { key: '_bounty', title: textsCap.bounty },
+                { key: 'tags', title: textsCap.tags },
+                { key: 'description', title: textsCap.description },
+                { title: textsCap.actions }
+            ],
+            data: new Map(
+                new Array(15).fill().map((_, i) => [i, {
+                    title: `Task ${i}`,
+                    description: `Task ${i} description`,
+                    assignee: i % 2 === 0 ?
+                        '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
+                        : '5G1iRKXyqeX9WLzS6bT7i41NUntmtCHZG2vwReZomnaxHvsD',
+                }])
+            ),
+            topLeftMenu: [
+                {
+                    content: textsCap.create,
+                    icon: 'plus',
+                    onClick: () => showForm(TaskForm, { size: 'tiny' }),
+                }
+            ]
+        }
 
+
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
+    }
+
+    componentWillMount() {
+        this._mounted = true
+        this.tieIdAddress = selectedAddressBond.tie(async (address) => {
+            this.selectedAddress = address
+            // subscribe to hash list changes
+            const { api } = await getConnection()
+            this.unsubscribe && this.unsubscribe()
+            this.unsubscribe = api.query.orders[this.listType](address).then(hashAr => {
+                if (!this._mounted) return
+                // Promise.all([])
+                // retrieve 
+                // this.setState({ hashAr, data: new Map() })
+            })
         })
-        return () => { }
-    }, [])
-    return <DataTable {...{ ...props, ...state }} />
+    }
+
+    componentWillUnmount() {
+        this._mounted = false
+        this.unsubscribe && this.unsubscribe()
+        selectedAddressBond.untie(this.tieIdAddress)
+    }
+
+    render = () => <DataTable {...{ ...this.props, ...this.state }} />
 }
 List.propTypes = {
     // valid options: owner, approver, fullfiller
     listType: PropTypes.string,
 }
 List.defaultProps = {
+    listType: listTypes.owner,
 }
-
-const reducer = (state = {}, action = { type: '', data: undefined }) => {
-    switch (action) {
-        case 'columns':
-            break
-        case 'hashAr':
-            state.hashAr = data
-            break
-    }
-    return state
-}
-
-const getListProps = () => ({
-    columns: [
-        { key: 'title', title: textsCap.title },
-        { key: '_owner', title: textsCap.taskOwner },
-        { key: '_assignee', title: textsCap.assignee },
-        { key: '_bounty', title: textsCap.bounty },
-        { key: 'tags', title: textsCap.tags },
-        { key: 'description', title: textsCap.description },
-        { title: textsCap.actions }
-    ],
-    data: new Map(
-        new Array(15).fill().map((_, i) => [i, {
-            title: `Task ${i}`,
-            description: `Task ${i} description`,
-            assignee: i % 2 === 0 ?
-                '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
-                : '5G1iRKXyqeX9WLzS6bT7i41NUntmtCHZG2vwReZomnaxHvsD',
-        }])
-    ),
-    topLeftMenu: [
-        {
-            content: textsCap.create,
-            onClick: () => showForm(TaskForm, { size: 'tiny' }),
-        }
-    ]
-})

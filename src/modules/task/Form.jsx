@@ -4,7 +4,7 @@ import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import Currency from '../../components/Currency'
-import { arrSort, deferred, isObj } from '../../utils/utils'
+import { arrSort, deferred, isObj, isValidNumber, deferredPromise } from '../../utils/utils'
 import PartnerForm from '../../forms/Partner'
 // services
 import { getConnection, getCurrentBlock } from '../../services/blockchain'
@@ -27,9 +27,10 @@ const [texts, textsCap] = translated({
     advancedLabel: 'advanced options',
     amountRequired: 'amount required',
     assignee: 'select a partner to assign task',
+    assigneeErrUserIdRequired: 'partner does not have an User ID associated.',
+    assigneeErrOwnIdentitySelected: 'you cannot assign a task to your currently selected identity',
     assigneePlaceholder: 'select from partner list',
     assignToPartner: 'assign to a partner',
-    assigneeErrUserIdRequired: 'partner does not have an User ID associated.',
     balance: 'balance',
     bountyLabel: 'bounty amount',
     bountyPlaceholder: 'enter bounty amount',
@@ -62,6 +63,7 @@ const [texts, textsCap] = translated({
 }, true)
 const estimatedTxFee = 140
 const deadlineMinMS = 48 * 60 * 60 * 1000
+const strToDate = ymd => new Date(`${ymd}T23:59`)
 
 export default class TaskForm extends Component {
     constructor(props) {
@@ -169,6 +171,9 @@ export default class TaskForm extends Component {
                     type: 'dropdown',
                     validate: (_, { value: assignee }) => {
                         if (!assignee) return
+                        const { address } = getSelected() || {}
+                        if (assignee === address) return textsCap.assigneeErrOwnIdentitySelected
+
                         const partner = partners.get(assignee) || {}
                         const { inputs } = this.state
                         const assigneeIn = findInput(inputs, this.names.assignee)
@@ -211,10 +216,11 @@ export default class TaskForm extends Component {
                         dueDateIn.bond.changed(dueDate)
                     },
                     required: true,
-                    type: 'datetime-local',
+                    type: 'date',
                     validate: (_, { value: deadline }) => {
                         if (!deadline) return
-                        const diffMS = new Date(deadline) - new Date()
+                        console.log({ deadline })
+                        const diffMS = strToDate(deadline) - new Date()
                         return diffMS < deadlineMinMS && textsCap.deadlineMinErrorMsg
                     },
                     value: '',
@@ -225,12 +231,12 @@ export default class TaskForm extends Component {
                     label: textsCap.dueDateLabel,
                     name: this.names.dueDate,
                     required: true,
-                    type: 'datetime-local',
+                    type: 'date',
                     validate: (_, { value: dueDate }) => {
                         if (!dueDate) return
                         const { values } = this.state
                         const deadline = values[this.names.deadline]
-                        const diffMS = new Date(dueDate) - new Date(deadline)
+                        const diffMS = strToDate(dueDate) - strToDate(deadline)
                         return diffMS < 0 && textsCap.dueDateMinErrorMsg
                     },
                     value: '',
@@ -319,16 +325,13 @@ export default class TaskForm extends Component {
         this.tieId = this.bond.tie(() => {
             const { inputs } = this.state
             const assigneeIn = findInput(inputs, this.names.assignee)
-            const selected = getSelected()
             const options = Array.from(partners.getAll())
-                // exclude selected identity
-                .map(([address, { name, userId }]) => address === selected.address ? null : {
+                .map(([address, { name, userId }]) => ({
                     description: userId,
                     key: address,
                     text: name,
                     value: address,
-                })
-                .filter(Boolean)
+                }))
 
             assigneeIn.options = arrSort(options, 'text')
             this.setState({ inputs })
@@ -353,31 +356,58 @@ export default class TaskForm extends Component {
         this._mounted = false
     }
 
+    getBalance = (() => {
+        let promises = []
+        const then = resolver => function () {
+            const args = arguments
+            promises.shift() // remove the first promise
+            !promises.length && resolver.apply(null, args)
+        }
+        return address => new Promise((resolve, reject) => {
+            const promise = api.query.balances.freeBalance(address)
+            promise.then(then(resolve), then(reject))
+            promises.push(promise)
+        })
+    })()
+
     // check if use has enough balance for the transaction including pre-funding amount (bounty)
-    handleBountyChange = deferred(async (_, values) => {
+    handleBountyChange = deferred((_, values) => {
+        this.bountyPromise = this.bountyPromise || deferredPromise()
         // turn publish value into binary
         values[this.names.publish] = values[this.names.publish] === 'yes' ? 1 : 0
         const { inputs } = this.state
         const bountyGrpIn = findInput(inputs, this.names.bountyGroup)
         const bountyIn = findInput(inputs, this.names.bounty)
         const bounty = values[this.names.bounty]
+        const valid = isValidNumber(bounty)
         const currency = values[this.names.currency]
         const currencySelected = getSelectedCurrency()
         const { address } = getSelected()
         const getCurrencyEl = (prefix, suffix, value, unit, unitDisplayed) => (
             <Currency {... { decimalPlaces: 4, prefix, suffix, value, unit, unitDisplayed }} />
         )
-        bountyIn.loading = true
-        this.setState({ inputs, submitDisabled: true })
+        bountyIn.loading = valid
+        bountyIn.invalid = false
+        bountyGrpIn.message = null
+        this.setState({ inputs, submitDisabled: valid })
+        if (!valid) return
 
-        try {
-            // no need to convert currency if amount is zero or XTX is the selected currency
-            const requireConversion = bounty && currency !== currencyDefault
-            this.amountXTX = Math.ceil(
-                !requireConversion ? bounty : await convertTo(bounty, currency, currencyDefault)
-            )
-            const { api } = await getConnection()
-            const balanceXTX = parseInt(await api.query.balances.freeBalance(address))
+        const promise = new Promise(async (resolve, reject) => {
+            try {
+                const result = []
+                // no need to convert currency if amount is zero or XTX is the selected currency
+                const requireConversion = bounty && currency !== currencyDefault
+                const { api } = await getConnection()
+                result[0] = Math.ceil(
+                    !requireConversion ? bounty : await convertTo(bounty, currency, currencyDefault)
+                )
+                result[1] = parseInt(await api.query.balances.freeBalance(address))
+                resolve(result)
+            } catch (e) { reject(e) }
+        })
+        const thenOk = result => {
+            this.amountXTX = result[0]
+            const balanceXTX = result[1]
             const amountTotalXTX = this.amountXTX + estimatedTxFee
             const gotBalance = balanceXTX - estimatedTxFee - this.amountXTX >= 0
             bountyIn.invalid = !gotBalance
@@ -407,16 +437,23 @@ export default class TaskForm extends Component {
                 header: !gotBalance ? textsCap.insufficientBalance : undefined,
                 status: gotBalance ? 'success' : 'error',
             }
-        } catch (e) {
+            bountyIn.loading = false
+            this.setState({ inputs, submitDisabled: false })
+        }
+        const thenErr = err => {
             bountyIn.invalid = true
             bountyGrpIn.message = {
-                content: e,
+                content: `${err}`,
                 header: textsCap.conversionErrorHeader,
                 status: 'error'
             }
         }
-        bountyIn.loading = false
-        this.setState({ inputs, submitDisabled: false })
+        this.bountyPromise(promise).then(thenOk)
+            .catch(thenErr)
+            .finally(() => {
+                bountyIn.loading = false
+                this.setState({ inputs, submitDisabled: false })
+            })
     }, 300)
 
     handlePublishChange = (_, values) => {
@@ -431,8 +468,8 @@ export default class TaskForm extends Component {
         const { hash } = this.props.values || {}
         const { address } = getSelected()
         const currentBlock = await getCurrentBlock()
-        const deadlineMS = new Date(values[this.names.deadline]) - new Date()
-        const dueDateMS = new Date(values[this.names.dueDate]) - new Date()
+        const deadlineMS = strToDate(values[this.names.deadline]) - new Date()
+        const dueDateMS = strToDate(values[this.names.dueDate]) - new Date()
         const deadlineBlocks = Math.ceil(deadlineMS / 1000 / BLOCK_DURATION_SECONDS) + currentBlock
         const dueDateBlocks = Math.ceil(dueDateMS / 1000 / BLOCK_DURATION_SECONDS) + currentBlock
         const assignee = values[this.names.assignee]

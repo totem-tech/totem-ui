@@ -54,6 +54,4 @@ export const createOrUpdateTask = (
     }
 }
 
-export default {
-    createOrUpdateTask,
-}
+export default { createOrUpdateTask }
