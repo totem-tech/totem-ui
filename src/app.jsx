@@ -93,7 +93,9 @@ export class App extends ReactiveComponent {
 			const { api } = await services.blockchain.getConnection()
 			func = eval(func)
 			if (!func) return console.log('Invalid function')
-			return await func.apply(null, args)
+			const result = await func.apply(null, args)
+			console.log(JSON.stringify(result, null, 4))
+			return result
 		}
 	}
 
