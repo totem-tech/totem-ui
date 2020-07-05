@@ -88,6 +88,14 @@ export class App extends ReactiveComponent {
 			timeKeeping,
 			toast,
 		}
+
+		window.queryBlockchain = async(func, args) => {
+			const { api } = await services.blockchain.getConnection()
+			func = eval(func)
+			if (!func) return console.log('Invalid function')
+			const balance = await func.apply(null, args)
+			console.log({ balance: parseInt(balance) })
+		}
 	}
 
 	// unused
@@ -187,3 +195,5 @@ const styles = {
 	},
 
 }
+
+
