@@ -47,6 +47,7 @@ const [texts, textsCap] = translated({
     formHeaderUpdate: 'update task',
     goods: 'goods',
     insufficientBalance: 'insufficient balance',
+    invalidDate: 'invalid date',
     inventory: 'inventory',
     marketplace: 'marketplace',
     myself: 'myself',
@@ -63,7 +64,7 @@ const [texts, textsCap] = translated({
 }, true)
 const estimatedTxFee = 140
 const deadlineMinMS = 48 * 60 * 60 * 1000
-const strToDate = ymd => new Date(`${ymd}T23:59`)
+const strToDate = ymd => new Date(`${ymd}T23:59:59`)
 
 export default class TaskForm extends Component {
     constructor(props) {
@@ -206,20 +207,14 @@ export default class TaskForm extends Component {
                     label: textsCap.deadlineLabel,
                     name: this.names.deadline,
                     onChange: (_, values) => {
-                        const { inputs } = this.state
-                        const dueDateIn = findInput(inputs, this.names.dueDate)
-                        const dueDate = values[this.names.dueDate]
-                        const deadline = values[this.names.deadline]
-                        if (!dueDate) return dueDateIn.bond.changed(deadline)
-                        // forces due date to be re-validated
-                        dueDateIn.bond.changed('')
-                        dueDateIn.bond.changed(dueDate)
+                        if (!values[this.names.dueDate]) return
+                        // reset due date
+                        findInput(this.state.inputs, this.names.dueDate).bond.changed('')
                     },
                     required: true,
                     type: 'date',
                     validate: (_, { value: deadline }) => {
-                        if (!deadline) return
-                        console.log({ deadline })
+                        if (!deadline) return textsCap.invalidDate
                         const diffMS = strToDate(deadline) - new Date()
                         return diffMS < deadlineMinMS && textsCap.deadlineMinErrorMsg
                     },
@@ -233,7 +228,7 @@ export default class TaskForm extends Component {
                     required: true,
                     type: 'date',
                     validate: (_, { value: dueDate }) => {
-                        if (!dueDate) return
+                        if (!dueDate) return textsCap.invalidDate
                         const { values } = this.state
                         const deadline = values[this.names.deadline]
                         const diffMS = strToDate(dueDate) - strToDate(deadline)
@@ -489,7 +484,6 @@ export default class TaskForm extends Component {
             [[PRODUCT_HASH_LABOUR, this.amountXTX, 1, 1]], // single item order
             hash,
         ]
-        // return console.log({ args, values })
         const then = (success, [err]) => this.setState({
             message: {
                 content: !success && `${err}`, // error can be string or Error object.

@@ -15,7 +15,7 @@ let config = {
     unit: 'Transactions',
     ticker: 'XTX'
 }
-const connection = { api: null, provider: null }
+const connection = { api: null, keyring: null, provider: null }
 let connectionPromsie
 export const denominations = Object.freeze({
     Ytx: 24,
@@ -33,6 +33,7 @@ export const hashTypes = {
     /// 2000
     projectHash: 3000,
     timeRecordHash: 4000,
+    taskHash: 5000,
     /// 5000
     /// 6000
     /// 7000
@@ -44,8 +45,8 @@ export const nodes = [
 ]
 
 export const getConfig = () => config
-export const getConnection = async () => {
-    if (connection.api && connection.api._isConnected.value) return connection
+export const getConnection = async (create = true) => {
+    if (connection.api && connection.api._isConnected.value || !create) return connection
     if (connectionPromsie) {
         await connectionPromsie
         return connection
@@ -53,12 +54,18 @@ export const getConnection = async () => {
     const nodeUrl = nodes[0]
     console.log('Polkadot: connecting to', nodeUrl)
     connectionPromsie = connect(nodeUrl, config.types, true)
-    const { api, keyring, provider } = await connectionPromsie
-    console.log('Connected using Polkadot', { api, provider })
-    connection.api = api
-    connection.provider = provider
-    connection.keyring = keyring
-    connectionPromsie = null
+    try {
+        const { api, keyring, provider } = await connectionPromsie
+        console.log('Connected using Polkadot', { api, provider })
+        connection.api = api
+        connection.provider = provider
+        connection.keyring = keyring
+        connectionPromsie = null
+    } catch (err) {
+        // make sure to reset when rejected
+        connectionPromsie = null
+        throw err
+    }
     return connection
 }
 
@@ -137,3 +144,5 @@ export default {
     setConfig,
     tasks,
 }
+
+

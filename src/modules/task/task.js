@@ -37,12 +37,13 @@ export const createOrUpdateTask = (
         deadline,
         dueDate,
         orderItems.map(item => !isArr(item) ? item : {
-            "ProductHash": item[0],
+            "Product": item[0],
             "UnitPrice": item[1],
             "Quantity": item[2],
             "UnitOfMeasure": item[3],
-        }),
+        })[0], // only send the first item until runtime can handle vec<struct>
     ]
+    console.log({ args })
     if (!!hash) args.push(hashToStr(hash))
     return {
         ...queueProps,
