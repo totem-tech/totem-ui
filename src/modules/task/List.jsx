@@ -9,6 +9,7 @@ import { getConnection } from '../../services/blockchain'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
 import { selectedAddressBond, getSelected } from '../../services/identity'
+import { isFn } from '../../utils/utils'
 
 const [texts, textsCap] = translated({
     actions: 'actions',
@@ -83,7 +84,7 @@ export default class List extends Component {
 
     componentWillUnmount() {
         this._mounted = false
-        this.unsubscribe && this.unsubscribe()
+        isFn(this.unsubscribe) && this.unsubscribe() || console.log({ unsubscribe: this.unsubscribe })
         selectedAddressBond.untie(this.tieIdAddress)
     }
 

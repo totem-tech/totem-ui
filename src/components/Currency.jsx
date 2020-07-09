@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { runtime } from 'oo7-substrate'
-import { isBond, isDefined, isValidNumber } from '../utils/utils'
+import { isBond, isDefined, isValidNumber, isFn, isStr } from '../utils/utils'
 import { ss58Decode } from '../utils/convert'
 import { round } from '../utils/number'
 import { bond, convertTo, currencyDefault, getSelected } from '../services/currency'
@@ -42,12 +42,13 @@ export default class Currency extends Component {
         const { address, value } = props
         const { value: oldValue } = this.state
         if (value !== oldValue) this.convert(value)
+        // new address received, unsubscribe and resubscribe to bonds
         if (address && !oldValue) this.componentWillUnmount() | this.componentWillMount()
     }
 
     convert = async (value) => {
-        let { decimalPlaces, unit, unitDisplayed } = this.props
-        let { error, valueConverted } = this.state
+        let { decimalPlaces, onChange, unit, unitDisplayed } = this.props
+        let { error, value: oldValue, valueConverted } = this.state
         unit = unit || currencyDefault
         unitDisplayed = unitDisplayed || getSelected()
 
@@ -67,17 +68,20 @@ export default class Currency extends Component {
             error = err
             valueConverted = 0
         }
+        valueConverted = round(valueConverted, decimalPlaces)
         this.setState({
             error,
             value,
-            valueConverted: round(valueConverted, decimalPlaces),
+            valueConverted,
         })
+
+        isFn(onChange) && oldValue !== value && onChange(value, valueConverted)
     }
 
     render = () => {
-        const { className, EL = 'span', prefix, style, suffix, unitDisplayed } = this.props
+        const { className, EL = 'span', emptyMessage = '', prefix, style, suffix, unitDisplayed } = this.props
         const { error, valueConverted } = this.state
-        return !valueConverted ? '' : (
+        return !valueConverted || !isStr(EL) ? emptyMessage : (
             <EL {...{
                 className,
                 style: { color: error ? 'red' : '', ...style },
@@ -94,7 +98,12 @@ Currency.propTypes = {
     address: PropTypes.string,
     className: PropTypes.string,
     decimalPlaces: PropTypes.number,
+    emptyMessage: PropTypes.string,
+    // @onChange is invoked whenever the account balance/value changes. 
+    onChange: PropTypes.func,
+    prefix: PropTypes.any,
     style: PropTypes.object,
+    suffix: PropTypes.any,
     unit: PropTypes.string,
     unitDisplayed: PropTypes.string,
     value: PropTypes.any, // number or bond

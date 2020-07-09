@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Dropdown } from 'semantic-ui-react'
+import { Dropdown, FormInput } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import { arrSort, isStr, textEllipsis } from '../utils/utils'
@@ -13,23 +13,27 @@ import { translated } from '../services/language'
 import { showForm } from '../services/modal'
 import partners from '../services/partner'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import Currency from '../components/Currency'
 
-const [words, wordsCap] = translated({
+const wordsCap = translated({
     amount: 'amount',
+    balance: 'balance',
     identity: 'identity',
     partner: 'partner',
     recipient: 'recipient',
     status: 'status',
-}, true)
-const [texts] = translated({
+}, true)[1]
+const texts = translated({
     amountPlaceholder: 'Enter a value',
+    loadingBalance: 'Loading account balance',
     partnerEmptyMsg1: 'You do not have any partner yet. Add one in the Partner Module',
     partnerEmptyMsg2: 'No match found. Enter a valid address to add as a partner.',
     partnerPlaceholder: 'Select a Partner',
     submitErrorHeader: 'Transfer error',
     submitInprogressHeader: 'Transfer in-progress',
     submitSuccessHeader: 'Transfer successful',
-})
+    txFee: 'Transaction fee',
+})[0]
 
 export default class Transfer extends Component {
     constructor(props) {
@@ -51,7 +55,7 @@ export default class Transfer extends Component {
                     search: ['text', 'value'],
                     selection: true,
                     type: 'dropdown',
-                    value: identities.getSelected().address,
+                    value: '',
                 },
                 {
                     additionLabel: 'Add partner: ',
@@ -131,8 +135,18 @@ export default class Transfer extends Component {
         const { values } = this.props
         const fromIn = findInput(inputs, 'from')
         // change value when selected address changes
-        this.tieIdSelected = identities.selectedAddressBond.tie(() => {
-            fromIn.bond.changed(identities.getSelected().address)
+        this.tieIdSelected = identities.selectedAddressBond.tie(address => {
+            fromIn.bond.changed(address)
+            fromIn.message = !address ? '' : {
+                content: (
+                    <Currency {...{
+                        address,
+                        emptyMessage: texts.loadingBalance + '...',
+                        key: address,
+                        prefix: `${wordsCap.balance}: `,
+                    }} />
+                )
+            }
         })
         // re-/populate options if identity list changes
         this.tieIdIdentity = identities.bond.tie(() => {
@@ -199,13 +213,15 @@ export default class Transfer extends Component {
         return Math.pow(10, -n).toFixed(n)
     }
 
-    setMessage = (err, hash, recipientName, amount) => {
+    setMessage = (err, result = [], recipientName, amount) => {
+        const [hash] = result
         const inProgress = !err && !hash
         const { denomination } = this.state
         const content = inProgress ? '' : (!err || isStr(err) ? err : err.message) || (
             <ul style={{ listStyleType: 'none', margin: 0, paddingLeft: 0 }}>
                 <li>{wordsCap.recipient}: {recipientName}</li>
                 <li>{wordsCap.amount}: {amount} {denomination}</li>
+                <li>{texts.txFee}: {}</li>
             </ul>
         )
         const header = inProgress ? texts.submitInprogressHeader : (

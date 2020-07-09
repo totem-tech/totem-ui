@@ -43,7 +43,6 @@ export const createOrUpdateTask = (
             "UnitOfMeasure": item[3],
         })[0], // only send the first item until runtime can handle vec<struct>
     ]
-    console.log({ args })
     if (!!hash) args.push(hashToStr(hash))
     return {
         ...queueProps,

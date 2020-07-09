@@ -7,6 +7,7 @@ export default function EventList() {
     const [events, setEvents] = useState(eventsT)
 
     useEffect(() => {
+        console.log('EventList. connecting to blockchain')
         getConnection().then(({ api }) =>
             api.query.system.events(newEvents => {
                 eventsT = [...newEvents, ...eventsT]
