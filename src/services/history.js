@@ -111,6 +111,7 @@ export const save = (
     message,
     groupId, // the root ID of a series of queued task
     id = uuid.v1(),
+    balance,
     timestamp = new Date().toISOString(),
 ) => {
     const icon = historyWorthy(action, data)
@@ -118,16 +119,17 @@ export const save = (
     // id already exists remove it from history to re-appear at the end of the list
     if (history.get(id)) history.delete(id)
     history.set(id, {
-        identity,
         action,
+        balance,
         data,
-        title,
         description,
-        status,
-        message,
-        groupId,
-        timestamp,
         icon,
+        identity,
+        groupId,
+        message,
+        status,
+        timestamp,
+        title,
     })
     // apply history limit
     limit(undefined, false)

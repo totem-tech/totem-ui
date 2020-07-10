@@ -68,7 +68,7 @@ export const getClient = () => {
                         isFn(originalCallback) && originalCallback.apply({}, cbArgs)
                         if (!!err) return reject(err)
                         // resolver only takes a single argument
-                        resolve(cbArgs.length <= 2 ? cbArgs[1] : cbArgs.slice(1))
+                        resolve(cbArgs.slice(1)) // exclude the error message
                     }
 
                     func.apply(instance, args)

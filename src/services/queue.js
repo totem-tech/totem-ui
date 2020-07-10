@@ -5,7 +5,7 @@ import React from 'react'
 import uuid from 'uuid'
 import { addressToStr } from '../utils/convert'
 import DataStorage from '../utils/DataStorage'
-import { transfer, signAndSend } from '../utils/polkadotHelper'
+import { transfer, signAndSend, setDefaultConfig } from '../utils/polkadotHelper'
 import { hasValue, isArr, isFn, isObj, isStr, objClean, isValidNumber } from '../utils/utils'
 // services
 import { getClient } from './chatClient'
@@ -205,9 +205,8 @@ const setMessage = (task, msg = {}, duration, id, silent = false) => silent ? nu
     status: task.status,
 }, duration, id)
 
-const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, duration) => function () {
-    const cbArgs = arguments
-    const errMsg = status === ERROR ? cbArgs[0] : ''
+const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, duration, resultOrError, balance) => {
+    const errMsg = status === ERROR ? resultOrError : ''
     const done = [SUCCESS, ERROR].includes(status)
     const success = status === SUCCESS
     task.status = status
@@ -215,9 +214,12 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
         errMsg instanceof Error ? `${errMsg}` : undefined
     )
     const hasError = status === ERROR && task.errorMessage
-
     hasError && msg.content.unshift(task.errorMessage)
     task.toastId = setMessage(task, msg, duration, toastId, silent)
+    if (balance) {
+        // store account balance before and after TX
+        task.balance = { ...task.balance, ...balance }
+    }
 
     // save progress
     queue.set(id, rootTask)
@@ -237,13 +239,14 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
         errorMessage,
         id,
         task.id,
+        task.balance
     )
 
     if (!done) return
     delete inprogressIds[id]
 
     try {
-        isFn(task.then) && task.then(success, cbArgs)
+        isFn(task.then) && task.then(success, resultOrError)
     } catch (err) {
         // ignore any error occured by invoking the `then` function
         console.log('Unexpected error occured while executing queue .then()', { rootTask, err })
@@ -257,28 +260,29 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
 }
 
 
-const handleChatClient = (id, rootTask, task, toastId) => {
+const handleChatClient = async (id, rootTask, task, toastId) => {
     const { args, description, title, silent, toastDuration } = task
     const client = getClient()
     const msg = {
         content: [description],
         header: title,
     }
-    const _save = status => arg0 => setToastNSaveCb(
-        id, rootTask, task, status, msg, toastId, silent, toastDuration
-    )(arg0)
+    const _save = (status, resultOrErr) => setToastNSaveCb(
+        id, rootTask, task, status, msg, toastId, silent, toastDuration, resultOrErr
+    )
 
     try {
         let func = task.func
         func = (func.startsWith('client.') ? '' : 'client.') + func
         func = eval(func)
         eval(client) // just make sure client variable isn't removed by accident
-        if (!isFn(func)) return _save(ERROR)(texts.invalidFunc)
-        _save(LOADING)()
+        if (!isFn(func)) return _save(ERROR, texts.invalidFunc)
+        _save(LOADING)
         // initiate request
-        func.promise.apply(null, args).then(_save(SUCCESS), _save(ERROR))
+        const result = await func.promise.apply(null, args)
+        _save(ERROR, result)
     } catch (err) {
-        _save(ERROR)(err)
+        _save(ERROR, err)
     }
 }
 
@@ -304,11 +308,12 @@ const handleTxTransfer = async (id, rootTask, task, toastId) => {
     }
     task.title = texts.txTransferTitle
     task.description = msg.content.join('\n')
-    const _save = status => arg0 => setToastNSaveCb(
-        id, rootTask, task, status, msg, toastId, silent, toastDuration
-    )(arg0)
+    const _save = (status, resultOrErr, balances = {}) => setToastNSaveCb(
+        id, rootTask, task, status, msg, toastId, silent, toastDuration, resultOrErr, balances
+    )
 
-    _save(!sender || invalid ? ERROR : LOADING)(
+    _save(
+        !sender || invalid ? ERROR : LOADING,
         !sender ? texts.txForeignIdentity : (invalid ? texts.txTransferMissingArgs : '')
     )
     if (!sender || invalid) return
@@ -317,11 +322,18 @@ const handleTxTransfer = async (id, rootTask, task, toastId) => {
         api = (await getConnection()).api
     } catch (err) {
         console.log('handleTxTransfer: connectcion error', err)
+        _save(ERROR, err)
         return
     }
 
     try {
-        _save(LOADING)()
+        _save(LOADING)
+        const config = setDefaultConfig()
+        let balance = parseInt(await api.query.balances.freeBalance(senderAddress))
+
+        _save(LOADING, null, { before: balance }) // save balance
+        if (balance <= (amount + config.txFeeMin)) return _save(ERROR, textsCap.insufficientBalance)
+        console.log('Polkadot: transfer from ', { address: senderAddress, balance })
         const result = await transfer(
             recipientAddress,
             amount,
@@ -329,9 +341,11 @@ const handleTxTransfer = async (id, rootTask, task, toastId) => {
             null,
             api
         )
-        _save(SUCCESS)(result)
+        balance = parseInt(await api.query.balances.freeBalance(senderAddress))
+        _save(SUCCESS, result, { after: balance })
+
     } catch (err) {
-        _save(ERROR)(err)
+        _save(ERROR, err)
     }
 }
 const handleTxStorage = async (id, rootTask, task, toastId) => {
@@ -347,13 +361,13 @@ const handleTxStorage = async (id, rootTask, task, toastId) => {
         content: [description],
         header: title,
     }
-    const _save = status => arg0 => setToastNSaveCb(
-        id, rootTask, task, status, msg, toastId, silent, toastDuration
-    )(arg0)
+    const _save = (status, resultOrError, balance) => setToastNSaveCb(
+        id, rootTask, task, status, msg, toastId, silent, toastDuration, resultOrError, balance
+    )
 
     // make sure identity is owned by user and a transaction can be created
-    if (!findIdentity(address)) return _save(ERROR)(texts.txForeignIdentity)
-    if (!isStr(func) || !func.startsWith('api.tx.')) return _save(ERROR)(texts.invalidFunc)
+    if (!findIdentity(address)) return _save(ERROR, texts.txForeignIdentity)
+    if (!isStr(func) || !func.startsWith('api.tx.')) return _save(ERROR, texts.invalidFunc)
     let api
     try {
         api = (await getConnection()).api
@@ -363,17 +377,18 @@ const handleTxStorage = async (id, rootTask, task, toastId) => {
     }
 
     try {
-        _save(LOADING)()
         const txFunc = eval(func)
-        if (!isFn(txFunc)) _save(ERROR)(texts.invalidFunc)
+        if (!isFn(txFunc)) return _save(ERROR, texts.invalidFunc)
 
-        const balance = await api.query.balances.freeBalance(address)
-        if (parseInt(balance) < (amountXTX + MIN_BALANCE)) return _save(ERROR)(texts.insufficientBalance)
+        let balance = parseInt(await api.query.balances.freeBalance(address))
+        if (balance < (amountXTX + MIN_BALANCE)) return _save(ERROR, texts.insufficientBalance)
+        _save(LOADING, null, { before: balance })
         const tx = txFunc.apply(null, args)
         const result = await signAndSend(api, address, tx)
-        _save(SUCCESS)(result)
+        balance = parseInt(await api.query.balances.freeBalance(address))
+        _save(SUCCESS, result, { after: balance })
     } catch (err) {
-        _save(ERROR)(err)
+        _save(ERROR, err)
     }
 }
 

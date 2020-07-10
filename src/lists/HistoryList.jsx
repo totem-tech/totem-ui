@@ -8,10 +8,12 @@ import { bond, clearAll, getAll, remove } from '../services/history'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import { getAddressName } from '../services/partner'
-import { clearClutter } from '../utils/utils'
+import { clearClutter, isValidNumber, isObj } from '../utils/utils'
 
 const [texts, textsCap] = translated({
     action: 'action',
+    balanceAfterTx: 'account balance after transaction',
+    balanceBeforeTx: 'account balance before transaction',
     clearAll: 'Clear All',
     close: 'close',
     data: 'data',
@@ -145,7 +147,9 @@ export default class HistoryList extends Component {
 
     showDetails = (item, id) => {
         const errMsg = `${item.message}` // in case message is an Error object
-        const x = [
+        const { before, after } = isObj(item.balance) ? item.balance : {}
+        const balanceExtProps = { action: { content: 'XTX' } }
+        const inputDefs = [
             // title describes what the task is about
             [textsCap.action, item.title],
             // description about the task that is displayed in the queue toast message
@@ -161,11 +165,13 @@ export default class HistoryList extends Component {
             [texts.taskId, id],
             // data is an array of arguments passed to and solely dependant on the specific task's function (@item.action <=> queueItem.func).
             [textsCap.data, JSON.stringify(item.data, null, 4), 'textarea'],
+            isValidNumber(before) && [textsCap.balanceBeforeTx, before, 'number', balanceExtProps],
+            isValidNumber(after) && [textsCap.balanceAfterTx, after, 'number', balanceExtProps],
         ]
         showForm(FormBuilder, {
             closeText: textsCap.close,
             header: textsCap.techDetails,
-            inputs: x.filter(Boolean)
+            inputs: inputDefs.filter(Boolean)
                 .map(([label, value, type = 'text', extraProps = {}], i) => ({
                     ...extraProps,
                     label,

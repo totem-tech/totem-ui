@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { ReactiveComponent, Rspan } from 'oo7-react'
 import { bytesToHex, pretty } from 'oo7-substrate'
 import { Icon, Grid, GridRow, GridColumn } from 'semantic-ui-react'
@@ -21,18 +21,105 @@ const [texts, textsCap] = translated({
 	syncing: 'syncing',
 	yes: 'yes',
 }, true)
-export default class SystemStatus extends ReactiveComponent {
+export default function SystemStatus() {
+	useEffect(() => {
+
+		// 'system_health_is_syncing', // api.rpc.system.health() => res.get(is)
+		// 'chain_height', // block number: api.rpc.chain.subscribeNewHeads
+		// 'chain_lag',
+		// 'nodeService_status',
+		// 'system_chain',
+		// 'system_health_peers', //api.rpc.system.peers
+		// 'system_name',
+		// 'system_version',
+		// 'runtime_balances_totalIssuance',
+		// 'runtime_core_authorities',
+		// 'runtime_version_implName',
+		// 'runtime_version_implVersion',
+		// 'runtime_version_specName',
+		// 'runtime_version_specVersion', // network version
+		// 'runtime_version_authoringVersion'
+
+		return () => {
+			// unsubscribe here
+		}
+	}, [])
+
+	return <SystemStatusOld />
+
+	const status = this.state.nodeService_status || {}
+	const isConnected = !!status.connected
+	const newStatus = (
+		<Grid celled stackable>
+			<GridRow>
+				<GridColumn width={2}>
+					<Icon
+						name="circle"
+						color={isConnected ? 'green' : 'red'} />
+					{!!isConnected ? textsCap.online : textsCap.offline}
+				</GridColumn>
+				<GridColumn width={7}>
+					{texts.networkVersion} : {this.state.system_chain} v{this.state.runtime_version_authoringVersion}.{this.state.runtime_version_specVersion}.{this.state.runtime_version_implVersion}
+				</GridColumn>
+				<GridColumn width={7}>
+					{texts.chainType} : {this.state.runtime_version_specName}
+				</GridColumn>
+			</GridRow>
+			<GridRow>
+				<GridColumn width={2}>
+					<Icon
+						name="circle"
+						color={this.state.system_health_is_syncing ? 'green' : 'yellow'}
+					/>
+					{textsCap.syncing} - {this.state.system_health_is_syncing ? textsCap.yes : textsCap.no}
+				</GridColumn>
+				<GridColumn width={7}>
+					{isConnected ? texts.hostConneced : texts.hostDisconnected} : {isConnected && status.connected.split('ws://').join('')}
+				</GridColumn>
+				<GridColumn width={7}>
+					{texts.blockchainRuntime} : v{this.state.system_version}
+
+				</GridColumn>
+			</GridRow>
+			<GridRow>
+				<GridColumn width={2}>
+					<Icon
+						name="circle"
+						color={this.state.peers > 0 ? 'green' : 'red'}
+					/>
+					{textsCap.peers} #{this.state.system_health_peers}
+				</GridColumn>
+				<GridColumn width={5}>
+					{texts.blockNr} : {pretty(this.state.chain_height) || 0}
+				</GridColumn>
+				<GridColumn width={5}>
+					{textsCap.lag} : {pretty(this.state.chain_lag) || 0}
+				</GridColumn>
+			</GridRow>
+		</Grid>
+	)
+
+	return (
+		<div>
+			{newStatus}
+			<SystemStatusOld />
+		</div>
+	)
+}
+export class SystemStatusOld extends ReactiveComponent {
 	constructor(props) {
 		super(props, {
 			lastFinalisedBlock: 0
 		})
+
+
 	}
 
 	componentDidMount() {
 		this.setState({
 			watchers: subscribeAllNSetState(this, [
 				'system_health_is_syncing',
-				'chain_height',
+				'chain_height', // block number: api.rpc.chain.subscribeNewHeads
 				'chain_lag',
 				'nodeService_status',
 				'system_chain',
@@ -69,7 +156,7 @@ export default class SystemStatus extends ReactiveComponent {
 						{!!isConnected ? textsCap.online : textsCap.offline}
 					</GridColumn>
 					<GridColumn width={7}>
-					{texts.networkVersion} : {this.state.system_chain} v{this.state.runtime_version_authoringVersion}.{this.state.runtime_version_specVersion}.{this.state.runtime_version_implVersion} 
+						{texts.networkVersion} : {this.state.system_chain} v{this.state.runtime_version_authoringVersion}.{this.state.runtime_version_specVersion}.{this.state.runtime_version_implVersion}
 					</GridColumn>
 					<GridColumn width={7}>
 						{texts.chainType} : {this.state.runtime_version_specName}
@@ -88,7 +175,7 @@ export default class SystemStatus extends ReactiveComponent {
 					</GridColumn>
 					<GridColumn width={7}>
 						{texts.blockchainRuntime} : v{this.state.system_version}
-						
+
 					</GridColumn>
 				</GridRow>
 				<GridRow>
@@ -109,10 +196,6 @@ export default class SystemStatus extends ReactiveComponent {
 			</Grid>,
 		]
 
-		return (
-			<React.Fragment>
-				{items.map((item, i) => <div key={i}>{item}</div>)}
-			</React.Fragment>
-		)
+		return items.map((item, i) => <div key={i}>{item}</div>)
 	}
 }

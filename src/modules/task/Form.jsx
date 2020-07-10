@@ -34,6 +34,7 @@ const [texts, textsCap] = translated({
     balance: 'balance',
     bountyLabel: 'bounty amount',
     bountyPlaceholder: 'enter bounty amount',
+    close: 'close',
     conversionErrorHeader: 'currency conversion failed',
     currency: 'currency',
     deadlineLabel: 'deadline',
@@ -471,7 +472,28 @@ export default class TaskForm extends Component {
         const orderClosed = !!assignee ? 1 : 0
         const description = values[this.names.title]
         const title = !hash ? textsCap.formHeader : textsCap.formHeaderUpdate
-        const args = [
+
+        const then = (success, [err]) => this.setState({
+            closeText: success ? textsCap.close : undefined,
+            message: {
+                content: !success && `${err}`, // error can be string or Error object.
+                header: success ? textsCap.submitSuccess : textsCap.submitFailed,
+                showIcon: true,
+                status: success ? 'success' : 'error',
+            },
+            submitDisabled: false,
+            success,
+        })
+        this.setState({
+            closeText: textsCap.close,
+            submitDisabled: true,
+            message: {
+                header: textsCap.addedToQueue,
+                showIcon: true,
+                status: 'loading',
+            },
+        })
+        const queueProps = createOrUpdateTask.apply(null, [
             address,
             address,
             assignee || address,
@@ -483,27 +505,9 @@ export default class TaskForm extends Component {
             dueDateBlocks,
             [[PRODUCT_HASH_LABOUR, this.amountXTX, 1, 1]], // single item order
             hash,
-        ]
-        const then = (success, [err]) => this.setState({
-            message: {
-                content: !success && `${err}`, // error can be string or Error object.
-                header: success ? textsCap.submitSuccess : textsCap.submitFailed,
-                showIcon: true,
-                status: success ? 'success' : 'error',
-            },
-            submitDisabled: false,
-            success,
-        })
-        const queueProps = createOrUpdateTask.apply(null, [...args, { description, then, title }])
+            { description, then, title },
+        ])
         addToQueue(queueProps)
-        this.setState({
-            submitDisabled: true,
-            message: {
-                header: textsCap.addedToQueue,
-                showIcon: true,
-                status: 'loading',
-            },
-        })
     }
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
