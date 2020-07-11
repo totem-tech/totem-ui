@@ -7,7 +7,7 @@ import storage from './storage'
 const key = 'history'
 const MODULE_KEY = 'totem_' + key
 const history = new DataStorage(MODULE_KEY, true)
-const LIMIT = 500 // default number of items to store
+const LIMIT_DEFAULT = 500 // default number of items to store
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 
@@ -27,20 +27,20 @@ export const remove = id => history.delete(id) | updateBond()
 // @trigger     boolean: whether to trigger update on the history list (if open)
 //
 // Returns      number
-export const limit = (newLimit, trigger = true) => {
+export const limit = (newLimit) => {
     let limit = rw().limit
-    if (!isDefined(limit)) limit = LIMIT
-    if (limit != newLimit && isValidNumber(newLimit)) {
+    if (!isDefined(limit)) limit = LIMIT_DEFAULT
+    const changed = isValidNumber(newLimit) && limit != newLimit
+    if (changed) {
         limit = newLimit
         rw({ limit })
     }
 
     if (limit === 0 || history.size <= limit) return limit
 
-    const arr = Array.from(history.getAll())
-    const limitted = arr.slice(arr.length - limit)
+    const limitted = Array.from(history.getAll()).slice(-limit)
     history.setAll(new Map(limitted))
-    trigger && updateBond()
+    changed && updateBond()
     return limit
 }
 
@@ -53,7 +53,10 @@ const notifyTypesIcons = {
     identity: {
         request: 'download',
         share: 'upload',
-    }
+    },
+    task: {
+        
+    },
 }
 
 // enable/disable history data donation
@@ -112,6 +115,7 @@ export const save = (
     groupId, // the root ID of a series of queued task
     id = uuid.v1(),
     balance,
+    result,
     timestamp = new Date().toISOString(),
 ) => {
     const icon = historyWorthy(action, data)
@@ -127,6 +131,7 @@ export const save = (
         identity,
         groupId,
         message,
+        result,
         status,
         timestamp,
         title,
