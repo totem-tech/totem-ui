@@ -42,24 +42,18 @@ export default function NotificationItem({ id, notification }) {
     const typeSpaced = type.replace('_', ' ')
     const msg = {
         // attached: true,
+        className: 'list-item',
         icon: { name: 'bell outline' },
-        content: <span>{userIdBtn}: {message}</span>,
-        header: `${typeSpaced} ${childType}`,
         key: id,
         onClick: () => toggleRead(id),
         onDismiss: e => e.stopPropagation() | remove(id),
         status: read ? undefined : 'info',
-        style: {
-            margin: 0,
-            textAlign: 'left',
-        },
     }
 
     switch (type + ':' + childType) {
         case 'identity:introduce': // data => {userId}
         case 'identity:request': // data => {reason}
             const isIntroduce = childType === 'introduce'
-            msg.header = undefined
             msg.icon.name = isIntroduce ? 'handshake' : 'user'
             const recipientId = isIntroduce ? data.userId : senderId
             msg.content = (
@@ -86,7 +80,6 @@ export default function NotificationItem({ id, notification }) {
             )
             break
         case 'identity:share': // data => { address, introducedBy, name }
-            msg.header = undefined
             msg.icon.name = 'user plus'
             msg.content = (
                 <div>
@@ -114,7 +107,6 @@ export default function NotificationItem({ id, notification }) {
                 remove(id)
                 return ''
             }
-            msg.header = undefined
             msg.icon.name = 'clock outline'
             msg.content = (
                 <div>
@@ -139,7 +131,6 @@ export default function NotificationItem({ id, notification }) {
             )
             break
         case 'time_keeping:invitation_response': // data => { projectHash, projectName, workerAddress }
-            msg.header = undefined
             msg.icon.name = 'clock outline'
             msg.content = (
                 <div>
@@ -148,32 +139,16 @@ export default function NotificationItem({ id, notification }) {
                 </div>
             )
             break
+        default:
+            msg.content = <span>{userIdBtn}: {message}</span>
+            msg.header = <div className="header">{typeSpaced} {childType}</div>
     }
 
     msg.content = (
-        <div style={styles.messageContent}>
+        <div className='details'>
             {msg.content}
-            <TimeSince {...{
-                style: {
-                    bottom: 0,
-                    color: 'grey',
-                    fontSize: 11,
-                    fontStyle: 'italic',
-                    left: 5,
-                    position: 'absolute',
-                },
-                time: tsCreated
-            }} />
+            <TimeSince className='time-since' time={tsCreated} />
         </div>
     )
-    msg.header = <div className="header" style={styles.messageHeader}>{msg.header} {id}</div>
     return <Message {...msg} />
-}
-
-const styles = {
-    messageContent: {
-        whiteSpace: 'pre-wrap',
-        // padding: '0 12px 0 55px',
-    },
-    messageHeader: { textTransform: 'capitalize' },
 }

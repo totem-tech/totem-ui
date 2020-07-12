@@ -142,7 +142,7 @@ export class App extends ReactiveComponent {
 				</ErrorBoundary>
 
 				<ErrorBoundary>
-					<NotificationList {...{ isMobile }} />
+					<NotificationList inline={false} />
 				</ErrorBoundary>
 
 				<Sidebar.Pushable style={styles.pushable}>
