@@ -4,7 +4,7 @@ import { hashToStr } from '../utils/convert'
 import { setNetworkDefault, denominationInfo } from 'oo7-substrate'
 import { connect } from '../utils/polkadotHelper'
 import types from '../utils/totem-polkadot-js-types'
-import { isObj } from '../utils/utils'
+import { isObj, isFn, isArr, isDefined } from '../utils/utils'
 
 // oo7-substrate: register custom types
 Object.keys(types).forEach(key => addCodecTransform(key, types[key]))
@@ -15,8 +15,14 @@ let config = {
     unit: 'Transactions',
     ticker: 'XTX'
 }
-const connection = { api: null, keyring: null, provider: null }
-let connectionPromsie
+let connection = {
+    api: null,
+    keyring: null,
+    isConnected: false,
+    nodeUrl: null,
+    provider: null,
+}
+let connectionPromsie = null
 export const denominations = Object.freeze({
     Ytx: 24,
     Ztx: 21,
@@ -57,13 +63,28 @@ export const getConnection = async (create = true) => {
     try {
         const { api, keyring, provider } = await connectionPromsie
         console.log('Connected using Polkadot', { api, provider })
-        connection.api = api
-        connection.provider = provider
-        connection.keyring = keyring
+        connection = {
+            api,
+            provider,
+            keyring,
+            nodeUrl,
+            isConnected: true,
+        }
         connectionPromsie = null
+
+        // none of these work!!!!
+        // provider.websocket.addEventListener('disconnected', (err) => console.log('disconnected', err))
+        // provider.websocket.addEventListener('error', (err) => console.log('error', err))
+        // provider.websocket.on('disconnected', (err) => console.log('disconnected', err))
+        // provider.websocket.on('disonnect', (err) => console.log('disonnect', err))
+        // provider.websocket.on('error', (err) => console.log('error', err))
+        // provider.websocket.on('connect_timeout', (err) => console.log('connect_timeout', err))
+        // provider.websocket.on('reconnect', (err) => console.log('reconnect', err))
+        // provider.websocket.on('connect', (err) => console.log('connect', err))
     } catch (err) {
         // make sure to reset when rejected
         connectionPromsie = null
+        connection.isConnected = false
         throw err
     }
     return connection
@@ -78,6 +99,38 @@ export const getCurrentBlock = async () => {
 
 // getTypes returns a promise with 
 export const getTypes = () => new Promise(resolve => resolve(types))
+
+// query blockchain storage. All values returned will be sanitised.
+//
+// Params:
+// @func string: path to the PolkadotJS API function as a string. Eg: 'api.rpc.system.health'
+// @args    array: arguments to be supplied when invoking the API function.
+//            To subscribe to the API supply a callback function as the last item in the array.
+// @print   boolean: if true, will print the result of the query
+//
+// Returns  function/any: If callback is supplied in @args, will return the unsubscribe function.
+//                      Otherwise, value of the query will be returned
+export const queryStorage = async (func, args = [], print = false) => {
+    // **** keep { api } **** It is expected to be used with eval()
+    const { api } = await getConnection()
+    if (!func || func === 'api') return api
+    const fn = eval(func)
+    if (!fn) throw new Error('Invalid API function', func)
+    args = isArr(args) || !isDefined(args) ? args : [args]
+    const cleanUp = x => JSON.parse(JSON.stringify(x)) // get rid of jargon
+    const cb = args[args.length - 1]
+    const isSubscribe = isFn(cb) && isFn(fn)
+    if (isSubscribe) {
+        args[args.length - 1] = value => {
+            value = cleanUp(value)
+            print && console.log(func, value)
+            cb.call(null, value)
+        }
+    }
+    const result = isFn(fn) ? await fn.apply(null, args) : fn
+    !isSubscribe && print && console.log(JSON.stringify(result, null, 4))
+    return isSubscribe ? result : cleanUp(result)
+}
 
 // Replace configs
 export const setConfig = newConfig => {
@@ -141,6 +194,7 @@ export default {
     getTypes,
     hashTypes,
     nodes,
+    queryStorage,
     setConfig,
     tasks,
 }

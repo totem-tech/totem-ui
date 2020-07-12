@@ -34,6 +34,7 @@ import polkadotHelper from './utils/polkadotHelper'
 import TotemButtonLogo from './assets/totem-button-grey.png'
 import PlaceholderImage from './assets/totem-placeholder.png'
 import ChatBar from './modules/chat/ChatBar'
+import { className } from './utils/utils'
 
 const [texts] = translated({
 	failedMsg: 'Connection failed! Please check your internet connection.',
@@ -89,14 +90,7 @@ export class App extends ReactiveComponent {
 			toast,
 		}
 
-		window.queryBlockchain = async (func, args) => {
-			const { api } = await services.blockchain.getConnection()
-			func = eval(func)
-			if (!func) return console.log('Invalid function')
-			const result = await func.apply(null, args)
-			console.log(JSON.stringify(result, null, 4))
-			return result
-		}
+		window.queryBlockchain = async (func, args) => await blockchain.queryStorage(func, args, true)
 	}
 
 	// unused
@@ -120,13 +114,6 @@ export class App extends ReactiveComponent {
 		const { isMobile, numCol } = this.state
 		const logoSrc = TotemButtonLogo
 		const { collapsed, visible } = sidebarStateBond._value
-		const classNames = [
-			collapsed ? 'sidebar-collapsed' : '',
-			isMobile ? 'mobile' : 'desktop',
-			visible ? 'sidebar-visible' : '',
-			'wrapper',
-		].filter(Boolean).join(' ')
-
 		if (!this.resumed) {
 			// resume any incomplete queued tasks 
 			this.resumed = true
@@ -134,7 +121,13 @@ export class App extends ReactiveComponent {
 		}
 
 		return (
-			<div className={classNames}>
+			<div className={className({
+				wrapper: true,
+				mobile: isMobile,
+				desktop: !isMobile,
+				'sidebar-collapsed': collapsed,
+				'sidebar-visible': visible,
+			})}>
 				<ModalsConainer />
 				<ToastsContainer isMobile={isMobile} />
 				<ErrorBoundary>

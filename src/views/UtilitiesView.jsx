@@ -5,7 +5,7 @@ import PageUtilitiesView from './PageUtilitiesView'
 import AdminUtilsForm from '../forms/AdminUtils'
 // import TransactionsView from './TransactionsView'
 // import PokeView from './PokeView'
-import SystemStatus from '../legacies/SystemStatus'
+import SystemStatusView from './SystemStatusView'
 import { buildMode, translated } from '../services/language'
 
 const [texts] = translated({
@@ -18,21 +18,18 @@ const [texts] = translated({
 })
 
 export default class UtilitiesView extends Component {
-    render = () => (
-        <React.Fragment>
-            {subItems.map((item, i) =>
-                <ContentSegment
-                    {...item}
-                    active={true}
-                    basic={true}
-                    key={i}
-                    headerTag="h3"
-                    style={{ padding: 0 }}
-                // vertical={true}
-                />
-            )}
-        </React.Fragment>
-    )
+    render = () =>
+        subItems.map((item, i) =>
+            <ContentSegment
+                {...item}
+                active={true}
+                basic={true}
+                key={i}
+                headerTag="h3"
+                style={{ padding: 0 }}
+            // vertical={true}
+            />
+        )
 }
 
 const subItems = [
@@ -47,7 +44,7 @@ const subItems = [
         header: 'Admin Tools'
     },
     {
-        content: <SystemStatus />,
+        content: <SystemStatusView />,
         icon: '',
         header: texts.statusHeader,
         subHeader: texts.statusSubheader,

@@ -73,12 +73,14 @@ export default class List extends Component {
             // subscribe to hash list changes
             const { api } = await getConnection()
             this.unsubscribe && this.unsubscribe()
-            this.unsubscribe = api.query.orders[this.listType](address).then(hashAr => {
+            this.unsubscribe = await api.query.orders[this.listType](address, hashAr => { //).then(
+                console.log({ hashAr })
                 if (!this._mounted) return
                 // Promise.all([])
                 // retrieve 
                 // this.setState({ hashAr, data: new Map() })
             })
+            console.log({ unsubscribe: this.unsubscribe })
         })
     }
 
