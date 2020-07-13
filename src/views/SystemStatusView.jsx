@@ -2,8 +2,9 @@ import React, { useEffect, useReducer } from 'react'
 import { Icon, Grid, GridRow, GridColumn } from 'semantic-ui-react'
 // import Identicon from 'polkadot-identicon'
 import { translated } from '../services/language'
-import { isFn, isArr, objCreate } from '../utils/utils'
-import { getConnection, queryStorage } from '../services/blockchain'
+import { isFn, objCreate } from '../utils/utils'
+import { getConnection, query } from '../services/blockchain'
+import { reducer } from '../services/react'
 
 const [texts, textsCap] = translated({
 	blockchainRuntime: 'Connected Host Runtime Version',
@@ -20,7 +21,6 @@ const [texts, textsCap] = translated({
 	syncing: 'syncing',
 	yes: 'yes',
 }, true)
-const reducer = (oldState = {}, newState = {}) => ({ ...oldState, ...newState })
 
 export default function SystemStatus() {
 	const [state, setState] = useReducer(reducer, {})
@@ -42,6 +42,7 @@ export default function SystemStatus() {
 		specVersion = '',
 		implVersion = '',
 	} = runtimeVersion
+
 	useEffect(() => {
 		let mounted = true
 		let unsubFnArr = []
@@ -50,8 +51,8 @@ export default function SystemStatus() {
 			health: 'api.rpc.system.health',
 			newHead: 'api.rpc.chain.subscribeNewHeads',
 			rpcSystemChain: 'api.rpc.system.chain',
-			// rpcSystemName: 'api.rpc.system.name',
 			rpcSystemVersion: 'api.rpc.system.version',
+			// rpcSystemName: 'api.rpc.system.name',
 			// totalIssuance: 'api.query.balances.totalIssuance',
 		}
 
@@ -67,7 +68,7 @@ export default function SystemStatus() {
 		)
 
 		Object.keys(x).forEach(async (key) =>
-			unsubFnArr[key] = await queryStorage(x[key], value => mounted && setState(objCreate(key, value)))
+			unsubFnArr[key] = await query(x[key], value => mounted && setState(objCreate(key, value)))
 		)
 
 		return () => {

@@ -25,7 +25,7 @@ import sidebar, { sidebarItems, sidebarStateBond } from './services/sidebar'
 import storage from './services/storage'
 import timeKeeping from './services/timeKeeping'
 import toast, { ToastsContainer } from './services/toast'
-import { getLayout, gridColumnsBond, layoutBond } from './services/window'
+import windw from './services/window'
 // Utils
 import DataStorage from './utils/DataStorage'
 import naclHelper from './utils/naclHelper'
@@ -45,12 +45,12 @@ export class App extends ReactiveComponent {
 	constructor() {
 		super([], {
 			ensureRuntime: runtimeUp,
-			isMobile: layoutBond.map(layout => layout === 'mobile'),
-			numCol: gridColumnsBond,
+			isMobile: windw.layoutBond.map(layout => layout === 'mobile'),
+			numCol: windw.gridColumnsBond,
 		})
 		this.state = {
 			sidebarCollapsed: false,
-			sidebarVisible: getLayout() !== 'mobile',
+			sidebarVisible: windw.getLayout() !== 'mobile',
 			status: {}
 		}
 
@@ -88,9 +88,11 @@ export class App extends ReactiveComponent {
 			storage,
 			timeKeeping,
 			toast,
+			window: windw,
 		}
 
-		window.queryBlockchain = async (func, args) => await blockchain.queryStorage(func, args, true)
+		blockchain.getConnection().then(({ api }) => window.api = api)
+		window.queryBlockchain = async (func, args) => await blockchain.query(func, args, true)
 	}
 
 	// unused

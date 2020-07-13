@@ -1,69 +1,73 @@
 /*
  * Toast service displays toast messages/notifications
  */
-import React, { Component } from 'react'
-import { Bond } from 'oo7'
+import React, { useEffect, useReducer } from 'react'
 import uuid from 'uuid'
 import { deferred, isObj, isStr } from '../utils/utils'
 import Message from '../components/Message'
-import { trigger as totalModalsBond } from './modal'
+import { modals } from './modal'
 import { sidebarStateBond } from './sidebar'
+import { reducer } from './react'
+import { layoutBond, MOBILE } from './window'
+import DataStorage from '../utils/DataStorage'
 
 const DURATION = 5000
-const toasts = new Map()
-// Use Bond as a way to trigger update to the ToastService component
-const trigger = new Bond()
-// store timeout IDs so that they can be cancelled if needed
-const closeCbs = new Map()
+const toasts = new DataStorage()
+const deferedCloseCbs = new Map()
 
-export class ToastsContainer extends Component {
-    componentWillMount() {
-        this.bond = Bond.all([totalModalsBond, sidebarStateBond, trigger])
-        this.tieId = this.bond.tie(() => this.forceUpdate())
+export const ToastsContainer = () => {
+    const [state, setState] = useReducer(reducer, {})
+    const { animationInProgress, isMobile, isModalOpen, sidebarVisible, toastsArr } = state
+    const mcEl = document.getElementById('main-content')
+    const hasScrollbar = mcEl && mcEl.clientHeight !== mcEl.scrollHeight
+    const { left = 0, top = 0 } = !isModalOpen && mcEl && mcEl.getBoundingClientRect() || {}
+    const hide = !mcEl || toasts.size === 0 || (isMobile && sidebarVisible)
 
+    useEffect(() => {
+        let mounted = true
+        const tieId = toasts.bond.tie(() => setState({
+            toastsArr: Array.from(toasts.getAll())
+        }))
+        const tieIdMobile = layoutBond.tie(layout => mounted && setState({ isMobile: layout === MOBILE }))
+        const tieIdModals = modals.bond.tie(() => setState({ isModalOpen: modals.size > 0 }))
         // delay until sidebar animnation is complete
-        sidebarStateBond.tie(({ visible }) => {
-            const { isMobile } = this.props
+        const tieIdSidebar = sidebarStateBond.tie(({ visible }) => {
             const sidebarWillAnimate = toasts.size > 0 && !isMobile
-            this.setState({
+            setState({
                 animationInProgress: sidebarWillAnimate,
-                visible,
+                sidebarVisible: visible,
             })
             if (!sidebarWillAnimate) return
-            setTimeout(() => this.setState({ animationInProgress: false }), 500)
+            setTimeout(() => setState({ animationInProgress: false }), 500)
         })
-    }
+        return () => {
+            mounted = false
+            layoutBond.untie(tieIdMobile)
+            modals.bond.untie(tieIdModals)
+            toasts.bond.untie(tieId)
+            sidebarStateBond.untie(tieIdSidebar)
+        }
+    }, [])
 
-    componentWillUnmount = () => this.bond.untie(this.tieId)
-
-    render() {
-        const { isMobile } = this.props
-        const { animationInProgress, visible } = this.state || {}
-        const mcEl = document.getElementById('main-content')
-        if (!mcEl || toasts.size === 0) return ''
-        const isModalOpen = totalModalsBond._value > 0
-        const hasScrollbar = mcEl.clientHeight !== mcEl.scrollHeight
-        const { left, top } = isModalOpen ? { left: 0, top: 0 } : mcEl.getBoundingClientRect()
-        return isMobile && visible ? '' : (
-            <div
-                className="toast-service"
-                style={{
-                    ...styles.toastService,
-                    left: animationInProgress ? 250 : left + 15,
-                    top: top + 10,
-                    right: isModalOpen ? 0 : (hasScrollbar ? 15 : 5),
-                }}>
-                {Array.from(toasts).map(([_, el]) => el)}
-            </div>
-        )
-    }
+    return hide ? '' : (
+        <div
+            className='toast-service'
+            style={{
+                ...styles.toastService,
+                left: animationInProgress ? 250 : left + 15,
+                top: top + 10,
+                right: isModalOpen ? 0 : (hasScrollbar ? 15 : 5),
+            }}>
+            {toastsArr.map(([_, el]) => el)}
+        </div>
+    )
 }
 
 // get existing toast message object by id
 export const getById = id => toasts.get(id)
 
 // remove existing toast message
-export const removeToast = id => toasts.delete(id) | trigger.trigger(uuid.v1())
+export const removeToast = id => toasts.delete(id)
 
 // add/update toast message
 export const setToast = (message, duration, id) => {
@@ -72,17 +76,18 @@ export const setToast = (message, duration, id) => {
     if (!isObj(message) || (!message.header && !message.content)) return;
     id = id || uuid.v1()
     const autoClose = duration !== 0
-    const handleClose = () => removeToast(id)
+    const handleClose = () => removeToast(id) | deferedCloseCbs.delete(id)
     const props = {
         ...message,
         key: id,
         onDismiss: handleClose,
         style: { ...styles.message, ...message.style },
     }
-    toasts.set(id, <Message {...props} />)
-    trigger.trigger(uuid.v1())
+    toasts.set(id, <Message {...{ ...props, key: id }} />)
     if (autoClose) {
-        const deferredClose = closeCbs.get(id) || closeCbs.set(id, deferred(handleClose, duration || DURATION)).get(id)
+        const deferredClose = deferedCloseCbs.get(id) || deferedCloseCbs.set(
+            id, deferred(handleClose, duration || DURATION)
+        ).get(id)
         deferredClose()
     }
     return id

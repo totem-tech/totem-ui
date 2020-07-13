@@ -100,7 +100,7 @@ export const getCurrentBlock = async () => {
 // getTypes returns a promise with 
 export const getTypes = () => new Promise(resolve => resolve(types))
 
-// query blockchain storage. All values returned will be sanitised.
+// query makes API calls using PolkadotJS. All values returned will be sanitised.
 //
 // Params:
 // @func string: path to the PolkadotJS API function as a string. Eg: 'api.rpc.system.health'
@@ -110,26 +110,26 @@ export const getTypes = () => new Promise(resolve => resolve(types))
 //
 // Returns  function/any: If callback is supplied in @args, will return the unsubscribe function.
 //                      Otherwise, value of the query will be returned
-export const queryStorage = async (func, args = [], print = false) => {
+export const query = async (func, args = [], print = false) => {
     // **** keep { api } **** It is expected to be used with eval()
     const { api } = await getConnection()
     if (!func || func === 'api') return api
     const fn = eval(func)
     if (!fn) throw new Error('Invalid API function', func)
     args = isArr(args) || !isDefined(args) ? args : [args]
-    const cleanUp = x => JSON.parse(JSON.stringify(x)) // get rid of jargon
+    const sanitise = x => JSON.parse(JSON.stringify(x)) // get rid of jargon
     const cb = args[args.length - 1]
     const isSubscribe = isFn(cb) && isFn(fn)
     if (isSubscribe) {
         args[args.length - 1] = value => {
-            value = cleanUp(value)
+            value = sanitise(value)
             print && console.log(func, value)
             cb.call(null, value)
         }
     }
     const result = isFn(fn) ? await fn.apply(null, args) : fn
     !isSubscribe && print && console.log(JSON.stringify(result, null, 4))
-    return isSubscribe ? result : cleanUp(result)
+    return isSubscribe ? result : sanitise(result)
 }
 
 // Replace configs
@@ -173,7 +173,7 @@ export const tasks = {
     // @queueProps  string: provide task specific properties (eg: description, title, then, next...)
     registerKey: (address, signPubKey, data, signature, queueProps = {}) => ({
         ...queueProps,
-        address: address,
+        address,
         func: 'api.tx.keyregistry.registerKeys',
         type: TX_STORAGE,
         args: [
@@ -194,9 +194,7 @@ export default {
     getTypes,
     hashTypes,
     nodes,
-    queryStorage,
+    query,
     setConfig,
     tasks,
 }
-
-

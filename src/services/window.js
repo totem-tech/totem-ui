@@ -1,12 +1,15 @@
 import { Bond } from 'oo7'
-import { isDefined } from '../utils/utils'
+import { isDefined, isFn } from '../utils/utils'
 import storage from './storage'
 
 const MODULE_KEY = 'window'
 let _forcedSize = ''
+const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 export const MOBILE = 'mobile'
 export const DESKTOP = 'desktop'
-const rw = value => storage.settings.module(MODULE_KEY, value) || {}
+export const gridColumnsBond = new Bond().defaultTo(gridColumns())
+export const layoutBond = new Bond().defaultTo(getLayout())
+
 // forceLayout enforces and reverts a specific layout size and ignores layout change when window resizes
 //
 // Params:
@@ -15,9 +18,49 @@ export const forceLayout = size => {
     _forcedSize = [DESKTOP, MOBILE].includes(size) ? size : ''
     window.onresize()
 }
-window.forceLayout = forceLayout
-export const getLayout = () => _forcedSize || (window.innerWidth <= 991 ? MOBILE : DESKTOP)
-export const layoutBond = new Bond().defaultTo(getLayout())
+
+// toggleFullscreen enters/exits an element into fullscreen mode.
+// If the target element is already in fullscreen mode will simply exit fullscreen.
+// If another element is in fullscreen mode, will exit it from fullscreen 
+// and enter target into full screen with a slight delay.
+//
+// Params:
+// @selector    string: CSS selector of the target element to toggle fullscreen
+export const toggleFullscreen = selector => {
+    // target element to toggle fullscreen
+    const el = document.querySelector(selector) || {}
+    var fsEl = document.fullscreenElement
+        || document.webkitFullscreenElement
+        || document.mozFullScreenElement
+        || document.msFullscreenElement
+    const isFS = isDefined(fsEl)
+
+    // function to exit fullscreen
+    const exitFS = document.exitFullscreen
+        || document.mozCancelFullScreen
+        || document.webkitExitFullscreen
+        || document.msExitFullscreen
+
+    // exit if already in fullscreen mode
+    if (isFS) {
+        exitFS.call(document)
+        // target element has just been toggled 
+        if (fsEl === el) return
+    }
+
+    // function to enter fullscreen
+    const goFS = el.requestFullscreen
+        || el.mozRequestFullScreen /* Firefox */
+        || el.webkitRequestFullscreen /* Chrome, Safari, Brave & Opera */
+        || el.msRequestFullscreen /* IE/Edge */
+
+
+    isFn(goFS) && setTimeout(() => goFS.call(el), isFS ? 50 : 0)
+}
+
+export function getLayout() {
+    return _forcedSize || (window.innerWidth <= 991 ? MOBILE : DESKTOP)
+}
 
 // getUrlParam reads the URL parameters
 //
@@ -33,23 +76,24 @@ export const getUrlParam = name => {
     return name ? params[name] || '' : params
 }
 
-// Main content grid column count
-export const gridColumns = numCol => {
+// gridColumns read/writes main content grid column count
+export function gridColumns(numCol) {
     const value = isDefined(numCol) ? { gridColumns: numCol } : undefined
     value && gridColumnsBond.changed(numCol)
     return rw(value).gridColumns || 1
 }
-export const gridColumnsBond = new Bond().defaultTo(gridColumns())
 
 // set layout name on window resize 
-window.onresize = () => {
-    const size = getLayout()
-    if (layoutBond._value !== size) layoutBond.changed(size)
-}
+window.onresize = () => layoutBond.changed(getLayout())
 
 export default {
+    MOBILE,
+    DESKTOP,
+    gridColumnsBond,
+    layoutBond,
     forceLayout,
+    toggleFullscreen,
     getLayout,
     getUrlParam,
-    layoutBond,
+    gridColumns,
 }
