@@ -4,6 +4,7 @@ import { Confirm } from 'semantic-ui-react'
 import { isBool, isFn } from '../utils/utils'
 import { translated } from './language'
 import DataStorage from '../utils/DataStorage'
+import { toggleFullscreen } from './window'
 
 export const modals = new DataStorage()
 const textsCap = translated({
@@ -34,6 +35,8 @@ const add = (id, element) => {
     modals.set(id, element)
     // add class to #app element to inticate one or more modal is open
     document.getElementById('app').classList.add('modal-open')
+    // If already in fullscreen, exit. Otherwise, modal will not be visible.
+    toggleFullscreen()
     return id
 }
 
@@ -62,7 +65,7 @@ export const confirm = (confirmProps, id) => {
         confirmButton = textsCap.ok
     }
     if (!content && content !== null) {
-        content = texts.areYouSure
+        content = textsCap.areYouSure
     }
     return add(
         id,

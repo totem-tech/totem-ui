@@ -39,8 +39,11 @@ export const createInbox = (receiverIds = [], name, reload = false, setOpen = fa
     settings.name = name || settings.name
     !chatHistory.get(inboxKey) && chatHistory.set(inboxKey, [])
     inboxSettings(inboxKey, settings, reload)
-    setOpen && openInboxBond.changed(inboxKey)
-    setOpen && visibleBond.changed(true)
+    if (setOpen) {
+        openInboxBond.changed(inboxKey)
+        visibleBond.changed(true)
+        getLayout() === MOBILE && expandedBond.changed(true)
+    }
     return inboxKey
 }
 

@@ -19,14 +19,15 @@ export const forceLayout = size => {
     window.onresize()
 }
 
-// toggleFullscreen enters/exits an element into fullscreen mode.
+// fullscreen enters/exits an element into fullscreen mode.
 // If the target element is already in fullscreen mode will simply exit fullscreen.
 // If another element is in fullscreen mode, will exit it from fullscreen 
 // and enter target into full screen with a slight delay.
+// If no/invalid selector supplied, will exit any fullscreen element.
 //
 // Params:
-// @selector    string: CSS selector of the target element to toggle fullscreen
-export const toggleFullscreen = selector => {
+// @selector    string: (optional) CSS selector of the target element to toggle fullscreen
+export const toggleFullscreen = (selector) => {
     // target element to toggle fullscreen
     const el = document.querySelector(selector) || {}
     var fsEl = document.fullscreenElement

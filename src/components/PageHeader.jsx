@@ -245,7 +245,7 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 		left: 0,
 		position: 'absolute',
 		textAlign: 'center',
-		top: isMobile ? 17 : 22,
+		top: isMobile ? 17 : 24,
 		width: '100%',
 	}
 

@@ -297,10 +297,18 @@ button.dark-grey .icon,
 .chat-container .messages .message-wrap.user {
     text-align: right !important;
 }
+.chat-container .messages .message-wrap {
+    margin: 0 10px;
+}
+.chat-container .messages .message-wrap:first-child {
+    margin-top: 5px;
+}
+.chat-container .messages .message-wrap:last-child {
+    margin-bottom: 5px;
+}
 .chat-container .messages .message-wrap .message {
     border-radius: 10px;
     box-shadow: none;
-    margin: 5px 10px 0;
     max-width: 80%;
     overflow-x: auto;
     padding: 7px 15px;
