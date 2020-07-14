@@ -44,7 +44,7 @@ const [texts] = translated({
 export class App extends ReactiveComponent {
 	constructor() {
 		super([], {
-			ensureRuntime: runtimeUp,
+			// ensureRuntime: runtimeUp,
 			isMobile: windw.layoutBond.map(layout => layout === 'mobile'),
 			numCol: windw.gridColumnsBond,
 		})
@@ -54,12 +54,12 @@ export class App extends ReactiveComponent {
 			status: {}
 		}
 
-		nodeService().status.notify(() => {
-			const status = nodeService().status._value
-			// prevent unnecessary state update
-			if (this.state.status.error && status.error) return
-			this.setState({ status })
-		})
+		// nodeService().status.notify(() => {
+		// 	const status = nodeService().status._value
+		// 	// prevent unnecessary state update
+		// 	if (this.state.status.error && status.error) return
+		// 	this.setState({ status })
+		// })
 
 		// For debug only.
 		window.utils = {
@@ -112,7 +112,7 @@ export class App extends ReactiveComponent {
 		)
 	}
 
-	readyRender() {
+	render() {//readyRender
 		const { isMobile, numCol } = this.state
 		const logoSrc = TotemButtonLogo
 		const { collapsed, visible } = sidebarStateBond._value

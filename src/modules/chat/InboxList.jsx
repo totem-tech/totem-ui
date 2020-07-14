@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Bond } from 'oo7'
 import { Button, Label, Icon } from 'semantic-ui-react'
 import { arrSort, textEllipsis, arrUnique } from '../../utils/utils'
 import FormInput from '../../components/FormInput'
@@ -20,6 +21,7 @@ import {
     removeInbox,
     SUPPORT,
     TROLLBOX,
+    newMsgBond,
 } from './chat'
 import NewInboxForm, { editName } from './NewInboxForm'
 
@@ -66,13 +68,12 @@ export const getInboxName = (inboxKey, settings = inboxSettings(inboxKey)) => {
 
 export default function InboxList(props) {
     const { inverted } = props
-    const getAllInboxKeys = () => Object.keys(inboxesSettings())
     const { id: ownId } = getUser() || {}
     const names = {}
     const msgs = {}
     // states
-    const [allSettings, setAllSettings] = useState(inboxesSettings())
-    const [inboxKeys, setInboxKeys] = useState(getAllInboxKeys())
+    const [allSettings, setAllSettings] = useState(inboxesSettings() || {})
+    const [inboxKeys, setInboxKeys] = useState(Object.keys(inboxesSettings()) || [])
     // inbox keys after filtering
     let [filteredKeys, setFilteredKeys] = useState(inboxKeys)
     // IDs of messages containing searched query. Full-text, case-insensitive
@@ -110,31 +111,37 @@ export default function InboxList(props) {
 
     if (!showAll && !query) {
         filteredKeys = filteredKeys.filter(key => {
-            const s = allSettings[key]
+            const s = allSettings[key] || {}
             return !s.hide && !s.deleted
         })
     }
     if (!query) {
         // sort by last message timestamp
-        filteredKeys = filteredKeys.map(key => ({
-            key,
-            sort: showAll ? names[key] : allSettings[key].lastMessageTS || allSettings[key].createdTS,
-        }))
+        filteredKeys = filteredKeys.map(key => {
+            const settings = allSettings[key] || {}
+            return {
+                key,
+                sort: showAll ? names[key] : settings.lastMessageTS || settings.createdTS,
+            }
+        })
         filteredKeys = arrSort(filteredKeys, 'sort', !showAll).map(x => x.key)
     }
 
     useEffect(() => {
         let isMounted = true
         let ignoredFirst = false
-        const tieId = inboxListBond.tie(() => {
+        const resetKeys = () => {
             if (!isMounted) return
-            const keys = getAllInboxKeys()
+            const allSettings = inboxesSettings()
+            const keys = Object.keys(allSettings) || []
             setInboxKeys(keys)
             setFilteredKeys(keys)
-            setAllSettings(inboxesSettings())
-        })
+            setAllSettings(allSettings)
+        }
+        const tieId = inboxListBond.tie(resetKeys)
         const tieIdOpenKey = openInboxBond.tie(key => {
             if (!isMounted) return
+            if (!inboxKeys.includes(key)) resetKeys()
             setOpenKey(key)
             ignoredFirst && getLayout() === MOBILE && expandedBond.changed(!!key)
             ignoredFirst = true

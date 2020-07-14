@@ -38,7 +38,7 @@ export const createInbox = (receiverIds = [], name, reload = false, setOpen = fa
     }
     settings.name = name || settings.name
     !chatHistory.get(inboxKey) && chatHistory.set(inboxKey, [])
-    inboxSettings(inboxKey, settings, reload)
+    inboxSettings(inboxKey, settings)
     if (setOpen) {
         openInboxBond.changed(inboxKey)
         visibleBond.changed(true)
@@ -107,7 +107,7 @@ export function inboxSettings(inboxKey, value) {
     let iSettings = settings[inboxKey] || {}
     if (value === null) delete settings[inboxKey]
     if (!isObj(value)) return iSettings || {}
-    const { deleted, hide, name, unread } = iSettings
+    const { unread } = iSettings
     settings[inboxKey] = { ...iSettings, ...value }
     settings = rw({ inbox: settings }).inbox
     iSettings = settings[inboxKey]
@@ -154,7 +154,7 @@ const saveMessage = msg => {
         ...inboxSettings(inboxKey),
         lastMessageTS: timestamp,
     }
-    const { name: oldName, unread } = settings
+    const { name: oldName, unread = 0 } = settings
 
     messages.push({
         action,
@@ -180,7 +180,7 @@ const saveMessage = msg => {
     const resetCount = visibleBond._value && openInboxBond._value === inboxKey
         && getLayout() !== MOBILE || expandedBond._value
         && !!document.querySelector('.chat-container .inbox .scroll-to-bottom:not(.visible)')
-    settings.unread = resetCount ? 0 : (senderId !== userId ? 1 : 0) + unread || 0
+    settings.unread = resetCount ? 0 : unread + (senderId !== userId ? 1 : 0)
 
     // update settings
     inboxSettings(inboxKey, settings)
@@ -267,7 +267,8 @@ client.onMessage((m, s, r, e, t, id, action) => {
 // initialize
 [(() => {
     const allSettings = rw().inbox || {}
-    if (!allSettings[getInboxKey([SUPPORT])]) createInbox([SUPPORT])
+    const { id: userId } = getUser() || {}
+    if (userId && !allSettings[getInboxKey([SUPPORT])]) createInbox([SUPPORT, userId])
     if (!allSettings[getInboxKey([TROLLBOX])]) createInbox([TROLLBOX], false, true)
 
     // automatically mark inbox as read
