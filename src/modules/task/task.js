@@ -23,10 +23,11 @@ export const createOrUpdateTask = (
     // 2D array of order items (will be converted to objects): [[productHash, unitRate, qty, unitOfMeasure]]
     // Or, array of OrderItemStruct (see utils => polkadot types) objects 
     orderItems = [],
-    hash, // (optional) determines whether to create or update
+    id, // (optional) determines whether to create or update a record
+    token, // BONSAI token hash
     queueProps,
 ) => {
-    const func = !!hash ? 'api.tx.orders.changeSpfso' : 'api.tx.orders.createSpfso'
+    const func = !!id ? 'api.tx.orders.changeSpfso' : 'api.tx.orders.createSpfso'
     const args = [
         addressToStr(addrApprover),
         addressToStr(addrFulfiller),
@@ -42,8 +43,9 @@ export const createOrUpdateTask = (
             "Quantity": item[2],
             "UnitOfMeasure": item[3],
         })[0], // only send the first item until runtime can handle vec<struct>
+        token,
     ]
-    if (!!hash) args.push(hashToStr(hash))
+    if (!!id) args.push(hashToStr(id))
     return {
         ...queueProps,
         address: addrOrigin,

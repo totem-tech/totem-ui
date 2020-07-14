@@ -4,10 +4,10 @@ import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import Currency from '../../components/Currency'
-import { arrSort, deferred, isObj, isValidNumber, deferredPromise } from '../../utils/utils'
+import { arrSort, deferred, isObj, isValidNumber, deferredPromise, objClean, generateHash } from '../../utils/utils'
 import PartnerForm from '../../forms/Partner'
 // services
-import { getConnection, getCurrentBlock } from '../../services/blockchain'
+import { getConnection, getCurrentBlock, hashTypes } from '../../services/blockchain'
 import {
     convertTo,
     currencyDefault,
@@ -63,6 +63,13 @@ const [texts, textsCap] = translated({
     titlePlaceholder: 'enter a very short task description',
     updatePartner: 'update partner',
 }, true)
+const BONSAI_KEYS = [ // keys used to generate BONSAI token hash
+    'currency',
+    'description',
+    'published',
+    'tags',
+    'title',
+]
 const estimatedTxFee = 140
 const deadlineMinMS = 48 * 60 * 60 * 1000
 const strToDate = ymd => new Date(`${ymd}T23:59:59`)
@@ -461,7 +468,7 @@ export default class TaskForm extends Component {
     }
 
     handleSubmit = async (_, values) => {
-        const { hash } = this.props.values || {}
+        const { id } = this.props.values || {}
         const { address } = getSelected()
         const currentBlock = await getCurrentBlock()
         const deadlineMS = strToDate(values[this.names.deadline]) - new Date()
@@ -471,8 +478,9 @@ export default class TaskForm extends Component {
         const assignee = values[this.names.assignee]
         const orderClosed = !!assignee ? 1 : 0
         const description = values[this.names.title]
-        const title = !hash ? textsCap.formHeader : textsCap.formHeaderUpdate
-
+        const title = !id ? textsCap.formHeader : textsCap.formHeaderUpdate
+        const tokenData = hashTypes.taskHash + address + JSON.stringify(objClean(values, BONSAI_KEYS))
+        const token = generateHash(tokenData)
         const then = (success, [err]) => this.setState({
             closeText: success ? textsCap.close : undefined,
             message: {
@@ -504,7 +512,8 @@ export default class TaskForm extends Component {
             deadlineBlocks,
             dueDateBlocks,
             [[PRODUCT_HASH_LABOUR, this.amountXTX, 1, 1]], // single item order
-            hash,
+            id,
+            token,
             { description, then, title },
         ])
         addToQueue(queueProps)
