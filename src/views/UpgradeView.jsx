@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect } from 'react'
+import React, { useReducer, useEffect, Component } from 'react'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
 import { If, ReactiveComponent } from 'oo7-react'
@@ -6,18 +6,18 @@ import { calls, runtime, bytesToHex } from 'oo7-substrate'
 import { TransactButton } from '../components/TransactButton'
 import { FileUploadBond } from '../components/FileUploadBond'
 
-import { decodeUTF8, hashToStr } from '../utils/convert'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 // services
 import { getConnection } from '../services/blockchain'
 import { get as getIdentity, getSelected } from '../services/identity'
-import { reducer } from '../services/react'
+import { generateHash } from '../utils/utils'
 
 // Translation not required
 const textsCap = {
 	accessDenied: 'Access denied',
 	invalidFile: 'Invalid file type selected',
 	fileErr: 'Failed to process file',
+	codeHash: 'SHA256 hash of the wasm binary',
 	selectRuntime: 'Select runtime',
 	upgrade: 'Upgrade',
 	upgradeFailed: 'Upgrade failed',
@@ -26,127 +26,125 @@ const textsCap = {
 	upgradeSuccessful: 'Upgrade successful',
 }
 
-export const UpgradeForm = props => {
-	const [state, setState] = useReducer(reducer, {
-		message: {},
-		onSubmit: async (_, { codeHex }) => {
-			try {
-				const { api, keyring } = await getConnection()
-				const adminAddress = getSelected().address //await api.query.sudo.key()
-				const identity = getIdentity(adminAddress)
-				setState({
-					message: {
-						header: identity ? textsCap.upgradingRuntime : textsCap.accessDenied,
-						showIcon: true,
-						status: identity ? 'loading' : 'error',
-					},
-					submitDisabled: !!identity,
-				})
-				if (!identity) return
+export class UpgradeForm extends Component {
+	constructor() {
+		super()
 
-				const adminPair = await keyring.getPair(adminAddress)
-				const useNewVersion = api.tx.system && api.tx.system.setCode
-				const { setCode } = useNewVersion ? api.tx.system : api.tx.consensus
-				const proposal = await setCode(codeHex)
-				const sudoProposal = await api.tx.sudo.sudo(proposal)
-				console.log('Upgrading runtime. Size: ', ((codeHex.length - 2) / 2), 'bytes. Admin identity:', identity)
-				let includedInBlock = false
-
-				// Perform the actual chain upgrade via the sudo module
-				await sudoProposal.signAndSend(adminPair, ({ events = [], status }) => {
-					console.log('Proposal status:', status.type)
-
-					if (status.isInBlock) {
-						console.error('Upgrade chain transaction included in block')
-						console.log('Upgrade chain transaction included in block', status.asInBlock.toHex())
-						console.log('Events:', JSON.parse(JSON.stringify(events.toHuman())))
-						includedInBlock = true
-						return
-					}
-
-					if (!status.isFinalized) return
-					console.log('Finalized block hash', status.asFinalized.toHex())
-
-					setState({
-						message: {
-							header: includedInBlock ? textsCap.upgradeSuccessful : textsCap.upgradeFailed,
-							showIcon: true,
-							status: includedInBlock ? 'success' : 'error',
-						},
-						submitDisabled: false,
-					})
-				})
-			} catch (err) {
-				setState({
-					message: {
-						content: `${err}`,
-						header: textsCap.upgradeFailed,
-						showIcon: true,
-						status: 'error',
-					},
-					submitDisabled: false,
-				})
-			}
-		},
-		selectedFile: null,
-		submitText: textsCap.upgrade,
-		inputs: [
-			{
+		this.state = {
+			message: {},
+			onSubmit: this.handleSubmit,
+			selectedFile: null,
+			submitText: textsCap.upgrade,
+			inputs: [{
 				accept: '.wasm',
-				id: 'file-input',
 				label: textsCap.selectRuntime,
 				name: 'file',
 				required: true,
 				type: 'file',
-				onChange: event => {
-					const { inputs } = state
-					const fileIn = findInput(inputs, 'file')
-					const codeHexIn = findInput(inputs, 'codeHex')
-					try {
-						const file = event.target.files[0]
-						var reader = new FileReader()
-						reader.onload = e => {
-							codeHexIn.bond.changed(hashToStr(decodeUTF8(e.target.result)))
-							setState({ inputs })
-							e.target.value = null
-						}
-						reader.readAsText(file)
-					} catch (err) {
-						event.target.value = null
-						codeHexIn.bond.changed('')
-						fileIn.message = {
-							content: `${err}`,
-							header: textsCap.fileErr,
-							showIcon: true,
-							status: 'error',
-						}
-						setState({ inputs })
-					}
-				},
-				validate: event => {
-					const { accept } = findInput(state.inputs, 'file')
-					const file = event.target.files[0]
-					if (file.name.endsWith(accept || '')) return
+				onChange: this.handleFileChange,
+				validate: this.validateFile
+			}],
+		}
+	}
 
-					// reset textarea
-					findInput(state.inputs, 'codeHex').bond.changed('')
-					// reset file input
-					event.target.value = null
-					return textsCap.invalidFile
+	handleFileChange = event => {
+		const { inputs } = this.state
+		const fileIn = findInput(inputs, 'file')
+		const file = event.target.files[0]
+		if (!file) return
+
+		this.setState({ submitDisabled: true })
+		try {
+			if (!file.name.endsWith(fileIn.accept || '')) throw textsCap.invalidFile
+			var reader = new FileReader()
+			reader.onload = e => {
+				const codeBytes = new Uint8Array(e.target.result)
+				e.target.value = null
+				fileIn.message = {
+					content: generateHash(codeBytes),
+					header: textsCap.codeHash,
+					showIcon: true,
+					status: 'info',
 				}
-			},
-			{
-				bond: new Bond(),
-				name: 'codeHex',
-				readOnly: true,
-				required: true,
-				type: 'textarea',
-				value: '',
-			},
-		],
-	})
+				this.setState({ inputs, codeBytes, submitDisabled: false })
+			}
+			reader.readAsArrayBuffer(file)
+		} catch (err) {
+			event.target.value = null
+			fileIn.message = {
+				content: `${err}`,
+				header: textsCap.fileErr,
+				showIcon: true,
+				status: 'error',
+			}
+			this.setState({ inputs, codeBytes: null, submitDisabled: false })
+		}
+	}
 
-	return <FormBuilder {...{ ...props, ...state }} />
+	handleSubmit = async () => {
+		try {
+			const { codeBytes } = this.state
+			const { api, keyring } = await getConnection()
+			// tx will fail if selected is not sudo identity
+			const adminAddress = getSelected().address //await api.query.sudo.key() 
+			const identity = getIdentity(adminAddress)
+			this.setState({
+				message: {
+					header: identity ? textsCap.upgradingRuntime : textsCap.accessDenied,
+					showIcon: true,
+					status: identity ? 'loading' : 'error',
+				},
+				submitDisabled: !!identity,
+			})
+			if (!identity) return
+
+			const adminPair = await keyring.getPair(adminAddress)
+			const useNewVersion = api.tx.system && api.tx.system.setCode
+			const { setCode } = useNewVersion ? api.tx.system : api.tx.consensus
+			const proposal = await setCode(codeBytes)
+			const sudoProposal = await api.tx.sudo.sudo(proposal)
+			console.log('Upgrading runtime. Size: ', (codeBytes.length / 2),
+				'bytes. Admin identity:', identity)
+			let includedInBlock = false
+
+			// Perform the actual chain upgrade via the sudo module
+			await sudoProposal.signAndSend(adminPair, ({ events = [], status }) => {
+				console.log('Proposal status:', status.type)
+
+				if (status.isInBlock) {
+					console.error('Upgrade chain transaction included in block')
+					console.log('Upgrade chain transaction included in block', status.asInBlock.toHex())
+					console.log('Events:', JSON.parse(JSON.stringify(events.toHuman())))
+					includedInBlock = true
+					return
+				}
+
+				if (!status.isFinalized) return
+				console.log('Finalized block hash', status.asFinalized.toHex())
+
+				this.setState({
+					message: {
+						header: includedInBlock ? textsCap.upgradeSuccessful : textsCap.upgradeFailed,
+						showIcon: true,
+						status: includedInBlock ? 'success' : 'error',
+					},
+					submitDisabled: false,
+				})
+			})
+		} catch (err) {
+			this.setState({
+				message: {
+					content: `${err}`,
+					header: textsCap.upgradeFailed,
+					showIcon: true,
+					status: 'error',
+				},
+				submitDisabled: false,
+			})
+		}
+	}
+
+	render = () => <FormBuilder {...this.state} />
 }
 
 
@@ -163,8 +161,9 @@ export default class UpgradeViewOld extends ReactiveComponent {
 	render() {
 		const contents = (
 			<div>
+				<h1>PolkadotJS Upgrade Form</h1>
 				<UpgradeForm />
-				<h1>Old Upgrade Form</h1>
+				<h1>oo7-substrate Upgrade Form</h1>
 				<div style={{ paddingBottom: '20px' }}>
 					<FileUploadBond bond={this.newRuntime} content={textsCap.selectRuntime} />
 				</div>
