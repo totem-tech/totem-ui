@@ -145,8 +145,8 @@ const InboxHeader = ({ inboxKey, isGroup, isMobile, setShowMembers, showMembers 
     <div {...{
         className: 'header',
         onClick: () => {
-            if (!isMobile || expandedBond._value) return
-            expandedBond.changed(true)
+            if (!isMobile) return
+            expandedBond.changed(!expandedBond._value)
             setShowMembers(false)
         },
     }}>

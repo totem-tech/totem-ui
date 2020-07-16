@@ -1,7 +1,7 @@
 import DataStorage from '../../utils/DataStorage'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
-import { arrUnique, isObj, isValidNumber, isDefined } from '../../utils/utils'
+import { arrUnique, isObj, isValidNumber, isDefined, objClean } from '../../utils/utils'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import client, { getUser } from '../../services/chatClient'
 import storage from '../../services/storage'
@@ -73,7 +73,7 @@ export const getInboxKey = receiverIds => {
         .join()
 }
 
-export const getMessages = inboxKey => [
+export const getMessages = inboxKey => !inboxKey ? chatHistory.getAll() : [
     ...chatHistory.get(inboxKey) || [],
     ...(pendingMessages[inboxKey] || [])
 ]
@@ -104,19 +104,21 @@ export const historyLimit = limit => {
 // get/set inbox specific settings
 export function inboxSettings(inboxKey, value) {
     let settings = rw().inbox || {}
-    let iSettings = settings[inboxKey] || {}
+    let oldSettings = settings[inboxKey] || {}
     if (value === null) delete settings[inboxKey]
-    if (!isObj(value)) return iSettings || {}
-    const { unread } = iSettings
-    settings[inboxKey] = { ...iSettings, ...value }
-    settings = rw({ inbox: settings }).inbox
-    iSettings = settings[inboxKey]
+    if (!isObj(value)) return oldSettings || {}
+    const newSettings = { ...oldSettings, ...value }
+    settings[inboxKey] = newSettings
+    // save settings
+    rw({ inbox: settings }).inbox
 
     // update unread count bond
-    unread !== iSettings.unread && unreadCountBond.changed(getUnreadCount())
-    inboxListBond.changed(uuid.v1())
+    newSettings.unread !== oldSettings.unread && unreadCountBond.changed(getUnreadCount())
+    const keys = ['deleted', 'hide', 'name']
+    const changed = JSON.stringify(objClean(oldSettings, keys)) !== JSON.stringify(objClean(newSettings, keys))
+    changed && inboxListBond.changed(uuid.v1())
 
-    return iSettings || {}
+    return oldSettings || {}
 }
 
 // all inbox settings
