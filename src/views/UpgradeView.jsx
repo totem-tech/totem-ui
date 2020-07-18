@@ -1,8 +1,7 @@
-import React, { useReducer, useEffect, Component } from 'react'
-import uuid from 'uuid'
+import React, { Component } from 'react'
 import { Bond } from 'oo7'
 import { If, ReactiveComponent } from 'oo7-react'
-import { calls, runtime, bytesToHex } from 'oo7-substrate'
+import { calls, runtime } from 'oo7-substrate'
 import { TransactButton } from '../components/TransactButton'
 import { FileUploadBond } from '../components/FileUploadBond'
 
@@ -11,6 +10,7 @@ import FormBuilder, { findInput } from '../components/FormBuilder'
 import { getConnection } from '../services/blockchain'
 import { get as getIdentity, getSelected } from '../services/identity'
 import { generateHash } from '../utils/utils'
+import { compactAddLength } from '@polkadot/util'
 
 // Translation not required
 const textsCap = {
@@ -58,7 +58,7 @@ export class UpgradeForm extends Component {
 			if (!file.name.endsWith(fileIn.accept || '')) throw textsCap.invalidFile
 			var reader = new FileReader()
 			reader.onload = e => {
-				const codeBytes = new Uint8Array(e.target.result)
+				const codeBytes = compactAddLength(new Uint8Array(e.target.result))
 				e.target.value = null
 				fileIn.message = {
 					content: generateHash(codeBytes),
