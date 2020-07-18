@@ -86,7 +86,7 @@ export class UpgradeForm extends Component {
 			const { codeBytes } = this.state
 			const { api, keyring } = await getConnection()
 			// tx will fail if selected is not sudo identity
-			const adminAddress = getSelected().address //await api.query.sudo.key() 
+			const adminAddress = await api.query.sudo.key() //getSelected().address
 			const identity = getIdentity(adminAddress)
 			this.setState({
 				message: {
