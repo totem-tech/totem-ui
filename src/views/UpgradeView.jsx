@@ -58,11 +58,19 @@ export class UpgradeForm extends Component {
 			if (!file.name.endsWith(fileIn.accept || '')) throw textsCap.invalidFile
 			var reader = new FileReader()
 			reader.onload = e => {
-				const codeBytes = compactAddLength(new Uint8Array(e.target.result))
+				const bytes = new Uint8Array(e.target.result)
+				const codeBytes = compactAddLength(bytes)
 				e.target.value = null
 				fileIn.message = {
-					content: generateHash(codeBytes),
-					header: textsCap.codeHash,
+					content: (
+						<div>
+							<div><b>Original length:</b><br />{bytes.length}</div>
+							<div><b>Original hash:</b><br />{generateHash(bytes)}</div>
+							<div><b>Processed length:</b><br />{codeBytes.length}</div>
+							<div><b>Processed hash:</b><br />{generateHash(codeBytes)}</div>
+						</div>
+					),
+					// header: textsCap.codeHash,
 					showIcon: true,
 					status: 'info',
 				}
