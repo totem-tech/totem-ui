@@ -1,14 +1,15 @@
 import DataStorage from '../../utils/DataStorage'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
-import { arrUnique, isObj, isValidNumber, isDefined, objClean } from '../../utils/utils'
+import { arrUnique, isObj, isValidNumber, isDefined, objClean, deferredPromise } from '../../utils/utils'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import client, { getUser } from '../../services/chatClient'
+import client, { getUser, loginBond } from '../../services/chatClient'
 import storage from '../../services/storage'
 import { getLayout, MOBILE } from '../../services/window'
 
 const PREFIX = 'totem_'
 const MODULE_KEY = 'chat-history'
+const INTERVAL_FREQUENCY_MS = 60000 // check online status every 60 seconds
 export const TROLLBOX = 'everyone'
 export const TROLLBOX_ALT = 'trollbox' // alternative ID for trollbox
 export const SUPPORT = 'support'
@@ -24,10 +25,35 @@ export const newMsgBond = new Bond() // value : [inboxkey, unique id]
 export const openInboxBond = new Bond().defaultTo(rw().openInboxKey)
 export const pendingMessages = {}
 export const unreadCountBond = new Bond().defaultTo(getUnreadCount())
+// stores and notifies of online status changes of chat User IDs.
+export const userStatusBond = new Bond()
 export const visibleBond = new Bond().defaultTo(!!rw().visible)
 
+// checks and updates userStatusBond with online status of all inbox User IDs, excluding TROLLBOX and SUPPORT
+export const checkOnlineStatus = () => {
+    const { id: userId } = getUser() || {}
+    // unregistered user
+    if (!userId) return
+    let keys = Object.keys(inboxesSettings() || {})
+    const excludedIds = [userId, SUPPORT, TROLLBOX]
+    const inboxUserIds = keys.map(key => key.split(',').filter(id => !excludedIds.includes(id)))
+    const userIds = arrUnique(inboxUserIds.flat())
+    if (!userIds.length) {
+        userStatusBond.changed()
+        return
+    }
+    client.isUserOnline(userIds, (err, online = {}) => {
+        if (err) console.log('Failed to check user online status. ', err)
+        // current user is online
+        online[userId] = true
+        // check if value changed
+        if (JSON.stringify(online) === JSON.stringify(userStatusBond._value)) return
+        userStatusBond.changed(online)
+    })
+}
+
 // create/get inbox key
-export const createInbox = (receiverIds = [], name, reload = false, setOpen = false) => {
+export const createInbox = (receiverIds = [], name, setOpen = false) => {
     const inboxKey = getInboxKey(receiverIds)
     let settings = inboxSettings(inboxKey)
     settings = {
@@ -56,10 +82,9 @@ export const getChatUserIds = (includeTrollbox = true) => arrUnique(Object.keys(
 
 // returns inbox storage key
 export const getInboxKey = receiverIds => {
-    receiverIds = arrUnique(receiverIds)
     const { id: userId } = getUser() || {}
-    const index = receiverIds.indexOf(userId)
-    if (index >= 0) receiverIds.splice(index, 1)
+    receiverIds = arrUnique(receiverIds).filter(id => id !== userId)
+
     // Trollbox
     if (receiverIds.includes(TROLLBOX)) return TROLLBOX
     // Trollbox
@@ -110,11 +135,11 @@ export function inboxSettings(inboxKey, value) {
     const newSettings = { ...oldSettings, ...value }
     settings[inboxKey] = newSettings
     // save settings
-    rw({ inbox: settings }).inbox
+    rw({ inbox: settings })
 
     // update unread count bond
     newSettings.unread !== oldSettings.unread && unreadCountBond.changed(getUnreadCount())
-    const keys = ['deleted', 'hide', 'name']
+    const keys = ['deleted', 'hide', 'name', 'unread', 'lastMessageTS']
     const changed = JSON.stringify(objClean(oldSettings, keys)) !== JSON.stringify(objClean(newSettings, keys))
     changed && inboxListBond.changed(uuid.v1())
 
@@ -152,11 +177,9 @@ const saveMessage = msg => {
 
     const limit = historyLimit()
     const { id: userId } = getUser() || {}
-    let settings = {
-        ...inboxSettings(inboxKey),
-        lastMessageTS: timestamp,
-    }
+    let settings = inboxSettings(inboxKey)
     const { name: oldName, unread = 0 } = settings
+    if ((settings.lastMessageTS || '') < timestamp) settings.lastMessageTS = timestamp
 
     messages.push({
         action,
@@ -250,9 +273,15 @@ client.onConnect(() => {
 // handle message received
 client.onMessage((m, s, r, e, t, id, action) => {
     const inboxKey = getInboxKey(r)
+    const userIds = inboxKey.split(',').filter(id => ![SUPPORT, TROLLBOX].includes(id))
+    const online = { ...userStatusBond._value }
+    userIds.forEach(id => online[id] = true)
+    // set sender status as online
+    if (JSON.stringify(online) !== JSON.stringify(userStatusBond._value)) userStatusBond.changed(online)
+
     // prevent saving trollbox messages if hidden
     if (inboxKey === TROLLBOX && inboxSettings(inboxKey).hide) return
-    createInbox(r, null, true)
+    createInbox(r)
     saveMessage({
         action,
         id,
@@ -264,14 +293,28 @@ client.onMessage((m, s, r, e, t, id, action) => {
         timestamp: t,
     })
     setTimeout(() => newMsgBond.changed([inboxKey, id]))
+
 })
 
 // initialize
 [(() => {
     const allSettings = rw().inbox || {}
     const { id: userId } = getUser() || {}
-    if (userId && !allSettings[getInboxKey([SUPPORT])]) createInbox([SUPPORT, userId])
-    if (!allSettings[getInboxKey([TROLLBOX])]) createInbox([TROLLBOX], false, true)
+    let intervalId = null
+
+    const createSupportInbox = () => !allSettings[getInboxKey([SUPPORT])] && createInbox([SUPPORT])
+    if (userId) {
+        createSupportInbox()
+    } else {
+        // user hasn't registered yet
+        const tieId = loginBond.tie(success => {
+            if (!success) return
+            // registration successful
+            loginBond.untie(tieId)
+            createSupportInbox()
+        })
+    }
+    if (!allSettings[getInboxKey([TROLLBOX])]) createInbox([TROLLBOX])
 
     // automatically mark inbox as read
     Bond.all([expandedBond, openInboxBond, visibleBond]).tie(([expanded, inboxKey, visible]) => {
@@ -282,8 +325,16 @@ client.onMessage((m, s, r, e, t, id, action) => {
     expandedBond.tie(expand => document.getElementById('app').classList[expand ? 'add' : 'remove']('inbox-expanded'))
     // remember last open inbox key
     openInboxBond.tie(key => rw({ openInboxKey: key }))
-    // remember if chat is visible
-    visibleBond.tie(visible => rw({ visible }))
+
+    userId && checkOnlineStatus()
+    visibleBond.tie(visible => {
+        // remember if chat is visible
+        rw({ visible })
+        intervalId && clearInterval(intervalId)
+        if (!userId || !visible) return
+        // enable/disble status check of User IDs
+        intervalId = setInterval(checkOnlineStatus, INTERVAL_FREQUENCY_MS)
+    })
 })()]
 
 export default {
@@ -294,13 +345,13 @@ export default {
     pendingMessages,
     visibleBond,
     unreadCountBond,
+    createInbox,
     getMessages,
     getChatUserIds,
     getInboxKey,
     getTrollboxUserIds,
     historyLimit,
     inboxSettings,
-    newInbox: createInbox,
     send,
     removeInbox,
     removeInboxMessages,

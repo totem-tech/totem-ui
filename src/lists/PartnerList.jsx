@@ -134,7 +134,7 @@ export default class PartnerList extends ReactiveComponent {
 			{
 				disabled: !userId || userId === ownId,
 				icon: 'chat',
-				onClick: () => createInbox([userId], null, false, true),
+				onClick: () => createInbox([userId], null, true),
 				title: textsCap.chat,
 			},
 		].filter(Boolean).map(props => <Button key={props.title} {...props} />)

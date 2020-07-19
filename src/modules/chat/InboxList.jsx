@@ -19,8 +19,7 @@ import {
     removeInbox,
     SUPPORT,
     TROLLBOX,
-    newMsgBond,
-    unreadCountBond,
+    userStatusBond,
 } from './chat'
 import NewInboxForm, { editName } from './NewInboxForm'
 
@@ -65,6 +64,7 @@ export const getInboxName = (inboxKey, settings = inboxSettings(inboxKey), userI
 }
 
 const filterInboxes = (query = '', showAll = false) => {
+    query = query.trim()
     const allSettings = inboxesSettings() || {}
     let filteredKeys = Object.keys(allSettings)
     if (!filteredKeys.length) return []
@@ -127,15 +127,11 @@ const filterInboxes = (query = '', showAll = false) => {
     }).filter(Boolean)
 
     // sort by timestamp if query is empty, otherwise sort by match index
-    const sortedResult = arrSort(result, query ? 'matchIndex' : 'ts')
-    // exclude unnecessary information (ts/matchIndex)
-    return sortedResult
+    return arrSort(result, query ? 'matchIndex' : 'ts', true)
 }
 
 export default function InboxList() {
-    const { id: userId } = getUser() || {}
     const [query, setQuery] = useState('')
-    const [status, setStatus] = useState({})
     // whether to include archived and deleted items
     const [showAll, setShowAllOrg] = useState(false)
     const [items, setItems] = useState(filterInboxes(query, showAll))
@@ -158,36 +154,11 @@ export default function InboxList() {
         const tieId = inboxListBond.tie(() => {
             mounted && setItems(filterInboxes(query, showAll))
         })
-
-        // check online status of active private and group chat user ids
-        const checkStatus = () => {
-            if (!mounted) return
-            const keys = items.map(x => x.inboxKey)
-            const inboxUserIds = keys.map(x => x.split(',')
-                .filter(id => ![userId, SUPPORT, TROLLBOX].includes(id))
-            )
-            const userIds = arrUnique(inboxUserIds.flat())
-            if (userIds.length > 0) return
-            client.isUserOnline(userIds, (err, online) => {
-                if (!mounted) return
-                const newStatus = {}
-                if (!err) keys.forEach((key, i) => {
-                    const ids = inboxUserIds[i]
-                    const numOnline = ids.filter(id => online[id]).length
-                    newStatus[key] = !numOnline ? OFFLINE : (
-                        numOnline === ids.length ? ALL_ONLINE : SOME_ONLINE
-                    )
-                })
-                setStatus(newStatus)
-                setTimeout(() => checkStatus(), 60000)
-            })
-        }
-        checkStatus()
         return () => {
             mounted = false
             inboxListBond.untie(tieId)
         }
-    }, [showAll])
+    }, [query, showAll])
     return (
         <div {...{
             className: 'inbox-list',
@@ -206,7 +177,7 @@ export default function InboxList() {
                 {items.map(item => <InboxListItem {...{
                     ...item,
                     active: openInboxBond._value === item.inboxKey,
-                    key: JSON.stringify(item) + status[item.inboxKey],
+                    key: JSON.stringify(item),
                     query,
                 }} />)}
 
@@ -223,15 +194,13 @@ const InboxListItem = ({
     inboxKey,
     isEmpty,
     label,
-    message: messageX, // last or queried message
+    message, // last or queried message
     name,
     query = '',
-    status,
-    unreadCountX,
+    unreadCount,
     userId,
 }) => {
-    const [unreadCount, setUnreadCount] = useState(unreadCountX)
-    const [message, setMessage] = useState(messageX)
+    const [status, setStatus] = useState(OFFLINE)
     const isTrollbox = inboxKey === TROLLBOX
     const receiverIds = inboxKey.split(',')
     const isSupport = receiverIds.includes(SUPPORT)
@@ -272,28 +241,20 @@ const InboxListItem = ({
 
     useEffect(() => {
         let mounted = true
-        const tieIdCount = unreadCountBond.tie(() => {
-            if (!mounted) return
-            // update unread count
-            if (inboxSettings(inboxKey).unread !== unreadCount)
-                setUnreadCount(unreadCount || 0)
+        const userIds = inboxKey.split(',').filter(id => ![userId, TROLLBOX, SUPPORT].includes(id))
+        const tieId = userIds.length > 0 && userStatusBond.tie((online = {}) => {
+            if (!online) return
+            const numOnline = userIds.filter(id => online[id]).length
+            const newStatus = !numOnline ? OFFLINE : (
+                numOnline === userIds.length ? ALL_ONLINE : SOME_ONLINE
+            )
+            status !== newStatus && setStatus(newStatus)
         })
-        const tieIdMsg = newMsgBond.tie(([key, id]) => {
-            if (key !== inboxKey) return
-            // new message received => show last message
-            const lastMsg = (getMessages(inboxKey) || [])
-                .filter(x => !!x.message)
-                .slice(-1)[0]
-            const updateRequired = !query || ((lastMsg || {}).message || '').toLowerCase().includes(query)
-            updateRequired && setMessage(lastMsg)
-        })
-
         return () => {
             mounted = false
-            unreadCountBond.untie(tieIdCount)
-            newMsgBond.untie(tieIdMsg)
+            tieId && userStatusBond.untie(tieId)
         }
-    }, [active, unreadCount])
+    }, [])
 
     return (
         <div {...{
