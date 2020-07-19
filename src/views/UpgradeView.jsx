@@ -8,16 +8,15 @@ import { FileUploadBond } from '../components/FileUploadBond'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 // services
 import { getConnection } from '../services/blockchain'
-import { get as getIdentity, getSelected } from '../services/identity'
-import { generateHash } from '../utils/utils'
+import { get as getIdentity } from '../services/identity'
 import { compactAddLength } from '@polkadot/util'
+import { blake2AsHex } from '@polkadot/util-crypto'
 
 // Translation not required
 const textsCap = {
 	accessDenied: 'Access denied',
 	invalidFile: 'Invalid file type selected',
 	fileErr: 'Failed to process file',
-	codeHash: 'SHA256 hash of the wasm binary',
 	selectRuntime: 'Select runtime',
 	upgrade: 'Upgrade',
 	upgradeFailed: 'Upgrade failed',
@@ -65,12 +64,11 @@ export class UpgradeForm extends Component {
 					content: (
 						<div>
 							<div><b>Original length:</b><br />{bytes.length}</div>
-							<div><b>Original hash:</b><br />{generateHash(bytes)}</div>
+							<div><b>Original blake2AsHex:</b><br />{blake2AsHex(bytes, 256)}</div>
 							<div><b>Processed length:</b><br />{codeBytes.length}</div>
-							<div><b>Processed hash:</b><br />{generateHash(codeBytes)}</div>
+							<div><b>Processed hash:</b><br />{blake2AsHex(codeBytes, 256)}</div>
 						</div>
 					),
-					// header: textsCap.codeHash,
 					showIcon: true,
 					status: 'info',
 				}
