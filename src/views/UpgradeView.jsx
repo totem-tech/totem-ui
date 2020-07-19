@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { Bond } from 'oo7'
 import { If, ReactiveComponent } from 'oo7-react'
-import { calls, runtime } from 'oo7-substrate'
+import { calls, runtime, ss58Encode } from 'oo7-substrate'
 import { TransactButton } from '../components/TransactButton'
 import { FileUploadBond } from '../components/FileUploadBond'
 
@@ -92,7 +92,7 @@ export class UpgradeForm extends Component {
 			const { codeBytes } = this.state
 			const { api, keyring } = await getConnection()
 			// tx will fail if selected is not sudo identity
-			const adminAddress = await api.query.sudo.key() //getSelected().address
+			const adminAddress = ss58Encode(await api.query.sudo.key()) //getSelected().address
 			const identity = getIdentity(adminAddress)
 			this.setState({
 				message: {
