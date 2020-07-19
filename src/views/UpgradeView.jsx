@@ -109,8 +109,7 @@ export class UpgradeForm extends Component {
 			const { setCode } = useNewVersion ? api.tx.system : api.tx.consensus
 			const proposal = await setCode(codeBytes)
 			const sudoProposal = await api.tx.sudo.sudo(proposal)
-			console.log('Upgrading runtime. Size: ', (codeBytes.length / 2),
-				'bytes. Admin identity:', adminAddress)
+			console.log('Upgrading runtime. Size: ', codeBytes.length, 'bytes. Admin identity:', adminAddress)
 
 			// Perform the actual chain upgrade via the sudo module
 			await sudoProposal.signAndSend(adminPair, ({ events = [], status }) => {
