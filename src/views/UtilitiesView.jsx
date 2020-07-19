@@ -27,7 +27,7 @@ export default class UtilitiesView extends Component {
                 key={i}
                 headerTag="h3"
                 style={{ padding: 0 }}
-            // vertical={true}
+                vertical={true}
             />
         )
 }

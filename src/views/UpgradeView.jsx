@@ -111,7 +111,6 @@ export class UpgradeForm extends Component {
 			const sudoProposal = await api.tx.sudo.sudo(proposal)
 			console.log('Upgrading runtime. Size: ', (codeBytes.length / 2),
 				'bytes. Admin identity:', identity)
-			let includedInBlock = false
 
 			// Perform the actual chain upgrade via the sudo module
 			await sudoProposal.signAndSend(adminPair, ({ events = [], status }) => {
@@ -121,7 +120,6 @@ export class UpgradeForm extends Component {
 					console.error('Upgrade chain transaction included in block')
 					console.log('Upgrade chain transaction included in block', status.asInBlock.toHex())
 					console.log('Events:', JSON.parse(JSON.stringify(events.toHuman())))
-					includedInBlock = true
 					return
 				}
 
@@ -130,9 +128,9 @@ export class UpgradeForm extends Component {
 
 				this.setState({
 					message: {
-						header: includedInBlock ? textsCap.upgradeSuccessful : textsCap.upgradeFailed,
+						header: textsCap.upgradeSuccessful,// : textsCap.upgradeFailed,
 						showIcon: true,
-						status: includedInBlock ? 'success' : 'error',
+						status: 'success',// : 'error',
 					},
 					submitDisabled: false,
 				})
