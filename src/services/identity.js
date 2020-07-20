@@ -41,7 +41,7 @@ const VALID_KEYS = Object.freeze([
 ])
 
 export const bond = identities.bond
-export const selectedAddressBond = new Bond().defaultTo(uuid.v1())
+export const selectedAddressBond = new Bond()
 
 export const addFromUri = (uri, type = 'sr25519') => {
     try {
@@ -90,7 +90,7 @@ export const setSelected = address => {
     })
     identity.selected = true
     identities.set(address, identity)
-    selectedAddressBond.changed(uuid.v1())
+    selectedAddressBond.changed(address)
 }
 const deprecateSecretStore = (ssKeys) => {
     console.log('Identity service: Migrating secretStore identities')
@@ -129,8 +129,9 @@ const init = () => {
 
     // add seeds to PolkadotJS keyring
     keyring.add(getAll().map(x => x.uri))
+    selectedAddressBond.changed((getSelected() || {}).address)
 }
-setTimeout(init, 2000)
+setTimeout(init, 2000) // 2 seconds delay for secretStore to load
 
 export default {
     addFromUri,

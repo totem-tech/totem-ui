@@ -17,7 +17,7 @@ import chatClient from './services/chatClient'
 import identity from './services/identity'
 import language, { translated } from './services/language'
 import modal, { ModalsConainer } from './services/modal'
-import NotificationList from './services/notification'
+import NotificationList from './modules/notification/List'
 import partner from './services/partner'
 import project from './services/project'
 import queue, { resumeQueue } from './services/queue'
@@ -25,14 +25,16 @@ import sidebar, { sidebarItems, sidebarStateBond } from './services/sidebar'
 import storage from './services/storage'
 import timeKeeping from './services/timeKeeping'
 import toast, { ToastsContainer } from './services/toast'
-import { getLayout, gridColumnsBond, layoutBond } from './services/window'
+import windw from './services/window'
 // Utils
 import DataStorage from './utils/DataStorage'
 import naclHelper from './utils/naclHelper'
+import polkadotHelper from './utils/polkadotHelper'
 // Images
 import TotemButtonLogo from './assets/totem-button-grey.png'
 import PlaceholderImage from './assets/totem-placeholder.png'
 import ChatBar from './modules/chat/ChatBar'
+import { className } from './utils/utils'
 
 const [texts] = translated({
 	failedMsg: 'Connection failed! Please check your internet connection.',
@@ -43,12 +45,12 @@ export class App extends ReactiveComponent {
 	constructor() {
 		super([], {
 			ensureRuntime: runtimeUp,
-			isMobile: layoutBond.map(layout => layout === 'mobile'),
-			numCol: gridColumnsBond,
+			isMobile: windw.layoutBond.map(layout => layout === 'mobile'),
+			numCol: windw.gridColumnsBond,
 		})
 		this.state = {
 			sidebarCollapsed: false,
-			sidebarVisible: getLayout() !== 'mobile',
+			sidebarVisible: windw.getLayout() !== 'mobile',
 			status: {}
 		}
 
@@ -61,7 +63,8 @@ export class App extends ReactiveComponent {
 
 		// For debug only.
 		window.utils = {
-			naclHelper
+			naclHelper,
+			polkadotHelper,
 		}
 		window.runtime = runtime
 		window.secretStore = secretStore
@@ -85,7 +88,11 @@ export class App extends ReactiveComponent {
 			storage,
 			timeKeeping,
 			toast,
+			window: windw,
 		}
+
+		blockchain.getConnection().then(({ api }) => window.api = api)
+		window.queryBlockchain = async (func, args) => await blockchain.query(func, args, true)
 	}
 
 	// unused
@@ -109,13 +116,6 @@ export class App extends ReactiveComponent {
 		const { isMobile, numCol } = this.state
 		const logoSrc = TotemButtonLogo
 		const { collapsed, visible } = sidebarStateBond._value
-		const classNames = [
-			collapsed ? 'sidebar-collapsed' : '',
-			isMobile ? 'mobile' : 'desktop',
-			visible ? 'sidebar-visible' : '',
-			'wrapper',
-		].filter(Boolean).join(' ')
-
 		if (!this.resumed) {
 			// resume any incomplete queued tasks 
 			this.resumed = true
@@ -123,7 +123,13 @@ export class App extends ReactiveComponent {
 		}
 
 		return (
-			<div className={classNames}>
+			<div className={className({
+				wrapper: true,
+				mobile: isMobile,
+				desktop: !isMobile,
+				'sidebar-collapsed': collapsed,
+				'sidebar-visible': visible,
+			})}>
 				<ModalsConainer />
 				<ToastsContainer isMobile={isMobile} />
 				<ErrorBoundary>
@@ -131,7 +137,7 @@ export class App extends ReactiveComponent {
 				</ErrorBoundary>
 
 				<ErrorBoundary>
-					<NotificationList {...{ isMobile }} />
+					<NotificationList inline={false} />
 				</ErrorBoundary>
 
 				<Sidebar.Pushable style={styles.pushable}>
@@ -185,3 +191,5 @@ const styles = {
 	},
 
 }
+
+

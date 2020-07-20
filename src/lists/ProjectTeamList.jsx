@@ -9,7 +9,7 @@ import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
 import identities, { selectedAddressBond } from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
-import { handleTKInvitation } from '../services/notification'
+import { handleTKInvitation } from '../modules/notification/notification'
 import PartnerForm from '../forms/Partner'
 import timeKeeping, { getProjectWorkers } from '../services/timeKeeping'
 

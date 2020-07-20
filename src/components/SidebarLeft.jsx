@@ -102,6 +102,7 @@ export class MainContentItem extends Component {
 				key={name}
 				style={styles.spaceBelow}
 				ref={elementRef}
+				name={name}
 			>
 				<ContentSegment {...item} onClose={name => setActive(name, false)} />
 			</div>

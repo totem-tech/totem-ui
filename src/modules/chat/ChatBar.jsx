@@ -1,28 +1,31 @@
 import React, { useState, useEffect } from 'react'
 import Inbox from './Inbox'
 import InboxList from './InboxList'
-import { getInboxKey, openInboxBond, visibleBond } from './chat'
+import { openInboxBond, visibleBond } from './chat'
 import './style.css'
 
 export default function ChatBar({ inverted = false }) {
     const [visible, setVisible] = useState(visibleBond._value)
-    const [hiding, setHiding] = useState(false)
+    const [inboxKey, setInboxKey] = useState(openInboxBond._value)
+    const receiverIds = (inboxKey || '').split(',')
+    const container = 'chat-container'
     const className = [
-        'chat-container',
+        container,
         inverted ? 'inverted' : '',
-        hiding ? 'hiding' : '',
     ].filter(Boolean).join(' ')
 
 
     useEffect(() => {
         let mounted = true
+        const tieIdOpenInbox = openInboxBond.tie(key => mounted && setInboxKey(key))
         const tieId = visibleBond.tie(show => {
             if (!mounted) return
-            setHiding(!show) // animate
+            document.querySelector('.' + container)
+                .classList[show ? 'remove' : 'add']('hiding')
+
             setTimeout(() => {
                 setVisible(show)
-                document
-                    .getElementById('app')
+                document.getElementById('app')
                     .classList[show ? 'add' : 'remove']('chat-visible')
             }, 350)
         })
@@ -30,42 +33,23 @@ export default function ChatBar({ inverted = false }) {
         return () => {
             mounted = false
             visibleBond.untie(tieId)
+            openInboxBond.untie(tieIdOpenInbox)
         }
     }, [])
 
     return (
         <div className={className}>
-            <ChatContents {...{ hiding, inverted, visible }} />
-        </div>
-    )
-}
-
-const ChatContents = ({ hiding, inverted, visible }) => {
-    const [receiverIds, setReceiverIds] = useState((openInboxBond._value || '').split(','))
-    const inboxKey = getInboxKey(receiverIds)
-
-    useEffect(() => {
-        let mounted = true
-        const tieIdOpenInbox = openInboxBond.tie(key => mounted && setReceiverIds((key || '').split(',')))
-        return () => {
-            mounted = false
-            openInboxBond.untie(tieIdOpenInbox)
-        }
-    }, [])
-
-    return !visible ? '' : (
-        <div className='chat-contents'>
-            <InboxList {...{
-                inboxKey,
-                inverted,
-            }} />
-            {receiverIds.length > 0 && (
-                <Inbox {...{
-                    hiding,
-                    inboxKey,
-                    key: inboxKey,
-                    receiverIds,
-                }} />
+            {!visible ? '' : (
+                <div className='chat-contents'>
+                    <InboxList {...{ inverted, inboxKey }} />
+                    {receiverIds.length > 0 && (
+                        <Inbox {...{
+                            inboxKey,
+                            key: inboxKey,
+                            receiverIds,
+                        }} />
+                    )}
+                </div>
             )}
         </div>
     )

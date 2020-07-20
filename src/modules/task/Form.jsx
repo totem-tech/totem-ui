@@ -1,78 +1,104 @@
 import React, { Component } from 'react'
+import { Button } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-import FormBuilder, { findInput } from '../../components/FormBuilder'
+import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import Currency from '../../components/Currency'
-import { arrSort, deferred } from '../../utils/utils'
+import { arrSort, deferred, isObj, isValidNumber, deferredPromise, objClean, generateHash } from '../../utils/utils'
+import PartnerForm from '../../forms/Partner'
 // services
-import { getConnection } from '../../services/blockchain'
+import { getConnection, getCurrentBlock, hashTypes } from '../../services/blockchain'
 import {
     convertTo,
     currencyDefault,
     getCurrencies,
     getSelected as getSelectedCurrency
 } from '../../services/currency'
-import { bond, get as getIdentity, getSelected } from '../../services/identity'
+import { bond, getSelected } from '../../services/identity'
 import { translated } from '../../services/language'
 import partners from '../../services/partner'
+import { BLOCK_DURATION_SECONDS } from '../../utils/time'
+import { createOrUpdateTask, PRODUCT_HASH_LABOUR } from './task'
+import { addToQueue } from '../../services/queue'
+import { showForm } from '../../services/modal'
 
 const [texts, textsCap] = translated({
+    addedToQueue: 'request added to queue',
     advancedLabel: 'advanced options',
     amountRequired: 'amount required',
     assignee: 'select a partner to assign task',
+    assigneeErrUserIdRequired: 'partner does not have an User ID associated.',
+    assigneeErrOwnIdentitySelected: 'you cannot assign a task to your currently selected identity',
     assigneePlaceholder: 'select from partner list',
     assignToPartner: 'assign to a partner',
-    assigneeTypeConflict: 'task relationship type and parter type must be the same',
     balance: 'balance',
     bountyLabel: 'bounty amount',
     bountyPlaceholder: 'enter bounty amount',
-    business: 'business',
-    buyLabel: 'task type',
-    buyOptionLabelBuy: 'buying',
-    buyOptionLabelSell: 'selling',
+    close: 'close',
     conversionErrorHeader: 'currency conversion failed',
     currency: 'currency',
+    deadlineLabel: 'deadline',
+    deadlineMinErrorMsg: 'deadline must be at least 48 hours from now',
+    dueDateLabel: 'due date',
+    dueDateMinErrorMsg: 'due date must be equal or after deadline',
     description: 'detailed description',
     descriptionPlaceholder: 'enter more details about the task',
+    featureNotImplemented: 'This feature is yet to be implemented. Please stay tuned.',
     formHeader: 'create a new task',
+    formHeaderUpdate: 'update task',
     goods: 'goods',
     insufficientBalance: 'insufficient balance',
+    invalidDate: 'invalid date',
     inventory: 'inventory',
     marketplace: 'marketplace',
     myself: 'myself',
-    personal: 'personal',
+    orderTypeLabel: 'order type',
     publishToMarketPlace: 'publish to marketplace',
     services: 'services',
+    submitFailed: 'failed to create task',
+    submitSuccess: 'task created successfully',
     tags: 'categorise with tags',
     tagsNoResultMsg: 'type tag and press ENTER to add',
-    taskType: 'task relationship',
     title: 'task title',
     titlePlaceholder: 'enter a very short task description',
-    orderTypeLabel: 'order type',
+    updatePartner: 'update partner',
 }, true)
-const estimatedTxFee = 160
+const BONSAI_KEYS = [ // keys used to generate BONSAI token hash
+    'currency',
+    'description',
+    'published',
+    'tags',
+    'title',
+]
+const estimatedTxFee = 140
+const deadlineMinMS = 48 * 60 * 60 * 1000
+const strToDate = ymd => new Date(`${ymd}T23:59:59`)
 
-export default class Form extends Component {
+export default class TaskForm extends Component {
     constructor(props) {
         super(props)
 
+        const { values } = this.props
+        this.amountXTX = 0
         // list of input names
         this.names = Object.freeze({
             advancedGroup: 'advancedGroup',
             assignee: 'assignee',
             bounty: 'bounty',
             bountyGroup: 'bountyGroup',
-            business: 'business',
-            buy: 'buy',
             currency: 'currency',
+            deadline: 'deadline',
+            dueDate: 'dueDate',
             description: 'description',
             orderType: 'orderType',
-            publish: 'publish',
+            publish: 'published',
+            isSell: 'isSell',
             tags: 'tags',
             title: 'title',
         })
 
         this.state = {
+            header: !values || !values.hash ? textsCap.formHeader : textsCap.formHeaderUpdate,
             onChange: (_, values) => this.setState({ values }),
             onSubmit: this.handleSubmit,
             values: {},
@@ -104,7 +130,7 @@ export default class Form extends Component {
                             required: true,
                             type: 'number',
                             useInput: true,
-                            value: 0,
+                            value: '',
                             width: 12,
                         },
                         {
@@ -137,11 +163,13 @@ export default class Form extends Component {
                     radio: true,
                     required: true,
                     type: 'checkbox-group',
+                    // remove validation once implemented
+                    validate: (_, { value: publish }) => publish === 'yes' && textsCap.featureNotImplemented,
                     value: 'no',
                 },
                 {
                     bond: new Bond(),
-                    hidden: (values, i) => values[this.names.publish] === 'yes',
+                    hidden: values => values[this.names.publish] === 'yes',
                     label: textsCap.assignee,
                     name: this.names.assignee,
                     options: [],
@@ -150,16 +178,74 @@ export default class Form extends Component {
                     selection: true,
                     search: true,
                     type: 'dropdown',
-                    validate: (_, { value }) => {
-                        if (getIdentity(value)) return
-                        const { values } = this.state
-                        const isBusiness = values[this.names.business] === 'yes'
-                        const assigneeIsBusiness = partners.get(value).type === 'business'
-                        return isBusiness === assigneeIsBusiness ? null : textsCap.assigneeTypeConflict
-                    }
+                    validate: (_, { value: assignee }) => {
+                        if (!assignee) return
+                        const { address } = getSelected() || {}
+                        if (assignee === address) return textsCap.assigneeErrOwnIdentitySelected
+
+                        const partner = partners.get(assignee) || {}
+                        const { inputs } = this.state
+                        const assigneeIn = findInput(inputs, this.names.assignee)
+                        return partner.userId ? null : (
+                            <div>
+                                {textsCap.assigneeErrUserIdRequired}
+                                <div>
+                                    <Button {...{
+                                        content: textsCap.updatePartner,
+                                        onClick: e => {
+                                            e.preventDefault() // prevents form being submitted
+                                            showForm(PartnerForm, {
+                                                values: partner,
+                                                onSubmit: (success, { userId }) => {
+                                                    // partner wasn't updated with an user Id
+                                                    if (!success || !userId) return
+                                                    // force assignee to be re-validated
+                                                    assigneeIn.bond.changed('')
+                                                    assigneeIn.bond.changed(assignee)
+                                                }
+                                            })
+                                        },
+                                    }} />
+                                </div>
+                            </div>
+                        )
+                    },
                 },
-                // Advanced section (Form type "group" with accordion)
                 {
+                    label: textsCap.deadlineLabel,
+                    name: this.names.deadline,
+                    onChange: (_, values) => {
+                        if (!values[this.names.dueDate]) return
+                        // reset due date
+                        findInput(this.state.inputs, this.names.dueDate).bond.changed('')
+                    },
+                    required: true,
+                    type: 'date',
+                    validate: (_, { value: deadline }) => {
+                        if (!deadline) return textsCap.invalidDate
+                        const diffMS = strToDate(deadline) - new Date()
+                        return diffMS < deadlineMinMS && textsCap.deadlineMinErrorMsg
+                    },
+                    value: '',
+                },
+                {
+                    bond: new Bond(),
+                    hidden: values => !values[this.names.deadline], // hide if deadline is not selected
+                    label: textsCap.dueDateLabel,
+                    name: this.names.dueDate,
+                    required: true,
+                    type: 'date',
+                    validate: (_, { value: dueDate }) => {
+                        if (!dueDate) return textsCap.invalidDate
+                        const { values } = this.state
+                        const deadline = values[this.names.deadline]
+                        const diffMS = strToDate(dueDate) - strToDate(deadline)
+                        return diffMS < 0 && textsCap.dueDateMinErrorMsg
+                    },
+                    value: '',
+                },
+                {
+                    // Advanced section (Form type "group" with accordion)
                     accordion: {
                         collapsed: true,
                         styled: true,
@@ -172,32 +258,10 @@ export default class Form extends Component {
                     // styleContainer: {width: '100%'},
                     grouped: true,
                     inputs: [
-                        // Everything is now assumed to be B2B for accounting purposes
-                        // {
-                        //     bond: new Bond(),
-                        //     inline: true,
-                        //     label: textsCap.taskType,
-                        //     name: this.names.business,
-                        //     options: [
-                        //         { label: textsCap.business, value: 'yes' },
-                        //         { label: textsCap.personal, value: 'no' },
-                        //     ],
-                        //     radio: true,
-                        //     required: true,
-                        //     type: 'checkbox-group',
-                        // },
                         {
-                            hidden: true,  // only show if this is a purchase order
-                            inline: true,
-                            label: textsCap.buyLabel,
-                            name: this.names.buy,
-                            options: [
-                                { label: textsCap.buyOptionLabelBuy, value: 'yes' },
-                                { label: textsCap.buyOptionLabelSell, value: 'no' },
-                            ],
-                            radio: true,
-                            type: 'checkbox-group',
-                            value: 'yes',
+                            name: this.names.isSell,
+                            type: 'hidden',
+                            value: 0,// buy order
                         },
                         {
                             hidden: true, // only show if this is a purchase order
@@ -205,13 +269,13 @@ export default class Form extends Component {
                             label: textsCap.orderTypeLabel,
                             name: this.names.orderType,
                             options: [
-                                { label: textsCap.goods, value: 'goods' },
-                                { label: textsCap.services, value: 'services' },
-                                { label: textsCap.inventory, value: 'inventory' },
+                                { label: textsCap.services, value: 0 },
+                                { label: textsCap.inventory, value: 1 },
+                                { label: textsCap.goods, value: 2 }, // assets
                             ],
                             radio: true,
                             type: 'checkbox-group',
-                            value: 'services',
+                            value: 0, // default: service
                         },
                         {
                             label: textsCap.description,
@@ -251,36 +315,26 @@ export default class Form extends Component {
                 },
             ]
         }
+
+        isObj(values) && fillValues(inputs, values)
+
         this.originalSetState = this.setState
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
     componentWillMount() {
         this._mounted = true
-        // connect to blockchain beforehand to speed up currency convertion
-        getConnection()
-
         this.bond = Bond.all([bond, partners.bond])
         this.tieId = this.bond.tie(() => {
             const { inputs } = this.state
             const assigneeIn = findInput(inputs, this.names.assignee)
-            const selected = getSelected()
             const options = Array.from(partners.getAll())
-                .map(([address, { name, userId }]) => !userId ? null : {
+                .map(([address, { name, userId }]) => ({
                     description: userId,
                     key: address,
                     text: name,
                     value: address,
-                })
-                .filter(Boolean)
-            if (!options.find(x => x.address === selected.address)) {
-                options.push(({
-                    description: texts.myself,
-                    key: selected.address,
-                    text: selected.name,
-                    value: selected.address,
                 }))
-            }
 
             assigneeIn.options = arrSort(options, 'text')
             this.setState({ inputs })
@@ -299,34 +353,64 @@ export default class Form extends Component {
             currencyIn.search = ['text', 'name']
             this.setState({ inputs })
         })
-
-        // force balance check on-load
-        findInput(this.state.inputs, this.names.bounty).bond.changed(0)
-
     }
 
     componentWillUnmount() {
         this._mounted = false
     }
 
-    handleBountyChange = deferred(async (_, values) => {
+    getBalance = (() => {
+        let promises = []
+        const then = resolver => function () {
+            const args = arguments
+            promises.shift() // remove the first promise
+            !promises.length && resolver.apply(null, args)
+        }
+        return address => new Promise((resolve, reject) => {
+            const promise = api.query.balances.freeBalance(address)
+            promise.then(then(resolve), then(reject))
+            promises.push(promise)
+        })
+    })()
+
+    // check if use has enough balance for the transaction including pre-funding amount (bounty)
+    handleBountyChange = deferred((_, values) => {
+        this.bountyPromise = this.bountyPromise || deferredPromise()
+        // turn publish value into binary
+        values[this.names.publish] = values[this.names.publish] === 'yes' ? 1 : 0
         const { inputs } = this.state
-        const bounty = values[this.names.bounty]
-        const currency = values[this.names.currency]
         const bountyGrpIn = findInput(inputs, this.names.bountyGroup)
         const bountyIn = findInput(inputs, this.names.bounty)
+        const bounty = values[this.names.bounty]
+        const valid = isValidNumber(bounty)
+        const currency = values[this.names.currency]
         const currencySelected = getSelectedCurrency()
         const { address } = getSelected()
-        bountyIn.loading = true
-        this.setState({ inputs, submitDisabled: true })
         const getCurrencyEl = (prefix, suffix, value, unit, unitDisplayed) => (
-            <Currency {... { prefix, suffix, value, unit, unitDisplayed }} />
+            <Currency {... { decimalPlaces: 4, prefix, suffix, value, unit, unitDisplayed }} />
         )
+        bountyIn.loading = valid
+        bountyIn.invalid = false
+        bountyGrpIn.message = null
+        this.setState({ inputs, submitDisabled: valid })
+        if (!valid) return
 
-        try {
-            this.amountXTX = bounty === 0 ? 0 : Math.ceil(await convertTo(bounty, currency, currencyDefault))
-            const { api } = await getConnection()
-            const balanceXTX = parseInt(await api.query.balances.freeBalance(address))
+        const promise = new Promise(async (resolve, reject) => {
+            try {
+                const result = []
+                // no need to convert currency if amount is zero or XTX is the selected currency
+                const requireConversion = bounty && currency !== currencyDefault
+                const { api } = await getConnection()
+                result[0] = Math.ceil(
+                    !requireConversion ? bounty : await convertTo(bounty, currency, currencyDefault)
+                )
+                result[1] = parseInt(await api.query.balances.freeBalance(address))
+                resolve(result)
+            } catch (e) { reject(e) }
+        })
+        const thenOk = result => {
+            this.amountXTX = result[0]
+            const balanceXTX = result[1]
             const amountTotalXTX = this.amountXTX + estimatedTxFee
             const gotBalance = balanceXTX - estimatedTxFee - this.amountXTX >= 0
             bountyIn.invalid = !gotBalance
@@ -356,36 +440,87 @@ export default class Form extends Component {
                 header: !gotBalance ? textsCap.insufficientBalance : undefined,
                 status: gotBalance ? 'success' : 'error',
             }
-        } catch (e) {
+            bountyIn.loading = false
+            this.setState({ inputs, submitDisabled: false })
+        }
+        const thenErr = err => {
             bountyIn.invalid = true
             bountyGrpIn.message = {
-                content: e,
+                content: `${err}`,
                 header: textsCap.conversionErrorHeader,
                 status: 'error'
             }
         }
-        bountyIn.loading = false
-        this.setState({ inputs, submitDisabled: false })
+        this.bountyPromise(promise).then(thenOk)
+            .catch(thenErr)
+            .finally(() => {
+                bountyIn.loading = false
+                this.setState({ inputs, submitDisabled: false })
+            })
     }, 300)
 
     handlePublishChange = (_, values) => {
         const { inputs } = this.state
-        const publish = values[this.names.publish] === 'yes'
         const assigneeIn = findInput(inputs, this.names.assignee)
+        const publish = values[this.names.publish] === 'yes'
         assigneeIn.hidden = publish
         this.setState({ inputs })
     }
 
-    handleSubmit = (_, values) => {
-        console.log({ values })
+    handleSubmit = async (_, values) => {
+        const { id } = this.props.values || {}
+        const { address } = getSelected()
+        const currentBlock = await getCurrentBlock()
+        const deadlineMS = strToDate(values[this.names.deadline]) - new Date()
+        const dueDateMS = strToDate(values[this.names.dueDate]) - new Date()
+        const deadlineBlocks = Math.ceil(deadlineMS / 1000 / BLOCK_DURATION_SECONDS) + currentBlock
+        const dueDateBlocks = Math.ceil(dueDateMS / 1000 / BLOCK_DURATION_SECONDS) + currentBlock
+        const assignee = values[this.names.assignee]
+        const orderClosed = !!assignee ? 1 : 0
+        const description = values[this.names.title]
+        const title = !id ? textsCap.formHeader : textsCap.formHeaderUpdate
+        const tokenData = hashTypes.taskHash + address + JSON.stringify(objClean(values, BONSAI_KEYS))
+        const token = generateHash(tokenData)
+        const then = (success, [err]) => this.setState({
+            closeText: success ? textsCap.close : undefined,
+            message: {
+                content: !success && `${err}`, // error can be string or Error object.
+                header: success ? textsCap.submitSuccess : textsCap.submitFailed,
+                showIcon: true,
+                status: success ? 'success' : 'error',
+            },
+            submitDisabled: false,
+            success,
+        })
+        this.setState({
+            closeText: textsCap.close,
+            submitDisabled: true,
+            message: {
+                header: textsCap.addedToQueue,
+                showIcon: true,
+                status: 'loading',
+            },
+        })
+        const queueProps = createOrUpdateTask.apply(null, [
+            address,
+            address,
+            assignee || address,
+            values[this.names.isSell],
+            this.amountXTX,
+            orderClosed,
+            values[this.names.orderType],
+            deadlineBlocks,
+            dueDateBlocks,
+            [[PRODUCT_HASH_LABOUR, this.amountXTX, 1, 1]], // single item order
+            id,
+            token,
+            { description, then, title },
+        ])
+        addToQueue(queueProps)
     }
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
-Form.propTypes = {
+TaskForm.propTypes = {
     values: PropTypes.object,
-}
-Form.defaultProps = {
-    header: textsCap.formHeader,
-    subheader: '',
 }

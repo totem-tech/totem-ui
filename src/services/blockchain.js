@@ -4,7 +4,7 @@ import { hashToStr } from '../utils/convert'
 import { setNetworkDefault, denominationInfo } from 'oo7-substrate'
 import { connect } from '../utils/polkadotHelper'
 import types from '../utils/totem-polkadot-js-types'
-import { isObj } from '../utils/utils'
+import { isObj, isFn, isArr, isDefined } from '../utils/utils'
 
 // oo7-substrate: register custom types
 Object.keys(types).forEach(key => addCodecTransform(key, types[key]))
@@ -15,8 +15,14 @@ let config = {
     unit: 'Transactions',
     ticker: 'XTX'
 }
-const connection = { api: null, provider: null }
-let connectionPromsie
+let connection = {
+    api: null,
+    keyring: null,
+    isConnected: false,
+    nodeUrl: null,
+    provider: null,
+}
+let connectionPromsie = null
 export const denominations = Object.freeze({
     Ytx: 24,
     Ztx: 21,
@@ -33,6 +39,7 @@ export const hashTypes = {
     /// 2000
     projectHash: 3000,
     timeRecordHash: 4000,
+    taskHash: 5000,
     /// 5000
     /// 6000
     /// 7000
@@ -44,8 +51,8 @@ export const nodes = [
 ]
 
 export const getConfig = () => config
-export const getConnection = async () => {
-    if (connection.api && connection.api._isConnected.value) return connection
+export const getConnection = async (create = true) => {
+    if (connection.api && connection.api._isConnected.value || !create) return connection
     if (connectionPromsie) {
         await connectionPromsie
         return connection
@@ -53,16 +60,77 @@ export const getConnection = async () => {
     const nodeUrl = nodes[0]
     console.log('Polkadot: connecting to', nodeUrl)
     connectionPromsie = connect(nodeUrl, config.types, true)
-    const { api, keyring, provider } = await connectionPromsie
-    console.log('Connected using Polkadot', { api, provider })
-    connection.api = api
-    connection.provider = provider
-    connection.keyring = keyring
-    connectionPromsie = null
+    try {
+        const { api, keyring, provider } = await connectionPromsie
+        console.log('Connected using Polkadot', { api, provider })
+        connection = {
+            api,
+            provider,
+            keyring,
+            nodeUrl,
+            isConnected: true,
+        }
+        connectionPromsie = null
+
+        // none of these work!!!!
+        // provider.websocket.addEventListener('disconnected', (err) => console.log('disconnected', err))
+        // provider.websocket.addEventListener('error', (err) => console.log('error', err))
+        // provider.websocket.on('disconnected', (err) => console.log('disconnected', err))
+        // provider.websocket.on('disonnect', (err) => console.log('disonnect', err))
+        // provider.websocket.on('error', (err) => console.log('error', err))
+        // provider.websocket.on('connect_timeout', (err) => console.log('connect_timeout', err))
+        // provider.websocket.on('reconnect', (err) => console.log('reconnect', err))
+        // provider.websocket.on('connect', (err) => console.log('connect', err))
+    } catch (err) {
+        // make sure to reset when rejected
+        connectionPromsie = null
+        connection.isConnected = false
+        throw err
+    }
     return connection
 }
+
+// get current block number
+export const getCurrentBlock = async () => {
+    const { api } = await getConnection()
+    const res = await api.rpc.chain.getBlock()
+    return parseInt(res.block.get('header').get('number'))
+}
+
 // getTypes returns a promise with 
 export const getTypes = () => new Promise(resolve => resolve(types))
+
+// query makes API calls using PolkadotJS. All values returned will be sanitised.
+//
+// Params:
+// @func string: path to the PolkadotJS API function as a string. Eg: 'api.rpc.system.health'
+// @args    array: arguments to be supplied when invoking the API function.
+//            To subscribe to the API supply a callback function as the last item in the array.
+// @print   boolean: if true, will print the result of the query
+//
+// Returns  function/any: If callback is supplied in @args, will return the unsubscribe function.
+//                      Otherwise, value of the query will be returned
+export const query = async (func, args = [], print = false) => {
+    // **** keep { api } **** It is expected to be used with eval()
+    const { api } = await getConnection()
+    if (!func || func === 'api') return api
+    const fn = eval(func)
+    if (!fn) throw new Error('Invalid API function', func)
+    args = isArr(args) || !isDefined(args) ? args : [args]
+    const sanitise = x => JSON.parse(JSON.stringify(x)) // get rid of jargon
+    const cb = args[args.length - 1]
+    const isSubscribe = isFn(cb) && isFn(fn)
+    if (isSubscribe) {
+        args[args.length - 1] = value => {
+            value = sanitise(value)
+            print && console.log(func, value)
+            cb.call(null, value)
+        }
+    }
+    const result = isFn(fn) ? await fn.apply(null, args) : fn
+    !isSubscribe && print && console.log(JSON.stringify(result, null, 4))
+    return isSubscribe ? result : sanitise(result)
+}
 
 // Replace configs
 export const setConfig = newConfig => {
@@ -105,7 +173,7 @@ export const tasks = {
     // @queueProps  string: provide task specific properties (eg: description, title, then, next...)
     registerKey: (address, signPubKey, data, signature, queueProps = {}) => ({
         ...queueProps,
-        address: address,
+        address,
         func: 'api.tx.keyregistry.registerKeys',
         type: TX_STORAGE,
         args: [
@@ -122,9 +190,11 @@ export default {
     denominations,
     getConfig,
     getConnection,
+    getCurrentBlock,
     getTypes,
     hashTypes,
     nodes,
+    query,
     setConfig,
     tasks,
 }

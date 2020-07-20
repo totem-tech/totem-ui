@@ -3,17 +3,22 @@ import { ReactiveComponent } from 'oo7-react'
 import { Checkbox, Button, Label } from 'semantic-ui-react'
 import { textEllipsis } from '../utils/utils'
 import DataTable from '../components/DataTable'
+// services
+import { createInbox } from '../modules/chat/chat'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import addressbook, { getAddressName } from '../services/partner'
 import { layoutBond } from '../services/window'
+// forms
 import CompanyForm from '../forms/Company'
 import IdentityRequestForm from '../forms/IdentityRequest'
 import PartnerForm from '../forms/Partner'
 import IntroduceUserForm from '../forms/IntroduceUser'
+import { getUser } from '../services/chatClient'
 
-const [words, wordsCap] = translated({
+const [_, textsCap] = translated({
 	add: 'add',
+	chat: 'chat',
 	delete: 'delete',
 	edit: 'edit',
 	public: 'public',
@@ -21,17 +26,15 @@ const [words, wordsCap] = translated({
 	tags: 'tags',
 	update: 'update',
 	usage: 'usage',
+	introducePartner: 'introduce a partner',
+	columnPublicTitle1: 'a public company cannot be changed to private.',
+	columnPublicTitle2: 'click to add a company with this identity to the public database',
+	noUserIdConfirmHeader: 'partner User ID required',
+	noUserIdConfirmMsg: 'selected Partner does not include a User ID. Would you like to update the Partner record?',
+	partnerName: 'partner name',
+	removePartner: 'remove partner',
+	usedBy: 'used by',
 }, true)
-const [texts] = translated({
-	introducePartner: 'Introduce a Partner',
-	columnPublicTitle1: 'A public company cannot be changed to private.',
-	columnPublicTitle2: 'Click to add a company with this identity to the public database',
-	partnerName: 'Partner Name',
-	partnerNoUserIdConfirmHeader: 'Partner User ID required',
-	partnerNoUserIdConfirmMsg: 'Selected Partner does not include a User ID. Would you like to update the Partner record?',
-	removePartner: 'Remove Partner?',
-	usedBy: 'Used by',
-})
 
 export default class PartnerList extends ReactiveComponent {
 	constructor(props) {
@@ -40,17 +43,17 @@ export default class PartnerList extends ReactiveComponent {
 		this.state = {
 			listProps: {
 				columns: [
-					{ key: '_name', title: texts.partnerName },
-					{ collapsing: true, key: 'type', title: wordsCap.usage },
-					{ key: '_associatedIdentity', title: texts.usedBy, style: { maxWidth: 200 } },
+					{ key: '_name', title: textsCap.partnerName },
+					{ collapsing: true, key: 'type', title: textsCap.usage },
+					{ key: '_associatedIdentity', title: textsCap.usedBy, style: { maxWidth: 200 } },
 					{
 						key: '_tags',
 						draggable: false, // individual tags are draggable
-						title: wordsCap.tags
+						title: textsCap.tags
 					},
 					{
 						content: ({ address, name, isPublic }) => (
-							<div title={isPublic ? texts.columnPublicTitle1 : texts.columnPublicTitle2}>
+							<div title={isPublic ? textsCap.columnPublicTitle1 : textsCap.columnPublicTitle2}>
 								<Checkbox
 									checked={isPublic}
 									toggle
@@ -63,13 +66,13 @@ export default class PartnerList extends ReactiveComponent {
 						),
 						collapsing: true,
 						textAlign: 'center',
-						title: wordsCap.public,
+						title: textsCap.public,
 					},
 					{
 						collapsing: true,
 						content: this.getActions,
 						draggable: false,
-						title: wordsCap.edit,
+						title: textsCap.edit,
 					},
 				],
 				data: new Map(),
@@ -90,46 +93,51 @@ export default class PartnerList extends ReactiveComponent {
 
 	getActions = partner => {
 		const { address, name, userId } = partner
+		const { id: ownId } = getUser() || {}
 		const updatePartnerCb = onSubmit => () => showForm(PartnerForm, {
 			onSubmit,
 			size: 'tiny',
 			values: partner,
 		})
-		return (
-			<React.Fragment>
-				<Button
-					icon='handshake'
-					onClick={() => {
-						const introduce = userId => showForm(IntroduceUserForm, { values: { userId } })
-						if (!!userId) return introduce(userId)
+		return [
+			{
+				icon: 'handshake',
+				onClick: () => {
+					const introduce = userId => showForm(IntroduceUserForm, { values: { userId } })
+					if (!!userId) return introduce(userId)
 
-						confirm({
-							content: texts.partnerNoUserIdConfirmMsg,
-							header: texts.partnerNoUserIdConfirmHeader,
-							onConfirm: updatePartnerCb((success, { userId }) => success && userId && introduce(userId)),
-							size: 'tiny',
-						})
-					}}
-					title={texts.introducePartner}
-				/>
-				<Button
-					icon='pencil'
-					onClick={updatePartnerCb()}
-					title={wordsCap.update}
-				/>
-				<Button
-					icon='trash'
-					onClick={() => confirm({
-						confirmButton: <Button negative content={wordsCap.delete} />,
-						content: <p>{texts.partnerName}: <b>{name}</b></p>,
-						header: texts.removePartner,
-						onConfirm: () => addressbook.remove(address),
-						size: 'mini',
-					})}
-					title={wordsCap.delete}
-				/>
-			</React.Fragment>
-		)
+					confirm({
+						content: textsCap.partnerNoUserIdConfirmMsg,
+						header: textsCap.partnerNoUserIdConfirmHeader,
+						onConfirm: updatePartnerCb((success, { userId }) => success && userId && introduce(userId)),
+						size: 'tiny',
+					})
+				},
+				title: textsCap.introducePartner
+			},
+			{
+				icon: 'pencil',
+				onClick: updatePartnerCb(),
+				title: textsCap.update,
+			},
+			{
+				icon: 'trash',
+				onClick: () => confirm({
+					confirmButton: <Button negative content={textsCap.delete} />,
+					content: <p>{textsCap.partnerName}: <b>{name}</b></p>,
+					header: `${textsCap.removePartner}?`,
+					onConfirm: () => addressbook.remove(address),
+					size: 'mini',
+				}),
+				title: textsCap.delete,
+			},
+			{
+				disabled: !userId || userId === ownId,
+				icon: 'chat',
+				onClick: () => createInbox([userId], null, true),
+				title: textsCap.chat,
+			},
+		].filter(Boolean).map(props => <Button key={props.title} {...props} />)
 	}
 
 	getPartners() {
@@ -169,12 +177,12 @@ export default class PartnerList extends ReactiveComponent {
 			<Button.Group fluid={isMobile} key='0'>
 				<Button
 					icon='plus'
-					content={wordsCap.add}
+					content={textsCap.add}
 					onClick={() => showForm(PartnerForm)}
 				/>
 				<Button.Or />
 				<Button
-					content={wordsCap.request}
+					content={textsCap.request}
 					onClick={() => showForm(IdentityRequestForm)}
 				/>
 			</Button.Group>

@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import FormInput from './FormInput'
-import { arrUnique, isFn, objWithoutKeys, textCapitalize, arrSort } from '../utils/utils'
+import { arrUnique, isFn, objWithoutKeys, textCapitalize, arrSort, isStr } from '../utils/utils'
 import { getChatUserIds } from '../modules/chat/chat'
 import client, { getUser } from '../services/chatClient'
 import { translated } from '../services/language'
@@ -38,9 +38,9 @@ const validIcon = { color: 'green', name: 'check circle', size: 'large' }
 const userIdRegex = /^[a-z][a-z0-9]+$/
 // removes surrounding whitespaces, removes '@' at the beginning and transforms to lowercase
 export const getRawUserID = userId => {
+    if (!isStr(userId)) return 'invalid user id'
     userId = userId.trim()
-    if (!userId.startsWith('@')) return userId
-    return userId.split('').slice(1).join('').toLowerCase()
+    return userId.replace('@', '').toLowerCase()
 }
 
 export default class UserIdInput extends Component {

@@ -1,0 +1,43 @@
+.notification-list:not(.inline) {
+    max-height: calc(100% - 61px);
+    overflow: auto;
+    position: fixed;
+    right: 0px;
+    top: 61px;
+    width: 400px;
+    z-index: 2;
+}
+#app > .mobile .notification-list:not(.inline) {
+    bottom: 47px;
+    max-height: calc(100% - 48px);
+    width: 100%;
+}
+#app:not(.notification-visible) .notification-list:not(.inline) {
+    display: none;
+}
+/* hide scrollbar */
+.notification-list:not(.inline)::-webkit-scrollbar {
+    width: 0px;
+}
+
+.notification-list .list-item {
+    margin: 0;
+    text-align: left;
+}
+
+.notification-list .list-item .details {
+    white-space: pre-wrap;
+}
+
+.notification-list .list-item .header {
+    text-transform: capitalize;
+ }
+
+.notification-list .list-item .time-since {
+    bottom: 0;
+    color: grey;
+    font-size: 11px;
+    font-style: italic;
+    left: 5px;
+    position: absolute;
+}

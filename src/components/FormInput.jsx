@@ -288,7 +288,7 @@ export default class FormInput extends Component {
 		)
 
 		let groupEl = (
-			<div>
+			<div style={{ marginBottom: 15 }}>
 				<Form.Group {...objWithoutKeys(attrs, ['inputs'])} style={{ ...styleContainer, ...attrs.style }}>
 					{inputEl}
 				</Form.Group>
@@ -301,7 +301,7 @@ export default class FormInput extends Component {
 		let { collapsed } = this.state
 		if (!isBool(collapsed)) collapsed = accordion.collapsed
 		return (
-			<Accordion {...objWithoutKeys(accordion, NON_ATTRIBUTES)}>
+			<Accordion {...objWithoutKeys(accordion, NON_ATTRIBUTES)} style={{ marginBottom: 15, ...accordion.style }}>
 				<Accordion.Title
 					active={!collapsed}
 					content={accordion.title || label}

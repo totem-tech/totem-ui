@@ -8,13 +8,16 @@ import { bond, clearAll, getAll, remove } from '../services/history'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import { getAddressName } from '../services/partner'
-import { clearClutter } from '../utils/utils'
+import { clearClutter, isValidNumber, isObj, isDefined } from '../utils/utils'
 
 const [texts, textsCap] = translated({
     action: 'action',
+    balanceAfterTx: 'account balance after transaction',
+    balanceBeforeTx: 'account balance before transaction',
     clearAll: 'Clear All',
     close: 'close',
-    data: 'data',
+    dataReceived: 'data received',
+    dataSent: 'data sent',
     delete: 'delete',
     description: 'description',
     errorMessage: 'Error message',
@@ -34,10 +37,10 @@ const [texts, textsCap] = translated({
 export default class HistoryList extends Component {
     constructor(props) {
         super(props)
-        
+
         // makes columns resizable
-        const headerProps = { style: { resize: 'both',overflow: 'auto'} }
-        
+        const headerProps = { style: { resize: 'both', overflow: 'auto' } }
+
         this.state = {
             columns: [
                 {
@@ -144,13 +147,17 @@ export default class HistoryList extends Component {
     }
 
     showDetails = (item, id) => {
-        const x = [
+        const errMsg = `${item.message}` // in case message is an Error object
+        const { before, after } = isObj(item.balance) ? item.balance : {}
+        const balanceExtProps = { action: { content: 'XTX' } }
+
+        const inputDefs = [
             // title describes what the task is about
             [textsCap.action, item.title],
             // description about the task that is displayed in the queue toast message
             [textsCap.description, item.description, 'textarea'],
             // show error message only if available
-            item.message && [textsCap.errorMessage, item.message, 'textarea', { invalid: item.status === 'error' }],
+            errMsg && [textsCap.errorMessage, errMsg, 'textarea', { invalid: item.status === 'error' }],
             // blockchain or chat client function path in string format
             [textsCap.function, item.action],
             // user's identity that was used to create the transaction
@@ -158,17 +165,20 @@ export default class HistoryList extends Component {
             [textsCap.timestamp, item._timestamp],
             [texts.groupId, item.groupId],
             [texts.taskId, id],
-            // data is an array of arguments passed to and solely dependant on the specific task's function (@item.action <=> queueItem.func).
-            [textsCap.data, JSON.stringify(item.data, null, 4), 'textarea'],
+            isValidNumber(before) && [textsCap.balanceBeforeTx, before, 'number', balanceExtProps],
+            isValidNumber(after) && [textsCap.balanceAfterTx, after, 'number', balanceExtProps],
+            [textsCap.dataSent, JSON.stringify(item.data, null, 4), 'textarea'],
+            isDefined(item.result) && [textsCap.dataReceived, JSON.stringify(item.result, null, 4), 'textarea']
         ]
+
         showForm(FormBuilder, {
             closeText: textsCap.close,
             header: textsCap.techDetails,
-            inputs: x.filter(Boolean)
+            inputs: inputDefs.filter(Boolean)
                 .map(([label, value, type = 'text', extraProps = {}], i) => ({
                     ...extraProps,
                     label,
-                    name: `${i}`,
+                    name: `${i}-${label}`,
                     readOnly: true,
                     type,
                     value,

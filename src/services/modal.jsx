@@ -1,31 +1,31 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import uuid from 'uuid'
-import { Bond } from 'oo7'
-import { ReactiveComponent } from 'oo7-react'
 import { Confirm } from 'semantic-ui-react'
-import { isBool, isFn, textCapitalize } from '../utils/utils'
+import { isBool, isFn } from '../utils/utils'
 import { translated } from './language'
+import DataStorage from '../utils/DataStorage'
+import { toggleFullscreen } from './window'
 
-export const modals = new Map()
-// Use Bond as a way to trigger update to the ModalService component
-// Stores number of modals currently open
-export const trigger = new Bond().defaultTo(0)
-const [words, wordsCap] = translated({
+export const modals = new DataStorage()
+const textsCap = translated({
+    areYouSure: 'are you sure?',
     ok: 'ok',
     cancel: 'cancel',
-}, true)
-const [texts] = translated({
-    areYouSure: 'Are you sure?'
-})
+}, true)[1]
 
-export class ModalsConainer extends ReactiveComponent {
-    constructor() {
-        super([], { trigger })
-    }
+export const ModalsConainer = () => {
+    const [modalsArr, setModalsArr] = useState([])
 
-    render = () => (
+    useEffect(() => {
+        const tieId = modals.bond.tie(() => setModalsArr(Array.from(modals.getAll())))
+        return () => modals.bond.untie(tieId)
+    }, [])
+
+    return (
         <div className="modal-service">
-            {Array.from(modals).map(([id, modalEl]) => <span {...{ key: id, id }}>{modalEl}</span>)}
+            {modalsArr.map(([id, modalEl]) => (
+                <span {...{ key: id, id }}>{modalEl}</span>
+            ))}
         </div>
     )
 }
@@ -33,16 +33,16 @@ export class ModalsConainer extends ReactiveComponent {
 const add = (id, element) => {
     id = id || uuid.v1()
     modals.set(id, element)
-    trigger.changed(modals.size)
     // add class to #app element to inticate one or more modal is open
     document.getElementById('app').classList.add('modal-open')
+    // If already in fullscreen, exit. Otherwise, modal will not be visible.
+    toggleFullscreen()
     return id
 }
 
 export const closeModal = (id, delay = 0) => setTimeout(() => {
     modals.delete(id)
     // update modal service
-    trigger.changed(modals.size)
     // remove classname if no modal is open
     modals.size === 0 && document.getElementById('app').classList.add('modal-open')
 }, delay)
@@ -59,13 +59,13 @@ export const confirm = (confirmProps, id) => {
     id = id || uuid.v1()
     let { cancelButton, confirmButton, content, open, onCancel, onConfirm } = confirmProps
     if (!cancelButton && cancelButton !== null) {
-        cancelButton = wordsCap.cancel
+        cancelButton = textsCap.cancel
     }
     if (!confirmButton && confirmButton !== null) {
-        confirmButton = wordsCap.ok
+        confirmButton = textsCap.ok
     }
     if (!content && content !== null) {
-        content = texts.areYouSure
+        content = textsCap.areYouSure
     }
     return add(
         id,

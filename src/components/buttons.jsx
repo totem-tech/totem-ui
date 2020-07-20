@@ -1,13 +1,27 @@
 import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
-import { getRawUserID } from './UserIdInput'
-import { translated } from '../services/language'
-import { getByUserId } from '../services/partner'
 import { objWithoutKeys } from '../utils/utils'
+import { getRawUserID } from './UserIdInput'
+// forms
+import IdentityRequestForm from '../forms/IdentityRequest'
+import IdentityShareForm from '../forms/IdentityShare'
+import PartnerForm from '../forms/Partner'
+// services
+import { translated } from '../services/language'
+import { confirm, showForm, closeModal } from '../services/modal'
+import { createInbox } from '../modules/chat/chat'
+import { getByUserId } from '../services/partner'
+import { getUser } from '../services/chatClient'
 
-const [words, wordsCap] = translated({
+const [texts, textsCap] = translated({
     accept: 'accept',
+    close: 'close',
+    partnerAdd: 'add partner',
+    partnerName: 'partner name',
+    partnerUpdate: 'update partner',
+    identityRequest: 'request identity',
+    identityShare: 'share identity',
     reject: 'reject',
 }, true)
 
@@ -33,9 +47,9 @@ ButtonAcceptOrReject.propTypes = {
 }
 ButtonAcceptOrReject.defaultProps = {
     acceptColor: 'green',
-    acceptText: wordsCap.accept,
+    acceptText: textsCap.accept,
     rejectColor: 'red',
-    rejectText: wordsCap.reject
+    rejectText: textsCap.reject
 }
 
 export const Reveal = ({ content, hiddenContent, style, defaultVisible = false, El = 'div' }) => {
@@ -53,25 +67,89 @@ export const Reveal = ({ content, hiddenContent, style, defaultVisible = false, 
 
 // placeholder to potentially use this in the future to make all User IDs clickable and open private chat with user
 export const UserID = props => {
-    const { onClick, prefix, style, suffix, userId = '' } = props
-    if (!userId) return ''
-    return (
-        <Button {...{
-            ...objWithoutKeys(props, ['onClick', 'prefix', 'style', 'suffix', 'userId']),
-            basic: true,
-            compact: true,
-            content: <b>{prefix}@{getRawUserID(userId)}{suffix}</b>,
-            onClick: e => {
-                if (onClick === null) return // prevent any action
-                e.stopPropagation()
-                // ToDo: open modal with options to add to partner, send/request identity and start/reopen chat
+    const { onClick, prefix, style, suffix, userId } = props
+    const rawId = getRawUserID(userId)
+    const isOwnId = (getUser() || {}).id === rawId
+    const allowClick = onClick !== null && !isOwnId
+    if (!rawId) return ''
+
+    const handleClick = e => {
+        e.stopPropagation()
+        const { address, name = '' } = getByUserId(rawId) || {}
+        const buttons = [
+            !name && {
+                content: textsCap.partnerAdd,
+                icon: 'user plus',
+                onClick: () => showForm(PartnerForm, { values: { userId: rawId } }),
             },
-            title: (getByUserId(userId) || {}).name,
+            {
+                content: textsCap.identityRequest,
+                icon: 'download',
+                onClick: () => showForm(IdentityRequestForm, { values: { userIds: [rawId] } }),
+            },
+            {
+                content: textsCap.identityShare,
+                icon: 'share',
+                onClick: () => showForm(IdentityShareForm, { values: { userIds: [rawId] } }),
+            },
+        ].filter(Boolean)
+
+        const modalId = confirm({
+            cancelButton: textsCap.close,
+            confirmButton: null,
+            content: (
+                <div>
+                    {name && (
+                        <div>
+                            <b>{textsCap.partnerName}:</b>
+                            {` ${name} `}
+                            <Button {...{
+                                circular: true,
+                                icon: 'pencil',
+                                size: 'mini',
+                                title: textsCap.partnerUpdate,
+                                onClick: () => showForm(PartnerForm, {
+                                    values: { address, userId: rawId, name },
+                                }),
+                            }} />
+                        </div>
+                    )}
+                    <div>
+                        {buttons.map(props => <Button {...{
+                            fluid: true,
+                            key: props.content,
+                            style: { margin: '3px 0' },
+                            ...props,
+                        }} />)}
+                    </div>
+                </div>
+            ),
+            header: (
+                <div className='header'>
+                    @{rawId}
+                    <Button {...{
+                        circular: true,
+                        icon: 'chat',
+                        onClick: () => closeModal(modalId) | createInbox([rawId], null, true),
+                        size: 'mini'
+                    }} />
+                </div>
+            ),
+            size: 'mini',
+        })
+    }
+    return (
+        <span {...{
+            ...objWithoutKeys(props, ['prefix', 'suffix', 'userId']),
+            onClick: allowClick ? handleClick : undefined,
             style: {
-                boxShadow: 'none',
+                cursor: allowClick && 'pointer',
                 padding: 0,
                 ...style,
             },
-        }} />
+            title: name,
+        }}>
+            <b>{prefix}@{rawId}{suffix}</b>
+        </span>
     )
 }
