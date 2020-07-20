@@ -103,11 +103,11 @@ export const getMessages = inboxKey => !inboxKey ? chatHistory.getAll() : [
     ...(pendingMessages[inboxKey] || [])
 ]
 
+// get list of User IDs by inbox key
+export const getInboxUserIds = inboxKey => arrUnique((chatHistory.get(inboxKey) || []).map(x => x.senderId))
+
 // unique user ids from Trollbox chat history
-export const getTrollboxUserIds = () => {
-    const messages = chatHistory.get(TROLLBOX) || []
-    return arrUnique(messages.map(x => x.senderId))
-}
+export const getTrollboxUserIds = () => getInboxUserIds(TROLLBOX)
 
 export function getUnreadCount() {
     const allSettings = rw().inbox || {}
@@ -349,6 +349,7 @@ export default {
     getMessages,
     getChatUserIds,
     getInboxKey,
+    getInboxUserIds,
     getTrollboxUserIds,
     historyLimit,
     inboxSettings,

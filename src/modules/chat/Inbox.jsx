@@ -16,6 +16,7 @@ import {
     TROLLBOX,
     newMsgBond,
     inboxSettings,
+    getInboxUserIds,
 } from './chat'
 import client, { loginBond, getUser } from '../../services/chatClient'
 import { translated } from '../../services/language'
@@ -48,7 +49,7 @@ export default function Inbox(props) {
     const [messages, setMessages] = useState(props.messages || getMessages(inboxKey))
     const [showMembers, setShowMembers] = useState(false)
     const isTrollbox = receiverIds.includes(TROLLBOX)
-    const isGroup = !receiverIds.includes(SUPPORT) && receiverIds.length > 1 || isTrollbox
+    const isGroup = receiverIds.length > 1 || isTrollbox
     const isMobile = getLayout() === MOBILE
     const msgsSelector = '.chat-container .inbox .messages'
     const scrollBtnSelector = '.chat-container .inbox .scroll-to-bottom'
@@ -105,7 +106,7 @@ export default function Inbox(props) {
                     setShowMembers,
                     showMembers,
                 }} />
-                {showMembers ? <MemberList {...{ isTrollbox, receiverIds }} /> : (
+                {showMembers ? <MemberList {...{ inboxKey, isTrollbox, receiverIds }} /> : (
                     <React.Fragment>
                         <InboxMessages {...{
                             className: 'messages',
@@ -183,16 +184,18 @@ const InboxHeader = ({ inboxKey, isGroup, isMobile, setShowMembers, showMembers 
     </div>
 )
 
-const MemberList = ({ isTrollbox, receiverIds }) => {
+const MemberList = ({ inboxKey, isTrollbox, receiverIds }) => {
     const { id: ownId } = getUser() || {}
     const [online, setOnline] = useState({})
+    const isSupport = receiverIds.includes(SUPPORT)
     useEffect(() => {
         let isMounted = true
         const frequency = 60000 // check user status every 60 seconds
         const checkOnline = () => {
             if (!isMounted) return
             if (!loginBond._value) return setOnline(false)
-            const userIds = (!isTrollbox ? receiverIds : getTrollboxUserIds()).filter(id => id !== ownId)
+            const userIds = (!isTrollbox && !isSupport ? receiverIds : getInboxUserIds(inboxKey))
+                .filter(id => id !== ownId)
             userIds.length && client.isUserOnline(userIds, (err, online) => !err && setOnline(online))
         }
         const intervalId = setInterval(checkOnline, frequency)
@@ -205,7 +208,7 @@ const MemberList = ({ isTrollbox, receiverIds }) => {
 
     return (
         <div>
-            {(!isTrollbox ? receiverIds : getTrollboxUserIds())
+            {(!isTrollbox && !isSupport ? receiverIds : getInboxUserIds(inboxKey))
                 .sort()
                 .map(memberId => {
                     const isSelf = ownId === memberId
