@@ -241,9 +241,9 @@ const InboxListItem = ({
 
     useEffect(() => {
         let mounted = true
-        const userIds = inboxKey.split(',').filter(id => ![userId, TROLLBOX, SUPPORT].includes(id))
+        const userIds = inboxKey.split(',').filter(id => ![userId, TROLLBOX].includes(id))
         const tieId = userIds.length > 0 && userStatusBond.tie((online = {}) => {
-            if (!online) return
+            if (!mounted || !online) return
             const numOnline = userIds.filter(id => online[id]).length
             const newStatus = !numOnline ? OFFLINE : (
                 numOnline === userIds.length ? ALL_ONLINE : SOME_ONLINE

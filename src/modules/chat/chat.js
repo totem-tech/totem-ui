@@ -35,7 +35,7 @@ export const checkOnlineStatus = () => {
     // unregistered user
     if (!userId) return
     let keys = Object.keys(inboxesSettings() || {})
-    const excludedIds = [userId, SUPPORT, TROLLBOX]
+    const excludedIds = [userId, TROLLBOX]
     const inboxUserIds = keys.map(key => key.split(',').filter(id => !excludedIds.includes(id)))
     const userIds = arrUnique(inboxUserIds.flat())
     if (!userIds.length) {
