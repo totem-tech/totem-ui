@@ -35,7 +35,7 @@ export const checkOnlineStatus = () => {
     // unregistered user
     if (!userId) return
     let keys = Object.keys(inboxesSettings() || {})
-    const excludedIds = [userId, SUPPORT, TROLLBOX]
+    const excludedIds = [userId, TROLLBOX]
     const inboxUserIds = keys.map(key => key.split(',').filter(id => !excludedIds.includes(id)))
     const userIds = arrUnique(inboxUserIds.flat())
     if (!userIds.length) {
@@ -78,7 +78,7 @@ export const getChatUserIds = (includeTrollbox = true) => arrUnique(Object.keys(
     .filter(key => key !== TROLLBOX)
     .map(key => key.split(','))
     .flat()
-    .concat(includeTrollbox ? getTrollboxUserIds() : []))
+    .concat(includeTrollbox ? getInboxUserIds(TROLLBOX) : []))
 
 // returns inbox storage key
 export const getInboxKey = receiverIds => {
@@ -103,11 +103,8 @@ export const getMessages = inboxKey => !inboxKey ? chatHistory.getAll() : [
     ...(pendingMessages[inboxKey] || [])
 ]
 
-// unique user ids from Trollbox chat history
-export const getTrollboxUserIds = () => {
-    const messages = chatHistory.get(TROLLBOX) || []
-    return arrUnique(messages.map(x => x.senderId))
-}
+// get list of User IDs by inbox key
+export const getInboxUserIds = inboxKey => arrUnique((chatHistory.get(inboxKey) || []).map(x => x.senderId))
 
 export function getUnreadCount() {
     const allSettings = rw().inbox || {}
@@ -349,7 +346,7 @@ export default {
     getMessages,
     getChatUserIds,
     getInboxKey,
-    getTrollboxUserIds,
+    getInboxUserIds,
     historyLimit,
     inboxSettings,
     send,
