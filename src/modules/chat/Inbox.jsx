@@ -9,7 +9,6 @@ import {
     createInbox,
     expandedBond,
     getMessages,
-    getTrollboxUserIds,
     openInboxBond,
     send,
     SUPPORT,

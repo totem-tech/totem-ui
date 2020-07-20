@@ -12,8 +12,8 @@ import {
     createInbox,
     getInboxKey,
     inboxSettings,
-    SUPPORT,
     inboxesSettings,
+    SUPPORT,
 } from './chat'
 import { getInboxName } from './InboxList'
 
