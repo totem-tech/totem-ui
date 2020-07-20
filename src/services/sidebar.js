@@ -15,10 +15,10 @@ import TransferForm from '../forms/Transfer'
 import UtilitiesView from '../views/UtilitiesView'
 // temp
 import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
+import EventList from '../modules/Event/EventList'
 // utils
 import DataStorage from '../utils/DataStorage'
 import { isBool, isBond } from '../utils/utils'
-import { findInput as findItem } from '../components/FormBuilder'
 // services
 import { translated } from './language'
 import storage from './storage'
@@ -303,7 +303,13 @@ export const sidebarItems = [
         name: 'utilities',
         subHeader: texts.utilitiesSubheader,
         title: texts.utilitiesTitle,
-    }
+    },
+    {
+        content: EventList,
+        icon: 'history',
+        name: 'Events',
+        title: 'Events'
+    },
 ].map(item => {
     const {
         active = false,
@@ -326,10 +332,11 @@ export const sidebarItems = [
     }
 })
 
-export const getItem = name => findItem(sidebarItems, name)
+export const findItem = name => sidebarItems.find(x => x.name === name)
+export const getItem = name => findItem(name)
 
 export const setActive = (name, active = true, contentProps, hidden) => {
-    const item = findItem(sidebarItems, name)
+    const item = findItem(name)
     if (!item) return
     item.active = active
     item.hidden = isBool(hidden) ? hidden : item.hidden
@@ -343,7 +350,7 @@ export const setActive = (name, active = true, contentProps, hidden) => {
 }
 
 export const setContentProps = (name, props = {}, scrollToItem = true) => {
-    const item = findItem(sidebarItems, name)
+    const item = findItem(name)
     if (!item) return
 
     if (!item.active) return setActive(name, true, props)
@@ -363,7 +370,7 @@ export const scrollTo = name => {
         const elRef = item.elementRef
         if (!elRef || !elRef.current) return
         document.getElementById('main-content')
-            .scrollTo(0, elRef.current.offsetTop - 15)
+            .scrollTo(elRef.current.offsetLeft, elRef.current.offsetTop - 15)
     }, 100)
     return item
 }

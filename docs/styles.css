@@ -43,105 +43,132 @@
 */
 
 /* iphone XR */
- @media only screen 
+ /* @media only screen 
     and (device-width : 414px) 
     and (device-height : 896px) 
     and (-webkit-device-pixel-ratio : 2) { 
-      .ui.container {
-        width: auto !important;
-        margin-left: 1em !important;
-        margin-right: 1em !important;
-      }
-      
-      .ui.grid.container {
-        width: auto !important;
-      }
-      
-      .ui.relaxed.grid.container {
-        width: auto !important;
-      }
-      
-      .ui.very.relaxed.grid.container {
-        width: auto !important;
-      }
-}
+	.ui.container {
+		width: auto !important;
+		margin-left: 1em !important;
+		margin-right: 1em !important;
+	}
+	
+	.ui.grid.container {
+		width: auto !important;
+	}
+
+	.ui.relaxed.grid.container {
+		width: auto !important;
+	}
+
+	.ui.very.relaxed.grid.container {
+		width: auto !important;
+	}
+} */
 
 /* iphone XS */
-@media only screen 
-and (device-width : 375px) 
-and (device-height : 812px) 
-and (-webkit-device-pixel-ratio : 3) { 
-  .ui.container {
-    width: auto !important;
-    margin-left: 1em !important;
-    margin-right: 1em !important;
-  }
-  
-  .ui.grid.container {
-    width: auto !important;
-  }
-  
-  .ui.relaxed.grid.container {
-    width: auto !important;
-  }
-  
-  .ui.very.relaxed.grid.container {
-    width: auto !important;
-  }
-}
+/* @media only screen 
+	and (device-width : 375px) 
+	and (device-height : 812px) 
+	and (-webkit-device-pixel-ratio : 3) { 
+	.ui.container {
+		width: auto !important;
+		margin-left: 1em !important;
+		margin-right: 1em !important;
+	}
+
+	.ui.grid.container {
+		width: auto !important;
+	}
+
+	.ui.relaxed.grid.container {
+		width: auto !important;
+	}
+
+	.ui.very.relaxed.grid.container {
+		width: auto !important;
+	}
+} */
 
 /* iphone XS Max */
-@media only screen 
-and (device-width : 414px) 
-and (device-height : 896px) 
-and (-webkit-device-pixel-ratio : 3) { 
-  .ui.container {
-    width: auto !important;
-    margin-left: 1em !important;
-    margin-right: 1em !important;
-  }
-  
-  .ui.grid.container {
-    width: auto !important;
-  }
-  
-  .ui.relaxed.grid.container {
-    width: auto !important;
-  }
-  
-  .ui.very.relaxed.grid.container {
-    width: auto !important;
-  }
+/* @media only screen 
+	and (device-width : 414px) 
+	and (device-height : 896px) 
+	and (-webkit-device-pixel-ratio : 3) { 
+	.ui.container {
+		width: auto !important;
+		margin-left: 1em !important;
+		margin-right: 1em !important;
+	}
+
+	.ui.grid.container {
+		width: auto !important;
+	}
+
+	.ui.relaxed.grid.container {
+		width: auto !important;
+	}
+
+	.ui.very.relaxed.grid.container {
+		width: auto !important;
+	}
+} */
+
+
+
+ /* @media only screen and (max-width: 767px) {
+	.ui.container {
+		width: auto !important;
+		margin-left: 1em !important;
+		margin-right: 1em !important;
+	}
+
+	.ui.grid.container {
+		width: auto !important;
+	}
+
+	.ui.relaxed.grid.container {
+		width: auto !important;
+	}
+
+	.ui.very.relaxed.grid.container {
+		width: auto !important;
+	}
+} */
+					
+@media only screen and
+	/* iphone XR */
+	(device-width : 414px) and (device-height : 896px) and (-webkit-device-pixel-ratio : 2),
+	/* iphone XS */
+	(device-width : 375px) and (device-height : 812px) and (-webkit-device-pixel-ratio : 3),
+	/* iphone XS Max */
+	(device-width : 414px) and (device-height : 896px) and (-webkit-device-pixel-ratio : 3),
+	(max-width: 767px) {
+	.ui.container {
+		width: auto !important;
+		margin-left: 1em !important;
+		margin-right: 1em !important;
+	}
+
+	.ui.grid.container {
+		width: auto !important;
+	}
+
+	.ui.relaxed.grid.container {
+		width: auto !important;
+	}
+
+	.ui.very.relaxed.grid.container {
+		width: auto !important;
+	}
 }
-
-
-
- @media only screen and (max-width: 767px) {
-  .ui.container {
-    width: auto !important;
-    margin-left: 1em !important;
-    margin-right: 1em !important;
-  }
-
-  .ui.grid.container {
-    width: auto !important;
-  }
-
-  .ui.relaxed.grid.container {
-    width: auto !important;
-  }
-
-  .ui.very.relaxed.grid.container {
-    width: auto !important;
-  }
-}
-
-
 
 
 
 #app, #app > div {
   height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 .mobile .pusher.main-content {
   margin: 0 !important;
@@ -165,6 +192,13 @@ and (-webkit-device-pixel-ratio : 3) {
 .ui.left.visible.sidebar > a {
   white-space: nowrap;
   overflow: hidden;
+}
+/* hide footer bar when mobile sidebar is open */
+.mobile.sidebar-visible > .ui.menu.bottom {
+    display: none;
+}
+.mobile.sidebar-visible > .notification-list {
+  display: none;
 }
 /* Main content width and positioning when sidebar is collapsed (icon-only mode) */
 #app > :not(.mobile) .ui.visible.left.sidebar.very.thin ~ .pusher.main-content {
@@ -197,27 +231,6 @@ and (-webkit-device-pixel-ratio : 3) {
 
 .no-margin {
   margin: 0 !important;
-}
-.notification-dropdown.ui.dropdown .menu.notifictaions {
-  position: fixed !important;
-  top: 60px !important;
-}
-.notification-dropdown.has-unread.ui.item.scrolling.dropdown {
-  background: red;
-}
-#app .desktop .notification-dropdown.ui.dropdown .menu.notifictaions {
-  left: calc(100% - 400px) !important;
-}
-#app .desktop .notification-dropdown .menu.notifictaions .item {
-  max-width: 400px;
-} 
-.no-padding, .ui.menu .notification-dropdown.item .menu.notifictaions.visible .item.no-padding {
-  padding: 0 !important;
-}
-.ui.menu .ui.notification-dropdown.dropdown .menu > .item > .message i:not(.close) {
-  float: left;
-  font-size: 40px !important;
-  margin-right: 5px !important;
 }
 .blink {
   animation: blinker 1s linear infinite;
@@ -257,61 +270,6 @@ div.ui.padded.segment {
   font-weight: normal;
 }
 
-/* Chat Message Customisation */
-.rcw-conversation-container .rcw-title {
-  font-size: 20px !important;
-  padding: 5px 0px !important;
-}
-
-.rcw-conversation-container .rcw-header {
-  background-color:#17537d  !important;
-}
-
-.rcw-conversation-container .rcw-header span {
-  padding: 0px 50px  !important;
-}
-
-
-.rcw-full-screen .rcw-close-button {
-  background-color:#17537d  !important;
-}
-
-.rcw-conversation-container .rcw-close-button {
-  background-color:#17537d  !important;
-}
-
-.rcw-launcher {
-  background-color:#17537d  !important;
-}
-
-.rcw-client {
-  background-color:#177d2440  !important;
-}
-
-.rcw-widget-container {
-  transition: all 0.5s ease;
-}
-/* pushes chat launcher icon up when bottom status bar is visible */
-/* #app .sidebar-collapsed .rcw-widget-container {
-  margin-bottom: 73px;
-} */
-
-/* hide when mobile sidebar is open */
-.mobile.sidebar-visible .rcw-widget-container {
-  display: none;
-}
-
-/* more space for messages
-#messages .rcw-response {
-  max-width: 75%;
-}*/
-
-/* allow new lines in the chat subheader */
-.rcw-header > h4 + span {
-  white-space: pre-line;
-}
-
-
 /*
  * Form Builder
  */
@@ -328,4 +286,22 @@ div.ui.padded.segment {
 
 input[readonly] {
   cursor: not-allowed;
+}
+
+
+/* Page header:
+ * identity dropdown style fix
+ */
+.identity-dropdown .menu {
+    display: table !important;
+}
+.identity-dropdown .menu:not(.visible) { 
+  display: none !important;
+}
+.identity-dropdown .menu > .item {
+    display: table-row !important;
+}
+.identity-dropdown .menu .item > * {
+    display: table-cell;
+    padding: 10px 15px;
 }

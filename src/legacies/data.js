@@ -1,8 +1,7 @@
 // ToDo: deprecate?
 // Only used by src/components/SystemStatus.jsx and src/legacies/ChainInfoBar.jsx
 
-import { calls, runtime, chain, nodeService, system, runtimeUp, ss58Encode, ss58Decode, secretStore } from 'oo7-substrate'
-import { Bond } from 'oo7'
+import { runtime, chain, nodeService, system, runtimeUp } from 'oo7-substrate'
 import uuid from 'uuid'
 
 const PREFIX = 'data-cache'
@@ -41,7 +40,6 @@ const settings = {
     runtime_version_specName: { bond: () => runtime.version.specName },
     runtime_version_specVersion: { bond: () => runtime.version.specVersion },
     runtimeUp: { bond: () => runtimeUp },
-    secretStore_keys: { bond: () => secretStore() },
     system_chain: { bond: () => system.chain },
     system_health_is_syncing: { bond: () => system.health.isSyncing },
     system_health_should_have_peers: { bond: () => system.health.shouldHavePeers },

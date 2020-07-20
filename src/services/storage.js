@@ -14,14 +14,26 @@ const cache = new DataStorage(CACHE_KEY)
 const settings = new DataStorage(PREFIX + 'settings', true)
 // LocalStorage items that are essential for the applicaiton to run. 
 export const essentialKeys = [
-    'totem_history',
+    'totem_chat-history', // chat history
+    'totem_history', // user activity history
     'totem_identities',
     // notifications are essential because user may need to respond to them in case they are migrating to a new device.
     'totem_notifications',
     'totem_partners',
-    'secretStore', // ToDo: deprecate by migrating completely to identities
     'totem_settings',
 ]
+
+// generates user data for backup, excluding non-essential items such as cache etc...
+export const generateBackupData = () => {
+    const keys = Object.keys(localStorage)
+        .map(key => !essentialKeys.includes(key) ? null : key)
+        .filter(Boolean)
+        .sort()
+    return keys.reduce((data, key) => {
+        data[key] = JSON.parse(localStorage[key])
+        return data
+    }, {})
+}
 
 // Read/write to storage
 //

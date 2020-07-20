@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import { Divider, Header, Icon, Placeholder, Rail, Segment } from 'semantic-ui-react'
 import ErrorBoundary from './CatchReactErrors'
 import { isBond, isFn, isObj } from '../utils/utils'
+import { toggleFullscreen } from '../services/window'
 
 export default class ContentSegment extends Component {
 	constructor(props) {
@@ -85,11 +86,20 @@ export default class ContentSegment extends Component {
 				{isFn(onClose) && (
 					<Rail internal position='right' close style={styles.closeButtonRail}>
 						<Icon
+							color='grey'
+							link
+							name='expand arrows alternate'
+							onClick={() => toggleFullscreen(`.main-content div[name="${name}"]`)}
+							size='mini'
+							style={{ display: 'inline' }}
+						/>
+						<Icon
+							color='grey'
 							link
 							name='times circle outline'
-							color="grey"
-							size="mini"
 							onClick={() => onClose(name)}
+							size='mini'
+							style={{ display: 'inline' }}
 						/>
 					</Rail>
 				)}
@@ -104,8 +114,8 @@ export default class ContentSegment extends Component {
 									<Icon
 										link
 										name='question circle outline'
-										color="grey"
-										size="small"
+										color='grey'
+										size='small'
 										onClick={this.toggleSubHeader}
 									/>
 								)}
@@ -203,7 +213,7 @@ const placeholder = (
 const styles = {
 	closeButtonRail: {
 		marginTop: 0,
-		marginRight: -12,
+		marginRight: 25,
 		padding: 0,
 		fontSize: 50,
 		width: 50

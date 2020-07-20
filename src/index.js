@@ -1,16 +1,14 @@
+import 'semantic-ui-css/semantic.min.css'
 import React from 'react'
 import { render } from 'react-dom'
 import { App } from './app.jsx'
 import { setNodeUri } from 'oo7-substrate'
 import { getTypes, nodes, setConfig } from './services/blockchain'
-import 'semantic-ui-css/semantic.min.css'
 import client from './services/chatClient'
 import { getSelected, getTexts, setTexts } from './services/language'
 import storage from './services/storage'
 import { setDefaultConfig } from './utils/polkadotHelper'
 import { generateHash } from './utils/utils'
-// import { getConnection } from './services/blockchain'
-
 
 const init = () => new Promise((resolve, reject) => {
     // set denomnination info
@@ -35,7 +33,8 @@ const init = () => new Promise((resolve, reject) => {
         const engHash = generateHash(getTexts(EN))
         const selected = getSelected()
         const selectedHash = selected !== EN && generateHash(getTexts(selected) || '')
-        client.translations(EN, engHash, (err, texts) => {
+        // retrieve list of application texts in English
+        client.languageTranslations(EN, engHash, (err, texts) => {
             if (err) return console.log('Language check failed:', EN, { texts }) | resolve()
             // update english text list
             if (texts !== null) setTexts(EN, texts)
@@ -44,7 +43,8 @@ const init = () => new Promise((resolve, reject) => {
                 resolve()
                 return
             }
-            client.translations(selected, selectedHash, (err, texts) => {
+            // retrieve list of application texts in selected language, if not English
+            client.languageTranslations(selected, selectedHash, (err, texts) => {
                 if (err) return console.log('Language check failed:', selected, { texts }) | resolve()
                 if (texts !== null) setTexts(selected, texts)
                 translationChecked = true
@@ -52,12 +52,10 @@ const init = () => new Promise((resolve, reject) => {
             })
         })
     })
-    getTypes().then(types => {
-        setDefaultConfig(nodes, types)
-        // getConnection().then(() => {
 
-        // })
-    })
+    // set Polkadot blockchain types
+    getTypes().then(types => setDefaultConfig(nodes, types))
+
     // force resolve in case messaging service is not connected yet
     setTimeout(() => resolve(), 2000)
 })

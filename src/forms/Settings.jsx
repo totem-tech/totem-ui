@@ -2,26 +2,30 @@ import React, { Component } from 'react'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 import { arrSort, generateHash } from '../utils/utils'
 // services
-import client, { historyLimit as chatHistoryLimit } from '../services/chatClient'
-import { convertTo, currencies, currencyDefault, selected as selectedCurrency } from '../services/currency'
+import client from '../services/chatClient'
+import { historyLimit as chatHistoryLimit } from '../modules/chat/chat'
+import {
+    getCurrencies,
+    getSelected as getSelectedCurrency,
+    setSelected as setSelectedCurrency
+} from '../services/currency'
 import { limit as historyItemsLimit } from '../services/history'
-import { getSelected, getTexts, languages, setSelected, setTexts, translated } from '../services/language'
-import storage from '../services/storage'
+import { getSelected as getSelectedLanguage, getTexts, languages, setSelected, setTexts, translated } from '../services/language'
+import { gridColumns } from '../services/window'
 
-const [words, wordsCap] = translated({
+const [texts, textsCap] = translated({
+    column: 'column',
+    columns: 'columns',
+    chatLimitLabel: 'chat message limit per conversation',
+    gridColumnsLabel: 'number of columns on main content (experimental)',
+    gsCurrencyLabel: 'default currency',
+    gsLanguageLabel: 'default language (experimental)',
+    historyLimitLabel: 'history limit',
     unlimited: 'unlimited',
     saved: 'saved',
 }, true)
-const [texts] = translated({
-    chatLimitLabel: 'Chat message limit',
-    gsCurrencyLabel: 'Default currency',
-    gsLanguageLabel: 'Default language (experimental)',
-    historyLimitLabel: 'History limit',
-})
-// read/write to global settings
-const rwg = (key, value) => storage.settings.global(key, value)
 const forceRefreshPage = () => window.location.reload(true)
-const savedMsg = { content: wordsCap.saved, status: 'success' }
+const savedMsg = { content: textsCap.saved, status: 'success' }
 
 export default class Settings extends Component {
     constructor(props) {
@@ -33,7 +37,7 @@ export default class Settings extends Component {
             submitText: null,
             inputs: [
                 {
-                    label: texts.gsLanguageLabel,
+                    label: textsCap.gsLanguageLabel,
                     name: 'languageCode',
                     onChange: this.handleLanguageChange,
                     options: arrSort(
@@ -48,33 +52,25 @@ export default class Settings extends Component {
                     search: true,
                     selection: true,
                     type: 'dropdown',
-                    value: getSelected(),
+                    value: getSelectedLanguage(),
                 },
                 {
-                    label: texts.gsCurrencyLabel,
+                    label: textsCap.gsCurrencyLabel,
                     name: 'currency',
                     onChange: this.handleCurrencyChange,
-                    options: arrSort(
-                        Object.keys(currencies).map(value => ({
-                            description: currencies[value],
-                            key: value,
-                            text: value,
-                            value
-                        })),
-                        'text',
-                    ),
+                    options: [],
                     search: true,
                     selection: true,
                     type: 'dropdown',
-                    value: selectedCurrency()
+                    value: getSelectedCurrency()
                 },
                 {
-                    label: texts.historyLimitLabel,
+                    label: textsCap.historyLimitLabel,
                     name: 'historyLimit',
                     onChange: this.handleHistoryLimitChange,
                     options: [0, 10, 50, 100, 500, 1000].map((limit, i) => ({
                         key: i,
-                        text: limit || wordsCap.unlimited,
+                        text: limit || textsCap.unlimited,
                         value: limit,
                     })),
                     selection: true,
@@ -82,32 +78,54 @@ export default class Settings extends Component {
                     value: historyItemsLimit(),
                 },
                 {
-                    label: texts.chatLimitLabel,
+                    label: textsCap.chatLimitLabel,
                     name: 'chatMsgLimit',
                     onChange: this.handleChatLimitChange,
                     options: [0, 10, 50, 100, 500, 1000].map((limit, i) => ({
                         key: i,
-                        text: limit || wordsCap.unlimited,
+                        text: limit || textsCap.unlimited,
                         value: limit,
                     })),
                     selection: true,
                     type: 'dropdown',
                     value: chatHistoryLimit(),
                 },
+                {
+                    label: textsCap.gridColumnsLabel,
+                    name: 'gridCols',
+                    onChange: this.handleGridCollumnsChange,
+                    options: [1, 2, 3, 4, 5, 6].map(n => ({
+                        icon: n === 1 ? 'bars' : 'grid layout',
+                        key: n,
+                        text: `${n} ${n > 1 ? texts.columns : texts.column}`,
+                        value: n,
+                    })),
+                    selection: true,
+                    type: 'dropdown',
+                    value: gridColumns(),
+                },
             ]
         }
     }
 
+    componentWillMount() {
+        const { inputs } = this.state
+        const currencyIn = findInput(inputs, 'currency')
+        getCurrencies().then(currencies => {
+            currencyIn.options = currencies.map(({ currency, nameInLanguage, ISO }) => ({
+                description: currency,
+                key: ISO,
+                text: nameInLanguage,
+                value: ISO
+            }))
+            currencyIn.search = ['text', 'description']
+            this.setState({ inputs })
+        })
+    }
+
     handleCurrencyChange = async (_, { currency }) => {
-        let msg = savedMsg
-        try{
-            // check if currency conversion is supported
-            await convertTo(0, currency, currencyDefault)
-            selectedCurrency(currency)
-        } catch(e) {
-            msg = { content: e, status: 'error'}
-        }
-        this.setInputMessage('currency', msg, 0)
+        await setSelectedCurrency(currency)
+        this.setInputMessage('currency', savedMsg)
     }
 
     handleChatLimitChange = (_, { chatMsgLimit }) => {
@@ -115,18 +133,23 @@ export default class Settings extends Component {
         this.setInputMessage('chatMsgLimit', savedMsg)
     }
 
+    handleGridCollumnsChange = (_, { gridCols }) => {
+        gridColumns(gridCols)
+        this.setInputMessage('gridCols', savedMsg)
+    }
+
     handleHistoryLimitChange = (_, { historyLimit: limit }) => {
-        historyItemsLimit(limit === wordsCap.unlimited ? null : limit, true)
+        historyItemsLimit(limit === textsCap.unlimited ? null : limit, true)
         this.setInputMessage('historyLimit', savedMsg)
     }
 
     handleLanguageChange = (_, { languageCode }) => {
         setSelected(languageCode)
         this.setInputMessage('languageCode', savedMsg, 0)
-        const selected = getSelected()
+        const selected = getSelectedLanguage()
         if (selected === 'EN') return forceRefreshPage()
         const selectedHash = generateHash(getTexts(selected) || '')
-        client.translations(selected, selectedHash, (err, texts) => {
+        client.languageTranslations(selected, selectedHash, (err, texts) => {
             if (texts !== null) setTexts(selected, texts)
             // reload page
             forceRefreshPage()

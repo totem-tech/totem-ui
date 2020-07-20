@@ -1,18 +1,15 @@
 import React from 'react'
 import { ReactiveComponent } from 'oo7-react'
 import uuid from 'uuid'
-import { dropMessages, addResponseMessage } from 'react-chat-widget'
 import FormBuilder from '../components/FormBuilder'
 import { isFn } from '../utils/utils'
 import { getClient } from '../services/chatClient'
 import { translated } from '../services/language'
 
-const [words, wordsCap] = translated({
-    register: 'register',
-}, true)
-const [texts] = translated({
+const [texts, textsCap] = translated({
     formHeader: 'Register a Memorable User Name',
     formSubheader: 'Choose an unique alias for use with Totem chat messaging.',
+    register: 'register',
     registrationComplete: 'Registration complete',
     registrationFailed: 'Registration failed',
     userId: 'User ID',
@@ -21,8 +18,7 @@ const [texts] = translated({
     userIdCriteria2: 'contains minimum 3 characters',
     userIdCriteria3: 'contains only alphanumeric characters',
     userIdPlaceholder: 'Enter your desired ID',
-    welcomeMsg: 'Welcome to the Totem trollbox. Please be nice.',
-})
+}, true)
 
 export default class FormRegister extends ReactiveComponent {
     constructor(props) {
@@ -73,22 +69,17 @@ export default class FormRegister extends ReactiveComponent {
                 showIcon: true,
                 status: success ? 'success' : 'error'
             }
-            this.setState({ message, success: success, open: !success })
+            this.setState({ message, success: success })
             isFn(onSubmit) && onSubmit(success, values)
-
-            // add welcome message
-            dropMessages()
-            addResponseMessage(texts.welcomeMsg)
         })
     }
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
 FormRegister.defaultProps = {
-    closeOnSubmit: true,
     header: texts.formHeader,
     headerIcon: 'sign-in',
     size: 'tiny',
     subheader: texts.formSubheader,
-    submitText: wordsCap.register
+    submitText: textsCap.register
 }

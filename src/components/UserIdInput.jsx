@@ -1,8 +1,9 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import FormInput from './FormInput'
-import { arrUnique, isFn, objWithoutKeys, textCapitalize, arrSort } from '../utils/utils'
-import client, { getUser, getHistory } from '../services/chatClient'
+import { arrUnique, isFn, objWithoutKeys, textCapitalize, arrSort, isStr } from '../utils/utils'
+import { getChatUserIds } from '../modules/chat/chat'
+import client, { getUser } from '../services/chatClient'
 import { translated } from '../services/language'
 import partners from '../services/partner'
 
@@ -37,9 +38,9 @@ const validIcon = { color: 'green', name: 'check circle', size: 'large' }
 const userIdRegex = /^[a-z][a-z0-9]+$/
 // removes surrounding whitespaces, removes '@' at the beginning and transforms to lowercase
 export const getRawUserID = userId => {
+    if (!isStr(userId)) return 'invalid user id'
     userId = userId.trim()
-    if (!userId.startsWith('@')) return userId
-    return userId.split('').slice(1).join('').toLowerCase()
+    return userId.replace('@', '').toLowerCase()
 }
 
 export default class UserIdInput extends Component {
@@ -94,7 +95,7 @@ export default class UserIdInput extends Component {
         value = value || (multiple ? [] : '')
         if (!options) return this.setState({ value })
 
-        const userIds = options.map(({ userId }) => userId)
+        const userIds = options.map(x => x.value)
         if (includePartners) {
             const partnerOptions = []
             Array.from(partners.getAll())
@@ -114,7 +115,7 @@ export default class UserIdInput extends Component {
             options = options.concat(arrSort(partnerOptions, 'text'))
         }
         if (includeFromChat) {
-            const historyUserIds = arrUnique(getHistory().map(x => x.id))
+            const historyUserIds = getChatUserIds()
                 .filter(id => !userIds.includes(id))
             const huiOptions = arrSort(historyUserIds.map(id => ({
                 icon: 'chat',
@@ -162,7 +163,7 @@ export default class UserIdInput extends Component {
         if (isOwnId) return
 
         // check if User ID is valid
-        client.idExists(userId, exists => {
+        client.idExists(userId, (err, exists) => {
             const input = this.state
             input.loading = false
             input.message = exists ? undefined : {
@@ -237,12 +238,12 @@ export default class UserIdInput extends Component {
             triggerChagne(true)
             return true
         }
-        const cb = exists => {
-            const invalid = newUser ? exists : !exists
+        client.idExists(value, (err, exists) => {
+            const invalid = err ? true : (
+                newUser ? exists : !exists
+            )
             triggerChagne(invalid)
-            return invalid
-        }
-        client.idExists.promise(value).then(cb, cb)
+        })
     }
 
     render() {
