@@ -66,84 +66,21 @@ export const Reveal = ({ content, hiddenContent, style, defaultVisible = false, 
 }
 
 // placeholder to potentially use this in the future to make all User IDs clickable and open private chat with user
-export const UserID = props => {
+export const UserID = React.memo(props => {
     const { onClick, prefix, style, suffix, userId } = props
     const rawId = getRawUserID(userId)
-    const isOwnId = (getUser() || {}).id === rawId
-    const allowClick = onClick !== null && !isOwnId
     if (!rawId) return ''
 
-    const handleClick = e => {
-        e.stopPropagation()
-        const { address, name = '' } = getByUserId(rawId) || {}
-        const buttons = [
-            !name && {
-                content: textsCap.partnerAdd,
-                icon: 'user plus',
-                onClick: () => showForm(PartnerForm, { values: { userId: rawId } }),
-            },
-            {
-                content: textsCap.identityRequest,
-                icon: 'download',
-                onClick: () => showForm(IdentityRequestForm, { values: { userIds: [rawId] } }),
-            },
-            {
-                content: textsCap.identityShare,
-                icon: 'share',
-                onClick: () => showForm(IdentityShareForm, { values: { userIds: [rawId] } }),
-            },
-        ].filter(Boolean)
+    const isOwnId = (getUser() || {}).id === rawId
+    const allowClick = onClick !== null && !isOwnId
 
-        const modalId = confirm({
-            cancelButton: textsCap.close,
-            confirmButton: null,
-            content: (
-                <div>
-                    {name && (
-                        <div>
-                            <b>{textsCap.partnerName}:</b>
-                            {` ${name} `}
-                            <Button {...{
-                                circular: true,
-                                icon: 'pencil',
-                                size: 'mini',
-                                title: textsCap.partnerUpdate,
-                                onClick: () => showForm(PartnerForm, {
-                                    values: { address, userId: rawId, name },
-                                }),
-                            }} />
-                        </div>
-                    )}
-                    <div>
-                        {buttons.map(props => <Button {...{
-                            fluid: true,
-                            key: props.content,
-                            style: { margin: '3px 0' },
-                            ...props,
-                        }} />)}
-                    </div>
-                </div>
-            ),
-            header: (
-                <div className='header'>
-                    @{rawId}
-                    <Button {...{
-                        circular: true,
-                        icon: 'chat',
-                        onClick: () => closeModal(modalId) | createInbox([rawId], null, true),
-                        size: 'mini'
-                    }} />
-                </div>
-            ),
-            size: 'mini',
-        })
-    }
     return (
         <span {...{
             ...objWithoutKeys(props, ['prefix', 'suffix', 'userId']),
-            onClick: allowClick ? handleClick : undefined,
+            onClick: !allowClick ? undefined : (e => e.stopPropagation() | UserID.showModal(userId)),
             style: {
                 cursor: allowClick && 'pointer',
+                fontWeight: 'bold',
                 padding: 0,
                 ...style,
             },
@@ -152,4 +89,75 @@ export const UserID = props => {
             <b>{prefix}@{rawId}{suffix}</b>
         </span>
     )
+})
+
+UserID.showModal = userId => {
+    const { address, name = '' } = getByUserId(userId) || {}
+    const buttons = [
+        !name && {
+            content: textsCap.partnerAdd,
+            icon: 'user plus',
+            onClick: () => showForm(PartnerForm, {
+                // prevent form modal to auto close 
+                closeOnSubmit: false,
+                // after successfully adding partner close the original modal (confirm)
+                onSubmit: ok => ok && closeModal(modalId),
+                values: { userId },
+            }),
+        },
+        {
+            content: textsCap.identityRequest,
+            icon: 'download',
+            onClick: () => showForm(IdentityRequestForm, { values: { userIds: [userId] } }),
+        },
+        {
+            content: textsCap.identityShare,
+            icon: 'share',
+            onClick: () => showForm(IdentityShareForm, { values: { userIds: [userId] } }),
+        },
+    ].filter(Boolean)
+
+    const modalId = confirm({
+        cancelButton: textsCap.close,
+        confirmButton: null,
+        content: (
+            <div>
+                {name && (
+                    <div>
+                        <b>{textsCap.partnerName}:</b>
+                        {` ${name} `}
+                        <Button {...{
+                            circular: true,
+                            icon: 'pencil',
+                            size: 'mini',
+                            title: textsCap.partnerUpdate,
+                            onClick: () => showForm(PartnerForm, {
+                                values: { address, userId, name },
+                            }),
+                        }} />
+                    </div>
+                )}
+                <div>
+                    {buttons.map(props => <Button {...{
+                        fluid: true,
+                        key: props.content,
+                        style: { margin: '3px 0' },
+                        ...props,
+                    }} />)}
+                </div>
+            </div>
+        ),
+        header: (
+            <div className='header'>
+                @{userId}
+                <Button {...{
+                    circular: true,
+                    icon: 'chat',
+                    onClick: () => closeModal(modalId) | createInbox([userId], null, true),
+                    size: 'mini'
+                }} />
+            </div>
+        ),
+        size: 'mini',
+    })
 }

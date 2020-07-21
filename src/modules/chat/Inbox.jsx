@@ -35,7 +35,7 @@ const [texts, textsCap] = translated({
     showConvList: 'show conversation list',
     showMembers: 'show members',
     pmBtnTitle: 'open back-channel',
-    trollbox: 'totem global conversation',
+    trollbox: 'Totem Global Conversation',
     you: 'you',
 }, true)
 

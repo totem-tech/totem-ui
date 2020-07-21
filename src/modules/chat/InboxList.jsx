@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Button, Label } from 'semantic-ui-react'
-import { arrSort, textEllipsis, arrUnique } from '../../utils/utils'
+import { arrSort, textEllipsis, arrUnique, deferred } from '../../utils/utils'
 import FormInput from '../../components/FormInput'
 import Message from '../../components/Message'
 import client, { getUser } from '../../services/chatClient'
@@ -20,6 +20,7 @@ import {
     SUPPORT,
     TROLLBOX,
     userStatusBond,
+    jumpToMessage,
 } from './chat'
 import NewInboxForm, { editName } from './NewInboxForm'
 
@@ -45,9 +46,9 @@ const [texts, textsCap] = translated({
     removeConversation: 'trash conversation',
     searchPlaceholder: 'search conversations',
     showHidden: 'show archived',
-    support: 'totem support',
+    support: 'Totem Support',
     trash: 'trash',
-    trollbox: 'totem global conversation',
+    trollbox: 'Totem Global Conversation',
     you: 'you',
 }, true)
 
@@ -56,15 +57,15 @@ export const getInboxName = (inboxKey, settings = inboxSettings(inboxKey), userI
     let name = receiverIds.includes(TROLLBOX) ? textsCap.trollbox : settings.name
     if (receiverIds.includes(SUPPORT)) {
         const otherUsers = receiverIds.filter(id => ![SUPPORT, userId].includes(id))
-        const isSupportMember = otherUsers.length > 0
-        // for support member display name as follows: "Totem support: UserID", otherwise "Totem Support"
-        return textsCap.support + (!isSupportMember ? '' : `: ${otherUsers[0]}`)
+        // for support member display name as follows: "Totem Support: UserID", otherwise only "Totem Support"
+        if (receiverIds.length <= 2 || otherUsers.length === 0) return textsCap.support
+        return `${textsCap.support}: ${otherUsers[0]}`
     }
     return name
 }
 
 const filterInboxes = (query = '', showAll = false) => {
-    query = query.trim()
+    query = query.trim().toLowerCase()
     const allSettings = inboxesSettings() || {}
     let filteredKeys = Object.keys(allSettings)
     if (!filteredKeys.length) return []
@@ -102,20 +103,20 @@ const filterInboxes = (query = '', showAll = false) => {
             userId,
         }
         if (!query) return item
+        let matchIndex = name.toLowerCase().indexOf(query)
         let matchType = 1000
-        let matchIndex = inboxKey.indexOf(query)
-        if (matchIndex) {
+        if (matchIndex === -1) {
+            matchIndex = inboxKey.indexOf(query)
             matchType = 2000
-            matchIndex = name.toLowerCase().indexOf(query)
         }
+        // find the latest message matching query
         const queriedMsg = messages.find(m => {
             let index = m.message.toLowerCase().indexOf(query)
-            if (index === -1) return
             if (matchIndex === -1) {
                 matchIndex = index
                 matchType = 3000
             }
-            return true
+            return index >= 0
         })
 
         // did not match name, key or any of the messages => filter out
@@ -142,13 +143,6 @@ export default function InboxList() {
         setShowAllOrg(showAll)
     }
 
-    // handle query change
-    const handleSearchChange = async (_, { value }) => {
-        expandedBond._value && expandedBond.changed(false)
-        setQuery(value)
-        setItems(filterInboxes(query, showAll))
-    }
-
     useEffect(() => {
         let mounted = true
         const tieId = inboxListBond.tie(() => {
@@ -169,7 +163,11 @@ export default function InboxList() {
         }}>
             <ToolsBar {...{
                 query,
-                onSeachChange: handleSearchChange,
+                onSeachChange: (_, { value }) => {
+                    expandedBond._value && expandedBond.changed(false)
+                    setQuery(value)
+                    setItems(filterInboxes(value, showAll))
+                },
                 showAll,
                 toggleShowAll: () => setShowAll(!showAll),
             }} />
@@ -187,7 +185,14 @@ export default function InboxList() {
     )
 }
 
-const InboxListItem = ({
+const onlineStatus = (online = {}, userIds = []) => {
+    if (!online) return OFFLINE
+    const numOnline = userIds.filter(id => online[id]).length
+    return !numOnline ? OFFLINE : (
+        numOnline === userIds.length ? ALL_ONLINE : SOME_ONLINE
+    )
+}
+const InboxListItem = React.memo(({
     active,
     archived,
     deleted,
@@ -200,7 +205,9 @@ const InboxListItem = ({
     unreadCount,
     userId,
 }) => {
-    const [status, setStatus] = useState(OFFLINE)
+    query = query.trim().toLowerCase()
+    const [userIds] = useState(inboxKey.split(',').filter(id => ![userId, TROLLBOX].includes(id)))
+    const [status, setStatus] = useState(onlineStatus(userStatusBond._value, userIds))
     const isTrollbox = inboxKey === TROLLBOX
     const receiverIds = inboxKey.split(',')
     const isSupport = receiverIds.includes(SUPPORT)
@@ -211,50 +218,22 @@ const InboxListItem = ({
         )
     )
     const { id: msgId, message: msgText, senderId, } = message || {}
-    const qIndex = !msgText ? -1 : msgText.toLowerCase().indexOf(query.toLowerCase())
+    const qIndex = !msgText ? -1 : msgText.toLowerCase().indexOf(query)
 
-    const handleHighlightedClick = e => {
-        const isMobile = getLayout() === MOBILE
-        e.stopPropagation()
-        e.preventDefault()
-        if (openInboxBond._value !== inboxKey) {
-            // makes sure inbox is not deleted or archived
-            createInbox(inboxKey.split(','))
-            // open this inbox
-            openInboxBond.changed(inboxKey)
-        }
-        isMobile && !expandedBond._value && expandedBond.changed(true)
-        // scroll to highlighted message
-        setTimeout(() => {
-            const msgEl = document.getElementById(msgId)
-            const msgsEl = document.querySelector('.chat-container .messages')
-            if (!msgEl || !msgsEl) return
-            msgEl.classList.add('blink')
-            msgsEl.classList.add('animate-scroll')
-            msgsEl.scrollTo(0, msgEl.offsetTop)
-            setTimeout(() => {
-                msgEl.classList.remove('blink')
-                msgsEl.classList.remove('animate-scroll')
-            }, 5000)
-        }, 500)
-    }
-
-    useEffect(() => {
+    userIds.length > 0 && useEffect(() => {
         let mounted = true
-        const userIds = inboxKey.split(',').filter(id => ![userId, TROLLBOX].includes(id))
-        const tieId = userIds.length > 0 && userStatusBond.tie((online = {}) => {
+        let firstIgnored = false
+        const tieId = userStatusBond.tie((online = {}) => {
             if (!mounted || !online) return
-            const numOnline = userIds.filter(id => online[id]).length
-            const newStatus = !numOnline ? OFFLINE : (
-                numOnline === userIds.length ? ALL_ONLINE : SOME_ONLINE
-            )
+            if (!firstIgnored) return firstIgnored = true
+            const newStatus = onlineStatus(online, userIds)
             status !== newStatus && setStatus(newStatus)
         })
         return () => {
             mounted = false
             tieId && userStatusBond.untie(tieId)
         }
-    }, [])
+    }, [status])
 
     return (
         <div {...{
@@ -295,12 +274,13 @@ const InboxListItem = ({
                 </i>
                 {!senderId ? '' : (
                     <div className='preview'>
-                        <b>{senderId === userId ? textsCap.you : `@${senderId}`}</b>: {' '}
-                        {!query || qIndex === -1 ? msgText : (
+                        <b>{senderId === userId ? textsCap.you : senderId}</b>
+                        : {!query || qIndex === -1 ? msgText : (
                             <span>
                                 {msgText.slice(0, qIndex)}
                                 <b {...{
-                                    onClick: handleHighlightedClick,
+                                    onClick: e => e.stopPropagation() | jumpToMessage(inboxKey, msgId),
+                                    //e.preventDefault()
                                     style: { background: 'yellow' },
                                     title: textsCap.jumpToMsg,
                                 }}>
@@ -323,9 +303,9 @@ const InboxListItem = ({
             }} />
         </div>
     )
-}
+})
 
-const ToolsBar = ({ query, onSeachChange, showAll, toggleShowAll }) => (
+const ToolsBar = React.memo(({ query, onSeachChange, showAll, toggleShowAll }) => (
     <div className='tools'>
         <div className='actions'>
             <Button.Group {...{
@@ -368,14 +348,14 @@ const ToolsBar = ({ query, onSeachChange, showAll, toggleShowAll }) => (
                 name: 'keywords',
                 onChange: onSeachChange,
                 placeholder: textsCap.searchPlaceholder,
-                type: 'text',
+                type: 'search', // enables escape to clear
                 value: query,
             }} />
         </div>
     </div>
-)
+))
 
-const InboxActions = ({ inboxKey, isGroup, isSupport, isTrollbox, isEmpty, archived, deleted }) => {
+const InboxActions = React.memo(({ inboxKey, isGroup, isSupport, isTrollbox, isEmpty, archived, deleted }) => {
     const [showActions, setShowActions] = useState(false)
     const actions = [
         isGroup && !isTrollbox && !isSupport && {
@@ -440,4 +420,4 @@ const InboxActions = ({ inboxKey, isGroup, isSupport, isTrollbox, isEmpty, archi
             ))}
         </span>
     )
-}
+})

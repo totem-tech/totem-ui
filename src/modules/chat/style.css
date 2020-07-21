@@ -39,11 +39,6 @@
     position: relative;
 }
 
-/* fix for small font size */
-.chat-container b {
-    font-weight: 400;
-}
-
 /* custom icon and button colors */
 button.dark-grey .icon,
 .icon.dark-grey {
@@ -192,7 +187,7 @@ button.dark-grey .icon,
     margin-right: 5px;
 }
 .chat-container .inbox-list .list-item b {
-    font-weight: 400;
+    font-weight: 800;
 }
 
 /* inbox */ 
@@ -242,13 +237,11 @@ button.dark-grey .icon,
     overflow: hidden;
 }
 .chat-container .inbox .member-list-item {
+    font-size: 14px;
     height: 40px;
     margin: 0;
     padding: 8px 10px;
     border-radius: 0;
-}
-.chat-container .inbox .member-list-item {
-    font-size: 16px !important;
 }
 .chat-container .inbox .member-list-item .user-icon {
     font-size: 16px !important;
@@ -318,7 +311,9 @@ button.dark-grey .icon,
 .chat-container .messages .message-wrap:last-child {
     margin-bottom: 5px;
 }
-
+.chat-container .messages .message-wrap .error {
+    color: red;
+}
 .chat-container .ui.brown.message {
     background-color: 'white' !important;
 }

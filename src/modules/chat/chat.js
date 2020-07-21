@@ -146,6 +146,31 @@ export function inboxSettings(inboxKey, value) {
 // all inbox settings
 export const inboxesSettings = () => rw().inbox || {}
 
+// Jump to a specific message within an inbox. will hightlight and blink the message
+export const jumpToMessage = (inboxKey, msgId) => {
+    const isMobile = getLayout() === MOBILE
+    if (openInboxBond._value !== inboxKey) {
+        // makes sure inbox is not deleted or archived
+        createInbox(inboxKey.split(','))
+        // open this inbox
+        openInboxBond.changed(inboxKey)
+    }
+    isMobile && !expandedBond._value && expandedBond.changed(true)
+    // scroll to highlighted message
+    setTimeout(() => {
+        const msgEl = document.getElementById(msgId)
+        const msgsEl = document.querySelector('.chat-container .messages')
+        if (!msgEl || !msgsEl) return
+        msgEl.classList.add('blink')
+        msgsEl.classList.add('animate-scroll')
+        msgsEl.scrollTo(0, msgEl.offsetTop)
+        setTimeout(() => {
+            msgEl.classList.remove('blink')
+            msgsEl.classList.remove('animate-scroll')
+        }, 5000)
+    }, 500)
+}
+
 export const removeInbox = inboxKey => {
     chatHistory.delete(inboxKey)
     inboxSettings(inboxKey, { deleted: true, unread: 0 })

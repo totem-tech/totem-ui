@@ -25,7 +25,7 @@ if (rw().history) rw({ history: null })
 export const loginBond = new Bond()
 // retrieves user credentails from local storage
 export const getUser = () => rw().user
-export const setUser = user => rw({ user }) // user = {id, secret}
+export const setUser = user => rw({ user })
 
 // include any ChatClient property that is not a function or event that does not have a callback
 const nonCbs = ['isConnected', 'disconnect']
@@ -107,15 +107,6 @@ export class ChatClient {
         // this.onDisconnect = cb => socket.on('disonnect', cb)  // doesn't work
         this.disconnect = () => socket.disconnect()
         this.onError = cb => socket.on('error', cb)
-
-        // check if logged in user has the role 'support'
-        // if true, user will receive all support messages sent by other users
-        //
-        // Params:
-        // @cb  function: callback args=>
-        //                  @err    string: error message, if any
-        //                  @yes    boolean: true indicates user is a support member
-        this.amISupport = cb => isFn(cb) && socket.emit('am-i-support', cb)
 
         // add/get company by wallet address
         //
@@ -338,6 +329,13 @@ export class ChatClient {
         },
     )
 
-    login = (id, secret, cb) => isFn(cb) && socket.emit('login', id, secret, cb)
+    login = (id, secret, cb) => isFn(cb) && socket.emit('login',
+        id,
+        secret,
+        (err, data) => {
+            // store user roles etc data sent from server
+            !err && setUser({ ...getUser(), ...data })
+            cb(err, data)
+        })
 }
 export default getClient()
