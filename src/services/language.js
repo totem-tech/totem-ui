@@ -6,7 +6,7 @@ import storage from './storage'
 const translations = new DataStorage('totem_static_translations')
 const EN = 'EN'
 const MODULE_KEY = 'language'
-export const buildMode = getUrlParam('build-mode').toLowerCase() == 'true' && window.location.hostname !== 'totem.live'
+export const BUILD_MODE = getUrlParam('build-mode').toLowerCase() == 'true' && window.location.hostname !== 'totem.live'
 export const languages = Object.freeze({
     BN: 'Bengali',
     DE: 'German',
@@ -35,7 +35,7 @@ export const translated = (texts = {}, capitalized = false) => {
     // list of selected language texts
     const selected = translations.get(getSelected()) || []
     // attempt to build a single list of english texts for translation
-    if (buildMode) {
+    if (BUILD_MODE) {
         window.enList = window.enList || []
         Object.values(texts).forEach(text => {
             text = clearClutter(text)
@@ -60,7 +60,10 @@ export const translated = (texts = {}, capitalized = false) => {
 
 export const getTexts = langCode => translations.get(langCode)
 export const setTexts = (langCode, texts) => translations.set(langCode, texts)
-export const downloadWordsListCSV = !buildMode ? () => { } : () => {
+// downloadTextListCSV generates a CSV file with all the unique application texts
+// that can be used to translate by opening the file in Google Drive
+// NB: this function should not be used when BUILD_MODE is false (URL param 'build-mode' not 'true')
+export const downloadTextListCSV = !BUILD_MODE ? null : () => {
     const langCodes = [EN, ...Object.keys(languages).filter(x => x != EN)]
     const rest = langCodes.slice(1)
     const cols = textCapitalize('abcdefghijklmnopqrstuvwxyz').split('')
@@ -69,7 +72,7 @@ export const downloadWordsListCSV = !buildMode ? () => { } : () => {
         const functions = rest.map((_, c) => `"=GOOGLETRANSLATE($A${rowNo}, $A$1, ${cols[c + 1]}$1)"`).join(',')
         return `"${clearClutter(x)}", ` + functions
     }).join(',\n')
-    downloadFile(str, 'translations.csv', 'text/csv')
+    downloadFile(str, `English-texts-${new Date().toISOString()}.csv`, 'text/csv')
 }
 
 export default {
@@ -80,88 +83,97 @@ export default {
     setSelected,
 }
 
-if (buildMode) {
-
-    // remove later
-    window.getArr = str => `
-    [
-        ${ str.split('\n').join(' ').split(' ').filter(Boolean).sort().map(x => `    '${x}',`).join('\n')}
-    ]
-    `
+if (BUILD_MODE) {
     // list of files that needs translation
-    const files = {
-        components: [
-            'CatchReactErrors.jsx',
-            'ChatWidget.jsx',
-            'CheckboxGroup.jsx',
-            'ContentSegment.jsx',
-            'Currency.jsx',
-            'DataTable.jsx',
-            'FormBuilder.jsx',
-            'FormInput.jsx',
-            'Message.jsx',
-            'PageHeader.jsx',
-            'Paginator.jsx',
-            'SidebarLeft.jsx',
-            'UserIdInput.jsx',
-            'buttons.jsx',
-        ],
-        forms: [
-            'AdminUtils.jsx',
-            'Company.jsx',
-            'Identity.jsx',
-            'IdentityDetails.jsx',
-            'IdentityRequest.jsx',
-            'IdentityShare.jsx',
-            'IntroduceUser.jsx',
-            'KeyRegistryPlayGround.jsx',
-            'Partner.jsx',
-            'Project.jsx',
-            'ProjectReassign.jsx',
-            'Register.jsx',
-            'Settings.jsx',
-            'TimeKeeping.jsx',
-            'TimeKeepingInvite.jsx',
-            'Transfer.jsx',
-        ],
-        lists: [
-            'HistoryList.jsx',
-            'IdentityList.jsx',
-            'PartnerList.jsx',
-            'ProjectList.jsx',
-            'ProjectTeamList.jsx',
-            'TimeKeepingList.jsx',
-            'TimeKeepingSummary.jsx',
-        ],
-        services: [
-            'blockchain.js',
-            'chatClient.js',
-            'data.js',
-            'history.js',
-            'identity.js',
-            'language.js',
-            'modal.jsx',
-            'notification.jsx',
-            'partner.js',
-            'project.js',
-            'queue.js',
-            'sidebar.js',
-            'storage.js',
-            'timeKeeping.js',
-            'toast.jsx',
-            'window.js',
-        ],
-        views: [
-            'GettingStartedView.jsx',
-            'PageUtilitiesView.jsx',
-            'PokeView.jsx',
-            'TimeKeepingView.jsx',
-            'TransactionsView.jsx',
-            'UpgradeView.jsx',
-            'UtilitiesView.jsx',
-        ],
-    }
-    // import files to force run translated on each file and therefore force rebuild 'en' list
-    Object.keys(files).forEach(dir => files[dir].forEach(filename => require(`../${dir}/${filename}`)))
-    console.log('Language build mode. English text/words list build done.')
+    // MAKE SURE THIS LIST IS UPDATED BEFORE GENERATING translations.json file
+    // From the 'src/' directory run in console (exclude any file that shouldn't be translated):
+    //                  ls - R | egrep - v / $
+    [
+        'app.jsx',
+        'index.js',
+        'components/buttons.jsx',
+        'components/CatchReactErrors.jsx',
+        'components/CheckboxGroup.jsx',
+        'components/ContentSegment.jsx',
+        'components/Currency.jsx',
+        'components/DataTable.jsx',
+        'components/FileUploadBond.jsx',
+        'components/FormBuilder.jsx',
+        'components/FormInput.jsx',
+        'components/Message.jsx',
+        'components/PageHeader.jsx',
+        'components/Paginator.jsx',
+        'components/SidebarLeft.jsx',
+        'components/TimeSince.jsx',
+        'components/TransactButton.jsx',
+        'components/UserIdInput.jsx',
+        'forms/AdminUtils.jsx',
+        'forms/Company.jsx',
+        'forms/IdentityDetails.jsx',
+        'forms/Identity.jsx',
+        'forms/IdentityRequest.jsx',
+        'forms/IdentityShare.jsx',
+        'forms/IntroduceUser.jsx',
+        'forms/KeyRegistryPlayGround.jsx',
+        'forms/Partner.jsx',
+        'forms/Project.jsx',
+        'forms/ProjectReassign.jsx',
+        'forms/Register.jsx',
+        'forms/RestoreBackup.jsx',
+        'forms/RuntimeUpgrade.jsx',
+        'forms/Settings.jsx',
+        'forms/TimeKeepingInvite.jsx',
+        'forms/TimeKeeping.jsx',
+        'forms/Transfer.jsx',
+        'lists/HistoryList.jsx',
+        'lists/IdentityList.jsx',
+        'lists/PartnerList.jsx',
+        'lists/ProjectList.jsx',
+        'lists/ProjectTeamList.jsx',
+        'lists/TimeKeepingList.jsx',
+        'lists/TimeKeepingSummary.jsx',
+        'modules/chat/ChatBar.jsx',
+        'modules/chat/chat.js',
+        'modules/chat/Inbox.jsx',
+        'modules/chat/InboxList.jsx',
+        'modules/chat/InboxMessages.jsx',
+        'modules/chat/NewInboxForm.jsx',
+        'modules/chat/style.css',
+        'modules/Event/EventList.jsx',
+        'modules/notification/ListItem.jsx',
+        'modules/notification/List.jsx',
+        'modules/notification/notification.js',
+        'modules/notification/style.css',
+        'modules/task/Form.jsx',
+        'modules/task/List.jsx',
+        'modules/task/task.js',
+        'services/blockchain.js',
+        'services/chatClient.js',
+        'services/currency.js',
+        'services/history.js',
+        'services/identity.js',
+        'services/language.js',
+        'services/modal.jsx',
+        'services/partner.js',
+        'services/project.js',
+        'services/queue.js',
+        'services/react.js',
+        'services/sidebar.js',
+        'services/storage.js',
+        'services/tag.js',
+        'services/tags.js',
+        'services/timeKeeping.js',
+        'services/toast.jsx',
+        'services/window.js',
+        'views/GettingStartedView.jsx',
+        'views/PageUtilitiesView.jsx',
+        'views/PokeView.jsx',
+        'views/SystemStatusView.jsx',
+        'views/TimeKeepingView.jsx',
+        'views/TransactionsView.jsx',
+        'views/UtilitiesView.jsx',
+    ]
+        // import files to force translated() function call on each file and therefore force build list of English texts
+        .forEach(path => require(`../${path}`))
+    console.log('Language texts ready to be downloaded for translation.\nGo to the "Utilities > Admin Tools"')
 }

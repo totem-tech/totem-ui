@@ -7,7 +7,7 @@ import { downloadFile, objWithoutKeys } from '../utils/utils'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 // services
 import client from '../services/chatClient'
-import { downloadWordsListCSV, translated } from '../services/language'
+import { downloadTextListCSV, translated } from '../services/language'
 import storage from '../services/storage'
 
 export default class AdminUtils extends Component {
@@ -53,6 +53,7 @@ export default class AdminUtils extends Component {
 					required: true,
 					selection: true,
 					type: 'dropdown',
+					value: 'language-download',
 				},
 				{
 					hidden: ({ action }) => action !== 'companies',
@@ -124,14 +125,14 @@ export default class AdminUtils extends Component {
 		switch (action) {
 			case 'companies':
 				return this.processCompanies(e, { seed, seedStartNum, text })
-			case 'language':
+			case 'language': // convert csv to json
 				data = Array.from(csvToMap(text, null, '\t'))
 				name = 'translations.json'
 				break
 			case 'language-download':
 				return client.languageErrorMessages((_, texts) => {
 					translated(texts || '')
-					downloadWordsListCSV()
+					downloadTextListCSV()
 				})
 			default:
 				data = text

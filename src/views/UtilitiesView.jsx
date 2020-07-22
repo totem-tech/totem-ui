@@ -9,7 +9,7 @@ import RuntimeUpgradeForm from '../forms/RuntimeUpgrade'
 // services
 import { getConnection } from '../services/blockchain'
 import identity from '../services/identity'
-import { buildMode, translated } from '../services/language'
+import { BUILD_MODE, translated } from '../services/language'
 
 // import TransactionsView from './TransactionsView'
 // import PokeView from './PokeView'
@@ -52,7 +52,7 @@ export default function UtilitiesView() {
             header: texts.statusHeader,
             subHeader: texts.statusSubheader,
         },
-        buildMode && {
+        BUILD_MODE && {
             content: AdminUtilsForm,
             header: 'Admin Tools',
         },
