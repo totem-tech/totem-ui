@@ -5,6 +5,7 @@ import { setNetworkDefault, denominationInfo } from 'oo7-substrate'
 import { connect } from '../utils/polkadotHelper'
 import types from '../utils/totem-polkadot-js-types'
 import { isObj, isFn, isArr, isDefined } from '../utils/utils'
+import PromisE from '../utils/PromisE'
 
 // oo7-substrate: register custom types
 Object.keys(types).forEach(key => addCodecTransform(key, types[key]))
@@ -22,7 +23,8 @@ let connection = {
     nodeUrl: null,
     provider: null,
 }
-let connectionPromsie = null
+let connectPromise = null
+let reconnectAttempted = false
 export const denominations = Object.freeze({
     Ytx: 24,
     Ztx: 21,
@@ -51,17 +53,21 @@ export const nodes = [
 ]
 
 export const getConfig = () => config
+
 export const getConnection = async (create = true) => {
     if (connection.api && connection.api._isConnected.value || !create) return connection
-    if (connectionPromsie) {
-        await connectionPromsie
+    if (connectPromise) {
+        await connectPromise
+
+        // if connection is rejected attempt to connect again
+        if (connectPromise.rejected && create) await getConnection(true)
         return connection
     }
     const nodeUrl = nodes[0]
     console.log('Polkadot: connecting to', nodeUrl)
-    connectionPromsie = connect(nodeUrl, config.types, true)
+    connectPromise = PromisE(connect(nodeUrl, config.types, true))
     try {
-        const { api, keyring, provider } = await connectionPromsie
+        const { api, keyring, provider } = await connectPromise
         console.log('Connected using Polkadot', { api, provider })
         connection = {
             api,
@@ -70,7 +76,7 @@ export const getConnection = async (create = true) => {
             nodeUrl,
             isConnected: true,
         }
-        connectionPromsie = null
+        connectPromise = null
 
         // none of these work!!!!
         // provider.websocket.addEventListener('disconnected', (err) => console.log('disconnected', err))
@@ -83,7 +89,7 @@ export const getConnection = async (create = true) => {
         // provider.websocket.on('connect', (err) => console.log('connect', err))
     } catch (err) {
         // make sure to reset when rejected
-        connectionPromsie = null
+        connectPromise = null
         connection.isConnected = false
         throw err
     }

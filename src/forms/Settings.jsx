@@ -49,7 +49,7 @@ export default class Settings extends Component {
                         })),
                         'text',
                     ),
-                    search: true,
+                    search: ['text', 'description'], // sort search results by specific keys
                     selection: true,
                     type: 'dropdown',
                     value: getSelectedLanguage(),
@@ -59,7 +59,7 @@ export default class Settings extends Component {
                     name: 'currency',
                     onChange: this.handleCurrencyChange,
                     options: [],
-                    search: true,
+                    search: ['text', 'description'],
                     selection: true,
                     type: 'dropdown',
                     value: getSelectedCurrency()
@@ -118,7 +118,6 @@ export default class Settings extends Component {
                 text: nameInLanguage,
                 value: ISO
             }))
-            currencyIn.search = ['text', 'description']
             this.setState({ inputs })
         })
     }
