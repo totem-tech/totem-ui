@@ -40,13 +40,8 @@ export default class AdminUtils extends Component {
 						},
 						{
 							accept: '.tsv',
-							text: 'Convert translations.tsv to translations.json',
+							text: 'Convert English-Texts.tsv file to translations.json',
 							value: 'language',
-						},
-						{
-							accept: '.tsv',
-							text: 'Convert companies.tsv to companies.json',
-							value: 'companies',
 						},
 					].map(x => ({ ...x, key: x.value })),
 					placeholder: 'Select an action',
@@ -54,27 +49,6 @@ export default class AdminUtils extends Component {
 					selection: true,
 					type: 'dropdown',
 					value: 'language-download',
-				},
-				{
-					hidden: ({ action }) => action !== 'companies',
-					label: 'Seed for address generation',
-					name: 'seed',
-					placeholder: 'Enter a seed (without derivation path) to generate missing addresses',
-					required: true,
-					rows: 1,
-					type: 'textarea',
-					value: '',
-				},
-				{
-					hidden: ({ action }) => action !== 'companies',
-					integer: true,
-					label: 'Derivation starting number',
-					name: 'seedStartNum',
-					placeholder: 'Enter a seed derivation starting number',
-					required: true,
-					rows: 1,
-					type: 'number',
-					value: '',
 				},
 				{
 					accept: '*/*',
@@ -120,109 +94,29 @@ export default class AdminUtils extends Component {
 		return (country && country.code) || ''
 	}
 
-	handleSubmit = (e, { action, filename, seed, seedStartNum, text }) => {
-		let data, name, type
+	handleSubmit = (_, { action, text }) => {
 		switch (action) {
-			case 'companies':
-				return this.processCompanies(e, { seed, seedStartNum, text })
 			case 'language': // convert csv to json
-				data = Array.from(csvToMap(text, null, '\t'))
-				name = 'translations.json'
+				downloadFile(
+					JSON.stringify(Array.from(csvToMap(text, null, '\t'))),
+					'translations.json',
+					'application/json',
+				)
 				break
 			case 'language-download':
-				return client.languageErrorMessages((_, texts) => {
+				client.languageErrorMessages((_, texts) => {
 					translated(texts || '')
 					downloadTextListCSV()
 				})
-			default:
-				data = text
-				name = filename || `${action}.json`
 		}
-		type = type || 'application/json'
-		downloadFile(JSON.stringify(data), name, type)
-	}
-
-	processCompanies = (e, { seed, seedStartNum, text }) => {
-		let counter = 0
-		let counterAddr = 0
-		let updateCount = 0
-		let error = false
-		let notFoundCountries = {}
-		seed = seed.trim()
-		const message = {
-			content: 'Conversion started.... This may take a while to complete',
-			showIcon: true,
-			status: 'loading',
-		}
-		const companies = csvToArr(text, null, '\t').map((com, i) => {
-			let country = this.getCountry(com.country)
-			if (!country) {
-				com.country = com.country
-				notFoundCountries[com.country] = 1
+		this.setState({
+			message: {
+				content: 'Read up the howto-language.md file',
+				header: 'Not sure what to do next?',
+				showIcon: true,
+				status: 'info'
 			}
-			return [com.address, objWithoutKeys(com, ['address'])]
 		})
-		let updateEvery = parseInt(companies.length / 100) || 1
-		this.setState({ message, submitDisabled: true })
-
-		const process = keyring =>
-			companies.forEach(([address], i) =>
-				setTimeout(() => {
-					if (error || !keyring) return
-					const seedFull = `${seed}${seed.endsWith('/') ? '' : '/'}1/${++seedStartNum}`
-					try {
-						if (!address) {
-							const pair = keyring.addFromUri(seedFull)
-							counterAddr++
-							companies[i][0] = pair.address
-						}
-						counter++
-
-						if (counter % updateEvery === 0) {
-							updateCount++
-							message.header = `${counter}/${companies.length} companies processed. ${counterAddr} new address generated`
-							console.log('progress', ((counter / companies.length) * 100).toFixed(2), '%')
-							message.content = (
-								<progress
-									{...{
-										value: counter / companies.length,
-										max: 1,
-										style: { width: '100%' },
-									}}
-								/>
-							)
-							this.setState({ message })
-						}
-						if (counter >= companies.length) {
-							console.timeEnd('companies')
-							notFoundCountries = Object.keys(notFoundCountries)
-							if (notFoundCountries.length > 0) {
-								console.log({ notFoundCountries })
-								alert(`
-                            Warning: the following countries did not match correct 2/3 letter country codes or full name:
-                            ${notFoundCountries.join()}
-                        `)
-							}
-							this.handleSubmit(e, { filename: 'companies.json', text: companies })
-							return this.setState({ message: null, submitDisabled: false })
-						}
-					} catch (err) {
-						error = true
-						message.content =
-							'Address generation failed! Please check if the supplied seed is valid:\n' +
-							seed +
-							'\n\nCurrent seed with derivation path:\n' +
-							seedFull +
-							'\n\n' +
-							err
-						message.status = 'error'
-						console.timeEnd('companies')
-						this.setState({ message, submitDisabled: false })
-					}
-				})
-			)
-
-		console.time('companies') | setTimeout(() => process(keyring.keyring), 300)
 	}
 
 	handleFileChange = (e, { action }) => {

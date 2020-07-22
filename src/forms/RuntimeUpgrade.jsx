@@ -141,5 +141,5 @@ export default class UpgradeForm extends Component {
         }
     }
 
-    render = () => <FormBuilder {...this.state} />
+    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
