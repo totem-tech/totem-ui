@@ -4,7 +4,7 @@ import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import Currency from '../../components/Currency'
-import { arrSort, deferred, isObj, isValidNumber, deferredPromise, objClean, generateHash } from '../../utils/utils'
+import { arrSort, deferred, isObj, isValidNumber, objClean, generateHash } from '../../utils/utils'
 import PartnerForm from '../../forms/Partner'
 // services
 import { getConnection, getCurrentBlock, hashTypes } from '../../services/blockchain'
@@ -21,6 +21,7 @@ import { BLOCK_DURATION_SECONDS } from '../../utils/time'
 import { createOrUpdateTask, PRODUCT_HASH_LABOUR } from './task'
 import { addToQueue } from '../../services/queue'
 import { showForm } from '../../services/modal'
+import PromisE from '../../utils/PromisE'
 
 const [texts, textsCap] = translated({
     addedToQueue: 'request added to queue',
@@ -375,7 +376,7 @@ export default class TaskForm extends Component {
 
     // check if use has enough balance for the transaction including pre-funding amount (bounty)
     handleBountyChange = deferred((_, values) => {
-        this.bountyPromise = this.bountyPromise || deferredPromise()
+        this.bountyPromise = this.bountyPromise || PromisE.deferred()
         // turn publish value into binary
         values[this.names.publish] = values[this.names.publish] === 'yes' ? 1 : 0
         const { inputs } = this.state

@@ -184,7 +184,6 @@ export const getTimeRecordsBonds = (archive, manage, projectHash) => getProjects
 
 export const getProjectWorkers = projectHash => Bond.promise([
     worker.listWorkers(projectHash),
-    // ToDo: add invited workers bond here
     worker.listInvited(projectHash),
     project.getOwner(projectHash),
 ]).then(([acceptedAddresses, invitedAddresses, ownerAddress]) => {

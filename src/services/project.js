@@ -1,15 +1,16 @@
 import uuid from 'uuid'
 import { Bond } from 'oo7'
 import { runtime } from 'oo7-substrate'
-import { hashToBytes, hashToStr, ss58Decode } from '../utils/convert'
-import { arrUnique, isBond, isUint8Arr } from '../utils/utils'
+import { hashToBytes, hashToStr, ss58Decode, addressToStr } from '../utils/convert'
+import { arrUnique, isBond, isUint8Arr, isFn } from '../utils/utils'
 // services
-import { hashTypes } from './blockchain'
+import { hashTypes, getConnection, query } from './blockchain'
 import client from './chatClient'
 import identities, { getSelected, selectedAddressBond } from './identity'
 import partners from './partner'
 import storage from './storage'
-import timeKeeping from './timeKeeping'
+import timeKeeping, { record } from './timeKeeping'
+import PromisE from '../utils/PromisE'
 
 export const MODULE_KEY = 'projects'
 // read or write to cache storage
@@ -87,54 +88,66 @@ export const getProject = projectHash => fetchProjects([projectHash]).then(proje
     return projects.size > 0 ? Array.from(projects)[0][1] : undefined
 })
 
-// getProjects retrieves projects owned by selected identity
-// Retrieved data is cached in localStorage and only updated there is changes to invitation or manually triggered by setting `@_forceUpdate` to `true`.
+// getProjects retrieves projects along with relevant details owned by selected identity.
+// Retrieved data is cached in localStorage and only updated when list of projects changes in the blockchain
+// or manually triggered by invoking `getProjects(true)`.
 //
 // Params:
-// @_forceUpdate    Boolean
+// @forceUpdate     Boolean: (optional)
 // 
-// Returns Promise
-export const getProjects = (_forceUpdate = false) => {
-    _forceUpdate = _forceUpdate || _config.firstAttempt
+// Returns          Map: list of projects
+export async function getProjects(forceUpdate) {
+    const config = getProject
+    const {
+        address: addressPrev,
+        unsubscribe,
+        timeout = 10000, // force timeout after 10 seconds
+    } = config
     const { address } = getSelected()
-    const key = 'projects-' + address
-    const cachedAr = cacheRW(key) || []
-    const projectsCache = new Map(cachedAr)
+    const cacheKey = 'projects-' + address
+    const update = async (recordIds) => {
+        recordIds = recordIds.map(h => hashToStr(h)).sort()
+        const cachedIds = (cacheRW(cacheKey) || []).map(([id]) => id).sort()
+        const changed = JSON.stringify(recordIds) !== JSON.stringify(cachedIds)
+        if (config.updatePromise || !changed && !forceUpdate) return
 
-    if (_config.address !== address) {
-        _config.address = address
-        // update projects list whenever list of projects changes
-        if (_config.hashesBond) _config.hashesBond.untie(_config.tieId)
-        _config.hashesBond = project.listByOwner(address)
-        _config.tieId = _config.hashesBond.tie(hashes => {
-            hashes = hashes.map(h => hashToStr(h))
-            const changed = !!hashes.find(hash => !projectsCache.get(hash))
-                || !!cachedAr.find(([hash]) => !hashes.includes(hash))
-            if (_config.firstAttempt) return
-            if (_config.updateInProgress) return //_config.updatePromise.then(() => getProjects())
-            if (changed) return getProjects(true)
+        const promise = fetchProjects(recordIds)
+        // use cache if times out
+        config.updatePromise = PromisE.timeout(promise, timeout)
+        // update cache and trigger bond
+        promise.then(projects => {
+            // in case chat server does not have the project
+            Array.from(projects).forEach(([_, project]) => {
+                project.ownerAddress = project.ownerAddress || address
+                project.isOwner = true
+                project.title = project.title || 'Unknown'
+                project.description = project.description || ''
+            })
+            config.updatePromise = null
+            // save to local storage
+            cacheRW(cacheKey, projects)
+            // update bond so that components that are subscribed to it gets updated
+            getProjectsBond.changed(uuid.v1())
+            return projects
         })
     }
-
-    if (!navigator.onLine || !_forceUpdate && projectsCache.size > 0) {
-        return new Promise(resolve => resolve(projectsCache))
+    if (!unsubscribe || address !== addressPrev) {
+        // selected identity changed
+        config.address = address
+        isFn(unsubscribe) && unsubscribe()
+        config.unsubscribe = await project.listByOwner(address, update)
+    } else if (forceUpdate) {
+        // once-off update
+        await project.listByOwner(address).then(update)
     }
-    if (_config.updateInProgress) return _config.updatePromise
-    _config.updateInProgress = true
-    // if not online resolve to cached projects and update whenever goes online
-    _config.updatePromise = fetchProjects(_config.hashesBond).then(projects => {
-        // in case chat server does not have the project
-        Array.from(projects).forEach(([_, project]) => {
-            project.ownerAddress = project.ownerAddress || address
-            project.isOwner = true
-        })
-        _config.updateInProgress = false
-        _config.firstAttempt = false
-        cacheRW(key, projects)
-        _forceUpdate && getProjectsBond.changed(uuid.v1())
-        return projects
-    })
-    return _config.updatePromise
+
+    if (!navigator.onLine) return new Map(cacheRW(cacheKey) || [])
+
+    // if fetchProjects is still in-progress wait for it to finish
+    try {
+        if (config.updatePromise) await config.updatePromise
+    } catch (e) { /* ignore timeout error  */ }
+    return new Map(cacheRW(cacheKey) || [])
 }
 
 // triggered whenever list of project is updated
@@ -145,14 +158,22 @@ const project = {
     // getOwner retrives the owner address of a project
     //
     // Params:
-    // @projectHash string/Bond/Uint8Array
+    // @recordId    string/Uint8Array: must be a valid hex
+    // @callback    function: (optional) if included will return a function to unsubscribe
     //
     // Returns Bond
-    getOwner: projectHash => runtime.projects.projectHashOwner(hashToBytes(projectHash)),
+    getOwner: (recordId, callback) => query(
+        'api.query.projects.projectHashOwner',
+        [hashToStr(recordId), callback].filter(Boolean),
+    ),
     // listByOwner retrieves a list of project hashes owned by @address
     //
     // Returns Bond
-    listByOwner: address => runtime.projects.ownerProjectsList(ss58Decode(address)),
+    // listByOwner: address => runtime.projects.ownerProjectsList(ss58Decode(address)),
+    listByOwner: (address, callback) => query(
+        'api.query.projects.ownerProjectsList',
+        [addressToStr(address), callback].filter(Boolean),
+    ),
     // status retrieves the status code of a project
     // params
     // @projecthash    string/Uint8Array

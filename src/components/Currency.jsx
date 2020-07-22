@@ -6,7 +6,7 @@ import { round } from '../utils/number'
 import { bond, convertTo, currencyDefault, getSelected } from '../services/currency'
 import { getConnection } from '../services/blockchain'
 
-function Currency(props) {
+const Currency = props => {
     const {
         address,
         className,

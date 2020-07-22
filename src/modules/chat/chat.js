@@ -1,7 +1,7 @@
 import DataStorage from '../../utils/DataStorage'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
-import { arrUnique, isObj, isValidNumber, isDefined, objClean, deferredPromise } from '../../utils/utils'
+import { arrUnique, isObj, isValidNumber, isDefined, objClean } from '../../utils/utils'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import client, { getUser, loginBond } from '../../services/chatClient'
 import storage from '../../services/storage'
