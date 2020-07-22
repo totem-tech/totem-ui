@@ -59,7 +59,7 @@ export default class Settings extends Component {
                     name: 'currency',
                     onChange: this.handleCurrencyChange,
                     options: [],
-                    search: ['text', 'description'],
+                    search: ['text', 'value'],
                     selection: true,
                     type: 'dropdown',
                     value: getSelectedCurrency()
@@ -81,7 +81,7 @@ export default class Settings extends Component {
                     label: textsCap.chatLimitLabel,
                     name: 'chatMsgLimit',
                     onChange: this.handleChatLimitChange,
-                    options: [0, 10, 50, 100, 500, 1000].map((limit, i) => ({
+                    options: [0, 10, 50, 100, 500].map((limit, i) => ({
                         key: i,
                         text: limit || textsCap.unlimited,
                         value: limit,
@@ -106,18 +106,17 @@ export default class Settings extends Component {
                 },
             ]
         }
-    }
 
-    componentWillMount() {
         const { inputs } = this.state
         const currencyIn = findInput(inputs, 'currency')
         getCurrencies().then(currencies => {
-            currencyIn.options = currencies.map(({ currency, nameInLanguage, ISO }) => ({
+            const options = currencies.map(({ currency, nameInLanguage, ISO }) => ({
                 description: currency,
                 key: ISO,
                 text: nameInLanguage,
                 value: ISO
             }))
+            currencyIn.options = arrSort(options, 'text')
             this.setState({ inputs })
         })
     }

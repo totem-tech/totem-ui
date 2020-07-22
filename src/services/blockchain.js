@@ -24,7 +24,6 @@ let connection = {
     provider: null,
 }
 let connectPromise = null
-let reconnectAttempted = false
 export const denominations = Object.freeze({
     Ytx: 24,
     Ztx: 21,
@@ -76,7 +75,6 @@ export const getConnection = async (create = true) => {
             nodeUrl,
             isConnected: true,
         }
-        connectPromise = null
 
         // none of these work!!!!
         // provider.websocket.addEventListener('disconnected', (err) => console.log('disconnected', err))
@@ -89,7 +87,6 @@ export const getConnection = async (create = true) => {
         // provider.websocket.on('connect', (err) => console.log('connect', err))
     } catch (err) {
         // make sure to reset when rejected
-        connectPromise = null
         connection.isConnected = false
         throw err
     }

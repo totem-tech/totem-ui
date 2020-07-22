@@ -12,7 +12,7 @@ let lastUpdated = null
 const updateFrequencyMs = 24 * 60 * 60 * 1000
 
 // selected currency bond
-export const bond = new Bond()
+export const bond = new Bond().defaultTo(getSelected())
 // default currency
 export const currencyDefault = 'XTX'
 
@@ -35,8 +35,9 @@ export const convertTo = async (amount, from, to) => {
 }
 
 // get selected currency code
-export const getSelected = () => rw().selected || currencyDefault
-bond.changed(getSelected())
+export function getSelected() {
+    return rw().selected || currencyDefault
+}
 
 // get list of currencies 
 export const getCurrencies = async () => await updateCurrencies() || rwCache().currencies
@@ -61,7 +62,7 @@ export const updateCurrencies = async () => {
     let currencies = null
     await client.currencyList.promise(tickersHash, ((err, currencies = []) => {
         err && console.error('Failed to retrieve currencies', err)
-        if (currencies.size === 0) return
+        if (currencies.length === 0) return
         currencies.forEach(x => {
             x.nameInLanguage = x.nameInLanguage || x.currency
             x.ISO = x.ISO || x.currency

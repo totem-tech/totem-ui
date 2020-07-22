@@ -10,6 +10,7 @@ import { getLayout, MOBILE } from '../../services/window'
 const PREFIX = 'totem_'
 const MODULE_KEY = 'chat-history'
 const INTERVAL_FREQUENCY_MS = 60000 // check online status every 60 seconds
+const DEFAULT_LIMIT = 200
 export const TROLLBOX = 'everyone'
 export const TROLLBOX_ALT = 'trollbox' // alternative ID for trollbox
 export const SUPPORT = 'support'
@@ -120,7 +121,7 @@ export const historyLimit = limit => {
     limit = rw(
         !isValidNumber(limit) ? undefined : { historyLimit: limit }
     ).historyLimit
-    return isDefined(limit) ? limit : 100
+    return isDefined(limit) ? limit : DEFAULT_LIMIT
 }
 
 // get/set inbox specific settings
