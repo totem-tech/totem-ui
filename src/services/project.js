@@ -84,61 +84,75 @@ export const getProject = async (recordId) => {
 //                          Default: 10000 (10 seconds)
 // 
 // Returns          Map: list of projects
-export async function getProjects(forceUpdate = false, timeout = 20000) {
+export const getProjects = (forceUpdate = false, timeout = 10000) => new Promise(async (resolve, reject) => {
     const config = getProject
+    config.bond = config.bond || new Bond()
     const {
         address: addressPrev,
+        bond,
         unsubscribe,
+        update,
         updatePromise,
     } = config
     const { address } = getSelected()
     const cacheKey = 'projects-' + address
-    const update = async (recordIds) => {
-        recordIds = recordIds.map(hashToStr).sort()
-        const cachedIds = (cacheRW(cacheKey) || []).map(([id]) => id).sort()
-        const changed = JSON.stringify(recordIds) !== JSON.stringify(cachedIds)
-        if (updatePromise && updatePromise.pending || !changed && !forceUpdate) return
 
-        const promise = fetchProjects(recordIds)
-        // use cache if times out
-        try {
-            config.updatePromise = promise// PromisE.timeout(promise, timeout)
-            // update cache and trigger bond
-            const projects = await promise
-            // in case chat server does not have the project
-            Array.from(projects).forEach(([_, project]) => {
-                project.ownerAddress = project.ownerAddress || address
-                project.isOwner = true
-                project.title = project.title || 'Unknown'
-                project.description = project.description || ''
-            })
-            // save to local storage
-            cacheRW(cacheKey, projects)
-            // update bond so that components that are subscribed to it gets updated
-            getProjectsBond.changed(uuid.v1())
-        } catch (err) { console.log('error', err) }
-    }
-    if (!unsubscribe || address !== addressPrev) {
-        // selected identity changed
-        config.address = address
-        isFn(unsubscribe) && unsubscribe()
-        config.unsubscribe = await project.listByOwner(address, update)
-    } else if (forceUpdate) {
-        // once-off update
-        update(await project.listByOwner(address))
-    }
-
-    if (!navigator.onLine) return new Map(cacheRW(cacheKey) || [])
-
-    // if fetchProjects is still in-progress wait for it to finish
     try {
-        if (updatePromise.pending) await updatePromise
-    } catch (e) { /* ignore timeout error  */ }
-    return new Map(cacheRW(cacheKey) || [])
+        if (!navigator.onLine) return new Map(cacheRW(cacheKey) || [])
+        if (!unsubscribe || address !== addressPrev) {
+            // selected identity changed
+            config.address = address
+            isFn(unsubscribe) && unsubscribe()
+            config.unsubscribe = await project.listByOwner(address, update)
+        } else if (forceUpdate) {
+            // once-off update
+            await update(await project.listByOwner(address), true, true)
+        }
+    } catch (err) {
+        reject(err)
+    }
+
+    try {
+        await PromisE.timeout(updatePromise, Bond.proimse(bond), timeout)
+        config.bond = null // remove bond
+    } catch (e) {
+        /* ignore timeout error  */
+    }
+    resolve(new Map(cacheRW(cacheKey) || []))
+})
+getProjects.update = async (recordIds, forceUpdate = false, throwError = false) => {
+    const config = getProject
+    const { updatePromise } = config
+    recordIds = recordIds.map(hashToStr).sort()
+    const cachedIds = (cacheRW(cacheKey) || []).map(([id]) => id).sort()
+    const changed = JSON.stringify(recordIds) !== JSON.stringify(cachedIds)
+    if (updatePromise && updatePromise.pending || !changed && !forceUpdate) return
+
+    // use cache if times out
+    try {
+        // update cache and trigger bond
+        config.updatePromise = new PromisE(fetchProjects(recordIds))
+        const projects = await config.updatePromise
+        // in case chat server does not have the project
+        Array.from(projects).forEach(([_, project]) => {
+            project.ownerAddress = project.ownerAddress || address
+            project.isOwner = true
+            project.title = project.title || 'Unknown'
+            project.description = project.description || ''
+        })
+        // save to local storage
+        cacheRW(cacheKey, projects)
+        // update bond so that components that are subscribed to it gets updated
+        const id = uuid.v1()
+        getProjectsBond.changed(id)
+        config.bond && config.bond.changed(id)
+    } catch (err) {
+        if (throwError) throw err
+    }
 }
 
 // triggered whenever list of project is updated
-export const getProjectsBond = new Bond().defaultTo(uuid.v1())
+export const getProjectsBond = new Bond()
 selectedAddressBond.tie(() => getProjectsBond.changed(uuid.v1()))
 
 const project = {
