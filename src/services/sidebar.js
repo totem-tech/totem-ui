@@ -234,7 +234,7 @@ export const sidebarItems = [
         subHeader: texts.tasksSubheader,
     },
     {
-        content: TransferForm,
+        content: <TransferForm />,
         contentProps: { style: { maxWidth: 620 } },
         icon: 'money bill alternate outline',
         header: texts.transferHeader,

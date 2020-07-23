@@ -288,13 +288,13 @@ export default class TimeKeepingForm extends ReactiveComponent {
     }
 
     // check if project is active (status = open or reopened)
-    handleProjectChange = (_, values, index) => {
-        let { projectHash, workerAddress } = values
+    handleProjectChange = async (_, values, index) => {
+        let { projectHash: recordId, workerAddress } = values
         const { inputs } = this.state
-        const isValidProject = projectHash && (inputs[index].options || []).find(x => x.value === projectHash)
+        const isValidProject = recordId && (inputs[index].options || []).find(x => x.value === recordId)
         if (!isValidProject) {
             // project hash doesnt exists in the options
-            if (projectHash) inputs[index].bond.changed(null)
+            if (recordId) inputs[index].bond.changed(null)
             return
         }
 
@@ -307,50 +307,49 @@ export default class TimeKeepingForm extends ReactiveComponent {
         this.setState({ inputs, submitDisabled: true })
 
         // check if project status is open/reopened
-        projectService.status(projectHash).then(statusCode => {
-            const projectActive = openStatuses.includes(statusCode)
-            const { address } = getSelected()
-            workerAddress = workerAddress || address
-            inputs[index].invalid = !projectActive
-            inputs[index].message = projectActive ? undefined : {
-                content: texts.selectActiveProject,
-                header: texts.inactiveProjectSelected,
+        const statusCode = await projectService.status(recordId)
+        const projectActive = openStatuses.includes(statusCode)
+        const { address } = getSelected()
+        workerAddress = workerAddress || address
+        inputs[index].invalid = !projectActive
+        inputs[index].message = projectActive ? undefined : {
+            content: texts.selectActiveProject,
+            header: texts.inactiveProjectSelected,
+            showIcon: true,
+            status: 'error',
+        }
+        if (!projectActive) {
+            inputs[index].loading = false
+            return this.setState({ inputs, submitDisabled: false })
+        }
+        // check if worker's ban and invitation status
+        Bond.all([
+            timeKeeping.worker.accepted(recordId, workerAddress),
+            timeKeeping.worker.banned(recordId, workerAddress),
+        ]).then(([accepted, banned]) => {
+            inputs[index].loading = false
+            inputs[index].invalid = banned || !accepted // null => not invited, false => not responded/aceepted
+            const invited = accepted === false
+            inputs[index].message = banned ? texts.workerBannedMsg : accepted ? undefined : {
+                content: !invited ? texts.inactiveWorkerMsg1 : (
+                    <div>
+                        {texts.inactiveWorkerMsg3} <br />
+                        <ButtonAcceptOrReject
+                            onClick={ok => handleTKInvitation(recordId, workerAddress, ok)
+                                .then(success => {
+                                    // force trigger change
+                                    success && inputs[index].bond.changed(recordId)
+                                })
+                            }
+                        />
+                    </div>
+                ),
+                header: invited ? texts.inactiveWorkerHeader2 : texts.inactiveWorkerHeader1,
                 showIcon: true,
                 status: 'error',
             }
-            if (!projectActive) {
-                inputs[index].loading = false
-                return this.setState({ inputs, submitDisabled: false })
-            }
-            // check if worker's ban and invitation status
-            Bond.all([
-                timeKeeping.worker.accepted(projectHash, workerAddress),
-                timeKeeping.worker.banned(projectHash, workerAddress),
-            ]).then(([accepted, banned]) => {
-                inputs[index].loading = false
-                inputs[index].invalid = banned || !accepted // null => not invited, false => not responded/aceepted
-                const invited = accepted === false
-                inputs[index].message = banned ? texts.workerBannedMsg : accepted ? undefined : {
-                    content: !invited ? texts.inactiveWorkerMsg1 : (
-                        <div>
-                            {texts.inactiveWorkerMsg3} <br />
-                            <ButtonAcceptOrReject
-                                onClick={ok => handleTKInvitation(projectHash, workerAddress, ok)
-                                    .then(success => {
-                                        // force trigger change
-                                        success && inputs[index].bond.changed(projectHash)
-                                    })
-                                }
-                            />
-                        </div>
-                    ),
-                    header: invited ? texts.inactiveWorkerHeader2 : texts.inactiveWorkerHeader1,
-                    showIcon: true,
-                    status: 'error',
-                }
-                this.setState({ inputs, submitDisabled: false })
-                if (!inputs[index].message) this.setIdentityOptions()
-            })
+            this.setState({ inputs, submitDisabled: false })
+            if (!inputs[index].message) this.setIdentityOptions()
         })
     }
 

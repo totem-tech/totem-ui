@@ -4,7 +4,7 @@ import { hashToStr } from '../utils/convert'
 import { setNetworkDefault, denominationInfo } from 'oo7-substrate'
 import { connect } from '../utils/polkadotHelper'
 import types from '../utils/totem-polkadot-js-types'
-import { isObj, isFn, isArr, isDefined } from '../utils/utils'
+import { isObj, isFn, isArr, isDefined, isStr } from '../utils/utils'
 import PromisE from '../utils/PromisE'
 
 // oo7-substrate: register custom types
@@ -106,30 +106,37 @@ export const getTypes = () => new Promise(resolve => resolve(types))
 // query makes API calls using PolkadotJS. All values returned will be sanitised.
 //
 // Params:
-// @func string: path to the PolkadotJS API function as a string. Eg: 'api.rpc.system.health'
+// @func    string: path to the PolkadotJS API function as a string. Eg: 'api.rpc.system.health'
 // @args    array: arguments to be supplied when invoking the API function.
-//            To subscribe to the API supply a callback function as the last item in the array.
+//              To subscribe to the API supply a callback function as the last item in the array.
 // @print   boolean: if true, will print the result of the query
 //
 // Returns  function/any: If callback is supplied in @args, will return the unsubscribe function.
-//                      Otherwise, value of the query will be returned
-export const query = async (func, args = [], print = false) => {
+//              Otherwise, value of the query will be returned
+export const query = async (func, args = [], multi = false, print = false) => {
     // **** keep { api } **** It is expected to be used with eval()
     const { api } = await getConnection()
     if (!func || func === 'api') return api
+    // add .multi if required
+    if (isStr(func) && multi && !func.endsWith('.multi')) func += '.multi'
+
     const fn = eval(func)
     if (!fn) throw new Error('Invalid API function', func)
+
     args = isArr(args) || !isDefined(args) ? args : [args]
     const sanitise = x => JSON.parse(JSON.stringify(x)) // get rid of jargon
     const cb = args[args.length - 1]
     const isSubscribe = isFn(cb) && isFn(fn)
-    if (isSubscribe) {
+
+    if (isSubscribe && print) {
+        // only add interceptor if subscribe and print
         args[args.length - 1] = value => {
             value = sanitise(value)
             print && console.log(func, value)
             cb.call(null, value)
         }
     }
+
     const result = isFn(fn) ? await fn.apply(null, args) : fn
     !isSubscribe && print && console.log(JSON.stringify(result, null, 4))
     return isSubscribe ? result : sanitise(result)

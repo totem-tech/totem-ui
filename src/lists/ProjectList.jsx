@@ -51,7 +51,7 @@ const [texts] = translated({
         A better option might be to archive the Activity.`,
     deleteConfirmHeader: 'Delete Activities',
     detailsNameLabel: 'Activity Name',
-    detailsHashLabel: 'Activity Unique ID',
+    detailsRecordIdLabel: 'Activity Record ID',
     detailsDescLabel: 'Description of Activity',
     detailsTotalTimeLabel: 'Total Time',
     detailsStatusLabel: 'Activity Status',
@@ -114,23 +114,23 @@ export default class ProjectList extends Component {
                 {
                     // No key required
                     collapsing: true,
-                    content: (project, hash) => ([
+                    content: (project, recordId) => ([
                         {
                             key: 'edit',
                             icon: 'pencil',
-                            onClick: () => showForm(ProjectForm, { hash, values: project }),
+                            onClick: () => showForm(ProjectForm, { hash: recordId, values: project }),
                             title: texts.editProject,
                         },
                         {
                             icon: { name: 'group' },
                             key: 'workers',
-                            onClick: () => this.showTeam(hash, project.name),
+                            onClick: () => this.showTeam(recordId, project.name),
                             title: texts.viewTeam,
                         },
                         {
                             icon: { name: 'eye' },
                             key: 'detials',
-                            onClick: () => this.showDetails(project, hash),
+                            onClick: () => this.showDetails(project, recordId),
                             title: texts.viewDetails,
                         }
                     ]).map(props => <Button {...props} />),
@@ -196,39 +196,39 @@ export default class ProjectList extends Component {
         // unsubscribe from updates
         getProjectsBond.untie(this.tieId)
         layoutBond.untie(this.tieIdLayout)
-        if (this.statusBond) this.statusBond.untie(this.statusTieId);
+        if (this.unsubscribeStatus) this.unsubscribeStatus()
     }
 
     // either close or reopen projects
     // if all of the projects are open/repopened, then close otherwise reopens closed ones
-    handleCloseReopen = selectedHashes => {
+    handleCloseReopen = selectedIds => {
         const { data: projects, topRightMenu } = this.state
-        const doClose = selectedHashes.every(key => openStatuses.indexOf((projects.get(key) || {}).status) >= 0)
+        const doClose = selectedIds.every(key => openStatuses.indexOf((projects.get(key) || {}).status) >= 0)
         const targetStatus = doClose ? statusCodes.close : statusCodes.reopen
         const targetStatusText = statusTexts[doClose ? statusCodes.close : statusCodes.reopen]
-        const targetHashes = selectedHashes.reduce((hashArr, hash) => {
-            const { status } = projects.get(hash) || {}
+        const targetIds = selectedIds.reduce((recordIds, id) => {
+            const { status } = projects.get(id) || {}
             const isOpen = openStatuses.includes(status)
-            if (doClose && isOpen || !doClose && !isOpen) hashArr.push(hash)
-            return hashArr
+            if (doClose && isOpen || !doClose && !isOpen) recordIds.push(id)
+            return recordIds
         }, [])
 
         confirm({
             content: (
                 <div>
                     {texts.projectCloseReopenWarning} <b>{targetStatusText}</b>
-                    <ol>{targetHashes.map(hash => <li key={hash}>{projects.get(hash).name}</li>)}</ol>
+                    <ol>{targetIds.map(id => <li key={id}>{projects.get(id).name}</li>)}</ol>
                 </div>
             ),
             confirmButton: wordsCap.procees,
             header: texts.areYouSure,
             onConfirm: () => {
-                targetHashes.forEach(hash => {
-                    const { name, ownerAddress, status } = projects.get(hash) || {}
+                targetIds.forEach(id => {
+                    const { name, ownerAddress, status } = projects.get(id) || {}
                     // ignore if project is already at target status or project no longer exists
                     if (status === targetStatus || !name) return;
                     const statusCode = doClose ? statusCodes.close : statusCodes.reopen
-                    addToQueue(tasks.setStatus(ownerAddress, hash, statusCode, {
+                    addToQueue(tasks.setStatus(ownerAddress, id, statusCode, {
                         title: doClose ? texts.closeProject : texts.reopenProject,
                         description: `${wordsCap.activity}: ${name}`,
                         then: success => success && getProjects(true),
@@ -242,17 +242,17 @@ export default class ProjectList extends Component {
         })
     }
 
-    handleDelete = selectedHashes => {
+    handleDelete = selectedIds => {
         const queueItems = []
         const projectNames = []
-        selectedHashes.forEach(hash => {
+        selectedIds.forEach(recordId => {
             const { data: projects } = this.state
             const targetStatus = statusCodes.delete
-            const { name, ownerAddress, status } = projects.get(hash) || {}
+            const { name, ownerAddress, status } = projects.get(recordId) || {}
             // ignore if project is already at target status or project not longer exists in the list
             if (status === targetStatus || !name) return;
             projectNames.push(name)
-            queueItems.push(tasks.remove(ownerAddress, hash, {
+            queueItems.push(tasks.remove(ownerAddress, recordId, {
                 title: texts.deleteConfirmHeader,
                 description: `${wordsCap.activity}: ${name}`,
                 then: success => success && getProjects(true),
@@ -274,17 +274,17 @@ export default class ProjectList extends Component {
         })
     }
 
-    handleReassignOwner = selectedHashes => {
-        if (selectedHashes.length !== 1) return;
+    handleReassignOwner = selectedIds => {
+        if (selectedIds.length !== 1) return;
         const { data: projects } = this.state
-        const hash = selectedHashes[0]
-        const project = projects.get(hash)
-        project && showForm(ReassignProjectForm, { hash, values: project })
+        const recordId = selectedIds[0]
+        const project = projects.get(recordId)
+        project && showForm(ReassignProjectForm, { hash: recordId, values: project })
     }
 
-    handleRowSelection = selectedHashes => {
+    handleRowSelection = selectedIds => {
         const { data: projects, topRightMenu } = this.state
-        const len = selectedHashes.length
+        const len = selectedIds.length
         topRightMenu.forEach(x => { x.disabled = len === 0; return x })
 
         // Enable export button only when all projects are selected
@@ -293,7 +293,7 @@ export default class ProjectList extends Component {
 
         // If every selected project's status is 'open' or 're-opened change action to 'Close', otherwise 'Re-open'
         const closeBtn = findInput(topRightMenu, 'close')
-        const doClose = selectedHashes.every(key => openStatuses.indexOf(projects.get(key).status) >= 0)
+        const doClose = selectedIds.every(key => openStatuses.indexOf(projects.get(key).status) >= 0)
         closeBtn.content = doClose ? wordsCap.close : wordsCap.reopen
         closeBtn.icon = `toggle ${doClose ? 'off' : 'on'}`
         findInput(topRightMenu, 're-assign').disabled = len !== 1
@@ -301,51 +301,53 @@ export default class ProjectList extends Component {
         this.setState({ topRightMenu })
     }
 
-    loadProjects = force => getProjects(force).then(projects => {
-        const hashes = Array.from(projects).map(([hash, project]) => {
-            const { status, totalBlocks } = project
-            project._hash = hash
-            project._statusText = statusTexts[status] || words.unknown
-            project._totalTime = `${totalBlocks} ${words.blocks}`
-            return hash
-        })
-        this.setStatusBond(hashes)
-        this.setState({ data: projects })
-    }, console.log)
+    loadProjects = async (force) => {
+        try {
+            const projects = await getProjects(force)
+            const recordIds = Array.from(projects).map(([recordId, project]) => {
+                const { status, totalBlocks } = project
+                project.recordId = recordId
+                project._statusText = statusTexts[status] || words.unknown
+                project._totalTime = `${totalBlocks} ${words.blocks}`
+                return recordId
+            })
+            this.setStatusBond(recordIds)
+            this.setState({ data: projects })
+        } catch (err) { } // ignore error
+    }
 
     // ToDo: re-evaluate
     // Reload project list whenever status of any of the projects changes
-    setStatusBond(hashes) {
-        // return if all the hashes are the same as the ones from previous call
-        if (JSON.stringify(this.hashes) === JSON.stringify(hashes)) return;
-        this.hashes = hashes
-        // untie existing bond
-        if (this.statusBond && this.statusTieId) this.statusBond.untie(this.statusTieId);
-        this.statusBond = Bond.all(this.hashes.map(hash => projectService.status(hash)))
-        this.statusTieId = this.statusBond.tie((statusCodes) => {
+    setStatusBond = async (recordIds) => {
+        // return if all the Record Ids are the same as the ones from previous call
+        if (JSON.stringify(this.recordIds) === JSON.stringify(recordIds)) return
+        this.recordIds = recordIds
+        this.unsubscribeStatus && this.unsubscribeStatus()
+        const updateStatus = (statusCodes) => {
             // return if all status codes received are exactly same as previously set ones
             if (JSON.stringify(this.statusCodes) === JSON.stringify(statusCodes)) return
             this.statusCodes = statusCodes
             this.loadProjects(true)
-        })
+        }
+        this.unsubscribeStatus = await projectService.status(this.recordIds, updateStatus, true)
     }
 
     // show project team in a modal
-    showTeam = (hash, projectName) => confirm({
+    showTeam = (recordId, projectName) => confirm({
         cancelButton: wordsCap.close,
         confirmButton: null,
-        content: <ProjectTeamList projectHash={hash} />,
+        content: <ProjectTeamList projectHash={recordId} />,
         header: `${texts.projectTeam} - ${projectName}`,
     })
 
     // show project details in a read-only modal form
-    showDetails = (project, hash) => {
+    showDetails = (project, recordId) => {
         const data = { ...project }
-        data._hash = textEllipsis(hash, 23)
+        data.recordId = textEllipsis(recordId, 23)
         data._firstSeen = data.firstSeen ? data.firstSeen : words.never
         const labels = {
             name: texts.detailsNameLabel,
-            _hash: texts.detailsHashLabel,
+            recordId: texts.detailsRecordIdLabel,
             description: texts.detailsDescLabel,
             _totalTime: texts.detailsTotalTimeLabel,
             _statusText: texts.detailsStatusLabel,
@@ -358,7 +360,7 @@ export default class ProjectList extends Component {
             closeText: wordsCap.close,
             header: texts.detailsFormHeader,
             inputs: Object.keys(labels).map(key => ({
-                action: key !== '_hash' ? undefined : { icon: 'copy', onClick: () => copyToClipboard(hash) },
+                action: key !== 'recordId' ? undefined : { icon: 'copy', onClick: () => copyToClipboard(recordId) },
                 label: labels[key],
                 name: key,
                 readOnly: true,
@@ -374,7 +376,7 @@ export default class ProjectList extends Component {
                     content: <TimeKeepingList {...{
                         isOwner: true,
                         manage: true,
-                        projectHash: hash,
+                        projectHash: recordId,
                         projectName: project.name,
                         ownerAddress: project.ownerAddress,
                     }} />,

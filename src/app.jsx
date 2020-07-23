@@ -92,7 +92,7 @@ export class App extends ReactiveComponent {
 		}
 
 		blockchain.getConnection().then(({ api }) => window.api = api)
-		window.queryBlockchain = async (func, args) => await blockchain.query(func, args, true)
+		window.queryBlockchain = async (func, args, multi) => await blockchain.query(func, args, multi, true)
 	}
 
 	// unused

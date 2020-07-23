@@ -14,6 +14,7 @@ import project, {
     getProjectsBond as getUserProjectsBond
 } from './project'
 import storage from './storage'
+import { query } from './blockchain'
 
 // to sumbit a new time record must submit with this hash
 export const NEW_RECORD_HASH = '0x40518ed7e875ba87d6c7358c06b1cac9d339144f8367a0632af7273423dd124e'
@@ -188,7 +189,6 @@ export const getProjectWorkers = projectHash => Bond.promise([
     project.getOwner(projectHash),
 ]).then(([acceptedAddresses, invitedAddresses, ownerAddress]) => {
     const allAddresses = ([...acceptedAddresses, ...invitedAddresses]).map(w => ss58Encode(w))
-    ownerAddress = ss58Encode(ownerAddress)
     const { address: selectedAddress } = getSelected()
     const isOwner = ownerAddress === selectedAddress
     const workers = new Map()
@@ -405,9 +405,19 @@ export default {
     getTimeRecordsDetails,
     project: {
         // timestamp of the very first recorded time on a project
-        firstSeen: projectHash => runtime.timekeeping.projectFirstSeen(hashToBytes(projectHash)),
+        // firstSeen: projectHash => runtime.timekeeping.projectFirstSeen(hashToBytes(projectHash)),
+        firstSeen: (recordId, callback, multi) => query(
+            'api.query.timekeeping.projectFirstSeen',
+            [recordId, callback].filter(Boolean),
+            multi,
+        ),
         // get total blocks booked in a project
-        totalBlocks: projectHash => runtime.timekeeping.totalBlocksPerProject(hashToBytes(projectHash)),
+        // totalBlocks: projectHash => runtime.timekeeping.totalBlocksPerProject(hashToBytes(projectHash)),
+        totalBlocks: (recordId, callback, multi) => query(
+            'api.query.timekeeping.totalBlocksPerProject',
+            [recordId, callback].filter(Boolean),
+            multi,
+        )
     },
     record,
     recordTasks,

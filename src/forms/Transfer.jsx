@@ -204,7 +204,6 @@ export default class Transfer extends Component {
                 this.clearForm()
             }
         })
-
     }
 
     // returns the min value acceptable for the selected denomination
