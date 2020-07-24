@@ -1,7 +1,6 @@
 import React, { Component } from 'react'
-import { Bond } from 'oo7'
 import { Button } from 'semantic-ui-react'
-import { copyToClipboard, textEllipsis } from '../utils/utils'
+import { copyToClipboard, isFn, textEllipsis } from '../utils/utils'
 // components
 import DataTable from '../components/DataTable'
 import FormBuilder, { findInput } from '../components/FormBuilder'
@@ -13,7 +12,7 @@ import ReassignProjectForm from '../forms/ProjectReassign'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import { addToQueue } from '../services/queue'
-import projectService, { getProjects, getProjectsBond, openStatuses, statusCodes, tasks } from '../services/project'
+import projectService, { getProjects, rxProjects, openStatuses, statusCodes, tasks } from '../services/project'
 import { layoutBond, getLayout } from '../services/window'
 
 const toBeImplemented = () => alert('To be implemented')
@@ -182,8 +181,13 @@ export default class ProjectList extends Component {
     }
 
     componentWillMount() {
-        // reload projects whenever any of the bond's value updates
-        this.tieId = getProjectsBond.tie(() => this.loadProjects())
+        this.loadProjects()
+        // // reload projects whenever any of the bond's value updates
+        // this.tieId = getProjectsBond.tie(() => {
+        //     this.loadProjects()
+        // })
+        const { unsubscribe } = rxProjects.subscribe(projects => this.loadProjects(false, projects))
+        this.unsubscribers = [unsubscribe]
         this.tieIdLayout = layoutBond.tie(() => {
             const { columns } = this.state
             // hide on mobile
@@ -194,9 +198,8 @@ export default class ProjectList extends Component {
 
     componentWillUnmount() {
         // unsubscribe from updates
-        getProjectsBond.untie(this.tieId)
+        ([...this.unsubscribers, this.unsubscribeStatus]).forEach(unsubscribe => isFn(unsubscribe) && unsubscribe())
         layoutBond.untie(this.tieIdLayout)
-        if (this.unsubscribeStatus) this.unsubscribeStatus()
     }
 
     // either close or reopen projects
@@ -301,9 +304,9 @@ export default class ProjectList extends Component {
         this.setState({ topRightMenu })
     }
 
-    loadProjects = async (force) => {
+    loadProjects = async (force, projects) => {
         try {
-            const projects = await getProjects(force)
+            projects = projects || await getProjects(force)
             const recordIds = Array.from(projects).map(([recordId, project]) => {
                 const { status, totalBlocks } = project
                 project.recordId = recordId
@@ -312,8 +315,10 @@ export default class ProjectList extends Component {
                 return recordId
             })
             this.setStatusBond(recordIds)
-            this.setState({ data: projects })
-        } catch (err) { } // ignore error
+            this.setState({ emptyMessage: null, data: projects })
+        } catch (err) {
+            this.setState({ emptyMessage: { header: 'failed to retrieve projects', content: `${err}` } })
+        }
     }
 
     // ToDo: re-evaluate

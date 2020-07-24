@@ -11,10 +11,10 @@ const rwCache = (key, value) => storage.cache(MODULE_KEY, key, value) || {}
 let lastUpdated = null
 const updateFrequencyMs = 24 * 60 * 60 * 1000
 
-// selected currency bond
-export const bond = new Bond().defaultTo(getSelected())
 // default currency
 export const currencyDefault = 'XTX'
+// selected currency bond
+export const bond = new Bond().defaultTo(getSelected())
 
 // convert currency 
 //

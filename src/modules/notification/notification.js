@@ -15,6 +15,12 @@ export const notifications = new DataStorage(MODULE_KEY, true)
 export const newNotificationBond = new Bond()
 export const visibleBond = new Bond().defaultTo(false)
 export const unreadCountBond = new Bond().defaultTo(getUnreadCount())
+notifications.bond.tie(() => {
+    // auto update unread count
+    unreadCountBond.changed(getUnreadCount())
+    // change visibility if no notificaitons left
+    if (!notifications.size) visibleBond.changed(false)
+})
 
 const [texts] = translated({
     timekeeping: 'Timekeeping',
@@ -40,7 +46,6 @@ client.onNotify((id, from, type, childType, message, data, tsCreated) => {
     setTimeout(() => {
         rw({ tsLastReceived: tsCreated })
         notifications.set(id, newNotification).sort('tsCreated', true, true)
-        unreadCountBond.changed(getUnreadCount())
         newNotificationBond.changed(id)
         console.log('Notification received!', id, from, tsCreated)
     })
@@ -67,7 +72,6 @@ client.onConnect(() => {
         // save latest item's timestamp as last received
         rw({ tsLastReceived: mostRecent.tsCreated })
         notifications.setAll(items, true).sort('tsCreated', true, true)
-        unreadCountBond.changed(getUnreadCount())
         gotNew && newNotificationBond.changed(mostRecentId)
     })
 })
@@ -85,7 +89,6 @@ export const toggleRead = id => {
     const item = notifications.get(id)
     item.read = !item.read
     notifications.set(id, item)
-    unreadCountBond.changed(getUnreadCount())
 
     addToQueue({
         silent: true,
@@ -97,7 +100,6 @@ export const toggleRead = id => {
 
 export const remove = id => setTimeout(() => {
     notifications.delete(id)
-    if (!notifications.size) visibleBond.changed(false)
 
     addToQueue({
         silent: true,

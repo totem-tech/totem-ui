@@ -3,9 +3,11 @@
     overflow: auto;
     position: fixed;
     right: 0px;
-    top: 61px;
     width: 400px;
     z-index: 2;
+}
+#app > :not(.mobile) .notification-list:not(.inline) {
+    top: 61px;
 }
 #app > .mobile .notification-list:not(.inline) {
     bottom: 47px;

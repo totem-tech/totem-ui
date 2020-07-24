@@ -2,13 +2,14 @@
 // IMPORTANT NOTE the terminology "project" has been replaced by "activity" in the UI. 
 // It has not been replaced in the code.
 // *********
+import { Observable } from 'rxjs'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
 import { hashToStr } from '../utils/convert'
 import PromisE from '../utils/PromisE'
 import { arrUnique, isFn } from '../utils/utils'
 // services
-import { hashTypes, query } from './blockchain'
+import { hashTypes, query, getConnection } from './blockchain'
 import client from './chatClient'
 import identities, { getSelected, selectedAddressBond } from './identity'
 import partners from './partner'
@@ -18,7 +19,9 @@ import timeKeeping from './timeKeeping'
 export const MODULE_KEY = 'projects'
 // read or write to cache storage
 const cacheRW = (key, value) => storage.cache(MODULE_KEY, key, value)
-// queue item type
+const queryPrefix = 'api.query.projects.'
+const txPrefix = 'api.tx.projects.'
+// transaction queue item type
 const TX_STORAGE = 'tx_storage'
 // project status codes
 export const statusCodes = {
@@ -32,6 +35,9 @@ export const statusCodes = {
 }
 // status codes that indicate project is open
 export const openStatuses = [statusCodes.open, statusCodes.reopen]
+let projectsObserver = null
+export const rxProjects = Observable.create(o => projectsObserver = o)
+setTimeout(() => selectedAddressBond.tie(() => getProjects(true)))
 
 export const fetchProjects = async (recordIds = [], timeout = 10000) => {
     recordIds = await new PromisE(recordIds)
@@ -46,7 +52,7 @@ export const fetchProjects = async (recordIds = [], timeout = 10000) => {
     ])
     const result = await PromisE.timeout(promise, timeout)
     const [arFristSeen, arTotalBlocks, arStatusCode, clientResult] = result
-    const [projects = new Map(), unknownIds = []] = clientResult
+    const [projects = new Map(), unknownIds = []] = clientResult || []
 
     // Records that are somehow not found in the off-chain database
     unknownIds.forEach(recordId => projects.set(recordId, {}))
@@ -68,10 +74,7 @@ export const fetchProjects = async (recordIds = [], timeout = 10000) => {
 }
 
 // getProject retrieves a single project by hash
-export const getProject = async (recordId) => {
-    const projects = await fetchProjects([recordId])
-    return projects.size > 0 ? Array.from(projects)[0][1] : undefined
-}
+export const getProject = async (recordId) => (Array.from(await fetchProjects([recordId]))[0] || [])[1]
 
 // getProjects retrieves projects along with relevant details owned by selected identity.
 // Retrieved data is cached in localStorage and only updated when list of projects changes in the blockchain
@@ -84,76 +87,82 @@ export const getProject = async (recordId) => {
 //                          Default: 10000 (10 seconds)
 // 
 // Returns          Map: list of projects
-export const getProjects = (forceUpdate = false, timeout = 10000) => new Promise(async (resolve, reject) => {
-    const config = getProject
+export const getProjects = async (forceUpdate = false, timeout = 10000) => {
+    let result
+    const config = getProjects
     config.bond = config.bond || new Bond()
     const {
         address: addressPrev,
-        bond,
         unsubscribe,
-        update,
-        updatePromise,
     } = config
     const { address } = getSelected()
     const cacheKey = 'projects-' + address
 
-    try {
-        if (!navigator.onLine) return new Map(cacheRW(cacheKey) || [])
-        if (!unsubscribe || address !== addressPrev) {
-            // selected identity changed
-            config.address = address
-            isFn(unsubscribe) && unsubscribe()
-            config.unsubscribe = await project.listByOwner(address, update)
-        } else if (forceUpdate) {
-            // once-off update
-            await update(await project.listByOwner(address), true, true)
-        }
-    } catch (err) {
-        reject(err)
+    if (!navigator.onLine) return new Map(cacheRW(cacheKey) || [])
+    if ((config.updatePromise || {}).rejected || address !== addressPrev) {
+        // selected identity changed
+        config.address = address
+        isFn(unsubscribe) && unsubscribe()
+        config.updatePromise = new PromisE((resolve, reject) => (async () => {
+            try {
+                await getConnection()
+            } catch (err) {
+                // reset update promise
+                config.updatePromise = null
+                // use cache if not connected
+                return resolve(new Map(cacheRW(cacheKey) || []))
+            }
+            config.unsubscribe = await project.listByOwner(address, async (result) => {
+                try {
+                    result = await config.update(result, cacheKey)
+                    projectsObserver.next(result)
+                    resolve(result)
+                } catch (err) {
+                    console.log(err)
+                    reject(err)
+                }
+            })
+        })())
+    } else if (forceUpdate) {
+        // once-off update
+        config.updatePromise = config.update(await project.listByOwner(address), address, true)
     }
 
+    const promise = PromisE.timeout(config.updatePromise, timeout)
     try {
-        await PromisE.timeout(updatePromise, Bond.proimse(bond), timeout)
-        config.bond = null // remove bond
-    } catch (e) {
-        /* ignore timeout error  */
+        result = await promise
+    } catch (err) {
+        // if timed out, return cached. Otherwise, throw error
+        if (!promise.timeout.rejected) throw err
     }
-    resolve(new Map(cacheRW(cacheKey) || []))
-})
-getProjects.update = async (recordIds, forceUpdate = false, throwError = false) => {
-    const config = getProject
-    const { updatePromise } = config
+    return result || new Map(cacheRW(cacheKey) || [])
+}
+getProjects.update = async (recordIds, address, forceUpdate = false) => {
+    let projects = null
+    const cacheKey = 'projects-' + address
+    // force convert to strings for comparison
     recordIds = recordIds.map(hashToStr).sort()
-    const cachedIds = (cacheRW(cacheKey) || []).map(([id]) => id).sort()
-    const changed = JSON.stringify(recordIds) !== JSON.stringify(cachedIds)
-    if (updatePromise && updatePromise.pending || !changed && !forceUpdate) return
+    let cached = cacheRW(cacheKey) || []
+    const cachedIds = cached.map(([id]) => id).sort()
+    let changed = JSON.stringify(recordIds) !== JSON.stringify(cachedIds)
+    if (!changed && !forceUpdate) return new Map(cached)
 
     // use cache if times out
-    try {
-        // update cache and trigger bond
-        config.updatePromise = new PromisE(fetchProjects(recordIds))
-        const projects = await config.updatePromise
-        // in case chat server does not have the project
-        Array.from(projects).forEach(([_, project]) => {
-            project.ownerAddress = project.ownerAddress || address
-            project.isOwner = true
-            project.title = project.title || 'Unknown'
-            project.description = project.description || ''
-        })
-        // save to local storage
-        cacheRW(cacheKey, projects)
-        // update bond so that components that are subscribed to it gets updated
-        const id = uuid.v1()
-        getProjectsBond.changed(id)
-        config.bond && config.bond.changed(id)
-    } catch (err) {
-        if (throwError) throw err
-    }
+    // update cache and trigger bond
+    projects = await fetchProjects(recordIds)
+    // in case chat server does not have the project
+    const projectsArr = Array.from(projects).map(([_, project]) => {
+        project.ownerAddress = project.ownerAddress || address
+        project.isOwner = true
+        project.title = project.title || 'Unknown'
+        project.description = project.description || ''
+        return project
+    })
+    // save to local storage
+    cached = cacheRW(cacheKey, projects)
+    changed = JSON.stringify(cached) !== JSON.stringify(projectsArr)
+    return projects
 }
-
-// triggered whenever list of project is updated
-export const getProjectsBond = new Bond()
-selectedAddressBond.tie(() => getProjectsBond.changed(uuid.v1()))
 
 const project = {
     // getOwner retrives the owner address of a project
@@ -165,7 +174,7 @@ const project = {
     //
     // Returns Promise/function
     getOwner: (recordId, callback, multi = false) => query(
-        'api.query.projects.projectHashOwner',
+        queryPrefix + 'projectHashOwner',
         [recordId, callback].filter(Boolean),
         multi,
     ),
@@ -173,7 +182,7 @@ const project = {
     //
     // Returns Promise/function
     listByOwner: (address, callback, multi = false) => query(
-        'api.query.projects.ownerProjectsList',
+        queryPrefix + 'ownerProjectsList',
         [address, callback].filter(Boolean),
         multi,
     ),
@@ -184,7 +193,7 @@ const project = {
     //
     // Returns      Promise/function
     status: (recordId, callback, multi = false) => query(
-        'api.query.projects.projectHashStatus',
+        queryPrefix + 'projectHashStatus',
         [recordId, callback].filter(Boolean),
         multi,
     ),
@@ -206,7 +215,7 @@ export const tasks = {
     add: (ownerAddress, recordId, queueProps = {}) => ({
         ...queueProps,
         address: ownerAddress,
-        func: 'api.tx.projects.addNewProject',
+        func: txPrefix + 'addNewProject',
         type: TX_STORAGE,
         args: [recordId],
     }),
@@ -222,7 +231,7 @@ export const tasks = {
     reassign: (ownerAddress, newOwnerAddress, recordId, queueProps = {}) => ({
         ...queueProps,
         address: ownerAddress,
-        func: 'api.tx.projects.reassignProject',
+        func: txPrefix + 'reassignProject',
         type: TX_STORAGE,
         args: [newOwnerAddress, recordId],
     }),
@@ -237,7 +246,7 @@ export const tasks = {
     remove: (ownerAddress, recordId, queueProps = {}) => ({
         ...queueProps,
         address: ownerAddress,
-        func: 'api.tx.projects.removeProject',
+        func: txPrefix + 'removeProject',
         type: TX_STORAGE,
         args: [recordId],
     }),
@@ -267,7 +276,7 @@ export const tasks = {
     setStatus: (ownerAddress, recordId, statusCode, queueProps = {}) => ({
         ...queueProps,
         address: ownerAddress,
-        func: 'api.tx.projects.setStatusProject',
+        func: txPrefix + 'setStatusProject',
         type: TX_STORAGE,
         args: [recordId, statusCode],
     }),
@@ -276,8 +285,8 @@ export default {
     fetchProjects,
     getProject,
     getProjects,
-    getProjectsBond,
     openStatuses,
+    rxProjects,
     statusCodes,
     ...project,
     tasks,

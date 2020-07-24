@@ -11,7 +11,7 @@ import partners from './partner'
 import project, {
     fetchProjects,
     getProjects as getUserProjects,
-    getProjectsBond as getUserProjectsBond
+    rxProjects,
 } from './project'
 import storage from './storage'
 import { query } from './blockchain'
@@ -19,6 +19,9 @@ import { query } from './blockchain'
 // to sumbit a new time record must submit with this hash
 export const NEW_RECORD_HASH = '0x40518ed7e875ba87d6c7358c06b1cac9d339144f8367a0632af7273423dd124e'
 export const MODULE_KEY = 'time-keeping'
+const queryPrefix = 'api.query.timekeeping.'
+const txPrefix = 'api.tx.timekeeping.'
+// transaction queue item type
 const TX_STORAGE = 'tx_storage'
 // read/write to module settings storage
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
@@ -105,7 +108,7 @@ export const getProjects = (_forceUpdate = false) => {
 
 // Triggered whenever time keeping project list is updated
 export const getProjectsBond = new Bond().defaultTo(uuid.v1())
-setTimeout(() => getUserProjectsBond.tie(() => getProjectsBond.changed(uuid.v1())))
+setTimeout(() => rxProjects.subscribe(() => getProjectsBond.changed(uuid.v1())))
 
 // getRecords retrieves records either by project or by selected worker
 //
@@ -244,7 +247,7 @@ export const recordTasks = {
     approve: (ownerAddress, workerAddress, projectHash, recordHash, accepted, reason, queueProps = {}) => ({
         ...queueProps,
         address: ownerAddress,
-        func: 'api.tx.timekeeping.authoriseTime',
+        func: txPrefix + 'authoriseTime',
         type: TX_STORAGE,
         args: [
             workerAddress,
@@ -274,7 +277,7 @@ export const recordTasks = {
     save: (address, projectHash, recordHash, status, reason, blockCount, postingPeriod, blockStart, blockEnd, breakCount, queueProps) => ({
         ...queueProps,
         address: address,
-        func: 'api.tx.timekeeping.submitTime',
+        func: txPrefix + 'submitTime',
         type: TX_STORAGE,
         args: [
             hashToStr(projectHash),
@@ -312,13 +315,28 @@ export const worker = {
     listWorkers: projectHash => runtime.timekeeping.projectWorkersList(hashToBytes(projectHash)),
     // projects that worker has been invited to or accepted
     listWorkerProjects: workerAddress => runtime.timekeeping.workerProjectsBacklogList(ss58Decode(workerAddress)),
+    // listWorkerProjects: (address, callback, multi) => query(
+    //     'api.query.timekeeping.totalBlocksPerAddress',
+    //     [address, callback].filter(Boolean),
+    //     multi,
+    // ),
     // workers total booked time in blocks accross all projects
     totalBlocks: address => runtime.timekeeping.totalBlocksPerAddress(ss58Decode(address)),
+    // totalBlocks: (address, callback, multi) => query(
+    //     'api.query.timekeeping.totalBlocksPerAddress',
+    //     [address, callback].filter(Boolean),
+    //     multi,
+    // ),
     // workers total booked time in blocks on a specific project
     totalBlocksByProject: (address, projectHash) => runtime.timekeeping.totalBlocksPerProjectPerAddress([
         ss58Decode(address),
         hashToBytes(projectHash)
     ]),
+    // totalBlocksByProject: (address, recordId, callback, multi) => query(
+    //     'api.query.timekeeping.totalBlocksPerProjectPerAddress',
+    //     [address, recordId, callback].filter(Boolean),
+    //     multi,
+    // ),
 }
 
 // Save timekeeping worker related data to blockchain storage.
@@ -336,7 +354,7 @@ export const workerTasks = {
     accept: (projectHash, workerAddress, accepted, queueProps = {}) => ({
         ...queueProps,
         address: workerAddress,
-        func: 'api.tx.timekeeping.workerAcceptanceProject',
+        func: txPrefix + 'workerAcceptanceProject',
         type: TX_STORAGE,
         args: [
             hashToStr(projectHash),
@@ -353,7 +371,7 @@ export const workerTasks = {
     add: (projectHash, ownerAddress, workerAddress, queueProps = {}) => ({
         ...queueProps,
         address: ownerAddress,
-        func: 'api.tx.timekeeping.notifyProjectWorker',
+        func: txPrefix + 'notifyProjectWorker',
         type: TX_STORAGE,
         args: [
             addressToStr(workerAddress),
@@ -370,7 +388,7 @@ export const workerTasks = {
     banWorker: (projectHash, ownerAddress, recordHash, queueProps = {}) => ({
         ...queueProps,
         address: ownerAddress,
-        func: 'api.tx.timekeeping.banWorker',
+        func: txPrefix + 'banWorker',
         type: TX_STORAGE,
         args: [
             hashToStr(projectHash),
@@ -388,7 +406,7 @@ export const workerTasks = {
     unbanWorker: (projectHash, ownerAddress, workerAddress, queueProps = {}) => ({
         ...queueProps,
         address: ownerAddress,
-        func: 'api.tx.timekeeping.banWorker',
+        func: txPrefix + 'banWorker',
         type: TX_STORAGE,
         args: [
             hashToStr(projectHash),
@@ -405,14 +423,12 @@ export default {
     getTimeRecordsDetails,
     project: {
         // timestamp of the very first recorded time on a project
-        // firstSeen: projectHash => runtime.timekeeping.projectFirstSeen(hashToBytes(projectHash)),
         firstSeen: (recordId, callback, multi) => query(
             'api.query.timekeeping.projectFirstSeen',
             [recordId, callback].filter(Boolean),
             multi,
         ),
         // get total blocks booked in a project
-        // totalBlocks: projectHash => runtime.timekeeping.totalBlocksPerProject(hashToBytes(projectHash)),
         totalBlocks: (recordId, callback, multi) => query(
             'api.query.timekeeping.totalBlocksPerProject',
             [recordId, callback].filter(Boolean),
