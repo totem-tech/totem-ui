@@ -17,6 +17,7 @@ const [texts, textsCap] = translated({
     column: 'column',
     columns: 'columns',
     chatLimitLabel: 'chat message limit per conversation',
+    error: 'error',
     gridColumnsLabel: 'number of columns on main content (experimental)',
     gsCurrencyLabel: 'default currency',
     gsLanguageLabel: 'default language (experimental)',
@@ -148,6 +149,12 @@ export default class Settings extends Component {
         if (selected === 'EN') return forceRefreshPage()
         const selectedHash = generateHash(getTexts(selected) || '')
         client.languageTranslations(selected, selectedHash, (err, texts) => {
+            if (!!err) return this.setInputMessage('historyLimit', {
+                content: `${err}`,
+                header: textsCap.error,
+                showIcon: true,
+                status: 'error',
+            })
             if (texts !== null) setTexts(selected, texts)
             // reload page
             forceRefreshPage()

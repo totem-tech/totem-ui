@@ -45,18 +45,19 @@ export const limit = (newLimit) => {
 }
 
 const actionIcons = {
-    'api.tx.': 'connectdevelop',
-    'client.faucetRequest': 'money',
-    'client.project': 'briefcase',
+    'api.tx.': 'connectdevelop',        // icon for all blockchain transactions 
+    'client.faucetRequest': 'money',    // icon for faucet requests
+    'client.project': 'briefcase',      // icon for all project related requests
 }
-const notifyTypesIcons = {
+// icons for notification types
+const notificationIcons = {
     identity: {
         introduce: 'handshake',
         invitation_response: 'upload',
         request: 'download',
         share: 'upload',
     },
-    task: 'tasks',
+    // task: 'tasks',
     time_keeping: {
         invitation: 'group',
         invitation_response: 'group',
@@ -80,7 +81,7 @@ export const historyWorthy = (func, args) => {
             break
         case 'client.notify':
             const [_, type, childType] = args
-            const icon = notifyTypesIcons[type]
+            const icon = notificationIcons[type]
             return (isStr(icon) ? icon : isObj(icon) && icon[childType]) || historyIcon
     }
     return actionIcons[func] || func.startsWith('client.') && historyIcon

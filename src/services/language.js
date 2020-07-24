@@ -27,13 +27,28 @@ export const languages = Object.freeze({
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 // get selected language code
 export const getSelected = () => rw().selected || EN
+
+export const getTexts = langCode => translations.get(langCode)
+
 // set selected language code
 export const setSelected = selected => rw({ selected: selected || EN })
 
+// save translated list of texts retrieved from server
+export const setTexts = (langCode, texts) => translations.setAll(new Map(
+    [
+        [EN, translations.get(EN)],
+        langCode !== EN && [langCode, texts],
+    ].filter(Boolean)
+))
+
 export const translated = (texts = {}, capitalized = false) => {
+    const langCode = getSelected() || EN
+    // translation not required
+    if (langCode === EN && !BUILD_MODE) return [texts, capitalized && textCapitalize(texts)]
+
     const en = translations.get(EN) || []
     // list of selected language texts
-    const selected = translations.get(getSelected()) || []
+    const selected = translations.get(langCode) || []
     // attempt to build a single list of english texts for translation
     if (BUILD_MODE) {
         window.enList = window.enList || []
@@ -57,9 +72,6 @@ export const translated = (texts = {}, capitalized = false) => {
     })
     return [texts, capitalized && textCapitalize(texts)]
 }
-
-export const getTexts = langCode => translations.get(langCode)
-export const setTexts = (langCode, texts) => translations.set(langCode, texts)
 // downloadTextListCSV generates a CSV file with all the unique application texts
 // that can be used to translate by opening the file in Google Drive
 // NB: this function should not be used when BUILD_MODE is false (URL param 'build-mode' not 'true')
