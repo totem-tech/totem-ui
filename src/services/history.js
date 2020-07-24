@@ -47,16 +47,20 @@ export const limit = (newLimit) => {
 const actionIcons = {
     'api.tx.': 'connectdevelop',
     'client.faucetRequest': 'money',
-    'client.project': 'tasks',
+    'client.project': 'briefcase',
 }
 const notifyTypesIcons = {
     identity: {
+        introduce: 'handshake',
+        invitation_response: 'upload',
         request: 'download',
         share: 'upload',
     },
-    task: {
-        
-    },
+    task: 'tasks',
+    time_keeping: {
+        invitation: 'group',
+        invitation_response: 'group',
+    }
 }
 
 // enable/disable history data donation
@@ -67,18 +71,19 @@ export const historyDataDonation = enable => (isBool(enable) ? rw({ donate }) : 
 // returns appropriate icon name if valid
 export const historyWorthy = (func, args) => {
     if (func.startsWith('api.tx.')) return actionIcons['api.tx.']
+    const historyIcon = 'history' // for any new/undefined types that should be logged
     switch (func) {
         case 'client.project':
             // only log project creation and update actions
-            const [hash, project] = args
-            if (!hash || !isObj(project)) return false
+            const [recordId, project] = args
+            if (!recordId || !isObj(project)) return false
             break
         case 'client.notify':
             const [_, type, childType] = args
-            const childTypes = notifyTypesIcons[type]
-            return isStr(childTypes) ? childTypes : childTypes[childType]
+            const icon = notifyTypesIcons[type]
+            return (isStr(icon) ? icon : isObj(icon) && icon[childType]) || historyIcon
     }
-    return actionIcons[func] || false
+    return actionIcons[func] || func.startsWith('client.') && historyIcon
 }
 
 // add or update a history item. Each item represents an individual successful or failed queued task 

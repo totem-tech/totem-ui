@@ -60,11 +60,6 @@ export default class HistoryList extends Component {
                     title: textsCap.executionTime,
                 },
                 {
-                    collapsing: true,
-                    key: '_identity',
-                    title: textsCap.identity,
-                },
-                {
                     headerProps,
                     key: 'title',
                     title: textsCap.title,
@@ -77,6 +72,11 @@ export default class HistoryList extends Component {
                         whiteSpace: 'pre-wrap',
                     },
                     title: textsCap.description,
+                },
+                {
+                    collapsing: true,
+                    key: '_identity',
+                    title: textsCap.identity,
                 },
                 {
                     collapsing: true,
