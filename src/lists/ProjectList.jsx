@@ -12,8 +12,9 @@ import ReassignProjectForm from '../forms/ProjectReassign'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import { addToQueue } from '../services/queue'
-import projectService, { getProjects, rxProjects, openStatuses, statusCodes, tasks } from '../services/project'
+import { getProjects, openStatuses, query, statusCodes, queueables, forceUpdate } from '../services/project'
 import { layoutBond, getLayout } from '../services/window'
+import { getSelected } from '../services/identity'
 
 const toBeImplemented = () => alert('To be implemented')
 const [words, wordsCap] = translated({
@@ -41,31 +42,32 @@ const [words, wordsCap] = translated({
     timekeeping: 'timekeeping',
     unknown: 'unknown',
 }, true)
-const [texts] = translated({
-    areYouSure: 'Are you sure?',
-    closeProject: 'Close activity',
-    deleteConfirmMsg1: 'You are about to delete the following Activities:',
+const textsCap = translated({
+    areYouSure: 'are you sure?',
+    closeProject: 'close Activity',
+    deleteConfirmMsg1: 'you are about to delete the following Activities:',
     deleteConfirmMsg2: `Warning: This action cannot be undone! 
         You will lose access to this Activity data forever! 
         A better option might be to archive the Activity.`,
-    deleteConfirmHeader: 'Delete Activities',
-    detailsNameLabel: 'Activity Name',
+    deleteConfirmHeader: 'delete Activities',
+    detailsNameLabel: 'activity Name',
     detailsRecordIdLabel: 'Activity Record ID',
-    detailsDescLabel: 'Description of Activity',
-    detailsTotalTimeLabel: 'Total Time',
-    detailsStatusLabel: 'Activity Status',
-    detailsFirstSeenLabel: 'Activity First Used On (this date)',
-    detailsFormHeader: 'Activity Details',
-    detailsTimeRecordsBtn: 'View Time Records',
-    editProject: 'Edit Activity',
-    projectCloseReopenWarning: 'You are about to change status of the following Activities to:',
+    detailsDescLabel: 'description of Activity',
+    detailsTotalTimeLabel: 'total time',
+    detailsStatusLabel: 'Activity status',
+    detailsFirstSeenLabel: 'Activity first used on (this date)',
+    detailsFormHeader: 'Activity details',
+    detailsTimeRecordsBtn: 'view Time records',
+    editProject: 'edit Activity',
+    projectsFailed: 'failed to retrieve Activities',
+    projectCloseReopenWarning: 'you are about to change status of the following Activities to:',
     projectTeam: 'Activity team',
-    reassignOwner: 'Re-assign owner',
-    reopenProject: 'Re-open activity',
-    totalTime: 'Total Time',
-    viewDetails: 'View Details',
-    viewTeam: 'View Team',
-})
+    reassignOwner: 're-assign owner',
+    reopenProject: 're-open Activity',
+    totalTime: 'total time',
+    viewDetails: 'view details',
+    viewTeam: 'view team',
+}, true)[1]
 const statusTexts = []
 statusTexts[statusCodes.open] = wordsCap.open
 statusTexts[statusCodes.reopen] = wordsCap.reopened
@@ -108,7 +110,7 @@ export default class ProjectList extends Component {
                     collapsing: true,
                     key: '_totalTime',
                     textAlign: 'center',
-                    title: texts.totalTime,
+                    title: textsCap.totalTime,
                 },
                 {
                     // No key required
@@ -118,19 +120,19 @@ export default class ProjectList extends Component {
                             key: 'edit',
                             icon: 'pencil',
                             onClick: () => showForm(ProjectForm, { hash: recordId, values: project }),
-                            title: texts.editProject,
+                            title: textsCap.editProject,
                         },
                         {
                             icon: { name: 'group' },
                             key: 'workers',
                             onClick: () => this.showTeam(recordId, project.name),
-                            title: texts.viewTeam,
+                            title: textsCap.viewTeam,
                         },
                         {
                             icon: { name: 'eye' },
                             key: 'detials',
                             onClick: () => this.showDetails(project, recordId),
-                            title: texts.viewDetails,
+                            title: textsCap.viewDetails,
                         }
                     ]).map(props => <Button {...props} />),
                     draggable: false,
@@ -164,7 +166,7 @@ export default class ProjectList extends Component {
                 },
                 {
                     active: false,
-                    content: texts.reassignOwner,
+                    content: textsCap.reassignOwner,
                     icon: 'mail forward',
                     name: 're-assign',
                     onClick: this.handleReassignOwner,
@@ -178,28 +180,48 @@ export default class ProjectList extends Component {
                 },
             ]
         }
+
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
-    componentWillMount() {
-        this.loadProjects()
-        // // reload projects whenever any of the bond's value updates
-        // this.tieId = getProjectsBond.tie(() => {
-        //     this.loadProjects()
-        // })
-        const { unsubscribe } = rxProjects.subscribe(projects => this.loadProjects(false, projects))
-        this.unsubscribers = [unsubscribe]
+    async componentWillMount() {
+        this._mounted = true
+        this.unsubscribers = {
+            projects: null,
+            status: null,
+        }
+        try {
+            this.unsubscribers.project = await getProjects(true, projects => {
+                if (!this._mounted) return
+                const recordIds = Array.from(projects).map(([recordId, project]) => {
+                    const { status, totalBlocks } = project
+                    project.recordId = recordId
+                    project._statusText = statusTexts[status] || words.unknown
+                    project._totalTime = `${totalBlocks} ${words.blocks}`
+                    return recordId
+                })
+                this.setStatusBond(recordIds, getSelected().address)
+                this.setState({ emptyMessage: null, data: projects })
+            })
+        } catch (err) {
+            this.setState({ emptyMessage: { header: textsCap.projectsFailed, content: `${err}` } })
+        }
         this.tieIdLayout = layoutBond.tie(() => {
             const { columns } = this.state
             // hide on mobile
             columns.find(x => x.key === 'description').hidden = getLayout() === 'mobile'
             this.setState({ columns })
         })
+
     }
 
     componentWillUnmount() {
-        // unsubscribe from updates
-        ([...this.unsubscribers, this.unsubscribeStatus]).forEach(unsubscribe => isFn(unsubscribe) && unsubscribe())
+        this._mounted = false
         layoutBond.untie(this.tieIdLayout)
+        // unsubscribe from updates
+        Object.values(this.unsubscribers)
+            .forEach(fn => isFn(fn) && fn())
     }
 
     // either close or reopen projects
@@ -219,22 +241,22 @@ export default class ProjectList extends Component {
         confirm({
             content: (
                 <div>
-                    {texts.projectCloseReopenWarning} <b>{targetStatusText}</b>
+                    {textsCap.projectCloseReopenWarning} <b>{targetStatusText}</b>
                     <ol>{targetIds.map(id => <li key={id}>{projects.get(id).name}</li>)}</ol>
                 </div>
             ),
             confirmButton: wordsCap.procees,
-            header: texts.areYouSure,
+            header: textsCap.areYouSure,
             onConfirm: () => {
-                targetIds.forEach(id => {
-                    const { name, ownerAddress, status } = projects.get(id) || {}
+                targetIds.forEach(recordId => {
+                    const { name, ownerAddress, status } = projects.get(recordId) || {}
                     // ignore if project is already at target status or project no longer exists
                     if (status === targetStatus || !name) return;
                     const statusCode = doClose ? statusCodes.close : statusCodes.reopen
-                    addToQueue(tasks.setStatus(ownerAddress, id, statusCode, {
-                        title: doClose ? texts.closeProject : texts.reopenProject,
+                    addToQueue(queueables.setStatus(ownerAddress, recordId, statusCode, {
+                        title: doClose ? textsCap.closeProject : textsCap.reopenProject,
                         description: `${wordsCap.activity}: ${name}`,
-                        then: success => success && getProjects(true),
+                        then: success => success && forceUpdate([recordId], ownerAddress),
                     }))
                 })
 
@@ -255,10 +277,10 @@ export default class ProjectList extends Component {
             // ignore if project is already at target status or project not longer exists in the list
             if (status === targetStatus || !name) return;
             projectNames.push(name)
-            queueItems.push(tasks.remove(ownerAddress, recordId, {
-                title: texts.deleteConfirmHeader,
+            queueItems.push(queueables.remove(ownerAddress, recordId, {
+                title: textsCap.deleteConfirmHeader,
                 description: `${wordsCap.activity}: ${name}`,
-                then: success => success && getProjects(true),
+                then: success => success && forceUpdate([recordId], ownerAddress),
             }))
         })
         if (projectNames.length === 0) return
@@ -266,12 +288,12 @@ export default class ProjectList extends Component {
             confirmButton: { color: 'red', content: wordsCap.proceed },
             content: (
                 <div>
-                    <h4>{texts.deleteConfirmMsg1}</h4>
+                    <h4>{textsCap.deleteConfirmMsg1}</h4>
                     <ul>{projectNames.map((name, i) => <li key={i}>{name}</li>)}</ul>
-                    <p style={{ color: 'red' }}>{texts.deleteConfirmMsg2}</p>
+                    <p style={{ color: 'red' }}>{textsCap.deleteConfirmMsg2}</p>
                 </div>
             ),
-            header: texts.deleteConfirmHeader,
+            header: textsCap.deleteConfirmHeader,
             onConfirm: () => queueItems.forEach(item => addToQueue(item)),
             size: 'mini',
         })
@@ -304,37 +326,22 @@ export default class ProjectList extends Component {
         this.setState({ topRightMenu })
     }
 
-    loadProjects = async (force, projects) => {
-        try {
-            projects = projects || await getProjects(force)
-            const recordIds = Array.from(projects).map(([recordId, project]) => {
-                const { status, totalBlocks } = project
-                project.recordId = recordId
-                project._statusText = statusTexts[status] || words.unknown
-                project._totalTime = `${totalBlocks} ${words.blocks}`
-                return recordId
-            })
-            this.setStatusBond(recordIds)
-            this.setState({ emptyMessage: null, data: projects })
-        } catch (err) {
-            this.setState({ emptyMessage: { header: 'failed to retrieve projects', content: `${err}` } })
-        }
-    }
-
     // ToDo: re-evaluate
     // Reload project list whenever status of any of the projects changes
-    setStatusBond = async (recordIds) => {
+    setStatusBond = async (recordIds, ownerAddress) => {
+        recordIds = recordIds.sort()
         // return if all the Record Ids are the same as the ones from previous call
         if (JSON.stringify(this.recordIds) === JSON.stringify(recordIds)) return
         this.recordIds = recordIds
-        this.unsubscribeStatus && this.unsubscribeStatus()
+        this.unsubscribers.status && this.unsubscribers.status()
         const updateStatus = (statusCodes) => {
             // return if all status codes received are exactly same as previously set ones
             if (JSON.stringify(this.statusCodes) === JSON.stringify(statusCodes)) return
             this.statusCodes = statusCodes
-            this.loadProjects(true)
+            // update update project details
+            forceUpdate(recordIds, ownerAddress)
         }
-        this.unsubscribeStatus = await projectService.status(this.recordIds, updateStatus, true)
+        this.unsubscribers.status = await query.status(this.recordIds, updateStatus, true)
     }
 
     // show project team in a modal
@@ -342,7 +349,7 @@ export default class ProjectList extends Component {
         cancelButton: wordsCap.close,
         confirmButton: null,
         content: <ProjectTeamList projectHash={recordId} />,
-        header: `${texts.projectTeam} - ${projectName}`,
+        header: `${textsCap.projectTeam} - ${projectName}`,
     })
 
     // show project details in a read-only modal form
@@ -351,19 +358,19 @@ export default class ProjectList extends Component {
         data.recordId = textEllipsis(recordId, 23)
         data._firstSeen = data.firstSeen ? data.firstSeen : words.never
         const labels = {
-            name: texts.detailsNameLabel,
-            recordId: texts.detailsRecordIdLabel,
-            description: texts.detailsDescLabel,
-            _totalTime: texts.detailsTotalTimeLabel,
-            _statusText: texts.detailsStatusLabel,
-            _firstSeen: texts.detailsFirstSeenLabel
+            name: textsCap.detailsNameLabel,
+            recordId: textsCap.detailsRecordIdLabel,
+            description: textsCap.detailsDescLabel,
+            _totalTime: textsCap.detailsTotalTimeLabel,
+            _statusText: textsCap.detailsStatusLabel,
+            _firstSeen: textsCap.detailsFirstSeenLabel
         }
         // Create a form on the fly and display data a read-only input fields
         showForm(FormBuilder, {
             closeOnEscape: true,
             closeOnDimmerClick: true,
             closeText: wordsCap.close,
-            header: texts.detailsFormHeader,
+            header: textsCap.detailsFormHeader,
             inputs: Object.keys(labels).map(key => ({
                 action: key !== 'recordId' ? undefined : { icon: 'copy', onClick: () => copyToClipboard(recordId) },
                 label: labels[key],
@@ -373,7 +380,7 @@ export default class ProjectList extends Component {
                 value: data[key]
             })).concat({
                 // view time records button
-                content: texts.detailsTimeRecordsBtn,
+                content: textsCap.detailsTimeRecordsBtn,
                 name: 'button',
                 onClick: () => confirm({
                     cancelButton: wordsCap.close,

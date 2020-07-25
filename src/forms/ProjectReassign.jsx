@@ -10,7 +10,7 @@ import identities from '../services/identity'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import partners from '../services/partner'
-import { tasks } from '../services/project'
+import { queueables } from '../services/project'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
 const [words, wordsCap] = translated({
@@ -175,7 +175,7 @@ export default class ReassignProjectForm extends ReactiveComponent {
         const { hash, name, ownerAddress, newOwnerAddress } = values
         // confirm if re-assigning to someone else
         const doConfirm = !!identities.find(newOwnerAddress)
-        const task = tasks.reassign(ownerAddress, newOwnerAddress, hash, {
+        const task = queueables.reassign(ownerAddress, newOwnerAddress, hash, {
             title: texts.queueTitle,
             description: texts.queueDescription + name,
             next: {

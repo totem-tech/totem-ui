@@ -4,7 +4,7 @@ import { hashToStr } from '../utils/convert'
 import { setNetworkDefault, denominationInfo } from 'oo7-substrate'
 import { connect } from '../utils/polkadotHelper'
 import types from '../utils/totem-polkadot-js-types'
-import { isObj, isFn, isArr, isDefined, isStr } from '../utils/utils'
+import { isObj, isFn, isArr, isDefined, isStr, isArr2D } from '../utils/utils'
 import PromisE from '../utils/PromisE'
 
 // oo7-substrate: register custom types
@@ -124,19 +124,46 @@ export const query = async (func, args = [], multi = false, print = false) => {
     if (!fn) throw new Error('Invalid API function', func)
 
     args = isArr(args) || !isDefined(args) ? args : [args]
+    multi = isFn(fn) && !!multi
     const sanitise = x => JSON.parse(JSON.stringify(x)) // get rid of jargon
     const cb = args[args.length - 1]
     const isSubscribe = isFn(cb) && isFn(fn)
 
-    if (isSubscribe && print) {
-        // only add interceptor if subscribe and print
-        args[args.length - 1] = value => {
-            value = sanitise(value)
-            print && console.log(func, value)
-            cb.call(null, value)
+    if (isSubscribe) {
+        // only add interceptor to process result
+        args[args.length - 1] = result => {
+            result = sanitise(result)
+            print && console.log(func, result)
+            cb.call(null, result)
         }
     }
 
+    // For multi query arguments needs to be constructs as 2D Array.
+    // If only one argument in @args is supplied, assume that it is a 2D array.
+    // Otherwise, construct a 2D array as required by 
+    const len = isSubscribe ? 2 : 1
+    if (multi && !isFn(args[0]) && args.length > len) {
+        try {
+            // remove subscription callback before processing arguments
+            let interceptor
+            if (isSubscribe) {
+                interceptor = args.slice(-1)[0]
+                args = args.slice(0, -1)
+            }
+            // construct a 2D array
+            args = [
+                args[0].map((_, i) =>
+                    args.map(ar => ar[i])
+                )
+            ]
+            // re-add subscription callback
+            if (isSubscribe) args.push(interceptor)
+
+        } catch (err) {
+            console.log({ err })
+            throw `Failed to process arguments for multi-query. ${err}`
+        }
+    }
     const result = isFn(fn) ? await fn.apply(null, args) : fn
     !isSubscribe && print && console.log(JSON.stringify(result, null, 4))
     return isSubscribe ? result : sanitise(result)

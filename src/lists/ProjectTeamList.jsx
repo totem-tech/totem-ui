@@ -11,7 +11,7 @@ import { translated } from '../services/language'
 import { showForm } from '../services/modal'
 import { handleTKInvitation } from '../modules/notification/notification'
 import PartnerForm from '../forms/Partner'
-import timeKeeping, { getProjectWorkers } from '../services/timeKeeping'
+import { getProjectWorkers, query } from '../services/timeKeeping'
 
 const [words, wordsCap] = translated({
     accepted: 'accepted',
@@ -64,8 +64,8 @@ export default class ProjectTeamList extends ReactiveComponent {
 
         this.projectHash = projectHash
         this.bond = Bond.all([
-            timeKeeping.worker.listInvited(projectHash),
-            timeKeeping.worker.listWorkers(projectHash),
+            query.worker.listInvited(projectHash),
+            query.worker.listWorkers(projectHash),
             selectedAddressBond,
         ])
         this.tieId = this.bond.tie(() => this.loadWorkers())
@@ -82,8 +82,8 @@ export default class ProjectTeamList extends ReactiveComponent {
         this.projectHash = projectHash
         this.bond && this.bond.untie(this.tieId)
         this.bond = !projectHash ? null : Bond.all([
-            timeKeeping.worker.listInvited(projectHash),
-            timeKeeping.worker.listWorkers(projectHash),
+            query.worker.listInvited(projectHash),
+            query.worker.listWorkers(projectHash),
             selectedAddressBond,
         ])
         this.tieId = this.bond && this.bond.tie(() => this.loadWorkers())

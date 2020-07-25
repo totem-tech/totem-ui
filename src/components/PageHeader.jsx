@@ -150,6 +150,7 @@ const PageHeaderView = props => {
 					item
 					labeled
 					onChange={onSelection}
+					onClick={() => notifVisibleBond.changed(false)}
 					text={textEllipsis(selected.name, isMobile ? 25 : 50, 3, false)}
 					value={selected.address}
 					style={{ paddingRight: 0 }}
@@ -188,7 +189,7 @@ const PageHeaderView = props => {
 						size: 'large',
 						className: 'no-margin'
 					}}
-					onClick={() => setShowTools(!showTools)}
+					onClick={() => setShowTools(!showTools) | notifVisibleBond.changed(false)}
 				>
 					<Dropdown.Menu className="left">
 						<Dropdown.Item

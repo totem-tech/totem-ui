@@ -17,8 +17,8 @@ import identities, { getSelected, selectedAddressBond } from '../services/identi
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import partners from '../services/partner'
-import { getTimeRecordsDetails, statuses, getTimeRecordsBonds, recordTasks } from '../services/timeKeeping'
-import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import { getTimeRecordsDetails, statuses, getTimeRecordsBonds, queueables } from '../services/timeKeeping'
+import { addToQueue } from '../services/queue'
 import { getLayout } from '../services/window'
 
 const toBeImplemented = () => alert('To be implemented')
@@ -364,7 +364,7 @@ export default class ProjectTimeKeepingList extends Component {
         const targetStatus = approve ? statuses.accept : statuses.reject
         if (!workerAddress || submit_status !== statuses.submit || targetStatus === submit_status) return
         inProgressHashesBond.changed(inProgressHashes.concat(hash))
-        const task = recordTasks.approve(projectOwnerAddress, workerAddress, projectHash, hash, approve, null, {
+        const task = queueables.approve(projectOwnerAddress, workerAddress, projectHash, hash, approve, null, {
             title: `${wordsCap.timekeeping} - ${approve ? texts.approveRecord : texts.rejectRecord}`,
             description: `${texts.recordId}: ${hash}`,
             then: success => {
@@ -420,7 +420,7 @@ export default class ProjectTimeKeepingList extends Component {
 
         inProgressHashes.push(hash)
         this.setState({ inProgressHashes })
-        const task = recordTasks.save(
+        const task = queueables.record.save(
             projectOwnerAddress,
             projectHash,
             hash,

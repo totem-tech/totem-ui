@@ -5,7 +5,7 @@ import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import { arrSort, generateHash, isFn, objClean } from '../utils/utils'
 import identities, { getSelected } from '../services/identity'
 import { translated } from '../services/language'
-import { getProjects, tasks } from '../services/project'
+import { getProjects, queueables } from '../services/project'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
 const [words, wordsCap] = translated({
@@ -115,7 +115,6 @@ export default class ProjectForm extends Component {
         const create = !existingHash
         const hash = existingHash || generateHash(values)
         const token = generateHash(objClean(values, validKeys))
-        console.log({ token, data: objClean(values, validKeys) })
         const { description: desc, name: projectName, ownerAddress } = values
         const title = create ? texts.submitTitleCreate : texts.submitTitleUpdate
         const description = `${wordsCap.name}: ${projectName}` + '\n' + `${wordsCap.description}: ${desc}`
@@ -138,7 +137,7 @@ export default class ProjectForm extends Component {
         this.setState({ message, submitDisabled: true })
 
         // save auth token to blockchain and then store data to off-chain DB
-        const updateTask = tasks.saveBONSAIToken(ownerAddress, hash, token, {
+        const updateTask = queueables.saveBONSAIToken(ownerAddress, hash, token, {
             title: texts.saveBONSAIToken,
             description: token,
             then: handleTxError,
@@ -171,7 +170,7 @@ export default class ProjectForm extends Component {
         })
 
         // Send transaction to blockchain first, then add to external storage
-        const createTask = tasks.add(ownerAddress, hash, {
+        const createTask = queueables.add(ownerAddress, hash, {
             title,
             description,
             then: handleTxError,

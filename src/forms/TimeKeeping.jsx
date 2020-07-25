@@ -20,9 +20,17 @@ import { translated } from '../services/language'
 import { confirm, closeModal, showForm } from '../services/modal'
 import { handleTKInvitation } from '../modules/notification/notification'
 import { getAddressName } from '../services/partner'
-import projectService, { openStatuses } from '../services/project'
+import { openStatuses, query as queryProject } from '../services/project'
 import { addToQueue } from '../services/queue'
-import timeKeeping, { getProjects, getProjectsBond, NEW_RECORD_HASH, recordTasks, statuses } from '../services/timeKeeping'
+import {
+    formData,
+    getProjects,
+    getProjectsBond,
+    NEW_RECORD_HASH,
+    query,
+    queueables,
+    statuses
+} from '../services/timeKeeping'
 
 // Hash that indicates creation of new record
 const DURATION_ZERO = '00:00:00'
@@ -111,7 +119,7 @@ function handleDurationChange(e, formValues, i) {
 
 function handleSubmitTime(hash, projectName, values, status, reason, checkBanned = true) {
     const { address } = getSelected()
-    if (checkBanned) return timeKeeping.worker.banned(hash, address).then(banned => {
+    if (checkBanned) return query.worker.banned(hash, address).then(banned => {
         if (banned) return this.setState({
             message: {
                 header: texts.permissionDenied,
@@ -124,7 +132,7 @@ function handleSubmitTime(hash, projectName, values, status, reason, checkBanned
 
     const { onSubmit } = this.props
     const { blockCount, blockEnd, blockStart, breakCount, duration, projectHash, workerAddress } = values
-    const queueProps = recordTasks.save(workerAddress, projectHash, hash, status, reason, blockCount, 0, blockStart, blockEnd, breakCount, {
+    const queueProps = queueables.record.save(workerAddress, projectHash, hash, status, reason, blockCount, 0, blockStart, blockEnd, breakCount, {
         title: texts.tkNewRecord,
         description: `${wordsCap.activity}: ${projectName} | ${wordsCap.duration}: ${values.duration}`,
         then: success => {
@@ -185,7 +193,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
     constructor(props) {
         super(props)
 
-        const values = timeKeeping.formData() || {}
+        const values = formData() || {}
         const { breakCount, duration, durationValid, inprogress, projectHash, stopped, workerAddress } = values
         values.durationValid = !isDefined(durationValid) ? true : durationValid
         values.duration = duration || DURATION_ZERO
@@ -307,7 +315,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         this.setState({ inputs, submitDisabled: true })
 
         // check if project status is open/reopened
-        const statusCode = await projectService.status(recordId)
+        const statusCode = await queryProject.status(recordId)
         const projectActive = openStatuses.includes(statusCode)
         const { address } = getSelected()
         workerAddress = workerAddress || address
@@ -324,8 +332,8 @@ export default class TimeKeepingForm extends ReactiveComponent {
         }
         // check if worker's ban and invitation status
         Bond.all([
-            timeKeeping.worker.accepted(recordId, workerAddress),
-            timeKeeping.worker.banned(recordId, workerAddress),
+            query.worker.accepted(recordId, workerAddress),
+            query.worker.banned(recordId, workerAddress),
         ]).then(([accepted, banned]) => {
             inputs[index].loading = false
             inputs[index].invalid = banned || !accepted // null => not invited, false => not responded/aceepted
@@ -386,7 +394,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
             values.breakCount = 0
             inputs.find(x => x.name === 'duration').value = DURATION_ZERO
             this.setState({ values, inputs })
-            timeKeeping.formData(values)
+            formData(values)
         }
 
         !doConfirm ? reset() : confirm({
@@ -474,7 +482,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         duraIn.value = values.duration
         values.durationValid = BLOCK_DURATION_REGEX.test(values.duration) && values.duration !== DURATION_ZERO
         this.setState({ blockNumber: currentBlockNumber, inputs, message: {}, values })
-        timeKeeping.formData(values)
+        formData(values)
     }
 
     setIdentityOptions = () => {
@@ -485,7 +493,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
         const allIdentities = identities.getAll()
         const ar = allIdentities.map(({ address }) => ({ projectHash, workerAddress: address }))
 
-        timeKeeping.worker.acceptedList(ar).then(acceptedAr => {
+        query.worker.acceptedList(ar).then(acceptedAr => {
             const options = allIdentities
                 // filter accepted projects
                 .filter((_, i) => !!acceptedAr[i])
@@ -673,7 +681,7 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
         const { hash, projectName, values } = this.props
         const blockCount = durationToBlockCount(duration)
         const blockEnd = values.blockStart + blockCount
-        timeKeeping.record.get(hash).then(record => {
+        query.record.get(hash).then(record => {
             const { nr_of_breaks, reason_code } = { record }
             const newValues = {
                 ...values,

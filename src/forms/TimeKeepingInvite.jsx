@@ -13,7 +13,7 @@ import { showForm } from '../services/modal'
 import partners from '../services/partner'
 import { getProjects, openStatuses } from '../services/project'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import timeKeeping, { workerTasks } from '../services/timeKeeping'
+import timeKeeping, { query, workerTasks } from '../services/timeKeeping'
 
 const notificationType = 'time_keeping'
 const childType = 'invitation'
@@ -193,7 +193,7 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
         if (!partnerIn.loading) return
 
         // check if partner is already invited or accepted
-        timeKeeping.worker.accepted(projectHash, workerAddress).then(accepted => {
+        query.worker.accepted(projectHash, workerAddress).then(accepted => {
             /*
              * accepted values:
              * null => not yet invited or rejected

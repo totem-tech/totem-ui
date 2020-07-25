@@ -5,7 +5,8 @@ import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
 import DataTable from '../components/DataTable'
 import { getSelected, selectedAddressBond } from '../services/identity'
 import { translated } from '../services/language'
-import timeKeeping, { getProjects } from '../services/timeKeeping'
+import { getProjects, query } from '../services/timeKeeping'
+import { isFn } from '../utils/utils'
 
 const [words, wordsCap] = translated({
     activity: 'activity',
@@ -57,33 +58,46 @@ export default class TimeKeepingSummary extends ReactiveComponent {
 
     componentWillMount() {
         this._mounted = true
+        this.unsubscribers = {}
         this.tieId = selectedAddressBond.tie(this.getSummary)
     }
 
     componentWillUnmount() {
         this._mounted = false
         selectedAddressBond.untie(this.tieId)
-        this.bond && this.bond.untie(this.tieIdBlocks)
+        Object.values(this.unsubscribers)
+            .forEach(fn => isFn(fn) && fn())
     }
 
-    getSummary = arrTotalBlocks => getProjects().then(projects => {
+    getSummary = async (arrTotalBlocks) => {
+        const projects = await getProjects()
         const { address } = getSelected()
-        const hashes = Array.from(projects).map(([hash]) => hash)
+        const recordIds = Array.from(projects).map(([hash]) => hash)
         if (!arrTotalBlocks || address !== this.address) {
             this.address = address
-            const bonds = hashes.map(hash => timeKeeping.worker.totalBlocksByProject(address, hash))
-            this.bond = Bond.all(bonds)
-            return this.tieIdBlocks = this.bond.tie(this.getSummary)
+            const { totalBlocks } = this.unsubscribers
+            // unsubscribe from existing subscription
+            isFn(totalBlocks) && totalBlocks()
+            this.unsubscribers.totalBlocks = query.worker.totalBlocksByProject(
+                recordIds.map(() => address),
+                recordIds, // for multi query needs to be a 2D array of arguments
+                this.getSummary,
+                true,
+            )
+            return
+            // const bonds = recordIds.map(hash => query.worker.totalBlocksByProject(address, hash))
+            // this.bond = Bond.all(bonds)
+            // return this.tieIdBlocks = this.bond.tie(this.getSummary)
         }
         const sumTotalBlocks = arrTotalBlocks.reduce((sum, next) => sum + next, 0)
         const data = arrTotalBlocks.map((totalBlocks, i) => ({
-            name: projects.get(hashes[i]).name,
+            name: projects.get(recordIds[i]).name,
             totalBlocks,
             totalHours: secondsToDuration(totalBlocks * BLOCK_DURATION_SECONDS),
             percentage: totalBlocks === 0 ? '0%' : (totalBlocks * 100 / sumTotalBlocks).toFixed(0) + '%',
         }))
         this.setState({ data })
-    })
+    }
 
     render = () => <DataTable {...this.state} />
 }

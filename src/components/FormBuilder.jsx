@@ -27,7 +27,7 @@ export default class FormBuilder extends Component {
 
     }
 
-    getValues = (inputs = [], values = {}, inputName, newValue) => inputs.reduce((values, input, i) => {
+    getValues = (inputs = [], values = {}, inputName, newValue) => inputs.reduce((values, input) => {
         const { controlled, inputs: childInputs, groupValues, name, type } = input
         const typeLC = (type || '').toLowerCase()
         const isGroup = typeLC === 'group'
@@ -65,7 +65,7 @@ export default class FormBuilder extends Component {
             isFn(onInputChange) && !data.invalid && await onInputChange(event, values, index, childIndex)
             // trigger form's onchange callback
             isFn(formOnChange) && await formOnChange(event, values, index, childIndex)
-            this.setState({ inputs, values })
+            this.setState({ message: null, inputs, values })
         } catch (err) {
             this.setState({
                 message: {
@@ -78,8 +78,8 @@ export default class FormBuilder extends Component {
         }
     }
 
-    handleClose = e => {
-        e.preventDefault()
+    handleClose = event => {
+        event.preventDefault()
         const { onClose } = this.props
         if (isFn(onClose)) return onClose();
         this.setState({ open: !this.state.open })
@@ -91,6 +91,7 @@ export default class FormBuilder extends Component {
         const { values } = this.state
         try {
             isFn(onSubmit) && await onSubmit(event, values)
+            setState({ message: null })
         } catch (err) {
             this.setState({
                 message: {
