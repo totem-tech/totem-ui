@@ -1,16 +1,23 @@
-import { addCodecTransform, post } from 'oo7-substrate'
-import storage from './storage'
+import { addCodecTransform, denominationInfo } from 'oo7-substrate'
+// utils
 import { hashToStr } from '../utils/convert'
-import { setNetworkDefault, denominationInfo } from 'oo7-substrate'
+import PromisE from '../utils/PromisE'
 import { connect } from '../utils/polkadotHelper'
 import types from '../utils/totem-polkadot-js-types'
-import { isObj, isFn, isArr, isDefined, isStr, isArr2D } from '../utils/utils'
-import PromisE from '../utils/PromisE'
+import { isFn, isArr, isDefined, isStr } from '../utils/utils'
+// services
+import { translated } from './language'
+import storage from './storage'
 
-// oo7-substrate: register custom types
+// oo7-substrate: register custom types. ToDo: deprecate
 Object.keys(types).forEach(key => addCodecTransform(key, types[key]))
+
 const MODULE_KEY = 'blockchain'
 const TX_STORAGE = 'tx_storage'
+const textsCap = translated({
+    invalidApiFunc: 'Invalid API function',
+    invalidMultiQueryArgs: 'Failed to process arguments for multi-query.',
+}, true)[0]
 let config = {
     primary: 'Ktx',
     unit: 'Transactions',
@@ -121,7 +128,7 @@ export const query = async (func, args = [], multi = false, print = false) => {
     if (isStr(func) && multi && !func.endsWith('.multi')) func += '.multi'
 
     const fn = eval(func)
-    if (!fn) throw new Error('Invalid API function', func)
+    if (!fn) throw new Error(textsCap.invalidApiFunc, func)
 
     args = isArr(args) || !isDefined(args) ? args : [args]
     multi = isFn(fn) && !!multi
@@ -160,8 +167,7 @@ export const query = async (func, args = [], multi = false, print = false) => {
             if (isSubscribe) args.push(interceptor)
 
         } catch (err) {
-            console.log({ err })
-            throw `Failed to process arguments for multi-query. ${err}`
+            throw `${textsCap.invalidMultiQueryArgs} ${err}`
         }
     }
     const result = isFn(fn) ? await fn.apply(null, args) : fn

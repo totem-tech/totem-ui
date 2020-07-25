@@ -3,18 +3,16 @@
 // It has not been replaced in the code.
 // *********
 import { Observable } from 'rxjs'
-import uuid from 'uuid'
-import { Bond } from 'oo7'
 import { hashToStr } from '../utils/convert'
 import PromisE from '../utils/PromisE'
-import { arrUnique, isFn, isPromise } from '../utils/utils'
+import { arrUnique, isFn } from '../utils/utils'
 // services
 import { hashTypes, query as queryBlockchain, getConnection } from './blockchain'
 import client from './chatClient'
 import identities, { getSelected, selectedAddressBond } from './identity'
 import partners from './partner'
 import storage from './storage'
-import timeKeeping from './timeKeeping'
+import { query as tkQuery } from './timeKeeping'
 
 export const MODULE_KEY = 'projects'
 // read or write to cache storage
@@ -53,7 +51,7 @@ export const fetchProjects = async (recordIds = [], ownAddress, timeout = 10000)
         (await new PromisE(recordIds)).map(hashToStr)
     ).filter(Boolean)
     if (recordIds.length === 0) return new Map()
-    const { firstSeen, totalBlocks } = timeKeeping.project
+    const { firstSeen, totalBlocks } = tkQuery.project
     const promise = Promise.all([
         firstSeen(recordIds, null, true),
         totalBlocks(recordIds, null, true),
@@ -114,7 +112,7 @@ export const getProject = async (recordId) => (Array.from(await fetchProjects([r
 //                      If  a valid functin supplied, it will be invoked with the value whenever projects list changes.
 // 
 // Returns          Map: list of projects
-export const getProjects = async (forceUpdate = false, callback) => {
+export const getProjects = async (forceUpdate = false, callback, timeout = 10000) => {
     if (isFn(callback)) {
         const subscribed = rxProjects.subscribe(callback)
         return () => subscribed.unsubscribe()
@@ -124,7 +122,6 @@ export const getProjects = async (forceUpdate = false, callback) => {
     const config = getProjects
     const {
         address: addressPrev,
-        timeout = 10000,
         unsubscribe,
         updatePromise,
     } = config
@@ -172,7 +169,7 @@ export const getProjects = async (forceUpdate = false, callback) => {
     return result || new Map(cacheRW(cacheKey) || [])
 }
 
-// save to local storage
+// save projects to local storage and trigger change on `rxProjects`
 //
 // Params:
 // @projects        Map/2D Array
@@ -189,9 +186,9 @@ export const query = {
     // getOwner retrives the owner address of a project
     //
     // Params:
-    // @recordId    string/array: project ID(s)
-    // @callback    function: (optional)
-    // @multi       boolean: (optional) Default: false
+    // @recordId    string/array: array for multi query
+    // @callback    function: (optional) to subscribe to blockchain storage state changes
+    // @multi       boolean: (optional) indicates multiple storage states are being queried in a single request
     //
     // Returns Promise/function
     getOwner: (recordId, callback, multi = false) => queryBlockchain(
@@ -201,7 +198,12 @@ export const query = {
     ),
     // listByOwner retrieves a list of project hashes owned by @address
     //
-    // Returns Promise/function
+    // Params:
+    // @address     string/array: array for multi query
+    // @callback    function: (optional) to subscribe to blockchain storage state changes
+    // @multi       function: (optional) indicates multiple storage states are being queried in a single request
+    //
+    // Returns      promise
     listByOwner: (address, callback, multi = false) => queryBlockchain(
         queryPrefix + 'ownerProjectsList',
         [address, callback].filter(Boolean),
@@ -209,10 +211,11 @@ export const query = {
     ),
     // status retrieves the status code of a project
     // params
-    // @recordId    string/array: project ID(s)
-    // @callback    function: (optional)
+    // @recordId    string/array: array for multi query
+    // @callback    function: (optional) to subscribe to blockchain storage state changes
+    // @multi       function: (optional) indicates multiple storage states are being queried in a single request
     //
-    // Returns      Promise/function
+    // Returns      promise
     status: (recordId, callback, multi = false) => queryBlockchain(
         queryPrefix + 'projectHashStatus',
         [recordId, callback].filter(Boolean),
@@ -249,8 +252,8 @@ export const queueables = {
     // transfer ownership of a project to a new owner address 
     //
     // Params:
-    // @ownerAddress    string/Bond: current owner of the project
-    // @newOwnerAddress string/Bond: address which will be the new owner
+    // @ownerAddress    string: current owner of the project
+    // @newOwnerAddress string: address which will be the new owner
     // @recordId        string: project ID
     // @queueProps      string: provide task specific properties (eg: description, title, then, next...)
     //
@@ -265,7 +268,7 @@ export const queueables = {
     // remove a project
     //
     // Params:
-    // @ownerAddress    string/Bond: current owner of the project
+    // @ownerAddress    string: current owner of the project
     // @recordId        string  : project ID
     // @queueProps      string: provide task specific properties (eg: description, title, then, next...)
     //
@@ -295,7 +298,7 @@ export const queueables = {
     // change project status
     //
     // Params:
-    // @ownerAddress    string/Bond: current owner of the project
+    // @ownerAddress    string: current owner of the project
     // @recordId        string: project ID
     // @queueProps      string: provide task specific properties (eg: description, title, then, next...)
     //

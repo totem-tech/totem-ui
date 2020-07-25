@@ -1,6 +1,7 @@
 import { Bond } from 'oo7'
 import { runtime } from 'oo7-substrate'
 import uuid from 'uuid'
+import { Observable } from 'rxjs'
 import { addressToStr, hashToBytes, hashToStr, ss58Decode, ss58Encode } from '../utils/convert'
 import { arrUnique, isArr, isObj, mapJoin } from '../utils/utils'
 import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
@@ -23,6 +24,8 @@ const queryPrefix = 'api.query.timekeeping.'
 const txPrefix = 'api.tx.timekeeping.'
 // transaction queue item type
 const TX_STORAGE = 'tx_storage'
+let projectsObserver = null
+const rxProjects = Observable.create(o => projectsObserver = o)
 // read/write to module settings storage
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 // read or write to cache storage
@@ -47,7 +50,7 @@ export const statuses = {
 }
 // timeKeeping form values and states for use with the TimeKeeping form
 export const formData = formData => {
-    if (isObj(formData)) rw({ formData }) | formDataBond.changed(uuid.v1())
+    if (!isObj(formData)) rw({ formData }) | formDataBond.changed(uuid.v1())
     return rw().formData || {}
 }
 export const formDataBond = new Bond().defaultTo(uuid.v1())
@@ -57,7 +60,7 @@ export const formDataBond = new Bond().defaultTo(uuid.v1())
 //
 // Params:
 // @forceUpdate bool: if true and user is online, forces to update the cache.
-export const getProjects = (_forceUpdate = false) => {
+export const getProjectsOld = (_forceUpdate = false) => {
     _forceUpdate = _forceUpdate || _config.firstAttempt
     const { address } = getSelected()
     const key = 'projects-' + address
@@ -104,6 +107,27 @@ export const getProjects = (_forceUpdate = false) => {
         })
     })
     return _config.updatePromise
+}
+
+// @forceUpdate updates only specified @recordIds in the projects list.
+//
+// Params:
+// @recordids   array: array of project IDs
+export const forceUpdate = async (recordIds, ownerAddress) => {
+    const updateProjects = await fetchProjects(recordIds, ownerAddress)
+    const projects = await getProjects()
+    Array.from(updateProjects)
+        .forEach(([recordId, project]) =>
+            projects.set(recordId, project)
+        )
+}
+
+export const getProjects = (forceUpdate, callback, timeout = 10000) => {
+    if (isFn(callback)) {
+        const subscribed = rxProjects.subscribe(callback)
+        return () => subscribed.unsubscribe()
+    }
+    // similar process as service.project.getProjects
 }
 
 // Triggered whenever time keeping project list is updated
@@ -186,10 +210,10 @@ export const getTimeRecordsBonds = (archive, manage, projectHash) => getProjects
         .map(h => func.call(null, h))
 })
 
-export const getProjectWorkers = projectHash => Bond.promise([
-    query.worker.listWorkers(projectHash),
-    query.worker.listInvited(projectHash),
-    queryProjects.getOwner(projectHash),
+export const getProjectWorkers = recordId => Bond.promise([
+    query.worker.listWorkers(recordId),
+    query.worker.listInvited(recordId),
+    queryProjects.getOwner(recordId),
 ]).then(([acceptedAddresses, invitedAddresses, ownerAddress]) => {
     const allAddresses = ([...acceptedAddresses, ...invitedAddresses]).map(w => ss58Encode(w))
     const { address: selectedAddress } = getSelected()
@@ -216,6 +240,26 @@ export const getProjectWorkers = projectHash => Bond.promise([
 })
 
 export const query = {
+    /*
+     * Timekeeping project related queries
+     */
+    project: {
+        // timestamp of the very first recorded time on a project
+        firstSeen: (recordId, callback, multi) => queryBlockchain(
+            queryPrefix + 'projectFirstSeen',
+            [recordId, callback].filter(Boolean),
+            multi,
+        ),
+        // get total blocks booked in a project
+        totalBlocks: (recordId, callback, multi) => queryBlockchain(
+            queryPrefix + 'totalBlocksPerProject',
+            [recordId, callback].filter(Boolean),
+            multi,
+        )
+    },
+    /* 
+     * Timekeeping record related queries
+     */
     record: {
         // get details of a record
         get: recordHash => runtime.timekeeping.timeRecord(hashToBytes(recordHash)),
@@ -229,6 +273,9 @@ export const query = {
         // list of all archived record hashes in a project 
         listByProjectArchive: projectHash => runtime.timekeeping.projectTimeRecordsHashListArchive(hashToBytes(projectHash)),
     },
+    /*
+     * Timekeeping worker related queries
+     */
     worker: {
         // status of invitation
         accepted: (projectHash, workerAddress) => runtime.timekeeping.workerProjectsBacklogStatus([
@@ -243,45 +290,53 @@ export const query = {
         ]),
         // workers that have been invited to but hasn't responded yet
         listInvited: projectHash => runtime.timekeeping.projectInvitesList(hashToBytes(projectHash)),
+        // listWorkers: projectHash => runtime.timekeeping.projectWorkersList(hashToBytes(projectHash)),
         // workers that has accepted invitation
-        listWorkers: projectHash => runtime.timekeeping.projectWorkersList(hashToBytes(projectHash)),
+        listWorkers: (recordId, callback, multi) => queryBlockchain(
+            queryPrefix + 'projectWorkersList',
+            [recordId, callback].filter(Boolean),
+            multi,
+        ),
         // projects that worker has been invited to or accepted
-        listWorkerProjects: workerAddress => runtime.timekeeping.workerProjectsBacklogList(ss58Decode(workerAddress)),
-        // listWorkerProjects: (address, callback, multi) => query(
-        //     'api.query.timekeeping.totalBlocksPerAddress',
-        //     [address, callback].filter(Boolean),
-        //     multi,
-        // ),
-        // workers total booked time in blocks accross all projects
-        totalBlocks: address => runtime.timekeeping.totalBlocksPerAddress(ss58Decode(address)),
-        // totalBlocks: (address, callback, multi) => query(
-        //     'api.query.timekeeping.totalBlocksPerAddress',
-        //     [address, callback].filter(Boolean),
-        //     multi,
-        // ),
+        //
+        // Params:
+        // @address     string/array: array for multi query
+        // @callback    function: (optional) to subscribe to blockchain storage state changes
+        // @multi       boolean: (optional) indicates multiple storage states are being queried in a single request
+        //
+        // returns      promise
+        listWorkerProjects: (address, callback, multi) => queryBlockchain(
+            queryPrefix + 'workerProjectsBacklogList',
+            [address, callback].filter(Boolean),
+            multi,
+        ),
+        // worker's total booked time (in blocks) accross all projects (unused!)
+        //
+        // Params:
+        // @address     string/array: array for multi query
+        // @callback    function: (optional) to subscribe to blockchain storage state changes
+        // @multi       boolean: (optional) indicates multiple storage states are being queried in a single request
+        //
+        // Returns      promise
+        totalBlocks: (address, callback, multi) => queryBlockchain(
+            queryPrefix + 'totalBlocksPerAddress',
+            [address, callback].filter(Boolean),
+            multi,
+        ),
         // worker's total booked time (in blocks) for a specific project
         //
         // Params:
-        // @address     string/array: for multi query if single non-array address supplied,
-        //                  it will be used for all the recordIds.
-        // @recordId    string/array: for multi query must provide an array of recordIds
-        totalBlocksByProject: (address, recordId, callback, multi = false) => {
-            // const args = (!multi ?
-            //     [address, recordId, callback] :
-            //     [ // for multi query @recordId is expected to be an array
-            //         [...recordId].map((id, i) => [
-            //             isArr(address) ? address[i] : address,
-            //             id,
-            //         ]),
-            //         callback,
-            //     ]
-            // ).filter(Boolean)
-            queryBlockchain(
-                'api.query.timekeeping.totalBlocksPerProjectPerAddress',
-                [address, recordId, callback],
-                multi,
-            )
-        },
+        // @address     string/array: array for multi query
+        // @recordId    string/array: array for multi query
+        // @callback    function: (optional) to subscribe to blockchain storage state changes
+        // @multi       boolean: (optional) indicates multiple storage states are being queried in a single request
+        //
+        // returns      promise
+        totalBlocksByProject: (address, recordId, callback, multi = false) => queryBlockchain(
+            queryPrefix + 'totalBlocksPerProjectPerAddress',
+            [address, recordId, callback].filter(Boolean),
+            multi,
+        ),
     },
 }
 
@@ -442,20 +497,6 @@ export default {
     getProjectWorkers,
     getTimeRecordsBonds,
     getTimeRecordsDetails,
-    project: {
-        // timestamp of the very first recorded time on a project
-        firstSeen: (recordId, callback, multi) => queryBlockchain(
-            'api.query.timekeeping.projectFirstSeen',
-            [recordId, callback].filter(Boolean),
-            multi,
-        ),
-        // get total blocks booked in a project
-        totalBlocks: (recordId, callback, multi) => queryBlockchain(
-            'api.query.timekeeping.totalBlocksPerProject',
-            [recordId, callback].filter(Boolean),
-            multi,
-        )
-    },
     query,
     queueables,
 }
