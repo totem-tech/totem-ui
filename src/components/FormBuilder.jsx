@@ -1,9 +1,14 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Button, Form, Header, Icon, Modal } from 'semantic-ui-react'
-import { isDefined, isArr, isBool, isBond, isFn, isObj, isStr, objCopy, objWithoutKeys, hasValue } from '../utils/utils'
+import { isDefined, isArr, isBool, isBond, isFn, isObj, isStr, hasValue } from '../utils/utils'
 import Message from '../components/Message'
 import FormInput, { nonValueTypes } from './FormInput'
+import { translated } from '../services/language'
+
+const textsCap = translated({
+    unexpectedError: 'an unexpected error occured',
+}, true)[0]
 
 export default class FormBuilder extends Component {
     constructor(props) {
@@ -45,7 +50,7 @@ export default class FormBuilder extends Component {
         return values
     }, values)
 
-    handleChange = (e, data, input, index, childIndex) => {
+    handleChange = async (event, data, input, index, childIndex) => {
         const { name, onChange: onInputChange } = input
         let { inputs } = this.state
         const { onChange: formOnChange } = this.props
@@ -55,11 +60,22 @@ export default class FormBuilder extends Component {
         input.value = value
         values = this.getValues(inputs, values, name, value)
 
-        // trigger input items's onchange callback
-        isFn(onInputChange) && !data.invalid && onInputChange(e, values, index, childIndex)
-        // trigger form's onchange callback
-        isFn(formOnChange) && formOnChange(e, values, index, childIndex)
-        this.setState({ inputs, values })
+        try {
+            // trigger input items's onchange callback
+            isFn(onInputChange) && !data.invalid && await onInputChange(event, values, index, childIndex)
+            // trigger form's onchange callback
+            isFn(formOnChange) && await formOnChange(event, values, index, childIndex)
+            this.setState({ inputs, values })
+        } catch (err) {
+            this.setState({
+                message: {
+                    content: `${err}`,
+                    header: textsCap.unexpectedError,
+                    showIcon: true,
+                    status: 'error',
+                }
+            })
+        }
     }
 
     handleClose = e => {
@@ -69,11 +85,22 @@ export default class FormBuilder extends Component {
         this.setState({ open: !this.state.open })
     }
 
-    handleSubmit = e => {
-        e.preventDefault()
+    handleSubmit = async (event) => {
+        event.preventDefault()
         const { onSubmit } = this.props
         const { values } = this.state
-        isFn(onSubmit) && onSubmit(e, values)
+        try {
+            isFn(onSubmit) && await onSubmit(event, values)
+        } catch (err) {
+            this.setState({
+                message: {
+                    content: `${err}`,
+                    header: textsCap.unexpectedError,
+                    showIcon: true,
+                    status: 'error',
+                }
+            })
+        }
     }
 
     render() {
@@ -102,13 +129,14 @@ export default class FormBuilder extends Component {
             trigger,
             widths
         } = this.props
-        let { inputs, open: sOpen, values } = this.state
+        let { inputs, message: sMsg, open: sOpen, values } = this.state
         // whether the 'open' status is controlled or uncontrolled
         let modalOpen = isFn(onClose) ? open : sOpen
         if (success && closeOnSubmit) {
             modalOpen = false
             isFn(onClose) && onClose({}, {})
         }
+        msg = sMsg || msg
         const message = isObj(msg) && msg || {}
         // recursive interceptor for infinite level of child inputs
         const addInterceptor = index => (input, i) => {
