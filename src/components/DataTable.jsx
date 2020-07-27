@@ -1,35 +1,34 @@
-import React from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { ReactiveComponent } from 'oo7-react'
 import { Button, Dropdown, Grid, Icon, Input, Table } from 'semantic-ui-react'
 import { arrMapSlice, getKeys, isArr, isFn, objWithoutKeys, objCopy, search, sort } from '../utils/utils'
 import Message from '../components/Message'
-import Paginator from './Paginator'
 import { translated } from '../services/language'
-import { layoutBond } from '../services/window'
+import { layoutBond, getLayout, MOBILE } from '../services/window'
+import Paginator from './Paginator'
 
 const mapItemsByPage = (data, pageNo, perPage, callback) => {
     const start = pageNo * perPage - perPage
     const end = start + perPage - 1
     return arrMapSlice(data, start, end, callback)
 }
-const [words, wordsCap] = translated({
-    actions: 'actions',
-    search: 'search',
-}, true)
-const [texts] = translated({
-    deselectAll: 'Deselect all',
-    noDataAvailable: 'No data available',
-    noResultsMsg: 'Your search yielded no results',
-    selectAll: 'Select all',
-})
 
-export default class DataTable extends ReactiveComponent {
+const textsCap = translated({
+    actions: 'actions',
+    deselectAll: 'deselect all',
+    noDataAvailable: 'no data available',
+    noResultsMsg: 'your search yielded no results',
+    search: 'search',
+    selectAll: 'select all',
+}, true)[1]
+
+class DataTable extends Component {
     constructor(props) {
-        super(props, { layout: layoutBond })
+        super(props)
 
         const { columns, defaultSort, defaultSortAsc, pageNo } = props
         this.state = {
+            isMobile: getLayout() === MOBILE,
             pageNo: pageNo,
             keywords: '',
             selectedIndexes: [],
@@ -37,6 +36,14 @@ export default class DataTable extends ReactiveComponent {
             sortBy: defaultSort || (columns.find(x => !!x.key) || {}).key,
         }
     }
+    componentWillMount() {
+        this.tieId = layoutBond.tie(layout => {
+            const isMobile = layout === MOBILE
+            if (this.state.isMObile === isMobile) return
+            this.setState({ isMobile })
+        })
+    }
+    componentWillUnmount = () => layoutBond.untie(this.tieId)
 
     handleRowSelect(key, selectedIndexes) {
         const { onRowSelect } = this.props
@@ -57,15 +64,14 @@ export default class DataTable extends ReactiveComponent {
 
     getTopContent(totalRows, selectedIndexes) {
         let { searchable, selectable, topLeftMenu, topRightMenu } = this.props
-        const { keywords, layout } = this.state
-        const isMobile = layout === 'mobile'
+        const { keywords, isMobile } = this.state
         topLeftMenu = (topLeftMenu || []).filter(x => !x.hidden)
         topRightMenu = (topRightMenu || []).filter(x => !x.hidden)
 
         if (topLeftMenu.length + topRightMenu.length === 0 && !searchable) return
 
         const searchCol = searchable && (
-            <Grid.Column key="0" tablet={16} computer={5} style={{ padding: 0 }}>
+            <Grid.Column key='0' tablet={16} computer={5} style={{ padding: 0 }}>
                 <Input
                     icon='search'
                     iconPosition='left'
@@ -81,7 +87,7 @@ export default class DataTable extends ReactiveComponent {
                         if (!keywords.trim()) return
                         this.setState({ keywords })
                     }}
-                    placeholder={wordsCap.search}
+                    placeholder={textsCap.search}
                     style={!isMobile ? undefined : styles.searchMobile}
                     type='search' // enables escape to clear
                     value={keywords}
@@ -92,8 +98,8 @@ export default class DataTable extends ReactiveComponent {
         const right = selectable && topRightMenu && topRightMenu.length > 0 && (
             <Grid.Column
                 computer={3}
-                floated="right"
-                key="1"
+                floated='right'
+                key='1'
                 style={{ padding: 0 }}
                 tablet={16}
             >
@@ -102,9 +108,9 @@ export default class DataTable extends ReactiveComponent {
                     disabled={selectedIndexes.length === 0}
                     fluid
                     style={{ textAlign: 'center' }}
-                    text={wordsCap.actions}
+                    text={textsCap.actions}
                 >
-                    <Dropdown.Menu direction="left" style={{ minWidth: 'auto' }}>
+                    <Dropdown.Menu direction='left' style={{ minWidth: 'auto' }}>
                         {topRightMenu.map((item, i) => React.isValidElement(item) ? item : (
                             <Dropdown.Item
                                 {...item}
@@ -151,9 +157,9 @@ export default class DataTable extends ReactiveComponent {
                 {selectable && ( /* include checkbox to select items */
                     <Table.Cell onClick={() => this.handleRowSelect(key, selectedIndexes)} style={styles.checkboxCell}>
                         <Icon
-                            className="no-margin"
+                            className='no-margin'
                             name={(selectedIndexes.indexOf(key) >= 0 ? 'check ' : '') + 'square outline'}
-                            size="large"
+                            size='large'
                         />
                     </Table.Cell>
                 )}
@@ -163,7 +169,7 @@ export default class DataTable extends ReactiveComponent {
                         content={undefined}
                         draggable={cell.draggable !== false}
                         key={j}
-                        onDragStart={cell.draggable === false ? undefined : e => e.dataTransfer.setData("Text", e.target.textContent)}
+                        onDragStart={cell.draggable === false ? undefined : e => e.dataTransfer.setData('Text', e.target.textContent)}
                         style={{
                             cursor: cell.draggable !== false ? 'grab' : undefined,
                             padding: cell.collapsing ? '0 5px' : undefined,
@@ -191,7 +197,7 @@ export default class DataTable extends ReactiveComponent {
                 onClick={() => x.key && this.setState({ sortBy: x.key, sortAsc: sortBy === x.key ? !sortAsc : true })}
                 sorted={sortBy !== x.key ? null : (sortAsc ? 'ascending' : 'descending')}
                 style={{ ...((x.headerProps || {}).style), ...styles.columnHeader }}
-                textAlign="center"
+                textAlign='center'
             >
                 {x.title}
             </Table.HeaderCell>
@@ -203,18 +209,18 @@ export default class DataTable extends ReactiveComponent {
         const iconName = `${n > 0 ? 'check ' : ''}square${n === 0 || n != totalRows ? ' outline' : ''}`
         const deselect = n === totalRows || n > 0 && n < totalRows
         const numRows = deselect ? n : totalRows
-        const title = `${deselect ? texts.deselectAll : texts.selectAll} (${numRows})`
+        const title = `${deselect ? textsCap.deselectAll : textsCap.selectAll} (${numRows})`
         headers.splice(0, 0, (
             <Table.HeaderCell
-                key="checkbox"
+                key='checkbox'
                 onClick={() => this.handleAllSelect(selectedIndexes)}
                 style={styles.checkboxCell}
                 title={title}
             >
                 <Icon
                     name={iconName}
-                    size="large"
-                    className="no-margin"
+                    size='large'
+                    className='no-margin'
                 />
             </Table.HeaderCell >
         ))
@@ -223,27 +229,34 @@ export default class DataTable extends ReactiveComponent {
 
     getFooter(totalPages, pageNo) {
         let { footerContent, navLimit, pageOnSelect } = this.props
-        const { layout } = this.state
-        const isMobile = layout === 'mobile'
+        const { isMobile } = this.state
 
-        return (
-            <React.Fragment>
-                {footerContent && <div style={{ float: 'left', width: isMobile ? '100%' : undefined }}>{footerContent}</div>}
-                {totalPages <= 1 ? undefined : (
-                    <Paginator
-                        total={totalPages}
-                        current={pageNo}
-                        navLimit={navLimit}
-                        float={isMobile ? undefined : 'right'}
-                        onSelect={pageNo => { this.setState({ pageNo }); isFn(pageOnSelect) && pageOnSelect(pageNo); }}
-                    />
-                )}
-            </React.Fragment>
-        )
+        return [
+            totalPages <= 1 ? '' : (
+                <Paginator
+                    current={pageNo}
+                    float={isMobile ? 'left' : 'right'}
+                    key='paginator'
+                    navLimit={navLimit}
+                    total={totalPages}
+                    onSelect={pageNo => {
+                        this.setState({ pageNo })
+                        isFn(pageOnSelect) && pageOnSelect(pageNo)
+                    }}
+                />),
+            footerContent && <div key='footer-content' style={{ float: 'left' }}>{footerContent}</div>,
+        ].filter(Boolean)
     }
 
     render() {
-        let { data, columns: columnsOriginal, emptyMessage, footerContent, perPage, searchExtraKeys, tableProps } = this.props
+        let { data,
+            columns: columnsOriginal,
+            emptyMessage,
+            footerContent,
+            perPage,
+            searchExtraKeys,
+            tableProps,
+        } = this.props
         let { keywords, pageNo, selectedIndexes, sortAsc, sortBy } = this.state
         keywords = keywords.trim()
         const columns = columnsOriginal.filter(x => !!x && !x.hidden)
@@ -271,10 +284,10 @@ export default class DataTable extends ReactiveComponent {
 
         if (totalItems > 0 && totalRows === 0) {
             // search resulted in zero rows
-            emptyMessage = { content: texts.noResultsMsg }
+            emptyMessage = { content: textsCap.noResultsMsg }
         }
         return (
-            <div className="data-table">
+            <div className='data-table'>
                 {this.getTopContent(totalRows, selectedIndexes)}
 
                 <div style={styles.tableContent}>
@@ -342,7 +355,7 @@ DataTable.defaultProps = {
     data: [],
     defaultSortAsc: true,
     emptyMessage: {
-        content: texts.noDataAvailable,
+        content: textsCap.noDataAvailable,
         status: 'basic'
     },
     navLimit: 5,
@@ -383,3 +396,6 @@ const styles = {
         width: '100%'
     }
 }
+
+
+export default React.memo(DataTable)

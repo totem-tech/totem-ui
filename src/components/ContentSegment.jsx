@@ -216,7 +216,9 @@ const styles = {
 		marginRight: 25,
 		padding: 0,
 		fontSize: 50,
-		width: 50
+		width: 50,
+		height: 40,
+		maxHeight: 40,
 	},
 	subHeader: {
 		marginTop: 8
