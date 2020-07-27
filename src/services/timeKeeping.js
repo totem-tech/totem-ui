@@ -1,21 +1,17 @@
 import { Bond } from 'oo7'
-import { runtime } from 'oo7-substrate'
 import uuid from 'uuid'
-import { Observable } from 'rxjs'
-import { addressToStr, hashToBytes, hashToStr, ss58Decode, ss58Encode } from '../utils/convert'
-import { arrUnique, isArr, isObj, mapJoin } from '../utils/utils'
-import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
+import { Subject } from 'rxjs'
+import { addressToStr, hashToStr } from '../utils/convert'
+import { isObj, mapJoin, isFn } from '../utils/utils'
 // services
-import { getUser } from './chatClient'
-import identities, { getSelected } from './identity'
-import partners from './partner'
+import { getSelected } from './identity'
 import {
     fetchProjects,
     getProjects as getUserProjects,
-    query as queryProjects,
 } from './project'
 import storage from './storage'
 import { query as queryBlockchain } from './blockchain'
+import PromisE from '../utils/PromisE'
 
 // to sumbit a new time record must submit with this hash
 export const NEW_RECORD_HASH = '0x40518ed7e875ba87d6c7358c06b1cac9d339144f8367a0632af7273423dd124e'
@@ -24,20 +20,12 @@ const queryPrefix = 'api.query.timekeeping.'
 const txPrefix = 'api.tx.timekeeping.'
 // transaction queue item type
 const TX_STORAGE = 'tx_storage'
-let projectsObserver = null
-const rxProjects = Observable.create(o => projectsObserver = o)
+const rxProjects = new Subject()
 // read/write to module settings storage
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 // read or write to cache storage
 const cacheRW = (key, value) => storage.cache(MODULE_KEY, key, value)
-const _config = {
-    address: undefined,
-    firstAttempt: true,
-    hashesBond: undefined,
-    tieId: undefined,
-    updateInProgress: false,
-    updatePromise: undefined,
-}
+const cacheKeyProjects = address => `projects-${address}`
 // record status codes
 export const statuses = {
     draft: 0,
@@ -50,64 +38,10 @@ export const statuses = {
 }
 // timeKeeping form values and states for use with the TimeKeeping form
 export const formData = formData => {
-    if (!isObj(formData)) rw({ formData }) | formDataBond.changed(uuid.v1())
+    if (isObj(formData)) rw({ formData }) | formDataBond.changed(uuid.v1())
     return rw().formData || {}
 }
 export const formDataBond = new Bond().defaultTo(uuid.v1())
-
-// getProjects returns all the projects user owns along with the projects they have been invited to (accepted or not).
-// Retrieved data is cached in localStorage and only updated there is changes to invitation or manually triggered by setting `@_forceUpdate` to `true`.
-//
-// Params:
-// @forceUpdate bool: if true and user is online, forces to update the cache.
-export const getProjectsOld = (_forceUpdate = false) => {
-    _forceUpdate = _forceUpdate || _config.firstAttempt
-    const { address } = getSelected()
-    const key = 'projects-' + address
-    const cachedAr = cacheRW(key) || []
-    const invitedProjects = new Map(cachedAr)
-
-    if (_config.address !== address) {
-        _config.firstAttempt = true
-        _config.address = address
-        if (_config.hashesBond) _config.hashesBond.untie(_config.tieId)
-        _config.hashesBond = query.worker.listWorkerProjects(address)
-        // listen for changes to user invitations and update projects list
-        _config.tieId = _config.hashesBond.tie(hashes => {
-            hashes = hashes.map(h => hashToStr(h))
-            const changed = !!hashes.find(hash => !invitedProjects.get(hash))
-                || !!(cachedAr[address] || []).find(([hash]) => !hashes.includes(hash))
-            if (_config.firstAttempt || _config.updateInProgress) return
-            if (changed) return getProjects(true)
-        })
-    }
-
-    if (_config.updateInProgress && _config.updatePromise) return _config.updatePromise
-    // retrieve user owned projects
-    _config.updatePromise = getUserProjects().then(userProjects => {
-        if (!navigator.onLine || !_forceUpdate && invitedProjects.size > 0) {
-            return mapJoin(userProjects, invitedProjects)
-        }
-
-        _config.updateInProgress = true
-        // invited project hashes
-        return Bond.promise([_config.hashesBond]).then(hashes => {
-            hashes = hashes.flat().map(h => hashToStr(h))
-                // exclude user owned projects
-                .filter(hash => !userProjects.get(hash))
-
-            //retrieve invited project details excluding own projects
-            return fetchProjects(hashes).then(invitedProjects => {
-                _config.updateInProgress = false
-                _config.firstAttempt = false
-
-                cacheRW(key, invitedProjects)
-                return mapJoin(userProjects, invitedProjects)
-            })
-        })
-    })
-    return _config.updatePromise
-}
 
 // @forceUpdate updates only specified @recordIds in the projects list.
 //
@@ -122,122 +56,98 @@ export const forceUpdate = async (recordIds, ownerAddress) => {
         )
 }
 
-export const getProjects = (forceUpdate, callback, timeout = 10000) => {
+// getProjects retrieves projects along with relevant details owned by selected identity.
+// Retrieved data is cached in localStorage and only updated when list of projects changes in the blockchain
+// or manually triggered by invoking `getProjects(true)`.
+//
+// Params:
+// @forceUpdate     Boolean: (optional) whether to attempt to update cached data immediately instead of re-using cache.
+//                      Default: false
+// @callback        function: (optional) indicates whether to subscribe to changes on the list of projects.
+//                      If  a valid functin supplied, it will be invoked with the value whenever projects list changes.
+// 
+// Returns          Map: list of projects
+export const getProjects = async (forceUpdate, callback, timeout = 10000) => {
+    const config = getProjects
+    // auto update whenever user projects change
+    config.unsubscribeUP = config.unsubscribeUP || await getUserProjects(false, () => getProjects())
+
     if (isFn(callback)) {
-        const subscribed = rxProjects.subscribe(callback)
+        const interceptor = async (result) => {
+            console.log({ result })
+            // include user owned projects
+            result = mapJoin(await getUserProjects(), result)
+            callback(result)
+        }
+        const subscribed = rxProjects.subscribe(interceptor)
+        // makes sure query.worker.listWorkerProjects is subscribed
+        getProjects(forceUpdate).then(callback)
         return () => subscribed.unsubscribe()
     }
     // similar process as service.project.getProjects
-}
+    let result
+    const {
+        address: addressPrev,
+        unsubscribe,
+        updatePromise,
+    } = config
+    const { address } = getSelected()
+    const cacheKey = cacheKeyProjects(address)
 
-// Triggered whenever time keeping project list is updated
-export const getProjectsBond = new Bond().defaultTo(uuid.v1())
-// setTimeout(() => rxProjects.subscribe())
-
-// getRecords retrieves records either by project or by selected worker
-//
-// Params:
-// @projectHash     string/Bond/Uint8Array
-// @ownerAddress    string/Bond/AccountID
-// @archived        bool: whether to retrieve non-/archived records
-//
-// returns promise, resolves to a Map of records.
-export const getTimeRecordsDetails = hashAr => {
-    const result = new Map()
-    if (!isArr(hashAr) || hashAr.length === 0) return result
-    // flatten array, convert to strings and remove duplicates
-    hashAr = arrUnique(hashAr.flat().map(hashToStr))
-    // retrieve all record details
-    return Promise.all([
-        Bond.promise(hashAr.map(query.record.get)),
-        getProjects(),
-    ]).then(([records, projects]) => {
-        records.map((r, i) => !r ? null : ({
-            ...r,
-            // add extra information including duration in hh:mm:ss format
-            duration: secondsToDuration(r.total_blocks * BLOCK_DURATION_SECONDS),
-            hash: hashToStr(hashAr[i]),
-            projectHash: hashToStr(r.project_hash),
-            workerAddress: r.worker && ss58Encode(r.worker) || '',
-        })).filter(Boolean)
-            // populate the result Map
-            .forEach(r => {
-                const { name, ownerAddress } = projects.get(r.projectHash) || {}
-                result.set(r.hash, {
-                    ...r,
-                    projectOwnerAddress: ownerAddress,
-                    projectName: name,
-                })
+    if (!navigator.onLine) return new Map(cacheRW(cacheKey) || [])
+    if (address !== addressPrev || !updatePromise || updatePromise.rejected) {
+        // selected identity changed
+        config.address = address
+        isFn(unsubscribe) && unsubscribe()
+        config.updatePromise = new PromisE((resolve, reject) => (async () => {
+            try {
+                await getConnection()
+            } catch (err) {
+                // reset update promise
+                config.updatePromise = null
+                // use cache if not connected
+                return resolve(new Map(cacheRW(cacheKey) || []))
+            }
+            config.unsubscribe = await query.worker.listWorkerProjects(address, async (recordIds) => {
+                try {
+                    const projects = await fetchProjects(recordIds, address)
+                    saveProjects(projects, address)
+                    resolve(projects)
+                } catch (err) {
+                    reject(err)
+                }
             })
-        return result
-        /*
-        example Record from blockchain: {
-            locked_status: false
-            posting_period: 0
-            project_hash: [...]
-            reason_code: {ReasonCodeKey: 0, ReasonCodeTypeKey: 0}
-            start_block: 1851599056011264
-            submit_status: 0
-            total_blocks: 3600
-            worker: [...]
-        }
-        */
-    })
-}
-
-// getTimeRecordsBonds get a list of bonds to retrieve time record hashes for gived properties
-//
-// Params:
-// @archive     bool: whether to retrieve archived records
-// @manage      bool: whether to retrieve own records only or all records from owned projects
-// @projectHash string: (optional) if @manage === true, will only retrieve hashes from supplied @projectHash
-//
-// returns      promise: resolves to a single dimentional array of bonds which all resolves to time record hashes (bytes)
-export const getTimeRecordsBonds = (archive, manage, projectHash) => getProjects().then(projects => {
-    let func
-    if (!manage) {
-        // own records only, from all accepted projects of selected identity
-        func = archive ? query.record.listArchive : query.record.list
-        return [func.call(null, getSelected().address)]
+        })())
+    } else if (forceUpdate) {
+        // once-off update
+        config.updatePromise = fetchProjects(query.worker.listWorkerProjects(address), address)
+        // update rxProjects
+        config.updatePromise.then(projects => saveProjects(projects, address))
     }
 
-    // all records by all workers from projects owned by selected identity
-    func = archive ? query.record.listByProjectArchive : query.record.listByProject
-    if (!!projectHash) return [func.call(null, projectHash)]
-    return Array.from(projects)
-        // filter projects
-        .map(([projectHash, { isOwner }]) => isOwner && projectHash).filter(Boolean)
-        .map(h => func.call(null, h))
-})
+    const promise = PromisE.timeout(getUserProjects(), config.updatePromise, timeout)
+    try {
+        const [ownedProject, invitedProjects] = await promise
+        result = mapJoin(ownedProject, invitedProjects)
+    } catch (err) {
+        // if timed out, return cached. Otherwise, throw error
+        if (!promise.timeout.rejected) throw err
+    }
+    return result || new Map(cacheRW(cacheKey) || [])
+}
 
-export const getProjectWorkers = recordId => Bond.promise([
-    query.worker.listWorkers(recordId),
-    query.worker.listInvited(recordId),
-    queryProjects.getOwner(recordId),
-]).then(([acceptedAddresses, invitedAddresses, ownerAddress]) => {
-    const allAddresses = ([...acceptedAddresses, ...invitedAddresses]).map(w => ss58Encode(w))
-    const { address: selectedAddress } = getSelected()
-    const isOwner = ownerAddress === selectedAddress
-    const workers = new Map()
-
-    allAddresses.forEach((address, i) => {
-        if (isOwner || selectedAddress === address) {
-            let { name, userId } = partners.get(address) || identities.get(address) || {}
-            if (!userId && identities.get(address)) {
-                // address is own identitty
-                userId = (getUser() || {}).id
-            }
-            !workers.get(address) && workers.set(address, {
-                accepted: i < acceptedAddresses.length,
-                address,
-                name,
-                invited: true,
-                userId,
-            })
-        }
-    })
-    return { isOwner, ownerAddress, workers }
-})
+// save projects to local storage and trigger change on `rxProjects`
+//
+// Params:
+// @projects        Map/2D Array
+// @ownerAddress    string: identity that owns the projects
+const saveProjects = (projects, ownerAddress) => {
+    if (!projects || !ownerAddress) return
+    const cacheKey = cacheKeyProjects(ownerAddress)
+    cacheRW(cacheKey, projects)
+    // update rxProjects
+    rxProjects.next(projects)
+}
 
 export const query = {
     /*
@@ -262,79 +172,108 @@ export const query = {
      */
     record: {
         // get details of a record
-        get: recordHash => runtime.timekeeping.timeRecord(hashToBytes(recordHash)),
-        isOwner: (hash, address) => runtime.timeKeeping.timeHashOwner(hashToBytes(hash), ss58Decode(address)),
-        // list of all record hashes by worker
-        list: workerAddress => runtime.timekeeping.workerTimeRecordsHashList(ss58Decode(workerAddress)),
-        // list of all archived record hashes by worker
-        listArchive: workerAddress => runtime.timekeeping.workerTimeRecordsHashListArchive(ss58Decode(workerAddress)),
+        get: (recordId, callback, multi) => queryBlockchain(
+            queryPrefix + 'timeRecord',
+            [recordId, callback].filter(Boolean),
+            multi,
+        ),
+        // check if worker is owner of the record | unused
+        isOwner: (recordId, workerAddress, callback, multi) => queryBlockchain(
+            queryPrefix + 'workerTimeRecordsHashList',
+            [recordId, workerAddress, callback].filter(Boolean),
+            multi,
+        ),
+        // list of all recordIds by worker
+        list: (workerAddress, callback, multi) => queryBlockchain(
+            queryPrefix + 'workerTimeRecordsHashList',
+            [workerAddress, callback].filter(Boolean),
+            multi,
+        ),
+        // list of all archived recordIds by worker
+        listArchive: (workerAddress, callback, multi) => queryBlockchain(
+            queryPrefix + 'workerTimeRecordsHashListArchive',
+            [workerAddress, callback].filter(Boolean),
+            multi,
+        ),
         // list of all record hashes in a project 
-        listByProject: projectHash => runtime.timekeeping.projectTimeRecordsHashList(hashToBytes(projectHash)),
+        listByProject: (projectId, callback, multi) => queryBlockchain(
+            queryPrefix + 'projectTimeRecordsHashList',
+            [projectId, callback].filter(Boolean),
+            multi,
+        ),
         // list of all archived record hashes in a project 
-        listByProjectArchive: projectHash => runtime.timekeeping.projectTimeRecordsHashListArchive(hashToBytes(projectHash)),
+        listByProjectArchive: (projectId, callback, multi) => queryBlockchain(
+            queryPrefix + 'projectTimeRecordsHashListArchive',
+            [projectId, callback].filter(Boolean),
+            multi,
+        ),
     },
     /*
      * Timekeeping worker related queries
      */
     worker: {
         // status of invitation
-        accepted: (projectHash, workerAddress) => runtime.timekeeping.workerProjectsBacklogStatus([
-            hashToBytes(projectHash),
-            ss58Decode(workerAddress)
-        ]),
-        acceptedList: arr => Bond.all(arr.map(({ projectHash: p, workerAddress: w }) => query.worker.accepted(p, w))),
+        accepted: (projectId, workerAddress, callback, multi) => queryBlockchain(
+            queryPrefix + 'workerProjectsBacklogStatus',
+            [projectId, workerAddress, callback].filter(Boolean),
+            multi,
+        ),
         // check if worker is banned. undefined: not banned, object: banned
-        banned: (projectHash, address) => runtime.timekeeping.projectWorkersBanList([
-            hashToBytes(projectHash),
-            ss58Decode(address)
-        ]),
+        banned: (projectId, callback, multi) => queryBlockchain(
+            queryPrefix + 'projectInvitesList',
+            [projectId, callback].filter(Boolean),
+            multi,
+        ),
         // workers that have been invited to but hasn't responded yet
-        listInvited: projectHash => runtime.timekeeping.projectInvitesList(hashToBytes(projectHash)),
-        // listWorkers: projectHash => runtime.timekeeping.projectWorkersList(hashToBytes(projectHash)),
+        listInvited: (projectId, callback, multi) => queryBlockchain(
+            queryPrefix + 'projectInvitesList',
+            [projectId, callback].filter(Boolean),
+            multi,
+        ),
         // workers that has accepted invitation
-        listWorkers: (recordId, callback, multi) => queryBlockchain(
+        listWorkers: (projectId, callback, multi) => queryBlockchain(
             queryPrefix + 'projectWorkersList',
-            [recordId, callback].filter(Boolean),
+            [projectId, callback].filter(Boolean),
             multi,
         ),
         // projects that worker has been invited to or accepted
         //
         // Params:
-        // @address     string/array: array for multi query
-        // @callback    function: (optional) to subscribe to blockchain storage state changes
-        // @multi       boolean: (optional) indicates multiple storage states are being queried in a single request
-        //
-        // returns      promise
-        listWorkerProjects: (address, callback, multi) => queryBlockchain(
+        // @workerAddress   string/array: array for multi query
+        // @callback        function: (optional) to subscribe to blockchain storage state changes
+        // @multi           boolean: (optional) indicates multiple storage states are being queried in a single request
+        //  
+        // returns          promise
+        listWorkerProjects: (workerAddress, callback, multi) => queryBlockchain(
             queryPrefix + 'workerProjectsBacklogList',
-            [address, callback].filter(Boolean),
+            [workerAddress, callback].filter(Boolean),
             multi,
         ),
         // worker's total booked time (in blocks) accross all projects (unused!)
         //
         // Params:
-        // @address     string/array: array for multi query
-        // @callback    function: (optional) to subscribe to blockchain storage state changes
-        // @multi       boolean: (optional) indicates multiple storage states are being queried in a single request
-        //
-        // Returns      promise
-        totalBlocks: (address, callback, multi) => queryBlockchain(
+        // @workerAddress   string/array: array for multi query
+        // @callback        function: (optional) to subscribe to blockchain storage state changes
+        // @multi           boolean: (optional) indicates multiple storage states are being queried in a single request
+        //  
+        // Returns          promise
+        totalBlocks: (workerAddress, callback, multi) => queryBlockchain(
             queryPrefix + 'totalBlocksPerAddress',
-            [address, callback].filter(Boolean),
+            [workerAddress, callback].filter(Boolean),
             multi,
         ),
         // worker's total booked time (in blocks) for a specific project
         //
         // Params:
-        // @address     string/array: array for multi query
-        // @recordId    string/array: array for multi query
-        // @callback    function: (optional) to subscribe to blockchain storage state changes
-        // @multi       boolean: (optional) indicates multiple storage states are being queried in a single request
-        //
-        // returns      promise
-        totalBlocksByProject: (address, recordId, callback, multi = false) => queryBlockchain(
+        // @workerAddress   string/array: array for multi query
+        // @recordId        string/array: array for multi query
+        // @callback        function: (optional) to subscribe to blockchain storage state changes
+        // @multi           boolean: (optional) indicates multiple storage states are being queried in a single request
+        //  
+        // returns          promise
+        totalBlocksByProject: (workerAddress, recordId, callback, multi = false) => queryBlockchain(
             queryPrefix + 'totalBlocksPerProjectPerAddress',
-            [address, recordId, callback].filter(Boolean),
+            [workerAddress, recordId, callback].filter(Boolean),
             multi,
         ),
     },
@@ -487,16 +426,11 @@ export const queueables = {
         }),
     },
 }
-// auto update timekeeping projects list if user projects changes
-setTimeout(() => getUserProjects(false, () => getProjectsBond.changed(uuid.v1())))
 
 export default {
     formData,
     formDataBond,
     getProjects,
-    getProjectWorkers,
-    getTimeRecordsBonds,
-    getTimeRecordsDetails,
     query,
     queueables,
 }

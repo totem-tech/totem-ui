@@ -287,7 +287,6 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
     )
 
     if (!done) return
-    delete inprogressIds[id]
 
     try {
         isFn(task.then) && task.then(success, resultOrError)
@@ -295,7 +294,7 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
         // ignore any error occured by invoking the `then` function
         console.log('Unexpected error occured while executing queue .then()', { rootTask, err })
     }
-
+    delete inprogressIds[id]
     // execute next only if current task is successful
     success && isObj(task.next) && _processTask(task.next, id, toastId)
 

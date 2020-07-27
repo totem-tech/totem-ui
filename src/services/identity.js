@@ -2,7 +2,6 @@
 import { Bond } from 'oo7'
 import { generateMnemonic } from 'bip39'
 import { secretStore } from 'oo7-substrate'
-import uuid from 'uuid'
 import DataStorage from '../utils/DataStorage'
 import { keyring } from '../utils/polkadotHelper'
 import { objClean } from '../utils/utils'

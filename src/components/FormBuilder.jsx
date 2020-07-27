@@ -67,6 +67,7 @@ export default class FormBuilder extends Component {
             isFn(formOnChange) && await formOnChange(event, values, index, childIndex)
             this.setState({ message: null, inputs, values })
         } catch (err) {
+            console.error(err)
             this.setState({
                 message: {
                     content: `${err}`,
@@ -91,8 +92,9 @@ export default class FormBuilder extends Component {
         const { values } = this.state
         try {
             isFn(onSubmit) && await onSubmit(event, values)
-            setState({ message: null })
+            this.setState({ message: null })
         } catch (err) {
+            console.error(err)
             this.setState({
                 message: {
                     content: `${err}`,

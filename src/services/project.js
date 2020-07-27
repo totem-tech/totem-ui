@@ -2,7 +2,7 @@
 // IMPORTANT NOTE the terminology "project" has been replaced by "activity" in the UI. 
 // It has not been replaced in the code.
 // *********
-import { Observable } from 'rxjs'
+import { Subject } from 'rxjs'
 import { hashToStr } from '../utils/convert'
 import PromisE from '../utils/PromisE'
 import { arrUnique, isFn } from '../utils/utils'
@@ -15,6 +15,7 @@ import storage from './storage'
 import { query as tkQuery } from './timeKeeping'
 
 export const MODULE_KEY = 'projects'
+const rxProjects = new Subject()
 // read or write to cache storage
 const cacheRW = (key, value) => storage.cache(MODULE_KEY, key, value)
 const cacheKeyProjects = address => `projects-${address}`
@@ -34,15 +35,13 @@ export const statusCodes = {
 }
 // status codes that indicate project is open
 export const openStatuses = [statusCodes.open, statusCodes.reopen]
-let projectsObserver = null
-const rxProjects = Observable.create(o => projectsObserver = o)
 setTimeout(() => selectedAddressBond.tie(() => getProjects(true)))
 
 // retrieve project details by record IDs
 //
 // Params:
 // @recordIds       array: array of project IDs
-// @ownAddress      string: (optional) address of the users own identity to determine if user owns individual records.
+// @ownAddress      string: address of the users own identity to determine if user owns individual records.
 // @timeout         integer: (optional) duration in milliseconds to timeout the request
 //
 // Returns          map: list of projects
@@ -66,23 +65,26 @@ export const fetchProjects = async (recordIds = [], ownAddress, timeout = 10000)
     unknownIds.forEach(recordId => projects.set(recordId, {}))
 
     // process projects to include extra information
-    Array.from(projects).forEach(([recordId, project]) => {
+    const resultArr = Array.from(projects).map(([recordId, project]) => {
         const index = recordIds.indexOf(recordId)
         project.status = arStatusCode[index]
         // exclude deleted project
-        if (project.status === null) return projects.delete(recordId)
+        if (project.status === null) return
 
         const { description, name, ownerAddress } = project
         const { name: ownerName } = identities.get(ownerAddress) || partners.get(ownerAddress) || {}
-        project.ownerName = ownerName
-        project.firstSeen = arFristSeen[index]
-        project.totalBlocks = arTotalBlocks[index]
-        project.ownerAddress = project.ownerAddress || ownerAddress
-        project.isOwner = ownAddress === ownerAddress || getSelected().address === ownerAddress
-        project.name = name || ''
-        project.description = description || ''
+        return [recordId, {
+            ...project,
+            ownerName: ownerName,
+            firstSeen: arFristSeen[index],
+            totalBlocks: arTotalBlocks[index],
+            ownerAddress: ownerAddress || ownAddress,
+            isOwner: ownAddress === ownerAddress || getSelected().address === ownerAddress,
+            name: name || '',
+            description: description || '',
+        }]
     })
-    return projects
+    return new Map(resultArr.filter(Boolean))
 }
 
 // @forceUpdate updates only specified @recordIds in the projects list.
@@ -92,14 +94,15 @@ export const fetchProjects = async (recordIds = [], ownAddress, timeout = 10000)
 export const forceUpdate = async (recordIds, ownerAddress) => {
     const updateProjects = await fetchProjects(recordIds, ownerAddress)
     const projects = await getProjects()
-    Array.from(updateProjects)
-        .forEach(([recordId, project]) =>
-            projects.set(recordId, project)
-        )
+    Array.from(updateProjects).forEach(
+        ([recordId, project]) => projects.set(recordId, project)
+    )
+    // save to local storage
+    saveProjects(projects, ownerAddress)
 }
 
 // getProject retrieves a single project by hash
-export const getProject = async (recordId) => (Array.from(await fetchProjects([recordId]))[0] || [])[1]
+export const getProject = async (recordId) => (await getProjects()).get(recordId)
 
 // getProjects retrieves projects along with relevant details owned by selected identity.
 // Retrieved data is cached in localStorage and only updated when list of projects changes in the blockchain
@@ -115,6 +118,8 @@ export const getProject = async (recordId) => (Array.from(await fetchProjects([r
 export const getProjects = async (forceUpdate = false, callback, timeout = 10000) => {
     if (isFn(callback)) {
         const subscribed = rxProjects.subscribe(callback)
+        // makes sure query.worker.listWorkerProjects is subscribed
+        getProjects(forceUpdate).then(callback)
         return () => subscribed.unsubscribe()
     }
 
@@ -179,7 +184,7 @@ const saveProjects = (projects, ownerAddress) => {
     const cacheKey = cacheKeyProjects(ownerAddress)
     cacheRW(cacheKey, projects)
     // update rxProjects
-    projectsObserver.next(projects)
+    rxProjects.next(projects)
 }
 
 export const query = {
@@ -316,7 +321,6 @@ export default {
     getProject,
     getProjects,
     openStatuses,
-    rxProjects,
     statusCodes,
     queueables,
     query,

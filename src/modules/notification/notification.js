@@ -111,7 +111,7 @@ export const remove = id => setTimeout(() => {
 
 // respond to time keeping invitation
 export const handleTKInvitation = (
-    projectHash, workerAddress, accepted,
+    projectId, workerAddress, accepted,
     // optional args
     projectOwnerId, projectName, notificationId
 ) => new Promise(resolve => {
@@ -126,11 +126,11 @@ export const handleTKInvitation = (
     })).reduce((notifyId, [xNotifyId, xNotification]) => {
         if (!!notifyId) return notifyId
         const { data: { projectHash: hash, workerAddress: address } } = xNotification
-        const match = hash === projectHash && address === workerAddress
+        const match = hash === projectId && address === workerAddress
         return match ? xNotifyId : null
     }, null)
 
-    const getprops = (projectOwnerId, projectName) => workerTasks.accept(projectHash, workerAddress, accepted, {
+    const getprops = (projectOwnerId, projectName) => workerTasks.accept(projectId, workerAddress, accepted, {
         title: `${texts.timekeeping} - ${accepted ? texts.acceptInvitation : texts.rejectInvitation}`,
         description: `${texts.activity}: ${projectName}`,
         then: success => !success && resolve(false),
@@ -144,7 +144,7 @@ export const handleTKInvitation = (
                 type,
                 'invitation_response',
                 `${accepted ? texts.acceptedInvitation : texts.rejectedInvitation}: "${projectName}"`,
-                { accepted, projectHash, projectName, workerAddress },
+                { accepted, projectHash: projectId, projectName, workerAddress },
                 err => {
                     !err && notificationId && remove(notificationId)
                     resolve(!err)
@@ -156,7 +156,7 @@ export const handleTKInvitation = (
     if (!!projectOwnerId && !!projectName) return addToQueue(getprops(projectOwnerId, projectName))
 
     // retrieve project details to get project name and owners user id
-    getProject(projectHash).then(project => {
+    getProject(projectId).then(project => {
         const { name, userId } = project || {}
         addToQueue(getprops(userId, name))
     })

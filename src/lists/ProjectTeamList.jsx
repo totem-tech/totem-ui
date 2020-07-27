@@ -1,17 +1,19 @@
-import React from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { ReactiveComponent } from 'oo7-react'
 import { Button } from 'semantic-ui-react'
+import { isFn } from '../utils/utils'
 import { ButtonAcceptOrReject } from '../components/buttons'
 import DataTable from '../components/DataTable'
+import PartnerForm from '../forms/Partner'
 import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
+import { handleTKInvitation } from '../modules/notification/notification'
 // services
-import identities, { selectedAddressBond } from '../services/identity'
+import { get as getIdentity, selectedAddressBond, getSelected } from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
-import { handleTKInvitation } from '../modules/notification/notification'
-import PartnerForm from '../forms/Partner'
-import { getProjectWorkers, query } from '../services/timeKeeping'
+import { get as getPartner } from '../services/partner'
+import { query } from '../services/timeKeeping'
+import { getUser } from '../services/chatClient'
 
 const [words, wordsCap] = translated({
     accepted: 'accepted',
@@ -27,25 +29,26 @@ const [texts] = translated({
     unknownUser: 'Unknown user',
 })
 
-export default class ProjectTeamList extends ReactiveComponent {
+export default class ProjectTeamList extends Component {
     constructor(props) {
         super(props)
 
         this.state = {
+            ownerAddress: getSelected().address,
             listProps: {
                 columns: [
                     // { key: '_userId', title: texts.userId },
                     { key: 'name', title: wordsCap.team },
                     { key: '_status', textAlign: 'center', title: wordsCap.status },
                 ],
-                data: [],
+                data: new Map(),
                 emptyMessage: { content: texts.emptyMessage },
                 rowProps: ({ accepted }) => ({ positive: accepted }),
                 searchExtraKeys: ['address', 'userId'],
                 topLeftMenu: [{
                     content: wordsCap.invite,
                     onClick: () => showForm(TimeKeepingInviteForm, {
-                        onSubmit: success => success && this.loadWorkers(),
+                        // onSubmit: success => success && this.loadWorkers(),
                         values: { projectHash: this.props.projectHash }
                     })
                 }]
@@ -59,67 +62,106 @@ export default class ProjectTeamList extends ReactiveComponent {
 
     componentWillMount() {
         this._mounted = true
-        const { projectHash } = this.props
-        if (!projectHash) return
-
-        this.projectHash = projectHash
-        this.bond = Bond.all([
-            query.worker.listInvited(projectHash),
-            query.worker.listWorkers(projectHash),
-            selectedAddressBond,
-        ])
-        this.tieId = this.bond.tie(() => this.loadWorkers())
+        let ignoredFirst = false
+        const { projectHash: projectId } = this.props
+        const { listInvited, listWorkers } = query.worker
+        this.unsubscribers = {
+            workersAccepted: listWorkers(projectId, this.setWorkers(projectId, true)),
+            workersInvited: listInvited(projectId, this.setWorkers(projectId, false)),
+        }
+        this.tieId = selectedAddressBond.tie(ownerAddress => {
+            // force reset everything
+            const { listProps } = this.state
+            listProps.data = !ignoredFirst ? listProps.data : new Map()
+            this.setState({ ownerAddress, listProps })
+            if (!ignoredFirst) {
+                ignoredFirst = true
+                return
+            }
+            this.componentWillUnmount()
+            this.componentWillMount()
+        })
     }
 
     componentWillUnmount() {
         this._mounted = false
-        this.bond && this.bond.untie(this.tieId)
+        Object.values(this.unsubscribers).forEach(fn => isFn(fn) && fn())
+        selectedAddressBond.untie(this.tieId)
     }
 
-    componentWillUpdate() {
-        const { projectHash } = this.props
-        if (this.projectHash === projectHash) return
-        this.projectHash = projectHash
-        this.bond && this.bond.untie(this.tieId)
-        this.bond = !projectHash ? null : Bond.all([
-            query.worker.listInvited(projectHash),
-            query.worker.listWorkers(projectHash),
-            selectedAddressBond,
-        ])
-        this.tieId = this.bond && this.bond.tie(() => this.loadWorkers())
-        !this.bond && this.loadWorkers()
-    }
+    // loadWorkers = () => {
+    //     const { projectHash: projectId } = this.props
+    //     const { listProps } = this.state
+    //     if (!projectId) {
+    //         listProps.data = []
+    //         return this.setState({ listProps })
+    //     }
 
-    loadWorkers = () => {
-        const { projectHash } = this.props
+    //     getProjectWorkers(projectId).then(({ workers }) => {
+    //         Array.from(workers).forEach(([_, invite]) => {
+    //             const { accepted, address, name } = invite
+    //             const isOwnIdentity = !!getIdentity(address)
+    //             invite._status = accepted === true ? words.accepted : (!isOwnIdentity ? words.invited : (
+    //                 // Worker identity belongs to current user => button to accept or reject
+    //                 <ButtonAcceptOrReject onClick={accepted => handleTKInvitation(projectId, address, accepted)} />
+    //             ))
+    //             invite.name = name || (
+    //                 <Button
+    //                     content={texts.addPartner}
+    //                     onClick={() => showForm(PartnerForm, { values: { address } })}
+    //                 />
+    //             )
+    //         })
+    //         listProps.data = workers
+    //         this.setState({ listProps })
+    //     })
+    // }
+
+    setWorkers = (projectId, accepted) => workerAddresses => {
         const { listProps } = this.state
-        if (!projectHash) {
-            listProps.data = []
-            return this.setState({ listProps })
-        }
+        const { data } = listProps
+        const { id: currentUserId } = getUser() | {}
+        workerAddresses.forEach(address => {
+            let { name, userId } = getPartner(address) || {}
+            let isOwnIdentity = false
+            if (!name || !userId) {
+                const { name: iName } = getIdentity(address) || {}
+                if (iName) {
+                    isOwnIdentity = true
+                    // address is owned by current user
+                    name = iName
+                    userId = currentUserId
+                }
+            }
 
-        getProjectWorkers(projectHash).then(({ workers }) => {
-            Array.from(workers).forEach(([_, invite]) => {
-                const { accepted, address, name } = invite
-                const isOwnIdentity = !!identities.get(address)
-                invite._status = accepted === true ? words.accepted : (!isOwnIdentity ? words.invited : (
-                    // Worker identity belongs to current user => button to accept or reject
-                    <ButtonAcceptOrReject onClick={accepted => handleTKInvitation(projectHash, address, accepted)} />
-                ))
-                invite.name = name || (
+            // if (!accepted && data.get(address)) return
+            data.set(address, {
+                accepted,
+                address,
+                name: name || (
                     <Button
                         content={texts.addPartner}
                         onClick={() => showForm(PartnerForm, { values: { address } })}
                     />
-                )
+                ),
+                invited: true,
+                userId,
+                _status: accepted ? words.accepted : (!isOwnIdentity ? words.invited : (
+                    // Worker identity belongs to current user => button to accept or reject
+                    <ButtonAcceptOrReject onClick={accept => handleTKInvitation(
+                        projectId,
+                        address,
+                        accept,
+                    )} />
+                ))
             })
-            listProps.data = workers
-            this.setState({ listProps })
         })
+
+        this.setState({ listProps })
     }
 
     render = () => <DataTable {...this.state.listProps} />
 }
 ProjectTeamList.propTypes = {
-    projectHash: PropTypes.string,
+    projectHash: PropTypes.string.isRequired,
 }
