@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Step, Embed } from 'semantic-ui-react'
+import { Button, Icon, Embed, Step } from 'semantic-ui-react'
 // services
 import { getUser } from '../services/chatClient'
 import { getSelected } from '../services/identity'
@@ -11,22 +11,37 @@ import { setToast } from '../services/toast'
 // forms
 import RegisterForm from '../forms/Register'
 import IdentityForm from '../forms/Identity'
+import { createInbox, SUPPORT, TROLLBOX } from '../modules/chat/chat'
 
 const [texts] = translated({
 	faucetRequest: 'Faucet request',
 	faucetRequestDetails: 'Transaction allocations to get you started',
-	registrationSuccess: 'Registration successful! You will shortly receive an allocation of transactions to get you started.',
-	quickGuidePara1: `Totem is currently under heavy development, but you can already use the Identities, Partners, Activities 
+	registrationSuccess: `
+		Registration successful! You will shortly receive an allocation of transactions to get you started.
+	`,
+	quickGuidePara1: `
+		Totem is currently under heavy development, but you can already use the Identities, Partners, Activities 
 		and Timekeeping Modules as well as make basic transfers of your transaction allocations balance using the Transfer Module.`,
-	quickGuidePara2: `Most of what you do in Totem will consume transactions from your balance (XTX for short) but don't worry, 
-		we are nice open source people, and we'll give you plenty to get you started.`,
+	quickGuidePara2: `
+		Most of what you do in Totem will consume transactions from your balance (XTX for short) but don't worry, 
+		we are nice open source people, and we'll give you plenty to get you started.
+	`,
 	quickGuidePara3: 'If you use up your balance - no problemo! Simply request some more from our automated faucet.',
 	quickGuideTitle: 'A quick guide to getting started with Totem Live Accounting.',
 	step1Description: `Identities are only known to you. You can create as many as you like in the Identities Module.`,
 	step1Title: 'Edit Default Identity',
 	stepsTitle: `Only 2 short steps to begin. Let's go!`,
-	step2Description: `Chat is how you communicate with other Totem users. Choose a unique name (preferably not your own name!)`,
+	step2Description: `
+		Chat is how you communicate with other Totem users. Choose a unique name (preferably not your own name!)
+	`,
 	step2Title: 'Create Chat User ID',
+	supportChatHeader: 'Got any questions?',
+	supportChatDesc1: `
+		Now that you are registered with our chat service you can contact us anytime using the support chat channel.
+	`,
+	supportChatDesc2: 'You can also reach us over on the following applications:',
+	supportContact: 'Contact Support',
+	trollbox: 'Join Totem Global Conversation',
 	videoGuidTitle: 'Further essential steps:',
 	video1Title: 'What am I looking at? Watch the video:',
 	video2Title: 'Backup your account. Watch the video:',
@@ -93,44 +108,43 @@ export default class GetingStarted extends Component {
 	render() {
 		const { activeStep } = this.state
 		return (
-			<React.Fragment>
-				<div>
-					<h3>{texts.quickGuideTitle}</h3>
-					<p>{texts.quickGuidePara1}</p>
-					<p>{texts.quickGuidePara2}</p>
-					<p>{texts.quickGuidePara3}</p>
-					<h4>{texts.stepsTitle}</h4>
-					<div style={{ overflowX: 'auto' }}>
-						<Step.Group fluid ordered>
-							<Step
-								active={activeStep === 0}
-								completed={activeStep > 0}
-								disabled={activeStep !== 0}
-								onClick={this.handleIdentity}>
-								<Step.Content>
-									<Step.Title>{texts.step1Title}</Step.Title>
-									<Step.Description style={styles.stepDescription}>
-										{texts.step1Description}
-									</Step.Description>
-								</Step.Content>
-							</Step>
+			<div>
+				<h3>{texts.quickGuideTitle}</h3>
+				<p>{texts.quickGuidePara1}</p>
+				<p>{texts.quickGuidePara2}</p>
+				<p>{texts.quickGuidePara3}</p>
+				<h4>{texts.stepsTitle}</h4>
+				<div style={{ overflowX: 'auto' }}>
+					<Step.Group fluid ordered>
+						<Step
+							active={activeStep === 0}
+							completed={activeStep > 0}
+							disabled={activeStep !== 0}
+							onClick={this.handleIdentity}>
+							<Step.Content>
+								<Step.Title>{texts.step1Title}</Step.Title>
+								<Step.Description style={styles.stepDescription}>
+									{texts.step1Description}
+								</Step.Description>
+							</Step.Content>
+						</Step>
 
-							<Step
-								active={activeStep === 1}
-								completed={activeStep > 1}
-								disabled={activeStep !== 1}
-								onClick={this.handleRegister}>
-								<Step.Content>
-									<Step.Title>{texts.step2Title}</Step.Title>
-									<Step.Description style={styles.stepDescription}>
-										{texts.step2Description}
-									</Step.Description>
-								</Step.Content>
-							</Step>
-						</Step.Group>
-					</div>
+						<Step
+							active={activeStep === 1}
+							completed={activeStep > 1}
+							disabled={activeStep !== 1}
+							onClick={this.handleRegister}>
+							<Step.Content>
+								<Step.Title>{texts.step2Title}</Step.Title>
+								<Step.Description style={styles.stepDescription}>
+									{texts.step2Description}
+								</Step.Description>
+							</Step.Content>
+						</Step>
+					</Step.Group>
+				</div>
 
-					{/* <h3>{texts.videoGuidTitle}</h3>
+				{/* <h3>{texts.videoGuidTitle}</h3>
 					<h5>{texts.video1Title}</h5>
 					<div style={styles.videoContainer}>
 						<Embed
@@ -147,13 +161,50 @@ export default class GetingStarted extends Component {
 							source='vimeo'
 						/>
 					</div> */}
-				</div>
-			</React.Fragment>
+
+				{activeStep >= this.registerStepIndex && (
+					<div style={{ marginTop: 25 }}>
+						<h3>{texts.supportChatHeader}</h3>
+						<div>
+							{texts.supportChatDesc1}
+							<div>
+								<Button {...{
+									content: texts.supportContact,
+									icon: 'heartbeat',
+									onClick: () => createInbox([SUPPORT], null, true),
+									// positive: true,
+									size: 'mini',
+								}} />
+								<Button {...{
+									content: texts.trollbox,
+									icon: 'globe',
+									onClick: () => createInbox([TROLLBOX], null, true),
+									// positive: true,
+									size: 'mini',
+								}} />
+							</div>
+						</div>
+						{texts.supportChatDesc2}
+						<div>
+							<a href='https://discord.gg/Vx7qbgn' target='_blank'>
+								<Icon name='discord' style={styles.appIconStyle} />
+							</a>
+							<a href='https://t.me/totem_live' target='_blank'>
+								<Icon name='telegram' style={styles.appIconStyle} />
+							</a>
+						</div>
+					</div>
+				)}
+			</div>
 		)
 	}
 }
 
 const styles = {
+	appIconStyle: {
+		fontSize: 32,
+		lineHeight: '40px',
+	},
 	stepDescription: {
 		maxWidth: 215,
 	},
