@@ -1,7 +1,7 @@
 // utils
 import { hashToStr } from '../utils/convert'
 import PromisE from '../utils/PromisE'
-import { connect, query as queryHelper } from '../utils/polkadotHelper'
+import { connect, query as queryHelper, setDefaultConfig } from '../utils/polkadotHelper'
 import types from '../utils/totem-polkadot-js-types'
 // services
 import { translated } from './language'
@@ -52,9 +52,9 @@ export const hashTypes = {
 export const nodes = [
     'wss://node1.totem.live',
 ]
+setDefaultConfig(nodes, types)
 
 export const getConfig = () => config
-
 export const getConnection = async (create = true) => {
     if (connection.api && connection.api._isConnected.value || !create) return connection
     if (connectPromise) {
@@ -66,7 +66,7 @@ export const getConnection = async (create = true) => {
     }
     const nodeUrl = nodes[0]
     console.log('Polkadot: connecting to', nodeUrl)
-    connectPromise = PromisE(connect(nodeUrl, config.types, true))
+    connectPromise = PromisE(connect(nodeUrl, types, true))
     try {
         const { api, keyring, provider } = await connectPromise
         console.log('Connected using Polkadot', { api, provider })
@@ -184,7 +184,6 @@ export default {
     getConfig,
     getConnection,
     getCurrentBlock,
-    getTypes,
     hashTypes,
     nodes,
     query,

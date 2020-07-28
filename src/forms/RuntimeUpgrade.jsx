@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { blake2AsHex, } from '@polkadot/util-crypto'
+import { blake2AsHex } from '@polkadot/util-crypto'
 import { compactAddLength } from '@polkadot/util'
 import { ss58Encode } from '../utils/convert'
 import FormBuilder, { findInput } from '../components/FormBuilder'

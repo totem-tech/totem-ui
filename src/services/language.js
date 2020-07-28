@@ -1,7 +1,8 @@
 import DataStorage from '../utils/DataStorage'
-import { getUrlParam } from './window'
-import { clearClutter, downloadFile, textCapitalize } from '../utils/utils'
+import { clearClutter, downloadFile, generateHash, textCapitalize } from '../utils/utils'
+import client from './chatClient'
 import storage from './storage'
+import { getUrlParam } from './window'
 
 const translations = new DataStorage('totem_static_translations')
 export const EN = 'EN'
@@ -26,6 +27,26 @@ export const languages = Object.freeze({
     ZH: 'Chinese',
 })
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
+
+// retrieve latest translated texts from server and save to local storage
+export const fetchNSaveTexts = async () => {
+    const selected = getSelected()
+    if (selected === EN) return setTexts(selected, null, null)
+
+    const selectedHash = generateHash(getTexts(selected) || '')
+    const engHash = generateHash(getTexts(EN) || '')
+    const func = client.languageTranslations.promise
+    const [[textsEn], [texts]] = await Promise.all([
+        func(EN, engHash),
+        func(selected, selectedHash),
+    ])
+
+    if (!texts && !textsEn) return
+    console.log('Language text list updated', { selected, texts, textsEn })
+    // save only if update required
+    setTexts(selected, texts, textsEn)
+}
+
 // get selected language code
 export const getSelected = () => rw().selected || EN
 
@@ -35,10 +56,11 @@ export const getTexts = langCode => translations.get(langCode)
 export const setSelected = selected => rw({ selected })
 
 // save translated list of texts retrieved from server
-export const setTexts = (langCode, texts, enTexts = []) => translations.setAll(new Map(
-    [
-        [EN, enTexts.length > 0 ? enTexts : translations.get(EN)],
-        [langCode, texts],
+export const setTexts = (langCode, texts, enTexts) => translations.setAll(new Map(
+    // remove all language cache if selected is English
+    langCode === EN ? [] : [
+        [EN, enTexts || translations.get(EN)],
+        [langCode, texts || translations.get(langCode)],
     ].filter(Boolean)
 ))
 

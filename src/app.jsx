@@ -65,7 +65,6 @@ export class App extends Component {
 			window: windw,
 		}
 
-		blockchain.getConnection().then(({ api }) => window.api = api)
 		window.queryBlockchain = async (func, args, multi) => await blockchain.query(func, args, multi, true)
 	}
 

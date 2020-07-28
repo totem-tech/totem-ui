@@ -1,8 +1,7 @@
 import React, { Component } from 'react'
 import FormBuilder, { findInput } from '../components/FormBuilder'
-import { arrSort, generateHash } from '../utils/utils'
+import { arrSort } from '../utils/utils'
 // services
-import client from '../services/chatClient'
 import { historyLimit as chatHistoryLimit } from '../modules/chat/chat'
 import {
     getCurrencies,
@@ -11,13 +10,11 @@ import {
 } from '../services/currency'
 import { limit as historyItemsLimit } from '../services/history'
 import {
-    EN,
     getSelected as getSelectedLanguage,
-    getTexts,
     languages,
     setSelected as setSelectedLang,
-    setTexts,
     translated,
+    fetchNSaveTexts,
 } from '../services/language'
 import { gridColumns } from '../services/window'
 
@@ -59,6 +56,8 @@ export default class Settings extends Component {
                         'text',
                     ),
                     search: ['text', 'description'], // sort search results by specific keys
+                    // selectOnBlur: false,
+                    selectOnNavigation: false,
                     selection: true,
                     type: 'dropdown',
                     value: getSelectedLanguage(),
@@ -153,18 +152,10 @@ export default class Settings extends Component {
     handleLanguageChange = async (_, { languageCode }) => {
         try {
             this.setInputMessage('languageCode', savedMsg, 0)
-            if (languageCode === EN) return forceRefreshPage()
-
-            const langTextsHash = generateHash(getTexts(languageCode) || '')
-            const [[texts], [textsEn]] = await Promise.all([
-                client.languageTranslations.promise(languageCode, langTextsHash),
-                client.languageTranslations.promise(EN, ''),
-            ])
-            setTexts(languageCode, texts, textsEn)
             setSelectedLang(languageCode)
+            await fetchNSaveTexts()
             // reload page
             setTimeout(forceRefreshPage, 100)
-
         } catch (err) {
             this.setInputMessage('languageCode', {
                 content: `${err}`,
