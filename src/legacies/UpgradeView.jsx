@@ -2,8 +2,8 @@ import React, { Component } from 'react'
 import { Bond } from 'oo7'
 import { If, ReactiveComponent } from 'oo7-react'
 import { calls, runtime } from 'oo7-substrate'
-import { TransactButton } from '../components/TransactButton'
-import { FileUploadBond } from '../components/FileUploadBond'
+import { TransactButton } from './TransactButton'
+import { FileUploadBond } from './FileUploadBond'
 
 
 

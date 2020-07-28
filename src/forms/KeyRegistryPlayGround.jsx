@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 import { newSignature, signingKeyPair, verifySignature } from '../utils/naclHelper'
-import { encodeBase64, decodeBase64, decodeUTF8, bytesToHex, hashToStr } from '../utils/convert'
+import { encodeBase64, decodeBase64, decodeUTF8, hashToStr } from '../utils/convert'
 // services
 import identities from '../services/identity'
 import { tasks } from '../services/blockchain'

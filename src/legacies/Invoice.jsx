@@ -4,7 +4,7 @@ import { Bond, TransformBond } from 'oo7';
 import { runtime, ss58Encode, ss58Decode, addCodecTransform, VecU8 } from 'oo7-substrate';
 import { ReactiveComponent, If, Rspan } from 'oo7-react';
 import { InputBond } from './InputBond.jsx';
-import { TransactButton } from '../components/TransactButton.jsx';
+import { TransactButton } from './TransactButton.jsx';
 import { AccountIdBond, SignerBond } from './AccountIdBond.jsx';
 import { Pretty } from './Pretty';
 

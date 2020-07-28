@@ -18,7 +18,7 @@ import RestoreBackupForm from '../forms/RestoreBackup'
 const [texts] = translated({
 	backupTitle: 'Backup your account',
 	backupDescription: `
-		Creating a backup will help you make sure that do not lose your account. 
+		Creating a backup will help you make sure that you do not lose your account. 
 		Additionally, you will also be able to restore your account on another device.
 	`,
 	confirmBackupContent: `

@@ -69,7 +69,7 @@ export default function UtilitiesView() {
         //     header: 'Transactions',
         //     subHeader: 'Send custom transactions'
         // },
-        // {
+        // { // need to migrate to PolkadotJS
         //     content: <PokeView />,
         //     icon: 'search',
         //     header: 'Poke',

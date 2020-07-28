@@ -8,6 +8,7 @@ import { objClean } from '../utils/utils'
 import storage from './storage'
 
 // catch errors from secretstore
+// ToDo: remove completely
 const _secretStore = () => {
     try {
         return secretStore()

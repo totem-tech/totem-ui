@@ -1,12 +1,5 @@
-import React from 'react'
-import { Container, Dimmer, Image, Loader, Menu, Sidebar } from 'semantic-ui-react'
-import { Bond } from 'oo7'
-import { ReactiveComponent } from 'oo7-react'
-import {
-	calls, runtime, chain, system, runtimeUp,
-	secretStore, metadata, nodeService
-} from 'oo7-substrate'
-
+import React, { Component } from 'react'
+import { Container, Dimmer, Image, Loader, Sidebar } from 'semantic-ui-react'
 // Components
 import ErrorBoundary from './components/CatchReactErrors'
 import PageHeader from './components/PageHeader'
@@ -25,55 +18,36 @@ import sidebar, { sidebarItems, sidebarStateBond } from './services/sidebar'
 import storage from './services/storage'
 import timeKeeping from './services/timeKeeping'
 import toast, { ToastsContainer } from './services/toast'
-import windw from './services/window'
+import windw, { gridColumnsBond, layoutBond, MOBILE } from './services/window'
 // Utils
 import DataStorage from './utils/DataStorage'
 import naclHelper from './utils/naclHelper'
 import polkadotHelper from './utils/polkadotHelper'
+import { className } from './utils/utils'
 // Images
 import TotemButtonLogo from './assets/totem-button-grey.png'
 import PlaceholderImage from './assets/totem-placeholder.png'
 import ChatBar from './modules/chat/ChatBar'
-import { className } from './utils/utils'
 
-const [texts] = translated({
-	failedMsg: 'Connection failed! Please check your internet connection.',
-	connectingMsg: 'Connecting to Totem blockchain network...',
-})
+// const [texts] = translated({
+// 	failedMsg: 'Connection failed! Please check your internet connection.',
+// 	connectingMsg: 'Connecting to Totem blockchain network...',
+// })
 
-export class App extends ReactiveComponent {
+export class App extends Component {
 	constructor() {
-		super([], {
-			ensureRuntime: runtimeUp,
-			isMobile: windw.layoutBond.map(layout => layout === 'mobile'),
-			numCol: windw.gridColumnsBond,
-		})
+		super()
 		this.state = {
 			sidebarCollapsed: false,
 			sidebarVisible: windw.getLayout() !== 'mobile',
 			status: {}
 		}
 
-		nodeService().status.notify(() => {
-			const status = nodeService().status._value
-			// prevent unnecessary state update
-			if (this.state.status.error && status.error) return
-			this.setState({ status })
-		})
-
 		// For debug only.
 		window.utils = {
 			naclHelper,
 			polkadotHelper,
 		}
-		window.runtime = runtime
-		window.secretStore = secretStore
-		window.chain = chain
-		window.calls = calls
-		window.system = system
-		window.that = this
-		window.metadata = metadata
-		window.Bond = Bond
 		window.DataStorage = DataStorage
 		window.services = {
 			blockchain,
@@ -95,6 +69,16 @@ export class App extends ReactiveComponent {
 		window.queryBlockchain = async (func, args, multi) => await blockchain.query(func, args, multi, true)
 	}
 
+	componentWillMount() {
+		this.tieIdIsMobile = layoutBond.tie(layout => this.setState({ isMobile: layout === MOBILE }))
+		this.tieIdNumCol = gridColumnsBond.tie(numCol => this.setState({ numCol }))
+	}
+
+	componentWillUnmount() {
+		layoutBond.untie(this.tieIdIsMobile)
+		gridColumnsBond.untie(this.tieIdNumCol)
+	}
+
 	// unused
 	// hack to format as a currency. Needs to go in a seperate Display Formatting Utilities file.
 	round(value, decimals) {
@@ -103,16 +87,16 @@ export class App extends ReactiveComponent {
 
 	handleSidebarToggle = (v, c) => this.setState({ sidebarVisible: v, sidebarCollapsed: c })
 
-	unreadyRender() {
-		const { status } = this.state
-		return (
-			<Dimmer active style={{ height: '100%', position: 'fixed' }}>
-				{!!status.error ? texts.failedMsg : <Loader indeterminate>{texts.connectingMsg}</Loader>}
-			</Dimmer>
-		)
-	}
+	// unreadyRender() {
+	// 	const { status } = this.state
+	// 	return (
+	// 		<Dimmer active style={{ height: '100%', position: 'fixed' }}>
+	// 			{!!status.error ? texts.failedMsg : <Loader indeterminate>{texts.connectingMsg}</Loader>}
+	// 		</Dimmer>
+	// 	)
+	// }
 
-	readyRender() {
+	render() {
 		const { isMobile, numCol } = this.state
 		const logoSrc = TotemButtonLogo
 		const { collapsed, visible } = sidebarStateBond._value

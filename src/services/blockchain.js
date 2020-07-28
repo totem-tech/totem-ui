@@ -1,22 +1,17 @@
-import { addCodecTransform, denominationInfo } from 'oo7-substrate'
 // utils
 import { hashToStr } from '../utils/convert'
 import PromisE from '../utils/PromisE'
-import { connect } from '../utils/polkadotHelper'
+import { connect, query as queryHelper } from '../utils/polkadotHelper'
 import types from '../utils/totem-polkadot-js-types'
-import { isFn, isArr, isDefined, isStr } from '../utils/utils'
 // services
 import { translated } from './language'
 import storage from './storage'
-
-// oo7-substrate: register custom types. ToDo: deprecate
-Object.keys(types).forEach(key => addCodecTransform(key, types[key]))
 
 const MODULE_KEY = 'blockchain'
 const TX_STORAGE = 'tx_storage'
 const textsCap = translated({
     invalidApiFunc: 'Invalid API function',
-    invalidMultiQueryArgs: 'Failed to process arguments for multi-query.',
+    invalidMultiQueryArgs: 'Failed to process arguments for multi-query',
 }, true)[0]
 let config = {
     primary: 'Ktx',
@@ -110,7 +105,7 @@ export const getCurrentBlock = async () => {
 // getTypes returns a promise with 
 export const getTypes = () => new Promise(resolve => resolve(types))
 
-// query makes API calls using PolkadotJS. All values returned will be sanitised.
+// query storage makes API calls using PolkadotJS. All values returned will be sanitised.
 //
 // Params:
 // @func    string: path to the PolkadotJS API function as a string. Eg: 'api.rpc.system.health'
@@ -120,66 +115,21 @@ export const getTypes = () => new Promise(resolve => resolve(types))
 //
 // Returns  function/any: If callback is supplied in @args, will return the unsubscribe function.
 //              Otherwise, value of the query will be returned
-export const query = async (func, args = [], multi = false, print = false) => {
-    // **** keep { api } **** It is expected to be used with eval()
-    const { api } = await getConnection()
-    if (!func || func === 'api') return api
-    // add .multi if required
-    if (isStr(func) && multi && !func.endsWith('.multi')) func += '.multi'
-
-    const fn = eval(func)
-    if (!fn) throw new Error(textsCap.invalidApiFunc, func)
-
-    args = isArr(args) || !isDefined(args) ? args : [args]
-    multi = isFn(fn) && !!multi
-    const sanitise = x => JSON.parse(JSON.stringify(x)) // get rid of jargon
-    const cb = args[args.length - 1]
-    const isSubscribe = isFn(cb) && isFn(fn)
-
-    if (isSubscribe) {
-        // only add interceptor to process result
-        args[args.length - 1] = result => {
-            result = sanitise(result)
-            print && console.log(func, result)
-            cb.call(null, result)
-        }
-    }
-
-    // For multi query arguments needs to be constructs as 2D Array.
-    // If only one argument in @args is supplied, assume that it is a 2D array.
-    // Otherwise, construct a 2D array as required by 
-    const len = isSubscribe ? 2 : 1
-    if (multi && !isFn(args[0]) && args.length > len) {
-        try {
-            // remove subscription callback before processing arguments
-            let interceptor
-            if (isSubscribe) {
-                interceptor = args.slice(-1)[0]
-                args = args.slice(0, -1)
-            }
-            // construct a 2D array
-            args = [
-                args[0].map((_, i) =>
-                    args.map(ar => ar[i])
-                )
-            ]
-            // re-add subscription callback
-            if (isSubscribe) args.push(interceptor)
-
-        } catch (err) {
-            throw `${textsCap.invalidMultiQueryArgs} ${err}`
-        }
-    }
-    const result = isFn(fn) ? await fn.apply(null, args) : fn
-    !isSubscribe && print && console.log(JSON.stringify(result, null, 4))
-    return isSubscribe ? result : sanitise(result)
-}
+export const query = async (func, args = [], multi = false, print = false) => await queryHelper(
+    (await getConnection()).api,
+    func,
+    args,
+    multi,
+    print,
+    // translated error messages
+    textsCap.invalidApiFunc,
+    textsCap.invalidMultiQueryArgs,
+)
 
 // Replace configs
 export const setConfig = newConfig => {
     config = { ...config, ...newConfig }
     storage.settings.module(MODULE_KEY, { config })
-    denominationInfo.init({ ...config, denominations })
 }
 
 // Save general (not specific to a module or used by multiple modules) data to blockchain storage.

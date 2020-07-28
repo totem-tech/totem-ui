@@ -1,20 +1,18 @@
-import 'semantic-ui-css/semantic.min.css'
 import React from 'react'
 import { render } from 'react-dom'
+import 'semantic-ui-css/semantic.min.css'
+import { setDefaultConfig } from './utils/polkadotHelper'
+import { generateHash } from './utils/utils'
 import { App } from './app.jsx'
-import { setNodeUri } from 'oo7-substrate'
+// services
 import { getTypes, nodes, setConfig, getConnection } from './services/blockchain'
 import client from './services/chatClient'
 import { getSelected, getTexts, setTexts } from './services/language'
 import storage from './services/storage'
-import { setDefaultConfig } from './utils/polkadotHelper'
-import { generateHash } from './utils/utils'
 
 const init = () => new Promise((resolve, reject) => {
     // set denomnination info
     setConfig()
-    // set node URLs
-    setNodeUri(nodes)
 
     const countries = storage.countries.getAll()
     const countriesHash = generateHash(countries)

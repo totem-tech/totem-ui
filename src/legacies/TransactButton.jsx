@@ -1,17 +1,17 @@
 const React = require('react');
-const {Bond} = require('oo7');
-const {ReactiveComponent} = require('oo7-react');
-const {post} = require('oo7-substrate');
-const {Button} = require('semantic-ui-react');
-const {TransactionProgressLabel, styleStatus} = require('../legacies/TransactionProgressLabel');
+const { Bond } = require('oo7');
+const { ReactiveComponent } = require('oo7-react');
+const { post } = require('oo7-substrate');
+const { Button } = require('semantic-ui-react');
+const { TransactionProgressLabel, styleStatus } = require('./TransactionProgressLabel');
 
 class TransactButton extends ReactiveComponent {
-	constructor () {
+	constructor() {
 		super(['content', 'disabled', 'enabled', 'positive', 'negative', 'active']);
 		this.state = { index: 0, status: null };
 		this.handleClick = this.handleClick.bind(this);
 	}
-	handleClick () {
+	handleClick() {
 		let begin = false;
 		let s = this.state;
 		if (s.status) {
@@ -26,12 +26,12 @@ class TransactButton extends ReactiveComponent {
 			this.execNext();
 		}
 	}
-	execNext () {
+	execNext() {
 		let s = this.state;
-		let single = typeof(this.props.tx) === 'function' || this.props.tx.length === undefined;
+		let single = typeof (this.props.tx) === 'function' || this.props.tx.length === undefined;
 		if ((single && s.index === 0) || s.index < this.props.tx.length) {
 			let t = single ? this.props.tx : this.props.tx[s.index];
-			s.status = typeof(t) === 'function'
+			s.status = typeof (t) === 'function'
 				? t()
 				: post(t);
 			s.status.tie((x, i) => {
@@ -47,9 +47,9 @@ class TransactButton extends ReactiveComponent {
 		s.index++
 		this.setState(s);
 	}
-	render () {
+	render() {
 		if (!this.props.tx) {
-			return (<span/>);
+			return (<span />);
 		}
 		return <TransactButtonAux
 			icon={this.props.icon}
@@ -68,7 +68,7 @@ class TransactButton extends ReactiveComponent {
 			content={this.state.content}
 			color={this.props.color}
 			status={this.state.status}
-			progress={{current: this.state.index, total: this.props.tx.length}}
+			progress={{ current: this.state.index, total: this.props.tx.length }}
 			onClick={this.handleClick}
 			statusText={this.props.statusText}
 			statusIcon={this.props.statusIcon}
