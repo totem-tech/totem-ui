@@ -49,7 +49,7 @@ export default class IdentityList extends ReactiveComponent {
                     title: wordsCap.tags
                 },
                 {
-                    key: '_cloudBackupTS',
+                    key: '_fileBackupTS',
                     textAlign: 'center',
                     title: texts.lastBackup
                 },
@@ -87,7 +87,7 @@ export default class IdentityList extends ReactiveComponent {
             const data = identityService.getAll()
             this.allBackupDone = data.reduce((done, { cloudBackupTS }) => !done ? false : !!cloudBackupTS, true)
             data.forEach(identity => {
-                identity._cloudBackupTS = format(identity.cloudBackupTS) || words.never
+                identity._fileBackupTS = format(identity.fileBackupTS) || words.never
                 identity.usageType = identity.usageType || words.personal
                 identity._tagsStr = (identity.tags || []).join(' ')
                 identity._tags = (identity.tags || []).map(tag => (

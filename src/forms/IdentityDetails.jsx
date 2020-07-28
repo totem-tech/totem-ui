@@ -141,7 +141,7 @@ export default class IdentityDetails extends Component {
                 {
                     defaultValue: words.never,
                     label: texts.lastBackup,
-                    name: 'cloudBackupTS',
+                    name: 'fileBackupTS',
                     readOnly: true,
                     type: 'text',
                 },
@@ -229,5 +229,5 @@ IdentityDetails.defaultProps = {
     closeOnDocumentClick: true,
     closeOnEscape: true,
     header: texts.identityDetails,
-    size: 'small',
+    size: 'tiny',
 }

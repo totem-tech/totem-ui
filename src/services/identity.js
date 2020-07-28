@@ -35,6 +35,7 @@ const VALID_KEYS = Object.freeze([
     'cloudBackupStatus', // undefined: never backed up, in-progress, done
     'cloudBackupTS', // most recent successful backup timestamp
     'fileBackupTS', // most recent file backup timestamp
+    'selected',
     'tags',
     'usageType',
 ])
@@ -66,11 +67,14 @@ export const remove = address => identities.delete(address)
 
 // add/update
 export const set = (address, identity = {}) => {
-    const { type, usageType } = identity
+    const { selected, type, uri, usageType } = identity
     // add to PolkadotJS keyring
-    !identities.get(address) && keyring.add([identity.uri])
+    !identities.get(address) && keyring.add([uri])
     identity.type = type || 'sr25519'
-    if (!Object.keys(USAGE_TYPES).includes(usageType)) identity.usageType = USAGE_TYPES.PERSONAL
+    identity.selected = !!selected
+    if (!Object.values(USAGE_TYPES).includes(usageType)) {
+        identity.usageType = USAGE_TYPES.PERSONAL
+    }
     identity = objClean({
         ...identities.get(address), //  merge with existing values
         ...identity
