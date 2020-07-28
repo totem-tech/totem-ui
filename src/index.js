@@ -10,7 +10,7 @@ import { fetchNSaveTexts } from './services/language'
 import storage from './services/storage'
 import PromisE from './utils/PromisE'
 
-const init = () => new Promise((resolve, reject) => {
+const init = () => PromisE.timeout((resolve, reject) => {
     const countries = storage.countries.getAll()
     let hasCountries = countries.size > 0
     let translationChecked = false
@@ -35,11 +35,10 @@ const init = () => new Promise((resolve, reject) => {
 
     // set Polkadot blockchain types and initiate connection to blockchain
     getConnection()
-})
+}, 2000)
 const doRender = () => render(<App />, document.getElementById('app'))
 
-PromisE.timeout(init(), 2000)
-    .then(doRender)
-    // force resolve in case messaging service is not connected yet
+init().then(doRender)
+    // force render in case messaging service is taking longer to get connected
     .catch(doRender)
 

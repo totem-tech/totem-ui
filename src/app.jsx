@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Container, Dimmer, Image, Loader, Sidebar } from 'semantic-ui-react'
+import { Container, Image, Sidebar } from 'semantic-ui-react'
 // Components
 import ErrorBoundary from './components/CatchReactErrors'
 import PageHeader from './components/PageHeader'
@@ -8,7 +8,7 @@ import SidebarLeft, { MainContentItem } from './components/SidebarLeft'
 import blockchain from './services/blockchain'
 import chatClient from './services/chatClient'
 import identity from './services/identity'
-import language, { translated } from './services/language'
+import language from './services/language'
 import modal, { ModalsConainer } from './services/modal'
 import NotificationList from './modules/notification/List'
 import partner from './services/partner'
@@ -28,11 +28,6 @@ import { className } from './utils/utils'
 import TotemButtonLogo from './assets/totem-button-grey.png'
 import PlaceholderImage from './assets/totem-placeholder.png'
 import ChatBar from './modules/chat/ChatBar'
-
-// const [texts] = translated({
-// 	failedMsg: 'Connection failed! Please check your internet connection.',
-// 	connectingMsg: 'Connecting to Totem blockchain network...',
-// })
 
 export class App extends Component {
 	constructor() {
@@ -85,15 +80,6 @@ export class App extends Component {
 	}
 
 	handleSidebarToggle = (v, c) => this.setState({ sidebarVisible: v, sidebarCollapsed: c })
-
-	// unreadyRender() {
-	// 	const { status } = this.state
-	// 	return (
-	// 		<Dimmer active style={{ height: '100%', position: 'fixed' }}>
-	// 			{!!status.error ? texts.failedMsg : <Loader indeterminate>{texts.connectingMsg}</Loader>}
-	// 		</Dimmer>
-	// 	)
-	// }
 
 	render() {
 		const { isMobile, numCol } = this.state
