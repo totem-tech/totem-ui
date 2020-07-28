@@ -4,9 +4,10 @@ import { clearClutter, downloadFile, textCapitalize } from '../utils/utils'
 import storage from './storage'
 
 const translations = new DataStorage('totem_static_translations')
-const EN = 'EN'
+export const EN = 'EN'
 const MODULE_KEY = 'language'
-export const BUILD_MODE = getUrlParam('build-mode').toLowerCase() == 'true' && window.location.hostname !== 'totem.live'
+export const BUILD_MODE = getUrlParam('build-mode').toLowerCase() == 'true'
+    && window.location.hostname !== 'totem.live'
 export const languages = Object.freeze({
     BN: 'Bengali',
     DE: 'German',
@@ -31,13 +32,13 @@ export const getSelected = () => rw().selected || EN
 export const getTexts = langCode => translations.get(langCode)
 
 // set selected language code
-export const setSelected = selected => rw({ selected: selected || EN })
+export const setSelected = selected => rw({ selected })
 
 // save translated list of texts retrieved from server
-export const setTexts = (langCode, texts) => translations.setAll(new Map(
+export const setTexts = (langCode, texts, enTexts = []) => translations.setAll(new Map(
     [
-        [EN, translations.get(EN)],
-        langCode !== EN && [langCode, texts],
+        [EN, enTexts.length > 0 ? enTexts : translations.get(EN)],
+        [langCode, texts],
     ].filter(Boolean)
 ))
 
@@ -99,7 +100,7 @@ if (BUILD_MODE) {
     // list of files that needs translation
     // MAKE SURE THIS LIST IS UPDATED BEFORE GENERATING translations.json file
     // From the 'src/' directory run in console (exclude any file that shouldn't be translated):
-    //                  ls - R | egrep - v / $
+    ////                 ls -R | egrep -v /$
     [
         'app.jsx',
         'index.js',
@@ -109,7 +110,6 @@ if (BUILD_MODE) {
         'components/ContentSegment.jsx',
         'components/Currency.jsx',
         'components/DataTable.jsx',
-        'components/FileUploadBond.jsx',
         'components/FormBuilder.jsx',
         'components/FormInput.jsx',
         'components/Message.jsx',
@@ -117,7 +117,6 @@ if (BUILD_MODE) {
         'components/Paginator.jsx',
         'components/SidebarLeft.jsx',
         'components/TimeSince.jsx',
-        'components/TransactButton.jsx',
         'components/UserIdInput.jsx',
         'forms/AdminUtils.jsx',
         'forms/Company.jsx',
@@ -150,7 +149,6 @@ if (BUILD_MODE) {
         'modules/chat/InboxList.jsx',
         'modules/chat/InboxMessages.jsx',
         'modules/chat/NewInboxForm.jsx',
-        'modules/chat/style.css',
         'modules/Event/EventList.jsx',
         'modules/notification/ListItem.jsx',
         'modules/notification/List.jsx',
@@ -179,10 +177,8 @@ if (BUILD_MODE) {
         'services/window.js',
         'views/GettingStartedView.jsx',
         'views/PageUtilitiesView.jsx',
-        'views/PokeView.jsx',
         'views/SystemStatusView.jsx',
         'views/TimeKeepingView.jsx',
-        'views/TransactionsView.jsx',
         'views/UtilitiesView.jsx',
     ]
         // import files to force translated() function call on each file and therefore force build list of English texts

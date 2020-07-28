@@ -80,7 +80,7 @@ export default class ContentSegment extends Component {
 				compact={!!compact}
 				inverted={inverted}
 				padded
-				style={style}
+				style={{ ...styles.segment, ...style }}
 				vertical={vertical}
 			>
 				{isFn(onClose) && (
@@ -188,9 +188,6 @@ ContentSegment.defaultProps = {
 	headerDivider: true,
 	headerTag: 'h2',
 	index: 0,
-	style: {
-		borderRadius: 2
-	},
 	vertical: false
 }
 
@@ -211,6 +208,9 @@ const placeholder = (
 )
 
 const styles = {
+	segment: {
+		overflow: 'auto',
+	},
 	closeButtonRail: {
 		marginTop: 0,
 		marginRight: 25,

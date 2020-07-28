@@ -10,7 +10,15 @@ import {
     setSelected as setSelectedCurrency
 } from '../services/currency'
 import { limit as historyItemsLimit } from '../services/history'
-import { getSelected as getSelectedLanguage, getTexts, languages, setSelected, setTexts, translated } from '../services/language'
+import {
+    EN,
+    getSelected as getSelectedLanguage,
+    getTexts,
+    languages,
+    setSelected as setSelectedLang,
+    setTexts,
+    translated,
+} from '../services/language'
 import { gridColumns } from '../services/window'
 
 const [texts, textsCap] = translated({
@@ -142,23 +150,29 @@ export default class Settings extends Component {
         this.setInputMessage('historyLimit', savedMsg)
     }
 
-    handleLanguageChange = (_, { languageCode }) => {
-        setSelected(languageCode)
-        this.setInputMessage('languageCode', savedMsg, 0)
-        const selected = getSelectedLanguage()
-        if (selected === 'EN') return forceRefreshPage()
-        const selectedHash = generateHash(getTexts(selected) || '')
-        client.languageTranslations(selected, selectedHash, (err, texts) => {
-            if (!!err) return this.setInputMessage('historyLimit', {
+    handleLanguageChange = async (_, { languageCode }) => {
+        try {
+            this.setInputMessage('languageCode', savedMsg, 0)
+            if (languageCode === EN) return forceRefreshPage()
+
+            const langTextsHash = generateHash(getTexts(languageCode) || '')
+            const [[texts], [textsEn]] = await Promise.all([
+                client.languageTranslations.promise(languageCode, langTextsHash),
+                client.languageTranslations.promise(EN, ''),
+            ])
+            setTexts(languageCode, texts, textsEn)
+            setSelectedLang(languageCode)
+            // reload page
+            setTimeout(forceRefreshPage, 100)
+
+        } catch (err) {
+            this.setInputMessage('languageCode', {
                 content: `${err}`,
                 header: textsCap.error,
                 showIcon: true,
                 status: 'error',
             })
-            if (texts !== null) setTexts(selected, texts)
-            // reload page
-            forceRefreshPage()
-        })
+        }
     }
 
     setInputMessage = (inputName, message, delay = 2000) => {

@@ -400,7 +400,7 @@ export default class ProjectTimeKeepingList extends Component {
         const targetStatus = approve ? statuses.accept : statuses.reject
         if (!workerAddress || submit_status !== statuses.submit || targetStatus === submit_status) return
         inProgressHashesBond.changed(inProgressHashes.concat(hash))
-        const task = queueables.approve(projectOwnerAddress, workerAddress, projectHash, hash, approve, null, {
+        const task = queueables.record.approve(projectOwnerAddress, workerAddress, projectHash, hash, approve, null, {
             title: `${wordsCap.timekeeping} - ${approve ? texts.approveRecord : texts.rejectRecord}`,
             description: `${texts.recordId}: ${hash}`,
             then: success => {
