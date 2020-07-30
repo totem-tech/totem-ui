@@ -3,9 +3,9 @@
 // It has not been replaced in the code.
 // *********
 import { Subject } from 'rxjs'
-import { hashToStr } from '../utils/convert'
+import { bytesToHex } from '../utils/convert'
 import PromisE from '../utils/PromisE'
-import { arrUnique, isFn } from '../utils/utils'
+import { arrUnique, isFn, isStr } from '../utils/utils'
 // services
 import { hashTypes, query as queryBlockchain, getConnection } from './blockchain'
 import client from './chatClient'
@@ -33,6 +33,7 @@ export const statusCodes = {
     close: 500,
     delete: 999,
 }
+
 // status codes that indicate project is open
 export const openStatuses = [statusCodes.open, statusCodes.reopen]
 setTimeout(() => selectedAddressBond.tie(() => getProjects(true)))
@@ -46,8 +47,9 @@ setTimeout(() => selectedAddressBond.tie(() => getProjects(true)))
 //
 // Returns          map: list of projects
 export const fetchProjects = async (recordIds = [], ownAddress, timeout = 10000) => {
+    recordIds = await new PromisE(recordIds)
     recordIds = arrUnique(
-        (await new PromisE(recordIds)).map(hashToStr)
+        recordIds.map(id => isStr(id) ? id : bytesToHex(id))
     ).filter(Boolean)
     if (recordIds.length === 0) return new Map()
     const { firstSeen, totalBlocks } = tkQuery.project

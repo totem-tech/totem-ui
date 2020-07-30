@@ -3,14 +3,13 @@
  */
 import React from 'react'
 import uuid from 'uuid'
-import { addressToStr } from '../utils/convert'
 import DataStorage from '../utils/DataStorage'
 import { transfer, signAndSend, setDefaultConfig } from '../utils/polkadotHelper'
-import { hasValue, isArr, isFn, isObj, isStr, objClean, isValidNumber } from '../utils/utils'
+import { isArr, isFn, isObj, isStr, objClean, isValidNumber } from '../utils/utils'
 // services
 import { getClient } from './chatClient'
 import { currencyDefault } from './currency'
-import { getConnection } from './blockchain'
+import { getConnection, query } from './blockchain'
 import { save as addToHistory } from './history'
 import { find as findIdentity, getSelected } from './identity'
 import { getAddressName } from './partner'
@@ -353,10 +352,6 @@ const handleChatClient = async (id, rootTask, task, toastId) => {
 }
 
 const handleTxStorage = async (id, rootTask, task, toastId) => {
-    if (!isStr(task.address) || !task.address.startsWith('0x')) {
-        // force convert to hex string
-        task.address = addressToStr(task.address)
-    }
     if (!isValidNumber(task.amountXTX)) {
         task.amountXTX = 0
     }
@@ -389,13 +384,13 @@ const handleTxStorage = async (id, rootTask, task, toastId) => {
         const txFunc = eval(func)
         if (!isFn(txFunc)) return _save(ERROR, texts.invalidFunc)
 
-        let balance = parseInt(await api.query.balances.freeBalance(address))
+        let balance = await query(api.query.balances.freeBalance, address)
         if (balance < (amountXTX + MIN_BALANCE)) return _save(ERROR, texts.insufficientBalance)
         _save(LOADING, null, { before: balance })
 
         const tx = txFunc.apply(null, task.processedArgs || args)
         const result = await signAndSend(api, address, tx)
-        balance = parseInt(await api.query.balances.freeBalance(address))
+        balance = await query(api.query.balances.freeBalance, address)
         _save(SUCCESS, result, { after: balance })
     } catch (err) {
         _save(ERROR, err)
@@ -404,13 +399,7 @@ const handleTxStorage = async (id, rootTask, task, toastId) => {
 
 
 const handleTxTransfer = async (id, rootTask, task, toastId) => {
-    // convert addresses to string. if invalid will be empty string.
-    // sender address
-    task.address = addressToStr(task.address)
-    // recipient address
-    task.args[0] = addressToStr(task.args[0])
     task.func = 'api.tx.balances.transfer'
-
     const { address: senderAddress, args, silent, toastDuration } = task
     const [recipientAddress, amount] = args
     const sender = findIdentity(senderAddress)
@@ -446,10 +435,11 @@ const handleTxTransfer = async (id, rootTask, task, toastId) => {
     try {
         _save(LOADING)
         const config = setDefaultConfig()
-        let balance = parseInt(await api.query.balances.freeBalance(senderAddress))
+        let balance = await query(api.query.balances.freeBalance, senderAddress)
 
         _save(LOADING, null, { before: balance }) // save balance
         if (balance <= (amount + config.txFeeMin)) return _save(ERROR, textsCap.insufficientBalance)
+
         console.log('Polkadot: transfer from ', { address: senderAddress, balance })
         const result = await transfer(
             recipientAddress,
@@ -458,9 +448,8 @@ const handleTxTransfer = async (id, rootTask, task, toastId) => {
             null,
             api
         )
-        balance = parseInt(await api.query.balances.freeBalance(senderAddress))
+        balance = await query(api.query.balances.freeBalance, senderAddress)
         _save(SUCCESS, result, { after: balance })
-
     } catch (err) {
         _save(ERROR, err)
     }

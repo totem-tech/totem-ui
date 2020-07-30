@@ -1,7 +1,6 @@
 import { Bond } from 'oo7'
 import uuid from 'uuid'
 import { Subject } from 'rxjs'
-import { addressToStr, hashToStr } from '../utils/convert'
 import { isObj, mapJoin, isFn } from '../utils/utils'
 // services
 import { getSelected } from './identity'
@@ -294,21 +293,21 @@ export const queueables = {
         // (project owner) approve/reject a time record
         //
         // Params:
-        // @workerAddress   string/bond
-        // @projectHash     string/bond/Uint8Array
-        // @recordHash      string/bond/Uint8Array
+        // @workerAddress   string
+        // @projectId       string
+        // @recordHash      string
         // @status          integer: default 0
         // @reason          object: {ReasonCode: integer, ReasonCodeType: integer}
         // @queueProps      object: provide task specific properties (eg: description, title, then, next...)
-        approve: (ownerAddress, workerAddress, projectHash, recordHash, accepted, reason, queueProps = {}) => ({
+        approve: (ownerAddress, workerAddress, projectId, recordId, accepted, reason, queueProps = {}) => ({
             ...queueProps,
             address: ownerAddress,
             func: txPrefix + 'authoriseTime',
             type: TX_STORAGE,
             args: [
                 workerAddress,
-                hashToStr(projectHash),
-                hashToStr(recordHash),
+                projectId,
+                recordId,
                 accepted ? statuses.accept : statuses.reject,
                 reason || {
                     ReasonCodeKey: 0,
@@ -320,8 +319,8 @@ export const queueables = {
         // 
         // Params:
         // @address         string: worker's address (create or update) or owner address (only set as draft)
-        // @projectHash     string
-        // @recordHash      string: leave empty to create a new record, otherwise, use existing record's hash
+        // @projectId       string
+        // @recordId        string: leave empty to create a new record, otherwise, use existing record's hash
         // @status          int: record status code
         // @reason          object: valid properties => ReasonCodeKey, ReasonCodeTypeKey
         // @postingPeriod   u16: 15 fiscal periods (0-14) // not yet implemented use default 0
@@ -330,14 +329,14 @@ export const queueables = {
         // @blockCount      int: total number of blocks worker has been active
         // @breakCount      int: number of breaks taken during record period
         // @queueProps      object: provide task specific properties (eg: description, title, then, next...)
-        save: (address, projectHash, recordHash, status, reason, blockCount, postingPeriod, blockStart, blockEnd, breakCount, queueProps) => ({
+        save: (address, projectId, recordId, status, reason, blockCount, postingPeriod, blockStart, blockEnd, breakCount, queueProps) => ({
             ...queueProps,
             address: address,
             func: txPrefix + 'submitTime',
             type: TX_STORAGE,
             args: [
-                hashToStr(projectHash),
-                hashToStr(recordHash || NEW_RECORD_HASH),
+                projectId,
+                recordId || NEW_RECORD_HASH,
                 status || 0,
                 reason || {
                     ReasonCodeKey: 0,
@@ -358,71 +357,59 @@ export const queueables = {
         // (worker) accept invitation to a project
         //
         // Params:
-        // @projectHash     string
+        // @projectId       string
         // @workerAddress   string
         // @accepted        boolean: indicates acceptence or rejection
         // @queueProps      object: provide task specific properties (eg: description, title, then, next...)
-        accept: (projectHash, workerAddress, accepted, queueProps = {}) => ({
+        accept: (projectId, workerAddress, accepted, queueProps = {}) => ({
             ...queueProps,
             address: workerAddress,
             func: txPrefix + 'workerAcceptanceProject',
             type: TX_STORAGE,
-            args: [
-                hashToStr(projectHash),
-                accepted,
-            ],
+            args: [projectId, accepted],
         }),
         // (project owner) invite a worker to join a project
         //
         // Params: 
-        // @projecthash     string
+        // @projectId       string
         // @ownerAddress    string
         // @workerAddress   string
         // @queueProps      string: provide task specific properties (eg: description, title, then, next...)
-        add: (projectHash, ownerAddress, workerAddress, queueProps = {}) => ({
+        add: (projectId, ownerAddress, workerAddress, queueProps = {}) => ({
             ...queueProps,
             address: ownerAddress,
             func: txPrefix + 'notifyProjectWorker',
             type: TX_STORAGE,
-            args: [
-                addressToStr(workerAddress),
-                hashToStr(projectHash),
-            ],
+            args: [workerAddress, projectId],
         }),
         // ban project worker
         //
         // Params:
-        // @projectHash     string
+        // @projectId       string
         // @ownerAddress    string
-        // @recordHash      string
+        // @recordId        string
         // @queueProps      object: provide task specific properties (eg: description, title, then, next...)
-        banWorker: (projectHash, ownerAddress, recordHash, queueProps = {}) => ({
+        banWorker: (projectId, ownerAddress, recordId, queueProps = {}) => ({
             ...queueProps,
             address: ownerAddress,
             func: txPrefix + 'banWorker',
             type: TX_STORAGE,
-            args: [
-                hashToStr(projectHash),
-                hashToStr(recordHash)
-            ],
+            args: [projectId, recordId],
         }),
         // unban project worker
         //
         // Params:
-        // @projectHash     string
+        // @projectId       string
         // @ownerAddress    string
         // @ownerAddress    string
         // @recordHash      string
         // @queueProps      object: provide task specific properties (eg: description, title, then, next...)
-        unbanWorker: (projectHash, ownerAddress, workerAddress, queueProps = {}) => ({
+        unbanWorker: (projectId, ownerAddress, workerAddress, queueProps = {}) => ({
             ...queueProps,
             address: ownerAddress,
             func: txPrefix + 'banWorker',
             type: TX_STORAGE,
-            args: [
-                hashToStr(projectHash),
-                addressToStr(workerAddress),
-            ],
+            args: [projectId, workerAddress],
         }),
     },
 }

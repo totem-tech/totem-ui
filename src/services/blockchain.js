@@ -1,5 +1,4 @@
 // utils
-import { hashToStr } from '../utils/convert'
 import PromisE from '../utils/PromisE'
 import { connect, query as queryHelper, setDefaultConfig } from '../utils/polkadotHelper'
 import types from '../utils/totem-polkadot-js-types'
@@ -140,21 +139,17 @@ export const tasks = {
     // un-/archive a record. See @hashTypes for a list of supported types.
     //
     // Props: 
-    // @hashOwnerAddress    string
-    // @type                int: type code. See @hashTypes
-    // @hash                string: hash of the record to be un-/archived
-    // @archive             boolean: indicates archive or unarchive action
-    // @queueProps          string: provide task specific properties (eg: description, title, then, next...)
-    archiveRecord: (hashOwnerAddress, type, hash, archive = true, queueProps = {}) => ({
+    // @ownerAddress    string
+    // @type            int: type code. See @hashTypes
+    // @recordId        string: hash of the record to be un-/archived
+    // @archive         boolean: indicates archive or unarchive action
+    // @queueProps      string: provide task specific properties (eg: description, title, then, next...)
+    archiveRecord: (ownerAddress, type, recordId, archive = true, queueProps = {}) => ({
         ...queueProps,
-        address: hashOwnerAddress,
+        address: ownerAddress,
         func: 'api.tx.archive.archiveRecord',
         type: TX_STORAGE,
-        args: [
-            type,
-            hashToStr(hash),
-            archive,
-        ],
+        args: [type, recordId, archive],
     }),
     // add a key to the key registry
     //

@@ -1,7 +1,5 @@
 import { generateHash, isArr } from "../../utils/utils"
 
-const { addressToStr, hashToStr } = require("../../utils/convert")
-
 export const PRODUCT_HASH_LABOUR = generateHash('labour')
 const TX_STORAGE = 'tx_storage'
 const DEADLINE_MIN_BLOCKS = 111520
@@ -23,14 +21,14 @@ export const createOrUpdateTask = (
     // 2D array of order items (will be converted to objects): [[productHash, unitRate, qty, unitOfMeasure]]
     // Or, array of OrderItemStruct (see utils => polkadot types) objects 
     orderItems = [],
-    id, // (optional) determines whether to create or update a record
+    recordId, // (optional) determines whether to create or update a record
     token, // BONSAI token hash
     queueProps,
 ) => {
-    const func = !!id ? 'api.tx.orders.changeSpfso' : 'api.tx.orders.createSpfso'
+    const func = !!recordId ? 'api.tx.orders.changeSpfso' : 'api.tx.orders.createSpfso'
     const args = [
-        addressToStr(addrApprover),
-        addressToStr(addrFulfiller),
+        addrApprover,
+        addrFulfiller,
         isSell,
         amountXTX,
         isClosed,
@@ -45,7 +43,7 @@ export const createOrUpdateTask = (
         })[0], // only send the first item until runtime can handle vec<struct>
         token,
     ]
-    if (!!id) args.push(hashToStr(id))
+    if (!!recordId) args.push(recordId)
     return {
         ...queueProps,
         address: addrOrigin,

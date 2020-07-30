@@ -7,7 +7,6 @@ import DataTable from '../components/DataTable'
 import FormBuilder from '../components/FormBuilder'
 import { isArr, deferred, copyToClipboard, textEllipsis, isFn } from '../utils/utils'
 import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
-import { hashToStr } from '../utils/convert'
 // Forms
 import PartnerForm from '../forms/Partner'
 import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'

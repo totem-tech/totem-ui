@@ -1,8 +1,8 @@
 import React, { Component } from 'react'
 import { Bond } from 'oo7'
-import FormBuilder, { findInput } from '../components/FormBuilder'
-import { newSignature, signingKeyPair, verifySignature } from '../utils/naclHelper'
-import { encodeBase64, decodeBase64, decodeUTF8, hashToStr } from '../utils/convert'
+// import FormBuilder, { findInput } from '../components/FormBuilder'
+// import { newSignature, signingKeyPair, verifySignature } from '../utils/naclHelper'
+// import { encodeBase64, decodeBase64, decodeUTF8, hashToStr } from '../utils/convert'
 // services
 import identities from '../services/identity'
 import { tasks } from '../services/blockchain'
@@ -93,22 +93,22 @@ export default class KeyRegistryPlayground extends Component {
         }
     }
 
-    generateSignature = (e, { data, address }) => {
+    generateSignature = async (e, { data, address }) => {
         if (!data || !address) return
-        const { inputs } = this.state
-        const identity = identities.find(address)
-        const keyPair = signingKeyPair(identity.keyData)
-        const signature = newSignature(data, keyPair.secretKey, false)
-        const newValues = {
-            dataHex: hashToStr(decodeUTF8(data)),
-            signatureHex: hashToStr(signature),
-            signatureBase64: encodeBase64(signature),
-            publicHex: hashToStr(decodeBase64(keyPair.publicKey)),
-            publicBase64: keyPair.publicKey,
-            privateHex: hashToStr(decodeBase64(keyPair.secretKey)),
-            privateBase64: keyPair.secretKey,
-        }
-        Object.keys(newValues).forEach(key => findInput(inputs, key).bond.changed(newValues[key]))
+        // const { inputs } = this.state
+        // const identity = identities.find(address)
+        // const keyPair = signingKeyPair(identity.keyData)
+        // const signature = newSignature(data, keyPair.secretKey, false)
+        // const newValues = {
+        //     dataHex: hashToStr(decodeUTF8(data)),
+        //     signatureHex: hashToStr(signature),
+        //     signatureBase64: encodeBase64(signature),
+        //     publicHex: hashToStr(decodeBase64(keyPair.publicKey)),
+        //     publicBase64: keyPair.publicKey,
+        //     privateHex: hashToStr(decodeBase64(keyPair.secretKey)),
+        //     privateBase64: keyPair.secretKey,
+        // }
+        // Object.keys(newValues).forEach(key => findInput(inputs, key).bond.changed(newValues[key]))
     }
 
     handleSubmit = (e, { address, dataHex, publicHex, signatureHex }) => {
@@ -127,5 +127,5 @@ export default class KeyRegistryPlayground extends Component {
         }))
     }
 
-    render = () => <FormBuilder {...this.state} />
+    render = () => 'REQUIRES MIGRATIN TO POLKADOTJS' //<FormBuilder {...this.state} />
 }

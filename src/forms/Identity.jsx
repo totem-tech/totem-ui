@@ -163,7 +163,7 @@ export default class IdentityForm extends Component {
             seed = seed || identityService.generateUri()
             seed = seed.split('/totem/')[0] + `/totem/${usageType === 'personal' ? 0 : 1}/0`
         }
-        const { address } = identityService.addFromUri(seed) || {}
+        const { address = '' } = seed && identityService.addFromUri(seed) || {}
         this.addressBond.changed(address)
         findInput(inputs, 'uri').bond.changed(seed)
         this.setState({ inputs })
@@ -176,7 +176,7 @@ export default class IdentityForm extends Component {
 
     validateUri = (_, { value: seed }) => {
         const { inputs } = this.state
-        const { address } = identityService.addFromUri(seed) || {}
+        const { address } = seed && identityService.addFromUri(seed) || {}
         if (!address) {
             this.addressBond.changed('')
             return texts.validSeedRequired

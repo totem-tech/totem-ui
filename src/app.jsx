@@ -18,12 +18,13 @@ import sidebar, { sidebarItems, sidebarStateBond } from './services/sidebar'
 import storage from './services/storage'
 import timeKeeping from './services/timeKeeping'
 import toast, { ToastsContainer } from './services/toast'
-import windw, { gridColumnsBond, layoutBond, MOBILE } from './services/window'
+import windw, { gridColumnsBond, getLayout, layoutBond, MOBILE } from './services/window'
 // Utils
+import convert from './utils/convert'
 import DataStorage from './utils/DataStorage'
 import naclHelper from './utils/naclHelper'
 import polkadotHelper from './utils/polkadotHelper'
-import { className } from './utils/utils'
+import { className, isBool } from './utils/utils'
 // Images
 import TotemButtonLogo from './assets/totem-button-grey.png'
 import PlaceholderImage from './assets/totem-placeholder.png'
@@ -34,12 +35,13 @@ export class App extends Component {
 		super()
 		this.state = {
 			sidebarCollapsed: false,
-			sidebarVisible: windw.getLayout() !== 'mobile',
+			sidebarVisible: getLayout() !== MOBILE,
 			status: {}
 		}
 
 		// For debug only.
 		window.utils = {
+			convert,
 			naclHelper,
 			polkadotHelper,
 		}
@@ -83,6 +85,7 @@ export class App extends Component {
 
 	render() {
 		const { isMobile, numCol } = this.state
+		if (!isBool(isMobile)) return ''
 		const logoSrc = TotemButtonLogo
 		const { collapsed, visible } = sidebarStateBond._value
 		if (!this.resumed) {

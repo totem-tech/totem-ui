@@ -198,9 +198,9 @@ export default class Transfer extends Component {
             type: QUEUE_TYPES.TX_TRANSFER,
             args: [to, amount],
             address: from,
-            then: (success, args) => {
-                if (!success) return this.setMessage(args[0])
-                this.setMessage(null, args[0], name, amountXTX)
+            then: (success, resultOrError) => {
+                if (!success) return this.setMessage(resultOrError)
+                this.setMessage(null, resultOrError, name, amountXTX)
                 this.clearForm()
             }
         })
