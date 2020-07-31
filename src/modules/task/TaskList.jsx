@@ -40,6 +40,7 @@ class TaskList extends Component {
         this.listType = listTypes[props.type] || listTypes.owner
         this.isOwner = this.listType === listTypes.owner
         this.isFulfiller = this.listType === listTypes.assigned
+        const keywordsKey = 'keywords' + this.listType
         this.state = {
             columns: [
                 { key: 'title', title: textsCap.title },
@@ -58,6 +59,9 @@ class TaskList extends Component {
                 { key: 'description', title: textsCap.description },
                 { title: textsCap.actions }
             ],
+            // preserve search keywords
+            keywords: cachedData.get(keywordsKey),
+            searchOnChange: keywords => cachedData.set(keywordsKey, keywords),
             topLeftMenu: [
                 this.isOwner && {
                     content: textsCap.create,

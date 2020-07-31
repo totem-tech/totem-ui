@@ -5,7 +5,7 @@ import { translated } from '../../services/language'
 
 const textsCap = translated({
     assigned: 'my tasks',
-    manage: 'manage tasks I own',
+    manage: 'manage tasks',
     pending: 'pending tasks',
 }, true)[1]
 

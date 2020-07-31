@@ -26,11 +26,11 @@ class DataTable extends Component {
     constructor(props) {
         super(props)
 
-        const { columns, defaultSort, defaultSortAsc, pageNo } = props
+        const { columns, defaultSort, defaultSortAsc, keywords, pageNo } = props
         this.state = {
             isMobile: getLayout() === MOBILE,
             pageNo: pageNo,
-            keywords: '',
+            keywords: keywords || '',
             selectedIndexes: [],
             sortAsc: defaultSortAsc, // ascending/descending sort
             sortBy: defaultSort || (columns.find(x => !!x.key) || {}).key,
@@ -63,12 +63,13 @@ class DataTable extends Component {
     }
 
     getTopContent(totalRows, selectedIndexes) {
-        let { searchable, selectable, topLeftMenu, topRightMenu } = this.props
+        let { searchable, searchOnChange, selectable, topLeftMenu, topRightMenu } = this.props
         const { keywords, isMobile } = this.state
         topLeftMenu = (topLeftMenu || []).filter(x => !x.hidden)
         topRightMenu = (topRightMenu || []).filter(x => !x.hidden)
 
         if (topLeftMenu.length + topRightMenu.length === 0 && !searchable) return
+        const triggerSearchChange = keywords => isFn(searchOnChange) && searchOnChange(keywords)
 
         const searchCol = searchable && (
             <Grid.Column key='0' tablet={16} computer={5} style={{ padding: 0 }}>
@@ -78,14 +79,22 @@ class DataTable extends Component {
                     action={!keywords ? undefined : {
                         basic: true,
                         icon: { className: 'no-margin', name: 'close' },
-                        onClick: () => this.setState({ keywords: '' })
+                        onClick: () => {
+                            this.setState({ keywords: '' })
+                            triggerSearchChange('')
+                        }
                     }}
-                    onChange={(e, d) => this.setState({ keywords: d.value })}
+                    onChange={(e, d) => {
+                        const keywords = d.value
+                        this.setState({ keywords })
+                        triggerSearchChange(keywords)
+                    }}
                     onDragOver={e => e.preventDefault()}
                     onDrop={e => {
                         const keywords = e.dataTransfer.getData('Text')
                         if (!keywords.trim()) return
                         this.setState({ keywords })
+                        triggerSearchChange(keywords)
                     }}
                     placeholder={textsCap.search}
                     style={!isMobile ? undefined : styles.searchMobile}
@@ -340,6 +349,8 @@ DataTable.propTypes = {
         PropTypes.string, PropTypes.object
     ]),
     footerContent: PropTypes.any,
+    // initial search keywords
+    keywords: PropTypes.string,
     // total of page numbers to be visible including current
     navLimit: PropTypes.number,
     // loading: PropTypes.bool,
@@ -350,6 +361,7 @@ DataTable.propTypes = {
     ]),
     searchable: PropTypes.bool,
     searchExtraKeys: PropTypes.array,
+    searchOnChange: PropTypes.func,
     selectable: PropTypes.bool,
     tableProps: PropTypes.object.isRequired, // table element props
     topLeftMenu: PropTypes.arrayOf(PropTypes.object),
