@@ -1,25 +1,11 @@
 // Store and manage identities
 import { Bond } from 'oo7'
 import { generateMnemonic } from 'bip39'
-import { secretStore } from 'oo7-substrate'
 import DataStorage from '../utils/DataStorage'
 import { keyring } from '../utils/polkadotHelper'
 import { objClean } from '../utils/utils'
-import storage from './storage'
 
-// catch errors from secretstore
-// ToDo: remove completely
-const _secretStore = () => {
-    try {
-        return secretStore()
-    } catch (e) {
-        return { _key: [] }
-    }
-}
-
-const MODULE_KEY = 'identity'
 const DEFAULT_NAME = 'Default'
-const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 const identities = new DataStorage('totem_identities', true)
 const USAGE_TYPES = Object.freeze({
     PERSONAL: 'personal',
@@ -69,8 +55,6 @@ export const remove = address => identities.delete(address)
 // add/update
 export const set = (address, identity = {}) => {
     const { selected, type, uri, usageType } = identity
-    // add to PolkadotJS keyring
-    !identities.get(address) && keyring.add([uri])
     identity.type = type || 'sr25519'
     identity.selected = !!selected
     if (!Object.values(USAGE_TYPES).includes(usageType)) {
@@ -96,28 +80,11 @@ export const setSelected = address => {
     identities.set(address, identity)
     selectedAddressBond.changed(address)
 }
-const deprecateSecretStore = (ssKeys) => {
-    console.log('Identity service: Migrating secretStore identities')
-    const arr = ssKeys.map(ssKey => {
-        const { address } = ssKey
-        return [
-            address,
-            objClean(
-                { ...ssKey, ...identities.find(address) },
-                REQUIRED_KEYS
-            ),
-        ]
-    })
-    identities.setAll(new Map(arr))
-}
-const init = () => {
-    const ssKeys = _secretStore()._keys
-    let identities = getAll()
-    const hasMissingProps = identities.filter(x => !x.name || !x.uri).length > 0
-    const shouldInit = !hasMissingProps && identities.length === 0 && ssKeys.length <= 1
 
-    if (shouldInit) {
-        console.log('Identity service: Creating default identity for first time user')
+(() => {
+    if (!getAll().length) {
+        console.log('Identity service: creating default identity for first time user')
+        // generate a new seed
         const uri = generateUri() + '/totem/0/0'
         const { address } = addFromUri(uri)
         const identity = {
@@ -127,15 +94,10 @@ const init = () => {
             uri,
         }
         set(address, identity)
-    } else if (!rw().secretStoreDeprecated) deprecateSecretStore(ssKeys)
+    }
 
-    rw({ secretStoreDeprecated: true })
-
-    // add seeds to PolkadotJS keyring
-    keyring.add(getAll().map(x => x.uri))
     selectedAddressBond.changed((getSelected() || {}).address)
-}
-setTimeout(init, 2000) // 2 seconds delay for secretStore to load
+})()
 
 export default {
     addFromUri,
@@ -145,7 +107,6 @@ export default {
     get,
     getAll,
     getSelected,
-    keyring,
     remove,
     selectedAddressBond,
     set,

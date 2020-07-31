@@ -4,7 +4,7 @@
 import React from 'react'
 import uuid from 'uuid'
 import DataStorage from '../utils/DataStorage'
-import { transfer, signAndSend, setDefaultConfig } from '../utils/polkadotHelper'
+import { transfer, signAndSend, setDefaultConfig, keyring } from '../utils/polkadotHelper'
 import { isArr, isFn, isObj, isStr, objClean, isValidNumber } from '../utils/utils'
 // services
 import { getClient } from './chatClient'
@@ -150,15 +150,16 @@ const [words, wordsCap] = translated({
     transaction: 'transaction',
     transactions: 'transactions',
 }, true)
-const [_, texts] = translated({
+const textsCap = translated({
     insufficientBalance: 'insufficient balance',
     invalidFunc: 'invalid function name supplied.',
     processArgsFailed: 'failed to process dynamic task argument',
     txForeignIdentity: 'cannot create a transaction from an identity that does not belong to you!',
     txInvalidSender: 'invalid or no sender address supplied',
     txTransferTitle: 'transfer funds',
-    txTransferMissingArgs: 'one or more of the following arguments is missing or invalid: sender identity, recipient identity and amount',
-}, true)
+    txTransferMissingArgs: `one or more of the following arguments is missing or invalid: 
+        sender identity, recipient identity and amount`,
+}, true)[1]
 const statusTitles = {
     loading: words.inProgress,
     success: words.successful,
@@ -238,7 +239,9 @@ const attachKey = (ar = []) => !isArr(ar) ? ar : (
 const setMessage = (task, msg = {}, duration, id, silent = false) => silent ? null : setToast({
     ...msg,
     content: msg.content ? attachKey(msg.content) : task.description,
-    header: `${msg.header || task.title}: ${task.type.startsWith('tx_') ? words.transaction : ''} ${statusTitles[task.status]}`,
+    header: `${msg.header || task.title}: 
+        ${task.type.startsWith('tx_') ? words.transaction : ''} ${statusTitles[task.status]}
+    `,
     status: task.status,
 }, duration, id)
 
@@ -291,7 +294,8 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
         isFn(task.then) && task.then(success, resultOrError)
     } catch (err) {
         // ignore any error occured by invoking the `then` function
-        console.log('Unexpected error occured while executing queue .then()', { rootTask, err })
+        console.log('Unexpected error occured while executing queue .then()', { rootTask })
+        console.error(err)
     }
     delete inprogressIds[id]
     // execute next only if current task is successful
@@ -340,7 +344,7 @@ const handleChatClient = async (id, rootTask, task, toastId) => {
         func = (func.startsWith('client.') ? '' : 'client.') + func
         func = eval(func)
         eval(client) // just make sure client variable isn't removed by accident
-        if (!isFn(func)) return _save(ERROR, texts.invalidFunc)
+        if (!isFn(func)) return _save(ERROR, textsCap.invalidFunc)
         _save(LOADING)
 
         // initiate request
@@ -356,6 +360,7 @@ const handleTxStorage = async (id, rootTask, task, toastId) => {
         task.amountXTX = 0
     }
     const { address, amountXTX, args, description, func, silent, title, toastDuration } = task
+    const identity = findIdentity(address)
     const msg = {
         content: [description],
         header: title,
@@ -365,11 +370,14 @@ const handleTxStorage = async (id, rootTask, task, toastId) => {
     )
 
     // make sure identity is owned by user and a transaction can be created
-    if (!findIdentity(address)) return _save(ERROR, texts.txForeignIdentity)
-    if (!isStr(func) || !func.startsWith('api.tx.')) return _save(ERROR, texts.invalidFunc)
+    if (!identity) return _save(ERROR, textsCap.txForeignIdentity)
+    if (!isStr(func) || !func.startsWith('api.tx.')) return _save(ERROR, textsCap.invalidFunc)
     let api
     try {
-        api = (await getConnection()).api
+        const { api: apiX, keyring } = await getConnection()
+        api = apiX
+        // add idenitity to keyring on demand
+        !keyring.contains(address) && keyring.add([identity.uri])
     } catch (err) {
         console.log('handleTxTransfer: connectcion error', err)
         return
@@ -378,14 +386,14 @@ const handleTxStorage = async (id, rootTask, task, toastId) => {
     try {
         task.processedArgs = await processArgs(rootTask, task)
     } catch (err) {
-        return _save(ERROR, `${texts.processArgsFailed}. ${err}`)
+        return _save(ERROR, `${textsCap.processArgsFailed}. ${err}`)
     }
     try {
         const txFunc = eval(func)
-        if (!isFn(txFunc)) return _save(ERROR, texts.invalidFunc)
+        if (!isFn(txFunc)) return _save(ERROR, textsCap.invalidFunc)
 
         let balance = await query(api.query.balances.freeBalance, address)
-        if (balance < (amountXTX + MIN_BALANCE)) return _save(ERROR, texts.insufficientBalance)
+        if (balance < (amountXTX + MIN_BALANCE)) return _save(ERROR, textsCap.insufficientBalance)
         _save(LOADING, null, { before: balance })
 
         const tx = txFunc.apply(null, task.processedArgs || args)
@@ -402,30 +410,33 @@ const handleTxTransfer = async (id, rootTask, task, toastId) => {
     task.func = 'api.tx.balances.transfer'
     const { address: senderAddress, args, silent, toastDuration } = task
     const [recipientAddress, amount] = args
-    const sender = findIdentity(senderAddress)
+    const identity = findIdentity(senderAddress)
     const invalid = !senderAddress || !recipientAddress || !amount
     const msg = {
         content: [
-            `${wordsCap.sender}: ${sender.name}`,
+            `${wordsCap.sender}: ${identity.name}`,
             `${wordsCap.recipient}: ${getAddressName(recipientAddress)}`,
             `${wordsCap.amount}: ${amount} ${currencyDefault}`,
         ],
-        header: texts.txTransferTitle
+        header: textsCap.txTransferTitle
     }
-    task.title = texts.txTransferTitle
+    task.title = textsCap.txTransferTitle
     task.description = msg.content.join('\n')
     const _save = (status, resultOrErr, balances = {}) => setToastNSaveCb(
         id, rootTask, task, status, msg, toastId, silent, toastDuration, resultOrErr, balances
     )
 
     _save(
-        !sender || invalid ? ERROR : LOADING,
-        !sender ? texts.txForeignIdentity : (invalid ? texts.txTransferMissingArgs : '')
+        !identity || invalid ? ERROR : LOADING,
+        !identity ? textsCap.txForeignIdentity : (invalid ? textsCap.txTransferMissingArgs : '')
     )
-    if (!sender || invalid) return
+    if (!identity || invalid) return
     let api
     try {
-        api = (await getConnection()).api
+        const { api: apiX, keyring } = await getConnection()
+        api = apiX
+        // add idenitity to keyring on demand
+        !keyring.contains(senderAddress) && keyring.add([identity.uri])
     } catch (err) {
         console.log('handleTxTransfer: connectcion error', err)
         _save(ERROR, err)

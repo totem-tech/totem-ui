@@ -124,9 +124,9 @@ export default class ProjectForm extends Component {
             status: 'loading',
             showIcon: true
         }
-        const handleTxError = (ok, [err]) => !ok && this.setState({
+        const handleTxError = (ok, err) => !ok && this.setState({
             message: {
-                content: err,
+                content: `${err}`,
                 header: texts.submitErrorHeader,
                 showIcon: true,
                 status: 'error'
