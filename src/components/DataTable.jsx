@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Button, Dropdown, Grid, Icon, Input, Table } from 'semantic-ui-react'
-import { arrMapSlice, getKeys, isArr, isFn, objWithoutKeys, objCopy, search, sort } from '../utils/utils'
+import { arrMapSlice, getKeys, isArr, isFn, objWithoutKeys, objCopy, search, sort, isStr } from '../utils/utils'
 import Message from '../components/Message'
 import { translated } from '../services/language'
 import { layoutBond, getLayout, MOBILE } from '../services/window'
@@ -285,6 +285,8 @@ class DataTable extends Component {
         if (totalItems > 0 && totalRows === 0) {
             // search resulted in zero rows
             emptyMessage = { content: textsCap.noResultsMsg }
+        } else if (isStr(emptyMessage)) {
+            emptyMessage = { content: emptyMessage }
         }
         return (
             <div className='data-table'>
@@ -333,7 +335,10 @@ DataTable.propTypes = {
     // Object key to set initial sort by
     defaultSort: PropTypes.string,
     defaultSortAsc: PropTypes.bool.isRequired,
-    emptyMessage: PropTypes.object,
+    emptyMessage: PropTypes.oneOfType([
+        PropTypes.object,
+        PropTypes.string, PropTypes.object
+    ]),
     footerContent: PropTypes.any,
     // total of page numbers to be visible including current
     navLimit: PropTypes.number,

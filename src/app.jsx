@@ -61,7 +61,7 @@ export class App extends Component {
 			toast,
 			window: windw,
 		}
-
+		
 		window.queryBlockchain = async (func, args, multi) => await blockchain.query(func, args, multi, true)
 	}
 

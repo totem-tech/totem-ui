@@ -8,7 +8,7 @@ import IdentityList from '../lists/IdentityList'
 import PartnerList from '../lists/PartnerList'
 import ProjectList from '../lists/ProjectList'
 import SettingsForm from '../forms/Settings'
-import TaskList from '../modules/task/List'
+import TaskView from '../modules/task/TaskView'
 import TimeKeepingView from '../views/TimeKeepingView'
 import TransferForm from '../forms/Transfer'
 import UtilitiesView from '../views/UtilitiesView'
@@ -226,14 +226,14 @@ export const sidebarItems = [
         title: texts.timekeepingTitle,
     },
     {
-        content: TaskList,
+        content: TaskView,
         icon: 'tasks',
         name: 'tasks',
         title: texts.tasksTitle,
         subHeader: texts.tasksSubheader,
     },
     {
-        content: <TransferForm />,
+        content: TransferForm,
         contentProps: { style: { maxWidth: 620 } },
         icon: 'money bill alternate outline',
         header: texts.transferHeader,

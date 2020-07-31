@@ -18,12 +18,12 @@ import { bond, getSelected } from '../../services/identity'
 import { translated } from '../../services/language'
 import partners from '../../services/partner'
 import { BLOCK_DURATION_SECONDS } from '../../utils/time'
-import { createOrUpdateTask, PRODUCT_HASH_LABOUR } from './task'
+import { queueables, PRODUCT_HASH_LABOUR } from './task'
 import { addToQueue } from '../../services/queue'
 import { showForm } from '../../services/modal'
 import PromisE from '../../utils/PromisE'
 
-const [texts, textsCap] = translated({
+const textsCap = translated({
     addedToQueue: 'request added to queue',
     advancedLabel: 'advanced options',
     amountRequired: 'amount required',
@@ -63,7 +63,7 @@ const [texts, textsCap] = translated({
     title: 'task title',
     titlePlaceholder: 'enter a very short task description',
     updatePartner: 'update partner',
-}, true)
+}, true)[1]
 const BONSAI_KEYS = [ // keys used to generate BONSAI token hash
     'currency',
     'description',
@@ -502,7 +502,7 @@ export default class TaskForm extends Component {
                 status: 'loading',
             },
         })
-        const queueProps = createOrUpdateTask.apply(null, [
+        const queueProps = queueables.save.apply(null, [
             address,
             address,
             assignee || address,
