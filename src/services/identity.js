@@ -1,4 +1,5 @@
-// Store and manage identities
+import React, { useState, useEffect } from 'react'
+import { Subject } from 'rxjs'
 import { Bond } from 'oo7'
 import { generateMnemonic } from 'bip39'
 import DataStorage from '../utils/DataStorage'
@@ -29,6 +30,9 @@ const VALID_KEYS = Object.freeze([
 
 export const bond = identities.bond
 export const selectedAddressBond = new Bond()
+const rxSelected = new Subject()
+// keep until selectedAddressBond is removed
+rxSelected.subscribe(address => selectedAddressBond.changed(address))
 
 export const addFromUri = (uri, type = 'sr25519') => {
     try {
@@ -78,7 +82,8 @@ export const setSelected = address => {
     })
     identity.selected = true
     identities.set(address, identity)
-    selectedAddressBond.changed(address)
+    // selectedAddressBond.changed(address)
+    rxSelected.next(address)
 }
 
 (() => {
@@ -96,8 +101,21 @@ export const setSelected = address => {
         set(address, identity)
     }
 
-    selectedAddressBond.changed((getSelected() || {}).address)
+    // selectedAddressBond.changed((getSelected() || {}).address)
+    rxSelected.next(getSelected().address)
 })()
+
+// Custom hook to use the selected identity in a functional component
+export const useSelected = () => {
+    const [selected, setSelected] = useState(getSelected().address)
+
+    useEffect(() => {
+        const subscribed = rxSelected.subscribe(address => setSelected(address))
+        return subscribed.unsubscribe
+    }, [])
+
+    return selected
+}
 
 export default {
     addFromUri,

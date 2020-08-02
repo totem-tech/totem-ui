@@ -26,9 +26,9 @@ const textsCap = translated({
     title: 'title',
 }, true)[1]
 const listTypes = Object.freeze({
-    owner: 'owner',
     approver: 'approver',
-    assigned: 'beneficiary',
+    beneficiary: 'beneficiary',
+    owner: 'owner',
 })
 // cache data so that 
 const cachedData = new Map()
@@ -39,7 +39,7 @@ class TaskList extends Component {
 
         this.listType = listTypes[props.type] || listTypes.owner
         this.isOwner = this.listType === listTypes.owner
-        this.isFulfiller = this.listType === listTypes.assigned
+        this.isFulfiller = this.listType === listTypes.beneficiary
         const keywordsKey = 'keywords' + this.listType
         this.state = {
             columns: [
@@ -78,79 +78,15 @@ class TaskList extends Component {
     componentWillMount() {
         this._mounted = true
         this.unsubscribers = {}
-        this.tieIdAddress = selectedAddressBond.tie(this.handleSelectedAddressChange)
     }
 
     componentWillUnmount() {
         this._mounted = false
-        selectedAddressBond.untie(this.tieIdAddress)
-        this.unsubscribe()
-    }
-
-    handleSelectedAddressChange = async (address) => {
-        if (!this.listType) return
-        // unsubscribe to any existing subscriptions
-        this.unsubscribe()
-        const key = getSelected().address + this.listType
-        const data = cachedData.get(key) || undefined
-        this.setState({ data, loading: !data })
-
-        // subscribe to hash list changes
-        this.unsubscribers.recordList = await query(
-            `api.query.orders.${this.listType}`,
-            [
-                address,
-                async (recordIds) => {
-                    this.unsubscribers.orders = await query(
-                        'api.query.orders.order',
-                        [recordIds, this.updateOrdersCb(key, recordIds)],
-                        true,
-                    )
-                }
-            ]
-        )
-    }
-
-    unsubscribe = () => Object.values(this.unsubscribers).forEach(fn => isFn(fn) && fn())
-
-    updateOrdersCb = (key, recordIds) => orders => {
-        const { data = new Map() } = this.state
-        orders.filter(Boolean).forEach((order, i) => {
-            const [
-                owner,
-                approver,
-                fullfiller,
-                isSell,
-                amountXTX,
-                isClosed,
-                orderType,
-                deadline,
-                dueDate,
-            ] = order
-            const existing = data.get(recordIds[i])
-            data.set(recordIds[i], {
-                ...existing,
-                owner,
-                approver,
-                fullfiller,
-                isSell,
-                amountXTX: eval(amountXTX),
-                isClosed,
-                orderType,
-                deadline,
-                dueDate,
-                _amountXTX: <Currency value={eval(amountXTX)} />,
-                _owner: getAddressName(owner) || textEllipsis(owner, 15),
-                _fulfiller: getAddressName(fullfiller) || textEllipsis(fullfiller, 15),
-            })
-        })
-        this.setState({ data, loading: undefined })
-        cachedData.set(key, data)
     }
 
     render = () => {
-        const { asTabPane } = this.props
-        const { loading } = this.state
+        let { asTabPane, loading } = this.props
+        loading = this.state.loading || loading
         const el = <DataTable {...{ ...this.props, ...this.state }} />
         return !asTabPane ? el : <Tab.Pane loading={loading}>{el}</Tab.Pane>
     }

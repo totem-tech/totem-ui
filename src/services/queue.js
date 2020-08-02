@@ -327,7 +327,6 @@ const processArgs = async (rootTask = {}, currentTask = {}) => {
     return processedArgs
 }
 
-
 const handleChatClient = async (id, rootTask, task, toastId) => {
     const { args, description, title, silent, toastDuration } = task
     const client = getClient()

@@ -19,7 +19,7 @@ import { translated } from '../../services/language'
 import partners from '../../services/partner'
 import { BLOCK_DURATION_SECONDS } from '../../utils/time'
 import { queueables, PRODUCT_HASH_LABOUR } from './task'
-import { addToQueue } from '../../services/queue'
+import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import { showForm } from '../../services/modal'
 import PromisE from '../../utils/PromisE'
 
@@ -409,7 +409,7 @@ export default class TaskForm extends Component {
                 resolve(result)
             } catch (e) { reject(e) }
         })
-        const thenOk = result => {
+        const handleSucces = result => {
             this.amountXTX = result[0]
             const balanceXTX = result[1]
             const amountTotalXTX = this.amountXTX + estimatedTxFee
@@ -444,7 +444,7 @@ export default class TaskForm extends Component {
             bountyIn.loading = false
             this.setState({ inputs, submitDisabled: false })
         }
-        const thenErr = err => {
+        const handleErr = err => {
             bountyIn.invalid = true
             bountyGrpIn.message = {
                 content: `${err}`,
@@ -452,8 +452,8 @@ export default class TaskForm extends Component {
                 status: 'error'
             }
         }
-        this.bountyPromise(promise).then(thenOk)
-            .catch(thenErr)
+        this.bountyPromise(promise).then(handleSucces)
+            .catch(handleErr)
             .finally(() => {
                 bountyIn.loading = false
                 this.setState({ inputs, submitDisabled: false })
@@ -482,6 +482,7 @@ export default class TaskForm extends Component {
         const title = !id ? textsCap.formHeader : textsCap.formHeaderUpdate
         const tokenData = hashTypes.taskHash + address + JSON.stringify(objClean(values, BONSAI_KEYS))
         const token = generateHash(tokenData)
+        const queueTaskName = 'createTask'
         const then = (success, [err]) => this.setState({
             closeText: success ? textsCap.close : undefined,
             message: {
@@ -502,6 +503,20 @@ export default class TaskForm extends Component {
                 status: 'loading',
             },
         })
+
+        const clientQT = {
+            type: QUEUE_TYPES.CHATCLIENT,
+            func: '',
+            args: [
+                id || {
+                    __taskName: queueTaskName,
+                    __resultSelector: `function(result) {
+                        const [txHash, eventsArr] = result
+                    }`
+                }, // need to process tx result to get the taskId
+                {},
+            ]
+        }
         const queueProps = queueables.save.apply(null, [
             address,
             address,
@@ -515,8 +530,15 @@ export default class TaskForm extends Component {
             [[PRODUCT_HASH_LABOUR, this.amountXTX, 1, 1]], // single item order
             id,
             token,
-            { description, then, title },
+            {
+                description,
+                name: queueTaskName,
+                then,
+                title,
+            },
+            // then: clientQT,
         ])
+
         addToQueue(queueProps)
     }
 

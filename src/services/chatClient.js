@@ -315,6 +315,9 @@ export class ChatClient {
             hashArr,
             (err, res, notFoundHashes) => cb(err, new Map(res), notFoundHashes),
         )
+
+        // add/update task
+        this.task = (id, task, cb) => isFn(cb) && socket.emit('task', id, task, cb)
     }
 
     register = (id, secret, cb) => isFn(cb) && socket.emit('register',
