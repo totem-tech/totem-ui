@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { Tab } from 'semantic-ui-react'
-import { textEllipsis, isFn, deferred } from '../../utils/utils'
+import { textEllipsis, isFn, deferred, arrUnique } from '../../utils/utils'
 import TaskList from './TaskList'
 import Currency from '../../components/Currency'
-import { query } from '../../services/blockchain'
+import { query, getConnection } from '../../services/blockchain'
 import { useSelected } from '../../services/identity'
 import { translated } from '../../services/language'
 import { getAddressName } from '../../services/partner'
@@ -15,33 +15,24 @@ const textsCap = translated({
     pending: 'pending tasks',
     unknown: 'unknown',
 }, true)[1]
-let isOpen = false
 const getKey = (address, type) => `${address}-${type}`
-const messagingServicePlaceholder = (taskIds) => new Promise(resolve => resolve(
-    new Array(taskIds.length).fill(null))
-)
+const messagingServicePlaceholder = () => new Promise(resolve => resolve(new Map()))
 
 export default function TaskView(props) {
     const selectedAddress = props.address || useSelected()
-    const [listType, setListType] = useState(props.type || panes[0].type)
     const [allTasks, setAllTasks] = useState(new Map())
-    const key = getKey(selectedAddress, listType)
-    const tasks = allTasks.get(key)
-    isOpen = true
 
     useEffect(() => {
         let mounted = true
         const unsubscribers = {}
-        const allTasks = new Map()
-        const setTasksDeffered = deferred(tasks => mounted && setAllTasks(tasks), 500)
         const types = ['owner', 'approver', 'beneficiary']
-        const tasksCb = (key, taskIds) => async (taskOrders) => {
-            const tasks = new Map()
+        const tasksCb = (address, taskIds2d, uniqueTaskIds) => async (taskOrders) => {
+            let uniqueTasks = new Map()
             // older orders can sometimes be invalid and have null value
             taskOrders.filter(Boolean).forEach((order = [], i) => {
                 const [owner, approver, fullfiller, isSell, amountXTX, isClosed, orderType, deadline, dueDate] = order
-                const taskId = taskIds[i]
-                tasks.set(taskId, {
+                const taskId = uniqueTaskIds[i]
+                uniqueTasks.set(taskId, {
                     owner,
                     approver,
                     fullfiller,
@@ -57,48 +48,59 @@ export default function TaskView(props) {
                     _fulfiller: getAddressName(fullfiller) || textEllipsis(fullfiller, 15),
                 })
             })
-
-            const promise = PromisE.timeout(messagingServicePlaceholder(taskIds), 5000)
-            const process = (arrTaskDetails = []) => {
-                Array.from(tasks).forEach(([id, task], i) => {
-                    const { title, description, tags } = arrTaskDetails[i] || {}
+            const promise = PromisE.timeout(messagingServicePlaceholder(), 5000)
+            const addDetails = (detailsMap = new Map()) => {
+                // add title description etc retrieved from Messaging Service
+                Array.from(uniqueTasks).forEach(([id, task]) => {
+                    const { title, description, tags } = detailsMap.get(id) || {}
                     task.title = title || textsCap.unknown
                     task.description = description
                     task.tags = tags
                 })
-                allTasks.set(key, tasks)
-                setTasksDeffered(allTasks)
+                // construct separate lists for each type
+                const allTasks = new Map()
+                types.forEach((type, i) => {
+                    const ids = taskIds2d[i]
+                    const typeTasks = ids.map(id => {
+                        const task = uniqueTasks.get(id)
+                        return task && [id, uniqueTasks.get(id)]
+                    }).filter(Boolean)
+                    allTasks.set(
+                        getKey(address, type),
+                        new Map(typeTasks),
+                    )
+                })
+                setAllTasks(allTasks)
+
+                console.log({ allTasks, taskIds2d })
+
             }
             // on receive update tasks lists
-            promise.promise.then(process)
+            promise.promise.then(addDetails)
             // if times out update component without title, desc etc
-            promise.catch(() => process([]))
+            promise.catch(() => addDetails([]))
         }
 
-        types.forEach(type => {
-            const key = getKey(selectedAddress, type)
-            unsubscribers[`taskIds-${key}`] = (async () => await query(
-                `api.query.orders.${type}`,
-                [
-                    selectedAddress,
-                    async (taskIds) => {
-                        // no tasks available
-                        if (!taskIds.length) return tasksCb(key, taskIds)([])
-
-                        isFn(unsubscribers[`tasks-${key}`]) && unsubscribers[`tasks-${key}`]()
-                        unsubscribers[`tasks-${key}`] = await query(
-                            'api.query.orders.order',
-                            [taskIds, tasksCb(key, taskIds)],
-                            true,
-                        )
-                    },
-                ]
-            ))()
+        getConnection().then(async ({ api }) => {
+            // construct a single query to retrieve 3 different types of lists with a single subscription
+            unsubscribers.taskIds2d = await query('api.queryMulti', [
+                types.map(x => [api.query.orders[x], selectedAddress]),
+                async (taskIds2d) => {
+                    // create single list of unique Task IDs
+                    const uniqueTaskIds = arrUnique(taskIds2d.flat())
+                    // retrieve details of all unique tasks at with a signle subscription
+                    unsubscribers.tasks = await query(
+                        'api.query.orders.order',
+                        [uniqueTaskIds, tasksCb(selectedAddress, taskIds2d, uniqueTaskIds)],
+                        true,
+                    )
+                }
+            ])
         })
+
 
         // unsubscribe on unmount
         return () => {
-            isOpen = false
             mounted = false
             Object.values(unsubscribers).forEach(fn => isFn(fn) && fn())
         }
@@ -107,20 +109,23 @@ export default function TaskView(props) {
     return (
         <Tab
             className='module-task-view'
-            onTabChange={(_, { activeIndex }) => setListType(panes[activeIndex].type)}
             panes={panes.map(({ title, type }) => ({
                 menuItem: title,
-                render: () => (
-                    <TaskList {...{
-                        asTabPane: true,
-                        key: type,
-                        loading: !tasks,
-                        selectedAddress,
-                        data: type === listType && tasks || new Map(),
-                        title,
-                        type,
-                    }} />
-                )
+                render: () => {
+                    const key = getKey(selectedAddress, type)
+                    const tasks = allTasks.get(key)
+                    return (
+                        <TaskList {...{
+                            asTabPane: true,
+                            key: type,
+                            loading: !tasks,
+                            selectedAddress,
+                            data: tasks || new Map(),
+                            title,
+                            type,
+                        }} />
+                    )
+                }
             }))}
         />
     )
