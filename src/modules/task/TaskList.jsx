@@ -6,13 +6,8 @@ import DataTable from '../../components/DataTable'
 // forms
 import TaskForm from './TaskForm'
 // services
-import { query } from '../../services/blockchain'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
-import { selectedAddressBond, getSelected } from '../../services/identity'
-import { isFn, textEllipsis } from '../../utils/utils'
-import { getAddressName } from '../../services/partner'
-import Currency from '../../components/Currency'
 
 const textsCap = translated({
     actions: 'actions',
@@ -84,12 +79,7 @@ class TaskList extends Component {
         this._mounted = false
     }
 
-    render = () => {
-        let { asTabPane, loading } = this.props
-        loading = this.state.loading || loading
-        const el = <DataTable {...{ ...this.props, ...this.state }} />
-        return !asTabPane ? el : <Tab.Pane loading={loading}>{el}</Tab.Pane>
-    }
+    render = () => <DataTable {...{ ...this.props, ...this.state }} />
 }
 TaskList.propTypes = {
     asTabPane: PropTypes.bool,
