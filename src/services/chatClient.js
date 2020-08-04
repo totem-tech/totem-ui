@@ -300,24 +300,43 @@ export class ChatClient {
         // add/get/update project
         //
         // Params:
-        // @hash    string: A hash string generated using the project details as seed. Will be used as ID/key.
-        // @project object
-        // @create  bool: whether to create or update project
-        // @cb      function
-        this.project = (hash, project, create, cb) => socket.emit('project',
-            hash,
+        // @projectId   string: A hash string generated using the project details as seed. Will be used as ID/key.
+        // @project     object
+        // @create      bool: whether to create or update project
+        // @cb          function
+        this.project = (projectId, project, create, cb) => socket.emit('project',
+            projectId,
             project,
             create,
             cb,
         )
         // retrieve projects by an array of hashes
-        this.projectsByHashes = (hashArr, cb) => isFn(cb) && socket.emit('projects-by-hashes',
-            hashArr,
+        this.projectsByHashes = (projectIds, cb) => isFn(cb) && socket.emit('projects-by-hashes',
+            projectIds,
             (err, res, notFoundHashes) => cb(err, new Map(res), notFoundHashes),
         )
 
-        // add/update task
+        /**
+         * @name task
+         * @summary add/update task details to messaging service
+         * 
+         * @param {String}      id ID of the task
+         * @param {Object}      task 
+         * @param {Function}    cb callback function expected arguments:
+         *                  @err    String: error message if query failed
+         */
         this.task = (id, task, cb) => isFn(cb) && socket.emit('task', id, task, cb)
+
+        /**
+         * @name    taskGetById
+         * @summary retrieve a list of tasks details by Task IDs
+         * 
+         * @param   {String|Array}  ids single or array of Task IDs
+         * @param   {Function}      cb Callback function expected arguments:
+         *                      @err    String: error message if query failed
+         *                      @result Map: list of tasks with details
+         */
+        this.taskGetById = (ids, cb) => isFn(cb) && socket.emit('task-get-by-id', ids, cb)
     }
 
     register = (id, secret, cb) => isFn(cb) && socket.emit('register',

@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Tab } from 'semantic-ui-react'
+import { Button } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
 // components
 import DataTable from '../../components/DataTable'
@@ -10,7 +10,7 @@ import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
 
 const textsCap = translated({
-    actions: 'actions',
+    action: 'action',
     assignee: 'assignee',
     bounty: 'bounty',
     create: 'create',
@@ -19,6 +19,7 @@ const textsCap = translated({
     tags: 'tags',
     taskOwner: 'task owner',
     title: 'title',
+    update: 'update',
 }, true)[1]
 const listTypes = Object.freeze({
     approver: 'approver',
@@ -52,7 +53,23 @@ class TaskList extends Component {
                 },
                 { key: 'tags', title: textsCap.tags },
                 { key: 'description', title: textsCap.description },
-                { title: textsCap.actions }
+                {
+                    collapsing: true,
+                    content: (task, taskId) => [
+                        {
+                            icon: 'pencil',
+                            onClick: () => showForm(TaskForm, { taskId, values: task }),
+                            title: textsCap.update,
+                        },
+                        {
+                            icon: 'eye',
+                            onClick: () => this.showDetails(task, taskId),
+                            title: textsCap.techDetails
+                        }
+                    ].map((props, i) => <Button {...props} key={i} />),
+                    textAlign: 'center',
+                    title: textsCap.action
+                },
             ],
             // preserve search keywords
             keywords: cachedData.get(keywordsKey),
@@ -82,12 +99,10 @@ class TaskList extends Component {
     render = () => <DataTable {...{ ...this.props, ...this.state }} />
 }
 TaskList.propTypes = {
-    asTabPane: PropTypes.bool,
-    // valid options: owner, approver, fullfiller
+    // @listType valid options: owner, approver, fulfiller etc
     listType: PropTypes.string,
 }
 TaskList.defaultProps = {
-    asTabPane: false,
     listType: listTypes.owner,
 }
 export default React.memo(TaskList)

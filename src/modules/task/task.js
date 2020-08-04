@@ -31,7 +31,14 @@ export const queueables = {
         queueProps,
     ) => {
         const func = !!recordId ? 'api.tx.orders.changeSpfso' : 'api.tx.orders.createSpfso'
-        const args = [
+        const orderItem = orderItems.map(item => !isArr(item) ? item : {
+            "Product": item[0],
+            "UnitPrice": item[1],
+            "Quantity": item[2],
+            "UnitOfMeasure": item[3],
+        })[0]
+
+        const args = !recordId ? [
             addrApprover,
             addrFulfiller,
             isSell,
@@ -40,15 +47,19 @@ export const queueables = {
             orderType,
             deadline,
             dueDate,
-            orderItems.map(item => !isArr(item) ? item : {
-                "Product": item[0],
-                "UnitPrice": item[1],
-                "Quantity": item[2],
-                "UnitOfMeasure": item[3],
-            })[0], // only send the first item until runtime can handle vec<struct>
+            orderItem,
             token,
-        ]
-        if (!!recordId) args.push(recordId)
+        ] : [
+                addrApprover,
+                addrFulfiller,
+                amountXTX,
+                deadline,
+                dueDate,
+                orderItem,
+                token,
+                recordId
+            ]
+
         return {
             ...queueProps,
             address: addrOrigin,

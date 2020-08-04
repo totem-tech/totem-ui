@@ -1,5 +1,4 @@
-import React from 'react'
-import { ReactiveComponent } from 'oo7-react'
+import React, { Component } from 'react'
 import uuid from 'uuid'
 import FormBuilder from '../components/FormBuilder'
 import { isFn } from '../utils/utils'
@@ -20,7 +19,7 @@ const [texts, textsCap] = translated({
     userIdPlaceholder: 'Enter your desired ID',
 }, true)
 
-export default class FormRegister extends ReactiveComponent {
+export default class FormRegister extends Component {
     constructor(props) {
         super(props)
 

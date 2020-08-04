@@ -183,7 +183,7 @@ export default class HistoryList extends Component {
                     type,
                     value,
                 })),
-            size: 'tiny',
+            // size: 'tiny',
             submitText: null,
         })
     }

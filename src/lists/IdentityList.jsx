@@ -1,5 +1,4 @@
-import React from 'react'
-import { ReactiveComponent } from 'oo7-react'
+import React, { Component } from 'react'
 import { Button, Label } from 'semantic-ui-react'
 import { format } from '../utils/time'
 // components
@@ -32,7 +31,7 @@ const [texts] = translated({
     updateIdentity: 'Update your identity',
 })
 
-export default class IdentityList extends ReactiveComponent {
+export default class IdentityList extends Component {
     constructor(props) {
         super(props)
 

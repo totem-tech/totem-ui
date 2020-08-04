@@ -246,12 +246,12 @@ const setMessage = (task, msg = {}, duration, id, silent = false) => silent ? nu
 }, duration, id)
 
 const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, duration, resultOrError, balance) => {
-    const errMsg = status === ERROR ? resultOrError : ''
+    const errMsg = status === ERROR ? resultOrError : null
     const done = [SUCCESS, ERROR].includes(status)
     const success = status === SUCCESS
     task.status = status
     task.errorMessage = isStr(errMsg) ? errMsg : (
-        errMsg instanceof Error ? `${errMsg}` : undefined
+        errMsg instanceof Error ? `${errMsg}` : null
     )
     const hasError = status === ERROR && task.errorMessage
     hasError && msg.content.unshift(task.errorMessage)
@@ -268,6 +268,8 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
         case SUCCESS:
             // save the result so that @next task can access it if needed
             task.result = resultOrError
+        case ERROR:
+            delete inprogressIds[id]
             break
     }
 
@@ -297,9 +299,8 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
         console.log('Unexpected error occured while executing queue .then()', { rootTask })
         console.error(err)
     }
-    delete inprogressIds[id]
     // execute next only if current task is successful
-    success && isObj(task.next) && _processTask(task.next, id, toastId)
+    if (success && isObj(task.next)) return _processTask(task.next, id, toastId)
 
     // delete root item if no error occured
     queue.delete(id)
@@ -314,11 +315,10 @@ const processArgs = async (rootTask = {}, currentTask = {}) => {
         if (task.name === name) return task.result
         return !isObj(task.next) ? undefined : getResultByName(task.next, name)
     }
-
     const processedArgs = args.map(arg => {
         const { __taskName, __resultSelector } = isObj(arg) ? arg : {}
         const isStatic = !__taskName || !__resultSelector
-        if (isStatic) return args
+        if (isStatic) return arg
         const result = getResultByName(rootTask, __taskName)
         const argValue = eval(__resultSelector)
         return !isFn(argValue) ? argValue : argValue(result)
@@ -337,6 +337,12 @@ const handleChatClient = async (id, rootTask, task, toastId) => {
     const _save = (status, resultOrErr) => setToastNSaveCb(
         id, rootTask, task, status, msg, toastId, silent, toastDuration, resultOrErr
     )
+    try {
+        task.processedArgs = await processArgs(rootTask, task)
+        _save(null)
+    } catch (err) {
+        return _save(ERROR, `${textsCap.processArgsFailed}. ${err}`)
+    }
 
     try {
         let func = task.func
@@ -347,7 +353,7 @@ const handleChatClient = async (id, rootTask, task, toastId) => {
         _save(LOADING)
 
         // initiate request
-        const result = await func.promise.apply(null, args)
+        const result = await func.promise.apply(null, task.processedArgs || args)
         _save(SUCCESS, result)
     } catch (err) {
         _save(ERROR, err)

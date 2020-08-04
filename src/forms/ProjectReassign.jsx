@@ -1,7 +1,6 @@
-import React from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-import { ReactiveComponent } from 'oo7-react'
 import { arrSort, isFn, textEllipsis } from '../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import PartnerForm from '../forms/Partner'
@@ -36,7 +35,7 @@ const [texts] = translated({
     queueTitle: 'Re-assign activity owner',
 })
 
-export default class ReassignProjectForm extends ReactiveComponent {
+export default class ReassignProjectForm extends Component {
     constructor(props) {
         super(props)
 

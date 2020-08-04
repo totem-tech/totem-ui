@@ -1,5 +1,4 @@
-import React from 'react'
-import { ReactiveComponent } from 'oo7-react'
+import React, { Component } from 'react'
 import { Checkbox, Button, Label } from 'semantic-ui-react'
 import { textEllipsis } from '../utils/utils'
 import DataTable from '../components/DataTable'
@@ -36,9 +35,9 @@ const [_, textsCap] = translated({
 	usedBy: 'used by',
 }, true)
 
-export default class PartnerList extends ReactiveComponent {
+export default class PartnerList extends Component {
 	constructor(props) {
-		super(props, { layout: layoutBond })
+		super(props)
 
 		this.state = {
 			listProps: {
@@ -87,9 +86,13 @@ export default class PartnerList extends ReactiveComponent {
 
 	componentWillMount() {
 		this.tieId = addressbook.bond.tie(() => this.getPartners())
+		this.tieIdLayout = layoutBond.tie(layout => this.setState({ layout }))
 	}
 
-	componentWillUnmount = () => addressbook.bond.untie(this.tieId)
+	componentWillUnmount = () => {
+		addressbook.bond.untie(this.tieId)
+		layoutBond.untie(this.tieIdLayout)
+	}
 
 	getActions = partner => {
 		const { address, name, userId } = partner

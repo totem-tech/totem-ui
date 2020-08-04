@@ -12,10 +12,10 @@ const messagingServicePlaceholder = () => new Promise(resolve => resolve(new Map
  * @name useTasks
  * @summary a custom React hook to subscribe to list(s) of task orders
  * 
- * @param {Array} types array of types. 
- * A `type` must be the name of a valid PolkadotJS API function that returns a 
+ * @param {Array} types array of types. A `type` must be the name of a valid PolkadotJS API function that returns a 
  * list of Task Order IDs. Type is valided using the following: `api.query.orders[type]`. Example types: 
- * @param {String} address SS58 string. The identity of 
+ * @param {String} address SS58 string. The identity to retrieve list of tasks for.
+ * @param {Number} timeout (optional) timeout delay in milliseconds. Default: 5000
  * 
  */
 export default function useTasks(types, address, timeout = 5000) {
@@ -30,24 +30,24 @@ export default function useTasks(types, address, timeout = 5000) {
             // older orders can be invalid and have null value
             taskOrders.forEach((order = [], i) => {
                 const [
-                    owner, approver, fullfiller, isSell, amountXTX,
+                    owner, fulfiller, approver, isSell, bountyXTX,
                     isClosed, orderType, deadline, dueDate,
                 ] = order || []
                 const taskId = uniqueTaskIds[i]
                 uniqueTasks.set(taskId, {
                     owner,
                     approver,
-                    fullfiller,
+                    fulfiller,
                     isSell,
-                    amountXTX: eval(amountXTX), // convert Hex string to int if needed
+                    bountyXTX: eval(bountyXTX), // convert Hex string to int if needed
                     isClosed,
                     orderType,
                     deadline,
                     dueDate,
                     // pre-process values for use with DataTable
-                    _amountXTX: <Currency value={eval(amountXTX)} />,
+                    _amountXTX: <Currency value={eval(bountyXTX)} />,
                     _owner: getAddressName(owner) || textEllipsis(owner, 15),
-                    _fulfiller: getAddressName(fullfiller) || textEllipsis(fullfiller, 15),
+                    _fulfiller: getAddressName(fulfiller) || textEllipsis(fulfiller, 15),
                 })
             })
 
@@ -74,7 +74,7 @@ export default function useTasks(types, address, timeout = 5000) {
 
             // on receive update tasks lists
             promise.promise.then(addDetails)
-            // if times out update component without title, desc etc
+            // if times out or fails update component without title, desc etc
             promise.catch(() => addDetails(new Map()))
         }
 
@@ -82,7 +82,7 @@ export default function useTasks(types, address, timeout = 5000) {
             // exclude any invalid type
             types = types.filter(x => !!api.query.orders[x])
             const args = types.map(x => [api.query.orders[x], address])
-            console.log({ address })
+
             // construct a single query to retrieve 3 different types of lists with a single subscription
             unsubscribers.taskIds2d = await query('api.queryMulti', [
                 args,

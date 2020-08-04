@@ -1,16 +1,18 @@
-import React from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Checkbox } from 'semantic-ui-react'
-import { ReactiveComponent } from 'oo7-react'
 import { hasValue, isDefined, isArr, isBond, isFn, isObj, objWithoutKeys } from '../utils/utils'
 
-export default class CheckboxGroup extends ReactiveComponent {
+const excludeKeys = ['bond', 'inline', 'multiple', 'name', 'options', 'required', 'type', 'value', 'width']
 
+export default class CheckboxGroup extends Component {
     componentWillMount() {
         let { bond, multiple, radio, value } = this.props
         const allowMultiple = !radio && multiple
         const hasBond = isBond(bond)
-        value = value || (hasBond && bond._value) || (allowMultiple ? [] : undefined)
+        if (!hasValue(value)) {
+            value = (hasBond && bond._value) || (allowMultiple ? [] : undefined)
+        }
         if (allowMultiple) {
             value = isArr(value) ? value : (hasValue(value) ? [value] : [])
         }
@@ -45,7 +47,6 @@ export default class CheckboxGroup extends ReactiveComponent {
     render() {
         const { inline, name, options, style } = this.props
         const { allowMultiple, value } = this.state
-        const excludeKeys = ['bond', 'inline', 'multiple', 'name', 'options', 'required', 'type', 'value', 'width']
         const commonProps = objWithoutKeys(this.props, excludeKeys)
         return (
             <div style={style}>
@@ -76,6 +77,7 @@ export default class CheckboxGroup extends ReactiveComponent {
         )
     }
 }
+
 CheckboxGroup.propTypes = {
     // bond: Bond
     inline: PropTypes.bool,

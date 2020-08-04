@@ -35,6 +35,7 @@ export default function TaskView(props) {
             type: 'approver',
         },
     ].map(({ name, title, type }) => ({
+        active: true,
         menuItem: <Menu.Item  {...{ title, content: name, key: type }} />, //<span title={title}>{name}</span>
         render: () => {
             const key = getKey(address, type)

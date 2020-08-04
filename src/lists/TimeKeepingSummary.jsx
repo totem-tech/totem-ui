@@ -1,54 +1,50 @@
-import React from 'react'
-import { Bond } from 'oo7'
-import { ReactiveComponent } from 'oo7-react'
+import React, { Component } from 'react'
 import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
+import { isFn } from '../utils/utils'
 import DataTable from '../components/DataTable'
 import { getSelected, selectedAddressBond } from '../services/identity'
 import { translated } from '../services/language'
 import { getProjects, query } from '../services/timeKeeping'
-import { isFn } from '../utils/utils'
 
-const [words, wordsCap] = translated({
+const textsCap = translated({
     activity: 'activity',
     percentage: 'percentage',
-}, true)
-const [texts] = translated({
-    noTimeRecords: 'You have not yet booked time on an activity',
-    totalBlocks: 'Total Time in Blocks',
-    totalHours: 'Total Time in Hours',
-    yourContribution: 'How Your Time is Divided',
-})
+    noTimeRecords: 'you have not yet booked time on an activity',
+    totalBlocks: 'total time in blocks',
+    totalHours: 'total time in hours',
+    yourContribution: 'how your time is divided',
+}, true)[1]
 
-export default class TimeKeepingSummary extends ReactiveComponent {
+export default class TimeKeepingSummary extends Component {
     constructor(props) {
         super(props)
 
         this.state = {
             data: [],
             emptyMessage: {
-                content: texts.noTimeRecords,
+                content: textsCap.noTimeRecords,
                 status: 'warning',
             },
             searchable: false,
             columns: [
                 {
                     key: 'name',
-                    title: wordsCap.activity,
+                    title: textsCap.activity,
                 },
                 {
                     key: 'totalHours',
                     textAlign: 'center',
-                    title: texts.totalHours,
+                    title: textsCap.totalHours,
                 },
                 {
                     key: 'totalBlocks',
                     textAlign: 'center',
-                    title: texts.totalBlocks,
+                    title: textsCap.totalBlocks,
                 },
                 {
                     key: 'percentage',
                     textAlign: 'center',
-                    title: texts.yourContribution,
+                    title: textsCap.yourContribution,
                 }
             ]
         }
