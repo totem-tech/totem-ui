@@ -111,7 +111,7 @@ export const useSelected = () => {
 
     useEffect(() => {
         const subscribed = rxSelected.subscribe(address => setSelected(address))
-        return subscribed.unsubscribe
+        return () => subscribed.unsubscribe()
     }, [])
 
     return selected

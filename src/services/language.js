@@ -36,7 +36,7 @@ export const fetchNSaveTexts = async () => {
     const selectedHash = generateHash(getTexts(selected) || '')
     const engHash = generateHash(getTexts(EN) || '')
     const func = client.languageTranslations.promise
-    const [[textsEn], [texts]] = await Promise.all([
+    const [textsEn, texts] = await Promise.all([
         func(EN, engHash),
         func(selected, selectedHash),
     ])

@@ -24,15 +24,7 @@ export const bond = new Bond().defaultTo(getSelected())
 // @to      string: currency ticker to convert to
 //
 // retuns   number
-export const convertTo = async (amount, from, to) => {
-    let convertedAmount, error
-    await client.currencyConvert.promise(from, to, amount, (err, result) => {
-        convertedAmount = result
-        error = err
-    })
-    if (error) throw new Error(error)
-    return convertedAmount
-}
+export const convertTo = async (amount, from, to) => await client.currencyConvert.promise(from, to, amount)
 
 // get selected currency code
 export function getSelected() {
@@ -56,12 +48,10 @@ export const setSelected = async (ISO) => {
 
 export const updateCurrencies = async () => {
     if (lastUpdated && new Date() - lastUpdated < updateFrequencyMs) return
-
-    const sortedTickers = rwCache().currencies
-    const tickersHash = generateHash(sortedTickers)
-    let currencies = null
-    await client.currencyList.promise(tickersHash, ((err, currencies = []) => {
-        err && console.error('Failed to retrieve currencies', err)
+    try {
+        const sortedArr = rwCache().currencies
+        const hash = generateHash(sortedArr)
+        const currencies = await client.currencyList.promise(hash)
         if (currencies.length === 0) return
         currencies.forEach(x => {
             x.nameInLanguage = x.nameInLanguage || x.currency
@@ -70,6 +60,8 @@ export const updateCurrencies = async () => {
         rwCache('currencies', arrSort(currencies, 'ISO'))
         lastUpdated = new Date()
         console.log({ currencies })
-    }))
-    return currencies
+        return currencies
+    } catch (err) {
+        console.error('Failed to retrieve currencies', err)
+    }
 }

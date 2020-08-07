@@ -114,16 +114,18 @@ export const getCurrentBlock = async () => {
 // getTypes returns a promise with 
 export const getTypes = () => new Promise(resolve => resolve(types))
 
-// query storage makes API calls using PolkadotJS. All values returned will be sanitised.
-//
-// Params:
-// @func    string: path to the PolkadotJS API function as a string. Eg: 'api.rpc.system.health'
-// @args    array: arguments to be supplied when invoking the API function.
-//              To subscribe to the API supply a callback function as the last item in the array.
-// @print   boolean: if true, will print the result of the query
-//
-// Returns  function/any: If callback is supplied in @args, will return the unsubscribe function.
-//              Otherwise, value of the query will be returned
+/**
+ * @name query
+ * @summary retrieve data from Blockchain storage using PolkadotJS API. All values returned will be sanitised.
+ *
+ * @param {Function}    func    string: path to the PolkadotJS API function as a string. Eg: 'api.rpc.system.health'
+ * @param {Array}       args    array: arguments to be supplied when invoking the API function.
+ *                                  To subscribe to the API supply a callback function as the last item in the array.
+ * @param {Boolean}            print   boolean: if true, will print the result of the query
+ *
+ * @returns {Function|*}        Function/Result: If callback is supplied in @args, will return the unsubscribe function.
+ *                              Otherwise, sanitised value of the query will be returned.
+ */
 export const query = async (func, args = [], multi = false, print = false) => await queryHelper(
     (await getConnection()).api,
     func,

@@ -339,7 +339,7 @@ const handleChatClient = async (id, rootTask, task, toastId) => {
     )
     try {
         task.processedArgs = await processArgs(rootTask, task)
-        _save(null)
+        _save(LOADING)
     } catch (err) {
         return _save(ERROR, `${textsCap.processArgsFailed}. ${err}`)
     }
@@ -349,7 +349,7 @@ const handleChatClient = async (id, rootTask, task, toastId) => {
         func = (func.startsWith('client.') ? '' : 'client.') + func
         func = eval(func)
         eval(client) // just make sure client variable isn't removed by accident
-        if (!isFn(func)) return _save(ERROR, textsCap.invalidFunc)
+        if (!isFn(func)) throw textsCap.invalidFunc
         _save(LOADING)
 
         // initiate request

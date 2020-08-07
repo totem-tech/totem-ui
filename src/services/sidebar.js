@@ -2,6 +2,7 @@ import React from 'react'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
 // Views (including lists and forms)
+import FinancialStatementsView from '../modules/financialStatement/view'
 import GettingStarted from '../views/GettingStartedView'
 import HistoryList from '../lists/HistoryList'
 import IdentityList from '../lists/IdentityList'
@@ -306,8 +307,14 @@ export const sidebarItems = [
     {
         content: EventList,
         icon: 'history',
-        name: 'Events',
+        name: 'blockchain-events',
         title: 'Events'
+    },
+    {
+        content: FinancialStatementsView,
+        icon: '',
+        name: 'financial-statement',
+        title: 'Financial statement',
     },
 ].map(item => {
     const {

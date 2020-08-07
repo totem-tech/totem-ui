@@ -96,16 +96,16 @@ export default class TaskForm extends Component {
         // keys used to generate BONSAI token hash
         this.bonsaiKeys = [
             this.names.currency,
-            this.names.description,
             this.names.publish,
-            this.names.tags,
             this.names.title,
+            this.names.description,
+            this.names.tags,
         ]
 
         this.state = {
             header: isObj(values) && !!taskId ? textsCap.formHeaderUpdate : textsCap.formHeader,
             loading: true,
-            // onChange: (_, values) => this.setState({ values }),
+            onChange: (_, values) => this.setState({ values }),
             onSubmit: this.handleSubmit,
             values: {},
             inputs: [
@@ -487,7 +487,7 @@ export default class TaskForm extends Component {
         const token = generateHash(tokenData)
         const queueTaskName = 'createTask'
         const thenCb = last => (success, err) => {
-            if (!last && !err) return
+            if (!last && !success) return
             this.setState({
                 closeText: success ? textsCap.close : undefined,
                 message: {
@@ -524,12 +524,12 @@ export default class TaskForm extends Component {
                             return data[0] === '${ownerAddress}' && data[1] === '${assignee}'
                         })
                         const taskId = event && event.data[2]
-                        console.log({ taskId })
                         if (!event || !taskId.startsWith('0x')) throw new Error('${textsCap.taskIdParseError}')
                         return taskId
                     }`
                 },
                 dbValues,
+                ownerAddress,
             ]
         }
         const queueProps = queueables.save.apply(null, [

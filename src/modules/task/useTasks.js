@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react'
 import { textEllipsis, isFn, arrUnique } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 import Currency from '../../components/Currency'
+// services
 import { query, getConnection } from '../../services/blockchain'
+import client from '../../services/chatClient'
 import { getAddressName } from '../../services/partner'
 import storage from '../../services/storage'
 import { translated } from '../../services/language'
@@ -109,9 +111,9 @@ export default function useTasks(types, address, timeout = 5000) {
                 })
             })
 
-            const promise = PromisE.timeout(messagingServicePlaceholder(), timeout)
+            const promise = PromisE.timeout(client.taskGetById.promise(uniqueTaskIds), timeout)
             // add title description etc retrieved from Messaging Service
-            const addDetails = (detailsMap = new Map()) => {
+            const addDetails = (detailsMap) => {
                 if (!mounted) return
                 Array.from(uniqueTasks).forEach(([id, task]) => {
                     const { title, description, tags } = detailsMap.get(id) || {}

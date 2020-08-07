@@ -26,11 +26,11 @@ export const queueables = {
         // 2D array of order items (will be converted to objects): [[productHash, unitRate, qty, unitOfMeasure]]
         // Or, array of OrderItemStruct (see utils => polkadot types) objects 
         orderItems = [],
-        recordId, // (optional) determines whether to create or update a record
+        taskId, // (optional) determines whether to create or update a record
         token, // BONSAI token hash
         queueProps,
     ) => {
-        const func = !!recordId ? 'api.tx.orders.changeSpfso' : 'api.tx.orders.createSpfso'
+        const func = !!taskId ? 'api.tx.orders.changeSpfso' : 'api.tx.orders.createSpfso'
         const orderItem = orderItems.map(item => !isArr(item) ? item : {
             "Product": item[0],
             "UnitPrice": item[1],
@@ -38,7 +38,7 @@ export const queueables = {
             "UnitOfMeasure": item[3],
         })[0]
 
-        const args = !recordId ? [
+        const args = !taskId ? [
             addrApprover,
             addrFulfiller,
             isSell,
@@ -56,8 +56,8 @@ export const queueables = {
                 deadline,
                 dueDate,
                 orderItem,
+                taskId,
                 token,
-                recordId
             ]
 
         return {

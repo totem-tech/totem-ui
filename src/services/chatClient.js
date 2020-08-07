@@ -43,10 +43,11 @@ export const getClient = () => {
     //     without promise:
     //          client.messate('hello universe!', (err, arg0, arg1) => console.log({err, arg0, arg1}))
     //     with promise:
-    //          client.message.promise('hello universe!').then(
-    //              console.log, // success callback excluding the error message
-    //              console.log, // error callback with only error message
-    //          )
+    //          try {
+    //              const result = await client.message.promise('hello universe!')
+    //          } catch(errMsg) { 
+    //              console.log(errMsg)
+    //          }
     //
     Object.keys(instance).forEach(key => {
         const func = instance[key]
@@ -67,8 +68,11 @@ export const getClient = () => {
                         const err = cbArgs[0]
                         isFn(originalCallback) && originalCallback.apply({}, cbArgs)
                         if (!!err) return reject(err)
+                        const result = cbArgs.slice(1)
                         // resolver only takes a single argument
-                        resolve(cbArgs.slice(1)) // exclude the error message
+                        // if callback is invoked with more than one value (excluding error message),
+                        // then resolve with an array of value arguments, otherwise, resolve with only the result value.
+                        resolve(result.length > 1 ? result : result[0])
                     }
 
                     func.apply(instance, args)
@@ -178,6 +182,8 @@ export class ChatClient {
 
         // Check if User ID Exists
         this.isUserOnline = (userId, cb) => isFn(cb) && socket.emit('is-user-online', userId, cb)
+
+        this.glAccounts = (accountNumbers, cb) => isFn(cb) && socket.emit('gl-accounts', accountNumbers, cb)
 
         // FOR BUILD MODE ONLY
         // Retrieve a list of error messages used in the messaging service
@@ -322,10 +328,11 @@ export class ChatClient {
          * 
          * @param {String}      id ID of the task
          * @param {Object}      task 
+         * @param {String}      ownerAddress
          * @param {Function}    cb callback function expected arguments:
          *                  @err    String: error message if query failed
          */
-        this.task = (id, task, cb) => isFn(cb) && socket.emit('task', id, task, cb)
+        this.task = (id, task, ownerAddress, cb) => isFn(cb) && socket.emit('task', id, task, ownerAddress, cb)
 
         /**
          * @name    taskGetById
@@ -336,7 +343,10 @@ export class ChatClient {
          *                      @err    String: error message if query failed
          *                      @result Map: list of tasks with details
          */
-        this.taskGetById = (ids, cb) => isFn(cb) && socket.emit('task-get-by-id', ids, cb)
+        this.taskGetById = (ids, cb) => isFn(cb) && socket.emit('task-get-by-id',
+            ids,
+            (err, result) => cb(err, new Map(result)),
+        )
     }
 
     register = (id, secret, cb) => isFn(cb) && socket.emit('register',
