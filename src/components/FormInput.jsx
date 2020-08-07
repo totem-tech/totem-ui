@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Accordion, Button, Dropdown, Form, Input, TextArea } from 'semantic-ui-react'
+import PromisE from '../utils/PromisE'
 import {
 	deferred,
 	hasValue,
@@ -9,7 +10,6 @@ import {
 	isDefined,
 	isFn,
 	isObj,
-	isPromise,
 	isStr,
 	isValidNumber,
 	objWithoutKeys,
@@ -183,9 +183,13 @@ export default class FormInput extends Component {
 			triggerChange()
 		}
 
-		const promiseOrRes = validate(event, data)
-		if (!isPromise(promiseOrRes)) return customValidate(promiseOrRes)
-		promiseOrRes.then(customValidate, err => console.log({ promiseError: err }))
+		PromisE(validate(event, data)).then(
+			customValidate,
+			err => console.log({ validationError: err, input: this.props })
+		)
+		// const promiseOrRes = new PromisE(validate(event, data))
+		// if (!isPromise(promiseOrRes)) return customValidate(promiseOrRes)
+		// promiseOrRes.then(customValidate, err => console.log({ promiseError: err }))
 	}
 
 	setMessage = (message = {}) => this.setState({ message })

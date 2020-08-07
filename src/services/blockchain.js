@@ -5,13 +5,15 @@ import types from '../utils/totem-polkadot-js-types'
 // services
 import { translated } from './language'
 import storage from './storage'
+import { setToast } from './toast'
 
 const MODULE_KEY = 'blockchain'
 const TX_STORAGE = 'tx_storage'
 const textsCap = translated({
-    invalidApiFunc: 'Invalid API function',
-    invalidMultiQueryArgs: 'Failed to process arguments for multi-query',
-}, true)[0]
+    invalidApiFunc: 'invalid API function',
+    invalidMultiQueryArgs: 'failed to process arguments for multi-query',
+    nodeConnectionErr: 'failed to connect to Totem blockchain network'
+}, true)[1]
 let config = {
     primary: 'Ktx',
     unit: 'Transactions',
@@ -55,18 +57,18 @@ setDefaultConfig(nodes, types)
 
 export const getConfig = () => config
 export const getConnection = async (create = true) => {
-    if (connection.api && connection.api._isConnected.value || !create) return connection
-    if (connectPromise) {
-        await connectPromise
-
-        // if connection is rejected attempt to connect again
-        if (connectPromise.rejected && create) await getConnection(true)
-        return connection
-    }
-    const nodeUrl = nodes[0]
-    console.log('Polkadot: connecting to', nodeUrl)
-    connectPromise = PromisE(connect(nodeUrl, types, true))
     try {
+        if (connection.api && connection.api._isConnected.value || !create) return connection
+        if (connectPromise) {
+            await connectPromise
+
+            // if connection is rejected attempt to connect again
+            if (connectPromise.rejected && create) await getConnection(true)
+            return connection
+        }
+        const nodeUrl = nodes[0]
+        console.log('Polkadot: connecting to', nodeUrl)
+        connectPromise = PromisE(connect(nodeUrl, types, true))
         const { api, keyring, provider } = await connectPromise
         console.log('Connected using Polkadot', { api, provider })
         connection = {
@@ -75,6 +77,7 @@ export const getConnection = async (create = true) => {
             keyring,
             nodeUrl,
             isConnected: true,
+            errorShown: false,
         }
 
         // none of these work!!!!
@@ -89,6 +92,13 @@ export const getConnection = async (create = true) => {
     } catch (err) {
         // make sure to reset when rejected
         connection.isConnected = false
+        // set toast when connection fails for the first time
+        !connection.errorShown && setToast(
+            { content: textsCap.nodeConnectionErr, status: 'error' },
+            3000,
+            'blockchain-connection',
+        )
+        connection.errorShown = true
         throw err
     }
     return connection

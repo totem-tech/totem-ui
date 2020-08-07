@@ -3,7 +3,7 @@ import { Menu, Tab } from 'semantic-ui-react'
 import TaskList from './TaskList'
 import { useSelected } from '../../services/identity'
 import { translated } from '../../services/language'
-import useTasks, { getKey } from './useTasks'
+import useTasks from './useTasks'
 
 const textsCap = translated({
     beneficiary: 'my tasks',
@@ -38,8 +38,7 @@ export default function TaskView(props) {
         active: true,
         menuItem: <Menu.Item  {...{ title, content: name, key: type }} />, //<span title={title}>{name}</span>
         render: () => {
-            const key = getKey(address, type)
-            const tasks = allTasks.get(key)
+            const tasks = allTasks.get(type)
             return (
                 <Tab.Pane {...{ loading: !tasks }}>
                     {tasks && (

@@ -2,9 +2,12 @@ import React, { Component } from 'react'
 import { Button } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
-import Currency from '../../components/Currency'
 import { arrSort, deferred, isObj, isValidNumber, objClean, generateHash } from '../../utils/utils'
+import PromisE from '../../utils/PromisE'
+import { BLOCK_DURATION_SECONDS, format } from '../../utils/time'
+// components
+import Currency from '../../components/Currency'
+import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import PartnerForm from '../../forms/Partner'
 // services
 import { getConnection, getCurrentBlock, hashTypes, query } from '../../services/blockchain'
@@ -17,11 +20,9 @@ import {
 import { bond, getSelected } from '../../services/identity'
 import { translated } from '../../services/language'
 import partners from '../../services/partner'
-import { BLOCK_DURATION_SECONDS, format } from '../../utils/time'
 import { queueables, PRODUCT_HASH_LABOUR } from './task'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import { showForm } from '../../services/modal'
-import PromisE from '../../utils/PromisE'
 
 const textsCap = translated({
     addedToQueue: 'request added to queue',
@@ -104,7 +105,7 @@ export default class TaskForm extends Component {
         this.state = {
             header: isObj(values) && !!taskId ? textsCap.formHeaderUpdate : textsCap.formHeader,
             loading: true,
-            onChange: (_, values) => this.setState({ values }),
+            // onChange: (_, values) => this.setState({ values }),
             onSubmit: this.handleSubmit,
             values: {},
             inputs: [
@@ -349,7 +350,7 @@ export default class TaskForm extends Component {
 
     // converts a block number to date string formatted as yyyy-mm-dd
     blockToDateStr(blockNum, currentBlockNum) {
-        if (!blockNum) return ''
+        if (!isValidNumber(blockNum)) return blockNum
         const numSeconds = (blockNum - currentBlockNum) * BLOCK_DURATION_SECONDS
         const now = new Date()
         now.setSeconds(now.getSeconds() + numSeconds)
