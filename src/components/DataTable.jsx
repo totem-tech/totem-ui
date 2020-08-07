@@ -22,7 +22,7 @@ const textsCap = translated({
     selectAll: 'select all',
 }, true)[1]
 
-class DataTable extends Component {
+export default class DataTable extends Component {
     constructor(props) {
         super(props)
 
@@ -413,6 +413,3 @@ const styles = {
         width: '100%'
     }
 }
-
-
-export default React.memo(DataTable)

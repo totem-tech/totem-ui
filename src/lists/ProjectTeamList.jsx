@@ -15,13 +15,13 @@ import { get as getPartner } from '../services/partner'
 import { query } from '../services/timeKeeping'
 import { getUser } from '../services/chatClient'
 
-const [words, wordsCap] = translated({
+const wordsCap = translated({
     accepted: 'accepted',
     invite: 'invite',
     invited: 'invited',
     status: 'status',
     team: 'team',
-}, true)
+}, true)[1]
 const [texts] = translated({
     addPartner: 'Add Partner',
     emptyMessage: 'No team member available. Click on the invite button to invite parters.',
@@ -34,25 +34,20 @@ export default class ProjectTeamList extends Component {
         super(props)
 
         this.state = {
-            ownerAddress: getSelected().address,
-            listProps: {
-                columns: [
-                    // { key: '_userId', title: texts.userId },
-                    { key: 'name', title: wordsCap.team },
-                    { key: '_status', textAlign: 'center', title: wordsCap.status },
-                ],
-                data: new Map(),
-                emptyMessage: { content: texts.emptyMessage },
-                rowProps: ({ accepted }) => ({ positive: accepted }),
-                searchExtraKeys: ['address', 'userId'],
-                topLeftMenu: [{
-                    content: wordsCap.invite,
-                    onClick: () => showForm(TimeKeepingInviteForm, {
-                        // onSubmit: success => success && this.loadWorkers(),
-                        values: { projectHash: this.props.projectHash }
-                    })
-                }]
-            },
+            columns: [
+                { key: 'name', title: wordsCap.team },
+                { key: '_status', textAlign: 'center', title: wordsCap.status },
+            ],
+            data: new Map(),
+            emptyMessage: { content: texts.emptyMessage },
+            rowProps: ({ accepted }) => ({ positive: accepted }),
+            searchExtraKeys: ['address', 'userId'],
+            topLeftMenu: [{
+                content: wordsCap.invite,
+                onClick: () => showForm(TimeKeepingInviteForm, {
+                    values: { projectHash: this.props.projectHash }
+                })
+            }],
             searchExtraKeys: ['userId', 'status']
         }
 
@@ -62,64 +57,21 @@ export default class ProjectTeamList extends Component {
 
     componentWillMount() {
         this._mounted = true
-        let ignoredFirst = false
         const { projectHash: projectId } = this.props
         const { listInvited, listWorkers } = query.worker
         this.unsubscribers = {
-            workersAccepted: listWorkers(projectId, this.setWorkers(projectId, true)),
-            workersInvited: listInvited(projectId, this.setWorkers(projectId, false)),
+            workersAccepted: listWorkers(projectId, this.setWorkersCb(projectId, true)),
+            workersInvited: listInvited(projectId, this.setWorkersCb(projectId, false)),
         }
-        this.tieId = selectedAddressBond.tie(ownerAddress => {
-            // force reset everything
-            const { listProps } = this.state
-            listProps.data = !ignoredFirst ? listProps.data : new Map()
-            this.setState({ ownerAddress, listProps })
-            if (!ignoredFirst) {
-                ignoredFirst = true
-                return
-            }
-            this.componentWillUnmount()
-            this.componentWillMount()
-        })
     }
 
     componentWillUnmount() {
         this._mounted = false
         Object.values(this.unsubscribers).forEach(fn => isFn(fn) && fn())
-        selectedAddressBond.untie(this.tieId)
     }
 
-    // loadWorkers = () => {
-    //     const { projectHash: projectId } = this.props
-    //     const { listProps } = this.state
-    //     if (!projectId) {
-    //         listProps.data = []
-    //         return this.setState({ listProps })
-    //     }
-
-    //     getProjectWorkers(projectId).then(({ workers }) => {
-    //         Array.from(workers).forEach(([_, invite]) => {
-    //             const { accepted, address, name } = invite
-    //             const isOwnIdentity = !!getIdentity(address)
-    //             invite._status = accepted === true ? words.accepted : (!isOwnIdentity ? words.invited : (
-    //                 // Worker identity belongs to current user => button to accept or reject
-    //                 <ButtonAcceptOrReject onClick={accepted => handleTKInvitation(projectId, address, accepted)} />
-    //             ))
-    //             invite.name = name || (
-    //                 <Button
-    //                     content={texts.addPartner}
-    //                     onClick={() => showForm(PartnerForm, { values: { address } })}
-    //                 />
-    //             )
-    //         })
-    //         listProps.data = workers
-    //         this.setState({ listProps })
-    //     })
-    // }
-
-    setWorkers = (projectId, accepted) => workerAddresses => {
-        const { listProps } = this.state
-        const { data } = listProps
+    setWorkersCb = (projectId, accepted) => workerAddresses => {
+        const { data } = this.state
         const { id: currentUserId } = getUser() | {}
         workerAddresses.forEach(address => {
             let { name, userId } = getPartner(address) || {}
@@ -134,7 +86,6 @@ export default class ProjectTeamList extends Component {
                 }
             }
 
-            // if (!accepted && data.get(address)) return
             data.set(address, {
                 accepted,
                 address,
@@ -146,7 +97,7 @@ export default class ProjectTeamList extends Component {
                 ),
                 invited: true,
                 userId,
-                _status: accepted ? words.accepted : (!isOwnIdentity ? words.invited : (
+                _status: accepted ? wordsCap.accepted : (!isOwnIdentity ? wordsCap.invited : (
                     // Worker identity belongs to current user => button to accept or reject
                     <ButtonAcceptOrReject onClick={accept => handleTKInvitation(
                         projectId,
@@ -155,12 +106,12 @@ export default class ProjectTeamList extends Component {
                     )} />
                 ))
             })
-        })
 
-        this.setState({ listProps })
+        })
+        this.setState({ data })
     }
 
-    render = () => <DataTable {...this.state.listProps} />
+    render = () => <DataTable {...this.state} />
 }
 ProjectTeamList.propTypes = {
     projectHash: PropTypes.string.isRequired,
