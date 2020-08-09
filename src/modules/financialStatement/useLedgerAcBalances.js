@@ -3,15 +3,14 @@ import { query, getConnection } from '../../services/blockchain'
 import { isFn, isAddress } from '../../utils/utils'
 import client from '../../services/chatClient'
 
-export default function useBalancesByLedger(address) {
-    const [balances, setBalances] = useState([])
+export default function useLedgerAcBalances(address) {
+    const [glAccountBalances, setGlAccountBalances] = useState()
 
     useEffect(() => {
         let mounted = true
         const unsubscribers = {}
         const handleAccounts = async (accounts) => {
             const glAccounts = await client.glAccounts.promise(accounts.map(a => `${a}`)) // convert to string
-            console.log(glAccounts)
             // unsubscribe if there is already an existing subscription
             unsubscribers.balance && unsubscribers.balance()
             unsubscribers.balance = await query(
@@ -25,19 +24,21 @@ export default function useBalancesByLedger(address) {
             )
         }
         const handleBalancesCb = (accounts, glAccounts) => (_, balances) => {
-            setBalances(new Map(
-                balances.map(({ negative, words }, i) => [
-                    accounts[i],
-                    (negative ? -1 : 1) * words[0],
-                ])
-            ))
+            balances = balances.map(({ negative, words }) => (negative ? -1 : 1) * words[0])
+            glAccounts.forEach(glAccount => {
+                const { number: account } = glAccount
+                const index = accounts.indexOf(parseInt(account))
+                glAccount._balance = balances[index] || 0
+            })
+
+            setGlAccountBalances(glAccounts)
         }
         isAddress(address) && getConnection().then(async () => {
             if (!mounted) return
             unsubscribers.accounts && unsubscribers.accounts()
             unsubscribers.accounts = await query(
                 'api.query.accounting.accountsById',
-                [address, handleAccounts], //
+                [address, handleAccounts],
             )
         })
 
@@ -47,5 +48,5 @@ export default function useBalancesByLedger(address) {
         }
     }, [address])
 
-    return balances
+    return glAccountBalances
 }

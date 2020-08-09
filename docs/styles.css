@@ -175,7 +175,7 @@
   overflow: auto !important;
 }
 .empty-message:not(:only-child) {
-  display: none;
+  display: none !important;
 }
 /* Fixes the dimmer height being limited due to the use of scrollbar */ 
 .mobile.sidebar-visible .main-content.pusher.container:after {
