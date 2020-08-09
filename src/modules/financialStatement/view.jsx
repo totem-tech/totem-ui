@@ -9,12 +9,12 @@ import { useSelected } from '../../services/identity'
 export default function () {
     const selectedAddress = useSelected()
     const glAcBalances = useLedgerAcBalances(selectedAddress)
-    const levelBalances = getLevelBalances(glAcBalances)
-    console.log({ glAcBalances, levelBalances })
+    const nestedBalances = getNestedBalances(glAcBalances)
+    console.log({ glAcBalances, nestedBalances })
     return (
         <div style={{ whiteSpace: 'pre' }}>
             {glAcBalances && (
-                levelBalances.map((level, i) => (
+                nestedBalances.map((level, i) => (
                     <AccountDrillDownList {...{
                         key: i + level.balance,
                         levels: [level],
@@ -86,7 +86,7 @@ const AccountDrillDownList = React.memo(({ nestedLevelNum = 0, levels, style }) 
     )
 })
 
-const getLevelBalances = (glAccounts = []) => {
+const getNestedBalances = (glAccounts = []) => {
     const setLevelBalance = (parent, title, balance = 0) => {
         let level = parent.find(x => x.title === title)
         if (!level) {
