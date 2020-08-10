@@ -1,38 +1,10 @@
 import React, { useState } from 'react'
+import PropTypes from 'prop-types'
+import { isArr } from '../../utils/utils'
 import { Accordion, Icon } from 'semantic-ui-react'
 import Currency from '../../components/Currency'
-import Message from '../../components/Message'
-import useLedgerAcBalances from './useLedgerAcBalances'
-import { useSelected } from '../../services/identity'
 
-
-export default function () {
-    const selectedAddress = useSelected()
-    const glAcBalances = useLedgerAcBalances(selectedAddress)
-    const nestedBalances = getNestedBalances(glAcBalances)
-    console.log({ glAcBalances, nestedBalances })
-    return (
-        <div style={{ whiteSpace: 'pre' }}>
-            {glAcBalances && (
-                nestedBalances.map((level, i) => (
-                    <AccountDrillDownList {...{
-                        key: i + level.balance,
-                        levels: [level],
-                        style: { margin: '15px 0' }
-                    }} />
-                ))
-            )}
-            <Message {...{
-                className: 'empty-message',
-                content: 'Loading...',
-                showIcon: true,
-                status: 'loading',
-            }} />
-        </div>
-    )
-}
-
-const AccountDrillDownList = React.memo(({ nestedLevelNum = 0, levels, style }) => {
+export const AccountDrillDownList = ({ glAccounts = [], nestedLevelNum = 0, style }) => {
     const [activeIndex, setActiveIndex] = useState()
     const AccordionEL = nestedLevelNum ? Accordion.Accordion : Accordion
     const props = nestedLevelNum ? {} : {
@@ -45,7 +17,7 @@ const AccountDrillDownList = React.memo(({ nestedLevelNum = 0, levels, style }) 
     props.style = style
     return (
         <AccordionEL {...props}>
-            {levels.map(({ balance, children = [], title }, i) => {
+            {glAccounts.map(({ balance, children = [], title }, i) => {
                 const active = activeIndex === i || !children.length
                 return (
                     <React.Fragment key={title + i}>
@@ -84,9 +56,23 @@ const AccountDrillDownList = React.memo(({ nestedLevelNum = 0, levels, style }) 
             })}
         </AccordionEL >
     )
-})
+}
+AccountDrillDownList.propTypes = {
+    glAccounts: PropTypes.array,
+    nestedLevelNum: PropTypes.number,
+    style: PropTypes.object,
+}
 
-const getNestedBalances = (glAccounts = []) => {
+/**
+ * @name    getNestedBalances
+ * @summary generate multi-dimentional array using the result of `useLedgerAcBalances()` for use with drill down list
+ * 
+ * @param {Array} glAccounts 
+ * 
+ * @returns {Array}
+ */
+export const getNestedBalances = (glAccounts = []) => {
+    if (!isArr(glAccounts)) return []
     const setLevelBalance = (parent, title, balance = 0) => {
         let level = parent.find(x => x.title === title)
         if (!level) {
@@ -102,11 +88,13 @@ const getNestedBalances = (glAccounts = []) => {
         return level
     }
 
-    return glAccounts.reduce((levels, { typeName, categoryName, categoryGrpName, groupName, _balance = 0 }) => {
-        const type = setLevelBalance(levels, typeName, _balance)
-        const category = setLevelBalance(type.children, categoryName, _balance)
-        const categoryGrp = setLevelBalance(category.children, categoryGrpName, _balance)
-        const group = setLevelBalance(categoryGrp.children, groupName, _balance)
+    return glAccounts.reduce((levels, { typeName, categoryName, categoryGrpName, groupName, balance = 0 }) => {
+        const type = setLevelBalance(levels, typeName, balance)
+        const category = setLevelBalance(type.children, categoryName, balance)
+        const categoryGrp = setLevelBalance(category.children, categoryGrpName, balance)
+        const group = setLevelBalance(categoryGrp.children, groupName, balance)
         return levels
     }, [])
 }
+
+export default React.memo(AccountDrillDownList)

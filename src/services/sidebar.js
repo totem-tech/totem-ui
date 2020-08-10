@@ -2,7 +2,7 @@ import React from 'react'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
 // Views (including lists and forms)
-import FinancialStatementsView from '../modules/financialStatement/view'
+import FinancialStatementsView from '../modules/financialStatement/View'
 import GettingStarted from '../views/GettingStartedView'
 import HistoryList from '../lists/HistoryList'
 import IdentityList from '../lists/IdentityList'
