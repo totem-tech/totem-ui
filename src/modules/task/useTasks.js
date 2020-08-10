@@ -5,12 +5,15 @@ import Currency from '../../components/Currency'
 // services
 import { query, getConnection } from '../../services/blockchain'
 import client from '../../services/chatClient'
+import { translated } from '../../services/language'
 import { getAddressName } from '../../services/partner'
 import storage from '../../services/storage'
-import { translated } from '../../services/language'
 
 const MODULE_KEY = 'task'
-const texts = translated({
+const textsCap = translated({
+    errorHeader: 'failed to load tasks',
+    loadingMsg: 'loading tasks',
+    // status names
     accepted: 'accepted',
     blocked: 'blocked',
     completed: 'completed',
@@ -19,7 +22,7 @@ const texts = translated({
     pendingApproval: 'pending approval',
     rejected: 'rejected',
     submitted: 'submitted',
-})
+}, true)[1]
 export const statusCodes = {
     submitted: 0,
     accepted: 1,
@@ -30,13 +33,13 @@ export const statusCodes = {
     completed: 6,
 }
 export const statusCodeNames = {
-    submitted: texts.submitted,
-    accepted: texts.accepted,
-    rejected: texts.rejected,
-    disputed: texts.disputed,
-    blocked: texts.blocked,
-    invoiced: texts.invoiced,
-    completed: texts.completed,
+    submitted: textsCap.submitted,
+    accepted: textsCap.accepted,
+    rejected: textsCap.rejected,
+    disputed: textsCap.disputed,
+    blocked: textsCap.blocked,
+    invoiced: textsCap.invoiced,
+    completed: textsCap.completed,
 }
 export const approvedCodes = {
     pendingApproval: 0,
@@ -44,9 +47,22 @@ export const approvedCodes = {
     rejected: 2,
 }
 export const approvedCodeNames = {
-    pendingApproval: texts.pendingApproval,
-    approved: texts.approved,
-    rejected: texts.rejected,
+    pendingApproval: textsCap.pendingApproval,
+    approved: textsCap.approved,
+    rejected: textsCap.rejected,
+}
+
+/**
+ * 
+ * @param {String} address user identity
+ * @param {Array} types task list types
+ */
+const getCached = (address, types) => {
+    let cache = rwCache(address)
+    if (cache.length === 0) {
+        cache = types.map(type => [type, []])
+    }
+    return new Map(cache.map(([type, typeTasks]) => [type, new Map(typeTasks)]))
 }
 /**
  * @name    rwCache
@@ -57,7 +73,6 @@ export const approvedCodeNames = {
  * @returns {Map}
  */
 const rwCache = (key, value) => storage.cache(MODULE_KEY, key, value) || []
-const messagingServicePlaceholder = () => new Promise(resolve => resolve(new Map()))
 
 /**
  * @name useTasks
@@ -71,10 +86,28 @@ const messagingServicePlaceholder = () => new Promise(resolve => resolve(new Map
  */
 export default function useTasks(types, address, timeout = 5000) {
     const [tasks, setTasks] = useState(new Map())
+    const [message, setMessage] = useState()
 
     useEffect(() => {
         let mounted = true
+        let loaded = false
+        let error = false
         const unsubscribers = {}
+        const loadingMsg = {
+            content: textsCap.loadingMsg,
+            showIcon: true,
+            status: 'loading',
+        }
+        const errorMsg = {
+            header: textsCap.errorHeader,
+            showIcon: true,
+            status: 'error'
+        }
+
+        const setError = err => {
+            error = true
+            setMessage({ ...errorMsg, content: `${err}` })
+        }
         const tasksCb = (address, taskIds2d, uniqueTaskIds, types) => async (orders) => {
             if (!mounted) return
             const arStatus = []
@@ -129,6 +162,7 @@ export default function useTasks(types, address, timeout = 5000) {
                     allTasks.set(type, new Map(typeTasks))
                     return [type, typeTasks]
                 })
+                loaded = true
                 rwCache(address, cacheableAr)
                 setTasks(allTasks)
             }
@@ -139,40 +173,44 @@ export default function useTasks(types, address, timeout = 5000) {
             promise.catch(() => addDetails(new Map()))
         }
 
+        setTasks(getCached(address, types))
+        setMessage(loadingMsg)
         getConnection().then(async ({ api }) => {
-            // exclude any invalid type
-            types = types.filter(x => !!api.query.orders[x])
-            const args = types.map(x => [api.query.orders[x], address])
+            try {
+                // exclude any invalid type
+                types = types.filter(x => !!api.query.orders[x])
+                const args = types.map(x => [api.query.orders[x], address])
 
-            // construct a single query to retrieve 3 different types of lists with a single subscription
-            unsubscribers.taskIds2d = await query('api.queryMulti', [
-                args,
-                async (taskIds2d) => {
-                    unsubscribers.tasks && unsubscribers.tasks()
-                    // create single list of unique Task IDs
-                    const uniqueTaskIds = arrUnique(taskIds2d.flat())
-                    const lists = ['order', 'status', 'approved']
-                    // retrieve details of all unique tasks at with a single subscription
-                    // unsubscribers.tasks = await query(
-                    //     'api.queryMulti',
-                    //     [
-                    //         lists.map(l => [l, uniqueTaskIds]),
-                    //         tasksCb(address, taskIds2d, uniqueTaskIds, types),
-                    //     ],
-                    //     false,
-                    // )
-                    unsubscribers.tasks = await query(
-                        'api.query.orders.order',
-                        [
-                            uniqueTaskIds,
-                            tasksCb(address, taskIds2d, uniqueTaskIds, types),
-                        ],
-                        true,
-                    )
+                // construct a single query to retrieve 3 different types of lists with a single subscription
+                unsubscribers.taskIds2d = await query('api.queryMulti', [
+                    args,
+                    async (taskIds2d) => {
+                        unsubscribers.tasks && unsubscribers.tasks()
+                        // create single list of unique Task IDs
+                        const uniqueTaskIds = arrUnique(taskIds2d.flat())
+                        const listsTypes = ['order', 'status', 'approved']
+                        // retrieve details of all unique tasks at with a single subscription
+                        unsubscribers.tasks = await query(
+                            'api.queryMulti',
+                            [
+                                listsTypes.map(l => [l, uniqueTaskIds]),
+                                tasksCb(address, taskIds2d, uniqueTaskIds, types),
+                            ],
+                            false,
+                        )
+                        // unsubscribers.tasks = await query(
+                        //     'api.query.orders.order',
+                        //     [
+                        //         uniqueTaskIds,
+                        //         tasksCb(address, taskIds2d, uniqueTaskIds, types),
+                        //     ],
+                        //     true,
+                        // )
 
-                }
-            ])
-        }, err => setTasks(getCached(address, types)))
+                    }
+                ])
+            } catch (err) { setError(err) }
+        }, setError)
 
         return () => {
             mounted = false
@@ -180,13 +218,5 @@ export default function useTasks(types, address, timeout = 5000) {
         }
     }, [address]) // update subscriptions whenever address changes
 
-    return [tasks]
-}
-
-const getCached = (address, types) => {
-    let cache = rwCache(address)
-    if (cache.length === 0) {
-        cache = types.map(type => [type, []])
-    }
-    return new Map(cache.map(([type, typeTasks]) => [type, new Map(typeTasks)]))
+    return [tasks, message]
 }

@@ -40,6 +40,7 @@ export default function useLedgerAcBalances(address, timeout = 10000) {
             status: 'error',
         }
         const handleAccounts = async (accounts = []) => {
+            if (!mounted) return
             let empty = !accounts.length
             try {
                 if (empty) throw textsCap.emptyMessage
@@ -64,6 +65,7 @@ export default function useLedgerAcBalances(address, timeout = 10000) {
             }
         }
         const handleBalancesCb = (accounts, glAccounts) => (_, balances) => {
+            if (!mounted) return
             balances = balances.map(({ negative, words }) => (negative ? -1 : 1) * words[0])
             glAccounts.forEach(glAccount => {
                 const { number: account } = glAccount
@@ -82,13 +84,14 @@ export default function useLedgerAcBalances(address, timeout = 10000) {
             unsubscribers.accounts && unsubscribers.accounts()
             unsubscribers.accounts = await query.accountsById(address, handleAccounts)
         }, err => {
+            if (!mounted) return
             error = true
             setMessage({ ...errorMsg, content: `${err}` })
         })
 
         // update message if accounts and balances hasn't been loaded after timeout duration
         setTimeout(() => {
-            if (loaded || error) return
+            if (!mounted || loaded || error) return
             setMessage({
                 ...loadingMsg,
                 content: textsCap.timeoutMsg,
