@@ -46,7 +46,11 @@ https.createServer({
  */
 const src = './src'
 const exts = ['js', 'jsx']
-const exclude = [src + '/utils']
+const exclude = [
+	'./src/assets',
+	'./src/legacies',
+	'./src/utils',
+]
 const destFile = './src/services/languageFiles.js'
 const getPaths = async (dir, extensions, exclude = []) => {
 	let result = []
