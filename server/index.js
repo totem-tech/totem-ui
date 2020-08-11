@@ -50,19 +50,16 @@ const exclude = [src + '/utils']
 const destFile = './src/services/languageFiles.js'
 const getPaths = async (dir, extensions, exclude = []) => {
 	let result = []
-	// if (exclude.includes(dir)) return throw 'exclude'
+	if (exclude.includes(dir)) return []
 	if (!isDir(dir)) return [dir]
-	try {
-		const files = fs.readdirSync(dir)
-		for (let i = 0; i < files.length; i++) {
-			result.push(await getPaths(
-				`${dir}/${files[i]}`,
-				extensions,
-				exclude,
-			))
-		}
-	} catch (err) {
-		console.log(err)
+
+	const files = fs.readdirSync(dir)
+	for (let i = 0; i < files.length; i++) {
+		result.push(await getPaths(
+			`${dir}/${files[i]}`,
+			extensions,
+			exclude,
+		))
 	}
 
 	return result.flat().filter(hasExtension(extensions))
@@ -76,7 +73,6 @@ const hasExtension = (extensions = []) => (path = '') => {
 	return false
 }
 getPaths(src, exts, exclude).then(files => {
-	// files = files.map(path => path.replace('./src/', ''))
 	const fileContents = `export default ${JSON.stringify(files, null, 4)}`
 	// create a js file that exports the files array 
 	fs.writeFileSync(destFile, fileContents)
