@@ -1,7 +1,7 @@
 // A read only form to display identity details including seed
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import Currency from '../components/Currency'
+import Balance from '../components/Balance'
 import { Button } from 'semantic-ui-react'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import { copyToClipboard, isFn } from '../utils/utils'
@@ -139,11 +139,11 @@ export default class IdentityDetails extends Component {
                     type: 'dropdown',
                 },
                 {
-                    defaultValue: words.never,
                     label: texts.lastBackup,
                     name: 'fileBackupTS',
                     readOnly: true,
                     type: 'text',
+                    value: words.never,
                 },
                 {
                     name: 'txAllocations',
@@ -166,18 +166,15 @@ export default class IdentityDetails extends Component {
         findInput(inputs, 'txAllocations').content = (
             <label style={{ fontWeight: 'bold', margin: 0 }}>
                 {texts.txAllocations}:
-                <Currency {...{
-                    address,
-                    prefix: ' ',
-                    unitDisplayed: currencyDefault,
-                }} />
                 {getSelected() !== currencyDefault && (
                     // display amount in selected currency if not XTX
-                    <Currency {...{
+                    <Balance {...{
                         address,
                         prefix: ` | ${wordsCap.converted}: `,
+                        unitDisplayed: currencyDefault,
                     }} />
                 )}
+                <Balance {...{ address, prefix: ' ' }} />
             </label>
         )
         fillValues(inputs, { ...this.identity, uri: this.getUri() })

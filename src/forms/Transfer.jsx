@@ -1,8 +1,9 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Dropdown, FormInput } from 'semantic-ui-react'
+import { Dropdown } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
+import Balance from '../components/Balance'
 import { arrSort, isStr, textEllipsis } from '../utils/utils'
 import { ss58Decode } from '../utils/convert'
 import PartnerForm from '../forms/Partner'
@@ -13,7 +14,6 @@ import { translated } from '../services/language'
 import { showForm } from '../services/modal'
 import partners from '../services/partner'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import Currency from '../components/Currency'
 
 const wordsCap = translated({
     amount: 'amount',
@@ -139,7 +139,7 @@ export default class Transfer extends Component {
             fromIn.bond.changed(address)
             fromIn.message = !address ? '' : {
                 content: (
-                    <Currency {...{
+                    <Balance {...{
                         address,
                         emptyMessage: texts.loadingBalance + '...',
                         key: address,

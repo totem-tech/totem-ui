@@ -1,7 +1,7 @@
 import React, { Component, useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { Dropdown, Icon, Image, Menu } from 'semantic-ui-react'
-import Currency from '../components/Currency'
+import Balance from '../components/Balance'
 // utils
 import { arrSort, copyToClipboard, textEllipsis } from '../utils/utils'
 // forms
@@ -167,7 +167,7 @@ const PageHeaderView = props => {
 										{name}
 									</div>
 
-									<Currency {...{
+									<Balance {...{
 										address: address,
 										EL: 'div',
 										style: {

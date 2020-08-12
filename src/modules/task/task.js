@@ -1,3 +1,4 @@
+import uuid from 'uuid'
 import { generateHash, isArr } from "../../utils/utils"
 import storage from '../../services/storage'
 
@@ -37,6 +38,7 @@ export const queueables = {
             "Quantity": item[2],
             "UnitOfMeasure": item[3],
         })[0]
+        const txId = uuid.v1()
 
         const args = !taskId ? [
             addrApprover,
@@ -49,6 +51,7 @@ export const queueables = {
             dueDate,
             orderItem,
             token,
+            txId,
         ] : [
                 addrApprover,
                 addrFulfiller,
@@ -58,6 +61,7 @@ export const queueables = {
                 orderItem,
                 taskId,
                 token,
+                txId,
             ]
 
         return {
@@ -72,5 +76,5 @@ export const queueables = {
 }
 
 export default {
-    queueables
+    queueables,
 }

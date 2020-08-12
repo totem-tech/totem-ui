@@ -33,7 +33,7 @@ const init = () => PromisE.timeout((resolve, reject) => {
         }
     })
 
-    // set Polkadot blockchain types and initiate connection to blockchain
+    // initiate connection to blockchain
     getConnection()
 }, 2000)
 const doRender = () => render(<App />, document.getElementById('app'))

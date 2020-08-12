@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { textEllipsis, isFn, arrUnique } from '../../utils/utils'
+import { isFn, arrUnique } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
-import Currency from '../../components/Currency'
 // services
 import { query, getConnection } from '../../services/blockchain'
 import client from '../../services/chatClient'
@@ -108,25 +107,31 @@ export default function useTasks(types, address, timeout = 5000) {
             error = true
             setMessage({ ...errorMsg, content: `${err}` })
         }
-        const tasksCb = (address, taskIds2d, uniqueTaskIds, types) => async (orders) => {
+        const tasksCb = (address, taskIds2d, uniqueTaskIds, types) => async (orders, ordersOrg) => {
             if (!mounted) return
             const arStatus = []
             const arApproved = []
-
             let uniqueTasks = new Map()
             // older orders can be invalid and have null value
             orders.forEach((order = [], index) => {
-                const [
-                    owner, fulfiller, approver, isSell, bountyXTX,
-                    isClosed, orderType, deadline, dueDate,
-                ] = order || []
+                let {
+                    owner,
+                    fulfiller,
+                    approver,
+                    isSell,
+                    amountXTX = 0,//'0x0',
+                    isClosed,
+                    orderType,
+                    deadline,
+                    dueDate,
+                } = order || {}
                 const taskId = uniqueTaskIds[index]
                 const status = arStatus[index]
                 const approved = arApproved[index]
                 uniqueTasks.set(taskId, {
                     approved,
                     approver,
-                    bountyXTX: eval(bountyXTX), // convert Hex string to int if needed
+                    amountXTX: eval(amountXTX),
                     deadline,
                     dueDate,
                     fulfiller,
@@ -136,11 +141,11 @@ export default function useTasks(types, address, timeout = 5000) {
                     status,
                     owner,
                     // pre-process values for use with DataTable
-                    _amountXTX: <Currency value={eval(bountyXTX)} />,
                     _approved: approvedCodeNames[approved],
-                    _fulfiller: getAddressName(fulfiller) || textEllipsis(fulfiller, 15),
                     _status: statusCodeNames[status],
-                    _owner: getAddressName(owner) || textEllipsis(owner, 15),
+                    // ToDo: move to task list
+                    _fulfiller: getAddressName(fulfiller),
+                    _owner: getAddressName(owner),
                 })
             })
 
@@ -188,24 +193,14 @@ export default function useTasks(types, address, timeout = 5000) {
                         unsubscribers.tasks && unsubscribers.tasks()
                         // create single list of unique Task IDs
                         const uniqueTaskIds = arrUnique(taskIds2d.flat())
-                        const listsTypes = ['order', 'status', 'approved']
-                        // retrieve details of all unique tasks at with a single subscription
                         unsubscribers.tasks = await query(
-                            'api.queryMulti',
+                            'api.query.orders.order',
                             [
-                                listsTypes.map(l => [l, uniqueTaskIds]),
+                                uniqueTaskIds,
                                 tasksCb(address, taskIds2d, uniqueTaskIds, types),
                             ],
-                            false,
+                            true,
                         )
-                        // unsubscribers.tasks = await query(
-                        //     'api.query.orders.order',
-                        //     [
-                        //         uniqueTaskIds,
-                        //         tasksCb(address, taskIds2d, uniqueTaskIds, types),
-                        //     ],
-                        //     true,
-                        // )
 
                     }
                 ])

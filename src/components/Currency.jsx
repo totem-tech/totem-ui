@@ -1,96 +1,80 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import { isValidNumber, isFn } from '../utils/utils'
-import { ss58Decode } from '../utils/convert'
+import { isValidNumber, isFn, isDefined } from '../utils/utils'
 import { round } from '../utils/number'
-import { bond, convertTo, currencyDefault, getSelected } from '../services/currency'
-import { getConnection } from '../services/blockchain'
+import { convertTo, currencyDefault, useSelected } from '../services/currency'
 
-const Currency = props => {
+export const Currency = props => {
     const {
-        address,
         className,
         decimalPlaces,
         EL,
         emptyMessage = '',
         onChange,
-        prefix,
+        prefix = '',
         style,
-        suffix,
+        suffix = '',
         unit,
         unitDisplayed: pUnitD,
-        value: pVal,
+        value,
     } = props
-    const [unitDisplayed, setUnitDisplayed] = useState(pUnitD || getSelected())
+    const [unitDisplayed] = pUnitD ? [pUnitD] : useSelected()
     let [valueConverted, setValueConverted] = useState()
     let [error, setError] = useState()
 
     useEffect(() => {
+        if (!isValidNumber(value)) return () => { }
         let mounted = true
-        let unsubscribe = null
-        let tieId = null
-        const convertValue = async (value) => {
-            value = parseInt(value)
+        const convert = async (value) => {
+            if (!mounted) return
             try {
-                valueConverted = round(
-                    !value ? 0 : await convertTo(value, unit, unitDisplayed),
-                    decimalPlaces,
-                )
+                valueConverted = !value ? 0 : await convertTo(value, unit, unitDisplayed)
+                valueConverted = round(valueConverted, decimalPlaces)
                 error = null
             } catch (err) {
-                console.log('Currency conversion failed: ', { err })
                 error = err
-                valueConverted = null
+                valueConverted = 0.00
             }
+
+            if (!mounted) return
             setError(error)
             setValueConverted(valueConverted)
-            unsubscribe && isFn(onChange) && onChange(valueConverted, error)
-        }
-        if (!isValidNumber(pVal) && ss58Decode(address)) {
-            // subscribe to address balance change
-            getConnection().then(async ({ api }) =>
-                unsubscribe = await api.query.balances.freeBalance(address, convertValue)
-            )
-        } else {
-            // convert and display value supplied
-            convertValue(pVal)
+            isFn(onChange) && onChange(valueConverted, error)
         }
 
-        // subscribe to default display unit changes
-        if (!pUnitD) tieId = bond.tie(unit => setUnitDisplayed(unit))
+        // convert and display value supplied
+        convert(value)
 
-        return () => {
-            mounted = false
-            unsubscribe && unsubscribe()
-            tieId && bond.untie(tieId)
-        }
-    }, [unitDisplayed])
+        return () => mounted = false
+    }, [unitDisplayed, value])
 
-    return valueConverted === undefined ? emptyMessage : (
+    const content = !isDefined(valueConverted) ? emptyMessage : `${prefix}${valueConverted} ${unitDisplayed}${suffix}`
+    return (
         <EL {...{
             className,
-            style: { color: error ? 'red' : '', ...style },
+            style: { color: error ? 'red' : undefined, ...style },
             title: `${error}`,
         }}>
-            {prefix}{valueConverted} {unitDisplayed}{suffix}
+            {content}
         </EL>
     )
 }
 Currency.propTypes = {
-    // @address to retrieve balance from Totem chain.
-    // Only used when value is not supplied.
-    address: PropTypes.string,
     className: PropTypes.string,
     decimalPlaces: PropTypes.number,
     // @EL (optional) HTML element to use. Default: 'span'
     EL: PropTypes.string,
-    emptyMessage: PropTypes.string,
+    emptyMessage: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.element,
+    ]),
     // @onChange is invoked whenever the account balance/value changes. 
     onChange: PropTypes.func,
     prefix: PropTypes.any,
     style: PropTypes.object,
     suffix: PropTypes.any,
     unit: PropTypes.string,
+    // Display currency. Default: selected currency from currency service
     unitDisplayed: PropTypes.string,
     value: PropTypes.number,
 }

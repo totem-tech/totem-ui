@@ -1,5 +1,6 @@
 export default [
     "./src/app.jsx",
+    "./src/components/Balance.jsx",
     "./src/components/CatchReactErrors.jsx",
     "./src/components/CheckboxGroup.jsx",
     "./src/components/ContentSegment.jsx",
@@ -53,6 +54,7 @@ export default [
     "./src/modules/notification/List.jsx",
     "./src/modules/notification/ListItem.jsx",
     "./src/modules/notification/notification.js",
+    "./src/modules/task/TaskDetailsForm.jsx",
     "./src/modules/task/TaskForm.jsx",
     "./src/modules/task/TaskList.jsx",
     "./src/modules/task/TaskView.jsx",

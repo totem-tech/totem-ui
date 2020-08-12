@@ -117,6 +117,26 @@ export const useSelected = () => {
     return selected
 }
 
+// Custom React hook use get the list of identities and subscribe to changes
+export const useIdentities = () => {
+    const [list, setList] = useState(getAll())
+
+    useEffect(() => {
+        let mounted = true
+        let ignoredFirst
+        const tieId = identities.bond.tie(() => {
+            ignoredFirst && mounted && setList(getAll())
+            ignoredFirst = true
+        })
+        return () => {
+            mounted = false
+            identities.bond.untie(tieId)
+        }
+    }, [])
+
+    return list
+}
+
 export default {
     addFromUri,
     bond,

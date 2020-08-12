@@ -10,9 +10,11 @@ import { setToast } from './toast'
 const MODULE_KEY = 'blockchain'
 const TX_STORAGE = 'tx_storage'
 const textsCap = translated({
+    invalidApiPromise: 'ApiPromise instance required',
     invalidApiFunc: 'invalid API function',
     invalidMultiQueryArgs: 'failed to process arguments for multi-query',
-    nodeConnectionErr: 'failed to connect to Totem blockchain network'
+    nodeConnectionErr: 'failed to connect to Totem blockchain network',
+    nodeConntimeoutMsg: 'blockchain connection taking longer than expected',
 }, true)[1]
 let config = {
     primary: 'Ktx',
@@ -53,17 +55,29 @@ export const hashTypes = {
 export const nodes = [
     'wss://node1.totem.live',
 ]
-setDefaultConfig(nodes, types)
+setDefaultConfig(
+    nodes,
+    types,
+    30000,
+    {
+        connectionFailed: textsCap.nodeConnectionErr,
+        connectionTimeout: textsCap.nodeConntimeoutMsg,
+        invalidApi: textsCap.invalidApiPromise,
+        invalidApiFunc: textsCap.invalidApiFunc,
+        invalidMutliArgsMsg: textsCap.invalidMultiQueryArgs,
+    },
+)
 
 export const getConfig = () => config
-export const getConnection = async (create = true) => {
+export const getConnection = async (create = false) => {
     try {
-        if (connection.api && connection.api._isConnected.value || !create) return connection
+        let isConnected = !connection.api ? false : connection.api._isConnected.value
+        if (isConnected) return connection
         if (connectPromise) {
             await connectPromise
-
+            isConnected = connection.api._isConnected.value
             // if connection is rejected attempt to connect again
-            if (connectPromise.rejected && create) await getConnection(true)
+            if ((connectPromise.rejected || !isConnected) && create) await getConnection(true)
             return connection
         }
         const nodeUrl = nodes[0]
@@ -96,20 +110,20 @@ export const getConnection = async (create = true) => {
         !connection.errorShown && setToast(
             { content: textsCap.nodeConnectionErr, status: 'error' },
             3000,
-            'blockchain-connection',
+            'blockchain-connection-error', // ensures same message not displayed twice
         )
         connection.errorShown = true
         throw err
     }
     return connection
 }
-
-// get current block number
-export const getCurrentBlock = async () => {
-    const { api } = await getConnection()
-    const res = await api.rpc.chain.getBlock()
-    return parseInt(res.block.get('header').get('number'))
-}
+/**
+ * @name    getCurrentBlock
+ * @summary get current block number
+ * 
+ * @returns {Number} latest block number
+ */
+export const getCurrentBlock = async () => (await query('api.rpc.chain.getBlock')).block.header.number
 
 // getTypes returns a promise with 
 export const getTypes = () => new Promise(resolve => resolve(types))
@@ -133,21 +147,16 @@ export const query = async (func, args = [], multi = false, print = false) => aw
     multi,
     print,
     // translated error messages
+    textsCap.invalidApiPromise,
     textsCap.invalidApiFunc,
     textsCap.invalidMultiQueryArgs,
 )
-
-// Replace configs
-export const setConfig = newConfig => {
-    config = { ...config, ...newConfig }
-    storage.settings.module(MODULE_KEY, { config })
-}
 
 // Save general (not specific to a module or used by multiple modules) data to blockchain storage.
 // Each function returns a task (an object) that can be used to create a queued transaction.
 // Make sure to supply appropriate `title` and `descrption` properties to `@queueProps`
 // and use the `addToQueue(task)` function from queue service to add the task to the queue
-export const tasks = {
+export const queueables = {
     // un-/archive a record. See @hashTypes for a list of supported types.
     //
     // Props: 
@@ -184,6 +193,12 @@ export const tasks = {
     })
 }
 
+// Replace configs
+export const setConfig = newConfig => {
+    config = { ...config, ...newConfig }
+    storage.settings.module(MODULE_KEY, { config })
+}
+
 // Include all functions here that will be used by Queue Service
 // Only blockchain transactions
 export default {
@@ -195,5 +210,6 @@ export default {
     nodes,
     query,
     setConfig,
-    tasks,
+    queueables,
+    types,
 }

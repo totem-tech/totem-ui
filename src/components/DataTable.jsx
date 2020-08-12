@@ -7,6 +7,7 @@ import { translated } from '../services/language'
 import { layoutBond, getLayout, MOBILE } from '../services/window'
 import Paginator from './Paginator'
 
+const TableCell = React.memo(Table.Cell)
 const mapItemsByPage = (data, pageNo, perPage, callback) => {
     const start = pageNo * perPage - perPage
     const end = start + perPage - 1
@@ -43,23 +44,110 @@ export default class DataTable extends Component {
             this.setState({ isMobile })
         })
     }
+
     componentWillUnmount = () => layoutBond.untie(this.tieId)
 
-    handleRowSelect(key, selectedIndexes) {
-        const { onRowSelect } = this.props
-        const index = selectedIndexes.indexOf(key)
-        index < 0 ? selectedIndexes.push(key) : selectedIndexes.splice(index, 1)
-        isFn(onRowSelect) && onRowSelect(selectedIndexes, key)
-        this.setState({ selectedIndexes })
+    getFooter(totalPages, pageNo) {
+        let { footerContent, navLimit } = this.props
+        const { isMobile } = this.state
+        const paginator = totalPages <= 1 ? '' : (
+            <Paginator
+                current={pageNo}
+                float={isMobile ? 'left' : 'right'}
+                key='paginator'
+                navLimit={navLimit}
+                total={totalPages}
+                onSelect={this.handlePageSelect}
+            />
+        )
+        const footer = footerContent && (
+            <div key='footer-content' style={{ float: 'left' }}>
+                {footerContent}
+            </div>
+        )
+        return [paginator, footer].filter(Boolean)
     }
 
-    handleAllSelect(selectedIndexes) {
-        const { data, onRowSelect } = this.props
-        const total = data.size || data.length
+    getHeaders(totalRows, columns, selectedIndexes) {
+        let { selectable } = this.props
+        const { sortAsc, sortBy } = this.state
+
+        const headers = columns.filter(x => !x.hidden).map((x, i) => (
+            <Table.HeaderCell
+                {...x.headerProps}
+                key={i}
+                onClick={() => x.key && this.setState({ sortBy: x.key, sortAsc: sortBy === x.key ? !sortAsc : true })}
+                sorted={sortBy !== x.key ? null : (sortAsc ? 'ascending' : 'descending')}
+                style={{ ...((x.headerProps || {}).style), ...styles.columnHeader }}
+                textAlign='center'
+            >
+                {x.title}
+            </Table.HeaderCell>
+        ))
+
+        if (!selectable) return headers
+        // include checkbox to select items
         const n = selectedIndexes.length
-        selectedIndexes = n === total || n > 0 && n < total ? [] : getKeys(data)
-        isFn(onRowSelect) && onRowSelect(selectedIndexes)
-        this.setState({ selectedIndexes })
+        const iconName = `${n > 0 ? 'check ' : ''}square${n === 0 || n != totalRows ? ' outline' : ''}`
+        const deselect = n === totalRows || n > 0 && n < totalRows
+        const numRows = deselect ? n : totalRows
+        const title = `${deselect ? textsCap.deselectAll : textsCap.selectAll} (${numRows})`
+        headers.splice(0, 0, (
+            <Table.HeaderCell
+                key='checkbox'
+                onClick={() => this.handleSelectAll(selectedIndexes)}
+                style={styles.checkboxCell}
+                title={title}
+            >
+                <Icon
+                    name={iconName}
+                    size='large'
+                    className='no-margin'
+                />
+            </Table.HeaderCell >
+        ))
+        return headers
+    }
+
+    getRows(filteredData, columns, selectedIndexes) {
+        let { perPage, rowProps, selectable } = this.props
+        const { pageNo } = this.state
+
+        return mapItemsByPage(filteredData, pageNo, perPage, (item, key, items, isMap) => (
+            <Table.Row
+                key={key + (!isMap ? JSON.stringify(item) : '')}
+                {...(isFn(rowProps) ? rowProps(item, key, items, isMap) : rowProps || {})}
+            >
+                {selectable && ( /* include checkbox to select items */
+                    <Table.Cell onClick={() => this.handleRowSelect(key, selectedIndexes)} style={styles.checkboxCell}>
+                        <Icon
+                            className='no-margin'
+                            name={(selectedIndexes.indexOf(key) >= 0 ? 'check ' : '') + 'square outline'}
+                            size='large'
+                        />
+                    </Table.Cell>
+                )}
+                {columns.filter(x => !x.hidden).map((cell, j) => {
+                    let { collapsing, content, draggable, key: contentKey, style, textAlign = 'left' } = cell || {}
+                    draggable = draggable !== false
+                    content = isFn(content) ? content(item, key, items, isMap) : cell.content || item[contentKey]
+                    style = {
+                        cursor: draggable ? 'grab' : undefined,
+                        padding: collapsing ? '0 5px' : undefined,
+                        ...style
+                    }
+                    const props = {
+                        ...objWithoutKeys(cell, ['content', 'headerProps', 'title']),
+                        key: j,
+                        draggable,
+                        onDragStart: !draggable ? undefined : this.handleDragStart,
+                        style,
+                        textAlign,
+                    }
+                    return <TableCell {...props}>{content}</TableCell>
+                })}
+            </Table.Row>
+        ))
     }
 
     getTopContent(totalRows, selectedIndexes) {
@@ -154,107 +242,29 @@ export default class DataTable extends Component {
         )
     }
 
-    getRows(filteredData, columns, selectedIndexes) {
-        let { perPage, rowProps, selectable } = this.props
-        const { pageNo } = this.state
+    handleDragStart = e => e.dataTransfer.setData('Text', e.target.textContent)
 
-        return mapItemsByPage(filteredData, pageNo, perPage, (item, key, items, isMap) => (
-            <Table.Row
-                key={key + (!isMap ? JSON.stringify(item) : '')}
-                {...(isFn(rowProps) ? rowProps(item, key, items, isMap) : rowProps || {})}
-            >
-                {selectable && ( /* include checkbox to select items */
-                    <Table.Cell onClick={() => this.handleRowSelect(key, selectedIndexes)} style={styles.checkboxCell}>
-                        <Icon
-                            className='no-margin'
-                            name={(selectedIndexes.indexOf(key) >= 0 ? 'check ' : '') + 'square outline'}
-                            size='large'
-                        />
-                    </Table.Cell>
-                )}
-                {columns.filter(x => !x.hidden).map((cell, j) => (
-                    <Table.Cell
-                        {...objWithoutKeys(cell, ['headerProps', 'title'])}
-                        content={undefined}
-                        draggable={cell.draggable !== false}
-                        key={j}
-                        onDragStart={cell.draggable === false ? undefined : e => e.dataTransfer.setData('Text', e.target.textContent)}
-                        style={{
-                            cursor: cell.draggable !== false ? 'grab' : undefined,
-                            padding: cell.collapsing ? '0 5px' : undefined,
-                            ...cell.style
-                        }}
-                        textAlign={cell.textAlign || 'left'}
-                    >
-                        {!cell.content ? item[cell.key] : (
-                            isFn(cell.content) ? cell.content(item, key, items, isMap) : cell.content
-                        )}
-                    </Table.Cell>
-                ))}
-            </Table.Row>
-        ))
+    handlePageSelect = pageNo => {
+        const { pageOnSelect } = this.props
+        this.setState({ pageNo })
+        isFn(pageOnSelect) && pageOnSelect(pageNo)
     }
 
-    getHeaders(totalRows, columns, selectedIndexes) {
-        let { selectable } = this.props
-        const { sortAsc, sortBy } = this.state
+    handleRowSelect(key, selectedIndexes) {
+        const { onRowSelect } = this.props
+        const index = selectedIndexes.indexOf(key)
+        index < 0 ? selectedIndexes.push(key) : selectedIndexes.splice(index, 1)
+        isFn(onRowSelect) && onRowSelect(selectedIndexes, key)
+        this.setState({ selectedIndexes })
+    }
 
-        const headers = columns.filter(x => !x.hidden).map((x, i) => (
-            <Table.HeaderCell
-                {...x.headerProps}
-                key={i}
-                onClick={() => x.key && this.setState({ sortBy: x.key, sortAsc: sortBy === x.key ? !sortAsc : true })}
-                sorted={sortBy !== x.key ? null : (sortAsc ? 'ascending' : 'descending')}
-                style={{ ...((x.headerProps || {}).style), ...styles.columnHeader }}
-                textAlign='center'
-            >
-                {x.title}
-            </Table.HeaderCell>
-        ))
-
-        if (!selectable) return headers
-        // include checkbox to select items
+    handleSelectAll(selectedIndexes) {
+        const { data, onRowSelect } = this.props
+        const total = data.size || data.length
         const n = selectedIndexes.length
-        const iconName = `${n > 0 ? 'check ' : ''}square${n === 0 || n != totalRows ? ' outline' : ''}`
-        const deselect = n === totalRows || n > 0 && n < totalRows
-        const numRows = deselect ? n : totalRows
-        const title = `${deselect ? textsCap.deselectAll : textsCap.selectAll} (${numRows})`
-        headers.splice(0, 0, (
-            <Table.HeaderCell
-                key='checkbox'
-                onClick={() => this.handleAllSelect(selectedIndexes)}
-                style={styles.checkboxCell}
-                title={title}
-            >
-                <Icon
-                    name={iconName}
-                    size='large'
-                    className='no-margin'
-                />
-            </Table.HeaderCell >
-        ))
-        return headers
-    }
-
-    getFooter(totalPages, pageNo) {
-        let { footerContent, navLimit, pageOnSelect } = this.props
-        const { isMobile } = this.state
-
-        return [
-            totalPages <= 1 ? '' : (
-                <Paginator
-                    current={pageNo}
-                    float={isMobile ? 'left' : 'right'}
-                    key='paginator'
-                    navLimit={navLimit}
-                    total={totalPages}
-                    onSelect={pageNo => {
-                        this.setState({ pageNo })
-                        isFn(pageOnSelect) && pageOnSelect(pageNo)
-                    }}
-                />),
-            footerContent && <div key='footer-content' style={{ float: 'left' }}>{footerContent}</div>,
-        ].filter(Boolean)
+        selectedIndexes = n === total || n > 0 && n < total ? [] : getKeys(data)
+        isFn(onRowSelect) && onRowSelect(selectedIndexes)
+        this.setState({ selectedIndexes })
     }
 
     render() {

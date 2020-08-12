@@ -229,7 +229,8 @@
   max-width: 100%;
 }
 
-.no-margin {
+.no-margin, 
+.ui.menu .ui.dropdown .menu>.item .icon:not(.dropdown).no-margin {
   margin: 0 !important;
 }
 .blink {

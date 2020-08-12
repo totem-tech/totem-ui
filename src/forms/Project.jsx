@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import Currency from '../components/Currency'
+import Balance from '../components/Balance'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import { arrSort, generateHash, isFn, objClean } from '../utils/utils'
 import identities, { getSelected } from '../services/identity'
@@ -95,7 +95,7 @@ export default class ProjectForm extends Component {
         // populate and auto update ownerAddress dropdown options
         this.tieId = identities.bond.tie(() => {
             const options = identities.getAll().map(({ address, name }) => ({
-                description: <Currency address={address} className='description' />,
+                description: <Balance address={address} className='description' />,
                 key: address,
                 text: name,
                 value: address

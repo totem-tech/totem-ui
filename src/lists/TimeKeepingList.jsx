@@ -12,7 +12,7 @@ import PartnerForm from '../forms/Partner'
 import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'
 import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
 // Services
-import { hashTypes, tasks } from '../services/blockchain'
+import { hashTypes, queueables as bcQueueables } from '../services/blockchain'
 import identities, { getSelected, selectedAddressBond } from '../services/identity'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
@@ -419,7 +419,7 @@ export default class ProjectTimeKeepingList extends Component {
         inProgressHashes.push(hash)
         this.setState({ inProgressHashes })
 
-        addToQueue(tasks.archiveRecord(address, hashTypes.timeRecordHash, hash, archive, {
+        addToQueue(bcQueueables.archiveRecord(address, hashTypes.timeRecordHash, hash, archive, {
             title: texts.archiveRecord,
             description: `${wordsCap.hash}: ${hash}`,
             then: () => {

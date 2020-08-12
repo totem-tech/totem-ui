@@ -1,7 +1,8 @@
-import { Bond } from 'oo7'
-import { generateHash, isMap, arrSort } from '../utils/utils'
+import { Subject } from 'rxjs'
+import { generateHash, arrSort } from '../utils/utils'
 import client from './chatClient'
 import storage from './storage'
+import { useState, useEffect } from 'react'
 
 const MODULE_KEY = 'currency'
 // read or write to currency settings storage
@@ -13,8 +14,8 @@ const updateFrequencyMs = 24 * 60 * 60 * 1000
 
 // default currency
 export const currencyDefault = 'XTX'
-// selected currency bond
-export const bond = new Bond().defaultTo(getSelected())
+// RxJS Subject to keep track of selected currencly changes
+export const rxSelected = new Subject()
 
 // convert currency 
 //
@@ -42,7 +43,7 @@ export const setSelected = async (ISO) => {
     const currencies = await getCurrencies()
     const exists = currencies.find(x => x.ISO === ISO)
     const newValue = exists ? { selected: ISO } : undefined
-    newValue && setTimeout(() => bond.changed(ISO))
+    newValue && rxSelected.next(ISO)
     return rw(newValue).selected || currencyDefault
 }
 
@@ -64,4 +65,19 @@ export const updateCurrencies = async () => {
     } catch (err) {
         console.error('Failed to retrieve currencies', err)
     }
+}
+
+/**
+ * @name useSelected
+ * @summary custom React hook to get/set the latest selected currency
+ */
+export const useSelected = () => {
+    const [selected] = useState(getSelected())
+
+    useEffect(() => {
+        const subscribed = rxSelected.subscribe(value => setSelected(value))
+        return () => subscribed.unsubscribe
+    }, [])
+
+    return [selected, setSelected]
 }

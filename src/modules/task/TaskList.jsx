@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import { Button } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
 // components
+import Currency from '../../components/Currency'
 import DataTable from '../../components/DataTable'
 // forms
 import TaskForm from './TaskForm'
@@ -40,7 +41,12 @@ class TaskList extends Component {
         this.state = {
             columns: [
                 { key: 'title', title: textsCap.title },
-                { collapsing: true, key: '_amountXTX', title: textsCap.bounty },
+                {
+                    collapsing: true,
+                    content: ({ amountXTX }) => <Currency value={amountXTX} emptyMessage={textsCap.loading} />,
+                    key: 'amountXTX',
+                    title: textsCap.bounty,
+                },
                 {
                     hidden: this.isOwner,
                     key: '_owner',
@@ -55,18 +61,7 @@ class TaskList extends Component {
                 { key: 'description', title: textsCap.description },
                 {
                     collapsing: true,
-                    content: (task, taskId) => [
-                        {
-                            icon: 'pencil',
-                            onClick: () => showForm(TaskForm, { taskId, values: task }),
-                            title: textsCap.update,
-                        },
-                        {
-                            icon: 'eye',
-                            onClick: () => this.showDetails(task, taskId),
-                            title: textsCap.techDetails
-                        }
-                    ].map((props, i) => <Button {...props} key={i} />),
+                    content: this.getActions,
                     textAlign: 'center',
                     title: textsCap.action
                 },
@@ -94,6 +89,23 @@ class TaskList extends Component {
 
     componentWillUnmount() {
         this._mounted = false
+    }
+
+    getActions = (task, taskId) => {
+        return [
+            this.isOwner && {
+                icon: 'pencil',
+                onClick: () => showForm(TaskForm, { taskId, values: task }),
+                title: textsCap.update,
+            },
+            {
+                icon: 'eye',
+                onClick: () => this.showDetails(task, taskId),
+                title: textsCap.techDetails
+            }
+        ]
+            .filter(Boolean)
+            .map((props, i) => <Button {...props} key={`${i}-${props.title}`} />)
     }
 
     render = () => <DataTable {...{ ...this.props, ...this.state }} />

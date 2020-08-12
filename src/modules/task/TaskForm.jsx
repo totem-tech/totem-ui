@@ -332,13 +332,13 @@ export default class TaskForm extends Component {
         })
 
         if (!isObj(values)) return this.setState({ loading: false })
-        const { bountyXTX, deadline, dueDate } = values
+        const { amountXTX, deadline, dueDate } = values
         // convert duedate and deadline block numbers to date format yyyy-mm-dd
         const { number } = await query('api.rpc.chain.getHeader')
 
         values.deadline = this.blockToDateStr(deadline, number)
         values.dueDate = this.blockToDateStr(dueDate, number)
-        values.bounty = bountyXTX
+        values.bounty = amountXTX
         this.bountyOriginal = values.bounty
         fillValues(inputs, values)
         this.setState({ inputs, loading: false })
@@ -487,7 +487,7 @@ export default class TaskForm extends Component {
         const token = generateHash(tokenData)
         const queueTaskName = 'createTask'
         const thenCb = last => (success, err) => {
-            if (!last && !success) return
+            if (!last && success) return
             this.setState({
                 closeText: success ? textsCap.close : undefined,
                 message: {

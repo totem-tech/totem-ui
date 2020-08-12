@@ -32,12 +32,13 @@ const MIN_BALANCE = 140
 const inprogressIds = {}
 // Properties accepted in a queue item. Items not marked as optional or internal should be supplied for task execution.
 const VALID_KEYS = Object.freeze([
-    // @name            string: (optional) a name for the queue item. Should be unique in the queue chain. 
-    //                          The name is used to pass through the data (eg: TX event data) to the @next queue items.
-    'name',
 
-    // @type            string: name of the service. Currently supported: blockchain, chatclient
-    'type',
+    // @address         string: address to initiate a transaction with.
+    //                          Required for transaction types. 
+    'address',
+
+    // @amountXTX       number: minimum required amount in addition to transactin fee
+    'amountXTX',
 
     // @args            array: arguments to be supplied to @func function
     //                      Variable args: if any of the args require a value from the result of one of the preious
@@ -63,64 +64,70 @@ const VALID_KEYS = Object.freeze([
     //                          
     'args',
 
+    // @description     string: short description about the task to very briefly describle what this task is about/for. /                           Eg: project name.
+    //                          If a child task's description not supplied will use the root task's description. 
+    //                          Root task is the very first task in a queue chain.
+    'description',
+
     // @func            string  : name of the function to be excuted. Depends on the @type of the task.
     //                          1. TX_TRANSER: 
     //                          2. TX_STORAGE: path to the PolkadotJS API function as string. 
     //                              Eg: 'api.tx.timekeeping.authoriseTime'
     //                          3. CHATCLIENT: chat client instances method property name
-
     'func',
+
+    // @name            string: (optional) a name for the queue item. Should be unique in the queue chain. 
+    //                          The name is used to pass through the data (eg: TX event data) to the @next queue items.
+    'name',
+
+    // @next            object: (optional) next task in this queue. Same keys as @VALID_KEYS
+    //                          Will only be executed if the parent task was successful.
+    'next',
+
+    // @silent          bool: (optional) If true, enables silent mode and no toast messages will be displayed.
+    //                          This is particularly usefull when executing tasks that user didn't initiate or should //                            not be bothered with.
+    'silent',
+
+    // @title           string: short title for the task. Eg: 'Create project'
+    'title',
+
     // @then            function: Callback to be executed once task execution is done (status: 'success' or 'error').
     //                          Not preserved on page reload
     //                          Arguments:
     //                          @success    boolean: indicates success/failure of the task
     //                          @args       array: arguments returned by invoking @func
-
     'then',
-    // @address         string: address to initiate a transaction with.
-    //                          Required for transaction types. 
 
-    'address',
-    // @amountXTX       number: minimum required amount in addition to transactin fee
-
-    'amountXTX',
-    // @title           string: short title for the task. Eg: 'Create project'
-
-    'title',
-    // @description     string: short description about the task to very briefly describle what this task is about/for. /                           Eg: project name.
-    //                          If a child task's description not supplied will use the root task's description. 
-    //                          Root task is the very first task in a queue chain.
-
-    'description',
-    // @toastId         string: (optional) if a valid existing toast ID is supplied will replace/re-use the toast //                            message instead of creating a new toast.
-    //                          If not supplied, a new ID will be generated.
-    //                          Only root task's toast ID will be used. Child tasks will inherit the root's toast ID.
-
-    'toastId',
     // @toastDuration   number: (optional) duration in milliseconds before toast message disappears automatically.
     //                          Special values:
     //                          - 0 (zero): disable auto-close
     //                          - undefined/falsy : will use default value set in the Toast service
-
     'toastDuration',
-    // @silent          bool: (optional) If true, enables silent mode and no toast messages will be displayed.
-    //                          This is particularly usefull when executing tasks that user didn't initiate or should //                            not be bothered with.
-    'silent',
 
-    // @next            object: (optional) next task in this queue. Same keys as @VALID_KEYS
-    //                          Will only be executed if the parent task was successful.
-    'next',
+    // @toastId         string: (optional) if a valid existing toast ID is supplied will replace/re-use the toast //                            message instead of creating a new toast.
+    //                          If not supplied, a new ID will be generated.
+    //                          Only root task's toast ID will be used. Child tasks will inherit the root's toast ID.
+    'toastId',
+
+    // @txId            string: (optional) for supported Blockchain translationc include a "Transaction ID" (an UUID).
+    //                          the included ID will be used to verify the status of the transaction, in case, user 
+    //                          leaves the page befor the transaction is completed
+    'txId',
+
+    // @type            string: name of the service. Currently supported: blockchain, chatclient
+    'type',
 ])
 /* 
  * Internal props generated/used by the queue service. For reference only.
  *
- * @balacne        object: (internal) stores account balances in XTX for transaction related tasks.
+ * @balacne         object: (internal) stores account balances in XTX for transaction related tasks.
  *                      Props:
  *                      @before     integer: account balance before the transaction
  *                      @after      integer: account balance after the successful transaction
  *
- * @data           any: (internal) data returned by @func after successful execution of the task
- * @errorMessage   string: (internal) if an error occured during execution or task failed with an error message.
+ * @data            any: (internal) data returned by @func after successful execution of the task
+ * 
+ * @errorMessage    string: (internal) if an error occured during execution or task failed with an error message.
  *
  * @status          string: (internal) indicates the status of the queue item.
  *                          Uses the same status strings as toast messages to display relevant background color.
@@ -135,6 +142,8 @@ const VALID_KEYS = Object.freeze([
  *                                      it will be executed again on page reload
  *                          - 'success': task completed successfully.
  *                          - undefined/falsy: task execution was never attempted. Typically the inital status.
+ * 
+ * @tsStart         date: timestamp of when the request was initiated
  */
 const [words, wordsCap] = translated({
     amount: 'amount',

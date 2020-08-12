@@ -5,7 +5,7 @@ import { Bond } from 'oo7'
 // import { encodeBase64, decodeBase64, decodeUTF8, hashToStr } from '../utils/convert'
 // services
 import identities from '../services/identity'
-import { tasks } from '../services/blockchain'
+import { queueables } from '../services/blockchain'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
 export default class KeyRegistryPlayground extends Component {
@@ -113,7 +113,7 @@ export default class KeyRegistryPlayground extends Component {
 
     handleSubmit = (e, { address, dataHex, publicHex, signatureHex }) => {
         this.setState({ loading: true })
-        addToQueue(tasks.registerKey(address, publicHex, dataHex, signatureHex, {
+        addToQueue(queueables.registerKey(address, publicHex, dataHex, signatureHex, {
             title: 'Register Key',
             then: success => {
                 this.setState({
