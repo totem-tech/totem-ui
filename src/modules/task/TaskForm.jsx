@@ -510,28 +510,6 @@ export default class TaskForm extends Component {
             },
         })
 
-        const clientQT = {
-            type: QUEUE_TYPES.CHATCLIENT,
-            func: 'task',
-            then: thenCb(true),
-            args: [
-                taskId || {
-                    // need to process tx result (events' data) to get the taskId
-                    __taskName: queueTaskName,
-                    __resultSelector: `result => {
-                        const [txHash, eventsArr = []] = result || []
-                        const event = (eventsArr || []).find(({ data = [] }) => {
-                            return data[0] === '${ownerAddress}' && data[1] === '${assignee}'
-                        })
-                        const taskId = event && event.data[2]
-                        if (!event || !taskId.startsWith('0x')) throw new Error('${textsCap.taskIdParseError}')
-                        return taskId
-                    }`
-                },
-                dbValues,
-                ownerAddress,
-            ]
-        }
         const queueProps = queueables.save.apply(null, [
             ownerAddress,
             ownerAddress,
@@ -548,12 +526,33 @@ export default class TaskForm extends Component {
             {
                 description,
                 name: queueTaskName,
-                next: clientQT,
                 title,
                 then: thenCb(false),
             },
         ])
-
+        const txId = queueProps.args.slice(-1)
+        queueProps.next = {
+            type: QUEUE_TYPES.CHATCLIENT,
+            func: 'task',
+            then: thenCb(true),
+            args: [
+                taskId || {
+                    // need to process tx result (events' data) to get the taskId
+                    __taskName: queueTaskName,
+                    __resultSelector: `result => {
+                        const [txHash, eventsArr = []] = result || []
+                        const event = (eventsArr || []).find(({ data = [] }) => {
+                            return data[0] === '${txId}'
+                        })
+                        const taskId = event && event.data[1]
+                        if (!event || !taskId.startsWith('0x')) throw new Error('${textsCap.taskIdParseError}')
+                        return taskId
+                    }`
+                },
+                dbValues,
+                ownerAddress,
+            ]
+        }
         addToQueue(queueProps)
     }
 

@@ -1,6 +1,7 @@
 import uuid from 'uuid'
 import { generateHash, isArr } from "../../utils/utils"
 import storage from '../../services/storage'
+import { bytesToHex, strToU8a } from '../../utils/convert'
 
 export const PRODUCT_HASH_LABOUR = generateHash('labour')
 const MODULE_KEY = 'task'
@@ -38,8 +39,9 @@ export const queueables = {
             "Quantity": item[2],
             "UnitOfMeasure": item[3],
         })[0]
-        const txId = uuid.v1()
-
+        const txidStr = uuid.v1().replace(/\-/g, '')
+        const txId = bytesToHex(strToU8a(txidStr))
+        console.log({ txidStr, txId })
         const args = !taskId ? [
             addrApprover,
             addrFulfiller,

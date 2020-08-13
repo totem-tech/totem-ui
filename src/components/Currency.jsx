@@ -9,11 +9,11 @@ export const Currency = props => {
         className,
         decimalPlaces,
         EL,
-        emptyMessage = '',
+        emptyMessage,
         onChange,
-        prefix = '',
+        prefix,
         style,
-        suffix = '',
+        suffix,
         unit,
         unitDisplayed: pUnitD,
         value,
@@ -48,12 +48,14 @@ export const Currency = props => {
         return () => mounted = false
     }, [unitDisplayed, value])
 
-    const content = !isDefined(valueConverted) ? emptyMessage : `${prefix}${valueConverted} ${unitDisplayed}${suffix}`
+    const content = !isDefined(valueConverted) ? (emptyMessage || '') : (
+        `${prefix || ''}${valueConverted} ${unitDisplayed}${suffix || ''}`
+    )
     return (
         <EL {...{
             className,
             style: { color: error ? 'red' : undefined, ...style },
-            title: `${error}`,
+            title: `${error || ''}`,
         }}>
             {content}
         </EL>

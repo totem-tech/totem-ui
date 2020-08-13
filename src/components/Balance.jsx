@@ -12,7 +12,7 @@ export const Balance = (props) => {
     return <Currency {...{
         ...props,
         value: balance,
-        emptyMessage: (
+        emptyMessage: emptyMessage === null ? '' : (
             <span>
                 <Icon
                     name='spinner'
@@ -26,6 +26,7 @@ export const Balance = (props) => {
 }
 Balance.propTypes = {
     address: PropTypes.string.isRequired,
+    // use null to prevent  displaying loading spinner
     emptyMessage: PropTypes.oneOfType([
         PropTypes.string,
         PropTypes.element,

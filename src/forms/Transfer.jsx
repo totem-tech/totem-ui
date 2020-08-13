@@ -14,6 +14,7 @@ import { translated } from '../services/language'
 import { showForm } from '../services/modal'
 import partners from '../services/partner'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import { currencyDefault } from '../services/currency'
 
 const wordsCap = translated({
     amount: 'amount',
@@ -139,12 +140,21 @@ export default class Transfer extends Component {
             fromIn.bond.changed(address)
             fromIn.message = !address ? '' : {
                 content: (
-                    <Balance {...{
-                        address,
-                        emptyMessage: texts.loadingBalance + '...',
-                        key: address,
-                        prefix: `${wordsCap.balance}: `,
-                    }} />
+                    [
+                        <Balance {...{
+                            address,
+                            emptyMessage: texts.loadingBalance + '...',
+                            key: 'XTX',
+                            prefix: `${wordsCap.balance}: `,
+                            unitDisplayed: currencyDefault,
+                        }} />,
+                        <Balance {...{
+                            address,
+                            emptyMessage: null,
+                            key: 'selected',
+                            prefix: ' | ',
+                        }} />
+                    ]
                 )
             }
         })
