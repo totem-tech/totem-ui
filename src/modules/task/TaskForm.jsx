@@ -530,7 +530,6 @@ export default class TaskForm extends Component {
                 then: thenCb(false),
             },
         ])
-        const txId = queueProps.args.slice(-1)
         queueProps.next = {
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'task',
@@ -542,7 +541,7 @@ export default class TaskForm extends Component {
                     __resultSelector: `result => {
                         const [txHash, eventsArr = []] = result || []
                         const event = (eventsArr || []).find(({ data = [] }) => {
-                            return data[0] === '${txId}'
+                            return data[0] === '${queueProps.txId}'
                         })
                         const taskId = event && event.data[1]
                         if (!event || !taskId.startsWith('0x')) throw new Error('${textsCap.taskIdParseError}')

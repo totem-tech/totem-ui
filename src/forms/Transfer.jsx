@@ -8,11 +8,11 @@ import { arrSort, isStr, textEllipsis } from '../utils/utils'
 import { ss58Decode } from '../utils/convert'
 import PartnerForm from '../forms/Partner'
 // services
-import { denominations } from '../services/blockchain'
-import identities from '../services/identity'
+import { denominations, queueables } from '../services/blockchain'
+import identities, { find as findIdentity } from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
-import partners from '../services/partner'
+import partners, { getAddressName } from '../services/partner'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { currencyDefault } from '../services/currency'
 
@@ -22,14 +22,16 @@ const wordsCap = translated({
     identity: 'identity',
     partner: 'partner',
     recipient: 'recipient',
+    sender: 'sender',
     status: 'status',
 }, true)[1]
 const texts = translated({
-    amountPlaceholder: 'Enter a value',
+    amountPlaceholder: 'Enter the amount to send',
     loadingBalance: 'Loading account balance',
     partnerEmptyMsg1: 'You do not have any partner yet. Add one in the Partner Module',
     partnerEmptyMsg2: 'No match found. Enter a valid address to add as a partner.',
     partnerPlaceholder: 'Select a Partner',
+    queueTitle: 'Transfer Transactions',
     submitErrorHeader: 'Transfer error',
     submitInprogressHeader: 'Transfer in-progress',
     submitSuccessHeader: 'Transfer successful',
@@ -202,18 +204,27 @@ export default class Transfer extends Component {
         const { name } = partners.get(to)
         // amount in transactions
         const amountXTX = amount * Math.pow(10, denominations[denomination])
+        const description = [
+            `${wordsCap.sender}: ${findIdentity(from).name}`,
+            `${wordsCap.recipient}: ${getAddressName(to)}`,
+            `${wordsCap.amount}: ${amount} ${currencyDefault}`,
+        ].join('\n')
         this.setMessage()
 
-        addToQueue({
-            type: QUEUE_TYPES.TX_TRANSFER,
-            args: [to, amount],
-            address: from,
-            then: (success, resultOrError) => {
-                if (!success) return this.setMessage(resultOrError)
-                this.setMessage(null, resultOrError, name, amountXTX)
-                this.clearForm()
-            }
-        })
+        addToQueue(queueables.balanceTransfer(
+            from,
+            to,
+            amount,
+            {
+                description,
+                title: texts.queueTitle,
+                then: (success, resultOrError) => {
+                    if (!success) return this.setMessage(resultOrError)
+                    this.setMessage(null, resultOrError, name, amountXTX)
+                    this.clearForm()
+                }
+            },
+        ))
     }
 
     // returns the min value acceptable for the selected denomination
@@ -238,7 +249,6 @@ export default class Transfer extends Component {
         )
         const status = inProgress ? 'loading' : (err ? 'error' : 'success')
         this.setState({
-            loading: inProgress,
             message: {
                 content,
                 header,

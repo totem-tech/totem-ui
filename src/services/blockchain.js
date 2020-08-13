@@ -6,9 +6,9 @@ import types from '../utils/totem-polkadot-js-types'
 import { translated } from './language'
 import storage from './storage'
 import { setToast } from './toast'
+import { QUEUE_TYPES } from './queue'
 
 const MODULE_KEY = 'blockchain'
-const TX_STORAGE = 'tx_storage'
 const textsCap = translated({
     invalidApiPromise: 'ApiPromise instance required',
     invalidApiFunc: 'invalid API function',
@@ -169,7 +169,7 @@ export const queueables = {
         ...queueProps,
         address: ownerAddress,
         func: 'api.tx.archive.archiveRecord',
-        type: TX_STORAGE,
+        type: QUEUE_TYPES.TX_STORAGE,
         args: [type, recordId, archive],
     }),
     // add a key to the key registry
@@ -184,13 +184,20 @@ export const queueables = {
         ...queueProps,
         address,
         func: 'api.tx.keyregistry.registerKeys',
-        type: TX_STORAGE,
+        type: QUEUE_TYPES.TX_STORAGE,
         args: [
             signPubKey,
             data,
             signature,
         ],
-    })
+    }),
+    balanceTransfer: (address, toAddress, amount, queueProps = {}) => ({
+        ...queueProps,
+        address,
+        func: 'api.tx.balances.transfer',
+        type: QUEUE_TYPES.TX_STORAGE,
+        args: [toAddress, amount],
+    }),
 }
 
 // Replace configs

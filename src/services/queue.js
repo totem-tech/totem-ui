@@ -21,7 +21,7 @@ export const QUEUE_TYPES = Object.freeze({
     CHATCLIENT: 'chatclient',
     BLOCKCHAIN: 'blockchain', // deprecated
     // transaction to transfer funds
-    TX_TRANSFER: 'tx_transfer', // todo use polkadot for tx
+    TX_TRANSFER: 'tx_transfer', // deprecated
     // transaction to create/update storage data
     TX_STORAGE: 'tx_storage',
 })
@@ -32,17 +32,19 @@ const MIN_BALANCE = 140
 const inprogressIds = {}
 // Properties accepted in a queue item. Items not marked as optional or internal should be supplied for task execution.
 const VALID_KEYS = Object.freeze([
-
-    // @address         string: address to initiate a transaction with.
-    //                          Required for transaction types. 
+    // @address         string: (optional) address/identity to initiate a transaction with.
+    //                          Required for transaction types.
+    //                          Also used to check if user has minimum required balance to execute the TX
     'address',
 
     // @amountXTX       number: minimum required amount in addition to transactin fee
     'amountXTX',
 
-    // @args            array: arguments to be supplied to @func function
-    //                      Variable args: if any of the args require a value from the result of one of the preious
-    //                      tasks in the queue chain format the args item as an object with the following properties:
+    // @args            array: arguments to be supplied to @func function.
+    //                      Dynamic @args: (not supported with QUEUE_TYPES.TX_TRANSFER for obvious reasons)
+    //                      If any of the @args require a value from the result of one of the preious tasks in the  
+    //                      queue chain format the args item as an object with the following properties:
+    //
     //                          @__taskName         string: (required) name of the previous task in the queue chain
     //                          @__resultSelector   string: (required) 
     //
@@ -55,7 +57,7 @@ const VALID_KEYS = Object.freeze([
     //                          Example 2:
     //                          args[index] = {
     //                              __taskName: '@name of the previous task',
-    //                              __resultSelector: `function(result) { 
+    //                              __resultSelector: `function(result, rootTask) { 
     //                                      const { data } = result || {}
     //                                      return parseInt(data.num) || 0
     //                                }`,
@@ -223,7 +225,7 @@ const _processTask = (currentTask, id, toastId, allowRepeat) => {
             handleTxTransfer(id, rootTask, currentTask, toastId)
             break
         case QUEUE_TYPES.TX_STORAGE:
-            handleTxStorage(id, rootTask, currentTask, toastId)
+            handleTx(id, rootTask, currentTask, toastId)
             break
         case QUEUE_TYPES.CHATCLIENT:
             handleChatClient(id, rootTask, currentTask, toastId)
@@ -315,30 +317,44 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
     queue.delete(id)
 }
 
-const processArgs = async (rootTask = {}, currentTask = {}) => {
-    const args = currentTask.args || []
-    const processingRequired = args.find(arg => isObj(arg) && !!arg.__taskName && arg.__resultSelector)
-    if (!processingRequired) return
+const processArgs = (rootTask = {}, currentTask = {}) => {
+    try {
+        const args = currentTask.args || []
+        const processedArgs = []
+        const hasDynamicArg = args.find(arg => isObj(arg) && arg.__taskName && arg.__resultSelector)
+        if (!hasDynamicArg) return []
 
-    const getResultByName = (task, name) => {
-        if (task.name === name) return task.result
-        return !isObj(task.next) ? undefined : getResultByName(task.next, name)
+        // throw 'test error 0'
+        const getResultByName = (task, name) => {
+            // throw 'test error 2'
+            if (task.name === name) return task.result
+            return !isObj(task.next) ? undefined : getResultByName(task.next, name)
+        }
+        for (let i = 0; i < args.length; i++) {
+            const arg = args[i]
+            const { __taskName, __resultSelector } = isObj(arg) ? arg : {}
+            const isStatic = !__taskName || !__resultSelector
+            if (isStatic) {
+                processedArgs.push(arg)
+                continue
+            }
+            // throw 'test error 1'
+            const result = getResultByName(rootTask, __taskName)
+            const argValue = eval(__resultSelector)
+            const processedArg = !isFn(argValue) ? argValue : argValue(result, rootTask)
+            processedArgs.push(processedArg)
+        }
+
+        return [null, processedArgs]
+    } catch (err) {
+        console.log({ err })
+        // throw err
+        return [err]
     }
-    const processedArgs = args.map(arg => {
-        const { __taskName, __resultSelector } = isObj(arg) ? arg : {}
-        const isStatic = !__taskName || !__resultSelector
-        if (isStatic) return arg
-        const result = getResultByName(rootTask, __taskName)
-        const argValue = eval(__resultSelector)
-        return !isFn(argValue) ? argValue : argValue(result)
-    })
-
-    return processedArgs
 }
 
 const handleChatClient = async (id, rootTask, task, toastId) => {
     const { args, description, title, silent, toastDuration } = task
-    const client = getClient()
     const msg = {
         content: [description],
         header: title,
@@ -346,19 +362,19 @@ const handleChatClient = async (id, rootTask, task, toastId) => {
     const _save = (status, resultOrErr) => setToastNSaveCb(
         id, rootTask, task, status, msg, toastId, silent, toastDuration, resultOrErr
     )
-    try {
-        task.processedArgs = await processArgs(rootTask, task)
-        _save(LOADING)
-    } catch (err) {
-        return _save(ERROR, `${textsCap.processArgsFailed}. ${err}`)
-    }
 
     try {
+        const client = getClient() // keep the client variable as it will be used the `eval(func)`
+        eval(client) // just make sure client variable isn't removed by accident
         let func = task.func
         func = (func.startsWith('client.') ? '' : 'client.') + func
         func = eval(func)
-        eval(client) // just make sure client variable isn't removed by accident
         if (!isFn(func)) throw textsCap.invalidFunc
+
+        // process any dynamic arguments
+        const [err, processedArgs] = processArgs(rootTask, task)
+        task.processedArgs = processedArgs
+        if (err) throw `${textsCap.processArgsFailed}. ${err}`
         _save(LOADING)
 
         // initiate request
@@ -369,11 +385,11 @@ const handleChatClient = async (id, rootTask, task, toastId) => {
     }
 }
 
-const handleTxStorage = async (id, rootTask, task, toastId) => {
+const handleTx = async (id, rootTask, task, toastId) => {
     if (!isValidNumber(task.amountXTX)) {
         task.amountXTX = 0
     }
-    const { address, amountXTX, args, description, func, silent, title, toastDuration } = task
+    const { address, amountXTX, args, description, func, silent, title, toastDuration, txId } = task
     const identity = findIdentity(address)
     const msg = {
         content: [description],
@@ -393,21 +409,21 @@ const handleTxStorage = async (id, rootTask, task, toastId) => {
         // add idenitity to keyring on demand
         !keyring.contains(address) && keyring.add([identity.uri])
     } catch (err) {
-        console.log('handleTxTransfer: connectcion error', err)
+        console.log('handleTxStorage: connectcion error', err)
+        // attempt to execute again on page reload or manual resume
         return
     }
 
     try {
-        task.processedArgs = await processArgs(rootTask, task)
-    } catch (err) {
-        return _save(ERROR, `${textsCap.processArgsFailed}. ${err}`)
-    }
-    try {
         const txFunc = eval(func)
-        if (!isFn(txFunc)) return _save(ERROR, textsCap.invalidFunc)
+        if (!isFn(txFunc)) throw textsCap.invalidFunc
+
+        const [err, processedArgs] = processArgs(rootTask, task)
+        task.processedArgs = processedArgs
+        if (err) throw `${textsCap.processArgsFailed}. ${err}`
 
         let balance = await query(api.query.balances.freeBalance, address)
-        if (balance < (amountXTX + MIN_BALANCE)) return _save(ERROR, textsCap.insufficientBalance)
+        if (balance < (amountXTX + MIN_BALANCE)) throw textsCap.insufficientBalance
         _save(LOADING, null, { before: balance })
 
         const tx = txFunc.apply(null, task.processedArgs || args)
@@ -418,7 +434,6 @@ const handleTxStorage = async (id, rootTask, task, toastId) => {
         _save(ERROR, err)
     }
 }
-
 
 const handleTxTransfer = async (id, rootTask, task, toastId) => {
     task.func = 'api.tx.balances.transfer'

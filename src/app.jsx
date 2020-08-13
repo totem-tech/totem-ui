@@ -62,8 +62,8 @@ export class App extends Component {
 			window: windw,
 		}
 
-		// queryBlockchain(api => window.api = api)
 		window.queryBlockchain = async (func, args, multi) => await blockchain.query(func, args, multi, true)
+		queryBlockchain().then(api => window.api = api)
 	}
 
 	componentWillMount() {
@@ -74,12 +74,6 @@ export class App extends Component {
 	componentWillUnmount() {
 		layoutBond.untie(this.tieIdIsMobile)
 		gridColumnsBond.untie(this.tieIdNumCol)
-	}
-
-	// unused
-	// hack to format as a currency. Needs to go in a seperate Display Formatting Utilities file.
-	round(value, decimals) {
-		return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals).toFixed(decimals)
 	}
 
 	handleSidebarToggle = (v, c) => this.setState({ sidebarVisible: v, sidebarCollapsed: c })

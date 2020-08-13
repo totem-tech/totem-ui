@@ -41,7 +41,6 @@ export const queueables = {
         })[0]
         const txidStr = uuid.v1().replace(/\-/g, '')
         const txId = bytesToHex(strToU8a(txidStr))
-        console.log({ txidStr, txId })
         const args = !taskId ? [
             addrApprover,
             addrFulfiller,
@@ -73,6 +72,7 @@ export const queueables = {
             func,
             type: TX_STORAGE,
             args,
+            txId,
         }
     }
 }
