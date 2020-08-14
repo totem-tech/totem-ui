@@ -72,12 +72,12 @@ export const updateCurrencies = async () => {
  * @summary custom React hook to get/set the latest selected currency
  */
 export const useSelected = () => {
-    const [selected] = useState(getSelected())
+    const [value, setValue] = useState(getSelected())
 
     useEffect(() => {
-        const subscribed = rxSelected.subscribe(value => setSelected(value))
+        const subscribed = rxSelected.subscribe(value => setValue(value))
         return () => subscribed.unsubscribe
     }, [])
 
-    return [selected, setSelected]
+    return [value, setSelected]
 }

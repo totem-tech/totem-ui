@@ -25,6 +25,8 @@ import storage from './storage'
 import { getLayout, layoutBond } from './window'
 
 const [texts] = translated({
+    financialStatementTitle: 'Financial statement',
+
     gettingStartedTitle: 'Getting Started',
 
     historyTitle: 'History',
@@ -305,16 +307,17 @@ export const sidebarItems = [
         title: texts.utilitiesTitle,
     },
     {
+        hidden: false,
         content: EventList,
         icon: '',
         name: 'blockchain-events',
-        title: 'Events'
+        title: texts.eventsTtile
     },
     {
         content: FinancialStatementsView,
         icon: '',
         name: 'financial-statement',
-        title: 'Financial statement',
+        title: texts.financialStatementTitle,
     },
 ].map(item => {
     const {

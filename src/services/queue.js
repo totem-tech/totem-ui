@@ -494,7 +494,7 @@ const handleTx = async (id, rootTask, task, toastId) => {
                     // wait for up to 10 blocks and check again if tx becomes succesful
                     await PromisE.delay(diff * BLOCK_DURATION_SECONDS * 1000)
                 } else {
-                    // new transaction, continue with 
+                    // new transaction, continue with execution
                     done = true
                 }
             } while (!done)

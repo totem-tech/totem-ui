@@ -18,8 +18,10 @@ export const Currency = props => {
         unitDisplayed: pUnitD,
         value,
     } = props
+    // console.log({ pUnitD })
     const [unitDisplayed] = pUnitD ? [pUnitD] : useSelected()
-    let [valueConverted, setValueConverted] = useState()
+    const isSame = unit === unitDisplayed
+    let [valueConverted, setValueConverted] = useState(isSame ? value : undefined)
     let [error, setError] = useState()
 
     useEffect(() => {
@@ -28,7 +30,7 @@ export const Currency = props => {
         const convert = async (value) => {
             if (!mounted) return
             try {
-                valueConverted = !value ? 0 : await convertTo(value, unit, unitDisplayed)
+                valueConverted = !value || isSame ? value || 0 : await convertTo(value, unit, unitDisplayed)
                 valueConverted = round(valueConverted, decimalPlaces)
                 error = null
             } catch (err) {
@@ -55,7 +57,9 @@ export const Currency = props => {
         <EL {...{
             className,
             style: { color: error ? 'red' : undefined, ...style },
-            title: `${error || ''}`,
+            title: error ? `${error}` : (
+                !isDefined(value) || isSame ? '' : `${value || 0} ${unit}`
+            ),
         }}>
             {content}
         </EL>

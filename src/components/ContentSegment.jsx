@@ -23,14 +23,9 @@ export default class ContentSegment extends Component {
 		const { bond } = this.props
 		if (!isBond(bond)) return
 		this.tieId = bond.tie(() => {
-			const { contentProps: argsS } = this.state
-			const { contentProps: argsP } = this.props
+			const { contentProps } = this.props
 			const content = this.getContent()
-			// if arguments changed then force re-render
-			const doReRender = isObj(argsP) && JSON.stringify(argsS) === JSON.stringify(argsP)
-			this.setState({ content: doReRender ? '' : content, contentProps: argsP })
-
-			doReRender && setTimeout(() => this.setState({ content }))
+			this.setState({ content, contentProps })
 		})
 	}
 
