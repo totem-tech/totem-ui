@@ -1,3 +1,4 @@
+import { Subject } from 'rxjs'
 import { Bond } from 'oo7'
 import { isDefined, isFn } from '../utils/utils'
 import storage from './storage'
@@ -9,6 +10,7 @@ export const MOBILE = 'mobile'
 export const DESKTOP = 'desktop'
 export const gridColumnsBond = new Bond().defaultTo(gridColumns())
 export const layoutBond = new Bond().defaultTo(getLayout())
+export const rxOnline = new Subject()
 
 // forceLayout enforces and reverts a specific layout size and ignores layout change when window resizes
 //
@@ -86,6 +88,8 @@ export function gridColumns(numCol) {
 
 // set layout name on window resize 
 window.onresize = () => layoutBond.changed(getLayout())
+window.addEventListener('online', () => rxOnline.next(true))
+window.addEventListener('offline', () => rxOnline.next(false))
 
 export default {
     MOBILE,

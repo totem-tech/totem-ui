@@ -306,7 +306,7 @@ export const sidebarItems = [
     },
     {
         content: EventList,
-        icon: 'history',
+        icon: '',
         name: 'blockchain-events',
         title: 'Events'
     },

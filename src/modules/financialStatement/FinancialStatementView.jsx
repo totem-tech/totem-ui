@@ -11,7 +11,6 @@ export default function FinancialStatementView() {
     const [glAcBalances, message] = useLedgerAcBalances(selectedAddress)
     const nestedBalances = getNestedBalances(glAcBalances)
 
-    glAcBalances && console.log({ nestedBalances })
     return (
         <div style={{ whiteSpace: 'pre' }}>
             {glAcBalances && (

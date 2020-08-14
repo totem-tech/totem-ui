@@ -7,6 +7,7 @@ import { translated } from './language'
 import storage from './storage'
 import { setToast } from './toast'
 import { QUEUE_TYPES } from './queue'
+import { rxOnline } from './window'
 
 const MODULE_KEY = 'blockchain'
 const textsCap = translated({
@@ -73,7 +74,19 @@ export const getConnection = async (create = false) => {
     try {
         let isConnected = !connection.api ? false : connection.api._isConnected.value
         if (isConnected) return connection
-        if (connectPromise) {
+        if (!navigator.onLine && !create && (!connectPromise || !connectPromise.pending)) {
+            // working offline. wait for connection to be re-established
+            connectPromise = PromisE(resolve => {
+                const subscribed = rxOnline.subscribe(online => {
+                    if (!online) return
+                    connectPromise = null
+                    subscribed.unsubscribe()
+                    resolve(getConnection(true))
+                })
+            })
+            return connectPromise
+        }
+        if (connectPromise && !connectPromise.rejected) {
             await connectPromise
             isConnected = connection.api._isConnected.value
             // if connection is rejected attempt to connect again
@@ -172,6 +185,14 @@ export const queueables = {
         type: QUEUE_TYPES.TX_STORAGE,
         args: [type, recordId, archive],
     }),
+
+    balanceTransfer: (address, toAddress, amount, queueProps = {}) => ({
+        ...queueProps,
+        address,
+        func: 'api.tx.balances.transfer',
+        type: QUEUE_TYPES.TX_STORAGE,
+        args: [toAddress, amount],
+    }),
     // add a key to the key registry
     //
     // Props: 
@@ -190,13 +211,6 @@ export const queueables = {
             data,
             signature,
         ],
-    }),
-    balanceTransfer: (address, toAddress, amount, queueProps = {}) => ({
-        ...queueProps,
-        address,
-        func: 'api.tx.balances.transfer',
-        type: QUEUE_TYPES.TX_STORAGE,
-        args: [toAddress, amount],
     }),
 }
 

@@ -7,10 +7,9 @@ export default function EventList() {
     const [events, setEvents] = useState(eventsT)
 
     useEffect(() => {
-        console.log('EventList. connecting to blockchain')
         getConnection().then(({ api }) =>
             api.query.system.events(newEvents => {
-                eventsT = [...newEvents, ...eventsT]
+                eventsT = [...newEvents, ...eventsT].slice(-100) // keep only latest 100 events
                 setEvents(eventsT)
             })
         )
@@ -23,7 +22,6 @@ export default function EventList() {
         </ol>
     )
 }
-
 
 function EventDisplay({ event }) {
     const params = (event.typeDef || []).map(({ type }) => ({

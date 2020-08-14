@@ -14,7 +14,7 @@ import { translated } from '../services/language'
 import { showForm } from '../services/modal'
 import partners, { getAddressName } from '../services/partner'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import { currencyDefault } from '../services/currency'
+import { currencyDefault, getSelected } from '../services/currency'
 
 const wordsCap = translated({
     amount: 'amount',
@@ -42,7 +42,7 @@ export default class Transfer extends Component {
     constructor(props) {
         super(props)
 
-        const primary = 'Transactions' //getConfig().primary
+        const primary = 'Transactions'
         this.state = {
             denomination: primary,
             message: undefined,
@@ -150,13 +150,15 @@ export default class Transfer extends Component {
                             prefix: `${wordsCap.balance}: `,
                             unitDisplayed: currencyDefault,
                         }} />,
-                        <Balance {...{
-                            address,
-                            emptyMessage: null,
-                            key: 'selected',
-                            prefix: ' | ',
-                        }} />
-                    ]
+                        getSelected() !== currencyDefault && (
+                            <Balance {...{
+                                address,
+                                emptyMessage: null,
+                                key: 'selected',
+                                prefix: ' | ',
+                            }} />
+                        ),
+                    ].filter(Boolean)
                 )
             }
         })
@@ -209,22 +211,20 @@ export default class Transfer extends Component {
             `${wordsCap.recipient}: ${getAddressName(to)}`,
             `${wordsCap.amount}: ${amount} ${currencyDefault}`,
         ].join('\n')
+        const then = (success, resultOrError) => {
+            if (!success) return this.setMessage(resultOrError)
+            this.setMessage(null, resultOrError, name, amountXTX)
+            this.clearForm()
+        }
         this.setMessage()
 
-        addToQueue(queueables.balanceTransfer(
+        const queueProps = queueables.balanceTransfer(
             from,
             to,
             amount,
-            {
-                description,
-                title: texts.queueTitle,
-                then: (success, resultOrError) => {
-                    if (!success) return this.setMessage(resultOrError)
-                    this.setMessage(null, resultOrError, name, amountXTX)
-                    this.clearForm()
-                }
-            },
-        ))
+            { description, title: texts.queueTitle, then },
+        )
+        addToQueue(queueProps)
     }
 
     // returns the min value acceptable for the selected denomination
@@ -237,24 +237,23 @@ export default class Transfer extends Component {
         const [hash] = result
         const inProgress = !err && !hash
         const { denomination } = this.state
-        const content = inProgress ? '' : (!err || isStr(err) ? err : err.message) || (
-            <ul style={{ listStyleType: 'none', margin: 0, paddingLeft: 0 }}>
-                <li>{wordsCap.recipient}: {recipientName}</li>
-                <li>{wordsCap.amount}: {amount} {denomination}</li>
-                <li>{texts.txFee}: {}</li>
-            </ul>
-        )
-        const header = inProgress ? texts.submitInprogressHeader : (
-            err ? texts.submitErrorHeader : texts.submitSuccessHeader
-        )
-        const status = inProgress ? 'loading' : (err ? 'error' : 'success')
+        let content = ''
+        let header = texts.submitInprogressHeader
+        let status = 'loading'
+        if (!inProgress) {
+            content = err ? `${err}` : (
+                <ul style={{ listStyleType: 'none', margin: 0, paddingLeft: 0 }}>
+                    <li>{wordsCap.recipient}: {recipientName}</li>
+                    <li>{wordsCap.amount}: {amount} {denomination}</li>
+                    {/* <li>{texts.txFee}: {}</li> */}
+                </ul>
+            )
+            header = err ? texts.submitErrorHeader : texts.submitSuccessHeader
+            status = err ? 'error' : 'success'
+        }
+
         this.setState({
-            message: {
-                content,
-                header,
-                showIcon: true,
-                status
-            },
+            message: { content, header, showIcon: true, status },
             submitDisabled: inProgress,
         })
     }

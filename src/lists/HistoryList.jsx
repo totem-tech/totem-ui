@@ -1,16 +1,17 @@
 import React, { Component } from 'react'
 import { Button, Icon } from 'semantic-ui-react'
 import DataTable from '../components/DataTable'
-import { format } from '../utils/time'
 import FormBuilder from '../components/FormBuilder'
+import { format } from '../utils/time'
+import { clearClutter, isValidNumber, isObj, isDefined } from '../utils/utils'
 // services
 import { bond, clearAll, getAll, remove } from '../services/history'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import { getAddressName } from '../services/partner'
-import { clearClutter, isValidNumber, isObj, isDefined } from '../utils/utils'
+import { statusTitles } from '../services/queue'
 
-const [texts, textsCap] = translated({
+const textsCap = translated({
     action: 'action',
     balanceAfterTx: 'account balance after transaction',
     balanceBeforeTx: 'account balance before transaction',
@@ -26,13 +27,14 @@ const [texts, textsCap] = translated({
     groupId: 'Group ID',
     identity: 'identity',
     message: 'message',
+    pendingExecution: 'pending execution',
     status: 'status',
     taskId: 'Task ID',
     techDetails: 'technical details',
     timestamp: 'timestamp',
     title: 'title',
     type: 'type',
-}, true)
+}, true)[1]
 
 export default class HistoryList extends Component {
     constructor(props) {
@@ -109,7 +111,7 @@ export default class HistoryList extends Component {
             searchable: true,
             selectable: true,
             topLeftMenu: [{
-                content: texts.clearAll,
+                content: textsCap.clearAll,
                 name: 'clear-all',
                 negative: true,
                 onClick: () => confirm({
@@ -156,6 +158,7 @@ export default class HistoryList extends Component {
             [textsCap.action, item.title],
             // description about the task that is displayed in the queue toast message
             [textsCap.description, item.description, 'textarea'],
+            [textsCap.status, statusTitles[item.status] || textsCap.pendingExecution],
             // show error message only if available
             errMsg && [textsCap.errorMessage, errMsg, 'textarea', { invalid: item.status === 'error' }],
             // blockchain or chat client function path in string format
@@ -163,8 +166,8 @@ export default class HistoryList extends Component {
             // user's identity that was used to create the transaction
             item.identity && [textsCap.identity, item._identity],
             [textsCap.timestamp, item._timestamp],
-            [texts.groupId, item.groupId],
-            [texts.taskId, id],
+            [textsCap.groupId, item.groupId],
+            [textsCap.taskId, id],
             isValidNumber(before) && [textsCap.balanceBeforeTx, before, 'number', balanceExtProps],
             isValidNumber(after) && [textsCap.balanceAfterTx, after, 'number', balanceExtProps],
             [textsCap.dataSent, JSON.stringify(item.data, null, 4), 'textarea'],
@@ -183,7 +186,7 @@ export default class HistoryList extends Component {
                     type,
                     value,
                 })),
-            // size: 'tiny',
+            size: 'tiny',
             submitText: null,
         })
     }
