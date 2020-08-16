@@ -47,7 +47,7 @@ export const generateUri = generateMnemonic
 export const get = address => identities.get(address)
 
 // todo: migrate from array to map for consistency
-export const getAll = () => Array.from(identities.getAll()).map(([_, x]) => x)
+export const getAll = () => identities.map(([_, x]) => x)
 
 export const getSelected = () => identities.find({ selected: true }, true, true) || getAll()[0]
 
@@ -86,25 +86,6 @@ export const setSelected = address => {
     rxSelected.next(address)
 }
 
-(() => {
-    if (!getAll().length) {
-        console.log('Identity service: creating default identity for first time user')
-        // generate a new seed
-        const uri = generateUri() + '/totem/0/0'
-        const { address } = addFromUri(uri)
-        const identity = {
-            address,
-            name: DEFAULT_NAME,
-            usageType: USAGE_TYPES.PERSONAL,
-            uri,
-        }
-        set(address, identity)
-    }
-
-    // selectedAddressBond.changed((getSelected() || {}).address)
-    rxSelected.next(getSelected().address)
-})()
-
 // Custom hook to use the selected identity in a functional component
 export const useSelected = () => {
     const [selected, setSelected] = useState(getSelected().address)
@@ -134,8 +115,27 @@ export const useIdentities = () => {
         }
     }, [])
 
-    return list
+    return [list]
 }
+
+(() => {
+    if (!getAll().length) {
+        console.log('Identity service: creating default identity for first time user')
+        // generate a new seed
+        const uri = generateUri() + '/totem/0/0'
+        const { address } = addFromUri(uri)
+        const identity = {
+            address,
+            name: DEFAULT_NAME,
+            usageType: USAGE_TYPES.PERSONAL,
+            uri,
+        }
+        set(address, identity)
+    }
+
+    // selectedAddressBond.changed((getSelected() || {}).address)
+    rxSelected.next(getSelected().address)
+})()
 
 export default {
     addFromUri,

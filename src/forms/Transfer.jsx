@@ -142,23 +142,13 @@ export default class Transfer extends Component {
             fromIn.bond.changed(address)
             fromIn.message = !address ? '' : {
                 content: (
-                    [
-                        <Balance {...{
-                            address,
-                            emptyMessage: texts.loadingBalance + '...',
-                            key: 'XTX',
-                            prefix: `${wordsCap.balance}: `,
-                            unitDisplayed: currencyDefault,
-                        }} />,
-                        getSelected() !== currencyDefault && (
-                            <Balance {...{
-                                address,
-                                emptyMessage: null,
-                                key: 'selected',
-                                prefix: ' | ',
-                            }} />
-                        ),
-                    ].filter(Boolean)
+                    <Balance {...{
+                        address,
+                        emptyMessage: texts.loadingBalance + '...',
+                        key: 'XTX',
+                        prefix: `${wordsCap.balance}: `,
+                        unitDisplayed: currencyDefault,
+                    }} />
                 )
             }
         })

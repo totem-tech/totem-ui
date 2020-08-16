@@ -25,12 +25,14 @@ import storage from './storage'
 import { getLayout, layoutBond } from './window'
 
 const [texts] = translated({
+    eventsTtile: 'Events',
+
     financialStatementTitle: 'Financial statement',
 
     gettingStartedTitle: 'Getting Started',
 
     historyTitle: 'History',
-    historySubheader: 'History List of actions recently taken by you. This data is only stored locally on your computer.',
+    historySubheader: 'List of actions recently taken by you. This data is only stored locally on your computer.',
 
     identityTitle: 'Identities',
     identitySubheader: 'Identities are like companies - and you can create as many as you like!',
@@ -54,19 +56,28 @@ const [texts] = translated({
         To keep the information separate you can only see the activities of one identity at a time. 
         Select the identity you want to view in the top right corner of the header.
     `,
-    identitySubheaderDetails5: 'Once an Identity is stored in this list you can use it all over Totem. To find out more, watch the video!',
+    identitySubheaderDetails5: `
+        Once an Identity is stored in this list you can use it all over Totem. 
+        To find out more, watch the video!
+    `,
 
     partnersTitle: 'Partners',
     partnersHeader: 'Partner Contact List',
     partnersSubheader: 'Manage suppliers, customers, and any other party that you have contact with in Totem.',
     partnersSubheaderDetails1: `In Totem, a partner is anyone that you intend to interact with.`,
-    partnersSubheaderDetails2: `Each partner has one or more identities that they can share with you. The best way to get 
-        someone\'s identity is to request it, which you can do using the request button. Simply enter their userid and click request.`,
-    partnersSubheaderDetails3: `You can give each shared Partner a name, add tags, and define it any way you want. The table can be sorted and searched to suit your needs.`,
-    partnersSubheaderDetails4: `Once a partner is stored here it will become available all over Totem.`,
+    partnersSubheaderDetails2: `
+        Each partner has one or more identities that they can share with you. 
+        The best way to get someone\'s identity is to request it, which you can do using the request button.
+        Simply enter their userid and click request.
+    `,
+    partnersSubheaderDetails3: `
+        You can give each shared Partner a name, add tags, and define it any way you want.
+        The table can be sorted and searched to suit your needs.
+    `,
+    partnersSubheaderDetails4: 'Once a partner is stored here it will become available all over Totem.',
     partnersSubheaderDetails: `
         In Totem, a partner is anyone that you intend to interact with. Each partner has one or more identities,
-        that they can share with you. (see the Identities Module for more information on Identities.)
+        that they can share with you. (See the Identities Module for more information on Identities.)
         The best way to get someone's identity is to request it, which you can do using the internal messaging service.
         Click Request, and enter the partner's User ID and hopefully they will share one with you.
         You can give each shared Partner Identity a new name, add tags, and define it any way you want.
@@ -75,8 +86,12 @@ const [texts] = translated({
 
     projectTitle: 'Activities',
     projectSubheader: 'Manage activities',
-    projectSubheaderDetails1: `You can use the activity module to account for any activity, task project. You can invite team members to activities or assign individuals an activity, manage and approve all time booked against an activity.`,
-    projectSubheaderDetails2: `Activities are then automatically mapped to invoices or other payments, and all accounting will be correctly posted even into your partner\'s accounts.`,
+    projectSubheaderDetails1: `
+        You can use the activity module to account for any activity, task project.
+        You can invite team members to activities or assign individuals an activity,
+        manage and approve all time booked against an activity.
+    `,
+    projectSubheaderDetails2: 'Activities are then automatically mapped to invoices or other payments, and all accounting will be correctly posted even into your partner\'s accounts.',
     projectSubheaderDetails: `
         You can use the activity module to account for any activity, task project.
         You can invite team members to activities or assign individuals an activity, manage and approve all time booked against an activity. 
@@ -311,7 +326,7 @@ export const sidebarItems = [
         content: EventList,
         icon: '',
         name: 'blockchain-events',
-        title: texts.eventsTtile
+        title: texts.eventsTtile,
     },
     {
         content: FinancialStatementsView,

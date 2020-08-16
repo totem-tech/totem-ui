@@ -75,8 +75,12 @@ export const useSelected = () => {
     const [value, setValue] = useState(getSelected())
 
     useEffect(() => {
-        const subscribed = rxSelected.subscribe(value => setValue(value))
-        return () => subscribed.unsubscribe
+        let mounted = true
+        const subscribed = rxSelected.subscribe(value => mounted && setValue(value))
+        return () => {
+            mounted = false
+            subscribed.unsubscribe()
+        }
     }, [])
 
     return [value, setSelected]

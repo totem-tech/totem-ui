@@ -10,7 +10,7 @@ import TimeKeepingForm from '../forms/TimeKeeping'
 // services
 import { getUser, loginBond } from '../services/chatClient'
 import identities, { getSelected, setSelected } from '../services/identity'
-import { translated } from '../services/language'
+import { getSelected as getSelectedLang, translated } from '../services/language'
 import { showForm } from '../services/modal'
 import {
 	unreadCountBond as unreadMsgCountBond,
@@ -22,18 +22,19 @@ import {
 	unreadCountBond as unreadNotifCountBond,
 } from '../modules/notification/notification'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import { toggleSidebarState } from '../services/sidebar'
+import { toggleSidebarState, setActive } from '../services/sidebar'
 import timeKeeping from '../services/timeKeeping'
 import { setToast } from '../services/toast'
 
-const [texts] = translated({
-	addressCopied: 'Address copied to clipboard',
-	copyAddress: 'Copy Address',
-	faucetRequest: 'Faucet request',
-	faucetRequestDetails: 'Requested transaction allocations',
-	requestFunds: 'Request Funds',
-	updateIdentity: 'Update Identity',
-})
+const textsCap = translated({
+	addressCopied: 'your identity copied to clipboard',
+	changeCurrency: 'change display currency',
+	copyAddress: 'copy my identity',
+	faucetRequest: 'faucet request',
+	faucetRequestDetails: 'requested transaction allocations',
+	requestFunds: 'request Funds',
+	updateIdentity: 'update identity',
+}, true)[1]
 export default class PageHeader extends Component {
 	constructor(props) {
 		super(props)
@@ -70,7 +71,7 @@ export default class PageHeader extends Component {
 		const { address } = getSelected()
 		if (!address) return;
 		copyToClipboard(address)
-		const msg = { content: texts.addressCopied, status: 'success' }
+		const msg = { content: textsCap.addressCopied, status: 'success' }
 		this.copiedMsgId = setToast(msg, 2000, this.copiedMsgId)
 	}
 
@@ -82,8 +83,8 @@ export default class PageHeader extends Component {
 	handleFaucetRequest = () => addToQueue({
 		type: QUEUE_TYPES.CHATCLIENT,
 		func: 'faucetRequest',
-		title: texts.faucetRequest,
-		description: texts.faucetRequestDetails,
+		title: textsCap.faucetRequest,
+		description: textsCap.faucetRequestDetails,
 		args: [getSelected().address]
 	})
 
@@ -184,6 +185,7 @@ const PageHeaderView = props => {
 				/>
 				<Dropdown
 					item
+					text={getSelectedLang()}
 					icon={{
 						name: 'chevron circle ' + (showTools ? 'up' : 'down'),
 						size: 'large',
@@ -191,25 +193,39 @@ const PageHeaderView = props => {
 					}}
 					onClick={() => setShowTools(!showTools) | notifVisibleBond.changed(false)}
 				>
-					<Dropdown.Menu className="left">
-						<Dropdown.Item
-							icon="pencil"
-							content={texts.updateIdentity}
-							onClick={onEdit}
-						/>
-						<Dropdown.Item
-							icon="copy"
-							content={texts.copyAddress}
-							onClick={onCopy}
-						/>
-						{userId && [
-							<Dropdown.Item
-								key="0"
-								icon="gem"
-								content={texts.requestFunds}
-								onClick={onFaucetRequest}
-							/>
-						]}
+					<Dropdown.Menu className='left'>
+						{
+							[
+								{
+									icon: 'pencil',
+									content: textsCap.updateIdentity,
+									onClick: onEdit,
+								},
+								{
+									icon: 'copy',
+									content: textsCap.copyAddress,
+									onClick: onCopy,
+								},
+								userId && {
+
+									icon: 'gem',
+									content: textsCap.requestFunds,
+									onClick: onFaucetRequest,
+								},
+								{
+									icon: 'currency',
+									content: textsCap.changeCurrency, // Better left un-translated
+									onClick: () => setActive('settings'),
+								},
+								{
+									icon: 'language',
+									content: 'Change language', // Better left un-translated
+									onClick: () => setActive('settings'),
+								},
+							]
+								.filter(Boolean)
+								.map((props, i) => <Dropdown.Item {...props} key={props.icon + i} />)
+						}
 					</Dropdown.Menu>
 				</Dropdown>
 			</Menu.Menu>
@@ -219,18 +235,17 @@ const PageHeaderView = props => {
 	if (!isMobile || !isRegistered) return topBar
 
 	return (
-		<React.Fragment>
+		<div>
 			{topBar}
 			<Menu
+				children={buttons}
 				direction='bottom'
 				fixed='bottom'
 				inverted
 				vertical={false}
 				widths={5}
-			>
-				{buttons}
-			</Menu>
-		</React.Fragment>
+			/>
+		</div>
 	)
 }
 

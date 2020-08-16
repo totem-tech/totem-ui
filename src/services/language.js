@@ -7,6 +7,8 @@ import { getUrlParam } from './window'
 const translations = new DataStorage('totem_static_translations')
 export const EN = 'EN'
 const MODULE_KEY = 'language'
+const rw = value => storage.settings.module(MODULE_KEY, value) || {}
+let _selected = rw().selected || EN
 export const BUILD_MODE = getUrlParam('build-mode').toLowerCase() == 'true'
     && window.location.hostname !== 'totem.live'
 export const languages = Object.freeze({
@@ -26,7 +28,21 @@ export const languages = Object.freeze({
     UK: 'Ukrainian',
     ZH: 'Chinese',
 })
-const rw = value => storage.settings.module(MODULE_KEY, value) || {}
+
+// downloadTextListCSV generates a CSV file with all the unique application texts
+// that can be used to translate by opening the file in Google Drive
+// NB: this function should not be used when BUILD_MODE is false (URL param 'build-mode' not 'true')
+export const downloadTextListCSV = !BUILD_MODE ? null : () => {
+    const langCodes = [EN, ...Object.keys(languages).filter(x => x != EN)]
+    const rest = langCodes.slice(1)
+    const cols = textCapitalize('abcdefghijklmnopqrstuvwxyz').split('')
+    const str = langCodes.join(',') + '\n' + (window.enList || []).map((x, i) => {
+        const rowNo = i + 2
+        const functions = rest.map((_, c) => `"=GOOGLETRANSLATE($A${rowNo}, $A$1, ${cols[c + 1]}$1)"`).join(',')
+        return `"${clearClutter(x)}", ` + functions
+    }).join(',\n')
+    downloadFile(str, `English-texts-${new Date().toISOString()}.csv`, 'text/csv')
+}
 
 // retrieve latest translated texts from server and save to local storage
 export const fetchNSaveTexts = async () => {
@@ -48,12 +64,18 @@ export const fetchNSaveTexts = async () => {
 }
 
 // get selected language code
-export const getSelected = () => rw().selected || EN
+export const getSelected = () => _selected
 
 export const getTexts = langCode => translations.get(langCode)
 
 // set selected language code
-export const setSelected = selected => rw({ selected })
+export const setSelected = async (selected, delay = true) => {
+    rw({ selected })
+    // retrieve translated texts from server
+    await fetchNSaveTexts()
+    // reload page
+    setTimeout(() => window.location.reload(true), delay)
+}
 
 // save translated list of texts retrieved from server
 export const setTexts = (langCode, texts, enTexts) => translations.setAll(new Map(
@@ -65,7 +87,7 @@ export const setTexts = (langCode, texts, enTexts) => translations.setAll(new Ma
 ))
 
 export const translated = (texts = {}, capitalized = false) => {
-    const langCode = getSelected() || EN
+    const langCode = getSelected()
     // translation not required
     if (langCode === EN && !BUILD_MODE) return [texts, capitalized && textCapitalize(texts)]
 
@@ -94,20 +116,6 @@ export const translated = (texts = {}, capitalized = false) => {
         texts[key] = translatedText
     })
     return [texts, capitalized && textCapitalize(texts)]
-}
-// downloadTextListCSV generates a CSV file with all the unique application texts
-// that can be used to translate by opening the file in Google Drive
-// NB: this function should not be used when BUILD_MODE is false (URL param 'build-mode' not 'true')
-export const downloadTextListCSV = !BUILD_MODE ? null : () => {
-    const langCodes = [EN, ...Object.keys(languages).filter(x => x != EN)]
-    const rest = langCodes.slice(1)
-    const cols = textCapitalize('abcdefghijklmnopqrstuvwxyz').split('')
-    const str = langCodes.join(',') + '\n' + (window.enList || []).map((x, i) => {
-        const rowNo = i + 2
-        const functions = rest.map((_, c) => `"=GOOGLETRANSLATE($A${rowNo}, $A$1, ${cols[c + 1]}$1)"`).join(',')
-        return `"${clearClutter(x)}", ` + functions
-    }).join(',\n')
-    downloadFile(str, `English-texts-${new Date().toISOString()}.csv`, 'text/csv')
 }
 
 export default {

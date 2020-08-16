@@ -15,6 +15,7 @@ import { showForm } from '../services/modal'
 
 const wordsCap = translated({
     actions: 'actions',
+    business: 'business',
     create: 'create',
     name: 'name',
     never: 'never',
@@ -32,11 +33,10 @@ const [texts] = translated({
 })
 
 export default function IdentityList(props) {
-    const identities = useIdentities()
+    const [identities] = useIdentities()
     identities.forEach(identity => {
         const { fileBackupTS, tags = [], usageType } = identity
         identity._fileBackupTS = format(fileBackupTS) || wordsCap.never
-        identity.usageType = usageType || wordsCap.personal
         identity._tagsStr = tags.join(' ')
         identity._tags = tags.map(tag => (
             <Label
@@ -53,15 +53,13 @@ export default function IdentityList(props) {
                 {tag}
             </Label>
         ))
+        identity._usageType = usageType === 'personal' ? wordsCap.personal : wordsCap.business
     })
 
     const tableProps = {
         columns: [
             { key: 'name', title: wordsCap.name },
-            {
-                key: 'usageType',
-                title: wordsCap.usage
-            },
+            { collapsing: true, key: '_usageType', title: wordsCap.usage },
             {
                 key: '_tags',
                 draggable: false, // individual tags are draggable

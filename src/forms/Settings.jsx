@@ -14,7 +14,6 @@ import {
     languages,
     setSelected as setSelectedLang,
     translated,
-    fetchNSaveTexts,
 } from '../services/language'
 import { gridColumns } from '../services/window'
 
@@ -24,13 +23,12 @@ const [texts, textsCap] = translated({
     chatLimitLabel: 'chat message limit per conversation',
     error: 'error',
     gridColumnsLabel: 'number of columns on main content (experimental)',
-    gsCurrencyLabel: 'default currency',
-    gsLanguageLabel: 'default language (experimental)',
+    gsCurrencyLabel: 'display currency',
+    gsLanguageLabel: 'display language (experimental)',
     historyLimitLabel: 'history limit',
     unlimited: 'unlimited',
     saved: 'saved',
 }, true)
-const forceRefreshPage = () => window.location.reload(true)
 const savedMsg = { content: textsCap.saved, status: 'success' }
 
 export default class Settings extends Component {
@@ -149,21 +147,16 @@ export default class Settings extends Component {
         this.setInputMessage('historyLimit', savedMsg)
     }
 
-    handleLanguageChange = async (_, { languageCode }) => {
-        try {
-            this.setInputMessage('languageCode', savedMsg, 0)
-            setSelectedLang(languageCode)
-            await fetchNSaveTexts()
-            // reload page
-            setTimeout(forceRefreshPage, 100)
-        } catch (err) {
+    handleLanguageChange = (_, { languageCode }) => {
+        this.setInputMessage('languageCode', savedMsg, 0)
+        setSelectedLang(languageCode).catch(err => {
             this.setInputMessage('languageCode', {
                 content: `${err}`,
                 header: textsCap.error,
                 showIcon: true,
                 status: 'error',
             })
-        }
+        })
     }
 
     setInputMessage = (inputName, message, delay = 2000) => {
