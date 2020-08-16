@@ -154,10 +154,13 @@ export default function useTasks(types, address, timeout = 5000) {
             const addDetails = (detailsMap) => {
                 if (!mounted) return
                 Array.from(uniqueTasks).forEach(([id, task]) => {
-                    const { title, description, tags } = detailsMap.get(id) || {}
-                    task.title = title || ''
-                    task.description = description || ''
-                    task.tags = tags || []
+                    const taskDetails = detailsMap.get(id) || {
+                        description: '',
+                        publish: 0,
+                        title: '',
+                        tags: [],
+                    }
+                    Object.keys(taskDetails).forEach(key => task[key] = taskDetails[key])
                 })
                 // construct separate lists for each type
                 const allTasks = new Map()

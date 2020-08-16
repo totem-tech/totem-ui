@@ -15,9 +15,10 @@ export default class FormBuilder extends Component {
         super(props)
 
         const { inputsDisabled = [], inputs = [], open } = props
-        inputs.forEach(x => ({ ...x, controlled: isDefined(x.value) }))
         // disable inputs
-        inputsDisabled.forEach(name => (findInput(inputs, name) || {}).disabled = true)
+        inputsDisabled.forEach(name =>
+            (findInput(inputs, name) || {}).disabled = true
+        )
 
         this.state = {
             inputs,
@@ -28,10 +29,9 @@ export default class FormBuilder extends Component {
     }
 
     getValues = (inputs = [], values = {}, inputName, newValue) => inputs.reduce((values, input) => {
-        const { controlled, inputs: childInputs, groupValues, name, type } = input
+        const { inputs: childInputs, groupValues, name, type } = input
         const typeLC = (type || '').toLowerCase()
         const isGroup = typeLC === 'group'
-        let value
         if (!isStr(name) || nonValueTypes.includes(type)) return values
         if (isGroup) {
             const newValues = this.getValues(childInputs, groupValues ? {} : values, inputName, newValue)
@@ -42,11 +42,10 @@ export default class FormBuilder extends Component {
         if (inputName && name === inputName) {
             // for value grouping
             values[name] = newValue
-        } //else {
-        value = values[name]
-        value = !(controlled ? hasValue : isDefined)(value) ? input.value : value
-        values[name] = value
-        //}
+        }
+        if (!hasValue(values[name]) && isDefined(input.value)) {
+            values[name] = input.value
+        }
         return values
     }, values)
 
@@ -116,6 +115,7 @@ export default class FormBuilder extends Component {
             header,
             headerIcon,
             hideFooter,
+            inputs,
             loading,
             message: msg,
             modal,
@@ -132,7 +132,7 @@ export default class FormBuilder extends Component {
             trigger,
             widths
         } = this.props
-        let { inputs, message: sMsg, open: sOpen, values } = this.state
+        let { inputs: inputsS, message: sMsg, open: sOpen, values } = this.state
         // whether the 'open' status is controlled or uncontrolled
         let modalOpen = isFn(onClose) ? open : sOpen
         if (success && closeOnSubmit) {
@@ -320,13 +320,19 @@ export const fillValues = (inputs, values, forceFill) => {
             || (!forceFill && hasValue(input.value)) || !type
         )) return
 
-        if (['checkbox', 'radio'].indexOf(type) >= 0) {
-            input.defaultChecked = newValue
-        } else if (isGroup) {
-            fillValues(input.inputs, values, forceFill)
-        } else {
-            input.value = newValue
+
+        switch (type) {
+            case 'checkbox':
+            case 'radio':
+                input.defaultChecked = newValue
+                break
+            case 'group':
+                fillValues(input.inputs, values, forceFill)
+                break
+            default:
+                input.value = newValue
         }
+
         // make sure Bond is also updated
         if (!isBond(bond)) return
         setTimeout(() => bond.changed(newValue))

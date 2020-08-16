@@ -55,11 +55,17 @@ const textsCap = translated({
     marketplace: 'marketplace',
     myself: 'myself',
     orderTypeLabel: 'order type',
+    publishDisclaimer: `
+        Your task will be published to the marketplace.
+        Anyone using Totem will be able to submit proposal to this Task.
+        You will then be able to accept or reject any proposal you wish.
+    `,
     publishToMarketPlace: 'publish to marketplace',
     taskIdParseError: 'failed to parse Task ID from transaction event data',
     services: 'services',
     submitFailed: 'failed to create task',
     submitSuccess: 'task created successfully',
+    saveOffChainData: 'save off-chain data using BONSAI',
     tags: 'categorise with tags',
     tagsNoResultMsg: 'type tag and press ENTER to add',
     tagsPlaceholder: 'enter tags',
@@ -88,12 +94,13 @@ export default class TaskForm extends Component {
             dueDate: 'dueDate',
             description: 'description',
             orderType: 'orderType',
-            publish: 'published',
+            publish: 'publish',
             isSell: 'isSell',
             tags: 'tags',
             title: 'title',
         })
         // keys used to generate BONSAI token hash
+        // keep it in the same order as in the `VALID_KEYS` array in the messaging service
         this.bonsaiKeys = [
             this.names.currency,
             this.names.publish,
@@ -110,6 +117,7 @@ export default class TaskForm extends Component {
             values: {},
             inputs: [
                 {
+                    bond: new Bond(),
                     label: textsCap.title,
                     max: 160,
                     min: 3,
@@ -140,6 +148,7 @@ export default class TaskForm extends Component {
                             width: 12,
                         },
                         {
+                            bond: new Bond(),
                             label: textsCap.currency,
                             name: this.names.currency,
                             onChange: this.handleBountyChange,
@@ -157,26 +166,26 @@ export default class TaskForm extends Component {
                     ]
                 },
                 {
-                    hidden: !!taskId && !!values[this.names.assignee],
+                    bond: new Bond(),
                     inline: true,
                     label: textsCap.marketplace,
                     multiple: false,
                     name: this.names.publish,
                     onChange: this.handlePublishChange,
                     options: [
-                        { label: textsCap.assignToPartner, value: 1 }, //'no'
-                        { label: textsCap.publishToMarketPlace, value: 0 }, //'yes'
+                        { label: textsCap.assignToPartner, value: 0 },
+                        { label: textsCap.publishToMarketPlace, value: 1 },
                     ],
                     radio: true,
                     required: true,
                     type: 'checkbox-group',
                     // remove validation once implemented
-                    validate: (_, { value: publish }) => publish === 'yes' && textsCap.featureNotImplemented,
-                    value: 0,//'no'
+                    // validate: (_, { value: publish }) => publish && textsCap.featureNotImplemented,
+                    value: 0,
                 },
                 {
                     bond: new Bond(),
-                    hidden: values => values[this.names.publish] === 'yes',
+                    hidden: values => !!values[this.names.publish],
                     label: textsCap.assignee,
                     name: this.names.assignee,
                     options: [],
@@ -192,9 +201,14 @@ export default class TaskForm extends Component {
                     label: textsCap.deadlineLabel,
                     name: this.names.deadline,
                     onChange: (_, values) => {
-                        if (!values[this.names.dueDate]) return
+                        const dueDate = values[this.names.dueDate]
+                        const { taskId } = this.props
+                        if (!dueDate) return
                         // reset due date
-                        findInput(this.state.inputs, this.names.dueDate).bond.changed('')
+                        const dueDateIn = findInput(this.state.inputs, this.names.dueDate)
+                        dueDateIn.bond.changed('')
+                        // force re-evaluate the due date
+                        taskId && dueDateIn.bond.changed(dueDate)
                     },
                     required: true,
                     type: 'date',
@@ -332,7 +346,7 @@ export default class TaskForm extends Component {
         })
 
         if (!isObj(values)) return this.setState({ loading: false })
-        const { amountXTX, deadline, dueDate } = values
+        const { amountXTX, deadline, dueDate, tags = [] } = values
         // convert duedate and deadline block numbers to date format yyyy-mm-dd
         const { number } = await query('api.rpc.chain.getHeader')
 
@@ -340,7 +354,14 @@ export default class TaskForm extends Component {
         values.dueDate = this.blockToDateStr(dueDate, number)
         values.bounty = amountXTX
         this.bountyOriginal = values.bounty
-        fillValues(inputs, values)
+        if (tags.length) {
+            findInput(inputs, this.names.tags).options = tags.map(tag => ({
+                key: tag,
+                text: tag,
+                value: tag,
+            }))
+        }
+        fillValues(inputs, values, true)
         this.setState({ inputs, loading: false })
     }
 
@@ -379,9 +400,6 @@ export default class TaskForm extends Component {
         if (taskId && bounty === this.bountyOriginal) return
 
         this.bountyPromise = this.bountyPromise || PromisE.deferred()
-        const p = this.names.publish
-        // turn publish value into binary
-        values[p] = values[p] === 'yes' ? 1 : 0
         const { inputs } = this.state
         const bountyGrpIn = findInput(inputs, this.names.bountyGroup)
         const bountyIn = findInput(inputs, this.names.bounty)
@@ -464,9 +482,14 @@ export default class TaskForm extends Component {
 
     handlePublishChange = (_, values) => {
         const { inputs } = this.state
+        const publishIn = findInput(inputs, this.names.publish)
         const assigneeIn = findInput(inputs, this.names.assignee)
-        const publish = values[this.names.publish] === 'yes'
+        const publish = !!values[this.names.publish]
         assigneeIn.hidden = publish
+        publishIn.message = !publish ? null : {
+            content: textsCap.publishDisclaimer,
+            style: { textAlign: 'justify' },
+        }
         this.setState({ inputs })
     }
 
@@ -534,6 +557,7 @@ export default class TaskForm extends Component {
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'task',
             then: thenCb(true),
+            title: textsCap.saveOffChainData,
             args: [
                 taskId || {
                     // need to process tx result (events' data) to get the taskId

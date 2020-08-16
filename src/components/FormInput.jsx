@@ -47,7 +47,7 @@ const VALIDATION_MESSAGES = Object.freeze({
 const NON_ATTRIBUTES = Object.freeze([
 	'bond',
 	'collapsed',
-	'controlled',
+	// 'controlled',
 	'defer',
 	'elementRef',
 	'hidden',
@@ -83,10 +83,15 @@ export default class FormInput extends Component {
 
 	componentWillMount() {
 		this._mounted = true
-		this.bond && this.bond.tie(value => setTimeout(() => this.handleChange({}, { ...this.props, value })))
+		if (this.bond) {
+			this.tieId = this.bond.tie(value => setTimeout(() => this.handleChange({}, { ...this.props, value })))
+		}
 	}
 
-	componentWillUnmount = () => this._mounted = false
+	componentWillUnmount = () => {
+		this._mounted = false
+		this.bond && this.bond.untie(this.tieId)
+	}
 
 	handleChange = (event = {}, data = {}) => {
 		const {
