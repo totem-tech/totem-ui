@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { Button } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-import { arrSort, deferred, isObj, isValidNumber, objClean, generateHash } from '../../utils/utils'
+import { arrSort, deferred, isObj, isValidNumber, objClean, generateHash, isFn } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 import { BLOCK_DURATION_SECONDS, format } from '../../utils/time'
 // components
@@ -494,7 +494,7 @@ export default class TaskForm extends Component {
     }
 
     handleSubmit = async (_, values) => {
-        const { taskId } = this.props
+        const { onSubmit, taskId } = this.props
         const { address: ownerAddress } = getSelected()
         const currentBlock = await getCurrentBlock()
         const deadlineMS = strToDate(values[this.names.deadline]) - new Date()
@@ -522,6 +522,7 @@ export default class TaskForm extends Component {
                 submitDisabled: false,
                 success,
             })
+            isFn(onSubmit) && onSubmit(success, values, taskId)
         }
         this.setState({
             closeText: textsCap.close,

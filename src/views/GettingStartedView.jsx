@@ -273,7 +273,7 @@ export default class GetingStarted extends Component {
 								<a href='https://discord.gg/Vx7qbgn' target='_blank'>
 									<Icon name='discord' style={styles.appIconStyle} />
 								</a>
-								<a href='https://t.me/totem_live' target='_blank'>
+								<a href='https://t.me/totemchat' target='_blank'>
 									<Icon name='telegram' style={styles.appIconStyle} />
 								</a>
 							</div>

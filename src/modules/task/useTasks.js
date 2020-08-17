@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react'
-import { isFn, arrUnique } from '../../utils/utils'
+import { isFn, arrUnique, objCopy, isArr } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 // services
-import { query, getConnection } from '../../services/blockchain'
 import client from '../../services/chatClient'
 import { translated } from '../../services/language'
 import { getAddressName } from '../../services/partner'
 import storage from '../../services/storage'
+import { query } from './task'
 
 const MODULE_KEY = 'task'
 const textsCap = translated({
     errorHeader: 'failed to load tasks',
     loadingMsg: 'loading tasks',
     // status names
+    inaccessible: 'inaccessible',
     accepted: 'accepted',
     blocked: 'blocked',
     completed: 'completed',
@@ -22,7 +23,19 @@ const textsCap = translated({
     rejected: 'rejected',
     submitted: 'submitted',
 }, true)[1]
-export const statusCodes = {
+export const statusNames = {
+    // / // used for tasks that are no longer available in the storage
+    '-1': textsCap.inaccessible,
+    '0': textsCap.submitted,
+    '1': textsCap.accepted,
+    '2': textsCap.rejected,
+    '3': textsCap.disputed,
+    '4': textsCap.blocked,
+    '5': textsCap.invoiced,
+    '6': textsCap.completed,
+}
+export const statuses = {
+    inaccessible: -1,
     submitted: 0,
     accepted: 1,
     rejected: 2,
@@ -30,15 +43,6 @@ export const statusCodes = {
     blocked: 4,
     invoiced: 5,
     completed: 6,
-}
-export const statusCodeNames = {
-    submitted: textsCap.submitted,
-    accepted: textsCap.accepted,
-    rejected: textsCap.rejected,
-    disputed: textsCap.disputed,
-    blocked: textsCap.blocked,
-    invoiced: textsCap.invoiced,
-    completed: textsCap.completed,
 }
 export const approvedCodes = {
     pendingApproval: 0,
@@ -89,8 +93,6 @@ export default function useTasks(types, address, timeout = 5000) {
 
     useEffect(() => {
         let mounted = true
-        let loaded = false
-        let error = false
         const unsubscribers = {}
         const loadingMsg = {
             content: textsCap.loadingMsg,
@@ -103,11 +105,8 @@ export default function useTasks(types, address, timeout = 5000) {
             status: 'error'
         }
 
-        const setError = err => {
-            error = true
-            setMessage({ ...errorMsg, content: `${err}` })
-        }
-        const tasksCb = (address, taskIds2d, uniqueTaskIds, types) => async (orders, ordersOrg) => {
+        const setError = err => setMessage({ ...errorMsg, content: `${err}` })
+        const handleOrdersCb = (taskIds2d, uniqueTaskIds, types) => async (orders, ordersOrg) => {
             if (!mounted) return
             const arStatus = []
             const arApproved = []
@@ -126,7 +125,8 @@ export default function useTasks(types, address, timeout = 5000) {
                     dueDate,
                 } = order || {}
                 const taskId = uniqueTaskIds[index]
-                const status = arStatus[index]
+                // order can be null if storage has changed
+                const status = order === null ? -1 : arStatus[index]
                 const approved = arApproved[index]
                 uniqueTasks.set(taskId, {
                     approved,
@@ -142,14 +142,14 @@ export default function useTasks(types, address, timeout = 5000) {
                     owner,
                     // pre-process values for use with DataTable
                     _approved: approvedCodeNames[approved],
-                    _status: statusCodeNames[status],
+                    _status: statusNames[status],
                     // ToDo: move to task list
                     _fulfiller: getAddressName(fulfiller),
                     _owner: getAddressName(owner),
                 })
             })
 
-            const promise = PromisE.timeout(client.taskGetById.promise(uniqueTaskIds), timeout)
+            const promise = PromisE.timeout(query.getDetailsByTaskIds(uniqueTaskIds), timeout)
             // add title description etc retrieved from Messaging Service
             const addDetails = (detailsMap) => {
                 if (!mounted) return
@@ -170,7 +170,6 @@ export default function useTasks(types, address, timeout = 5000) {
                     allTasks.set(type, new Map(typeTasks))
                     return [type, typeTasks]
                 })
-                loaded = true
                 rwCache(address, cacheableAr)
                 setTasks(allTasks)
             }
@@ -180,35 +179,28 @@ export default function useTasks(types, address, timeout = 5000) {
             // if times out or fails update component without title, desc etc
             promise.catch(() => addDetails(new Map()))
         }
+        const handleTaskIds = async (taskIds2d) => {
+            if (!mounted) return
+            unsubscribers.tasks && unsubscribers.tasks()
+            // create single list of unique Task IDs
+            const uniqueTaskIds = arrUnique(taskIds2d.flat())
+            query.orders(
+                uniqueTaskIds,
+                handleOrdersCb(taskIds2d, uniqueTaskIds, types),
+                true,
+            ).then(
+                fn => unsubscribers.tasks = fn,
+                setError
+            )
+        }
 
         setTasks(getCached(address, types))
         setMessage(loadingMsg)
-        getConnection().then(async ({ api }) => {
-            try {
-                // exclude any invalid type
-                types = types.filter(x => !!api.query.orders[x])
-                const args = types.map(x => [api.query.orders[x], address])
 
-                // construct a single query to retrieve 3 different types of lists with a single subscription
-                unsubscribers.taskIds2d = await query('api.queryMulti', [
-                    args,
-                    async (taskIds2d) => {
-                        unsubscribers.tasks && unsubscribers.tasks()
-                        // create single list of unique Task IDs
-                        const uniqueTaskIds = arrUnique(taskIds2d.flat())
-                        unsubscribers.tasks = await query(
-                            'api.query.orders.order',
-                            [
-                                uniqueTaskIds,
-                                tasksCb(address, taskIds2d, uniqueTaskIds, types),
-                            ],
-                            true,
-                        )
-
-                    }
-                ])
-            } catch (err) { setError(err) }
-        }, setError)
+        query.getTaskIds(types, address, handleTaskIds).then(
+            fn => unsubscribers.taskIds2d = fn,
+            setError,
+        )
 
         return () => {
             mounted = false
@@ -216,5 +208,29 @@ export default function useTasks(types, address, timeout = 5000) {
         }
     }, [address]) // update subscriptions whenever address changes
 
-    return [tasks, message]
+    return [
+        tasks,
+        message,
+        // function to update specific details from messaging service
+        async (taskIds = []) => {
+            if (!taskIds || !taskIds.length) return
+            try {
+                const detailsMap = await query.getDetailsByTaskIds(taskIds)
+                if (!detailsMap.size) return
+                const cacheableAr = Array.from(tasks).map(([type, typeTasks = new Map()]) => {
+                    taskIds.forEach(id => {
+                        const task = typeTasks.get(id)
+                        if (!task) return
+                        typeTasks.set(id, objCopy(task, detailsMap.get(id) || {}))
+                    })
+                    return [type, Array.from(typeTasks)]
+                })
+                rwCache(address, cacheableAr)
+                setTasks(tasks)
+                console.log({ tasks, taskIds, detailsMap })
+            } catch (err) {
+                console.log({ err })
+            }//ignore error
+        }
+    ]
 }

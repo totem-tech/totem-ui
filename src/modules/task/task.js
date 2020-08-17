@@ -1,14 +1,40 @@
 import uuid from 'uuid'
-import { generateHash, isArr } from "../../utils/utils"
-import storage from '../../services/storage'
+import { generateHash, isArr, isDefined } from "../../utils/utils"
 import { bytesToHex, strToU8a } from '../../utils/convert'
+import { query as queryHelper } from '../../services/blockchain'
+import client from '../../services/chatClient'
 
 export const PRODUCT_HASH_LABOUR = generateHash('labour')
-const MODULE_KEY = 'task'
 // read and write to cached storage
-const rwCache = (key, value) => storage.cache(MODULE_KEY, key, value)
 const TX_STORAGE = 'tx_storage'
-const DEADLINE_MIN_BLOCKS = 111520
+
+export const query = {
+    getDetailsByTaskIds: async (taskIds = []) => await client.taskGetById.promise(taskIds),
+    getTaskIds: async (types = [], address, callback) => {
+        // const validTypes = ['owner', 'approver', 'beneficiary']
+        const api = await queryHelper() // get API
+        const args = types.map(type => [api.query.orders[type], address])
+        return await queryHelper('api.queryMulti', [args, callback].filter(isDefined))
+    },
+    /**
+     * @name    orders
+     * @summary retrieve a list of orders by Task IDs
+     * 
+     * @param {String|Array}    address user identity
+     * @param {String|Array}    taskId
+     * @param {Function|null}   callback (optional) callback function to subscribe to changes.
+     *                              If supplied, once result is retrieved function will be invoked with result.
+     *                              Default: null
+     * @param {Boolean}         multi (optional) indicates whether it is a multi query. Default: false.
+     * 
+     * @returns {*|Function}    if a @callback is a function, will return a function to unsubscribe. Otherwise, result.
+     */
+    orders: async (taskId, callback = null, multi = false) => await queryHelper(
+        'api.query.orders.orders',
+        [taskId, callback].filter(isDefined),
+        multi,
+    ),
+}
 
 // Create/update task order (queue-able object)
 //
@@ -78,5 +104,6 @@ export const queueables = {
 }
 
 export default {
+    query,
     queueables,
 }

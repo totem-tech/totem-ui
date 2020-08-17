@@ -9,6 +9,7 @@ import TaskForm from './TaskForm'
 // services
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
+import { isFn } from '../../utils/utils'
 
 const textsCap = translated({
     action: 'action',
@@ -17,6 +18,7 @@ const textsCap = translated({
     create: 'create',
     description: 'description',
     loading: 'loading',
+    status: 'status',
     tags: 'tags',
     taskOwner: 'task owner',
     title: 'title',
@@ -57,6 +59,11 @@ class TaskList extends Component {
                     key: '_fulfiller',
                     title: textsCap.assignee,
                 },
+                {
+                    collapsing: true,
+                    key: '_status',
+                    title: textsCap.status,
+                },
                 { key: 'tags', title: textsCap.tags },
                 { key: 'description', title: textsCap.description },
                 {
@@ -95,7 +102,15 @@ class TaskList extends Component {
         return [
             this.isOwner && {
                 icon: 'pencil',
-                onClick: () => showForm(TaskForm, { taskId, values: task }),
+                onClick: () => showForm(TaskForm, {
+                    onSubmit: success => {
+                        const { updater } = this.props
+                        if (!success || !isFn(updater)) return
+                        updater([taskId])
+                    },
+                    taskId,
+                    values: task,
+                }),
                 title: textsCap.update,
             },
             {

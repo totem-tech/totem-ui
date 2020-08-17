@@ -17,7 +17,7 @@ const textsCap = translated({
 
 export default function TaskView(props) {
     const address = props.address || useSelected()
-    const [allTasks] = useTasks(['owner', 'approver', 'beneficiary'], address)
+    const [allTasks, message, updater] = useTasks(['owner', 'approver', 'beneficiary'], address)
     const panes = [
         {
             name: textsCap.manage,
@@ -36,7 +36,7 @@ export default function TaskView(props) {
         },
     ].map(({ name, title, type }) => ({
         active: true,
-        menuItem: <Menu.Item  {...{ title, content: name, key: type }} />, //<span title={title}>{name}</span>
+        menuItem: <Menu.Item  {...{ title, content: name, key: type }} />,
         render: () => {
             const tasks = allTasks.get(type)
             return (
@@ -48,6 +48,7 @@ export default function TaskView(props) {
                             data: tasks,
                             key: type + address + tasks.size,
                             type,
+                            updater,
                         }} />
                     )}
                 </Tab.Pane>

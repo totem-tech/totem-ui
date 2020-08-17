@@ -107,7 +107,6 @@ export default function useLedgerAcBalances(address, timeout = 10000) {
     return [result, message]
 }
 
-
 const query = {
     /**
      * @name    accountsById
