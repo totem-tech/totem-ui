@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Button, Dropdown, Grid, Icon, Input, Table } from 'semantic-ui-react'
-import { arrMapSlice, getKeys, isArr, isFn, objWithoutKeys, objCopy, search, sort, isStr } from '../utils/utils'
+import { arrMapSlice, getKeys, isArr, isFn, objWithoutKeys, objCopy, search, sort, isStr, arrReverse } from '../utils/utils'
 import Message from '../components/Message'
 import { translated } from '../services/language'
 import { layoutBond, getLayout, MOBILE } from '../services/window'
@@ -151,45 +151,49 @@ export default class DataTable extends Component {
     }
 
     getTopContent(totalRows, selectedIndexes) {
-        let { searchable, searchOnChange, selectable, topLeftMenu, topRightMenu } = this.props
+        let { searchable, searchHideOnEmpty, searchOnChange, selectable, topLeftMenu, topRightMenu } = this.props
         const { keywords, isMobile } = this.state
         topLeftMenu = (topLeftMenu || []).filter(x => !x.hidden)
         topRightMenu = (topRightMenu || []).filter(x => !x.hidden)
+        const showSearch = searchable && (keywords || totalRows > 0 || !searchHideOnEmpty)
 
-        if (topLeftMenu.length + topRightMenu.length === 0 && !searchable) return
+        if (topLeftMenu.length + topRightMenu.length === 0 && !showSearch) return
         const triggerSearchChange = keywords => isFn(searchOnChange) && searchOnChange(keywords)
 
-        const searchCol = searchable && (
-            <Grid.Column key='0' tablet={16} computer={5} style={{ padding: 0 }}>
-                <Input
-                    icon='search'
-                    iconPosition='left'
-                    action={!keywords ? undefined : {
-                        basic: true,
-                        icon: { className: 'no-margin', name: 'close' },
-                        onClick: () => {
-                            this.setState({ keywords: '' })
-                            triggerSearchChange('')
-                        }
-                    }}
-                    onChange={(e, d) => {
-                        const keywords = d.value
-                        this.setState({ keywords })
-                        triggerSearchChange(keywords)
-                    }}
-                    onDragOver={e => e.preventDefault()}
-                    onDrop={e => {
-                        const keywords = e.dataTransfer.getData('Text')
-                        if (!keywords.trim()) return
-                        this.setState({ keywords })
-                        triggerSearchChange(keywords)
-                    }}
-                    placeholder={textsCap.search}
-                    style={!isMobile ? undefined : styles.searchMobile}
-                    type='search' // enables escape to clear
-                    value={keywords}
-                />
-            </Grid.Column>
+        const searchCol = !showSearch ? '' : (
+            // if searchable is a valid element search is assumed to be externally handled
+            React.isValidElement(searchable) ? searchable : (
+                <Grid.Column key='0' tablet={16} computer={5} style={{ padding: 0 }}>
+                    <Input
+                        icon='search'
+                        iconPosition='left'
+                        action={!keywords ? undefined : {
+                            basic: true,
+                            icon: { className: 'no-margin', name: 'close' },
+                            onClick: () => {
+                                this.setState({ keywords: '' })
+                                triggerSearchChange('')
+                            }
+                        }}
+                        onChange={(e, d) => {
+                            const keywords = d.value
+                            this.setState({ keywords })
+                            triggerSearchChange(keywords)
+                        }}
+                        onDragOver={e => e.preventDefault()}
+                        onDrop={e => {
+                            const keywords = e.dataTransfer.getData('Text')
+                            if (!keywords.trim()) return
+                            this.setState({ keywords })
+                            triggerSearchChange(keywords)
+                        }}
+                        placeholder={textsCap.search}
+                        style={!isMobile ? undefined : styles.searchMobile}
+                        type='search' // enables escape to clear
+                        value={keywords}
+                    />
+                </Grid.Column>
+            )
         )
 
         const right = selectable && topRightMenu && topRightMenu.length > 0 && (
@@ -234,9 +238,7 @@ export default class DataTable extends Component {
                             />
                         ))}
                     </Grid.Column>
-                    {(keywords || totalRows > 0) && (
-                        isMobile ? [right, searchCol] : [searchCol, right]
-                    )}
+                    {arrReverse([searchCol, right], isMobile)}
                 </Grid.Row>
             </Grid>
         )
@@ -371,6 +373,7 @@ DataTable.propTypes = {
     ]),
     searchable: PropTypes.bool,
     searchExtraKeys: PropTypes.array,
+    searchHideOnEmpty: PropTypes.bool,
     searchOnChange: PropTypes.func,
     selectable: PropTypes.bool,
     tableProps: PropTypes.object.isRequired, // table element props
@@ -389,6 +392,7 @@ DataTable.defaultProps = {
     pageNo: 1,
     perPage: 10,
     searchable: true,
+    searchHideOnEmpty: true,
     selectable: false,
     tableProps: {
         celled: true,

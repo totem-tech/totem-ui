@@ -195,6 +195,7 @@ export default class TaskForm extends Component {
                     search: true,
                     type: 'dropdown',
                     validate: this.validateAssignee,
+                    value: '',
                 },
                 {
                     bond: new Bond(),
@@ -302,6 +303,7 @@ export default class TaskForm extends Component {
                             selection: true,
                             search: true,
                             type: 'dropdown',
+                            vaue: '',
                         },
                     ],
                 },

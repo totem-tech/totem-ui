@@ -6,12 +6,14 @@ import { translated } from '../../services/language'
 import useTasks from './useTasks'
 
 const textsCap = translated({
+    approver: 'approver',
+    approverDesc: 'tasks you can approve',
     beneficiary: 'my tasks',
     beneficiaryDesc: 'tasks assigned to you',
     manage: 'manage tasks',
     manageDesc: 'tasks created by you',
-    approver: 'approver',
-    approverDesc: 'tasks you can approve',
+    marketplace: 'marketplace',
+    marketplaceDesc: 'marketplace',
     unknown: 'unknown',
 }, true)[1]
 
@@ -34,11 +36,16 @@ export default function TaskView(props) {
             title: textsCap.approverDesc,
             type: 'approver',
         },
+        {
+            name: textsCap.marketplace,
+            title: textsCap.marketplaceDesc,
+            type: 'marketplace',
+        },
     ].map(({ name, title, type }) => ({
         active: true,
         menuItem: <Menu.Item  {...{ title, content: name, key: type }} />,
         render: () => {
-            const tasks = allTasks.get(type)
+            const tasks = type === 'marketplace' ? new Map() : allTasks.get(type)
             return (
                 <Tab.Pane {...{ loading: !tasks }}>
                     {tasks && (

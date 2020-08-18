@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { isFn, arrUnique, objCopy, isArr } from '../../utils/utils'
+import { isFn, arrUnique, objCopy } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 // services
-import client from '../../services/chatClient'
 import { translated } from '../../services/language'
 import { getAddressName } from '../../services/partner'
 import storage from '../../services/storage'

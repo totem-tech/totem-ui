@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Button } from 'semantic-ui-react'
+import { Button, Label } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
 // components
 import Currency from '../../components/Currency'
@@ -17,16 +17,21 @@ const textsCap = translated({
     bounty: 'bounty',
     create: 'create',
     description: 'description',
+    emptyMsgMarketPlace: 'search for marketplace tasks by title or description',
     loading: 'loading',
+    marketplace: 'marketplace',
+    no: 'no',
     status: 'status',
     tags: 'tags',
     taskOwner: 'task owner',
     title: 'title',
     update: 'update',
+    yes: 'yes',
 }, true)[1]
 const listTypes = Object.freeze({
     approver: 'approver',
     beneficiary: 'beneficiary',
+    marketplace: 'marketplace',
     owner: 'owner',
 })
 // cache data so that 
@@ -39,7 +44,9 @@ class TaskList extends Component {
         this.listType = listTypes[props.type] || listTypes.owner
         this.isOwner = this.listType === listTypes.owner
         this.isFulfiller = this.listType === listTypes.beneficiary
+        this.isMarketplace = this.listType === listTypes.marketplace
         const keywordsKey = 'keywords' + this.listType
+        const showCreate = this.isOwner || this.isMarketplace
         this.state = {
             columns: [
                 { key: 'title', title: textsCap.title },
@@ -60,12 +67,40 @@ class TaskList extends Component {
                     title: textsCap.assignee,
                 },
                 {
+                    content: ({ tags = [] }) => tags.map(tag => (
+                        <Label
+                            key={tag}
+                            draggable='true'
+                            onDragStart={e => {
+                                e.stopPropagation()
+                                e.dataTransfer.setData("Text", e.target.textContent)
+                            }}
+                            style={{
+                                cursor: 'grab',
+                                display: 'inline',
+                                // float: 'left',
+                                margin: 1,
+                            }}
+                        >
+                            {tag}
+                        </Label>
+                    )),
+                    key: 'tags',
+                    title: textsCap.tags,
+                    style: { textAlign: 'center' },
+                },
+                {
                     collapsing: true,
                     key: '_status',
                     title: textsCap.status,
                 },
-                { key: 'tags', title: textsCap.tags },
-                { key: 'description', title: textsCap.description },
+                {
+                    collapsing: true,
+                    content: ({ publish }) => publish ? textsCap.yes : textsCap.no,
+                    key: 'publish',
+                    title: textsCap.marketplace,
+                },
+                // { key: 'description', title: textsCap.description },
                 {
                     collapsing: true,
                     content: this.getActions,
@@ -73,29 +108,25 @@ class TaskList extends Component {
                     title: textsCap.action
                 },
             ],
+            emptyMessage: this.isMarketplace ? textsCap.emptyMsgMarketPlace : undefined,
             // preserve search keywords
             keywords: cachedData.get(keywordsKey),
+            searchHideOnEmpty: !this.isMarketplace,
             searchOnChange: keywords => cachedData.set(keywordsKey, keywords),
             topLeftMenu: [
-                this.isOwner && {
+                showCreate && {
                     content: textsCap.create,
                     icon: 'plus',
-                    onClick: () => showForm(TaskForm, { size: 'tiny' }),
+                    onClick: () => showForm(TaskForm, {
+                        values: !this.isMarketplace ? undefined : { publish: 1 },
+                        size: 'tiny',
+                    }),
                 }
             ].filter(Boolean)
         }
 
         this.originalSetState = this.setState
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
-    }
-
-    componentWillMount() {
-        this._mounted = true
-        this.unsubscribers = {}
-    }
-
-    componentWillUnmount() {
-        this._mounted = false
     }
 
     getActions = (task, taskId) => {
@@ -113,7 +144,7 @@ class TaskList extends Component {
                 }),
                 title: textsCap.update,
             },
-            {
+            this.showDetails && {
                 icon: 'eye',
                 onClick: () => this.showDetails(task, taskId),
                 title: textsCap.techDetails
