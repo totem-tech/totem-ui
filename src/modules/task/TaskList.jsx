@@ -11,6 +11,7 @@ import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
 import { isFn } from '../../utils/utils'
 import { getById } from '../../services/history'
+import { rxUpdater } from './useTasks'
 
 const textsCap = translated({
     action: 'action',
@@ -112,6 +113,8 @@ class TaskList extends Component {
             emptyMessage: this.isMarketplace ? textsCap.emptyMsgMarketPlace : undefined,
             // preserve search keywords
             keywords: cachedData.get(keywordsKey),
+            perPage: 100,
+            searchExtraKeys: ['_taskId'],
             searchHideOnEmpty: !this.isMarketplace,
             searchOnChange: keywords => cachedData.set(keywordsKey, keywords),
             topLeftMenu: [
@@ -133,10 +136,11 @@ class TaskList extends Component {
 
     handleTaskSubmit = (success, values, taskId, historyId) => {
         if (!success) return
-        const { updater } = this.props
+        // const { updater } = this.props
         taskId = taskId || (getById(historyId) || { data: [] }).data[0]
         if (!taskId.startsWith('0x')) return
-        updater([taskId])
+        // updater([taskId])
+        rxUpdater.next([taskId])
     }
 
     getActions = (task, taskId) => {
@@ -165,7 +169,6 @@ class TaskList extends Component {
 TaskList.propTypes = {
     // @listType valid options: owner, approver, fulfiller etc
     listType: PropTypes.string,
-    updater: PropTypes.func.isRequired,
 }
 TaskList.defaultProps = {
     listType: listTypes.owner,

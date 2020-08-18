@@ -506,7 +506,7 @@ export default class TaskForm extends Component {
         const dueDateMS = strToDate(values[this.names.dueDate]) - new Date()
         const deadlineBlocks = Math.ceil(deadlineMS / 1000 / BLOCK_DURATION_SECONDS) + currentBlock
         const dueDateBlocks = Math.ceil(dueDateMS / 1000 / BLOCK_DURATION_SECONDS) + currentBlock
-        const assignee = values[this.names.assignee]
+        const assignee = values.publish ? ownerAddress : values[this.names.assignee]
         const orderClosed = !!assignee ? 1 : 0
         const description = values[this.names.title]
         const title = !taskId ? textsCap.formHeader : textsCap.formHeaderUpdate

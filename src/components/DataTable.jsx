@@ -1,13 +1,14 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Button, Dropdown, Grid, Icon, Input, Table } from 'semantic-ui-react'
-import { arrMapSlice, getKeys, isArr, isFn, objWithoutKeys, objCopy, search, sort, isStr, arrReverse } from '../utils/utils'
+import {
+    arrMapSlice, getKeys, isArr, isFn, objWithoutKeys, objCopy, search, sort, isStr, arrReverse
+} from '../utils/utils'
 import Message from '../components/Message'
 import { translated } from '../services/language'
 import { layoutBond, getLayout, MOBILE } from '../services/window'
 import Paginator from './Paginator'
 
-const TableCell = React.memo(Table.Cell)
 const mapItemsByPage = (data, pageNo, perPage, callback) => {
     const start = pageNo * perPage - perPage
     const end = start + perPage - 1
@@ -115,7 +116,7 @@ export default class DataTable extends Component {
 
         return mapItemsByPage(filteredData, pageNo, perPage, (item, key, items, isMap) => (
             <Table.Row
-                key={key + (!isMap ? JSON.stringify(item) : '')}
+                key={key + JSON.stringify(item)}
                 {...(isFn(rowProps) ? rowProps(item, key, items, isMap) : rowProps || {})}
             >
                 {selectable && ( /* include checkbox to select items */
@@ -136,15 +137,16 @@ export default class DataTable extends Component {
                         padding: collapsing ? '0 5px' : undefined,
                         ...style
                     }
+                    contentKey === 'title' && console.log(key + j + item[contentKey])
                     const props = {
                         ...objWithoutKeys(cell, ['content', 'headerProps', 'title']),
-                        key: j,
+                        key: key + j + item[contentKey],
                         draggable,
                         onDragStart: !draggable ? undefined : this.handleDragStart,
                         style,
                         textAlign,
                     }
-                    return <TableCell {...props}>{content}</TableCell>
+                    return <Table.Cell {...props}>{content}</Table.Cell>
                 })}
             </Table.Row>
         ))

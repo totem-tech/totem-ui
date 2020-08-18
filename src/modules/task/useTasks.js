@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Subject } from 'rxjs'
 import { isFn, arrUnique, objCopy } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 // services
@@ -53,6 +54,8 @@ export const approvedCodeNames = {
     approved: textsCap.approved,
     rejected: textsCap.rejected,
 }
+
+export const rxUpdater = new Subject()
 
 /**
  * 
@@ -142,7 +145,7 @@ export default function useTasks(types, address, timeout = 5000) {
                     // pre-process values for use with DataTable
                     _approved: approvedCodeNames[approved],
                     _status: statusNames[status],
-                    // ToDo: move to task list
+                    _taskId: taskId,
                     _fulfiller: getAddressName(fulfiller),
                     _owner: getAddressName(owner),
                 })
@@ -193,7 +196,7 @@ export default function useTasks(types, address, timeout = 5000) {
             )
         }
 
-        setTasks(getCached(address, types))
+        // setTasks(getCached(address, types))
         setMessage(loadingMsg)
 
         query.getTaskIds(types, address, handleTaskIds).then(
@@ -207,29 +210,37 @@ export default function useTasks(types, address, timeout = 5000) {
         }
     }, [address]) // update subscriptions whenever address changes
 
-    return [
-        tasks,
-        message,
-        // function to update specific details from messaging service
-        async (taskIds = []) => {
+
+    useEffect(() => {
+        const subscribed = rxUpdater.subscribe(async (taskIds) => {
             if (!taskIds || !taskIds.length) return
+            console.log({ taskIds })
             try {
                 const detailsMap = await query.getDetailsByTaskIds(taskIds)
                 if (!detailsMap.size) return
+                const newTasks = new Map()
                 const cacheableAr = Array.from(tasks).map(([type, typeTasks = new Map()]) => {
                     taskIds.forEach(id => {
-                        const task = typeTasks.get(id)
+                        let task = typeTasks.get(id)
                         if (!task) return
-                        typeTasks.set(id, objCopy(task, detailsMap.get(id) || {}))
+                        task = objCopy(detailsMap.get(id) || {}, task)
+                        typeTasks.set(id, task)
                     })
+                    // tasks.set(type, typeTasks)
+                    newTasks.set(type, typeTasks)
                     return [type, Array.from(typeTasks)]
                 })
                 rwCache(address, cacheableAr)
-                setTasks(tasks)
+                setTasks(newTasks)
                 console.log({ tasks, taskIds, detailsMap })
             } catch (err) {
                 console.log({ err })
             }//ignore error
-        }
+        })
+        return () => subscribed.unsubscribe()
+    }, [tasks])
+    return [
+        tasks,
+        message,
     ]
 }

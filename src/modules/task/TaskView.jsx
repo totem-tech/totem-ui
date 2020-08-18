@@ -19,7 +19,7 @@ const textsCap = translated({
 
 export default function TaskView(props) {
     const address = props.address || useSelected()
-    const [allTasks, message, updater] = useTasks(['owner', 'approver', 'beneficiary'], address)
+    const [allTasks, message] = useTasks(['owner', 'approver', 'beneficiary'], address)
     const panes = [
         {
             name: textsCap.manage,
@@ -55,7 +55,6 @@ export default function TaskView(props) {
                             data: tasks,
                             key: type + address + tasks.size,
                             type,
-                            updater,
                         }} />
                     )}
                 </Tab.Pane>
