@@ -6,13 +6,13 @@ import { Button } from 'semantic-ui-react'
 import DataTable from '../components/DataTable'
 import FormBuilder from '../components/FormBuilder'
 import { isArr, deferred, copyToClipboard, textEllipsis, isFn } from '../utils/utils'
-import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
+import { BLOCK_DURATION_SECONDS, secondsToDuration, blockNumberToTS } from '../utils/time'
 // Forms
 import PartnerForm from '../forms/Partner'
 import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'
 import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
 // Services
-import { hashTypes, queueables as bcQueueables } from '../services/blockchain'
+import { hashTypes, queueables as bcQueueables, getCurrentBlock } from '../services/blockchain'
 import identities, { getSelected, selectedAddressBond } from '../services/identity'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
@@ -67,6 +67,7 @@ const [texts] = translated({
     cannotBanOwnIdentity: 'You cannot ban your own identity!',
     emptyMessage: 'No time records available.',
     emptyMessageArchive: 'No records have been archived yet',
+    finishedAt: 'Finished at',
     orInviteATeamMember: 'invite someone to an activity?',
     noTimeRecords: 'Your team have not yet booked time. Maybe ',
     notProjectOwner: 'You do not own this activity',
@@ -107,11 +108,12 @@ export default class ProjectTimeKeepingList extends Component {
         this.state = {
             inProgressHashes: [],
             columns: [
+                { collapsing: true, key: '_end_block', title: texts.finishedAt },
                 { collapsing: true, key: 'projectName', title: wordsCap.activity },
                 { key: '_workerName', title: wordsCap.identity },
                 { key: 'duration', textAlign: 'center', title: wordsCap.duration },
-                { key: 'start_block', title: texts.blockStart },
-                { key: 'end_block', title: texts.blockEnd },
+                // { key: 'start_block', title: texts.blockStart },
+                // { key: 'end_block', title: texts.blockEnd },
                 { collapsing: true, key: '_status', textAlign: 'center', title: wordsCap.status },
                 {
                     collapsing: true,
@@ -338,17 +340,16 @@ export default class ProjectTimeKeepingList extends Component {
         this.recordIds = recordIds
         if (!this.recordIds.length) return this.setState({ data: new Map() })
 
-        // get individual records details
-        const result = new Map()
         // retrieve all record details
-        let [records, projects] = await PromisE.all(
+        let [records, projects, currentBlock] = await PromisE.all(
             query.record.get(recordIds, null, true),
             getProjects(),
+            getCurrentBlock()
         )
 
         records = records.map((record, i) => {
             if (!record) return
-            const { project_hash: projectHash, total_blocks, worker } = record
+            const { end_block, project_hash: projectHash, total_blocks, worker } = record
             const recordId = recordIds[i]
             const { name, ownerAddress } = projects.get(projectHash) || {}
             return [
@@ -362,6 +363,7 @@ export default class ProjectTimeKeepingList extends Component {
                     workerAddress: worker || '',// && ss58Encode(worker) || '',
                     projectOwnerAddress: ownerAddress,
                     projectName: name,
+                    _end_block: blockNumberToTS(end_block, currentBlock),
                 }
             ]
         })
@@ -483,8 +485,9 @@ export default class ProjectTimeKeepingList extends Component {
         const { manage } = this.props
         const isMobile = getLayout() === 'mobile'
         const {
-            _status, duration, end_block, nr_of_breaks, projectHash, projectName,
-            start_block, total_blocks, workerAddress, workerName
+            duration, end_block, nr_of_breaks, projectHash, projectName,
+            start_block, total_blocks, workerAddress, workerName,
+            _end_block, _status,
         } = record
         const inputs = [
             manage && [texts.projectName, projectName || projectHash],
@@ -493,6 +496,7 @@ export default class ProjectTimeKeepingList extends Component {
             [wordsCap.status, _status],
             [wordsCap.duration, duration],
             [texts.numberOfBreaks, nr_of_breaks, 'number'],
+            [texts.finishedAt, _end_block],
             [texts.blockCount, total_blocks],
             [texts.blockStart, start_block],
             [texts.blockEnd, end_block],

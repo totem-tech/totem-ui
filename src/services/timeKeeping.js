@@ -1,7 +1,7 @@
 import { Bond } from 'oo7'
 import uuid from 'uuid'
 import { Subject } from 'rxjs'
-import { isObj, mapJoin, isFn } from '../utils/utils'
+import { isObj, mapJoin, isFn, isDefined } from '../utils/utils'
 // services
 import { getSelected } from './identity'
 import {
@@ -156,13 +156,13 @@ export const query = {
         // timestamp of the very first recorded time on a project
         firstSeen: (recordId, callback, multi) => queryBlockchain(
             queryPrefix + 'projectFirstSeen',
-            [recordId, callback].filter(Boolean),
+            [recordId, callback].filter(isDefined),
             multi,
         ),
         // get total blocks booked in a project
         totalBlocks: (recordId, callback, multi) => queryBlockchain(
             queryPrefix + 'totalBlocksPerProject',
-            [recordId, callback].filter(Boolean),
+            [recordId, callback].filter(isDefined),
             multi,
         )
     },
@@ -173,37 +173,37 @@ export const query = {
         // get details of a record
         get: (recordId, callback, multi) => queryBlockchain(
             queryPrefix + 'timeRecord',
-            [recordId, callback].filter(Boolean),
+            [recordId, callback].filter(isDefined),
             multi,
         ),
         // check if worker is owner of the record | unused
         isOwner: (recordId, workerAddress, callback, multi) => queryBlockchain(
             queryPrefix + 'workerTimeRecordsHashList',
-            [recordId, workerAddress, callback].filter(Boolean),
+            [recordId, workerAddress, callback].filter(isDefined),
             multi,
         ),
         // list of all recordIds by worker
         list: (workerAddress, callback, multi) => queryBlockchain(
             queryPrefix + 'workerTimeRecordsHashList',
-            [workerAddress, callback].filter(Boolean),
+            [workerAddress, callback].filter(isDefined),
             multi,
         ),
         // list of all archived recordIds by worker
         listArchive: (workerAddress, callback, multi) => queryBlockchain(
             queryPrefix + 'workerTimeRecordsHashListArchive',
-            [workerAddress, callback].filter(Boolean),
+            [workerAddress, callback].filter(isDefined),
             multi,
         ),
         // list of all record hashes in a project 
         listByProject: (projectId, callback, multi) => queryBlockchain(
             queryPrefix + 'projectTimeRecordsHashList',
-            [projectId, callback].filter(Boolean),
+            [projectId, callback].filter(isDefined),
             multi,
         ),
         // list of all archived record hashes in a project 
         listByProjectArchive: (projectId, callback, multi) => queryBlockchain(
             queryPrefix + 'projectTimeRecordsHashListArchive',
-            [projectId, callback].filter(Boolean),
+            [projectId, callback].filter(isDefined),
             multi,
         ),
     },
@@ -211,28 +211,28 @@ export const query = {
      * Timekeeping worker related queries
      */
     worker: {
-        // status of invitation
+        // status of invitation | DOES NOT WORK | deprecated
         accepted: (projectId, workerAddress, callback, multi) => queryBlockchain(
             queryPrefix + 'workerProjectsBacklogStatus',
-            [projectId, workerAddress, callback].filter(Boolean),
+            [projectId, workerAddress, callback].filter(isDefined),
             multi,
         ),
         // check if worker is banned. undefined: not banned, object: banned
         banned: (projectId, callback, multi) => queryBlockchain(
-            queryPrefix + 'projectInvitesList',
-            [projectId, callback].filter(Boolean),
+            queryPrefix + 'projectWorkersBanList',
+            [projectId, callback].filter(isDefined),
             multi,
         ),
         // workers that have been invited to but hasn't responded yet
         listInvited: (projectId, callback, multi) => queryBlockchain(
             queryPrefix + 'projectInvitesList',
-            [projectId, callback].filter(Boolean),
+            [projectId, callback].filter(isDefined),
             multi,
         ),
         // workers that has accepted invitation
         listWorkers: (projectId, callback, multi) => queryBlockchain(
             queryPrefix + 'projectWorkersList',
-            [projectId, callback].filter(Boolean),
+            [projectId, callback].filter(isDefined),
             multi,
         ),
         // projects that worker has been invited to or accepted
@@ -245,7 +245,7 @@ export const query = {
         // returns          promise
         listWorkerProjects: (workerAddress, callback, multi) => queryBlockchain(
             queryPrefix + 'workerProjectsBacklogList',
-            [workerAddress, callback].filter(Boolean),
+            [workerAddress, callback].filter(isDefined),
             multi,
         ),
         // worker's total booked time (in blocks) accross all projects (unused!)
@@ -258,7 +258,7 @@ export const query = {
         // Returns          promise
         totalBlocks: (workerAddress, callback, multi) => queryBlockchain(
             queryPrefix + 'totalBlocksPerAddress',
-            [workerAddress, callback].filter(Boolean),
+            [workerAddress, callback].filter(isDefined),
             multi,
         ),
         // worker's total booked time (in blocks) for a specific project
@@ -272,7 +272,7 @@ export const query = {
         // returns          promise
         totalBlocksByProject: (workerAddress, recordId, callback, multi = false) => queryBlockchain(
             queryPrefix + 'totalBlocksPerProjectPerAddress',
-            [workerAddress, recordId, callback].filter(Boolean),
+            [workerAddress, recordId, callback].filter(isDefined),
             multi,
         ),
     },

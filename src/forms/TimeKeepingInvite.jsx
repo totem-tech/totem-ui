@@ -191,7 +191,12 @@ export default class TimeKeepingInviteForm extends Component {
         if (!partnerIn.loading) return
 
         // check if partner is already invited or accepted
-        const accepted = await query.worker.accepted(projectId, workerAddress)
+        const [acceptedAr, invitedAr] = await Promise.all([
+            query.worker.listInvited(projectId),
+            query.worker.listWorkers(projectId),
+        ])
+        const accepted = acceptedAr.includes(workerAddress)
+        const invited = invitedAr.includes(workerAddress)
         /*
          * accepted values:
          * null => not yet invited or rejected
@@ -201,7 +206,7 @@ export default class TimeKeepingInviteForm extends Component {
         partnerIn.loading = false
         // allows (re-)invitation if user hasn't accepted (!== true) invitation
         partnerIn.invalid = !!accepted
-        if (accepted !== null) {
+        if (invited) {
             partnerIn.message = {
                 content: accepted ? textsCap.partnerAcceptedInvite : textsCap.partnerInvited,
                 status: accepted ? 'error' : 'warning'

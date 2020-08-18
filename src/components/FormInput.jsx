@@ -285,7 +285,7 @@ export default class FormInput extends Component {
 
 		if (!isGroup) return (
 			<Form.Field
-				error={(message && message.status === 'error') || error || invalid}
+				error={(message && message.status === 'error') || !!error || !!invalid}
 				required={required}
 				style={styleContainer}
 				width={width}

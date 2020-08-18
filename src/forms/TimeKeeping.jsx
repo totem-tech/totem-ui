@@ -33,8 +33,8 @@ import {
 // Hash that indicates creation of new record
 const DURATION_ZERO = '00:00:00'
 const blockCountToDuration = blockCount => secondsToDuration(blockCount * BLOCK_DURATION_SECONDS)
-const durationToBlockCount = duration => BLOCK_DURATION_REGEX.test(duration) ?
-    durationToSeconds(duration) / BLOCK_DURATION_SECONDS : 0
+const durationToBlockCount = duration => !BLOCK_DURATION_REGEX.test(duration) ? 0 :
+    parseInt(durationToSeconds(duration) / BLOCK_DURATION_SECONDS)
 const wordsCap = translated({
     activity: 'activity',
     close: 'close',
@@ -70,7 +70,6 @@ const [texts] = translated({
     inactiveProjectSelected: 'This Activity is inactive!',
     invalidDuration: 'Invalid duration',
     invalidDurationMsgPart1: 'Please enter a valid duration using the following format:',
-    invalidDurationMsgPart2: 'Seconds must be in increments of 5',
     manuallyEnterDuration: 'Manually enter duration',
     noContinueTimer: 'No, continue timer',
     noProjectsMsg: 'Create a new activity or ask to be invited to the Team',
@@ -104,7 +103,6 @@ function handleDurationChange(e, formValues, i) {
             <span>
                 {texts.invalidDurationMsgPart1}<br />
                 <b>{texts.hhmmss}</b><br />
-                {texts.invalidDurationMsgPart2}
             </span>
         ),
         header: texts.invalidDuration,
@@ -155,7 +153,7 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
         workerAddress,
         projectHash,
         hash,
-        tatus,
+        status,
         reason,
         blockCount,
         0,
@@ -251,7 +249,7 @@ export default class TimeKeepingForm extends Component {
                     autoComplete: 'off',
                     label: wordsCap.duration,
                     name: 'duration',
-                    onChange: deferred(handleDurationChange, 300, this),
+                    onChange: handleDurationChange.bind(this),
                     placeholder: texts.hhmmss,
                     readOnly: values.manualEntry !== true,
                     type: 'text',
@@ -301,6 +299,7 @@ export default class TimeKeepingForm extends Component {
                 fillValues(inputs, values, true)
                 this.prefillDone = true
             }
+
             this.setState({ inputs })
         }, 100)
         this.unsubscribers.newHead = await queryBlockchain('api.rpc.chain.subscribeNewHeads', [updateValues])
@@ -345,18 +344,33 @@ export default class TimeKeepingForm extends Component {
             status: 'error',
         }
         if (!projectActive) {
+            // project is not active anymore
             inputs[index].loading = false
             return this.setState({ inputs, submitDisabled: false })
         }
+
         // check worker ban and invitation status
-        const [accepted, banned] = await Promise.all([
-            query.worker.accepted(projectId, workerAddress),
+        const [banned, invitedAr, acceptedAr] = await Promise.all([
             query.worker.banned(projectId, workerAddress),
+            query.worker.listInvited(projectId),
+            query.worker.listWorkers(projectId),
         ])
+        const invited = invitedAr.includes(workerAddress)
+        const accepted = acceptedAr.includes(workerAddress)
         inputs[index].loading = false
-        inputs[index].invalid = banned || !accepted // null => not invited, false => not responded/aceepted
-        const invited = accepted === false
-        inputs[index].message = banned ? texts.workerBannedMsg : accepted ? undefined : {
+        inputs[index].invalid = banned || !accepted
+
+        if (banned) {
+            // user has been banned by activity owner
+            inputs[index].message = {
+                content: texts.workerBannedMsg,
+                showIcon: true,
+                status: 'error',
+            }
+            return this.setState({ inputs, submitDisabled: false })
+        }
+
+        inputs[index].message = accepted ? undefined : {
             content: !invited ? texts.inactiveWorkerMsg1 : (
                 <div>
                     {texts.inactiveWorkerMsg3} <br />
@@ -372,7 +386,7 @@ export default class TimeKeepingForm extends Component {
             status: 'error',
         }
         this.setState({ inputs, submitDisabled: false })
-        if (!inputs[index].message) this.setIdentityOptions()
+        this.setIdentityOptions(projectId, workerAddress)
     }
 
     handleValuesChange = (_, formValues) => {
@@ -499,38 +513,23 @@ export default class TimeKeepingForm extends Component {
         formData(values)
     }
 
-    setIdentityOptions = async () => {
-        const { inputs, values } = this.state
-        const { projectHash: projectId, workerAddress } = values
+    setIdentityOptions = async (projectId, workerAddress) => {
         if (!projectId) return
+        const { inputs } = this.state
         const identityIn = findInput(inputs, 'workerAddress')
         const allIdentities = identities.getAll()
-        const ownerAddresses = allIdentities.map(({ address }) => address)
-
-        // check user's own identities that has accepted the project
-        const acceptedAr = await query.worker.accepted(
-            ownerAddresses.map(() => projectId),
-            ownerAddresses
-        )
+        const workers = await query.worker.listWorkers(projectId)
         const options = allIdentities
             // exclude projects that hasn't been accepted yet
-            .filter((_, i) => !!acceptedAr[i])
+            .filter(({ address }) => workers.includes(address))
             .map(({ address, name }) => ({
                 key: address,
                 text: name,
                 value: address,
             }))
         identityIn.options = options
-
-        let value = workerAddress
-        // if only option, preselect it
-        if (options.length === 1) {
-            value = options[0].value
-        } else if (!options.find(x => x.value === value)) {
-            // if existing value is not in options list
-            value = null
-        }
-        identityIn.bond.changed(value)
+        const hasOption = options.find(({ value }) => value === workerAddress)
+        identityIn.bond.changed(hasOption ? workerAddress : null)
         this.setState({ inputs })
     }
 
@@ -652,7 +651,7 @@ export class TimeKeepingUpdateForm extends Component {
                     bond: new Bond(),
                     label: wordsCap.duration,
                     name: 'duration',
-                    onChange: deferred(this.handleDurationChange, 300),
+                    onChange: this.handleDurationChange,
                     type: 'text',
                     required: true,
                 },

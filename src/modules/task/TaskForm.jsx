@@ -4,7 +4,7 @@ import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import { arrSort, deferred, isObj, isValidNumber, objClean, generateHash, isFn } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
-import { BLOCK_DURATION_SECONDS, format } from '../../utils/time'
+import { BLOCK_DURATION_SECONDS, format, blockNumberToTS } from '../../utils/time'
 // components
 import Currency from '../../components/Currency'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
@@ -372,10 +372,12 @@ export default class TaskForm extends Component {
     // converts a block number to date string formatted as yyyy-mm-dd
     blockToDateStr(blockNum, currentBlockNum) {
         if (!isValidNumber(blockNum)) return blockNum
-        const numSeconds = (blockNum - currentBlockNum) * BLOCK_DURATION_SECONDS
-        const now = new Date()
-        now.setSeconds(now.getSeconds() + numSeconds)
-        return format(now).substr(0, 10)
+        // const numSeconds = (blockNum - currentBlockNum) * BLOCK_DURATION_SECONDS
+        // const now = new Date()
+        // now.setSeconds(now.getSeconds() + numSeconds)
+        // return format(now).substr(0, 10)
+        const ts = blockNumberToTS(blockNum, currentBlockNum, true)
+        return ts.substr(0, 10) // Format as yyyy-dd-mm
     }
 
     getBalance = (() => {
