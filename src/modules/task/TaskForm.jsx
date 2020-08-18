@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import uuid from 'uuid'
 import { Button } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
@@ -513,6 +514,7 @@ export default class TaskForm extends Component {
         const tokenData = hashTypes.taskHash + ownerAddress + JSON.stringify(dbValues)
         const token = generateHash(tokenData)
         const queueTaskName = 'createTask'
+        const queueId = uuid.v1()
         const thenCb = last => (success, err) => {
             if (!last && success) return
             this.setState({
@@ -526,7 +528,7 @@ export default class TaskForm extends Component {
                 submitDisabled: false,
                 success,
             })
-            isFn(onSubmit) && onSubmit(success, values, taskId)
+            isFn(onSubmit) && onSubmit(success, values, taskId, queueId)
         }
         this.setState({
             closeText: textsCap.close,
@@ -559,10 +561,11 @@ export default class TaskForm extends Component {
             },
         ])
         queueProps.next = {
+            id: queueId,
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'task',
             then: thenCb(true),
-            title: textsCap.saveOffChainData,
+            description: textsCap.saveOffChainData,
             args: [
                 taskId || {
                     // need to process tx result (events' data) to get the taskId

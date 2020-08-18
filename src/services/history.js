@@ -17,6 +17,9 @@ export const clearAll = () => history.setAll(new Map()) | updateBond()
 
 export const getAll = () => history.getAll()
 
+
+export const getById = id => history.get(id)
+
 export const remove = id => history.delete(id) | updateBond()
 
 // set number of actions to store and apply to history items

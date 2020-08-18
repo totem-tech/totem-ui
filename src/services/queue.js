@@ -346,7 +346,7 @@ const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, 
 const processArgs = (rootTask = {}, currentTask = {}) => {
     try {
         const args = currentTask.args || []
-        const processedArgs = []
+        const argsProcessed = []
         const hasDynamicArg = args.find(arg => isObj(arg) && arg.__taskName && arg.__resultSelector)
         if (!hasDynamicArg) return []
 
@@ -361,17 +361,17 @@ const processArgs = (rootTask = {}, currentTask = {}) => {
             const { __taskName, __resultSelector } = isObj(arg) ? arg : {}
             const isStatic = !__taskName || !__resultSelector
             if (isStatic) {
-                processedArgs.push(arg)
+                argsProcessed.push(arg)
                 continue
             }
             // throw 'test error 1'
             const result = getResultByName(rootTask, __taskName)
             const argValue = eval(__resultSelector)
             const processedArg = !isFn(argValue) ? argValue : argValue(result, rootTask)
-            processedArgs.push(processedArg)
+            argsProcessed.push(processedArg)
         }
 
-        return [null, processedArgs]
+        return [null, argsProcessed]
     } catch (err) {
         console.log({ err })
         // throw err
@@ -404,13 +404,13 @@ const handleChatClient = async (id, rootTask, task, toastId) => {
         if (!isFn(func)) throw textsCap.invalidFunc
 
         // process any dynamic arguments
-        const [err, processedArgs] = processArgs(rootTask, task)
-        task.processedArgs = processedArgs
+        const [err, argsProcessed] = processArgs(rootTask, task)
+        task.argsProcessed = argsProcessed
         if (err) throw `${textsCap.processArgsFailed}. ${err}`
         _save(LOADING)
 
         // initiate request
-        const result = await func.promise.apply(null, task.processedArgs || args)
+        const result = await func.promise.apply(null, task.argsProcessed || args)
         _save(SUCCESS, result)
     } catch (err) {
         _save(ERROR, err)
@@ -461,8 +461,8 @@ const handleTx = async (id, rootTask, task, toastId) => {
         if (!isFn(txFunc)) throw textsCap.invalidFunc
 
         // process dynamic arguments, if required
-        const [err, processedArgs] = processArgs(rootTask, task)
-        task.processedArgs = processedArgs
+        const [err, argsProcessed] = processArgs(rootTask, task)
+        task.argsProcessed = argsProcessed
         if (err) throw `${textsCap.processArgsFailed}. ${err}`
 
         if (txId) {
@@ -506,7 +506,7 @@ const handleTx = async (id, rootTask, task, toastId) => {
         _save(LOADING, null, { before: balance })
 
         // attempt to execute the transaction
-        const tx = txFunc.apply(null, task.processedArgs || args)
+        const tx = txFunc.apply(null, task.argsProcessed || args)
         const result = await signAndSend(api, address, tx)
 
         // retrieve and store account balance after execution

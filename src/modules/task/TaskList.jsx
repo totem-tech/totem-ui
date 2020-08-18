@@ -10,6 +10,7 @@ import TaskForm from './TaskForm'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
 import { isFn } from '../../utils/utils'
+import { getById } from '../../services/history'
 
 const textsCap = translated({
     action: 'action',
@@ -118,6 +119,7 @@ class TaskList extends Component {
                     content: textsCap.create,
                     icon: 'plus',
                     onClick: () => showForm(TaskForm, {
+                        onSubmit: this.handleTaskSubmit,
                         values: !this.isMarketplace ? undefined : { publish: 1 },
                         size: 'tiny',
                     }),
@@ -129,16 +131,20 @@ class TaskList extends Component {
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
+    handleTaskSubmit = (success, values, taskId, historyId) => {
+        if (!success) return
+        const { updater } = this.props
+        taskId = taskId || (getById(historyId) || { data: [] }).data[0]
+        if (!taskId.startsWith('0x')) return
+        updater([taskId])
+    }
+
     getActions = (task, taskId) => {
         return [
             this.isOwner && {
                 icon: 'pencil',
                 onClick: () => showForm(TaskForm, {
-                    onSubmit: success => {
-                        const { updater } = this.props
-                        if (!success || !isFn(updater)) return
-                        updater([taskId])
-                    },
+                    onSubmit: this.handleTaskSubmit,
                     taskId,
                     values: task,
                 }),
@@ -159,6 +165,7 @@ class TaskList extends Component {
 TaskList.propTypes = {
     // @listType valid options: owner, approver, fulfiller etc
     listType: PropTypes.string,
+    updater: PropTypes.func.isRequired,
 }
 TaskList.defaultProps = {
     listType: listTypes.owner,
