@@ -1,4 +1,5 @@
 import React from 'react'
+import uuid from 'uuid'
 import { Menu, Tab } from 'semantic-ui-react'
 import TaskList from './TaskList'
 import { useSelected } from '../../services/identity'
@@ -53,7 +54,6 @@ export default function TaskView(props) {
                             address,
                             asTabPane: true,
                             data: tasks,
-                            key: type + address + tasks.size,
                             type,
                         }} />
                     )}
@@ -62,5 +62,10 @@ export default function TaskView(props) {
         }
     }))
 
-    return <Tab panes={panes} />
+    return (
+        <Tab
+            panes={panes}
+            key={uuid.v1()} // forces active pane to re-render on each change
+        />
+    )
 }

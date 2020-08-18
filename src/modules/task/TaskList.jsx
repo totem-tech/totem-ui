@@ -164,7 +164,11 @@ class TaskList extends Component {
             .map((props, i) => <Button {...props} key={`${i}-${props.title}`} />)
     }
 
-    render = () => <DataTable {...{ ...this.props, ...this.state }} />
+    render = () => {
+        console.log({ props: this.props })
+        return <DataTable {...{ ...this.props, ...this.state }} />
+
+    }
 }
 TaskList.propTypes = {
     // @listType valid options: owner, approver, fulfiller etc

@@ -238,7 +238,7 @@ export default function useTasks(types, address, timeout = 5000) {
             }//ignore error
         })
         return () => subscribed.unsubscribe()
-    }, [tasks])
+    }, [tasks, setTasks])
     return [
         tasks,
         message,
