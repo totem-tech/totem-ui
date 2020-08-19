@@ -24,7 +24,7 @@ const textsCap = translated({
     submitted: 'submitted',
 }, true)[1]
 export const statusNames = {
-    // / // used for tasks that are no longer available in the storage
+    // used for tasks that are no longer available in the Blockchain storage
     '-1': textsCap.inaccessible,
     '0': textsCap.submitted,
     '1': textsCap.accepted,
@@ -54,7 +54,11 @@ export const approvedCodeNames = {
     approved: textsCap.approved,
     rejected: textsCap.rejected,
 }
-
+// @rsUpdater is used to force update off-chain task data. Expected value is array of Task IDs.
+// Use case: whenever off-chain task data (eg: title, description...) needs to be updated manually because PolkadotJS 
+//      API the subscription mechanism used in the`useTasks` hook cannot automatically do it:
+//      After creating and updating the task using the TaskForm
+// Example usage: rxUpdater.next(['0x...'])
 export const rxUpdater = new Subject()
 
 /**
@@ -95,6 +99,7 @@ export default function useTasks(types, address, timeout = 5000) {
 
     useEffect(() => {
         let mounted = true
+        let done = false
         const unsubscribers = {}
         const loadingMsg = {
             content: textsCap.loadingMsg,
@@ -151,7 +156,7 @@ export default function useTasks(types, address, timeout = 5000) {
                 })
             })
 
-            const promise = PromisE.timeout(query.getDetailsByTaskIds(uniqueTaskIds), timeout)
+            const promise = PromisE.timeout(query.getDetailsByTaskIds(uniqueTaskIds), timeout / 2)
             // add title description etc retrieved from Messaging Service
             const addDetails = (detailsMap) => {
                 if (!mounted) return
@@ -174,6 +179,7 @@ export default function useTasks(types, address, timeout = 5000) {
                 })
                 rwCache(address, cacheableAr)
                 setTasks(allTasks)
+                done = true
             }
 
             // on receive update tasks lists
@@ -196,7 +202,10 @@ export default function useTasks(types, address, timeout = 5000) {
             )
         }
 
-        // setTasks(getCached(address, types))
+        // load cached items if items are not loaded within timeout duration
+        setTimeout(() => {
+            mounted && !done && setTasks(getCached(address, types))
+        }, timeout)
         setMessage(loadingMsg)
 
         query.getTaskIds(types, address, handleTaskIds).then(
@@ -214,7 +223,6 @@ export default function useTasks(types, address, timeout = 5000) {
     useEffect(() => {
         const subscribed = rxUpdater.subscribe(async (taskIds) => {
             if (!taskIds || !taskIds.length) return
-            console.log({ taskIds })
             try {
                 const detailsMap = await query.getDetailsByTaskIds(taskIds)
                 if (!detailsMap.size) return
@@ -232,13 +240,14 @@ export default function useTasks(types, address, timeout = 5000) {
                 })
                 rwCache(address, cacheableAr)
                 setTasks(newTasks)
-                console.log({ tasks, taskIds, detailsMap })
             } catch (err) {
+                //ignore error
                 console.log({ err })
-            }//ignore error
+            }
         })
         return () => subscribed.unsubscribe()
     }, [tasks, setTasks])
+
     return [
         tasks,
         message,

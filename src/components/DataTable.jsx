@@ -137,10 +137,9 @@ export default class DataTable extends Component {
                         padding: collapsing ? '0 5px' : undefined,
                         ...style
                     }
-                    contentKey === 'title' && console.log(key + j + item[contentKey])
                     const props = {
                         ...objWithoutKeys(cell, ['content', 'headerProps', 'title']),
-                        key: key + j + item[contentKey],
+                        key: key + j,
                         draggable,
                         onDragStart: !draggable ? undefined : this.handleDragStart,
                         style,

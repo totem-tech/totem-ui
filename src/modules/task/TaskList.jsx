@@ -100,6 +100,7 @@ class TaskList extends Component {
                     collapsing: true,
                     content: ({ publish }) => publish ? textsCap.yes : textsCap.no,
                     key: 'publish',
+                    style: { textAlign: 'center' },
                     title: textsCap.marketplace,
                 },
                 // { key: 'description', title: textsCap.description },
@@ -122,7 +123,6 @@ class TaskList extends Component {
                     content: textsCap.create,
                     icon: 'plus',
                     onClick: () => showForm(TaskForm, {
-                        onSubmit: this.handleTaskSubmit,
                         values: !this.isMarketplace ? undefined : { publish: 1 },
                         size: 'tiny',
                     }),
@@ -134,21 +134,11 @@ class TaskList extends Component {
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
-    handleTaskSubmit = (success, values, taskId, historyId) => {
-        if (!success) return
-        // const { updater } = this.props
-        taskId = taskId || (getById(historyId) || { data: [] }).data[0]
-        if (!taskId.startsWith('0x')) return
-        // updater([taskId])
-        rxUpdater.next([taskId])
-    }
-
     getActions = (task, taskId) => {
         return [
             this.isOwner && {
                 icon: 'pencil',
                 onClick: () => showForm(TaskForm, {
-                    onSubmit: this.handleTaskSubmit,
                     taskId,
                     values: task,
                 }),
@@ -164,11 +154,7 @@ class TaskList extends Component {
             .map((props, i) => <Button {...props} key={`${i}-${props.title}`} />)
     }
 
-    render = () => {
-        console.log({ props: this.props })
-        return <DataTable {...{ ...this.props, ...this.state }} />
-
-    }
+    render = () => <DataTable {...{ ...this.props, ...this.state }} />
 }
 TaskList.propTypes = {
     // @listType valid options: owner, approver, fulfiller etc

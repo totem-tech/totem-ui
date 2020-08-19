@@ -54,6 +54,7 @@ export default [
     "./src/modules/notification/List.jsx",
     "./src/modules/notification/ListItem.jsx",
     "./src/modules/notification/notification.js",
+    "./src/modules/task/TaskDetails.jsx",
     "./src/modules/task/TaskDetailsForm.jsx",
     "./src/modules/task/TaskForm.jsx",
     "./src/modules/task/TaskList.jsx",

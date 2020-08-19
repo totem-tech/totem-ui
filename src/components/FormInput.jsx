@@ -172,6 +172,7 @@ export default class FormInput extends Component {
 			}
 		}
 		if (message || !isFn(validate)) return triggerChange()
+		
 		isFn(onChange) && onChange(event, data, this.props)
 
 		const customValidate = vMsg => {
@@ -192,9 +193,6 @@ export default class FormInput extends Component {
 			customValidate,
 			err => console.log({ validationError: err, input: this.props })
 		)
-		// const promiseOrRes = new PromisE(validate(event, data))
-		// if (!isPromise(promiseOrRes)) return customValidate(promiseOrRes)
-		// promiseOrRes.then(customValidate, err => console.log({ promiseError: err }))
 	}
 
 	setMessage = (message = {}) => this.setState({ message })

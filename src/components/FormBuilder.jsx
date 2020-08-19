@@ -60,11 +60,11 @@ export default class FormBuilder extends Component {
         values = this.getValues(inputs, values, name, value)
 
         try {
+            this.setState({ message: null, inputs, values })
             // trigger input items's onchange callback
             isFn(onInputChange) && !data.invalid && await onInputChange(event, values, index, childIndex)
             // trigger form's onchange callback
             isFn(formOnChange) && await formOnChange(event, values, index, childIndex)
-            this.setState({ message: null, inputs, values })
         } catch (err) {
             console.error(err)
             this.setState({
@@ -115,7 +115,7 @@ export default class FormBuilder extends Component {
             header,
             headerIcon,
             hideFooter,
-            inputs,
+            // inputs,
             loading,
             message: msg,
             modal,
@@ -132,7 +132,7 @@ export default class FormBuilder extends Component {
             trigger,
             widths
         } = this.props
-        let { inputs: inputsS, message: sMsg, open: sOpen, values } = this.state
+        let { inputs, message: sMsg, open: sOpen, values } = this.state
         // whether the 'open' status is controlled or uncontrolled
         let modalOpen = isFn(onClose) ? open : sOpen
         if (success && closeOnSubmit) {

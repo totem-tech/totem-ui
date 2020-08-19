@@ -24,6 +24,8 @@ import partners from '../../services/partner'
 import { queueables, PRODUCT_HASH_LABOUR } from './task'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import { showForm } from '../../services/modal'
+import { getById } from '../../services/history'
+import { rxUpdater } from './useTasks'
 
 const textsCap = translated({
     addedToQueue: 'request added to queue',
@@ -75,6 +77,7 @@ const textsCap = translated({
     updatePartner: 'update partner',
 }, true)[1]
 const estimatedTxFee = 140
+// deadline must be minimum 48 hours from now
 const deadlineMinMS = 48 * 60 * 60 * 1000
 const strToDate = ymd => new Date(`${ymd}T23:59:59`)
 
@@ -499,7 +502,7 @@ export default class TaskForm extends Component {
     }
 
     handleSubmit = async (_, values) => {
-        const { onSubmit, taskId } = this.props
+        let { onSubmit, taskId } = this.props
         const { address: ownerAddress } = getSelected()
         const currentBlock = await getCurrentBlock()
         const deadlineMS = strToDate(values[this.names.deadline]) - new Date()
@@ -515,8 +518,8 @@ export default class TaskForm extends Component {
         const token = generateHash(tokenData)
         const queueTaskName = 'createTask'
         const queueId = uuid.v1()
-        const thenCb = last => (success, err) => {
-            if (!last && success) return
+        const thenCb = isLastInQueue => (success, err) => {
+            if (!isLastInQueue && success) return
             this.setState({
                 closeText: success ? textsCap.close : undefined,
                 message: {
@@ -528,7 +531,11 @@ export default class TaskForm extends Component {
                 submitDisabled: false,
                 success,
             })
-            isFn(onSubmit) && onSubmit(success, values, taskId, queueId)
+
+            // force `useTask` hook to update the off-chain task data for this task only
+            taskId = taskId || (getById(historyId) || { data: [] }).data[0]
+            taskId.startsWith('0x') && rxUpdater.next([taskId])
+            isFn(onSubmit) && onSubmit(success, values, taskId)
         }
         this.setState({
             closeText: textsCap.close,
