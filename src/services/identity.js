@@ -38,7 +38,8 @@ export const addFromUri = (uri, type = 'sr25519') => {
     try {
         return keyring.keyring.addFromUri(uri, null, type).toJson()
     } catch (err) {
-        console.log('services.identity.addFromUri()', err)
+        // error will occur if wasm-crypto is not initialised or invalid URI passed
+        // console.log('services.identity.addFromUri()', err)
     }
 }
 
@@ -118,12 +119,15 @@ export const useIdentities = () => {
     return [list]
 }
 
-(() => {
+const init = () => {
     if (!getAll().length) {
-        console.log('Identity service: creating default identity for first time user')
         // generate a new seed
         const uri = generateUri() + '/totem/0/0'
-        const { address } = addFromUri(uri)
+        const { address } = addFromUri(uri) || {}
+        // in case `wasm-crypto` hasn't been initiated yet, try again after a second
+        if (!address) return setTimeout(init, 1000)
+        console.log('Identity service: creating default identity for first time user')
+
         const identity = {
             address,
             name: DEFAULT_NAME,
@@ -135,7 +139,9 @@ export const useIdentities = () => {
 
     // selectedAddressBond.changed((getSelected() || {}).address)
     rxSelected.next(getSelected().address)
-})()
+}
+
+setTimeout(init)
 
 export default {
     addFromUri,

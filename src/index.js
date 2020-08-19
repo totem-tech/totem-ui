@@ -33,11 +33,11 @@ const init = () => PromisE.timeout((resolve, reject) => {
         }
     })
 
-    // initiate connection to blockchain
-    getConnection()
 }, 2000)
 const doRender = () => render(<App />, document.getElementById('app'))
 
+// initiate connection to blockchain
+getConnection()
 init().then(doRender)
     // force render in case messaging service is taking longer to get connected
     .catch(doRender)
