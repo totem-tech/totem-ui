@@ -28,6 +28,26 @@ export default class FormBuilder extends Component {
 
     }
 
+    // recursive interceptor for infinite level of child inputs
+    addInterceptor = (index, values) => (input, i) => {
+        const { hidden, inputs: childInputs, key, name, type } = input || {}
+        const isGroup = (type || '').toLowerCase() === 'group' && isArr(childInputs)
+        index = isDefined(index) ? index : null
+        return {
+            ...input,
+            hidden: !isFn(hidden) ? hidden : !!hidden(values, i),
+            inputs: !isGroup ? undefined : childInputs.map(this.addInterceptor(index ? index : i, values)),
+            key: key || i + name,
+            onChange: isGroup ? undefined : (e, data) => this.handleChange(
+                e,
+                data,
+                input,
+                index ? index : i,
+                index ? i : undefined
+            ),
+        }
+    }
+
     getValues = (inputs = [], values = {}, inputName, newValue) => inputs.reduce((values, input) => {
         const { inputs: childInputs, groupValues, name, type } = input
         const typeLC = (type || '').toLowerCase()
@@ -141,27 +161,6 @@ export default class FormBuilder extends Component {
         }
         msg = sMsg || msg
         const message = isObj(msg) && msg || {}
-        // recursive interceptor for infinite level of child inputs
-        const addInterceptor = index => (input, i) => {
-            const { hidden, inputs: childInputs, key, name, type } = input || {}
-            const isGroup = (type || '').toLowerCase() === 'group' && isArr(childInputs)
-            index = isDefined(index) ? index : null
-            return {
-                ...input,
-                hidden: !isFn(hidden) ? hidden : !!hidden(values, i),
-                inputs: !isGroup ? undefined : childInputs.map(addInterceptor(index ? index : i)),
-                key: key || i + name,
-                onChange: isGroup ? undefined : (e, data) => this.handleChange(
-                    e,
-                    data,
-                    input,
-                    index ? index : i,
-                    index ? i : undefined
-                ),
-            }
-        }
-        inputs = inputs.map(addInterceptor())
-
         let submitBtn, closeBtn
         const shouldDisable = submitDisabled || success || isFormInvalid(inputs, values)
         submitText = !isFn(submitText) ? submitText : submitText(values, shouldDisable)
@@ -195,7 +194,7 @@ export default class FormBuilder extends Component {
                 warning={message.status === 'warning'}
                 widths={widths}
             >
-                {inputs.map(props => <FormInput {...props} />)}
+                {inputs.map(this.addInterceptor(null, values)).map(props => <FormInput {...props} />)}
                 {/* Include submit button if not a modal */}
                 {!modal && !hideFooter && (
                     <div>

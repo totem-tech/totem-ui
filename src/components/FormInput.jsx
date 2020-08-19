@@ -66,7 +66,7 @@ const NON_ATTRIBUTES = Object.freeze([
 ])
 export const nonValueTypes = Object.freeze(['button', 'html'])
 
-export default class FormInput extends Component {
+export class FormInput extends Component {
 	constructor(props) {
 		super(props)
 
@@ -172,7 +172,7 @@ export default class FormInput extends Component {
 			}
 		}
 		if (message || !isFn(validate)) return triggerChange()
-		
+
 		isFn(onChange) && onChange(event, data, this.props)
 
 		const customValidate = vMsg => {
@@ -189,7 +189,7 @@ export default class FormInput extends Component {
 			triggerChange()
 		}
 
-		PromisE(validate(event, data)).then(
+		PromisE(async () => await validate(event, data)).then(
 			customValidate,
 			err => console.log({ validationError: err, input: this.props })
 		)
@@ -254,7 +254,7 @@ export default class FormInput extends Component {
 				if (isArr(attrs.search)) {
 					attrs.search = searchRanked(attrs.search)
 				}
-				inputEl = <Dropdown {...attrs} />
+				inputEl = <Dropdown {...attrs} search={true} />
 				break
 			case 'group':
 				isGroup = true
@@ -395,3 +395,6 @@ FormInput.defaultProps = {
 	type: 'text',
 	width: 16,
 }
+
+
+export default React.memo(FormInput)

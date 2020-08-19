@@ -113,15 +113,17 @@ export default class TaskForm extends Component {
             this.names.tags,
         ]
 
+        this.values = values || {}
+
         this.state = {
             header: isObj(values) && !!taskId ? textsCap.formHeaderUpdate : textsCap.formHeader,
             loading: true,
-            onChange: (_, values) => this.setState({ values }),
+            onChange: (_, values) => this.values = values,
             onSubmit: this.handleSubmit,
-            values: {},
             inputs: [
                 {
                     bond: new Bond(),
+                    defer: null,
                     label: textsCap.title,
                     max: 160,
                     min: 3,
@@ -139,8 +141,6 @@ export default class TaskForm extends Component {
                         {
                             bond: new Bond(),
                             label: textsCap.bountyLabel,
-                            // inlineLabel: null,
-                            // labelPosition: 'right',
                             min: 0, // allows bounty-free tasks
                             name: this.names.bounty,
                             onChange: this.handleBountyChange,
@@ -183,8 +183,6 @@ export default class TaskForm extends Component {
                     radio: true,
                     required: true,
                     type: 'checkbox-group',
-                    // remove validation once implemented
-                    // validate: (_, { value: publish }) => publish && textsCap.featureNotImplemented,
                     value: 0,
                 },
                 {
@@ -233,7 +231,7 @@ export default class TaskForm extends Component {
                     type: 'date',
                     validate: (_, { value: dueDate }) => {
                         if (!dueDate) return textsCap.invalidDate
-                        const { values } = this.state
+                        const { values } = this.values
                         const deadline = values[this.names.deadline]
                         const diffMS = strToDate(dueDate) - strToDate(deadline)
                         return diffMS < 0 && textsCap.dueDateMinErrorMsg
@@ -319,49 +317,39 @@ export default class TaskForm extends Component {
     }
 
     async componentWillMount() {
-        const { values } = this.props
         this._mounted = true
-        this.bond = Bond.all([bond, partners.bond])
-        this.tieId = this.bond.tie(() => {
-            const { inputs } = this.state
-            const assigneeIn = findInput(inputs, this.names.assignee)
-            const options = Array.from(partners.getAll())
-                .map(([address, { name, userId }]) => ({
-                    description: userId,
-                    key: address,
-                    text: name,
-                    value: address,
-                }))
-
-            assigneeIn.options = arrSort(options, 'text')
-            this.setState({ inputs, values })
-        })
-
+        const { values } = this.props
         const { inputs } = this.state
+        const assigneeIn = findInput(inputs, this.names.assignee)
+        const tagsIn = findInput(inputs, this.names.tags)
         const currencyIn = findInput(inputs, this.names.currency)
-        getCurrencies().then(currencies => {
-            currencyIn.options = currencies.map(({ currency, nameInLanguage, ISO }) => ({
+        const assigneeOptions = Array.from(partners.getAll())
+            .map(([address, { name, userId }]) => ({
+                description: userId,
+                key: address,
+                text: name,
+                value: address,
+            }))
+        assigneeIn.options = arrSort(assigneeOptions, 'text')
+        const currencyOptions = (await getCurrencies())
+            .map(({ currency, ISO }) => ({
                 key: ISO,
                 text: currency,
                 value: ISO,
-                name: nameInLanguage,
             }))
-            currencyIn.deburr = true // ???
-            currencyIn.search = ['text', 'name']
-            this.setState({ inputs })
-        })
+        // currencyIn.deburr = true // ???
+        currencyIn.options = arrSort(currencyOptions, 'text')
+        currencyIn.search = ['text']
+        if (!isObj(values)) return this.setState({ inputs, loading: false })
 
-        if (!isObj(values)) return this.setState({ loading: false })
         const { amountXTX, deadline, dueDate, tags = [] } = values
-        // convert duedate and deadline block numbers to date format yyyy-mm-dd
         const { number } = await query('api.rpc.chain.getHeader')
-
+        // convert duedate and deadline block numbers to date format yyyy-mm-dd
         values.deadline = this.blockToDateStr(deadline, number)
         values.dueDate = this.blockToDateStr(dueDate, number)
         values.bounty = amountXTX
-        this.bountyOriginal = values.bounty
         if (tags.length) {
-            findInput(inputs, this.names.tags).options = tags.map(tag => ({
+            tagsIn.options = tags.map(tag => ({
                 key: tag,
                 text: tag,
                 value: tag,
@@ -378,10 +366,6 @@ export default class TaskForm extends Component {
     // converts a block number to date string formatted as yyyy-mm-dd
     blockToDateStr(blockNum, currentBlockNum) {
         if (!isValidNumber(blockNum)) return blockNum
-        // const numSeconds = (blockNum - currentBlockNum) * BLOCK_DURATION_SECONDS
-        // const now = new Date()
-        // now.setSeconds(now.getSeconds() + numSeconds)
-        // return format(now).substr(0, 10)
         const ts = blockNumberToTS(blockNum, currentBlockNum, true)
         return ts.substr(0, 10) // Format as yyyy-dd-mm
     }
@@ -402,10 +386,11 @@ export default class TaskForm extends Component {
 
     // check if use has enough balance for the transaction including pre-funding amount (bounty)
     handleBountyChange = deferred((_, values) => {
-        const { taskId } = this.props
+        const { taskId, values } = this.props
+        const { amountXTX: bountyOriginal } = values || {}
         const bounty = values[this.names.bounty]
         // bounty hasn't changed
-        if (taskId && bounty === this.bountyOriginal) return
+        if (taskId && bounty === bountyOriginal) return
 
         this.bountyPromise = this.bountyPromise || PromisE.deferred()
         const { inputs } = this.state

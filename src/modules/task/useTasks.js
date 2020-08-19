@@ -93,7 +93,7 @@ const rwCache = (key, value) => storage.cache(MODULE_KEY, key, value) || []
  * @param {Number} timeout (optional) timeout delay in milliseconds. Default: 5000
  * 
  */
-export default function useTasks(types, address, timeout = 5000) {
+export default function useTasks(types, address, timeout = 1000) {
     const [tasks, setTasks] = useState(new Map())
     const [message, setMessage] = useState()
 

@@ -29,6 +29,7 @@ import { className, isBool } from './utils/utils'
 import TotemButtonLogo from './assets/totem-button-grey.png'
 import PlaceholderImage from './assets/totem-placeholder.png'
 import ChatBar from './modules/chat/ChatBar'
+import PromisE from './utils/PromisE'
 
 export class App extends Component {
 	constructor() {
@@ -44,6 +45,7 @@ export class App extends Component {
 			convert,
 			naclHelper,
 			polkadotHelper,
+			PromisE: PromisE,
 		}
 		window.DataStorage = DataStorage
 		window.services = {
