@@ -309,16 +309,18 @@ FormBuilder.defaultProps = {
 
 export const fillValues = (inputs, values, forceFill) => {
     if (!isObj(values)) return
-    inputs.forEach(input => {
-        let { bond, name, type } = input
-        const newValue = values[input.name]
+    // inputs.forEach(input => {
+    Object.keys(values).forEach(name => {
+        const input = findInput(inputs, name)
+        if (!input) return
+        let { bond, type } = input
+        const newValue = values[name]
         type = (isStr(type) ? type : 'text').toLowerCase()
-        const isGroup = type === 'group'
-        if (!isGroup && (
-            !isDefined(name) || !values.hasOwnProperty(input.name)
-            || (!forceFill && hasValue(input.value)) || !type
+        if (type !== 'group' && (
+            !forceFill && (
+                !hasValue(newValue) || hasValue(input.value)
+            )
         )) return
-
 
         switch (type) {
             case 'checkbox':
