@@ -162,39 +162,39 @@ export default class DataTable extends Component {
         const triggerSearchChange = keywords => isFn(searchOnChange) && searchOnChange(keywords)
 
         const searchCol = !showSearch ? '' : (
-            // if searchable is a valid element search is assumed to be externally handled
-            React.isValidElement(searchable) ? searchable : (
-                <Grid.Column key='0' tablet={16} computer={5} style={{ padding: 0 }}>
-                    <Input
-                        icon='search'
-                        iconPosition='left'
-                        action={!keywords ? undefined : {
-                            basic: true,
-                            icon: { className: 'no-margin', name: 'close' },
-                            onClick: () => {
-                                this.setState({ keywords: '' })
-                                triggerSearchChange('')
-                            }
-                        }}
-                        onChange={(e, d) => {
-                            const keywords = d.value
-                            this.setState({ keywords })
-                            triggerSearchChange(keywords)
-                        }}
-                        onDragOver={e => e.preventDefault()}
-                        onDrop={e => {
-                            const keywords = e.dataTransfer.getData('Text')
-                            if (!keywords.trim()) return
-                            this.setState({ keywords })
-                            triggerSearchChange(keywords)
-                        }}
-                        placeholder={textsCap.search}
-                        style={!isMobile ? undefined : styles.searchMobile}
-                        type='search' // enables escape to clear
-                        value={keywords}
-                    />
-                </Grid.Column>
-            )
+            <Grid.Column key='0' tablet={16} computer={5} style={{ padding: 0 }}>
+                {// if searchable is a valid element search is assumed to be externally handled
+                    React.isValidElement(searchable) ? searchable : (
+                        <Input
+                            icon='search'
+                            iconPosition='left'
+                            action={!keywords ? undefined : {
+                                basic: true,
+                                icon: { className: 'no-margin', name: 'close' },
+                                onClick: () => {
+                                    this.setState({ keywords: '' })
+                                    triggerSearchChange('')
+                                }
+                            }}
+                            onChange={(e, d) => {
+                                const keywords = d.value
+                                this.setState({ keywords })
+                                triggerSearchChange(keywords)
+                            }}
+                            onDragOver={e => e.preventDefault()}
+                            onDrop={e => {
+                                const keywords = e.dataTransfer.getData('Text')
+                                if (!keywords.trim()) return
+                                this.setState({ keywords })
+                                triggerSearchChange(keywords)
+                            }}
+                            placeholder={textsCap.search}
+                            style={!isMobile ? undefined : styles.searchMobile}
+                            type='search' // enables escape to clear
+                            value={keywords}
+                        />
+                    )}
+            </Grid.Column>
         )
 
         const right = selectable && topRightMenu && topRightMenu.length > 0 && (
@@ -372,7 +372,10 @@ DataTable.propTypes = {
         PropTypes.func,
         PropTypes.object
     ]),
-    searchable: PropTypes.bool,
+    searchable: PropTypes.oneOfType([
+        PropTypes.bool,
+        PropTypes.element,
+    ]),
     searchExtraKeys: PropTypes.array,
     searchHideOnEmpty: PropTypes.bool,
     searchOnChange: PropTypes.func,

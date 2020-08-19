@@ -355,7 +355,7 @@ export default class TaskForm extends Component {
                 value: tag,
             }))
         }
-        fillValues(inputs, values, true)
+        fillValues(inputs, values)
         this.setState({ inputs, loading: false })
     }
 

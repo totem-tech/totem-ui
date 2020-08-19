@@ -12,6 +12,7 @@ import { showForm } from '../../services/modal'
 import { isFn } from '../../utils/utils'
 import { getById } from '../../services/history'
 import { rxUpdater } from './useTasks'
+import { FormInput } from '../../components/FormInput'
 
 const textsCap = translated({
     action: 'action',
@@ -115,6 +116,26 @@ class TaskList extends Component {
             // preserve search keywords
             keywords: cachedData.get(keywordsKey),
             perPage: 100,
+            searchable: !this.isMarketplace ? true : (
+                <FormInput {...{
+                    // for advanced filtering
+                    // filter by: 
+                    //      tags(categories?),
+                    //      amountXTX (convert from display currency if necessary)
+                    //      deadline (convert timestamp to block number before search)
+                    //      created after (createdTS)
+                    // search by: title, description, userId
+                    action: {
+                        icon: 'filter',
+                        onClick: () => alert('to be implemented')
+                    },
+                    icon: 'search',
+                    iconPosition: 'left',
+                    name: 'search',
+                    placeholder: 'search',
+                    type: 'search'
+                }} />
+            ),
             searchExtraKeys: ['_taskId'],
             searchHideOnEmpty: !this.isMarketplace,
             searchOnChange: keywords => cachedData.set(keywordsKey, keywords),
