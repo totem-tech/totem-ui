@@ -206,12 +206,11 @@ const PageHeaderView = props => {
 									content: textsCap.copyAddress,
 									onClick: onCopy,
 								},
-								userId && {
-
-									icon: 'gem',
-									content: textsCap.requestFunds,
-									onClick: onFaucetRequest,
-								},
+								// userId && {
+								// 	icon: 'gem',
+								// 	content: textsCap.requestFunds,
+								// 	onClick: onFaucetRequest,
+								// },
 								{
 									icon: 'currency',
 									content: textsCap.changeCurrency, // Better left un-translated
