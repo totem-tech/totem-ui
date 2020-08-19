@@ -386,8 +386,8 @@ export default class TaskForm extends Component {
 
     // check if use has enough balance for the transaction including pre-funding amount (bounty)
     handleBountyChange = deferred((_, values) => {
-        const { taskId, values } = this.props
-        const { amountXTX: bountyOriginal } = values || {}
+        const { taskId, values: valuesOrg } = this.props
+        const { amountXTX: bountyOriginal } = valuesOrg || {}
         const bounty = values[this.names.bounty]
         // bounty hasn't changed
         if (taskId && bounty === bountyOriginal) return

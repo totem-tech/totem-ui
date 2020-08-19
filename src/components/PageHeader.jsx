@@ -187,9 +187,9 @@ const PageHeaderView = props => {
 					item
 					text={getSelectedLang()}
 					icon={{
-						name: 'chevron circle ' + (showTools ? 'up' : 'down'),
+						name: 'cog',//'chevron circle ' + (showTools ? 'up' : 'down'),
 						size: 'large',
-						className: 'no-margin'
+						// className: 'no-margin',
 					}}
 					onClick={() => setShowTools(!showTools) | notifVisibleBond.changed(false)}
 				>
