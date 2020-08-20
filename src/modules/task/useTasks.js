@@ -5,10 +5,8 @@ import PromisE from '../../utils/PromisE'
 // services
 import { translated } from '../../services/language'
 import { getAddressName } from '../../services/partner'
-import storage from '../../services/storage'
-import { query } from './task'
+import { query, rwCache } from './task'
 
-const MODULE_KEY = 'task'
 const textsCap = translated({
     errorHeader: 'failed to load tasks',
     loadingMsg: 'loading tasks',
@@ -62,9 +60,12 @@ export const approvedCodeNames = {
 export const rxUpdater = new Subject()
 
 /**
- * 
+ * @name getCached
+ * @summary read cached list of tasks
  * @param {String} address user identity
  * @param {Array} types task list types
+ * 
+ * @returns {Map}
  */
 const getCached = (address, types) => {
     let cache = rwCache(address)
@@ -73,15 +74,14 @@ const getCached = (address, types) => {
     }
     return new Map(cache.map(([type, typeTasks]) => [type, new Map(typeTasks)]))
 }
+
 /**
- * @name    rwCache
- * @summary read/write to cache storage 
- * @param   {String} key 
- * @param   {*} value (optional) if undefined will only return existing cache.
- *                  If `null`, will clear cache.
- * @returns {Map}
+ * @name setCache
+ * @summary save tasks in the cache storage
+ * @param {String} address 
+ * @param {Array} allTasksArr Array converted from 2D map of all tasks for all types
  */
-const rwCache = (key, value) => storage.cache(MODULE_KEY, key, value) || []
+const setCache = (address, allTasksArr) => rwCache(address, allTasksArr)
 
 /**
  * @name useTasks
@@ -177,7 +177,8 @@ export default function useTasks(types, address, timeout = 1000) {
                     allTasks.set(type, new Map(typeTasks))
                     return [type, typeTasks]
                 })
-                rwCache(address, cacheableAr)
+                setCache(address, cacheableAr)
+                setMessage(null)
                 setTasks(allTasks)
                 done = true
             }
@@ -204,7 +205,9 @@ export default function useTasks(types, address, timeout = 1000) {
 
         // load cached items if items are not loaded within timeout duration
         setTimeout(() => {
-            mounted && !done && setTasks(getCached(address, types))
+            if (!mounted || done) return
+            setMessage(null)
+            setTasks(getCached(address, types))
         }, timeout)
         setMessage(loadingMsg)
 
@@ -238,7 +241,8 @@ export default function useTasks(types, address, timeout = 1000) {
                     newTasks.set(type, typeTasks)
                     return [type, Array.from(typeTasks)]
                 })
-                rwCache(address, cacheableAr)
+                setCache(address, cacheableAr)
+                setMessage(null)
                 setTasks(newTasks)
             } catch (err) {
                 //ignore error

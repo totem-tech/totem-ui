@@ -5,6 +5,8 @@ import TaskList from './TaskList'
 import { useSelected } from '../../services/identity'
 import { translated } from '../../services/language'
 import useTasks from './useTasks'
+import Message from '../../components/Message'
+import { rwSettings } from './task'
 
 const textsCap = translated({
     approver: 'approver',
@@ -18,10 +20,10 @@ const textsCap = translated({
     unknown: 'unknown',
 }, true)[1]
 
-let activeIndex = 0
 export default function TaskView(props) {
     const address = props.address || useSelected()
     const [allTasks, message] = useTasks(['owner', 'approver', 'beneficiary'], address)
+    const activeIndex = rwSettings().activeIndex || 0
     const panes = [
         {
             name: textsCap.manage,
@@ -48,30 +50,26 @@ export default function TaskView(props) {
         menuItem: <Menu.Item  {...{
             content: name,
             key: type,
-            onClick: () => activeIndex = i,
+            // remember open tab index
+            onClick: () => rwSettings({ activeIndex: i }),
             title,
         }} />,
-        render: () => {
-            const tasks = type === 'marketplace' ? new Map() : allTasks.get(type)
-            return (
-                <Tab.Pane {...{ loading: !tasks }}>
-                    {tasks && (
-                        <TaskList {...{
-                            address,
-                            asTabPane: true,
-                            key: type,
-                            data: tasks,
-                            type,
-                        }} />
-                    )}
-                </Tab.Pane>
-            )
-        }
+        render: () => (
+            <Tab.Pane>
+                <TaskList {...{
+                    address,
+                    asTabPane: true,
+                    key: type,
+                    data: type === 'marketplace' ? new Map() : allTasks.get(type),
+                    type,
+                }} />
+            </Tab.Pane>
+        )
     }))
 
-    return (
+    return message ? <Message {...message} /> : (
         <Tab
-            defaultActiveIndex={activeIndex || 0}
+            defaultActiveIndex={activeIndex}
             panes={panes}
             key={uuid.v1()} // forces active pane to re-render on each change
         />

@@ -17,7 +17,7 @@ export default function FinancialStatementView() {
                 nestedBalances.map((level, i) => (
                     <DrillDownList {...{
                         items: [level],
-                        key: i + level.balance,
+                        key: i + level.title,
                         style: { margin: '15px 0' }
                     }} />
                 ))

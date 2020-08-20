@@ -18,7 +18,7 @@ import {
     getCurrencies,
     getSelected as getSelectedCurrency
 } from '../../services/currency'
-import { bond, getSelected } from '../../services/identity'
+import { getSelected } from '../../services/identity'
 import { translated } from '../../services/language'
 import partners from '../../services/partner'
 import { queueables, PRODUCT_HASH_LABOUR } from './task'
@@ -90,6 +90,7 @@ export default class TaskForm extends Component {
         // list of input names
         this.names = Object.freeze({
             advancedGroup: 'advancedGroup',
+            amountXTX: 'amountXTX',
             assignee: 'fulfiller',
             bounty: 'bounty',
             bountyGroup: 'bountyGroup',
@@ -106,6 +107,7 @@ export default class TaskForm extends Component {
         // keys used to generate BONSAI token hash
         // keep it in the same order as in the `VALID_KEYS` array in the messaging service
         this.bonsaiKeys = [
+            this.names.amountXTX,
             this.names.currency,
             this.names.publish,
             this.names.title,
@@ -116,6 +118,7 @@ export default class TaskForm extends Component {
         this.values = values || {}
 
         this.state = {
+            disabled: true,
             header: isObj(values) && !!taskId ? textsCap.formHeaderUpdate : textsCap.formHeader,
             loading: true,
             onChange: (_, values) => this.values = values,
@@ -231,8 +234,7 @@ export default class TaskForm extends Component {
                     type: 'date',
                     validate: (_, { value: dueDate }) => {
                         if (!dueDate) return textsCap.invalidDate
-                        const { values } = this.values
-                        const deadline = values[this.names.deadline]
+                        const deadline = this.values[this.names.deadline]
                         const diffMS = strToDate(dueDate) - strToDate(deadline)
                         return diffMS < 0 && textsCap.dueDateMinErrorMsg
                     },
@@ -345,17 +347,17 @@ export default class TaskForm extends Component {
         const { amountXTX, deadline, dueDate, tags = [] } = values
         const { number } = await query('api.rpc.chain.getHeader')
         // convert duedate and deadline block numbers to date format yyyy-mm-dd
-        values.deadline = this.blockToDateStr(deadline, number)
-        values.dueDate = this.blockToDateStr(dueDate, number)
-        values.bounty = amountXTX
-        if (tags.length) {
+        if (deadline) values.deadline = this.blockToDateStr(deadline, number)
+        if (dueDate) values.dueDate = this.blockToDateStr(dueDate, number)
+        if (amountXTX) values.bounty = amountXTX
+        if (tags && tags.length) {
             tagsIn.options = tags.map(tag => ({
                 key: tag,
                 text: tag,
                 value: tag,
             }))
         }
-        fillValues(inputs, values)
+        fillValues(inputs, values, true)
         this.setState({ inputs, loading: false })
     }
 
@@ -464,6 +466,7 @@ export default class TaskForm extends Component {
                 header: textsCap.conversionErrorHeader,
                 status: 'error'
             }
+            this.setState({ inputs })
         }
         this.bountyPromise(promise).then(handleSuccess)
             .catch(handleErr)
@@ -507,6 +510,7 @@ export default class TaskForm extends Component {
             if (!isLastInQueue && success) return
             this.setState({
                 closeText: success ? textsCap.close : undefined,
+                loading: false,
                 message: {
                     content: !success && `${err} `, // error can be string or Error object.
                     header: success ? textsCap.submitSuccess : textsCap.submitFailed,
@@ -518,18 +522,19 @@ export default class TaskForm extends Component {
             })
 
             // force `useTask` hook to update the off-chain task data for this task only
-            taskId = taskId || (getById(historyId) || { data: [] }).data[0]
+            taskId = taskId || (getById(queueId) || { data: [] }).data[0]
             taskId.startsWith('0x') && rxUpdater.next([taskId])
             isFn(onSubmit) && onSubmit(success, values, taskId)
         }
         this.setState({
             closeText: textsCap.close,
-            submitDisabled: true,
+            loading: true,
             message: {
                 header: textsCap.addedToQueue,
                 showIcon: true,
                 status: 'loading',
             },
+            submitDisabled: true,
         })
 
         const queueProps = queueables.save.apply(null, [

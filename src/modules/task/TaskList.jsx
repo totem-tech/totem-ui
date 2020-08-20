@@ -123,8 +123,8 @@ class TaskList extends Component {
                     //      tags(categories?),
                     //      amountXTX (convert from display currency if necessary)
                     //      deadline (convert timestamp to block number before search)
-                    //      created after (createdTS)
-                    // search by: title, description, userId
+                    //      created after (tsCreated)
+                    // search by: title, description, userId (filter by partner userId or own (default on first load??))
                     action: {
                         icon: 'filter',
                         onClick: () => alert('to be implemented')

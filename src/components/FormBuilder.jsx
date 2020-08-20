@@ -307,9 +307,17 @@ FormBuilder.defaultProps = {
     submitText: 'Submit'
 }
 
+/**
+ * @name    fillValues
+ * @summary fill values into array of inputs
+ * @param   {Array}     inputs 
+ * @param   {Object}    values values to fill into the input. Property name/key is the name of the input.
+ * @param   {Boolean}   forceFill whether to override existing, if any.
+ * 
+ * @returns {Array} inputs
+ */
 export const fillValues = (inputs, values, forceFill) => {
     if (!isObj(values)) return
-    // inputs.forEach(input => {
     Object.keys(values).forEach(name => {
         const input = findInput(inputs, name)
         if (!input) return

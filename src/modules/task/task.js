@@ -3,15 +3,53 @@ import { generateHash, isArr, isDefined } from "../../utils/utils"
 import { bytesToHex, strToU8a } from '../../utils/convert'
 import { query as queryHelper } from '../../services/blockchain'
 import client from '../../services/chatClient'
+import storage from '../../services/storage'
 
 export const PRODUCT_HASH_LABOUR = generateHash('labour')
+const MODULE_KEY = 'task'
 // read and write to cached storage
 const TX_STORAGE = 'tx_storage'
+/**
+ * @name    rwCache
+ * @summary read/write to cache storage 
+ * @param   {String} key 
+ * @param   {*} value (optional) if undefined will only return existing cache.
+ *                  If `null`, will clear cache.
+ * @returns {Map}
+ */
+export const rwCache = (key, value) => storage.cache(MODULE_KEY, key, value)
+
+/**
+ * @name    rwSettings
+ * @summary read/write to module settings storage (LocalStorage)
+ * 
+ * @param   {Object} value 
+ * 
+ * @returns {Object}
+ */
+export const rwSettings = (value = {}) => storage.settings.module(MODULE_KEY, value) || {}
 
 export const query = {
+    /**
+     * @name    getDetailsByTaskIds
+     * @summary get off-chain task data (eg: title, description, tags...) from messaging service.
+     * 
+     * @param   {Array} taskIds
+     * 
+     * @returns {Map}   list of tasks
+     */
     getDetailsByTaskIds: async (taskIds = []) => await client.taskGetById.promise(taskIds),
+    /**
+     * @name    getTaskIds
+     * @summary get lists of tasks for by types
+     * 
+     * @param {Array}       types one of more task list types. Valid types: ['owner', 'approver', 'beneficiary']
+     * @param {String}      address user identity
+     * @param {Function}    callback (optional) subcription callback. 
+     * 
+     * @returns {Array}     2D Arrary of Task IDs
+     */
     getTaskIds: async (types = [], address, callback) => {
-        // const validTypes = ['owner', 'approver', 'beneficiary']
         const api = await queryHelper() // get API
         const args = types.map(type => [api.query.orders[type], address])
         return await queryHelper('api.queryMulti', [args, callback].filter(isDefined))
