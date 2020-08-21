@@ -86,7 +86,6 @@ export default class TaskForm extends Component {
         super(props)
 
         const { taskId, values } = this.props
-        this.amountXTX = 0
         // list of input names
         this.names = Object.freeze({
             advancedGroup: 'advancedGroup',
@@ -109,10 +108,12 @@ export default class TaskForm extends Component {
         this.bonsaiKeys = [
             this.names.amountXTX,
             this.names.currency,
-            this.names.publish,
-            this.names.title,
+            this.names.deadline,
             this.names.description,
+            this.names.dueDate,
+            this.names.publish,
             this.names.tags,
+            this.names.title,
         ]
 
         this.values = values || {}
@@ -154,7 +155,12 @@ export default class TaskForm extends Component {
                             value: '',
                             width: 12,
                         },
-                        {
+                        {// hidden type to store bounty in XTX (regardless of display currency selected)
+                            name: this.names.amountXTX,
+                            required: true,
+                            type: 'hidden',
+                        },
+                        { // display currency
                             bond: new Bond(),
                             label: textsCap.currency,
                             name: this.names.currency,
@@ -323,8 +329,8 @@ export default class TaskForm extends Component {
         const { values } = this.props
         const { inputs } = this.state
         const assigneeIn = findInput(inputs, this.names.assignee)
-        const tagsIn = findInput(inputs, this.names.tags)
         const currencyIn = findInput(inputs, this.names.currency)
+        const tagsIn = findInput(inputs, this.names.tags)
         const assigneeOptions = Array.from(partners.getAll())
             .map(([address, { name, userId }]) => ({
                 description: userId,
@@ -344,12 +350,20 @@ export default class TaskForm extends Component {
         currencyIn.search = ['text']
         if (!isObj(values)) return this.setState({ inputs, loading: false })
 
-        const { amountXTX, deadline, dueDate, tags = [] } = values
+        const { amountXTX, currency, deadline, dueDate, tags = [] } = values
         const { number } = await query('api.rpc.chain.getHeader')
         // convert duedate and deadline block numbers to date format yyyy-mm-dd
         if (deadline) values.deadline = this.blockToDateStr(deadline, number)
         if (dueDate) values.dueDate = this.blockToDateStr(dueDate, number)
-        if (amountXTX) values.bounty = amountXTX
+        if (amountXTX) {
+            values.bounty = amountXTX
+            if (currency !== currencyDefault) {
+                // temporarily set currency to default currency 
+                values.currency = currencyDefault
+                // after a delay set it to the currency of the task, to make sure currency conversion is done
+                setTimeout(() => currencyIn.bond.changed(currency), 100)
+            }
+        }
         if (tags && tags.length) {
             tagsIn.options = tags.map(tag => ({
                 key: tag,
@@ -393,6 +407,10 @@ export default class TaskForm extends Component {
     })()
 
     // check if use has enough balance for the transaction including pre-funding amount (bounty)
+    // Two different deferred mechanims used here:
+    // 1. deferred: to delay currency conversion while user is typing
+    // 2. PromisE.deferred: makes sure even if deferred (1) resolves multiple times, only last execution is applied
+    //          Eg: user types slow and / or network is slow
     handleBountyChange = deferred((_, values) => {
         const { taskId, values: valuesOrg } = this.props
         const { amountXTX: bountyOriginal } = valuesOrg || {}
@@ -402,6 +420,7 @@ export default class TaskForm extends Component {
 
         this.bountyPromise = this.bountyPromise || PromisE.deferred()
         const { inputs } = this.state
+        const amountXTXIn = findInput(inputs, this.names.amountXTX)
         const bountyGrpIn = findInput(inputs, this.names.bountyGroup)
         const bountyIn = findInput(inputs, this.names.bounty)
         const valid = isValidNumber(bounty)
@@ -431,10 +450,11 @@ export default class TaskForm extends Component {
             } catch (e) { reject(e) }
         })
         const handleSuccess = result => {
-            this.amountXTX = result[0]
+            const amountXTX = result[0]
             const balanceXTX = result[1]
-            const amountTotalXTX = this.amountXTX + estimatedTxFee
-            const gotBalance = balanceXTX - estimatedTxFee - this.amountXTX >= 0
+            const amountTotalXTX = amountXTX + estimatedTxFee
+            const gotBalance = balanceXTX - estimatedTxFee - amountXTX >= 0
+            amountXTXIn.value = amountXTX
             bountyIn.invalid = !gotBalance
             bountyGrpIn.message = {
                 content: (
@@ -447,6 +467,13 @@ export default class TaskForm extends Component {
                                 currencyDefault,
                                 currencySelected,
                             )}
+                            <Currency {... {
+                                decimalPlaces: 4,
+                                prefix: `${textsCap.amountRequired}: `,
+                                value: amountTotalXTX,
+                                unit: currencyDefault,
+                                unitDisplayed: currencySelected,
+                            }} />
                         </div>
                         <div title={`${textsCap.balance}: ${balanceXTX} ${currencyDefault} `}>
                             {getCurrencyEl(
@@ -456,6 +483,13 @@ export default class TaskForm extends Component {
                                 currencyDefault,
                                 currencySelected,
                             )}
+                            <Currency {... {
+                                decimalPlaces: 4,
+                                prefix: `${textsCap.balance}: `,
+                                value: balanceXTX,
+                                unit: currencyDefault,
+                                unitDisplayed: currencySelected,
+                            }} />
                         </div>
                     </div>
                 ),
@@ -498,11 +532,13 @@ export default class TaskForm extends Component {
     handleSubmit = async (_, values) => {
         let { onSubmit, taskId, values: valueP = {} } = this.props
         const ownerAddress = valueP.owner || getSelected().address
+        const amountXTX = values[this.names.amountXTX]
         const currentBlock = await getCurrentBlock()
         const deadlineBlocks = this.dateStrToBlockNum(values[this.names.deadline], currentBlock)
         const dueDateBlocks = this.dateStrToBlockNum(values[this.names.dueDate], currentBlock)
         const assignee = values.publish ? ownerAddress : values[this.names.assignee]
         const isClosed = assignee && assignee !== ownerAddress ? 1 : 0
+        const isSell = values[this.names.isSell]
         const description = values[this.names.title]
         const title = !taskId ? textsCap.formHeader : textsCap.formHeaderUpdate
         const dbValues = objClean(values, this.bonsaiKeys)
@@ -534,13 +570,13 @@ export default class TaskForm extends Component {
             ownerAddress,
             ownerAddress,
             assignee,
-            values[this.names.isSell],
-            this.amountXTX,
+            isSell,
+            amountXTX,
             isClosed,
             values[this.names.orderType],
             deadlineBlocks,
             dueDateBlocks,
-            [[PRODUCT_HASH_LABOUR, this.amountXTX, 1, 1]], // single item order
+            [[PRODUCT_HASH_LABOUR, amountXTX, 1, 1]], // single item order
             taskId,
             token,
             {

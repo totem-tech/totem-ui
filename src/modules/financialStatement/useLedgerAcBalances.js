@@ -66,7 +66,8 @@ export default function useLedgerAcBalances(address, timeout = 10000) {
         }
         const handleBalancesCb = (accounts, glAccounts) => (_, balances) => {
             if (!mounted) return
-            balances = balances.map(({ negative, words }) => (negative ? -1 : 1) * words[0])
+            // convert BN (BigNumber) to JS Number type
+            balances = balances.map(b => b.toNumber())
             glAccounts.forEach(glAccount => {
                 const { number: account } = glAccount
                 const index = accounts.indexOf(parseInt(account))

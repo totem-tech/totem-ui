@@ -68,7 +68,7 @@ export const rxUpdater = new Subject()
  * @returns {Map}
  */
 const getCached = (address, types) => {
-    let cache = rwCache(address)
+    let cache = rwCache(address) || []
     if (cache.length === 0) {
         cache = types.map(type => [type, []])
     }
@@ -125,12 +125,13 @@ export default function useTasks(types, address, timeout = 5000) {
                     fulfiller,
                     approver,
                     isSell,
-                    amountXTX = 0,//'0x0',
+                    // amountXTX = 0,
                     isClosed,
                     orderType,
                     deadline,
                     dueDate,
                 } = order || {}
+                const amountXTX = !order ? 0 : ordersOrg[index].value.get('amountXTX').toNumber()
                 const taskId = uniqueTaskIds[index]
                 // order can be null if storage has changed
                 const status = order === null ? -1 : arStatus[index]
@@ -138,7 +139,7 @@ export default function useTasks(types, address, timeout = 5000) {
                 uniqueTasks.set(taskId, {
                     approved,
                     approver,
-                    amountXTX: eval(amountXTX),
+                    amountXTX,
                     deadline,
                     dueDate,
                     fulfiller,
