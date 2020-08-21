@@ -372,6 +372,12 @@ export default class TaskForm extends Component {
         return ts.substr(0, 10) // Format as yyyy-dd-mm
     }
 
+    dateStrToBlockNum = (dateStr, currentBlockNum) => {
+        const dateMS = strToDate(dateStr) - new Date()
+        const blockNum = Math.ceil(dateMS / 1000 / BLOCK_DURATION_SECONDS) + currentBlockNum
+        return blockNum
+    }
+
     getBalance = (() => {
         let promises = []
         const then = resolver => function () {
@@ -490,15 +496,13 @@ export default class TaskForm extends Component {
     }
 
     handleSubmit = async (_, values) => {
-        let { onSubmit, taskId } = this.props
-        const { address: ownerAddress } = getSelected()
+        let { onSubmit, taskId, values: valueP = {} } = this.props
+        const ownerAddress = valueP.owner || getSelected().address
         const currentBlock = await getCurrentBlock()
-        const deadlineMS = strToDate(values[this.names.deadline]) - new Date()
-        const dueDateMS = strToDate(values[this.names.dueDate]) - new Date()
-        const deadlineBlocks = Math.ceil(deadlineMS / 1000 / BLOCK_DURATION_SECONDS) + currentBlock
-        const dueDateBlocks = Math.ceil(dueDateMS / 1000 / BLOCK_DURATION_SECONDS) + currentBlock
+        const deadlineBlocks = this.dateStrToBlockNum(values[this.names.deadline], currentBlock)
+        const dueDateBlocks = this.dateStrToBlockNum(values[this.names.dueDate], currentBlock)
         const assignee = values.publish ? ownerAddress : values[this.names.assignee]
-        const orderClosed = !!assignee ? 1 : 0
+        const isClosed = assignee && assignee !== ownerAddress ? 1 : 0
         const description = values[this.names.title]
         const title = !taskId ? textsCap.formHeader : textsCap.formHeaderUpdate
         const dbValues = objClean(values, this.bonsaiKeys)
@@ -526,24 +530,13 @@ export default class TaskForm extends Component {
             taskId.startsWith('0x') && rxUpdater.next([taskId])
             isFn(onSubmit) && onSubmit(success, values, taskId)
         }
-        this.setState({
-            closeText: textsCap.close,
-            loading: true,
-            message: {
-                header: textsCap.addedToQueue,
-                showIcon: true,
-                status: 'loading',
-            },
-            submitDisabled: true,
-        })
-
         const queueProps = queueables.save.apply(null, [
             ownerAddress,
             ownerAddress,
             assignee,
             values[this.names.isSell],
             this.amountXTX,
-            orderClosed,
+            isClosed,
             values[this.names.orderType],
             deadlineBlocks,
             dueDateBlocks,
@@ -581,6 +574,18 @@ export default class TaskForm extends Component {
                 ownerAddress,
             ]
         }
+
+        // add requests to the queue
+        this.setState({
+            closeText: textsCap.close,
+            loading: true,
+            message: {
+                header: textsCap.addedToQueue,
+                showIcon: true,
+                status: 'loading',
+            },
+            submitDisabled: true,
+        })
         addToQueue(queueProps)
     }
 

@@ -85,7 +85,7 @@ export const queueables = {
         addrFulfiller = addrOrigin,
         isSell = 0, // 0 = buy, 1 = open
         amountXTX = 0,
-        isClosed = 1, // 0 = open, 1 = closed
+        isClosed = addrFulfiller !== addrFulfiller, // false = open, true = closed
         orderType = 0, // 0: service order, 1: inventory order, 2: asset order extensible
         deadline, // must be equal or higher than `currentBlockNumber + 11520` blocks. 
         dueDate, // must be equal or higher than deadline

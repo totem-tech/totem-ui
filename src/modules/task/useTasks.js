@@ -93,7 +93,7 @@ const setCache = (address, allTasksArr) => rwCache(address, allTasksArr)
  * @param {Number} timeout (optional) timeout delay in milliseconds. Default: 5000
  * 
  */
-export default function useTasks(types, address, timeout = 1000) {
+export default function useTasks(types, address, timeout = 5000) {
     const [tasks, setTasks] = useState(new Map())
     const [message, setMessage] = useState()
 
