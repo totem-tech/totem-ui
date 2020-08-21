@@ -465,40 +465,11 @@ const handleTx = async (id, rootTask, task, toastId) => {
         task.argsProcessed = argsProcessed
         if (err) throw `${textsCap.processArgsFailed}. ${err}`
 
-        if (txId) {
-            let done = false
-            let blockNum = 0
-            let diff = 0
-            do {
-                const [isStarted = 0, isSuccessful = 0] = await query(
-                    api.queryMulti,
-                    [[
-                        [api.query.bonsai.isStarted, txId],
-                        [api.query.bonsai.isSuccessful, txId],
-                    ]],
-                )
-                if (isSuccessful) {
-                    // tx was already successfully completed
-                    // transaction and event data is unknown 
-                    return _save(SUCCESS, [])
-                } else if (isStarted) {
-                    // tx is already being executed
-                    // retreive current block number to check if transaction has failed
-                    blockNum = await getCurrentBlock()
-                    diff = blockNum - isStarted
-                    if (diff > 10) {
-                        // sufficient amount has passed but the transaction was still not in the isSuccess list
-                        // assume tx has failed
-                        return _save(ERROR, textsCap.txFailed)
-                    }
-                    // wait for up to 10 blocks and check again if tx becomes succesful
-                    await PromisE.delay(diff * BLOCK_DURATION_SECONDS * 1000)
-                } else {
-                    // new transaction, continue with execution
-                    done = true
-                }
-            } while (!done)
-        }
+        let txSuccess = await checkTxStatus(api, txId, true)
+        if (txSuccess !== null) return _save(
+            txSuccess ? SUCCESS : ERROR,
+            txSuccess ? [] : textsCap.txFailed,
+        )
 
         // retrieve and store account balance before starting the transaction
         let balance = await query(api.query.balances.freeBalance, address)
@@ -511,9 +482,58 @@ const handleTx = async (id, rootTask, task, toastId) => {
 
         // retrieve and store account balance after execution
         balance = await query(api.query.balances.freeBalance, address)
-        _save(SUCCESS, result, { after: balance })
+        txSuccess = txId && (await checkTxStatus(api, txId, false))
+        _save(
+            txSuccess ? SUCCESS : ERROR,
+            txSuccess ? result : textsCap.txFailed,
+            { after: balance })
     } catch (err) {
         _save(ERROR, err)
+    }
+}
+
+/**
+ * @name    checkTxStatus
+ * @summary check status of a transaction by TxId
+ * 
+ * @param   {ApiPromise}    api         PolkadotJS API instance
+ * @param   {String}        txId        transaction ID
+ * @param   {Boolean}       allowWait   whether to wait until block is finalized
+ * @param   {Number}        waitBlocks  number of blocks to wait if TX is in `isStarted` but not in `isSuccessful`
+ * 
+ * @returns {Boolean|Null}  null if transaction ID doesn't exist
+ */
+const checkTxStatus = async (api, txId, allowWait = true, waitBlocks = 3) => {
+    if (!txId) return null
+    let blockNum = 0
+    let diff = 0
+    const [isStarted = 0, isSuccessful = 0] = await query(
+        api.queryMulti,
+        [[
+            [api.query.bonsai.isStarted, txId],
+            [api.query.bonsai.isSuccessful, txId],
+        ]],
+    )
+    if (isSuccessful) {
+        // tx was already successfully completed
+        // transaction and event data is unknown 
+        return true
+    } else if (isStarted) {
+        // tx is already being executed
+        // retreive current block number to check if transaction has failed
+        blockNum = await getCurrentBlock()
+        diff = blockNum - isStarted
+        if (diff > waitBlocks || !allowWait || !isValidNumber(waitBlocks)) {
+            // sufficient amount has passed but the transaction was still not in the isSuccess list
+            // assume tx has failed
+            return false
+        }
+        // wait for up to 10 blocks and check again if tx becomes succesful
+        await PromisE.delay(diff * BLOCK_DURATION_SECONDS * 1000)
+        return await checkTxStatus(api, txId, false, waitBlocks)
+    } else {
+        // new transaction, continue with execution
+        return null
     }
 }
 

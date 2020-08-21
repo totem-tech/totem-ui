@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Subject } from 'rxjs'
-import { isFn, arrUnique, objCopy } from '../../utils/utils'
+import { isFn, arrUnique, objCopy, objContains, objCreate } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 // services
 import { translated } from '../../services/language'
@@ -168,7 +168,8 @@ export default function useTasks(types, address, timeout = 5000) {
                         title: '',
                         tags: [],
                     }
-                    Object.keys(taskDetails).forEach(key => task[key] = taskDetails[key])
+                    const combined = objCopy(task, taskDetails)
+                    uniqueTasks.set(id, combined)
                 })
                 // construct separate lists for each type
                 const allTasks = new Map()
@@ -178,10 +179,10 @@ export default function useTasks(types, address, timeout = 5000) {
                     allTasks.set(type, new Map(typeTasks))
                     return [type, typeTasks]
                 })
+                done = true
                 setCache(address, cacheableAr)
                 setMessage(null)
                 setTasks(allTasks)
-                done = true
             }
 
             // on receive update tasks lists

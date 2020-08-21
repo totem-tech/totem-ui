@@ -3,7 +3,7 @@ import uuid from 'uuid'
 import { Button } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-import { arrSort, deferred, isObj, isValidNumber, objClean, generateHash, isFn } from '../../utils/utils'
+import { arrSort, deferred, isObj, isValidNumber, objClean, generateHash, isFn, isHash } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 import { BLOCK_DURATION_SECONDS, format, blockNumberToTS } from '../../utils/time'
 // components
@@ -56,13 +56,13 @@ const textsCap = translated({
     invalidDate: 'invalid date',
     inventory: 'inventory',
     marketplace: 'marketplace',
-    myself: 'myself',
-    orderTypeLabel: 'order type',
-    publishDisclaimer: `
+    marketplaceDisclaimer: `
         Your task will be published to the marketplace.
         Anyone using Totem will be able to submit proposal to this Task.
         You will then be able to accept or reject any proposal you wish.
     `,
+    myself: 'myself',
+    orderTypeLabel: 'order type',
     publishToMarketPlace: 'publish to marketplace',
     taskIdParseError: 'failed to parse Task ID from transaction event data',
     services: 'services',
@@ -98,7 +98,7 @@ export default class TaskForm extends Component {
             dueDate: 'dueDate',
             description: 'description',
             orderType: 'orderType',
-            publish: 'publish',
+            isClosed: 'isClosed',
             isSell: 'isSell',
             tags: 'tags',
             title: 'title',
@@ -111,7 +111,8 @@ export default class TaskForm extends Component {
             this.names.deadline,
             this.names.description,
             this.names.dueDate,
-            this.names.publish,
+            this.names.isClosed,
+            this.names.isSell,
             this.names.tags,
             this.names.title,
         ]
@@ -183,20 +184,20 @@ export default class TaskForm extends Component {
                     inline: true,
                     label: textsCap.marketplace,
                     multiple: false,
-                    name: this.names.publish,
-                    onChange: this.handlePublishChange,
+                    name: this.names.isClosed,
+                    onChange: this.handleIsClosedChange,
                     options: [
-                        { label: textsCap.assignToPartner, value: 0 },
-                        { label: textsCap.publishToMarketPlace, value: 1 },
+                        { label: textsCap.assignToPartner, value: true },
+                        { label: textsCap.publishToMarketPlace, value: false },
                     ],
                     radio: true,
                     required: true,
                     type: 'checkbox-group',
-                    value: 0,
+                    // value: true,
                 },
                 {
                     bond: new Bond(),
-                    hidden: values => !!values[this.names.publish],
+                    hidden: values => !values[this.names.isClosed],
                     label: textsCap.assignee,
                     name: this.names.assignee,
                     options: [],
@@ -313,7 +314,7 @@ export default class TaskForm extends Component {
                             selection: true,
                             search: true,
                             type: 'dropdown',
-                            vaue: '',
+                            vaue: [],
                         },
                     ],
                 },
@@ -350,8 +351,12 @@ export default class TaskForm extends Component {
         currencyIn.search = ['text']
         if (!isObj(values)) return this.setState({ inputs, loading: false })
 
-        const { amountXTX, currency, deadline, dueDate, tags = [] } = values
         const { number } = await query('api.rpc.chain.getHeader')
+        const amountXTX = values[this.names.amountXTX]
+        const currency = values[this.names.currency]
+        const deadline = values[this.names.deadline]
+        const dueDate = values[this.names.dueDate]
+        const tags = values[this.names.tags]
         // convert duedate and deadline block numbers to date format yyyy-mm-dd
         if (deadline) values.deadline = this.blockToDateStr(deadline, number)
         if (dueDate) values.dueDate = this.blockToDateStr(dueDate, number)
@@ -410,7 +415,7 @@ export default class TaskForm extends Component {
     // Two different deferred mechanims used here:
     // 1. deferred: to delay currency conversion while user is typing
     // 2. PromisE.deferred: makes sure even if deferred (1) resolves multiple times, only last execution is applied
-    //          Eg: user types slow and / or network is slow
+    //          Eg: user types slowly and / or network is slow
     handleBountyChange = deferred((_, values) => {
         const { taskId, values: valuesOrg } = this.props
         const { amountXTX: bountyOriginal } = valuesOrg || {}
@@ -516,36 +521,42 @@ export default class TaskForm extends Component {
             })
     }, 300)
 
-    handlePublishChange = (_, values) => {
+    handleIsClosedChange = (_, values) => {
         const { inputs } = this.state
-        const publishIn = findInput(inputs, this.names.publish)
+        const isClosedIn = findInput(inputs, this.names.isClosed)
         const assigneeIn = findInput(inputs, this.names.assignee)
-        const publish = !!values[this.names.publish]
-        assigneeIn.hidden = publish
-        publishIn.message = !publish ? null : {
-            content: textsCap.publishDisclaimer,
+        const isClosed = !!values[this.names.isClosed]
+        assigneeIn.hidden = !isClosed
+        isClosedIn.message = isClosed ? null : {
+            content: textsCap.marketplaceDisclaimer,
             style: { textAlign: 'justify' },
         }
         this.setState({ inputs })
     }
 
     handleSubmit = async (_, values) => {
+        // convert deadline & dueDate string date to block number
+        const currentBlock = await getCurrentBlock()
+        const deadlineN = this.names.deadline
+        const dueDateN = this.names.dueDate
+        values[deadlineN] = this.dateStrToBlockNum(values[deadlineN], currentBlock)
+        values[dueDateN] = this.dateStrToBlockNum(values[dueDateN], currentBlock)
         let { onSubmit, taskId, values: valueP = {} } = this.props
         const ownerAddress = valueP.owner || getSelected().address
         const amountXTX = values[this.names.amountXTX]
-        const currentBlock = await getCurrentBlock()
-        const deadlineBlocks = this.dateStrToBlockNum(values[this.names.deadline], currentBlock)
-        const dueDateBlocks = this.dateStrToBlockNum(values[this.names.dueDate], currentBlock)
-        const assignee = values.publish ? ownerAddress : values[this.names.assignee]
-        const isClosed = assignee && assignee !== ownerAddress ? 1 : 0
-        const isSell = values[this.names.isSell]
+        const isClosed = values[this.names.isClosed]
+        const assignee = !isClosed ? ownerAddress : values[this.names.assignee]
+        const deadline = values[deadlineN]
+        const dueDate = values[dueDateN]
         const description = values[this.names.title]
+        const isSell = values[this.names.isSell]
         const title = !taskId ? textsCap.formHeader : textsCap.formHeaderUpdate
         const dbValues = objClean(values, this.bonsaiKeys)
         const tokenData = hashTypes.taskHash + ownerAddress + JSON.stringify(dbValues)
         const token = generateHash(tokenData)
         const queueTaskName = 'createTask'
         const queueId = uuid.v1()
+        const orderType = values[this.names.orderType]
         const thenCb = isLastInQueue => (success, err) => {
             if (!isLastInQueue && success) return
             this.setState({
@@ -563,7 +574,7 @@ export default class TaskForm extends Component {
 
             // force `useTask` hook to update the off-chain task data for this task only
             taskId = taskId || (getById(queueId) || { data: [] }).data[0]
-            taskId.startsWith('0x') && rxUpdater.next([taskId])
+            isHash(taskId) && rxUpdater.next([taskId])
             isFn(onSubmit) && onSubmit(success, values, taskId)
         }
         const queueProps = queueables.save.apply(null, [
@@ -573,9 +584,9 @@ export default class TaskForm extends Component {
             isSell,
             amountXTX,
             isClosed,
-            values[this.names.orderType],
-            deadlineBlocks,
-            dueDateBlocks,
+            orderType,
+            deadline,
+            dueDate,
             [[PRODUCT_HASH_LABOUR, amountXTX, 1, 1]], // single item order
             taskId,
             token,
@@ -586,6 +597,7 @@ export default class TaskForm extends Component {
                 then: thenCb(false),
             },
         ])
+        // queue task to store off-chain data to messaging service
         queueProps.next = {
             id: queueId,
             type: QUEUE_TYPES.CHATCLIENT,

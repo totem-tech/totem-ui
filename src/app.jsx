@@ -25,6 +25,7 @@ import DataStorage from './utils/DataStorage'
 import naclHelper from './utils/naclHelper'
 import polkadotHelper from './utils/polkadotHelper'
 import { className, isBool } from './utils/utils'
+import validator from './utils/validator'
 // Images
 import TotemButtonLogo from './assets/totem-button-grey.png'
 import PlaceholderImage from './assets/totem-placeholder.png'
@@ -46,6 +47,7 @@ export class App extends Component {
 			naclHelper,
 			polkadotHelper,
 			PromisE: PromisE,
+			validator,
 		}
 		window.DataStorage = DataStorage
 		window.services = {
