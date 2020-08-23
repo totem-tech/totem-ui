@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react'
 import uuid from 'uuid'
 import { Confirm } from 'semantic-ui-react'
 import DataStorage from '../utils/DataStorage'
-import { isBool, isFn } from '../utils/utils'
+import { isBool, isFn, className } from '../utils/utils'
 import { translated } from './language'
-import { toggleFullscreen } from './window'
+import { toggleFullscreen, useInverted, rxInverted } from './window'
 
 export const modals = new DataStorage()
 const textsCap = translated({
@@ -68,7 +68,7 @@ export const confirm = (confirmProps, id) => {
     }
     return add(
         id,
-        <Confirm
+        <IConfirm
             {...confirmProps}
             {...{
                 cancelButton,
@@ -79,6 +79,22 @@ export const confirm = (confirmProps, id) => {
                 onConfirm: (e, d) => closeModal(id) | (isFn(onConfirm) && onConfirm(e, d)),
             }}
         />
+    )
+}
+const IConfirm = props => {
+    const inverted = useInverted()
+    return (
+        <Confirm {...{
+            ...props,
+            className: className([
+                props.className,
+                { inverted }
+            ]),
+            style: {
+                borderRadius: inverted ? 5 : undefined,
+                ...props.style,
+            }
+        }} />
     )
 }
 

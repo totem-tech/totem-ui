@@ -25,11 +25,14 @@ import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { toggleSidebarState, setActive } from '../services/sidebar'
 import timeKeeping from '../services/timeKeeping'
 import { setToast } from '../services/toast'
+import { useInverted, setInverted } from '../services/window'
 
 const textsCap = translated({
 	addressCopied: 'your identity copied to clipboard',
 	changeCurrency: 'change display currency',
 	copyAddress: 'copy my identity',
+	darkModeOn: 'disable dark mode',
+	darkModeOff: 'enable dark mode',
 	faucetRequest: 'faucet request',
 	faucetRequestDetails: 'requested transaction allocations',
 	requestFunds: 'request Funds',
@@ -115,6 +118,7 @@ PageHeader.defaultProps = {
 
 const PageHeaderView = props => {
 	const [showTools, setShowTools] = useState(false)
+	const inverted = useInverted()
 	const {
 		userId,
 		isLoggedIn,
@@ -205,6 +209,11 @@ const PageHeaderView = props => {
 									icon: 'copy',
 									content: textsCap.copyAddress,
 									onClick: onCopy,
+								},
+								{
+									icon: inverted ? 'toggle off' : 'toggle on',
+									content: inverted ? textsCap.darkModeOff : textsCap.darkModeOn,
+									onClick: () => setInverted(!inverted)
 								},
 								// userId && {
 								// 	icon: 'gem',

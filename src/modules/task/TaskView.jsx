@@ -9,6 +9,7 @@ import { translated } from '../../services/language'
 import useTasks from './useTasks'
 import { rwSettings } from './task'
 import { useInverted } from '../../services/window'
+import { className } from '../../utils/utils'
 
 const textsCap = translated({
     approver: 'approver',
@@ -26,6 +27,7 @@ export default function TaskView(props) {
     const address = props.address || useSelected()
     const [allTasks, message] = useTasks(['owner', 'approver', 'beneficiary'], address)
     const [activeType, setActiveType] = useState(rwSettings().activeType || 'owner')
+    const inverted = useInverted()
     const panes = [
         {
             name: textsCap.manage,
@@ -49,6 +51,7 @@ export default function TaskView(props) {
         },
     ].map(({ name, title, type }) => ({
         active: true,
+        inverted,
         menuItem: <Menu.Item  {...{
             content: <Text>{name}</Text>,
             key: type,
@@ -64,7 +67,7 @@ export default function TaskView(props) {
         <div>
             <Tab {...{
                 activeIndex,
-                menu: { secondary: true, pointing: true },
+                menu: { inverted, secondary: true, pointing: true },
                 panes,
                 key: activeIndex + activeType, // forces active pane to re-render on each change
             }} />

@@ -315,11 +315,20 @@ input[readonly] {
 /* 
  * DARK MODE/INVERTED STYLES 
  */
-#app.inverted #main-content .inverted {
-    background: #464646;
+#app.inverted #main-content.inverted {
+	background: #2e2d2d;
+	color: white,
 }
+/* anything inside the #main-content with .inverted class */
+#app.inverted #main-content .inverted,
+#app.inverted .accordion {
+    background: #464646;
+	color: white,
+}
+/* Chat */
 #app.inverted .chat-container {
     background: #1b1c1d;
+	color: white,
 }
 /* #app.inverted .pushable .ui.sidebar.left {
 	background: red
@@ -328,3 +337,21 @@ input[readonly] {
 /* #app.inverted > * > .ui.top.menu.inverted {
     background: red;
 } */
+/* Data Table */
+#app.inverted .data-table.inverted {
+    border: 1px solid #505050;
+}
+/* Modals */
+body .modals .ui.modal.inverted > * {
+	background: #464646;
+	color: white;
+}
+
+/* Form loading backshadow when inverted */
+.ui.modals.invert .ui.inverted.loading.form:before{
+	background: #464646eb;
+}
+/* Form loading spinner when inverted */
+.ui.modals.invert .ui.inverted.loading.form:after{
+	border-color: white rgba(0,0,0,.1) rgba(0,0,0,.1) rgba(0,0,0,.1);
+}

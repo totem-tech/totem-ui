@@ -356,7 +356,8 @@ export default class TaskForm extends Component {
         const currency = values[this.names.currency]
         const deadline = values[this.names.deadline]
         const dueDate = values[this.names.dueDate]
-        const tags = values[this.names.tags]
+        const tags = values[this.names.tags] || []
+        values[this.names.tags] = tags
         // convert duedate and deadline block numbers to date format yyyy-mm-dd
         if (deadline) values.deadline = this.blockToDateStr(deadline, number)
         if (dueDate) values.dueDate = this.blockToDateStr(dueDate, number)
@@ -369,7 +370,7 @@ export default class TaskForm extends Component {
                 setTimeout(() => currencyIn.bond.changed(currency), 100)
             }
         }
-        if (tags && tags.length) {
+        if (tags.length) {
             tagsIn.options = tags.map(tag => ({
                 key: tag,
                 text: tag,

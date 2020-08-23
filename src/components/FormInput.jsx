@@ -21,7 +21,6 @@ import Message from './Message'
 import CheckboxGroup from './CheckboxGroup'
 import UserIdInput from './UserIdInput'
 import { translated } from '../services/language'
-import Text from './Text'
 
 const [texts] = translated({
 	fileType: 'Invalid file type selected',
@@ -59,7 +58,6 @@ const NON_ATTRIBUTES = Object.freeze([
 	'_invalid',
 	'inlineLabel',
 	'label',
-	'modal',
 	'trueValue',
 	'falseValue',
 	'styleContainer',
@@ -212,7 +210,6 @@ export class FormInput extends Component {
 			invalid,
 			label,
 			message: externalMsg,
-			modal,
 			name,
 			required,
 			styleContainer,
@@ -233,7 +230,6 @@ export class FormInput extends Component {
 		attrs.onChange = this.handleChange
 		let isGroup = false
 		const typeLC = type.toLowerCase()
-		const TextEl = modal ? 'span' : Text
 
 		switch (typeLC) {
 			case 'button':
@@ -245,13 +241,12 @@ export class FormInput extends Component {
 				attrs.type = 'checkbox'
 				delete attrs.value
 				hideLabel = true
-				inputEl = <Form.Checkbox {...attrs} label={<TextEl>{label}</TextEl>} />
+				inputEl = <Form.Checkbox {...attrs} label={label} />
 				break
 			case 'checkbox-group':
 			case 'radio-group':
 				attrs.bond = bond
 				attrs.inline = inline
-				attrs.modal = modal
 				attrs.radio = typeLC === 'radio-group' ? true : attrs.radio
 				inputEl = <CheckboxGroup {...attrs} />
 				break
@@ -295,7 +290,7 @@ export class FormInput extends Component {
 			>
 				{!hideLabel && label && (
 					<label htmlFor={name}>
-						<TextEl>{label}</TextEl>
+						{label}
 					</label>
 				)}
 				{inputEl}

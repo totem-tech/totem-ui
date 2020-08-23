@@ -1,9 +1,10 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Divider, Header, Icon, Placeholder, Rail } from 'semantic-ui-react' //Segment
+import { Divider, Header, Icon, Placeholder, Rail } from 'semantic-ui-react'
 import ErrorBoundary from './CatchReactErrors'
 import Segment from './Segment'
-import { isBond, isFn, isObj } from '../utils/utils'
+import Text from './Text'
+import { isBond, isFn } from '../utils/utils'
 import { toggleFullscreen } from '../services/window'
 
 export default class ContentSegment extends Component {
@@ -105,7 +106,7 @@ export default class ContentSegment extends Component {
 						{icon && <Icon name={icon} />}
 						<Header.Content>
 							<div>
-								{headerText}
+								<Text>{headerText}</Text>
 								{subHeader && (
 									<Icon
 										link
@@ -120,7 +121,7 @@ export default class ContentSegment extends Component {
 						{showSubHeader && (
 							<React.Fragment>
 								<Header.Subheader style={styles.subHeader}>
-									{subHeader}
+									<Text>{subHeader}</Text>
 								</Header.Subheader>
 								{subHeaderDetails && (
 									<div style={styles.subHeaderDetails}>

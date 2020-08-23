@@ -1,7 +1,7 @@
 .chat-container {
     color: black;
     bottom: 0px;
-    box-shadow: 3px 3px 5px 3px #979797;
+    /* box-shadow: 3px 3px 5px 3px #979797; */
     /* box-shadow: 3px 3px 5px 3px rgba(67,68,70 1); */
     font-size: 14px;
     font-weight: 100;
@@ -109,11 +109,15 @@ button.dark-grey .icon,
     position: relative;
     white-space: nowrap;
 }
+.chat-container .inbox-list .list-item.active {
+    background: #C7F2C7
+}
 .chat-container .inbox-list .list-item:hover {
     background: #F2F2F2;
 }
-.chat-container .inbox-list .list-item.active {
-    background: #C7F2C7
+#app.inverted .chat-container .inbox-list .list-item:hover,
+#app.inverted .chat-container .inbox-list .list-item.active {
+    background: grey;
 }
 .chat-container .inbox-list .list-item:not(:last-child) {
     border-bottom: 1px solid #d1caca;

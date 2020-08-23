@@ -7,6 +7,7 @@ export default [
     "./src/components/Currency.jsx",
     "./src/components/DataTable.jsx",
     "./src/components/DrillDownList.jsx",
+    "./src/components/Form.jsx",
     "./src/components/FormBuilder.jsx",
     "./src/components/FormInput.jsx",
     "./src/components/Label.jsx",

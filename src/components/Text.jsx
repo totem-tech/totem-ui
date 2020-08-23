@@ -1,9 +1,9 @@
 import React from 'react'
 import { useInverted } from '../services/window'
-import { objWithoutKeys } from '../utils/utils'
 
 export default React.memo(props => {
     const {
+        className,
         children,
         color = 'black',
         EL = 'span',
@@ -12,9 +12,10 @@ export default React.memo(props => {
         style
     } = props
     const inverted = useInverted(reverseInverted)
+    
     return (
         <EL {...{
-            ...objWithoutKeys(props, ['reverseInverted']),
+            className,
             style: {
                 background: 'transparent',
                 color: inverted ? invertedColor : color,

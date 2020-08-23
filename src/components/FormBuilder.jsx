@@ -1,9 +1,12 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Button, Form, Header, Icon, Modal } from 'semantic-ui-react'
+import { Button, Header, Icon, Modal } from 'semantic-ui-react'
 import { isDefined, isArr, isBool, isBond, isFn, isObj, isStr, hasValue } from '../utils/utils'
 import Message from '../components/Message'
+import Form from './Form'
 import FormInput, { nonValueTypes } from './FormInput'
+import IModal from './Modal'
+import Text from './Text'
 import { translated } from '../services/language'
 
 const textsCap = translated({
@@ -39,7 +42,7 @@ export default class FormBuilder extends Component {
             hidden: !isFn(hidden) ? hidden : !!hidden(values, i),
             inputs: !isGroup ? undefined : childInputs.map(this.addInterceptor(index ? index : i, values)),
             key: key || i + name,
-            modal,
+            // modal,
             onChange: isGroup ? undefined : (e, data) => this.handleChange(
                 e,
                 data,
@@ -51,7 +54,7 @@ export default class FormBuilder extends Component {
     }
 
     getValues = (inputs = [], values = {}, inputName, newValue) => inputs.reduce((values, input) => {
-        const { inputs: childInputs, groupValues, name, type } = input
+        const { inputs: childInputs, groupValues, multiple, name, type } = input
         const typeLC = (type || '').toLowerCase()
         const isGroup = typeLC === 'group'
         if (!isStr(name) || nonValueTypes.includes(type)) return values
@@ -67,6 +70,10 @@ export default class FormBuilder extends Component {
         }
         if (!hasValue(values[name]) && isDefined(input.value)) {
             values[name] = input.value
+        }
+        if (multiple && type === 'dropdown' && !isArr(values[name])) {
+            // dropdown field with `multiple` -> value must always be an array 
+            values[name] = []
         }
         return values
     }, values)
@@ -208,7 +215,7 @@ export default class FormBuilder extends Component {
         )
 
         return !modal ? form : (
-            <Modal
+            <IModal
                 closeOnEscape={!!closeOnEscape}
                 closeOnDimmerClick={!!closeOnDimmerClick}
                 defaultOpen={defaultOpen}
@@ -235,7 +242,11 @@ export default class FormBuilder extends Component {
                             {headerIcon && <Icon name={headerIcon} size="large" />}
                             {header}
                         </Header.Content>
-                        {subheader && <Header.Subheader>{subheader}</Header.Subheader>}
+                        {subheader && (
+                            <Header.Subheader>
+                                <Text>{subheader}</Text>
+                            </Header.Subheader>
+                        )}
                     </Header>
                 )}
                 <Modal.Content>{form}</Modal.Content>
@@ -246,7 +257,7 @@ export default class FormBuilder extends Component {
                     </Modal.Actions>
                 )}
                 {message && <Message {...message} />}
-            </Modal>
+            </IModal>
         )
     }
 }
