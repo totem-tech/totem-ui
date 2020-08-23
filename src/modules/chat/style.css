@@ -1,6 +1,5 @@
 .chat-container {
     color: black;
-    background: white;
     bottom: 0px;
     box-shadow: 3px 3px 5px 3px #979797;
     /* box-shadow: 3px 3px 5px 3px rgba(67,68,70 1); */
@@ -13,14 +12,16 @@
     width: 400px;
     z-index: 1;
 }
+#app:not(.inverted) .chat-container {
+    background: white;
+}
 #app > .mobile .chat-container {
     width: 100%;
 }
 #app > .mobile.sidebar-visible > .chat-container {
     display: none;
 }
-.chat-container.inverted {
-    background: #1b1c1d;
+#app.inverted .chat-container {
     color: white;
 }
 #app:not(.chat-visible) .chat-container,
@@ -208,7 +209,7 @@ button.dark-grey .icon,
     font-weight: 800;
     color: #F2F2F2;
 }
-.chat-container.inverted .inbox .header {
+#app.inverted .chat-container .inbox .header {
     background: #979797;
 }
 .chat-container .inbox .header .tools.right {
@@ -274,10 +275,12 @@ button.dark-grey .icon,
 
 /* message list */
 .chat-container .messages {
-    background: #EDE8E3;
     height: calc(100% - 92px);
     overflow-x: auto;
     position: relative;
+}
+#app:not(.inverted) .chat-container .messages {
+    background: #EDE8E3;
 }
 .chat-container .messages.animate-scroll {
     scroll-behavior: smooth;

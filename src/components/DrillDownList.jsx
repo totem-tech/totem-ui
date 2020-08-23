@@ -1,20 +1,27 @@
 import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { Accordion, Icon } from 'semantic-ui-react'
+import Text from './Text'
+import { useInverted } from '../services/window'
+import { className } from '../utils/utils'
 
-export const DrillDownList = ({ items = [], nestedLevelNum = 0, style }) => {
+export const DrillDownList = (props) => {
+    const { className: clsName, items = [], nestedLevelNum = 0, style = {} } = props
     const [activeIndex, setActiveIndex] = useState()
+    const inverted = useInverted()
     const AccordionEL = nestedLevelNum ? Accordion.Accordion : Accordion
-    const props = nestedLevelNum ? {} : {
-        styled: true,
-        fluid: true,
+    const elProps = {
+        className: className([clsName, { inverted }]),
+        styled: nestedLevelNum ? undefined : true,
+        fluid: nestedLevelNum ? undefined : true,
+        style: {
+            border: inverted ? 'grey 1px solid' : undefined,
+            margin: !nestedLevelNum ? 0 : undefined,
+            ...style,
+        }
     }
-    if (nestedLevelNum) {
-        style = { margin: 0, ...style }
-    }
-    props.style = style
     return (
-        <AccordionEL {...props}>
+        <AccordionEL {...elProps}>
             {items.map(({ children = [], subtitle, title }, i) => {
                 const active = activeIndex === i || !children.length
                 return (
@@ -28,17 +35,28 @@ export const DrillDownList = ({ items = [], nestedLevelNum = 0, style }) => {
                                 position: 'relative',
                             },
                         }}>
-                            {children.length > 0 && <Icon name='dropdown' />}
-                            {title}
+
+                            {children.length > 0 && <Icon inverted={inverted} name='dropdown' />}
+                            <Text {...{
+                                color: null,
+                                invertedColor: active ? 'white' : 'grey'
+                            }}>
+                                {title}
+                            </Text>
 
                             {nestedLevelNum > 0 && (
-                                <div style={{
-                                    position: 'absolute',
-                                    right: 20,
-                                    top: 10,
+                                <Text {...{
+                                    color: null,
+                                    EL: 'div',
+                                    invertedColor: active ? 'white' : 'grey',
+                                    style: {
+                                        position: 'absolute',
+                                        right: 20,
+                                        top: 10,
+                                    }
                                 }}>
                                     {subtitle}
-                                </div>
+                                </Text>
                             )}
                         </Accordion.Title>
                         {children.length > 0 && (

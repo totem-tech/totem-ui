@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { isValidNumber, isFn, isDefined } from '../utils/utils'
 import { round } from '../utils/number'
+import Text from './Text'
 import { convertTo, currencyDefault, useSelected } from '../services/currency'
 
 export const Currency = props => {
@@ -18,7 +19,6 @@ export const Currency = props => {
         unitDisplayed: pUnitD,
         value,
     } = props
-    // console.log({ pUnitD })
     const [unitDisplayed] = pUnitD ? [pUnitD] : useSelected()
     const isSame = unit === unitDisplayed
     let [valueConverted, setValueConverted] = useState(isSame ? value : undefined)

@@ -278,6 +278,11 @@ div.ui.padded.segment {
 .form :not(.item) > .ui.dropdown.active.visible:not(.no-margin):not(.item) {
   margin-bottom: 37px;
 }
+/* Capitalise input labels */
+form.ui.form label,
+form.ui.form .field > label {
+    text-transform: capitalize;
+}
 
 /* Message */
 /* forces close icon to be over content */
@@ -306,3 +311,20 @@ input[readonly] {
     display: table-cell;
     padding: 10px 15px;
 }
+
+/* 
+ * DARK MODE/INVERTED STYLES 
+ */
+#app.inverted #main-content .inverted {
+    background: #464646;
+}
+#app.inverted .chat-container {
+    background: #1b1c1d;
+}
+/* #app.inverted .pushable .ui.sidebar.left {
+	background: red
+} */
+/* header bar*/
+/* #app.inverted > * > .ui.top.menu.inverted {
+    background: red;
+} */

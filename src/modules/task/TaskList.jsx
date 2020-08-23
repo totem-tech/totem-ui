@@ -9,9 +9,6 @@ import TaskForm from './TaskForm'
 // services
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
-import { isFn } from '../../utils/utils'
-import { getById } from '../../services/history'
-import { rxUpdater } from './useTasks'
 import { FormInput } from '../../components/FormInput'
 
 const textsCap = translated({

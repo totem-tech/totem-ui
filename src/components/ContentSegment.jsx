@@ -1,7 +1,8 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Divider, Header, Icon, Placeholder, Rail, Segment } from 'semantic-ui-react'
+import { Divider, Header, Icon, Placeholder, Rail } from 'semantic-ui-react' //Segment
 import ErrorBoundary from './CatchReactErrors'
+import Segment from './Segment'
 import { isBond, isFn, isObj } from '../utils/utils'
 import { toggleFullscreen } from '../services/window'
 

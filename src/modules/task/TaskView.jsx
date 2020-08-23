@@ -1,12 +1,14 @@
-import React from 'react'
+import React, { useState } from 'react'
 import uuid from 'uuid'
 import { Menu, Tab } from 'semantic-ui-react'
+import Message from '../../components/Message'
+import Text from '../../components/Text'
 import TaskList from './TaskList'
 import { useSelected } from '../../services/identity'
 import { translated } from '../../services/language'
 import useTasks from './useTasks'
-import Message from '../../components/Message'
 import { rwSettings } from './task'
+import { useInverted } from '../../services/window'
 
 const textsCap = translated({
     approver: 'approver',
@@ -23,7 +25,7 @@ const textsCap = translated({
 export default function TaskView(props) {
     const address = props.address || useSelected()
     const [allTasks, message] = useTasks(['owner', 'approver', 'beneficiary'], address)
-    const activeIndex = rwSettings().activeIndex || 0
+    const [activeType, setActiveType] = useState(rwSettings().activeType || 'owner')
     const panes = [
         {
             name: textsCap.manage,
@@ -45,33 +47,35 @@ export default function TaskView(props) {
             title: textsCap.marketplaceDesc,
             type: 'marketplace',
         },
-    ].map(({ name, title, type }, i) => ({
+    ].map(({ name, title, type }) => ({
         active: true,
         menuItem: <Menu.Item  {...{
-            content: name,
+            content: <Text>{name}</Text>,
             key: type,
             // remember open tab index
-            onClick: () => rwSettings({ activeIndex: i }),
+            onClick: () => rwSettings({ activeType: type }) | setActiveType(type),
             title,
         }} />,
-        render: () => (
-            <Tab.Pane>
-                <TaskList {...{
-                    address,
-                    asTabPane: true,
-                    key: type,
-                    data: type === 'marketplace' ? new Map() : allTasks.get(type),
-                    type,
-                }} />
-            </Tab.Pane>
-        )
+        type,
     }))
 
+    const activeIndex = panes.findIndex(x => x.type === activeType)
     return message ? <Message {...message} /> : (
-        <Tab
-            defaultActiveIndex={activeIndex}
-            panes={panes}
-            key={uuid.v1()} // forces active pane to re-render on each change
-        />
+        <div>
+            <Tab {...{
+                activeIndex,
+                menu: { secondary: true, pointing: true },
+                panes,
+                key: activeIndex + activeType, // forces active pane to re-render on each change
+            }} />
+            <TaskList {...{
+                address,
+                asTabPane: true,
+                data: activeType === 'marketplace' ? new Map() : allTasks.get(activeType),
+                key: activeType,
+                style: { marginTop: 15 },
+                type: activeType,
+            }} />
+        </div>
     )
 }

@@ -157,9 +157,9 @@ export default class TaskForm extends Component {
                             width: 12,
                         },
                         {// hidden type to store bounty in XTX (regardless of display currency selected)
+                            hidden: true,
                             name: this.names.amountXTX,
                             required: true,
-                            type: 'hidden',
                         },
                         { // display currency
                             bond: new Bond(),

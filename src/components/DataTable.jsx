@@ -1,12 +1,13 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Button, Dropdown, Grid, Icon, Input, Table } from 'semantic-ui-react'
+import Segment from './Segment'
 import {
     arrMapSlice, getKeys, isArr, isFn, objWithoutKeys, objCopy, search, sort, isStr, arrReverse
 } from '../utils/utils'
 import Message from '../components/Message'
 import { translated } from '../services/language'
-import { layoutBond, getLayout, MOBILE } from '../services/window'
+import { getLayout, layoutBond, MOBILE, rxInverted, setInverted } from '../services/window'
 import Paginator from './Paginator'
 
 const mapItemsByPage = (data, pageNo, perPage, callback) => {
@@ -31,22 +32,33 @@ export default class DataTable extends Component {
         const { columns, defaultSort, defaultSortAsc, keywords, pageNo } = props
         this.state = {
             isMobile: getLayout() === MOBILE,
-            pageNo: pageNo,
+            inverted: setInverted(),
             keywords: keywords || '',
+            pageNo: pageNo,
             selectedIndexes: [],
             sortAsc: defaultSortAsc, // ascending/descending sort
             sortBy: defaultSort || (columns.find(x => !!x.key) || {}).key,
         }
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
     componentWillMount() {
+        this._mounted = true
         this.tieId = layoutBond.tie(layout => {
             const isMobile = layout === MOBILE
             if (this.state.isMObile === isMobile) return
             this.setState({ isMobile })
         })
+        this.unsubscribers = {
+            inverted: rxInverted.subscribe(inverted => this.setState({ inverted }))
+        }
     }
 
-    componentWillUnmount = () => layoutBond.untie(this.tieId)
+    componentWillUnmount = () => {
+        this._mounted = false
+        layoutBond.untie(this.tieId)
+        Object.keys(this.unsubscribers).forEach(fn => isFn(fn) && fn())
+    }
 
     getFooter(totalPages, pageNo) {
         let { footerContent, navLimit } = this.props
@@ -277,9 +289,17 @@ export default class DataTable extends Component {
             footerContent,
             perPage,
             searchExtraKeys,
+            style,
             tableProps,
         } = this.props
-        let { keywords, pageNo, selectedIndexes, sortAsc, sortBy } = this.state
+        let {
+            inverted,
+            keywords,
+            pageNo,
+            selectedIndexes,
+            sortAsc,
+            sortBy,
+        } = this.state
         keywords = keywords.trim()
         const columns = columnsOriginal.filter(x => !!x && !x.hidden)
         const keys = columns.filter(x => !!x.key).map(x => x.key)
@@ -311,13 +331,18 @@ export default class DataTable extends Component {
             emptyMessage = { content: emptyMessage }
         }
         return (
-            <div className='data-table'>
+            <Segment
+                basic
+                inverted={inverted}
+                className='data-table'
+                style={{ margin: 0, ...style }}
+            >
                 {this.getTopContent(totalRows, selectedIndexes)}
 
                 <div style={styles.tableContent}>
                     {totalRows === 0 && emptyMessage && <Message {...emptyMessage} />}
                     {totalRows > 0 && (
-                        <Table {...tableProps}>
+                        <Table {...{ ...tableProps, inverted }}>
                             <Table.Header>
                                 <Table.Row>{headers}</Table.Row>
                             </Table.Header>
@@ -336,7 +361,7 @@ export default class DataTable extends Component {
                         </Table>
                     )}
                 </div>
-            </div>
+            </Segment>
         )
     }
 }

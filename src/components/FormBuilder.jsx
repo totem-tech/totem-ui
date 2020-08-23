@@ -30,6 +30,7 @@ export default class FormBuilder extends Component {
 
     // recursive interceptor for infinite level of child inputs
     addInterceptor = (index, values) => (input, i) => {
+        const { modal } = this.props
         const { hidden, inputs: childInputs, key, name, type } = input || {}
         const isGroup = (type || '').toLowerCase() === 'group' && isArr(childInputs)
         index = isDefined(index) ? index : null
@@ -38,6 +39,7 @@ export default class FormBuilder extends Component {
             hidden: !isFn(hidden) ? hidden : !!hidden(values, i),
             inputs: !isGroup ? undefined : childInputs.map(this.addInterceptor(index ? index : i, values)),
             key: key || i + name,
+            modal,
             onChange: isGroup ? undefined : (e, data) => this.handleChange(
                 e,
                 data,

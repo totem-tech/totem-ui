@@ -1,9 +1,10 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Checkbox } from 'semantic-ui-react'
+import Text from './Text'
 import { hasValue, isDefined, isArr, isBond, isFn, isObj, objWithoutKeys } from '../utils/utils'
 
-const excludeKeys = ['bond', 'inline', 'multiple', 'name', 'options', 'required', 'type', 'value', 'width']
+const excludeKeys = ['bond', 'inline', 'multiple', 'modal', 'name', 'options', 'required', 'type', 'value', 'width']
 
 export default class CheckboxGroup extends Component {
     componentWillMount() {
@@ -45,7 +46,7 @@ export default class CheckboxGroup extends Component {
     }
 
     render() {
-        const { inline, name, options, style } = this.props
+        const { inline, modal, name, options, style } = this.props
         const { allowMultiple, value } = this.state
         const commonProps = objWithoutKeys(this.props, excludeKeys)
         return (
@@ -59,6 +60,7 @@ export default class CheckboxGroup extends Component {
                                 ...option,
                                 checked,
                                 key: i,
+                                label: modal ? option.label : <Text EL='label' for={name}>{option.label}</Text>,
                                 name: name + (allowMultiple ? i : ''),
                                 onChange: (e, d) => this.handleChange(e, d, option, i),
                                 required: false, // handled by CheckboxGroup

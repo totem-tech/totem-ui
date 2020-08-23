@@ -3,6 +3,7 @@ import { Container, Image, Sidebar } from 'semantic-ui-react'
 // Components
 import ErrorBoundary from './components/CatchReactErrors'
 import PageHeader from './components/PageHeader'
+import Segment from './components/Segment'
 import SidebarLeft, { MainContentItem } from './components/SidebarLeft'
 // Services
 import blockchain from './services/blockchain'
@@ -117,11 +118,11 @@ export class App extends Component {
 					</ErrorBoundary>
 
 					<Sidebar.Pusher
-						as={Container}
+						as={Segment}
 						className="main-content"
 						dimmed={false}
 						id="main-content"
-						fluid
+						// fluid
 						style={{
 							...styles.mainContent,
 							paddingBottom: isMobile ? 55 : 15,
@@ -148,11 +149,13 @@ const getGridStyle = (numCol = 1) => numCol <= 1 ? {} : {
 }
 const styles = {
 	mainContent: {
+		borderRadius: 0,
+		height: '100%',
+		margin: 0,
 		overflow: 'hidden auto',
 		WebkitOverflow: 'hidden auto',
-		height: '100%',
-		scrollBehavior: 'smooth',
 		padding: 15,
+		scrollBehavior: 'smooth',
 	},
 	pushable: {
 		margin: 0,

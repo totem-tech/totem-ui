@@ -1,6 +1,7 @@
+import React, { useEffect, useState } from 'react'
 import { Subject } from 'rxjs'
 import { Bond } from 'oo7'
-import { isDefined, isFn } from '../utils/utils'
+import { isDefined, isFn, isBool } from '../utils/utils'
 import storage from './storage'
 
 const MODULE_KEY = 'window'
@@ -11,6 +12,7 @@ export const DESKTOP = 'desktop'
 export const gridColumnsBond = new Bond().defaultTo(gridColumns())
 export const layoutBond = new Bond().defaultTo(getLayout())
 export const rxOnline = new Subject()
+export const rxInverted = new Subject()
 
 // forceLayout enforces and reverts a specific layout size and ignores layout change when window resizes
 //
@@ -21,14 +23,52 @@ export const forceLayout = size => {
     window.onresize()
 }
 
-// fullscreen enters/exits an element into fullscreen mode.
-// If the target element is already in fullscreen mode will simply exit fullscreen.
-// If another element is in fullscreen mode, will exit it from fullscreen 
-// and enter target into full screen with a slight delay.
-// If no/invalid selector supplied, will exit any fullscreen element.
+export function getLayout() {
+    return _forcedSize || (window.innerWidth <= 991 ? MOBILE : DESKTOP)
+}
+
+// getUrlParam reads the URL parameters
 //
 // Params:
-// @selector    string: (optional) CSS selector of the target element to toggle fullscreen
+// @name    string: (optional) if supplied will return a specific paramenter as string.
+//                  Otherwise, will return an object containing all the URL parameters with respective values.
+//
+// returns  string/object
+export const getUrlParam = name => {
+    const params = {}
+    const regex = /[?&]+([^=&]+)=([^&]*)/gi
+    window.location.href.replace(regex, (_, key, value) => params[key] = value)
+    return name ? params[name] || '' : params
+}
+
+// gridColumns read/writes main content grid column count
+export function gridColumns(numCol) {
+    const value = isDefined(numCol) ? { gridColumns: numCol } : undefined
+    value && gridColumnsBond.changed(numCol)
+    return rw(value).gridColumns || 1
+}
+
+/**
+ * @name inverted
+ * @summary get/set inverted
+ * @param {Boolean} inverted
+ * @returns {Boolean} 
+ */
+export const setInverted = inverted => {
+    const newValue = !isBool(inverted) ? undefined : { inverted }
+    newValue && rxInverted.next(inverted)
+    return rw(newValue).inverted
+}
+
+/**
+ * @name toggleFullscreen
+ * @summary fullscreen enters/exits an element into fullscreen mode.
+ * @description If the target element is already in fullscreen mode will simply exit fullscreen.
+ * If another element is in fullscreen mode, will exit it from fullscreen and enter target into full screen with a 
+ * slight delay. If no/invalid selector supplied, will exit any fullscreen element.
+ * 
+ * @param {String} selector (optional) CSS selector of the target element to toggle fullscreen
+ */
 export const toggleFullscreen = (selector) => {
     // target element to toggle fullscreen
     const el = document.querySelector(selector) || {}
@@ -61,44 +101,53 @@ export const toggleFullscreen = (selector) => {
     isFn(goFS) && setTimeout(() => goFS.call(el), isFS ? 50 : 0)
 }
 
-export function getLayout() {
-    return _forcedSize || (window.innerWidth <= 991 ? MOBILE : DESKTOP)
-}
+export const useInverted = (reverse = false) => {
+    const [inverted, setInvertedLocal] = useState(setInverted())
 
-// getUrlParam reads the URL parameters
-//
-// Params:
-// @name    string: (optional) if supplied will return a specific paramenter as string.
-//                  Otherwise, will return an object containing all the URL parameters with respective values.
-//
-// returns  string/object
-export const getUrlParam = name => {
-    const params = {}
-    const regex = /[?&]+([^=&]+)=([^&]*)/gi
-    window.location.href.replace(regex, (_, key, value) => params[key] = value)
-    return name ? params[name] || '' : params
-}
+    useEffect(() => {
+        let mounted = true
+        const subscribed = rxInverted.subscribe(inverted => mounted && setInvertedLocal(inverted))
+        return () => {
+            mounted = false
+            subscribed.unsubscribe()
+        }
+    }, [])
 
-// gridColumns read/writes main content grid column count
-export function gridColumns(numCol) {
-    const value = isDefined(numCol) ? { gridColumns: numCol } : undefined
-    value && gridColumnsBond.changed(numCol)
-    return rw(value).gridColumns || 1
+    if (!reverse) return inverted
+
+    switch (`${reverse}`) {
+        // always reverse
+        case 'true':
+        case 'always': return !inverted
+        // reverse only when inverted
+        case 'inverted': return inverted && !inverted
+        // reverse only when not inverted
+        case 'not inverted': return !inverted && inverted
+        default: return inverted
+    }
 }
 
 // set layout name on window resize 
 window.onresize = () => layoutBond.changed(getLayout())
 window.addEventListener('online', () => rxOnline.next(true))
 window.addEventListener('offline', () => rxOnline.next(false))
+rxInverted.subscribe(inverted =>
+    document.getElementById('app')
+        .classList[inverted ? 'add' : 'remove']('inverted')
+)
+rxInverted.next(setInverted())
 
 export default {
     MOBILE,
     DESKTOP,
     gridColumnsBond,
     layoutBond,
+    rxInverted,
+    rxOnline,
     forceLayout,
     toggleFullscreen,
     getLayout,
     getUrlParam,
     gridColumns,
+    setInverted,
 }
