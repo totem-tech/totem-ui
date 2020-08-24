@@ -1,14 +1,58 @@
 import uuid from 'uuid'
 import { generateHash, isArr, isDefined } from "../../utils/utils"
 import { bytesToHex, strToU8a } from '../../utils/convert'
-import { query as queryHelper } from '../../services/blockchain'
+import { query as queryHelper, randomHex } from '../../services/blockchain'
 import client from '../../services/chatClient'
+import { translated } from '../../services/language'
 import storage from '../../services/storage'
 
 export const PRODUCT_HASH_LABOUR = generateHash('labour')
 const MODULE_KEY = 'task'
 // read and write to cached storage
 const TX_STORAGE = 'tx_storage'
+const textsCap = translated({
+    inaccessible: 'inaccessible',
+    accepted: 'accepted',
+    approved: 'approved',
+    blocked: 'blocked',
+    completed: 'completed',
+    disputed: 'disputed',
+    invoiced: 'invoiced',
+    pendingApproval: 'pending approval',
+    rejected: 'rejected',
+    submitted: 'submitted',
+}, true)[1]
+export const approvalStatuses = {
+    pendingApproval: 0,
+    approved: 1,
+    rejected: 2,
+}
+export const approvalStatusNames = {
+    0: textsCap.pendingApproval,
+    1: textsCap.approved,
+    2: textsCap.rejected,
+}
+export const statuses = {
+    inaccessible: -1,
+    submitted: 0,
+    accepted: 1,
+    rejected: 2,
+    disputed: 3,
+    blocked: 4,
+    invoiced: 5,
+    completed: 6,
+}
+export const statusNames = {
+    // used for tasks that are no longer available in the Blockchain storage
+    '-1': textsCap.inaccessible,
+    '0': textsCap.submitted,
+    '1': textsCap.accepted,
+    '2': textsCap.rejected,
+    '3': textsCap.disputed,
+    '4': textsCap.blocked,
+    '5': textsCap.invoiced,
+    '6': textsCap.completed,
+}
 /**
  * @name    rwCache
  * @summary read/write to cache storage 
@@ -79,35 +123,71 @@ export const query = {
 // Params:
 // @addrOrigin
 export const queueables = {
+    /**
+     * @name accept
+     * @summary accept/reject task assignment
+     * 
+     * @param {String} address fulfiller address
+     * @
+     */
+    accept: (address, taskId, accept = true, queueProps) => {
+        const txId = randomHex(address)
+        return {
+            ...queueProps,
+            address,
+            args: [
+                taskId,
+                accept ? statuses.accepted : statuses.rejected,
+                txId,
+            ],
+            func: 'api.tx.orders.handleSpfso',
+            txId,
+            type: TX_STORAGE,
+        }
+    },
+    approve: (address, taskId, approve = true, queueProps) => {
+        const txId = randomHex(address)
+        return {
+            ...queueProps,
+            address,
+            args: [
+                taskId,
+                approve ? approvalStatuses.approved : approvalStatuses.rejected,
+                txId,
+            ],
+            func: 'api.tx.orders.changeApproval',
+            txId,
+            type: TX_STORAGE,
+        }
+    },
     save: (
-        addrOrigin,
-        addrApprover = addrOrigin,
-        addrFulfiller = addrOrigin,
-        isSell = 0, // 0 = buy, 1 = open
-        amountXTX = 0,
-        isClosed = addrFulfiller !== addrFulfiller, // false = open, true = closed
+        owner,
+        approver,
+        fulfiller,
+        isSell, // 0 = buy, 1 = open
+        amountXTX,
+        isClosed, // false = open, true = closed
         orderType = 0, // 0: service order, 1: inventory order, 2: asset order extensible
         deadline, // must be equal or higher than `currentBlockNumber + 11520` blocks. 
         dueDate, // must be equal or higher than deadline
-        // 2D array of order items (will be converted to objects): [[productHash, unitRate, qty, unitOfMeasure]]
-        // Or, array of OrderItemStruct (see utils => polkadot types) objects 
-        orderItems = [],
         taskId, // (optional) determines whether to create or update a record
         token, // BONSAI token hash
         queueProps,
     ) => {
         const func = !!taskId ? 'api.tx.orders.changeSpfso' : 'api.tx.orders.createSpfso'
-        const orderItem = orderItems.map(item => !isArr(item) ? item : {
-            "Product": item[0],
-            "UnitPrice": item[1],
-            "Quantity": item[2],
-            "UnitOfMeasure": item[3],
-        })[0]
+        const orderItem = {
+            Product: PRODUCT_HASH_LABOUR,
+            UnitPrice: amountXTX,
+            Quantity: 1,
+            UnitOfMeasure: 1,
+        }
         const txidStr = uuid.v1().replace(/\-/g, '')
-        const txId = bytesToHex(strToU8a(txidStr))
+        const txIdx = bytesToHex(strToU8a(txidStr))
+        const txId = randomHex(owner)
+        console.log({ txId, txIdx })
         const args = !taskId ? [
-            addrApprover,
-            addrFulfiller,
+            approver,
+            fulfiller,
             isSell,
             amountXTX,
             isClosed,
@@ -118,8 +198,8 @@ export const queueables = {
             token,
             txId,
         ] : [
-                addrApprover,
-                addrFulfiller,
+                approver,
+                fulfiller,
                 amountXTX,
                 deadline,
                 dueDate,
@@ -131,14 +211,14 @@ export const queueables = {
 
         return {
             ...queueProps,
-            address: addrOrigin,
+            address: owner,
             amountXTX,
             func,
             type: TX_STORAGE,
             args,
             txId,
         }
-    }
+    },
 }
 
 export default {

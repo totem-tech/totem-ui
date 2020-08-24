@@ -1,12 +1,14 @@
+import uuid from 'uuid'
 // utils
 import PromisE from '../utils/PromisE'
 import { connect, query as queryHelper, setDefaultConfig } from '../utils/polkadotHelper'
 import types from '../utils/totem-polkadot-js-types'
+import { generateHash } from '../utils/utils'
 // services
 import { translated } from './language'
+import { QUEUE_TYPES } from './queue'
 import storage from './storage'
 import { setToast } from './toast'
-import { QUEUE_TYPES } from './queue'
 import { rxOnline } from './window'
 
 const MODULE_KEY = 'blockchain'
@@ -213,6 +215,16 @@ export const queueables = {
         ],
     }),
 }
+
+/**
+ * @name randomHex
+ * @summary generates a hash using the supplied address and a internally generated time based UUID as seed.
+ * 
+ * @param {String} address 
+ * 
+ * @returns {String} hash
+ */
+export const randomHex = address => generateHash(`${address}${uuid.v1()}`)
 
 // Replace configs
 export const setConfig = newConfig => {

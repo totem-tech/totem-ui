@@ -10,9 +10,18 @@ import TaskForm from './TaskForm'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
 import { FormInput } from '../../components/FormInput'
+import { getSelected } from '../../services/identity'
+import { approvalStatuses, queueables, statuses } from './task'
+import { ButtonAcceptOrReject } from '../../components/buttons'
+import { addToQueue } from '../../services/queue'
+import { isArr } from '../../utils/utils'
 
 const textsCap = translated({
+    acceptTask: 'accept task',
     action: 'action',
+    approve: 'approve',
+    approved: 'approved',
+    approvedChangeNotAllowed: 'approved task cannot be changed',
     assignee: 'assignee',
     bounty: 'bounty',
     create: 'create',
@@ -21,6 +30,7 @@ const textsCap = translated({
     loading: 'loading',
     marketplace: 'marketplace',
     no: 'no',
+    rejectTask: 'reject task',
     status: 'status',
     tags: 'tags',
     taskOwner: 'task owner',
@@ -34,15 +44,18 @@ const listTypes = Object.freeze({
     marketplace: 'marketplace',
     owner: 'owner',
 })
-// cache data so that 
-const cachedData = new Map()
+// preserves search keywords for each list type until page reloads
+const tempCache = new Map()
+const toBeImplemented = () => alert('to be implemented')
 
 class TaskList extends Component {
     constructor(props) {
         super(props)
 
+        this.selectedAddress = getSelected().address
         this.listType = listTypes[props.type] || listTypes.owner
         this.isOwner = this.listType === listTypes.owner
+        this.isApprover = this.listType === listTypes.approver
         this.isFulfiller = this.listType === listTypes.beneficiary
         this.isMarketplace = this.listType === listTypes.marketplace
         const keywordsKey = 'keywords' + this.listType
@@ -62,7 +75,7 @@ class TaskList extends Component {
                     title: textsCap.taskOwner,
                 },
                 {
-                    hidden: !this.isFulfiller,
+                    hidden: this.isFulfiller,
                     key: '_fulfiller',
                     title: textsCap.assignee,
                 },
@@ -90,18 +103,44 @@ class TaskList extends Component {
                     style: { textAlign: 'center' },
                 },
                 {
+                    content: (task, taskId) => {
+                        const { fulfiller, orderStatus, _orderStatus } = task
+                        const isFulfiller = this.selectedAddress === fulfiller
+                        const isSubmitted = orderStatus === statuses.submitted
+                        const { acceptInProgress } = tempCache.get(taskId) || {}
+
+                        return !isFulfiller || !isSubmitted ? _orderStatus : (
+                            <ButtonAcceptOrReject
+                                disabled={acceptInProgress}
+                                loading={acceptInProgress}
+                                onClick={accept => this.handleAccept(taskId, accept)}
+                            />
+                        )
+                    },
                     collapsing: true,
-                    key: '_status',
+                    key: '_orderStatus',
                     title: textsCap.status,
                 },
                 {
+                    content: (task, taskId) => {
+                        const { approvalStatus, approver, _approvalStatus } = task
+                        const isPendingAproval = approvalStatus === approvalStatuses.pendingApproval
+                        const isApprover = this.selectedAddress === approver
+                        const { approveInProgress } = tempCache.get(taskId) || {}
+
+                        return !isApprover || !isPendingAproval ? _approvalStatus : (
+                            <ButtonAcceptOrReject
+                                acceptText={textsCap.approve}
+                                disabled={approveInProgress}
+                                loading={approveInProgress}
+                                onClick={approve => this.handleApprove(taskId, approve)}
+                            />
+                        )
+                    },
                     collapsing: true,
-                    content: ({ publish }) => publish ? textsCap.yes : textsCap.no,
-                    key: 'publish',
-                    style: { textAlign: 'center' },
-                    title: textsCap.marketplace,
+                    key: '_approvalStatus',
+                    title: textsCap.approved,
                 },
-                // { key: 'description', title: textsCap.description },
                 {
                     collapsing: true,
                     content: this.getActions,
@@ -111,8 +150,8 @@ class TaskList extends Component {
             ],
             emptyMessage: this.isMarketplace ? textsCap.emptyMsgMarketPlace : undefined,
             // preserve search keywords
-            keywords: cachedData.get(keywordsKey),
-            perPage: 100,
+            keywords: tempCache.get(keywordsKey),
+            // perPage: 100,
             searchable: !this.isMarketplace ? true : (
                 <FormInput {...{
                     // for advanced filtering
@@ -124,7 +163,7 @@ class TaskList extends Component {
                     // search by: title, description, userId (filter by partner userId or own (default on first load??))
                     action: {
                         icon: 'filter',
-                        onClick: () => alert('to be implemented')
+                        onClick: toBeImplemented
                     },
                     icon: 'search',
                     iconPosition: 'left',
@@ -135,41 +174,67 @@ class TaskList extends Component {
             ),
             searchExtraKeys: ['_taskId'],
             searchHideOnEmpty: !this.isMarketplace,
-            searchOnChange: keywords => cachedData.set(keywordsKey, keywords),
+            searchOnChange: keywords => tempCache.set(keywordsKey, keywords),
             topLeftMenu: [
                 showCreate && {
                     content: textsCap.create,
                     icon: 'plus',
                     onClick: () => showForm(TaskForm, {
-                        values: !this.isMarketplace ? undefined : { publish: 1 },
+                        values: !this.isMarketplace ? undefined : { isClosed: 0 },
                         size: 'tiny',
                     }),
                 }
             ].filter(Boolean)
         }
-
-        this.originalSetState = this.setState
-        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
-    getActions = (task, taskId) => {
-        return [
-            this.isOwner && {
-                icon: 'pencil',
-                onClick: () => showForm(TaskForm, {
-                    taskId,
-                    values: task,
-                }),
-                title: textsCap.update,
-            },
-            this.showDetails && {
-                icon: 'eye',
-                onClick: () => this.showDetails(task, taskId),
-                title: textsCap.techDetails
-            }
-        ]
-            .filter(Boolean)
-            .map((props, i) => <Button {...props} key={`${i}-${props.title}`} />)
+    getActions = (task, taskId) => [
+        this.isOwner && {
+            disabled: !task.allowEdit,
+            icon: 'pencil',
+            onClick: () => showForm(TaskForm, { taskId, values: task }),
+            title: textsCap.update,
+        },
+        this.showDetails && {
+            icon: 'eye',
+            onClick: () => this.showDetails(task, taskId),
+            title: textsCap.techDetails
+        }
+    ].filter(Boolean)
+        .map((props, i) =>
+            <Button {...props} key={`${i}-${props.title}`} />
+        )
+
+    handleAccept = (taskIds, accept = true) => {
+        taskIds = isArr(taskIds) ? taskIds : [taskIds]
+        taskIds.forEach(taskId => {
+            tempCache.set(
+                taskId,
+                { ...tempCache.get(taskId), acceptInProgress: true },
+            )
+            const queueProps = queueables.accept(this.selectedAddress, taskId, accept, {
+                description: taskId,
+                title: accept ? textsCap.acceptTask : textsCap.rejectTask,
+                then: () => {
+                    tempCache.set(taskId, {
+                        ...tempCache.get(taskId),
+                        acceptInProgress: false,
+                    })
+                    this.forceUpdate()
+                }
+            })
+            addToQueue(queueProps)
+        })
+        this.forceUpdate()
+    }
+
+    handleApprove = (taskId, approve = true) => {
+        return toBeImplemented()
+    }
+
+    showDetails = (task, taskId) => {
+        console.log({ task, taskId })
+        toBeImplemented()
     }
 
     render = () => <DataTable {...{ ...this.props, ...this.state }} />

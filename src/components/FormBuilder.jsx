@@ -169,7 +169,7 @@ export default class FormBuilder extends Component {
             isFn(onClose) && onClose({}, {})
         }
         msg = sMsg || msg
-        const message = isObj(msg) && msg || {}
+        const message = { ...msg, style: { margin: modal ? 0 : 15, ...(msg || {}).style } }
         let submitBtn, closeBtn
         const shouldDisable = submitDisabled || success || isFormInvalid(inputs, values)
         submitText = !isFn(submitText) ? submitText : submitText(values, shouldDisable)
@@ -208,7 +208,7 @@ export default class FormBuilder extends Component {
                 {!modal && !hideFooter && (
                     <div>
                         {submitBtn}
-                        {message && <Message {...message} />}
+                        {msg && <Message {...message} />}
                     </div>
                 )}
             </Form>
@@ -256,7 +256,7 @@ export default class FormBuilder extends Component {
                         {submitBtn}
                     </Modal.Actions>
                 )}
-                {message && <Message {...message} />}
+                {msg && <Message {...message} />}
             </IModal>
         )
     }

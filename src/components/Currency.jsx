@@ -3,10 +3,10 @@ import PropTypes from 'prop-types'
 import { isValidNumber, isFn, isDefined } from '../utils/utils'
 import { round } from '../utils/number'
 import Text from './Text'
-import { convertTo, currencyDefault, useSelected } from '../services/currency'
+import { convertTo, currencyDefault, useSelected, getCurrencies } from '../services/currency'
 
 export const Currency = props => {
-    const {
+    let {
         className,
         decimalPlaces,
         EL,
@@ -31,11 +31,15 @@ export const Currency = props => {
             if (!mounted) return
             try {
                 valueConverted = !value || isSame ? value || 0 : await convertTo(value, unit, unitDisplayed)
-                valueConverted = round(valueConverted, decimalPlaces)
                 error = null
+                if (!isValidNumber(decimalPlaces)) {
+                    const { decimals } = (await getCurrencies()).find(x => x.ISO === unitDisplayed) || {}
+                    decimalPlaces = parseInt(decimals) || 0
+                }
+                valueConverted = round(valueConverted, decimalPlaces)
             } catch (err) {
                 error = err
-                valueConverted = 0.00
+                valueConverted = 0
             }
 
             if (!mounted) return
@@ -85,7 +89,6 @@ Currency.propTypes = {
     value: PropTypes.number,
 }
 Currency.defaultProps = {
-    decimalPlaces: 2,
     EL: 'span',
     unit: currencyDefault, // XTX
 }

@@ -1,57 +1,21 @@
 import React, { useState, useEffect } from 'react'
 import { Subject } from 'rxjs'
-import { isFn, arrUnique, objCopy, objContains, objCreate } from '../../utils/utils'
+import { isFn, arrUnique, objCopy } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 // services
 import { translated } from '../../services/language'
 import { getAddressName } from '../../services/partner'
-import { query, rwCache } from './task'
+import {
+    approvalStatuses,
+    approvalStatusNames,
+    query, rwCache, statuses, statusNames
+} from './task'
 
 const textsCap = translated({
     errorHeader: 'failed to load tasks',
     loadingMsg: 'loading tasks',
-    // status names
-    inaccessible: 'inaccessible',
-    accepted: 'accepted',
-    blocked: 'blocked',
-    completed: 'completed',
-    disputed: 'disputed',
-    invoiced: 'invoiced',
-    pendingApproval: 'pending approval',
-    rejected: 'rejected',
-    submitted: 'submitted',
 }, true)[1]
-export const statusNames = {
-    // used for tasks that are no longer available in the Blockchain storage
-    '-1': textsCap.inaccessible,
-    '0': textsCap.submitted,
-    '1': textsCap.accepted,
-    '2': textsCap.rejected,
-    '3': textsCap.disputed,
-    '4': textsCap.blocked,
-    '5': textsCap.invoiced,
-    '6': textsCap.completed,
-}
-export const statuses = {
-    inaccessible: -1,
-    submitted: 0,
-    accepted: 1,
-    rejected: 2,
-    disputed: 3,
-    blocked: 4,
-    invoiced: 5,
-    completed: 6,
-}
-export const approvedCodes = {
-    pendingApproval: 0,
-    approved: 1,
-    rejected: 2,
-}
-export const approvedCodeNames = {
-    pendingApproval: textsCap.pendingApproval,
-    approved: textsCap.approved,
-    rejected: textsCap.rejected,
-}
+
 // @rsUpdater is used to force update off-chain task data. Expected value is array of Task IDs.
 // Use case: whenever off-chain task data (eg: title, description...) needs to be updated manually because PolkadotJS 
 //      API the subscription mechanism used in the`useTasks` hook cannot automatically do it:
@@ -115,61 +79,55 @@ export default function useTasks(types, address, timeout = 5000) {
         const setError = err => setMessage({ ...errorMsg, content: `${err}` })
         const handleOrdersCb = (taskIds2d, uniqueTaskIds, types) => async (orders, ordersOrg) => {
             if (!mounted) return
-            const arStatus = []
-            const arApproved = []
             let uniqueTasks = new Map()
             // older orders can be invalid and have null value
-            orders.forEach((order = [], index) => {
-                let {
-                    owner,
-                    fulfiller,
-                    approver,
-                    isSell,
-                    // amountXTX = 0,
-                    isClosed,
-                    orderType,
-                    deadline,
-                    dueDate,
-                } = order || {}
-                const amountXTX = !order ? 0 : ordersOrg[index].value.get('amountXTX').toNumber()
-                const taskId = uniqueTaskIds[index]
+            orders.forEach((order, index) => {
                 // order can be null if storage has changed
-                const status = order === null ? -1 : arStatus[index]
-                const approved = arApproved[index]
-                uniqueTasks.set(taskId, {
-                    approved,
-                    approver,
-                    amountXTX,
-                    deadline,
-                    dueDate,
+                const taskId = uniqueTaskIds[index]
+                let amountXTX = 0
+                if (order) {
+                    try {
+                        amountXTX = ordersOrg[index].value.get('amountXTX').toNumber()
+                    } catch (err) {
+                        console.log('AmontXTX parse error', err)
+                    }
+                }
+                let {
+                    approvalStatus,
                     fulfiller,
-                    isClosed,
-                    isSell,
-                    orderType,
-                    status,
+                    orderStatus,
                     owner,
+                } = order || {
+                    orderStatus: statuses.inaccessible,
+                    approvalStatus: approvalStatuses.rejected,
+                }
+                const task = {
+                    ...order,
+                    amountXTX,
+                    allowEdit: orderStatus === statuses.submitted && approvalStatuses.pendingApproval,
                     // pre-process values for use with DataTable
-                    _approved: approvedCodeNames[approved],
-                    _status: statusNames[status],
+                    _approvalStatus: approvalStatusNames[approvalStatus],
+                    _orderStatus: statusNames[orderStatus],
                     _taskId: taskId,
                     _fulfiller: getAddressName(fulfiller),
                     _owner: getAddressName(owner),
-                })
+                }
+                uniqueTasks.set(taskId, task)
             })
 
             const promise = PromisE.timeout(query.getDetailsByTaskIds(uniqueTaskIds), timeout / 2)
             // add title description etc retrieved from Messaging Service
             const addDetails = (detailsMap) => {
                 if (!mounted) return
-                Array.from(uniqueTasks).forEach(([id, task]) => {
-                    const taskDetails = detailsMap.get(id) || {
+                Array.from(uniqueTasks).forEach(([taskId, task]) => {
+                    const taskDetails = detailsMap.get(taskId) || {
                         description: '',
                         publish: 0,
                         title: '',
                         tags: [],
                     }
                     const combined = objCopy(task, taskDetails)
-                    uniqueTasks.set(id, combined)
+                    uniqueTasks.set(taskId, combined)
                 })
                 // construct separate lists for each type
                 const allTasks = new Map()
@@ -254,8 +212,5 @@ export default function useTasks(types, address, timeout = 5000) {
         return () => subscribed.unsubscribe()
     }, [tasks, setTasks])
 
-    return [
-        tasks,
-        message,
-    ]
+    return [tasks, message]
 }

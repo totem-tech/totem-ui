@@ -99,11 +99,14 @@ export default class ProjectTeamList extends Component {
                 userId,
                 _status: accepted ? wordsCap.accepted : (!isOwnIdentity ? wordsCap.invited : (
                     // Worker identity belongs to current user => button to accept or reject
-                    <ButtonAcceptOrReject onClick={accept => handleTKInvitation(
-                        projectId,
-                        address,
-                        accept,
-                    )} />
+                    <ButtonAcceptOrReject
+                        onClick={accept => handleTKInvitation(
+                            projectId,
+                            address,
+                            accept,
+                        )}
+                        style={{ marginTop: 10 }}
+                    />
                 ))
             })
 

@@ -128,7 +128,7 @@ export default class DataTable extends Component {
 
         return mapItemsByPage(filteredData, pageNo, perPage, (item, key, items, isMap) => (
             <Table.Row
-                key={key + JSON.stringify(item)}
+                key={key}
                 {...(isFn(rowProps) ? rowProps(item, key, items, isMap) : rowProps || {})}
             >
                 {selectable && ( /* include checkbox to select items */

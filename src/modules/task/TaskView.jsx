@@ -44,11 +44,11 @@ export default function TaskView(props) {
             title: textsCap.approverDesc,
             type: 'approver',
         },
-        {
-            name: textsCap.marketplace,
-            title: textsCap.marketplaceDesc,
-            type: 'marketplace',
-        },
+        // {
+        //     name: textsCap.marketplace,
+        //     title: textsCap.marketplaceDesc,
+        //     type: 'marketplace',
+        // },
     ].map(({ name, title, type }) => ({
         active: true,
         inverted,

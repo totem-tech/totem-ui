@@ -374,11 +374,14 @@ export default class TimeKeepingForm extends Component {
             content: !invited ? texts.inactiveWorkerMsg1 : (
                 <div>
                     {texts.inactiveWorkerMsg3} <br />
-                    <ButtonAcceptOrReject onClick={async (accepted) => {
-                        const success = await handleTKInvitation(projectId, workerAddress, accepted)
-                        // force trigger change
-                        success && inputs[index].bond.changed(projectId)
-                    }} />
+                    <ButtonAcceptOrReject
+                        onClick={async (accepted) => {
+                            const success = await handleTKInvitation(projectId, workerAddress, accepted)
+                            // force trigger change
+                            success && inputs[index].bond.changed(projectId)
+                        }}
+                        style={{ marginTop: 10 }}
+                    />
                 </div>
             ),
             header: invited ? texts.inactiveWorkerHeader2 : texts.inactiveWorkerHeader1,

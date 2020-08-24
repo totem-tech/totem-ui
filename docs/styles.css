@@ -342,7 +342,9 @@ input[readonly] {
     border: 1px solid #505050;
 }
 /* Modals */
-body .modals .ui.modal.inverted > * {
+body .modals .ui.modal.inverted > *:not(.message),
+body .modals .ui.modal.inverted .accordion, 
+body .modals .ui.modal.inverted .accordion > * {
 	background: #464646;
 	color: white;
 }

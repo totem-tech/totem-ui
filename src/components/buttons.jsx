@@ -25,19 +25,32 @@ const [texts, textsCap] = translated({
     reject: 'reject',
 }, true)
 
-export const ButtonAcceptOrReject = ({ onClick, acceptText, rejectText, style, acceptColor, rejectColor }) => (
-    <div title="" style={{ textAlign: 'center', marginTop: 10, ...style }}>
-        <Button.Group>
-            <Button color={acceptColor} onClick={(e) => e.stopPropagation() | onClick(true)}>
-                {acceptText}
-            </Button>
-            <Button.Or onClick={e => e.stopPropagation()} />
-            <Button color={rejectColor} onClick={(e) => e.stopPropagation() | onClick(false)}>
-                {rejectText}
-            </Button>
-        </Button.Group>
-    </div>
-)
+export const ButtonAcceptOrReject = props => {
+    const { acceptColor, acceptText, disabled, loading, onClick, rejectColor, rejectText, style, title } = props
+    return (
+        <div title={title} style={{ textAlign: 'center', ...style }}>
+            <Button.Group>
+                <Button
+                    color={acceptColor}
+                    disabled={disabled}
+                    loading={loading}
+                    onClick={(e) => e.stopPropagation() | onClick(true)}
+                >
+                    {acceptText}
+                </Button>
+                <Button.Or onClick={e => e.stopPropagation()} />
+                <Button
+                    color={rejectColor}
+                    disabled={disabled}
+                    loading={loading}
+                    onClick={(e) => e.stopPropagation() | onClick(false)}
+                >
+                    {rejectText}
+                </Button>
+            </Button.Group>
+        </div>
+    )
+}
 ButtonAcceptOrReject.propTypes = {
     onClick: PropTypes.func.isRequired,
     acceptColor: PropTypes.string, // colors supported by SemanticUI buttons

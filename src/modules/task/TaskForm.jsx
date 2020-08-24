@@ -5,7 +5,7 @@ import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import { arrSort, deferred, isObj, isValidNumber, objClean, generateHash, isFn, isHash } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
-import { BLOCK_DURATION_SECONDS, format, blockNumberToTS } from '../../utils/time'
+import { BLOCK_DURATION_SECONDS, blockNumberToTS } from '../../utils/time'
 // components
 import Currency from '../../components/Currency'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
@@ -21,7 +21,7 @@ import {
 import { getSelected } from '../../services/identity'
 import { translated } from '../../services/language'
 import partners from '../../services/partner'
-import { queueables, PRODUCT_HASH_LABOUR } from './task'
+import { queueables } from './task'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import { showForm } from '../../services/modal'
 import { getById } from '../../services/history'
@@ -193,7 +193,7 @@ export default class TaskForm extends Component {
                     radio: true,
                     required: true,
                     type: 'checkbox-group',
-                    // value: true,
+                    value: true,
                 },
                 {
                     bond: new Bond(),
@@ -350,7 +350,6 @@ export default class TaskForm extends Component {
         currencyIn.options = arrSort(currencyOptions, 'text')
         currencyIn.search = ['text']
         if (!isObj(values)) return this.setState({ inputs, loading: false })
-
         const { number } = await query('api.rpc.chain.getHeader')
         const amountXTX = values[this.names.amountXTX]
         const currency = values[this.names.currency]
@@ -529,9 +528,10 @@ export default class TaskForm extends Component {
         const isClosed = !!values[this.names.isClosed]
         assigneeIn.hidden = !isClosed
         isClosedIn.message = isClosed ? null : {
-            content: textsCap.marketplaceDisclaimer,
+            content: 'Not implemented yet',//textsCap.marketplaceDisclaimer,
             style: { textAlign: 'justify' },
         }
+        isClosedIn.invalid = !isClosed
         this.setState({ inputs })
     }
 
@@ -588,7 +588,6 @@ export default class TaskForm extends Component {
             orderType,
             deadline,
             dueDate,
-            [[PRODUCT_HASH_LABOUR, amountXTX, 1, 1]], // single item order
             taskId,
             token,
             {

@@ -31,8 +31,8 @@ const textsCap = translated({
 	addressCopied: 'your identity copied to clipboard',
 	changeCurrency: 'change display currency',
 	copyAddress: 'copy my identity',
-	darkModeOn: 'disable dark mode',
-	darkModeOff: 'enable dark mode',
+	darkModeOn: 'enable dark mode',
+	darkModeOff: 'disable dark mode',
 	faucetRequest: 'faucet request',
 	faucetRequestDetails: 'requested transaction allocations',
 	requestFunds: 'request Funds',
@@ -159,8 +159,8 @@ const PageHeaderView = props => {
 					text={textEllipsis(selected.name, isMobile ? 25 : 50, 3, false)}
 					value={selected.address}
 					style={{ paddingRight: 0 }}
-					options={arrSort(
-						wallets.map(({ address, name }) => ({
+					options={arrSort(wallets, 'name')
+						.map(({ address, name }) => ({
 							key: address,
 							text: (
 								<React.Fragment>
@@ -183,9 +183,7 @@ const PageHeaderView = props => {
 								</React.Fragment>
 							),
 							value: address
-						})),
-						'text'
-					)}
+						}))}
 				/>
 				<Dropdown
 					item
@@ -211,7 +209,7 @@ const PageHeaderView = props => {
 									onClick: onCopy,
 								},
 								{
-									icon: inverted ? 'toggle off' : 'toggle on',
+									icon: inverted ? 'toggle on' : 'toggle off',
 									content: inverted ? textsCap.darkModeOff : textsCap.darkModeOn,
 									onClick: () => setInverted(!inverted)
 								},
