@@ -17,32 +17,25 @@ export default class FormBuilder extends Component {
     constructor(props) {
         super(props)
 
-        const { inputsDisabled = [], inputs = [], open } = props
-        // disable inputs
-        inputsDisabled.forEach(name =>
-            (findInput(inputs, name) || {}).disabled = true
-        )
-
+        const { inputs, open } = props
         this.state = {
-            inputs,
             open,
-            values: this.getValues(inputs)
+            values: this.getValues(inputs),
         }
-
     }
 
     // recursive interceptor for infinite level of child inputs
     addInterceptor = (index, values) => (input, i) => {
-        const { modal } = this.props
-        const { hidden, inputs: childInputs, key, name, type } = input || {}
+        const { inputsDisabled = [] } = this.props
+        const { disabled, hidden, inputs: childInputs, key, name, type } = input || {}
         const isGroup = (type || '').toLowerCase() === 'group' && isArr(childInputs)
         index = isDefined(index) ? index : null
         return {
             ...input,
+            disabled: inputsDisabled.includes(name) || (isFn(disabled) ? disabled(value, i) : disabled),
             hidden: !isFn(hidden) ? hidden : !!hidden(values, i),
             inputs: !isGroup ? undefined : childInputs.map(this.addInterceptor(index ? index : i, values)),
             key: key || i + name,
-            // modal,
             onChange: isGroup ? undefined : (e, data) => this.handleChange(
                 e,
                 data,
@@ -80,7 +73,7 @@ export default class FormBuilder extends Component {
 
     handleChange = async (event, data, input, index, childIndex) => {
         const { name, onChange: onInputChange } = input
-        let { inputs } = this.state
+        let { inputs } = this.props
         const { onChange: formOnChange } = this.props
         let { values } = this.state
         const { value } = data
@@ -144,7 +137,7 @@ export default class FormBuilder extends Component {
             header,
             headerIcon,
             hideFooter,
-            // inputs,
+            inputs,
             loading,
             message: msg,
             modal,
@@ -161,7 +154,7 @@ export default class FormBuilder extends Component {
             trigger,
             widths
         } = this.props
-        let { inputs, message: sMsg, open: sOpen, values } = this.state
+        let { message: sMsg, open: sOpen, values } = this.state
         // whether the 'open' status is controlled or uncontrolled
         let modalOpen = isFn(onClose) ? open : sOpen
         if (success && closeOnSubmit) {

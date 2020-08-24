@@ -3,6 +3,7 @@ import { generateHash, arrSort } from '../utils/utils'
 import client from './chatClient'
 import storage from './storage'
 import { useState, useEffect } from 'react'
+import PromisE from '../utils/PromisE'
 
 const MODULE_KEY = 'currency'
 // read or write to currency settings storage
@@ -33,7 +34,10 @@ export function getSelected() {
 }
 
 // get list of currencies 
-export const getCurrencies = async () => await updateCurrencies() || rwCache().currencies
+export const getCurrencies = async () => {
+    await updateCurrencies()
+    return rwCache().currencies || []
+}
 
 // get/set default currency
 //
@@ -48,20 +52,32 @@ export const setSelected = async (ISO) => {
 }
 
 export const updateCurrencies = async () => {
+    const { updatePromise } = updateCurrencies
     if (lastUpdated && new Date() - lastUpdated < updateFrequencyMs) return
     try {
+        // prevents making multiple requests
+        if (updatePromise) return await updatePromise
+
         const sortedArr = rwCache().currencies
         const hash = generateHash(sortedArr)
-        const currencies = await client.currencyList.promise(hash)
-        if (currencies.length === 0) return
-        currencies.forEach(x => {
-            x.nameInLanguage = x.nameInLanguage || x.currency
-            x.ISO = x.ISO || x.currency
-        })
-        rwCache('currencies', arrSort(currencies, 'ISO'))
-        lastUpdated = new Date()
-        console.log({ currencies })
-        return currencies
+        const currencyPromise = client.currencyList.promise(hash)
+        const handleCurrencies = async (currencies) => {
+            console.log({ currencies })
+            if (currencies.length === 0) return
+            currencies.forEach(x => {
+                x.nameInLanguage = x.nameInLanguage || x.currency
+                x.ISO = x.ISO || x.currency
+            })
+            rwCache('currencies', arrSort(currencies, 'ISO'))
+            lastUpdated = new Date()
+            console.log({ currencies })
+        }
+        currencyPromise.then(handleCurrencies)
+
+        // for first time user wait as long at it takes otherwise, timeout and force use cached
+        // cached list of currencies exists, timeout if list not loaded within 3 seconds
+        updateCurrencies.updatePromise = !sortedArr ? currencyPromise : PromisE.timeout(currencyPromise, 3000)
+        await updateCurrencies.updatePromise
     } catch (err) {
         console.error('Failed to retrieve currencies', err)
     }

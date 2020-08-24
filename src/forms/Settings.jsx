@@ -65,7 +65,7 @@ export default class Settings extends Component {
                     name: 'currency',
                     onChange: this.handleCurrencyChange,
                     options: [],
-                    search: ['text', 'value'],
+                    search: ['text', 'description', 'value'],
                     selection: true,
                     type: 'dropdown',
                     value: getSelectedCurrency()

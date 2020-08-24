@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { isValidNumber, isFn, isDefined } from '../utils/utils'
 import { round } from '../utils/number'
-import Text from './Text'
 import { convertTo, currencyDefault, useSelected, getCurrencies } from '../services/currency'
 
 export const Currency = props => {
@@ -33,8 +32,10 @@ export const Currency = props => {
                 valueConverted = !value || isSame ? value || 0 : await convertTo(value, unit, unitDisplayed)
                 error = null
                 if (!isValidNumber(decimalPlaces)) {
-                    const { decimals } = (await getCurrencies()).find(x => x.ISO === unitDisplayed) || {}
-                    decimalPlaces = parseInt(decimals) || 0
+                    const currencies = await getCurrencies()
+                    let { decimals } = currencies.find(x => x.ISO === unitDisplayed) || {}
+                    decimals = parseInt(decimals)
+                    decimalPlaces = isValidNumber(decimals) ? decimals : 8
                 }
                 valueConverted = round(valueConverted, decimalPlaces)
             } catch (err) {

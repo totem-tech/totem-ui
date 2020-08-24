@@ -254,7 +254,7 @@ export class FormInput extends Component {
 				if (isArr(attrs.search)) {
 					attrs.search = searchRanked(attrs.search)
 				}
-				inputEl = <Dropdown {...attrs} search={true} />
+				inputEl = <Dropdown {...attrs} />
 				break
 			case 'group':
 				isGroup = true
