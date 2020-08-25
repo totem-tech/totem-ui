@@ -8,7 +8,7 @@ import DataTable from '../../components/DataTable'
 import TaskForm from './TaskForm'
 // services
 import { translated } from '../../services/language'
-import { showForm } from '../../services/modal'
+import { showForm, confirm } from '../../services/modal'
 import { FormInput } from '../../components/FormInput'
 import { getSelected } from '../../services/identity'
 import { approvalStatuses, queueables, statuses } from './task'
@@ -113,7 +113,11 @@ class TaskList extends Component {
                             <ButtonAcceptOrReject
                                 disabled={acceptInProgress}
                                 loading={acceptInProgress}
-                                onClick={accept => this.handleAccept(taskId, accept)}
+                                onClick={accept => confirm({
+                                    header: textsCap.acceptTask,
+                                    onConfirm: () => this.handleAccept(taskId, accept),
+                                    size: 'mini'
+                                })}
                             />
                         )
                     },
