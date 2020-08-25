@@ -15,10 +15,12 @@ export const Currency = props => {
         style,
         suffix,
         unit,
-        unitDisplayed: pUnitD,
+        unitDisplayed,
         value,
     } = props
-    const [unitDisplayed] = pUnitD ? [pUnitD] : useSelected()
+    const [selected] = !unit && !unitDisplayed ? [] : useSelected()
+    unit = unit || selected
+    unitDisplayed = unitDisplayed || selected
     const isSame = unit === unitDisplayed
     let [valueConverted, setValueConverted] = useState(isSame ? value : undefined)
     let [error, setError] = useState()
@@ -53,7 +55,7 @@ export const Currency = props => {
         convert(value)
 
         return () => mounted = false
-    }, [unitDisplayed, value])
+    }, [unit, unitDisplayed, value])
 
     const content = !isDefined(valueConverted) ? (emptyMessage || '') : (
         `${prefix || ''}${valueConverted} ${unitDisplayed}${suffix || ''}`

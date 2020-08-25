@@ -5,7 +5,7 @@ import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import { arrSort, deferred, isObj, isValidNumber, objClean, generateHash, isFn, isHash } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
-import { BLOCK_DURATION_SECONDS, blockNumberToTS } from '../../utils/time'
+import { BLOCK_DURATION_SECONDS, blockNumberToTS, format } from '../../utils/time'
 // components
 import Currency from '../../components/Currency'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
@@ -26,6 +26,7 @@ import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import { showForm } from '../../services/modal'
 import { getById } from '../../services/history'
 import { rxUpdater } from './useTasks'
+import { Balance } from '../../components/Balance'
 
 const textsCap = translated({
     addedToQueue: 'request added to queue',
@@ -42,10 +43,11 @@ const textsCap = translated({
     close: 'close',
     conversionErrorHeader: 'currency conversion failed',
     currency: 'currency',
+    dateForamt: 'MM-DD-YYYY',
     deadlineLabel: 'deadline',
     deadlineMinErrorMsg: 'deadline must be at least 48 hours from now',
     dueDateLabel: 'due date',
-    dueDateMinErrorMsg: 'due date must be equal or after deadline',
+    dueDateMinErrorMsg: 'due date must be at least 24 hours after deadline',
     description: 'detailed description',
     descriptionPlaceholder: 'enter more details about the task',
     featureNotImplemented: 'This feature is yet to be implemented. Please stay tuned.',
@@ -76,9 +78,12 @@ const textsCap = translated({
     titlePlaceholder: 'enter a very short task description',
     updatePartner: 'update partner',
 }, true)[1]
-const estimatedTxFee = 140
+const estimatedTxFee = 340
+const minBalanceAterTx = 1618
 // deadline must be minimum 48 hours from now
 const deadlineMinMS = 48 * 60 * 60 * 1000
+// due date must be 24 hours after deadline
+const dueDateMinMS = 24 * 60 * 60 * 1000
 const strToDate = ymd => new Date(`${ymd}T23:59:59`)
 
 export default class TaskForm extends Component {
@@ -164,6 +169,7 @@ export default class TaskForm extends Component {
                         { // display currency
                             bond: new Bond(),
                             label: textsCap.currency,
+                            maxLength: 18,
                             name: this.names.currency,
                             onChange: this.handleBountyChange,
                             options: [],
@@ -211,17 +217,22 @@ export default class TaskForm extends Component {
                 },
                 {
                     bond: new Bond(),
-                    label: textsCap.deadlineLabel,
+                    label: `${textsCap.deadlineLabel} (${textsCap.dateForamt})`,
                     name: this.names.deadline,
                     onChange: (_, values) => {
-                        const dueDate = values[this.names.dueDate]
                         const { taskId } = this.props
-                        if (!dueDate) return
-                        // reset due date
+                        let dueDate = values[this.names.dueDate]
+                        const deadline = values[this.names.deadline]
                         const dueDateIn = findInput(this.state.inputs, this.names.dueDate)
-                        dueDateIn.bond.changed('')
-                        // force re-evaluate the due date
-                        taskId && dueDateIn.bond.changed(dueDate)
+                        if (!dueDate || !taskId) {
+                            // reset 1 day after deadline if not already set or creating new task
+                            const date = strToDate(deadline)
+                            date.setSeconds(date.getSeconds() + dueDateMinMS / 1000 + 1)
+                            dueDate = format(date).substr(0, 10)
+                        }
+                        // reset and force re-evaluate due date
+                        !!taskId && dueDateIn.bond.changed('')
+                        dueDateIn.bond.changed(dueDate)
                     },
                     required: true,
                     type: 'date',
@@ -235,7 +246,7 @@ export default class TaskForm extends Component {
                 {
                     bond: new Bond(),
                     hidden: values => !values[this.names.deadline], // hide if deadline is not selected
-                    label: textsCap.dueDateLabel,
+                    label: `${textsCap.dueDateLabel} (${textsCap.dateForamt})`,
                     name: this.names.dueDate,
                     required: true,
                     type: 'date',
@@ -243,7 +254,7 @@ export default class TaskForm extends Component {
                         if (!dueDate) return textsCap.invalidDate
                         const deadline = this.values[this.names.deadline]
                         const diffMS = strToDate(dueDate) - strToDate(deadline)
-                        return diffMS < 0 && textsCap.dueDateMinErrorMsg
+                        return diffMS < dueDateMinMS && textsCap.dueDateMinErrorMsg
                     },
                     value: '',
                 },
@@ -430,11 +441,7 @@ export default class TaskForm extends Component {
         const bountyIn = findInput(inputs, this.names.bounty)
         const valid = isValidNumber(bounty)
         const currency = values[this.names.currency]
-        const currencySelected = getSelectedCurrency()
         const { address } = getSelected()
-        const getCurrencyEl = (prefix, suffix, value, unit, unitDisplayed) => (
-            <Currency {... { decimalPlaces: 4, prefix, suffix, value, unit, unitDisplayed }} />
-        )
         bountyIn.loading = valid
         bountyIn.invalid = false
         bountyGrpIn.message = null
@@ -457,43 +464,27 @@ export default class TaskForm extends Component {
         const handleSuccess = result => {
             const amountXTX = result[0]
             const balanceXTX = result[1]
-            const amountTotalXTX = amountXTX + estimatedTxFee
-            const gotBalance = balanceXTX - estimatedTxFee - amountXTX >= 0
+            const amountTotalXTX = amountXTX + estimatedTxFee + minBalanceAterTx
+            const gotBalance = balanceXTX - amountTotalXTX >= 0
             amountXTXIn.value = amountXTX
             bountyIn.invalid = !gotBalance
             bountyGrpIn.message = {
                 content: (
                     <div>
+                        <div title={`${textsCap.balance}: ${balanceXTX} ${currencyDefault} `}>
+                            <Balance {...{
+                                address,
+                                prefix: textsCap.balance + ': ',
+                                unit: currencyDefault,
+                                unitDisplayed: currency,
+                            }} />
+                        </div>
                         <div title={`${textsCap.amountRequired}: ${amountTotalXTX} ${currencyDefault}`}>
-                            {getCurrencyEl(
-                                `${textsCap.amountRequired}: `,
-                                null,
-                                amountTotalXTX,
-                                currencyDefault,
-                                currencySelected,
-                            )}
                             <Currency {... {
-                                decimalPlaces: 4,
                                 prefix: `${textsCap.amountRequired}: `,
                                 value: amountTotalXTX,
                                 unit: currencyDefault,
-                                unitDisplayed: currencySelected,
-                            }} />
-                        </div>
-                        <div title={`${textsCap.balance}: ${balanceXTX} ${currencyDefault} `}>
-                            {getCurrencyEl(
-                                `${textsCap.balance}: `,
-                                null,
-                                balanceXTX,
-                                currencyDefault,
-                                currencySelected,
-                            )}
-                            <Currency {... {
-                                decimalPlaces: 4,
-                                prefix: `${textsCap.balance}: `,
-                                value: balanceXTX,
-                                unit: currencyDefault,
-                                unitDisplayed: currencySelected,
+                                unitDisplayed: currency,
                             }} />
                         </div>
                     </div>

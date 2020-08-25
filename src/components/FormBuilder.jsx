@@ -72,21 +72,31 @@ export default class FormBuilder extends Component {
     }, values)
 
     handleChange = async (event, data, input, index, childIndex) => {
-        const { name, onChange: onInputChange } = input
-        let { inputs } = this.props
-        const { onChange: formOnChange } = this.props
-        let { values } = this.state
-        const { value } = data
-        input._invalid = data.invalid
-        input.value = value
-        values = this.getValues(inputs, values, name, value)
-
         try {
+            const { name, onChange: onInputChange } = input
+            let { inputs } = this.props
+            const { onChange: formOnChange } = this.props
+            let { values } = this.state
+            const { value } = data
+            input._invalid = data.invalid
+            input.value = value
+            values = this.getValues(inputs, values, name, value)
             this.setState({ message: null, inputs, values })
             // trigger input items's onchange callback
-            isFn(onInputChange) && !data.invalid && await onInputChange(event, values, index, childIndex)
+            isFn(onInputChange) && !data.invalid && await onInputChange(
+                event,
+                values,
+                index,
+                childIndex,
+            )
+
             // trigger form's onchange callback
-            isFn(formOnChange) && await formOnChange(event, values, index, childIndex)
+            isFn(formOnChange) && !data.invalid && await formOnChange(
+                event,
+                values,
+                index,
+                childIndex,
+            )
         } catch (err) {
             console.error(err)
             this.setState({
@@ -108,10 +118,10 @@ export default class FormBuilder extends Component {
     }
 
     handleSubmit = async (event) => {
-        event.preventDefault()
-        const { onSubmit } = this.props
-        const { values } = this.state
         try {
+            event.preventDefault()
+            const { onSubmit } = this.props
+            const { values } = this.state
             isFn(onSubmit) && await onSubmit(event, values)
             this.setState({ message: null })
         } catch (err) {

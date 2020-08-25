@@ -173,7 +173,7 @@ export class FormInput extends Component {
 		}
 		if (message || !isFn(validate)) return triggerChange()
 
-		isFn(onChange) && onChange(event, data, this.props)
+		!isFn(validate) && isFn(onChange) && onChange(event, data, this.props)
 
 		const customValidate = vMsg => {
 			if (vMsg === true) {

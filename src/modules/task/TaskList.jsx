@@ -121,26 +121,26 @@ class TaskList extends Component {
                     key: '_orderStatus',
                     title: textsCap.status,
                 },
-                {
-                    content: (task, taskId) => {
-                        const { approvalStatus, approver, _approvalStatus } = task
-                        const isPendingAproval = approvalStatus === approvalStatuses.pendingApproval
-                        const isApprover = this.selectedAddress === approver
-                        const { approveInProgress } = tempCache.get(taskId) || {}
+                // {
+                //     content: (task, taskId) => {
+                //         const { approvalStatus, approver, _approvalStatus } = task
+                //         const isPendingAproval = approvalStatus === approvalStatuses.pendingApproval
+                //         const isApprover = this.selectedAddress === approver
+                //         const { approveInProgress } = tempCache.get(taskId) || {}
 
-                        return !isApprover || !isPendingAproval ? _approvalStatus : (
-                            <ButtonAcceptOrReject
-                                acceptText={textsCap.approve}
-                                disabled={approveInProgress}
-                                loading={approveInProgress}
-                                onClick={approve => this.handleApprove(taskId, approve)}
-                            />
-                        )
-                    },
-                    collapsing: true,
-                    key: '_approvalStatus',
-                    title: textsCap.approved,
-                },
+                //         return !isApprover || !isPendingAproval ? _approvalStatus : (
+                //             <ButtonAcceptOrReject
+                //                 acceptText={textsCap.approve}
+                //                 disabled={approveInProgress}
+                //                 loading={approveInProgress}
+                //                 onClick={approve => this.handleApprove(taskId, approve)}
+                //             />
+                //         )
+                //     },
+                //     collapsing: true,
+                //     key: '_approvalStatus',
+                //     title: textsCap.approved,
+                // },
                 {
                     collapsing: true,
                     content: this.getActions,

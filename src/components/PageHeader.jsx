@@ -209,7 +209,7 @@ const PageHeaderView = props => {
 									onClick: onCopy,
 								},
 								{
-									icon: inverted ? 'toggle on' : 'toggle off',
+									icon: inverted ? 'moon outline' : 'moon',
 									content: inverted ? textsCap.darkModeOff : textsCap.darkModeOn,
 									onClick: () => setInverted(!inverted)
 								},

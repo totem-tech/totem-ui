@@ -87,7 +87,7 @@ export default class Settings extends Component {
                     label: textsCap.chatLimitLabel,
                     name: 'chatMsgLimit',
                     onChange: this.handleChatLimitChange,
-                    options: [0, 10, 50, 100, 500].map((limit, i) => ({
+                    options: [10, 50, 100, 500].map((limit, i) => ({ //0 for unlimited
                         key: i,
                         text: limit || textsCap.unlimited,
                         value: limit,
