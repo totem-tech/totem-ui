@@ -4,22 +4,20 @@
 import React from 'react'
 import uuid from 'uuid'
 import DataStorage from '../utils/DataStorage'
-import { transfer, signAndSend, setDefaultConfig } from '../utils/polkadotHelper'
+import { signAndSend } from '../utils/polkadotHelper'
 import { isArr, isFn, isObj, isStr, objClean, isValidNumber } from '../utils/utils'
 // services
 import { getClient } from './chatClient'
-import { currencyDefault } from './currency'
 import { getConnection, query, getCurrentBlock } from './blockchain'
 import { save as addToHistory } from './history'
 import { find as findIdentity, getSelected } from './identity'
-import { getAddressName } from './partner'
 import { translated } from './language'
 import { setToast } from './toast'
 import { rxOnline } from './window'
 import PromisE from '../utils/PromisE'
 import { BLOCK_DURATION_SECONDS } from '../utils/time'
 
-const [words, wordsCap] = translated({
+const textsCap = translated({
     amount: 'amount',
     error: 'error',
     failed: 'failed',
@@ -33,8 +31,6 @@ const [words, wordsCap] = translated({
     suspended: 'suspended',
     transaction: 'transaction',
     transactions: 'transactions',
-}, true)
-const textsCap = translated({
     addedToQueue: 'added to queue',
     insufficientBalance: 'insufficient balance',
     invalidFunc: 'invalid function name supplied.',
@@ -47,10 +43,10 @@ const textsCap = translated({
         sender identity, recipient identity and amount`,
 }, true)[1]
 export const statusTitles = {
-    error: words.error,
-    loading: words.inProgress,
-    success: words.successful,
-    suspended: words.suspended,
+    error: textsCap.error,
+    loading: textsCap.inProgress,
+    success: textsCap.successful,
+    suspended: textsCap.suspended,
 }
 const queue = new DataStorage('totem_queue-data', false)
 export const QUEUE_TYPES = Object.freeze({
@@ -194,21 +190,6 @@ const VALID_KEYS = Object.freeze([
  *                          - undefined/falsy: task execution was never attempted. Typically the inital status.
  */
 
-export const addToQueue = (queueItem, id = uuid.v1(), toastId = uuid.v1()) => {
-    // prevent adding the same task again
-    if (queue.get(id)) return
-
-    queueItem = objClean(queueItem, VALID_KEYS)
-    queue.set(id, queueItem)
-    _processTask(queueItem, id, toastId)
-    return id
-}
-
-export const resumeQueue = () => queue.map(([id, task]) => {
-    if (!navigator.onLine) return suspendedIds.push(id)
-    _processTask(task, id, task.toastId, true)
-})
-
 const _processTask = (currentTask, id, toastId, allowRepeat) => {
     toastId = toastId || uuid.v1()
     if (!isObj(currentTask)) return queue.delete(id)
@@ -258,134 +239,89 @@ const _processTask = (currentTask, id, toastId, allowRepeat) => {
     }
 }
 
-const attachKey = (ar = []) => !isArr(ar) ? ar : (
-    <div>
-        {ar.filter(Boolean).map((x, i) => (
-            <div key={i} style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{x}</div>
-        ))}
-    </div>
-)
-const setMessage = (task, msg = {}, duration, id, silent = false) => {
-    if (silent) return
-    const statusText = task.status !== SUSPENDED ? statusTitles[task.status] : textsCap.addedToQueue
-    const header = `${msg.header || task.title}: 
-        ${task.type.startsWith('tx_') ? words.transaction : ''} ${statusText}`
-    setToast({
-        ...msg,
-        content: msg.content ? attachKey(msg.content) : task.description,
-        header,
-        status: task.status === SUSPENDED ? 'basic' : task.status,
-    }, duration, id)
+/**
+ * @name addToQueue
+ * @summary add queue item (individual or chain of tasks) to the queue service
+ * 
+ * @param   {Object} queueItem see `VALID_KEYS` for a list of accepted properties
+ * @param   {String} id (optional) supply a pre-defined ID. 
+ *                      If ID already exists in the queue service, will be ignored.
+ *                      If ID not supplied (undefined), will generate a new UUID.
+ * @param   {String} toastId 
+ * 
+ * @returns {String} supplied/newly generated ID
+ */
+export const addToQueue = (queueItem, id = uuid.v1(), toastId = uuid.v1()) => {
+    // prevent adding the same task again
+    if (queue.get(id)) return
+
+    queueItem = objClean(queueItem, VALID_KEYS)
+    queue.set(id, queueItem)
+    _processTask(queueItem, id, toastId)
+    return id
 }
 
-const setToastNSaveCb = (id, rootTask, task, status, msg = {}, toastId, silent, duration, resultOrError, balance) => {
-    const errMsg = status === ERROR ? resultOrError : null
-    const done = [SUCCESS, ERROR].includes(status)
-    const success = status === SUCCESS
-    task.status = status
-    task.errorMessage = isStr(errMsg) ? errMsg : (
-        errMsg instanceof Error ? `${errMsg}` : null
+/**
+ * @name    checkTxStatus
+ * @summary check status of a transaction by TxId
+ * 
+ * @param   {ApiPromise}    api         PolkadotJS API instance
+ * @param   {String}        txId        transaction ID
+ * @param   {Boolean}       allowWait   whether to wait until block is finalized
+ * @param   {Number}        waitBlocks  number of blocks to wait if TX is in `isStarted` but not in `isSuccessful`
+ * 
+ * @returns {Boolean|Null}  null if transaction ID doesn't exist
+ */
+const checkTxStatus = async (api, txId, allowWait = true, waitBlocks = 3) => {
+    if (!txId) return null
+    let blockNum = 0
+    let diff = 0
+    const [isStarted = 0, isSuccessful = 0] = await query(
+        api.queryMulti,
+        [[
+            [api.query.bonsai.isStarted, txId],
+            [api.query.bonsai.isSuccessful, txId],
+        ]],
     )
-    const hasError = status === ERROR && task.errorMessage
-    hasError && msg.content.unshift(task.errorMessage)
-    task.toastId = setMessage(task, msg, duration, toastId, silent)
-    if (balance) {
-        // store account balance before and after TX
-        task.balance = { ...task.balance, ...balance }
-    }
-
-    switch (status) {
-        case LOADING:
-            // add to inProgressIds list
-            !inProgressIds.includes(id) && inProgressIds.push(id)
-            break
-        case SUCCESS:
-            // save the result so that @next task can access it if needed
-            task.result = resultOrError
-        case ERROR:
-        default:
-            // remove from inProgressIds list
-            inProgressIds.splice(inProgressIds.indexOf(id), 1)
-
-            break
-    }
-
-    // save progress
-    queue.set(id, rootTask)
-    const { args, argsProcessed, description, errorMessage, func, title, type } = task
-    addToHistory(
-        [QUEUE_TYPES.TX_STORAGE, QUEUE_TYPES.TX_TRANSFER].includes(type) ? task.address : getSelected().address,
-        (type === QUEUE_TYPES.CHATCLIENT ? 'client.' : '') + func,
-        argsProcessed || args,
-        title,
-        description,
-        status,
-        errorMessage,
-        id,
-        task.id,
-        task.balance,
-        task.result
-    )
-
-    if (!done) return
-
-    try {
-        isFn(task.then) && task.then(success, resultOrError)
-    } catch (err) {
-        // ignore any error occured by invoking the `then` function
-        console.log('Unexpected error occured while executing queue .then()', { rootTask })
-        console.error(err)
-    }
-    // execute next only if current task is successful
-    if (success && isObj(task.next)) return _processTask(task.next, id, toastId)
-
-    // delete root item if no error occured
-    queue.delete(id)
-}
-
-const processArgs = (rootTask = {}, currentTask = {}) => {
-    try {
-        const args = currentTask.args || []
-        const argsProcessed = []
-        const hasDynamicArg = args.find(arg => isObj(arg) && arg.__taskName && arg.__resultSelector)
-        if (!hasDynamicArg) return []
-
-        // throw 'test error 0'
-        const getResultByName = (task, name) => {
-            // throw 'test error 2'
-            if (task.name === name) return task.result
-            return !isObj(task.next) ? undefined : getResultByName(task.next, name)
+    if (isSuccessful) {
+        // tx was already successfully completed
+        // transaction and event data is unknown 
+        return true
+    } else if (isStarted) {
+        // tx is already being executed
+        // retreive current block number to check if transaction has failed
+        blockNum = await getCurrentBlock()
+        diff = blockNum - isStarted
+        if (diff > waitBlocks || !allowWait || !isValidNumber(waitBlocks)) {
+            // sufficient amount has passed but the transaction was still not in the isSuccess list
+            // assume tx has failed
+            return false
         }
-        for (let i = 0; i < args.length; i++) {
-            const arg = args[i]
-            const { __taskName, __resultSelector } = isObj(arg) ? arg : {}
-            const isStatic = !__taskName || !__resultSelector
-            if (isStatic) {
-                argsProcessed.push(arg)
-                continue
-            }
-            // throw 'test error 1'
-            const result = getResultByName(rootTask, __taskName)
-            const argValue = eval(__resultSelector)
-            const processedArg = !isFn(argValue) ? argValue : argValue(result, rootTask)
-            argsProcessed.push(processedArg)
-        }
-
-        return [null, argsProcessed]
-    } catch (err) {
-        console.log({ err })
-        // throw err
-        return [err]
+        // wait for up to 10 blocks and check again if tx becomes succesful
+        await PromisE.delay(diff * BLOCK_DURATION_SECONDS * 1000)
+        return await checkTxStatus(api, txId, false, waitBlocks)
+    } else {
+        // new transaction, continue with execution
+        return null
     }
 }
 
+/**
+ * @name handleChatClient
+ * @summary handles queued task with request (both read and write) to the messaging service
+ * 
+ * @param {String} id 
+ * @param {Object} rootTask 
+ * @param {Object} task 
+ * @param {String} toastId 
+ */
 const handleChatClient = async (id, rootTask, task, toastId) => {
     const { args, description, title, silent, toastDuration } = task
     const msg = {
         content: [description],
         header: title,
     }
-    const _save = (status, resultOrErr) => setToastNSaveCb(
+    const _save = (status, resultOrErr) => setToastNSave(
         id, rootTask, task, status, msg, toastId, silent, toastDuration, resultOrErr
     )
 
@@ -401,7 +337,7 @@ const handleChatClient = async (id, rootTask, task, toastId) => {
         let func = task.func
         func = (func.startsWith('client.') ? '' : 'client.') + func
         func = eval(func)
-        if (!isFn(func)) throw textsCap.invalidFunc
+        if (!isFn(func) || !isFn(func.promise)) throw textsCap.invalidFunc
 
         // process any dynamic arguments
         const [err, argsProcessed] = processArgs(rootTask, task)
@@ -417,6 +353,15 @@ const handleChatClient = async (id, rootTask, task, toastId) => {
     }
 }
 
+/**
+ * @name handleTx
+ * @summary handles queued tasks with a Blockchain transaction
+ * 
+ * @param {String} id 
+ * @param {Object} rootTask 
+ * @param {Object} task 
+ * @param {String} toastId 
+ */
 const handleTx = async (id, rootTask, task, toastId) => {
     if (!isValidNumber(task.amountXTX)) {
         task.amountXTX = 0
@@ -427,7 +372,7 @@ const handleTx = async (id, rootTask, task, toastId) => {
         content: [description],
         header: title,
     }
-    const _save = (status, resultOrError, balance) => setToastNSaveCb(
+    const _save = (status, resultOrError, balance) => setToastNSave(
         id, rootTask, task, status, msg, toastId, silent, toastDuration, resultOrError, balance
     )
 
@@ -494,110 +439,174 @@ const handleTx = async (id, rootTask, task, toastId) => {
 }
 
 /**
- * @name    checkTxStatus
- * @summary check status of a transaction by TxId
+ * @name processArgs
+ * @summary process `args` for a task to extract any dynamic values. If task does not contain any dynamic arguments,
+ *              will return empty array.
+ * @param {Object} rootTask 
+ * @param {Object} currentTask 
  * 
- * @param   {ApiPromise}    api         PolkadotJS API instance
- * @param   {String}        txId        transaction ID
- * @param   {Boolean}       allowWait   whether to wait until block is finalized
- * @param   {Number}        waitBlocks  number of blocks to wait if TX is in `isStarted` but not in `isSuccessful`
- * 
- * @returns {Boolean|Null}  null if transaction ID doesn't exist
+ * @returns {Array} [errorMsg, processedArgs]
  */
-const checkTxStatus = async (api, txId, allowWait = true, waitBlocks = 3) => {
-    if (!txId) return null
-    let blockNum = 0
-    let diff = 0
-    const [isStarted = 0, isSuccessful = 0] = await query(
-        api.queryMulti,
-        [[
-            [api.query.bonsai.isStarted, txId],
-            [api.query.bonsai.isSuccessful, txId],
-        ]],
-    )
-    if (isSuccessful) {
-        // tx was already successfully completed
-        // transaction and event data is unknown 
-        return true
-    } else if (isStarted) {
-        // tx is already being executed
-        // retreive current block number to check if transaction has failed
-        blockNum = await getCurrentBlock()
-        diff = blockNum - isStarted
-        if (diff > waitBlocks || !allowWait || !isValidNumber(waitBlocks)) {
-            // sufficient amount has passed but the transaction was still not in the isSuccess list
-            // assume tx has failed
-            return false
+const processArgs = (rootTask = {}, currentTask = {}) => {
+    try {
+        const args = currentTask.args || []
+        const argsProcessed = []
+        const hasDynamicArg = args.find(arg => isObj(arg) && arg.__taskName && arg.__resultSelector)
+        if (!hasDynamicArg) return []
+
+        // throw 'test error 0'
+        const getResultByName = (task, name) => {
+            // throw 'test error 2'
+            if (task.name === name) return task.result
+            return !isObj(task.next) ? undefined : getResultByName(task.next, name)
         }
-        // wait for up to 10 blocks and check again if tx becomes succesful
-        await PromisE.delay(diff * BLOCK_DURATION_SECONDS * 1000)
-        return await checkTxStatus(api, txId, false, waitBlocks)
-    } else {
-        // new transaction, continue with execution
-        return null
+        for (let i = 0; i < args.length; i++) {
+            const arg = args[i]
+            const { __taskName, __resultSelector } = isObj(arg) ? arg : {}
+            const isStatic = !__taskName || !__resultSelector
+            if (isStatic) {
+                argsProcessed.push(arg)
+                continue
+            }
+            // throw 'test error 1'
+            const result = getResultByName(rootTask, __taskName)
+            const argValue = eval(__resultSelector)
+            const processedArg = !isFn(argValue) ? argValue : argValue(result, rootTask)
+            argsProcessed.push(processedArg)
+        }
+
+        return [null, argsProcessed]
+    } catch (err) {
+        console.log({ err })
+        // throw err
+        return [err]
     }
 }
 
-// Deprecated -> will be removed
-// const handleTxTransfer = async (id, rootTask, task, toastId) => {
-//     task.func = 'api.tx.balances.transfer'
-//     const { address: senderAddress, args, silent, toastDuration } = task
-//     const [recipientAddress, amount] = args
-//     const identity = findIdentity(senderAddress)
-//     const invalid = !senderAddress || !recipientAddress || !amount
-//     const msg = {
-//         content: [
-//             `${wordsCap.sender}: ${identity.name}`,
-//             `${wordsCap.recipient}: ${getAddressName(recipientAddress)}`,
-//             `${wordsCap.amount}: ${amount} ${currencyDefault}`,
-//         ],
-//         header: textsCap.txTransferTitle
-//     }
-//     task.title = textsCap.txTransferTitle
-//     task.description = msg.content.join('\n')
-//     const _save = (status, resultOrErr, balances = {}) => setToastNSaveCb(
-//         id, rootTask, task, status, msg, toastId, silent, toastDuration, resultOrErr, balances
-//     )
+/**
+ * @name resumeQueue
+ * @summary resume execution of queued tasks that are incomplete, partially complete or never started.
+ */
+export const resumeQueue = () => queue.map(([id, task]) => {
+    if (!navigator.onLine) return suspendedIds.push(id)
+    _processTask(task, id, task.toastId, true)
+})
 
-//     _save(
-//         !identity || invalid ? ERROR : LOADING,
-//         !identity ? textsCap.txForeignIdentity : (invalid ? textsCap.txTransferMissingArgs : '')
-//     )
-//     if (!identity || invalid) return
-//     let api
-//     try {
-//         const { api: apiX, keyring } = await getConnection()
-//         api = apiX
-//         // add idenitity to keyring on demand
-//         !keyring.contains(senderAddress) && keyring.add([identity.uri])
-//     } catch (err) {
-//         console.log('handleTxTransfer: connectcion error', err)
-//         _save(ERROR, err)
-//         return
-//     }
+/**
+ * @name setMessage
+ * @summary display a toast message for a specific task
+ * 
+ * @param {Object}  task 
+ * @param {Object}  msg 
+ * @param {Number}  duration 
+ * @param {String}  id 
+ * @param {Boolean} silent 
+ */
+const setMessage = (task, msg = {}, duration, id, silent = false) => {
+    if (silent) return
+    const statusText = task.status !== SUSPENDED ? statusTitles[task.status] : textsCap.addedToQueue
+    const header = `${msg.header || task.title}: 
+        ${task.type.startsWith('tx_') ? textsCap.transaction : ''} ${statusText}`
+    const content = !msg.content ? task.description : (
+        !isArr(msg.content) ? msg.content : (
+            <div>
+                {msg.content.filter(Boolean).map((txt, i) => (
+                    <div key={i} style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+                        {txt}
+                    </div>
+                ))}
+            </div>
+        )
+    )
 
-//     try {
-//         _save(LOADING)
-//         const config = setDefaultConfig()
-//         let balance = await query(api.query.balances.freeBalance, senderAddress)
+    setToast({
+        ...msg,
+        content,
+        header,
+        status: task.status === SUSPENDED ? 'basic' : task.status,
+    }, duration, id)
+}
 
-//         _save(LOADING, null, { before: balance }) // save balance
-//         if (balance <= (amount + config.txFeeMin)) return _save(ERROR, textsCap.insufficientBalance)
+/**
+ * @name setToastNSave
+ * @summary display appropriate toast message and do other post-processing (eg: save to history, 
+ *              remove task from queue, start next task in the queue chain)
+ * 
+ * @param {String}  id 
+ * @param {Object}  rootTask 
+ * @param {Object}  task 
+ * @param {String}  status 
+ * @param {Object}  msg 
+ * @param {String}  toastId 
+ * @param {Boolean} silent 
+ * @param {Number}  duration 
+ * @param {*}       resultOrError 
+ * @param {Object}  balance for transactions will store `before` and `after` balances
+ */
+const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, duration, resultOrError, balance) => {
+    const errMsg = status === ERROR ? resultOrError : null
+    const done = [SUCCESS, ERROR].includes(status)
+    const success = status === SUCCESS
+    task.status = status
+    task.errorMessage = isStr(errMsg) ? errMsg : (
+        errMsg instanceof Error ? `${errMsg}` : null
+    )
+    const hasError = status === ERROR && task.errorMessage
+    hasError && msg.content.unshift(task.errorMessage)
+    task.toastId = setMessage(task, msg, duration, toastId, silent)
+    if (balance) {
+        // store account balance before and after TX
+        task.balance = { ...task.balance, ...balance }
+    }
 
-//         console.log('Polkadot: transfer from ', { address: senderAddress, balance })
-//         const result = await transfer(
-//             recipientAddress,
-//             amount,
-//             senderAddress,
-//             null,
-//             api
-//         )
-//         balance = await query(api.query.balances.freeBalance, senderAddress)
-//         _save(SUCCESS, result, { after: balance })
-//     } catch (err) {
-//         _save(ERROR, err)
-//     }
-// }
+    switch (status) {
+        case LOADING:
+            // add to inProgressIds list
+            !inProgressIds.includes(id) && inProgressIds.push(id)
+            break
+        case SUCCESS:
+            // save the result so that @next task can access it if needed
+            task.result = resultOrError
+        case ERROR:
+        default:
+            // remove from inProgressIds list
+            inProgressIds.splice(inProgressIds.indexOf(id), 1)
+
+            break
+    }
+
+    // save progress
+    queue.set(id, rootTask)
+    const { args, argsProcessed, description, errorMessage, func, title, type } = task
+    addToHistory(
+        [QUEUE_TYPES.TX_STORAGE, QUEUE_TYPES.TX_TRANSFER].includes(type) ? task.address : getSelected().address,
+        (type === QUEUE_TYPES.CHATCLIENT ? 'client.' : '') + func,
+        argsProcessed || args,
+        title,
+        description,
+        status,
+        errorMessage,
+        id,
+        task.id,
+        task.balance,
+        task.result
+    )
+
+    if (!done) return
+
+    try {
+        isFn(task.then) && task.then(success, resultOrError)
+    } catch (err) {
+        // ignore any error occured by invoking the `then` function
+        console.log('Unexpected error occured while executing queue .then()', { rootTask })
+        console.error(err)
+    }
+    // execute next only if current task is successful
+    if (success && isObj(task.next)) return _processTask(task.next, id, toastId)
+
+    // delete root item if no error occured
+    queue.delete(id)
+}
 
 // if one or more tasks in progress, warn before user attempts to leave/reload page
 window.addEventListener('beforeunload', function (e) {

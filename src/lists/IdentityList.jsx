@@ -13,7 +13,7 @@ import { useIdentities } from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
 
-const wordsCap = translated({
+const textsCap = translated({
     actions: 'actions',
     business: 'business',
     create: 'create',
@@ -22,21 +22,19 @@ const wordsCap = translated({
     personal: 'personal',
     tags: 'tags',
     usage: 'usage',
+    emptyMessage: 'no matching identity found', // assumes there will always be an itentity
+    lastBackup: 'last backup',
+    showDetails: 'show details',
+    shareIdentityDetails: 'share your identity with other Totem users',
+    txAllocations: 'transaction balance',
+    updateIdentity: 'update your identity',
 }, true)[1]
-const [texts] = translated({
-    emptyMessage: 'No matching identity found', // assumes there will always be an itentity
-    lastBackup: 'Last Backup',
-    showDetails: 'Show details',
-    shareIdentityDetails: 'Share your identity with other Totem users',
-    txAllocations: 'Transaction Balance',
-    updateIdentity: 'Update your identity',
-})
 
 export default function IdentityList(props) {
     const [identities] = useIdentities()
     identities.forEach(identity => {
         const { fileBackupTS, tags = [], usageType } = identity
-        identity._fileBackupTS = format(fileBackupTS) || wordsCap.never
+        identity._fileBackupTS = format(fileBackupTS) || textsCap.never
         identity._tagsStr = tags.join(' ')
         identity._tags = tags.map(tag => (
             <Label
@@ -53,22 +51,22 @@ export default function IdentityList(props) {
                 {tag}
             </Label>
         ))
-        identity._usageType = usageType === 'personal' ? wordsCap.personal : wordsCap.business
+        identity._usageType = usageType === 'personal' ? textsCap.personal : textsCap.business
     })
 
     const tableProps = {
         columns: [
-            { key: 'name', title: wordsCap.name },
-            { collapsing: true, key: '_usageType', title: wordsCap.usage },
+            { key: 'name', title: textsCap.name },
+            { collapsing: true, key: '_usageType', title: textsCap.usage },
             {
                 key: '_tags',
                 draggable: false, // individual tags are draggable
-                title: wordsCap.tags
+                title: textsCap.tags
             },
             {
                 key: '_fileBackupTS',
                 textAlign: 'center',
-                title: texts.lastBackup
+                title: textsCap.lastBackup
             },
             {
                 collapsing: true,
@@ -76,54 +74,48 @@ export default function IdentityList(props) {
                 draggable: false,
                 key: '_balance',
                 textAlign: 'center',
-                title: texts.txAllocations,
+                title: textsCap.txAllocations,
             },
             {
                 collapsing: true,
-                content: identity => (
-                    [
-                        {
-                            icon: 'share',
-                            onClick: () => showForm(IdentityShareForm, {
-                                inputsDisabled: ['address'],
-                                includeOwnIdentities: true,
-                                includePartners: false,
-                                size: 'tiny',
-                                values: {
-                                    address: identity.address,
-                                    name: identity.name,
-                                },
-                            }),
-                            title: texts.shareIdentityDetails,
-                        },
-                        {
-                            icon: 'eye',
-                            onClick: () => showForm(IdentityDetailsForm, { values: identity }),
-                            title: texts.showDetails,
-                        },
-                        {
-                            icon: 'pencil',
-                            onClick: () => showForm(IdentityForm, { values: identity }),
-                            title: texts.updateIdentity,
-                        },
-                    ].map(props => <Button {...props} key={props.title} />)
-                ),
+                content: identity => ([
+                    {
+                        icon: 'share',
+                        onClick: () => showForm(IdentityShareForm, {
+                            inputsDisabled: ['address'],
+                            includeOwnIdentities: true,
+                            includePartners: false,
+                            size: 'tiny',
+                            values: {
+                                address: identity.address,
+                                name: identity.name,
+                            },
+                        }),
+                        title: textsCap.shareIdentityDetails,
+                    },
+                    {
+                        icon: 'eye',
+                        onClick: () => showForm(IdentityDetailsForm, { values: identity }),
+                        title: textsCap.showDetails,
+                    },
+                    {
+                        icon: 'pencil',
+                        onClick: () => showForm(IdentityForm, { values: identity }),
+                        title: textsCap.updateIdentity,
+                    },
+                ].map(props => <Button {...props} key={props.title} />)),
                 draggable: false,
-                title: wordsCap.actions
+                title: textsCap.actions
             }
         ],
         data: identities,
-        emptyMessage: {
-            content: texts.emptyMessage
-        },
+        emptyMessage: { content: textsCap.emptyMessage },
         searchExtraKeys: ['address', '_tagsStr'],
-        topLeftMenu: [
-            {
-                content: wordsCap.create,
-                icon: 'plus',
-                onClick: () => showForm(IdentityForm)
-            }
-        ]
+        topLeftMenu: [{
+            content: textsCap.create,
+            icon: 'plus',
+            onClick: () => showForm(IdentityForm)
+        }]
     }
 
     return <DataTable {...{ ...props, ...tableProps }} />

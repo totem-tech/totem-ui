@@ -15,7 +15,7 @@ import TransferForm from '../forms/Transfer'
 import UtilitiesView from '../views/UtilitiesView'
 // temp
 import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
-import EventList from '../modules/Event/EventList'
+import EventList from '../modules/event/EventList'
 // utils
 import DataStorage from '../utils/DataStorage'
 import { isBool, isBond } from '../utils/utils'
