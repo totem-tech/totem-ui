@@ -77,90 +77,78 @@ export default function useTasks(types, address, timeout = 5000) {
         }
 
         const setError = err => setMessage({ ...errorMsg, content: `${err}` })
-        const handleOrdersCb = (taskIds2d, uniqueTaskIds, types) => async (orders, ordersOrg) => {
+        const handleOrdersCb = (taskIds2d, uniqueTaskIds, detailsMap, types) => async (orders, ordersOrg) => {
             if (!mounted) return
-            let uniqueTasks = new Map()
-            // older orders can be invalid and have null value
-            orders.forEach((order, index) => {
-                // order can be null if storage has changed
-                const taskId = uniqueTaskIds[index]
-                let amountXTX = 0
-                if (order) {
+            try {
+                let uniqueTasks = new Map()
+                orders.forEach((order, index) => {
+                    const taskId = uniqueTaskIds[index]
+                    let amountXTX = 0
+                    let {
+                        approvalStatus,
+                        fulfiller,
+                        // order can be null if storage has changed, in that case, use inaccessible status
+                        orderStatus = statuses.inaccessible,
+                        owner,
+                    } = order || {}
                     try {
-                        amountXTX = ordersOrg[index].value.get('amountXTX').toNumber()
+                        amountXTX = !order ? 0 : ordersOrg[index].value.get('amountXTX').toNumber()
                     } catch (err) {
+                        // ignore error. should only happen when amountXTX is messed up due to blockchain storage reset
                         console.log('AmontXTX parse error', err)
                     }
-                }
-                let {
-                    approvalStatus,
-                    fulfiller,
-                    orderStatus,
-                    owner,
-                } = order || {
-                    orderStatus: statuses.inaccessible,
-                    approvalStatus: approvalStatuses.rejected,
-                }
-                const task = {
-                    ...order,
-                    amountXTX,
-                    allowEdit: orderStatus === statuses.submitted && approvalStatuses.pendingApproval,
-                    // pre-process values for use with DataTable
-                    _approvalStatus: approvalStatusNames[approvalStatus],
-                    _orderStatus: statusNames[orderStatus],
-                    _taskId: taskId,
-                    _fulfiller: getAddressName(fulfiller),
-                    _owner: getAddressName(owner),
-                }
-                uniqueTasks.set(taskId, task)
-            })
-
-            const promise = PromisE.timeout(query.getDetailsByTaskIds(uniqueTaskIds), timeout / 2)
-            // add title description etc retrieved from Messaging Service
-            const addDetails = (detailsMap) => {
-                if (!mounted) return
-                Array.from(uniqueTasks).forEach(([taskId, task]) => {
-                    const taskDetails = detailsMap.get(taskId) || {
-                        description: '',
-                        publish: 0,
-                        title: '',
-                        tags: [],
+                    const _owner = getAddressName(owner)
+                    const task = {
+                        ...order,
+                        amountXTX,
+                        allowEdit: orderStatus === statuses.submitted
+                            && approvalStatus == approvalStatuses.pendingApproval,
+                        // pre-process values for use with DataTable
+                        _approvalStatus: approvalStatusNames[approvalStatus],
+                        _orderStatus: statusNames[orderStatus],
+                        _taskId: taskId,
+                        _fulfiller: fulfiller === owner ? _owner : getAddressName(fulfiller),
+                        _owner,
                     }
-                    const combined = objCopy(task, taskDetails)
-                    uniqueTasks.set(taskId, combined)
+                    uniqueTasks.set(taskId, task)
                 })
-                // construct separate lists for each type
-                const allTasks = new Map()
-                const cacheableAr = types.map((type, i) => {
-                    const ids = taskIds2d[i]
-                    const typeTasks = ids.map(id => [id, uniqueTasks.get(id)])
-                    allTasks.set(type, new Map(typeTasks))
-                    return [type, typeTasks]
-                })
-                done = true
-                setCache(address, cacheableAr)
-                setMessage(null)
-                setTasks(allTasks)
-            }
 
-            // on receive update tasks lists
-            promise.promise.then(addDetails)
-            // if times out or fails update component without title, desc etc
-            promise.catch(() => addDetails(new Map()))
+                let newTasks = new Map()
+                types.map((type, i) => {
+                    const typeTaskIds = taskIds2d[i]
+                    const typeTasks = new Map(
+                        typeTaskIds.map(id => [id, uniqueTasks.get(id)])
+                    )
+                    newTasks.set(type, typeTasks)
+                })
+                newTasks = addDetails(address, newTasks, detailsMap, uniqueTaskIds)
+                done = true
+                setMessage(null)
+                setTasks(newTasks)
+            } catch (err) {
+                setError(err)
+            }
         }
         const handleTaskIds = async (taskIds2d) => {
             if (!mounted) return
-            unsubscribers.tasks && unsubscribers.tasks()
-            // create single list of unique Task IDs
-            const uniqueTaskIds = arrUnique(taskIds2d.flat())
-            query.orders(
-                uniqueTaskIds,
-                handleOrdersCb(taskIds2d, uniqueTaskIds, types),
-                true,
-            ).then(
-                fn => unsubscribers.tasks = fn,
-                setError
-            )
+            try {
+                unsubscribers.tasks && unsubscribers.tasks()
+                // create single list of unique Task IDs
+                const uniqueTaskIds = arrUnique(taskIds2d.flat())
+                const detailsMap = await query.getDetailsByTaskIds(uniqueTaskIds)
+                unsubscribers.tasks = await query.orders(
+                    uniqueTaskIds,
+                    handleOrdersCb(
+                        taskIds2d,
+                        uniqueTaskIds,
+                        detailsMap,
+                        types,
+                    ),
+                    true,
+                )
+            } catch (err) {
+                setError(err)
+            }
         }
 
         // load cached items if items are not loaded within timeout duration
@@ -184,33 +172,46 @@ export default function useTasks(types, address, timeout = 5000) {
 
 
     useEffect(() => {
+        // listend for changes in rxUpdated and update task details from messaging service
         const subscribed = rxUpdater.subscribe(async (taskIds) => {
             if (!taskIds || !taskIds.length) return
+            let msg = null
+            let newTasks = null
             try {
                 const detailsMap = await query.getDetailsByTaskIds(taskIds)
-                if (!detailsMap.size) return
-                const newTasks = new Map()
-                const cacheableAr = Array.from(tasks).map(([type, typeTasks = new Map()]) => {
-                    taskIds.forEach(id => {
-                        let task = typeTasks.get(id)
-                        if (!task) return
-                        task = objCopy(detailsMap.get(id) || {}, task)
-                        typeTasks.set(id, task)
-                    })
-                    // tasks.set(type, typeTasks)
-                    newTasks.set(type, typeTasks)
-                    return [type, Array.from(typeTasks)]
-                })
-                setCache(address, cacheableAr)
-                setMessage(null)
-                setTasks(newTasks)
+                newTasks = addDetails(address, tasks, detailsMap, taskIds)
             } catch (err) {
                 //ignore error
-                console.log({ err })
+                console.error(err)
+                msg = {
+                    content: `${err}`,
+                    showIcon: true,
+                    status: 'error',
+                }
             }
+            setMessage(msg)
+            newTasks && setTasks(newTasks)
         })
         return () => subscribed.unsubscribe()
-    }, [tasks, setTasks])
+    }, [address, tasks, setTasks])
 
     return [tasks, message]
+}
+
+const addDetails = (address, tasks, detailsMap, uniqueTaskIds, save = true) => {
+    if (!detailsMap.size) return
+    const newTasks = new Map()
+    const cacheableAr = Array.from(tasks).map(([type, typeTasks = new Map()]) => {
+        uniqueTaskIds.forEach(id => {
+            let task = typeTasks.get(id)
+            if (!task) return
+            task = objCopy(detailsMap.get(id) || {}, task)
+            typeTasks.set(id, task)
+        })
+        // tasks.set(type, typeTasks)
+        newTasks.set(type, typeTasks)
+        return [type, Array.from(typeTasks)]
+    })
+    save && setCache(address, cacheableAr)
+    return newTasks
 }
