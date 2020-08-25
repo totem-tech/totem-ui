@@ -352,6 +352,8 @@ export const fillValues = (inputs, values, forceFill) => {
         if (!isBond(bond)) return
         setTimeout(() => bond.changed(newValue))
     })
+
+    return inputs
 }
 
 export const resetValues = (inputs = []) => inputs.map(input => {

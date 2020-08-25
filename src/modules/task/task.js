@@ -45,20 +45,21 @@ export const statuses = {
 export const statusNames = {
     // used for tasks that are no longer available in the Blockchain storage
     '-1': textsCap.inaccessible,
-    '0': textsCap.submitted,
-    '1': textsCap.accepted,
-    '2': textsCap.rejected,
-    '3': textsCap.disputed,
-    '4': textsCap.blocked,
-    '5': textsCap.invoiced,
-    '6': textsCap.completed,
+    0: textsCap.submitted,
+    1: textsCap.accepted,
+    2: textsCap.rejected,
+    3: textsCap.disputed,
+    4: textsCap.blocked,
+    5: textsCap.invoiced,
+    6: textsCap.completed,
 }
 /**
  * @name    rwCache
  * @summary read/write to cache storage 
- * @param   {String} key 
- * @param   {*} value (optional) if undefined will only return existing cache.
- *                  If `null`, will clear cache.
+ * 
+ * @param   {String}    key 
+ * @param   {*}         value (optional) if undefined will only return existing cache.
+ *                          If `null`, will clear cache for the suppiled @key.
  * @returns {Map}
  */
 export const rwCache = (key, value) => storage.cache(MODULE_KEY, key, value)
@@ -117,11 +118,6 @@ export const query = {
         multi,
     ),
 }
-
-// Create/update task order (queue-able object)
-//
-// Params:
-// @addrOrigin
 export const queueables = {
     /**
      * @name accept
