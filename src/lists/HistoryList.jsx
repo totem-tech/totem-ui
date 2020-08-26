@@ -34,6 +34,7 @@ const textsCap = translated({
     identity: 'identity',
     message: 'message',
     pendingExecution: 'pending execution',
+    remove: 'remove',
     removeConfirmContent: `
         WARNING: selected item has not completed execution.
         If the execution has already started, removing it from here WILL NOT be able to stop it.
@@ -122,6 +123,7 @@ export default class HistoryList extends Component {
                                     content: textsCap.removeConfirmContent,
                                     header: textsCap.removeConfirmHeader,
                                     onConfirm: remove,
+                                    confirmButton: <Button negative content={textsCap.remove} />
                                 })
                             },
                             title: textsCap.delete,
