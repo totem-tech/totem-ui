@@ -317,7 +317,7 @@ input[readonly] {
  */
 #app.inverted #main-content.inverted {
 	background: #2e2d2d;
-	color: white,
+	color: white;
 }
 /* anything inside the #main-content with .inverted class */
 #app.inverted #main-content .inverted,

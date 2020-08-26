@@ -193,8 +193,7 @@ class TaskList extends Component {
     }
 
     getActions = (task, taskId) => [
-        this.isOwner && {
-            disabled: !task.allowEdit,
+        this.isOwner && task.allowEdit && {
             icon: 'pencil',
             onClick: () => showForm(TaskForm, { taskId, values: task }),
             title: textsCap.update,
@@ -233,6 +232,7 @@ class TaskList extends Component {
     }
 
     handleApprove = (taskId, approve = true) => {
+        // not necessary for now
         return toBeImplemented()
     }
 

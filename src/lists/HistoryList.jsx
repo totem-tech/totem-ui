@@ -5,11 +5,17 @@ import FormBuilder from '../components/FormBuilder'
 import { format } from '../utils/time'
 import { clearClutter, isValidNumber, isObj, isDefined } from '../utils/utils'
 // services
-import { bond, clearAll, getAll, remove } from '../services/history'
+import { bond, clearAll, getAll, remove as removeHistoryItem } from '../services/history'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import { getAddressName } from '../services/partner'
-import { statusTitles } from '../services/queue'
+import {
+    getById as getQueueItemById,
+    remove as removeQueueItem,
+    statuses,
+    statusTitles,
+    checkComplete,
+} from '../services/queue'
 
 const textsCap = translated({
     action: 'action',
@@ -28,6 +34,14 @@ const textsCap = translated({
     identity: 'identity',
     message: 'message',
     pendingExecution: 'pending execution',
+    removeConfirmContent: `
+        WARNING: selected item has not completed execution.
+        If the execution has already started, removing it from here WILL NOT be able to stop it.
+        It may show up again if the task execution is completed before page reload.
+        However, if the execution has not started yet or is stuck, 
+        revoming will prevent it from being executed again on page reload.
+    `,
+    removeConfirmHeader: 'remove unfinished queue item?',
     status: 'status',
     taskId: 'Task ID',
     techDetails: 'technical details',
@@ -47,13 +61,23 @@ export default class HistoryList extends Component {
             columns: [
                 {
                     collapsing: true,
-                    content: ({ icon, status }) => (
-                        <Icon
-                            className='no-margin'
-                            loading={status === 'loading'}
-                            name={status === 'loading' ? 'spinner' : icon || 'history'}
-                        />
-                    ),
+                    content: ({ icon, status }) => {
+                        const iconPrpos = {
+                            className: 'no-margin',
+                            name: icon || history,
+                            loading: false
+                        }
+                        switch (status) {
+                            case statuses.LOADING:
+                                iconPrpos.name = 'spinner'
+                                iconPrpos.loading = true
+                                break
+                            case statuses.SUSPENDED:
+                                iconPrpos.name = 'pause'
+                                break
+                        }
+                        return <Icon {...iconPrpos} />
+                    },
                     title: '',
                 },
                 {
@@ -85,7 +109,21 @@ export default class HistoryList extends Component {
                     content: (item, id) => [
                         {
                             icon: 'close',
-                            onClick: () => remove(id),
+                            onClick: () => {
+                                const { groupId } = item
+                                const remove = () => {
+                                    removeHistoryItem(id)
+                                    removeQueueItem(groupId)
+                                }
+                                const rootTask = getQueueItemById(groupId)
+                                const isComplete = checkComplete(rootTask)
+                                if (isComplete) return remove()
+                                confirm({
+                                    content: textsCap.removeConfirmContent,
+                                    header: textsCap.removeConfirmHeader,
+                                    onConfirm: remove,
+                                })
+                            },
                             title: textsCap.delete,
                         },
                         {
@@ -122,7 +160,7 @@ export default class HistoryList extends Component {
             topRightMenu: [{
                 content: textsCap.delete,
                 icon: 'close',
-                onClick: ids => ids.forEach(remove)
+                onClick: ids => ids.forEach(removeHistoryItem)
             }]
         }
     }
@@ -166,8 +204,8 @@ export default class HistoryList extends Component {
             // user's identity that was used to create the transaction
             item.identity && [textsCap.identity, item._identity],
             [textsCap.timestamp, item._timestamp],
-            [textsCap.groupId, item.groupId],
-            [textsCap.taskId, id],
+            // [textsCap.groupId, item.groupId],
+            // [textsCap.taskId, id],
             isValidNumber(before) && [textsCap.balanceBeforeTx, before, 'number', balanceExtProps],
             isValidNumber(after) && [textsCap.balanceAfterTx, after, 'number', balanceExtProps],
             [textsCap.dataSent, JSON.stringify(item.data, null, 4), 'textarea'],

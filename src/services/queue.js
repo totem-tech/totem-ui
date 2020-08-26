@@ -42,21 +42,7 @@ const textsCap = translated({
     txTransferMissingArgs: `one or more of the following arguments is missing or invalid: 
         sender identity, recipient identity and amount`,
 }, true)[1]
-export const statusTitles = {
-    error: textsCap.error,
-    loading: textsCap.inProgress,
-    success: textsCap.successful,
-    suspended: textsCap.suspended,
-}
 const queue = new DataStorage('totem_queue-data', false)
-export const QUEUE_TYPES = Object.freeze({
-    CHATCLIENT: 'chatclient',
-    BLOCKCHAIN: 'blockchain', // deprecated
-    // transaction to transfer funds
-    TX_TRANSFER: 'tx_transfer', // deprecated
-    // transaction to create/update storage data
-    TX_STORAGE: 'tx_storage',
-})
 /* Queue statuses */
 // indicates task failed
 const ERROR = 'error'
@@ -73,6 +59,27 @@ const inProgressIds = []
 // list of queue root task ids of which execution is suspended due to browser being offline
 // will reattempt when back online.
 const suspendedIds = []
+export const QUEUE_TYPES = Object.freeze({
+    CHATCLIENT: 'chatclient',
+    BLOCKCHAIN: 'blockchain', // deprecated
+    // transaction to transfer funds
+    TX_TRANSFER: 'tx_transfer', // deprecated
+    // transaction to create/update storage data
+    TX_STORAGE: 'tx_storage',
+})
+export const statuses = Object.freeze({
+    ERROR: ERROR,
+    LOADING: LOADING,
+    SUCCESS: SUCCESS,
+    SUSPENDED: SUSPENDED,
+})
+// translated version of the statuses
+export const statusTitles = Object.freeze({
+    error: textsCap.error,
+    loading: textsCap.inProgress,
+    success: textsCap.successful,
+    suspended: textsCap.suspended,
+})
 // Properties accepted in a queue item. Items not marked as optional or internal should be supplied for task execution.
 const VALID_KEYS = Object.freeze([
     // @address         string: (optional) address/identity to initiate a transaction with.
@@ -262,6 +269,22 @@ export const addToQueue = (queueItem, id = uuid.v1(), toastId = uuid.v1()) => {
 }
 
 /**
+ * @name    checkComplete
+ * @summary check if queue chain has finished execution
+ * 
+ * @param   {Object} queuedTask 
+ * 
+ * @returns {Boolean}
+ */
+export const checkComplete = queuedTask => {
+    if (!queuedTask) return true
+    const { next, status } = queuedTask
+    const isComplete = [statuses.ERROR, statuses.SUCCESS].includes(status)
+    const hasChild = isObj(next) && !!next.func && Object.values(QUEUE_TYPES).includes(next.type)
+    return !hasChild ? isComplete : checkComplete(next)
+}
+
+/**
  * @name    checkTxStatus
  * @summary check status of a transaction by TxId
  * 
@@ -272,7 +295,7 @@ export const addToQueue = (queueItem, id = uuid.v1(), toastId = uuid.v1()) => {
  * 
  * @returns {Boolean|Null}  null if transaction ID doesn't exist
  */
-const checkTxStatus = async (api, txId, allowWait = true, waitBlocks = 3) => {
+export const checkTxStatus = async (api, txId, allowWait = true, waitBlocks = 3) => {
     if (!txId) return null
     let blockNum = 0
     let diff = 0
@@ -307,12 +330,22 @@ const checkTxStatus = async (api, txId, allowWait = true, waitBlocks = 3) => {
 }
 
 /**
+ * @name    getById
+ * @summary get queue item by ID
+ * 
+ * @param   {String} id 
+ * 
+ * @returns {Object} queued task
+ */
+export const getById = id => queue.get(id)
+
+/**
  * @name handleChatClient
  * @summary handles queued task with request (both read and write) to the messaging service
  * 
  * @param {String} id 
- * @param {Object} rootTask 
- * @param {Object} task 
+ * @param {Object} rootTask first task in a chain
+ * @param {Object} task queued task to execute. can be the same as @rootTask if only one task in the chain.
  * @param {String} toastId 
  */
 const handleChatClient = async (id, rootTask, task, toastId) => {
@@ -354,18 +387,19 @@ const handleChatClient = async (id, rootTask, task, toastId) => {
 }
 
 /**
- * @name handleTx
+ * @name    handleTx
  * @summary handles queued tasks with a Blockchain transaction
  * 
- * @param {String} id 
- * @param {Object} rootTask 
- * @param {Object} task 
- * @param {String} toastId 
+ * @param   {String} id 
+ * @param   {Object} rootTask 
+ * @param   {Object} task 
+ * @param   {String} toastId 
  */
 const handleTx = async (id, rootTask, task, toastId) => {
     if (!isValidNumber(task.amountXTX)) {
         task.amountXTX = 0
     }
+    let api
     const { address, amountXTX, args, description, func, silent, title, toastDuration, txId } = task
     const identity = findIdentity(address)
     const msg = {
@@ -387,7 +421,6 @@ const handleTx = async (id, rootTask, task, toastId) => {
         console.log('Queue task execution suspended due to being offline. ID:', id)
         return
     }
-    let api
     try {
         _save(LOADING)
         const { api: apiX, keyring } = await getConnection()
@@ -439,11 +472,11 @@ const handleTx = async (id, rootTask, task, toastId) => {
 }
 
 /**
- * @name processArgs
+ * @name    processArgs
  * @summary process `args` for a task to extract any dynamic values. If task does not contain any dynamic arguments,
  *              will return empty array.
- * @param {Object} rootTask 
- * @param {Object} currentTask 
+ * @param   {Object} rootTask 
+ * @param   {Object} currentTask 
  * 
  * @returns {Array} [errorMsg, processedArgs]
  */
@@ -484,11 +517,29 @@ const processArgs = (rootTask = {}, currentTask = {}) => {
 }
 
 /**
+ * @name remove
+ * @summary remove queued item. Entire chain will be removed.
+ * 
+ * @param {String} id ID of the rootTask
+ */
+export const remove = id => {
+    // remove from inprogressIds
+    let index = inProgressIds.indexOf(id)
+    if (index >= 0) inProgressIds.splice(index, 1)
+    // remove from suspended
+    index = suspendedIds.indexOf(id)
+    if (index >= 0) suspendedIds.splice(index)
+
+    // remove from queue
+    queue.delete(id)
+}
+
+/**
  * @name resumeQueue
  * @summary resume execution of queued tasks that are incomplete, partially complete or never started.
  */
 export const resumeQueue = () => queue.map(([id, task]) => {
-    if (!navigator.onLine) return suspendedIds.push(id)
+    // if (!navigator.onLine) return suspendedIds.push(id)
     _processTask(task, id, task.toastId, true)
 })
 
@@ -546,14 +597,18 @@ const setMessage = (task, msg = {}, duration, id, silent = false) => {
 const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, duration, resultOrError, balance) => {
     const errMsg = status === ERROR ? resultOrError : null
     const done = [SUCCESS, ERROR].includes(status)
-    const success = status === SUCCESS
+    const isSuccess = status === SUCCESS
+    const isSuspended = status === SUSPENDED
     task.status = status
     task.errorMessage = isStr(errMsg) ? errMsg : (
         errMsg instanceof Error ? `${errMsg}` : null
     )
     const hasError = status === ERROR && task.errorMessage
     hasError && msg.content.unshift(task.errorMessage)
-    task.toastId = setMessage(task, msg, duration, toastId, silent)
+    if (!isSuspended) {
+        // no need to display toast if status is suspended
+        task.toastId = setMessage(task, msg, duration, toastId, silent)
+    }
     if (balance) {
         // store account balance before and after TX
         task.balance = { ...task.balance, ...balance }
@@ -571,7 +626,6 @@ const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, du
         default:
             // remove from inProgressIds list
             inProgressIds.splice(inProgressIds.indexOf(id), 1)
-
             break
     }
 
@@ -595,14 +649,14 @@ const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, du
     if (!done) return
 
     try {
-        isFn(task.then) && task.then(success, resultOrError)
+        isFn(task.then) && task.then(isSuccess, resultOrError)
     } catch (err) {
         // ignore any error occured by invoking the `then` function
         console.log('Unexpected error occured while executing queue .then()', { rootTask })
         console.error(err)
     }
     // execute next only if current task is successful
-    if (success && isObj(task.next)) return _processTask(task.next, id, toastId)
+    if (isSuccess && isObj(task.next)) return _processTask(task.next, id, toastId)
 
     // delete root item if no error occured
     queue.delete(id)
