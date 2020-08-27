@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Subject } from 'rxjs'
-import { isFn, arrUnique, objCopy } from '../../utils/utils'
+import { isFn, arrUnique, objCopy, isMap } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 // services
 import { translated } from '../../services/language'
@@ -199,7 +199,7 @@ export default function useTasks(types, address, timeout = 5000) {
 }
 
 const addDetails = (address, tasks, detailsMap, uniqueTaskIds, save = true) => {
-    if (!detailsMap.size) return
+    if (!detailsMap.size || !isMap(tasks)) return
     const newTasks = new Map()
     const cacheableAr = Array.from(tasks).map(([type, typeTasks = new Map()]) => {
         uniqueTaskIds.forEach(id => {

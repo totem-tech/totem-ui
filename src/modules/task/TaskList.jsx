@@ -11,7 +11,7 @@ import { translated } from '../../services/language'
 import { showForm, confirm } from '../../services/modal'
 import { FormInput } from '../../components/FormInput'
 import { getSelected } from '../../services/identity'
-import { approvalStatuses, queueables, statuses } from './task'
+import task, { approvalStatuses, queueables, statuses } from './task'
 import { ButtonAcceptOrReject } from '../../components/buttons'
 import { addToQueue } from '../../services/queue'
 import { isArr } from '../../utils/utils'
@@ -216,7 +216,7 @@ class TaskList extends Component {
                 { ...tempCache.get(taskId), acceptInProgress: true },
             )
             const queueProps = queueables.accept(this.selectedAddress, taskId, accept, {
-                description: taskId,
+                description: task.title,
                 title: accept ? textsCap.acceptTask : textsCap.rejectTask,
                 then: () => {
                     tempCache.set(taskId, {

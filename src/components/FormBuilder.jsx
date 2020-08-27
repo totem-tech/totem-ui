@@ -172,7 +172,8 @@ export default class FormBuilder extends Component {
             isFn(onClose) && onClose({}, {})
         }
         msg = sMsg || msg
-        const message = { ...msg, style: { margin: modal ? 0 : 15, ...(msg || {}).style } }
+        const msgStyle = { ...(modal ? styles.messageModal : styles.messageInline), ...(msg || {}).style }
+        const message = { ...msg, style: msgStyle }
         let submitBtn, closeBtn
         const shouldDisable = submitDisabled || success || isFormInvalid(inputs, values)
         submitText = !isFn(submitText) ? submitText : submitText(values, shouldDisable)
@@ -229,7 +230,7 @@ export default class FormBuilder extends Component {
                 size={size}
                 trigger={trigger}
             >
-                <div style={styles.closeButton}>
+                <div className='modal-close' style={styles.closeButton}>
                     <Icon
                         className="no-margin"
                         color="grey"
@@ -430,8 +431,13 @@ const styles = {
         top: 15,
         right: 15
     },
-    formMessage: {
-        margin: 1
+    messageInline: {
+        margin: 15,
+    },
+    messageModal: {
+        margin: 0,
+        borderTopLeftRadius: 0,
+        borderTopRightRadius: 0,
     },
     header: {
         textTransform: 'capitalize',

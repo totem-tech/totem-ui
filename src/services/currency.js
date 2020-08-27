@@ -62,7 +62,6 @@ export const updateCurrencies = async () => {
         const hash = generateHash(sortedArr)
         const currencyPromise = client.currencyList.promise(hash)
         const handleCurrencies = async (currencies) => {
-            console.log({ currencies })
             if (currencies.length === 0) return
             currencies.forEach(x => {
                 x.nameInLanguage = x.nameInLanguage || x.currency
@@ -70,7 +69,7 @@ export const updateCurrencies = async () => {
             })
             rwCache('currencies', arrSort(currencies, 'ISO'))
             lastUpdated = new Date()
-            console.log({ currencies })
+            console.log('Currency list updated', currencies)
         }
         currencyPromise.then(handleCurrencies)
 

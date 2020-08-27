@@ -35,14 +35,16 @@ const textsCap = translated({
     message: 'message',
     pendingExecution: 'pending execution',
     remove: 'remove',
-    removeConfirmContent: `
+    removeWarning: `
         WARNING: selected item has not completed execution.
         If the execution has already started, removing it from here WILL NOT be able to stop it.
-        It may show up again if the task execution is completed before page reload.
+        It may show up again if the task execution is completed before is page reloaded.
         However, if the execution has not started yet or is stuck, 
         revoming will prevent it from being executed again on page reload.
     `,
+    removeWarning2: 'You will not be able to recover this history item once removed.',
     removeConfirmHeader: 'remove unfinished queue item?',
+    removeConfirmHeader2: 'Are you sure?',
     status: 'status',
     taskId: 'Task ID',
     techDetails: 'technical details',
@@ -83,7 +85,8 @@ export default class HistoryList extends Component {
                 },
                 {
                     collapsing: true,
-                    key: '_timestamp',
+                    content: ({ timestamp }) => format(timestamp, true),
+                    key: 'timestamp',
                     title: textsCap.executionTime,
                 },
                 {
@@ -112,18 +115,17 @@ export default class HistoryList extends Component {
                             icon: 'close',
                             onClick: () => {
                                 const { groupId } = item
-                                const remove = () => {
-                                    removeHistoryItem(id)
-                                    removeQueueItem(groupId)
-                                }
                                 const rootTask = getQueueItemById(groupId)
                                 const isComplete = checkComplete(rootTask)
-                                if (isComplete) return remove()
                                 confirm({
-                                    content: textsCap.removeConfirmContent,
-                                    header: textsCap.removeConfirmHeader,
-                                    onConfirm: remove,
-                                    confirmButton: <Button negative content={textsCap.remove} />
+                                    content: !isComplete ? textsCap.removeWarning : textsCap.removeWarning2,
+                                    header: !isComplete ? textsCap.removeConfirmHeader : textsCap.removeConfirmHeader2,
+                                    onConfirm: () => {
+                                        removeHistoryItem(id)
+                                        removeQueueItem(groupId)
+                                    },
+                                    confirmButton: <Button negative content={textsCap.remove} />,
+                                    size: 'tiny',
                                 })
                             },
                             title: textsCap.delete,
@@ -140,7 +142,7 @@ export default class HistoryList extends Component {
                 },
             ],
             data: new Map(),
-            defaultSort: '_timestamp',
+            defaultSort: 'timestamp',
             defaultSortAsc: false, // latest first
             rowProps: ({ status }) => ({
                 negative: status === 'error',
@@ -176,8 +178,6 @@ export default class HistoryList extends Component {
                 item.message = clearClutter(item.message || '')
                 // add identity name if available
                 item._identity = getAddressName(item.identity)
-                // Make time more human friendly
-                item._timestamp = format(item.timestamp)
             })
             this.setState({ data })
         })
@@ -205,7 +205,7 @@ export default class HistoryList extends Component {
             [textsCap.function, item.action],
             // user's identity that was used to create the transaction
             item.identity && [textsCap.identity, item._identity],
-            [textsCap.timestamp, item._timestamp],
+            [textsCap.timestamp, format(item.timestamp, true, true)],
             // [textsCap.groupId, item.groupId],
             // [textsCap.taskId, id],
             isValidNumber(before) && [textsCap.balanceBeforeTx, before, 'number', balanceExtProps],

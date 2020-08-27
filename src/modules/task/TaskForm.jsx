@@ -70,7 +70,7 @@ const textsCap = translated({
     services: 'services',
     submitFailed: 'failed to create task',
     submitSuccess: 'task created successfully',
-    saveOffChainData: 'save off-chain data using BONSAI',
+    saveOffChainData: 'save off-chain data',
     tags: 'categorise with tags',
     tagsNoResultMsg: 'type tag and press ENTER to add',
     tagsPlaceholder: 'enter tags',
@@ -594,7 +594,8 @@ export default class TaskForm extends Component {
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'task',
             then: thenCb(true),
-            description: textsCap.saveOffChainData,
+            title: textsCap.saveOffChainData,
+            description: title,
             args: [
                 taskId || {
                     // need to process tx result (events' data) to get the taskId

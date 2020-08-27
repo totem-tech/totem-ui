@@ -136,7 +136,7 @@ export const queueables = {
                 accept ? statuses.accepted : statuses.rejected,
                 txId,
             ],
-            func: 'api.tx.orders.handleSpfso',
+            func: 'api.tx.orders.handleSpfsoTest',
             txId,
             type: TX_STORAGE,
         }

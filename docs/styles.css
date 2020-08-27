@@ -342,10 +342,17 @@ input[readonly] {
     border: 1px solid #505050;
 }
 /* Modals */
-body .modals .ui.modal.inverted > *:not(.message),
+body .modal.inverted { border-radius: 6px;}
+body .modals .ui.modal.inverted > .content,
 body .modals .ui.modal.inverted .accordion, 
 body .modals .ui.modal.inverted .accordion > * {
 	background: #464646;
+	color: white;
+}
+body .modals .ui.modal.inverted > .modal-close,
+body .modals .ui.modal.inverted > .header,
+body .modals .ui.modal.inverted > .actions {
+	background: #2e2d2d;
 	color: white;
 }
 
