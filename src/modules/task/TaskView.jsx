@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import uuid from 'uuid'
 import { Menu, Tab } from 'semantic-ui-react'
 import Message from '../../components/Message'
 import Text from '../../components/Text'
@@ -9,10 +8,9 @@ import { translated } from '../../services/language'
 import useTasks from './useTasks'
 import { rwSettings } from './task'
 import { useInverted } from '../../services/window'
-import { className } from '../../utils/utils'
 
 const textsCap = translated({
-    approver: 'to approver',
+    approver: 'to approve',
     approverDesc: 'tasks you have been assigned as approver',
     beneficiary: 'tasks ToDo',
     beneficiaryDesc: 'tasks assigned to you',

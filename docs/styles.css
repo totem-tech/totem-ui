@@ -355,6 +355,9 @@ body .modals .ui.modal.inverted > .actions {
 	background: #2e2d2d;
 	color: white;
 }
+body .ui.form.inverted.loading::before {
+    background: rgba(90, 90, 90, 0.8);
+}
 
 /* Form loading backshadow when inverted */
 .ui.modals.invert .ui.inverted.loading.form:before{
@@ -363,4 +366,10 @@ body .modals .ui.modal.inverted > .actions {
 /* Form loading spinner when inverted */
 .ui.modals.invert .ui.inverted.loading.form:after{
 	border-color: white rgba(0,0,0,.1) rgba(0,0,0,.1) rgba(0,0,0,.1);
+}
+
+/* Semantic UI Steps (not built-in inverted!!)*/
+#app.inverted .ui.fluid.ordered.steps * {
+    background: #4c4c4c;
+    color: white;
 }

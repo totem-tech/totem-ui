@@ -21,6 +21,7 @@ const textsCap = translated({
  *                  ]
  */
 export default function useLedgerAcBalances(address, timeout = 10000) {
+    address = '5HTEjyF76N1dmKbg97kGdxSD48ntTHpXS54bc8CDNHLC46xn'
     const [result, setResult] = useState()
     const [message, setMessage] = useState()
 
