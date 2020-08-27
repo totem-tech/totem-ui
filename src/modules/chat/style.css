@@ -86,7 +86,7 @@ button.dark-grey .icon,
 }
 .chat-container .inbox-list .tools .actions button {
     /* color: #075d6a !important; */
-    color: #434446 !important;
+    color: #434446;
     border: none;
     border-radius: 0;
     text-align: left;

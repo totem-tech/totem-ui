@@ -156,6 +156,62 @@ export const queueables = {
             type: TX_STORAGE,
         }
     },
+    createPo: (
+        owner,
+        approver,
+        fulfiller,
+        isSell, // 0 = buy, 1 = open
+        amountXTX,
+        isClosed, // false = open, true = closed
+        orderType = 0, // 0: service order, 1: inventory order, 2: asset order extensible
+        deadline, // must be equal or higher than `currentBlockNumber + 11520` blocks. 
+        dueDate, // must be equal or higher than deadline
+        taskId, // (optional) determines whether to create or update a record
+        token, // BONSAI token hash
+        queueProps,
+    ) => {
+        const func = 'api.tx.orders.createPo'
+        const orderItem = {
+            Product: PRODUCT_HASH_LABOUR,
+            UnitPrice: amountXTX,
+            Quantity: 1,
+            UnitOfMeasure: 1,
+        }
+        const txId = randomHex(owner)
+        const args = !taskId ? [
+            approver,
+            fulfiller,
+            isSell,
+            amountXTX,
+            isClosed,
+            orderType,
+            deadline,
+            dueDate,
+            [orderItem],
+            token,
+            txId,
+        ] : [
+                approver,
+                fulfiller,
+                amountXTX,
+                deadline,
+                dueDate,
+                [orderItem],
+                taskId,
+                token,
+                txId,
+            ]
+
+        return {
+            ...queueProps,
+            address: owner,
+            amountXTX,
+            func,
+            type: TX_STORAGE,
+            args,
+            txId,
+        }
+    },
     save: (
         owner,
         approver,
@@ -177,10 +233,7 @@ export const queueables = {
             Quantity: 1,
             UnitOfMeasure: 1,
         }
-        const txidStr = uuid.v1().replace(/\-/g, '')
-        const txIdx = bytesToHex(strToU8a(txidStr))
         const txId = randomHex(owner)
-        console.log({ txId, txIdx })
         const args = !taskId ? [
             approver,
             fulfiller,

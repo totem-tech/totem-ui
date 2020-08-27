@@ -326,10 +326,11 @@ input[readonly] {
 	color: white,
 }
 /* Chat */
-#app.inverted .chat-container {
-    background: #1b1c1d;
+#app.inverted .chat-container{
+	background: #464646;
 	color: white;
 }
+/* Left Sidebar */
 /* #app.inverted .pushable .ui.sidebar.left {
 	background: red
 } */
@@ -368,7 +369,7 @@ body .ui.form.inverted.loading::before {
 	border-color: white rgba(0,0,0,.1) rgba(0,0,0,.1) rgba(0,0,0,.1);
 }
 
-/* Semantic UI Steps (not built-in inverted!!)*/
+/* Semantic UI Steps (no built-in inverted!!)*/
 #app.inverted .ui.fluid.ordered.steps * {
     background: #4c4c4c;
     color: white;
