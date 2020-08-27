@@ -328,7 +328,7 @@ input[readonly] {
 /* Chat */
 #app.inverted .chat-container {
     background: #1b1c1d;
-	color: white,
+	color: white;
 }
 /* #app.inverted .pushable .ui.sidebar.left {
 	background: red

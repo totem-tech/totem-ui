@@ -12,12 +12,12 @@ import { useInverted } from '../../services/window'
 import { className } from '../../utils/utils'
 
 const textsCap = translated({
-    approver: 'approver',
-    approverDesc: 'tasks you can approve',
-    beneficiary: 'my tasks',
+    approver: 'to approver',
+    approverDesc: 'tasks you have been assigned as approver',
+    beneficiary: 'tasks ToDo',
     beneficiaryDesc: 'tasks assigned to you',
-    manage: 'manage tasks',
-    manageDesc: 'tasks created by you',
+    ownerTasks: 'my tasks',
+    ownerTasksDesc: 'tasks created by you',
     marketplace: 'marketplace',
     marketplaceDesc: 'marketplace',
     unknown: 'unknown',
@@ -30,8 +30,8 @@ export default function TaskView(props) {
     const inverted = useInverted()
     const panes = [
         {
-            name: textsCap.manage,
-            title: textsCap.manageDesc,
+            name: textsCap.ownerTasks,
+            title: textsCap.ownerTasksDesc,
             type: 'owner',
         },
         {
