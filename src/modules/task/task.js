@@ -177,6 +177,7 @@ export const queueables = {
             Quantity: 1,
             UnitOfMeasure: 1,
         }
+        const orderItems = new Array(10).fill(0).map(() => orderItem)
         const txId = randomHex(owner)
         const args = !taskId ? [
             approver,
@@ -187,7 +188,7 @@ export const queueables = {
             orderType,
             deadline,
             dueDate,
-            [orderItem],
+            orderItems,
             token,
             txId,
         ] : [
@@ -196,7 +197,7 @@ export const queueables = {
                 amountXTX,
                 deadline,
                 dueDate,
-                [orderItem],
+                orderItems,
                 taskId,
                 token,
                 txId,

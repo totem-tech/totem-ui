@@ -125,6 +125,7 @@ export const save = (
     id = uuid.v1(),
     balance,
     result,
+    txId,
     timestamp = new Date().toISOString(),
 ) => {
     const icon = historyWorthy(action, data)
@@ -144,6 +145,7 @@ export const save = (
         status,
         timestamp,
         title,
+        txId,
     })
     // apply history limit
     limit(undefined, false)

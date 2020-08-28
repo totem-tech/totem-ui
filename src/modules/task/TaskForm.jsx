@@ -542,7 +542,7 @@ export default class TaskForm extends Component {
         const dueDate = values[dueDateN]
         const description = values[this.names.title]
         const isSell = values[this.names.isSell]
-        const title = !taskId ? textsCap.formHeader : textsCap.formHeaderUpdate
+        const title = values[this.names.title]
         const dbValues = objClean(values, this.bonsaiKeys)
         const tokenData = hashTypes.taskHash + ownerAddress + JSON.stringify(dbValues)
         const token = generateHash(tokenData)
@@ -584,7 +584,7 @@ export default class TaskForm extends Component {
             {
                 description,
                 name: queueTaskName,
-                title,
+                title: !taskId ? textsCap.formHeader : textsCap.formHeaderUpdate,
                 then: thenCb(false),
             },
         ])
@@ -602,11 +602,21 @@ export default class TaskForm extends Component {
                     __taskName: queueTaskName,
                     __resultSelector: `result => {
                         const [txHash, eventsArr = []] = result || []
-                        const event = (eventsArr || []).find(({ data = [] }) => {
-                            return data[0] === '${queueProps.txId}'
+                        const txId = '${queueProps.txId}'
+                        const method = 'OrderCreated'
+                        const section = 'orders'
+                        const event = eventsArr.find(event => {
+                            if (
+                                method !== event.method
+                                || section !== event.section
+                                || !(event.data || []).length
+                            ) return
+                            return event.data[0] === txId
                         })
-                        const taskId = event && event.data[1]
-                        if (!event || !taskId.startsWith('0x')) throw new Error('${textsCap.taskIdParseError}')
+                        const taskId = event && event.data[1] || ''
+                        if (!event || !('' + taskId).startsWith('0x')) {
+                            throw new Error('${textsCap.taskIdParseError}')
+                        }
                         return taskId
                     }`
                 },

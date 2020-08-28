@@ -3,7 +3,7 @@ import { Button, Icon } from 'semantic-ui-react'
 import DataTable from '../components/DataTable'
 import FormBuilder from '../components/FormBuilder'
 import { format } from '../utils/time'
-import { clearClutter, isValidNumber, isObj, isDefined } from '../utils/utils'
+import { clearClutter, isValidNumber, isObj, isDefined, copyToClipboard } from '../utils/utils'
 // services
 import { bond, clearAll, getAll, remove as removeHistoryItem } from '../services/history'
 import { translated } from '../services/language'
@@ -50,6 +50,7 @@ const textsCap = translated({
     techDetails: 'technical details',
     timestamp: 'timestamp',
     title: 'title',
+    txId: 'Transaction ID',
     type: 'type',
 }, true)[1]
 
@@ -194,6 +195,12 @@ export default class HistoryList extends Component {
         const balanceExtProps = { action: { content: 'XTX' } }
 
         const inputDefs = [
+            item.txId && [textsCap.txId, item.txId, 'text', {
+                action: {
+                    icon: 'copy',
+                    onClick: () => copyToClipboard(item.txId),
+                }
+            }],
             // title describes what the task is about
             [textsCap.action, item.title],
             // description about the task that is displayed in the queue toast message
@@ -204,10 +211,10 @@ export default class HistoryList extends Component {
             // blockchain or chat client function path in string format
             [textsCap.function, item.action],
             // user's identity that was used to create the transaction
-            item.identity && [textsCap.identity, item._identity],
+            item.identity && [textsCap.identity, item.identity],
             [textsCap.timestamp, format(item.timestamp, true, true)],
-            // [textsCap.groupId, item.groupId],
-            // [textsCap.taskId, id],
+            // [textsCap.groupId, item.groupId], // ID of the parent (rootTask) queue item
+            // [textsCap.taskId, id], // ID of the child/parent(rootTask) queue item
             isValidNumber(before) && [textsCap.balanceBeforeTx, before, 'number', balanceExtProps],
             isValidNumber(after) && [textsCap.balanceAfterTx, after, 'number', balanceExtProps],
             [textsCap.dataSent, JSON.stringify(item.data, null, 4), 'textarea'],

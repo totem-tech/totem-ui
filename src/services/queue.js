@@ -643,7 +643,8 @@ const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, du
         id,
         task.id,
         task.balance,
-        task.result
+        task.result,
+        task.txId,
     )
 
     if (!done) return
