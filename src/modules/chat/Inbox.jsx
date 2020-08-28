@@ -17,7 +17,7 @@ import {
     inboxSettings,
     getInboxUserIds,
 } from './chat'
-import client, { loginBond, getUser } from '../../services/chatClient'
+import client, { getUser, rxIsLoggedIn } from '../../services/chatClient'
 import { translated } from '../../services/language'
 import Message from '../../components/Message'
 import { getInboxName } from './InboxList'
@@ -192,7 +192,7 @@ const MemberList = ({ inboxKey, isTrollbox, receiverIds }) => {
         const frequency = 60000 // check user status every 60 seconds
         const checkOnline = () => {
             if (!isMounted) return
-            if (!loginBond._value) return setOnline(false)
+            if (!rxIsLoggedIn.value) return setOnline(false)
             const userIds = (!isTrollbox && !isSupport ? receiverIds : getInboxUserIds(inboxKey))
                 .filter(id => id !== ownId)
             userIds.length && client.isUserOnline(userIds, (err, online) => !err && setOnline(online))
@@ -211,7 +211,7 @@ const MemberList = ({ inboxKey, isTrollbox, receiverIds }) => {
                 .sort()
                 .map(memberId => {
                     const isSelf = ownId === memberId
-                    const memberOnline = isSelf ? loginBond._value : online[memberId]
+                    const memberOnline = isSelf ? rxIsLoggedIn.value : online[memberId]
                     return (
                         <Message {...{
                             className: 'member-list-item',

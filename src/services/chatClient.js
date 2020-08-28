@@ -1,5 +1,5 @@
 import io from 'socket.io-client'
-import { Bond } from 'oo7'
+import { BehaviorSubject } from 'rxjs'
 import { isFn } from '../utils/utils'
 import storage from './storage'
 
@@ -22,7 +22,7 @@ if (oldData) {
 // remove trollbox chat history items
 if (rw().history) rw({ history: null })
 
-export const loginBond = new Bond()
+export const rxIsLoggedIn = new BehaviorSubject(false)
 // retrieves user credentails from local storage
 export const getUser = () => rw().user
 export const setUser = user => rw({ user })
@@ -87,13 +87,9 @@ export const getClient = () => {
     const { id, secret } = getUser() || {}
     if (!id) return instance
 
-    instance.onConnect(() => instance.login(id, secret, err => {
-        err && console.log('Login failed', err)
-        loginBond.changed(!err)
-    }))
-    instance.onConnectError(() => {
-        loginBond.changed(false)
-    })
+    // auto login on connect to messaging service
+    instance.onConnect(() => instance.login(id, secret, () => { }))
+    instance.onConnectError(() => rxIsLoggedIn.next(false))
     return instance
 }
 
@@ -355,7 +351,7 @@ export class ChatClient {
         err => {
             if (!err) {
                 setUser({ id, secret })
-                loginBond.changed(true)
+                rxIsLoggedIn.next(true)
             }
             cb(err)
         },
@@ -365,8 +361,11 @@ export class ChatClient {
         id,
         secret,
         (err, data) => {
+            const isLoggedIn = !err
             // store user roles etc data sent from server
-            !err && setUser({ ...getUser(), ...data })
+            isLoggedIn && setUser({ ...getUser(), ...data })
+            if (isLoggedIn !== rxIsLoggedIn.value) rxIsLoggedIn.next(isLoggedIn)
+            err && console.log('Login failed', err)
             cb(err, data)
         })
 }

@@ -9,7 +9,7 @@ import { arrUnique, isFn, isStr } from '../utils/utils'
 // services
 import { hashTypes, query as queryBlockchain, getConnection } from './blockchain'
 import client from './chatClient'
-import identities, { getSelected, selectedAddressBond } from './identity'
+import identities, { getSelected, rxSelected } from './identity'
 import partners from './partner'
 import storage from './storage'
 import { query as tkQuery } from './timeKeeping'
@@ -36,7 +36,7 @@ export const statusCodes = {
 
 // status codes that indicate project is open
 export const openStatuses = [statusCodes.open, statusCodes.reopen]
-setTimeout(() => selectedAddressBond.tie(() => getProjects(true)))
+setTimeout(() => rxSelected.subscribe(() => getProjects(true)))
 
 // retrieve project details by record IDs
 //

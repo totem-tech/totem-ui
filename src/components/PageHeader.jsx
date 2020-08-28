@@ -8,8 +8,8 @@ import { arrSort, copyToClipboard, textEllipsis } from '../utils/utils'
 import IdentityForm from '../forms/Identity'
 import TimeKeepingForm from '../forms/TimeKeeping'
 // services
-import { getUser, loginBond } from '../services/chatClient'
-import identities, { getSelected, setSelected } from '../services/identity'
+import { getUser, rxIsLoggedIn } from '../services/chatClient'
+import { getSelected, setSelected, rxIdentities } from '../services/identity'
 import { getSelected as getSelectedLang, translated } from '../services/language'
 import { showForm } from '../services/modal'
 import {
@@ -26,6 +26,7 @@ import { toggleSidebarState, setActive } from '../services/sidebar'
 import timeKeeping from '../services/timeKeeping'
 import { setToast } from '../services/toast'
 import { useInverted, setInverted } from '../services/window'
+import { unsubscribe } from '../services/react'
 
 const textsCap = translated({
 	addressCopied: 'your identity copied to clipboard',
@@ -44,7 +45,7 @@ export default class PageHeader extends Component {
 
 		this.state = {
 			id: (getUser() || {}).id,
-			isLoggedIn: !!loginBond._value,
+			isLoggedIn: rxIsLoggedIn.value,
 			wallets: [],
 		}
 
@@ -54,34 +55,35 @@ export default class PageHeader extends Component {
 
 	componentWillMount() {
 		this._mounted = true
-		identities.bond.tie(() => this.setState({
-			wallets: identities.getAll()
-		}))
-		timeKeeping.formDataBond.tie(() => this.forceUpdate())
-
+		this.unsubscribers = {}
+		this.unsubscribers.identities = rxIdentities.subscribe(map =>
+			this.setState({
+				wallets: Array.from(map).map(([_, x]) => x)
+			})
+		)
 		// Update user ID after registration
-		this.tieIdLogin = loginBond.tie(isLoggedIn => {
+		this.unsubscribers.isLoggedIn = rxIsLoggedIn.subscribe(isLoggedIn => {
 			const { id } = getUser()
 			this.setState({ id, isLoggedIn })
 		})
 	}
 
-	componentWillUnmount = () => this._mounted = false
+	componentWillUnmount = () => {
+		this._mounted = false
+		unsubscribe(this.unsubscribers)
+	}
 
 	handleSelection = (_, { value: address }) => setSelected(address)
 
 	handleCopy = () => {
 		const { address } = getSelected()
-		if (!address) return;
+		if (!address) return
 		copyToClipboard(address)
 		const msg = { content: textsCap.addressCopied, status: 'success' }
 		this.copiedMsgId = setToast(msg, 2000, this.copiedMsgId)
 	}
 
-	handleEdit = () => showForm(IdentityForm, {
-		values: getSelected(),
-		onSubmit: () => this.forceUpdate()
-	})
+	handleEdit = () => showForm(IdentityForm, { values: getSelected() })
 
 	handleFaucetRequest = () => addToQueue({
 		type: QUEUE_TYPES.CHATCLIENT,
@@ -93,6 +95,7 @@ export default class PageHeader extends Component {
 
 	render() {
 		const { id, isLoggedIn, wallets } = this.state
+		// console.log('render', { wallets })
 		const viewProps = {
 			userId: id,
 			isLoggedIn,
@@ -213,11 +216,11 @@ const PageHeaderView = props => {
 									content: inverted ? textsCap.darkModeOff : textsCap.darkModeOn,
 									onClick: () => setInverted(!inverted)
 								},
-								// userId && {
-								// 	icon: 'gem',
-								// 	content: textsCap.requestFunds,
-								// 	onClick: onFaucetRequest,
-								// },
+								userId && {
+									icon: 'gem',
+									content: textsCap.requestFunds,
+									onClick: onFaucetRequest,
+								},
 								{
 									icon: 'currency',
 									content: textsCap.changeCurrency, // Better left un-translated

@@ -1,5 +1,4 @@
 import uuid from 'uuid'
-import { Bond } from 'oo7'
 import DataStorage from '../utils/DataStorage'
 import { isObj, isStr, isValidNumber, isDefined } from '../utils/utils'
 import storage from './storage'
@@ -7,20 +6,19 @@ import storage from './storage'
 const key = 'history'
 const MODULE_KEY = 'totem_' + key
 const history = new DataStorage(MODULE_KEY, true)
+export const rxHistory = history.rxData
 const LIMIT_DEFAULT = 500 // default number of items to store
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 
-export const bond = new Bond().defaultTo(uuid.v1())
-const updateBond = () => bond.changed(uuid.v1())
-export const clearAll = () => history.setAll(new Map()) | updateBond()
+export const clearAll = () => history.setAll(new Map())
 
 export const getAll = () => history.getAll()
 
 
 export const getById = id => history.get(id)
 
-export const remove = id => history.delete(id) | updateBond()
+export const remove = id => history.delete(id)
 
 // set number of actions to store and apply to history items
 // use null for unlimited history
@@ -43,7 +41,6 @@ export const limit = (newLimit) => {
 
     const limitted = Array.from(history.getAll()).slice(-limit)
     history.setAll(new Map(limitted))
-    changed && updateBond()
     return limit
 }
 
@@ -149,6 +146,5 @@ export const save = (
     })
     // apply history limit
     limit(undefined, false)
-    updateBond()
     return id
 }

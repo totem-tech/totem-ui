@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import { Subject } from 'rxjs'
-import { Bond } from 'oo7'
 import { generateMnemonic } from 'bip39'
 import DataStorage from '../utils/DataStorage'
 import { keyring } from '../utils/polkadotHelper'
@@ -8,6 +7,8 @@ import { objClean } from '../utils/utils'
 
 const DEFAULT_NAME = 'Default'
 const identities = new DataStorage('totem_identities', true)
+export const rxIdentities = identities.rxData
+export const rxSelected = new Subject()
 const USAGE_TYPES = Object.freeze({
     PERSONAL: 'personal',
     BUSINESS: 'business',
@@ -27,12 +28,6 @@ const VALID_KEYS = Object.freeze([
     'tags',
     'usageType',
 ])
-
-export const bond = identities.bond
-export const selectedAddressBond = new Bond()
-const rxSelected = new Subject()
-// keep until selectedAddressBond is removed
-rxSelected.subscribe(address => selectedAddressBond.changed(address))
 
 export const addFromUri = (uri, type = 'sr25519') => {
     try {
@@ -83,7 +78,6 @@ export const setSelected = address => {
     })
     identity.selected = true
     identities.set(address, identity)
-    // selectedAddressBond.changed(address)
     rxSelected.next(address)
 }
 
@@ -106,13 +100,14 @@ export const useIdentities = () => {
     useEffect(() => {
         let mounted = true
         let ignoredFirst
-        const tieId = identities.bond.tie(() => {
+        const subscribed = identities.rxData.subscribe(() => {
+            // prevents one extra render
             ignoredFirst && mounted && setList(getAll())
             ignoredFirst = true
         })
         return () => {
             mounted = false
-            identities.bond.untie(tieId)
+            subscribed.unsubscribe()
         }
     }, [])
 
@@ -137,7 +132,6 @@ const init = () => {
         set(address, identity)
     }
 
-    // selectedAddressBond.changed((getSelected() || {}).address)
     rxSelected.next(getSelected().address)
 }
 
@@ -145,14 +139,12 @@ setTimeout(init)
 
 export default {
     addFromUri,
-    bond,
     find,
     generateUri,
     get,
     getAll,
     getSelected,
     remove,
-    selectedAddressBond,
     set,
     setSelected,
 }

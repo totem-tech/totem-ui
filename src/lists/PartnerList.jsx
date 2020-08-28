@@ -6,7 +6,7 @@ import DataTable from '../components/DataTable'
 import { createInbox } from '../modules/chat/chat'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
-import addressbook, { getAddressName } from '../services/partner'
+import addressbook, { getAddressName, rxPartners } from '../services/partner'
 import { layoutBond } from '../services/window'
 // forms
 import CompanyForm from '../forms/Company'
@@ -87,12 +87,44 @@ export default class PartnerList extends Component {
 	}
 
 	componentWillMount() {
-		this.tieId = addressbook.bond.tie(() => this.getPartners())
+		this._mounted = true
+		this.subscriptions = {}
+
+		this.subscriptions.partners = rxPartners.subscribe(map => {
+			const { listProps } = this.state
+			listProps.data = map
+
+			Array.from(listProps.data).forEach(([_, p]) => {
+				const { associatedIdentity, address, name, tags, type } = p
+				p._address = textEllipsis(address, 15, 3)
+				p._associatedIdentity = associatedIdentity && getAddressName(associatedIdentity)
+				p._name = textEllipsis(name, 25, 3, false)
+				p._tags = (tags || []).map(tag => (
+					<Label
+						key={tag}
+						draggable='true'
+						onDragStart={e => e.stopPropagation() | e.dataTransfer.setData("Text", e.target.textContent)}
+						style={{
+							cursor: 'grab',
+							display: 'inline',
+							float: 'left',
+							margin: 1,
+						}}
+					>
+						{tag}
+					</Label>
+				))
+				// makes tags searchable
+				p._tagsStr = tags.join(' ')
+				p._type = type === 'personal' ? textsCap.personal : textsCap.business
+			})
+			this.setState({ listProps })
+		})
 		this.tieIdLayout = layoutBond.tie(layout => this.setState({ layout }))
 	}
 
 	componentWillUnmount = () => {
-		addressbook.bond.untie(this.tieId)
+		this._mounted = false
 		layoutBond.untie(this.tieIdLayout)
 	}
 
@@ -143,37 +175,6 @@ export default class PartnerList extends Component {
 				title: textsCap.chat,
 			},
 		].filter(Boolean).map(props => <Button key={props.title} {...props} />)
-	}
-
-	getPartners() {
-		const { listProps } = this.state
-		listProps.data = addressbook.getAll()
-
-		Array.from(listProps.data).forEach(([_, p]) => {
-			const { associatedIdentity, address, name, tags, type } = p
-			p._address = textEllipsis(address, 15, 3)
-			p._associatedIdentity = associatedIdentity && getAddressName(associatedIdentity)
-			p._name = textEllipsis(name, 25, 3, false)
-			p._tags = (tags || []).map(tag => (
-				<Label
-					key={tag}
-					draggable='true'
-					onDragStart={e => e.stopPropagation() | e.dataTransfer.setData("Text", e.target.textContent)}
-					style={{
-						cursor: 'grab',
-						display: 'inline',
-						float: 'left',
-						margin: 1,
-					}}
-				>
-					{tag}
-				</Label>
-			))
-			// makes tags searchable
-			p._tagsStr = tags.join(' ')
-			p._type = type === 'personal' ? textsCap.personal : textsCap.business
-		})
-		this.setState({ listProps })
 	}
 
 	render() {

@@ -4,9 +4,10 @@ import { Confirm } from 'semantic-ui-react'
 import DataStorage from '../utils/DataStorage'
 import { isBool, isFn, className } from '../utils/utils'
 import { translated } from './language'
-import { toggleFullscreen, useInverted, rxInverted } from './window'
+import { toggleFullscreen, useInverted } from './window'
 
-export const modals = new DataStorage()
+const modals = new DataStorage()
+export const rxModals = modals.rxData
 const textsCap = translated({
     areYouSure: 'are you sure?',
     ok: 'ok',
@@ -17,14 +18,19 @@ export const ModalsConainer = () => {
     const [modalsArr, setModalsArr] = useState([])
 
     useEffect(() => {
-        const tieId = modals.bond.tie(() => {
-            setModalsArr(Array.from(modals.getAll()))
+        let mounted = true
+        const subscribed = rxModals.subscribe(map => {
+            if (!mounted) return
+            setModalsArr(Array.from(map))
 
             // add/remove class to #app element to inticate at least one modal is open
             const func = !!modals.size ? 'add' : 'remove'
             document.getElementById('app').classList[func]('modal-open')
         })
-        return () => modals.bond.untie(tieId)
+        return () => {
+            mounted = false
+            subscribed.unsubscribe
+        }
     }, [])
 
     return (

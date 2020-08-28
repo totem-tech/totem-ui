@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../utils/time'
 import { isFn } from '../utils/utils'
 import DataTable from '../components/DataTable'
-import { getSelected, selectedAddressBond } from '../services/identity'
+import { getSelected, rxSelected } from '../services/identity'
 import { translated } from '../services/language'
 import { getProjects, query } from '../services/timeKeeping'
 
@@ -55,12 +55,11 @@ export default class TimeKeepingSummary extends Component {
     componentWillMount() {
         this._mounted = true
         this.unsubscribers = {}
-        this.tieId = selectedAddressBond.tie(this.getSummary)
+        this.unsubscribers.selected = rxSelected.subscribe(() => this.getSummary()).unsubscribe
     }
 
     componentWillUnmount() {
         this._mounted = false
-        selectedAddressBond.untie(this.tieId)
         Object.values(this.unsubscribers)
             .forEach(fn => isFn(fn) && fn())
     }

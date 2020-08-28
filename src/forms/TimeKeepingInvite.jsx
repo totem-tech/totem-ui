@@ -9,10 +9,11 @@ import { isFn, arrSort, textEllipsis } from '../utils/utils'
 import identities, { getSelected } from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
-import partners from '../services/partner'
+import partners, { rxPartners } from '../services/partner'
 import { getProjects as getUserProjects, openStatuses } from '../services/project'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { query, queueables } from '../services/timeKeeping'
+import { unsubscribe } from '../services/react'
 
 const notificationType = 'time_keeping'
 const childType = 'invitation'
@@ -98,19 +99,46 @@ export default class TimeKeepingInviteForm extends Component {
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
-    componentWillMount() {
+    async componentWillMount() {
         this._mounted = true
+        this.subscriptions = {}
+        const { values } = this.props
         const { inputs } = this.state
         const proIn = findInput(inputs, 'projectHash')
         proIn.loading = true
         this.setState({ inputs })
 
-        // automatically update when addressbook changes
-        this.tieId = partners.bond.tie(() => {
+        // retrieve project hashes by address
+        const projects = await getUserProjects()
+        proIn.loading = false
+        proIn.options = arrSort(
+            Array.from(projects)
+                // include only active (open/reopened) projects
+                .filter(([_, { status }]) => openStatuses.indexOf(status) >= 0)
+                .map(([pId, project]) => ({
+                    key: pId,
+                    text: project.name || textEllipsis(pId, 40),
+                    value: pId,
+                    project,
+                })),
+            'text'
+        )
+        console.log(proIn.options)
+        proIn.invalid = proIn.options.length === 0
+        proIn.message = !proIn.invalid ? null : {
+            content: textsCap.zeroActivityWarning,
+            status: 'error'
+        }
+
+        values && fillValues(inputs, values)
+        this.setState({ inputs })
+
+        // automatically update when partner list changes
+        this.subscriptions.partners = rxPartners.subscribe(map => {
             const { inputs } = this.state
             const partnerIn = findInput(inputs, 'workerAddress')
             const { address, name } = getSelected()
-            const options = Array.from(partners.getAll()).map(([address, { name, userId }]) => ({
+            const options = Array.from(map).map(([address, { name, userId }]) => ({
                 description: userId && '@' + userId,
                 key: address,
                 text: name,
@@ -126,37 +154,11 @@ export default class TimeKeepingInviteForm extends Component {
             partnerIn.options = arrSort(options, 'text')
             this.setState({ inputs })
         })
-
-        // retrieve project hashes by address
-        getUserProjects().then(projects => {
-            proIn.loading = false
-            proIn.options = arrSort(
-                Array.from(projects)
-                    // include only active (open/reopened) projects
-                    .filter(([_, { status }]) => openStatuses.indexOf(status) >= 0)
-                    .map(([pId, project]) => ({
-                        key: pId,
-                        text: project.name || textEllipsis(pId, 40),
-                        value: pId,
-                        project,
-                    })),
-                'text'
-            )
-            console.log(proIn.options)
-            proIn.invalid = proIn.options.length === 0
-            proIn.message = !proIn.invalid ? null : {
-                content: textsCap.zeroActivityWarning,
-                status: 'error'
-            }
-            this.setState({ inputs })
-        })
-
-        fillValues(inputs, this.props.values)
     }
 
     componentWillUnmount() {
         this._mounted = false
-        partners.bond.untie(this.tieId)
+        unsubscribe(this.subscriptions)
     }
 
     handlePartnerChange = async (_, { projectHash: projectId, workerAddress }) => {

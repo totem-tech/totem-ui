@@ -127,7 +127,7 @@ const MODULE_KEY = 'sidebar'
 const rw = value => storage.settings.module(MODULE_KEY, value)
 const statuses = new DataStorage()
 statuses.setAll(new Map((rw() || {}).items || []))
-statuses.bond.tie(() => rw({ items: Array.from(statuses.getAll()) }))
+statuses.rxData.subscribe(map => rw({ items: Array.from(map) }))
 
 export const allInactiveBond = new Bond().defaultTo(false)
 export const sidebarStateBond = new Bond().defaultTo((rw() || {}).status || {

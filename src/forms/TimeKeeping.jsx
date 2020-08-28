@@ -19,7 +19,7 @@ import { translated } from '../services/language'
 import { confirm, closeModal, showForm } from '../services/modal'
 import { handleTKInvitation } from '../modules/notification/notification'
 import { getAddressName } from '../services/partner'
-import project, { openStatuses, query as queryProject } from '../services/project'
+import { openStatuses, query as queryProject } from '../services/project'
 import { addToQueue } from '../services/queue'
 import {
     formData,
@@ -205,11 +205,11 @@ export default class TimeKeepingForm extends Component {
         super(props)
 
         const values = formData() || {}
-        const { breakCount, duration, durationValid, inprogress, projectHash, stopped, workerAddress } = values
+        const { breakCount, duration, durationValid, inprogress, projectHash, workerAddress } = values
         values.durationValid = !isDefined(durationValid) ? true : durationValid
         values.duration = duration || DURATION_ZERO
         values.breakCount = (breakCount || 0)
-        values.workerAddress = inprogress || stopped && workerAddress || getSelected().address
+        values.workerAddress = workerAddress || getSelected().address
         const projectHashSupplied = hasValue(props.projectHash)
         values.projectHash = projectHashSupplied && !inprogress ? props.projectHash : projectHash
 

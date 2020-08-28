@@ -3,7 +3,7 @@ import uuid from 'uuid'
 import { Bond } from 'oo7'
 import { arrUnique, isObj, isValidNumber, isDefined, objClean } from '../../utils/utils'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import client, { getUser, loginBond } from '../../services/chatClient'
+import client, { getUser, rxIsLoggedIn } from '../../services/chatClient'
 import storage from '../../services/storage'
 import { getLayout, MOBILE } from '../../services/window'
 
@@ -16,6 +16,7 @@ export const TROLLBOX_ALT = 'trollbox' // alternative ID for trollbox
 export const SUPPORT = 'support'
 // messages storage
 const chatHistory = new DataStorage(PREFIX + MODULE_KEY, true)
+export const rxChatHistory = chatHistory.rxData
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 // inbox expanded view
@@ -330,10 +331,10 @@ client.onMessage((m, s, r, e, t, id, action) => {
         createSupportInbox()
     } else {
         // user hasn't registered yet
-        const tieId = loginBond.tie(success => {
+        const subscribed = rxIsLoggedIn.subscribe(success => {
             if (!success) return
+            subscribed.unsubscribe()
             // registration successful
-            loginBond.untie(tieId)
             createSupportInbox()
         })
     }

@@ -4,15 +4,15 @@ import { Dropdown } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import Balance from '../components/Balance'
-import { arrSort, isStr, textEllipsis } from '../utils/utils'
+import { arrSort, isStr, textEllipsis, isFn } from '../utils/utils'
 import { ss58Decode } from '../utils/convert'
 import PartnerForm from '../forms/Partner'
 // services
 import { denominations, queueables } from '../services/blockchain'
-import identities, { find as findIdentity } from '../services/identity'
+import identities, { find as findIdentity, rxIdentities, rxSelected } from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
-import partners, { getAddressName } from '../services/partner'
+import partners, { getAddressName, rxPartners } from '../services/partner'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { currencyDefault, getSelected } from '../services/currency'
 
@@ -134,11 +134,12 @@ export default class Transfer extends Component {
 
     componentWillMount() {
         this._mounted = true
+        this.unsubscribers = {}
         const { inputs } = this.state
         const { values } = this.props
         const fromIn = findInput(inputs, 'from')
         // change value when selected address changes
-        this.tieIdSelected = identities.selectedAddressBond.tie(address => {
+        this.unsubscribers.selected = rxSelected.subscribe(address => {
             fromIn.bond.changed(address)
             fromIn.message = !address ? '' : {
                 content: (
@@ -151,20 +152,21 @@ export default class Transfer extends Component {
                     }} />
                 )
             }
-        })
+        }).unsubscribe
         // re-/populate options if identity list changes
-        this.tieIdIdentity = identities.bond.tie(() => {
-            fromIn.options = arrSort(identities.getAll().map(({ address, name }) => ({
+        this.unsubscribers.identities = rxIdentities.subscribe(map => {
+            const options = Array.from(map).map(([address, { name }]) => ({
                 key: address,
                 text: name,
                 value: address,
-            })), 'text')
+            }))
+            fromIn.options = arrSort(options, 'text')
             this.setState({ inputs })
-        })
+        }).unsubscribe
         // repopulate options if partners list changes
-        this.tieIdPartner = partners.bond.tie(() => {
+        this.unsubscribers.partners = rxPartners.subscribe(map => {
             findInput(inputs, 'to').options = arrSort(
-                Array.from(partners.getAll()).map(([_, { address, name }]) => ({
+                Array.from(map).map(([address, { name }]) => ({
                     description: textEllipsis(address, 20),
                     key: address,
                     text: name,
@@ -173,16 +175,14 @@ export default class Transfer extends Component {
                 'text'
             )
             this.setState({ inputs })
-        })
+        }).unsubscribe
 
         fillValues(inputs, values)
     }
 
     componentWillUnmount() {
         this._mounted = false
-        identities.bond.untie(this.tieIdIdentity)
-        identities.selectedAddressBond.untie(this.tieIdSelected)
-        partners.bond.untie(this.tieIdPartner)
+        Object.values(this.unsubscribers).forEach(fn => isFn(fn) && fn())
     }
 
     clearForm = () => {

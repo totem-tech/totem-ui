@@ -7,15 +7,15 @@ import { getProject } from '../../services/project'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import storage from '../../services/storage'
 import { workerTasks } from '../../services/timeKeeping'
-import { mapSort } from '../../utils/utils'
 
 export const MODULE_KEY = 'totem_notifications'
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
-export const notifications = new DataStorage(MODULE_KEY, true)
+const notifications = new DataStorage(MODULE_KEY, true)
+export const rxNotifications = notifications.rxData
 export const newNotificationBond = new Bond()
 export const visibleBond = new Bond().defaultTo(false)
 export const unreadCountBond = new Bond().defaultTo(getUnreadCount())
-notifications.bond.tie(() => {
+notifications.rxData.subscribe(() => {
     // auto update unread count
     unreadCountBond.changed(getUnreadCount())
     // change visibility if no notificaitons left

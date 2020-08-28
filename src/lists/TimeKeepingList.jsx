@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import { BehaviorSubject } from 'rxjs'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
 import { Button } from 'semantic-ui-react'
@@ -13,10 +14,10 @@ import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'
 import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
 // Services
 import { hashTypes, queueables as bcQueueables, getCurrentBlock } from '../services/blockchain'
-import identities, { getSelected, selectedAddressBond } from '../services/identity'
+import identities, { getSelected, rxIdentities, rxSelected } from '../services/identity'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
-import partners from '../services/partner'
+import partners, { rxPartners } from '../services/partner'
 import { getProjects, statuses, query, queueables } from '../services/timeKeeping'
 import { addToQueue } from '../services/queue'
 import { getLayout } from '../services/window'
@@ -97,8 +98,8 @@ statusTexts[statuses.invoice] = words.invoiced
 statusTexts[statuses.delete] = words.deleted
 
 // trigger refresh on not-archived records tables if multiple open at the same time 
-const updateTriggerBond = new Bond()
-const inProgressHashesBond = new Bond()
+const rxTrigger = new BehaviorSubject()
+const rxInProgressIds = new BehaviorSubject()
 
 export default class ProjectTimeKeepingList extends Component {
     constructor(props) {
@@ -186,7 +187,6 @@ export default class ProjectTimeKeepingList extends Component {
 
     async componentWillMount() {
         this._mounted = true
-        this.ignoredFirst = this.ignoredFirst || false
         this.unsubscribers = {}
         const { archive, manage, projectId } = this.props
         const { list, listArchive, listByProject, listByProjectArchive } = query.record
@@ -207,32 +207,38 @@ export default class ProjectTimeKeepingList extends Component {
         // subscribe to changes on the list of recordIds
         this.unsubscribers.recordIds = queryFn.call(null, arg, this.getRecords, multi)
 
-        // auto update partner/identity names
-        this.identitiesBond = manage && Bond.all([identities.bond, partners.bond])
-        this.tieIdIdentities = this.identitiesBond && this.identitiesBond.tie(() => {
-            const { data } = this.state
-            data && data.size > 0 && this.processRecords(data)
-        })
-        this.tieIdSelected = this.tieIdSelected || selectedAddressBond.tie(() => {
+        if (manage) {
+            // auto update partner/identity names
+            this.unsubscribers.identities = rxIdentities.subscribe(() =>
+                this._mounted && this.processRecords(this.state.data)
+            ).unsubscribe
+            this.unsubscribers.partners = rxPartners.subscribe(() =>
+                this._mounted && this.processRecords(this.state.data)
+            ).unsubscribe
+        }
+
+        // reset everything on selected address change
+        this.unsubscribers.selected = rxSelected.subscribe(() => {
+            if (!this._mounted) return
             if (!this.ignoredFirst) {
                 this.ignoredFirst = true
                 return
             }
-            // reset everything
             this.componentWillUnmount()
             this.componentWillMount()
         })
-        this.tieIdHashes = inProgressHashesBond.tie(ar => this.setState({ inProgressHashes: ar }))
+
+        this.unsubscribers.inProgressIds = rxInProgressIds.subscribe(ar =>
+            this._mounted && this.setState({ inProgressHashes: ar })
+        ).unsubscribe
         // update record details whenever triggered
-        this.tieIdTrigger = archive && updateTriggerBond.tie(this.getRecords)
+        this.unsubscribers.trigger = archive && rxTrigger.subscribe(() =>
+            this._mounted && this.getRecords()
+        ).unsubscribe
     }
 
     componentWillUnmount() {
         this._mounted = false
-        this.tieIdIdentities && this.identitiesBond.untie(this.tieIdIdentities)
-        selectedAddressBond.untie(this.tieIdSelected)
-        inProgressHashesBond.untie(this.tieIdHashes)
-        this.tieIdTrigger && updateTriggerBond.untie(this.tieIdTrigger)
         Object.values(this.unsubscribers).forEach(fn => isFn(fn) && fn())
     }
 
@@ -372,7 +378,7 @@ export default class ProjectTimeKeepingList extends Component {
     }, 150)
 
     // process record details and add extra information like worker name etc
-    processRecords = records => Array.from(records).forEach(([recordId, record]) => {
+    processRecords = records => Array.from(records || new Map()).forEach(([recordId, record]) => {
         const { locked, projectName, projectOwnerAddress, submit_status, workerAddress } = record
         record.approved = submit_status === statuses.accept
         record.rejected = submit_status === statuses.reject
@@ -400,12 +406,12 @@ export default class ProjectTimeKeepingList extends Component {
         const { projectHash, projectOwnerAddress, submit_status, workerAddress } = data.get(hash) || {}
         const targetStatus = approve ? statuses.accept : statuses.reject
         if (!workerAddress || submit_status !== statuses.submit || targetStatus === submit_status) return
-        inProgressHashesBond.changed(inProgressHashes.concat(hash))
+        rxInProgressIds.next(inProgressHashes.concat(hash))
         const task = queueables.record.approve(projectOwnerAddress, workerAddress, projectHash, hash, approve, null, {
             title: `${wordsCap.timekeeping} - ${approve ? texts.approveRecord : texts.rejectRecord}`,
             description: `${texts.recordId}: ${hash}`,
             then: success => {
-                inProgressHashesBond.changed(inProgressHashes.filter(h => h !== hash))
+                rxInProgressIds.next(inProgressHashes.filter(h => h !== hash))
                 success && this.updateTrigger()
             },
         })
@@ -540,7 +546,7 @@ export default class ProjectTimeKeepingList extends Component {
         })
     }
 
-    updateTrigger = () => this.props.archive ? this.getRecords() : updateTriggerBond.changed(uuid.v1())
+    updateTrigger = () => this.props.archive ? this.getRecords() : rxTrigger.next()
 
     render() {
         const { archive, hideTimer, manage } = this.props

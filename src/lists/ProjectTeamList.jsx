@@ -8,7 +8,7 @@ import PartnerForm from '../forms/Partner'
 import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
 import { handleTKInvitation } from '../modules/notification/notification'
 // services
-import { get as getIdentity, selectedAddressBond, getSelected } from '../services/identity'
+import { get as getIdentity } from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
 import { get as getPartner } from '../services/partner'

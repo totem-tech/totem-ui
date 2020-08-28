@@ -3,9 +3,9 @@ import { Button, Icon } from 'semantic-ui-react'
 import DataTable from '../components/DataTable'
 import FormBuilder from '../components/FormBuilder'
 import { format } from '../utils/time'
-import { clearClutter, isValidNumber, isObj, isDefined, copyToClipboard } from '../utils/utils'
+import { clearClutter, isValidNumber, isObj, isDefined, copyToClipboard, isFn } from '../utils/utils'
 // services
-import { bond, clearAll, getAll, remove as removeHistoryItem } from '../services/history'
+import { clearAll, remove as removeHistoryItem, rxHistory } from '../services/history'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import { getAddressName } from '../services/partner'
@@ -172,8 +172,8 @@ export default class HistoryList extends Component {
 
     componentWillMount() {
         this._mounted = true
-        this.tieId = bond.tie(() => {
-            const data = getAll()
+        this.unsubscribers = {}
+        this.unsubscribers.history = rxHistory.subscribe(data => {
             Array.from(data).forEach(([_, item]) => {
                 // clear unwanted spaces caused by use of backquotes etc.
                 item.message = clearClutter(item.message || '')
@@ -181,12 +181,12 @@ export default class HistoryList extends Component {
                 item._identity = getAddressName(item.identity)
             })
             this.setState({ data })
-        })
+        }).unsubscribe
     }
 
     componentWillUnmount() {
         this._mounted = true
-        bond.untie(this.tieId)
+        Object.values(this.unsubscribers).forEach(fn => isFn(fn) && fn())
     }
 
     showDetails = (item, id) => {

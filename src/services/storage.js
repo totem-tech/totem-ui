@@ -6,14 +6,13 @@ import { downloadFile, hasValue, isMap, isObj } from '../utils/utils'
 import DataStorage from '../utils/DataStorage'
 import identities from './identity'
 
-
 // Local Storage item key prefix for all items
 const PREFIX = 'totem_'
 const PREFIX_STATIC = 'totem_static_'
 const CACHE_KEY = PREFIX + 'cache'
 const storage = {}
-const cache = new DataStorage(CACHE_KEY)
-const settings = new DataStorage(PREFIX + 'settings', true)
+const cache = new DataStorage(CACHE_KEY, true)
+const settings = new DataStorage(PREFIX + 'settings')
 // LocalStorage items that are essential for the applicaiton to run. 
 export const essentialKeys = [
     'totem_chat-history', // chat history
