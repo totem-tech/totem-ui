@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react'
-import { Subject } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import { generateMnemonic } from 'bip39'
 import DataStorage from '../utils/DataStorage'
 import { keyring } from '../utils/polkadotHelper'
 import { objClean } from '../utils/utils'
 
 const DEFAULT_NAME = 'Default'
-const identities = new DataStorage('totem_identities', true)
+const identities = new DataStorage('totem_identities')
 export const rxIdentities = identities.rxData
-export const rxSelected = new Subject()
+export const rxSelected = new BehaviorSubject()
 const USAGE_TYPES = Object.freeze({
     PERSONAL: 'personal',
     BUSINESS: 'business',
@@ -83,11 +83,20 @@ export const setSelected = address => {
 
 // Custom hook to use the selected identity in a functional component
 export const useSelected = () => {
-    const [selected, setSelected] = useState(getSelected().address)
+    const [selected, setSelected] = useState(rxSelected.value)
 
     useEffect(() => {
-        const subscribed = rxSelected.subscribe(address => setSelected(address))
-        return () => subscribed.unsubscribe()
+        let mounted = true
+        let ignoredFirst = false
+        const subscribed = rxSelected.subscribe(address => {
+            if (!mounted) return
+            if (!ignoredFirst) return ignoredFirst = true
+            setSelected(address)
+        })
+        return () => {
+            mounted = false
+            subscribed.unsubscribe()
+        }
     }, [])
 
     return selected

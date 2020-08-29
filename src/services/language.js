@@ -4,7 +4,7 @@ import client from './chatClient'
 import storage from './storage'
 import { getUrlParam } from './window'
 
-const translations = new DataStorage('totem_static_translations')
+const translations = new DataStorage('totem_static_translations', true)
 export const EN = 'EN'
 const MODULE_KEY = 'language'
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}

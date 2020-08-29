@@ -1,6 +1,6 @@
 // placeholder for reusable React utility functions that doesn't doesn't specifically fit anywhere else
 
-import { isFn, isObj } from "../utils/utils"
+import { isFn } from "../utils/utils"
 
 // for use with useReducer hook on a functional component to imitate the behaviour of `setState()` of a class component
 export const reducer = (state = {}, newValue = {}) => ({ ...state, ...newValue })

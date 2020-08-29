@@ -43,7 +43,7 @@ export default class ContentSegment extends Component {
 		return (!!ContentEl ? <ContentEl {...contentProps} /> : content) || placeholder
 	}
 
-	toggleSubHeader = () => this.setState({ showSubHeader: !this.state.showSubHeader })
+	toggleSubHeader = e => e.preventDefault() | e.stopPropagation() | this.setState({ showSubHeader: !this.state.showSubHeader })
 
 	render() {
 		const {
@@ -109,11 +109,12 @@ export default class ContentSegment extends Component {
 								<Text>{headerText}</Text>
 								{subHeader && (
 									<Icon
+										// className='text-deselect'
+										color='grey'
 										link
 										name='question circle outline'
-										color='grey'
-										size='small'
 										onClick={this.toggleSubHeader}
+										size='small'
 									/>
 								)}
 							</div>

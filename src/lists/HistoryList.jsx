@@ -3,9 +3,9 @@ import { Button, Icon } from 'semantic-ui-react'
 import DataTable from '../components/DataTable'
 import FormBuilder from '../components/FormBuilder'
 import { format } from '../utils/time'
-import { clearClutter, isValidNumber, isObj, isDefined, copyToClipboard, isFn } from '../utils/utils'
+import { clearClutter, isValidNumber, isObj, isDefined, copyToClipboard, isFn, textEllipsis } from '../utils/utils'
 // services
-import { clearAll, remove as removeHistoryItem, rxHistory } from '../services/history'
+import { clearAll, remove as removeHistoryItem, rxHistory, getAll } from '../services/history'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import { getAddressName } from '../services/partner'
@@ -16,6 +16,7 @@ import {
     statusTitles,
     checkComplete,
 } from '../services/queue'
+import { unsubscribe } from '../services/react'
 
 const textsCap = translated({
     action: 'action',
@@ -97,7 +98,7 @@ export default class HistoryList extends Component {
                 },
                 {
                     headerProps,
-                    key: 'description',
+                    key: '_description',
                     style: {
                         minWidth: 200,
                         whiteSpace: 'pre-wrap',
@@ -150,7 +151,7 @@ export default class HistoryList extends Component {
                 positive: status === 'success',
                 warning: status === 'loading',
             }),
-            searchExtraKeys: ['identity', 'action'],
+            searchExtraKeys: ['action', 'identity', 'description'],
             searchable: true,
             selectable: true,
             topLeftMenu: [{
@@ -172,21 +173,29 @@ export default class HistoryList extends Component {
 
     componentWillMount() {
         this._mounted = true
-        this.unsubscribers = {}
-        this.unsubscribers.history = rxHistory.subscribe(data => {
-            Array.from(data).forEach(([_, item]) => {
-                // clear unwanted spaces caused by use of backquotes etc.
-                item.message = clearClutter(item.message || '')
-                // add identity name if available
-                item._identity = getAddressName(item.identity)
-            })
-            this.setState({ data })
-        }).unsubscribe
+        this.subscriptions = {}
+        this.subscriptions.history = rxHistory.subscribe(this.setHistory).unsubscribe
+        // force initial read as in-memory caching is disabled
+        this.setHistory(getAll())
     }
 
     componentWillUnmount() {
         this._mounted = true
-        Object.values(this.unsubscribers).forEach(fn => isFn(fn) && fn())
+        unsubscribe(this.subscriptions)
+    }
+
+    setHistory = (history = new Map()) => {
+        Array.from(history).forEach(([_, item]) => {
+            item._description = (item.description || '')
+                .split(' ')
+                .map(x => textEllipsis(x, 20))
+                .join(' ')
+            // clear unwanted spaces caused by use of backquotes etc.
+            item.message = clearClutter(item.message || '')
+            // add identity name if available
+            item._identity = getAddressName(item.identity)
+        })
+        this.setState({ data: history })
     }
 
     showDetails = (item, id) => {

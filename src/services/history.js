@@ -74,6 +74,7 @@ export const historyWorthy = (func, args) => {
     if (func.startsWith('api.tx.')) return actionIcons['api.tx.']
     const historyIcon = 'history' // for any new/undefined types that should be logged
     switch (func) {
+        case 'client.notificationSetStatus': return false
         case 'client.project':
             // only log project creation and update actions
             const [recordId, project] = args

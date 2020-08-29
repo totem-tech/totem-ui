@@ -95,7 +95,6 @@ export default class PageHeader extends Component {
 
 	render() {
 		const { id, isLoggedIn, wallets } = this.state
-		// console.log('render', { wallets })
 		const viewProps = {
 			userId: id,
 			isLoggedIn,
@@ -136,6 +135,31 @@ const PageHeaderView = props => {
 	} = props
 	const selected = getSelected() || {}
 	const buttons = <HeaderMenuButtons {...{ isLoggedIn, isMobile, isRegistered }} />
+	const walletOptions = arrSort(wallets, 'name')
+		.map(({ address, name }) => ({
+			key: address,
+			text: (
+				<React.Fragment>
+					<div style={{
+						color: 'black',
+						fontWeight: 'bold',
+						marginRight: 15,
+					}}>
+						{name}
+					</div>
+
+					<Balance {...{
+						address: address,
+						EL: 'div',
+						style: {
+							color: 'grey',
+							textAlign: 'right',
+						}
+					}} />
+				</React.Fragment>
+			),
+			value: address
+		}))
 	const topBar = (
 		<Menu
 			attached="top"
@@ -162,31 +186,7 @@ const PageHeaderView = props => {
 					text={textEllipsis(selected.name, isMobile ? 25 : 50, 3, false)}
 					value={selected.address}
 					style={{ paddingRight: 0 }}
-					options={arrSort(wallets, 'name')
-						.map(({ address, name }) => ({
-							key: address,
-							text: (
-								<React.Fragment>
-									<div style={{
-										color: 'black',
-										fontWeight: 'bold',
-										marginRight: 15,
-									}}>
-										{name}
-									</div>
-
-									<Balance {...{
-										address: address,
-										EL: 'div',
-										style: {
-											color: 'grey',
-											textAlign: 'right',
-										}
-									}} />
-								</React.Fragment>
-							),
-							value: address
-						}))}
+					options={walletOptions}
 				/>
 				<Dropdown
 					item
@@ -199,42 +199,40 @@ const PageHeaderView = props => {
 					onClick={() => setShowTools(!showTools) | notifVisibleBond.changed(false)}
 				>
 					<Dropdown.Menu className='left'>
-						{
-							[
-								{
-									icon: 'pencil',
-									content: textsCap.updateIdentity,
-									onClick: onEdit,
-								},
-								{
-									icon: 'copy',
-									content: textsCap.copyAddress,
-									onClick: onCopy,
-								},
-								{
-									icon: inverted ? 'moon outline' : 'moon',
-									content: inverted ? textsCap.darkModeOff : textsCap.darkModeOn,
-									onClick: () => setInverted(!inverted)
-								},
-								userId && {
-									icon: 'gem',
-									content: textsCap.requestFunds,
-									onClick: onFaucetRequest,
-								},
-								{
-									icon: 'currency',
-									content: textsCap.changeCurrency, // Better left un-translated
-									onClick: () => setActive('settings'),
-								},
-								{
-									icon: 'language',
-									content: 'Change language', // Better left un-translated
-									onClick: () => setActive('settings'),
-								},
-							]
-								.filter(Boolean)
-								.map((props, i) => <Dropdown.Item {...props} key={props.icon + i} />)
-						}
+						{[
+							{
+								icon: 'pencil',
+								content: textsCap.updateIdentity,
+								onClick: onEdit,
+							},
+							{
+								icon: 'copy',
+								content: textsCap.copyAddress,
+								onClick: onCopy,
+							},
+							{
+								icon: inverted ? 'moon outline' : 'moon',
+								content: inverted ? textsCap.darkModeOff : textsCap.darkModeOn,
+								onClick: () => setInverted(!inverted)
+							},
+							userId && {
+								icon: 'gem',
+								content: textsCap.requestFunds,
+								onClick: onFaucetRequest,
+							},
+							{
+								icon: 'currency',
+								content: textsCap.changeCurrency,
+								onClick: () => setActive('settings'),
+							},
+							{
+								icon: 'language',
+								content: 'Change language', // Better left un-translated
+								onClick: () => setActive('settings'),
+							},
+						].filter(Boolean).map((props, i) =>
+							<Dropdown.Item {...props} key={props.icon + i} />
+						)}
 					</Dropdown.Menu>
 				</Dropdown>
 			</Menu.Menu>
