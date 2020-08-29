@@ -3,13 +3,14 @@ import uuid from 'uuid'
 import PromisE from '../utils/PromisE'
 import { connect, query as queryHelper, setDefaultConfig } from '../utils/polkadotHelper'
 import types from '../utils/totem-polkadot-js-types'
-import { generateHash } from '../utils/utils'
+import { generateHash, isFn } from '../utils/utils'
 // services
 import { translated } from './language'
 import { QUEUE_TYPES } from './queue'
 import storage from './storage'
 import { setToast } from './toast'
 import { rxOnline } from './window'
+import { call } from 'file-loader'
 
 const MODULE_KEY = 'blockchain'
 const textsCap = translated({
@@ -136,9 +137,14 @@ export const getConnection = async (create = false) => {
  * @name    getCurrentBlock
  * @summary get current block number
  * 
- * @returns {Number} latest block number
+ * @param {Function} callback (optional) to subscribe to block number changes
+ * 
+ * @returns {Number|Function} latest block number if `@callback` not supplied, otherwise, function to unsubscribe
  */
-export const getCurrentBlock = async () => (await query('api.rpc.chain.getBlock')).block.header.number
+export const getCurrentBlock = async (callback) => {
+    if (!isFn(callback)) return await query('api.rpc.chain.getBlock').block.header.number
+    return query('api.rpc.chain.subscribeNewHeads', [res => callback(res.number)])
+}
 
 // getTypes returns a promise with 
 export const getTypes = () => new Promise(resolve => resolve(types))

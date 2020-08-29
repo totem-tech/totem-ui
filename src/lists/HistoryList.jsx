@@ -147,8 +147,8 @@ export default class HistoryList extends Component {
             defaultSort: 'timestamp',
             defaultSortAsc: false, // latest first
             rowProps: ({ status }) => ({
-                negative: status === 'error',
-                positive: status === 'success',
+                // negative: status === 'error',
+                // positive: status === 'success',
                 warning: status === 'loading',
             }),
             searchExtraKeys: ['action', 'identity', 'description'],

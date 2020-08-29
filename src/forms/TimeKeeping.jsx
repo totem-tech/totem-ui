@@ -13,7 +13,7 @@ import {
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import { ButtonAcceptOrReject } from '../components/buttons'
 // services
-import { query as queryBlockchain } from '../services/blockchain'
+import { query as queryBlockchain, getCurrentBlock } from '../services/blockchain'
 import identities, { getSelected } from '../services/identity'
 import { translated } from '../services/language'
 import { confirm, closeModal, showForm } from '../services/modal'
@@ -29,6 +29,7 @@ import {
     queueables,
     statuses
 } from '../services/timeKeeping'
+import { unsubscribe } from '../services/react'
 
 // Hash that indicates creation of new record
 const DURATION_ZERO = '00:00:00'
@@ -275,12 +276,11 @@ export default class TimeKeepingForm extends Component {
 
     async componentWillMount() {
         this._mounted = true
-        this.unsubscribers = {}
-        const updateValues = newHead => {
+        this.subscriptions = {}
+        const updateValues = blockNumber => {
             if (!this._mounted) return
             const { values: { inprogress } } = this.state
-            newHead.number = parseInt(newHead.number)
-            inprogress ? this.saveValues(newHead.number) : this.setState({ blockNumber: newHead.number })
+            inprogress ? this.saveValues(blockNumber) : this.setState({ blockNumber })
         }
         const updateProjects = deferred(projects => {
             if (!this._mounted) return
@@ -302,14 +302,15 @@ export default class TimeKeepingForm extends Component {
 
             this.setState({ inputs })
         }, 100)
-        this.unsubscribers.newHead = await queryBlockchain('api.rpc.chain.subscribeNewHeads', [updateValues])
-        this.unsubscribers.projects = await getProjects(false, updateProjects)
+        this.subscriptions.newHead = await queryBlockchain('api.rpc.chain.subscribeNewHeads', [updateValues])
+        this.subscriptions.blockNumber = await getCurrentBlock(updateValues)
+        this.subscriptions.projects = await getProjects(false, updateProjects)
 
     }
 
     componentWillUnmount() {
         this._mounted = false
-        Object.values(this.unsubscribers).forEach(fn => isFn(fn) && fn)
+        unsubscribe(this.subscriptions)
     }
 
     // check if project is active (status = open or reopened)

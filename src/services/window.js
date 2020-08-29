@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Subject } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import { Bond } from 'oo7'
 import { isDefined, isFn, isBool } from '../utils/utils'
 import storage from './storage'
@@ -11,8 +11,8 @@ export const MOBILE = 'mobile'
 export const DESKTOP = 'desktop'
 export const gridColumnsBond = new Bond().defaultTo(gridColumns())
 export const layoutBond = new Bond().defaultTo(getLayout())
-export const rxOnline = new Subject()
-export const rxInverted = new Subject()
+export const rxOnline = new BehaviorSubject()
+export const rxInverted = new BehaviorSubject(rw().inverted)
 
 // forceLayout enforces and reverts a specific layout size and ignores layout change when window resizes
 //
