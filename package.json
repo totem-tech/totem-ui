@@ -1,7 +1,7 @@
 {
-  "name": "totem-substrate-ui",
-  "version": "1.0.0",
-  "description": "Totem Substrate UI",
+  "name": "totem-meccano-ui",
+  "version": "1.1.0",
+  "description": "Totem Meccano UI",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
