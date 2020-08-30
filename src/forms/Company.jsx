@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-import { ss58Decode } from 'oo7-substrate'
+import { ss58Decode } from '../utils/convert'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import { deferred, isFn, generateHash } from '../utils/utils'
 import client from '../services/chatClient'

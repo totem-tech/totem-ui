@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import uuid from 'uuid'
-import { Table } from 'semantic-ui-react'
+import { Table, Button } from 'semantic-ui-react'
 import FormBuilder, { findInput, showMessage } from '../components/FormBuilder'
 import { objClean, textCapitalize, isFn, objWithoutKeys, hasValue } from '../utils/utils'
 import { getUser, setUser } from '../services/chatClient'
@@ -8,11 +8,12 @@ import { translated } from '../services/language'
 import { confirm } from '../services/modal'
 import { essentialKeys, generateBackupData } from '../services/storage'
 
-const [_, textsCap] = translated({
+const textsCap = translated({
 	backupValue: 'backup value',
+	cancel: 'cancel',
 	chatUserId: 'Chat User ID',
 	compare: 'compare',
-	confirmText: 'This action is irreversible',
+	confirmText: 'this action is irreversible',
 	conflicts: 'conflicts',
 	currentValue: 'current value',
 	fileLabel: 'restore file',
@@ -20,13 +21,13 @@ const [_, textsCap] = translated({
 	ignore: 'ignore',
 	keepUnchanged: 'keep unchanged',
 	merge: 'merge',
-	preserveUser: 'Preserve current credentials',
+	preserveUser: 'preserve current credentials',
 	remove: 'remove',
 	restore: 'restore',
 	restoreFromBackup: 'restore from backup',
-	restoreUser: 'Restore credentials from backup',
-	submitNoAction: 'No actionable item selected',
-}, true)
+	restoreUser: 'restore credentials from backup',
+	submitNoAction: 'no actionable item selected',
+}, true)[1]
 // data that can be merged (must be 2D array that represents a Map)
 const MERGEABLES = ['totem_identities', 'totem_partners']
 // ignore meta data or unnecessary fields when comparing between current and backed up data
@@ -73,60 +74,6 @@ export default class RestoreBackup extends Component {
 				},
 			],
 		}
-	}
-
-	handleFileChange = (e) => {
-		try {
-			const file = e.target.files[0]
-			var reader = new FileReader()
-			reader.onload = file => {
-				if (this.generateInputs(file.target.result)) return
-				file.target.value = null
-			}
-			reader.readAsText(file)
-		} catch (err) {
-			showMessage.call(this, this.names.file, err, 'error')
-		}
-	}
-
-	handleSubmit = (_, values) => {
-		const { onSubmit } = this.props
-		// select only data categories and not ignored
-		const dataKeys = Object.keys(this.backupData)
-			.filter(key => hasValue(values[key]) && values[key] !== IGNORE)
-		const user = values[this.names.userId]
-		const noAction = !user && dataKeys.every(key => values[key] === IGNORE)
-		if (noAction) return this.setState({
-			message: {
-				header: textsCap.submitNoAction,
-				showIcon: true,
-				status: 'warning',
-			}
-		})
-		const execute = () => {
-			dataKeys.forEach(key => {
-				let value = this.backupData[key]
-				if (values[key] === MERGE) {
-					const valueObj = values[VALUE_KEY_PREFIX + key]
-					// generate a 2D array for use with Map
-					value = Object.keys(valueObj)
-						.filter(key => valueObj[key] !== REMOVE)
-						.map(key => [key, valueObj[key]])
-				}
-				localStorage.setItem(key, JSON.stringify(value))
-			})
-			if (user) setUser(user)
-			this.setState({ success: true })
-			isFn(onSubmit) && onSubmit(true, values)
-			// reload page to reflect changes
-			window.location.reload(true)
-		}
-
-		confirm({
-			content: textsCap.confirmText,
-			onConfirm: execute,
-			size: 'mini',
-		})
 	}
 
 	generateInputs = str => {
@@ -295,6 +242,20 @@ export default class RestoreBackup extends Component {
 		]
 	}
 
+	handleFileChange = (e) => {
+		try {
+			const file = e.target.files[0]
+			var reader = new FileReader()
+			reader.onload = file => {
+				if (this.generateInputs(file.target.result)) return
+				file.target.value = null
+			}
+			reader.readAsText(file)
+		} catch (err) {
+			showMessage.call(this, this.names.file, err, 'error')
+		}
+	}
+
 	handleRestoreOptionChange = (_, values, index, childIndex) => {
 		const { inputs } = this.state
 		const restoreOptionsIn = inputs[index]
@@ -326,6 +287,49 @@ export default class RestoreBackup extends Component {
 			...restoreOptionsIn.inputs.slice(childIndex + 1),
 		]
 		this.setState({ inputs })
+	}
+
+	handleSubmit = (_, values) => {
+		const { onSubmit } = this.props
+		// select only data categories and not ignored
+		const dataKeys = Object.keys(this.backupData)
+			.filter(key => hasValue(values[key]) && values[key] !== IGNORE)
+		const user = values[this.names.userId]
+		const noAction = !user && dataKeys.every(key => values[key] === IGNORE)
+		if (noAction) return this.setState({
+			message: {
+				header: textsCap.submitNoAction,
+				showIcon: true,
+				status: 'warning',
+			}
+		})
+		const execute = async () => {
+			dataKeys.forEach(key => {
+				let value = this.backupData[key]
+				if (values[key] === MERGE) {
+					const valueObj = values[VALUE_KEY_PREFIX + key]
+					// generate a 2D array for use with Map
+					value = Object.keys(valueObj)
+						.filter(key => valueObj[key] !== REMOVE)
+						.map(key => [key, valueObj[key]])
+				}
+				localStorage.setItem(key, JSON.stringify(value))
+			})
+			if (user) setUser(user)
+			this.setState({ success: true })
+			// wait for onSubmit to finish executing
+			isFn(onSubmit) && await onSubmit(true, values)
+			// reload page to reflect changes
+			window.location.reload(true)
+		}
+
+		confirm({
+			cancelButton: <Button positive content={textsCap.cancel} />,
+			confirmButton: <Button negative content={textsCap.restore} />,
+			content: textsCap.confirmText,
+			onConfirm: execute,
+			size: 'mini',
+		})
 	}
 
 	render = () => <FormBuilder {...{ ...this.props, ...this.state }} />

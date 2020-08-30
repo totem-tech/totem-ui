@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Accordion, Button, Dropdown, Form, Input, TextArea } from 'semantic-ui-react'
+import PromisE from '../utils/PromisE'
 import {
 	deferred,
 	hasValue,
@@ -9,12 +10,12 @@ import {
 	isDefined,
 	isFn,
 	isObj,
-	isPromise,
 	isStr,
 	isValidNumber,
 	objWithoutKeys,
 	searchRanked,
 	isBool,
+	className,
 } from '../utils/utils'
 import Message from './Message'
 // Custom Inputs
@@ -47,9 +48,10 @@ const VALIDATION_MESSAGES = Object.freeze({
 const NON_ATTRIBUTES = Object.freeze([
 	'bond',
 	'collapsed',
-	'controlled',
+	// 'controlled',
 	'defer',
 	'elementRef',
+	'groupValues',
 	'hidden',
 	'inline',
 	'integer',
@@ -57,7 +59,6 @@ const NON_ATTRIBUTES = Object.freeze([
 	'_invalid',
 	'inlineLabel',
 	'label',
-	'groupValues',
 	'trueValue',
 	'falseValue',
 	'styleContainer',
@@ -66,7 +67,7 @@ const NON_ATTRIBUTES = Object.freeze([
 ])
 export const nonValueTypes = Object.freeze(['button', 'html'])
 
-export default class FormInput extends Component {
+export class FormInput extends Component {
 	constructor(props) {
 		super(props)
 
@@ -83,10 +84,15 @@ export default class FormInput extends Component {
 
 	componentWillMount() {
 		this._mounted = true
-		this.bond && this.bond.tie(value => setTimeout(() => this.handleChange({}, { ...this.props, value })))
+		if (this.bond) {
+			this.tieId = this.bond.tie(value => setTimeout(() => this.handleChange({}, { ...this.props, value })))
+		}
 	}
 
-	componentWillUnmount = () => this._mounted = false
+	componentWillUnmount = () => {
+		this._mounted = false
+		this.bond && this.bond.untie(this.tieId)
+	}
 
 	handleChange = (event = {}, data = {}) => {
 		const {
@@ -167,7 +173,8 @@ export default class FormInput extends Component {
 			}
 		}
 		if (message || !isFn(validate)) return triggerChange()
-		isFn(onChange) && onChange(event, data, this.props)
+
+		!isFn(validate) && isFn(onChange) && onChange(event, data, this.props)
 
 		const customValidate = vMsg => {
 			if (vMsg === true) {
@@ -183,9 +190,10 @@ export default class FormInput extends Component {
 			triggerChange()
 		}
 
-		const promiseOrRes = validate(event, data)
-		if (!isPromise(promiseOrRes)) return customValidate(promiseOrRes)
-		promiseOrRes.then(customValidate, err => console.log({ promiseError: err }))
+		PromisE(async () => await validate(event, data)).then(
+			customValidate,
+			err => console.log({ validationError: err, input: this.props })
+		)
 	}
 
 	setMessage = (message = {}) => this.setState({ message })
@@ -238,8 +246,8 @@ export default class FormInput extends Component {
 				break
 			case 'checkbox-group':
 			case 'radio-group':
-				attrs.inline = inline
 				attrs.bond = bond
+				attrs.inline = inline
 				attrs.radio = typeLC === 'radio-group' ? true : attrs.radio
 				inputEl = <CheckboxGroup {...attrs} />
 				break
@@ -276,12 +284,16 @@ export default class FormInput extends Component {
 
 		if (!isGroup) return (
 			<Form.Field
-				error={(message && message.status === 'error') || error || invalid}
+				error={(message && message.status === 'error') || !!error || !!invalid}
 				required={required}
 				style={styleContainer}
 				width={width}
 			>
-				{!hideLabel && label && <label htmlFor={name}>{label}</label>}
+				{!hideLabel && label && (
+					<label htmlFor={name}>
+						{label}
+					</label>
+				)}
 				{inputEl}
 				{message && <Message {...message} />}
 			</Form.Field>
@@ -289,11 +301,15 @@ export default class FormInput extends Component {
 
 		let groupEl = (
 			<div style={{ marginBottom: 15 }}>
-				<Form.Group {...objWithoutKeys(attrs, ['inputs'])} style={{ ...styleContainer, ...attrs.style }}>
+				<Form.Group {...{
+					className: 'form-group',
+					...objWithoutKeys(attrs, ['inputs']),
+					style: { ...styleContainer, ...attrs.style },
+				}}>
 					{inputEl}
 				</Form.Group>
 				{message && <Message {...message} />}
-			</div>
+			</div >
 		)
 
 		if (!isObj(accordion)) return groupEl
@@ -388,3 +404,6 @@ FormInput.defaultProps = {
 	type: 'text',
 	width: 16,
 }
+
+
+export default React.memo(FormInput)

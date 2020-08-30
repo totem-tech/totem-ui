@@ -2,16 +2,17 @@
  * Storage Service: to handle all interactions with browser's localStorage.
  * Typically this should be used by other services
  */
-import { hasValue, isMap, isObj } from '../utils/utils'
+import { downloadFile, hasValue, isMap, isObj } from '../utils/utils'
 import DataStorage from '../utils/DataStorage'
+import identities from './identity'
 
 // Local Storage item key prefix for all items
 const PREFIX = 'totem_'
 const PREFIX_STATIC = 'totem_static_'
 const CACHE_KEY = PREFIX + 'cache'
 const storage = {}
-const cache = new DataStorage(CACHE_KEY)
-const settings = new DataStorage(PREFIX + 'settings', true)
+const cache = new DataStorage(CACHE_KEY, true)
+const settings = new DataStorage(PREFIX + 'settings')
 // LocalStorage items that are essential for the applicaiton to run. 
 export const essentialKeys = [
     'totem_chat-history', // chat history
@@ -22,6 +23,28 @@ export const essentialKeys = [
     'totem_partners',
     'totem_settings',
 ]
+
+// download backup of application data
+//
+// Params:
+// @backup  any: if falsy, will generate a new backup
+export const downloadBackup = (backup = generateBackupData()) => {
+    const timestamp = new Date().toISOString()
+    downloadFile(
+        JSON.stringify(backup),
+        `totem-backup-${timestamp}.json`,
+        'application/json'
+    )
+    // assume file has been downloaded (no simple way to actually confirm file was downloaded)
+    // update file backup timestamp on identities
+    identities.getAll().forEach(identity => identities.set(
+        identity.address,
+        {
+            ...identity,
+            fileBackupTS: timestamp
+        }
+    ))
+}
 
 // generates user data for backup, excluding non-essential items such as cache etc...
 export const generateBackupData = () => {

@@ -1,20 +1,22 @@
 import DataStorage from '../../utils/DataStorage'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
-import { arrUnique, isObj, isValidNumber, isDefined, objClean, deferredPromise } from '../../utils/utils'
+import { arrUnique, isObj, isValidNumber, isDefined, objClean } from '../../utils/utils'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import client, { getUser, loginBond } from '../../services/chatClient'
+import client, { getUser, rxIsLoggedIn } from '../../services/chatClient'
 import storage from '../../services/storage'
 import { getLayout, MOBILE } from '../../services/window'
 
 const PREFIX = 'totem_'
 const MODULE_KEY = 'chat-history'
 const INTERVAL_FREQUENCY_MS = 60000 // check online status every 60 seconds
+const DEFAULT_LIMIT = 200
 export const TROLLBOX = 'everyone'
 export const TROLLBOX_ALT = 'trollbox' // alternative ID for trollbox
 export const SUPPORT = 'support'
 // messages storage
 const chatHistory = new DataStorage(PREFIX + MODULE_KEY, true)
+export const rxChatHistory = chatHistory.rxData
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 // inbox expanded view
@@ -120,7 +122,7 @@ export const historyLimit = limit => {
     limit = rw(
         !isValidNumber(limit) ? undefined : { historyLimit: limit }
     ).historyLimit
-    return isDefined(limit) ? limit : 100
+    return isDefined(limit) ? limit : DEFAULT_LIMIT
 }
 
 // get/set inbox specific settings
@@ -145,6 +147,31 @@ export function inboxSettings(inboxKey, value) {
 
 // all inbox settings
 export const inboxesSettings = () => rw().inbox || {}
+
+// Jump to a specific message within an inbox. will hightlight and blink the message
+export const jumpToMessage = (inboxKey, msgId) => {
+    const isMobile = getLayout() === MOBILE
+    if (openInboxBond._value !== inboxKey) {
+        // makes sure inbox is not deleted or archived
+        createInbox(inboxKey.split(','))
+        // open this inbox
+        openInboxBond.changed(inboxKey)
+    }
+    isMobile && !expandedBond._value && expandedBond.changed(true)
+    // scroll to highlighted message
+    setTimeout(() => {
+        const msgEl = document.getElementById(msgId)
+        const msgsEl = document.querySelector('.chat-container .messages')
+        if (!msgEl || !msgsEl) return
+        msgEl.classList.add('blink')
+        msgsEl.classList.add('animate-scroll')
+        msgsEl.scrollTo(0, msgEl.offsetTop)
+        setTimeout(() => {
+            msgEl.classList.remove('blink')
+            msgsEl.classList.remove('animate-scroll')
+        }, 5000)
+    }, 500)
+}
 
 export const removeInbox = inboxKey => {
     chatHistory.delete(inboxKey)
@@ -304,10 +331,10 @@ client.onMessage((m, s, r, e, t, id, action) => {
         createSupportInbox()
     } else {
         // user hasn't registered yet
-        const tieId = loginBond.tie(success => {
+        const subscribed = rxIsLoggedIn.subscribe(success => {
             if (!success) return
+            subscribed.unsubscribe()
             // registration successful
-            loginBond.untie(tieId)
             createSupportInbox()
         })
     }

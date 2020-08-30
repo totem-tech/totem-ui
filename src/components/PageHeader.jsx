@@ -1,16 +1,16 @@
 import React, { Component, useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { Dropdown, Icon, Image, Menu } from 'semantic-ui-react'
-import Currency from '../components/Currency'
+import Balance from '../components/Balance'
 // utils
 import { arrSort, copyToClipboard, textEllipsis } from '../utils/utils'
 // forms
 import IdentityForm from '../forms/Identity'
 import TimeKeepingForm from '../forms/TimeKeeping'
 // services
-import { getUser, loginBond } from '../services/chatClient'
-import identities, { getSelected, setSelected } from '../services/identity'
-import { translated } from '../services/language'
+import { getUser, rxIsLoggedIn } from '../services/chatClient'
+import { getSelected, setSelected, rxIdentities } from '../services/identity'
+import { getSelected as getSelectedLang, translated } from '../services/language'
 import { showForm } from '../services/modal'
 import {
 	unreadCountBond as unreadMsgCountBond,
@@ -22,25 +22,30 @@ import {
 	unreadCountBond as unreadNotifCountBond,
 } from '../modules/notification/notification'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import { toggleSidebarState } from '../services/sidebar'
+import { toggleSidebarState, setActive } from '../services/sidebar'
 import timeKeeping from '../services/timeKeeping'
 import { setToast } from '../services/toast'
+import { useInverted, setInverted } from '../services/window'
+import { unsubscribe } from '../services/react'
 
-const [texts] = translated({
-	addressCopied: 'Address copied to clipboard',
-	copyAddress: 'Copy Address',
-	faucetRequest: 'Faucet request',
-	faucetRequestDetails: 'Requested transaction allocations',
-	requestFunds: 'Request Funds',
-	updateIdentity: 'Update Identity',
-})
+const textsCap = translated({
+	addressCopied: 'your identity copied to clipboard',
+	changeCurrency: 'change display currency',
+	copyAddress: 'copy my identity',
+	darkModeOn: 'enable dark mode',
+	darkModeOff: 'disable dark mode',
+	faucetRequest: 'faucet request',
+	faucetRequestDetails: 'requested transaction allocations',
+	requestFunds: 'request Funds',
+	updateIdentity: 'update identity',
+}, true)[1]
 export default class PageHeader extends Component {
 	constructor(props) {
 		super(props)
 
 		this.state = {
 			id: (getUser() || {}).id,
-			isLoggedIn: !!loginBond._value,
+			isLoggedIn: rxIsLoggedIn.value,
 			wallets: [],
 		}
 
@@ -50,40 +55,41 @@ export default class PageHeader extends Component {
 
 	componentWillMount() {
 		this._mounted = true
-		identities.bond.tie(() => this.setState({
-			wallets: identities.getAll()
-		}))
-		timeKeeping.formDataBond.tie(() => this.forceUpdate())
-
+		this.unsubscribers = {}
+		this.unsubscribers.identities = rxIdentities.subscribe(map =>
+			this.setState({
+				wallets: Array.from(map).map(([_, x]) => x)
+			})
+		)
 		// Update user ID after registration
-		this.tieIdLogin = loginBond.tie(isLoggedIn => {
+		this.unsubscribers.isLoggedIn = rxIsLoggedIn.subscribe(isLoggedIn => {
 			const { id } = getUser()
 			this.setState({ id, isLoggedIn })
 		})
 	}
 
-	componentWillUnmount = () => this._mounted = false
+	componentWillUnmount = () => {
+		this._mounted = false
+		unsubscribe(this.unsubscribers)
+	}
 
 	handleSelection = (_, { value: address }) => setSelected(address)
 
 	handleCopy = () => {
 		const { address } = getSelected()
-		if (!address) return;
+		if (!address) return
 		copyToClipboard(address)
-		const msg = { content: texts.addressCopied, status: 'success' }
+		const msg = { content: textsCap.addressCopied, status: 'success' }
 		this.copiedMsgId = setToast(msg, 2000, this.copiedMsgId)
 	}
 
-	handleEdit = () => showForm(IdentityForm, {
-		values: getSelected(),
-		onSubmit: () => this.forceUpdate()
-	})
+	handleEdit = () => showForm(IdentityForm, { values: getSelected() })
 
 	handleFaucetRequest = () => addToQueue({
 		type: QUEUE_TYPES.CHATCLIENT,
 		func: 'faucetRequest',
-		title: texts.faucetRequest,
-		description: texts.faucetRequestDetails,
+		title: textsCap.faucetRequest,
+		description: textsCap.faucetRequestDetails,
 		args: [getSelected().address]
 	})
 
@@ -114,6 +120,7 @@ PageHeader.defaultProps = {
 
 const PageHeaderView = props => {
 	const [showTools, setShowTools] = useState(false)
+	const inverted = useInverted()
 	const {
 		userId,
 		isLoggedIn,
@@ -128,6 +135,31 @@ const PageHeaderView = props => {
 	} = props
 	const selected = getSelected() || {}
 	const buttons = <HeaderMenuButtons {...{ isLoggedIn, isMobile, isRegistered }} />
+	const walletOptions = arrSort(wallets, 'name')
+		.map(({ address, name }) => ({
+			key: address,
+			text: (
+				<React.Fragment>
+					<div style={{
+						color: 'black',
+						fontWeight: 'bold',
+						marginRight: 15,
+					}}>
+						{name}
+					</div>
+
+					<Balance {...{
+						address: address,
+						EL: 'div',
+						style: {
+							color: 'grey',
+							textAlign: 'right',
+						}
+					}} />
+				</React.Fragment>
+			),
+			value: address
+		}))
 	const topBar = (
 		<Menu
 			attached="top"
@@ -150,65 +182,57 @@ const PageHeaderView = props => {
 					item
 					labeled
 					onChange={onSelection}
+					onClick={() => notifVisibleBond.changed(false)}
 					text={textEllipsis(selected.name, isMobile ? 25 : 50, 3, false)}
 					value={selected.address}
 					style={{ paddingRight: 0 }}
-					options={arrSort(
-						wallets.map(({ address, name }) => ({
-							key: address,
-							text: (
-								<React.Fragment>
-									<div style={{
-										color: 'black',
-										fontWeight: 'bold',
-										marginRight: 15,
-									}}>
-										{name}
-									</div>
-
-									<Currency {...{
-										address: address,
-										EL: 'div',
-										style: {
-											color: 'grey',
-											textAlign: 'right',
-										}
-									}} />
-								</React.Fragment>
-							),
-							value: address
-						})),
-						'text'
-					)}
+					options={walletOptions}
 				/>
 				<Dropdown
 					item
+					text={getSelectedLang()}
 					icon={{
-						name: 'chevron circle ' + (showTools ? 'up' : 'down'),
+						name: 'cog',//'chevron circle ' + (showTools ? 'up' : 'down'),
 						size: 'large',
-						className: 'no-margin'
+						// className: 'no-margin',
 					}}
-					onClick={() => setShowTools(!showTools)}
+					onClick={() => setShowTools(!showTools) | notifVisibleBond.changed(false)}
 				>
-					<Dropdown.Menu className="left">
-						<Dropdown.Item
-							icon="pencil"
-							content={texts.updateIdentity}
-							onClick={onEdit}
-						/>
-						<Dropdown.Item
-							icon="copy"
-							content={texts.copyAddress}
-							onClick={onCopy}
-						/>
-						{userId && [
-							<Dropdown.Item
-								key="0"
-								icon="gem"
-								content={texts.requestFunds}
-								onClick={onFaucetRequest}
-							/>
-						]}
+					<Dropdown.Menu className='left'>
+						{[
+							{
+								icon: 'pencil',
+								content: textsCap.updateIdentity,
+								onClick: onEdit,
+							},
+							{
+								icon: 'copy',
+								content: textsCap.copyAddress,
+								onClick: onCopy,
+							},
+							{
+								icon: inverted ? 'moon outline' : 'moon',
+								content: inverted ? textsCap.darkModeOff : textsCap.darkModeOn,
+								onClick: () => setInverted(!inverted)
+							},
+							userId && {
+								icon: 'gem',
+								content: textsCap.requestFunds,
+								onClick: onFaucetRequest,
+							},
+							{
+								icon: 'currency',
+								content: textsCap.changeCurrency,
+								onClick: () => setActive('settings'),
+							},
+							{
+								icon: 'language',
+								content: 'Change language', // Better left un-translated
+								onClick: () => setActive('settings'),
+							},
+						].filter(Boolean).map((props, i) =>
+							<Dropdown.Item {...props} key={props.icon + i} />
+						)}
 					</Dropdown.Menu>
 				</Dropdown>
 			</Menu.Menu>
@@ -218,18 +242,17 @@ const PageHeaderView = props => {
 	if (!isMobile || !isRegistered) return topBar
 
 	return (
-		<React.Fragment>
+		<div>
 			{topBar}
 			<Menu
+				children={buttons}
 				direction='bottom'
 				fixed='bottom'
 				inverted
 				vertical={false}
 				widths={5}
-			>
-				{buttons}
-			</Menu>
-		</React.Fragment>
+			/>
+		</div>
 	)
 }
 

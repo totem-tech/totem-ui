@@ -1,8 +1,7 @@
 import React, { Component } from 'react'
 import FormBuilder, { findInput } from '../components/FormBuilder'
-import { arrSort, generateHash } from '../utils/utils'
+import { arrSort } from '../utils/utils'
 // services
-import client from '../services/chatClient'
 import { historyLimit as chatHistoryLimit } from '../modules/chat/chat'
 import {
     getCurrencies,
@@ -10,21 +9,26 @@ import {
     setSelected as setSelectedCurrency
 } from '../services/currency'
 import { limit as historyItemsLimit } from '../services/history'
-import { getSelected as getSelectedLanguage, getTexts, languages, setSelected, setTexts, translated } from '../services/language'
+import {
+    getSelected as getSelectedLanguage,
+    languages,
+    setSelected as setSelectedLang,
+    translated,
+} from '../services/language'
 import { gridColumns } from '../services/window'
 
 const [texts, textsCap] = translated({
     column: 'column',
     columns: 'columns',
     chatLimitLabel: 'chat message limit per conversation',
+    error: 'error',
     gridColumnsLabel: 'number of columns on main content (experimental)',
-    gsCurrencyLabel: 'default currency',
-    gsLanguageLabel: 'default language (experimental)',
+    gsCurrencyLabel: 'display currency',
+    gsLanguageLabel: 'display language (experimental)',
     historyLimitLabel: 'history limit',
     unlimited: 'unlimited',
     saved: 'saved',
 }, true)
-const forceRefreshPage = () => window.location.reload(true)
 const savedMsg = { content: textsCap.saved, status: 'success' }
 
 export default class Settings extends Component {
@@ -49,7 +53,9 @@ export default class Settings extends Component {
                         })),
                         'text',
                     ),
-                    search: true,
+                    search: ['text', 'description'], // sort search results by specific keys
+                    // selectOnBlur: false,
+                    selectOnNavigation: false,
                     selection: true,
                     type: 'dropdown',
                     value: getSelectedLanguage(),
@@ -59,7 +65,7 @@ export default class Settings extends Component {
                     name: 'currency',
                     onChange: this.handleCurrencyChange,
                     options: [],
-                    search: true,
+                    search: ['text', 'description', 'value'],
                     selection: true,
                     type: 'dropdown',
                     value: getSelectedCurrency()
@@ -81,7 +87,7 @@ export default class Settings extends Component {
                     label: textsCap.chatLimitLabel,
                     name: 'chatMsgLimit',
                     onChange: this.handleChatLimitChange,
-                    options: [0, 10, 50, 100, 500, 1000].map((limit, i) => ({
+                    options: [10, 50, 100, 500].map((limit, i) => ({ //0 for unlimited
                         key: i,
                         text: limit || textsCap.unlimited,
                         value: limit,
@@ -106,19 +112,17 @@ export default class Settings extends Component {
                 },
             ]
         }
-    }
 
-    componentWillMount() {
         const { inputs } = this.state
         const currencyIn = findInput(inputs, 'currency')
         getCurrencies().then(currencies => {
-            currencyIn.options = currencies.map(({ currency, nameInLanguage, ISO }) => ({
+            const options = currencies.map(({ currency, nameInLanguage, ISO }) => ({
                 description: currency,
                 key: ISO,
                 text: nameInLanguage,
                 value: ISO
             }))
-            currencyIn.search = ['text', 'description']
+            currencyIn.options = arrSort(options, 'text')
             this.setState({ inputs })
         })
     }
@@ -144,15 +148,14 @@ export default class Settings extends Component {
     }
 
     handleLanguageChange = (_, { languageCode }) => {
-        setSelected(languageCode)
         this.setInputMessage('languageCode', savedMsg, 0)
-        const selected = getSelectedLanguage()
-        if (selected === 'EN') return forceRefreshPage()
-        const selectedHash = generateHash(getTexts(selected) || '')
-        client.languageTranslations(selected, selectedHash, (err, texts) => {
-            if (texts !== null) setTexts(selected, texts)
-            // reload page
-            forceRefreshPage()
+        setSelectedLang(languageCode).catch(err => {
+            this.setInputMessage('languageCode', {
+                content: `${err}`,
+                header: textsCap.error,
+                showIcon: true,
+                status: 'error',
+            })
         })
     }
 

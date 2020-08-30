@@ -1,5 +1,4 @@
-import React from 'react'
-import { ReactiveComponent } from 'oo7-react'
+import React, { Component } from 'react'
 import { Checkbox, Button, Label } from 'semantic-ui-react'
 import { textEllipsis } from '../utils/utils'
 import DataTable from '../components/DataTable'
@@ -7,7 +6,7 @@ import DataTable from '../components/DataTable'
 import { createInbox } from '../modules/chat/chat'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
-import addressbook, { getAddressName } from '../services/partner'
+import addressbook, { getAddressName, rxPartners } from '../services/partner'
 import { layoutBond } from '../services/window'
 // forms
 import CompanyForm from '../forms/Company'
@@ -16,11 +15,13 @@ import PartnerForm from '../forms/Partner'
 import IntroduceUserForm from '../forms/IntroduceUser'
 import { getUser } from '../services/chatClient'
 
-const [_, textsCap] = translated({
+const textsCap = translated({
 	add: 'add',
+	business: 'business',
 	chat: 'chat',
 	delete: 'delete',
 	edit: 'edit',
+	personal: 'personal',
 	public: 'public',
 	request: 'request',
 	tags: 'tags',
@@ -34,17 +35,17 @@ const [_, textsCap] = translated({
 	partnerName: 'partner name',
 	removePartner: 'remove partner',
 	usedBy: 'used by',
-}, true)
+}, true)[1]
 
-export default class PartnerList extends ReactiveComponent {
+export default class PartnerList extends Component {
 	constructor(props) {
-		super(props, { layout: layoutBond })
+		super(props)
 
 		this.state = {
 			listProps: {
 				columns: [
 					{ key: '_name', title: textsCap.partnerName },
-					{ collapsing: true, key: 'type', title: textsCap.usage },
+					{ collapsing: true, key: '_type', title: textsCap.usage },
 					{ key: '_associatedIdentity', title: textsCap.usedBy, style: { maxWidth: 200 } },
 					{
 						key: '_tags',
@@ -78,7 +79,7 @@ export default class PartnerList extends ReactiveComponent {
 				data: new Map(),
 				defaultSort: 'name',
 				emptyMessage: null,
-				searchExtraKeys: ['associatedIdentity', '_tagsStr', 'address', 'name', 'visibility'],
+				searchExtraKeys: ['address', 'associatedIdentity', 'name', 'visibility', '_tagsStr', '_type'],
 				searchable: true,
 				topLeftMenu: [],
 			}
@@ -86,10 +87,46 @@ export default class PartnerList extends ReactiveComponent {
 	}
 
 	componentWillMount() {
-		this.tieId = addressbook.bond.tie(() => this.getPartners())
+		this._mounted = true
+		this.subscriptions = {}
+
+		this.subscriptions.partners = rxPartners.subscribe(map => {
+			const { listProps } = this.state
+			listProps.data = map
+
+			Array.from(listProps.data).forEach(([_, p]) => {
+				const { associatedIdentity, address, name, tags, type } = p
+				p._address = textEllipsis(address, 15, 3)
+				p._associatedIdentity = associatedIdentity && getAddressName(associatedIdentity)
+				p._name = textEllipsis(name, 25, 3, false)
+				p._tags = (tags || []).map(tag => (
+					<Label
+						key={tag}
+						draggable='true'
+						onDragStart={e => e.stopPropagation() | e.dataTransfer.setData("Text", e.target.textContent)}
+						style={{
+							cursor: 'grab',
+							display: 'inline',
+							float: 'left',
+							margin: 1,
+						}}
+					>
+						{tag}
+					</Label>
+				))
+				// makes tags searchable
+				p._tagsStr = tags.join(' ')
+				p._type = type === 'personal' ? textsCap.personal : textsCap.business
+			})
+			this.setState({ listProps })
+		})
+		this.tieIdLayout = layoutBond.tie(layout => this.setState({ layout }))
 	}
 
-	componentWillUnmount = () => addressbook.bond.untie(this.tieId)
+	componentWillUnmount = () => {
+		this._mounted = false
+		layoutBond.untie(this.tieIdLayout)
+	}
 
 	getActions = partner => {
 		const { address, name, userId } = partner
@@ -138,36 +175,6 @@ export default class PartnerList extends ReactiveComponent {
 				title: textsCap.chat,
 			},
 		].filter(Boolean).map(props => <Button key={props.title} {...props} />)
-	}
-
-	getPartners() {
-		const { listProps } = this.state
-		listProps.data = addressbook.getAll()
-
-		Array.from(listProps.data).forEach(([_, p]) => {
-			const { associatedIdentity, address, name, tags } = p
-			p._address = textEllipsis(address, 15, 3)
-			p._associatedIdentity = associatedIdentity && getAddressName(associatedIdentity)
-			p._name = textEllipsis(name, 25, 3, false)
-			p._tags = (tags || []).map(tag => (
-				<Label
-					key={tag}
-					draggable='true'
-					onDragStart={e => e.stopPropagation() | e.dataTransfer.setData("Text", e.target.textContent)}
-					style={{
-						cursor: 'grab',
-						display: 'inline',
-						float: 'left',
-						margin: 1,
-					}}
-				>
-					{tag}
-				</Label>
-			))
-			// makes tags searchable
-			p._tagsStr = tags.join(' ')
-		})
-		this.setState({ listProps })
 	}
 
 	render() {

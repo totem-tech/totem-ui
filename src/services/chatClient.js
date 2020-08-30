@@ -1,5 +1,5 @@
 import io from 'socket.io-client'
-import { Bond } from 'oo7'
+import { BehaviorSubject } from 'rxjs'
 import { isFn } from '../utils/utils'
 import storage from './storage'
 
@@ -14,18 +14,20 @@ const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 
 // migrate existing user data
 const deprecatedKey = PREFIX + 'chat-user'
-const oldData = localStorage[deprecatedKey]
-if (oldData) {
-    localStorage.removeItem(deprecatedKey)
-    rw({ user: JSON.parse(oldData) })
-}
+try {
+    const oldData = localStorage[deprecatedKey]
+    if (oldData) {
+        localStorage.removeItem(deprecatedKey)
+        rw({ user: JSON.parse(oldData) })
+    }
+} catch (e) { }
 // remove trollbox chat history items
 if (rw().history) rw({ history: null })
 
-export const loginBond = new Bond()
+export const rxIsLoggedIn = new BehaviorSubject(false)
 // retrieves user credentails from local storage
 export const getUser = () => rw().user
-export const setUser = user => rw({ user }) // user = {id, secret}
+export const setUser = user => rw({ user })
 
 // include any ChatClient property that is not a function or event that does not have a callback
 const nonCbs = ['isConnected', 'disconnect']
@@ -43,10 +45,11 @@ export const getClient = () => {
     //     without promise:
     //          client.messate('hello universe!', (err, arg0, arg1) => console.log({err, arg0, arg1}))
     //     with promise:
-    //          client.message.promise('hello universe!').then(
-    //              console.log, // success callback excluding the error message
-    //              console.log, // error callback with only error message
-    //          )
+    //          try {
+    //              const result = await client.message.promise('hello universe!')
+    //          } catch(errMsg) { 
+    //              console.log(errMsg)
+    //          }
     //
     Object.keys(instance).forEach(key => {
         const func = instance[key]
@@ -67,8 +70,11 @@ export const getClient = () => {
                         const err = cbArgs[0]
                         isFn(originalCallback) && originalCallback.apply({}, cbArgs)
                         if (!!err) return reject(err)
+                        const result = cbArgs.slice(1)
                         // resolver only takes a single argument
-                        resolve(cbArgs.slice(1)) // exclude the error message
+                        // if callback is invoked with more than one value (excluding error message),
+                        // then resolve with an array of value arguments, otherwise, resolve with only the result value.
+                        resolve(result.length > 1 ? result : result[0])
                     }
 
                     func.apply(instance, args)
@@ -83,13 +89,9 @@ export const getClient = () => {
     const { id, secret } = getUser() || {}
     if (!id) return instance
 
-    instance.onConnect(() => instance.login(id, secret, err => {
-        err && console.log('Login failed', err)
-        loginBond.changed(!err)
-    }))
-    instance.onConnectError(() => {
-        loginBond.changed(false)
-    })
+    // auto login on connect to messaging service
+    instance.onConnect(() => instance.login(id, secret, () => { }))
+    instance.onConnectError(() => rxIsLoggedIn.next(false))
     return instance
 }
 
@@ -107,15 +109,6 @@ export class ChatClient {
         // this.onDisconnect = cb => socket.on('disonnect', cb)  // doesn't work
         this.disconnect = () => socket.disconnect()
         this.onError = cb => socket.on('error', cb)
-
-        // check if logged in user has the role 'support'
-        // if true, user will receive all support messages sent by other users
-        //
-        // Params:
-        // @cb  function: callback args=>
-        //                  @err    string: error message, if any
-        //                  @yes    boolean: true indicates user is a support member
-        this.amISupport = cb => isFn(cb) && socket.emit('am-i-support', cb)
 
         // add/get company by wallet address
         //
@@ -188,6 +181,8 @@ export class ChatClient {
         // Check if User ID Exists
         this.isUserOnline = (userId, cb) => isFn(cb) && socket.emit('is-user-online', userId, cb)
 
+        this.glAccounts = (accountNumbers, cb) => isFn(cb) && socket.emit('gl-accounts', accountNumbers, cb)
+
         // FOR BUILD MODE ONLY
         // Retrieve a list of error messages used in the messaging service
         //
@@ -251,6 +246,15 @@ export class ChatClient {
             cb,
         )
 
+        /**
+         * @name    newsletterSignup
+         * @summary sign up to newsletter and updates
+         * 
+         * @param   {Object}    values required fields: name and email
+         * @param   {Function}  cb
+         */
+        this.newsletterSignup = (values, cb) => isFn(cb) && socket.emit('newsletter-signup', values, cb)
+
         // Send notification
         //
         // Params:
@@ -309,20 +313,46 @@ export class ChatClient {
         // add/get/update project
         //
         // Params:
-        // @hash    string: A hash string generated using the project details as seed. Will be used as ID/key.
-        // @project object
-        // @create  bool: whether to create or update project
-        // @cb      function
-        this.project = (hash, project, create, cb) => socket.emit('project',
-            hash,
+        // @projectId   string: A hash string generated using the project details as seed. Will be used as ID/key.
+        // @project     object
+        // @create      bool: whether to create or update project
+        // @cb          function
+        this.project = (projectId, project, create, cb) => socket.emit('project',
+            projectId,
             project,
             create,
             cb,
         )
         // retrieve projects by an array of hashes
-        this.projectsByHashes = (hashArr, cb) => isFn(cb) && socket.emit('projects-by-hashes',
-            hashArr,
+        this.projectsByHashes = (projectIds, cb) => isFn(cb) && socket.emit('projects-by-hashes',
+            projectIds,
             (err, res, notFoundHashes) => cb(err, new Map(res), notFoundHashes),
+        )
+
+        /**
+         * @name task
+         * @summary add/update task details to messaging service
+         * 
+         * @param {String}      id ID of the task
+         * @param {Object}      task 
+         * @param {String}      ownerAddress
+         * @param {Function}    cb callback function expected arguments:
+         *                  @err    String: error message if query failed
+         */
+        this.task = (id, task, ownerAddress, cb) => isFn(cb) && socket.emit('task', id, task, ownerAddress, cb)
+
+        /**
+         * @name    taskGetById
+         * @summary retrieve a list of tasks details by Task IDs
+         * 
+         * @param   {String|Array}  ids single or array of Task IDs
+         * @param   {Function}      cb Callback function expected arguments:
+         *                      @err    String: error message if query failed
+         *                      @result Map: list of tasks with details
+         */
+        this.taskGetById = (ids, cb) => isFn(cb) && socket.emit('task-get-by-id',
+            ids,
+            (err, result) => cb(err, new Map(result)),
         )
     }
 
@@ -332,12 +362,22 @@ export class ChatClient {
         err => {
             if (!err) {
                 setUser({ id, secret })
-                loginBond.changed(true)
+                rxIsLoggedIn.next(true)
             }
             cb(err)
         },
     )
 
-    login = (id, secret, cb) => isFn(cb) && socket.emit('login', id, secret, cb)
+    login = (id, secret, cb) => isFn(cb) && socket.emit('login',
+        id,
+        secret,
+        (err, data) => {
+            const isLoggedIn = !err
+            // store user roles etc data sent from server
+            isLoggedIn && setUser({ ...getUser(), ...data })
+            if (isLoggedIn !== rxIsLoggedIn.value) rxIsLoggedIn.next(isLoggedIn)
+            err && console.log('Login failed', err)
+            cb(err, data)
+        })
 }
 export default getClient()

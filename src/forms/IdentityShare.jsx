@@ -1,6 +1,5 @@
-import React from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { ReactiveComponent } from 'oo7-react'
 import { isFn, isObj, isArr } from '../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 // services
@@ -38,7 +37,7 @@ const [texts] = translated({
     userIdsPlaceholder: 'Enter User ID(s)',
 })
 
-export default class IdentityShareForm extends ReactiveComponent {
+export default class IdentityShareForm extends Component {
     constructor(props) {
         super(props)
 

@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import uuid from 'uuid'
 import { Confirm } from 'semantic-ui-react'
-import { isBool, isFn } from '../utils/utils'
-import { translated } from './language'
 import DataStorage from '../utils/DataStorage'
-import { toggleFullscreen } from './window'
+import { isBool, isFn, className } from '../utils/utils'
+import { translated } from './language'
+import { toggleFullscreen, useInverted, getUrlParam } from './window'
 
-export const modals = new DataStorage()
+const modals = new DataStorage()
+export const rxModals = modals.rxData
 const textsCap = translated({
     areYouSure: 'are you sure?',
     ok: 'ok',
@@ -17,8 +18,19 @@ export const ModalsConainer = () => {
     const [modalsArr, setModalsArr] = useState([])
 
     useEffect(() => {
-        const tieId = modals.bond.tie(() => setModalsArr(Array.from(modals.getAll())))
-        return () => modals.bond.untie(tieId)
+        let mounted = true
+        const subscribed = rxModals.subscribe(map => {
+            if (!mounted) return
+            setModalsArr(Array.from(map))
+
+            // add/remove class to #app element to inticate at least one modal is open
+            const func = !!modals.size ? 'add' : 'remove'
+            document.getElementById('app').classList[func]('modal-open')
+        })
+        return () => {
+            mounted = false
+            subscribed.unsubscribe
+        }
     }, [])
 
     return (
@@ -33,19 +45,12 @@ export const ModalsConainer = () => {
 const add = (id, element) => {
     id = id || uuid.v1()
     modals.set(id, element)
-    // add class to #app element to inticate one or more modal is open
-    document.getElementById('app').classList.add('modal-open')
     // If already in fullscreen, exit. Otherwise, modal will not be visible.
     toggleFullscreen()
     return id
 }
 
-export const closeModal = (id, delay = 0) => setTimeout(() => {
-    modals.delete(id)
-    // update modal service
-    // remove classname if no modal is open
-    modals.size === 0 && document.getElementById('app').classList.add('modal-open')
-}, delay)
+export const closeModal = (id, delay = 0) => setTimeout(() => modals.delete(id), delay)
 
 // confirm opens a confirm dialog
 //
@@ -69,7 +74,7 @@ export const confirm = (confirmProps, id) => {
     }
     return add(
         id,
-        <Confirm
+        <IConfirm
             {...confirmProps}
             {...{
                 cancelButton,
@@ -80,6 +85,22 @@ export const confirm = (confirmProps, id) => {
                 onConfirm: (e, d) => closeModal(id) | (isFn(onConfirm) && onConfirm(e, d)),
             }}
         />
+    )
+}
+const IConfirm = props => {
+    const inverted = useInverted()
+    return (
+        <Confirm {...{
+            ...props,
+            className: className([
+                props.className,
+                { inverted }
+            ]),
+            style: {
+                borderRadius: inverted ? 5 : undefined,
+                ...props.style,
+            }
+        }} />
     )
 }
 
@@ -110,6 +131,18 @@ export const showForm = (FormComponent, props, id) => {
     )
 }
 
+// open any form within './forms/ in a modal
+(() => {
+    const form = (getUrlParam('form') || '').trim()
+    if (!form) return
+    try {
+        const props = JSON.parse(getUrlParam('formProps') || '{}')
+        const Form = require(`../forms/${form}${form.endsWith('.jsx') ? '' : '.jsx'}`)
+        showForm(Form.default, props)
+    } catch (e) {
+        form && console.log(e)
+    }
+})()
 export default {
     closeModal,
     confirm,

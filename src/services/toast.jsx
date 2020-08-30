@@ -3,9 +3,9 @@
  */
 import React, { useEffect, useReducer } from 'react'
 import uuid from 'uuid'
-import { deferred, isObj, isStr } from '../utils/utils'
+import { deferred, isObj, isStr, isFn } from '../utils/utils'
 import Message from '../components/Message'
-import { modals } from './modal'
+import { rxModals } from './modal'
 import { sidebarStateBond } from './sidebar'
 import { reducer } from './react'
 import { layoutBond, MOBILE } from './window'
@@ -25,11 +25,14 @@ export const ToastsContainer = () => {
 
     useEffect(() => {
         let mounted = true
-        const tieId = toasts.bond.tie(() => setState({
-            toastsArr: Array.from(toasts.getAll())
-        }))
+        const unsubscribers = {}
+        unsubscribers.toasts = toasts.rxData.subscribe(map =>
+            mounted && setState({ toastsArr: Array.from(map) })
+        ).unsubscribe
+        unsubscribers.modals = rxModals.subscribe(map =>
+            mounted && setState({ isModalOpen: map.size > 0 })
+        ).unsubscribe
         const tieIdMobile = layoutBond.tie(layout => mounted && setState({ isMobile: layout === MOBILE }))
-        const tieIdModals = modals.bond.tie(() => setState({ isModalOpen: modals.size > 0 }))
         // delay until sidebar animnation is complete
         const tieIdSidebar = sidebarStateBond.tie(({ visible }) => {
             const sidebarWillAnimate = toasts.size > 0 && !isMobile
@@ -43,9 +46,8 @@ export const ToastsContainer = () => {
         return () => {
             mounted = false
             layoutBond.untie(tieIdMobile)
-            modals.bond.untie(tieIdModals)
-            toasts.bond.untie(tieId)
             sidebarStateBond.untie(tieIdSidebar)
+            Object.values(unsubscribers).forEach(fn => isFn(fn) && fn())
         }
     }, [])
 

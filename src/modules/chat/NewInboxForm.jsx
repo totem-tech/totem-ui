@@ -98,14 +98,11 @@ export default function NewInboxForm(props) {
     const handleSubmit = async (_, values) => {
         const { onSubmit } = props
         let receiverIds = values[names.receiverIds].map(x => x.split(',')).flat()
-        const { id: ownId } = getUser() || {}
-        const isSupport = receiverIds.includes(SUPPORT)
-        if (isSupport) {
-            let userIsSupport = false
-            await client.amISupport((_, yes) => userIsSupport = !!yes)
+        const { id: ownId, roles = [] } = getUser() || {}
+        if (receiverIds.includes(SUPPORT)) {
             receiverIds = [
                 SUPPORT,
-                !userIsSupport ? null : receiverIds.filter(id => ![SUPPORT, ownId].includes(id))[0]
+                !roles.includes(SUPPORT) ? null : receiverIds.filter(id => ![SUPPORT, ownId].includes(id))[0]
             ].filter(Boolean)
         }
         const name = receiverIds.length > 1 ? values[names.name] : null
