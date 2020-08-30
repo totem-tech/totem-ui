@@ -74,7 +74,7 @@ setDefaultConfig(
 export const getConfig = () => config
 export const getConnection = async (create = false) => {
     // never connect to blockchain
-    if (window.noChain) return await (new Promise(() => { }))
+    if (window.isInFrame) return await (new Promise(() => { }))
     try {
         let isConnected = !connection.api ? false : connection.api._isConnected.value
         if (isConnected) return connection

@@ -291,6 +291,10 @@ form.ui.form label,
 form.ui.form .field > label {
     text-transform: capitalize;
 }
+/* Group inputs: remove extra padding */
+.ui.form .fields.form-group > .field > .field {
+    padding: 0;
+}
 
 /* Message */
 /* forces close icon to be over content */

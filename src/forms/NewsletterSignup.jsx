@@ -10,8 +10,10 @@ const textsCap = translated({
     emailLabel: 'email',
     emailPlaceholder: 'enter your email address',
     header: 'newsletter signup',
-    nameLabel: 'name',
-    namePlaceholder: 'enter your name',
+    firstNameLabel: 'first name',
+    firstNamePlaceholder: 'enter your name',
+    lastNameLabel: 'family name',
+    lastNamePlaceholder: 'enter your family name',
     signup: 'signup',
     successMsg: 'thank you for signing up! Don\'t forget to check out our live testnet application at',
     subheader: 'We promise to not spam you and we will NEVER give your personal details to any third-party without your explicit conscent',
@@ -25,13 +27,30 @@ export default class NewsletteSignup extends Component {
             onSubmit: this.handleSubmit,
             inputs: [
                 {
-                    label: textsCap.nameLabel,
-                    minLength: 4,
-                    name: 'name',
-                    placeholder: textsCap.namePlaceholder,
-                    required: true,
-                    type: 'text',
-                    value: '',
+                    name: 'names',
+                    inline: true,
+                    type: 'group',
+                    widths: 'equal',
+                    inputs: [
+                        {
+                            label: textsCap.firstNameLabel,
+                            minLength: 4,
+                            name: 'firstName',
+                            placeholder: textsCap.firstNamePlaceholder,
+                            required: true,
+                            type: 'text',
+                            value: '',
+                        },
+                        {
+                            label: textsCap.lastNameLabel,
+                            minLength: 4,
+                            name: 'lastName',
+                            placeholder: textsCap.lastNamePlaceholder,
+                            required: true,
+                            type: 'text',
+                            value: '',
+                        },
+                    ]
                 },
                 {
                     defer: null,
@@ -51,8 +70,12 @@ export default class NewsletteSignup extends Component {
             ]
         }
 
-        if (props.modal) return
-        this.state.message = { content: textsCap.subheader }
+        if (!props.modal) {
+            this.state.message = { content: textsCap.subheader }
+        }
+        if (window.isInFrame) {
+            this.state.style = { maxWidth: 400, margin: 'auto', ...props.style }
+        }
     }
 
     handleSubmit = async (_, values) => {

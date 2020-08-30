@@ -15,6 +15,7 @@ import {
 	objWithoutKeys,
 	searchRanked,
 	isBool,
+	className,
 } from '../utils/utils'
 import Message from './Message'
 // Custom Inputs
@@ -300,11 +301,15 @@ export class FormInput extends Component {
 
 		let groupEl = (
 			<div style={{ marginBottom: 15 }}>
-				<Form.Group {...objWithoutKeys(attrs, ['inputs'])} style={{ ...styleContainer, ...attrs.style }}>
+				<Form.Group {...{
+					className: 'form-group',
+					...objWithoutKeys(attrs, ['inputs']),
+					style: { ...styleContainer, ...attrs.style },
+				}}>
 					{inputEl}
 				</Form.Group>
 				{message && <Message {...message} />}
-			</div>
+			</div >
 		)
 
 		if (!isObj(accordion)) return groupEl

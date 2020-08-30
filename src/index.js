@@ -45,7 +45,7 @@ const doRender = () => {
     render(<App />, document.getElementById('app'))
 }
 
-window.noChain = isSignUp
+window.isInFrame = isSignUp
 // initiate connection to blockchain
 getConnection()
 init().then(doRender).catch(doRender)
