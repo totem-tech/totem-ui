@@ -14,11 +14,13 @@ const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 
 // migrate existing user data
 const deprecatedKey = PREFIX + 'chat-user'
-const oldData = localStorage[deprecatedKey]
-if (oldData) {
-    localStorage.removeItem(deprecatedKey)
-    rw({ user: JSON.parse(oldData) })
-}
+try {
+    const oldData = localStorage[deprecatedKey]
+    if (oldData) {
+        localStorage.removeItem(deprecatedKey)
+        rw({ user: JSON.parse(oldData) })
+    }
+} catch (e) { }
 // remove trollbox chat history items
 if (rw().history) rw({ history: null })
 
@@ -243,6 +245,15 @@ export class ChatClient {
             name,
             cb,
         )
+
+        /**
+         * @name    newsletterSignup
+         * @summary sign up to newsletter and updates
+         * 
+         * @param   {Object}    values required fields: name and email
+         * @param   {Function}  cb
+         */
+        this.newsletterSignup = (values, cb) => isFn(cb) && socket.emit('newsletter-signup', values, cb)
 
         // Send notification
         //

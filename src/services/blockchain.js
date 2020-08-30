@@ -10,7 +10,6 @@ import { QUEUE_TYPES } from './queue'
 import storage from './storage'
 import { setToast } from './toast'
 import { rxOnline } from './window'
-import { call } from 'file-loader'
 
 const MODULE_KEY = 'blockchain'
 const textsCap = translated({
@@ -74,6 +73,8 @@ setDefaultConfig(
 
 export const getConfig = () => config
 export const getConnection = async (create = false) => {
+    // never connect to blockchain
+    if (window.noChain) return await (new Promise(() => { }))
     try {
         let isConnected = !connection.api ? false : connection.api._isConnected.value
         if (isConnected) return connection

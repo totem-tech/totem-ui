@@ -382,3 +382,11 @@ body .ui.form.inverted.loading::before {
     background: #4c4c4c;
     color: white;
 }
+
+/* Newsletter signup iframe */
+body.iframe {
+	background: transparent;
+}
+body.iframe label {
+    color: white !important;
+}

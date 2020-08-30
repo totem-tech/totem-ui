@@ -72,13 +72,15 @@ const MODULE_KEY = 'getting-started'
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 // old localStorage key for active step 
 const legacyKey = 'totem_getting-started-step-index'
-// migrate to new location and remove legacy key
-if (localStorage.getItem(legacyKey) || (storage.settings.global(MODULE_KEY) || {}).activeStep) {
-	localStorage.removeItem(legacyKey)
-	storage.settings.global(MODULE_KEY, null)
-	const activeStep = parseInt(localStorage.getItem(legacyKey) || storage.settings.global(MODULE_KEY).activeStep)
-	rw({ activeStep })
-}
+try {
+	// migrate to new location and remove legacy key
+	if (localStorage.getItem(legacyKey) || (storage.settings.global(MODULE_KEY) || {}).activeStep) {
+		localStorage.removeItem(legacyKey)
+		storage.settings.global(MODULE_KEY, null)
+		const activeStep = parseInt(localStorage.getItem(legacyKey) || storage.settings.global(MODULE_KEY).activeStep)
+		rw({ activeStep })
+	}
+} catch (e) { }
 
 export default class GetingStarted extends Component {
 	constructor(props) {

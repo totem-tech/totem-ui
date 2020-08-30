@@ -9,7 +9,10 @@ import client from './services/chatClient'
 import { fetchNSaveTexts } from './services/language'
 import storage from './services/storage'
 import PromisE from './utils/PromisE'
+import { getUrlParam } from './services/window'
+import NewsletterSignup from './forms/NewsletterSignup'
 
+const isSignUp = getUrlParam('NewsletterSignup') === 'true'
 const init = () => PromisE.timeout((resolve, reject) => {
     const countries = storage.countries.getAll()
     let hasCountries = countries.size > 0
@@ -32,13 +35,17 @@ const init = () => PromisE.timeout((resolve, reject) => {
             reject() // continue on rendering the application
         }
     })
-
 }, 2000)
-const doRender = () => render(<App />, document.getElementById('app'))
+const doRender = () => {
+    if (isSignUp) {
+        render(<NewsletterSignup />, document.getElementById('app'))
+        setTimeout(() => document.querySelector('body').classList.add('iframe'), 100)
+        return
+    }
+    render(<App />, document.getElementById('app'))
+}
 
+window.noChain = isSignUp
 // initiate connection to blockchain
 getConnection()
-init().then(doRender)
-    // force render in case messaging service is taking longer to get connected
-    .catch(doRender)
-
+init().then(doRender).catch(doRender)

@@ -4,7 +4,7 @@ import { Confirm } from 'semantic-ui-react'
 import DataStorage from '../utils/DataStorage'
 import { isBool, isFn, className } from '../utils/utils'
 import { translated } from './language'
-import { toggleFullscreen, useInverted } from './window'
+import { toggleFullscreen, useInverted, getUrlParam } from './window'
 
 const modals = new DataStorage()
 export const rxModals = modals.rxData
@@ -131,6 +131,17 @@ export const showForm = (FormComponent, props, id) => {
     )
 }
 
+// open any form within './forms/ in a modal
+(() => {
+    const form = (getUrlParam('form') || '').trim()
+    if (!form) return
+    try {
+        const Form = require('../forms/' + form)
+        showForm(Form.default)
+    } catch (e) {
+        form && console.log(e)
+    }
+})()
 export default {
     closeModal,
     confirm,

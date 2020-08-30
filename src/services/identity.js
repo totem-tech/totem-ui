@@ -130,7 +130,7 @@ const init = () => {
         const { address } = addFromUri(uri) || {}
         // in case `wasm-crypto` hasn't been initiated yet, try again after a second
         if (!address) return setTimeout(init, 1000)
-        console.log('Identity service: creating default identity for first time user')
+        // console.log('Identity service: creating default identity for first time user')
 
         const identity = {
             address,

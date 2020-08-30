@@ -132,7 +132,8 @@ export const getProjects = async (forceUpdate = false, callback, timeout = 10000
         unsubscribe,
         updatePromise,
     } = config
-    const { address } = getSelected()
+    const { address } = getSelected() || {}
+    if (!address) return
     const cacheKey = cacheKeyProjects(address)
 
     if (!navigator.onLine) return new Map(cacheRW(cacheKey) || [])
