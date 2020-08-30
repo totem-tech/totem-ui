@@ -23,7 +23,7 @@ const textsCap = translated({
 
 export default function TaskView(props) {
     const address = props.address || useSelected()
-    const [allTasks, message] = useTasks(['owner', 'approver', 'beneficiary'], address)
+    const [allTasks = new Map(), message] = useTasks(['owner', 'approver', 'beneficiary'], address)
     const [activeType, setActiveType] = useState(rwSettings().activeType || 'owner')
     const inverted = useInverted()
     const panes = [
@@ -72,7 +72,7 @@ export default function TaskView(props) {
             <TaskList {...{
                 address,
                 asTabPane: true,
-                data: activeType === 'marketplace' ? new Map() : allTasks.get(activeType),
+                data: activeType !== 'marketplace' && allTasks && allTasks.get(activeType) || new Map(),
                 key: activeType,
                 style: { marginTop: 15 },
                 type: activeType,
