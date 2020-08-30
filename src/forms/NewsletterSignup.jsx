@@ -17,8 +17,9 @@ const textsCap = translated({
     lastNameLabel: 'family name',
     lastNamePlaceholder: 'enter your family name',
     signup: 'signup',
-    successMsg1: 'thank you for signing up!',
-    successMsg2: 'don\'t forget to check out our live testnet application at',
+    successHeader: 'thank you for signing up!',
+    successMsg: 'if you haven\'t already done so, please feel free create an account, check out the application and provide us with any feedback you may have. It\'s completely free while in testnet!',
+    successMsgIframe: 'don\'t forget to check out our live testnet application which is completely free while in testnet:',
     subheader: 'We promise to not spam you and we will NEVER give your personal details to any third-party without your explicit consent',
 }, true)[1]
 
@@ -97,8 +98,8 @@ export default class NewsletteSignup extends Component {
             submitDisabled: !error,
             success: !error,
             message: {
-                content: error ? `${error}` : textsCap.successMsg2,
-                header: textsCap.successMsg1,
+                content: error ? `${error}` : textsCap.successMsg,
+                header: textsCap.successHeader,
                 showIcon: true,
                 status: error ? 'error' : 'success'
             },
@@ -115,7 +116,7 @@ export default class NewsletteSignup extends Component {
                 className: 'success-message',
                 content: (
                     <span>
-                        {message.content}
+                        {textsCap.successMsgIframe}
                         <div>
                             <a href={prodUrl} target='_blank'>
                                 {prodUrl}
