@@ -1,16 +1,16 @@
 {
-  "name": "totem-substrate-ui",
-  "version": "1.0.0",
-  "description": "Totem Substrate UI",
+  "name": "totem-meccano-ui",
+  "version": "1.1.0",
+  "description": "Totem Meccano UI",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "npm-run-all --parallel webpack-dev server",
     "prod": "npm-run-all --parallel webpack-prod server-prod",
-    "server": "nodemon --watch src/ --watch server/ --ignore server/data/ --ignore src/services/languageFiles.js --verbose --exec ./node_modules/.bin/babel-node ./server/index.js --ext jsx,js --presets env,react",
-    "server-prod": "nodemon --verbose --exec ./node_modules/.bin/babel-node ./server/index.js --ignore server/ --ignore src/",
+    "server": "nodemon --verbose --watch src/ --watch server/ --ignore server/data/ --ignore src/services/languageFiles.js --exec ./node_modules/.bin/babel-node ./server/index.js --ext jsx,js --presets env,react",
+    "server-prod": "nodemon --verbose --exec ./node_modules/.bin/babel-node ./server/index.js --ignore ./",
     "webpack-dev": "webpack --mode development --watch --debug",
-    "webpack-prod": "webpack --mode production --watch --debug"
+    "webpack-prod": "webpack --mode production --debug"
   },
   "babel": {
     "plugins": [
