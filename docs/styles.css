@@ -391,6 +391,14 @@ body .ui.form.inverted.loading::before {
 body.iframe {
 	background: transparent;
 }
-body.iframe label {
+body.iframe label, .success-message * {
     color: white !important;
+}
+body.iframe .message.success-message {
+	background: transparent;
+	box-shadow: none;
+	color: white;
+	font-size: 125%;
+	line-height: 175%;
+	text-align: center;
 }

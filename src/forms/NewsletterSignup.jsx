@@ -4,7 +4,9 @@ import FormBuilder from '../components/FormBuilder'
 import { translated } from '../services/language'
 import client from '../services/chatClient'
 import { validate, TYPES } from '../utils/validator'
+import Message from '../components/Message'
 
+const prodUrl = 'https://totem.live'
 const textsCap = translated({
     emailError: 'please enter a valid email address',
     emailLabel: 'email',
@@ -15,7 +17,8 @@ const textsCap = translated({
     lastNameLabel: 'family name',
     lastNamePlaceholder: 'enter your family name',
     signup: 'signup',
-    successMsg: 'thank you for signing up! Don\'t forget to check out our live testnet application at',
+    successMsg1: 'thank you for signing up!',
+    successMsg2: 'don\'t forget to check out our live testnet application at',
     subheader: 'We promise to not spam you and we will NEVER give your personal details to any third-party without your explicit consent',
 }, true)[1]
 
@@ -92,20 +95,40 @@ export default class NewsletteSignup extends Component {
         this.setState({
             loading: false,
             submitDisabled: !error,
+            success: !error,
             message: {
-                content: error ? `${error}` : (
-                    <span>
-                        {textsCap.successMsg}
-                        <a href='https://totem.live' target='_blank'> https://totem.live</a>
-                    </span>
-                ),
+                content: error ? `${error}` : textsCap.successMsg2,
+                header: textsCap.successMsg1,
                 showIcon: true,
                 status: error ? 'error' : 'success'
             },
         })
     }
 
-    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
+    render = () => {
+        let { message, success } = this.state
+        message = message || this.props.message
+
+        if (success && message && window.isInFrame) return (
+            <Message {...{
+                ...message,
+                className: 'success-message',
+                content: (
+                    <span>
+                        {message.content}
+                        <div>
+                            <a href={prodUrl} target='_blank'>
+                                {prodUrl}
+                            </a>
+                        </div>
+                    </span>
+                ),
+                showIcon: false,
+                status: 'basic',
+            }} />
+        )
+        return <FormBuilder {...{ ...this.props, ...this.state, message }} />
+    }
 }
 NewsletteSignup.propTypes = {
     values: PropTypes.object,
