@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import uuid from 'uuid'
 import FormBuilder from '../components/FormBuilder'
 import { isFn } from '../utils/utils'
-import { getClient } from '../services/chatClient'
+import { getClient, getUser } from '../services/chatClient'
 import { translated } from '../services/language'
 
 const [texts, textsCap] = translated({
@@ -23,12 +23,14 @@ export default class FormRegister extends Component {
     constructor(props) {
         super(props)
 
+        const { id } = getUser() || {}
         this.state = {
-            message: undefined,
             onSubmit: this.handleSubmit,
+            submitDisabled: !!id,
             success: false,
             inputs: [
                 {
+                    disabled: !!id,
                     label: texts.userId,
                     message: {
                         content: (

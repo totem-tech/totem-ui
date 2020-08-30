@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
-import { isFn } from '../utils/utils'
+import { isFn, arrUnique } from '../utils/utils'
 // services
 import identityService from '../services/identity'
 import { translated } from '../services/language'
@@ -107,7 +107,7 @@ export default class IdentityForm extends Component {
                     noResultsMessage: texts.tagsInputEmptyMessage,
                     multiple: true,
                     onAddItem: this.handleAddTag,
-                    options: getAllTags().map(tag => ({
+                    options: arrUnique([...getAllTags(), ...this.values.tags]).map(tag => ({
                         key: tag,
                         text: tag,
                         value: tag,

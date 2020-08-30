@@ -37,7 +37,7 @@ export function getLayout() {
 export const getUrlParam = name => {
     const params = {}
     const regex = /[?&]+([^=&]+)=([^&]*)/gi
-    window.location.href.replace(regex, (_, key, value) => params[key] = value)
+    window.location.href.replace(regex, (_, key, value) => params[key] = decodeURIComponent(value))
     return name ? params[name] || '' : params
 }
 

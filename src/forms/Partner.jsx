@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import { ss58Decode, addressToStr } from '../utils/convert'
-import { arrSort, deferred, isFn, isObj } from '../utils/utils'
+import { arrSort, deferred, isFn, isObj, arrUnique } from '../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import CompanyForm from './Company'
 // services
@@ -135,7 +135,7 @@ class Partner extends Component {
                     noResultsMessage: texts.tagsNoResultsMsg,
                     multiple: true,
                     onAddItem: this.handleAddTag,
-                    options: getAllTags().map(tag => ({
+                    options: arrUnique([...getAllTags(), ...values.tags]).map(tag => ({
                         key: tag,
                         text: tag,
                         value: tag,
