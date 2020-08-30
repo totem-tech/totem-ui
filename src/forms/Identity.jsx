@@ -107,7 +107,7 @@ export default class IdentityForm extends Component {
                     noResultsMessage: texts.tagsInputEmptyMessage,
                     multiple: true,
                     onAddItem: this.handleAddTag,
-                    options: arrUnique([...getAllTags(), ...this.values.tags]).map(tag => ({
+                    options: arrUnique([...getAllTags(), ...(this.values.tags || [])]).map(tag => ({
                         key: tag,
                         text: tag,
                         value: tag,

@@ -56,7 +56,7 @@ class Partner extends Component {
         const partner = props.values && addressbook.get(props.values.address)
         this.doUpdate = !!partner
         const values = { ...partner, ...props.values }
-        const { address, name, visibility } = values
+        const { address, name, tags = [], visibility } = values
 
         // placeholder to store user added address to the dropdown list
         this.customAddresses = []
@@ -135,7 +135,7 @@ class Partner extends Component {
                     noResultsMessage: texts.tagsNoResultsMsg,
                     multiple: true,
                     onAddItem: this.handleAddTag,
-                    options: arrUnique([...getAllTags(), ...values.tags]).map(tag => ({
+                    options: arrUnique([...getAllTags(), ...tags]).map(tag => ({
                         key: tag,
                         text: tag,
                         value: tag,
@@ -144,7 +144,7 @@ class Partner extends Component {
                     type: 'dropdown',
                     search: true,
                     selection: true,
-                    value: values.tags || []
+                    value: tags || []
                 },
                 {
                     bond: new Bond(),
