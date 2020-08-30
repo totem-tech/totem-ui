@@ -1,73 +1,62 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { ReactiveComponent } from 'oo7-react'
 import { Icon, Menu } from 'semantic-ui-react'
-import { isDefined, isFn } from '../utils/utils'
+import { isFn } from '../utils/utils'
 
-export default class Paginator extends ReactiveComponent {
-
-    handleClick(target) {
-        const { current, onSelect, total } = this.props
-        if (!isFn(onSelect) || current === target) return;
-        const isValid = 1 <= target && target <= total
-        isValid && onSelect(target)
-    }
-
-    getNumberItems() {
-        const { current, navLimit, total } = this.props
-        const edging = (current + navLimit - 1) >= total
-        let start = edging ? total - navLimit + 1 : current - Math.floor(navLimit / 2)
-        start = start < 1 ? 1 : start
-        let end = start + navLimit
-        end = end > total ? total + (edging ? 1 : 0) : end
-        return Array(end - start).fill(0).map((_, i) => {
-            const num = start + i
-            const isCurrent = num === current
-            return (
-                <Menu.Item
-                    active={isCurrent}
-                    as="a"
-                    key={num}
-                    onClick={() => this.handleClick(num)}
-                >
-                    {!isCurrent ? num : <b>{num}</b>}
-                </Menu.Item>
-            )
-        })
-
-    }
-
-    render() {
-        const { current, float, total } = this.props
-        const next = current + 1
-        const prev = current - 1
-
-        const menuProps = { pagination: true }
-        if (isDefined(float)) {
-            menuProps.floated = float
-        }
+const handleSelect = (props, target) => {
+    const { current, onSelect, total } = props
+    if (!isFn(onSelect) || current === target) return
+    const isValid = 1 <= target && target <= total
+    isValid && onSelect(target)
+}
+const getNumberItems = props => {
+    const { current, navLimit, total } = props
+    const edging = (current + navLimit - 1) >= total
+    let start = edging ? total - navLimit + 1 : current - Math.floor(navLimit / 2)
+    start = start < 1 ? 1 : start
+    let end = start + navLimit
+    end = end > total ? total + (edging ? 1 : 0) : end
+    return Array(end - start).fill(0).map((_, i) => {
+        const num = start + i
+        const isCurrent = num === current
         return (
-            <Menu {...menuProps}>
-                <Menu.Item
-                    as="a"
-                    icon
-                    onClick={() => this.handleClick(prev)}
-                    disabled={prev <= 0}
-                >
-                    <Icon name="chevron left" />
-                </Menu.Item>
-                {this.getNumberItems()}
-                <Menu.Item
-                    as="a"
-                    icon
-                    onClick={() => this.handleClick(next)}
-                    disabled={next > total}
-                >
-                    <Icon name="chevron right" />
-                </Menu.Item>
-            </Menu>
+            <Menu.Item
+                active={isCurrent}
+                as="a"
+                key={num}
+                onClick={() => handleSelect(props, num)}
+            >
+                {!isCurrent ? num : <b>{num}</b>}
+            </Menu.Item>
         )
-    }
+    })
+
+}
+function Paginator(props) {
+    const { current, float, total } = props
+    const next = current + 1
+    const prev = current - 1
+    return (
+        <Menu {...{ pagination: true, style: { float: float || 'right' } }}>
+            <Menu.Item
+                as="a"
+                icon
+                onClick={() => handleSelect(props, prev)}
+                disabled={prev <= 0}
+            >
+                <Icon name="chevron left" />
+            </Menu.Item>
+            {getNumberItems(props)}
+            <Menu.Item
+                as="a"
+                icon
+                onClick={() => handleSelect(props, next)}
+                disabled={next > total}
+            >
+                <Icon name="chevron right" />
+            </Menu.Item>
+        </Menu>
+    )
 }
 
 Paginator.propTypes = {
@@ -77,3 +66,4 @@ Paginator.propTypes = {
     navLimit: PropTypes.number,
     onSelect: PropTypes.func.isRequired
 }
+export default React.memo(Paginator)

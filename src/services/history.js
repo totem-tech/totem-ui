@@ -1,5 +1,4 @@
 import uuid from 'uuid'
-import { Bond } from 'oo7'
 import DataStorage from '../utils/DataStorage'
 import { isObj, isStr, isValidNumber, isDefined } from '../utils/utils'
 import storage from './storage'
@@ -7,17 +6,19 @@ import storage from './storage'
 const key = 'history'
 const MODULE_KEY = 'totem_' + key
 const history = new DataStorage(MODULE_KEY, true)
+export const rxHistory = history.rxData
 const LIMIT_DEFAULT = 500 // default number of items to store
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 
-export const bond = new Bond().defaultTo(uuid.v1())
-const updateBond = () => bond.changed(uuid.v1())
-export const clearAll = () => history.setAll(new Map()) | updateBond()
+export const clearAll = () => history.setAll(new Map())
 
 export const getAll = () => history.getAll()
 
-export const remove = id => history.delete(id) | updateBond()
+
+export const getById = id => history.get(id)
+
+export const remove = id => history.delete(id)
 
 // set number of actions to store and apply to history items
 // use null for unlimited history
@@ -40,23 +41,27 @@ export const limit = (newLimit) => {
 
     const limitted = Array.from(history.getAll()).slice(-limit)
     history.setAll(new Map(limitted))
-    changed && updateBond()
     return limit
 }
 
 const actionIcons = {
-    'api.tx.': 'connectdevelop',
-    'client.faucetRequest': 'money',
-    'client.project': 'tasks',
+    'api.tx.': 'connectdevelop',        // icon for all blockchain transactions 
+    'client.faucetRequest': 'money',    // icon for faucet requests
+    'client.project': 'briefcase',      // icon for all project related requests
 }
-const notifyTypesIcons = {
+// icons for notification types
+const notificationIcons = {
     identity: {
+        introduce: 'handshake',
+        invitation_response: 'upload',
         request: 'download',
         share: 'upload',
     },
-    task: {
-        
-    },
+    // task: 'tasks',
+    time_keeping: {
+        invitation: 'group',
+        invitation_response: 'group',
+    }
 }
 
 // enable/disable history data donation
@@ -67,18 +72,20 @@ export const historyDataDonation = enable => (isBool(enable) ? rw({ donate }) : 
 // returns appropriate icon name if valid
 export const historyWorthy = (func, args) => {
     if (func.startsWith('api.tx.')) return actionIcons['api.tx.']
+    const historyIcon = 'history' // for any new/undefined types that should be logged
     switch (func) {
+        case 'client.notificationSetStatus': return false
         case 'client.project':
             // only log project creation and update actions
-            const [hash, project] = args
-            if (!hash || !isObj(project)) return false
+            const [recordId, project] = args
+            if (!recordId || !isObj(project)) return false
             break
         case 'client.notify':
             const [_, type, childType] = args
-            const childTypes = notifyTypesIcons[type]
-            return isStr(childTypes) ? childTypes : childTypes[childType]
+            const icon = notificationIcons[type]
+            return (isStr(icon) ? icon : isObj(icon) && icon[childType]) || historyIcon
     }
-    return actionIcons[func] || false
+    return actionIcons[func] || func.startsWith('client.') && historyIcon
 }
 
 // add or update a history item. Each item represents an individual successful or failed queued task 
@@ -116,6 +123,7 @@ export const save = (
     id = uuid.v1(),
     balance,
     result,
+    txId,
     timestamp = new Date().toISOString(),
 ) => {
     const icon = historyWorthy(action, data)
@@ -135,9 +143,9 @@ export const save = (
         status,
         timestamp,
         title,
+        txId,
     })
     // apply history limit
     limit(undefined, false)
-    updateBond()
     return id
 }

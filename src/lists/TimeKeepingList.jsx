@@ -1,25 +1,27 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import { BehaviorSubject } from 'rxjs'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
 import { Button } from 'semantic-ui-react'
 import DataTable from '../components/DataTable'
 import FormBuilder from '../components/FormBuilder'
-import { isArr, deferred, copyToClipboard, textEllipsis } from '../utils/utils'
-import { hashToStr } from '../utils/convert'
+import { isArr, deferred, copyToClipboard, textEllipsis, isFn } from '../utils/utils'
+import { BLOCK_DURATION_SECONDS, secondsToDuration, blockNumberToTS } from '../utils/time'
 // Forms
 import PartnerForm from '../forms/Partner'
 import TimeKeepingForm, { TimeKeepingUpdateForm } from '../forms/TimeKeeping'
 import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
 // Services
-import { hashTypes, tasks } from '../services/blockchain'
-import identities, { getSelected, selectedAddressBond } from '../services/identity'
+import { hashTypes, queueables as bcQueueables, getCurrentBlock } from '../services/blockchain'
+import identities, { getSelected, rxIdentities, rxSelected } from '../services/identity'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
-import partners from '../services/partner'
-import { getTimeRecordsDetails, statuses, getTimeRecordsBonds, recordTasks } from '../services/timeKeeping'
-import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import partners, { rxPartners } from '../services/partner'
+import { getProjects, statuses, query, queueables } from '../services/timeKeeping'
+import { addToQueue } from '../services/queue'
 import { getLayout } from '../services/window'
+import PromisE from '../utils/PromisE'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -66,6 +68,7 @@ const [texts] = translated({
     cannotBanOwnIdentity: 'You cannot ban your own identity!',
     emptyMessage: 'No time records available.',
     emptyMessageArchive: 'No records have been archived yet',
+    finishedAt: 'Finished at',
     orInviteATeamMember: 'invite someone to an activity?',
     noTimeRecords: 'Your team have not yet booked time. Maybe ',
     notProjectOwner: 'You do not own this activity',
@@ -95,23 +98,23 @@ statusTexts[statuses.invoice] = words.invoiced
 statusTexts[statuses.delete] = words.deleted
 
 // trigger refresh on not-archived records tables if multiple open at the same time 
-const updateTriggerBond = new Bond()
-const inProgressHashesBond = new Bond()
+const rxTrigger = new BehaviorSubject()
+const rxInProgressIds = new BehaviorSubject()
 
 export default class ProjectTimeKeepingList extends Component {
     constructor(props) {
         super(props)
 
-        // this.getRecords = deferred(this.getRecords, 150)
-        this.hashList = []
+        this.recordIds = []
         this.state = {
             inProgressHashes: [],
             columns: [
+                { collapsing: true, key: '_end_block', title: texts.finishedAt },
                 { collapsing: true, key: 'projectName', title: wordsCap.activity },
                 { key: '_workerName', title: wordsCap.identity },
                 { key: 'duration', textAlign: 'center', title: wordsCap.duration },
-                { key: 'start_block', title: texts.blockStart },
-                { key: 'end_block', title: texts.blockEnd },
+                // { key: 'start_block', title: texts.blockStart },
+                // { key: 'end_block', title: texts.blockEnd },
                 { collapsing: true, key: '_status', textAlign: 'center', title: wordsCap.status },
                 {
                     collapsing: true,
@@ -182,48 +185,61 @@ export default class ProjectTimeKeepingList extends Component {
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
-    componentWillMount() {
+    async componentWillMount() {
         this._mounted = true
-        // only update project & identity names
-        this.identitiesBond = Bond.all([identities.bond, partners.bond])
-        this.tieIdSelected = selectedAddressBond.tie(this.setBond)
-        this.tieIdHashes = inProgressHashesBond.tie(ar => this.setState({ inProgressHashes: ar }))
-        if (!this.props.archive) {
-            this.tieIdTrigger = updateTriggerBond.tie(this.getRecords)
+        this.unsubscribers = {}
+        const { archive, manage, projectId } = this.props
+        const { list, listArchive, listByProject, listByProjectArchive } = query.record
+        let arg = !manage ? getSelected().address : projectId
+        let multi = false
+        if (manage && !arg) {
+            const projects = await getProjects()
+            const projectIds = Array.from(projects)
+                // filter projects
+                .map(([projectId, { isOwner }]) => isOwner && projectId)
+                .filter(Boolean)
+            arg = projectIds
+            multi = true
         }
+        const queryFn = archive ?
+            (manage ? listByProjectArchive : listArchive)
+            : (manage ? listByProject : list)
+        // subscribe to changes on the list of recordIds
+        this.unsubscribers.recordIds = queryFn.call(null, arg, this.getRecords, multi)
+
+        if (manage) {
+            // auto update partner/identity names
+            this.unsubscribers.identities = rxIdentities.subscribe(() =>
+                this._mounted && this.processRecords(this.state.data)
+            ).unsubscribe
+            this.unsubscribers.partners = rxPartners.subscribe(() =>
+                this._mounted && this.processRecords(this.state.data)
+            ).unsubscribe
+        }
+
+        // reset everything on selected address change
+        this.unsubscribers.selected = rxSelected.subscribe(() => {
+            if (!this._mounted) return
+            if (!this.ignoredFirst) {
+                this.ignoredFirst = true
+                return
+            }
+            this.componentWillUnmount()
+            this.componentWillMount()
+        })
+
+        this.unsubscribers.inProgressIds = rxInProgressIds.subscribe(ar =>
+            this._mounted && this.setState({ inProgressHashes: ar })
+        ).unsubscribe
+        // update record details whenever triggered
+        this.unsubscribers.trigger = archive && rxTrigger.subscribe(() =>
+            this._mounted && this.getRecords()
+        ).unsubscribe
     }
 
     componentWillUnmount() {
         this._mounted = false
-        this.tieId && this.bond.untie(this.tieId)
-        this.tieIdIdentities && this.identitiesBond.untie(this.tieIdIdentities)
-        selectedAddressBond.untie(this.tieIdSelected)
-        inProgressHashesBond.untie(this.tieIdHashes)
-        this.tieIdTrigger && updateTriggerBond.untie(this.tieIdTrigger)
-    }
-
-    setBond = () => {
-        const { address } = getSelected()
-        const propsStr = JSON.stringify({ ...this.props, address })
-        if (this.propsStr === propsStr) return
-        this.propsStr = propsStr
-
-        const { archive, manage, projectHash } = this.props
-        getTimeRecordsBonds(archive, manage, projectHash).then(bonds => {
-            this.bond && this.bond.untie(this.tieId)
-            this.bond = Bond.all(bonds)
-            this.tieId = this.bond.tie(this.getRecords)
-        })
-
-        if (this.manageAddress === address) return
-        this.manageAddress = manage ? address : undefined
-        if (!manage) return
-        this.tieIdIdentities && this.identitiesBond.untie(this.tieIdIdentities)
-        // update worker names whenever partner or identity list changes
-        this.tieIdIdentities = this.identitiesBond.tie(() => {
-            const { data } = this.state
-            data && data.size > 0 && this.processRecords(data)
-        })
+        Object.values(this.unsubscribers).forEach(fn => isFn(fn) && fn())
     }
 
     getActionContent = (record, hash) => {
@@ -325,17 +341,44 @@ export default class ProjectTimeKeepingList extends Component {
             .map(props => <Button {...props} />)
     }
 
-    getRecords = deferred(hashList => {
-        hashList = (isArr(hashList) ? hashList : this.hashList).flat().map(hashToStr)
-        this.hashList = hashList
-        if (this.hashList.length === 0) return this.setState({ data: new Map() })
+    getRecords = deferred(async (recordIds) => {
+        recordIds = (isArr(recordIds) ? recordIds : this.recordIds).flat()
+        this.recordIds = recordIds
+        if (!this.recordIds.length) return this.setState({ data: new Map() })
 
-        // get individual records details
-        getTimeRecordsDetails(this.hashList).then(this.processRecords)
+        // retrieve all record details
+        let [records, projects, currentBlock] = await PromisE.all(
+            query.record.get(recordIds, null, true),
+            getProjects(),
+            getCurrentBlock()
+        )
+
+        records = records.map((record, i) => {
+            if (!record) return
+            const { end_block, project_hash: projectHash, total_blocks, worker } = record
+            const recordId = recordIds[i]
+            const { name, ownerAddress } = projects.get(projectHash) || {}
+            return [
+                recordId,
+                {
+                    ...record,
+                    // add extra information including duration in hh:mm:ss format
+                    duration: secondsToDuration(total_blocks * BLOCK_DURATION_SECONDS),
+                    hash: recordId, // 
+                    projectHash,
+                    workerAddress: worker || '',// && ss58Encode(worker) || '',
+                    projectOwnerAddress: ownerAddress,
+                    projectName: name,
+                    _end_block: blockNumberToTS(end_block, currentBlock),
+                }
+            ]
+        })
+
+        this.processRecords(new Map(records))
     }, 150)
 
     // process record details and add extra information like worker name etc
-    processRecords = records => Array.from(records).forEach(([hash, record]) => {
+    processRecords = records => Array.from(records || new Map()).forEach(([recordId, record]) => {
         const { locked, projectName, projectOwnerAddress, submit_status, workerAddress } = record
         record.approved = submit_status === statuses.accept
         record.rejected = submit_status === statuses.reject
@@ -363,12 +406,12 @@ export default class ProjectTimeKeepingList extends Component {
         const { projectHash, projectOwnerAddress, submit_status, workerAddress } = data.get(hash) || {}
         const targetStatus = approve ? statuses.accept : statuses.reject
         if (!workerAddress || submit_status !== statuses.submit || targetStatus === submit_status) return
-        inProgressHashesBond.changed(inProgressHashes.concat(hash))
-        const task = recordTasks.approve(projectOwnerAddress, workerAddress, projectHash, hash, approve, null, {
+        rxInProgressIds.next(inProgressHashes.concat(hash))
+        const task = queueables.record.approve(projectOwnerAddress, workerAddress, projectHash, hash, approve, null, {
             title: `${wordsCap.timekeeping} - ${approve ? texts.approveRecord : texts.rejectRecord}`,
             description: `${texts.recordId}: ${hash}`,
             then: success => {
-                inProgressHashesBond.changed(inProgressHashes.filter(h => h !== hash))
+                rxInProgressIds.next(inProgressHashes.filter(h => h !== hash))
                 success && this.updateTrigger()
             },
         })
@@ -384,7 +427,7 @@ export default class ProjectTimeKeepingList extends Component {
         inProgressHashes.push(hash)
         this.setState({ inProgressHashes })
 
-        addToQueue(tasks.archiveRecord(address, hashTypes.timeRecordHash, hash, archive, {
+        addToQueue(bcQueueables.archiveRecord(address, hashTypes.timeRecordHash, hash, archive, {
             title: texts.archiveRecord,
             description: `${wordsCap.hash}: ${hash}`,
             then: () => {
@@ -420,7 +463,7 @@ export default class ProjectTimeKeepingList extends Component {
 
         inProgressHashes.push(hash)
         this.setState({ inProgressHashes })
-        const task = recordTasks.save(
+        const task = queueables.record.save(
             projectOwnerAddress,
             projectHash,
             hash,
@@ -448,8 +491,9 @@ export default class ProjectTimeKeepingList extends Component {
         const { manage } = this.props
         const isMobile = getLayout() === 'mobile'
         const {
-            _status, duration, end_block, nr_of_breaks, projectHash, projectName,
-            start_block, total_blocks, workerAddress, workerName
+            duration, end_block, nr_of_breaks, projectHash, projectName,
+            start_block, total_blocks, workerAddress, workerName,
+            _end_block, _status,
         } = record
         const inputs = [
             manage && [texts.projectName, projectName || projectHash],
@@ -458,6 +502,7 @@ export default class ProjectTimeKeepingList extends Component {
             [wordsCap.status, _status],
             [wordsCap.duration, duration],
             [texts.numberOfBreaks, nr_of_breaks, 'number'],
+            [texts.finishedAt, _end_block],
             [texts.blockCount, total_blocks],
             [texts.blockStart, start_block],
             [texts.blockEnd, end_block],
@@ -501,7 +546,7 @@ export default class ProjectTimeKeepingList extends Component {
         })
     }
 
-    updateTrigger = () => this.props.archive ? this.getRecords() : updateTriggerBond.changed(uuid.v1())
+    updateTrigger = () => this.props.archive ? this.getRecords() : rxTrigger.next()
 
     render() {
         const { archive, hideTimer, manage } = this.props
@@ -529,7 +574,6 @@ export default class ProjectTimeKeepingList extends Component {
                 </p>
             )
         }
-        this.setBond()
         return <DataTable {...this.state} />
     }
 }

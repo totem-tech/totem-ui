@@ -7,14 +7,20 @@ import { getProject } from '../../services/project'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import storage from '../../services/storage'
 import { workerTasks } from '../../services/timeKeeping'
-import { mapSort } from '../../utils/utils'
 
 export const MODULE_KEY = 'totem_notifications'
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
-export const notifications = new DataStorage(MODULE_KEY, true)
+const notifications = new DataStorage(MODULE_KEY, true)
+export const rxNotifications = notifications.rxData
 export const newNotificationBond = new Bond()
 export const visibleBond = new Bond().defaultTo(false)
 export const unreadCountBond = new Bond().defaultTo(getUnreadCount())
+notifications.rxData.subscribe(() => {
+    // auto update unread count
+    unreadCountBond.changed(getUnreadCount())
+    // change visibility if no notificaitons left
+    if (!notifications.size) visibleBond.changed(false)
+})
 
 const [texts] = translated({
     timekeeping: 'Timekeeping',
@@ -40,7 +46,6 @@ client.onNotify((id, from, type, childType, message, data, tsCreated) => {
     setTimeout(() => {
         rw({ tsLastReceived: tsCreated })
         notifications.set(id, newNotification).sort('tsCreated', true, true)
-        unreadCountBond.changed(getUnreadCount())
         newNotificationBond.changed(id)
         console.log('Notification received!', id, from, tsCreated)
     })
@@ -67,7 +72,6 @@ client.onConnect(() => {
         // save latest item's timestamp as last received
         rw({ tsLastReceived: mostRecent.tsCreated })
         notifications.setAll(items, true).sort('tsCreated', true, true)
-        unreadCountBond.changed(getUnreadCount())
         gotNew && newNotificationBond.changed(mostRecentId)
     })
 })
@@ -85,7 +89,6 @@ export const toggleRead = id => {
     const item = notifications.get(id)
     item.read = !item.read
     notifications.set(id, item)
-    unreadCountBond.changed(getUnreadCount())
 
     addToQueue({
         silent: true,
@@ -97,7 +100,6 @@ export const toggleRead = id => {
 
 export const remove = id => setTimeout(() => {
     notifications.delete(id)
-    if (!notifications.size) visibleBond.changed(false)
 
     addToQueue({
         silent: true,
@@ -109,7 +111,7 @@ export const remove = id => setTimeout(() => {
 
 // respond to time keeping invitation
 export const handleTKInvitation = (
-    projectHash, workerAddress, accepted,
+    projectId, workerAddress, accepted,
     // optional args
     projectOwnerId, projectName, notificationId
 ) => new Promise(resolve => {
@@ -124,11 +126,11 @@ export const handleTKInvitation = (
     })).reduce((notifyId, [xNotifyId, xNotification]) => {
         if (!!notifyId) return notifyId
         const { data: { projectHash: hash, workerAddress: address } } = xNotification
-        const match = hash === projectHash && address === workerAddress
+        const match = hash === projectId && address === workerAddress
         return match ? xNotifyId : null
     }, null)
 
-    const getprops = (projectOwnerId, projectName) => workerTasks.accept(projectHash, workerAddress, accepted, {
+    const getprops = (projectOwnerId, projectName) => workerTasks.accept(projectId, workerAddress, accepted, {
         title: `${texts.timekeeping} - ${accepted ? texts.acceptInvitation : texts.rejectInvitation}`,
         description: `${texts.activity}: ${projectName}`,
         then: success => !success && resolve(false),
@@ -142,7 +144,7 @@ export const handleTKInvitation = (
                 type,
                 'invitation_response',
                 `${accepted ? texts.acceptedInvitation : texts.rejectedInvitation}: "${projectName}"`,
-                { accepted, projectHash, projectName, workerAddress },
+                { accepted, projectHash: projectId, projectName, workerAddress },
                 err => {
                     !err && notificationId && remove(notificationId)
                     resolve(!err)
@@ -154,7 +156,7 @@ export const handleTKInvitation = (
     if (!!projectOwnerId && !!projectName) return addToQueue(getprops(projectOwnerId, projectName))
 
     // retrieve project details to get project name and owners user id
-    getProject(projectHash).then(project => {
+    getProject(projectId).then(project => {
         const { name, userId } = project || {}
         addToQueue(getprops(userId, name))
     })

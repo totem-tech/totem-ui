@@ -1,64 +1,51 @@
-import 'semantic-ui-css/semantic.min.css'
 import React from 'react'
 import { render } from 'react-dom'
-import { App } from './app.jsx'
-import { setNodeUri } from 'oo7-substrate'
-import { getTypes, nodes, setConfig } from './services/blockchain'
-import client from './services/chatClient'
-import { getSelected, getTexts, setTexts } from './services/language'
-import storage from './services/storage'
-import { setDefaultConfig } from './utils/polkadotHelper'
+import 'semantic-ui-css/semantic.min.css'
 import { generateHash } from './utils/utils'
+import { App } from './app.jsx'
+// services
+import { getConnection } from './services/blockchain'
+import client from './services/chatClient'
+import { fetchNSaveTexts } from './services/language'
+import storage from './services/storage'
+import PromisE from './utils/PromisE'
+import { getUrlParam } from './services/window'
+import NewsletterSignup from './forms/NewsletterSignup'
 
-const init = () => new Promise((resolve, reject) => {
-    // set denomnination info
-    setConfig()
-    // set node URLs
-    setNodeUri(nodes)
-
+const isSignUp = getUrlParam('NewsletterSignup') === 'true'
+const init = () => PromisE.timeout((resolve, reject) => {
     const countries = storage.countries.getAll()
-    const countriesHash = generateHash(countries)
     let hasCountries = countries.size > 0
     let translationChecked = false
-    client.onConnect(() => {
+    client.onConnect(async () => {
         // Retrieve a list of countries and store in the browser local storage
-        !hasCountries && client.countries(countriesHash, (_, countries) => {
+        !hasCountries && client.countries(generateHash(countries), (_, countries) => {
             countries && storage.countries.setAll(countries)
             hasCountries = true
         })
 
         // check and update selected language texts
         if (translationChecked) return
-        const EN = 'EN'
-        const engHash = generateHash(getTexts(EN))
-        const selected = getSelected()
-        const selectedHash = selected !== EN && generateHash(getTexts(selected) || '')
-        // retrieve list of application texts in English
-        client.languageTranslations(EN, engHash, (err, texts) => {
-            if (err) return console.log('Language check failed:', EN, { texts }) | resolve()
-            // update english text list
-            if (texts !== null) setTexts(EN, texts)
-            if (!selectedHash) {
-                translationChecked = true
-                resolve()
-                return
-            }
-            // retrieve list of application texts in selected language, if not English
-            client.languageTranslations(selected, selectedHash, (err, texts) => {
-                if (err) return console.log('Language check failed:', selected, { texts }) | resolve()
-                if (texts !== null) setTexts(selected, texts)
-                translationChecked = true
-                resolve()
-            })
-        })
+        try {
+            await fetchNSaveTexts()
+            translationChecked = true
+            resolve()
+        } catch (err) {
+            console.log('Language translations check failed:', err)
+            reject() // continue on rendering the application
+        }
     })
+}, 2000)
+const doRender = () => {
+    if (isSignUp) {
+        render(<NewsletterSignup />, document.getElementById('app'))
+        setTimeout(() => document.querySelector('body').classList.add('iframe'), 100)
+        return
+    }
+    render(<App />, document.getElementById('app'))
+}
 
-    // set Polkadot blockchain types
-    getTypes().then(types => setDefaultConfig(nodes, types))
-
-    // force resolve in case messaging service is not connected yet
-    setTimeout(() => resolve(), 2000)
-})
-
-init().then(() => render(<App />, document.getElementById('app')))
-
+window.isInFrame = isSignUp
+// initiate connection to blockchain
+getConnection()
+init().then(doRender).catch(doRender)

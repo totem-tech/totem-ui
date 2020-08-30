@@ -2,17 +2,17 @@ import React from 'react'
 import { Bond } from 'oo7'
 import { If } from 'oo7-react'
 import { calls, runtime, hexToBytes } from 'oo7-substrate'
-import { InputBond } from '../legacies/InputBond'
-import { TransactButton } from '../components/TransactButton'
+import { InputBond } from './InputBond'
+import { TransactButton } from './TransactButton'
 
 class PokeView extends React.Component {
-	constructor () {
-		super()
-		this.storageKey = new Bond;
-		this.storageValue = new Bond;
+    constructor() {
+        super()
+        this.storageKey = new Bond;
+        this.storageValue = new Bond;
     }
-    
-	render () {
+
+    render() {
         const content = (
             <React.Fragment>
                 <InputBond bond={this.storageKey} placeholder='Storage key e.g. 0xf00baa' />
@@ -27,8 +27,8 @@ class PokeView extends React.Component {
                 />
             </React.Fragment>
         )
-		return <If condition={runtime.metadata.map(m => m.modules && m.modules.some(o => o.name === 'sudo'))} then={content}/>
-	}
+        return <If condition={runtime.metadata.map(m => m.modules && m.modules.some(o => o.name === 'sudo'))} then={content} />
+    }
 }
 
 export default PokeView

@@ -1,26 +1,14 @@
-// Store and manage identities
-import { Bond } from 'oo7'
+import React, { useState, useEffect } from 'react'
+import { BehaviorSubject } from 'rxjs'
 import { generateMnemonic } from 'bip39'
-import { secretStore } from 'oo7-substrate'
-import uuid from 'uuid'
 import DataStorage from '../utils/DataStorage'
 import { keyring } from '../utils/polkadotHelper'
 import { objClean } from '../utils/utils'
-import storage from './storage'
 
-// catch errors from secretstore
-const _secretStore = () => {
-    try {
-        return secretStore()
-    } catch (e) {
-        return { _key: [] }
-    }
-}
-
-const MODULE_KEY = 'identity'
 const DEFAULT_NAME = 'Default'
-const rw = value => storage.settings.module(MODULE_KEY, value) || {}
-const identities = new DataStorage('totem_identities', true)
+const identities = new DataStorage('totem_identities')
+export const rxIdentities = identities.rxData
+export const rxSelected = new BehaviorSubject()
 const USAGE_TYPES = Object.freeze({
     PERSONAL: 'personal',
     BUSINESS: 'business',
@@ -36,18 +24,17 @@ const VALID_KEYS = Object.freeze([
     'cloudBackupStatus', // undefined: never backed up, in-progress, done
     'cloudBackupTS', // most recent successful backup timestamp
     'fileBackupTS', // most recent file backup timestamp
+    'selected',
     'tags',
     'usageType',
 ])
-
-export const bond = identities.bond
-export const selectedAddressBond = new Bond()
 
 export const addFromUri = (uri, type = 'sr25519') => {
     try {
         return keyring.keyring.addFromUri(uri, null, type).toJson()
     } catch (err) {
-        console.log('services.identity.addFromUri()', err)
+        // error will occur if wasm-crypto is not initialised or invalid URI passed
+        // console.log('services.identity.addFromUri()', err)
     }
 }
 
@@ -56,7 +43,7 @@ export const generateUri = generateMnemonic
 export const get = address => identities.get(address)
 
 // todo: migrate from array to map for consistency
-export const getAll = () => Array.from(identities.getAll()).map(([_, x]) => x)
+export const getAll = () => identities.map(([_, x]) => x)
 
 export const getSelected = () => identities.find({ selected: true }, true, true) || getAll()[0]
 
@@ -67,11 +54,12 @@ export const remove = address => identities.delete(address)
 
 // add/update
 export const set = (address, identity = {}) => {
-    const { type, usageType } = identity
-    // add to PolkadotJS keyring
-    !identities.get(address) && keyring.add([identity.uri])
+    const { selected, type, uri, usageType } = identity
     identity.type = type || 'sr25519'
-    if (!Object.keys(USAGE_TYPES).includes(usageType)) identity.usageType = USAGE_TYPES.PERSONAL
+    identity.selected = !!selected
+    if (!Object.values(USAGE_TYPES).includes(usageType)) {
+        identity.usageType = USAGE_TYPES.PERSONAL
+    }
     identity = objClean({
         ...identities.get(address), //  merge with existing values
         ...identity
@@ -90,32 +78,60 @@ export const setSelected = address => {
     })
     identity.selected = true
     identities.set(address, identity)
-    selectedAddressBond.changed(address)
+    rxSelected.next(address)
 }
-const deprecateSecretStore = (ssKeys) => {
-    console.log('Identity service: Migrating secretStore identities')
-    const arr = ssKeys.map(ssKey => {
-        const { address } = ssKey
-        return [
-            address,
-            objClean(
-                { ...ssKey, ...identities.find(address) },
-                REQUIRED_KEYS
-            ),
-        ]
-    })
-    identities.setAll(new Map(arr))
-}
-const init = () => {
-    const ssKeys = _secretStore()._keys
-    let identities = getAll()
-    const hasMissingProps = identities.filter(x => !x.name || !x.uri).length > 0
-    const shouldInit = !hasMissingProps && identities.length === 0 && ssKeys.length <= 1
 
-    if (shouldInit) {
-        console.log('Identity service: Creating default identity for first time user')
+// Custom hook to use the selected identity in a functional component
+export const useSelected = () => {
+    const [selected, setSelected] = useState(rxSelected.value)
+
+    useEffect(() => {
+        let mounted = true
+        let ignoredFirst = false
+        const subscribed = rxSelected.subscribe(address => {
+            if (!mounted) return
+            if (!ignoredFirst) return ignoredFirst = true
+            setSelected(address)
+        })
+        return () => {
+            mounted = false
+            subscribed.unsubscribe()
+        }
+    }, [])
+
+    return selected
+}
+
+// Custom React hook use get the list of identities and subscribe to changes
+export const useIdentities = () => {
+    const [list, setList] = useState(getAll())
+
+    useEffect(() => {
+        let mounted = true
+        let ignoredFirst
+        const subscribed = identities.rxData.subscribe(() => {
+            // prevents one extra render
+            ignoredFirst && mounted && setList(getAll())
+            ignoredFirst = true
+        })
+        return () => {
+            mounted = false
+            subscribed.unsubscribe()
+        }
+    }, [])
+
+    return [list]
+}
+
+const init = () => {
+    if (!getAll().length) {
+        // generate a new seed
         const uri = generateUri() + '/totem/0/0'
-        const { address } = addFromUri(uri)
+        const { address } = addFromUri(uri) || {}
+        // in case `wasm-crypto` hasn't been initiated yet, try again after a second
+        if (!address) return setTimeout(init, 1000)
+        // console.log('Identity service: creating default identity for first time user')
+
         const identity = {
             address,
             name: DEFAULT_NAME,
@@ -123,27 +139,21 @@ const init = () => {
             uri,
         }
         set(address, identity)
-    } else if (!rw().secretStoreDeprecated) deprecateSecretStore(ssKeys)
+    }
 
-    rw({ secretStoreDeprecated: true })
-
-    // add seeds to PolkadotJS keyring
-    keyring.add(getAll().map(x => x.uri))
-    selectedAddressBond.changed((getSelected() || {}).address)
+    rxSelected.next(getSelected().address)
 }
-setTimeout(init, 2000) // 2 seconds delay for secretStore to load
+
+setTimeout(init)
 
 export default {
     addFromUri,
-    bond,
     find,
     generateUri,
     get,
     getAll,
     getSelected,
-    keyring,
     remove,
-    selectedAddressBond,
     set,
     setSelected,
 }

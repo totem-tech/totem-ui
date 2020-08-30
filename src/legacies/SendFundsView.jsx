@@ -5,7 +5,7 @@ import { calls, runtime, runtimeUp } from 'oo7-substrate'
 import { If, ReactiveComponent } from 'oo7-react'
 import { AccountIdBond, SignerBond } from './AccountIdBond.jsx'
 import { BalanceBond } from './BalanceBond.jsx'
-import { TransactButton } from '../components/TransactButton.jsx'
+import { TransactButton } from './TransactButton.jsx'
 import { Pretty } from './Pretty'
 
 class SendFundsView extends ReactiveComponent {

@@ -1,8 +1,10 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Divider, Header, Icon, Placeholder, Rail, Segment } from 'semantic-ui-react'
+import { Divider, Header, Icon, Placeholder, Rail } from 'semantic-ui-react'
 import ErrorBoundary from './CatchReactErrors'
-import { isBond, isFn, isObj } from '../utils/utils'
+import Segment from './Segment'
+import Text from './Text'
+import { isBond, isFn } from '../utils/utils'
 import { toggleFullscreen } from '../services/window'
 
 export default class ContentSegment extends Component {
@@ -23,14 +25,9 @@ export default class ContentSegment extends Component {
 		const { bond } = this.props
 		if (!isBond(bond)) return
 		this.tieId = bond.tie(() => {
-			const { contentProps: argsS } = this.state
-			const { contentProps: argsP } = this.props
+			const { contentProps } = this.props
 			const content = this.getContent()
-			// if arguments changed then force re-render
-			const doReRender = isObj(argsP) && JSON.stringify(argsS) === JSON.stringify(argsP)
-			this.setState({ content: doReRender ? '' : content, contentProps: argsP })
-
-			doReRender && setTimeout(() => this.setState({ content }))
+			this.setState({ content, contentProps })
 		})
 	}
 
@@ -46,7 +43,7 @@ export default class ContentSegment extends Component {
 		return (!!ContentEl ? <ContentEl {...contentProps} /> : content) || placeholder
 	}
 
-	toggleSubHeader = () => this.setState({ showSubHeader: !this.state.showSubHeader })
+	toggleSubHeader = e => e.preventDefault() | e.stopPropagation() | this.setState({ showSubHeader: !this.state.showSubHeader })
 
 	render() {
 		const {
@@ -80,7 +77,7 @@ export default class ContentSegment extends Component {
 				compact={!!compact}
 				inverted={inverted}
 				padded
-				style={style}
+				style={{ ...styles.segment, ...style }}
 				vertical={vertical}
 			>
 				{isFn(onClose) && (
@@ -109,14 +106,15 @@ export default class ContentSegment extends Component {
 						{icon && <Icon name={icon} />}
 						<Header.Content>
 							<div>
-								{headerText}
+								<Text>{headerText}</Text>
 								{subHeader && (
 									<Icon
+										// className='text-deselect'
+										color='grey'
 										link
 										name='question circle outline'
-										color='grey'
-										size='small'
 										onClick={this.toggleSubHeader}
+										size='small'
 									/>
 								)}
 							</div>
@@ -124,7 +122,7 @@ export default class ContentSegment extends Component {
 						{showSubHeader && (
 							<React.Fragment>
 								<Header.Subheader style={styles.subHeader}>
-									{subHeader}
+									<Text>{subHeader}</Text>
 								</Header.Subheader>
 								{subHeaderDetails && (
 									<div style={styles.subHeaderDetails}>
@@ -188,9 +186,6 @@ ContentSegment.defaultProps = {
 	headerDivider: true,
 	headerTag: 'h2',
 	index: 0,
-	style: {
-		borderRadius: 2
-	},
 	vertical: false
 }
 
@@ -211,12 +206,17 @@ const placeholder = (
 )
 
 const styles = {
+	segment: {
+		overflow: 'auto',
+	},
 	closeButtonRail: {
 		marginTop: 0,
 		marginRight: 25,
 		padding: 0,
 		fontSize: 50,
-		width: 50
+		width: 50,
+		height: 40,
+		maxHeight: 40,
 	},
 	subHeader: {
 		marginTop: 8

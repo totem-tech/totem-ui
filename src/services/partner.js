@@ -1,12 +1,9 @@
-import { Bond } from 'oo7'
-import uuid from 'uuid'
 import { textEllipsis, arrUnique } from '../utils/utils'
 import DataStorage from '../utils/DataStorage'
 import identities from './identity'
 
-const partners = new DataStorage('totem_partners', true)
-const bond = new Bond().defaultTo(uuid.v1())
-const updateBond = () => bond.changed(uuid.v1())
+const partners = new DataStorage('totem_partners')
+export const rxPartners = partners.rxData
 
 export const get = address => partners.get(address)
 // returns name of an address if available in identity or partner lists.
@@ -34,7 +31,7 @@ export const getAllTags = () => {
 export const getByName = name => partners.find({ name }, true, true, true)
 // returns first matching partner with userId
 export const getByUserId = id => (Array.from(partners.getAll()).find(([_, { userId }]) => userId === id) || [])[1]
-export const remove = address => partners.delete(address) | updateBond()
+export const remove = address => partners.delete(address)
 // Add/update partner
 export const set = (address, name, tags, type, userId, visibility, associatedIdentity) => {
     name = name.trim()
@@ -45,7 +42,6 @@ export const set = (address, name, tags, type, userId, visibility, associatedIde
     partners.set(address, {
         address, name, tags, type, userId, visibility, associatedIdentity, isPublic: visibility === 'public'
     })
-    updateBond()
 }
 
 // Set partner as public
@@ -55,11 +51,9 @@ export const setPublic = address => {
     partner.isPublic = true
     partner.visibility = 'public'
     partners.set(address, { ...partner })
-    updateBond()
 }
 
 export default {
-    bond,
     getAddressName,
     getAll,
     get,

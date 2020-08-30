@@ -3,15 +3,17 @@ import Inbox from './Inbox'
 import InboxList from './InboxList'
 import { openInboxBond, visibleBond } from './chat'
 import './style.css'
+import { useInverted } from '../../services/window'
 
-export default function ChatBar({ inverted = false }) {
+export default function ChatBar() {
     const [visible, setVisible] = useState(visibleBond._value)
     const [inboxKey, setInboxKey] = useState(openInboxBond._value)
+    // const inverted = useInverted()
     const receiverIds = (inboxKey || '').split(',')
     const container = 'chat-container'
     const className = [
         container,
-        inverted ? 'inverted' : '',
+        // inverted ? 'inverted' : '',
     ].filter(Boolean).join(' ')
 
 
@@ -41,7 +43,7 @@ export default function ChatBar({ inverted = false }) {
         <div className={className}>
             {!visible ? '' : (
                 <div className='chat-contents'>
-                    <InboxList {...{ inverted, inboxKey }} />
+                    <InboxList {...{ inboxKey }} />
                     {receiverIds.length > 0 && (
                         <Inbox {...{
                             inboxKey,

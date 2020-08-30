@@ -1,24 +1,23 @@
-import React from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-import { ReactiveComponent } from 'oo7-react'
 import { Button } from 'semantic-ui-react'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import PartnerForm from '../forms/Partner'
-import { isFn, arrSort } from '../utils/utils'
+import { isFn, arrSort, textEllipsis } from '../utils/utils'
 // services
 import identities, { getSelected } from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
-import partners from '../services/partner'
-import { getProjects, openStatuses } from '../services/project'
+import partners, { rxPartners } from '../services/partner'
+import { getProjects as getUserProjects, openStatuses } from '../services/project'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import timeKeeping, { workerTasks } from '../services/timeKeeping'
+import { query, queueables } from '../services/timeKeeping'
+import { unsubscribe } from '../services/react'
 
 const notificationType = 'time_keeping'
 const childType = 'invitation'
-// ToDo: translate
-const [words, wordsCap] = translated({
+const textsCap = translated({
     activity: 'activity',
     close: 'close',
     identity: 'identity',
@@ -26,28 +25,26 @@ const [words, wordsCap] = translated({
     invitee: 'invitee',
     partner: 'partner',
     myself: 'myself',
-}, true)
-const [texts] = translated({
-    activityLabel: 'Select an activity',
-    addedToQueueDesc: 'Invitation request has been added to background queue',
-    addedToQueue: 'Added to queue',
-    addPartner: 'Add New Partner',
-    formHeader: 'Timekeeping - Invitation to join the Team',
-    invitedAndAccepted: 'Invited and accepted successfully',
-    inviteSuccess: 'Invitation sent!',
-    inviteSuccessNotifyFailed: 'Invitation sent but failed to notify user!',
-    partnerAcceptedInvite: 'Partner already accepted an invitation to the selected activity',
-    partnerInvited: 'Partner has already been invited to the selected activity',
-    partnerLabel: 'Select a partner',
-    partnerUserIdWarning: 'Selected partner does not include an User ID.',
+    activityLabel: 'select an activity',
+    addedToQueueDesc: 'invitation request has been added to background queue',
+    addedToQueue: 'added to queue',
+    addPartner: 'add new partner',
+    formHeader: 'Timekeeping - invitation to join the Team',
+    invitedAndAccepted: 'invited and accepted successfully',
+    inviteSuccess: 'invitation sent!',
+    inviteSuccessNotifyFailed: 'invitation sent but failed to notify user!',
+    partnerAcceptedInvite: 'partner already accepted an invitation to the selected activity',
+    partnerInvited: 'partner has already been invited to the selected activity',
+    partnerLabel: 'select a partner',
+    partnerUserIdWarning: 'selected partner does not include an User ID.',
     queueTitleOwnAccept: 'Timekeeping - accept own invitation',
-    queueTitleInviteTeamMember: 'Timekeeping - Invitation to join the Team',
-    txFailed: 'Transaction failed',
-    updateParner: 'Update Partner',
-    zeroActivityWarning: 'You must have one or more open activities',
-})
+    queueTitleInviteTeamMember: 'Timekeeping - invitation to join the Team',
+    txFailed: 'transaction failed',
+    updateParner: 'update Partner',
+    zeroActivityWarning: 'you must have one or more open activities',
+}, true)[1]
 
-export default class TimeKeepingInviteForm extends ReactiveComponent {
+export default class TimeKeepingInviteForm extends Component {
     constructor(props) {
         super(props)
 
@@ -59,10 +56,10 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             success: false,
             inputs: [
                 {
-                    label: wordsCap.activity,
+                    label: textsCap.activity,
                     name: 'projectHash',
                     options: [],
-                    placeholder: texts.activityLabel,
+                    placeholder: textsCap.activityLabel,
                     required: true,
                     search: true,
                     selection: true,
@@ -71,25 +68,26 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
                 },
                 {
                     bond: new Bond(),
-                    label: wordsCap.partner,
+                    label: textsCap.partner,
                     name: 'workerAddress',
                     onChange: this.handlePartnerChange,
                     options: [],
-                    placeholder: texts.partnerLabel,
+                    placeholder: textsCap.partnerLabel,
                     required: true,
                     search: ['text', 'value', 'description'],
                     selection: true,
                     type: 'dropdown',
                 },
                 {
-                    content: texts.addPartner,
+                    content: textsCap.addPartner,
                     icon: 'plus',
                     name: 'addpartner',
                     onClick: () => showForm(PartnerForm, {
-                        onSubmit: (success, { address }) => {
-                            // once partner created update the input with newly created partner's address
-                            success && findInput(this.state.inputs, 'workerAddress').bond.changed(address)
-                        }
+                        // once partner created update the input with newly created partner's address
+                        onSubmit: (success, { address }) => success && findInput(
+                            this.state.inputs,
+                            'workerAddress'
+                        ).bond.changed(address)
                     }),
                     fluid: true,
                     type: 'button',
@@ -101,26 +99,53 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
-    componentWillMount() {
+    async componentWillMount() {
         this._mounted = true
+        this.subscriptions = {}
+        const { values } = this.props
         const { inputs } = this.state
         const proIn = findInput(inputs, 'projectHash')
         proIn.loading = true
         this.setState({ inputs })
 
-        // automatically update when addressbook changes
-        this.tieId = partners.bond.tie(() => {
+        // retrieve project hashes by address
+        const projects = await getUserProjects()
+        proIn.loading = false
+        proIn.options = arrSort(
+            Array.from(projects)
+                // include only active (open/reopened) projects
+                .filter(([_, { status }]) => openStatuses.indexOf(status) >= 0)
+                .map(([pId, project]) => ({
+                    key: pId,
+                    text: project.name || textEllipsis(pId, 40),
+                    value: pId,
+                    project,
+                })),
+            'text'
+        )
+        console.log(proIn.options)
+        proIn.invalid = proIn.options.length === 0
+        proIn.message = !proIn.invalid ? null : {
+            content: textsCap.zeroActivityWarning,
+            status: 'error'
+        }
+
+        values && fillValues(inputs, values)
+        this.setState({ inputs })
+
+        // automatically update when partner list changes
+        this.subscriptions.partners = rxPartners.subscribe(map => {
             const { inputs } = this.state
             const partnerIn = findInput(inputs, 'workerAddress')
             const { address, name } = getSelected()
-            const options = Array.from(partners.getAll()).map(([address, { name, userId }]) => ({
+            const options = Array.from(map).map(([address, { name, userId }]) => ({
                 description: userId && '@' + userId,
                 key: address,
                 text: name,
                 value: address
             })).concat({
                 // add selected identity so that project owner can invite themself
-                description: wordsCap.myself,
+                description: textsCap.myself,
                 key: address + name,
                 text: name,
                 value: address,
@@ -129,39 +154,14 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             partnerIn.options = arrSort(options, 'text')
             this.setState({ inputs })
         })
-
-        // retrieve project hashes by address
-        getProjects().then(projects => {
-            proIn.loading = false
-            proIn.options = arrSort(
-                Array.from(projects)
-                    // include only active (open/reopened) projects
-                    .filter(([_, { status }]) => openStatuses.indexOf(status) >= 0)
-                    .map(([hash, project]) => ({
-                        key: hash,
-                        text: project.name,
-                        value: hash,
-                        project,
-                    })),
-                'text'
-            )
-            proIn.invalid = proIn.options.length === 0
-            proIn.message = !proIn.invalid ? null : {
-                content: texts.zeroActivityWarning,
-                status: 'error'
-            }
-            this.setState({ inputs })
-        })
-
-        fillValues(inputs, this.props.values)
     }
 
     componentWillUnmount() {
         this._mounted = false
-        partners.bond.untie(this.tieId)
+        unsubscribe(this.subscriptions)
     }
 
-    handlePartnerChange = (_, { projectHash, workerAddress }) => {
+    handlePartnerChange = async (_, { projectHash: projectId, workerAddress }) => {
         const { inputs } = this.state
         const partnerIn = findInput(inputs, 'workerAddress')
         const partner = partners.get(workerAddress)
@@ -169,14 +169,14 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
         // do not require user id if selected address belongs to user
         const requireUserId = !identities.get(workerAddress) && !userId
         partnerIn.invalid = requireUserId
-        partnerIn.loading = !!projectHash && !!workerAddress && !requireUserId
+        partnerIn.loading = !!projectId && !!workerAddress && !requireUserId
         partnerIn.message = !requireUserId ? null : {
             content: (
                 <p>
-                    {texts.partnerUserIdWarning} <br />
+                    {textsCap.partnerUserIdWarning} <br />
                     <Button
                         basic
-                        content={texts.updateParner}
+                        content={textsCap.updateParner}
                         onClick={e => e.preventDefault() | showForm(PartnerForm, {
                             onSubmit: (_, { address, userId }) => {
                                 partnerIn.invalid = !userId
@@ -193,31 +193,36 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
         if (!partnerIn.loading) return
 
         // check if partner is already invited or accepted
-        timeKeeping.worker.accepted(projectHash, workerAddress).then(accepted => {
-            /*
-             * accepted values:
-             * null => not yet invited or rejected
-             * true => invited and already accepted
-             * false => invited but hasn't responded
-             */
-            partnerIn.loading = false
-            // allows (re-)invitation if user hasn't accepted (!== true) invitation
-            partnerIn.invalid = !!accepted
-            if (accepted !== null) {
-                partnerIn.message = {
-                    content: accepted ? texts.partnerAcceptedInvite : texts.partnerInvited,
-                    status: accepted ? 'error' : 'warning'
-                }
+        const [acceptedAr, invitedAr] = await Promise.all([
+            query.worker.listInvited(projectId),
+            query.worker.listWorkers(projectId),
+        ])
+        const accepted = acceptedAr.includes(workerAddress)
+        const invited = invitedAr.includes(workerAddress)
+        /*
+         * accepted values:
+         * null => not yet invited or rejected
+         * true => invited and already accepted
+         * false => invited but hasn't responded
+         */
+        partnerIn.loading = false
+        // allows (re-)invitation if user hasn't accepted (!== true) invitation
+        partnerIn.invalid = !!accepted
+        if (invited) {
+            partnerIn.message = {
+                content: accepted ? textsCap.partnerAcceptedInvite : textsCap.partnerInvited,
+                status: accepted ? 'error' : 'warning'
             }
-            this.setState({ inputs, submitDisabled: false })
-        })
+        }
+        this.setState({ inputs, submitDisabled: false })
     }
 
     handleSubmit(e, values) {
         const { onSubmit } = this.props
         const { inputs } = this.state
-        const { projectHash, workerAddress } = values
-        const { project } = findInput(inputs, 'projectHash').options.find(x => x.value === projectHash)
+        const { projectHash: projectId, workerAddress } = values
+        const { project } = findInput(inputs, 'projectHash')
+            .options.find(x => x.value === projectId)
         const { name: projectName, ownerAddress } = project
         const ownIdentity = identities.get(workerAddress)
         const isOwner = ownIdentity && workerAddress === ownerAddress
@@ -226,8 +231,8 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             submitDisabled: true,
             loading: true,
             message: {
-                content: texts.addedToQueueDesc,
-                header: texts.addedToQueue,
+                content: textsCap.addedToQueueDesc,
+                header: textsCap.addedToQueue,
                 showIcon: true,
                 status: 'loading'
             }
@@ -239,16 +244,16 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
                 loading: false,
                 success,
                 message: {
-                    header: success ? texts.invitedAndAccepted : texts.txFailed,
+                    header: success ? textsCap.invitedAndAccepted : textsCap.txFailed,
                     showIcon: true,
                     status: success ? 'success' : 'error'
                 }
             })
             isFn(onSubmit) && onSubmit(success, values)
         }
-        const acceptOwnInvitationTask = workerTasks.accept(projectHash, workerAddress, true, {
-            title: texts.queueTitleOwnAccept,
-            description: `${wordsCap.identity}: ${name}`,
+        const acceptOwnInvitationTask = queueables.worker.accept(projectId, workerAddress, true, {
+            title: textsCap.queueTitleOwnAccept,
+            description: `${textsCap.identity}: ${name}`,
             then: selfInviteThen,
         })
         const notifyWorkerTask = {
@@ -259,14 +264,14 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
                 notificationType,
                 childType,
                 null,
-                { projectHash, projectName, workerAddress },
+                { projectHash: projectId, projectName, workerAddress },
                 err => {
                     this.setState({
                         submitDisabled: false,
                         loading: false,
                         success: !err,
                         message: {
-                            header: !err ? texts.inviteSuccess : inviteSuccessNotifyFailed,
+                            header: !err ? textsCap.inviteSuccess : textsCap.inviteSuccessNotifyFailed,
                             content: err || '',
                             showIcon: true,
                             status: !err ? 'success' : 'warning',
@@ -277,12 +282,30 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
             ],
         }
 
-        addToQueue(workerTasks.add(projectHash, ownerAddress, workerAddress, {
-            title: texts.queueTitleInviteTeamMember,
-            description: `${wordsCap.invitee}: ${name}`,
-            then: isOwner && selfInviteThen,
+        const extraProps = {
+            title: textsCap.queueTitleInviteTeamMember,
+            description: `${textsCap.invitee}: ${name}`,
+            then: isOwner ? selfInviteThen : (success, err) => {
+                if (success) return
+                this.setState({
+                    submitDisabled: false,
+                    loading: false,
+                    message: {
+                        header: textsCap.txFailed,
+                        content: `${err}`,
+                        showIcon: true,
+                        status: 'error',
+                    }
+                })
+            },
             next: isOwner ? null : (ownIdentity ? acceptOwnInvitationTask : notifyWorkerTask)
-        }))
+        }
+        addToQueue(queueables.worker.add(
+            projectId,
+            ownerAddress,
+            workerAddress,
+            extraProps,
+        ))
     }
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
@@ -290,12 +313,13 @@ export default class TimeKeepingInviteForm extends ReactiveComponent {
 TimeKeepingInviteForm.propTypes = {
     values: PropTypes.shape({
         projectHash: PropTypes.string,
-        userIds: PropTypes.array
+        userIds: PropTypes.array,
+        workerAddress: PropTypes.string,
     })
 }
 TimeKeepingInviteForm.defaultProps = {
-    closeText: wordsCap.close,
-    header: texts.formHeader,
+    closeText: textsCap.close,
+    header: textsCap.formHeader,
     size: 'tiny',
-    submitText: wordsCap.invite,
+    submitText: textsCap.invite,
 }

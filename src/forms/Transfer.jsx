@@ -1,19 +1,21 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Dropdown, FormInput } from 'semantic-ui-react'
+import { Dropdown } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
-import { arrSort, isStr, textEllipsis } from '../utils/utils'
+import Balance from '../components/Balance'
+import { arrSort, textEllipsis, isFn } from '../utils/utils'
 import { ss58Decode } from '../utils/convert'
 import PartnerForm from '../forms/Partner'
 // services
-import { denominations } from '../services/blockchain'
-import identities from '../services/identity'
+import { denominations, queueables } from '../services/blockchain'
+import { find as findIdentity, getAll, rxIdentities, rxSelected } from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
-import partners from '../services/partner'
+import partners, { getAddressName, rxPartners } from '../services/partner'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import Currency from '../components/Currency'
+import { currencyDefault, getSelected } from '../services/currency'
+import { unsubscribe } from '../services/react'
 
 const wordsCap = translated({
     amount: 'amount',
@@ -21,14 +23,16 @@ const wordsCap = translated({
     identity: 'identity',
     partner: 'partner',
     recipient: 'recipient',
+    sender: 'sender',
     status: 'status',
 }, true)[1]
 const texts = translated({
-    amountPlaceholder: 'Enter a value',
+    amountPlaceholder: 'Enter the amount to send',
     loadingBalance: 'Loading account balance',
     partnerEmptyMsg1: 'You do not have any partner yet. Add one in the Partner Module',
     partnerEmptyMsg2: 'No match found. Enter a valid address to add as a partner.',
     partnerPlaceholder: 'Select a Partner',
+    queueTitle: 'Transfer Transactions',
     submitErrorHeader: 'Transfer error',
     submitInprogressHeader: 'Transfer in-progress',
     submitSuccessHeader: 'Transfer successful',
@@ -39,7 +43,7 @@ export default class Transfer extends Component {
     constructor(props) {
         super(props)
 
-        const primary = 'Transactions' //getConfig().primary
+        const primary = 'Transactions'
         this.state = {
             denomination: primary,
             message: undefined,
@@ -131,36 +135,41 @@ export default class Transfer extends Component {
 
     componentWillMount() {
         this._mounted = true
+        this.subscriptions = {}
         const { inputs } = this.state
         const { values } = this.props
         const fromIn = findInput(inputs, 'from')
+        const toIn = findInput(inputs, 'to')
         // change value when selected address changes
-        this.tieIdSelected = identities.selectedAddressBond.tie(address => {
+        this.subscriptions.selected = rxSelected.subscribe(address => {
             fromIn.bond.changed(address)
             fromIn.message = !address ? '' : {
                 content: (
-                    <Currency {...{
+                    <Balance {...{
                         address,
                         emptyMessage: texts.loadingBalance + '...',
-                        key: address,
+                        key: 'XTX',
                         prefix: `${wordsCap.balance}: `,
+                        unitDisplayed: currencyDefault,
                     }} />
                 )
             }
+            this.setState({ inputs })
         })
         // re-/populate options if identity list changes
-        this.tieIdIdentity = identities.bond.tie(() => {
-            fromIn.options = arrSort(identities.getAll().map(({ address, name }) => ({
+        this.subscriptions.identities = rxIdentities.subscribe(map => {
+            const options = Array.from(map).map(([address, { name }]) => ({
                 key: address,
                 text: name,
                 value: address,
-            })), 'text')
+            }))
+            fromIn.options = arrSort(options, 'text')
             this.setState({ inputs })
         })
         // repopulate options if partners list changes
-        this.tieIdPartner = partners.bond.tie(() => {
-            findInput(inputs, 'to').options = arrSort(
-                Array.from(partners.getAll()).map(([_, { address, name }]) => ({
+        this.subscriptions.partners = rxPartners.subscribe(map => {
+            toIn.options = arrSort(
+                Array.from(map).map(([address, { name }]) => ({
                     description: textEllipsis(address, 20),
                     key: address,
                     text: name,
@@ -172,13 +181,12 @@ export default class Transfer extends Component {
         })
 
         fillValues(inputs, values)
+        this.setState({ inputs })
     }
 
     componentWillUnmount() {
         this._mounted = false
-        identities.bond.untie(this.tieIdIdentity)
-        identities.selectedAddressBond.untie(this.tieIdSelected)
-        partners.bond.untie(this.tieIdPartner)
+        unsubscribe(this.subscriptions)
     }
 
     clearForm = () => {
@@ -192,19 +200,25 @@ export default class Transfer extends Component {
         const { name } = partners.get(to)
         // amount in transactions
         const amountXTX = amount * Math.pow(10, denominations[denomination])
+        const description = [
+            `${wordsCap.sender}: ${findIdentity(from).name}`,
+            `${wordsCap.recipient}: ${getAddressName(to)}`,
+            `${wordsCap.amount}: ${amount} ${currencyDefault}`,
+        ].join('\n')
+        const then = (success, resultOrError) => {
+            if (!success) return this.setMessage(resultOrError)
+            this.setMessage(null, resultOrError, name, amountXTX)
+            this.clearForm()
+        }
         this.setMessage()
 
-        addToQueue({
-            type: QUEUE_TYPES.TX_TRANSFER,
-            args: [to, amount],
-            address: from,
-            then: (success, args) => {
-                if (!success) return this.setMessage(args[0])
-                this.setMessage(null, args[0], name, amountXTX)
-                this.clearForm()
-            }
-        })
-
+        const queueProps = queueables.balanceTransfer(
+            from,
+            to,
+            amount,
+            { description, title: texts.queueTitle, then },
+        )
+        addToQueue(queueProps)
     }
 
     // returns the min value acceptable for the selected denomination
@@ -217,25 +231,23 @@ export default class Transfer extends Component {
         const [hash] = result
         const inProgress = !err && !hash
         const { denomination } = this.state
-        const content = inProgress ? '' : (!err || isStr(err) ? err : err.message) || (
-            <ul style={{ listStyleType: 'none', margin: 0, paddingLeft: 0 }}>
-                <li>{wordsCap.recipient}: {recipientName}</li>
-                <li>{wordsCap.amount}: {amount} {denomination}</li>
-                <li>{texts.txFee}: {}</li>
-            </ul>
-        )
-        const header = inProgress ? texts.submitInprogressHeader : (
-            err ? texts.submitErrorHeader : texts.submitSuccessHeader
-        )
-        const status = inProgress ? 'loading' : (err ? 'error' : 'success')
+        let content = ''
+        let header = texts.submitInprogressHeader
+        let status = 'loading'
+        if (!inProgress) {
+            content = err ? `${err}` : (
+                <ul style={{ listStyleType: 'none', margin: 0, paddingLeft: 0 }}>
+                    <li>{wordsCap.recipient}: {recipientName}</li>
+                    <li>{wordsCap.amount}: {amount} {denomination}</li>
+                    {/* <li>{texts.txFee}: {}</li> */}
+                </ul>
+            )
+            header = err ? texts.submitErrorHeader : texts.submitSuccessHeader
+            status = err ? 'error' : 'success'
+        }
+
         this.setState({
-            loading: inProgress,
-            message: {
-                content,
-                header,
-                showIcon: true,
-                status
-            },
+            message: { content, header, showIcon: true, status },
             submitDisabled: inProgress,
         })
     }

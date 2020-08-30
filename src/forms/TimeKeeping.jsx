@@ -1,9 +1,7 @@
 
-import React from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
-import { ReactiveComponent } from 'oo7-react'
-import { chain } from 'oo7-substrate'
 import { Button, Icon } from 'semantic-ui-react'
 import { deferred, hasValue, isDefined, isFn, objCopy } from '../utils/utils'
 import {
@@ -15,20 +13,30 @@ import {
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import { ButtonAcceptOrReject } from '../components/buttons'
 // services
+import { query as queryBlockchain, getCurrentBlock } from '../services/blockchain'
 import identities, { getSelected } from '../services/identity'
 import { translated } from '../services/language'
 import { confirm, closeModal, showForm } from '../services/modal'
 import { handleTKInvitation } from '../modules/notification/notification'
 import { getAddressName } from '../services/partner'
-import projectService, { openStatuses } from '../services/project'
+import { openStatuses, query as queryProject } from '../services/project'
 import { addToQueue } from '../services/queue'
-import timeKeeping, { getProjects, getProjectsBond, NEW_RECORD_HASH, recordTasks, statuses } from '../services/timeKeeping'
+import {
+    formData,
+    getProjects,
+    NEW_RECORD_HASH,
+    query,
+    queueables,
+    statuses
+} from '../services/timeKeeping'
+import { unsubscribe } from '../services/react'
 
 // Hash that indicates creation of new record
 const DURATION_ZERO = '00:00:00'
 const blockCountToDuration = blockCount => secondsToDuration(blockCount * BLOCK_DURATION_SECONDS)
-const durationToBlockCount = duration => BLOCK_DURATION_REGEX.test(duration) ? durationToSeconds(duration) / BLOCK_DURATION_SECONDS : 0
-const [words, wordsCap] = translated({
+const durationToBlockCount = duration => !BLOCK_DURATION_REGEX.test(duration) ? 0 :
+    parseInt(durationToSeconds(duration) / BLOCK_DURATION_SECONDS)
+const wordsCap = translated({
     activity: 'activity',
     close: 'close',
     duration: 'duration',
@@ -45,7 +53,7 @@ const [words, wordsCap] = translated({
     update: 'update',
     yes: 'yes',
     wallet: 'wallet',
-}, true)
+}, true)[1]
 const [texts] = translated({
     addedToQueue: 'Added to queue',
     areYouSure: 'Are you sure?',
@@ -63,7 +71,6 @@ const [texts] = translated({
     inactiveProjectSelected: 'This Activity is inactive!',
     invalidDuration: 'Invalid duration',
     invalidDurationMsgPart1: 'Please enter a valid duration using the following format:',
-    invalidDurationMsgPart2: 'Seconds must be in increments of 5',
     manuallyEnterDuration: 'Manually enter duration',
     noContinueTimer: 'No, continue timer',
     noProjectsMsg: 'Create a new activity or ask to be invited to the Team',
@@ -97,7 +104,6 @@ function handleDurationChange(e, formValues, i) {
             <span>
                 {texts.invalidDurationMsgPart1}<br />
                 <b>{texts.hhmmss}</b><br />
-                {texts.invalidDurationMsgPart2}
             </span>
         ),
         header: texts.invalidDuration,
@@ -109,9 +115,11 @@ function handleDurationChange(e, formValues, i) {
     this.setState({ inputs: inputs })
 }
 
-function handleSubmitTime(hash, projectName, values, status, reason, checkBanned = true) {
+async function handleSubmitTime(hash, projectName, values, status, reason, checkBanned = true) {
     const { address } = getSelected()
-    if (checkBanned) return timeKeeping.worker.banned(hash, address).then(banned => {
+    if (checkBanned) {
+        const banned = await query.worker.banned(hash, address)
+        console.log({ banned })
         if (banned) return this.setState({
             message: {
                 header: texts.permissionDenied,
@@ -119,12 +127,11 @@ function handleSubmitTime(hash, projectName, values, status, reason, checkBanned
                 status: 'error',
             }
         })
-        return handleSubmitTime.call(this, hash, projectName, values, status, reason, false)
-    })
+    }
 
     const { onSubmit } = this.props
     const { blockCount, blockEnd, blockStart, breakCount, duration, projectHash, workerAddress } = values
-    const queueProps = recordTasks.save(workerAddress, projectHash, hash, status, reason, blockCount, 0, blockStart, blockEnd, breakCount, {
+    const extraProps = {
         title: texts.tkNewRecord,
         description: `${wordsCap.activity}: ${projectName} | ${wordsCap.duration}: ${values.duration}`,
         then: success => {
@@ -142,7 +149,20 @@ function handleSubmitTime(hash, projectName, values, status, reason, checkBanned
             })
             success && this.handleReset && this.handleReset()
         },
-    })
+    }
+    const queueProps = queueables.record.save(
+        workerAddress,
+        projectHash,
+        hash,
+        status,
+        reason,
+        blockCount,
+        0,
+        blockStart,
+        blockEnd,
+        breakCount,
+        extraProps
+    )
 
     const message = {
         content: texts.requestQueuedMsg,
@@ -181,16 +201,16 @@ function handleSubmitTime(hash, projectName, values, status, reason, checkBanned
     })
 }
 
-export default class TimeKeepingForm extends ReactiveComponent {
+export default class TimeKeepingForm extends Component {
     constructor(props) {
         super(props)
 
-        const values = timeKeeping.formData() || {}
-        const { breakCount, duration, durationValid, inprogress, projectHash, stopped, workerAddress } = values
+        const values = formData() || {}
+        const { breakCount, duration, durationValid, inprogress, projectHash, workerAddress } = values
         values.durationValid = !isDefined(durationValid) ? true : durationValid
         values.duration = duration || DURATION_ZERO
         values.breakCount = (breakCount || 0)
-        values.workerAddress = inprogress || stopped && workerAddress || getSelected().address
+        values.workerAddress = workerAddress || getSelected().address
         const projectHashSupplied = hasValue(props.projectHash)
         values.projectHash = projectHashSupplied && !inprogress ? props.projectHash : projectHash
 
@@ -230,7 +250,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
                     autoComplete: 'off',
                     label: wordsCap.duration,
                     name: 'duration',
-                    onChange: deferred(handleDurationChange, 300, this),
+                    onChange: handleDurationChange.bind(this),
                     placeholder: texts.hhmmss,
                     readOnly: values.manualEntry !== true,
                     type: 'text',
@@ -254,14 +274,16 @@ export default class TimeKeepingForm extends ReactiveComponent {
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
-    componentWillMount() {
+    async componentWillMount() {
         this._mounted = true
-        this.tieId = chain.height.tie(blockNumber => {
+        this.subscriptions = {}
+        const updateValues = blockNumber => {
+            if (!this._mounted) return
             const { values: { inprogress } } = this.state
-            blockNumber = parseInt(blockNumber)
             inprogress ? this.saveValues(blockNumber) : this.setState({ blockNumber })
-        })
-        this.tieIdProjects = getProjectsBond.tie(() => getProjects().then(projects => {
+        }
+        const updateProjects = deferred(projects => {
+            if (!this._mounted) return
             const { inputs, values } = this.state
             const projectIn = findInput(inputs, 'projectHash')
             const options = Array.from(projects).map(([hash, project]) => ({
@@ -277,24 +299,28 @@ export default class TimeKeepingForm extends ReactiveComponent {
                 fillValues(inputs, values, true)
                 this.prefillDone = true
             }
+
             this.setState({ inputs })
-        }))
+        }, 100)
+        this.subscriptions.newHead = await queryBlockchain('api.rpc.chain.subscribeNewHeads', [updateValues])
+        this.subscriptions.blockNumber = await getCurrentBlock(updateValues)
+        this.subscriptions.projects = await getProjects(false, updateProjects)
+
     }
 
     componentWillUnmount() {
         this._mounted = false
-        chain.height.untie(this.tieId)
-        getProjectsBond.untie(this.tieIdProjects)
+        unsubscribe(this.subscriptions)
     }
 
     // check if project is active (status = open or reopened)
-    handleProjectChange = (_, values, index) => {
-        let { projectHash, workerAddress } = values
+    handleProjectChange = async (_, values, index) => {
+        let { projectHash: projectId, workerAddress } = values
         const { inputs } = this.state
-        const isValidProject = projectHash && (inputs[index].options || []).find(x => x.value === projectHash)
+        const isValidProject = projectId && (inputs[index].options || []).find(x => x.value === projectId)
         if (!isValidProject) {
             // project hash doesnt exists in the options
-            if (projectHash) inputs[index].bond.changed(null)
+            if (projectId) inputs[index].bond.changed(null)
             return
         }
 
@@ -307,51 +333,64 @@ export default class TimeKeepingForm extends ReactiveComponent {
         this.setState({ inputs, submitDisabled: true })
 
         // check if project status is open/reopened
-        projectService.status(projectHash).then(statusCode => {
-            const projectActive = openStatuses.includes(statusCode)
-            const { address } = getSelected()
-            workerAddress = workerAddress || address
-            inputs[index].invalid = !projectActive
-            inputs[index].message = projectActive ? undefined : {
-                content: texts.selectActiveProject,
-                header: texts.inactiveProjectSelected,
+        const statusCode = await queryProject.status(projectId)
+        const projectActive = openStatuses.includes(statusCode)
+        const { address } = getSelected()
+        workerAddress = workerAddress || address
+        inputs[index].invalid = !projectActive
+        inputs[index].message = projectActive ? undefined : {
+            content: texts.selectActiveProject,
+            header: texts.inactiveProjectSelected,
+            showIcon: true,
+            status: 'error',
+        }
+        if (!projectActive) {
+            // project is not active anymore
+            inputs[index].loading = false
+            return this.setState({ inputs, submitDisabled: false })
+        }
+
+        // check worker ban and invitation status
+        const [banned, invitedAr, acceptedAr] = await Promise.all([
+            query.worker.banned(projectId, workerAddress),
+            query.worker.listInvited(projectId),
+            query.worker.listWorkers(projectId),
+        ])
+        const invited = invitedAr.includes(workerAddress)
+        const accepted = acceptedAr.includes(workerAddress)
+        inputs[index].loading = false
+        inputs[index].invalid = banned || !accepted
+
+        if (banned) {
+            // user has been banned by activity owner
+            inputs[index].message = {
+                content: texts.workerBannedMsg,
                 showIcon: true,
                 status: 'error',
             }
-            if (!projectActive) {
-                inputs[index].loading = false
-                return this.setState({ inputs, submitDisabled: false })
-            }
-            // check if worker's ban and invitation status
-            Bond.all([
-                timeKeeping.worker.accepted(projectHash, workerAddress),
-                timeKeeping.worker.banned(projectHash, workerAddress),
-            ]).then(([accepted, banned]) => {
-                inputs[index].loading = false
-                inputs[index].invalid = banned || !accepted // null => not invited, false => not responded/aceepted
-                const invited = accepted === false
-                inputs[index].message = banned ? texts.workerBannedMsg : accepted ? undefined : {
-                    content: !invited ? texts.inactiveWorkerMsg1 : (
-                        <div>
-                            {texts.inactiveWorkerMsg3} <br />
-                            <ButtonAcceptOrReject
-                                onClick={ok => handleTKInvitation(projectHash, workerAddress, ok)
-                                    .then(success => {
-                                        // force trigger change
-                                        success && inputs[index].bond.changed(projectHash)
-                                    })
-                                }
-                            />
-                        </div>
-                    ),
-                    header: invited ? texts.inactiveWorkerHeader2 : texts.inactiveWorkerHeader1,
-                    showIcon: true,
-                    status: 'error',
-                }
-                this.setState({ inputs, submitDisabled: false })
-                if (!inputs[index].message) this.setIdentityOptions()
-            })
-        })
+            return this.setState({ inputs, submitDisabled: false })
+        }
+
+        inputs[index].message = accepted ? undefined : {
+            content: !invited ? texts.inactiveWorkerMsg1 : (
+                <div>
+                    {texts.inactiveWorkerMsg3} <br />
+                    <ButtonAcceptOrReject
+                        onClick={async (accepted) => {
+                            const success = await handleTKInvitation(projectId, workerAddress, accepted)
+                            // force trigger change
+                            success && inputs[index].bond.changed(projectId)
+                        }}
+                        style={{ marginTop: 10 }}
+                    />
+                </div>
+            ),
+            header: invited ? texts.inactiveWorkerHeader2 : texts.inactiveWorkerHeader1,
+            showIcon: true,
+            status: 'error',
+        }
+        this.setState({ inputs, submitDisabled: false })
+        this.setIdentityOptions(projectId, workerAddress)
     }
 
     handleValuesChange = (_, formValues) => {
@@ -387,7 +426,7 @@ export default class TimeKeepingForm extends ReactiveComponent {
             values.breakCount = 0
             inputs.find(x => x.name === 'duration').value = DURATION_ZERO
             this.setState({ values, inputs })
-            timeKeeping.formData(values)
+            formData(values)
         }
 
         !doConfirm ? reset() : confirm({
@@ -475,39 +514,27 @@ export default class TimeKeepingForm extends ReactiveComponent {
         duraIn.value = values.duration
         values.durationValid = BLOCK_DURATION_REGEX.test(values.duration) && values.duration !== DURATION_ZERO
         this.setState({ blockNumber: currentBlockNumber, inputs, message: {}, values })
-        timeKeeping.formData(values)
+        formData(values)
     }
 
-    setIdentityOptions = () => {
-        const { inputs, values } = this.state
-        const { projectHash, workerAddress } = values
-        if (!projectHash) return
+    setIdentityOptions = async (projectId, workerAddress) => {
+        if (!projectId) return
+        const { inputs } = this.state
         const identityIn = findInput(inputs, 'workerAddress')
         const allIdentities = identities.getAll()
-        const ar = allIdentities.map(({ address }) => ({ projectHash, workerAddress: address }))
-
-        timeKeeping.worker.acceptedList(ar).then(acceptedAr => {
-            const options = allIdentities
-                // filter accepted projects
-                .filter((_, i) => !!acceptedAr[i])
-                .map(({ address, name }) => ({
-                    key: address,
-                    text: name,
-                    value: address,
-                }))
-            identityIn.options = options
-
-            let value = workerAddress
-            // if only option, preselect it
-            if (options.length === 1) {
-                value = options[0].value
-            } else if (!options.find(x => x.value === value)) {
-                // if existing value is not in options list
-                value = null
-            }
-            identityIn.bond.changed(value)
-            this.setState({ inputs })
-        })
+        const workers = await query.worker.listWorkers(projectId)
+        const options = allIdentities
+            // exclude projects that hasn't been accepted yet
+            .filter(({ address }) => workers.includes(address))
+            .map(({ address, name }) => ({
+                key: address,
+                text: name,
+                value: address,
+            }))
+        identityIn.options = options
+        const hasOption = options.find(({ value }) => value === workerAddress)
+        identityIn.bond.changed(hasOption ? workerAddress : null)
+        this.setState({ inputs })
     }
 
     render() {
@@ -615,7 +642,7 @@ TimeKeepingForm.propTypes = {
     projectHash: PropTypes.string,
 }
 // ToDo: separate file and text extraction for language
-export class TimeKeepingUpdateForm extends ReactiveComponent {
+export class TimeKeepingUpdateForm extends Component {
     constructor(props) {
         super(props)
 
@@ -628,7 +655,7 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
                     bond: new Bond(),
                     label: wordsCap.duration,
                     name: 'duration',
-                    onChange: deferred(this.handleDurationChange, 300),
+                    onChange: this.handleDurationChange,
                     type: 'text',
                     required: true,
                 },
@@ -670,21 +697,20 @@ export class TimeKeepingUpdateForm extends ReactiveComponent {
         this.setState({ inputs })
     }
 
-    handleSubmit = (e, { duration, submit_status }) => {
-        const { hash, projectName, values } = this.props
+    handleSubmit = async (_, { duration, submit_status }) => {
+        const { hash: recordId, projectName, values } = this.props
         const blockCount = durationToBlockCount(duration)
         const blockEnd = values.blockStart + blockCount
-        timeKeeping.record.get(hash).then(record => {
-            const { nr_of_breaks, reason_code } = { record }
-            const newValues = {
-                ...values,
-                blockCount,
-                blockEnd,
-                breakCount: nr_of_breaks || 0,
-                duration,
-            }
-            handleSubmitTime.call(this, hash, projectName, newValues, submit_status, reason_code)
-        })
+        const record = await query.record.get(recordId)
+        const { nr_of_breaks, reason_code } = { record }
+        const newValues = {
+            ...values,
+            blockCount,
+            blockEnd,
+            breakCount: nr_of_breaks || 0,
+            duration,
+        }
+        await handleSubmitTime.call(this, recordId, projectName, newValues, submit_status, reason_code)
     }
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />

@@ -98,7 +98,7 @@ const InboxMessage = props => {
                             }} />
                         )}
                         {message}
-                        {errorMessage && showDetails && <div><i>{errorMessage}</i></div>}
+                        {errorMessage && showDetails && <div className='error'><i>{errorMessage}</i></div>}
                         {showDetails && (
                             <TimeSince {...{
                                 style: {

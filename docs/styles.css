@@ -164,7 +164,6 @@
 }
 
 
-
 #app, #app > div {
   height: 100%;
   width: 100%;
@@ -175,7 +174,7 @@
   overflow: auto !important;
 }
 .empty-message:not(:only-child) {
-  display: none;
+  display: none !important;
 }
 /* Fixes the dimmer height being limited due to the use of scrollbar */ 
 .mobile.sidebar-visible .main-content.pusher.container:after {
@@ -229,7 +228,8 @@
   max-width: 100%;
 }
 
-.no-margin {
+.no-margin, 
+.ui.menu .ui.dropdown .menu>.item .icon:not(.dropdown).no-margin {
   margin: 0 !important;
 }
 .blink {
@@ -239,6 +239,15 @@
   50% {
     opacity: 0;
   }
+}
+
+/* Prevents text selection. Useful for clickable icons */
+.text-deselect,
+i.icon {
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-khtml-user-select: none;
+	-ms-user-select: none;
 }
 
 i.icon:not(.no-margin) {
@@ -277,6 +286,15 @@ div.ui.padded.segment {
 .form :not(.item) > .ui.dropdown.active.visible:not(.no-margin):not(.item) {
   margin-bottom: 37px;
 }
+/* Capitalise input labels */
+form.ui.form label,
+form.ui.form .field > label {
+    text-transform: capitalize;
+}
+/* Group inputs: remove extra padding */
+.ui.form .fields.form-group > .field > .field {
+    padding: 0;
+}
 
 /* Message */
 /* forces close icon to be over content */
@@ -304,4 +322,75 @@ input[readonly] {
 .identity-dropdown .menu .item > * {
     display: table-cell;
     padding: 10px 15px;
+}
+
+/* 
+ * DARK MODE/INVERTED STYLES 
+ */
+#app.inverted #main-content.inverted {
+	background: #2e2d2d;
+	color: white;
+}
+/* anything inside the #main-content with .inverted class */
+#app.inverted #main-content .inverted,
+#app.inverted .accordion {
+    background: #464646;
+	color: white,
+}
+/* Chat */
+#app.inverted .chat-container{
+	background: #464646;
+	color: white;
+}
+/* Left Sidebar */
+/* #app.inverted .pushable .ui.sidebar.left {
+	background: red
+} */
+/* header bar*/
+/* #app.inverted > * > .ui.top.menu.inverted {
+    background: red;
+} */
+/* Data Table */
+#app.inverted .data-table.inverted {
+    border: 1px solid #505050;
+}
+/* Modals */
+body .modal.inverted { border-radius: 6px;}
+body .modals .ui.modal.inverted > .content,
+body .modals .ui.modal.inverted .accordion, 
+body .modals .ui.modal.inverted .accordion > * {
+	background: #464646;
+	color: white;
+}
+body .modals .ui.modal.inverted > .modal-close,
+body .modals .ui.modal.inverted > .header,
+body .modals .ui.modal.inverted > .actions {
+	background: #2e2d2d;
+	color: white;
+}
+body .ui.form.inverted.loading::before {
+    background: rgba(90, 90, 90, 0.8);
+}
+
+/* Form loading backshadow when inverted */
+.ui.modals.invert .ui.inverted.loading.form:before{
+	background: #464646eb;
+}
+/* Form loading spinner when inverted */
+.ui.modals.invert .ui.inverted.loading.form:after{
+	border-color: white rgba(0,0,0,.1) rgba(0,0,0,.1) rgba(0,0,0,.1);
+}
+
+/* Semantic UI Steps (no built-in inverted!!)*/
+#app.inverted .ui.fluid.ordered.steps * {
+    background: #4c4c4c;
+    color: white;
+}
+
+/* Newsletter signup iframe */
+body.iframe {
+	background: transparent;
+}
+body.iframe label {
+    color: white !important;
 }

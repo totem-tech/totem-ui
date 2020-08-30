@@ -6,24 +6,22 @@ import { isFn } from '../utils/utils'
 import { translated } from '../services/language'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
-// const [words, wordsCap] = translated({
-//
-// }, true)
-const [texts] = translated({
-    addedToQueueContent: 'You will be notified once request is processed',
-    addedToQueueHeader: 'Request has been added to queue',
-    introducingUserIdConflict: 'You cannot introduce a user to themselves!',
-    header: 'Partner introduction',
-    recipients: 'Recipient(s)',
-    subheader: 'Recipients will receive a request for permission to share their identity this User',
-    submitSuccessHeader: 'Submitted successfully',
-    submitSuccessMessage: 'Notification sent to recipient(s)',
-    submitErrorHeader: 'Error: Submission failed',
+const [_, textsCap] = translated({
+    addedToQueueContent: 'you will be notified once request is processed',
+    addedToQueueHeader: 'request has been added to queue',
+    introducingUserIdConflict: 'you cannot introduce a user to themselves!',
+    header: 'partner introduction',
+    recipients: 'recipient(s)',
+    subheader: 'recipients will receive a request for permission to share their identity this User',
+    submitSuccessHeader: 'submitted successfully',
+    submitSuccessMessage: 'notification sent to recipient(s)',
+    submitErrorHeader: 'submission failed',
     userId: 'User ID',
-    userToIntroduce: 'User to introduce',
-})
-const type = 'identity'
-const childType = 'introduction'
+    userToIntroduce: 'user to introduce',
+}, true)
+// notificaiton types for user introduction
+const TYPE = 'identity'
+const CHILD_TYPE = 'introduce'
 
 export default class IntroduceUser extends Component {
     constructor(props) {
@@ -38,7 +36,7 @@ export default class IntroduceUser extends Component {
                     bond: new Bond(),
                     includeFromChat: true,
                     includePartners: true,
-                    label: texts.userToIntroduce,
+                    label: textsCap.userToIntroduce,
                     multiple: false,
                     name: 'userId',
                     required: true,
@@ -47,7 +45,7 @@ export default class IntroduceUser extends Component {
                 {
                     bond: new Bond(),
                     includePartners: true,
-                    label: texts.recipients,
+                    label: textsCap.recipients,
                     multiple: true,
                     name: 'recipients',
                     options: [],
@@ -71,7 +69,7 @@ export default class IntroduceUser extends Component {
         const recipientIn = findInput(inputs, 'recipients')
         recipientIn.invalid = invalid
         recipientIn.message = !invalid ? undefined : {
-            content: texts.introducingUserIdConflict,
+            content: textsCap.introducingUserIdConflict,
             status: 'error',
         }
         this.setState({ inputs })
@@ -83,8 +81,8 @@ export default class IntroduceUser extends Component {
         this.setState({
             loading: true,
             message: {
-                content: texts.addedToQueueContent,
-                header: texts.addedToQueueHeader,
+                content: textsCap.addedToQueueContent,
+                header: textsCap.addedToQueueHeader,
                 showIcon: true,
                 status: 'success',
             },
@@ -92,13 +90,13 @@ export default class IntroduceUser extends Component {
         addToQueue({
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'notify',
-            title: texts.header,
-            description: `${texts.userId}: ${userId} | ${texts.recipients}: ${recipients.join()}`,
-            args: [recipients, type, childType, null, { userId }, err => {
+            title: textsCap.header,
+            description: `${textsCap.userId}: ${userId} | ${textsCap.recipients}: ${recipients.join()}`,
+            args: [recipients, TYPE, CHILD_TYPE, null, { userId }, err => {
                 const success = !err
                 const message = {
-                    content: success ? texts.submitSuccessMessage : err,
-                    header: success ? texts.submitSuccessHeader : texts.submitErrorHeader,
+                    content: success ? textsCap.submitSuccessMessage : err,
+                    header: success ? textsCap.submitSuccessHeader : textsCap.submitErrorHeader,
                     showIcon: true,
                     status: success ? 'success' : 'error',
                 }
@@ -117,7 +115,7 @@ IntroduceUser.propTypes = {
     }),
 }
 IntroduceUser.defaultProps = {
-    header: texts.header,
+    header: textsCap.header,
     size: 'tiny',
-    subheader: texts.subheader,
+    subheader: textsCap.subheader,
 }

@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
-import { isFn } from '../utils/utils'
+import { isFn, arrUnique } from '../utils/utils'
 // services
 import identityService from '../services/identity'
 import { translated } from '../services/language'
@@ -107,7 +107,7 @@ export default class IdentityForm extends Component {
                     noResultsMessage: texts.tagsInputEmptyMessage,
                     multiple: true,
                     onAddItem: this.handleAddTag,
-                    options: getAllTags().map(tag => ({
+                    options: arrUnique([...getAllTags(), ...this.values.tags]).map(tag => ({
                         key: tag,
                         text: tag,
                         value: tag,
@@ -163,7 +163,7 @@ export default class IdentityForm extends Component {
             seed = seed || identityService.generateUri()
             seed = seed.split('/totem/')[0] + `/totem/${usageType === 'personal' ? 0 : 1}/0`
         }
-        const { address } = identityService.addFromUri(seed) || {}
+        const { address = '' } = seed && identityService.addFromUri(seed) || {}
         this.addressBond.changed(address)
         findInput(inputs, 'uri').bond.changed(seed)
         this.setState({ inputs })
@@ -176,7 +176,7 @@ export default class IdentityForm extends Component {
 
     validateUri = (_, { value: seed }) => {
         const { inputs } = this.state
-        const { address } = identityService.addFromUri(seed) || {}
+        const { address } = seed && identityService.addFromUri(seed) || {}
         if (!address) {
             this.addressBond.changed('')
             return texts.validSeedRequired

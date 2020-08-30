@@ -1,16 +1,24 @@
 import React, { Component } from 'react'
 import { Button, Icon } from 'semantic-ui-react'
 import DataTable from '../components/DataTable'
-import { format } from '../utils/time'
 import FormBuilder from '../components/FormBuilder'
+import { format } from '../utils/time'
+import { clearClutter, isValidNumber, isObj, isDefined, copyToClipboard, isFn, textEllipsis } from '../utils/utils'
 // services
-import { bond, clearAll, getAll, remove } from '../services/history'
+import { clearAll, remove as removeHistoryItem, rxHistory, getAll } from '../services/history'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import { getAddressName } from '../services/partner'
-import { clearClutter, isValidNumber, isObj, isDefined } from '../utils/utils'
+import {
+    getById as getQueueItemById,
+    remove as removeQueueItem,
+    statuses,
+    statusTitles,
+    checkComplete,
+} from '../services/queue'
+import { unsubscribe } from '../services/react'
 
-const [texts, textsCap] = translated({
+const textsCap = translated({
     action: 'action',
     balanceAfterTx: 'account balance after transaction',
     balanceBeforeTx: 'account balance before transaction',
@@ -26,13 +34,26 @@ const [texts, textsCap] = translated({
     groupId: 'Group ID',
     identity: 'identity',
     message: 'message',
+    pendingExecution: 'pending execution',
+    remove: 'remove',
+    removeWarning: `
+        WARNING: selected item has not completed execution.
+        If the execution has already started, removing it from here WILL NOT be able to stop it.
+        It may show up again if the task execution is completed before is page reloaded.
+        However, if the execution has not started yet or is stuck, 
+        revoming will prevent it from being executed again on page reload.
+    `,
+    removeWarning2: 'You will not be able to recover this history item once removed.',
+    removeConfirmHeader: 'remove unfinished queue item?',
+    removeConfirmHeader2: 'Are you sure?',
     status: 'status',
     taskId: 'Task ID',
     techDetails: 'technical details',
     timestamp: 'timestamp',
     title: 'title',
+    txId: 'Transaction ID',
     type: 'type',
-}, true)
+}, true)[1]
 
 export default class HistoryList extends Component {
     constructor(props) {
@@ -45,24 +66,30 @@ export default class HistoryList extends Component {
             columns: [
                 {
                     collapsing: true,
-                    content: ({ icon, status }) => (
-                        <Icon
-                            className='no-margin'
-                            loading={status === 'loading'}
-                            name={status === 'loading' ? 'spinner' : icon || 'history'}
-                        />
-                    ),
+                    content: ({ icon, status }) => {
+                        const iconPrpos = {
+                            className: 'no-margin',
+                            name: icon || history,
+                            loading: false
+                        }
+                        switch (status) {
+                            case statuses.LOADING:
+                                iconPrpos.name = 'spinner'
+                                iconPrpos.loading = true
+                                break
+                            case statuses.SUSPENDED:
+                                iconPrpos.name = 'pause'
+                                break
+                        }
+                        return <Icon {...iconPrpos} />
+                    },
                     title: '',
                 },
                 {
                     collapsing: true,
-                    key: '_timestamp',
+                    content: ({ timestamp }) => format(timestamp, true),
+                    key: 'timestamp',
                     title: textsCap.executionTime,
-                },
-                {
-                    collapsing: true,
-                    key: '_identity',
-                    title: textsCap.identity,
                 },
                 {
                     headerProps,
@@ -71,7 +98,7 @@ export default class HistoryList extends Component {
                 },
                 {
                     headerProps,
-                    key: 'description',
+                    key: '_description',
                     style: {
                         minWidth: 200,
                         whiteSpace: 'pre-wrap',
@@ -80,10 +107,29 @@ export default class HistoryList extends Component {
                 },
                 {
                     collapsing: true,
+                    key: '_identity',
+                    title: textsCap.identity,
+                },
+                {
+                    collapsing: true,
                     content: (item, id) => [
                         {
                             icon: 'close',
-                            onClick: () => remove(id),
+                            onClick: () => {
+                                const { groupId } = item
+                                const rootTask = getQueueItemById(groupId)
+                                const isComplete = checkComplete(rootTask)
+                                confirm({
+                                    content: !isComplete ? textsCap.removeWarning : textsCap.removeWarning2,
+                                    header: !isComplete ? textsCap.removeConfirmHeader : textsCap.removeConfirmHeader2,
+                                    onConfirm: () => {
+                                        removeHistoryItem(id)
+                                        removeQueueItem(groupId)
+                                    },
+                                    confirmButton: <Button negative content={textsCap.remove} />,
+                                    size: 'tiny',
+                                })
+                            },
                             title: textsCap.delete,
                         },
                         {
@@ -98,18 +144,18 @@ export default class HistoryList extends Component {
                 },
             ],
             data: new Map(),
-            defaultSort: '_timestamp',
+            defaultSort: 'timestamp',
             defaultSortAsc: false, // latest first
             rowProps: ({ status }) => ({
-                negative: status === 'error',
-                positive: status === 'success',
+                // negative: status === 'error',
+                // positive: status === 'success',
                 warning: status === 'loading',
             }),
-            searchExtraKeys: ['identity', 'action'],
+            searchExtraKeys: ['action', 'identity', 'description'],
             searchable: true,
             selectable: true,
             topLeftMenu: [{
-                content: texts.clearAll,
+                content: textsCap.clearAll,
                 name: 'clear-all',
                 negative: true,
                 onClick: () => confirm({
@@ -120,30 +166,36 @@ export default class HistoryList extends Component {
             topRightMenu: [{
                 content: textsCap.delete,
                 icon: 'close',
-                onClick: ids => ids.forEach(remove)
+                onClick: ids => ids.forEach(removeHistoryItem)
             }]
         }
     }
 
     componentWillMount() {
         this._mounted = true
-        this.tieId = bond.tie(() => {
-            const data = getAll()
-            Array.from(data).forEach(([_, item]) => {
-                // clear unwanted spaces caused by use of backquotes etc.
-                item.message = clearClutter(item.message || '')
-                // add identity name if available
-                item._identity = getAddressName(item.identity)
-                // Make time more human friendly
-                item._timestamp = format(item.timestamp)
-            })
-            this.setState({ data })
-        })
+        this.subscriptions = {}
+        this.subscriptions.history = rxHistory.subscribe(this.setHistory).unsubscribe
+        // force initial read as in-memory caching is disabled
+        this.setHistory(getAll())
     }
 
     componentWillUnmount() {
         this._mounted = true
-        bond.untie(this.tieId)
+        unsubscribe(this.subscriptions)
+    }
+
+    setHistory = (history = new Map()) => {
+        Array.from(history).forEach(([_, item]) => {
+            item._description = (item.description || '')
+                .split(' ')
+                .map(x => textEllipsis(x, 20))
+                .join(' ')
+            // clear unwanted spaces caused by use of backquotes etc.
+            item.message = clearClutter(item.message || '')
+            // add identity name if available
+            item._identity = getAddressName(item.identity)
+        })
+        this.setState({ data: history })
     }
 
     showDetails = (item, id) => {
@@ -152,19 +204,26 @@ export default class HistoryList extends Component {
         const balanceExtProps = { action: { content: 'XTX' } }
 
         const inputDefs = [
+            item.txId && [textsCap.txId, item.txId, 'text', {
+                action: {
+                    icon: 'copy',
+                    onClick: () => copyToClipboard(item.txId),
+                }
+            }],
             // title describes what the task is about
             [textsCap.action, item.title],
             // description about the task that is displayed in the queue toast message
             [textsCap.description, item.description, 'textarea'],
+            [textsCap.status, statusTitles[item.status] || textsCap.pendingExecution],
             // show error message only if available
             errMsg && [textsCap.errorMessage, errMsg, 'textarea', { invalid: item.status === 'error' }],
             // blockchain or chat client function path in string format
             [textsCap.function, item.action],
             // user's identity that was used to create the transaction
-            item.identity && [textsCap.identity, item._identity],
-            [textsCap.timestamp, item._timestamp],
-            [texts.groupId, item.groupId],
-            [texts.taskId, id],
+            item.identity && [textsCap.identity, item.identity],
+            [textsCap.timestamp, format(item.timestamp, true, true)],
+            // [textsCap.groupId, item.groupId], // ID of the parent (rootTask) queue item
+            // [textsCap.taskId, id], // ID of the child/parent(rootTask) queue item
             isValidNumber(before) && [textsCap.balanceBeforeTx, before, 'number', balanceExtProps],
             isValidNumber(after) && [textsCap.balanceAfterTx, after, 'number', balanceExtProps],
             [textsCap.dataSent, JSON.stringify(item.data, null, 4), 'textarea'],

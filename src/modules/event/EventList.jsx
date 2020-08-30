@@ -7,15 +7,15 @@ export default function EventList() {
     const [events, setEvents] = useState(eventsT)
 
     useEffect(() => {
-        console.log('EventList. connecting to blockchain')
+        let mounted = true
         getConnection().then(({ api }) =>
             api.query.system.events(newEvents => {
-                eventsT = [...newEvents, ...eventsT]
-                setEvents(eventsT)
+                eventsT = [...newEvents, ...eventsT].slice(-100) // keep only latest 100 events
+                mounted && setEvents(eventsT)
             })
         )
 
-        return () => { }
+        return () => mounted = false
     }, [])
     return (
         <ol>
@@ -23,7 +23,6 @@ export default function EventList() {
         </ol>
     )
 }
-
 
 function EventDisplay({ event }) {
     const params = (event.typeDef || []).map(({ type }) => ({
@@ -36,7 +35,6 @@ function EventDisplay({ event }) {
 
     return (
         <li>
-
             <div>
                 <div>{event.section}: {event.method}</div>
                 <div>Meta: {JSON.stringify(event.meta, null, 4)}</div>

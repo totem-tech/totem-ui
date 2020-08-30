@@ -1,21 +1,15 @@
-import React from 'react'
-import { Container, Dimmer, Image, Loader, Menu, Sidebar } from 'semantic-ui-react'
-import { Bond } from 'oo7'
-import { ReactiveComponent } from 'oo7-react'
-import {
-	calls, runtime, chain, system, runtimeUp,
-	secretStore, metadata, nodeService
-} from 'oo7-substrate'
-
+import React, { Component } from 'react'
+import { Container, Image, Sidebar } from 'semantic-ui-react'
 // Components
 import ErrorBoundary from './components/CatchReactErrors'
 import PageHeader from './components/PageHeader'
+import Segment from './components/Segment'
 import SidebarLeft, { MainContentItem } from './components/SidebarLeft'
 // Services
 import blockchain from './services/blockchain'
 import chatClient from './services/chatClient'
 import identity from './services/identity'
-import language, { translated } from './services/language'
+import language from './services/language'
 import modal, { ModalsConainer } from './services/modal'
 import NotificationList from './modules/notification/List'
 import partner from './services/partner'
@@ -25,55 +19,37 @@ import sidebar, { sidebarItems, sidebarStateBond } from './services/sidebar'
 import storage from './services/storage'
 import timeKeeping from './services/timeKeeping'
 import toast, { ToastsContainer } from './services/toast'
-import windw from './services/window'
+import windw, { gridColumnsBond, getLayout, layoutBond, MOBILE } from './services/window'
 // Utils
+import convert from './utils/convert'
 import DataStorage from './utils/DataStorage'
 import naclHelper from './utils/naclHelper'
 import polkadotHelper from './utils/polkadotHelper'
+import { className, isBool } from './utils/utils'
+import validator from './utils/validator'
 // Images
 import TotemButtonLogo from './assets/totem-button-grey.png'
 import PlaceholderImage from './assets/totem-placeholder.png'
 import ChatBar from './modules/chat/ChatBar'
-import { className } from './utils/utils'
+import PromisE from './utils/PromisE'
 
-const [texts] = translated({
-	failedMsg: 'Connection failed! Please check your internet connection.',
-	connectingMsg: 'Connecting to Totem blockchain network...',
-})
-
-export class App extends ReactiveComponent {
+export class App extends Component {
 	constructor() {
-		super([], {
-			ensureRuntime: runtimeUp,
-			isMobile: windw.layoutBond.map(layout => layout === 'mobile'),
-			numCol: windw.gridColumnsBond,
-		})
+		super()
 		this.state = {
 			sidebarCollapsed: false,
-			sidebarVisible: windw.getLayout() !== 'mobile',
+			sidebarVisible: getLayout() !== MOBILE,
 			status: {}
 		}
 
-		nodeService().status.notify(() => {
-			const status = nodeService().status._value
-			// prevent unnecessary state update
-			if (this.state.status.error && status.error) return
-			this.setState({ status })
-		})
-
 		// For debug only.
 		window.utils = {
+			convert,
 			naclHelper,
 			polkadotHelper,
+			PromisE: PromisE,
+			validator,
 		}
-		window.runtime = runtime
-		window.secretStore = secretStore
-		window.chain = chain
-		window.calls = calls
-		window.system = system
-		window.that = this
-		window.metadata = metadata
-		window.Bond = Bond
 		window.DataStorage = DataStorage
 		window.services = {
 			blockchain,
@@ -91,29 +67,25 @@ export class App extends ReactiveComponent {
 			window: windw,
 		}
 
-		blockchain.getConnection().then(({ api }) => window.api = api)
-		window.queryBlockchain = async (func, args) => await blockchain.query(func, args, true)
+		window.queryBlockchain = async (func, args, multi) => await blockchain.query(func, args, multi, true)
+		queryBlockchain().then(api => window.api = api)
 	}
 
-	// unused
-	// hack to format as a currency. Needs to go in a seperate Display Formatting Utilities file.
-	round(value, decimals) {
-		return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals).toFixed(decimals)
+	componentWillMount() {
+		this.tieIdIsMobile = layoutBond.tie(layout => this.setState({ isMobile: layout === MOBILE }))
+		this.tieIdNumCol = gridColumnsBond.tie(numCol => this.setState({ numCol }))
+	}
+
+	componentWillUnmount() {
+		layoutBond.untie(this.tieIdIsMobile)
+		gridColumnsBond.untie(this.tieIdNumCol)
 	}
 
 	handleSidebarToggle = (v, c) => this.setState({ sidebarVisible: v, sidebarCollapsed: c })
 
-	unreadyRender() {
-		const { status } = this.state
-		return (
-			<Dimmer active style={{ height: '100%', position: 'fixed' }}>
-				{!!status.error ? texts.failedMsg : <Loader indeterminate>{texts.connectingMsg}</Loader>}
-			</Dimmer>
-		)
-	}
-
-	readyRender() {
+	render() {
 		const { isMobile, numCol } = this.state
+		if (!isBool(isMobile)) return ''
 		const logoSrc = TotemButtonLogo
 		const { collapsed, visible } = sidebarStateBond._value
 		if (!this.resumed) {
@@ -146,11 +118,11 @@ export class App extends ReactiveComponent {
 					</ErrorBoundary>
 
 					<Sidebar.Pusher
-						as={Container}
+						as={Segment}
 						className="main-content"
 						dimmed={false}
 						id="main-content"
-						fluid
+						// fluid
 						style={{
 							...styles.mainContent,
 							paddingBottom: isMobile ? 55 : 15,
@@ -177,11 +149,13 @@ const getGridStyle = (numCol = 1) => numCol <= 1 ? {} : {
 }
 const styles = {
 	mainContent: {
+		borderRadius: 0,
+		height: '100%',
+		margin: 0,
 		overflow: 'hidden auto',
 		WebkitOverflow: 'hidden auto',
-		height: '100%',
-		scrollBehavior: 'smooth',
 		padding: 15,
+		scrollBehavior: 'smooth',
 	},
 	pushable: {
 		margin: 0,

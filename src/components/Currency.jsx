@@ -1,113 +1,98 @@
-import React, { Component } from 'react'
+import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import { runtime } from 'oo7-substrate'
-import { isBond, isDefined, isValidNumber, isFn, isStr } from '../utils/utils'
-import { ss58Decode } from '../utils/convert'
+import { isValidNumber, isFn, isDefined } from '../utils/utils'
 import { round } from '../utils/number'
-import { bond, convertTo, currencyDefault, getSelected } from '../services/currency'
+import { convertTo, currencyDefault, useSelected, getCurrencies } from '../services/currency'
 
-export default class Currency extends Component {
-    constructor(props) {
-        super(props)
-        this.state = {
-            error: undefined,
-            value: undefined,
-            valueConverted: undefined,
+export const Currency = props => {
+    let {
+        className,
+        decimalPlaces,
+        EL,
+        emptyMessage,
+        onChange,
+        prefix,
+        style,
+        suffix,
+        unit,
+        unitDisplayed,
+        value,
+    } = props
+    const [selected] = !unit && !unitDisplayed ? [] : useSelected()
+    unit = unit || selected
+    unitDisplayed = unitDisplayed || selected
+    const isSame = unit === unitDisplayed
+    let [valueConverted, setValueConverted] = useState(isSame ? value : undefined)
+    let [error, setError] = useState()
+
+    useEffect(() => {
+        if (!isValidNumber(value)) return () => { }
+        let mounted = true
+        const convert = async (value) => {
+            if (!mounted) return
+            try {
+                valueConverted = !value || isSame ? value || 0 : await convertTo(value, unit, unitDisplayed)
+                error = null
+                if (!isValidNumber(decimalPlaces)) {
+                    const currencies = await getCurrencies()
+                    let { decimals } = currencies.find(x => x.ISO === unitDisplayed) || {}
+                    decimals = parseInt(decimals)
+                    decimalPlaces = isValidNumber(decimals) ? decimals : 8
+                }
+                valueConverted = round(valueConverted, decimalPlaces)
+            } catch (err) {
+                error = err
+                valueConverted = 0
+            }
+
+            if (!mounted) return
+            setError(error)
+            setValueConverted(valueConverted)
+            isFn(onChange) && onChange(valueConverted, error)
         }
-        this.originalSetState = this.setState
-        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
-    }
 
-    componentWillMount = async () => {
-        this._mounted = true
-        let { address, value } = this.props
-        const isNum = isValidNumber(value)
-        if (!isNum && ss58Decode(address)) {
-            value = runtime.balances && runtime.balances.balance(address) || 0
-        }
-        if (isBond(value)) {
-            this.bond = value
-            this.tieId = this.bond.tie(value => this.convert(parseInt(value)))
-        }
-        this.tieIdCurrency = bond.tie(() => this.convert(isNum ? value : this.state.value))
-    }
+        // convert and display value supplied
+        convert(value)
 
-    componentWillUnmount() {
-        this._mounted = false
-        this.bond && this.bond.untie(this.tieId)
-        bond.untie(this.tieIdCurrency)
-    }
+        return () => mounted = false
+    }, [unit, unitDisplayed, value])
 
-    componentWillReceiveProps(props) {
-        const { address, value } = props
-        const { value: oldValue } = this.state
-        if (value !== oldValue) this.convert(value)
-        // new address received, unsubscribe and resubscribe to bonds
-        if (address && !oldValue) this.componentWillUnmount() | this.componentWillMount()
-    }
-
-    convert = async (value) => {
-        let { decimalPlaces, onChange, unit, unitDisplayed } = this.props
-        let { error, value: oldValue, valueConverted } = this.state
-        unit = unit || currencyDefault
-        unitDisplayed = unitDisplayed || getSelected()
-
-        // conversion not required
-        if (!isValidNumber(value)) return
-        if (unit === unitDisplayed) return this.setState({
-            error: undefined,
-            value,
-            valueConverted: round(value, decimalPlaces),
-        })
-
-        try {
-            valueConverted = !value ? 0 : await convertTo(value, unit, unitDisplayed)
-            error = undefined
-        } catch (err) {
-            console.log('Currency conversion failed: ', { err })
-            error = err
-            valueConverted = 0
-        }
-        valueConverted = round(valueConverted, decimalPlaces)
-        this.setState({
-            error,
-            value,
-            valueConverted,
-        })
-
-        isFn(onChange) && oldValue !== value && onChange(value, valueConverted)
-    }
-
-    render = () => {
-        const { className, EL = 'span', emptyMessage = '', prefix, style, suffix, unitDisplayed } = this.props
-        const { error, valueConverted } = this.state
-        return !valueConverted || !isStr(EL) ? emptyMessage : (
-            <EL {...{
-                className,
-                style: { color: error ? 'red' : '', ...style },
-                title: error,
-            }}>
-                {prefix}{valueConverted} {unitDisplayed || getSelected()}{suffix}
-            </EL>
-        )
-    }
+    const content = !isDefined(valueConverted) ? (emptyMessage || '') : (
+        `${prefix || ''}${valueConverted} ${unitDisplayed}${suffix || ''}`
+    )
+    return (
+        <EL {...{
+            className,
+            style: { color: error ? 'red' : undefined, ...style },
+            title: error ? `${error}` : (
+                !isDefined(value) || isSame ? '' : `${value || 0} ${unit}`
+            ),
+        }}>
+            {content}
+        </EL>
+    )
 }
 Currency.propTypes = {
-    // @address to retrieve balance from Totem chain.
-    // Only used when value is not supplied.
-    address: PropTypes.string,
     className: PropTypes.string,
     decimalPlaces: PropTypes.number,
-    emptyMessage: PropTypes.string,
+    // @EL (optional) HTML element to use. Default: 'span'
+    EL: PropTypes.string,
+    emptyMessage: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.element,
+    ]),
     // @onChange is invoked whenever the account balance/value changes. 
     onChange: PropTypes.func,
     prefix: PropTypes.any,
     style: PropTypes.object,
     suffix: PropTypes.any,
     unit: PropTypes.string,
+    // Display currency. Default: selected currency from currency service
     unitDisplayed: PropTypes.string,
-    value: PropTypes.any, // number or bond
+    value: PropTypes.number,
 }
 Currency.defaultProps = {
-    decimalPlaces: 2
+    EL: 'span',
+    unit: currencyDefault, // XTX
 }
+export default React.memo(Currency)
