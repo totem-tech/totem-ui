@@ -16,7 +16,7 @@ const textsCap = translated({
     lastNamePlaceholder: 'enter your family name',
     signup: 'signup',
     successMsg: 'thank you for signing up! Don\'t forget to check out our live testnet application at',
-    subheader: 'We promise to not spam you and we will NEVER give your personal details to any third-party without your explicit conscent',
+    subheader: 'We promise to not spam you and we will NEVER give your personal details to any third-party without your explicit consent',
 }, true)[1]
 
 export default class NewsletteSignup extends Component {

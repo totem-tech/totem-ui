@@ -63,7 +63,7 @@ export default class PageHeader extends Component {
 		)
 		// Update user ID after registration
 		this.unsubscribers.isLoggedIn = rxIsLoggedIn.subscribe(isLoggedIn => {
-			const { id } = getUser()
+			const { id } = getUser() || {}
 			this.setState({ id, isLoggedIn })
 		})
 	}
