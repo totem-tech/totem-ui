@@ -143,7 +143,15 @@ export const getConnection = async (create = false) => {
  * @returns {Number|Function} latest block number if `@callback` not supplied, otherwise, function to unsubscribe
  */
 export const getCurrentBlock = async (callback) => {
-    if (!isFn(callback)) return await query('api.rpc.chain.getBlock').block.header.number
+    if (!isFn(callback)) {
+        const res = await query('api.rpc.chain.getBlock')
+        try {
+            return res.block.header.number
+        } catch (e) {
+            console.log('Unexpected error reading block number', e)
+            return 0
+        }
+    }
     return query('api.rpc.chain.subscribeNewHeads', [res => callback(res.number)])
 }
 

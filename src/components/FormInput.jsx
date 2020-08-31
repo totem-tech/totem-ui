@@ -300,7 +300,7 @@ export class FormInput extends Component {
 		)
 
 		let groupEl = (
-			<div style={{ marginBottom: 15 }}>
+			<div>
 				<Form.Group {...{
 					className: 'form-group',
 					...objWithoutKeys(attrs, ['inputs']),
@@ -309,7 +309,7 @@ export class FormInput extends Component {
 					{inputEl}
 				</Form.Group>
 				{message && <Message {...message} />}
-			</div >
+			</div>
 		)
 
 		if (!isObj(accordion)) return groupEl
