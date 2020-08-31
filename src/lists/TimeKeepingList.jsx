@@ -22,6 +22,7 @@ import { getProjects, statuses, query, queueables } from '../services/timeKeepin
 import { addToQueue } from '../services/queue'
 import { getLayout } from '../services/window'
 import PromisE from '../utils/PromisE'
+import { unsubscribe } from '../services/react'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -187,7 +188,7 @@ export default class ProjectTimeKeepingList extends Component {
 
     async componentWillMount() {
         this._mounted = true
-        this.unsubscribers = {}
+        this.subscriptions = {}
         const { archive, manage, projectId } = this.props
         const { list, listArchive, listByProject, listByProjectArchive } = query.record
         let arg = !manage ? getSelected().address : projectId
@@ -205,20 +206,20 @@ export default class ProjectTimeKeepingList extends Component {
             (manage ? listByProjectArchive : listArchive)
             : (manage ? listByProject : list)
         // subscribe to changes on the list of recordIds
-        this.unsubscribers.recordIds = queryFn.call(null, arg, this.getRecords, multi)
+        this.subscriptions.recordIds = queryFn.call(null, arg, this.getRecords, multi)
 
         if (manage) {
             // auto update partner/identity names
-            this.unsubscribers.identities = rxIdentities.subscribe(() =>
+            this.subscriptions.identities = rxIdentities.subscribe(() =>
                 this._mounted && this.processRecords(this.state.data)
-            ).unsubscribe
-            this.unsubscribers.partners = rxPartners.subscribe(() =>
+            )
+            this.subscriptions.partners = rxPartners.subscribe(() =>
                 this._mounted && this.processRecords(this.state.data)
-            ).unsubscribe
+            )
         }
 
         // reset everything on selected address change
-        this.unsubscribers.selected = rxSelected.subscribe(() => {
+        this.subscriptions.selected = rxSelected.subscribe(() => {
             if (!this._mounted) return
             if (!this.ignoredFirst) {
                 this.ignoredFirst = true
@@ -228,23 +229,23 @@ export default class ProjectTimeKeepingList extends Component {
             this.componentWillMount()
         })
 
-        this.unsubscribers.inProgressIds = rxInProgressIds.subscribe(ar =>
+        this.subscriptions.inProgressIds = rxInProgressIds.subscribe(ar =>
             this._mounted && this.setState({ inProgressHashes: ar })
-        ).unsubscribe
+        )
         // update record details whenever triggered
-        this.unsubscribers.trigger = archive && rxTrigger.subscribe(() =>
+        this.subscriptions.trigger = archive && rxTrigger.subscribe(() =>
             this._mounted && this.getRecords()
-        ).unsubscribe
+        )
     }
 
     componentWillUnmount() {
         this._mounted = false
-        Object.values(this.unsubscribers).forEach(fn => isFn(fn) && fn())
+        unsubscribe(this.subscriptions)
     }
 
     getActionContent = (record, hash) => {
         const { archive, manage } = this.props
-        const { inProgressHashes } = this.state
+        const { inProgressHashes = [] } = this.state
         const {
             approved, duration, locked,
             projectHash, projectName, projectOwnerAddress,
@@ -402,7 +403,7 @@ export default class ProjectTimeKeepingList extends Component {
     }) | this.setState({ data: records })
 
     handleApprove = (hash, approve = false) => {
-        const { data, inProgressHashes } = this.state
+        const { data, inProgressHashes = [] } = this.state
         const { projectHash, projectOwnerAddress, submit_status, workerAddress } = data.get(hash) || {}
         const targetStatus = approve ? statuses.accept : statuses.reject
         if (!workerAddress || submit_status !== statuses.submit || targetStatus === submit_status) return
@@ -420,7 +421,7 @@ export default class ProjectTimeKeepingList extends Component {
 
     handleArchive = (hash, archive = true) => {
         const { manage } = this.props
-        const { data, inProgressHashes } = this.state
+        const { data, inProgressHashes = [] } = this.state
         const { projectOwnerAddress, workerAddress } = data.get(hash) || {}
         const address = manage ? projectOwnerAddress : workerAddress
         if (!address) return
@@ -442,7 +443,7 @@ export default class ProjectTimeKeepingList extends Component {
     }
 
     handleSetAsDraft = hash => {
-        const { data, inProgressHashes } = this.state
+        const { data, inProgressHashes = [] } = this.state
         const {
             approved,
             end_block,
