@@ -16,8 +16,9 @@ export const newNotificationBond = new Bond()
 export const visibleBond = new Bond().defaultTo(false)
 export const unreadCountBond = new Bond().defaultTo(getUnreadCount())
 notifications.rxData.subscribe(() => {
+    const unreadCount = getUnreadCount()
     // auto update unread count
-    unreadCountBond.changed(getUnreadCount())
+    unreadCountBond.changed(unreadCount)
     // change visibility if no notificaitons left
     if (!notifications.size) visibleBond.changed(false)
 })

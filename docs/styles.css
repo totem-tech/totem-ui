@@ -351,7 +351,9 @@ input[readonly] {
     background: red;
 } */
 /* Data Table */
-#app.inverted .data-table.inverted {
+#app.inverted .data-table.inverted,
+.ui.modal.inverted .ui.basic.inverted.segment.data-table {
+    background: #464646;
     border: 1px solid #505050;
 }
 /* Modals */
