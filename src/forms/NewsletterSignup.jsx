@@ -11,15 +11,15 @@ const textsCap = translated({
     emailError: 'please enter a valid email address',
     emailLabel: 'email',
     emailPlaceholder: 'enter your email address',
-    header: 'newsletter signup',
+    header: 'early adopter signup',
     firstNameLabel: 'first name',
     firstNamePlaceholder: 'enter your name',
     lastNameLabel: 'family name',
     lastNamePlaceholder: 'enter your family name',
     signup: 'signup',
     successHeader: 'thank you for signing up!',
-    successMsg: 'if you haven\'t already done so, please feel free create an account, check out the application and provide us with any feedback you may have. It\'s completely free while in testnet!',
-    successMsgIframe: 'don\'t forget to check out our live testnet application which is completely free while in testnet:',
+    successMsg: 'now that you are here, why not check out the test application and provide us with any feedback you may have? It\'s completely free',
+    successMsgIframe: 'don\'t forget to check out our live and free test application:',
     subheader: 'We promise to not spam you and we will NEVER give your personal details to any third-party without your explicit consent',
 }, true)[1]
 
