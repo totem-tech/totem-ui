@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { rxNotifications, visibleBond } from './notification'
 import ListItem from './ListItem'
 import './style.css'
-import { isFn } from '../../utils/utils'
+import { unsubscribe } from '../../services/react'
 
 export default function NotificationList() {
     const [items, setItems] = useState()
@@ -10,8 +10,8 @@ export default function NotificationList() {
 
     useEffect(() => {
         let mounted = true
-        const unsubscribers = {}
-        unsubscribers.notifications = rxNotifications.subscribe(map => mounted && setItems(map)).unsubscribe
+        const subscriptions = {}
+        subscriptions.notifications = rxNotifications.subscribe(map => mounted && setItems(map))
         const tieIdVisible = visibleBond.tie(visible => {
             const cl = document.getElementById('app').classList
             cl[visible ? 'add' : 'remove']('notification-visible')
@@ -20,7 +20,7 @@ export default function NotificationList() {
         return () => {
             mounted = false
             visibleBond.untie(tieIdVisible)
-            Object.values(unsubscribers).forEach(fn => isFn(fn) && fn())
+            unsubscribe(subscriptions)
         }
     }, [])
 
