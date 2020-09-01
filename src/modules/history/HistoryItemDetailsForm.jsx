@@ -126,7 +126,7 @@ export default function HistoryItemDetailsForm(props) {
                     label: textsCap.dataReceived,
                     name: 'result',
                     readOnly: true,
-                    type: 'textare',
+                    type: 'textarea',
                     value: JSON.stringify(result, null, 4),
                 },
             ].filter(Boolean)
