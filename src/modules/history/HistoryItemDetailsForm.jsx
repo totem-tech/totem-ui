@@ -72,7 +72,7 @@ export default function HistoryItemDetailsForm(props) {
     const { before, after } = isObj(balance) ? balance : {}
     const isTx = `${action}`.includes('api.tx.')
     const [layout] = useRxSubject(rxLayout)
-    const maxLength = layout === MOBILE ? 13 : 31
+    const maxLength = layout === MOBILE ? 13 : 25
     const [inputs, setInputs] = useState([
         {
             accordion: {
@@ -111,23 +111,25 @@ export default function HistoryItemDetailsForm(props) {
                     type: 'text',
                     value: identity,
                 },
-                {
+                data && {
                     content: (
                         <div style={{ padding: '0 10px' }}>
                             <h5 style={{ margin: 0 }}>{textsCap.dataSent}</h5>
                             {isTx ? <Icon loading={true} name='spinner' /> : dataToStr(data, maxLength)}
                         </div>
                     ),
-                    hidden: !data,
                     name: 'dataSent',
                     type: 'html',
                 },
                 result && {
-                    label: textsCap.dataReceived,
+                    content: (
+                        <div style={{ padding: '0 10px' }}>
+                            <h5 style={{ margin: 0 }}>{textsCap.dataReceived}</h5>
+                            {dataToStr(result, maxLength)}
+                        </div>
+                    ),
                     name: 'result',
-                    readOnly: true,
-                    type: 'textarea',
-                    value: JSON.stringify(result, null, 4),
+                    type: 'html',
                 },
             ].filter(Boolean)
         },
@@ -185,7 +187,7 @@ export default function HistoryItemDetailsForm(props) {
         },
     ].filter(Boolean))
 
-    isTx && useEffect(() => {
+    isTx && data && useEffect(() => {
         let mounted = true
         query(action + '.meta').then(meta => {
             if (!mounted) return
