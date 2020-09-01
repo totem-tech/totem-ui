@@ -1,7 +1,7 @@
 import { Bond } from 'oo7'
 import DataStorage from '../../utils/DataStorage'
 // services
-import client, { getUser } from '../../services/chatClient'
+import client, { getUser, rxIsLoggedIn } from '../../services/chatClient'
 import { translated } from '../../services/language'
 import { getProject } from '../../services/project'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
@@ -52,8 +52,9 @@ client.onNotify((id, from, type, childType, message, data, tsCreated) => {
     })
 })
 
-client.onConnect(() => {
-    if (!(getUser() || {}).id) return // ignore if not registered
+rxIsLoggedIn.subscribe(isLoggedIn => {
+    // ignore if not logged in
+    if (!isLoggedIn) return
     const { tsLastReceived } = rw()
     client.notificationGetRecent(null, (err, items) => {
         if (!items.size) return err && console.log('client.notificationGetRecent', err)
@@ -88,6 +89,7 @@ function getUnreadCount() {
 
 export const toggleRead = id => {
     const item = notifications.get(id)
+    if (!item) return
     item.read = !item.read
     notifications.set(id, item)
 
