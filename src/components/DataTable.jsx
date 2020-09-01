@@ -1,13 +1,22 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Button, Dropdown, Grid, Icon, Input, Table } from 'semantic-ui-react'
-import Segment from './Segment'
+import {
+    Button,
+    Dropdown,
+    Grid,
+    Icon,
+    Input,
+    Segment,
+    Table,
+} from 'semantic-ui-react'
+// import Segment from './Segment'
 import {
     arrMapSlice, getKeys, isArr, isFn, objWithoutKeys, objCopy, search, sort, isStr, arrReverse
 } from '../utils/utils'
+import Invertible from './Invertible'
 import Message from '../components/Message'
 import { translated } from '../services/language'
-import { getLayout, layoutBond, MOBILE, rxInverted, setInverted } from '../services/window'
+import { getLayout, layoutBond, MOBILE } from '../services/window'
 import Paginator from './Paginator'
 
 const mapItemsByPage = (data, pageNo, perPage, callback) => {
@@ -32,7 +41,6 @@ export default class DataTable extends Component {
         const { columns, defaultSort, defaultSortAsc, keywords, pageNo } = props
         this.state = {
             isMobile: getLayout() === MOBILE,
-            inverted: setInverted(),
             keywords: keywords || '',
             pageNo: pageNo,
             selectedIndexes: [],
@@ -49,15 +57,11 @@ export default class DataTable extends Component {
             if (this.state.isMObile === isMobile) return
             this.setState({ isMobile })
         })
-        this.unsubscribers = {
-            inverted: rxInverted.subscribe(inverted => this.setState({ inverted }))
-        }
     }
 
     componentWillUnmount = () => {
         this._mounted = false
         layoutBond.untie(this.tieId)
-        Object.keys(this.unsubscribers).forEach(fn => isFn(fn) && fn())
     }
 
     getFooter(totalPages, pageNo) {
@@ -293,7 +297,6 @@ export default class DataTable extends Component {
             tableProps,
         } = this.props
         let {
-            inverted,
             keywords,
             pageNo,
             selectedIndexes,
@@ -331,37 +334,39 @@ export default class DataTable extends Component {
             emptyMessage = { content: emptyMessage }
         }
         return (
-            <Segment
-                basic
-                inverted={inverted}
-                className='data-table'
-                style={{ margin: 0, ...style }}
-            >
+            <Invertible {...{
+                El: Segment,
+                basic: true,
+                className: 'data-table',
+                style: { margin: 0, ...style }
+            }}>
                 {this.getTopContent(totalRows, selectedIndexes)}
 
-                <div style={styles.tableContent}>
+                <div style={styles.tableContent} >
                     {totalRows === 0 && emptyMessage && <Message {...emptyMessage} />}
-                    {totalRows > 0 && (
-                        <Table {...{ ...tableProps, inverted }}>
-                            <Table.Header>
-                                <Table.Row>{headers}</Table.Row>
-                            </Table.Header>
+                    {
+                        totalRows > 0 && (
+                            <Invertible {...{ ...tableProps, El: Table }}>
+                                <Table.Header>
+                                    <Table.Row>{headers}</Table.Row>
+                                </Table.Header>
 
-                            <Table.Body>{rows}</Table.Body>
+                                <Table.Body>{rows}</Table.Body>
 
-                            {!footerContent && totalPages <= 1 ? undefined : (
-                                <Table.Footer>
-                                    <Table.Row>
-                                        <Table.HeaderCell colSpan={columns.length + 1}>
-                                            {this.getFooter(totalPages, pageNo)}
-                                        </Table.HeaderCell>
-                                    </Table.Row>
-                                </Table.Footer>
-                            )}
-                        </Table>
-                    )}
-                </div>
-            </Segment>
+                                {!footerContent && totalPages <= 1 ? undefined : (
+                                    <Table.Footer>
+                                        <Table.Row>
+                                            <Table.HeaderCell colSpan={columns.length + 1}>
+                                                {this.getFooter(totalPages, pageNo)}
+                                            </Table.HeaderCell>
+                                        </Table.Row>
+                                    </Table.Footer>
+                                )}
+                            </Invertible>
+                        )
+                    }
+                </div >
+            </Invertible >
         )
     }
 }

@@ -1,13 +1,13 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Button, Header, Icon, Modal } from 'semantic-ui-react'
+import { Button, Form, Header, Icon, Modal } from 'semantic-ui-react'
 import { isDefined, isArr, isBool, isBond, isFn, isObj, isStr, hasValue } from '../utils/utils'
 import Message from '../components/Message'
-import Form from './Form'
 import FormInput, { nonValueTypes } from './FormInput'
 import IModal from './Modal'
 import Text from './Text'
 import { translated } from '../services/language'
+import Invertible from './Invertible'
 
 const textsCap = translated({
     unexpectedError: 'an unexpected error occured',
@@ -203,15 +203,16 @@ export default class FormBuilder extends Component {
         }
 
         const form = (
-            <Form
-                error={message.status === 'error'}
-                loading={loading}
-                onSubmit={onSubmit}
-                style={style}
-                success={success || message.status === 'success'}
-                warning={message.status === 'warning'}
-                widths={widths}
-            >
+            <Invertible {...{
+                El: Form,
+                error: message.status === 'error',
+                loading: loading,
+                onSubmit: onSubmit,
+                style: style,
+                success: success || message.status === 'success',
+                warning: message.status === 'warning',
+                widths: widths,
+            }} >
                 {inputs.map(this.addInterceptor(null, values)).map(props => <FormInput {...props} />)}
                 {/* Include submit button if not a modal */}
                 {!modal && !hideFooter && (
@@ -220,7 +221,7 @@ export default class FormBuilder extends Component {
                         {msg && <Message {...message} />}
                     </div>
                 )}
-            </Form>
+            </Invertible>
         )
 
         return !modal ? form : (
