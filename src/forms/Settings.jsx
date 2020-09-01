@@ -8,7 +8,7 @@ import {
     getSelected as getSelectedCurrency,
     setSelected as setSelectedCurrency
 } from '../services/currency'
-import { limit as historyItemsLimit } from '../services/history'
+import { limit as historyItemsLimit } from '../modules/history/history'
 import {
     getSelected as getSelectedLanguage,
     languages,

@@ -4,7 +4,7 @@ import { Bond } from 'oo7'
 // Views (including lists and forms)
 import FinancialStatementsView from '../modules/financialStatement/FinancialStatementView'
 import GettingStarted from '../views/GettingStartedView'
-import HistoryList from '../lists/HistoryList'
+import HistoryList from '../modules/history/HistoryList'
 import IdentityList from '../lists/IdentityList'
 import PartnerList from '../lists/PartnerList'
 import ProjectList from '../lists/ProjectList'
