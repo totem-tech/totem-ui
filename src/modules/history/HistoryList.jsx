@@ -170,12 +170,14 @@ export default class HistoryList extends Component {
                 onClick: ids => ids.forEach(removeHistoryItem)
             }]
         }
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
     componentWillMount() {
         this._mounted = true
         this.subscriptions = {}
-        this.subscriptions.history = rxHistory.subscribe(this.setHistory).unsubscribe
+        this.subscriptions.history = rxHistory.subscribe(this.setHistory)
         // force initial read as in-memory caching is disabled
         this.setHistory(getAll())
     }

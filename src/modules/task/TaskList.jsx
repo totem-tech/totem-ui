@@ -194,7 +194,13 @@ class TaskList extends Component {
                 }
             ].filter(Boolean)
         }
+
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
+
+    componentWillMount = () => this._mounted = true
+    componentWillUnmount = () => this._mounted = false
 
     getActions = (task, taskId) => [
         this.isOwner && task.allowEdit && {
