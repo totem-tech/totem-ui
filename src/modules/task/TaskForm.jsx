@@ -11,7 +11,7 @@ import Currency from '../../components/Currency'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import PartnerForm from '../../forms/Partner'
 // services
-import { getConnection, getCurrentBlock, hashTypes, query } from '../../services/blockchain'
+import { getCurrentBlock, hashTypes, query } from '../../services/blockchain'
 import {
     convertTo,
     currencyDefault,
@@ -31,7 +31,6 @@ import { Balance } from '../../components/Balance'
 const textsCap = translated({
     addedToQueue: 'request added to queue',
     advancedLabel: 'advanced options',
-    amountRequired: 'amount required',
     assignee: 'select a partner to assign task',
     assigneeErrUserIdRequired: 'partner does not have an User ID associated.',
     assigneeErrOwnIdentitySelected: 'you cannot assign a task to your currently selected identity',
@@ -63,6 +62,7 @@ const textsCap = translated({
         Anyone using Totem will be able to submit proposal to this Task.
         You will then be able to accept or reject any proposal you wish.
     `,
+    minBalanceRequired: 'minimum balance required',
     myself: 'myself',
     orderTypeLabel: 'order type',
     publishToMarketPlace: 'publish to marketplace',
@@ -162,6 +162,7 @@ export default class TaskForm extends Component {
                             width: 12,
                         },
                         {// hidden type to store bounty in XTX (regardless of display currency selected)
+                            bond: new Bond(),
                             hidden: true,
                             name: this.names.amountXTX,
                             required: true,
@@ -453,11 +454,13 @@ export default class TaskForm extends Component {
                 const result = []
                 // no need to convert currency if amount is zero or XTX is the selected currency
                 const requireConversion = bounty && currency !== currencyDefault
-                const { api } = await getConnection()
-                result[0] = Math.ceil(
-                    !requireConversion ? bounty : await convertTo(bounty, currency, currencyDefault)
+                // amountXTX
+                result[0] = !requireConversion ? bounty : Math.ceil(
+                    await convertTo(bounty, currency, currencyDefault)
                 )
-                result[1] = parseInt(await api.query.balances.freeBalance(address))
+                // user account balance
+                result[1] = await query('api.query.balances.freeBalance', address)
+
                 resolve(result)
             } catch (e) { reject(e) }
         })
@@ -466,7 +469,7 @@ export default class TaskForm extends Component {
             const balanceXTX = result[1]
             const amountTotalXTX = amountXTX + estimatedTxFee + minBalanceAterTx
             const gotBalance = balanceXTX - amountTotalXTX >= 0
-            amountXTXIn.value = amountXTX
+            amountXTXIn.bond.changed(amountXTX)
             bountyIn.invalid = !gotBalance
             bountyGrpIn.message = {
                 content: (
@@ -479,9 +482,9 @@ export default class TaskForm extends Component {
                                 unitDisplayed: currency,
                             }} />
                         </div>
-                        <div title={`${textsCap.amountRequired}: ${amountTotalXTX} ${currencyDefault}`}>
+                        <div title={`${textsCap.minBalanceRequired}: ${amountTotalXTX} ${currencyDefault}`}>
                             <Currency {... {
-                                prefix: `${textsCap.amountRequired}: `,
+                                prefix: `${textsCap.minBalanceRequired}: `,
                                 value: amountTotalXTX,
                                 unit: currencyDefault,
                                 unitDisplayed: currency,
@@ -493,7 +496,7 @@ export default class TaskForm extends Component {
                 status: gotBalance ? 'success' : 'error',
             }
             bountyIn.loading = false
-            this.setState({ inputs, submitDisabled: false })
+            this.setState({ inputs, loading: false, submitDisabled: false })
         }
         const handleErr = err => {
             bountyIn.invalid = true
@@ -502,14 +505,9 @@ export default class TaskForm extends Component {
                 header: textsCap.conversionErrorHeader,
                 status: 'error'
             }
-            this.setState({ inputs })
+            this.setState({ inputs, loading: false, submitDisabled: false })
         }
-        this.bountyPromise(promise).then(handleSuccess)
-            .catch(handleErr)
-            .finally(() => {
-                bountyIn.loading = false
-                this.setState({ inputs, submitDisabled: false })
-            })
+        this.bountyPromise(promise).then(handleSuccess, handleErr)
     }, 300)
 
     handleIsClosedChange = (_, values) => {

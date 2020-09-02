@@ -33,7 +33,7 @@ export default class FormBuilder extends Component {
     addInterceptor = (index, values) => (input, i) => {
         const { inputsDisabled = [] } = this.props
         const { disabled, hidden, inputs: childInputs, key, name, type } = input || {}
-        const isGroup = (type || '').toLowerCase() === 'group' && isArr(childInputs)
+        const isGroup = `${type}`.toLowerCase() === 'group' && isArr(childInputs)
         index = isDefined(index) ? index : null
         return {
             ...input,

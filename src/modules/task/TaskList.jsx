@@ -25,6 +25,7 @@ const textsCap = translated({
     assignee: 'assignee',
     bounty: 'bounty',
     create: 'create',
+    createdAt: 'created at',
     description: 'description',
     emptyMsgMarketPlace: 'search for marketplace tasks by title or description',
     loading: 'loading',
@@ -62,6 +63,7 @@ class TaskList extends Component {
         const showCreate = this.isOwner || this.isMarketplace
         this.state = {
             columns: [
+                { collapsing: true, key: '_tsCreated', title: textsCap.createdAt },
                 { key: 'title', title: textsCap.title },
                 {
                     collapsing: true,
@@ -152,6 +154,8 @@ class TaskList extends Component {
                     title: textsCap.action
                 },
             ],
+            defaultSort: '_tsCreated',
+            defaultSortAsc: false,
             emptyMessage: this.isMarketplace ? textsCap.emptyMsgMarketPlace : undefined,
             // preserve search keywords
             keywords: tempCache.get(keywordsKey),

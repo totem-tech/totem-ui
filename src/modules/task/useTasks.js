@@ -10,6 +10,7 @@ import {
     approvalStatusNames,
     query, rwCache, statuses, statusNames
 } from './task'
+import { format } from '../../utils/time'
 
 const textsCap = translated({
     errorHeader: 'failed to load tasks',
@@ -105,9 +106,9 @@ export default function useTasks(types, address, timeout = 5000) {
                             && approvalStatus == approvalStatuses.pendingApproval,
                         // pre-process values for use with DataTable
                         _approvalStatus: approvalStatusNames[approvalStatus],
-                        _orderStatus: statusNames[orderStatus],
-                        _taskId: taskId,
                         _fulfiller: fulfiller === owner ? _owner : getAddressName(fulfiller),
+                        _orderStatus: statusNames[orderStatus],
+                        _taskId: taskId, // list search
                         _owner,
                     }
                     uniqueTasks.set(taskId, task)
@@ -206,6 +207,7 @@ const addDetails = (address, tasks, detailsMap, uniqueTaskIds, save = true) => {
             let task = typeTasks.get(id)
             if (!task) return
             task = objCopy(detailsMap.get(id) || {}, task)
+            task._tsCreated = format(task.tsCreated, true)
             typeTasks.set(id, task)
         })
         // tasks.set(type, typeTasks)

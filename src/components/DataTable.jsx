@@ -9,15 +9,15 @@ import {
     Segment,
     Table,
 } from 'semantic-ui-react'
-// import Segment from './Segment'
 import {
-    arrMapSlice, getKeys, isArr, isFn, objWithoutKeys, objCopy, search, sort, isStr, arrReverse
+    arrMapSlice, getKeys, isArr, isFn, objWithoutKeys, objCopy, search, sort, isStr, arrReverse, arrUnique
 } from '../utils/utils'
 import Invertible from './Invertible'
-import Message from '../components/Message'
-import { translated } from '../services/language'
-import { getLayout, layoutBond, MOBILE } from '../services/window'
+import Message from './Message'
 import Paginator from './Paginator'
+import { translated } from '../services/language'
+import { MOBILE, rxLayout } from '../services/window'
+import { unsubscribe } from '../services/react'
 
 const mapItemsByPage = (data, pageNo, perPage, callback) => {
     const start = pageNo * perPage - perPage
@@ -40,7 +40,7 @@ export default class DataTable extends Component {
 
         const { columns, defaultSort, defaultSortAsc, keywords, pageNo } = props
         this.state = {
-            isMobile: getLayout() === MOBILE,
+            isMobile: rxLayout.value === MOBILE,
             keywords: keywords || '',
             pageNo: pageNo,
             selectedIndexes: [],
@@ -52,7 +52,8 @@ export default class DataTable extends Component {
     }
     componentWillMount() {
         this._mounted = true
-        this.tieId = layoutBond.tie(layout => {
+        this.subscriptions = {}
+        this.subscriptions.layout = rxLayout.subscribe(layout => {
             const isMobile = layout === MOBILE
             if (this.state.isMObile === isMobile) return
             this.setState({ isMobile })
@@ -61,7 +62,7 @@ export default class DataTable extends Component {
 
     componentWillUnmount = () => {
         this._mounted = false
-        layoutBond.untie(this.tieId)
+        unsubscribe(this.subscriptions)
     }
 
     getFooter(totalPages, pageNo) {
@@ -287,8 +288,9 @@ export default class DataTable extends Component {
     }
 
     render() {
-        let { data,
+        let {
             columns: columnsOriginal,
+            data,
             emptyMessage,
             footerContent,
             perPage,
@@ -305,17 +307,13 @@ export default class DataTable extends Component {
         } = this.state
         keywords = keywords.trim()
         const columns = columnsOriginal.filter(x => !!x && !x.hidden)
-        const keys = columns.filter(x => !!x.key).map(x => x.key)
         // Include extra searchable keys that are not visibile on the table
-        if (isArr(searchExtraKeys)) {
-            searchExtraKeys.forEach(key => keys.indexOf(key) === -1 & keys.push(key))
-        }
-        const filteredData = sort(
-            !keywords ? data : search(data, keywords, keys),
-            sortBy,
-            !sortAsc,
-            false
+        const keys = arrUnique([
+            ...columns.filter(x => !!x.key).map(x => x.key),
+            ...(searchExtraKeys || [])]
         )
+        let filteredData = !keywords ? data : search(data, keywords, keys)
+        filteredData = !sortBy ? filteredData : sort(filteredData, sortBy, !sortAsc, false)
         selectedIndexes = selectedIndexes.filter(index => !!(isArr(data) ? data[index] : data.get(index)))
         // actual total
         const totalItems = data.size || data.length
