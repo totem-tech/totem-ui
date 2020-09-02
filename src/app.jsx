@@ -1,9 +1,9 @@
 import React, { Component } from 'react'
-import { Container, Image, Sidebar } from 'semantic-ui-react'
+import { Image, Segment, Sidebar } from 'semantic-ui-react'
 // Components
 import ErrorBoundary from './components/CatchReactErrors'
+import Invertible from './components/Invertible'
 import PageHeader from './components/PageHeader'
-import Segment from './components/Segment'
 import SidebarLeft, { MainContentItem } from './components/SidebarLeft'
 // Services
 import blockchain from './services/blockchain'
@@ -118,7 +118,7 @@ export class App extends Component {
 					</ErrorBoundary>
 
 					<Sidebar.Pusher
-						as={Segment}
+						as={Invertible.asCallback(Segment)}
 						className="main-content"
 						dimmed={false}
 						id="main-content"

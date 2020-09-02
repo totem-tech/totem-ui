@@ -9,7 +9,7 @@ import { isArr, isFn, isObj, isStr, objClean, isValidNumber } from '../utils/uti
 // services
 import { getClient } from './chatClient'
 import { getConnection, query, getCurrentBlock } from './blockchain'
-import { save as addToHistory } from './history'
+import { save as addToHistory } from '../modules/history/history'
 import { find as findIdentity, getSelected } from './identity'
 import { translated } from './language'
 import { setToast } from './toast'

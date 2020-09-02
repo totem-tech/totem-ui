@@ -28,14 +28,13 @@ export default function UtilitiesView() {
 
     useEffect(() => {
         let mounted = true
-        getConnection().then(({ api }) =>
-            api.query.sudo.key().then(result => {
-                if (!mounted) return
-                const adminAddress = ss58Encode(result)
-                const userIsAdmin = !!identity.find(adminAddress)
-                userIsAdmin && setIsAdmin(true)
-            })
-        )
+        getConnection().then(async ({ api }) => {
+            const result = api.query.sudo.key()
+            if (!mounted) return
+            const adminAddress = ss58Encode(result)
+            const userIsAdmin = !!identity.find(adminAddress)
+            userIsAdmin && setIsAdmin(true)
+        })
 
         return () => mounted = false
     }, [])

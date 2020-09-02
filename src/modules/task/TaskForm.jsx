@@ -24,7 +24,7 @@ import partners from '../../services/partner'
 import { queueables } from './task'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import { showForm } from '../../services/modal'
-import { getById } from '../../services/history'
+import { getById } from '../history/history'
 import { rxUpdater } from './useTasks'
 import { Balance } from '../../components/Balance'
 

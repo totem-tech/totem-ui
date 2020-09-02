@@ -25,7 +25,7 @@ import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { toggleSidebarState, setActive } from '../services/sidebar'
 import timeKeeping from '../services/timeKeeping'
 import { setToast } from '../services/toast'
-import { useInverted, setInverted } from '../services/window'
+import { useInverted, rxInverted } from '../services/window'
 import { unsubscribe } from '../services/react'
 
 const textsCap = translated({
@@ -213,7 +213,7 @@ const PageHeaderView = props => {
 							{
 								icon: inverted ? 'moon outline' : 'moon',
 								content: inverted ? textsCap.darkModeOff : textsCap.darkModeOn,
-								onClick: () => setInverted(!inverted)
+								onClick: () => rxInverted.next(!inverted)
 							},
 							userId && {
 								icon: 'gem',

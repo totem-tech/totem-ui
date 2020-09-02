@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, isValidElement } from 'react'
 import uuid from 'uuid'
 import { Confirm } from 'semantic-ui-react'
 import DataStorage from '../utils/DataStorage'
@@ -114,7 +114,7 @@ const IConfirm = props => {
 // @id              string : random id assigned to the modal. Can be used to remove using the remove function
 export const showForm = (FormComponent, props, id) => {
     // Invalid component supplied
-    if (!isFn(FormComponent)) return;
+    if (!isFn(FormComponent)) return
     id = id || uuid.v1()
     props = props || {}
     return add(
