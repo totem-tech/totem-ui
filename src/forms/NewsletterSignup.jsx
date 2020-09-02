@@ -1,10 +1,12 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import FormBuilder from '../components/FormBuilder'
+import { Bond } from 'oo7'
+import FormBuilder, { fillValues } from '../components/FormBuilder'
 import { translated } from '../services/language'
 import client from '../services/chatClient'
 import { validate, TYPES } from '../utils/validator'
 import Message from '../components/Message'
+import { isObj } from '../utils/utils'
 
 const prodUrl = 'https://totem.live'
 const textsCap = translated({
@@ -27,6 +29,8 @@ export default class NewsletteSignup extends Component {
     constructor(props) {
         super(props)
 
+        const { modal, style, values } = props
+
         this.state = {
             onSubmit: this.handleSubmit,
             inputs: [
@@ -37,6 +41,7 @@ export default class NewsletteSignup extends Component {
                     widths: 'equal',
                     inputs: [
                         {
+                            bond: new Bond(),
                             label: textsCap.firstNameLabel,
                             minLength: 4,
                             name: 'firstName',
@@ -46,6 +51,7 @@ export default class NewsletteSignup extends Component {
                             value: '',
                         },
                         {
+                            bond: new Bond(),
                             label: textsCap.lastNameLabel,
                             minLength: 4,
                             name: 'lastName',
@@ -57,6 +63,7 @@ export default class NewsletteSignup extends Component {
                     ]
                 },
                 {
+                    bond: new Bond(),
                     defer: null,
                     label: textsCap.emailLabel,
                     name: 'email',
@@ -74,11 +81,12 @@ export default class NewsletteSignup extends Component {
             ]
         }
 
-        if (!props.modal) {
+        if (isObj(values)) fillValues(this.state.inputs, values)
+        if (!modal) {
             this.state.message = { content: textsCap.subheader }
         }
         if (window.isInFrame) {
-            this.state.style = { maxWidth: 400, margin: 'auto', ...props.style }
+            this.state.style = { maxWidth: 400, margin: 'auto', ...style }
         }
     }
 
