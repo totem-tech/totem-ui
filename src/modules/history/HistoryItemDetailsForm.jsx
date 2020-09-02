@@ -203,6 +203,7 @@ export default function HistoryItemDetailsForm(props) {
                     { collapsing: true, key: 'name', title: textsCap.name },
                     { collapsing: true, key: 'type', title: textsCap.type },
                 ],
+                perPage: args.length,
                 searchable: false,
                 style: { padding: 0, margin: 0 },
                 tableProps: {
