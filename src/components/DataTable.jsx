@@ -127,9 +127,8 @@ export default class DataTable extends Component {
         return headers
     }
 
-    getRows(filteredData, columns, selectedIndexes) {
+    getRows(filteredData, columns, selectedIndexes, pageNo) {
         let { perPage, rowProps, selectable } = this.props
-        const { pageNo } = this.state
 
         return mapItemsByPage(filteredData, pageNo, perPage, (item, key, items, isMap) => (
             <Table.Row
@@ -320,10 +319,10 @@ export default class DataTable extends Component {
         // filtered total
         const totalRows = filteredData.length || filteredData.size || 0
         const totalPages = Math.ceil(totalRows / perPage)
-        const headers = this.getHeaders(totalRows, columns, selectedIndexes)
-        const rows = this.getRows(filteredData, columns, selectedIndexes)
         pageNo = pageNo > totalPages ? 1 : pageNo
         this.state.pageNo = pageNo
+        const headers = this.getHeaders(totalRows, columns, selectedIndexes)
+        const rows = this.getRows(filteredData, columns, selectedIndexes, pageNo)
 
         if (totalItems > 0 && totalRows === 0) {
             // search resulted in zero rows
@@ -342,27 +341,25 @@ export default class DataTable extends Component {
 
                 <div style={styles.tableContent} >
                     {totalRows === 0 && emptyMessage && <Message {...emptyMessage} />}
-                    {
-                        totalRows > 0 && (
-                            <Invertible {...{ ...tableProps, El: Table }}>
-                                <Table.Header>
-                                    <Table.Row>{headers}</Table.Row>
-                                </Table.Header>
+                    {totalRows > 0 && (
+                        <Invertible {...{ ...tableProps, El: Table }}>
+                            <Table.Header>
+                                <Table.Row>{headers}</Table.Row>
+                            </Table.Header>
 
-                                <Table.Body>{rows}</Table.Body>
+                            <Table.Body>{rows}</Table.Body>
 
-                                {!footerContent && totalPages <= 1 ? undefined : (
-                                    <Table.Footer>
-                                        <Table.Row>
-                                            <Table.HeaderCell colSpan={columns.length + 1}>
-                                                {this.getFooter(totalPages, pageNo)}
-                                            </Table.HeaderCell>
-                                        </Table.Row>
-                                    </Table.Footer>
-                                )}
-                            </Invertible>
-                        )
-                    }
+                            {!footerContent && totalPages <= 1 ? undefined : (
+                                <Table.Footer>
+                                    <Table.Row>
+                                        <Table.HeaderCell colSpan={columns.length + 1}>
+                                            {this.getFooter(totalPages, pageNo)}
+                                        </Table.HeaderCell>
+                                    </Table.Row>
+                                </Table.Footer>
+                            )}
+                        </Invertible>
+                    )}
                 </div >
             </Invertible >
         )

@@ -15,7 +15,8 @@ export const reducer = (state = {}, newValue = {}) => ({ ...state, ...newValue }
 export const unsubscribe = (subscriptions = {}) => Object.values(subscriptions).forEach(x => {
     try {
         if (!x) return
-        (isFn(x) ? x : x.unsubscribe)()
+        const fn = isFn(x) ? x : isFn(x.unsubscribe) ? x.unsubscribe : null
+        fn && fn()
     } catch (e) { } // ignore
 })
 

@@ -310,6 +310,7 @@ export const sidebarItems = [
     },
     {
         content: SettingsForm,
+        contentProps: { style: { maxWidth: 400 } },
         icon: 'cogs',
         name: 'settings',
         title: texts.settingsTitle,
