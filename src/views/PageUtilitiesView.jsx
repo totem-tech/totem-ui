@@ -1,12 +1,9 @@
 import React from 'react'
 import { Button } from 'semantic-ui-react'
-import { downloadFile } from '../utils/utils'
 // services
-import identities from '../services/identity'
 import { translated } from '../services/language'
-import { confirm, showForm } from '../services/modal'
-import storage, { generateBackupData, downloadBackup } from '../services/storage'
-import RestoreBackupForm from '../forms/RestoreBackup'
+import { confirm } from '../services/modal'
+import storage from '../services/storage'
 
 const [texts] = translated({
 	backupData: 'Backup data',
