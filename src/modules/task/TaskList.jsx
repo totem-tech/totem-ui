@@ -213,23 +213,29 @@ class TaskList extends Component {
         )
 
     handleAccept = (taskIds, accept = true) => {
+        console.log({ accept })
         taskIds = isArr(taskIds) ? taskIds : [taskIds]
         taskIds.forEach(taskId => {
             tempCache.set(
                 taskId,
                 { ...tempCache.get(taskId), acceptInProgress: true },
             )
-            const queueProps = queueables.accept(this.selectedAddress, taskId, accept, {
-                description: task.title,
-                title: accept ? textsCap.acceptTask : textsCap.rejectTask,
-                then: () => {
-                    tempCache.set(taskId, {
-                        ...tempCache.get(taskId),
-                        acceptInProgress: false,
-                    })
-                    this.forceUpdate()
+            const queueProps = queueables.accept(
+                this.selectedAddress,
+                taskId,
+                accept,
+                {
+                    description: task.title,
+                    title: accept ? textsCap.acceptTask : textsCap.rejectTask,
+                    then: () => {
+                        tempCache.set(taskId, {
+                            ...tempCache.get(taskId),
+                            acceptInProgress: false,
+                        })
+                        this.forceUpdate()
+                    }
                 }
-            })
+            )
             addToQueue(queueProps)
         })
         this.forceUpdate()
