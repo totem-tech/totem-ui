@@ -36,7 +36,7 @@ const [texts] = translated({
 
 
 export default function NotificationItem({ id, notification }) {
-    const { from, type, childType, message, data, tsCreated, read } = notification
+    const { from, type, childType, message, data, tsCreated, read } = notification || {}
     const senderId = from || notification.senderId // (previously used)
     const userIdBtn = <UserID userId={senderId} />
     const typeSpaced = type.replace('_', ' ')

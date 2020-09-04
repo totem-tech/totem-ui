@@ -10,7 +10,7 @@ import { workerTasks } from '../../services/timeKeeping'
 
 export const MODULE_KEY = 'totem_notifications'
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
-const notifications = new DataStorage(MODULE_KEY, true)
+const notifications = new DataStorage(MODULE_KEY)
 export const rxNotifications = notifications.rxData
 export const newNotificationBond = new Bond()
 export const visibleBond = new Bond().defaultTo(false)

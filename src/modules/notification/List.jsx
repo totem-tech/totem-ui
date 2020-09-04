@@ -5,7 +5,7 @@ import './style.css'
 import { unsubscribe } from '../../services/react'
 
 export default function NotificationList() {
-    const [items, setItems] = useState()
+    const [items, setItems] = useState(rxNotifications.value || new map())
     const [visible, setVisible] = useState(visibleBond._value)
 
     useEffect(() => {
