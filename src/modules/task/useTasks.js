@@ -159,6 +159,7 @@ export default function useTasks(types, address, timeout = 5000) {
             setTasks(getCached(address, types))
         }, timeout)
         setMessage(loadingMsg)
+        console.log({ address })
 
         query.getTaskIds(types, address, handleTaskIds).then(
             fn => unsubscribers.taskIds2d = fn,

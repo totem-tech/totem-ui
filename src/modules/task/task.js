@@ -97,6 +97,7 @@ export const query = {
     getTaskIds: async (types = [], address, callback) => {
         const api = await queryHelper() // get API
         const args = types.map(type => [api.query.orders[type], address])
+        console.log('getTaskIds', { address, types, args })
         return await queryHelper('api.queryMulti', [args, callback].filter(isDefined))
     },
     /**

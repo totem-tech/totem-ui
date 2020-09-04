@@ -136,9 +136,9 @@ export const showForm = (FormComponent, props, id) => {
     const form = (getUrlParam('form') || '').trim()
     if (!form) return
     try {
-        const props = JSON.parse(getUrlParam('formProps') || '{}')
         const Form = require(`../forms/${form}${form.endsWith('.jsx') ? '' : '.jsx'}`)
-        showForm(Form.default, props)
+        const values = getUrlParam()
+        showForm(Form.default, { values })
     } catch (e) {
         form && console.log(e)
     }

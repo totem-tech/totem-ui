@@ -14,7 +14,7 @@ import { createInbox } from '../modules/chat/chat'
 import { getByUserId } from '../services/partner'
 import { getUser } from '../services/chatClient'
 
-const [texts, textsCap] = translated({
+const textsCap = translated({
     accept: 'accept',
     close: 'close',
     partnerAdd: 'add partner',
@@ -23,7 +23,8 @@ const [texts, textsCap] = translated({
     identityRequest: 'request identity',
     identityShare: 'share identity',
     reject: 'reject',
-}, true)
+    userIdBtnTitle: 'click for more options',
+}, true)[1]
 
 export const ButtonAcceptOrReject = props => {
     const { acceptColor, acceptText, disabled, loading, onClick, rejectColor, rejectText, style, title } = props
@@ -97,7 +98,7 @@ export const UserID = React.memo(props => {
                 padding: 0,
                 ...style,
             },
-            title: name,
+            title: !allowClick ? name : textsCap.userIdBtnTitle,
         }}>
             <b>{prefix}@{rawId}{suffix}</b>
         </span>
