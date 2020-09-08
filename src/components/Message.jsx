@@ -4,7 +4,7 @@ import { Icon, Message as SemanticMessage } from 'semantic-ui-react'
 import { icons, isObj, isStr, objWithoutKeys } from '../utils/utils'
 
 // valid statuses: error, info, loading, warning, success
-const Message = (message = {}) => {
+export const Message = (message = {}) => {
     let { content, header, icon, list, showIcon, status, style } = message || {}
     if (!isObj(message) || (!content && !list && !header)) return ''
     icon = React.isValidElement(icon) ? icon.props : icon

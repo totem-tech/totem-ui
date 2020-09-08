@@ -15,7 +15,7 @@ export const rxNotifications = notifications.rxData
 export const newNotificationBond = new Bond()
 export const visibleBond = new Bond().defaultTo(false)
 export const unreadCountBond = new Bond().defaultTo(getUnreadCount())
-notifications.rxData.subscribe(() => {
+rxNotifications.subscribe(() => {
     const unreadCount = getUnreadCount()
     // auto update unread count
     unreadCountBond.changed(unreadCount)
@@ -23,14 +23,14 @@ notifications.rxData.subscribe(() => {
     if (!notifications.size) visibleBond.changed(false)
 })
 
-const [texts] = translated({
+const textsCap = translated({
     timekeeping: 'Timekeeping',
     activity: 'Activity',
     acceptInvitation: 'accept invitation',
     acceptedInvitation: 'accepted invitation to activity',
     rejectInvitation: 'reject invitation',
     rejectedInvitation: 'rejected invitation to activity',
-})
+}, true)[1]
 
 client.onNotify((id, from, type, childType, message, data, tsCreated) => {
     if (notifications.get(id)) console.log('notification exists', { id })
@@ -134,8 +134,8 @@ export const handleTKInvitation = (
     }, null)
 
     const getprops = (projectOwnerId, projectName) => workerTasks.accept(projectId, workerAddress, accepted, {
-        title: `${texts.timekeeping} - ${accepted ? texts.acceptInvitation : texts.rejectInvitation}`,
-        description: `${texts.activity}: ${projectName}`,
+        title: `${textsCap.timekeeping} - ${accepted ? textsCap.acceptInvitation : textsCap.rejectInvitation}`,
+        description: `${textsCap.activity}: ${projectName}`,
         then: success => !success && resolve(false),
         // no need to notify if rejected or current user is the project owner
         next: !accepted || !projectOwnerId || projectOwnerId === currentUserId ? undefined : {
@@ -146,7 +146,7 @@ export const handleTKInvitation = (
                 [projectOwnerId],
                 type,
                 'invitation_response',
-                `${accepted ? texts.acceptedInvitation : texts.rejectedInvitation}: "${projectName}"`,
+                `${accepted ? textsCap.acceptedInvitation : textsCap.rejectedInvitation}: "${projectName}"`,
                 { accepted, projectHash: projectId, projectName, workerAddress },
                 err => {
                     !err && notificationId && remove(notificationId)

@@ -109,7 +109,7 @@ export class App extends Component {
 				</ErrorBoundary>
 
 				<ErrorBoundary>
-					<NotificationList inline={false} />
+					<NotificationList />
 				</ErrorBoundary>
 
 				<Sidebar.Pushable style={styles.pushable}>

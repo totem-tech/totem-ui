@@ -88,8 +88,7 @@ export default class HistoryList extends Component {
                 },
                 {
                     collapsing: true,
-                    content: ({ timestamp }) => format(timestamp, true),
-                    key: 'timestamp',
+                    key: '_timestamp',
                     title: textsCap.executionTime,
                 },
                 {
@@ -189,14 +188,15 @@ export default class HistoryList extends Component {
 
     setHistory = (history = new Map()) => {
         Array.from(history).forEach(([_, item]) => {
+            // clear unwanted spaces caused by use of backquotes etc.
+            item.message = clearClutter(item.message || '')
             item._description = (item.description || '')
                 .split(' ')
                 .map(x => textEllipsis(x, 20))
                 .join(' ')
-            // clear unwanted spaces caused by use of backquotes etc.
-            item.message = clearClutter(item.message || '')
             // add identity name if available
             item._identity = getAddressName(item.identity)
+            item._timestamp = format(item.timestamp, true)
         })
         this.setState({ data: history })
     }
