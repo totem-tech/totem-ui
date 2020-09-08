@@ -124,18 +124,18 @@ export default class TaskForm extends Component {
             this.names.title,
         ]
 
-        this.values = values || {}
-
         this.state = {
             disabled: true,
             header: isObj(values) && !!taskId ? textsCap.formHeaderUpdate : textsCap.formHeader,
             loading: true,
-            onChange: (_, values) => this.values = values,
+            submitDisabled: {
+                oldVsNew: !!taskId,
+            },
+            onChange: !taskId ? undefined : this.handleChange,
             onSubmit: this.handleSubmit,
             inputs: [
                 {
                     bond: new Bond(),
-                    defer: null,
                     label: textsCap.title,
                     maxLength: 160,
                     minLength: 3,
@@ -253,9 +253,9 @@ export default class TaskForm extends Component {
                     name: this.names.dueDate,
                     required: true,
                     type: 'date',
-                    validate: (_, { value: dueDate }) => {
+                    validate: (_, { value: dueDate }, values) => {
                         if (!dueDate) return textsCap.invalidDate
-                        const deadline = this.values[this.names.deadline]
+                        const deadline = values[this.names.deadline]
                         const diffMS = strToDate(dueDate) - strToDate(deadline)
                         return diffMS < dueDateMinMS && textsCap.dueDateMinErrorMsg
                     },
@@ -400,6 +400,8 @@ export default class TaskForm extends Component {
             ]
             state.inputsDisabled = Object.values(this.names).filter(name => !editableFields.includes(name))
         }
+
+        this.oldValues = objClean(values, Object.values(this.names))
         this.setState(state)
     }
 
@@ -445,7 +447,7 @@ export default class TaskForm extends Component {
         if (taskId && bounty === bountyOriginal) return
 
         this.bountyPromise = this.bountyPromise || PromisE.deferred()
-        const { inputs } = this.state
+        const { inputs, submitDisabled } = this.state
         const amountXTXIn = findInput(inputs, this.names.amountXTX)
         const bountyGrpIn = findInput(inputs, this.names.bountyGroup)
         const bountyIn = findInput(inputs, this.names.bounty)
@@ -455,7 +457,8 @@ export default class TaskForm extends Component {
         bountyIn.loading = valid
         bountyIn.invalid = false
         bountyGrpIn.message = null
-        this.setState({ inputs, submitDisabled: valid })
+        submitDisabled.bounty = valid
+        this.setState({ inputs, submitDisabled })
         if (!valid) return
 
         const promise = new Promise(async (resolve, reject) => {
@@ -505,7 +508,9 @@ export default class TaskForm extends Component {
                 status: gotBalance ? 'success' : 'error',
             }
             bountyIn.loading = false
-            this.setState({ inputs, loading: false, submitDisabled: false })
+
+            submitDisabled.bounty = false
+            this.setState({ inputs, loading: false, submitDisabled })
         }
         const handleErr = err => {
             bountyIn.invalid = true
@@ -514,10 +519,19 @@ export default class TaskForm extends Component {
                 header: textsCap.conversionErrorHeader,
                 status: 'error'
             }
-            this.setState({ inputs, loading: false, submitDisabled: false })
+            submitDisabled.bounty = false
+            this.setState({ inputs, loading: false, submitDisabled })
         }
         this.bountyPromise(promise).then(handleSuccess, handleErr)
     }, 300)
+
+    // disables submit button if values unchanged
+    handleChange = deferred((_, newValues) => {
+        const { submitDisabled } = this.state
+        newValues = objClean(newValues, Object.values(this.names))
+        submitDisabled.oldVsNew = JSON.stringify(this.oldValues) === JSON.stringify(newValues)
+        this.setState({ submitDisabled })
+    }, 100)
 
     handleIsMarketChange = (_, values) => {
         const { inputs } = this.state
@@ -543,6 +557,7 @@ export default class TaskForm extends Component {
         values[dueDateN] = this.dateStrToBlockNum(values[dueDateN], currentBlock)
 
         let { onSubmit, taskId, values: valueP = {} } = this.props
+        const { submitDisabled } = this.state
         const doUpdate = !!taskId
         const ownerAddress = valueP.owner || getSelected().address
         const amountXTX = values[this.names.amountXTX]
@@ -561,6 +576,7 @@ export default class TaskForm extends Component {
         const orderType = values[this.names.orderType]
         const thenCb = isLastInQueue => (success, err) => {
             if (!isLastInQueue && success) return
+            submitDisabled.submit = false
             this.setState({
                 closeText: success ? textsCap.close : undefined,
                 loading: false,
@@ -570,7 +586,7 @@ export default class TaskForm extends Component {
                     showIcon: true,
                     status: success ? 'success' : 'error',
                 },
-                submitDisabled: false,
+                submitDisabled,
                 success,
             })
 
@@ -605,9 +621,9 @@ export default class TaskForm extends Component {
                     hashTypes.taskHash,
                     taskId,
                     token,
+                    extraProps,
                 ]
         )
-
 
         // queue task to store off-chain data to messaging service
         queueProps.next = {
@@ -646,6 +662,7 @@ export default class TaskForm extends Component {
             ]
         }
 
+        submitDisabled.submit = true
         // add requests to the queue
         this.setState({
             closeText: textsCap.close,
@@ -655,7 +672,7 @@ export default class TaskForm extends Component {
                 showIcon: true,
                 status: 'loading',
             },
-            submitDisabled: true,
+            submitDisabled,
         })
         addToQueue(queueProps)
     }

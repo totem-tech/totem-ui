@@ -210,7 +210,7 @@ export const queueables = {
         func: 'api.tx.balances.transfer',
         type: QUEUE_TYPES.TX_STORAGE,
     }),
-    bonsaiSaveToken: (ownerAddress, recordTypeCode, recordId, token, queueProps) => ({
+    bonsaiSaveToken: (ownerAddress, recordTypeCode, recordId, token, queueProps = {}) => ({
         ...queueProps,
         address: ownerAddress,
         args: [recordTypeCode, recordId, token],

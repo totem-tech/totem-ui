@@ -32,9 +32,13 @@ export default class FormBuilder extends Component {
     // recursive interceptor for infinite level of child inputs
     addInterceptor = (index, values) => (input, i) => {
         const { inputsDisabled = [] } = this.props
-        const { disabled, hidden, inputs: childInputs, key, name, type } = input || {}
+        const { disabled, hidden, inputs: childInputs, key, name, type, validate } = input || {}
         const isGroup = `${type}`.toLowerCase() === 'group' && isArr(childInputs)
         index = isDefined(index) ? index : null
+        const validateInterceptor = !isFn(validate) ? undefined : ((e, v) => {
+            const { values } = this.state
+            input.validate(e, v, values)
+        })
         return {
             ...input,
             disabled: inputsDisabled.includes(name) || (isFn(disabled) ? disabled(value, i) : disabled),
@@ -48,6 +52,7 @@ export default class FormBuilder extends Component {
                 index ? index : i,
                 index ? i : undefined
             ),
+            validate: validateInterceptor,
         }
     }
 
@@ -180,6 +185,9 @@ export default class FormBuilder extends Component {
         const msgStyle = { ...(modal ? styles.messageModal : styles.messageInline), ...(msg || {}).style }
         const message = { ...msg, style: msgStyle }
         let submitBtn, closeBtn
+        submitDisabled = !isObj(submitDisabled) ? !!submitDisabled : (
+            Object.values(submitDisabled).filter(Boolean).length > 0
+        )
         const shouldDisable = submitDisabled || success || isFormInvalid(inputs, values)
         submitText = !isFn(submitText) ? submitText : submitText(values, shouldDisable)
         if (submitText !== null) {
@@ -298,7 +306,11 @@ FormBuilder.propTypes = {
     size: PropTypes.string,
     style: PropTypes.object,
     subheader: PropTypes.string,
-    submitDisabled: PropTypes.bool,
+    submitDisabled: PropTypes.oneOfType([
+        PropTypes.bool,
+        // submit button will be disabled if one or more values is truthy
+        PropTypes.object,
+    ]),
     submitText: PropTypes.oneOfType([
         PropTypes.element,
         // @submitText can be a function

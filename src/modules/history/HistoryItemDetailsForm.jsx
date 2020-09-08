@@ -15,6 +15,7 @@ import { rxLayout, MOBILE } from '../../services/window'
 const textsCap = translated({
     action: 'action',
     advanced: 'advanced',
+    balances: 'balances',
     balanceAfterTx: 'account balance after transaction',
     balanceBeforeTx: 'account balance before transaction',
     clearAll: 'Clear All',
@@ -169,21 +170,33 @@ export default function HistoryItemDetailsForm(props) {
             type: 'text',
             value: format(timestamp, true, true),
         },
-        before && {
-            action: { content: 'XTX' },
-            label: textsCap.balanceBeforeTx,
-            name: 'balance-before',
-            readOnly: true,
-            value: before,
-            type: 'number',
-        },
-        after && {
-            action: { content: 'XTX' },
-            label: textsCap.balanceAfterTx,
-            name: 'balance-after',
-            readOnly: true,
-            value: after,
-            type: 'number',
+        !before && !after ? null : {
+            label: textsCap.balances,
+            inline: true,
+            grouped: false,
+            name: 'group-balances',
+            type: 'group',
+            widths: 8,
+            inputs: [
+                before && {
+                    action: { content: 'XTX' },
+                    label: textsCap.balanceBeforeTx,
+                    name: 'balance-before',
+                    readOnly: true,
+                    value: before,
+                    type: 'number',
+                    // width: 8,
+                },
+                after && {
+                    action: { content: 'XTX' },
+                    label: textsCap.balanceAfterTx,
+                    name: 'balance-after',
+                    readOnly: true,
+                    value: after,
+                    type: 'number',
+                    // width: 8,
+                },
+            ].filter(Boolean),
         },
     ].filter(Boolean))
 
