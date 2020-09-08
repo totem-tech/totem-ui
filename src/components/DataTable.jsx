@@ -335,7 +335,7 @@ export default class DataTable extends Component {
                 El: Segment,
                 basic: true,
                 className: 'data-table',
-                style: { margin: 0, ...style }
+                style: { margin: 0, padding: 0, ...style }
             }}>
                 {this.getTopContent(totalRows, selectedIndexes)}
 

@@ -106,12 +106,12 @@ class TaskList extends Component {
                 },
                 {
                     content: (task, taskId) => {
-                        const { fulfiller, orderStatus, _orderStatus } = task
+                        const { fulfiller, isMarket, orderStatus, _orderStatus } = task
                         const isFulfiller = this.selectedAddress === fulfiller
                         const isSubmitted = orderStatus === statuses.submitted
                         const { acceptInProgress } = tempCache.get(taskId) || {}
 
-                        return !isFulfiller || !isSubmitted ? _orderStatus : (
+                        return isMarket || !isFulfiller || !isSubmitted ? _orderStatus : (
                             <ButtonAcceptOrReject
                                 disabled={acceptInProgress}
                                 loading={acceptInProgress}
@@ -188,7 +188,7 @@ class TaskList extends Component {
                     content: textsCap.create,
                     icon: 'plus',
                     onClick: () => showForm(TaskForm, {
-                        values: !this.isMarketplace ? undefined : { isClosed: 0 },
+                        values: !this.isMarketplace ? undefined : { isMarket: false },
                         size: 'tiny',
                     }),
                 }
@@ -219,7 +219,6 @@ class TaskList extends Component {
         )
 
     handleAccept = (taskIds, accept = true) => {
-        console.log({ accept })
         taskIds = isArr(taskIds) ? taskIds : [taskIds]
         taskIds.forEach(taskId => {
             tempCache.set(

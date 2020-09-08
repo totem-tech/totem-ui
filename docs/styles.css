@@ -335,7 +335,7 @@ input[readonly] {
 #app.inverted #main-content .inverted,
 #app.inverted .accordion {
     background: #464646;
-	color: white,
+	color: white;
 }
 /* Chat */
 #app.inverted .chat-container{
@@ -354,7 +354,7 @@ input[readonly] {
 #app.inverted .data-table.inverted,
 .ui.modal.inverted .ui.basic.inverted.segment.data-table {
     background: #464646;
-    border: 1px solid #505050;
+    /* border: 1px solid #505050; */
 }
 /* Modals */
 body .modal.inverted { border-radius: 6px;}

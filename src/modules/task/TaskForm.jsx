@@ -11,7 +11,7 @@ import Currency from '../../components/Currency'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import PartnerForm from '../../forms/Partner'
 // services
-import { getCurrentBlock, hashTypes, query } from '../../services/blockchain'
+import { getCurrentBlock, hashTypes, query, queueables as bcQueueables } from '../../services/blockchain'
 import {
     convertTo,
     currencyDefault,
@@ -103,8 +103,9 @@ export default class TaskForm extends Component {
             dueDate: 'dueDate',
             description: 'description',
             orderType: 'orderType',
-            isClosed: 'isClosed',
+            isMarket: 'isMarket',
             isSell: 'isSell',
+            parentId: 'parentId',
             tags: 'tags',
             title: 'title',
         })
@@ -116,8 +117,9 @@ export default class TaskForm extends Component {
             this.names.deadline,
             this.names.description,
             this.names.dueDate,
-            this.names.isClosed,
+            this.names.isMarket,
             this.names.isSell,
+            this.names.parentId,
             this.names.tags,
             this.names.title,
         ]
@@ -191,20 +193,20 @@ export default class TaskForm extends Component {
                     inline: true,
                     label: textsCap.marketplace,
                     multiple: false,
-                    name: this.names.isClosed,
-                    onChange: this.handleIsClosedChange,
+                    name: this.names.isMarket,
+                    onChange: this.handleIsMarketChange,
                     options: [
-                        { label: textsCap.assignToPartner, value: true },
-                        { label: textsCap.publishToMarketPlace, value: false },
+                        { label: textsCap.assignToPartner, value: false },
+                        { label: textsCap.publishToMarketPlace, value: true },
                     ],
                     radio: true,
                     required: true,
                     type: 'checkbox-group',
-                    value: true,
+                    value: false,
                 },
                 {
                     bond: new Bond(),
-                    hidden: values => !values[this.names.isClosed],
+                    hidden: values => !values[this.names.isMarket],
                     label: textsCap.assignee,
                     name: this.names.assignee,
                     options: [],
@@ -339,7 +341,7 @@ export default class TaskForm extends Component {
 
     async componentWillMount() {
         this._mounted = true
-        const { values } = this.props
+        const { taskId, values } = this.props
         const { inputs } = this.state
         const assigneeIn = findInput(inputs, this.names.assignee)
         const currencyIn = findInput(inputs, this.names.currency)
@@ -389,12 +391,19 @@ export default class TaskForm extends Component {
             }))
         }
         fillValues(inputs, values, true)
-        this.setState({ inputs, loading: false })
+        const state = { inputs, loading: false }
+        if (taskId) {
+            const editableFields = [
+                this.names.description,
+                this.names.title,
+                this.names.tags,
+            ]
+            state.inputsDisabled = Object.values(this.names).filter(name => !editableFields.includes(name))
+        }
+        this.setState(state)
     }
 
-    componentWillUnmount() {
-        this._mounted = false
-    }
+    componentWillUnmount = () => this._mounted = false
 
     // converts a block number to date string formatted as yyyy-mm-dd
     blockToDateStr(blockNum, currentBlockNum) {
@@ -510,17 +519,18 @@ export default class TaskForm extends Component {
         this.bountyPromise(promise).then(handleSuccess, handleErr)
     }, 300)
 
-    handleIsClosedChange = (_, values) => {
+    handleIsMarketChange = (_, values) => {
         const { inputs } = this.state
-        const isClosedIn = findInput(inputs, this.names.isClosed)
+        const isMarketIn = findInput(inputs, this.names.isMarket)
         const assigneeIn = findInput(inputs, this.names.assignee)
-        const isClosed = !!values[this.names.isClosed]
-        assigneeIn.hidden = !isClosed
-        isClosedIn.message = isClosed ? null : {
-            content: 'Not implemented yet',//textsCap.marketplaceDisclaimer,
+        const isMarket = !!values[this.names.isMarket]
+        assigneeIn.hidden = isMarket
+        isMarketIn.invalid = isMarket
+        isMarketIn.message = !isMarket ? null : {
+            content: 'Not implemented yet', //textsCap.marketplaceDisclaimer,
+            status: 'error',
             style: { textAlign: 'justify' },
         }
-        isClosedIn.invalid = !isClosed
         this.setState({ inputs })
     }
 
@@ -531,11 +541,13 @@ export default class TaskForm extends Component {
         const dueDateN = this.names.dueDate
         values[deadlineN] = this.dateStrToBlockNum(values[deadlineN], currentBlock)
         values[dueDateN] = this.dateStrToBlockNum(values[dueDateN], currentBlock)
+
         let { onSubmit, taskId, values: valueP = {} } = this.props
+        const doUpdate = !!taskId
         const ownerAddress = valueP.owner || getSelected().address
         const amountXTX = values[this.names.amountXTX]
-        const isClosed = values[this.names.isClosed]
-        const assignee = !isClosed ? ownerAddress : values[this.names.assignee]
+        const isMarket = values[this.names.isMarket]
+        const assignee = isMarket ? ownerAddress : values[this.names.assignee]
         const deadline = values[deadlineN]
         const dueDate = values[dueDateN]
         const description = values[this.names.title]
@@ -567,25 +579,36 @@ export default class TaskForm extends Component {
             isHash(taskId) && rxUpdater.next([taskId])
             isFn(onSubmit) && onSubmit(success, values, taskId)
         }
-        const queueProps = queueables.save.apply(null, [
-            ownerAddress,
-            ownerAddress,
-            assignee,
-            isSell,
-            amountXTX,
-            isClosed,
-            orderType,
-            deadline,
-            dueDate,
-            taskId,
-            token,
-            {
-                description,
-                name: queueTaskName,
-                title: !taskId ? textsCap.formHeader : textsCap.formHeaderUpdate,
-                then: thenCb(false),
-            },
-        ])
+        const fn = !doUpdate ? queueables.save : bcQueueables.bonsaiSaveToken
+        const extraProps = {
+            description,
+            name: queueTaskName,
+            title: !doUpdate ? textsCap.formHeader : textsCap.formHeaderUpdate,
+            then: thenCb(false),
+        }
+        const queueProps = fn.apply(null,
+            !doUpdate ? [
+                ownerAddress,
+                ownerAddress,
+                assignee,
+                isSell,
+                amountXTX,
+                isMarket,
+                orderType,
+                deadline,
+                dueDate,
+                taskId,
+                token,
+                extraProps,
+            ] : [
+                    ownerAddress,
+                    hashTypes.taskHash,
+                    taskId,
+                    token,
+                ]
+        )
+
+
         // queue task to store off-chain data to messaging service
         queueProps.next = {
             id: queueId,

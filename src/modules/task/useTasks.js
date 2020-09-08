@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Subject } from 'rxjs'
-import { isFn, arrUnique, objCopy, isMap } from '../../utils/utils'
+import { isFn, arrUnique, objCopy, isMap, isArr } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 // services
 import { translated } from '../../services/language'
@@ -33,7 +33,8 @@ export const rxUpdater = new Subject()
  * @returns {Map}
  */
 const getCached = (address, types) => {
-    let cache = rwCache(address) || []
+    let cache = rwCache(address)
+    if (!isArr(cache)) cache = []
     if (cache.length === 0) {
         cache = types.map(type => [type, []])
     }
@@ -62,7 +63,7 @@ export default function useTasks(types, address, timeout = 5000) {
     const [tasks, setTasks] = useState(new Map())
     const [message, setMessage] = useState()
 
-    useEffect(() => {
+    address && useEffect(() => {
         let mounted = true
         let done = false
         const unsubscribers = {}
@@ -87,6 +88,7 @@ export default function useTasks(types, address, timeout = 5000) {
                     let amountXTX = 0
                     let {
                         approvalStatus,
+                        approver,
                         fulfiller,
                         // order can be null if storage has changed, in that case, use inaccessible status
                         orderStatus = statuses.inaccessible,
@@ -99,11 +101,15 @@ export default function useTasks(types, address, timeout = 5000) {
                         console.log('AmontXTX parse error', err)
                     }
                     const _owner = getAddressName(owner)
+                    const isOwner = address === owner
+                    const isSubmitted = orderStatus === statuses.submitted
+                    const isPendingApproval = approvalStatus == approvalStatuses.pendingApproval
+                    const isOwnerTheApprover = owner === approver
+                    let allowEdit = isOwner && isSubmitted && (isPendingApproval || isOwnerTheApprover)
                     const task = {
                         ...order,
                         amountXTX,
-                        allowEdit: orderStatus === statuses.submitted
-                            && approvalStatus == approvalStatuses.pendingApproval,
+                        allowEdit,
                         // pre-process values for use with DataTable
                         _approvalStatus: approvalStatusNames[approvalStatus],
                         _fulfiller: fulfiller === owner ? _owner : getAddressName(fulfiller),
@@ -173,7 +179,7 @@ export default function useTasks(types, address, timeout = 5000) {
     }, [address]) // update subscriptions whenever address changes
 
 
-    useEffect(() => {
+    address && useEffect(() => {
         // listend for changes in rxUpdated and update task details from messaging service
         const subscribed = rxUpdater.subscribe(async (taskIds) => {
             if (!taskIds || !taskIds.length) return

@@ -218,9 +218,9 @@ export const queueables = {
         owner,
         approver,
         fulfiller,
-        isSell, // 0 = buy, 1 = open
+        isSell,
         amountXTX,
-        isClosed, // false = open, true = closed
+        isMarket, //false
         orderType = 0, // 0: service order, 1: inventory order, 2: asset order extensible
         deadline, // must be equal or higher than `currentBlockNumber + 11520` blocks. 
         dueDate, // must be equal or higher than deadline
@@ -241,7 +241,7 @@ export const queueables = {
             fulfiller,
             isSell,
             amountXTX,
-            isClosed,
+            isMarket,
             orderType,
             deadline,
             dueDate,

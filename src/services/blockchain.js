@@ -42,7 +42,8 @@ export const denominations = Object.freeze({
     Mtx: 6,
     Ktx: 3,
     Transactions: 0,
-})// used for archiving
+})
+// Record Type Codes
 export const hashTypes = {
     /// 1000
     /// 2000
@@ -202,13 +203,19 @@ export const queueables = {
         type: QUEUE_TYPES.TX_STORAGE,
         args: [type, recordId, archive],
     }),
-
     balanceTransfer: (address, toAddress, amount, queueProps = {}) => ({
         ...queueProps,
         address,
+        args: [toAddress, amount],
         func: 'api.tx.balances.transfer',
         type: QUEUE_TYPES.TX_STORAGE,
-        args: [toAddress, amount],
+    }),
+    bonsaiSaveToken: (ownerAddress, recordTypeCode, recordId, token, queueProps) => ({
+        ...queueProps,
+        address: ownerAddress,
+        args: [recordTypeCode, recordId, token],
+        func: 'api.tx.bonsai.updateRecord',
+        type: QUEUE_TYPES.TX_STORAGE,
     }),
     // add a key to the key registry
     //
