@@ -44,6 +44,7 @@ export default React.memo(function NotificationItem({ id, notification }) {
         onClick: () => toggleRead(id),
         onDismiss: e => e.stopPropagation() | remove(id),
         status: read ? undefined : 'info',
+        style: { cursor: 'pointer' }
     }
 
     switch (type + ':' + childType) {
