@@ -32,13 +32,9 @@ export default class FormBuilder extends Component {
     // recursive interceptor for infinite level of child inputs
     addInterceptor = (index, values) => (input, i) => {
         const { inputsDisabled = [] } = this.props
-        const { disabled, hidden, inputs: childInputs, key, name, type, validate } = input || {}
+        const { disabled, hidden, inputs: childInputs, key, name, type, validate: validate } = input || {}
         const isGroup = `${type}`.toLowerCase() === 'group' && isArr(childInputs)
         index = isDefined(index) ? index : null
-        const validateInterceptor = !isFn(validate) ? undefined : ((e, v) => {
-            const { values } = this.state
-            input.validate(e, v, values)
-        })
         return {
             ...input,
             disabled: inputsDisabled.includes(name) || (isFn(disabled) ? disabled(value, i) : disabled),
@@ -52,7 +48,7 @@ export default class FormBuilder extends Component {
                 index ? index : i,
                 index ? i : undefined
             ),
-            validate: validateInterceptor,
+            validate: isFn(validate) ? ((e, v) => validate(e, v, this.state.values)) : undefined,
         }
     }
 
