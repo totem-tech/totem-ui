@@ -22,6 +22,7 @@ import Message from './Message'
 import CheckboxGroup from './CheckboxGroup'
 import UserIdInput from './UserIdInput'
 import { translated } from '../services/language'
+import { unsubscribe } from '../services/react'
 
 const [texts] = translated({
 	email: 'Please enter a valida email address',
@@ -50,7 +51,6 @@ const validationTypes = Object.values(TYPES)
 const NON_ATTRIBUTES = Object.freeze([
 	'bond',
 	'collapsed',
-	// 'controlled',
 	'defer',
 	'elementRef',
 	'groupValues',
@@ -66,6 +66,7 @@ const NON_ATTRIBUTES = Object.freeze([
 	'styleContainer',
 	'useInput',
 	'validate',
+	'rxValue',
 ])
 export const nonValueTypes = Object.freeze(['button', 'html'])
 
@@ -86,14 +87,21 @@ export class FormInput extends Component {
 
 	componentWillMount() {
 		this._mounted = true
+		this.subscriptions = {}
+		const { rxValue } = this.props
+		const triggerChange = value => setTimeout(() => this.handleChange({}, { ...this.props, value }))
 		if (this.bond) {
-			this.tieId = this.bond.tie(value => setTimeout(() => this.handleChange({}, { ...this.props, value })))
+			this.tieId = this.bond.tie(triggerChange)
+		}
+		if (isObj(rxValue) && isFn(rxValue.subscribe)) {
+			this.subscriptions.rxValue = rxValue.subscribe(triggerChange)
 		}
 	}
 
 	componentWillUnmount = () => {
 		this._mounted = false
 		this.bond && this.bond.untie(this.tieId)
+		unsubscribe(this.subscriptions)
 	}
 
 	handleChange = (event = {}, data = {}) => {
