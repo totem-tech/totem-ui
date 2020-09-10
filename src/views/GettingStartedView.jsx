@@ -15,6 +15,7 @@ import IdentityForm from '../forms/Identity'
 import RegisterForm from '../forms/Register'
 import RestoreBackupForm from '../forms/RestoreBackup'
 import NewsletteSignup from '../forms/NewsletterSignup'
+import Invertible from '../components/Invertible'
 
 const [texts] = translated({
 	backupTitle: 'Backup your account',
@@ -280,10 +281,10 @@ export default class GetingStarted extends Component {
 							{texts.supportChatDesc2}
 							<div>
 								<a href='https://discord.gg/Vx7qbgn' target='_blank'>
-									<Icon name='discord' style={styles.appIconStyle} />
+									<Invertible El={Icon} name='discord' style={styles.appIconStyle} />
 								</a>
 								<a href='https://t.me/totemchat' target='_blank'>
-									<Icon name='telegram' style={styles.appIconStyle} />
+									<Invertible El={Icon} name='telegram' style={styles.appIconStyle} />
 								</a>
 							</div>
 						</div>

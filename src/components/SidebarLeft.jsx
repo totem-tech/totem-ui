@@ -86,8 +86,16 @@ SidebarLeft.propTypes = {
 }
 
 export const MainContentItem = props => {
-	const [item, setItem] = useState(getItem(props.name) || {})
 	const [isMobile] = useRxSubject(rxLayout, true, layout => layout === MOBILE)
+	const [item, setItem] = useState(getItem(props.name) || {})
+	const { active, elementRef, hidden, name } = item
+	const show = active && !hidden
+	item.style = {
+		...item.style,
+		height: '100%',
+		padding: !isMobile ? undefined : '0 15px',
+	}
+
 	useEffect(() => {
 		let mounted = true
 		const { name } = item
@@ -98,18 +106,9 @@ export const MainContentItem = props => {
 			mounted = false
 			tieId && bond.untie(tieId)
 		}
-	}, [item])
-
-	const { active, elementRef, hidden, name } = item
-	const show = active && !hidden
-	item.style = {
-		...item.style,
-		height: '100%',
-		padding: !isMobile ? undefined : '0 15px',
-	}
+	}, [])
 	return !show ? '' : (
 		<div
-			hidden={!show}
 			key={name}
 			style={styles.spaceBelow}
 			ref={elementRef}

@@ -16,7 +16,7 @@ export default function Invertible(props) {
 }
 Invertible.propTypes = {
     asMemo: PropTypes.bool,
-    El: PropTypes.func,
+    El: PropTypes.func.isRequired,
     reverseInverted: PropTypes.bool,
 }
 Invertible.defaultProps = {}
