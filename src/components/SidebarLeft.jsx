@@ -40,7 +40,10 @@ export default class SidebarLeft extends Component {
 					width={collapsed ? 'very thin' : 'wide'}
 					color="black"
 					inverted
-					style={collapsed ? styles.collapsed : styles.expanded}
+					style={{
+						...(collapsed ? styles.collapsed : styles.expanded),
+						maxHeight: !isMobile ? undefined : 'calc( 100% - 49px )',
+					}}
 					onHidden={() => isMobile && setSidebarState(false, false)}
 				>
 					<Menu.Item
