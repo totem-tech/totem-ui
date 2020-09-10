@@ -202,7 +202,6 @@ export default class TaskForm extends Component {
                     radio: true,
                     required: true,
                     type: 'checkbox-group',
-                    value: false,
                 },
                 {
                     bond: new Bond(),

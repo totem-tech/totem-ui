@@ -114,7 +114,6 @@ export class FormInput extends Component {
 			type,
 			validate,
 		} = this.props
-		const { checked, value } = data
 
 		// for custom input types (eg: UserIdInput)
 		if (data.invalid) return isFn(onChange) && onChange(event, data, this.props)
@@ -124,7 +123,7 @@ export class FormInput extends Component {
 		event && isFn(event.persist) && event.persist()
 		const typeLower = (type || '').toLowerCase()
 		const isCheck = ['checkbox', 'radio'].indexOf(typeLower) >= 0
-		const hasVal = hasValue(isCheck ? checked : value)
+		const hasVal = hasValue(isCheck ? data.checked : data.value)
 		const customMsgs = { ...texts }
 		let errMsg, validatorConfig
 
@@ -134,13 +133,15 @@ export class FormInput extends Component {
 				case 'radio':
 					// Sematic UI's Checkbox component only supports string and number as value
 					// This allows support for any value types
-					data.value = checked ? trueValue : falseValue
-					if (required && !checked) errMsg = VALIDATION_MESSAGES.required
+					data.value = data.checked ? trueValue : falseValue
+					if (required && !data.checked) errMsg = VALIDATION_MESSAGES.required
 					break
 				case 'number':
 					validatorConfig = { type: integer ? TYPES.integer : TYPES.number }
+					data.value = !data.value ? data.value : parseFloat(data.value)
 					customMsgs.lengthMax = texts.maxLengthNum
 					customMsgs.lengthMin = texts.minLengthNum
+					break
 				case 'hex':
 					validatorConfig = { type: TYPES.hex }
 				case 'text':
@@ -152,7 +153,7 @@ export class FormInput extends Component {
 		}
 
 		if (!errMsg && validationTypes.includes(typeLower) || validatorConfig) {
-			errMsg = validator.validate(value, { ...this.props, ...validatorConfig }, customMsgs)
+			errMsg = validator.validate(data.value, { ...this.props, ...validatorConfig }, customMsgs)
 		}
 
 		let message = !errMsg ? null : { content: errMsg, status: 'error' }
@@ -161,7 +162,7 @@ export class FormInput extends Component {
 			isFn(onChange) && onChange(event, data, this.props)
 			this.setMessage(message)
 
-			if (isBond(this.bond) && !data.invalid) this.bond._value = value
+			if (isBond(this.bond) && !data.invalid) this.bond._value = data.value
 		}
 		if (message || !isFn(validate)) return triggerChange()
 

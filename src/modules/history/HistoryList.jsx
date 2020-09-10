@@ -182,7 +182,7 @@ export default class HistoryList extends Component {
     }
 
     componentWillUnmount() {
-        this._mounted = true
+        this._mounted = false
         unsubscribe(this.subscriptions)
     }
 
