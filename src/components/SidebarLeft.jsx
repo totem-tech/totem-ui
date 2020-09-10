@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { Component, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Icon, Label, Menu, Sidebar } from 'semantic-ui-react'
 import ContentSegment from './ContentSegment'
@@ -8,6 +8,8 @@ import {
 	allInactiveBond, getItem, setActive, setSidebarState,
 	sidebarItems, sidebarStateBond, scrollTo, toggleActive, toggleSidebarState
 } from '../services/sidebar'
+import { rxLayout, MOBILE } from '../services/window'
+import { unsubscribe, useRxSubject } from '../services/react'
 
 const [_, textsCap] = translated({
 	closeSidebar: 'close sidebar',
@@ -80,34 +82,39 @@ SidebarLeft.propTypes = {
 	isMobile: PropTypes.bool.isRequired,
 }
 
-export class MainContentItem extends Component {
-	componentWillMount() {
-		const { name } = this.props
+export const MainContentItem = props => {
+	const [item, setItem] = useState(getItem(props.name) || {})
+	const [isMobile] = useRxSubject(rxLayout, true, layout => layout === MOBILE)
+	useEffect(() => {
+		let mounted = true
+		const { name } = item
 		const { bond } = getItem(name) || {}
-		if (!isBond(bond)) return
-		this.bond = bond
-		this.tieId = this.bond.tie(() => this.forceUpdate())
-	}
+		const tieId = isBond(bond) && bond.tie(() => mounted && setItem({ ...getItem(props.name) }))
 
-	componentWillUnmount = () => this.bond && this.bond.untie(this.tieId)
+		return () => {
+			mounted = false
+			tieId && bond.untie(tieId)
+		}
+	}, [item])
 
-	render() {
-		const item = getItem(this.props.name) || {}
-		const { active, elementRef, hidden, name } = item
-		const show = active && !hidden
-		item.style = { ...item.style, height: '100%' }
-		return !show ? '' : (
-			<div
-				hidden={!show}
-				key={name}
-				style={styles.spaceBelow}
-				ref={elementRef}
-				name={name}
-			>
-				<ContentSegment {...item} onClose={name => setActive(name, false)} />
-			</div>
-		)
+	const { active, elementRef, hidden, name } = item
+	const show = active && !hidden
+	item.style = {
+		...item.style,
+		height: '100%',
+		padding: !isMobile ? undefined : '0 15px',
 	}
+	return !show ? '' : (
+		<div
+			hidden={!show}
+			key={name}
+			style={styles.spaceBelow}
+			ref={elementRef}
+			name={name}
+		>
+			<ContentSegment {...item} onClose={name => setActive(name, false)} />
+		</div>
+	)
 }
 MainContentItem.propTypes = {
 	name: PropTypes.string.isRequired,
