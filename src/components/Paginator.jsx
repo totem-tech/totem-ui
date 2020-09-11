@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Icon, Menu, Dropdown } from 'semantic-ui-react'
-import { isFn } from '../utils/utils'
+import { isFn, className } from '../utils/utils'
 
 const handleSelect = (props, target) => {
     const { current, onSelect, total } = props
@@ -10,7 +10,7 @@ const handleSelect = (props, target) => {
     isValid && onSelect(target)
 }
 const getNumberItems = props => {
-    const { current, navLimit, total } = props
+    const { current, navLimit, total, pageListDirection } = props
     const edging = (current + navLimit - 1) >= total
     let start = edging ? total - navLimit + 1 : current - Math.floor(navLimit / 2)
     start = start < 1 ? 1 : start
@@ -32,8 +32,8 @@ const getNumberItems = props => {
                 {!isCurrent ? num : (
                     !addDropDown ? <b>{num}</b> : (
                         <Dropdown {...{
-                            defaultUpward: true,
-                            className: 'upward',
+                            defaultUpward: pageListDirection === 'upward',
+                            className: pageListDirection || '',
                             icon: {
                                 className: 'no-margin',
                                 name: 'triangle up',
@@ -75,7 +75,7 @@ function Paginator(props) {
     const next = current + 1
     const prev = current - 1
     return (
-        <Menu {...{ pagination: true, style: { float: float || 'right' } }}>
+        <Menu {...{ pagination: true, style: { float } }}>
             <Menu.Item
                 as="a"
                 icon
@@ -99,9 +99,17 @@ function Paginator(props) {
 
 Paginator.propTypes = {
     current: PropTypes.number,
+    // @direction: accepted values : upward, downward, null/falsy
     float: PropTypes.string,
     // maximum number of page numbers to show
     navLimit: PropTypes.number,
-    onSelect: PropTypes.func.isRequired
+    onSelect: PropTypes.func.isRequired,
+    pageListDirection: PropTypes.string,
+}
+Paginator.defaultProps = {
+    current: 1,
+    float: 'right',
+    navLimit: 5,
+    pageListDirection: 'upward',
 }
 export default React.memo(Paginator)
