@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Button, Label } from 'semantic-ui-react'
-import { arrSort, textEllipsis, arrUnique, deferred } from '../../utils/utils'
+import { arrSort, textEllipsis } from '../../utils/utils'
 import FormInput from '../../components/FormInput'
 import Message from '../../components/Message'
 import client, { getUser } from '../../services/chatClient'
@@ -21,6 +21,7 @@ import {
     TROLLBOX,
     userStatusBond,
     jumpToMessage,
+    unreadCountBond,
 } from './chat'
 import NewInboxForm, { editName } from './NewInboxForm'
 
@@ -148,9 +149,13 @@ export default function InboxList() {
         const tieId = inboxListBond.tie(() => {
             mounted && setItems(filterInboxes(query, showAll))
         })
+        const tieIdUnreadCount = unreadCountBond.tie(() => {
+            mounted && setItems(filterInboxes(query, showAll))
+        })
         return () => {
             mounted = false
             inboxListBond.untie(tieId)
+            unreadCountBond.untie(tieIdUnreadCount)
         }
     }, [query, showAll])
     return (
@@ -309,7 +314,6 @@ const ToolsBar = React.memo(({ query, onSeachChange, showAll, toggleShowAll }) =
     <div className='tools'>
         <div className='actions'>
             <Button.Group {...{
-                color: 'grey',
                 widths: 2,
                 buttons: [
                     {
@@ -413,7 +417,6 @@ const InboxActions = React.memo(({ inboxKey, isGroup, isSupport, isTrollbox, isE
                 <Button {...{
                     ...action,
                     // circular: true,
-                    // className: 'dark-grey',
                     key: action.icon,
                     size: 'tiny'
                 }} />

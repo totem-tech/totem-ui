@@ -63,7 +63,8 @@ export default function useTasks(types, address, timeout = 5000) {
     const [tasks, setTasks] = useState(new Map())
     const [message, setMessage] = useState()
 
-    address && useEffect(() => {
+    useEffect(() => {
+        if (!address) return () => { }
         let mounted = true
         let done = false
         const unsubscribers = {}
@@ -179,7 +180,8 @@ export default function useTasks(types, address, timeout = 5000) {
     }, [address]) // update subscriptions whenever address changes
 
 
-    address && useEffect(() => {
+    useEffect(() => {
+        if (!address) return () => { }
         // listend for changes in rxUpdated and update task details from messaging service
         const subscribed = rxUpdater.subscribe(async (taskIds) => {
             if (!taskIds || !taskIds.length) return

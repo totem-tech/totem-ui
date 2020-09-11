@@ -84,6 +84,8 @@ export default class PartnerList extends Component {
 				topLeftMenu: [],
 			}
 		}
+		this.originalSetState = this.setState
+		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
 	}
 
 	componentWillMount() {

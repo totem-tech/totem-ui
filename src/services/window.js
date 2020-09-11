@@ -15,6 +15,7 @@ export const layoutBond = new Bond().defaultTo(getLayout())
 export const rxOnline = new BehaviorSubject()
 export const rxInverted = new BehaviorSubject(rw().inverted)
 export const rxLayout = new BehaviorSubject(getLayout())
+export const rxVisible = new BehaviorSubject(true)
 
 // forceLayout enforces and reverts a specific layout size and ignores layout change when window resizes
 //
@@ -121,7 +122,10 @@ rxInverted.subscribe(inverted => {
     ignoredFirstInverted = true
     document.getElementById('app').classList[inverted ? 'add' : 'remove']('inverted')
 })
-
+document.addEventListener('visibilitychange', () => {
+    const visible = document.visibilityState === 'visible'
+    rxVisible.next(visible)
+})
 export default {
     MOBILE,
     DESKTOP,

@@ -24,7 +24,8 @@ export default function useLedgerAcBalances(address, timeout = 10000) {
     const [result, setResult] = useState()
     const [message, setMessage] = useState()
 
-    isAddress(address) && useEffect(() => {
+    useEffect(() => {
+        if (!isAddress(address)) return
         let mounted = true
         const unsubscribers = {}
         let loaded = false
@@ -80,15 +81,9 @@ export default function useLedgerAcBalances(address, timeout = 10000) {
         // in case of address change, force empty result and show loading message
         setResult(null)
         setMessage(loadingMsg)
-        getConnection().then(async () => {
-            if (!mounted) return
-            unsubscribers.accounts && unsubscribers.accounts()
-            unsubscribers.accounts = await query.accountsById(address, handleAccounts)
-        }, err => {
-            if (!mounted) return
-            error = true
-            setMessage({ ...errorMsg, content: `${err}` })
-        })
+
+        query.accountsById(address, handleAccounts)
+            .then(unsubscribe => unsubscribers.accounts = unsubscribe)
 
         // update message if accounts and balances hasn't been loaded after timeout duration
         setTimeout(() => {
