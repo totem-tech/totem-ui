@@ -331,6 +331,7 @@ input[readonly] {
 /* 
  * DARK MODE/INVERTED STYLES 
  */
+#app.inverted,
 #app.inverted #main-content.inverted {
 	background: #2e2d2d;
 	color: white;
