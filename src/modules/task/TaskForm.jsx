@@ -161,7 +161,7 @@ export default class TaskForm extends Component {
                             type: 'number',
                             useInput: true,
                             value: '',
-                            width: 12,
+                            width: 10,
                         },
                         {// hidden type to store bounty in XTX (regardless of display currency selected)
                             bond: new Bond(),
@@ -183,7 +183,7 @@ export default class TaskForm extends Component {
                                 marginBottom: 0, // removes margin on popup open
                             },
                             type: 'dropdown',
-                            width: 4,
+                            width: 6,
                             value: getSelectedCurrency(),
                         },
                     ]

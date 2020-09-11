@@ -1,4 +1,4 @@
-.validator-balances {
+/* .validator-balances {
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: space-evenly;
@@ -32,10 +32,9 @@
 .value {
   font-weight: bold;
 }
-
 .ui.basic.label {
   background: none #ffffff !important;
-}
+} */
 
 
 /*
@@ -172,6 +171,9 @@
 .mobile .pusher.main-content {
   margin: 0 !important;
   overflow: auto !important;
+}
+#app > .mobile #main-content::-webkit-scrollbar {
+ width: 3px;
 }
 .empty-message:not(:only-child) {
   display: none !important;

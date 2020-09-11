@@ -115,6 +115,7 @@ export default function Inbox(props) {
 
                         <div className='scroll-to-bottom'>
                             <Button {...{
+                                active: false,
                                 circular: true,
                                 color: 'black',
                                 icon: 'chevron down',
@@ -226,7 +227,6 @@ const MemberList = ({ inboxKey, isTrollbox, receiverIds }) => {
                                             basic: true,
                                             style: { textAlign: 'right' }
                                         }} />
-
                                     )}
                                 </div>
                             ),
