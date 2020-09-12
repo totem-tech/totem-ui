@@ -38,7 +38,7 @@ const validIcon = { color: 'green', name: 'check circle', size: 'large' }
 const userIdRegex = /^[a-z][a-z0-9]+$/
 // removes surrounding whitespaces, removes '@' at the beginning and transforms to lowercase
 export const getRawUserID = userId => {
-    if (!isStr(userId)) return 'invalid user id'
+    if (!isStr(userId)) return ''
     userId = userId.trim()
     return userId.replace('@', '').toLowerCase()
 }
