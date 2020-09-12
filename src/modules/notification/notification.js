@@ -6,7 +6,7 @@ import { translated } from '../../services/language'
 import { getProject } from '../../services/project'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import storage from '../../services/storage'
-import { workerTasks } from '../../services/timeKeeping'
+import { queueables } from '../../services/timeKeeping'
 import TotemLogo from '../../assets/totem-button-grey.png'
 import { rxVisible } from '../../services/window'
 
@@ -92,7 +92,7 @@ export const handleTKInvitation = (
         return match ? xNotifyId : null
     }, null)
 
-    const getprops = (projectOwnerId, projectName) => workerTasks.accept(projectId, workerAddress, accepted, {
+    const getprops = (projectOwnerId, projectName) => queueables.worker.accept(projectId, workerAddress, accepted, {
         title: `${textsCap.timekeeping} - ${accepted ? textsCap.acceptInvitation : textsCap.rejectInvitation}`,
         description: `${textsCap.activity}: ${projectName}`,
         then: success => !success && resolve(false),
