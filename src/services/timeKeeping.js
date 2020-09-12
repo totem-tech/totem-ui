@@ -73,7 +73,6 @@ export const getProjects = async (forceUpdate, callback, timeout = 10000) => {
 
     if (isFn(callback)) {
         const interceptor = async (result) => {
-            console.log({ result })
             // include user owned projects
             result = mapJoin(await getUserProjects(), result)
             callback(result)
