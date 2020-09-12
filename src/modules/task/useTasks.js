@@ -209,7 +209,9 @@ export default function useTasks(types, address, timeout = 5000) {
 }
 
 const addDetails = (address, tasks, detailsMap, uniqueTaskIds, save = true) => {
-    if (!detailsMap.size || !isMap(tasks)) return
+    if (!isMap(tasks)) return new Map()
+    // no off-chain details to attach
+    if (!detailsMap.size) return tasks
     const newTasks = new Map()
     const cacheableAr = Array.from(tasks).map(([type, typeTasks = new Map()]) => {
         uniqueTaskIds.forEach(id => {
