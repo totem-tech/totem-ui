@@ -5,6 +5,7 @@ import DataTable from '../components/DataTable'
 import { getSelected, rxSelected } from '../services/identity'
 import { translated } from '../services/language'
 import { getProjects, query } from '../services/timeKeeping'
+import { unsubscribe } from '../services/react'
 
 const textsCap = translated({
     activity: 'activity',
@@ -54,14 +55,14 @@ export default class TimeKeepingSummary extends Component {
 
     componentWillMount() {
         this._mounted = true
-        this.unsubscribers = {}
-        this.unsubscribers.selected = rxSelected.subscribe(() => this.getSummary()).unsubscribe
+        this.subscriptions = {
+            selected: rxSelected.subscribe(() => mounted && this.getSummary())
+        }
     }
 
     componentWillUnmount() {
         this._mounted = false
-        Object.values(this.unsubscribers)
-            .forEach(fn => isFn(fn) && fn())
+        unsubscribe(this.subscriptions)
     }
 
     getSummary = async (arrTotalBlocks) => {
@@ -70,10 +71,10 @@ export default class TimeKeepingSummary extends Component {
         const recordIds = Array.from(projects).map(([hash]) => hash)
         if (!arrTotalBlocks || address !== this.address) {
             this.address = address
-            const { totalBlocks } = this.unsubscribers
+            const { totalBlocks } = this.subscriptions
             // unsubscribe from existing subscription
             isFn(totalBlocks) && totalBlocks()
-            this.unsubscribers.totalBlocks = query.worker.totalBlocksByProject(
+            this.subscriptions.totalBlocks = query.worker.totalBlocksByProject(
                 recordIds.map(() => address),
                 recordIds, // for multi query needs to be a 2D array of arguments
                 this.getSummary,
