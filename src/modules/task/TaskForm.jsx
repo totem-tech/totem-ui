@@ -347,7 +347,7 @@ export default class TaskForm extends Component {
         const tagsIn = findInput(inputs, this.names.tags)
         const assigneeOptions = Array.from(partners.getAll())
             .map(([address, { name, userId }]) => ({
-                description: userId,
+                description: !userId ? '' : `@${userId}`,
                 key: address,
                 text: name,
                 value: address,

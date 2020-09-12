@@ -314,7 +314,7 @@ export class FormInput extends Component {
 					icon={accordion.icon || 'dropdown'}
 					onClick={() => {
 						this.setState({ collapsed: !collapsed })
-						isFn(accordion.onClick) && accordion.onClick()
+						isFn(accordion.onClick) && accordion.onClick(!collapsed)
 					}}
 				/>
 				<Accordion.Content {...{ active: !collapsed, content: groupEl }} />

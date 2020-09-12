@@ -176,7 +176,7 @@ export default function HistoryItemDetailsForm(props) {
             grouped: false,
             name: 'group-balances',
             type: 'group',
-            widths: 8,
+            widths: 'equal',
             inputs: [
                 before && {
                     action: { content: 'XTX' },
@@ -185,7 +185,7 @@ export default function HistoryItemDetailsForm(props) {
                     readOnly: true,
                     value: before,
                     type: 'number',
-                    // width: 8,
+                    unstackable: true,
                 },
                 after && {
                     action: { content: 'XTX' },
@@ -194,7 +194,7 @@ export default function HistoryItemDetailsForm(props) {
                     readOnly: true,
                     value: after,
                     type: 'number',
-                    // width: 8,
+                    unstackable: true,
                 },
             ].filter(Boolean),
         },
