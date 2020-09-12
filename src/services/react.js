@@ -1,8 +1,7 @@
 // placeholder for reusable React utility functions that doesn't doesn't specifically fit anywhere else
 
 import { useState, useEffect } from "react"
-import { BehaviorSubject } from 'rxjs'
-import { isFn, isObj, isBool } from "../utils/utils"
+import { isFn, isObj } from "../utils/utils"
 
 // for use with useReducer hook on a functional component to imitate the behaviour of `setState()` of a class component
 export const reducer = (state = {}, newValue = {}) => ({ ...state, ...newValue })
@@ -15,22 +14,29 @@ export const reducer = (state = {}, newValue = {}) => ({ ...state, ...newValue }
 export const unsubscribe = (subscriptions = {}) => Object.values(subscriptions).forEach(x => {
     try {
         if (!x) return
-        (isFn(x) ? x : x.unsubscribe)()
+        const fn = isFn(x) ? x : isFn(x.unsubscribe) ? x.unsubscribe : null
+        fn && fn()
     } catch (e) { } // ignore
 })
 
-export const useRxSubject = (subject, ignoreFirst, onChange) => {
+export const useRxSubject = (subject, ignoreFirst, onBeforeSetValue) => {
     if (!isObj(subject)) return
-    const [value, setValue] = useState(subject.value)
+    const [value, setValue] = useState(() => {
+        const value = subject.value
+        if (!isFn(onBeforeSetValue)) return value
+        return onBeforeSetValue(value) || value
+    })
 
     useEffect(() => {
         let mounted = true
         let ignoredFirst = !!ignoreFirst ? false : true
         const subscribed = subject.subscribe(newValue => {
-            if (!mounted || !ignoredFirst) return
-            if (isFn(onChange)) newValue = onChange(newValue) || newValue
+            if (!mounted || !ignoredFirst) {
+                ignoredFirst = true
+                return
+            }
+            if (isFn(onBeforeSetValue)) newValue = onBeforeSetValue(newValue) || newValue
             setValue(newValue)
-            ignoredFirst = true
         })
         return () => subscribed.unsubscribe()
     }, [])

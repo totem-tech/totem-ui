@@ -252,7 +252,7 @@ export const sidebarItems = [
     },
     {
         content: TransferForm,
-        contentProps: { style: { maxWidth: 620 } },
+        contentProps: { style: { maxWidth: 400 } },
         icon: 'money bill alternate outline',
         header: texts.transferHeader,
         name: 'transfer',
@@ -310,6 +310,7 @@ export const sidebarItems = [
     },
     {
         content: SettingsForm,
+        contentProps: { style: { maxWidth: 400 } },
         icon: 'cogs',
         name: 'settings',
         title: texts.settingsTitle,

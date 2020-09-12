@@ -3,6 +3,7 @@ import uuid from 'uuid'
 import { Table, Button } from 'semantic-ui-react'
 import FormBuilder, { findInput, showMessage } from '../components/FormBuilder'
 import { objClean, textCapitalize, isFn, objWithoutKeys, hasValue } from '../utils/utils'
+import { rxForeUpdateCache } from '../utils/DataStorage'
 import { getUser, setUser } from '../services/chatClient'
 import { translated } from '../services/language'
 import { confirm } from '../services/modal'
@@ -315,12 +316,16 @@ export default class RestoreBackup extends Component {
 				}
 				localStorage.setItem(key, JSON.stringify(value))
 			})
+			// --keep this before setUser()--
+			rxForeUpdateCache.next(true)
 			if (user) setUser(user)
-			this.setState({ success: true })
 			// wait for onSubmit to finish executing
 			isFn(onSubmit) && await onSubmit(true, values)
+			this.setState({ success: true })
 			// reload page to reflect changes
-			window.location.reload(true)
+			setTimeout(() => {
+				window.location.reload(true)
+			}, 1000)
 		}
 
 		confirm({

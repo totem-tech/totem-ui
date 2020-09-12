@@ -1,4 +1,4 @@
-.validator-balances {
+/* .validator-balances {
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: space-evenly;
@@ -32,10 +32,9 @@
 .value {
   font-weight: bold;
 }
-
 .ui.basic.label {
   background: none #ffffff !important;
-}
+} */
 
 
 /*
@@ -173,6 +172,9 @@
   margin: 0 !important;
   overflow: auto !important;
 }
+#app > .mobile #main-content::-webkit-scrollbar {
+ width: 3px;
+}
 .empty-message:not(:only-child) {
   display: none !important;
 }
@@ -295,6 +297,10 @@ form.ui.form .field > label {
 .ui.form .fields.form-group > .field > .field {
     padding: 0;
 }
+/* Input group with accordion */
+.ui.form > .accordion.styled {
+    box-shadow: 1px 3px 3px 0 rgba(34,36,38,.15), 1px 3px 15px 2px rgba(34,36,38,.15);
+}
 
 /* Message */
 /* forces close icon to be over content */
@@ -327,6 +333,7 @@ input[readonly] {
 /* 
  * DARK MODE/INVERTED STYLES 
  */
+#app.inverted,
 #app.inverted #main-content.inverted {
 	background: #2e2d2d;
 	color: white;
@@ -335,11 +342,11 @@ input[readonly] {
 #app.inverted #main-content .inverted,
 #app.inverted .accordion {
     background: #464646;
-	color: white,
+	color: white;
 }
 /* Chat */
 #app.inverted .chat-container{
-	background: #464646;
+	background: #2a2a2a;
 	color: white;
 }
 /* Left Sidebar */
@@ -354,7 +361,7 @@ input[readonly] {
 #app.inverted .data-table.inverted,
 .ui.modal.inverted .ui.basic.inverted.segment.data-table {
     background: #464646;
-    border: 1px solid #505050;
+    /* border: 1px solid #505050; */
 }
 /* Modals */
 body .modal.inverted { border-radius: 6px;}
@@ -381,6 +388,11 @@ body .ui.form.inverted.loading::before {
 /* Form loading spinner when inverted */
 .ui.modals.invert .ui.inverted.loading.form:after{
 	border-color: white rgba(0,0,0,.1) rgba(0,0,0,.1) rgba(0,0,0,.1);
+}
+/* Form accordion when inverted */
+.modal.inverted .ui.form > .accordion.styled, 
+#app.inverted .ui.form > .accordion.styled {
+    box-shadow: 1px 3px 3px 0 rgba(34,36,38,.15), 1px 3px 15px 2px rgba(34,36,38,.5);
 }
 
 /* Semantic UI Steps (no built-in inverted!!)*/

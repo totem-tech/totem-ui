@@ -71,6 +71,7 @@ export const getTexts = langCode => translations.get(langCode)
 // set selected language code
 export const setSelected = async (selected, delay = true) => {
     rw({ selected })
+    _selected = selected
     // retrieve translated texts from server
     await fetchNSaveTexts()
     // reload page

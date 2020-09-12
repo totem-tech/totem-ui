@@ -12,7 +12,7 @@ const PREFIX_STATIC = 'totem_static_'
 const CACHE_KEY = PREFIX + 'cache'
 const storage = {}
 const cache = new DataStorage(CACHE_KEY, true)
-const settings = new DataStorage(PREFIX + 'settings')
+const settings = new DataStorage(PREFIX + 'settings', true) // keep cache disabled
 // LocalStorage items that are essential for the applicaiton to run. 
 export const essentialKeys = [
     'totem_chat-history', // chat history

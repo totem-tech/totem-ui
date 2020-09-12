@@ -88,8 +88,7 @@ export default class HistoryList extends Component {
                 },
                 {
                     collapsing: true,
-                    content: ({ timestamp }) => format(timestamp, true),
-                    key: 'timestamp',
+                    key: '_timestamp',
                     title: textsCap.executionTime,
                 },
                 {
@@ -170,31 +169,34 @@ export default class HistoryList extends Component {
                 onClick: ids => ids.forEach(removeHistoryItem)
             }]
         }
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
     componentWillMount() {
         this._mounted = true
         this.subscriptions = {}
-        this.subscriptions.history = rxHistory.subscribe(this.setHistory).unsubscribe
+        this.subscriptions.history = rxHistory.subscribe(this.setHistory)
         // force initial read as in-memory caching is disabled
         this.setHistory(getAll())
     }
 
     componentWillUnmount() {
-        this._mounted = true
+        this._mounted = false
         unsubscribe(this.subscriptions)
     }
 
     setHistory = (history = new Map()) => {
         Array.from(history).forEach(([_, item]) => {
+            // clear unwanted spaces caused by use of backquotes etc.
+            item.message = clearClutter(item.message || '')
             item._description = (item.description || '')
                 .split(' ')
                 .map(x => textEllipsis(x, 20))
                 .join(' ')
-            // clear unwanted spaces caused by use of backquotes etc.
-            item.message = clearClutter(item.message || '')
             // add identity name if available
             item._identity = getAddressName(item.identity)
+            item._timestamp = format(item.timestamp, true)
         })
         this.setState({ data: history })
     }

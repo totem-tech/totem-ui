@@ -1,5 +1,5 @@
 import { Subject } from 'rxjs'
-import { generateHash, arrSort } from '../utils/utils'
+import { generateHash, arrSort, isArr } from '../utils/utils'
 import client from './chatClient'
 import storage from './storage'
 import { useState, useEffect } from 'react'
@@ -99,4 +99,11 @@ export const useSelected = () => {
     }, [])
 
     return [value, setSelected]
+}
+
+// build custom hook so that currency columns can be sortable
+export const useConvertedCurrency = (amounts = [], unit, unitDisplayed = getSelected()) => {
+    amounts = !isArr(amounts) ? [amounts] : amounts
+    if (!unit) return amounts
+
 }

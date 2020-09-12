@@ -43,7 +43,7 @@ export default class NewsletteSignup extends Component {
                         {
                             bond: new Bond(),
                             label: textsCap.firstNameLabel,
-                            minLength: 4,
+                            maxLength: 30,
                             name: 'firstName',
                             placeholder: textsCap.firstNamePlaceholder,
                             required: true,
@@ -53,7 +53,7 @@ export default class NewsletteSignup extends Component {
                         {
                             bond: new Bond(),
                             label: textsCap.lastNameLabel,
-                            minLength: 4,
+                            maxLength: 30,
                             name: 'lastName',
                             placeholder: textsCap.lastNamePlaceholder,
                             required: true,
@@ -71,12 +71,6 @@ export default class NewsletteSignup extends Component {
                     required: true,
                     type: 'email',
                     value: '',
-                    validate: (_, { value }) => validate(
-                        value,
-                        { type: TYPES.email },
-                        // custom error message when email is invalid
-                        { email: textsCap.emailError },
-                    )
                 }
             ]
         }
@@ -85,7 +79,7 @@ export default class NewsletteSignup extends Component {
         if (!modal) {
             this.state.message = { content: textsCap.subheader }
         }
-        if (window.isInFrame) {
+        if (window.isInIFrame) {
             this.state.style = { maxWidth: 400, margin: 'auto', ...style }
         }
     }
@@ -118,7 +112,7 @@ export default class NewsletteSignup extends Component {
         let { message, success } = this.state
         message = message || this.props.message
 
-        if (success && message && window.isInFrame) return (
+        if (success && message && window.isInIFrame) return (
             <Message {...{
                 ...message,
                 className: 'success-message',

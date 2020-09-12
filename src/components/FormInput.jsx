@@ -15,15 +15,17 @@ import {
 	objWithoutKeys,
 	searchRanked,
 	isBool,
-	className,
 } from '../utils/utils'
+import validator, { TYPES } from '../utils/validator'
 import Message from './Message'
 // Custom Inputs
 import CheckboxGroup from './CheckboxGroup'
 import UserIdInput from './UserIdInput'
 import { translated } from '../services/language'
+import { unsubscribe } from '../services/react'
 
 const [texts] = translated({
+	email: 'Please enter a valida email address',
 	fileType: 'Invalid file type selected',
 	integer: 'Number must be an integer (no decimals)',
 	max: 'Number must be smaller than or equal to',
@@ -44,11 +46,11 @@ const VALIDATION_MESSAGES = Object.freeze({
 	number: texts.number,
 	required: texts.required,
 })
+const validationTypes = Object.values(TYPES)
 // properties exclude from being used in the DOM
 const NON_ATTRIBUTES = Object.freeze([
 	'bond',
 	'collapsed',
-	// 'controlled',
 	'defer',
 	'elementRef',
 	'groupValues',
@@ -64,6 +66,7 @@ const NON_ATTRIBUTES = Object.freeze([
 	'styleContainer',
 	'useInput',
 	'validate',
+	'rxValue',
 ])
 export const nonValueTypes = Object.freeze(['button', 'html'])
 
@@ -84,31 +87,33 @@ export class FormInput extends Component {
 
 	componentWillMount() {
 		this._mounted = true
+		this.subscriptions = {}
+		const { rxValue } = this.props
+		const triggerChange = value => setTimeout(() => this.handleChange({}, { ...this.props, value }))
 		if (this.bond) {
-			this.tieId = this.bond.tie(value => setTimeout(() => this.handleChange({}, { ...this.props, value })))
+			this.tieId = this.bond.tie(triggerChange)
+		}
+		if (isObj(rxValue) && isFn(rxValue.subscribe)) {
+			this.subscriptions.rxValue = rxValue.subscribe(triggerChange)
 		}
 	}
 
 	componentWillUnmount = () => {
 		this._mounted = false
 		this.bond && this.bond.untie(this.tieId)
+		unsubscribe(this.subscriptions)
 	}
 
 	handleChange = (event = {}, data = {}) => {
 		const {
-			falseValue: no,
+			falseValue: falseValue = false,
 			integer,
-			max,
-			maxLength,
-			min,
-			minLength,
 			onChange,
 			required,
-			trueValue: yes,
+			trueValue: trueValue = true,
 			type,
 			validate,
 		} = this.props
-		const { checked, value } = data
 
 		// for custom input types (eg: UserIdInput)
 		if (data.invalid) return isFn(onChange) && onChange(event, data, this.props)
@@ -118,8 +123,9 @@ export class FormInput extends Component {
 		event && isFn(event.persist) && event.persist()
 		const typeLower = (type || '').toLowerCase()
 		const isCheck = ['checkbox', 'radio'].indexOf(typeLower) >= 0
-		const hasVal = hasValue(isCheck ? checked : value)
-		let errMsg
+		const hasVal = hasValue(isCheck ? data.checked : data.value)
+		const customMsgs = { ...texts }
+		let errMsg, validatorConfig
 
 		if (hasVal && !errMsg) {
 			switch (typeLower) {
@@ -127,39 +133,27 @@ export class FormInput extends Component {
 				case 'radio':
 					// Sematic UI's Checkbox component only supports string and number as value
 					// This allows support for any value types
-					data.value = checked ? (isDefined(yes) ? yes : true) : isDefined(no) ? no : false
-					if (required && !checked) {
-						errMsg = VALIDATION_MESSAGES.required
-					}
+					data.value = data.checked ? trueValue : falseValue
+					if (required && !data.checked) errMsg = VALIDATION_MESSAGES.required
 					break
 				case 'number':
-					if (!required && value === '') break
-					const num = integer ? parseInt(value) : parseFloat(value)
-					if (!isValidNumber(num)) {
-						errMsg = integer ? VALIDATION_MESSAGES.integer : VALIDATION_MESSAGES.number
-					}
-					const maxNum = eval(max)
-					if (isValidNumber(maxNum) && maxNum < num) {
-						errMsg = VALIDATION_MESSAGES.max(max)
-						break
-					}
-					const minNum = eval(min)
-					if (isValidNumber(minNum) && minNum > num) {
-						errMsg = VALIDATION_MESSAGES.min(min)
-						break
-					}
-					data.value = num
+					validatorConfig = { type: integer ? TYPES.integer : TYPES.number }
+					data.value = !data.value ? data.value : parseFloat(data.value)
+					customMsgs.lengthMax = texts.maxLengthNum
+					customMsgs.lengthMin = texts.minLengthNum
+					break
+				case 'hex':
+					validatorConfig = { type: TYPES.hex }
 				case 'text':
 				case 'textarea':
-					if (isDefined(maxLength) && maxLength < value.length) {
-						errMsg = VALIDATION_MESSAGES.maxLength(value, maxLength)
-						break
-					}
-					if (isDefined(minLength) && minLength > value.length) {
-						errMsg = VALIDATION_MESSAGES.minLength(value, minLength)
-						break
-					}
+					validatorConfig = validatorConfig || { type: TYPES.string }
+					customMsgs.lengthMax = texts.maxLengthText
+					customMsgs.lengthMin = texts.minLengthText
 			}
+		}
+
+		if (!errMsg && validationTypes.includes(typeLower) || validatorConfig) {
+			errMsg = validator.validate(data.value, { ...this.props, ...validatorConfig }, customMsgs)
 		}
 
 		let message = !errMsg ? null : { content: errMsg, status: 'error' }
@@ -168,15 +162,13 @@ export class FormInput extends Component {
 			isFn(onChange) && onChange(event, data, this.props)
 			this.setMessage(message)
 
-			if (isBond(this.bond) && !data.invalid) {
-				this.bond._value = value
-			}
+			if (isBond(this.bond) && !data.invalid) this.bond._value = data.value
 		}
 		if (message || !isFn(validate)) return triggerChange()
 
 		!isFn(validate) && isFn(onChange) && onChange(event, data, this.props)
 
-		const customValidate = vMsg => {
+		const handleValidate = vMsg => {
 			if (vMsg === true) {
 				// means field is invalid but no message to display
 				errMsg = true
@@ -190,10 +182,8 @@ export class FormInput extends Component {
 			triggerChange()
 		}
 
-		PromisE(async () => await validate(event, data)).then(
-			customValidate,
-			err => console.log({ validationError: err, input: this.props })
-		)
+		// forces any unexpected error to be handled gracefully
+		PromisE(async () => await validate(event, data)).then(handleValidate, handleValidate)
 	}
 
 	setMessage = (message = {}) => this.setState({ message })
@@ -361,29 +351,12 @@ FormInput.propTypes = {
 	//              object (can be any status type. Required prop: content or header)
 	//              Promise (must resolve to one of the above) - defers onChange trigger until resolved
 	validate: PropTypes.func,
-
-	// Semantic UI supported props. Remove????
-	action: PropTypes.oneOfType([PropTypes.object, PropTypes.string]),
-	actionPosition: PropTypes.string,
-	checked: PropTypes.bool, // For checkbox/radio
-	defaultChecked: PropTypes.bool, // For checkbox/radio
-	defaultValue: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-	icon: PropTypes.oneOfType([PropTypes.object, PropTypes.string]),
-	iconPosition: PropTypes.string,
-	disabled: PropTypes.bool,
-	error: PropTypes.bool,
-	fluid: PropTypes.bool,
-	focus: PropTypes.bool,
 	hidden: PropTypes.bool,
 	inputs: PropTypes.array,
 	// Whether to use Semantic UI's Input or Form.Input component.
 	// Truthy => Input, Falsy (default) => Form.Input
 	useInput: PropTypes.bool,
 	message: PropTypes.object,
-	max: PropTypes.number,
-	maxLength: PropTypes.number,
-	min: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-	minLength: PropTypes.number,
 	name: PropTypes.string.isRequired,
 	label: PropTypes.string,
 	onChange: PropTypes.func,
@@ -395,7 +368,7 @@ FormInput.propTypes = {
 	slider: PropTypes.bool, // For checkbox/radio
 	toggle: PropTypes.bool, // For checkbox/radio
 	value: PropTypes.any,
-	onValidate: PropTypes.func,
+	onValidate: PropTypes.func,//????
 	width: PropTypes.number,
 }
 FormInput.defaultProps = {
