@@ -9,7 +9,7 @@ import { isArr, isFn, isObj, isStr, objClean, isValidNumber } from '../utils/uti
 // services
 import { getClient } from './chatClient'
 import { getConnection, query, getCurrentBlock } from './blockchain'
-import { save as addToHistory } from './history'
+import { save as addToHistory } from '../modules/history/history'
 import { find as findIdentity, getSelected } from './identity'
 import { translated } from './language'
 import { setToast } from './toast'
@@ -450,7 +450,7 @@ const handleTx = async (id, rootTask, task, toastId) => {
         )
 
         // retrieve and store account balance before starting the transaction
-        let balance = await query(api.query.balances.freeBalance, address)
+        let balance = await query('api.query.balances.freeBalance', address)
         if (balance < (amountXTX + MIN_BALANCE)) throw textsCap.insufficientBalance
         _save(LOADING, null, { before: balance })
 
@@ -459,7 +459,7 @@ const handleTx = async (id, rootTask, task, toastId) => {
         const result = await signAndSend(api, address, tx)
 
         // retrieve and store account balance after execution
-        balance = await query(api.query.balances.freeBalance, address)
+        balance = await query('api.query.balances.freeBalance', address)
         // if `txId` not supplied and transaction didn't already fail, assume success.
         txSuccess = !txId ? true : (await checkTxStatus(api, txId, false))
         _save(
@@ -467,7 +467,13 @@ const handleTx = async (id, rootTask, task, toastId) => {
             txSuccess ? result : textsCap.txFailed,
             { after: balance })
     } catch (err) {
-        _save(ERROR, err)
+        // retrieve and store account balance after execution
+        try {
+            const balance = await query('api.query.balances.freeBalance', address)
+            _save(ERROR, err, { after: balance })
+        } catch (_) {
+            _save(ERROR, err)
+        }
     }
 }
 

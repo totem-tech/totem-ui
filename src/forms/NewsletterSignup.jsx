@@ -1,31 +1,35 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import FormBuilder from '../components/FormBuilder'
+import { Bond } from 'oo7'
+import FormBuilder, { fillValues } from '../components/FormBuilder'
 import { translated } from '../services/language'
 import client from '../services/chatClient'
 import { validate, TYPES } from '../utils/validator'
 import Message from '../components/Message'
+import { isObj } from '../utils/utils'
 
 const prodUrl = 'https://totem.live'
 const textsCap = translated({
     emailError: 'please enter a valid email address',
     emailLabel: 'email',
     emailPlaceholder: 'enter your email address',
-    header: 'newsletter signup',
+    header: 'early adopter signup',
     firstNameLabel: 'first name',
     firstNamePlaceholder: 'enter your name',
     lastNameLabel: 'family name',
     lastNamePlaceholder: 'enter your family name',
     signup: 'signup',
     successHeader: 'thank you for signing up!',
-    successMsg: 'if you haven\'t already done so, please feel free create an account, check out the application and provide us with any feedback you may have. It\'s completely free while in testnet!',
-    successMsgIframe: 'don\'t forget to check out our live testnet application which is completely free while in testnet:',
+    successMsg: 'now that you are here, why not check out the test application and provide us with any feedback you may have? It\'s completely free',
+    successMsgIframe: 'don\'t forget to check out our live and free test application:',
     subheader: 'We promise to not spam you and we will NEVER give your personal details to any third-party without your explicit consent',
 }, true)[1]
 
 export default class NewsletteSignup extends Component {
     constructor(props) {
         super(props)
+
+        const { modal, style, values } = props
 
         this.state = {
             onSubmit: this.handleSubmit,
@@ -37,8 +41,9 @@ export default class NewsletteSignup extends Component {
                     widths: 'equal',
                     inputs: [
                         {
+                            bond: new Bond(),
                             label: textsCap.firstNameLabel,
-                            minLength: 4,
+                            maxLength: 30,
                             name: 'firstName',
                             placeholder: textsCap.firstNamePlaceholder,
                             required: true,
@@ -46,8 +51,9 @@ export default class NewsletteSignup extends Component {
                             value: '',
                         },
                         {
+                            bond: new Bond(),
                             label: textsCap.lastNameLabel,
-                            minLength: 4,
+                            maxLength: 30,
                             name: 'lastName',
                             placeholder: textsCap.lastNamePlaceholder,
                             required: true,
@@ -57,6 +63,7 @@ export default class NewsletteSignup extends Component {
                     ]
                 },
                 {
+                    bond: new Bond(),
                     defer: null,
                     label: textsCap.emailLabel,
                     name: 'email',
@@ -64,21 +71,16 @@ export default class NewsletteSignup extends Component {
                     required: true,
                     type: 'email',
                     value: '',
-                    validate: (_, { value }) => validate(
-                        value,
-                        { type: TYPES.email },
-                        // custom error message when email is invalid
-                        { email: textsCap.emailError },
-                    )
                 }
             ]
         }
 
-        if (!props.modal) {
+        if (isObj(values)) fillValues(this.state.inputs, values)
+        if (!modal) {
             this.state.message = { content: textsCap.subheader }
         }
-        if (window.isInFrame) {
-            this.state.style = { maxWidth: 400, margin: 'auto', ...props.style }
+        if (window.isInIFrame) {
+            this.state.style = { maxWidth: 400, margin: 'auto', ...style }
         }
     }
 
@@ -110,7 +112,7 @@ export default class NewsletteSignup extends Component {
         let { message, success } = this.state
         message = message || this.props.message
 
-        if (success && message && window.isInFrame) return (
+        if (success && message && window.isInIFrame) return (
             <Message {...{
                 ...message,
                 className: 'success-message',

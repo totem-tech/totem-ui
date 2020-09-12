@@ -30,8 +30,8 @@ const textsCap = translated({
 	introducePartner: 'introduce a partner',
 	columnPublicTitle1: 'a public company cannot be changed to private.',
 	columnPublicTitle2: 'click to add a company with this identity to the public database',
-	noUserIdConfirmHeader: 'partner User ID required',
-	noUserIdConfirmMsg: 'selected Partner does not include a User ID. Would you like to update the Partner record?',
+	noUserIdConfirmHeader: 'partner User ID Required',
+	noUserIdConfirmMsg: 'selected Partner does not include a User ID. In order to introduce partner a user ID is required. Would you like to update the partner?',
 	partnerName: 'partner name',
 	removePartner: 'remove partner',
 	usedBy: 'used by',
@@ -84,6 +84,8 @@ export default class PartnerList extends Component {
 				topLeftMenu: [],
 			}
 		}
+		this.originalSetState = this.setState
+		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
 	}
 
 	componentWillMount() {
@@ -144,8 +146,8 @@ export default class PartnerList extends Component {
 					if (!!userId) return introduce(userId)
 
 					confirm({
-						content: textsCap.partnerNoUserIdConfirmMsg,
-						header: textsCap.partnerNoUserIdConfirmHeader,
+						content: textsCap.noUserIdConfirmMsg,
+						header: textsCap.noUserIdConfirmHeader,
 						onConfirm: updatePartnerCb((success, { userId }) => success && userId && introduce(userId)),
 						size: 'tiny',
 					})

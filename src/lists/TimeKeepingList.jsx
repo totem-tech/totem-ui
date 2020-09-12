@@ -189,6 +189,7 @@ export default class ProjectTimeKeepingList extends Component {
     async componentWillMount() {
         this._mounted = true
         this.subscriptions = {}
+        this.ignoredFirst = false
         const { archive, manage, projectId } = this.props
         const { list, listArchive, listByProject, listByProjectArchive } = query.record
         let arg = !manage ? getSelected().address : projectId

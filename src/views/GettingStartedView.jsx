@@ -14,6 +14,8 @@ import { createInbox, SUPPORT, TROLLBOX } from '../modules/chat/chat'
 import IdentityForm from '../forms/Identity'
 import RegisterForm from '../forms/Register'
 import RestoreBackupForm from '../forms/RestoreBackup'
+import NewsletteSignup from '../forms/NewsletterSignup'
+import Invertible from '../components/Invertible'
 
 const [texts] = translated({
 	backupTitle: 'Backup your account',
@@ -34,6 +36,7 @@ const [texts] = translated({
 	`,
 	faucetRequest: 'Faucet request',
 	faucetRequestDetails: 'Transaction allocations to get you started',
+	newsletterSignup: 'Signup For Announcements',
 	registrationSuccess: `
 		Registration successful! You will shortly receive an allocation of transactions to get you started.
 	`,
@@ -256,7 +259,6 @@ export default class GetingStarted extends Component {
 										content: texts.supportContact,
 										icon: 'heartbeat',
 										onClick: () => createInbox([SUPPORT], null, true),
-										// positive: true,
 										size: 'mini',
 										style: styles.btnStyle,
 									}} />
@@ -264,7 +266,13 @@ export default class GetingStarted extends Component {
 										content: texts.trollbox,
 										icon: 'globe',
 										onClick: () => createInbox([TROLLBOX], null, true),
-										// positive: true,
+										size: 'mini',
+										style: styles.btnStyle,
+									}} />
+									<Button {...{
+										content: texts.newsletterSignup,
+										icon: 'mail',
+										onClick: () => showForm(NewsletteSignup),
 										size: 'mini',
 										style: styles.btnStyle,
 									}} />
@@ -273,10 +281,10 @@ export default class GetingStarted extends Component {
 							{texts.supportChatDesc2}
 							<div>
 								<a href='https://discord.gg/Vx7qbgn' target='_blank'>
-									<Icon name='discord' style={styles.appIconStyle} />
+									<Invertible El={Icon} name='discord' style={styles.appIconStyle} />
 								</a>
 								<a href='https://t.me/totemchat' target='_blank'>
-									<Icon name='telegram' style={styles.appIconStyle} />
+									<Invertible El={Icon} name='telegram' style={styles.appIconStyle} />
 								</a>
 							</div>
 						</div>

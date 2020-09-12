@@ -1,14 +1,23 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Button, Dropdown, Grid, Icon, Input, Table } from 'semantic-ui-react'
-import Segment from './Segment'
 import {
-    arrMapSlice, getKeys, isArr, isFn, objWithoutKeys, objCopy, search, sort, isStr, arrReverse
+    Button,
+    Dropdown,
+    Grid,
+    Icon,
+    Input,
+    Segment,
+    Table,
+} from 'semantic-ui-react'
+import {
+    arrMapSlice, getKeys, isArr, isFn, objWithoutKeys, objCopy, search, sort, isStr, arrReverse, arrUnique
 } from '../utils/utils'
-import Message from '../components/Message'
-import { translated } from '../services/language'
-import { getLayout, layoutBond, MOBILE, rxInverted, setInverted } from '../services/window'
+import Invertible from './Invertible'
+import Message from './Message'
 import Paginator from './Paginator'
+import { translated } from '../services/language'
+import { MOBILE, rxLayout } from '../services/window'
+import { unsubscribe } from '../services/react'
 
 const mapItemsByPage = (data, pageNo, perPage, callback) => {
     const start = pageNo * perPage - perPage
@@ -31,8 +40,7 @@ export default class DataTable extends Component {
 
         const { columns, defaultSort, defaultSortAsc, keywords, pageNo } = props
         this.state = {
-            isMobile: getLayout() === MOBILE,
-            inverted: setInverted(),
+            isMobile: rxLayout.value === MOBILE,
             keywords: keywords || '',
             pageNo: pageNo,
             selectedIndexes: [],
@@ -44,20 +52,17 @@ export default class DataTable extends Component {
     }
     componentWillMount() {
         this._mounted = true
-        this.tieId = layoutBond.tie(layout => {
+        this.subscriptions = {}
+        this.subscriptions.layout = rxLayout.subscribe(layout => {
             const isMobile = layout === MOBILE
             if (this.state.isMObile === isMobile) return
             this.setState({ isMobile })
         })
-        this.unsubscribers = {
-            inverted: rxInverted.subscribe(inverted => this.setState({ inverted }))
-        }
     }
 
     componentWillUnmount = () => {
         this._mounted = false
-        layoutBond.untie(this.tieId)
-        Object.keys(this.unsubscribers).forEach(fn => isFn(fn) && fn())
+        unsubscribe(this.subscriptions)
     }
 
     getFooter(totalPages, pageNo) {
@@ -122,9 +127,8 @@ export default class DataTable extends Component {
         return headers
     }
 
-    getRows(filteredData, columns, selectedIndexes) {
+    getRows(filteredData, columns, selectedIndexes, pageNo) {
         let { perPage, rowProps, selectable } = this.props
-        const { pageNo } = this.state
 
         return mapItemsByPage(filteredData, pageNo, perPage, (item, key, items, isMap) => (
             <Table.Row
@@ -283,8 +287,9 @@ export default class DataTable extends Component {
     }
 
     render() {
-        let { data,
+        let {
             columns: columnsOriginal,
+            data,
             emptyMessage,
             footerContent,
             perPage,
@@ -293,7 +298,6 @@ export default class DataTable extends Component {
             tableProps,
         } = this.props
         let {
-            inverted,
             keywords,
             pageNo,
             selectedIndexes,
@@ -302,27 +306,23 @@ export default class DataTable extends Component {
         } = this.state
         keywords = keywords.trim()
         const columns = columnsOriginal.filter(x => !!x && !x.hidden)
-        const keys = columns.filter(x => !!x.key).map(x => x.key)
         // Include extra searchable keys that are not visibile on the table
-        if (isArr(searchExtraKeys)) {
-            searchExtraKeys.forEach(key => keys.indexOf(key) === -1 & keys.push(key))
-        }
-        const filteredData = sort(
-            !keywords ? data : search(data, keywords, keys),
-            sortBy,
-            !sortAsc,
-            false
+        const keys = arrUnique([
+            ...columns.filter(x => !!x.key).map(x => x.key),
+            ...(searchExtraKeys || [])]
         )
+        let filteredData = !keywords ? data : search(data, keywords, keys)
+        filteredData = !sortBy ? filteredData : sort(filteredData, sortBy, !sortAsc, false)
         selectedIndexes = selectedIndexes.filter(index => !!(isArr(data) ? data[index] : data.get(index)))
         // actual total
         const totalItems = data.size || data.length
         // filtered total
         const totalRows = filteredData.length || filteredData.size || 0
         const totalPages = Math.ceil(totalRows / perPage)
-        const headers = this.getHeaders(totalRows, columns, selectedIndexes)
-        const rows = this.getRows(filteredData, columns, selectedIndexes)
         pageNo = pageNo > totalPages ? 1 : pageNo
         this.state.pageNo = pageNo
+        const headers = this.getHeaders(totalRows, columns, selectedIndexes)
+        const rows = this.getRows(filteredData, columns, selectedIndexes, pageNo)
 
         if (totalItems > 0 && totalRows === 0) {
             // search resulted in zero rows
@@ -331,18 +331,18 @@ export default class DataTable extends Component {
             emptyMessage = { content: emptyMessage }
         }
         return (
-            <Segment
-                basic
-                inverted={inverted}
-                className='data-table'
-                style={{ margin: 0, ...style }}
-            >
+            <Invertible {...{
+                El: Segment,
+                basic: true,
+                className: 'data-table',
+                style: { margin: 0, padding: 0, ...style }
+            }}>
                 {this.getTopContent(totalRows, selectedIndexes)}
 
-                <div style={styles.tableContent}>
+                <div style={styles.tableContent} >
                     {totalRows === 0 && emptyMessage && <Message {...emptyMessage} />}
                     {totalRows > 0 && (
-                        <Table {...{ ...tableProps, inverted }}>
+                        <Invertible {...{ ...tableProps, El: Table }}>
                             <Table.Header>
                                 <Table.Row>{headers}</Table.Row>
                             </Table.Header>
@@ -358,10 +358,10 @@ export default class DataTable extends Component {
                                     </Table.Row>
                                 </Table.Footer>
                             )}
-                        </Table>
+                        </Invertible>
                     )}
-                </div>
-            </Segment>
+                </div >
+            </Invertible >
         )
     }
 }

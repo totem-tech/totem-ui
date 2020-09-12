@@ -1,8 +1,8 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Divider, Header, Icon, Placeholder, Rail } from 'semantic-ui-react'
+import { Divider, Header, Icon, Placeholder, Rail, Segment } from 'semantic-ui-react'
 import ErrorBoundary from './CatchReactErrors'
-import Segment from './Segment'
+import Invertible from './Invertible'
 import Text from './Text'
 import { isBond, isFn } from '../utils/utils'
 import { toggleFullscreen } from '../services/window'
@@ -69,17 +69,17 @@ export default class ContentSegment extends Component {
 		} = this.props
 		const { content, showSubHeader } = this.state
 		const headerText = header || title
-
 		return !active ? '' : (
-			<Segment
-				basic={basic}
-				color={color}
-				compact={!!compact}
-				inverted={inverted}
-				padded
-				style={{ ...styles.segment, ...style }}
-				vertical={vertical}
-			>
+			<Invertible {...{
+				El: Segment,
+				basic: basic,
+				color: color,
+				compact: !!compact,
+				inverted: inverted,
+				padded: true,
+				style: { ...styles.segment, ...style },
+				vertical: vertical,
+			}}>
 				{isFn(onClose) && (
 					<Rail internal position='right' close style={styles.closeButtonRail}>
 						<Icon
@@ -139,7 +139,7 @@ export default class ContentSegment extends Component {
 				<div style={{ padding: contentPadding || 0 }}>
 					<ErrorBoundary>{content}</ErrorBoundary>
 				</div>
-			</Segment>
+			</Invertible>
 		)
 	}
 }

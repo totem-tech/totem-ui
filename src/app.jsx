@@ -1,9 +1,9 @@
 import React, { Component } from 'react'
-import { Container, Image, Sidebar } from 'semantic-ui-react'
+import { Image, Segment, Sidebar } from 'semantic-ui-react'
 // Components
 import ErrorBoundary from './components/CatchReactErrors'
+import Invertible from './components/Invertible'
 import PageHeader from './components/PageHeader'
-import Segment from './components/Segment'
 import SidebarLeft, { MainContentItem } from './components/SidebarLeft'
 // Services
 import blockchain from './services/blockchain'
@@ -109,7 +109,7 @@ export class App extends Component {
 				</ErrorBoundary>
 
 				<ErrorBoundary>
-					<NotificationList inline={false} />
+					<NotificationList />
 				</ErrorBoundary>
 
 				<Sidebar.Pushable style={styles.pushable}>
@@ -118,14 +118,14 @@ export class App extends Component {
 					</ErrorBoundary>
 
 					<Sidebar.Pusher
-						as={Segment}
+						as={Invertible.asCallback(Segment)}
 						className="main-content"
 						dimmed={false}
 						id="main-content"
 						// fluid
 						style={{
 							...styles.mainContent,
-							paddingBottom: isMobile ? 55 : 15,
+							padding: isMobile ? '0 0 35px 0' : '15px 15px 0',
 							...getGridStyle(numCol),
 						}}
 					>
@@ -154,7 +154,6 @@ const styles = {
 		margin: 0,
 		overflow: 'hidden auto',
 		WebkitOverflow: 'hidden auto',
-		padding: 15,
 		scrollBehavior: 'smooth',
 	},
 	pushable: {

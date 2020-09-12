@@ -1,21 +1,25 @@
 import { Bond } from 'oo7'
 import DataStorage from '../../utils/DataStorage'
 // services
-import client, { getUser } from '../../services/chatClient'
+import client, { getUser, rxIsLoggedIn } from '../../services/chatClient'
 import { translated } from '../../services/language'
 import { getProject } from '../../services/project'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import storage from '../../services/storage'
-import { workerTasks } from '../../services/timeKeeping'
+import { queueables } from '../../services/timeKeeping'
+import TotemLogo from '../../assets/totem-button-grey.png'
+import { rxVisible } from '../../services/window'
 
 export const MODULE_KEY = 'totem_notifications'
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
-const notifications = new DataStorage(MODULE_KEY, true)
+const notifications = new DataStorage(MODULE_KEY)
 export const rxNotifications = notifications.rxData
 export const newNotificationBond = new Bond()
 export const visibleBond = new Bond().defaultTo(false)
 export const unreadCountBond = new Bond().defaultTo(getUnreadCount())
-notifications.rxData.subscribe(() => {
+let browserNotification = null
+const openNotifications = []
+rxNotifications.subscribe(() => {
     const unreadCount = getUnreadCount()
     // auto update unread count
     unreadCountBond.changed(unreadCount)
@@ -23,59 +27,15 @@ notifications.rxData.subscribe(() => {
     if (!notifications.size) visibleBond.changed(false)
 })
 
-const [texts] = translated({
-    timekeeping: 'Timekeeping',
+const textsCap = translated({
+    newTitle: 'new notification received',
     activity: 'Activity',
     acceptInvitation: 'accept invitation',
     acceptedInvitation: 'accepted invitation to activity',
     rejectInvitation: 'reject invitation',
     rejectedInvitation: 'rejected invitation to activity',
-})
-
-client.onNotify((id, from, type, childType, message, data, tsCreated) => {
-    if (notifications.get(id)) console.log('notification exists', { id })
-    const newNotification = {
-        from,
-        type,
-        childType,
-        message,
-        data,
-        tsCreated,
-        deleted: false,
-        read: false,
-    }
-    setTimeout(() => {
-        rw({ tsLastReceived: tsCreated })
-        notifications.set(id, newNotification).sort('tsCreated', true, true)
-        newNotificationBond.changed(id)
-        console.log('Notification received!', id, from, tsCreated)
-    })
-})
-
-client.onConnect(() => {
-    if (!(getUser() || {}).id) return // ignore if not registered
-    const { tsLastReceived } = rw()
-    client.notificationGetRecent(null, (err, items) => {
-        if (!items.size) return err && console.log('client.notificationGetRecent', err)
-        const itemsArr = Array.from(items)
-            .filter(([id, { deleted }]) => {
-                // remove items deleted by user's other devices
-                if (deleted) {
-                    notifications.delete(id)
-                    items.delete(id)
-                }
-                return !deleted
-            })
-        const mostRecentId = itemsArr[0][0]
-        const mostRecent = itemsArr[0][1]
-        const gotNew = itemsArr.find(([_, { tsCreated }]) => tsCreated > tsLastReceived)
-
-        // save latest item's timestamp as last received
-        rw({ tsLastReceived: mostRecent.tsCreated })
-        notifications.setAll(items, true).sort('tsCreated', true, true)
-        gotNew && newNotificationBond.changed(mostRecentId)
-    })
-})
+    timekeeping: 'Timekeeping',
+}, true)[1]
 
 function getUnreadCount() {
     const all = notifications.getAll()
@@ -88,6 +48,7 @@ function getUnreadCount() {
 
 export const toggleRead = id => {
     const item = notifications.get(id)
+    if (!item) return
     item.read = !item.read
     notifications.set(id, item)
 
@@ -131,9 +92,9 @@ export const handleTKInvitation = (
         return match ? xNotifyId : null
     }, null)
 
-    const getprops = (projectOwnerId, projectName) => workerTasks.accept(projectId, workerAddress, accepted, {
-        title: `${texts.timekeeping} - ${accepted ? texts.acceptInvitation : texts.rejectInvitation}`,
-        description: `${texts.activity}: ${projectName}`,
+    const getprops = (projectOwnerId, projectName) => queueables.worker.accept(projectId, workerAddress, accepted, {
+        title: `${textsCap.timekeeping} - ${accepted ? textsCap.acceptInvitation : textsCap.rejectInvitation}`,
+        description: `${textsCap.activity}: ${projectName}`,
         then: success => !success && resolve(false),
         // no need to notify if rejected or current user is the project owner
         next: !accepted || !projectOwnerId || projectOwnerId === currentUserId ? undefined : {
@@ -144,7 +105,7 @@ export const handleTKInvitation = (
                 [projectOwnerId],
                 type,
                 'invitation_response',
-                `${accepted ? texts.acceptedInvitation : texts.rejectedInvitation}: "${projectName}"`,
+                `${accepted ? textsCap.acceptedInvitation : textsCap.rejectedInvitation}: "${projectName}"`,
                 { accepted, projectHash: projectId, projectName, workerAddress },
                 err => {
                     !err && notificationId && remove(notificationId)
@@ -162,3 +123,102 @@ export const handleTKInvitation = (
         addToQueue(getprops(userId, name))
     })
 })
+
+client.onNotify((id, from, type, childType, message, data, tsCreated, read = false, deleted = false) => {
+    if (deleted) return notifications.delete(id)
+    const newNotification = {
+        from,
+        type,
+        childType,
+        message,
+        data,
+        tsCreated,
+        deleted,
+        read,
+    }
+    notifications.set(id, newNotification).sort('tsCreated', true, true)
+    const isNew = rw().tsLastReceived < tsCreated
+    if (!isNew) return
+    rw({ tsLastReceived: tsCreated })
+    !read && notify(id, newNotification)
+    newNotificationBond.changed(id)
+    console.log('Notification received!', id, from, tsCreated)
+})
+
+rxIsLoggedIn.subscribe(isLoggedIn => {
+    // ignore if not logged in
+    if (!isLoggedIn) return
+    const { tsLastReceived } = rw()
+
+    // Request permission to use browser notifications
+    if (browserNotification === null && !!window.Notification) {
+        switch (Notification.permission) {
+            case 'granted':
+                browserNotification = true
+                break
+            case 'denied':
+                browserNotification = false
+                break
+            case 'default':
+                Notification.requestPermission().then(
+                    permission => browserNotification = permission === 'granted'
+                )
+        }
+    }
+
+    client.notificationGetRecent(null, (err, items) => {
+        if (!items.size) return err && console.log('client.notificationGetRecent', err)
+        const itemsArr = Array.from(items)
+            .filter(([id, { deleted }]) => {
+                // remove items deleted by user's other devices
+                if (deleted) {
+                    notifications.delete(id)
+                    items.delete(id)
+                }
+                return !deleted
+            })
+        const mostRecentId = itemsArr[0][0]
+        const mostRecent = itemsArr[0][1]
+        const gotNew = itemsArr.find(([_, { tsCreated }]) => tsCreated > tsLastReceived)
+
+        // save latest item's timestamp as last received
+        rw({ tsLastReceived: mostRecent.tsCreated })
+        notifications.setAll(items, true).sort('tsCreated', true, true)
+        if (!gotNew) return
+
+        newNotificationBond.changed(mostRecentId)
+
+        !mostRecent.read && notify(mostRecentId, mostRecent)
+    })
+})
+
+rxVisible.subscribe(visible => {
+    if (!visible) return
+    while (openNotifications.length > 0) {
+        openNotifications.pop().close()
+    }
+})
+
+const notify = (id, notification) => setTimeout(() => {
+    if (!browserNotification) return
+    const { id: userId } = getUser() || {}
+    const { childType, from, message, type } = notification
+    if (userId === from) return console.log('same user', { id, notification })
+    const options = {
+        badge: TotemLogo,
+        body: message || `@${from}: ${type} ${childType}`,
+        data: id,
+        icon: TotemLogo,
+        renotify: false,
+        requireInteraction: !rxVisible.value,
+        tag: type,
+        vibrate: true,
+    }
+    try {
+        const instance = new Notification(`${textsCap.newTitle} (${unreadCountBond._value})`, options)
+        !rxVisible.value && openNotifications.push(instance)
+    } catch (e) {
+        // service worker required for mobile
+        browserNotification = false
+    }
+}) 

@@ -40,10 +40,7 @@ const [texts, textsCap] = translated({
 }, true)
 
 export default function Inbox(props) {
-    let {
-        inboxKey,
-        receiverIds, // if not supplied use default open inbox
-    } = props
+    let { inboxKey, receiverIds } = props
     if (!inboxKey) return ''
     const [messages, setMessages] = useState(props.messages || getMessages(inboxKey))
     const [showMembers, setShowMembers] = useState(false)
@@ -118,6 +115,7 @@ export default function Inbox(props) {
 
                         <div className='scroll-to-bottom'>
                             <Button {...{
+                                active: false,
                                 circular: true,
                                 color: 'black',
                                 icon: 'chevron down',
@@ -229,7 +227,6 @@ const MemberList = ({ inboxKey, isTrollbox, receiverIds }) => {
                                             basic: true,
                                             style: { textAlign: 'right' }
                                         }} />
-
                                     )}
                                 </div>
                             ),
@@ -260,7 +257,6 @@ const MessageInput = ({ className, onSubmit }) => {
         <form {...{ className, onSubmit: handleSubmit }}>
             <FormInput {...{
                 action: {
-                    className: 'dark-grey',
                     icon: 'paper plane outline',
                     onClick: handleSubmit,
                 },

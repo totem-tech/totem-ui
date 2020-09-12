@@ -11,12 +11,15 @@ import { translated } from '../../services/language'
 import { showForm, confirm } from '../../services/modal'
 import { FormInput } from '../../components/FormInput'
 import { getSelected } from '../../services/identity'
-import task, { approvalStatuses, queueables, statuses } from './task'
+import { approvalStatuses, queueables, statuses } from './task'
 import { ButtonAcceptOrReject } from '../../components/buttons'
 import { addToQueue } from '../../services/queue'
 import { isArr } from '../../utils/utils'
 
 const textsCap = translated({
+    acceptInvoice: 'accept invoice',
+    acceptInvoiceDesc: 'accept the invoice and pay the assignee?',
+    acceptInvoiceTitle: 'task - accept invoice',
     acceptTask: 'accept task',
     action: 'action',
     approve: 'approve',
@@ -25,11 +28,18 @@ const textsCap = translated({
     assignee: 'assignee',
     bounty: 'bounty',
     create: 'create',
+    createdAt: 'created at',
+    createInvoice: 'create invoice',
+    createInvoiceDesc: 'mark the task as done and create an invoice?',
+    createInvoiceTitle: 'task - create invoice',
     description: 'description',
+    dispute: 'dispute',
+    disputeTask: 'dispute task',
     emptyMsgMarketPlace: 'search for marketplace tasks by title or description',
     loading: 'loading',
     marketplace: 'marketplace',
     no: 'no',
+    pay: 'pay',
     rejectTask: 'reject task',
     status: 'status',
     tags: 'tags',
@@ -62,6 +72,7 @@ class TaskList extends Component {
         const showCreate = this.isOwner || this.isMarketplace
         this.state = {
             columns: [
+                { collapsing: true, key: '_tsCreated', title: textsCap.createdAt },
                 { key: 'title', title: textsCap.title },
                 {
                     collapsing: true,
@@ -104,25 +115,88 @@ class TaskList extends Component {
                 },
                 {
                     content: (task, taskId) => {
-                        const { fulfiller, orderStatus, _orderStatus } = task
+                        const { fulfiller, isMarket, orderStatus, owner, _orderStatus } = task
+                        if (isMarket) return _orderStatus
+                        const isOwner = this.selectedAddress === owner
                         const isFulfiller = this.selectedAddress === fulfiller
-                        const isSubmitted = orderStatus === statuses.submitted
-                        const { acceptInProgress } = tempCache.get(taskId) || {}
+                        const { inProgress } = tempCache.get(taskId) || {}
 
-                        return !isFulfiller || !isSubmitted ? _orderStatus : (
-                            <ButtonAcceptOrReject
-                                disabled={acceptInProgress}
-                                loading={acceptInProgress}
-                                onClick={accept => confirm({
-                                    header: textsCap.acceptTask,
-                                    onConfirm: () => this.handleAccept(taskId, accept),
-                                    size: 'mini'
-                                })}
-                            />
-                        )
+                        switch (orderStatus) {
+                            // fulfiller hasn't accepted/rejected yet
+                            case statuses.submitted:
+                                if (isFulfiller) return (
+                                    <ButtonAcceptOrReject
+                                        disabled={inProgress}
+                                        loading={inProgress}
+                                        onClick={accept => confirm({
+                                            header: textsCap.acceptTask,
+                                            onConfirm: () => this.handleUpdateStatus(
+                                                taskId,
+                                                accept ? statuses.accepted : statuses.rejected,
+                                                accept ? textsCap.acceptTask : textsCap.rejectTask,
+                                            ),
+                                            size: 'mini',
+                                        })}
+                                    />
+                                )
+                                break
+                            // fulfiller accepted but hasn't finished/invoiced the task
+                            case statuses.accepted:
+                                if (isFulfiller) return (
+                                    <Button
+                                        content={textsCap.createInvoice}
+                                        disabled={inProgress}
+                                        loading={inProgress}
+                                        onClick={() => confirm({
+                                            confirmButton: textsCap.createInvoice,
+                                            content: textsCap.createInvoiceDesc,
+                                            header: textsCap.createInvoice,
+                                            onConfirm: () => this.handleUpdateStatus(
+                                                taskId,
+                                                statuses.invoiced,
+                                                textsCap.createInvoiceTitle,
+                                            ),
+                                            size: 'mini',
+                                        })}
+                                        positive
+                                        title={textsCap.createInvoiceDesc}
+                                    />
+                                )
+                                break
+                            case statuses.invoiced:
+                                if (isOwner) return (
+                                    <ButtonAcceptOrReject
+                                        acceptText={textsCap.pay}
+                                        disabled={inProgress}
+                                        loading={inProgress}
+                                        onClick={accept => confirm({
+                                            confirmButton: (
+                                                <Button {...{
+                                                    content: accept ? textsCap.pay : textsCap.dispute,
+                                                    negative: !accept,
+                                                    positive: accept,
+                                                }} />
+                                            ),
+                                            content: accept ? textsCap.acceptInvoiceDesc : undefined,
+                                            header: accept ? textsCap.acceptInvoice : textsCap.dispute,
+                                            onConfirm: () => this.handleUpdateStatus(
+                                                taskId,
+                                                accept ? statuses.completed : statuses.disputed,
+                                                accept ? textsCap.acceptInvoiceTitle : textsCap.disputeTask,
+                                            ),
+                                            size: 'mini',
+                                        })}
+                                        rejectText={textsCap.dispute}
+                                        title={textsCap.acceptInvoiceDesc}
+                                    />
+                                )
+                                break
+                        }
+                        return _orderStatus
                     },
                     collapsing: true,
                     key: '_orderStatus',
+                    textAlign: 'center',
                     title: textsCap.status,
                 },
                 // {
@@ -152,6 +226,8 @@ class TaskList extends Component {
                     title: textsCap.action
                 },
             ],
+            defaultSort: '_tsCreated',
+            defaultSortAsc: false,
             emptyMessage: this.isMarketplace ? textsCap.emptyMsgMarketPlace : undefined,
             // preserve search keywords
             keywords: tempCache.get(keywordsKey),
@@ -184,13 +260,19 @@ class TaskList extends Component {
                     content: textsCap.create,
                     icon: 'plus',
                     onClick: () => showForm(TaskForm, {
-                        values: !this.isMarketplace ? undefined : { isClosed: 0 },
+                        values: !this.isMarketplace ? undefined : { isMarket: false },
                         size: 'tiny',
                     }),
                 }
             ].filter(Boolean)
         }
+
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
+
+    componentWillMount = () => this._mounted = true
+    componentWillUnmount = () => this._mounted = false
 
     getActions = (task, taskId) => [
         this.isOwner && task.allowEdit && {
@@ -208,24 +290,32 @@ class TaskList extends Component {
             <Button {...props} key={`${i}-${props.title}`} />
         )
 
-    handleAccept = (taskIds, accept = true) => {
+    handleUpdateStatus = (taskIds, statusCode, queueTitle) => {
         taskIds = isArr(taskIds) ? taskIds : [taskIds]
         taskIds.forEach(taskId => {
+            const { data = new Map() } = this.props
+            const { title: description } = data.get(taskId) || {}
+
             tempCache.set(
                 taskId,
-                { ...tempCache.get(taskId), acceptInProgress: true },
+                { ...tempCache.get(taskId), inProgress: true },
             )
-            const queueProps = queueables.accept(this.selectedAddress, taskId, accept, {
-                description: task.title,
-                title: accept ? textsCap.acceptTask : textsCap.rejectTask,
-                then: () => {
-                    tempCache.set(taskId, {
-                        ...tempCache.get(taskId),
-                        acceptInProgress: false,
-                    })
-                    this.forceUpdate()
+            const queueProps = queueables.changeStatus(
+                this.selectedAddress,
+                taskId,
+                statusCode,
+                {
+                    description,
+                    title: queueTitle,
+                    then: () => {
+                        tempCache.set(taskId, {
+                            ...tempCache.get(taskId),
+                            inProgress: false,
+                        })
+                        this.forceUpdate()
+                    }
                 }
-            })
+            )
             addToQueue(queueProps)
         })
         this.forceUpdate()

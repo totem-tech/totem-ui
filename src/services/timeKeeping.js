@@ -9,7 +9,7 @@ import {
     getProjects as getUserProjects,
 } from './project'
 import storage from './storage'
-import { query as queryBlockchain } from './blockchain'
+import { getConnection, query as queryBlockchain } from './blockchain'
 import PromisE from '../utils/PromisE'
 
 // to sumbit a new time record must submit with this hash
@@ -73,7 +73,6 @@ export const getProjects = async (forceUpdate, callback, timeout = 10000) => {
 
     if (isFn(callback)) {
         const interceptor = async (result) => {
-            console.log({ result })
             // include user owned projects
             result = mapJoin(await getUserProjects(), result)
             callback(result)

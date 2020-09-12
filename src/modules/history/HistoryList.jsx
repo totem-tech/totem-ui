@@ -1,22 +1,23 @@
 import React, { Component } from 'react'
 import { Button, Icon } from 'semantic-ui-react'
-import DataTable from '../components/DataTable'
-import FormBuilder from '../components/FormBuilder'
-import { format } from '../utils/time'
-import { clearClutter, isValidNumber, isObj, isDefined, copyToClipboard, isFn, textEllipsis } from '../utils/utils'
+import DataTable from '../../components/DataTable'
+import FormBuilder from '../../components/FormBuilder'
+import { format } from '../../utils/time'
+import { clearClutter, isValidNumber, isObj, isDefined, copyToClipboard, textEllipsis } from '../../utils/utils'
 // services
-import { clearAll, remove as removeHistoryItem, rxHistory, getAll } from '../services/history'
-import { translated } from '../services/language'
-import { confirm, showForm } from '../services/modal'
-import { getAddressName } from '../services/partner'
+import { clearAll, remove as removeHistoryItem, rxHistory, getAll } from './history'
+import { translated } from '../../services/language'
+import { confirm, showForm } from '../../services/modal'
+import { getAddressName } from '../../services/partner'
 import {
     getById as getQueueItemById,
     remove as removeQueueItem,
     statuses,
     statusTitles,
     checkComplete,
-} from '../services/queue'
-import { unsubscribe } from '../services/react'
+} from '../../services/queue'
+import { unsubscribe } from '../../services/react'
+import HistoryItemDetailsForm from './HistoryItemDetailsForm'
 
 const textsCap = translated({
     action: 'action',
@@ -87,8 +88,7 @@ export default class HistoryList extends Component {
                 },
                 {
                     collapsing: true,
-                    content: ({ timestamp }) => format(timestamp, true),
-                    key: 'timestamp',
+                    key: '_timestamp',
                     title: textsCap.executionTime,
                 },
                 {
@@ -135,7 +135,7 @@ export default class HistoryList extends Component {
                         {
                             icon: 'eye',
                             negative: item.status === 'error',
-                            onClick: () => this.showDetails(item, id),
+                            onClick: () => showForm(HistoryItemDetailsForm, { values: item }),
                             title: textsCap.techDetails
                         }
                     ].map((props, i) => <Button {...props} key={i} />),
@@ -169,83 +169,86 @@ export default class HistoryList extends Component {
                 onClick: ids => ids.forEach(removeHistoryItem)
             }]
         }
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
     componentWillMount() {
         this._mounted = true
         this.subscriptions = {}
-        this.subscriptions.history = rxHistory.subscribe(this.setHistory).unsubscribe
+        this.subscriptions.history = rxHistory.subscribe(this.setHistory)
         // force initial read as in-memory caching is disabled
         this.setHistory(getAll())
     }
 
     componentWillUnmount() {
-        this._mounted = true
+        this._mounted = false
         unsubscribe(this.subscriptions)
     }
 
     setHistory = (history = new Map()) => {
         Array.from(history).forEach(([_, item]) => {
+            // clear unwanted spaces caused by use of backquotes etc.
+            item.message = clearClutter(item.message || '')
             item._description = (item.description || '')
                 .split(' ')
                 .map(x => textEllipsis(x, 20))
                 .join(' ')
-            // clear unwanted spaces caused by use of backquotes etc.
-            item.message = clearClutter(item.message || '')
             // add identity name if available
             item._identity = getAddressName(item.identity)
+            item._timestamp = format(item.timestamp, true)
         })
         this.setState({ data: history })
     }
 
-    showDetails = (item, id) => {
-        const errMsg = `${item.message}` // in case message is an Error object
-        const { before, after } = isObj(item.balance) ? item.balance : {}
-        const balanceExtProps = { action: { content: 'XTX' } }
+    // showDetails = (item, id) => {
+    //     const errMsg = `${item.message}` // in case message is an Error object
+    //     const { before, after } = isObj(item.balance) ? item.balance : {}
+    //     const balanceExtProps = { action: { content: 'XTX' } }
 
-        const inputDefs = [
-            item.txId && [textsCap.txId, item.txId, 'text', {
-                action: {
-                    icon: 'copy',
-                    onClick: () => copyToClipboard(item.txId),
-                }
-            }],
-            // title describes what the task is about
-            [textsCap.action, item.title],
-            // description about the task that is displayed in the queue toast message
-            [textsCap.description, item.description, 'textarea'],
-            [textsCap.status, statusTitles[item.status] || textsCap.pendingExecution],
-            // show error message only if available
-            errMsg && [textsCap.errorMessage, errMsg, 'textarea', { invalid: item.status === 'error' }],
-            // blockchain or chat client function path in string format
-            [textsCap.function, item.action],
-            // user's identity that was used to create the transaction
-            item.identity && [textsCap.identity, item.identity],
-            [textsCap.timestamp, format(item.timestamp, true, true)],
-            // [textsCap.groupId, item.groupId], // ID of the parent (rootTask) queue item
-            // [textsCap.taskId, id], // ID of the child/parent(rootTask) queue item
-            isValidNumber(before) && [textsCap.balanceBeforeTx, before, 'number', balanceExtProps],
-            isValidNumber(after) && [textsCap.balanceAfterTx, after, 'number', balanceExtProps],
-            [textsCap.dataSent, JSON.stringify(item.data, null, 4), 'textarea'],
-            isDefined(item.result) && [textsCap.dataReceived, JSON.stringify(item.result, null, 4), 'textarea']
-        ]
+    //     const inputDefs = [
+    //         item.txId && [textsCap.txId, item.txId, 'text', {
+    //             action: {
+    //                 icon: 'copy',
+    //                 onClick: () => copyToClipboard(item.txId),
+    //             }
+    //         }],
+    //         // title describes what the task is about
+    //         [textsCap.action, item.title],
+    //         // description about the task that is displayed in the queue toast message
+    //         [textsCap.description, item.description, 'textarea'],
+    //         [textsCap.status, statusTitles[item.status] || textsCap.pendingExecution],
+    //         // show error message only if available
+    //         errMsg && [textsCap.errorMessage, errMsg, 'textarea', { invalid: item.status === 'error' }],
+    //         // blockchain or chat client function path in string format
+    //         [textsCap.function, item.action],
+    //         // user's identity that was used to create the transaction
+    //         item.identity && [textsCap.identity, item.identity],
+    //         [textsCap.timestamp, format(item.timestamp, true, true)],
+    //         // [textsCap.groupId, item.groupId], // ID of the parent (rootTask) queue item
+    //         // [textsCap.taskId, id], // ID of the child/parent(rootTask) queue item
+    //         isValidNumber(before) && [textsCap.balanceBeforeTx, before, 'number', balanceExtProps],
+    //         isValidNumber(after) && [textsCap.balanceAfterTx, after, 'number', balanceExtProps],
+    //         [textsCap.dataSent, JSON.stringify(item.data, null, 4), 'textarea'],
+    //         isDefined(item.result) && [textsCap.dataReceived, JSON.stringify(item.result, null, 4), 'textarea']
+    //     ]
 
-        showForm(FormBuilder, {
-            closeText: textsCap.close,
-            header: textsCap.techDetails,
-            inputs: inputDefs.filter(Boolean)
-                .map(([label, value, type = 'text', extraProps = {}], i) => ({
-                    ...extraProps,
-                    label,
-                    name: `${i}-${label}`,
-                    readOnly: true,
-                    type,
-                    value,
-                })),
-            size: 'tiny',
-            submitText: null,
-        })
-    }
+    //     showForm(FormBuilder, {
+    //         closeText: textsCap.close,
+    //         header: textsCap.techDetails,
+    //         inputs: inputDefs.filter(Boolean)
+    //             .map(([label, value, type = 'text', extraProps = {}], i) => ({
+    //                 ...extraProps,
+    //                 label,
+    //                 name: `${i}-${label}`,
+    //                 readOnly: true,
+    //                 type,
+    //                 value,
+    //             })),
+    //         size: 'tiny',
+    //         submitText: null,
+    //     })
+    // }
 
     render() {
         const { data, topLeftMenu } = this.state

@@ -21,9 +21,6 @@
 #app > .mobile.sidebar-visible > .chat-container {
     display: none;
 }
-#app.inverted .chat-container {
-    color: white;
-}
 #app:not(.chat-visible) .chat-container,
 #app.chat-visible .chat-container.hiding {
     right: -410px;
@@ -33,25 +30,11 @@
     right: -100%;
 }
 .mobile .chat-container {
-    bottom: 48px;
+    bottom: 47px;
 }
 .chat-container .chat-contents {
     height: 100%;
     position: relative;
-}
-
-/* custom icon and button colors */
-button.dark-grey .icon,
-.icon.dark-grey {
-    color: #434446 !important;
-}
-.chat-container button.dark-grey:hover,
-.chat-container button.active.dark-grey {
-    background: #434446 !important;
-}
-.chat-container button.dark-grey:hover .icon,
-.chat-container button.active.dark-grey .icon {
-    color: white !important;
 }
 
 /* inbox/conversation list */
@@ -85,19 +68,27 @@ button.dark-grey .icon,
     padding-left: 18px;
 }
 .chat-container .inbox-list .tools .actions button {
-    /* color: #075d6a !important; */
     color: #434446;
     border: none;
     border-radius: 0;
     text-align: left;
     font-size: 14px;
 }
-.chat-container .inbox-list .tools .actions button:hover {
-    background: #F2F2F2 !important;
+#app.inverted .chat-container .inbox-list .tools .actions button {
+    background: #434446;
+    color: white !important;
 }
-.chat-container .inbox-list .tools .actions button.active {
+#app.inverted .chat-container .inbox-list .tools .actions button:focus:not(.active):not(:hover) {
+    background: #2a2a2a !important;
+}
+.chat-container .inbox-list .tools .actions button:hover,
+.chat-container .inbox-list .tools .actions button:active,
+.chat-container .inbox-list .tools .actions button.active{
     background: #434446 !important;
     color: white !important;
+}
+.chat-container .inbox-list .tools .actions button.active {
+    font-weight: bold;
 }
 .chat-container .inbox-list .list-item {
     border-radius: 0;
@@ -140,7 +131,7 @@ button.dark-grey .icon,
     position: absolute;
     top: 7px;
 }
-.chat-container .inbox-list .list-item .preview {
+.chat-container .inbox-list .list-item:not(:hover):not(.active) .preview {
     font-size: 12px;
     color: #979797;
     /* margin-top: 5px; */
@@ -149,6 +140,10 @@ button.dark-grey .icon,
     overflow: hidden;
     white-space: nowrap;
     width: 70px;
+}
+#app.inverted .chat-container .inbox-list .list-item:not(:hover):not(.active) .left .label {
+    background: #80808026;
+    color: white;
 }
 .ui.mini.label, .ui.mini.labels .label {
     margin-left: 9px;
@@ -203,7 +198,7 @@ button.dark-grey .icon,
     height: 100%;
 }
 .chat-container .inbox .header {
-    background: #434446;
+    background: #464646;
     color: white;
     padding: 10px 15px;
     position: relative;
@@ -212,9 +207,6 @@ button.dark-grey .icon,
 .chat-container .inbox .header b {
     font-weight: 800;
     color: #F2F2F2;
-}
-#app.inverted .chat-container .inbox .header {
-    background: #979797;
 }
 .chat-container .inbox .header .tools.right {
     display: inline;

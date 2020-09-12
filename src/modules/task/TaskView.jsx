@@ -21,11 +21,11 @@ const textsCap = translated({
     unknown: 'unknown',
 }, true)[1]
 
-export default function TaskView(props) {
-    const address = props.address || useSelected()
+export default function TaskView({ address }) {
+    address = address || useSelected()
+    const inverted = useInverted()
     const [allTasks = new Map(), message] = useTasks(['owner', 'approver', 'beneficiary'], address)
     const [activeType, setActiveType] = useState(rwSettings().activeType || 'owner')
-    const inverted = useInverted()
     const panes = [
         {
             name: textsCap.ownerTasks,

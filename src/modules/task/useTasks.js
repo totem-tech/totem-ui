@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Subject } from 'rxjs'
-import { isFn, arrUnique, objCopy, isMap } from '../../utils/utils'
+import { isFn, arrUnique, objCopy, isMap, isArr } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 // services
 import { translated } from '../../services/language'
@@ -10,6 +10,7 @@ import {
     approvalStatusNames,
     query, rwCache, statuses, statusNames
 } from './task'
+import { format } from '../../utils/time'
 
 const textsCap = translated({
     errorHeader: 'failed to load tasks',
@@ -32,7 +33,8 @@ export const rxUpdater = new Subject()
  * @returns {Map}
  */
 const getCached = (address, types) => {
-    let cache = rwCache(address) || []
+    let cache = rwCache(address)
+    if (!isArr(cache)) cache = []
     if (cache.length === 0) {
         cache = types.map(type => [type, []])
     }
@@ -62,6 +64,7 @@ export default function useTasks(types, address, timeout = 5000) {
     const [message, setMessage] = useState()
 
     useEffect(() => {
+        if (!address) return () => { }
         let mounted = true
         let done = false
         const unsubscribers = {}
@@ -86,6 +89,7 @@ export default function useTasks(types, address, timeout = 5000) {
                     let amountXTX = 0
                     let {
                         approvalStatus,
+                        approver,
                         fulfiller,
                         // order can be null if storage has changed, in that case, use inaccessible status
                         orderStatus = statuses.inaccessible,
@@ -98,16 +102,20 @@ export default function useTasks(types, address, timeout = 5000) {
                         console.log('AmontXTX parse error', err)
                     }
                     const _owner = getAddressName(owner)
+                    const isOwner = address === owner
+                    const isSubmitted = orderStatus === statuses.submitted
+                    const isPendingApproval = approvalStatus == approvalStatuses.pendingApproval
+                    const isOwnerTheApprover = owner === approver
+                    let allowEdit = isOwner && isSubmitted && (isPendingApproval || isOwnerTheApprover)
                     const task = {
                         ...order,
                         amountXTX,
-                        allowEdit: orderStatus === statuses.submitted
-                            && approvalStatus == approvalStatuses.pendingApproval,
+                        allowEdit,
                         // pre-process values for use with DataTable
                         _approvalStatus: approvalStatusNames[approvalStatus],
-                        _orderStatus: statusNames[orderStatus],
-                        _taskId: taskId,
                         _fulfiller: fulfiller === owner ? _owner : getAddressName(fulfiller),
+                        _orderStatus: statusNames[orderStatus],
+                        _taskId: taskId, // list search
                         _owner,
                     }
                     uniqueTasks.set(taskId, task)
@@ -158,6 +166,7 @@ export default function useTasks(types, address, timeout = 5000) {
             setTasks(getCached(address, types))
         }, timeout)
         setMessage(loadingMsg)
+        console.log({ address })
 
         query.getTaskIds(types, address, handleTaskIds).then(
             fn => unsubscribers.taskIds2d = fn,
@@ -172,6 +181,7 @@ export default function useTasks(types, address, timeout = 5000) {
 
 
     useEffect(() => {
+        if (!address) return () => { }
         // listend for changes in rxUpdated and update task details from messaging service
         const subscribed = rxUpdater.subscribe(async (taskIds) => {
             if (!taskIds || !taskIds.length) return
@@ -206,6 +216,7 @@ const addDetails = (address, tasks, detailsMap, uniqueTaskIds, save = true) => {
             let task = typeTasks.get(id)
             if (!task) return
             task = objCopy(detailsMap.get(id) || {}, task)
+            task._tsCreated = format(task.tsCreated, true)
             typeTasks.set(id, task)
         })
         // tasks.set(type, typeTasks)

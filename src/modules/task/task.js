@@ -1,6 +1,4 @@
-import uuid from 'uuid'
-import { generateHash, isArr, isDefined } from "../../utils/utils"
-import { bytesToHex, strToU8a } from '../../utils/convert'
+import { generateHash, isDefined } from "../../utils/utils"
 import { query as queryHelper, randomHex } from '../../services/blockchain'
 import client from '../../services/chatClient'
 import { translated } from '../../services/language'
@@ -53,6 +51,7 @@ export const statusNames = {
     5: textsCap.invoiced,
     6: textsCap.completed,
 }
+
 /**
  * @name    rwCache
  * @summary read/write to cache storage 
@@ -97,6 +96,7 @@ export const query = {
     getTaskIds: async (types = [], address, callback) => {
         const api = await queryHelper() // get API
         const args = types.map(type => [api.query.orders[type], address])
+        console.log('getTaskIds', { address, types, args })
         return await queryHelper('api.queryMulti', [args, callback].filter(isDefined))
     },
     /**
@@ -119,28 +119,6 @@ export const query = {
     ),
 }
 export const queueables = {
-    /**
-     * @name accept
-     * @summary accept/reject task assignment
-     * 
-     * @param {String} address fulfiller address
-     * @
-     */
-    accept: (address, taskId, accept = true, queueProps) => {
-        const txId = randomHex(address)
-        return {
-            ...queueProps,
-            address,
-            args: [
-                taskId,
-                accept ? statuses.accepted : statuses.rejected,
-                txId,
-            ],
-            func: 'api.tx.orders.handleSpfso',
-            txId,
-            type: TX_STORAGE,
-        }
-    },
     approve: (address, taskId, approve = true, queueProps) => {
         const txId = randomHex(address)
         return {
@@ -152,6 +130,32 @@ export const queueables = {
                 txId,
             ],
             func: 'api.tx.orders.changeApproval',
+            txId,
+            type: TX_STORAGE,
+        }
+    },
+    /**
+     * @name    changeStatus
+     * @summary change status of a pre-funded task order
+     * 
+     * @param   {String} address fulfiller address
+     * @param   {String} taskId
+     * @param   {Number} statusCode order status code
+     * @param   {Object} queueProps extra properties for the queue item
+     * 
+     * @returns {Object} to be used with queue service
+     */
+    changeStatus: (address, taskId, statusCode, queueProps) => {
+        const txId = randomHex(address)
+        return {
+            ...queueProps,
+            address,
+            args: [
+                taskId,
+                statusCode,
+                txId,
+            ],
+            func: 'api.tx.orders.handleSpfso',
             txId,
             type: TX_STORAGE,
         }
@@ -217,9 +221,9 @@ export const queueables = {
         owner,
         approver,
         fulfiller,
-        isSell, // 0 = buy, 1 = open
+        isSell,
         amountXTX,
-        isClosed, // false = open, true = closed
+        isMarket, //false
         orderType = 0, // 0: service order, 1: inventory order, 2: asset order extensible
         deadline, // must be equal or higher than `currentBlockNumber + 11520` blocks. 
         dueDate, // must be equal or higher than deadline
@@ -240,7 +244,7 @@ export const queueables = {
             fulfiller,
             isSell,
             amountXTX,
-            isClosed,
+            isMarket,
             orderType,
             deadline,
             dueDate,

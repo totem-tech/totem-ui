@@ -11,12 +11,12 @@ import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
 const notificationType = 'identity'
 const childType = 'share'
-const [words, wordsCap] = translated({
+const wordsCap = translated({
     identities: 'identities',
     identity: 'identity',
     partners: 'partners',
     partner: 'partner',
-}, true)
+}, true)[1]
 const [texts] = translated({
     failedMsgHeader: 'Submission Failed!',
     formHeader1: 'Share Identity/Partner',

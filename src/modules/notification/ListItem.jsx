@@ -2,7 +2,7 @@ import React from 'react'
 // components
 import { ButtonAcceptOrReject, UserID } from '../../components/buttons'
 import TimeSince from '../../components/TimeSince'
-import Message from '../../components/Message'
+import { Message } from '../../components/Message'
 // forms
 import IdentityShareForm from '../../forms/IdentityShare'
 import PartnerForm from '../../forms/Partner'
@@ -12,42 +12,39 @@ import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
 import { handleTKInvitation, remove, toggleRead } from './notification'
 
-const [words, wordsCap] = translated({
+const textsCap = translated({
+    // timekeeping: 'timekeeping'
+    // acceptInvitation: 'accept invitation',
+    // acceptedInvitation: 'accepted invitation to activity',
+    // rejectInvitation: 'reject invitation',
+    // rejectedInvitation: 'rejected invitation to activity',
     activity: 'activity',
     ignore: 'ignore',
     share: 'share',
     reason: 'reason',
-    timekeeping: 'timekeeping'
-}, true)
-const [texts] = translated({
-    addPartner: 'Add partner',
-    acceptInvitation: 'accept invitation',
-    acceptedInvitation: 'accepted invitation to activity',
-    indentityIntroduceMsg: 'recommended you to share your identity with the following user: ',
+    addPartner: 'add partner',
+    indentityIntroduceMsg: 'recommended you to share your identity with the following user:',
     identityRequestMsg: 'requested an identity',
-    identityShareMsg: 'Identity received from:',
-    rejectInvitation: 'reject invitation',
-    rejectedInvitation: 'rejected invitation to activity',
+    identityShareMsg: 'identity received from:',
     tkInvitationMsg: 'invited you to start booking time.',
     tkInviteAcceptMsg: 'accepted your invitation to the following activity',
     tkInviteRejectMsg: 'rejected your invitation to the following activity',
-    yourIdentity: 'Your identity',
-})
+    yourIdentity: 'your identity',
+}, true)[1]
 
-
-export default function NotificationItem({ id, notification }) {
-    const { from, type, childType, message, data, tsCreated, read } = notification
+export default React.memo(function NotificationItem({ id, notification }) {
+    const { from, type, childType, message, data, tsCreated, read } = notification || {}
     const senderId = from || notification.senderId // (previously used)
     const userIdBtn = <UserID userId={senderId} />
     const typeSpaced = type.replace('_', ' ')
     const msg = {
-        // attached: true,
         className: 'list-item',
         icon: { name: 'bell outline' },
         key: id,
         onClick: () => toggleRead(id),
         onDismiss: e => e.stopPropagation() | remove(id),
         status: read ? undefined : 'info',
+        style: { cursor: 'pointer' }
     }
 
     switch (type + ':' + childType) {
@@ -59,14 +56,14 @@ export default function NotificationItem({ id, notification }) {
             msg.content = (
                 <div>
                     <div>
-                        <b>{userIdBtn} {!isIntroduce ? texts.identityRequestMsg : texts.indentityIntroduceMsg}</b>
-                        {isIntroduce ? <UserID userId={recipientId} /> : (
-                            <div><b>{wordsCap.reason} :</b> {data.reason}</div>
+                        <b>{userIdBtn} {!isIntroduce ? textsCap.identityRequestMsg : textsCap.indentityIntroduceMsg}</b>
+                        {isIntroduce ? <UserID userId={recipientId} prefix=' ' /> : (
+                            <div><b>{textsCap.reason} :</b> {data.reason}</div>
                         )}
                     </div>
                     <ButtonAcceptOrReject
                         acceptColor='blue'
-                        acceptText={wordsCap.share}
+                        acceptText={textsCap.share}
                         onClick={accepted => !accepted ? remove(id) : showForm(IdentityShareForm, {
                             inputsDisabled: ['userIds'],
                             onSubmit: success => success && remove(id),
@@ -83,10 +80,10 @@ export default function NotificationItem({ id, notification }) {
             msg.icon.name = 'user plus'
             msg.content = (
                 <div>
-                    <div><b>{texts.identityShareMsg} {userIdBtn}</b></div>
+                    <div><b>{textsCap.identityShareMsg} {userIdBtn}</b></div>
                     <ButtonAcceptOrReject
                         acceptColor='blue'
-                        acceptText={texts.addPartner}
+                        acceptText={textsCap.addPartner}
                         onClick={accepted => !accepted ? remove(id) : showForm(
                             PartnerForm,
                             {
@@ -94,7 +91,7 @@ export default function NotificationItem({ id, notification }) {
                                 values: { ...data, userId: data.introducedBy || senderId },
                             }
                         )}
-                        rejectText={wordsCap.ignore}
+                        rejectText={textsCap.ignore}
                     />
                     <div>{message}</div>
                 </div>
@@ -110,9 +107,9 @@ export default function NotificationItem({ id, notification }) {
             msg.icon.name = 'clock outline'
             msg.content = (
                 <div>
-                    {userIdBtn} {texts.tkInvitationMsg}<br />
-                    {texts.yourIdentity}: <b>{identity.name}</b><br />
-                    {wordsCap.activity}: <b>{data.projectName}</b><br />
+                    {userIdBtn} {textsCap.tkInvitationMsg}<br />
+                    {textsCap.yourIdentity}: <b>{identity.name}</b><br />
+                    {textsCap.activity}: <b>{data.projectName}</b><br />
                     <ButtonAcceptOrReject
                         acceptColor='blue'
                         onClick={accepted => confirm({
@@ -134,7 +131,7 @@ export default function NotificationItem({ id, notification }) {
             msg.icon.name = 'clock outline'
             msg.content = (
                 <div>
-                    {userIdBtn} {data.accepted ? texts.tkInviteAcceptMsg : texts.tkInviteRejectMsg}:
+                    {userIdBtn} {data.accepted ? textsCap.tkInviteAcceptMsg : textsCap.tkInviteRejectMsg}:
                     <b> {data.projectName}</b>
                 </div>
             )
@@ -150,5 +147,5 @@ export default function NotificationItem({ id, notification }) {
             <TimeSince className='time-since' time={tsCreated} />
         </div>
     )
-    return <Message {...msg} />
-}
+    return <Message  {...msg} key={id + read} />
+})

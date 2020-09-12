@@ -8,7 +8,7 @@ import {
     getSelected as getSelectedCurrency,
     setSelected as setSelectedCurrency
 } from '../services/currency'
-import { limit as historyItemsLimit } from '../services/history'
+import { limit as historyItemsLimit } from '../modules/history/history'
 import {
     getSelected as getSelectedLanguage,
     languages,
@@ -125,7 +125,13 @@ export default class Settings extends Component {
             currencyIn.options = arrSort(options, 'text')
             this.setState({ inputs })
         })
+
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
+
+    componentWillMount = () => this._mounted = true
+    componentWillUnmount = () => this._mounted = false
 
     handleCurrencyChange = async (_, { currency }) => {
         await setSelectedCurrency(currency)
@@ -172,5 +178,5 @@ export default class Settings extends Component {
         }, delay)
     }
 
-    render = () => <FormBuilder {...this.state} />
+    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }

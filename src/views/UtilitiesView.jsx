@@ -7,7 +7,7 @@ import AdminUtilsForm from '../forms/AdminUtils'
 import SystemStatusView from './SystemStatusView'
 import RuntimeUpgradeForm from '../forms/RuntimeUpgrade'
 // services
-import { getConnection } from '../services/blockchain'
+import { getConnection, query } from '../services/blockchain'
 import identity from '../services/identity'
 import { BUILD_MODE, translated } from '../services/language'
 
@@ -28,14 +28,12 @@ export default function UtilitiesView() {
 
     useEffect(() => {
         let mounted = true
-        getConnection().then(({ api }) =>
-            api.query.sudo.key().then(result => {
-                if (!mounted) return
-                const adminAddress = ss58Encode(result)
-                const userIsAdmin = !!identity.find(adminAddress)
-                userIsAdmin && setIsAdmin(true)
-            })
-        )
+        getConnection().then(async ({ api }) => {
+            if (!mounted) return
+            const adminAddress = await query(api.query.sudo.key)
+            const userIsAdmin = !!identity.find(adminAddress)
+            userIsAdmin && setIsAdmin(true)
+        })
 
         return () => mounted = false
     }, [])

@@ -1,7 +1,7 @@
 import uuid from 'uuid'
-import DataStorage from '../utils/DataStorage'
-import { isObj, isStr, isValidNumber, isDefined } from '../utils/utils'
-import storage from './storage'
+import DataStorage from '../../utils/DataStorage'
+import { isObj, isStr, isValidNumber, isDefined } from '../../utils/utils'
+import storage from '../../services/storage'
 
 const key = 'history'
 const MODULE_KEY = 'totem_' + key

@@ -4,7 +4,7 @@ import { compactAddLength } from '@polkadot/util'
 import { ss58Encode } from '../utils/convert'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 import { getConnection } from '../services/blockchain'
-import { get as getIdentity } from '../services/identity'
+import { get as getIdentity, getSelected } from '../services/identity'
 
 // Translation not required
 const texts = {
@@ -86,7 +86,7 @@ export default class UpgradeForm extends Component {
             const { codeBytes } = this.state
             const { api, keyring } = await getConnection()
             // tx will fail if selected is not sudo identity
-            const adminAddress = ss58Encode(await api.query.sudo.key()) //getSelected().address
+            const adminAddress = ss58Encode(await api.query.sudo.key())  //getSelected().address
             const identity = getIdentity(adminAddress)
             this.setState({
                 message: {
@@ -97,8 +97,9 @@ export default class UpgradeForm extends Component {
                 submitDisabled: !!identity,
             })
             if (!identity) return
-
-            const adminPair = await keyring.getPair(adminAddress)
+            // add idenitity to keyring on demand
+            !keyring.contains(adminAddress) && keyring.add([identity.uri])
+            const adminPair = await keyring.keyring.getPair(adminAddress)
             const useNewVersion = api.tx.system && api.tx.system.setCode
             const { setCode } = useNewVersion ? api.tx.system : api.tx.consensus
             const proposal = await setCode(codeBytes)
@@ -129,6 +130,7 @@ export default class UpgradeForm extends Component {
                 })
             })
         } catch (err) {
+            console.error(err)
             this.setState({
                 message: {
                     content: `${err}`,

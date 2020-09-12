@@ -3,6 +3,7 @@ import { BehaviorSubject } from 'rxjs'
 import { Bond } from 'oo7'
 import { isDefined, isFn, isBool } from '../utils/utils'
 import storage from './storage'
+import { useRxSubject } from './react'
 
 const MODULE_KEY = 'window'
 let _forcedSize = ''
@@ -13,6 +14,8 @@ export const gridColumnsBond = new Bond().defaultTo(gridColumns())
 export const layoutBond = new Bond().defaultTo(getLayout())
 export const rxOnline = new BehaviorSubject()
 export const rxInverted = new BehaviorSubject(rw().inverted)
+export const rxLayout = new BehaviorSubject(getLayout())
+export const rxVisible = new BehaviorSubject(true)
 
 // forceLayout enforces and reverts a specific layout size and ignores layout change when window resizes
 //
@@ -46,18 +49,6 @@ export function gridColumns(numCol) {
     const value = isDefined(numCol) ? { gridColumns: numCol } : undefined
     value && gridColumnsBond.changed(numCol)
     return rw(value).gridColumns || 1
-}
-
-/**
- * @name inverted
- * @summary get/set inverted
- * @param {Boolean} inverted
- * @returns {Boolean} 
- */
-export const setInverted = inverted => {
-    const newValue = !isBool(inverted) ? undefined : { inverted }
-    newValue && rxInverted.next(inverted)
-    return rw(newValue).inverted
 }
 
 /**
@@ -102,17 +93,7 @@ export const toggleFullscreen = (selector) => {
 }
 
 export const useInverted = (reverse = false) => {
-    const [inverted, setInvertedLocal] = useState(setInverted())
-
-    useEffect(() => {
-        let mounted = true
-        const subscribed = rxInverted.subscribe(inverted => mounted && setInvertedLocal(inverted))
-        return () => {
-            mounted = false
-            subscribed.unsubscribe()
-        }
-    }, [])
-
+    const [inverted] = useRxSubject(rxInverted, false)
     if (!reverse) return inverted
 
     switch (`${reverse}`) {
@@ -128,15 +109,23 @@ export const useInverted = (reverse = false) => {
 }
 
 // set layout name on window resize 
-window.onresize = () => layoutBond.changed(getLayout())
+window.onresize = () => {
+    const layout = getLayout()
+    layoutBond.changed(layout)
+    rxLayout.next(layout)
+}
 window.addEventListener('online', () => rxOnline.next(true))
 window.addEventListener('offline', () => rxOnline.next(false))
-rxInverted.subscribe(inverted =>
-    document.getElementById('app')
-        .classList[inverted ? 'add' : 'remove']('inverted')
-)
-rxInverted.next(setInverted())
-
+let ignoredFirstInverted = false
+rxInverted.subscribe(inverted => {
+    ignoredFirstInverted && rw({ inverted })
+    ignoredFirstInverted = true
+    document.getElementById('app').classList[inverted ? 'add' : 'remove']('inverted')
+})
+document.addEventListener('visibilitychange', () => {
+    const visible = document.visibilityState === 'visible'
+    rxVisible.next(visible)
+})
 export default {
     MOBILE,
     DESKTOP,
@@ -149,5 +138,4 @@ export default {
     getLayout,
     getUrlParam,
     gridColumns,
-    setInverted,
 }
