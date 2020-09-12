@@ -8,7 +8,7 @@ import identityService from '../services/identity'
 import { translated } from '../services/language'
 import { getAllTags } from '../services/partner'
 
-const [words, wordsCap] = translated({
+const textsCap = translated({
     address: 'address',
     create: 'create',
     business: 'business',
@@ -20,18 +20,16 @@ const [words, wordsCap] = translated({
     seed: 'seed',
     tags: 'tags',
     update: 'update',
-}, true)
-const [texts] = translated({
-    identityNamePlaceholder: 'A name for the identity',
-    restoreInputLabel: 'Restore my existing identity',
-    seedExists: 'Seed already exists in the identity list',
-    seedPlaceholder: 'Enter existing seed or generate one',
-    tagsInputEmptyMessage: 'Enter tag and press enter to add, to tags list',
-    tagsPlaceholder: 'Enter tags',
-    uniqueNameRequired: 'Please enter an unique name',
-    usageType: 'Usage type',
-    validSeedRequired: 'Please enter a valid seed',
-})
+    identityNamePlaceholder: 'a name for the identity',
+    restoreInputLabel: 'restore my existing identity',
+    seedExists: 'seed already exists in the identity list with name:',
+    seedPlaceholder: 'enter existing seed or generate one',
+    tagsInputEmptyMessage: 'enter tag and press enter to add, to tags list',
+    tagsPlaceholder: 'enter tags',
+    uniqueNameRequired: 'please enter an unique name',
+    usageType: 'usage type',
+    validSeedRequired: 'please enter a valid seed',
+}, true)[1]
 
 export default class IdentityForm extends Component {
     constructor(props) {
@@ -46,7 +44,7 @@ export default class IdentityForm extends Component {
             message: props.message,
             onChange: (_, values) => this.values = values,
             onSubmit: this.handleSubmit,
-            submitText: wordsCap.create,
+            submitText: textsCap.create,
             success: false,
             inputs: [
                 {
@@ -54,14 +52,14 @@ export default class IdentityForm extends Component {
                     name: 'restore',
                     onChange: this.handleRestoreChange,
                     options: [
-                        { label: texts.restoreInputLabel, value: true },
+                        { label: textsCap.restoreInputLabel, value: true },
                     ],
                     type: 'Checkbox-group',
                 },
                 {
-                    label: wordsCap.name,
+                    label: textsCap.name,
                     name: 'name',
-                    placeholder: texts.identityNamePlaceholder,
+                    placeholder: textsCap.identityNamePlaceholder,
                     required: true,
                     validate: this.validateName,
                     value: '',
@@ -69,9 +67,9 @@ export default class IdentityForm extends Component {
                 {
                     bond: new Bond(),
                     hidden: true,
-                    label: wordsCap.seed,
+                    label: textsCap.seed,
                     name: 'uri',
-                    placeholder: texts.seedPlaceholder,
+                    placeholder: textsCap.seedPlaceholder,
                     readOnly: true,
                     required: true,
                     type: 'text',
@@ -82,12 +80,12 @@ export default class IdentityForm extends Component {
                     bond: new Bond(),
                     hidden: this.doUpdate && (this.values.uri || '').includes('/totem/'),
                     inline: true,
-                    label: texts.usageType,
+                    label: textsCap.usageType,
                     name: 'usageType',
                     onChange: (_, { usageType }) => this.updateSeed(this.values.uri, usageType),
                     options: [
-                        { label: wordsCap.personal, value: 'personal' },
-                        { label: wordsCap.business, value: 'business' }
+                        { label: textsCap.personal, value: 'personal' },
+                        { label: textsCap.business, value: 'business' }
                     ],
                     radio: true,
                     required: true,
@@ -95,16 +93,16 @@ export default class IdentityForm extends Component {
                 },
                 {
                     bond: this.addressBond,
-                    label: wordsCap.address,
+                    label: textsCap.address,
                     name: 'address',
                     type: 'hidden',
                     value: '',
                 },
                 {
                     allowAdditions: true,
-                    label: wordsCap.tags,
+                    label: textsCap.tags,
                     name: 'tags',
-                    noResultsMessage: texts.tagsInputEmptyMessage,
+                    noResultsMessage: textsCap.tagsInputEmptyMessage,
                     multiple: true,
                     onAddItem: this.handleAddTag,
                     options: arrUnique([...getAllTags(), ...(this.values.tags || [])]).map(tag => ({
@@ -112,7 +110,7 @@ export default class IdentityForm extends Component {
                         text: tag,
                         value: tag,
                     })),
-                    placeholder: texts.tagsPlaceholder,
+                    placeholder: textsCap.tagsPlaceholder,
                     type: 'dropdown',
                     search: true,
                     selection: true,
@@ -171,7 +169,7 @@ export default class IdentityForm extends Component {
 
     validateName = (_, { value: name }) => {
         const { address } = identityService.find(name) || {}
-        if (address && address !== this.values.address) return texts.uniqueNameRequired
+        if (address && address !== this.values.address) return textsCap.uniqueNameRequired
     }
 
     validateUri = (_, { value: seed }) => {
@@ -179,9 +177,10 @@ export default class IdentityForm extends Component {
         const { address } = seed && identityService.addFromUri(seed) || {}
         if (!address) {
             this.addressBond.changed('')
-            return texts.validSeedRequired
+            return textsCap.validSeedRequired
         }
-        if (identityService.find(address)) return texts.seedExists
+        const existing = identityService.find(address)
+        if (existing) return `${textsCap.seedExists} ${existing.name}`
         this.values.address = address
         this.addressBond.changed(address)
         if (seed.includes('/totem/')) {
@@ -199,9 +198,9 @@ export default class IdentityForm extends Component {
 
     render() {
         const { doUpdate, props, state, values: { restore } } = this
-        const action = doUpdate ? wordsCap.update : (restore ? wordsCap.restore : wordsCap.create)
+        const action = doUpdate ? textsCap.update : (restore ? textsCap.restore : textsCap.create)
         state.message = state.message || props.message
-        state.header = props.header || `${action} ${wordsCap.identity}`
+        state.header = props.header || `${action} ${textsCap.identity}`
         state.submitText = props.submitText || action
         return <FormBuilder {...{ ...props, ...state }} />
     }
