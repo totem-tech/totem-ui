@@ -6,7 +6,7 @@ import { keyring } from '../utils/polkadotHelper'
 import { objClean } from '../utils/utils'
 
 const DEFAULT_NAME = 'Default'
-const identities = new DataStorage('totem_identities')
+const identities = new DataStorage('totem_identities', true)
 export const rxIdentities = identities.rxData
 export const rxSelected = new BehaviorSubject()
 const USAGE_TYPES = Object.freeze({
@@ -54,7 +54,7 @@ export const remove = address => identities.delete(address)
 
 // add/update
 export const set = (address, identity = {}) => {
-    const { selected, type, uri, usageType } = identity
+    const { selected, type, usageType } = identity
     identity.type = type || 'sr25519'
     identity.selected = !!selected
     if (!Object.values(USAGE_TYPES).includes(usageType)) {

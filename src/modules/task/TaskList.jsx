@@ -29,7 +29,7 @@ const textsCap = translated({
     bounty: 'bounty',
     create: 'create',
     createdAt: 'created at',
-    createInvoice: 'create invoice',
+    createInvoice: 'mark as done',
     createInvoiceDesc: 'mark the task as done and create an invoice?',
     createInvoiceTitle: 'task - create invoice',
     description: 'description',
