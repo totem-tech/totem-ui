@@ -21,12 +21,10 @@
 #app > .mobile.sidebar-visible > .chat-container {
     display: none;
 }
-#app:not(.chat-visible) .chat-container,
-#app.chat-visible .chat-container.hiding {
+#app:not(.chat-visible) .chat-container{
     right: -410px;
 }
-#app:not(.chat-visible) .mobile .chat-container,
-#app.chat-visible .mobile .chat-container.hiding {
+#app:not(.chat-visible) .mobile .chat-container {
     right: -100%;
 }
 .mobile .chat-container {

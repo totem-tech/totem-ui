@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Button, Label } from 'semantic-ui-react'
-import { arrSort, textEllipsis } from '../../utils/utils'
+import { arrSort, deferred, textEllipsis } from '../../utils/utils'
 import FormInput from '../../components/FormInput'
 import Message from '../../components/Message'
 import client, { getUser } from '../../services/chatClient'
@@ -9,21 +9,21 @@ import { confirm, showForm } from '../../services/modal'
 import { MOBILE, getLayout } from '../../services/window'
 import {
     createInbox,
-    expandedBond,
+    rxExpanded,
     getMessages,
     inboxSettings,
     inboxesSettings,
-    inboxListBond,
-    openInboxBond,
+    rxInboxListChanged,
+    rxOpenInboxKey,
     removeInboxMessages,
     removeInbox,
     SUPPORT,
     TROLLBOX,
-    userStatusBond,
+    rxUsersOnline,
     jumpToMessage,
-    unreadCountBond,
 } from './chat'
 import NewInboxForm, { editName } from './NewInboxForm'
+import { unsubscribe, useRxSubject } from '../../services/react'
 
 const ALL_ONLINE = 'green'
 const SOME_ONLINE = 'yellow'
@@ -138,7 +138,7 @@ export default function InboxList() {
     const [showAll, setShowAllOrg] = useState(false)
     const [items, setItems] = useState(filterInboxes(query, showAll))
     const setShowAll = showAll => {
-        expandedBond.changed(false)
+        rxExpanded.next(false)
         // update list 
         setItems(filterInboxes(query, showAll))
         setShowAllOrg(showAll)
@@ -146,16 +146,11 @@ export default function InboxList() {
 
     useEffect(() => {
         let mounted = true
-        const tieId = inboxListBond.tie(() => {
-            mounted && setItems(filterInboxes(query, showAll))
-        })
-        const tieIdUnreadCount = unreadCountBond.tie(() => {
-            mounted && setItems(filterInboxes(query, showAll))
-        })
+        const subscriptions = {}
+        subscriptions.inboxList = rxInboxListChanged.subscribe(() => mounted && setItems(filterInboxes(query, showAll)))
         return () => {
             mounted = false
-            inboxListBond.untie(tieId)
-            unreadCountBond.untie(tieIdUnreadCount)
+            unsubscribe(subscriptions)
         }
     }, [query, showAll])
     return (
@@ -163,13 +158,13 @@ export default function InboxList() {
             className: 'inbox-list',
             style: {
                 // full height if no inbox is selected
-                height: openInboxBond._value ? undefined : '100%'
+                height: rxOpenInboxKey.value ? undefined : '100%'
             },
         }}>
             <ToolsBar {...{
                 query,
                 onSeachChange: (_, { value }) => {
-                    expandedBond._value && expandedBond.changed(false)
+                    rxExpanded.value && rxExpanded.next(false)
                     setQuery(value)
                     setItems(filterInboxes(value, showAll))
                 },
@@ -179,7 +174,7 @@ export default function InboxList() {
             <div className='list'>
                 {items.map(item => <InboxListItem {...{
                     ...item,
-                    active: openInboxBond._value === item.inboxKey,
+                    active: rxOpenInboxKey.value === item.inboxKey,
                     key: JSON.stringify(item),
                     query,
                 }} />)}
@@ -190,8 +185,8 @@ export default function InboxList() {
     )
 }
 
-const onlineStatus = (online = {}, userIds = []) => {
-    if (!online) return OFFLINE
+const getStatusColor = (online = {}, userIds = []) => {
+    if (!online || !userIds.length) return OFFLINE
     const numOnline = userIds.filter(id => online[id]).length
     return !numOnline ? OFFLINE : (
         numOnline === userIds.length ? ALL_ONLINE : SOME_ONLINE
@@ -212,7 +207,11 @@ const InboxListItem = React.memo(({
 }) => {
     query = query.trim().toLowerCase()
     const [userIds] = useState(inboxKey.split(',').filter(id => ![userId, TROLLBOX].includes(id)))
-    const [status, setStatus] = useState(onlineStatus(userStatusBond._value, userIds))
+    const [status] = useRxSubject(
+        userIds.length === 0 ? [OFFLINE] : rxUsersOnline,
+        true,
+        online => getStatusColor(online, userIds),
+    )
     const isTrollbox = inboxKey === TROLLBOX
     const receiverIds = inboxKey.split(',')
     const isSupport = receiverIds.includes(SUPPORT)
@@ -225,34 +224,19 @@ const InboxListItem = React.memo(({
     const { id: msgId, message: msgText, senderId, } = message || {}
     const qIndex = !msgText ? -1 : msgText.toLowerCase().indexOf(query)
 
-    userIds.length > 0 && useEffect(() => {
-        let mounted = true
-        let firstIgnored = false
-        const tieId = userStatusBond.tie((online = {}) => {
-            if (!mounted || !online) return
-            if (!firstIgnored) return firstIgnored = true
-            const newStatus = onlineStatus(online, userIds)
-            status !== newStatus && setStatus(newStatus)
-        })
-        return () => {
-            mounted = false
-            tieId && userStatusBond.untie(tieId)
-        }
-    }, [status])
-
     return (
         <div {...{
             className: 'list-item' + (active ? ' active' : ''),
             onClick: () => {
                 const isMobile = getLayout() === MOBILE
-                const isOpen = openInboxBond._value === inboxKey
+                const isOpen = rxOpenInboxKey.value === inboxKey
 
                 // inbox already open => toggle expanded
-                if (isMobile && isOpen) return expandedBond.changed(!expandedBond._value)
-                const key = openInboxBond._value === inboxKey ? null : inboxKey
+                if (isMobile && isOpen) return rxExpanded.next(!rxExpanded.value)
+                const key = rxOpenInboxKey.value === inboxKey ? null : inboxKey
                 key && createInbox(key.split(','))
-                openInboxBond.changed(key)
-                isMobile && expandedBond.changed(true)
+                rxOpenInboxKey.next(key)
+                isMobile && rxExpanded.next(true)
             }
         }}>
             <div className='left'>
@@ -334,7 +318,7 @@ const ToolsBar = React.memo(({ query, onSeachChange, showAll, toggleShowAll }) =
                         icon: 'edit',
                         key: 'new',
                         onClick: () => showForm(NewInboxForm, {
-                            onSubmit: (ok, { inboxKey }) => ok && openInboxBond.changed(inboxKey)
+                            onSubmit: (ok, { inboxKey }) => ok && rxOpenInboxKey.next(inboxKey)
                         }),
                         style: { textAlign: 'right' }
                     }
@@ -373,7 +357,7 @@ const InboxActions = React.memo(({ inboxKey, isGroup, isSupport, isTrollbox, isE
                 content: textsCap.archiveConversation,
                 onConfirm: () => {
                     inboxSettings(inboxKey, { hide: true })
-                    openInboxBond.changed(null)
+                    rxOpenInboxKey.next(null)
                 },
                 size: 'mini'
             }),
@@ -396,7 +380,7 @@ const InboxActions = React.memo(({ inboxKey, isGroup, isSupport, isTrollbox, isE
                 isEmpty ? removeInbox(inboxKey) : confirm({
                     confirmButton: <Button negative content={textsCap.trash} />,
                     header: textsCap.removeConversation,
-                    onConfirm: () => removeInbox(inboxKey) | openInboxBond.changed(null),
+                    onConfirm: () => removeInbox(inboxKey) | rxOpenInboxKey.next(null),
                     size: 'mini',
                 })
             },

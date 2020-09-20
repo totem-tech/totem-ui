@@ -1,17 +1,27 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { Icon } from 'semantic-ui-react'
+import { isArr, isValidNumber } from '../utils/utils'
 import Currency from './Currency'
-import { ss58Decode } from '../utils/convert'
 import { query } from '../services/blockchain'
+import { translated } from '../services/language'
+import { unsubscribe } from '../services/react'
+
+const textsCap = translated({
+    lockedAmount: 'locked amount'
+}, true)[1]
 
 export const Balance = (props) => {
     const { address, emptyMessage } = props
     const balance = useBalance(address)
+    const locks = userLocks(address)
+    const lockedBalance = locks.reduce((sum, next) => sum + next.amount, 0)
+    const freeBalance = !isValidNumber(balance) ? undefined : balance - lockedBalance
 
     return <Currency {...{
         ...props,
-        value: balance,
+        title: lockedBalance && `${textsCap.lockedAmount}: ${lockedBalance} XTX`,// use conversion??
+        value: freeBalance,
         emptyMessage: emptyMessage === null ? '' : (
             <span>
                 <Icon
@@ -36,23 +46,26 @@ Balance.propTypes = {
 export default React.memo(Balance)
 
 /**
- * @name useBalance
+ * @name    useBalance
  * @summary custom React hook to retrieve identity balance and subscribe to changes
- * @param {String} address user identity
  * 
- * @returns {Number} account balance amount in XTX
+ * @param   {String|Array}  address user identity
+ * 
+ * @returns {Number|Array} account balance amount in XTX
  */
-export function useBalance(address) {
-    const [value, setValue] = useState()
+export const useBalance = (address) => {
+    const [balance, setBalance] = useState()
+
     useEffect(() => {
-        if (!ss58Decode(address)) return () => { }
+        if (!address) return () => { }
         let mounted = true
-        let unsubscribe = null
+        let subscriptions = {}
         // subscribe to address balance change
         const subscribe = async () => {
-            unsubscribe = await query(
+            subscriptions.balance = await query(
                 'api.query.balances.freeBalance',
-                [address, value => mounted && setValue(value)],
+                [address, balance => mounted && setBalance(balance)],
+                isArr(address),
             )
         }
 
@@ -60,14 +73,56 @@ export function useBalance(address) {
         subscribe().catch(() => { })
         return () => {
             mounted = false
-            unsubscribe && unsubscribe()
+            unsubscribe(subscriptions)
         }
     }, [address])
 
-    return value
+    return balance
 }
 useBalance.propTypes = {
-    address: PropTypes.string.isRequired,
+    address: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.arrayOf(PropTypes.string),
+    ]).isRequired,
 }
 
-export const useBalances = (addresses = []) => addresses.map(address => useBalance(address))
+/**
+ * @name    userLocks
+ * @summary custom React hook to retrieve locked balances by identity and subscribe to changes
+ *
+ * @param   {String|Array}  address user identity
+ *
+ * @returns {Object|Array}
+ */
+export const userLocks = (address) => {
+    const [locks, setLocks] = useState([])
+
+    useEffect(() => {
+        if (!address) return () => { }
+        let mounted = true
+        let subscriptions = {}
+        const subscribe = async () => {
+            subscriptions.locks = await query(
+                'api.query.balances.locks',
+                [address, locks => mounted && setLocks(locks)],
+                isArr(address),
+            )
+        }
+
+        // ignore error
+        subscribe().catch(() => { })
+
+        return () => {
+            mounted = false
+            unsubscribe(subscriptions)
+        }
+    }, [address])
+
+    return locks
+}
+userLocks.propTypes = {
+    address: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.arrayOf(PropTypes.string),
+    ]).isRequired,
+}

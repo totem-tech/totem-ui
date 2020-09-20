@@ -1,7 +1,7 @@
 // placeholder for reusable React utility functions that doesn't doesn't specifically fit anywhere else
-
 import { useState, useEffect } from "react"
-import { isFn, isObj } from "../utils/utils"
+import PromisE from "../utils/PromisE"
+import { isAsyncFn, isFn, isObj } from "../utils/utils"
 
 // for use with useReducer hook on a functional component to imitate the behaviour of `setState()` of a class component
 export const reducer = (state = {}, newValue = {}) => ({ ...state, ...newValue })
@@ -19,23 +19,42 @@ export const unsubscribe = (subscriptions = {}) => Object.values(subscriptions).
     } catch (e) { } // ignore
 })
 
-export const useRxSubject = (subject, ignoreFirst, onBeforeSetValue) => {
-    if (!isObj(subject)) return
+/**
+ * @name    useRxSubject
+ * @summary custom React hook for use with RxJS subjects
+ * 
+ * @param   {BehaviorSubject|Subject}   subject RxJS subject to subscribe to. 
+ *                 If not object or doesn't have subcribe function will assume subject to be a static value.
+ * @param   {Boolean}   ignoreFirst whether to ignore first change. 
+ *                  Setting `true`, will prevent an additional state update after first load.
+ * @param   {Function}  onBeforeSetValue (optional) value modifier. 
+ *                  If an async function is supplied, `ignoreFirst` will be assumed `false`.
+ * @param   {*} initialValue (optional) initial value where appropriate
+ * 
+ * @returns {Array} [value, setvalue]
+ */
+export const useRxSubject = (subject, ignoreFirst, onBeforeSetValue, initialValue) => {
+    if (!isObj(subject) || !isFn(subject.subscribe)) return subject
+    const isAnAsyncFn = isAsyncFn(onBeforeSetValue)
     const [value, setValue] = useState(() => {
-        const value = subject.value
-        if (!isFn(onBeforeSetValue)) return value
-        return onBeforeSetValue(value) || value
+        if (initialValue || isAnAsyncFn) return initialValue
+        let value = !isFn(onBeforeSetValue) ? subject.value : onBeforeSetValue(subject.value)
+        if (value === useRxSubject.IGNORE_UPDATE) return initialValue
+        return value
     })
 
     useEffect(() => {
         let mounted = true
-        let ignoredFirst = !!ignoreFirst ? false : true
-        const subscribed = subject.subscribe(newValue => {
+        let ignoredFirst = !isAnAsyncFn && !!ignoreFirst ? false : true
+        const subscribed = subject.subscribe(async (newValue) => {
             if (!mounted || !ignoredFirst) {
                 ignoredFirst = true
                 return
             }
-            if (isFn(onBeforeSetValue)) newValue = onBeforeSetValue(newValue) || newValue
+            if (!isFn(onBeforeSetValue)) return setValue(newValue)
+
+            newValue = await PromisE(onBeforeSetValue(newValue))
+            if (!mounted || newValue === useRxSubject.IGNORE_UPDATE) return
             setValue(newValue)
         })
         return () => subscribed.unsubscribe()
@@ -43,3 +62,5 @@ export const useRxSubject = (subject, ignoreFirst, onBeforeSetValue) => {
 
     return [value, newValue => subject.next(newValue)]
 }
+// return this in onBeforeSetValue
+useRxSubject.IGNORE_UPDATE = Symbol('ignore-rx-subject-update')

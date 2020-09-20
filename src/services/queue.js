@@ -3,9 +3,10 @@
  */
 import React from 'react'
 import uuid from 'uuid'
+import { BehaviorSubject, Subject } from 'rxjs'
 import DataStorage from '../utils/DataStorage'
 import { signAndSend } from '../utils/polkadotHelper'
-import { isArr, isFn, isObj, isStr, objClean, isValidNumber } from '../utils/utils'
+import { isArr, isFn, isObj, isStr, objClean, isValidNumber, isError } from '../utils/utils'
 // services
 import { getClient } from './chatClient'
 import { getConnection, query, getCurrentBlock } from './blockchain'
@@ -43,6 +44,7 @@ const textsCap = translated({
         sender identity, recipient identity and amount`,
 }, true)[1]
 const queue = new DataStorage('totem_queue-data', false)
+export const rxOnSave = new BehaviorSubject()
 /* Queue statuses */
 // indicates task failed
 const ERROR = 'error'
@@ -161,9 +163,10 @@ const VALID_KEYS = Object.freeze([
     //                          Only root task's toast ID will be used. Child tasks will inherit the root's toast ID.
     'toastId',
 
-    // @txId            string: (optional) for supported Blockchain translations, include a "Transaction ID" (hex of 
-    //                          an UUID after stripping off the dashes). The @txId will be used to verify the status of 
-    //                          the transaction, in case, user leaves the page befor the transaction is completed.
+    // @txId            string: (optional) for Blockchain translations, include a "Transaction ID" (a hash of 
+    //                          an UUID and address combined). The @txId will be used to verify the status of 
+    //                          the a transaction, in case, user leaves the page befor the transaction is completed.
+    //                          For non-Blockchain tasks (eg: for chat client), can be used for external reference.
     'txId',
 
     // @type            string: name of the service. Currently supported: blockchain, chatclient
@@ -606,19 +609,15 @@ const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, du
     const isSuccess = status === SUCCESS
     const isSuspended = status === SUSPENDED
     task.status = status
-    task.errorMessage = isStr(errMsg) ? errMsg : (
-        errMsg instanceof Error ? `${errMsg}` : null
+    task.errorMessage = !errMsg || isStr(errMsg) ? errMsg : (
+        isError(errMsg) ? `${errMsg}` : JSON.stringify(errMsg, null, 4)
     )
     const hasError = status === ERROR && task.errorMessage
     hasError && msg.content.unshift(task.errorMessage)
-    if (!isSuspended) {
-        // no need to display toast if status is suspended
-        task.toastId = setMessage(task, msg, duration, toastId, silent)
-    }
-    if (balance) {
-        // store account balance before and after TX
-        task.balance = { ...task.balance, ...balance }
-    }
+    // no need to display toast if status is suspended
+    task.toastId = !isSuspended ? toastId : setMessage(task, msg, duration, toastId, silent)
+    // store account balance before and after TX
+    task.balance = { ...task.balance, ...balance }
 
     switch (status) {
         case LOADING:
@@ -652,7 +651,7 @@ const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, du
         task.result,
         task.txId,
     )
-
+    rxOnSave.next({ rootTask, task })
     if (!done) return
 
     try {
@@ -665,7 +664,7 @@ const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, du
     // execute next only if current task is successful
     if (isSuccess && isObj(task.next)) return _processTask(task.next, id, toastId)
 
-    // delete root item if no error occured
+    // execution complete -> delete entire queue chain
     queue.delete(id)
 }
 
@@ -696,4 +695,5 @@ export default {
     queue,
     QUEUE_TYPES,
     resumeQueue,
+    rxOnSave,
 }

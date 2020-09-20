@@ -2,7 +2,7 @@ import { textEllipsis, arrUnique } from '../utils/utils'
 import DataStorage from '../utils/DataStorage'
 import identities from './identity'
 
-const partners = new DataStorage('totem_partners', true)
+const partners = new DataStorage('totem_partners')
 export const rxPartners = partners.rxData
 
 export const get = address => partners.get(address)

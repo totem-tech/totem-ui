@@ -3,10 +3,10 @@ import { BehaviorSubject } from 'rxjs'
 import { generateMnemonic } from 'bip39'
 import DataStorage from '../utils/DataStorage'
 import { keyring } from '../utils/polkadotHelper'
-import { objClean } from '../utils/utils'
+import { isObj, objClean } from '../utils/utils'
 
 const DEFAULT_NAME = 'Default'
-const identities = new DataStorage('totem_identities', true)
+const identities = new DataStorage('totem_identities')
 export const rxIdentities = identities.rxData
 export const rxSelected = new BehaviorSubject()
 const USAGE_TYPES = Object.freeze({
@@ -53,7 +53,9 @@ export const find = addressOrName => identities.find({ address: addressOrName, n
 export const remove = address => identities.delete(address)
 
 // add/update
-export const set = (address, identity = {}) => {
+export const set = (address, identity) => {
+    if (!isObj(identity)) return
+    identity = objClean(identity, VALID_KEYS)
     const { selected, type, usageType } = identity
     identity.type = type || 'sr25519'
     identity.selected = !!selected

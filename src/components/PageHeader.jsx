@@ -13,8 +13,8 @@ import { getSelected, setSelected, rxIdentities } from '../services/identity'
 import { getSelected as getSelectedLang, translated } from '../services/language'
 import { showForm } from '../services/modal'
 import {
-	unreadCountBond as unreadMsgCountBond,
-	visibleBond as chatVisibleBond,
+	rxUnreadCount as rxUnreadMsgCount,
+	rxVisible as rxChatVisible,
 } from '../modules/chat/chat'
 import {
 	newNotificationBond,
@@ -22,11 +22,11 @@ import {
 	unreadCountBond as unreadNotifCountBond,
 } from '../modules/notification/notification'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import { unsubscribe, useRxSubject } from '../services/react'
 import { toggleSidebarState, setActive } from '../services/sidebar'
 import timeKeeping from '../services/timeKeeping'
 import { setToast } from '../services/toast'
 import { useInverted, rxInverted } from '../services/window'
-import { unsubscribe } from '../services/react'
 
 const textsCap = translated({
 	addressCopied: 'your identity copied to clipboard',
@@ -135,7 +135,7 @@ const PageHeaderView = props => {
 	} = props
 	const selected = getSelected() || {}
 	const buttons = <HeaderMenuButtons {...{ isLoggedIn, isMobile, isRegistered }} />
-	const walletOptions = arrSort(wallets, 'name')
+	const walletOptions = arrSort(wallets || [], 'name')
 		.map(({ address, name }) => ({
 			key: address,
 			text: (
@@ -183,10 +183,10 @@ const PageHeaderView = props => {
 					labeled
 					onChange={onSelection}
 					onClick={() => notifVisibleBond.changed(false)}
+					options={walletOptions}
+					style={{ paddingRight: 0 }}
 					text={textEllipsis(selected.name, isMobile ? 25 : 50, 3, false)}
 					value={selected.address}
-					style={{ paddingRight: 0 }}
-					options={walletOptions}
 				/>
 				<Dropdown
 					item
@@ -258,7 +258,7 @@ const PageHeaderView = props => {
 
 export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 	const [timerInProgress, setTimerActive] = useState(timeKeeping.formData().inprogress)
-	const [unreadMsgCount, setUnreadMsgCount] = useState(unreadMsgCountBond._value)
+	const [unreadMsgCount] = useRxSubject(rxUnreadMsgCount, true)
 	const [unreadNotifCount, setUnreadNotifCount] = useState(unreadNotifCountBond._value)
 	const [notifBlink, setNotifBlink] = useState(false)
 	const countStyle = {
@@ -274,7 +274,6 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 
 	useEffect(() => {
 		const tieIdTimer = timeKeeping.formDataBond.tie(() => setTimerActive(!!timeKeeping.formData().inprogress))
-		const tieIdUnreadMsg = unreadMsgCountBond.tie(unread => setUnreadMsgCount(unread))
 		const tieIdUnreadNotif = unreadNotifCountBond.tie(unread => setUnreadNotifCount(unread))
 		const tieIdNew = newNotificationBond.tie(() => {
 			setNotifBlink(true)
@@ -283,7 +282,6 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 
 		return () => {
 			timeKeeping.formDataBond.untie(tieIdTimer)
-			unreadMsgCountBond.untie(tieIdUnreadMsg)
 			unreadNotifCountBond.untie(tieIdUnreadNotif)
 			newNotificationBond.untie(tieIdNew)
 		}
@@ -324,7 +322,7 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 			</Menu.Item>
 
 			<Menu.Item onClick={() => {
-				chatVisibleBond.changed(!chatVisibleBond._value)
+				rxChatVisible.next(!rxChatVisible.value)
 				notifVisibleBond.changed(false)
 			}}>
 				<Icon {...{

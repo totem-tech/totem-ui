@@ -7,21 +7,22 @@ import FormInput from '../../components/FormInput'
 import { UserID } from '../../components/buttons'
 import {
     createInbox,
-    expandedBond,
+    getInboxUserIds,
     getMessages,
-    openInboxBond,
+    inboxSettings,
+    rxExpanded,
+    rxMsg,
+    rxOpenInboxKey,
     send,
     SUPPORT,
     TROLLBOX,
-    newMsgBond,
-    inboxSettings,
-    getInboxUserIds,
 } from './chat'
 import client, { getUser, rxIsLoggedIn } from '../../services/chatClient'
 import { translated } from '../../services/language'
 import Message from '../../components/Message'
 import { getInboxName } from './InboxList'
 import { getLayout, MOBILE } from '../../services/window'
+import { unsubscribe } from '../../services/react'
 
 const [texts, textsCap] = translated({
     close: 'close',
@@ -39,6 +40,33 @@ const [texts, textsCap] = translated({
     you: 'you',
 }, true)
 
+const msgsSelector = '.chat-container .inbox .messages'
+const scrollBtnSelector = '.chat-container .inbox .scroll-to-bottom'
+// scroll to bottom of the message list
+const scrollToBottom = (animate = false, force = false) => setTimeout(() => {
+    const msgsEl = document.querySelector(msgsSelector)
+    const btnWrapEl = document.querySelector(scrollBtnSelector)
+    const isMobile = getLayout() === MOBILE
+    const expanded = document.getElementById('app').classList.value.includes('inbox-expanded')
+    // prevent scroll if scroll button is visible and not forced
+    if (btnWrapEl.classList.value.includes('visible') && !force) return
+    const animateClass = 'animate-scroll'
+    animate && msgsEl.classList.add(animateClass)
+    msgsEl && msgsEl.scrollTo(0, msgsEl.scrollHeight)
+    setTimeout(() => {
+        msgsEl.classList.remove(animateClass)
+        // mark inbox as read
+        if (!isMobile || expanded) inboxSettings(rxOpenInboxKey.value, { unread: 0 })
+    }, 500)
+})
+// on message list scroll show/hide scroll button
+const handleScroll = () => {
+    const { scrollHeight, scrollTop, offsetHeight } = document.querySelector(msgsSelector) || {}
+    const showBtn = (scrollHeight - offsetHeight - scrollTop) > offsetHeight
+    const btnWrapEl = document.querySelector(scrollBtnSelector)
+    btnWrapEl.classList[showBtn ? 'add' : 'remove']('visible')
+}
+
 export default function Inbox(props) {
     let { inboxKey, receiverIds } = props
     if (!inboxKey) return ''
@@ -47,37 +75,12 @@ export default function Inbox(props) {
     const isTrollbox = receiverIds.includes(TROLLBOX)
     const isGroup = receiverIds.length > 1 || isTrollbox
     const isMobile = getLayout() === MOBILE
-    const msgsSelector = '.chat-container .inbox .messages'
-    const scrollBtnSelector = '.chat-container .inbox .scroll-to-bottom'
-    // scroll to bottom of the message list
-    const scrollToBottom = (animate = false, force = false) => setTimeout(() => {
-        const msgsEl = document.querySelector(msgsSelector)
-        const btnWrapEl = document.querySelector(scrollBtnSelector)
-        const isMobile = getLayout() === MOBILE
-        const expanded = document.getElementById('app').classList.value.includes('inbox-expanded')
-        // prevent scroll if scroll button is visible and not forced
-        if (btnWrapEl.classList.value.includes('visible') && !force) return
-        const animateClass = 'animate-scroll'
-        animate && msgsEl.classList.add(animateClass)
-        msgsEl && msgsEl.scrollTo(0, msgsEl.scrollHeight)
-        setTimeout(() => {
-            msgsEl.classList.remove(animateClass)
-            // mark inbox as read
-            if (!isMobile || expanded) inboxSettings(inboxKey, { unread: 0 })
-        }, 500)
-    })
-    // on message list scroll show/hide scroll button
-    const handleScroll = () => {
-        const { scrollHeight, scrollTop, offsetHeight } = document.querySelector(msgsSelector) || {}
-        const showBtn = (scrollHeight - offsetHeight - scrollTop) > offsetHeight
-        const btnWrapEl = document.querySelector(scrollBtnSelector)
-        btnWrapEl.classList[showBtn ? 'add' : 'remove']('visible')
-    }
 
     useEffect(() => {
         let mounted = true
+        const subscriptions = {}
         // whenever a new message for current inbox is retrieved update message list
-        const tieId = newMsgBond.tie(([key]) => {
+        subscriptions.newMsg = rxMsg.subscribe(([key]) => {
             if (!mounted || key !== inboxKey) return
             setMessages(getMessages(inboxKey))
             scrollToBottom()
@@ -87,7 +90,7 @@ export default function Inbox(props) {
 
         return () => {
             mounted = false
-            newMsgBond.untie(tieId)
+            unsubscribe(subscriptions)
         }
     }, []) // keep [] to prevent useEffect from being invoked on every render
 
@@ -144,7 +147,7 @@ const InboxHeader = ({ inboxKey, isGroup, isMobile, setShowMembers, showMembers 
         className: 'header',
         onClick: () => {
             if (!isMobile) return
-            expandedBond.changed(!expandedBond._value)
+            rxExpanded.next(!rxExpanded.value)
             setShowMembers(false)
         },
     }}>
@@ -164,16 +167,16 @@ const InboxHeader = ({ inboxKey, isGroup, isMobile, setShowMembers, showMembers 
                         name: showMembers ? 'undo' : 'group',
                         onClick: e => {
                             e.stopPropagation()
-                            const doExpand = isMobile && !expandedBond._value
+                            const doExpand = isMobile && !rxExpanded.value
                             setShowMembers(!showMembers)
-                            doExpand && expandedBond.changed(true)
+                            doExpand && rxExpanded.next(true)
                         },
                         title: showMembers ? textsCap.returnToInbox : textsCap.showMembers
                     }} />
                 )}
                 <i {...{
                     className: 'expand icon',
-                    onClick: e => e.stopPropagation() | expandedBond.changed(!expandedBond._value),
+                    onClick: e => e.stopPropagation() | rxExpanded.next(!rxExpanded.value),
                     title: textsCap.showConvList,
                 }} />
             </div>
@@ -219,7 +222,7 @@ const MemberList = ({ inboxKey, isTrollbox, receiverIds }) => {
                                     {!isSelf && (
                                         <Button {...{
                                             className: 'button-action',
-                                            onClick: () => openInboxBond.changed(createInbox([memberId])),
+                                            onClick: () => rxOpenInboxKey.next(createInbox([memberId])),
                                             content: textsCap.pmBtnTitle,
                                             icon: 'chat',
                                             labelPosition: 'right',

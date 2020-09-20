@@ -1,9 +1,9 @@
 import DataStorage from '../../utils/DataStorage'
 import uuid from 'uuid'
-import { Bond } from 'oo7'
+import { BehaviorSubject, Subject } from 'rxjs'
 import { arrUnique, isObj, isValidNumber, isDefined, objClean } from '../../utils/utils'
-import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import client, { getUser, rxIsLoggedIn } from '../../services/chatClient'
+import { addToQueue, QUEUE_TYPES, rxOnSave, statuses } from '../../services/queue'
 import storage from '../../services/storage'
 import { getLayout, MOBILE } from '../../services/window'
 
@@ -15,43 +15,46 @@ export const TROLLBOX = 'everyone'
 export const TROLLBOX_ALT = 'trollbox' // alternative ID for trollbox
 export const SUPPORT = 'support'
 // messages storage
-const chatHistory = new DataStorage(PREFIX + MODULE_KEY, true)
+const chatHistory = new DataStorage(PREFIX + MODULE_KEY) //, true
 export const rxChatHistory = chatHistory.rxData
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 // inbox expanded view
-export const expandedBond = new Bond().defaultTo(false)
 // notifies when new conversation is created, hidden or unhidden
-export const inboxListBond = new Bond()
-export const newMsgBond = new Bond() // value : [inboxkey, unique id]
-export const openInboxBond = new Bond().defaultTo(rw().openInboxKey)
-export const pendingMessages = {}
-export const unreadCountBond = new Bond().defaultTo(getUnreadCount())
+const initialSettings = rw()
+export const rxInboxListChanged = new Subject()
+export const rxPendingMsgIds = new BehaviorSubject([])
+export const rxMsg = new Subject() // value : [inboxkey: string, msg: object]
+export const rxUnreadCount = new BehaviorSubject(getUnreadCount())
+export const rxOpenInboxKey = new BehaviorSubject(initialSettings.openInboxKey)
+export const rxExpanded = new BehaviorSubject(false)
 // stores and notifies of online status changes of chat User IDs.
-export const userStatusBond = new Bond()
-export const visibleBond = new Bond().defaultTo(!!rw().visible)
+export const rxUsersOnline = new BehaviorSubject()
+export const rxVisible = new BehaviorSubject(!!initialSettings.visible)
 
-// checks and updates userStatusBond with online status of all inbox User IDs, excluding TROLLBOX and SUPPORT
+// checks and updates rxUsersOnline with online status of all inbox User IDs, excluding TROLLBOX and SUPPORT
 export const checkOnlineStatus = () => {
+    if (checkOnlineStatus.updatePromise) return
     const { id: userId } = getUser() || {}
     // unregistered user
     if (!userId) return
     let keys = Object.keys(inboxesSettings() || {})
     const excludedIds = [userId, TROLLBOX]
-    const inboxUserIds = keys.map(key => key.split(',').filter(id => !excludedIds.includes(id)))
-    const userIds = arrUnique(inboxUserIds.flat())
-    if (!userIds.length) {
-        userStatusBond.changed()
-        return
-    }
-    client.isUserOnline(userIds, (err, online = {}) => {
-        if (err) console.log('Failed to check user online status. ', err)
+    const userIds = arrUnique(keys.map(key => key.split(',')).flat())
+        .filter(id => id && !excludedIds.includes(id))
+        .sort()
+    if (!userIds.length) return rxUsersOnline.next(null)
+
+    checkOnlineStatus.updatePromise = client.isUserOnline.promise(userIds)
+
+    checkOnlineStatus.updatePromise.then((online = {}) => {
+        checkOnlineStatus.updatePromise = null
         // current user is online
         online[userId] = true
         // check if value changed
-        if (JSON.stringify(online) === JSON.stringify(userStatusBond._value)) return
-        userStatusBond.changed(online)
-    })
+        if (JSON.stringify(online) === JSON.stringify(rxUsersOnline.value)) return
+        rxUsersOnline.next(online)
+    }, err => console.log('Failed to check user online status. ', err))
 }
 
 // create/get inbox key
@@ -68,9 +71,9 @@ export const createInbox = (receiverIds = [], name, setOpen = false) => {
     !chatHistory.get(inboxKey) && chatHistory.set(inboxKey, [])
     inboxSettings(inboxKey, settings)
     if (setOpen) {
-        openInboxBond.changed(inboxKey)
-        visibleBond.changed(true)
-        getLayout() === MOBILE && expandedBond.changed(true)
+        rxOpenInboxKey.next(inboxKey)
+        rxVisible.next(true)
+        getLayout() === MOBILE && rxExpanded.next(true)
     }
     return inboxKey
 }
@@ -100,10 +103,7 @@ export const getInboxKey = receiverIds => {
         .join()
 }
 
-export const getMessages = inboxKey => !inboxKey ? chatHistory.getAll() : [
-    ...chatHistory.get(inboxKey) || [],
-    ...(pendingMessages[inboxKey] || [])
-]
+export const getMessages = inboxKey => !inboxKey ? chatHistory.getAll() : [...chatHistory.get(inboxKey)]
 
 // get list of User IDs by inbox key
 export const getInboxUserIds = inboxKey => arrUnique((chatHistory.get(inboxKey) || []).map(x => x.senderId))
@@ -137,10 +137,10 @@ export function inboxSettings(inboxKey, value) {
     rw({ inbox: settings })
 
     // update unread count bond
-    newSettings.unread !== oldSettings.unread && unreadCountBond.changed(getUnreadCount())
+    newSettings.unread !== oldSettings.unread && rxUnreadCount.next(getUnreadCount())
     const keys = ['deleted', 'hide', 'name', 'unread', 'lastMessageTS']
     const changed = JSON.stringify(objClean(oldSettings, keys)) !== JSON.stringify(objClean(newSettings, keys))
-    changed && inboxListBond.changed(uuid.v1())
+    changed && rxInboxListChanged.next(uuid.v1())
 
     return oldSettings || {}
 }
@@ -151,13 +151,13 @@ export const inboxesSettings = () => rw().inbox || {}
 // Jump to a specific message within an inbox. will hightlight and blink the message
 export const jumpToMessage = (inboxKey, msgId) => {
     const isMobile = getLayout() === MOBILE
-    if (openInboxBond._value !== inboxKey) {
+    if (rxOpenInboxKey.value !== inboxKey) {
         // makes sure inbox is not deleted or archived
         createInbox(inboxKey.split(','))
         // open this inbox
-        openInboxBond.changed(inboxKey)
+        rxOpenInboxKey.next(inboxKey)
     }
-    isMobile && !expandedBond._value && expandedBond.changed(true)
+    isMobile && !rxExpanded.value && rxExpanded.next(true)
     // scroll to highlighted message
     setTimeout(() => {
         const msgEl = document.getElementById(msgId)
@@ -176,11 +176,11 @@ export const jumpToMessage = (inboxKey, msgId) => {
 export const removeInbox = inboxKey => {
     chatHistory.delete(inboxKey)
     inboxSettings(inboxKey, { deleted: true, unread: 0 })
-    inboxListBond.changed(uuid.v1())
-    openInboxBond.changed(null)
+    rxInboxListChanged.next(uuid.v1())
+    rxOpenInboxKey.next(null)
 }
 
-export const removeInboxMessages = inboxKey => chatHistory.set(inboxKey, []) | newMsgBond.changed([inboxKey, uuid.v1()])
+export const removeInboxMessages = inboxKey => chatHistory.set(inboxKey, []) | rxInboxListChanged.next(uuid.v1())
 
 export const removeMessage = (inboxKey, id) => {
     const messages = chatHistory.get(inboxKey)
@@ -188,7 +188,7 @@ export const removeMessage = (inboxKey, id) => {
     if (index === -1) return
     messages.splice(index, 1)
     chatHistory.set(inboxKey, messages)
-    newMsgBond.changed([inboxKey, id])
+    rxInboxListChanged.next(uuid.v1())
 }
 
 const saveMessage = msg => {
@@ -226,8 +226,8 @@ const saveMessage = msg => {
     }
 
     chatHistory.set(inboxKey, !limit ? messages : messages.slice(-limit))
-    const resetCount = visibleBond._value && openInboxBond._value === inboxKey
-        && getLayout() !== MOBILE || expandedBond._value
+    const resetCount = rxVisible.value && rxOpenInboxKey.value === inboxKey
+        && (getLayout() !== MOBILE || rxExpanded.value)
         && !!document.querySelector('.chat-container .inbox .scroll-to-bottom:not(.visible)')
     settings.unread = resetCount ? 0 : unread + (senderId !== userId ? 1 : 0)
 
@@ -237,7 +237,6 @@ const saveMessage = msg => {
     // Store (global) last received (including own) message timestamp.
     // This is used to retrieve missed messages from server
     rw({ lastMessageTS: timestamp })
-    // makes sure inbox bonds are generated
 }
 
 // send message
@@ -245,68 +244,63 @@ export const send = (receiverIds, message, encrypted = false) => {
     const { id: senderId } = getUser() || {}
     if (!senderId) return
     const tempId = uuid.v1()
-    const inboxKey = getInboxKey(receiverIds)
-    const saveMsg = (id, status, timestamp, errorMessage) => {
-        const msg = {
-            message,
-            senderId,
-            receiverIds,
-            encrypted,
-            timestamp,
-            status,
-            id,
-            errorMessage,
-        }
-        if (status === 'error') saveMessage(msg)
-        const removePending = ['error', 'success'].includes(status)
-        let msgs = pendingMessages[inboxKey] || []
-        if (removePending) {
-            msgs = msgs.filter(m => m.id === id)
-        } else {
-            msgs.push(msg)
-        }
-        pendingMessages[inboxKey] = msgs
-        newMsgBond.changed([inboxKey, id])
+    const msg = {
+        message,
+        senderId,
+        receiverIds,
+        encrypted,
+        timestamp: new Date().toISOString(),
+        status: statuses.LOADING,
+        id: tempId,
+        errorMessage: null,
     }
 
-    saveMsg(tempId, 'loading')
+    // save as loading (sending in-progress)
+    saveMessage(msg)
 
     addToQueue({
         args: [
             receiverIds,
             message,
             false,
-            (err, timestamp, id) => saveMsg(id, err ? 'error' : 'success', timestamp, err),
+            // on success remove temporary/loading message
+            // err => !err ? removeMessage(inboxKey, tempId) : saveMessage({ ...msg, status: statuses.ERROR }),
         ],
         func: 'message',
         silent: true,
+        txId: tempId,
         type: QUEUE_TYPES.CHATCLIENT,
     })
+    return tempId
 }
 
 // retrieve unread messages on re/connect
-client.onConnect(() => {
-    if (!(getUser() || {}).id) return // ignore if not registered
+rxIsLoggedIn.subscribe(loggedIn => {
+    if (!loggedIn) return clearInterval(checkOnlineStatus.intervalId)
+    const { lastMessageTS } = rw()
     // check & retrieve any unread mesages
-    client.messageGetRecent(rw().lastMessageTS, (err, messages = []) => {
+    client.messageGetRecent(lastMessageTS, (err, messages = []) => {
         if (err) return console.log('Failed to retrieve recent inbox messages', err)
         messages.forEach(saveMessage)
     })
+
+    checkOnlineStatus()
+    checkOnlineStatus.intervalId = setInterval(checkOnlineStatus, INTERVAL_FREQUENCY_MS)
 })
 
 // handle message received
 client.onMessage((m, s, r, e, t, id, action) => {
     const inboxKey = getInboxKey(r)
     const userIds = inboxKey.split(',').filter(id => ![SUPPORT, TROLLBOX].includes(id))
-    const online = { ...userStatusBond._value }
+    const online = { ...rxUsersOnline.value }
     userIds.forEach(id => online[id] = true)
     // set sender status as online
-    if (JSON.stringify(online) !== JSON.stringify(userStatusBond._value)) userStatusBond.changed(online)
+    if (JSON.stringify(online) !== JSON.stringify(rxUsersOnline.value)) rxUsersOnline.next(online)
 
     // prevent saving trollbox messages if hidden
     if (inboxKey === TROLLBOX && inboxSettings(inboxKey).hide) return
     createInbox(r)
-    saveMessage({
+    const msg = {
         action,
         id,
         encrypted: e,
@@ -315,16 +309,15 @@ client.onMessage((m, s, r, e, t, id, action) => {
         senderId: s,
         status: 'success',
         timestamp: t,
-    })
-    setTimeout(() => newMsgBond.changed([inboxKey, id]))
-
+    }
+    saveMessage(msg)
+    rxMsg.next([inboxKey, msg])
 })
 
 // initialize
-[(() => {
+setTimeout(() => {
     const allSettings = rw().inbox || {}
     const { id: userId } = getUser() || {}
-    let intervalId = null
 
     const createSupportInbox = () => !allSettings[getInboxKey([SUPPORT])] && createInbox([SUPPORT])
     if (userId) {
@@ -341,34 +334,57 @@ client.onMessage((m, s, r, e, t, id, action) => {
     if (!allSettings[getInboxKey([TROLLBOX])]) createInbox([TROLLBOX])
 
     // automatically mark inbox as read
-    Bond.all([expandedBond, openInboxBond, visibleBond]).tie(([expanded, inboxKey, visible]) => {
+    const handleChange = () => {
+        const visible = rxVisible.value
+        const inboxKey = rxOpenInboxKey.value
+        const expanded = rxExpanded.value
         const doUpdate = visible && inboxKey && (getLayout() !== MOBILE || expanded) && inboxSettings(inboxKey).unread
         doUpdate && inboxSettings(inboxKey, { unread: 0 })
+    }
+    rxOpenInboxKey.subscribe(key => {
+        // remember last open inbox key
+        rw({ openInboxKey: key })
+        handleChange()
     })
+    rxVisible.subscribe(handleChange)
     // add/remove 'inbox-expanded' class for styling purposes
-    expandedBond.tie(expand => document.getElementById('app').classList[expand ? 'add' : 'remove']('inbox-expanded'))
-    // remember last open inbox key
-    openInboxBond.tie(key => rw({ openInboxKey: key }))
-
-    userId && checkOnlineStatus()
-    visibleBond.tie(visible => {
-        // remember if chat is visible
-        rw({ visible })
-        intervalId && clearInterval(intervalId)
-        if (!userId || !visible) return
-        // enable/disble status check of User IDs
-        intervalId = setInterval(checkOnlineStatus, INTERVAL_FREQUENCY_MS)
+    rxExpanded.subscribe(expand => {
+        document.getElementById('app').classList[expand ? 'add' : 'remove']('inbox-expanded')
+        handleChange()
     })
-})()]
+
+    // remove if successful, otherwise, update status of queued chat message
+    rxOnSave.subscribe(data => {
+        if (!data) return
+        const { task: { args, errorMessage, func, status, txId: msgId, type } } = data
+        const [receiverIds] = args || []
+        // only handle outgoing chat messages
+        if (func !== 'message' && type !== QUEUE_TYPES.CHATCLIENT) return
+        const inboxKey = getInboxKey(receiverIds)
+        let inboxMsgs = chatHistory.get(inboxKey) || []
+        const msg = inboxMsgs.find(msg => msg.id === msgId)
+        // not found |OR| already removed by user
+        if (!msg) return
+        // failed to send message
+        switch (status) {
+            case statuses.ERROR:
+                msg.status = status
+                msg.timestamp = new Date().toISOString()
+                msg.errorMessage = errorMessage
+                break
+            case statuses.SUCCESS:
+                // message sent successfully, remove temporary message
+                inboxMsgs = inboxMsgs.filter(msg => msg.id !== msgId)
+                rxInboxListChanged.next(uuid.v1())
+                break
+            default: return // no change required
+        }
+        chatHistory.set(inboxKey, inboxMsgs)
+        rxMsg.next([inboxKey, msg])
+    })
+})
 
 export default {
-    expandedBond,
-    inboxListBond,
-    newMsgBond,
-    openInboxBond,
-    pendingMessages,
-    visibleBond,
-    unreadCountBond,
     createInbox,
     getMessages,
     getChatUserIds,
@@ -379,4 +395,10 @@ export default {
     send,
     removeInbox,
     removeInboxMessages,
+    rxExpanded,
+    rxInboxListChanged,
+    rxNewMsgReceived: rxMsg,
+    rxOpenInboxKey,
+    rxUnreadCount,
+    rxVisible,
 }

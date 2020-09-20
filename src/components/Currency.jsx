@@ -14,6 +14,7 @@ export const Currency = props => {
         prefix,
         style,
         suffix,
+        title,
         unit,
         unitDisplayed,
         value,
@@ -64,7 +65,7 @@ export const Currency = props => {
         <EL {...{
             className,
             style: { color: error ? 'red' : undefined, ...style },
-            title: error ? `${error}` : (
+            title: error ? `${error}` : title || (
                 !isDefined(value) || isSame ? '' : `${value || 0} ${unit}`
             ),
         }}>
@@ -86,6 +87,7 @@ Currency.propTypes = {
     prefix: PropTypes.any,
     style: PropTypes.object,
     suffix: PropTypes.any,
+    title: PropTypes.any,
     unit: PropTypes.string,
     // Display currency. Default: selected currency from currency service
     unitDisplayed: PropTypes.string,
