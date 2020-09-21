@@ -8,7 +8,8 @@ import { translated } from '../services/language'
 import { unsubscribe } from '../services/react'
 
 const textsCap = translated({
-    lockedAmount: 'locked amount'
+    freeBalance: 'free balance',
+    lockedBalance: 'locked balance'
 }, true)[1]
 
 export const Balance = (props) => {
@@ -20,7 +21,7 @@ export const Balance = (props) => {
 
     return <Currency {...{
         ...props,
-        title: lockedBalance && `${textsCap.lockedAmount}: ${lockedBalance} XTX`,// use conversion??
+        title: `${textsCap.freeBalance}: ${balance} XTX | ${textsCap.lockedBalance}: ${lockedBalance} XTX`,
         value: freeBalance,
         emptyMessage: emptyMessage === null ? '' : (
             <span>

@@ -1,10 +1,14 @@
-import { BehaviorSubject, Subject } from 'rxjs'
-import { generateHash, arrSort, isArr } from '../utils/utils'
-import client from './chatClient'
-import storage from './storage'
 import { useState, useEffect } from 'react'
+import { BehaviorSubject } from 'rxjs'
+import { generateHash, arrSort, isArr } from '../utils/utils'
 import PromisE from '../utils/PromisE'
+import client from './chatClient'
+import { translated } from './language'
+import storage from './storage'
 
+const textsCap = translated({
+    invalidCurency: 'invalid currency supplied',
+}, true)[1]
 const MODULE_KEY = 'currency'
 // read or write to currency settings storage
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
@@ -33,16 +37,17 @@ export const rxSelected = new BehaviorSubject(getSelected())
 export const convertTo = async (amount = 0, from, to, decimals) => {
     from = from.toUpperCase()
     to = to.toUpperCase()
-    if (from === to) return amount
     const ft = [from, to]
     // await client.currencyConvert.promise(from, to, amount)
     const currencies = await getCurrencies()
     const fromTo = currencies.filter(({ ISO }) => ft.includes(ISO))
-    if (fromTo.length < 2) throw new Error('Invalid currency supplied')
+    if (!ft.every(x => fromTo.find(c => c.ISO === x))) throw new Error(textsCap.invalidCurency)
     const fromCurrency = fromTo.find(({ ISO }) => ISO === from)
     const toCurrency = currencies.find(({ ISO }) => ISO === to)
     const convertedAmount = (fromCurrency.ratioOfExchange / toCurrency.ratioOfExchange) * amount
-    return convertedAmount.toFixed(decimals || toCurrency.decimals)
+    decimals = decimals || parseInt(toCurrency.decimals)
+    const rounded = convertedAmount.toFixed(decimals)
+    return [convertedAmount, rounded]
 }
 
 // get selected currency code

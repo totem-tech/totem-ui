@@ -10,6 +10,7 @@ import { translated } from '../services/language'
 import Invertible from './Invertible'
 
 const textsCap = translated({
+    submit: 'submit',
     unexpectedError: 'an unexpected error occured',
 }, true)[0]
 
@@ -191,12 +192,15 @@ export default class FormBuilder extends Component {
                 React.isValidElement(submitText) ? { ...submitText.props } : submitText
             )
 
-            const { content, disabled, onClick, positive } = submitProps
-            submitProps.content = content || (!isStr(submitText) ? content : submitText)
-            submitProps.disabled = isBool(disabled) ? disabled : shouldDisable
-            submitProps.onClick = isFn(onClick) ? onClick : this.handleSubmit
-            submitProps.positive = isDefined(positive) ? positive : true
-            submitBtn = <Button {...submitProps} />
+            const { content, disabled, onClick, positive, style } = submitProps
+            submitBtn = <Button {...{
+                ...submitProps,
+                content: content || (!isStr(submitText) ? content : submitText),
+                disabled: isBool(disabled) ? disabled : shouldDisable,
+                onClick: isFn(onClick) ? onClick : this.handleSubmit,
+                positive: isBool(positive) ? positive : true,
+                style: { ...style, marginTop: modal ? undefined : 5 }
+            }} />
         }
         if (modal && closeText !== null) {
             const closeProps = React.isValidElement(closeText) ? { ...closeText.props } : {}
@@ -229,7 +233,8 @@ export default class FormBuilder extends Component {
         )
 
         return !modal ? form : (
-            <IModal
+            <Invertible
+                El={Modal}
                 closeOnEscape={!!closeOnEscape}
                 closeOnDimmerClick={!!closeOnDimmerClick}
                 defaultOpen={defaultOpen}
@@ -271,7 +276,7 @@ export default class FormBuilder extends Component {
                     </Modal.Actions>
                 )}
                 {msg && <Message {...message} />}
-            </IModal>
+            </Invertible>
         )
     }
 }
@@ -335,7 +340,7 @@ FormBuilder.defaultProps = {
         status: '',
         // see https://react.semantic-ui.com/collections/message/ for more options
     },
-    submitText: 'Submit'
+    submitText: textsCap.submit,
 }
 
 /**

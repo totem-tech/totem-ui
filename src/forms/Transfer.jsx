@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import { Subject } from 'rxjs'
 import { Dropdown } from 'semantic-ui-react'
 import { Bond } from 'oo7'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
@@ -27,11 +28,14 @@ import partners, { getAddressName, rxPartners } from '../services/partner'
 import { addToQueue } from '../services/queue'
 import { unsubscribe } from '../services/react'
 import { getTxFee } from '../utils/polkadotHelper'
+import Currency from '../components/Currency'
+import DataTable from '../components/DataTable'
 
 const textsCap = translated({
     amount: 'amount',
-    balance: 'balance',
+    amountToSend: 'amount to send',
     currency: 'currency',
+    availableBalance: 'available balance',
     identity: 'identity',
     partner: 'partner',
     recipient: 'recipient',
@@ -48,6 +52,8 @@ const textsCap = translated({
     submitErrorHeader: 'transfer error',
     submitInprogressHeader: 'transfer in-progress',
     submitSuccessHeader: 'transfer successful',
+    total: 'total',
+    totalRequired: 'total required',
     txFee: 'transaction fee',
 }, true)[1]
 
@@ -125,9 +131,10 @@ export default class Transfer extends Component {
                             label: textsCap.amount,
                             min: 0,
                             name: 'amount',
-                            onChange: this.handleAmountChange,
+                            onChange: deferred(this.handleAmountChange, 500),
                             placeholder: textsCap.amountPlaceholder,
                             required: true,
+                            rxValue: new Subject(),
                             type: 'number',
                             useInput: true,
                             value: '',
@@ -136,14 +143,14 @@ export default class Transfer extends Component {
                         {
                             label: textsCap.currency,
                             name: 'currency',
-                            onChange: this.handleAmountChange,
+                            onChange: this.handleCurrencyChange,
                             options: [],
+                            rxValue: new Subject(),
                             search: ['text', 'description'],
                             selection: true,
                             type: 'dropdown',
-                            value: rxSelectedCurrency.value,
                             width: 7,
-                        }
+                        },
                     ],
                 },
             ],
@@ -197,6 +204,7 @@ export default class Transfer extends Component {
             value: ISO
         }))
         currencyIn.options = arrSort(options, 'text')
+        currencyIn.rxValue.next(rxSelectedCurrency.value)
 
         fillValues(inputs, values)
         this.setState({ inputs })
@@ -213,19 +221,36 @@ export default class Transfer extends Component {
         this.setState({ inputs })
     }
 
+    handleCurrencyChange = (e, values) => {
+        const { inputs } = this.state
+        const amountIn = findInput(inputs, 'amount')
+        const currencyObj = this.currencies.find(x => x.ISO === values.currency) || {}
+        amountIn.decimals = parseInt(currencyObj.decimals || 0)
+        this.setState({ inputs })
+        isValidNumber(values.amount) && setTimeout(() => amountIn.rxValue.next(values.amount))
+    }
+
     handleAmountChange = async (_, values) => {
         const { amount, currency, from, to } = values
         const valid = isValidNumber(amount) && amount > 0
         const identity = findIdentity(from)
         const { inputs, submitDisabled } = this.state
         const amountIn = findInput(inputs, 'amount')
+        const amountGroupIn = findInput(inputs, 'amount-group')
         amountIn.loading = valid
         amountIn.invalid = !valid
         submitDisabled.loadingAmount = valid
+        amountGroupIn.message = null
         this.setState({ inputs, submitDisabled })
         if (!valid) return
 
-        this.amountXTX = await convertTo(amount, currency, currencyDefault)
+        const dualMode = currency && currency !== rxSelectedCurrency.value
+        const res = await convertTo(
+            amount,
+            currency,
+            currencyDefault,
+        )
+        this.amountXTX = res[0]
         const { api } = await getConnection()
         const [balance, locks] = await query(api.queryMulti, [[
             [api.query.balances.freeBalance, from],
@@ -235,17 +260,88 @@ export default class Transfer extends Component {
         this.fee = await getTxFee(
             api,
             from,
-            api.tx.balances.transfer(to || from, this.amountXTX),
+            await api.tx.balances.transfer(to || from, this.amountXTX),
             identity.uri,
         )
-        this.feeInCurrency = await convertTo(this.fee, currencyDefault, currency, 4)
-        const gotFund = freeBalance - this.fee - this.amountXTX >= 0
+        const total = this.fee + this.amountXTX
+        const gotFund = freeBalance - total >= 0
         submitDisabled.loadingAmount = false
         submitDisabled.loadingAmount = false
         amountIn.invalid = !gotFund
-        amountIn.message = gotFund ? null : {
-            content: textsCap.insufficientBalance,
-            status: 'error',
+        const unitDisplayed = rxSelectedCurrency.value
+        amountGroupIn.message = {
+            content: valid && (
+                <DataTable {...{
+                    columns: [
+                        { key: 'amountXTX', title: textsCap.amountToSend },
+                        { key: 'fee', title: textsCap.fxFee },
+                        { key: 'total', title: textsCap.totalRequired },
+                    ],
+                    data: [
+                        {
+                            amountXTX: <Currency {...{ EL: 'div', unitDisplayed, value: this.amountXTX }} />,
+                            fee: < Currency {...{ EL: 'div', unitDisplayed, value: this.fee }} />,
+                            total: <Currency {...{ EL: 'div', unitDisplayed, value: total }} />,
+                        },
+                        dualMode && {
+                            amountXTX: <Currency {...{ unitDisplayed: currency, value: this.amountXTX }} />,
+                            fee: <Currency {...{ unitDisplayed: currency, value: this.fee }} />,
+                            total: <Currency {...{ unitDisplayed: currency, value: total }} />,
+                        }
+                    ].filter(Boolean),
+                    searchable: false,
+                }} />
+            ),
+            // content: (
+            //     <span>
+            //         <Currency {...{
+            //             EL: 'div',
+            //             prefix: `${textsCap.amount}: `,
+            //             unitDisplayed: rxSelectedCurrency.value,
+            //             value: this.amountXTX,
+            //             suffix: !dualMode ? '' : (
+            //                 <Currency {...{
+            //                     prefix: ' | ',
+            //                     unitDisplayed: currency,
+            //                     value: this.amountXTX,
+            //                 }} />
+            //             )
+            //         }} />
+            //         <Currency {...{
+            //             EL: 'div',
+            //             prefix: `${textsCap.txFee}: `,
+            //             unitDisplayed: rxSelectedCurrency.value,
+            //             value: this.fee,
+            //             suffix: !dualMode ? '' : (
+            //                 <Currency {...{
+            //                     prefix: ' | ',
+            //                     unitDisplayed: currency,
+            //                     value: this.fee,
+            //                 }} />
+            //             )
+            //         }} />
+            //         <Currency {...{
+            //             EL: 'div',
+            //             prefix: `${textsCap.total}: `,
+            //             unitDisplayed: rxSelectedCurrency.value,
+            //             value: total,
+            //             suffix: !dualMode ? '' : (
+            //                 <Currency {...{
+            //                     prefix: ' | ',
+            //                     unitDisplayed: currency,
+            //                     value: total,
+            //                 }} />
+            //             )
+            //         }} />
+            //     </span>
+            // ),
+            header: gotFund ? '' : (
+                <div className='header' style={{ paddingTop: 10 }}>
+                    {textsCap.insufficientBalance}
+                </div>
+            ),
+            status: gotFund ? 'info' : 'error',
+            style: { padding: 0, margin: '0 -5 0 0' }
         }
         amountIn.loading = false
         this.setState({ inputs, submitDisabled })
@@ -264,16 +360,11 @@ export default class Transfer extends Component {
             this.clearForm()
         }
 
-        const queueProps = queueables.balanceTransfer(
-            from,
-            to,
-            this.amountXTX,
-            {
-                description,
-                title: textsCap.queueTitle,
-                then,
-            },
-        )
+        const queueProps = queueables.balanceTransfer(from, to, this.amountXTX, {
+            description,
+            title: textsCap.queueTitle,
+            then,
+        })
 
         confirm({
             onConfirm: () => this.setMessage() | addToQueue(queueProps),
@@ -293,8 +384,22 @@ export default class Transfer extends Component {
             content = err ? `${err}` : (
                 <ul style={{ listStyleType: 'none', margin: 0, paddingLeft: 0 }}>
                     <li>{textsCap.recipient}: {recipientName}</li>
-                    <li>{textsCap.amount}: {amount} {currency}</li>
-                    <li>{textsCap.txFee}: {this.feeInCurrency} {currency}</li>
+                    <li>
+                        <Currency {...{
+                            prefix: `${textsCap.amount}: `,
+                            unit: currencyDefault,
+                            unitDisplayed: rxSelectedCurrency,
+                            value: amount,
+                        }} />
+                    </li>
+                    <li>
+                        <Currency {...{
+                            prefix: `${textsCap.txFee}: `,
+                            unit: currencyDefault,
+                            unitDisplayed: rxSelectedCurrency,
+                            value: this.fee,
+                        }} />
+                    </li>
                 </ul>
             )
             header = err ? textsCap.submitErrorHeader : textsCap.submitSuccessHeader
@@ -310,19 +415,26 @@ export default class Transfer extends Component {
     render = () => {
         const { inputs } = this.state
         const address = rxSelected.value
-        if (this.address !== address || this.currency !== this.values.currency) {
-            this.currency = this.values.currency
+        const { currency } = this.values
+        const dualBalance = currency && currency !== rxSelectedCurrency.value
+        if (this.address !== address || this.currency !== currency + rxSelectedCurrency.value) {
+            this.currency = currency + rxSelectedCurrency.value
             this.address = address
             const fromIn = findInput(inputs, 'from')
-            const unitDisplayed = this.currency || rxSelectedCurrency.value
             fromIn.message = !address ? null : {
                 content: (
                     <Balance {...{
                         address,
                         emptyMessage: textsCap.loadingBalance + '...',
-                        key: address + unitDisplayed,
-                        prefix: `${textsCap.balance}: `,
-                        unitDisplayed,
+                        prefix: `${textsCap.availableBalance}: `,
+                        suffix: !dualBalance ? undefined : (
+                            <Balance {...{
+                                address,
+                                prefix: ' | ',
+                                unit: rxSelectedCurrency.value,
+                                unitDisplayed: currency || rxSelectedCurrency.value,
+                            }} />
+                        )
                     }} />
                 )
             }

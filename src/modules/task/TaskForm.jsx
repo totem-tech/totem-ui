@@ -476,7 +476,7 @@ export default class TaskForm extends Component {
             } catch (e) { reject(e) }
         })
         const handleSuccess = result => {
-            const amountXTX = result[0]
+            const amountXTX = result[0][0]
             const balanceXTX = result[1]
             const amountTotalXTX = amountXTX + estimatedTxFee + minBalanceAterTx
             const gotBalance = balanceXTX - amountTotalXTX >= 0

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { isValidNumber, isFn, isDefined } from '../utils/utils'
-import { round } from '../utils/number'
 import { convertTo, currencyDefault, useSelected, getCurrencies } from '../services/currency'
 
 export const Currency = props => {
@@ -32,15 +31,14 @@ export const Currency = props => {
         const convert = async (value) => {
             if (!mounted) return
             try {
-                valueConverted = !value || isSame ? value || 0 : await convertTo(value, unit, unitDisplayed)
+                const [_, rounded] = await convertTo(
+                    value || 0,
+                    unit,
+                    unitDisplayed,
+                    decimalPlaces,
+                )
                 error = null
-                if (!isValidNumber(decimalPlaces)) {
-                    const currencies = await getCurrencies()
-                    let { decimals } = currencies.find(x => x.ISO === unitDisplayed) || {}
-                    decimals = parseInt(decimals)
-                    decimalPlaces = isValidNumber(decimals) ? decimals : 8
-                }
-                valueConverted = round(valueConverted, decimalPlaces)
+                valueConverted = rounded
             } catch (err) {
                 error = err
                 valueConverted = 0
@@ -59,7 +57,7 @@ export const Currency = props => {
     }, [unit, unitDisplayed, value])
 
     const content = !isDefined(valueConverted) ? (emptyMessage || '') : (
-        `${prefix || ''}${valueConverted} ${unitDisplayed}${suffix || ''}`
+        <span>{prefix || ''}{valueConverted} {unitDisplayed}{suffix || ''}</span>
     )
     return (
         <EL {...{
@@ -97,4 +95,4 @@ Currency.defaultProps = {
     EL: 'span',
     unit: currencyDefault, // XTX
 }
-export default Currency//React.memo()
+export default React.memo(Currency)

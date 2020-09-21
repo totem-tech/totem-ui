@@ -25,9 +25,10 @@ import { translated } from '../services/language'
 import { unsubscribe } from '../services/react'
 
 const [texts] = translated({
-	email: 'Please enter a valida email address',
+	decimals: 'Maximum number of decimals allowed',
+	email: 'Please enter a valid email address',
 	fileType: 'Invalid file type selected',
-	integer: 'Number must be an integer (no decimals)',
+	integer: 'Please enter a number without decimals',
 	max: 'Number must be smaller than or equal to',
 	maxLengthNum: 'Maximum number of digits allowed',
 	maxLengthText: 'Maximum number of characters allowed',
