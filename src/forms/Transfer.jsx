@@ -341,5 +341,3 @@ Transfer.defaultProps = {
     header: textsCap.queueTitle,
     size: 'tiny'
 }
-
-window.form = () => showForm(Transfer)
