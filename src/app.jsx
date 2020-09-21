@@ -8,6 +8,7 @@ import SidebarLeft, { MainContentItem } from './components/SidebarLeft'
 // Services
 import blockchain from './services/blockchain'
 import chatClient from './services/chatClient'
+import currency from './services/currency'
 import identity from './services/identity'
 import language from './services/language'
 import modal, { ModalsConainer } from './services/modal'
@@ -54,6 +55,7 @@ export class App extends Component {
 		window.services = {
 			blockchain,
 			chatClient,
+			currency,
 			identity,
 			language,
 			modal,

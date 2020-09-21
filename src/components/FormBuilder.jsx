@@ -446,7 +446,7 @@ const styles = {
         right: 15
     },
     messageInline: {
-        margin: 15,
+        padding: 15,
     },
     messageModal: {
         margin: 0,

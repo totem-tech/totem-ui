@@ -1,4 +1,4 @@
-import { Subject } from 'rxjs'
+import { BehaviorSubject, Subject } from 'rxjs'
 import { generateHash, arrSort, isArr } from '../utils/utils'
 import client from './chatClient'
 import storage from './storage'
@@ -16,17 +16,34 @@ const updateFrequencyMs = 24 * 60 * 60 * 1000
 // default currency
 export const currencyDefault = 'XTX'
 // RxJS Subject to keep track of selected currencly changes
-export const rxSelected = new Subject()
+export const rxSelected = new BehaviorSubject(getSelected())
 
-// convert currency 
-//
-// Params:
-// @amount  number: amount to convert
-// @from    string: currency ticker to convert from
-// @to      string: currency ticker to convert to
-//
-// retuns   number
-export const convertTo = async (amount, from, to) => await client.currencyConvert.promise(from, to, amount)
+/**
+ * @name    convertTo
+ * @summary convert to display currency and limit to decimal places
+ * 
+ * @param   {Number} amount     amount to convert
+ * @param   {String} from       currency ticker to convert from
+ * @param   {String} to         currency ticker to convert to
+ * @param   {Number} decimals   (optional) number of decimal places to use. 
+ *                               Default: decimals defined in `to` currency
+ * 
+ * @returns {Number} converted amount
+ */
+export const convertTo = async (amount = 0, from, to, decimals) => {
+    from = from.toUpperCase()
+    to = to.toUpperCase()
+    if (from === to) return amount
+    const ft = [from, to]
+    // await client.currencyConvert.promise(from, to, amount)
+    const currencies = await getCurrencies()
+    const fromTo = currencies.filter(({ ISO }) => ft.includes(ISO))
+    if (fromTo.length < 2) throw new Error('Invalid currency supplied')
+    const fromCurrency = fromTo.find(({ ISO }) => ISO === from)
+    const toCurrency = currencies.find(({ ISO }) => ISO === to)
+    const convertedAmount = (fromCurrency.ratioOfExchange / toCurrency.ratioOfExchange) * amount
+    return convertedAmount.toFixed(decimals || toCurrency.decimals)
+}
 
 // get selected currency code
 export function getSelected() {
@@ -106,4 +123,16 @@ export const useConvertedCurrency = (amounts = [], unit, unitDisplayed = getSele
     amounts = !isArr(amounts) ? [amounts] : amounts
     if (!unit) return amounts
 
+}
+
+export default {
+    currencyDefault,
+    rxSelected,
+    convertTo,
+    getSelected,
+    getCurrencies,
+    setSelected,
+    updateCurrencies,
+    useSelected,
+    useConvertedCurrency,
 }

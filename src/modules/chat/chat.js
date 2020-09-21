@@ -346,7 +346,10 @@ setTimeout(() => {
         rw({ openInboxKey: key })
         handleChange()
     })
-    rxVisible.subscribe(handleChange)
+    rxVisible.subscribe(visible => {
+        rw({ visible })
+        handleChange()
+    })
     // add/remove 'inbox-expanded' class for styling purposes
     rxExpanded.subscribe(expand => {
         document.getElementById('app').classList[expand ? 'add' : 'remove']('inbox-expanded')

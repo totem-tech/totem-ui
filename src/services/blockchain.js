@@ -3,7 +3,7 @@ import uuid from 'uuid'
 import PromisE from '../utils/PromisE'
 import { connect, query as queryHelper, setDefaultConfig } from '../utils/polkadotHelper'
 import types from '../utils/totem-polkadot-js-types'
-import { generateHash, isFn } from '../utils/utils'
+import { generateHash, isArr, isDefined, isFn } from '../utils/utils'
 // services
 import { translated } from './language'
 import { QUEUE_TYPES } from './queue'

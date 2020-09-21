@@ -56,7 +56,7 @@ export default class TimeKeepingSummary extends Component {
     componentWillMount() {
         this._mounted = true
         this.subscriptions = {
-            selected: rxSelected.subscribe(() => mounted && this.getSummary())
+            selected: rxSelected.subscribe(() => this._mounted && this.getSummary())
         }
     }
 

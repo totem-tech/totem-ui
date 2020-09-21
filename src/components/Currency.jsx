@@ -97,4 +97,4 @@ Currency.defaultProps = {
     EL: 'span',
     unit: currencyDefault, // XTX
 }
-export default React.memo(Currency)
+export default Currency//React.memo()
