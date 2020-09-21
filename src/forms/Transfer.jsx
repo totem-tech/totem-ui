@@ -22,14 +22,12 @@ import {
     rxSelected,
 } from '../services/identity'
 import { translated } from '../services/language'
-import { showForm } from '../services/modal'
+import { confirm, showForm } from '../services/modal'
 import partners, { getAddressName, rxPartners } from '../services/partner'
 import { addToQueue } from '../services/queue'
 import { unsubscribe } from '../services/react'
 import { getTxFee } from '../utils/polkadotHelper'
 
-const textsCap = translated({
-}, true)[1]
 const textsCap = translated({
     amount: 'amount',
     balance: 'balance',
@@ -265,7 +263,6 @@ export default class Transfer extends Component {
             this.setMessage(null, resultOrError, name, amount, currency)
             this.clearForm()
         }
-        this.setMessage()
 
         const queueProps = queueables.balanceTransfer(
             from,
@@ -277,7 +274,12 @@ export default class Transfer extends Component {
                 then,
             },
         )
-        addToQueue(queueProps)
+
+        confirm({
+            onConfirm: () => this.setMessage() | addToQueue(queueProps),
+            size: 'mini',
+        })
+
     }
 
     setMessage = (err, result = [], recipientName, amount, currency) => {
