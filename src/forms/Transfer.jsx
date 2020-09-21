@@ -334,6 +334,7 @@ Transfer.propTypes = {
         amount: PropTypes.number,
         from: PropTypes.string,
         to: PropTypes.string,
+        currency: PropTypes.string,
     })
 }
 Transfer.defaultProps = {
