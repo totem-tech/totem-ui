@@ -385,7 +385,7 @@ export default class Transfer extends Component {
         const currencyObj = this.currencies.find(x => x.ISO === currencyReceived) || {}
         amountReceivedIn.decimals = parseInt(currencyObj.decimals || 0)
         // this.setState({ inputs })
-        isValidNumber(amountReceived) && this.handleAmountReceivedChange(_, values)
+        isValidNumber(amountReceived) && amountReceivedIn.rxValue.next(amountReceived)
     }
 
     handleSubmit = (_, values) => {
