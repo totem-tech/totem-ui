@@ -106,7 +106,7 @@ export default class Company extends Component {
                         <div><b>{Array.from(result)[0][1].name}</b></div>
                     </div>
                 ),
-                showIcon: true,
+                icon: true,
                 status: 'error',
             }
             this.setState({ inputs, submitDisabled: false })
@@ -122,7 +122,7 @@ export default class Company extends Component {
         const message = {
             content: success ? texts.submitSuccessMsg : err,
             header: success ? wordsCap.success : texts.submitErrorHeader,
-            showIcon: true,
+            icon: true,
             status: success ? 'success' : 'error'
         }
         this.setState({ success, message })

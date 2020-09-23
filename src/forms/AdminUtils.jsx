@@ -113,7 +113,7 @@ export default class AdminUtils extends Component {
 			message: {
 				content: 'Read up the howto-language.md file',
 				header: 'Not sure what to do next?',
-				showIcon: true,
+				icon: true,
 				status: 'info'
 			}
 		})

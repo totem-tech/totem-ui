@@ -103,7 +103,7 @@ export default class IdentityRequestForm extends Component {
             const message = {
                 content: texts.successMsg,
                 header: texts.successMsgHeader,
-                showIcon: true,
+                icon: true,
                 status: 'success',
             }
             this.setState({
@@ -111,7 +111,7 @@ export default class IdentityRequestForm extends Component {
                 message: success ? message : {
                     header: texts.errorMessageHeader,
                     content: err,
-                    showIcon: true,
+                    icon: true,
                     status: 'error',
                 },
                 success

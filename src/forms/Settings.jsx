@@ -159,7 +159,7 @@ export default class Settings extends Component {
             this.setInputMessage('languageCode', {
                 content: `${err}`,
                 header: textsCap.error,
-                showIcon: true,
+                icon: true,
                 status: 'error',
             })
         })

@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Button, Form, Header, Icon, Modal } from 'semantic-ui-react'
 import { isDefined, isArr, isBool, isBond, isFn, isObj, isStr, hasValue } from '../utils/utils'
-import Message from '../components/Message'
+import Message, { statuses } from '../components/Message'
 import FormInput, { nonValueTypes } from './FormInput'
 import IModal from './Modal'
 import Text from './Text'
@@ -10,9 +10,11 @@ import { translated } from '../services/language'
 import Invertible from './Invertible'
 
 const textsCap = translated({
+    cancel: 'cancel',
+    close: 'close',
     submit: 'submit',
     unexpectedError: 'an unexpected error occured',
-}, true)[0]
+}, true)[1]
 
 export default class FormBuilder extends Component {
     constructor(props) {
@@ -80,7 +82,7 @@ export default class FormBuilder extends Component {
 
     handleChange = async (event, data, input, index, childIndex) => {
         try {
-            const { name, onChange: onInputChange } = input
+            const { name, onChange: onInputChange, onInvalid } = input
             let { inputs } = this.props
             const { onChange: formOnChange } = this.props
             let { values } = this.state
@@ -88,15 +90,16 @@ export default class FormBuilder extends Component {
             input._invalid = data.invalid
             input.value = value
             values = this.getValues(inputs, values, name, value)
-            this.setState({ message: null, inputs, values })
+            this.setState({ message: null, values })
+
+            const fn = data.invalid ? onInvalid : onInputChange
             // trigger input items's onchange callback
-            isFn(onInputChange) && !data.invalid && await onInputChange(
+            isFn(fn) && await fn(
                 event,
                 values,
                 index,
                 childIndex,
             )
-
             // trigger form's onchange callback
             isFn(formOnChange) && !data.invalid && await formOnChange(
                 event,
@@ -110,8 +113,8 @@ export default class FormBuilder extends Component {
                 message: {
                     content: `${err}`,
                     header: textsCap.unexpectedError,
-                    showIcon: true,
-                    status: 'error',
+                    icon: true,
+                    status: statuses.ERROR,
                 }
             })
         }
@@ -137,8 +140,8 @@ export default class FormBuilder extends Component {
                 message: {
                     content: `${err}`,
                     header: textsCap.unexpectedError,
-                    showIcon: true,
-                    status: 'error',
+                    icon: true,
+                    status: statuses.ERROR,
                 }
             })
         }
@@ -166,6 +169,7 @@ export default class FormBuilder extends Component {
             style,
             subheader,
             submitDisabled,
+            submitInProgress,
             submitText,
             success,
             trigger,
@@ -185,26 +189,36 @@ export default class FormBuilder extends Component {
         submitDisabled = !isObj(submitDisabled) ? !!submitDisabled : (
             Object.values(submitDisabled).filter(Boolean).length > 0
         )
-        const shouldDisable = submitDisabled || success || isFormInvalid(inputs, values)
+        const formIsInvalid = isFormInvalid(inputs, values)
+        const shouldDisable = submitInProgress || submitDisabled || success || formIsInvalid
         submitText = !isFn(submitText) ? submitText : submitText(values, shouldDisable)
         if (submitText !== null) {
             const submitProps = !isObj(submitText) ? {} : (
                 React.isValidElement(submitText) ? { ...submitText.props } : submitText
             )
 
-            const { content, disabled, onClick, positive, style } = submitProps
+            let { content, disabled, icon, loading, onClick, positive, style } = submitProps
+            icon = icon || icon === null ? icon : (formIsInvalid ? 'exclamation circle' : 'check')
             submitBtn = <Button {...{
                 ...submitProps,
                 content: content || (!isStr(submitText) ? content : submitText),
                 disabled: isBool(disabled) ? disabled : shouldDisable,
+                icon,
+                loading: submitInProgress || loading,
                 onClick: isFn(onClick) ? onClick : this.handleSubmit,
                 positive: isBool(positive) ? positive : true,
-                style: { ...style, marginTop: modal ? undefined : 5 }
+                style: {
+                    paddingLeft: icon ? 10 : undefined,
+                    marginLeft: modal ? undefined : 3,
+                    ...style,
+                }
             }} />
         }
         if (modal && closeText !== null) {
             const closeProps = React.isValidElement(closeText) ? { ...closeText.props } : {}
-            closeProps.content = closeProps.content || (isStr(closeText) ? closeText : (success ? 'Close' : 'Cancel'))
+            closeProps.content = closeProps.content || (isStr(closeText) ? closeText : (
+                success ? textsCap.close : textsCap.cancel
+            ))
             closeProps.negative = isDefined(closeProps.negative) ? closeProps.negative : true
             closeProps.onClick = closeProps.onClick || this.handleClose
             closeBtn = <Button {...closeProps} />
@@ -213,12 +227,12 @@ export default class FormBuilder extends Component {
         const form = (
             <Invertible {...{
                 El: Form,
-                error: message.status === 'error',
+                error: message.status === statuses.ERROR,
                 loading: loading,
                 onSubmit: onSubmit,
                 style: style,
-                success: success || message.status === 'success',
-                warning: message.status === 'warning',
+                success: success || message.status === statuses.SUCCESS,
+                warning: message.status === statuses.WARNING,
                 widths: widths,
             }} >
                 {inputs.map(this.addInterceptor(null, values)).map(props => <FormInput {...props} />)}
@@ -233,8 +247,7 @@ export default class FormBuilder extends Component {
         )
 
         return !modal ? form : (
-            <Invertible
-                El={Modal}
+            <IModal
                 closeOnEscape={!!closeOnEscape}
                 closeOnDimmerClick={!!closeOnDimmerClick}
                 defaultOpen={defaultOpen}
@@ -276,7 +289,7 @@ export default class FormBuilder extends Component {
                     </Modal.Actions>
                 )}
                 {msg && <Message {...message} />}
-            </Invertible>
+            </IModal>
         )
     }
 }
@@ -440,7 +453,7 @@ export function showMessage(inputName, content, status, header) {
     if (!input) this.setState({ message })
 
     input.message = message
-    input.invalid = status === 'error'
+    input.invalid = status === statuses.ERROR
     this.setState({ inputs })
 }
 

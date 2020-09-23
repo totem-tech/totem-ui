@@ -233,7 +233,7 @@ export default class TimeKeepingInviteForm extends Component {
             message: {
                 content: textsCap.addedToQueueDesc,
                 header: textsCap.addedToQueue,
-                showIcon: true,
+                icon: true,
                 status: 'loading'
             }
         })
@@ -245,7 +245,7 @@ export default class TimeKeepingInviteForm extends Component {
                 success,
                 message: {
                     header: success ? textsCap.invitedAndAccepted : textsCap.txFailed,
-                    showIcon: true,
+                    icon: true,
                     status: success ? 'success' : 'error'
                 }
             })
@@ -273,7 +273,7 @@ export default class TimeKeepingInviteForm extends Component {
                         message: {
                             header: !err ? textsCap.inviteSuccess : textsCap.inviteSuccessNotifyFailed,
                             content: err || '',
-                            showIcon: true,
+                            icon: true,
                             status: !err ? 'success' : 'warning',
                         }
                     })
@@ -293,7 +293,7 @@ export default class TimeKeepingInviteForm extends Component {
                     message: {
                         header: textsCap.txFailed,
                         content: `${err}`,
-                        showIcon: true,
+                        icon: true,
                         status: 'error',
                     }
                 })

@@ -150,7 +150,7 @@ export default class UserIdInput extends Component {
             loading: !isOwnId,
             message: !isOwnId ? undefined : {
                 content: texts.ownIdEntered,
-                showIcon: true,
+                icon: true,
                 status: 'warning'
             },
             noResultsMessage: isOwnId ? texts.noResultsMessage : texts.validatingUserId,
@@ -168,7 +168,7 @@ export default class UserIdInput extends Component {
             input.loading = false
             input.message = exists ? undefined : {
                 content: `${texts.invalidUserId}: ${userId}`,
-                showIcon: true,
+                icon: true,
                 status: 'warning',
             }
 

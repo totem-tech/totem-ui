@@ -1,12 +1,11 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Subject } from 'rxjs'
-import { Dropdown } from 'semantic-ui-react'
-import { Bond } from 'oo7'
+import { Dropdown, Icon } from 'semantic-ui-react'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import Balance from '../components/Balance'
 import { arrSort, textEllipsis, isFn, deferred, isValidNumber } from '../utils/utils'
-import { ss58Decode } from '../utils/convert'
+import convert, { ss58Decode } from '../utils/convert'
 import PartnerForm from '../forms/Partner'
 // services
 import { getConnection, query, queueables } from '../services/blockchain'
@@ -30,28 +29,32 @@ import { unsubscribe } from '../services/react'
 import { getTxFee } from '../utils/polkadotHelper'
 import Currency from '../components/Currency'
 import DataTable from '../components/DataTable'
+import Text from '../components/Text'
 
 const textsCap = translated({
     amount: 'amount',
+    amountReceivedLabel: 'amount received',
+    amountReceivedPlaceholder: 'enter amount',
+    amountSentLabel: 'amount sent',
     amountToSend: 'amount to send',
-    currency: 'currency',
-    availableBalance: 'available balance',
-    identity: 'identity',
-    partner: 'partner',
-    recipient: 'recipient',
-    sender: 'sender',
-    status: 'status',
     addPartner: 'add partner',
-    amountPlaceholder: 'enter the amount to send',
+    availableBalance: 'available balance',
+    currency: 'currency',
+    includesTxFee: 'Includes TRANSACTION FEE',
     insufficientBalance: 'insufficient balance',
     loadingBalance: 'loading account balance',
     partnerEmptyMsg1: 'You do not have any partner yet. Add one in the Partner Module',
     partnerEmptyMsg2: 'No match found. Enter a valid address to add as a partner.',
     partnerPlaceholder: 'select a partner',
+    payerIdentity: 'payer identity',
     queueTitle: 'transfer funds',
+    recipient: 'recipient',
+    sender: 'sender',
+    status: 'status',
     submitErrorHeader: 'transfer error',
     submitInprogressHeader: 'transfer in-progress',
     submitSuccessHeader: 'transfer successful',
+    toLabel: 'recipient (select partner)',
     total: 'total',
     totalRequired: 'total required',
     txFee: 'transaction fee',
@@ -61,22 +64,33 @@ export default class Transfer extends Component {
     constructor(props) {
         super(props)
 
-        this.values = {
-            currency: rxSelectedCurrency.value,
+        this.names = {
+            amountReceived: 'amountReceived',
+            amountReceivedGroup: 'amountReceivedGroup',
+            amountSent: 'amountSent',
+            amountSentGroup: 'amountSentGroup',
+            currencyReceived: 'currencyReceived',
+            currencySent: 'currencySent',
+            from: 'from',
+            to: 'to',
+            txFee: 'txFeeHTML'
         }
         this.state = {
             message: undefined,
-            onChange: (_, values) => this.values = values,
+            onChange: (_, values) => this.setState({ values }),
             onSubmit: this.handleSubmit,
             submitDisabled: {},
             success: false,
+            values: {
+                currency: rxSelectedCurrency.value,
+            },
             inputs: [
                 {
-                    bond: new Bond(),
-                    label: textsCap.identity,
-                    name: 'from',
+                    label: undefined,
+                    name: this.names.from,
                     options: [],
                     required: true,
+                    rxValue: new Subject(),
                     search: ['text', 'value'],
                     selection: true,
                     type: 'dropdown',
@@ -85,22 +99,22 @@ export default class Transfer extends Component {
                 {
                     additionLabel: `${textsCap.addPartner}: `,
                     allowAdditions: false,
-                    bond: new Bond(),
                     clearable: true,
-                    label: textsCap.partner,
-                    name: 'to',
+                    label: textsCap.toLabel,
+                    name: this.names.to,
                     noResultsMessage: textsCap.partnerEmptyMsg1,
+                    rxValue: new Subject(),
                     onAddItem: (_, { value: address }) => {
                         // in case, if partner is not added or user cancels modal makes sure to remove the item
                         const { inputs } = this.state
-                        const toIn = findInput(inputs, 'to')
+                        const toIn = findInput(inputs, this.names.to)
                         toIn.options = toIn.options.filter(({ value }) => value !== address)
-                        toIn.bond.changed(null)
+                        toIn.rxValue.next(null)
                         this.setState({ inputs })
 
                         // Open add partner modal
                         showForm(PartnerForm, {
-                            onSubmit: (ok, { address }) => ok && toIn.bond.changed(address),
+                            onSubmit: (ok, { address }) => ok && toIn.rxValue.next(address),
                             values: { address }
                         })
                     },
@@ -108,7 +122,7 @@ export default class Transfer extends Component {
                         q = q.trim()
                         const { inputs } = this.state
                         const valid = !!ss58Decode(q)
-                        const toIn = findInput(inputs, 'to')
+                        const toIn = findInput(inputs, this.names.to)
                         toIn.allowAdditions = valid && !toIn.options.find(x => x.value === q)
                         toIn.noResultsMessage = !valid && q.length > 0 ? textsCap.partnerEmptyMsg2 : textsCap.partnerEmptyMsg1
                         this.setState({ inputs })
@@ -123,33 +137,73 @@ export default class Transfer extends Component {
                     type: 'dropdown',
                 },
                 {
-                    name: 'amount-group',
-                    type: 'group',
-                    unstackable: true,
+                    name: this.names.amountSentGroup,
                     inputs: [
                         {
-                            label: textsCap.amount,
+                            // disabled: true,
+                            label: textsCap.amountSentLabel,
                             min: 0,
-                            name: 'amount',
-                            onChange: deferred(this.handleAmountChange, 500),
-                            placeholder: textsCap.amountPlaceholder,
-                            required: true,
+                            name: this.names.amountSent,
+                            readOnly: true,
                             rxValue: new Subject(),
                             type: 'number',
                             useInput: true,
                             value: '',
-                            width: 9,
+                            width: 8,
                         },
                         {
+                            disabled: true,
                             label: textsCap.currency,
-                            name: 'currency',
-                            onChange: this.handleCurrencyChange,
+                            name: this.names.currencySent,
+                            onChange: this.handleCurrencySentChange,
                             options: [],
                             rxValue: new Subject(),
                             search: ['text', 'description'],
                             selection: true,
                             type: 'dropdown',
-                            width: 7,
+                            width: 8,
+                        },
+                    ],
+                    type: 'group',
+                    unstackable: true,
+                },
+                {
+                    content: this.getTxFeeEl(),
+                    name: this.names.txFee,
+                    type: 'html',
+                },
+                {
+                    name: this.names.amountReceivedGroup,
+                    type: 'group',
+                    unstackable: true,
+                    inputs: [
+                        {
+                            icon: 'money',
+                            iconPosition: 'left',
+                            label: textsCap.amountReceivedLabel,
+                            maxLength: 12,
+                            min: 0,
+                            name: this.names.amountReceived,
+                            onChange: deferred(this.handleAmountReceivedChange, 500),
+                            onInvalid: this.handleAmountReceivedInvalid,
+                            placeholder: textsCap.amountReceivedPlaceholder,
+                            required: true,
+                            rxValue: new Subject(),
+                            type: 'number',
+                            useInput: true,
+                            value: '',
+                            width: 8,
+                        },
+                        {
+                            label: textsCap.currency,
+                            name: this.names.currencyReceived,
+                            onChange: this.handleCurrencyReceivedChange,
+                            options: [],
+                            rxValue: new Subject(),
+                            search: ['text', 'description'],
+                            selection: true,
+                            type: 'dropdown',
+                            width: 8,
                         },
                     ],
                 },
@@ -163,13 +217,31 @@ export default class Transfer extends Component {
         this._mounted = true
         this.subscriptions = {}
         const { inputs } = this.state
-        const { values } = this.props
-        const fromIn = findInput(inputs, 'from')
-        const toIn = findInput(inputs, 'to')
+        const { values = {} } = this.props
+        const fromIn = findInput(inputs, this.names.from)
+        const toIn = findInput(inputs, this.names.to)
+        this.currencies = await getCurrencies()
+        const currencyReceivedIn = findInput(inputs, this.names.currencyReceived)
+        const currencySentIn = findInput(inputs, this.names.currencySent)
+        const options = arrSort(
+            this.currencies.map(({ currency, nameInLanguage, ISO }) => ({
+                description: currency,
+                key: ISO,
+                text: nameInLanguage,
+                value: ISO
+            })),
+            'text'
+        )
+        currencyReceivedIn.options = options
+        currencySentIn.options = options
+        values[this.names.currencyReceived] = rxSelectedCurrency.value
+        values[this.names.currencySent] = rxSelectedCurrency.value
+        fillValues(inputs, values)
+        this.setState({ inputs })
+
+        this.subscriptions.selectedCurency = rxSelectedCurrency.subscribe(v => currencySentIn.rxValue.next(v))
         // change value when selected address changes
-        this.subscriptions.selected = rxSelected.subscribe(address => {
-            fromIn.bond.changed(address)
-        })
+        this.subscriptions.selected = rxSelected.subscribe(v => fromIn.rxValue.next(v))
         // re-/populate options if identity list changes
         this.subscriptions.identities = rxIdentities.subscribe(map => {
             const options = Array.from(map).map(([address, { name }]) => ({
@@ -193,21 +265,6 @@ export default class Transfer extends Component {
             )
             this.setState({ inputs })
         })
-
-        // set currency options
-        this.currencies = await getCurrencies()
-        const currencyIn = findInput(inputs, 'currency')
-        const options = this.currencies.map(({ currency, nameInLanguage, ISO }) => ({
-            description: currency,
-            key: ISO,
-            text: nameInLanguage,
-            value: ISO
-        }))
-        currencyIn.options = arrSort(options, 'text')
-        currencyIn.rxValue.next(rxSelectedCurrency.value)
-
-        fillValues(inputs, values)
-        this.setState({ inputs })
     }
 
     componentWillUnmount() {
@@ -221,22 +278,38 @@ export default class Transfer extends Component {
         this.setState({ inputs })
     }
 
-    handleCurrencyChange = (e, values) => {
-        const { inputs } = this.state
-        const amountIn = findInput(inputs, 'amount')
-        const currencyObj = this.currencies.find(x => x.ISO === values.currency) || {}
-        amountIn.decimals = parseInt(currencyObj.decimals || 0)
-        this.setState({ inputs })
-        isValidNumber(values.amount) && setTimeout(() => amountIn.rxValue.next(values.amount))
-    }
+    getTxFeeEl = feeXTX => (
+        <Text EL='div' style={{
+            marginBottom: 15,
+            marginTop: feeXTX ? -15 : 15,
+            textAlign: 'center',
+        }}>
+            {feeXTX && (
+                <Currency {...{
+                    prefix: `${textsCap.includesTxFee}: `,
+                    value: feeXTX,
+                    unit: currencyDefault,
+                    unitDisplayed: rxSelectedCurrency.value
+                }} />
+            )}
+            <div style={{ fontSize: 32, paddingTop: !feeXTX ? 0 : 15 }}>
+                <Icon {...{ name: 'exchange', rotated: 'counterclockwise' }} />
+            </div>
+        </Text>
+    )
 
-    handleAmountChange = async (_, values) => {
-        const { amount, currency, from, to } = values
-        const valid = isValidNumber(amount) && amount > 0
+    handleAmountReceivedChange = async (_, values) => {
+        const amountReceived = values[this.names.amountReceived]
+        const currencyReceived = values[this.names.currencyReceived]
+        const from = values[this.names.from]
+        const to = values[this.names.to]
+        const valid = isValidNumber(amountReceived) && amountReceived > 0
         const identity = findIdentity(from)
         const { inputs, submitDisabled } = this.state
-        const amountIn = findInput(inputs, 'amount')
-        const amountGroupIn = findInput(inputs, 'amount-group')
+        const amountIn = findInput(inputs, this.names.amountReceived)
+        const amountGroupIn = findInput(inputs, this.names.amountReceivedGroup)
+        const amountSentIn = findInput(inputs, this.names.amountSent)
+        const txFeeIn = findInput(inputs, this.names.txFee)
         amountIn.loading = valid
         amountIn.invalid = !valid
         submitDisabled.loadingAmount = valid
@@ -244,10 +317,89 @@ export default class Transfer extends Component {
         this.setState({ inputs, submitDisabled })
         if (!valid) return
 
-        const dualMode = currency && currency !== rxSelectedCurrency.value
         const res = await convertTo(
-            amount,
-            currency,
+            amountReceived,
+            currencyReceived,
+            currencyDefault,
+        )
+        this.amountXTX = res[0]
+        const resAmountSent = await convertTo(
+            this.amountXTX,
+            currencyDefault,
+            rxSelectedCurrency.value,
+        )
+        const { api } = await getConnection()
+        const [balance, locks] = await query(api.queryMulti, [[
+            [api.query.balances.freeBalance, from],
+            [api.query.balances.locks, from]
+        ]])
+        const freeBalance = balance - locks.reduce((sum, x) => sum + x.amount, 0)
+        this.fee = await getTxFee(
+            api,
+            from,
+            await api.tx.balances.transfer(to || from, this.amountXTX),
+            identity.uri,
+        )
+        txFeeIn.content = this.getTxFeeEl(this.fee)
+        const total = this.fee + this.amountXTX
+        const gotFund = freeBalance - total > 0
+        submitDisabled.loadingAmount = false
+        amountIn.invalid = !gotFund
+        amountIn.loading = false
+        amountIn.icon = gotFund ? 'check' : 'exclamation circle'
+        amountIn.iconPosition = 'left'
+        amountGroupIn.message = gotFund ? null : {
+            content: textsCap.insufficientBalance,
+            status: 'error',
+        }
+
+        amountSentIn.rxValue.next(resAmountSent[1])
+        this.setState({ inputs, submitDisabled })
+    }
+
+    handleAmountReceivedInvalid = () => {
+        const { inputs } = this.state
+        const amountReceivedIn = findInput(inputs, this.names.amountReceived)
+        const amountReceivedGrpIn = findInput(inputs, this.names.amountReceivedGroup)
+        const amountSentIn = findInput(inputs, this.names.amountSent)
+        amountSentIn.rxValue.next('')
+        amountReceivedIn.icon = 'money'
+        amountReceivedGrpIn.message = null
+        this.setState({ inputs })
+    }
+
+    handleCurrencyReceivedChange = (_, values) => {
+        const { inputs } = this.state
+        const amountReceived = values[this.names.amountReceived]
+        const currencyReceived = values[this.names.currencyReceived]
+        const amountReceivedIn = findInput(inputs, this.names.amountReceived)
+        const currencyObj = this.currencies.find(x => x.ISO === currencyReceived) || {}
+        amountReceivedIn.decimals = parseInt(currencyObj.decimals || 0)
+        // this.setState({ inputs })
+        isValidNumber(amountReceived) && this.handleAmountReceivedChange(_, values)
+    }
+
+    handleAmountReceivedChangez = async (_, values) => {
+        const amountReceived = values[this.names.amountReceived]
+        const currencyReceived = values[this.names.currencyReceived]
+        const from = values[this.names.from]
+        const to = values[this.names.to]
+        const valid = isValidNumber(amountReceived) && amountReceived > 0
+        const identity = findIdentity(from)
+        const { inputs, submitDisabled } = this.state
+        const amountIn = findInput(inputs, this.names.amountReceived)
+        const amountGroupIn = findInput(inputs, this.names.amountReceivedGroup)
+        amountIn.loading = valid
+        amountIn.invalid = !valid
+        submitDisabled.loadingAmount = valid
+        amountGroupIn.message = null
+        this.setState({ inputs, submitDisabled })
+        if (!valid) return
+
+        const dualMode = currencyReceived && currencyReceived !== rxSelectedCurrency.value
+        const res = await convertTo(
+            amountReceived,
+            currencyReceived,
             currencyDefault,
         )
         this.amountXTX = res[0]
@@ -270,70 +422,27 @@ export default class Transfer extends Component {
         amountIn.invalid = !gotFund
         const unitDisplayed = rxSelectedCurrency.value
         amountGroupIn.message = {
-            content: valid && (
-                <DataTable {...{
-                    columns: [
-                        { key: 'amountXTX', title: textsCap.amountToSend },
-                        { key: 'fee', title: textsCap.fxFee },
-                        { key: 'total', title: textsCap.totalRequired },
-                    ],
-                    data: [
-                        {
-                            amountXTX: <Currency {...{ EL: 'div', unitDisplayed, value: this.amountXTX }} />,
-                            fee: < Currency {...{ EL: 'div', unitDisplayed, value: this.fee }} />,
-                            total: <Currency {...{ EL: 'div', unitDisplayed, value: total }} />,
-                        },
-                        dualMode && {
-                            amountXTX: <Currency {...{ unitDisplayed: currency, value: this.amountXTX }} />,
-                            fee: <Currency {...{ unitDisplayed: currency, value: this.fee }} />,
-                            total: <Currency {...{ unitDisplayed: currency, value: total }} />,
-                        }
-                    ].filter(Boolean),
-                    searchable: false,
-                }} />
-            ),
-            // content: (
-            //     <span>
-            //         <Currency {...{
-            //             EL: 'div',
-            //             prefix: `${textsCap.amount}: `,
-            //             unitDisplayed: rxSelectedCurrency.value,
-            //             value: this.amountXTX,
-            //             suffix: !dualMode ? '' : (
-            //                 <Currency {...{
-            //                     prefix: ' | ',
-            //                     unitDisplayed: currency,
-            //                     value: this.amountXTX,
-            //                 }} />
-            //             )
-            //         }} />
-            //         <Currency {...{
-            //             EL: 'div',
-            //             prefix: `${textsCap.txFee}: `,
-            //             unitDisplayed: rxSelectedCurrency.value,
-            //             value: this.fee,
-            //             suffix: !dualMode ? '' : (
-            //                 <Currency {...{
-            //                     prefix: ' | ',
-            //                     unitDisplayed: currency,
-            //                     value: this.fee,
-            //                 }} />
-            //             )
-            //         }} />
-            //         <Currency {...{
-            //             EL: 'div',
-            //             prefix: `${textsCap.total}: `,
-            //             unitDisplayed: rxSelectedCurrency.value,
-            //             value: total,
-            //             suffix: !dualMode ? '' : (
-            //                 <Currency {...{
-            //                     prefix: ' | ',
-            //                     unitDisplayed: currency,
-            //                     value: total,
-            //                 }} />
-            //             )
-            //         }} />
-            //     </span>
+            // content: valid && (
+            //     <DataTable {...{
+            //         columns: [
+            //             { key: 'amountXTX', title: textsCap.amountToSend },
+            //             { key: 'fee', title: textsCap.fxFee },
+            //             { key: 'total', title: textsCap.totalRequired },
+            //         ],
+            //         data: [
+            //             {
+            //                 amountXTX: <Currency {...{ EL: 'div', unitDisplayed, value: this.amountXTX }} />,
+            //                 fee: < Currency {...{ EL: 'div', unitDisplayed, value: this.fee }} />,
+            //                 total: <Currency {...{ EL: 'div', unitDisplayed, value: total }} />,
+            //             },
+            //             dualMode && {
+            //                 amountXTX: <Currency {...{ unitDisplayed: currencyReceived, value: this.amountXTX }} />,
+            //                 fee: <Currency {...{ unitDisplayed: currencyReceived, value: this.fee }} />,
+            //                 total: <Currency {...{ unitDisplayed: currencyReceived, value: total }} />,
+            //             }
+            //         ].filter(Boolean),
+            //         searchable: false,
+            //     }} />
             // ),
             header: gotFund ? '' : (
                 <div className='header' style={{ paddingTop: 10 }}>
@@ -347,16 +456,20 @@ export default class Transfer extends Component {
         this.setState({ inputs, submitDisabled })
     }
 
-    handleSubmit = (_, { amount, currency, from, to }) => {
+    handleSubmit = (_, values) => {
+        const amountReceived = values[this.names.amountReceived]
+        const currencyReceived = values[this.names.currencyReceived]
+        const from = values[this.names.from]
+        const to = vlaues[this.names.to]
         const { name } = partners.get(to)
         const description = [
             `${textsCap.sender}: ${findIdentity(from).name}`,
             `${textsCap.recipient}: ${getAddressName(to)}`,
-            `${textsCap.amount}: ${amount} ${currencyDefault}`,
+            `${textsCap.amount}: ${amountReceived} ${currencyReceived}`,
         ].join('\n')
         const then = (success, resultOrError) => {
-            if (!success) return this.setMessage(resultOrError)
-            this.setMessage(null, resultOrError, name, amount, currency)
+            if (!success) return this.setPostSubmitMessage(resultOrError)
+            this.setPostSubmitMessage(null, resultOrError, name, amountReceived)
             this.clearForm()
         }
 
@@ -367,20 +480,20 @@ export default class Transfer extends Component {
         })
 
         confirm({
-            onConfirm: () => this.setMessage() | addToQueue(queueProps),
+            onConfirm: () => this.setPostSubmitMessage() | addToQueue(queueProps),
             size: 'mini',
         })
 
     }
 
-    setMessage = (err, result = [], recipientName, amount, currency) => {
+    setPostSubmitMessage = (err, result = [], recipientName, amountReceived) => {
         const { submitDisabled } = this.state
         const [hash] = result
-        const inProgress = !err && !hash
+        const submitInProgress = !err && !hash
         let content = ''
         let header = textsCap.submitInprogressHeader
         let status = 'loading'
-        if (!inProgress) {
+        if (!submitInProgress) {
             content = err ? `${err}` : (
                 <ul style={{ listStyleType: 'none', margin: 0, paddingLeft: 0 }}>
                     <li>{textsCap.recipient}: {recipientName}</li>
@@ -389,7 +502,7 @@ export default class Transfer extends Component {
                             prefix: `${textsCap.amount}: `,
                             unit: currencyDefault,
                             unitDisplayed: rxSelectedCurrency,
-                            value: amount,
+                            value: amountReceived,
                         }} />
                     </li>
                     <li>
@@ -405,39 +518,43 @@ export default class Transfer extends Component {
             header = err ? textsCap.submitErrorHeader : textsCap.submitSuccessHeader
             status = err ? 'error' : 'success'
         }
-        submitDisabled.submission = inProgress
+        // submitDisabled.submission = submitInProgress
         this.setState({
-            message: { content, header, showIcon: true, status },
+            message: { content, header, icon: true, status },
             submitDisabled,
+            submitInProgress,
         })
     }
 
     render = () => {
-        const { inputs } = this.state
+        const { inputs, values } = this.state
         const address = rxSelected.value
-        const { currency } = this.values
-        const dualBalance = currency && currency !== rxSelectedCurrency.value
-        if (this.address !== address || this.currency !== currency + rxSelectedCurrency.value) {
-            this.currency = currency + rxSelectedCurrency.value
+        const currencyReceived = values[this.names.currencyReceived]
+        const dualBalance = currencyReceived && currencyReceived !== rxSelectedCurrency.value
+        if (this.address !== address || this.curs !== currencyReceived + rxSelectedCurrency.value) {
+            this.curs = currencyReceived + rxSelectedCurrency.value
             this.address = address
-            const fromIn = findInput(inputs, 'from')
-            fromIn.message = !address ? null : {
-                content: (
+            const fromIn = findInput(inputs, this.names.from)
+            fromIn.label = !address ? undefined : (
+                <span>
+                    {textsCap.payerIdentity} (
                     <Balance {...{
                         address,
                         emptyMessage: textsCap.loadingBalance + '...',
                         prefix: `${textsCap.availableBalance}: `,
-                        suffix: !dualBalance ? undefined : (
+                        suffix: !dualBalance ? '' : (
                             <Balance {...{
                                 address,
                                 prefix: ' | ',
+                                showDetailed: null,
                                 unit: rxSelectedCurrency.value,
-                                unitDisplayed: currency || rxSelectedCurrency.value,
+                                unitDisplayed: currencyReceived || rxSelectedCurrency.value,
                             }} />
                         )
                     }} />
-                )
-            }
+                    )
+                </span>
+            )
         }
         return <FormBuilder {...{ ...this.props, ...this.state }} />
     }

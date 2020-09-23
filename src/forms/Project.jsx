@@ -118,13 +118,13 @@ export default class ProjectForm extends Component {
             content: texts.submitQueuedMsg,
             header: texts.submitQueuedHeader,
             status: 'loading',
-            showIcon: true
+            icon: true
         }
         const handleTxError = (ok, err) => !ok && this.setState({
             message: {
                 content: `${err}`,
                 header: texts.submitErrorHeader,
-                showIcon: true,
+                icon: true,
                 status: 'error'
             },
             submitDisabled: false,
@@ -152,7 +152,7 @@ export default class ProjectForm extends Component {
                             message: {
                                 content: err || '',
                                 header: err ? texts.submitErrorHeader : texts.submitSuccessHeader,
-                                showIcon: true,
+                                icon: true,
                                 status: !err ? 'success' : 'warning',
                             },
                             submitDisabled: false,

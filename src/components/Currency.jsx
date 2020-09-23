@@ -10,6 +10,7 @@ export const Currency = props => {
         EL,
         emptyMessage,
         onChange,
+        onClick,
         prefix,
         style,
         suffix,
@@ -62,6 +63,7 @@ export const Currency = props => {
     return (
         <EL {...{
             className,
+            onClick,
             style: { color: error ? 'red' : undefined, ...style },
             title: error ? `${error}` : title || (
                 !isDefined(value) || isSame ? '' : `${value || 0} ${unit}`
@@ -82,6 +84,7 @@ Currency.propTypes = {
     ]),
     // @onChange is invoked whenever the account balance/value changes. 
     onChange: PropTypes.func,
+    onClick: PropTypes.func,
     prefix: PropTypes.any,
     style: PropTypes.object,
     suffix: PropTypes.any,

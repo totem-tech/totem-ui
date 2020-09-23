@@ -582,7 +582,7 @@ export default class TaskForm extends Component {
                 message: {
                     content: !success && `${err} `, // error can be string or Error object.
                     header: success ? textsCap.submitSuccess : textsCap.submitFailed,
-                    showIcon: true,
+                    icon: true,
                     status: success ? 'success' : 'error',
                 },
                 submitDisabled,
@@ -668,7 +668,7 @@ export default class TaskForm extends Component {
             loading: true,
             message: {
                 header: textsCap.addedToQueue,
-                showIcon: true,
+                icon: true,
                 status: 'loading',
             },
             submitDisabled,

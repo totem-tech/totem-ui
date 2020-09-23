@@ -67,7 +67,7 @@ export default class FormRegister extends Component {
             const message = {
                 content: err,
                 header: success ? texts.registrationComplete : texts.registrationFailed,
-                showIcon: true,
+                icon: true,
                 status: success ? 'success' : 'error'
             }
             this.setState({ message, success: success })

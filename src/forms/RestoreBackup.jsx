@@ -300,7 +300,7 @@ export default class RestoreBackup extends Component {
 		if (noAction) return this.setState({
 			message: {
 				header: textsCap.submitNoAction,
-				showIcon: true,
+				icon: true,
 				status: 'warning',
 			}
 		})

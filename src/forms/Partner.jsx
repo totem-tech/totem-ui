@@ -292,7 +292,7 @@ class Partner extends Component {
             closeText: wordsCap.close,
             message: closeOnSubmit ? null : {
                 content: this.doUpdate ? texts.submitSuccessMsg2 : texts.submitSuccessMsg1,
-                showIcon: true,
+                icon: true,
                 status: 'success'
             },
             success: true,
@@ -304,7 +304,7 @@ class Partner extends Component {
             message: {
                 header: this.doUpdate ? texts.submitSuccessMsg2 : texts.submitSuccessMsg1,
                 content: texts.companyFormOnOpenMsg,
-                showIcon: true,
+                icon: true,
                 status: 'success'
             },
             onSubmit: (e, v, success) => success && addressbook.setPublic(address),

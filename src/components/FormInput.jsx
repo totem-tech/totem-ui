@@ -38,15 +38,6 @@ const [texts] = translated({
 	number: 'Please enter a valid number',
 	required: 'Required field',
 })
-const VALIDATION_MESSAGES = Object.freeze({
-	integer: texts.integer,
-	max: max => `${texts.max} ${max}`,
-	maxLength: (value, max) => `${isStr(value) ? texts.maxLengthText : texts.maxLengthNum}: ${max}`,
-	min: min => `${texts.min} ${min}`,
-	minLength: (value, min) => `${isStr(value) ? texts.minLengthText : texts.minLengthNum}: ${min}`,
-	number: texts.number,
-	required: texts.required,
-})
 const validationTypes = Object.values(TYPES)
 // properties exclude from being used in the DOM
 const NON_ATTRIBUTES = Object.freeze([
@@ -68,6 +59,8 @@ const NON_ATTRIBUTES = Object.freeze([
 	'useInput',
 	'validate',
 	'rxValue',
+	'width',
+	'onInalid',
 ])
 export const nonValueTypes = Object.freeze(['button', 'html'])
 
@@ -135,7 +128,7 @@ export class FormInput extends Component {
 					// Sematic UI's Checkbox component only supports string and number as value
 					// This allows support for any value types
 					data.value = data.checked ? trueValue : falseValue
-					if (required && !data.checked) errMsg = VALIDATION_MESSAGES.required
+					if (required && !data.checked) errMsg = texts.required
 					break
 				case 'number':
 					validatorConfig = { type: integer ? TYPES.integer : TYPES.number }
@@ -153,7 +146,7 @@ export class FormInput extends Component {
 			}
 		}
 
-		if (!errMsg && validationTypes.includes(typeLower) || validatorConfig) {
+		if (!errMsg && hasVal && validationTypes.includes(typeLower) || validatorConfig) {
 			errMsg = validator.validate(data.value, { ...this.props, ...validatorConfig }, customMsgs)
 		}
 
@@ -167,7 +160,7 @@ export class FormInput extends Component {
 		}
 		if (message || !isFn(validate)) return triggerChange()
 
-		!isFn(validate) && isFn(onChange) && onChange(event, data, this.props)
+		// !isFn(validate) && isFn(onChange) && onChange(event, data, this.props)
 
 		const handleValidate = vMsg => {
 			if (vMsg === true) {
@@ -233,7 +226,7 @@ export class FormInput extends Component {
 				attrs.type = 'checkbox'
 				delete attrs.value
 				hideLabel = true
-				inputEl = <Form.Checkbox {...attrs} label={label} />
+				inputEl = <Checkbox {...attrs} label={label} />
 				break
 			case 'checkbox-group':
 			case 'radio-group':
@@ -246,9 +239,12 @@ export class FormInput extends Component {
 				if (isArr(attrs.search)) {
 					attrs.search = searchRanked(attrs.search)
 				}
+				attrs.style = { maxWidth: '100%', minWidth: '100%', ...attrs.style }
 				inputEl = <Dropdown {...attrs} />
+
 				break
 			case 'group':
+				// NB: if `widths` property is used `unstackable` property is ignored by Semantic UI!!!
 				isGroup = true
 				inputEl = attrs.inputs.map((subInput, i) => <FormInput key={i} {...subInput} />)
 				break
@@ -291,16 +287,20 @@ export class FormInput extends Component {
 		)
 
 		let groupEl = (
-			<div>
+			<React.Fragment>
 				<Form.Group {...{
 					className: 'form-group',
 					...objWithoutKeys(attrs, ['inputs']),
-					style: { ...styleContainer, ...attrs.style },
+					style: {
+						margin: '0px -5px 15px -5px',
+						...styleContainer,
+						...attrs.style,
+					},
 				}}>
 					{inputEl}
 				</Form.Group>
 				{message && <Message {...message} />}
-			</div>
+			</React.Fragment>
 		)
 
 		if (!isObj(accordion)) return groupEl
@@ -359,7 +359,10 @@ FormInput.propTypes = {
 	useInput: PropTypes.bool,
 	message: PropTypes.object,
 	name: PropTypes.string.isRequired,
-	label: PropTypes.string,
+	label: PropTypes.oneOfType([
+		PropTypes.string,
+		PropTypes.element,
+	]),
 	onChange: PropTypes.func,
 	placeholder: PropTypes.string,
 	readOnly: PropTypes.bool,

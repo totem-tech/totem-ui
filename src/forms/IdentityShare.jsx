@@ -180,7 +180,7 @@ export default class IdentityShareForm extends Component {
             const message = {
                 content: texts.successMsgContent,
                 header: texts.successMsgHeader,
-                showIcon: true,
+                icon: true,
                 status: 'success',
             }
             this.setState({
@@ -188,7 +188,7 @@ export default class IdentityShareForm extends Component {
                 message: success ? message : {
                     header: texts.failedMsgHeader,
                     content: err,
-                    showIcon: true,
+                    icon: true,
                     status: 'error',
                 },
                 success,

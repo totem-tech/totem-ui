@@ -32,12 +32,12 @@ export default function useLedgerAcBalances(address, timeout = 10000) {
         let error = false
         const loadingMsg = {
             content: textsCap.loading,
-            showIcon: true,
+            icon: true,
             status: 'loading',
         }
         const errorMsg = {
             header: textsCap.errorHeader,
-            showIcon: true,
+            icon: true,
             status: 'error',
         }
         const handleAccounts = async (accounts = []) => {

@@ -3,34 +3,44 @@ import PropTypes from 'prop-types'
 import { Icon, Message as SemanticMessage } from 'semantic-ui-react'
 import { icons, isObj, isStr, objWithoutKeys } from '../utils/utils'
 
+export const statuses = {
+    BASIC: '',
+    ERROR: 'error',
+    INFO: 'info',
+    LOADING: 'loading',
+    SUCCESS: 'success',
+    WARNING: 'warning',
+}
 // valid statuses: error, info, loading, warning, success
 export const Message = (message = {}) => {
-    let { content, header, icon, list, showIcon, status, style } = message || {}
+    let { content, header, icon, list, status, style } = message || {}
     if (!isObj(message) || (!content && !list && !header)) return ''
     icon = React.isValidElement(icon) ? icon.props : icon
-    if (showIcon) {
+    if (icon || icon === true) {
         icon = icons[status]
     }
-    icon = !isStr(icon) ? icon : { name: icon }
+    icon = !isStr(icon) ? icon || undefined : { name: icon }
 
     return (
         <SemanticMessage
-            {...(objWithoutKeys(message, ['showIcon']))}
-            error={status === 'error'}
+            {...message}
+            error={status === statuses.ERROR}
             icon={icon && <Icon {...icon} style={{ width: 42, ...icon.style }} />}
-            info={status === 'info'}
+            info={status === statuses.INFO}
             style={{ textAlign: icon ? 'left' : 'center', ...style }}
-            success={status === 'success'}
+            success={status === statuses.SUCCESS}
             visible={!!status}
-            warning={['warning', 'loading'].includes(status)}
+            warning={[statuses.WARNING, statuses.LOADING].includes(status)}
         />
     )
 }
 // support any properties supported by Semantic's Message component
 Message.propTypes = {
-    showIcon: PropTypes.bool,
+    icon: PropTypes.oneOfType([
+        PropTypes.bool,
+        PropTypes.element,
+        PropTypes.object,
+        PropTypes.string,
+    ]),
 }
-Message.defaultProps = {
-    showIcon: false,
-}
-export default Message
+export default React.memo(Message)

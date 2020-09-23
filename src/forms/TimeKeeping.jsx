@@ -107,7 +107,7 @@ function handleDurationChange(e, formValues, i) {
             </span>
         ),
         header: texts.invalidDuration,
-        showIcon: true,
+        icon: true,
         status: 'error',
     }
     inputs[i].invalid = invalid
@@ -123,7 +123,7 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
         if (banned) return this.setState({
             message: {
                 header: texts.permissionDenied,
-                showIcon: true,
+                icon: true,
                 status: 'error',
             }
         })
@@ -141,7 +141,7 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
                 message: {
                     content: success ? texts.recordSubmittedSuccessfully : texts.transactionFailed,
                     header: success ? wordsCap.success : wordsCap.error,
-                    showIcon: true,
+                    icon: true,
                     status: success ? 'success' : 'error',
                 },
                 submitDisabled: false,
@@ -168,7 +168,7 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
         content: texts.requestQueuedMsg,
         header: texts.addedToQueue,
         status: 'loading',
-        showIcon: true
+        icon: true
     }
 
     this.confirmId = showForm(FormBuilder, {
@@ -327,7 +327,7 @@ export default class TimeKeepingForm extends Component {
         inputs[index].loading = true
         inputs[index].message = {
             content: texts.checkingProjectStatus,
-            showIcon: true,
+            icon: true,
             status: 'loading',
         }
         this.setState({ inputs, submitDisabled: true })
@@ -341,7 +341,7 @@ export default class TimeKeepingForm extends Component {
         inputs[index].message = projectActive ? undefined : {
             content: texts.selectActiveProject,
             header: texts.inactiveProjectSelected,
-            showIcon: true,
+            icon: true,
             status: 'error',
         }
         if (!projectActive) {
@@ -365,7 +365,7 @@ export default class TimeKeepingForm extends Component {
             // user has been banned by activity owner
             inputs[index].message = {
                 content: texts.workerBannedMsg,
-                showIcon: true,
+                icon: true,
                 status: 'error',
             }
             return this.setState({ inputs, submitDisabled: false })
@@ -386,7 +386,7 @@ export default class TimeKeepingForm extends Component {
                 </div>
             ),
             header: invited ? texts.inactiveWorkerHeader2 : texts.inactiveWorkerHeader1,
-            showIcon: true,
+            icon: true,
             status: 'error',
         }
         this.setState({ inputs, submitDisabled: false })
@@ -622,7 +622,7 @@ export default class TimeKeepingForm extends Component {
                 message: !inprogress ? message : {
                     content: texts.timerRunningMsg,
                     header: texts.timerStarted,
-                    showIcon: true,
+                    icon: true,
                     status: 'info'
                 },
                 onChange: this.handleValuesChange,

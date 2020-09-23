@@ -70,12 +70,12 @@ export default function useTasks(types, address, timeout = 5000) {
         const unsubscribers = {}
         const loadingMsg = {
             content: textsCap.loadingMsg,
-            showIcon: true,
+            icon: true,
             status: 'loading',
         }
         const errorMsg = {
             header: textsCap.errorHeader,
-            showIcon: true,
+            icon: true,
             status: 'error'
         }
 
@@ -195,7 +195,7 @@ export default function useTasks(types, address, timeout = 5000) {
                 console.error(err)
                 msg = {
                     content: `${err}`,
-                    showIcon: true,
+                    icon: true,
                     status: 'error',
                 }
             }

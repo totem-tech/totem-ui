@@ -83,7 +83,7 @@ export default class IntroduceUser extends Component {
             message: {
                 content: textsCap.addedToQueueContent,
                 header: textsCap.addedToQueueHeader,
-                showIcon: true,
+                icon: true,
                 status: 'success',
             },
         })
@@ -97,7 +97,7 @@ export default class IntroduceUser extends Component {
                 const message = {
                     content: success ? textsCap.submitSuccessMessage : err,
                     header: success ? textsCap.submitSuccessHeader : textsCap.submitErrorHeader,
-                    showIcon: true,
+                    icon: true,
                     status: success ? 'success' : 'error',
                 }
                 this.setState({ loading: false, message, success })

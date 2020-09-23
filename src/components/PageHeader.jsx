@@ -151,6 +151,7 @@ const PageHeaderView = props => {
 					<Balance {...{
 						address: address,
 						EL: 'div',
+						showDetailed: null,
 						style: {
 							color: 'grey',
 							textAlign: 'right',

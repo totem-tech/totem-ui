@@ -189,7 +189,7 @@ export default class ReassignProjectForm extends Component {
                 header: texts.queuedMsgHeader,
                 content: texts.queuedMsgContent,
                 status: 'success',
-                showIcon: true
+                icon: true
             },
             success: true
         })

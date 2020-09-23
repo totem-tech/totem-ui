@@ -102,7 +102,7 @@ export default class NewsletteSignup extends Component {
             message: {
                 content: error ? `${error}` : textsCap.successMsg,
                 header: textsCap.successHeader,
-                showIcon: true,
+                icon: true,
                 status: error ? 'error' : 'success'
             },
         })
@@ -126,7 +126,7 @@ export default class NewsletteSignup extends Component {
                         </div>
                     </span>
                 ),
-                showIcon: false,
+                icon: false,
                 status: 'basic',
             }} />
         )

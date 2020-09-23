@@ -6,34 +6,63 @@ import Currency from './Currency'
 import { query } from '../services/blockchain'
 import { translated } from '../services/language'
 import { unsubscribe } from '../services/react'
+import { currencyDefault } from '../services/currency'
 
 const textsCap = translated({
-    freeBalance: 'free balance',
-    lockedBalance: 'locked balance'
+    balance: 'balance',
+    loadingAccBal: 'loading account balance',
+    locked: 'locked'
 }, true)[1]
 
 export const Balance = (props) => {
-    const { address, emptyMessage } = props
+    let { address, emptyMessage, showDetailed, style } = props
+    const [showLocked, setShowLocked] = useState(showDetailed)
     const balance = useBalance(address)
     const locks = userLocks(address)
+    const isLoading = !isValidNumber(balance)
     const lockedBalance = locks.reduce((sum, next) => sum + next.amount, 0)
-    const freeBalance = !isValidNumber(balance) ? undefined : balance - lockedBalance
+    const freeBalance = isLoading ? undefined : balance - lockedBalance
+    style = { cursor: 'pointer', ...style }
+    const handleClick = showDetailed === null ? undefined : (
+        e => e.stopPropagation() | setShowLocked(!showLocked)
+    )
 
-    return <Currency {...{
-        ...props,
-        title: `${textsCap.freeBalance}: ${balance} XTX | ${textsCap.lockedBalance}: ${lockedBalance} XTX`,
-        value: freeBalance,
-        emptyMessage: emptyMessage === null ? '' : (
-            <span>
-                <Icon
-                    name='spinner'
-                    loading={true}
-                    style={{ padding: 0 }}
-                />
-                {emptyMessage}
-            </span>
-        )
-    }} />
+    if (!isLoading && showLocked) return (
+        <Currency {...{
+            ...props,
+            onClick: handleClick,
+            prefix: `${textsCap.balance}: `,
+            style,
+            value: balance,
+            unit: currencyDefault,
+            suffix: (
+                <Currency {...{
+                    prefix: ` | ${textsCap.locked}: `,
+                    value: lockedBalance,
+                    unit: currencyDefault,
+                }} />
+            )
+        }} />
+    )
+    return (
+        <Currency {...{
+            ...props,
+            onClick: handleClick,
+            style,
+            value: freeBalance,
+            emptyMessage: emptyMessage === null ? '' : (
+                <span title={!isLoading ? '' : textsCap.loadingAccBal}>
+                    <Icon {...{
+                        className: 'no-margin',
+                        name: 'spinner',
+                        loading: true,
+                        style: { padding: 0 },
+                    }} />
+                    {emptyMessage}
+                </span>
+            )
+        }} />
+    )
 }
 Balance.propTypes = {
     address: PropTypes.string.isRequired,
@@ -41,8 +70,13 @@ Balance.propTypes = {
     emptyMessage: PropTypes.oneOfType([
         PropTypes.string,
         PropTypes.element,
-    ])
+    ]),
+    // @showDetailed: if truthy will display total balance and locked balance. Otherwise, free balance.
+    showDetailed: PropTypes.bool,
     // any other props accepted by Currency component will be passed through
+}
+Balance.defaultProps = {
+    showDetailed: false,
 }
 export default React.memo(Balance)
 
