@@ -155,8 +155,9 @@ const styles = {
 		height: '100%',
 		margin: 0,
 		overflow: 'hidden auto',
-		WebkitOverflow: 'hidden auto',
 		scrollBehavior: 'smooth',
+		transition: 'resize 0.3s ease',
+		WebkitOverflow: 'hidden auto',
 	},
 	pushable: {
 		margin: 0,

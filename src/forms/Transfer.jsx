@@ -139,7 +139,7 @@ export default class Transfer extends Component {
                     name: this.names.amountSentGroup,
                     inputs: [
                         {
-                            // disabled: true,
+                            disabled: true,
                             label: textsCap.amountSentLabel,
                             min: 0,
                             name: this.names.amountSent,
