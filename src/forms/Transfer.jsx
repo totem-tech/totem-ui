@@ -297,10 +297,7 @@ export default class Transfer extends Component {
             }} />
         )
         return (
-            <Text EL='div' style={{
-                marginBottom: 15,
-                marginTop: feeXTX ? -15 : 15,
-            }}>
+            <Text EL='div' style={{ margin: `${feeXTX ? '-' : ''}15px 0 15px 3px` }}>
                 {feeXTX && (
                     <Currency {...{
                         prefix: `${textsCap.includesTxFee}: `,
