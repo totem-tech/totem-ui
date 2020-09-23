@@ -227,9 +227,13 @@ export default class Transfer extends Component {
         const currencySentIn = findInput(inputs, this.names.currencySent)
         const options = arrSort(
             this.currencies.map(({ currency, nameInLanguage, ISO }) => ({
-                description: currency,
+                description: (
+                    <span classname='description' style={{ fontSize: '75%' }}>
+                        {nameInLanguage}
+                    </span>
+                ),
                 key: ISO,
-                text: nameInLanguage,
+                text: currency,
                 value: ISO
             })),
             'text'
