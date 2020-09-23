@@ -1,11 +1,11 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Subject } from 'rxjs'
-import { Dropdown, Icon } from 'semantic-ui-react'
+import { Icon } from 'semantic-ui-react'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import Balance from '../components/Balance'
-import { arrSort, textEllipsis, isFn, deferred, isValidNumber } from '../utils/utils'
-import convert, { ss58Decode } from '../utils/convert'
+import { arrSort, textEllipsis, deferred, isValidNumber } from '../utils/utils'
+import { ss58Decode } from '../utils/convert'
 import PartnerForm from '../forms/Partner'
 // services
 import { getConnection, query, queueables } from '../services/blockchain'
@@ -17,18 +17,16 @@ import {
 } from '../services/currency'
 import {
     find as findIdentity,
-    getAll,
     rxIdentities,
     rxSelected,
 } from '../services/identity'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
-import partners, { getAddressName, rxPartners } from '../services/partner'
+import { getAddressName, rxPartners } from '../services/partner'
 import { addToQueue } from '../services/queue'
 import { unsubscribe } from '../services/react'
 import { getTxFee } from '../utils/polkadotHelper'
 import Currency from '../components/Currency'
-import DataTable from '../components/DataTable'
 import Text from '../components/Text'
 
 const textsCap = translated({
@@ -49,6 +47,7 @@ const textsCap = translated({
     payerIdentity: 'payer identity',
     queueTitle: 'transfer funds',
     recipient: 'recipient',
+    send: 'send',
     sender: 'sender',
     status: 'status',
     submitErrorHeader: 'transfer error',
@@ -379,105 +378,30 @@ export default class Transfer extends Component {
         isValidNumber(amountReceived) && this.handleAmountReceivedChange(_, values)
     }
 
-    handleAmountReceivedChangez = async (_, values) => {
-        const amountReceived = values[this.names.amountReceived]
-        const currencyReceived = values[this.names.currencyReceived]
-        const from = values[this.names.from]
-        const to = values[this.names.to]
-        const valid = isValidNumber(amountReceived) && amountReceived > 0
-        const identity = findIdentity(from)
-        const { inputs, submitDisabled } = this.state
-        const amountIn = findInput(inputs, this.names.amountReceived)
-        const amountGroupIn = findInput(inputs, this.names.amountReceivedGroup)
-        amountIn.loading = valid
-        amountIn.invalid = !valid
-        submitDisabled.loadingAmount = valid
-        amountGroupIn.message = null
-        this.setState({ inputs, submitDisabled })
-        if (!valid) return
-
-        const dualMode = currencyReceived && currencyReceived !== rxSelectedCurrency.value
-        const res = await convertTo(
-            amountReceived,
-            currencyReceived,
-            currencyDefault,
-        )
-        this.amountXTX = res[0]
-        const { api } = await getConnection()
-        const [balance, locks] = await query(api.queryMulti, [[
-            [api.query.balances.freeBalance, from],
-            [api.query.balances.locks, from]
-        ]])
-        const freeBalance = balance - locks.reduce((sum, x) => sum + x.amount, 0)
-        this.fee = await getTxFee(
-            api,
-            from,
-            await api.tx.balances.transfer(to || from, this.amountXTX),
-            identity.uri,
-        )
-        const total = this.fee + this.amountXTX
-        const gotFund = freeBalance - total >= 0
-        submitDisabled.loadingAmount = false
-        submitDisabled.loadingAmount = false
-        amountIn.invalid = !gotFund
-        const unitDisplayed = rxSelectedCurrency.value
-        amountGroupIn.message = {
-            // content: valid && (
-            //     <DataTable {...{
-            //         columns: [
-            //             { key: 'amountXTX', title: textsCap.amountToSend },
-            //             { key: 'fee', title: textsCap.fxFee },
-            //             { key: 'total', title: textsCap.totalRequired },
-            //         ],
-            //         data: [
-            //             {
-            //                 amountXTX: <Currency {...{ EL: 'div', unitDisplayed, value: this.amountXTX }} />,
-            //                 fee: < Currency {...{ EL: 'div', unitDisplayed, value: this.fee }} />,
-            //                 total: <Currency {...{ EL: 'div', unitDisplayed, value: total }} />,
-            //             },
-            //             dualMode && {
-            //                 amountXTX: <Currency {...{ unitDisplayed: currencyReceived, value: this.amountXTX }} />,
-            //                 fee: <Currency {...{ unitDisplayed: currencyReceived, value: this.fee }} />,
-            //                 total: <Currency {...{ unitDisplayed: currencyReceived, value: total }} />,
-            //             }
-            //         ].filter(Boolean),
-            //         searchable: false,
-            //     }} />
-            // ),
-            header: gotFund ? '' : (
-                <div className='header' style={{ paddingTop: 10 }}>
-                    {textsCap.insufficientBalance}
-                </div>
-            ),
-            status: gotFund ? 'info' : 'error',
-            style: { padding: 0, margin: '0 -5 0 0' }
-        }
-        amountIn.loading = false
-        this.setState({ inputs, submitDisabled })
-    }
-
     handleSubmit = (_, values) => {
         const amountReceived = values[this.names.amountReceived]
         const currencyReceived = values[this.names.currencyReceived]
         const from = values[this.names.from]
-        const to = vlaues[this.names.to]
-        const { name } = partners.get(to)
+        const to = values[this.names.to]
         const description = [
             `${textsCap.sender}: ${findIdentity(from).name}`,
             `${textsCap.recipient}: ${getAddressName(to)}`,
             `${textsCap.amount}: ${amountReceived} ${currencyReceived}`,
-        ].join('\n')
-        const then = (success, resultOrError) => {
-            if (!success) return this.setPostSubmitMessage(resultOrError)
-            this.setPostSubmitMessage(null, resultOrError, name, amountReceived)
-            this.clearForm()
-        }
-
-        const queueProps = queueables.balanceTransfer(from, to, this.amountXTX, {
-            description,
-            title: textsCap.queueTitle,
-            then,
-        })
+        ]
+        const queueProps = queueables.balanceTransfer(
+            from,
+            to,
+            this.amountXTX,
+            {
+                description: description.join('\n'),
+                title: textsCap.queueTitle,
+                then: (success, resultOrError) => {
+                    if (!success) return this.setPostSubmitMessage(resultOrError)
+                    this.setPostSubmitMessage(null, resultOrError, description)
+                    this.clearForm()
+                },
+            },
+        )
 
         confirm({
             onConfirm: () => this.setPostSubmitMessage() | addToQueue(queueProps),
@@ -486,7 +410,7 @@ export default class Transfer extends Component {
 
     }
 
-    setPostSubmitMessage = (err, result = [], recipientName, amountReceived) => {
+    setPostSubmitMessage = (err, result = [], description) => {
         const { submitDisabled } = this.state
         const [hash] = result
         const submitInProgress = !err && !hash
@@ -494,25 +418,9 @@ export default class Transfer extends Component {
         let header = textsCap.submitInprogressHeader
         let status = 'loading'
         if (!submitInProgress) {
-            content = err ? `${err}` : (
+            content = err ? `${err}` : description && (
                 <ul style={{ listStyleType: 'none', margin: 0, paddingLeft: 0 }}>
-                    <li>{textsCap.recipient}: {recipientName}</li>
-                    <li>
-                        <Currency {...{
-                            prefix: `${textsCap.amount}: `,
-                            unit: currencyDefault,
-                            unitDisplayed: rxSelectedCurrency,
-                            value: amountReceived,
-                        }} />
-                    </li>
-                    <li>
-                        <Currency {...{
-                            prefix: `${textsCap.txFee}: `,
-                            unit: currencyDefault,
-                            unitDisplayed: rxSelectedCurrency,
-                            value: this.fee,
-                        }} />
-                    </li>
+                    {description.map((content, i) => <li key={i}>{content}</li>)}
                 </ul>
             )
             header = err ? textsCap.submitErrorHeader : textsCap.submitSuccessHeader
@@ -530,9 +438,10 @@ export default class Transfer extends Component {
         const { inputs, values } = this.state
         const address = rxSelected.value
         const currencyReceived = values[this.names.currencyReceived]
-        const dualBalance = currencyReceived && currencyReceived !== rxSelectedCurrency.value
-        if (this.address !== address || this.curs !== currencyReceived + rxSelectedCurrency.value) {
-            this.curs = currencyReceived + rxSelectedCurrency.value
+        const currencySent = rxSelectedCurrency.value
+        const dualBalance = currencyReceived && currencyReceived !== currencySent
+        if (this.address !== address || this.curs !== currencyReceived + currencySent) {
+            this.curs = currencyReceived + currencySent
             this.address = address
             const fromIn = findInput(inputs, this.names.from)
             fromIn.label = !address ? undefined : (
@@ -542,13 +451,13 @@ export default class Transfer extends Component {
                         address,
                         emptyMessage: textsCap.loadingBalance + '...',
                         prefix: `${textsCap.availableBalance}: `,
+                        unitDisplayed: currencySent,
                         suffix: !dualBalance ? '' : (
                             <Balance {...{
                                 address,
                                 prefix: ' | ',
                                 showDetailed: null,
-                                unit: rxSelectedCurrency.value,
-                                unitDisplayed: currencyReceived || rxSelectedCurrency.value,
+                                unitDisplayed: currencyReceived,
                             }} />
                         )
                     }} />
@@ -556,6 +465,7 @@ export default class Transfer extends Component {
                 </span>
             )
         }
+
         return <FormBuilder {...{ ...this.props, ...this.state }} />
     }
 }
@@ -571,5 +481,6 @@ Transfer.propTypes = {
 Transfer.defaultProps = {
     inputsDisabled: ['from'],
     header: textsCap.queueTitle,
-    size: 'tiny'
+    size: 'tiny',
+    submitText: textsCap.send,
 }
