@@ -38,6 +38,8 @@ const textsCap = translated({
     addPartner: 'add partner',
     availableBalance: 'available balance',
     currency: 'currency',
+    currencyReceivedLabel: 'recipient currency',
+    currencySentLabel: 'your currency',
     includesTxFee: 'Includes TRANSACTION FEE',
     insufficientBalance: 'insufficient balance',
     loadingBalance: 'loading account balance',
@@ -152,7 +154,7 @@ export default class Transfer extends Component {
                         },
                         {
                             disabled: true,
-                            label: textsCap.currency,
+                            label: textsCap.currencySentLabel,
                             name: this.names.currencySent,
                             onChange: this.handleCurrencySentChange,
                             options: [],
@@ -194,10 +196,11 @@ export default class Transfer extends Component {
                             width: 8,
                         },
                         {
-                            label: textsCap.currency,
+                            label: textsCap.currencyReceivedLabel,
                             name: this.names.currencyReceived,
                             onChange: this.handleCurrencyReceivedChange,
                             options: [],
+                            required: true,
                             rxValue: new Subject(),
                             search: ['text', 'description'],
                             selection: true,
@@ -281,7 +284,6 @@ export default class Transfer extends Component {
         <Text EL='div' style={{
             marginBottom: 15,
             marginTop: feeXTX ? -15 : 15,
-            textAlign: 'center',
         }}>
             {feeXTX && (
                 <Currency {...{
@@ -291,7 +293,11 @@ export default class Transfer extends Component {
                     unitDisplayed: rxSelectedCurrency.value
                 }} />
             )}
-            <div style={{ fontSize: 32, paddingTop: !feeXTX ? 0 : 15 }}>
+            <div style={{
+                fontSize: 32,
+                paddingTop: !feeXTX ? 0 : 15,
+                textAlign: 'center',
+            }}>
                 <Icon {...{ name: 'exchange', rotated: 'counterclockwise' }} />
             </div>
         </Text>
