@@ -67,7 +67,7 @@ export const fetchProjects = async (recordIds = [], ownAddress, timeout = 10000)
     unknownIds.forEach(recordId => projects.set(recordId, {}))
 
     // process projects to include extra information
-    const resultArr = Array.from(projects).map(([recordId, project]) => {
+    const projectsArr = Array.from(projects).map(([recordId, project]) => {
         const index = recordIds.indexOf(recordId)
         project.status = arStatusCode[index]
         // exclude deleted project
@@ -86,7 +86,8 @@ export const fetchProjects = async (recordIds = [], ownAddress, timeout = 10000)
             description: description || '',
         }]
     })
-    return new Map(resultArr.filter(Boolean))
+    const projectsMap = new Map(projectsArr.filter(Boolean))
+    return projectsMap
 }
 
 // @forceUpdate updates only specified @recordIds in the projects list.

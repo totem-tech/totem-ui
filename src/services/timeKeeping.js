@@ -66,7 +66,7 @@ export const forceUpdate = async (recordIds, ownerAddress) => {
 //                      If  a valid functin supplied, it will be invoked with the value whenever projects list changes.
 // 
 // Returns          Map: list of projects
-export const getProjects = async (forceUpdate, callback, timeout = 10000) => {
+export const getProjects = async (forceUpdate, callback, timeout = 30000) => {
     const config = getProjects
     // auto update whenever user projects change
     config.unsubscribeUP = config.unsubscribeUP || await getUserProjects(false, () => getProjects())
@@ -98,25 +98,25 @@ export const getProjects = async (forceUpdate, callback, timeout = 10000) => {
         // selected identity changed
         config.address = address
         isFn(unsubscribe) && unsubscribe()
-        config.updatePromise = new PromisE((resolve, reject) => (async () => {
-            try {
-                await getConnection()
-            } catch (err) {
+        config.updatePromise = new PromisE((resolve, reject) => {
+            getConnection().then(async () => {
+                config.unsubscribe = await query.worker.listWorkerProjects(address, async (recordIds) => {
+                    try {
+                        const projects = await fetchProjects(recordIds, address)
+                        saveProjects(projects, address)
+                        resolve(projects)
+                    } catch (err) {
+                        reject(err)
+                    }
+                })
+            }, err => {
                 // reset update promise
                 config.updatePromise = null
                 // use cache if not connected
                 return resolve(new Map(cacheRW(cacheKey) || []))
-            }
-            config.unsubscribe = await query.worker.listWorkerProjects(address, async (recordIds) => {
-                try {
-                    const projects = await fetchProjects(recordIds, address)
-                    saveProjects(projects, address)
-                    resolve(projects)
-                } catch (err) {
-                    reject(err)
-                }
             })
-        })())
+
+        })
     } else if (forceUpdate) {
         // once-off update
         config.updatePromise = fetchProjects(query.worker.listWorkerProjects(address), address)
@@ -126,8 +126,8 @@ export const getProjects = async (forceUpdate, callback, timeout = 10000) => {
 
     const promise = PromisE.timeout(getUserProjects(), config.updatePromise, timeout)
     try {
-        const [ownedProject, invitedProjects] = await promise
-        result = mapJoin(ownedProject, invitedProjects)
+        const [ownedProjects, invitedProjects] = await promise
+        result = mapJoin(ownedProjects, invitedProjects)
     } catch (err) {
         // if timed out, return cached. Otherwise, throw error
         if (!promise.timeout.rejected) throw err
