@@ -169,7 +169,7 @@ export default class Transfer extends Component {
                     unstackable: true,
                 },
                 {
-                    content: this.getTxFeeEl(),
+                    content: undefined,
                     name: this.names.txFee,
                     type: 'html',
                 },
@@ -228,7 +228,7 @@ export default class Transfer extends Component {
         const options = arrSort(
             this.currencies.map(({ currency, nameInLanguage, ISO }) => ({
                 description: (
-                    <span classname='description' style={{ fontSize: '75%' }}>
+                    <span className='description' style={{ fontSize: '75%' }}>
                         {nameInLanguage}
                     </span>
                 ),
@@ -243,6 +243,7 @@ export default class Transfer extends Component {
         values[this.names.currencyReceived] = rxSelectedCurrency.value
         values[this.names.currencySent] = rxSelectedCurrency.value
         fillValues(inputs, values)
+        findInput(inputs, this.names.txFee).content = this.getTxFeeEl()
         this.setState({ inputs })
 
         this.subscriptions.selectedCurency = rxSelectedCurrency.subscribe(v => currencySentIn.rxValue.next(v))
@@ -284,28 +285,40 @@ export default class Transfer extends Component {
         this.setState({ inputs })
     }
 
-    getTxFeeEl = feeXTX => (
-        <Text EL='div' style={{
-            marginBottom: 15,
-            marginTop: feeXTX ? -15 : 15,
-        }}>
-            {feeXTX && (
-                <Currency {...{
-                    prefix: `${textsCap.includesTxFee}: `,
-                    value: feeXTX,
-                    unit: currencyDefault,
-                    unitDisplayed: rxSelectedCurrency.value
-                }} />
-            )}
-            <div style={{
-                fontSize: 32,
-                paddingTop: !feeXTX ? 0 : 15,
-                textAlign: 'center',
+    getTxFeeEl = feeXTX => {
+        const { values } = this.state
+        const currencyReceived = values[this.names.currencyReceived]
+        const currentSent = values[this.names.currencySent]
+        const secondCurEl = currencyReceived === currentSent ? null : (
+            <Currency {...{
+                prefix: ' | ',
+                value: feeXTX,
+                unitDisplayed: currencyReceived,
+            }} />
+        )
+        return (
+            <Text EL='div' style={{
+                marginBottom: 15,
+                marginTop: feeXTX ? -15 : 15,
             }}>
-                <Icon {...{ name: 'exchange', rotated: 'counterclockwise' }} />
-            </div>
-        </Text>
-    )
+                {feeXTX && (
+                    <Currency {...{
+                        prefix: `${textsCap.includesTxFee}: `,
+                        value: feeXTX,
+                        unitDisplayed: currentSent,
+                        suffix: secondCurEl,
+                    }} />
+                )}
+                <div style={{
+                    fontSize: 32,
+                    paddingTop: !feeXTX ? 0 : 15,
+                    textAlign: 'center',
+                }}>
+                    <Icon {...{ name: 'exchange', rotated: 'counterclockwise' }} />
+                </div>
+            </Text>
+        )
+    }
 
     handleAmountReceivedChange = async (_, values) => {
         const amountReceived = values[this.names.amountReceived]
