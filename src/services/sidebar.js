@@ -24,7 +24,7 @@ import { translated } from './language'
 import storage from './storage'
 import { getLayout, layoutBond } from './window'
 
-const [texts] = translated({
+const textsCap = translated({
     eventsTtile: 'Events',
 
     financialStatementTitle: 'Financial statement',
@@ -105,7 +105,7 @@ const [texts] = translated({
     timekeepingSubheader: 'Manage timekeeping against activities that you have been invited to, or that you have created yourself.',
 
     transferTitle: 'Transfer',
-    transferHeader: 'Transfer Transactions',
+    transferHeader: 'Transfer Funds',
     transferSubheader: 'Transfer transaction between your Identities and  Partners.',
     transferSubheaderDetails: 'You can use the transfer module to send some of your transaction balance to other parties on the Totem Network.',
 
@@ -120,7 +120,7 @@ const [texts] = translated({
     settingsTitle: 'Settings',
     utilitiesTitle: 'Utilities',
     utilitiesSubheader: 'Blockchain utilities',
-})
+}, true)[1]
 
 // store items' "active" status in the localStorage
 const MODULE_KEY = 'sidebar'
@@ -174,7 +174,7 @@ export const sidebarItems = [
         // headerDividerHidden: true,
         icon: 'play circle outline',
         name: gsName,
-        title: texts.gettingStartedTitle,
+        title: textsCap.gettingStartedTitle,
     },
     {
         content: KeyRegistryPlayground,
@@ -194,146 +194,146 @@ export const sidebarItems = [
         content: IdentityList,
         icon: 'id badge outline',
         name: 'identities',
-        subHeader: texts.identitySubheader,
+        subHeader: textsCap.identitySubheader,
         subHeaderDetails: (
             <div>
-                <p>{texts.identitySubheaderDetails1}</p>
-                <p>{texts.identitySubheaderDetails2}</p>
-                <p>{texts.identitySubheaderDetails3}</p>
-                <p>{texts.identitySubheaderDetails4}</p>
-                <p>{texts.identitySubheaderDetails5}</p>
+                <p>{textsCap.identitySubheaderDetails1}</p>
+                <p>{textsCap.identitySubheaderDetails2}</p>
+                <p>{textsCap.identitySubheaderDetails3}</p>
+                <p>{textsCap.identitySubheaderDetails4}</p>
+                <p>{textsCap.identitySubheaderDetails5}</p>
             </div>
         ),
-        title: texts.identityTitle,
+        title: textsCap.identityTitle,
     },
     {
         content: PartnerList,
         icon: 'users',
-        header: texts.partnersHeader,
+        header: textsCap.partnersHeader,
         name: 'partners',
-        subHeader: texts.partnersSubheader,
+        subHeader: textsCap.partnersSubheader,
         subHeaderDetails: (
             <div>
-                <p>{texts.partnersSubheaderDetails1}</p>
-                <p>{texts.partnersSubheaderDetails2}</p>
-                <p>{texts.partnersSubheaderDetails3}</p>
-                <p>{texts.partnersSubheaderDetails4}</p>
+                <p>{textsCap.partnersSubheaderDetails1}</p>
+                <p>{textsCap.partnersSubheaderDetails2}</p>
+                <p>{textsCap.partnersSubheaderDetails3}</p>
+                <p>{textsCap.partnersSubheaderDetails4}</p>
             </div>
         ),
-        title: texts.partnersTitle,
+        title: textsCap.partnersTitle,
     },
     {
         content: ProjectList,
         // headerDividerHidden: true,
         icon: 'briefcase',
         name: 'projects',
-        subHeader: texts.projectSubheader,
+        subHeader: textsCap.projectSubheader,
         subHeaderDetails: (
             <div>
-                <p>{texts.projectSubheaderDetails1}</p>
-                <p>{texts.projectSubheaderDetails2}</p>
+                <p>{textsCap.projectSubheaderDetails1}</p>
+                <p>{textsCap.projectSubheaderDetails2}</p>
             </div>
         ),
-        title: texts.projectTitle,
+        title: textsCap.projectTitle,
     },
     {
         content: TimeKeepingView,
         icon: 'clock outline',
         name: 'timekeeping',
-        subHeader: texts.timekeepingSubheader,
-        title: texts.timekeepingTitle,
+        subHeader: textsCap.timekeepingSubheader,
+        title: textsCap.timekeepingTitle,
     },
     {
         content: TaskView,
         icon: 'tasks',
         name: 'tasks',
-        title: texts.tasksTitle,
-        subHeader: texts.tasksSubheader,
+        title: textsCap.tasksTitle,
+        subHeader: textsCap.tasksSubheader,
     },
     {
         content: TransferForm,
         contentProps: { style: { maxWidth: 450 } },
         icon: 'money bill alternate outline',
-        header: texts.transferHeader,
+        header: textsCap.transferHeader,
         name: 'transfer',
-        subHeader: texts.transferSubheader,
-        subHeaderDetails: texts.transferSubheaderDetails,
-        title: texts.transferTitle,
+        subHeader: textsCap.transferSubheader,
+        subHeaderDetails: textsCap.transferSubheaderDetails,
+        title: textsCap.transferTitle,
     },
     // { icon: 'file alternate', title: 'Invoice', subHeader: '', active: false, content: <Invoice /> },
     {
         icon: 'file alternate',
         name: 'invoices',
-        title: texts.invoicesTitle,
+        title: textsCap.invoicesTitle,
     },
     {
         icon: 'file alternate outline',
         name: 'credit-note',
-        title: texts.creditNoteTitle,
+        title: textsCap.creditNoteTitle,
     },
     {
         icon: 'exchange',
         name: 'purchase-order',
-        title: texts.purchaseOrderTitle,
+        title: textsCap.purchaseOrderTitle,
     },
     {
         icon: 'inbox',
         name: 'manage-orders',
-        title: texts.manageOrderTitle,
+        title: textsCap.manageOrderTitle,
     },
     {
         icon: 'cc mastercard',
         name: 'expense',
-        title: texts.expenseTitle,
+        title: textsCap.expenseTitle,
     },
     {
         icon: 'exclamation circle',
         name: 'disputed-items',
-        title: texts.disputedItemsTitle,
+        title: textsCap.disputedItemsTitle,
     },
     {
         icon: 'chart bar outline',
         name: 'edit-accounting',
-        title: texts.editAccountingTitle,
+        title: textsCap.editAccountingTitle,
     },
     {
         icon: 'lightbulb',
         name: 'products',
-        title: texts.productsTitle,
+        title: textsCap.productsTitle,
     },
     {
         content: HistoryList,
         icon: 'history',
         name: 'history',
-        title: texts.historyTitle,
-        subHeader: texts.historySubheader
+        title: textsCap.historyTitle,
+        subHeader: textsCap.historySubheader
     },
     {
         content: SettingsForm,
         contentProps: { style: { maxWidth: 450 } },
         icon: 'cogs',
         name: 'settings',
-        title: texts.settingsTitle,
+        title: textsCap.settingsTitle,
     },
     {
         content: UtilitiesView,
         icon: 'stethoscope',
         name: 'utilities',
-        subHeader: texts.utilitiesSubheader,
-        title: texts.utilitiesTitle,
+        subHeader: textsCap.utilitiesSubheader,
+        title: textsCap.utilitiesTitle,
     },
     {
         hidden: false,
         content: EventList,
         icon: '',
         name: 'blockchain-events',
-        title: texts.eventsTtile,
+        title: textsCap.eventsTtile,
     },
     {
         content: FinancialStatementsView,
         icon: '',
         name: 'financial-statement',
-        title: texts.financialStatementTitle,
+        title: textsCap.financialStatementTitle,
     },
 ].map(item => {
     const {
