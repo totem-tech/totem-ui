@@ -355,7 +355,6 @@ setTimeout(() => {
         document.getElementById('app').classList[expand ? 'add' : 'remove']('inbox-expanded')
         handleChange()
     })
-
     // remove if successful, otherwise, update status of queued chat message
     rxOnSave.subscribe(data => {
         if (!data) return
