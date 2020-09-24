@@ -58,7 +58,7 @@ const notificationIcons = {
         share: 'upload',
     },
     // task: 'tasks',
-    time_keeping: {
+    timekeeping: {
         invitation: 'group',
         invitation_response: 'group',
     }

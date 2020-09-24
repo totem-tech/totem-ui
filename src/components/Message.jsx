@@ -16,7 +16,7 @@ export const Message = (message = {}) => {
     let { content, header, icon, list, status, style } = message || {}
     if (!isObj(message) || (!content && !list && !header)) return ''
     icon = React.isValidElement(icon) ? icon.props : icon
-    if (icon || icon === true) {
+    if (icon === true) {
         icon = icons[status]
     }
     icon = !isStr(icon) ? icon || undefined : { name: icon }

@@ -13,11 +13,6 @@ import { confirm, showForm } from '../../services/modal'
 import { handleTKInvitation, remove, toggleRead } from './notification'
 
 const textsCap = translated({
-    // timekeeping: 'timekeeping'
-    // acceptInvitation: 'accept invitation',
-    // acceptedInvitation: 'accepted invitation to activity',
-    // rejectInvitation: 'reject invitation',
-    // rejectedInvitation: 'rejected invitation to activity',
     activity: 'activity',
     ignore: 'ignore',
     share: 'share',
@@ -32,7 +27,7 @@ const textsCap = translated({
     yourIdentity: 'your identity',
 }, true)[1]
 
-export default React.memo(function NotificationItem({ id, notification }) {
+export default React.memo(({ id, notification }) => {
     const { from, type, childType, message, data, tsCreated, read } = notification || {}
     const senderId = from || notification.senderId // (previously used)
     const userIdBtn = <UserID userId={senderId} />
@@ -43,8 +38,8 @@ export default React.memo(function NotificationItem({ id, notification }) {
         key: id,
         onClick: () => toggleRead(id),
         onDismiss: e => e.stopPropagation() | remove(id),
-        status: read ? undefined : 'info',
-        style: { cursor: 'pointer' }
+        status: read ? 'basic' : 'info',
+        style: { cursor: 'pointer', textAlign: 'left' }
     }
 
     switch (type + ':' + childType) {
@@ -97,7 +92,7 @@ export default React.memo(function NotificationItem({ id, notification }) {
                 </div>
             )
             break
-        case 'time_keeping:invitation': // data => { projectHash, projectName, workerAddress }
+        case 'timekeeping:invitation': // data => { projectHash, projectName, workerAddress }
             // wrong user id used to send invitation. address does not belong to user
             const identity = identityService.find(data.workerAddress)
             if (!identity) {
@@ -127,7 +122,7 @@ export default React.memo(function NotificationItem({ id, notification }) {
                 </div>
             )
             break
-        case 'time_keeping:invitation_response': // data => { projectHash, projectName, workerAddress }
+        case 'timekeeping:invitation_response': // data => { projectHash, projectName, workerAddress }
             msg.icon.name = 'clock outline'
             msg.content = (
                 <div>

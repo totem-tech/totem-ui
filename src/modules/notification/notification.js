@@ -1,4 +1,4 @@
-import { Bond } from 'oo7'
+import { BehaviorSubject, Subject } from 'rxjs'
 import DataStorage from '../../utils/DataStorage'
 // services
 import client, { getUser, rxIsLoggedIn } from '../../services/chatClient'
@@ -8,23 +8,25 @@ import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import storage from '../../services/storage'
 import { queueables } from '../../modules/timekeeping/timekeeping'
 import TotemLogo from '../../assets/totem-button-grey.png'
-import { rxVisible } from '../../services/window'
+import { rxVisible as rxWindowVisbile } from '../../services/window'
 
-export const MODULE_KEY = 'totem_notifications'
+export const MODULE_KEY = 'notifications'
+storage.settings.module('totem_notifications', null)
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
-const notifications = new DataStorage(MODULE_KEY)
+const notifications = new DataStorage('totem_' + MODULE_KEY)
+const itemRenderers = {}
+export const rxNewNotification = new Subject()
 export const rxNotifications = notifications.rxData
-export const newNotificationBond = new Bond()
-export const visibleBond = new Bond().defaultTo(false)
-export const unreadCountBond = new Bond().defaultTo(getUnreadCount())
+export const rxVisible = new BehaviorSubject(false)
+export const rxUnreadCount = new BehaviorSubject(getUnreadCount())
 let browserNotification = null
 const openNotifications = []
 rxNotifications.subscribe(() => {
     const unreadCount = getUnreadCount()
     // auto update unread count
-    unreadCountBond.changed(unreadCount)
+    rxUnreadCount.next(unreadCount)
     // change visibility if no notificaitons left
-    if (!notifications.size) visibleBond.changed(false)
+    if (!notifications.size) rxVisible.next(false)
 })
 
 const textsCap = translated({
@@ -45,6 +47,30 @@ function getUnreadCount() {
         .filter(Boolean)
         .length
 }
+
+const notify = (id, notification) => setTimeout(() => {
+    if (!browserNotification) return
+    const { id: userId } = getUser() || {}
+    const { childType, from, message, type } = notification
+    if (userId === from) return console.log('same user', { id, notification })
+    const options = {
+        badge: TotemLogo,
+        body: message || `@${from}: ${type} ${childType}`,
+        data: id,
+        icon: TotemLogo,
+        renotify: false,
+        requireInteraction: !rxWindowVisbile.value,
+        tag: type,
+        vibrate: true,
+    }
+    try {
+        const instance = new Notification(`${textsCap.newTitle} (${rxUnreadCount.value})`, options)
+        !rxWindowVisbile.value && openNotifications.push(instance)
+    } catch (e) {
+        // service worker required for mobile
+        browserNotification = false
+    }
+})
 
 export const toggleRead = id => {
     const item = notifications.get(id)
@@ -71,13 +97,40 @@ export const remove = id => setTimeout(() => {
     })
 })
 
+/**
+ * @name    setItemRenderer
+ * @summary allows each module to set how respective notifcation item to be rendered
+ * 
+ * @param   {String}    type        Notification type as used in messaging service.
+ *                                  Typically should be a module key
+ * @param   {String}    chileType   Child notification type as used in messaging service. 
+ *                                  Typically should correspond to an action
+ * @param   {Function}  renderer      function to be invoked before renering a notification item.
+ *                                  Args =>
+ *                                      @notification   object: notification details
+ *                                      @id             string: notification ID
+ *                                  Expected return: one of the following
+ *                                      1. JSX/HTML element: element to be displayed for the notification
+ *                                      2. `null`: ignore/hide this notification
+ *                                      3. none of above: display generic item view
+ */
+export const setItemRenderer = (type, childType, renderer) => {
+    const key = `${type}:${childType}`
+    // SHOULD not occur
+    if (itemRenderers[key]) console.log(
+        'Notifcation item render function being overriden:',
+        { previous: itemRenderers[key], new: renderer }
+    )
+    itemRenderers[key] = renderer
+}
+
 // respond to time keeping invitation
 export const handleTKInvitation = (
     projectId, workerAddress, accepted,
     // optional args
     projectOwnerId, projectName, notificationId
 ) => new Promise(resolve => {
-    const type = 'time_keeping'
+    const type = 'timekeeping'
     const childType = 'invitation'
     const currentUserId = (getUser() || {}).id
     // find notification if not supplied
@@ -141,7 +194,7 @@ client.onNotify((id, from, type, childType, message, data, tsCreated, read = fal
     if (!isNew) return
     rw({ tsLastReceived: tsCreated })
     !read && notify(id, newNotification)
-    newNotificationBond.changed(id)
+    rxNewNotification.next(id)
     console.log('Notification received!', id, from, tsCreated)
 })
 
@@ -186,39 +239,27 @@ rxIsLoggedIn.subscribe(isLoggedIn => {
         notifications.setAll(items, true).sort('tsCreated', true, true)
         if (!gotNew) return
 
-        newNotificationBond.changed(mostRecentId)
+        rxNewNotification.next(mostRecentId)
 
         !mostRecent.read && notify(mostRecentId, mostRecent)
     })
 })
 
-rxVisible.subscribe(visible => {
+rxWindowVisbile.subscribe(visible => {
     if (!visible) return
     while (openNotifications.length > 0) {
         openNotifications.pop().close()
     }
 })
 
-const notify = (id, notification) => setTimeout(() => {
-    if (!browserNotification) return
-    const { id: userId } = getUser() || {}
-    const { childType, from, message, type } = notification
-    if (userId === from) return console.log('same user', { id, notification })
-    const options = {
-        badge: TotemLogo,
-        body: message || `@${from}: ${type} ${childType}`,
-        data: id,
-        icon: TotemLogo,
-        renotify: false,
-        requireInteraction: !rxVisible.value,
-        tag: type,
-        vibrate: true,
-    }
-    try {
-        const instance = new Notification(`${textsCap.newTitle} (${unreadCountBond._value})`, options)
-        !rxVisible.value && openNotifications.push(instance)
-    } catch (e) {
-        // service worker required for mobile
-        browserNotification = false
-    }
-}) 
+
+export default {
+    MODULE_KEY,
+    rxNewNotification,
+    rxNotifications,
+    rxVisible,
+    rxUnreadCount,
+    remove,
+    setItemHandler: setItemRenderer,
+    toggleRead,
+}

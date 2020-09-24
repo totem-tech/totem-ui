@@ -15,7 +15,7 @@ import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import { unsubscribe } from '../../services/react'
 import { query, queueables } from './timekeeping'
 
-const notificationType = 'time_keeping'
+const notificationType = 'timekeeping'
 const childType = 'invitation'
 const textsCap = translated({
     activity: 'activity',

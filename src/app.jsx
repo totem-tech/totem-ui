@@ -12,7 +12,7 @@ import currency from './services/currency'
 import identity from './services/identity'
 import language from './services/language'
 import modal, { ModalsConainer } from './services/modal'
-import NotificationList from './modules/notification/List'
+import NotificationView from './modules/notification/NotificationView'
 import partner from './services/partner'
 import project from './services/project'
 import queue, { resumeQueue } from './services/queue'
@@ -111,7 +111,7 @@ export class App extends Component {
 				</ErrorBoundary>
 
 				<ErrorBoundary>
-					<NotificationList />
+					<NotificationView />
 				</ErrorBoundary>
 
 				<Sidebar.Pushable style={styles.pushable}>

@@ -17,9 +17,9 @@ import {
 	rxVisible as rxChatVisible,
 } from '../modules/chat/chat'
 import {
-	newNotificationBond,
-	visibleBond as notifVisibleBond,
-	unreadCountBond as unreadNotifCountBond,
+	rxNewNotification,
+	rxVisible as rxNotifVisible,
+	rxUnreadCount as rxUnreadNotifCount,
 } from '../modules/notification/notification'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { unsubscribe, useRxSubject } from '../services/react'
@@ -183,7 +183,7 @@ const PageHeaderView = props => {
 					item
 					labeled
 					onChange={onSelection}
-					onClick={() => notifVisibleBond.changed(false)}
+					onClick={() => rxNotifVisible.next(false)}
 					options={walletOptions}
 					style={{ paddingRight: 0 }}
 					text={textEllipsis(selected.name, isMobile ? 25 : 50, 3, false)}
@@ -197,7 +197,7 @@ const PageHeaderView = props => {
 						size: 'large',
 						// className: 'no-margin',
 					}}
-					onClick={() => setShowTools(!showTools) | notifVisibleBond.changed(false)}
+					onClick={() => setShowTools(!showTools) | rxNotifVisible.next(false)}
 				>
 					<Dropdown.Menu className='left'>
 						{[
@@ -260,31 +260,27 @@ const PageHeaderView = props => {
 export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 	const [timerInProgress, setTimerActive] = useState(timeKeeping.formData().inprogress)
 	const [unreadMsgCount] = useRxSubject(rxUnreadMsgCount, true)
-	const [unreadNotifCount, setUnreadNotifCount] = useState(unreadNotifCountBond._value)
+	const [unreadNotifCount] = useRxSubject(rxUnreadNotifCount, true)
 	const [notifBlink, setNotifBlink] = useState(false)
 	const countStyle = {
-		color: 'white',
-		fontSize: 13,
-		fontWeight: 'bold',
-		left: 0,
-		position: 'absolute',
-		textAlign: 'center',
-		top: isMobile ? 17 : 24,
-		width: '100%',
+		...styles.countStyle,
+		top: isMobile ? 17 : styles.countStyle.top,
 	}
 
 	useEffect(() => {
+		let mounted = true
+		const subscriptions = {}
 		const tieIdTimer = timeKeeping.formDataBond.tie(() => setTimerActive(!!timeKeeping.formData().inprogress))
-		const tieIdUnreadNotif = unreadNotifCountBond.tie(unread => setUnreadNotifCount(unread))
-		const tieIdNew = newNotificationBond.tie(() => {
+		subscriptions.newNotif = rxNewNotification.subscribe(() => {
+			if (!mounted) return
 			setNotifBlink(true)
 			setTimeout(() => setNotifBlink(false), 5000)
 		})
 
 		return () => {
+			mounted = false
 			timeKeeping.formDataBond.untie(tieIdTimer)
-			unreadNotifCountBond.untie(tieIdUnreadNotif)
-			newNotificationBond.untie(tieIdNew)
+			unsubscribe(subscriptions)
 		}
 	}, [])
 
@@ -317,7 +313,7 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 					'shake-trigger',
 				]),
 				disabled: unreadNotifCount === -1,
-				onClick: () => setNotifBlink(false) | notifVisibleBond.changed(!notifVisibleBond._value),
+				onClick: () => setNotifBlink(false) | rxNotifVisible.next(!rxNotifVisible.value),
 				style: { background: unreadNotifCount > 0 ? '#2185d0' : '' }
 			}}>
 				<Icon {...{
@@ -340,7 +336,7 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 
 			<Menu.Item onClick={() => {
 				rxChatVisible.next(!rxChatVisible.value)
-				notifVisibleBond.changed(false)
+				rxNotifVisible.next(false)
 			}}>
 				<Icon {...{
 					className: 'no-margin',
@@ -352,4 +348,17 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 			</Menu.Item>
 		</React.Fragment>
 	)
+}
+
+const styles = {
+	countStyle: {
+		color: 'white',
+		fontSize: 13,
+		fontWeight: 'bold',
+		left: 0,
+		position: 'absolute',
+		textAlign: 'center',
+		top: 24,
+		width: '100%',
+	}
 }
