@@ -362,7 +362,7 @@ setTimeout(() => {
         const { task: { args, errorMessage, func, status, txId: msgId, type } } = data
         const [receiverIds] = args || []
         // only handle outgoing chat messages
-        if (func !== 'message' && type !== QUEUE_TYPES.CHATCLIENT) return
+        if (func !== 'message' || type !== QUEUE_TYPES.CHATCLIENT) return
         const inboxKey = getInboxKey(receiverIds)
         let inboxMsgs = chatHistory.get(inboxKey) || []
         const msg = inboxMsgs.find(msg => msg.id === msgId)

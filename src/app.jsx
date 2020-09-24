@@ -18,7 +18,7 @@ import project from './services/project'
 import queue, { resumeQueue } from './services/queue'
 import sidebar, { sidebarItems, sidebarStateBond } from './services/sidebar'
 import storage from './services/storage'
-import timeKeeping from './services/timeKeeping'
+import timeKeeping from './modules/timekeeping/timekeeping'
 import toast, { ToastsContainer } from './services/toast'
 import windw, { gridColumnsBond, getLayout, layoutBond, MOBILE } from './services/window'
 // Utils

@@ -10,7 +10,7 @@ import PartnerList from '../lists/PartnerList'
 import ProjectList from '../lists/ProjectList'
 import SettingsForm from '../forms/Settings'
 import TaskView from '../modules/task/TaskView'
-import TimeKeepingView from '../views/TimeKeepingView'
+import TimekeepingView from '../modules/timekeeping/TimekeepingView'
 import TransferForm from '../forms/Transfer'
 import UtilitiesView from '../views/UtilitiesView'
 // temp
@@ -237,7 +237,7 @@ export const sidebarItems = [
         title: textsCap.projectTitle,
     },
     {
-        content: TimeKeepingView,
+        content: TimekeepingView,
         icon: 'clock outline',
         name: 'timekeeping',
         subHeader: textsCap.timekeepingSubheader,

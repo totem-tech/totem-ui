@@ -5,14 +5,14 @@ import { isFn } from '../utils/utils'
 import { ButtonAcceptOrReject } from '../components/buttons'
 import DataTable from '../components/DataTable'
 import PartnerForm from '../forms/Partner'
-import TimeKeepingInviteForm from '../forms/TimeKeepingInvite'
+import TimekeepingInviteForm from '../modules/timekeeping/TimekeeepingInviteForm'
 import { handleTKInvitation } from '../modules/notification/notification'
 // services
 import { get as getIdentity } from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
 import { get as getPartner } from '../services/partner'
-import { query } from '../services/timeKeeping'
+import { query } from '../modules/timekeeping/timekeeping'
 import { getUser } from '../services/chatClient'
 
 const wordsCap = translated({
@@ -44,7 +44,7 @@ export default class ProjectTeamList extends Component {
             searchExtraKeys: ['address', 'userId'],
             topLeftMenu: [{
                 content: wordsCap.invite,
-                onClick: () => showForm(TimeKeepingInviteForm, {
+                onClick: () => showForm(TimekeepingInviteForm, {
                     values: { projectHash: this.props.projectHash }
                 })
             }],

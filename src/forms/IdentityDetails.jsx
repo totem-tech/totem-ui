@@ -10,21 +10,20 @@ import { translated } from '../services/language'
 import { confirm } from '../services/modal'
 
 const textsCap = translated({
+    availableBalance: 'available balance',
     close: 'close',
-    identity: 'identity',
-    name: 'name',
-    never: 'never',
-    seed: 'seed',
-    show: 'show',
-    tags: 'tags',
-    usage: 'usage',
     copyAddress: 'copy address',
     copySeed: 'copy seed',
     cryptoType: 'identity type',
     hideSeed: 'hide seed',
+    identity: 'identity',
     identityDetails: 'identity details',
     lastBackup: 'last backup',
+    loadingBalance: 'loading account balance',
+    name: 'name',
+    never: 'never',
     noKeepItHidden: 'no, keep it hidden',
+    ok: 'OK',
     showSeed: 'show seed',
     removeIdentity: 'remove identity',
     removePermanently: 'remove permanently',
@@ -32,8 +31,11 @@ const textsCap = translated({
     removeWarningPart2: 'if not backed up, this action is irreversible',
     removeWarningPart3: 'you will lose access to all activity/data related to this identity.',
     selectedWalletWarning: 'cannot remove identity you are currently using',
+    show: 'show',
     showSeed: 'show seed phrase',
-    txAllocations: 'transaction balance',
+    seed: 'seed',
+    tags: 'tags',
+    usage: 'usage',
 }, true)[1]
 
 // A read only form to display identity details including seed
@@ -134,11 +136,7 @@ export default class IdentityDetails extends Component {
                     label: textsCap.tags,
                     multiple: true,
                     name: 'tags',
-                    options: (tags || []).map(tag => ({
-                        key: tag,
-                        text: tag,
-                        value: tag,
-                    })),
+                    options: (tags || []).map(tag => ({ key: tag, text: tag, value: tag })),
                     search: true,
                     selection: true,
                     type: 'dropdown',
@@ -152,10 +150,13 @@ export default class IdentityDetails extends Component {
                 },
                 {
                     content: (
-                        <label style={{ fontWeight: 'bold', margin: 0 }}>
-                            {textsCap.txAllocations}: {' '}
-                            <Balance address={address} />
-                        </label>
+                        <Balance {...{
+                            address: address,
+                            EL: 'label',
+                            emptyMessage: textsCap.loadingBalance,
+                            prefix: `${textsCap.availableBalance}: `,
+                            style: { fontWeight: 'bold', margin: '0 0 0 3px' },
+                        }} />
                     ),
                     name: 'txAllocations',
                     type: 'html'
@@ -177,7 +178,7 @@ export default class IdentityDetails extends Component {
         const { address, name } = this.identity
         if (address === getSelected().address) {
             return confirm({
-                cancelButton: 'Ok',
+                cancelButton: textsCap.ok,
                 confirmButton: null,
                 content: textsCap.selectedWalletWarning,
                 size: 'mini',

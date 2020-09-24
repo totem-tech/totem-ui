@@ -5,7 +5,7 @@ import { copyToClipboard, isFn, textEllipsis } from '../utils/utils'
 import DataTable from '../components/DataTable'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 import ProjectTeamList from '../lists/ProjectTeamList'
-import TimeKeepingList from '../lists/TimeKeepingList'
+import TimekeepingList from '../modules/timekeeping/TimekeepingList'
 import ProjectForm from '../forms/Project'
 import ReassignProjectForm from '../forms/ProjectReassign'
 // services
@@ -385,7 +385,7 @@ export default class ProjectList extends Component {
                 onClick: () => confirm({
                     cancelButton: wordsCap.close,
                     confirmButton: null,
-                    content: <TimeKeepingList {...{
+                    content: <TimekeepingList {...{
                         isOwner: true,
                         manage: true,
                         projectHash: recordId,

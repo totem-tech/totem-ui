@@ -6,7 +6,7 @@ import { translated } from '../../services/language'
 import { getProject } from '../../services/project'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import storage from '../../services/storage'
-import { queueables } from '../../services/timeKeeping'
+import { queueables } from '../../modules/timekeeping/timekeeping'
 import TotemLogo from '../../assets/totem-button-grey.png'
 import { rxVisible } from '../../services/window'
 

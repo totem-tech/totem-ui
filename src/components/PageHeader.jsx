@@ -3,10 +3,10 @@ import PropTypes from 'prop-types'
 import { Dropdown, Icon, Image, Menu } from 'semantic-ui-react'
 import Balance from '../components/Balance'
 // utils
-import { arrSort, copyToClipboard, textEllipsis } from '../utils/utils'
+import { arrSort, className, copyToClipboard, textEllipsis } from '../utils/utils'
 // forms
 import IdentityForm from '../forms/Identity'
-import TimeKeepingForm from '../forms/TimeKeeping'
+import TimekeepingForm from '../modules/timekeeping/TimekeeepingForm'
 // services
 import { getUser, rxIsLoggedIn } from '../services/chatClient'
 import { getSelected, setSelected, rxIdentities } from '../services/identity'
@@ -24,7 +24,7 @@ import {
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { unsubscribe, useRxSubject } from '../services/react'
 import { toggleSidebarState, setActive } from '../services/sidebar'
-import timeKeeping from '../services/timeKeeping'
+import timeKeeping from '../modules/timekeeping/timekeeping'
 import { setToast } from '../services/toast'
 import { useInverted, rxInverted } from '../services/window'
 
@@ -172,7 +172,7 @@ const PageHeaderView = props => {
 				width: '100%',
 			}}
 		>
-			<Menu.Item>
+			<Menu.Item onClick={!isMobile ? undefined : toggleSidebarState}>
 				<Image size="mini" src={logoSrc} />
 			</Menu.Item>
 			<Menu.Menu position="right">
@@ -292,7 +292,11 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 		<React.Fragment>
 			{isMobile && (
 				<Menu.Item
-					icon={{ name: 'sidebar', size: 'large', className: 'no-margin' }}
+					icon={{
+						name: 'sidebar',
+						size: 'large',
+						className: 'no-margin',
+					}}
 					onClick={toggleSidebarState}
 				/>
 			)}
@@ -304,22 +308,34 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 					name: 'clock outline',
 					size: 'large'
 				}}
-				onClick={() => showForm(TimeKeepingForm, {})}
+				onClick={() => showForm(TimekeepingForm, {})}
 			/>
 
 			<Menu.Item {...{
-				className: notifBlink ? 'blink' : '',
+				className: className([
+					notifBlink ? 'blink' : '',
+					'shake-trigger',
+				]),
 				disabled: unreadNotifCount === -1,
 				onClick: () => setNotifBlink(false) | notifVisibleBond.changed(!notifVisibleBond._value),
 				style: { background: unreadNotifCount > 0 ? '#2185d0' : '' }
 			}}>
 				<Icon {...{
-					className: 'no-margin',
+					// className: 'no-margin',
+					className: className([
+						'no-margin',
+						unreadNotifCount && 'shake',
+						notifBlink && 'shake forever',
+					]),
 					color: unreadNotifCount === -1 ? 'grey' : undefined,
 					name: 'bell',
 					size: 'large',
 				}} />
-				{unreadNotifCount > 0 && <div style={{ ...countStyle, color: '#2185d0' }}>{unreadNotifCount}</div>}
+				{unreadNotifCount > 0 && (
+					<div style={{ ...countStyle, color: '#2185d0' }}>
+						{unreadNotifCount}
+					</div>
+				)}
 			</Menu.Item>
 
 			<Menu.Item onClick={() => {

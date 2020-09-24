@@ -80,26 +80,28 @@ export default class ContentSegment extends Component {
 				style: { ...styles.segment, ...style },
 				vertical: vertical,
 			}}>
-				{isFn(onClose) && (
-					<Rail internal position='right' close style={styles.closeButtonRail}>
+				<Rail internal position='right' close style={styles.closeButtonRail}>
+					{name && (
 						<Icon
 							color='grey'
 							link
-							name='expand arrows alternate'
+							name='expand'//'expand arrows alternate' 'compress'
 							onClick={() => toggleFullscreen(`.main-content div[name="${name}"]`)}
 							size='mini'
 							style={{ display: 'inline' }}
 						/>
-						<Icon
-							color='grey'
-							link
-							name='times circle outline'
-							onClick={() => onClose(name)}
-							size='mini'
-							style={{ display: 'inline' }}
-						/>
-					</Rail>
-				)}
+					)}
+
+					{isFn(onClose) && (<Icon
+						color='grey'
+						link
+						name='times circle outline'
+						onClick={() => onClose(name)}
+						size='mini'
+						style={{ display: 'inline' }}
+					/>
+					)}
+				</Rail>
 
 				{!!headerText && (
 					<Header as={headerTag || 'h2'} inverted={headerInverted}>

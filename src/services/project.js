@@ -12,7 +12,7 @@ import client from './chatClient'
 import identities, { getSelected, rxSelected } from './identity'
 import partners from './partner'
 import storage from './storage'
-import { query as tkQuery } from './timeKeeping'
+import { query as tkQuery } from '../modules/timekeeping/timekeeping'
 
 export const MODULE_KEY = 'projects'
 const rxProjects = new Subject()
