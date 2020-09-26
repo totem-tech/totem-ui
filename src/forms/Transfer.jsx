@@ -31,22 +31,22 @@ import Text from '../components/Text'
 
 const textsCap = translated({
     amount: 'amount',
-    amountReceivedLabel: 'amount received',
+    amountReceivedLabel: 'payment amount',
     amountReceivedPlaceholder: 'enter amount',
-    amountSentLabel: 'amount sent',
+    amountSentLabel: 'amount in your display currency',
     amountToSend: 'amount to send',
     addPartner: 'add partner',
     availableBalance: 'available balance',
     currency: 'currency',
-    currencyReceivedLabel: 'recipient currency',
-    currencySentLabel: 'your currency',
-    includesTxFee: 'Includes TRANSACTION FEE',
+    currencyReceivedLabel: 'payment currency',
+    currencySentLabel: 'your display currency',
+    includesTxFee: 'Includes a transaction fee of',
     insufficientBalance: 'insufficient balance',
     loadingBalance: 'loading account balance',
-    partnerEmptyMsg1: 'You do not have any partner yet. Add one in the Partner Module',
+    partnerEmptyMsg1: 'You do not have any partners yet. Add one in the Partner Module',
     partnerEmptyMsg2: 'No match found. Enter a valid address to add as a partner.',
     partnerPlaceholder: 'select a partner',
-    payerIdentity: 'payer identity',
+    payerIdentity: 'payer',
     queueTitle: 'transfer funds',
     recipient: 'recipient',
     send: 'send',
@@ -55,7 +55,7 @@ const textsCap = translated({
     submitErrorHeader: 'transfer error',
     submitInprogressHeader: 'transfer in-progress',
     submitSuccessHeader: 'transfer successful',
-    toLabel: 'recipient (select partner)',
+    toLabel: 'recipient (select a partner)',
     total: 'total',
     totalRequired: 'total required',
     txFee: 'transaction fee',
@@ -300,10 +300,10 @@ export default class Transfer extends Component {
             <Text EL='div' style={{ margin: `${feeXTX ? '-' : ''}15px 0 15px 3px` }}>
                 {feeXTX && (
                     <Currency {...{
-                        prefix: `${textsCap.includesTxFee}: `,
+                        prefix: `${textsCap.includesTxFee} : `,
                         value: feeXTX,
                         unitDisplayed: currentSent,
-                        suffix: secondCurEl,
+                        // suffix: secondCurEl,
                     }} />
                 )}
                 <div style={{
