@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Bond } from 'oo7'
+import { BehaviorSubject } from 'rxjs'
 import { ss58Decode } from '../utils/convert'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import { deferred, isFn, generateHash } from '../utils/utils'
@@ -9,24 +9,22 @@ import { translated } from '../services/language'
 import { setPublic } from '../services/partner'
 import storage from '../services/storage'
 
-const [words, wordsCap] = translated({
-    identity: 'identity',
-    success: 'success',
-}, true)
-const [texts] = translated({
+const textsCap = translated({
     companyExistsMsg: 'An entity already exists with the following name. You cannot resubmit.',
-    countryLabel: 'Country of Registration',
-    countryPlaceholder: 'Select a Country',
-    header: 'Make Partner Public',
-    identityValidationMsg: 'Please enter a valid Totem Identity',
-    nameLabel: 'Company or Entity Name',
-    namePlaceholder: 'Enter the trading name',
-    regNumLabel: 'Registered Number',
-    regNumPlaceholder: 'Enter national registered number of entity',
-    submitSuccessMsg: 'Company added successfully',
-    submitErrorHeader: 'Submission failed',
-    subheader: 'Warning: doing this makes this partner visible to all Totem users',
-})
+    countryLabel: 'country of registration',
+    countryPlaceholder: 'select a country',
+    header: 'make partner public',
+    identity: 'identity',
+    identityValidationMsg: 'pelease enter a valid Totem identity',
+    nameLabel: 'company or entity Name',
+    namePlaceholder: 'enter the trading name',
+    regNumLabel: 'registered number',
+    regNumPlaceholder: 'enter national registered number of entity',
+    submitSuccessMsg: 'company added successfully',
+    submitErrorHeader: 'submission failed',
+    subheader: 'warning: doing this makes this partner visible to all Totem users',
+    success: 'success',
+}, true)[1]
 
 export default class Company extends Component {
     constructor(props) {
@@ -39,35 +37,36 @@ export default class Company extends Component {
             onSubmit: this.handleSubmit,
             inputs: [
                 {
-                    bond: new Bond(),
-                    label: wordsCap.identity,
+                    label: textsCap.identity,
                     name: 'identity',
                     onChange: deferred(this.handleIdentityChange, 300),
                     readOnly: !!identity,
+                    rxValue: new BehaviorSubject(),
                     type: 'text',
-                    validate: (e, { value }) => !ss58Decode(value) ? texts.identityValidationMsg : null,
+                    validate: (e, { value }) => !value ? undefined : (
+                        !ss58Decode(value) ? textsCap.identityValidationMsg : null
+                    ),
                     value: ''
                 },
                 {
-                    bond: new Bond(),
-                    label: texts.nameLabel,
+                    label: textsCap.nameLabel,
                     name: 'name',
-                    placeholder: texts.namePlaceholder,
+                    placeholder: textsCap.namePlaceholder,
                     required: true,
+                    rxValue: new BehaviorSubject(),
                     type: 'text',
                     value: ''
                 },
                 {
-                    // bond: new Bond(),
-                    label: texts.regNumLabel,
+                    label: textsCap.regNumLabel,
                     name: 'registrationNumber',
-                    placeholder: texts.regNumPlaceholder,
+                    placeholder: textsCap.regNumPlaceholder,
                     required: true,
                     type: 'text',
                     value: ''
                 },
                 {
-                    label: texts.countryLabel,
+                    label: textsCap.countryLabel,
                     name: 'countryCode',
                     options: Array.from(storage.countries.getAll())
                         .map(([_, { code, name }]) => ({
@@ -76,7 +75,7 @@ export default class Company extends Component {
                             text: name,
                             value: code
                         })),
-                    placeholder: texts.countryPlaceholder,
+                    placeholder: textsCap.countryPlaceholder,
                     required: true,
                     selection: true,
                     search: ['text', 'description'],
@@ -102,7 +101,7 @@ export default class Company extends Component {
             input.message = !exists ? null : {
                 content: (
                     <div>
-                        {texts.companyExistsMsg}
+                        {textsCap.companyExistsMsg}
                         <div><b>{Array.from(result)[0][1].name}</b></div>
                     </div>
                 ),
@@ -120,8 +119,8 @@ export default class Company extends Component {
         const { onSubmit } = this.props
         const success = !err
         const message = {
-            content: success ? texts.submitSuccessMsg : err,
-            header: success ? wordsCap.success : texts.submitErrorHeader,
+            content: success ? textsCap.submitSuccessMsg : err,
+            header: success ? textsCap.success : textsCap.submitErrorHeader,
             icon: true,
             status: success ? 'success' : 'error'
         }
@@ -141,7 +140,7 @@ Company.propTypes = {
     })
 }
 Company.defaultProps = {
-    header: texts.header,
+    header: textsCap.header,
     size: 'tiny',
-    subheader: texts.subheader,
+    subheader: textsCap.subheader,
 }

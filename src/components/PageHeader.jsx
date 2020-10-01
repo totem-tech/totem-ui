@@ -24,7 +24,7 @@ import {
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { unsubscribe, useRxSubject } from '../services/react'
 import { toggleSidebarState, setActive } from '../services/sidebar'
-import timeKeeping from '../modules/timekeeping/timekeeping'
+import { rxTimerInProgress } from '../modules/timekeeping/timekeeping'
 import { setToast } from '../services/toast'
 import { useInverted, rxInverted } from '../services/window'
 
@@ -258,7 +258,7 @@ const PageHeaderView = props => {
 }
 
 export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
-	const [timerInProgress, setTimerActive] = useState(timeKeeping.formData().inprogress)
+	const [timerInProgress] = useRxSubject(rxTimerInProgress, true)
 	const [unreadMsgCount] = useRxSubject(rxUnreadMsgCount, true)
 	const [unreadNotifCount] = useRxSubject(rxUnreadNotifCount, true)
 	const [notifBlink, setNotifBlink] = useState(false)
@@ -270,7 +270,6 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 	useEffect(() => {
 		let mounted = true
 		const subscriptions = {}
-		const tieIdTimer = timeKeeping.formDataBond.tie(() => setTimerActive(!!timeKeeping.formData().inprogress))
 		subscriptions.newNotif = rxNewNotification.subscribe(() => {
 			if (!mounted) return
 			setNotifBlink(true)
@@ -279,7 +278,6 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 
 		return () => {
 			mounted = false
-			timeKeeping.formDataBond.untie(tieIdTimer)
 			unsubscribe(subscriptions)
 		}
 	}, [])

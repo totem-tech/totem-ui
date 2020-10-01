@@ -36,6 +36,7 @@ export const unsubscribe = (subscriptions = {}) => Object.values(subscriptions).
 export const useRxSubject = (subject, ignoreFirst, onBeforeSetValue, initialValue) => {
     if (!isObj(subject) || !isFn(subject.subscribe)) return subject
     const isAnAsyncFn = isAsyncFn(onBeforeSetValue)
+    const [setRxValue] = useState(() => newValue => subject.next(newValue))
     const [value, setValue] = useState(() => {
         if (initialValue || isAnAsyncFn) return initialValue
         let value = !isFn(onBeforeSetValue) ? subject.value : onBeforeSetValue(subject.value)
@@ -60,7 +61,7 @@ export const useRxSubject = (subject, ignoreFirst, onBeforeSetValue, initialValu
         return () => subscribed.unsubscribe()
     }, [])
 
-    return [value, newValue => subject.next(newValue)]
+    return [value, setRxValue]
 }
 // return this in onBeforeSetValue
 useRxSubject.IGNORE_UPDATE = Symbol('ignore-rx-subject-update')

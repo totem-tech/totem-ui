@@ -1,6 +1,7 @@
 import React from 'react'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
+import { BehaviorSubject } from 'rxjs'
 // Views (including lists and forms)
 import FinancialStatementsView from '../modules/financialStatement/FinancialStatementView'
 import GettingStarted from '../views/GettingStartedView'
@@ -22,7 +23,7 @@ import { isBool, isBond } from '../utils/utils'
 // services
 import { translated } from './language'
 import storage from './storage'
-import { getLayout, layoutBond } from './window'
+import { MOBILE, rxLayout } from './window'
 
 const textsCap = translated({
     eventsTtile: 'Events',
@@ -125,27 +126,28 @@ const textsCap = translated({
 // store items' "active" status in the localStorage
 const MODULE_KEY = 'sidebar'
 const rw = value => storage.settings.module(MODULE_KEY, value)
+const settings = rw() || {} //initial settings
 const statuses = new DataStorage()
-statuses.setAll(new Map((rw() || {}).items || []))
+statuses.setAll(new Map(settings.items || []))
 statuses.rxData.subscribe(map => rw({ items: Array.from(map) }))
 
-export const allInactiveBond = new Bond().defaultTo(false)
-export const sidebarStateBond = new Bond().defaultTo((rw() || {}).status || {
+export const rxAllInactive = new BehaviorSubject()
+export const rxSidebarState = new BehaviorSubject(settings.status || {
     collapsed: false,
-    visible: getLayout() !== 'mobile',
+    visible: rxLayout.value !== MOBILE,
 })
 // save to local storage to preseve state
-sidebarStateBond.tie(status => rw({ status }))
+rxSidebarState.subscribe(status => rw({ status }))
 export const setSidebarState = (collapsed, visible) => {
-    const lastState = sidebarStateBond._value
-    const isMobile = getLayout() === 'mobile'
+    const lastState = rxSidebarState.value
+    const isMobile = rxLayout.value === MOBILE
     // force expand on mobile mode
     collapsed = !isMobile && collapsed
     // always visible when not on mobile mode
     visible = !isMobile || visible
     // state hasn't changed
     if (lastState.collapsed === collapsed && lastState.visible === visible) return
-    sidebarStateBond.changed({ collapsed, visible })
+    rxSidebarState.next({ collapsed, visible })
     // set class
     const classNames = {
         'sidebar-visible': visible,
@@ -157,12 +159,12 @@ export const setSidebarState = (collapsed, visible) => {
     })
 }
 export const toggleSidebarState = () => {
-    const { collapsed, visible } = sidebarStateBond._value
+    let { collapsed, visible } = rxSidebarState.value
     setSidebarState(!collapsed, !visible)
 }
 // update sidebar state on layout change
-layoutBond.tie(() => {
-    const { collapsed, visible } = sidebarStateBond._value || {}
+rxLayout.subscribe(() => {
+    const { collapsed, visible } = rxSidebarState.value || {}
     setSidebarState(collapsed, visible)
 })
 const gsName = 'getting-started'
@@ -368,7 +370,8 @@ export const setActive = (name, active = true, contentProps, hidden) => {
     item.contentProps = { ...item.contentProps, ...contentProps }
     statuses.set(name, active)
     item.bond.changed(uuid.v1())
-    allInactiveBond.changed(sidebarItems.every(({ active, hidden }) => !active || hidden))
+    const allInactive = sidebarItems.every(({ active, hidden }) => !active || hidden)
+    rxAllInactive.next(allInactive)
 
     scrollTo(name)
     return item
@@ -409,13 +412,13 @@ statuses.setAll(sidebarItems.reduce((map, { active, name }) => map.set(name, act
 sidebarItems.every(x => x.hidden || !x.active) && setActive(gsName)
 
 export default {
-    allInactiveBond,
     getItem,
     setActive,
     setContentProps,
     scrollTo,
     setSidebarState,
-    sidebarStateBond,
+    rxAllInactive,
+    rxSidebarState,
     toggleActive,
     toggleSidebarState,
 }

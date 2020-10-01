@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Bond } from 'oo7'
+import { BehaviorSubject } from 'rxjs'
 import { ss58Decode, addressToStr } from '../utils/convert'
 import { arrSort, deferred, isFn, isObj, arrUnique } from '../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
@@ -86,7 +86,6 @@ class Partner extends Component {
                 {
                     allowAdditions: false,
                     additionLabel: texts.addressAdditionLabel + ' ',
-                    bond: new Bond(),
                     clearable: true,
                     // disable when adding new and address is prefilled (possibly from notification)
                     disabled: !this.doUpdate && !!ss58Decode(address),
@@ -103,17 +102,18 @@ class Partner extends Component {
                     }],
                     placeholder: texts.addressPlaceholder,
                     required: true,
+                    // rxValue: new BehaviorSubject(),
                     search: ['text', 'value', 'key'],
                     selection: true,
                     type: 'dropdown',
                     validate: this.doUpdate ? null : this.validateAddress,
                 },
                 {
-                    bond: new Bond(),
                     label: texts.nameLabel,
                     name: 'name',
                     placeholder: texts.namePlaceholder,
                     required: true,
+                    // rxValue: new BehaviorSubject(),
                     type: 'text',
                     validate: this.validateName,
                     value: '',
@@ -147,7 +147,6 @@ class Partner extends Component {
                     value: tags || []
                 },
                 {
-                    bond: new Bond(),
                     disabled: false, // only disable when company address selected
                     inline: true,
                     label: texts.visibilityLabel,
@@ -157,15 +156,16 @@ class Partner extends Component {
                         { label: wordsCap.public, value: 'public' }
                     ],
                     radio: true,
+                    // rxValue: new BehaviorSubject(),
                     type: 'checkbox-group',
                     value: values.visibility || 'private'
                 },
                 {
-                    bond: new Bond(),
                     label: texts.userIdLabel,
                     name: 'userId',
                     multiple: false,
                     placeholder: texts.userIdPlaceholder,
+                    // rxValue: new BehaviorSubject(),
                     type: 'UserIdInput',
                 },
             ]

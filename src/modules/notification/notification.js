@@ -4,17 +4,18 @@ import DataStorage from '../../utils/DataStorage'
 import client, { getUser, rxIsLoggedIn } from '../../services/chatClient'
 import { translated } from '../../services/language'
 import { getProject } from '../../services/project'
-import { addToQueue, QUEUE_TYPES } from '../../services/queue'
+import { addToQueue, QUEUE_TYPES, rxOnSave } from '../../services/queue'
 import storage from '../../services/storage'
 import { queueables } from '../../modules/timekeeping/timekeeping'
 import TotemLogo from '../../assets/totem-button-grey.png'
 import { rxVisible as rxWindowVisbile } from '../../services/window'
+import { isFn, isStr } from '../../utils/utils'
 
 export const MODULE_KEY = 'notifications'
 storage.settings.module('totem_notifications', null)
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 const notifications = new DataStorage('totem_' + MODULE_KEY)
-const itemRenderers = {}
+export const itemViewHandlers = {}
 export const rxNewNotification = new Subject()
 export const rxNotifications = notifications.rxData
 export const rxVisible = new BehaviorSubject(false)
@@ -31,12 +32,6 @@ rxNotifications.subscribe(() => {
 
 const textsCap = translated({
     newTitle: 'new notification received',
-    activity: 'Activity',
-    acceptInvitation: 'accept invitation',
-    acceptedInvitation: 'accepted invitation to activity',
-    rejectInvitation: 'reject invitation',
-    rejectedInvitation: 'rejected invitation to activity',
-    timekeeping: 'Timekeeping',
 }, true)[1]
 
 function getUnreadCount() {
@@ -72,34 +67,28 @@ const notify = (id, notification) => setTimeout(() => {
     }
 })
 
-export const toggleRead = id => {
-    const item = notifications.get(id)
-    if (!item) return
-    item.read = !item.read
-    notifications.set(id, item)
-
-    addToQueue({
-        silent: true,
-        type: QUEUE_TYPES.CHATCLIENT,
-        func: 'notificationSetStatus',
-        args: [id, item.read, false]
-    })
-}
-
 export const remove = id => setTimeout(() => {
     notifications.delete(id)
 
     addToQueue({
+        args: [id, null, true],
+        func: 'notificationSetStatus',
+        notificationId: id,
         silent: true,
         type: QUEUE_TYPES.CHATCLIENT,
-        func: 'notificationSetStatus',
-        args: [id, null, true]
     })
 })
 
 /**
- * @name    setItemRenderer
- * @summary allows each module to set how respective notifcation item to be rendered
+ * @name    search
+ * @summary search notifications
+ */
+export const search = (...args) => notifications.search.apply(notifications, args)
+
+/**
+ * @name        setCustomViewHandler
+ * @summary     set notification item renderer for specific notification `type` and `childType`
+ * @description allows each module to set how respective notifcation item to be rendered
  * 
  * @param   {String}    type        Notification type as used in messaging service.
  *                                  Typically should be a module key
@@ -109,149 +98,124 @@ export const remove = id => setTimeout(() => {
  *                                  Args =>
  *                                      @notification   object: notification details
  *                                      @id             string: notification ID
- *                                  Expected return: one of the following
- *                                      1. JSX/HTML element: element to be displayed for the notification
- *                                      2. `null`: ignore/hide this notification
- *                                      3. none of above: display generic item view
+ *                                      @extra          object
+ *                                  Must return an Object to be used with `Message` component. 
+ *                                  Required Properties: @content {String|Element}
  */
-export const setItemRenderer = (type, childType, renderer) => {
+export const setItemViewHandler = (type, childType, renderer) => {
+    if (!isFn(renderer)) return
     const key = `${type}:${childType}`
-    // SHOULD not occur
-    if (itemRenderers[key]) console.log(
-        'Notifcation item render function being overriden:',
-        { previous: itemRenderers[key], new: renderer }
-    )
-    itemRenderers[key] = renderer
+    itemViewHandlers[key] = renderer
 }
 
-// respond to time keeping invitation
-export const handleTKInvitation = (
-    projectId, workerAddress, accepted,
-    // optional args
-    projectOwnerId, projectName, notificationId
-) => new Promise(resolve => {
-    const type = 'timekeeping'
-    const childType = 'invitation'
-    const currentUserId = (getUser() || {}).id
-    // find notification if not supplied
-    notificationId = notificationId || Array.from(notifications.search({
-        from: projectOwnerId,
-        type,
-        childType,
-    })).reduce((notifyId, [xNotifyId, xNotification]) => {
-        if (!!notifyId) return notifyId
-        const { data: { projectHash: hash, workerAddress: address } } = xNotification
-        const match = hash === projectId && address === workerAddress
-        return match ? xNotifyId : null
-    }, null)
+/**
+ * @name    toggleRead
+ * @summary toggle notification read status
+ * @param   {String} id Notification ID
+ */
+export const toggleRead = id => {
+    const item = notifications.get(id)
+    if (!item) return
+    item.read = !item.read
+    notifications.set(id, item)
 
-    const getprops = (projectOwnerId, projectName) => queueables.worker.accept(projectId, workerAddress, accepted, {
-        title: `${textsCap.timekeeping} - ${accepted ? textsCap.acceptInvitation : textsCap.rejectInvitation}`,
-        description: `${textsCap.activity}: ${projectName}`,
-        then: success => !success && resolve(false),
-        // no need to notify if rejected or current user is the project owner
-        next: !accepted || !projectOwnerId || projectOwnerId === currentUserId ? undefined : {
-            address: workerAddress, // for automatic balance check
-            type: QUEUE_TYPES.CHATCLIENT,
-            func: 'notify',
-            args: [
-                [projectOwnerId],
-                type,
-                'invitation_response',
-                `${accepted ? textsCap.acceptedInvitation : textsCap.rejectedInvitation}: "${projectName}"`,
-                { accepted, projectHash: projectId, projectName, workerAddress },
-                err => {
-                    !err && notificationId && remove(notificationId)
-                    resolve(!err)
-                }
-            ]
+    addToQueue({
+        args: [id, item.read, false],
+        func: 'notificationSetStatus',
+        notificationId: id,
+        type: QUEUE_TYPES.CHATCLIENT,
+        silent: true,
+    })
+}
+
+// initialize
+setTimeout(() => {
+    // handle new notification received
+    client.onNotify((id, from, type, childType, message, data, tsCreated, read = false, deleted = false) => {
+        if (deleted) return notifications.delete(id)
+        const newNotification = {
+            from,
+            type,
+            childType,
+            message,
+            data,
+            tsCreated,
+            deleted,
+            read,
+        }
+        notifications.set(id, newNotification).sort('tsCreated', true, true)
+        const isNew = rw().tsLastReceived < tsCreated
+        if (!isNew) return
+        rw({ tsLastReceived: tsCreated })
+        !read && notify(id, newNotification)
+        rxNewNotification.next(id)
+        console.log('Notification received!', id, from, tsCreated)
+    })
+
+    // do stuff whenever user logs in
+    rxIsLoggedIn.subscribe(isLoggedIn => {
+        // ignore if not logged in
+        if (!isLoggedIn) return
+        const { tsLastReceived } = rw()
+
+        // Request permission to use browser notifications
+        if (browserNotification === null && !!window.Notification) {
+            switch (Notification.permission) {
+                case 'granted':
+                    browserNotification = true
+                    break
+                case 'denied':
+                    browserNotification = false
+                    break
+                case 'default':
+                    Notification.requestPermission().then(
+                        permission => browserNotification = permission === 'granted'
+                    )
+            }
+        }
+
+        // retrieve any new notifications since last logout
+        client.notificationGetRecent(null, (err, items) => {
+            if (!items.size) return err && console.log('client.notificationGetRecent', err)
+            const itemsArr = Array.from(items)
+                .filter(([id, { deleted }]) => {
+                    // remove items deleted by user's other devices
+                    if (deleted) {
+                        notifications.delete(id)
+                        items.delete(id)
+                    }
+                    return !deleted
+                })
+            const mostRecentId = itemsArr[0][0]
+            const mostRecent = itemsArr[0][1]
+            const gotNew = itemsArr.find(([_, { tsCreated }]) => tsCreated > tsLastReceived)
+
+            // save latest item's timestamp as last received
+            rw({ tsLastReceived: mostRecent.tsCreated })
+            notifications.setAll(items, true).sort('tsCreated', true, true)
+            if (!gotNew) return
+
+            rxNewNotification.next(mostRecentId)
+
+            !mostRecent.read && notify(mostRecentId, mostRecent)
+        })
+    })
+
+    // clear browser notifications whenver tab is visible
+    rxWindowVisbile.subscribe(visible => {
+        if (!visible) return
+        while (openNotifications.length > 0) {
+            openNotifications.pop().close()
         }
     })
 
-    if (!!projectOwnerId && !!projectName) return addToQueue(getprops(projectOwnerId, projectName))
-
-    // retrieve project details to get project name and owners user id
-    getProject(projectId).then(project => {
-        const { name, userId } = project || {}
-        addToQueue(getprops(userId, name))
+    // mark notifications as loading whenever queue service processes a notification response
+    rxOnSave.subscribe(data => {
+        const { task: { notificationId: id, status } } = data || { task: {} }
+        const notification = notifications.get(id)
+        notification && notifications.set(id, { ...notification, status })
     })
 })
-
-client.onNotify((id, from, type, childType, message, data, tsCreated, read = false, deleted = false) => {
-    if (deleted) return notifications.delete(id)
-    const newNotification = {
-        from,
-        type,
-        childType,
-        message,
-        data,
-        tsCreated,
-        deleted,
-        read,
-    }
-    notifications.set(id, newNotification).sort('tsCreated', true, true)
-    const isNew = rw().tsLastReceived < tsCreated
-    if (!isNew) return
-    rw({ tsLastReceived: tsCreated })
-    !read && notify(id, newNotification)
-    rxNewNotification.next(id)
-    console.log('Notification received!', id, from, tsCreated)
-})
-
-rxIsLoggedIn.subscribe(isLoggedIn => {
-    // ignore if not logged in
-    if (!isLoggedIn) return
-    const { tsLastReceived } = rw()
-
-    // Request permission to use browser notifications
-    if (browserNotification === null && !!window.Notification) {
-        switch (Notification.permission) {
-            case 'granted':
-                browserNotification = true
-                break
-            case 'denied':
-                browserNotification = false
-                break
-            case 'default':
-                Notification.requestPermission().then(
-                    permission => browserNotification = permission === 'granted'
-                )
-        }
-    }
-
-    client.notificationGetRecent(null, (err, items) => {
-        if (!items.size) return err && console.log('client.notificationGetRecent', err)
-        const itemsArr = Array.from(items)
-            .filter(([id, { deleted }]) => {
-                // remove items deleted by user's other devices
-                if (deleted) {
-                    notifications.delete(id)
-                    items.delete(id)
-                }
-                return !deleted
-            })
-        const mostRecentId = itemsArr[0][0]
-        const mostRecent = itemsArr[0][1]
-        const gotNew = itemsArr.find(([_, { tsCreated }]) => tsCreated > tsLastReceived)
-
-        // save latest item's timestamp as last received
-        rw({ tsLastReceived: mostRecent.tsCreated })
-        notifications.setAll(items, true).sort('tsCreated', true, true)
-        if (!gotNew) return
-
-        rxNewNotification.next(mostRecentId)
-
-        !mostRecent.read && notify(mostRecentId, mostRecent)
-    })
-})
-
-rxWindowVisbile.subscribe(visible => {
-    if (!visible) return
-    while (openNotifications.length > 0) {
-        openNotifications.pop().close()
-    }
-})
-
 
 export default {
     MODULE_KEY,
@@ -260,6 +224,6 @@ export default {
     rxVisible,
     rxUnreadCount,
     remove,
-    setItemHandler: setItemRenderer,
+    setItemHandler: setItemViewHandler,
     toggleRead,
 }

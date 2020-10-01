@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Bond } from 'oo7'
+import { BehaviorSubject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
 import ContentSegment from '../../components/ContentSegment'
 import CheckboxGroup from '../../components/CheckboxGroup'
@@ -13,8 +13,9 @@ import TimekeepingSummaryList from './TimekeepingSummaryList'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
 import storage from '../../services/storage'
-import { layoutBond } from '../../services/window'
+import { MOBILE, rxLayout } from '../../services/window'
 import { MODULE_KEY } from './timekeeping'
+import { unsubscribe } from '../../services/react'
 
 const textsCap = translated({
     archive: 'archive',
@@ -39,7 +40,7 @@ export default class TimekeepingView extends Component {
         const style = { textAlign: 'left' }
         this.state = {
             optionsInput: {
-                bond: new Bond(),
+                rxValue: new BehaviorSubject(),
                 multiple: true,
                 name: 'option',
                 onChange: (_, { value: viewOptions }) => {
@@ -74,11 +75,13 @@ export default class TimekeepingView extends Component {
 
     componentWillMount() {
         this._mounted = true
-        this.tieIdLayout = layoutBond.tie(layout => this.setState({ isMobile: layout === 'mobile' }))
+        this.subscriptions = {
+            layout: rxLayout.subscribe(layout => this.setState({ isMobile: layout === MOBILE }))
+        }
     }
     componentWillUnmount() {
         this._mounted = false
-        layoutBond.untie(this.tieIdLayout)
+        unsubscribe(this.subscriptions)
     }
 
     render() {

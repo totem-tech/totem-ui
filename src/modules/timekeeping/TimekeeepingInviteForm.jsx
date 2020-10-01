@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Bond } from 'oo7'
+import { BehaviorSubject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import PartnerForm from '../../forms/Partner'
@@ -67,7 +67,7 @@ export default class TimeKeepingInviteForm extends Component {
                     value: '',
                 },
                 {
-                    bond: new Bond(),
+                    rxValue: new BehaviorSubject(),
                     label: textsCap.partner,
                     name: 'workerAddress',
                     onChange: this.handlePartnerChange,
@@ -87,7 +87,7 @@ export default class TimeKeepingInviteForm extends Component {
                         onSubmit: (success, { address }) => success && findInput(
                             this.state.inputs,
                             'workerAddress'
-                        ).bond.changed(address)
+                        ).rxValue.next(address)
                     }),
                     fluid: true,
                     type: 'button',
@@ -180,7 +180,7 @@ export default class TimeKeepingInviteForm extends Component {
                         onClick={e => e.preventDefault() | showForm(PartnerForm, {
                             onSubmit: (_, { address, userId }) => {
                                 partnerIn.invalid = !userId
-                                userId && partnerIn.bond.changed(address)
+                                userId && partnerIn.rxValue.next(address)
                             },
                             values: partner,
                         })}

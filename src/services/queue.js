@@ -138,6 +138,9 @@ const VALID_KEYS = Object.freeze([
     //                          Will only be executed if the parent task was successful.
     'next',
 
+    // @notificationId  string: (optional) if the task is a in responding to a specific notification
+    'notificationId',
+
     // @silent          bool: (optional) If true, enables silent mode and no toast messages will be displayed.
     //                          This is particularly usefull when executing tasks that user didn't initiate or should //                            not be bothered with.
     'silent',
@@ -497,10 +500,10 @@ const processArgs = (rootTask = {}, currentTask = {}) => {
         if (!hasDynamicArg) return []
 
         // throw 'test error 0'
-        const getResultByName = (task, name) => {
+        const getTaskByName = (task, name) => {
             // throw 'test error 2'
-            if (task.name === name) return task.result
-            return !isObj(task.next) ? undefined : getResultByName(task.next, name)
+            if (task.name === name) return task
+            return !isObj(task.next) ? undefined : getTaskByName(task.next, name)
         }
         for (let i = 0; i < args.length; i++) {
             const arg = args[i]
@@ -511,9 +514,10 @@ const processArgs = (rootTask = {}, currentTask = {}) => {
                 continue
             }
             // throw 'test error 1'
-            const result = getResultByName(rootTask, __taskName)
+            const task = getTaskByName(rootTask, __taskName)
+            const { result } = task || {}
             const argValue = eval(__resultSelector)
-            const processedArg = !isFn(argValue) ? argValue : argValue(result, rootTask)
+            const processedArg = !isFn(argValue) ? argValue : argValue(result, rootTask, task)
             argsProcessed.push(processedArg)
         }
 
@@ -615,7 +619,7 @@ const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, du
     const hasError = status === ERROR && task.errorMessage
     hasError && msg.content.unshift(task.errorMessage)
     // no need to display toast if status is suspended
-    task.toastId = !isSuspended ? toastId : setMessage(task, msg, duration, toastId, silent)
+    task.toastId = isSuspended ? toastId : setMessage(task, msg, duration, toastId, silent)
     // store account balance before and after TX
     task.balance = { ...task.balance, ...balance }
 

@@ -57,7 +57,14 @@ export default function IdentityList(props) {
     const tableProps = {
         columns: [
             { key: 'name', title: textsCap.name },
-            { collapsing: true, key: '_usageType', title: textsCap.usage },
+            {
+                collapsing: true,
+                content: ({ address }) => <Balance address={address} />,
+                draggable: false,
+                key: '_balance',
+                textAlign: 'center',
+                title: textsCap.txAllocations,
+            },
             {
                 key: '_tags',
                 draggable: false, // individual tags are draggable
@@ -68,14 +75,7 @@ export default function IdentityList(props) {
                 textAlign: 'center',
                 title: textsCap.lastBackup
             },
-            {
-                collapsing: true,
-                content: ({ address }) => <Balance address={address} />,
-                draggable: false,
-                key: '_balance',
-                textAlign: 'center',
-                title: textsCap.txAllocations,
-            },
+            { collapsing: true, key: '_usageType', title: textsCap.usage },
             {
                 collapsing: true,
                 content: identity => ([

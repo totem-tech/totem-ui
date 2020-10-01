@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Bond } from 'oo7'
+import { BehaviorSubject } from 'rxjs'
 import { arrSort, isFn, textEllipsis } from '../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
 import PartnerForm from '../forms/Partner'
@@ -70,11 +70,11 @@ export default class ReassignProjectForm extends Component {
                     type: 'dropdown',
                 },
                 {
-                    bond: new Bond(),
                     label: texts.newOwnerLabel,
                     name: 'newOwnerAddress',
                     onChange: this.handleNewOwnerChange,
                     placeholder: texts.newOwnerPlaceholder,
+                    rxValue: new BehaviorSubject(),
                     search: ['text', 'value'], // search both name and project hash
                     selection: true,
                     required: true,
@@ -90,7 +90,7 @@ export default class ReassignProjectForm extends Component {
                             if (!ok) return
                             const { inputs } = this.state
                             const newOwnerIn = findInput(inputs, 'newOwnerAddress')
-                            newOwnerIn.bond.changed(address)
+                            newOwnerIn.rxValue.next(address)
                         }
                     }),
                     type: 'button'

@@ -43,7 +43,7 @@ export const generateUri = generateMnemonic
 export const get = address => identities.get(address)
 
 // todo: migrate from array to map for consistency
-export const getAll = () => identities.map(([_, x]) => x)
+export const getAll = () => identities.map(([_, x]) => ({ ...x }))
 
 export const getSelected = () => identities.find({ selected: true }, true, true) || getAll()[0]
 
@@ -54,8 +54,8 @@ export const remove = address => identities.delete(address)
 
 // add/update
 export const set = (address, identity) => {
-    if (!isObj(identity)) return
-    identity = objClean(identity, VALID_KEYS)
+    if (!address || !isObj(identity)) return
+
     const { selected, type, usageType } = identity
     identity.type = type || 'sr25519'
     identity.selected = !!selected
@@ -67,6 +67,7 @@ export const set = (address, identity) => {
         ...identity
     }, VALID_KEYS)
     identities.set(address, identity)
+
     return identity
 }
 

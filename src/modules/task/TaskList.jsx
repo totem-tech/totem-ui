@@ -124,6 +124,7 @@ class TaskList extends Component {
                         switch (orderStatus) {
                             // fulfiller hasn't accepted/rejected yet
                             case statuses.submitted:
+                                // assignement response
                                 if (isFulfiller) return (
                                     <ButtonAcceptOrReject
                                         disabled={inProgress}
@@ -142,6 +143,7 @@ class TaskList extends Component {
                                 break
                             // fulfiller accepted but hasn't finished/invoiced the task
                             case statuses.accepted:
+                                // invoice
                                 if (isFulfiller) return (
                                     <Button
                                         content={textsCap.createInvoice}
@@ -164,6 +166,7 @@ class TaskList extends Component {
                                 )
                                 break
                             case statuses.invoiced:
+                                // invoice response
                                 if (isOwner) return (
                                     <ButtonAcceptOrReject
                                         acceptText={textsCap.pay}

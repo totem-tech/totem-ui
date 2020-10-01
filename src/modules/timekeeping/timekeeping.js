@@ -1,6 +1,5 @@
-import { Bond } from 'oo7'
-import uuid from 'uuid'
-import { Subject } from 'rxjs'
+
+import { BehaviorSubject, Subject } from 'rxjs'
 import { isObj, mapJoin, isFn, isDefined } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 // services
@@ -11,6 +10,7 @@ import {
 } from '../../services/project'
 import storage from '../../services/storage'
 import { getConnection, query as queryBlockchain } from '../../services/blockchain'
+import { setHandlers } from './notificationHandlers'
 
 // to sumbit a new time record must submit with this hash
 export const NEW_RECORD_HASH = '0x40518ed7e875ba87d6c7358c06b1cac9d339144f8367a0632af7273423dd124e'
@@ -19,12 +19,13 @@ const queryPrefix = 'api.query.timekeeping.'
 const txPrefix = 'api.tx.timekeeping.'
 // transaction queue item type
 const TX_STORAGE = 'tx_storage'
-const rxProjects = new Subject()
 // read/write to module settings storage
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 // read or write to cache storage
 const cacheRW = (key, value) => storage.cache(MODULE_KEY, key, value)
 const cacheKeyProjects = address => `projects-${address}`
+export const rxTimerInProgress = new BehaviorSubject(saveFormData().inprogress)
+const rxProjects = new Subject()
 // record status codes
 export const statuses = {
     draft: 0,
@@ -36,11 +37,12 @@ export const statuses = {
     delete: 999,
 }
 // timeKeeping form values and states for use with the Timekeeping form
-export const formData = formData => {
-    if (isObj(formData)) rw({ formData }) | formDataBond.changed(uuid.v1())
-    return rw().formData || {}
+export function saveFormData(data) {
+    if (!isObj(data)) return rw().formData || {}
+
+    rxTimerInProgress.next(data.inprogress)
+    return rw({ formData: data }).formData
 }
-export const formDataBond = new Bond().defaultTo(uuid.v1())
 
 // @forceUpdate updates only specified @recordIds in the projects list.
 //
@@ -414,9 +416,12 @@ export const queueables = {
     },
 }
 
+// set notification item handlers
+setHandlers()
+
 export default {
-    formData,
-    formDataBond,
+    saveFormData,
+    rxTimerInProgress,
     getProjects,
     query,
     queueables,

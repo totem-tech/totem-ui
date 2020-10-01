@@ -1,18 +1,20 @@
 import React from 'react'
 import { render } from 'react-dom'
 import 'semantic-ui-css/semantic.min.css'
+import PromisE from './utils/PromisE'
 import { generateHash } from './utils/utils'
-import { App } from './app.jsx'
+import App from './App'
+import NewsletterSignup from './forms/NewsletterSignup'
 // services
 import { getConnection } from './services/blockchain'
 import client from './services/chatClient'
 import { fetchNSaveTexts } from './services/language'
 import storage from './services/storage'
-import PromisE from './utils/PromisE'
 import { getUrlParam } from './services/window'
-import NewsletterSignup from './forms/NewsletterSignup'
 
 const isSignUp = getUrlParam('NewsletterSignup') === 'true'
+window.isInIFrame = isSignUp || true
+
 const init = () => PromisE.timeout((resolve, reject) => {
     const countries = storage.countries.getAll()
     let hasCountries = countries.size > 0
@@ -45,7 +47,6 @@ const doRender = () => {
     render(<App />, document.getElementById('app'))
 }
 
-window.isInIFrame = isSignUp
 // initiate connection to blockchain
 getConnection()
 init().then(doRender).catch(doRender)

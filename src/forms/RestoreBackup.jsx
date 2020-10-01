@@ -8,6 +8,7 @@ import { getUser, setUser } from '../services/chatClient'
 import { translated } from '../services/language'
 import { confirm } from '../services/modal'
 import { essentialKeys, generateBackupData } from '../services/storage'
+import { MOBILE, rxLayout } from '../services/window'
 
 const textsCap = translated({
 	backupValue: 'backup value',
@@ -20,6 +21,7 @@ const textsCap = translated({
 	fileLabel: 'restore file',
 	formHeader: 'restore backup',
 	ignore: 'ignore',
+	invalidFileType: 'invalid file type selected',
 	keepUnchanged: 'keep unchanged',
 	merge: 'merge',
 	preserveUser: 'preserve current credentials',
@@ -133,7 +135,7 @@ export default class RestoreBackup extends Component {
 		}, {})
 
 		return (
-			<Table basic celled compact definition>
+			<Table basic celled compact definition unstackable>
 				<Table.Header>
 					<Table.Row>
 						<Table.HeaderCell />
@@ -164,6 +166,7 @@ export default class RestoreBackup extends Component {
 		const currentMap = new Map(current)
 		const backupMap = new Map(backup)
 		const processed = {}
+		const isMobile = rxLayout.value === MOBILE
 		const dataInputs = current.map(([keyC, valueC = {}]) => {
 			const valueB = backupMap.get(keyC)
 			const strC = JSON.stringify(objWithoutKeys(valueC, ignoredKeys))
@@ -178,7 +181,7 @@ export default class RestoreBackup extends Component {
 			].filter(Boolean)
 			processed[keyC] = true
 			return {
-				inline: true,
+				inline: !isMobile,
 				label: valueC.name || valueB.name || keyC,
 				name: keyC,
 				options,
@@ -245,8 +248,13 @@ export default class RestoreBackup extends Component {
 
 	handleFileChange = (e) => {
 		try {
+			const { inputs } = this.state
+			const fileIn = findInput(inputs, 'file')
 			const file = e.target.files[0]
+			const name = e.target.value
 			var reader = new FileReader()
+			if (name && !name.endsWith(fileIn.accept)) throw textsCap.invalidFileType
+
 			reader.onload = file => {
 				if (this.generateInputs(file.target.result)) return
 				file.target.value = null

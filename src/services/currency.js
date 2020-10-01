@@ -32,7 +32,7 @@ export const rxSelected = new BehaviorSubject(getSelected())
  * @param   {Number} decimals   (optional) number of decimal places to use. 
  *                               Default: decimals defined in `to` currency
  * 
- * @returns {Number} converted amount
+ * @returns {Array} [@convertedAmount Number, @rounded String]
  */
 export const convertTo = async (amount = 0, from, to, decimals) => {
     from = from.toUpperCase()

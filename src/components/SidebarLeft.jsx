@@ -5,80 +5,76 @@ import ContentSegment from './ContentSegment'
 import { isBond } from '../utils/utils'
 import { translated } from '../services/language'
 import {
-	allInactiveBond, getItem, setActive, setSidebarState,
-	sidebarItems, sidebarStateBond, scrollTo, toggleActive, toggleSidebarState
+	rxAllInactive, getItem, setActive, setSidebarState,
+	sidebarItems, rxSidebarState, scrollTo, toggleActive, toggleSidebarState
 } from '../services/sidebar'
 import { rxLayout, MOBILE } from '../services/window'
-import { unsubscribe, useRxSubject } from '../services/react'
+import { useRxSubject } from '../services/react'
 
 const [_, textsCap] = translated({
 	closeSidebar: 'close sidebar',
 }, true)
-export default class SidebarLeft extends Component {
-	componentWillMount = () => {
-		sidebarStateBond.tie(s => this.setState(s))
-		allInactiveBond.tie(allInactive => setTimeout(() => this.setState({ allInactive }), 500))
-	}
+export default function SidebarLeft() {
+	const [allInactive] = useRxSubject(rxAllInactive, true)
+	const [isMobile] = useRxSubject(rxLayout, true, l => l === MOBILE)
+	const [sidebarState] = useRxSubject(rxSidebarState, true)
+	let { collapsed, visible } = sidebarState
+	collapsed = allInactive ? false : collapsed
+	visible = allInactive ? true : visible
 
-	render() {
-		const { isMobile } = this.props
-		const { allInactive, collapsed: c, visible: v } = this.state
-		const collapsed = allInactive ? false : c
-		const visible = allInactive ? true : v
-		return (
-			<React.Fragment>
-				{
-					// use an alternative dimmer to prevent unnecessary state updates on App.jsx and the entire application
-					isMobile && visible && <div style={styles.dimmer} onClick={toggleSidebarState}></div>
-				}
-				<Sidebar
-					as={Menu}
-					animation={isMobile ? 'overlay' : 'push'}
-					direction="left"
-					vertical
-					visible={visible}
-					width={collapsed ? 'very thin' : 'wide'}
-					color="black"
-					inverted
-					style={{
-						...(collapsed ? styles.collapsed : styles.expanded),
-						maxHeight: !isMobile ? undefined : 'calc( 100% - 49px )',
-					}}
-					onHidden={() => isMobile && setSidebarState(false, false)}
+	return (
+		<React.Fragment>
+			{
+				// use an alternative dimmer to prevent unnecessary state updates on App.jsx and the entire application
+				isMobile && visible && <div style={styles.dimmer} onClick={toggleSidebarState}></div>
+			}
+			<Sidebar
+				as={Menu}
+				animation={isMobile ? 'overlay' : 'push'}
+				direction="left"
+				vertical
+				visible={visible}
+				width={collapsed ? 'very thin' : 'wide'}
+				color="black"
+				inverted
+				style={{
+					...(collapsed ? styles.collapsed : styles.expanded),
+					maxHeight: !isMobile ? undefined : 'calc( 100% - 49px )',
+				}}
+				onHidden={() => isMobile && setSidebarState(false, false)}
+			>
+				<Menu.Item
+					style={styles.sidebarToggleWrap}
+					onClick={toggleSidebarState}
 				>
-					<Menu.Item
-						style={styles.sidebarToggleWrap}
-						onClick={toggleSidebarState}
+					<div
+						style={styles.sidebarToggle}
+						position="right"
+						title={collapsed ? 'Expand' : 'Collapse'}
+						style={styles.sidebarToggle}
 					>
-						<div
-							style={styles.sidebarToggle}
-							position="right"
-							title={collapsed ? 'Expand' : 'Collapse'}
-							style={styles.sidebarToggle}
-						>
-							<span>
-								<Icon name={`arrow alternate circle ${collapsed ? 'right' : 'left'} outline`} />
-								{!collapsed && ` ${textsCap.closeSidebar}`}
-							</span>
-						</div>
-					</Menu.Item>
+						<span>
+							<Icon name={`arrow alternate circle ${collapsed ? 'right' : 'left'} outline`} />
+							{!collapsed && ` ${textsCap.closeSidebar}`}
+						</span>
+					</div>
+				</Menu.Item>
 
-					{// menu items 
-						sidebarItems.map(({ name }, i) => (
-							<SidebarMenuItem
-								{...{
-									key: i + name,
-									isMobile,
-									name,
-									sidebarCollapsed: collapsed,
-									style: i === 0 ? styles.menuItem : undefined
-								}}
-							/>
-						))}
-				</Sidebar>
-			</React.Fragment>
-		)
-	}
+				{// menu items 
+					sidebarItems.map(({ name }, i) => (
+						<SidebarMenuItem
+							{...{
+								key: i + name,
+								isMobile,
+								name,
+								sidebarCollapsed: collapsed,
+								style: i === 0 ? styles.menuItem : undefined
+							}}
+						/>
+					))}
+			</Sidebar>
+		</React.Fragment>
+	)
 }
 
 SidebarLeft.propTypes = {
@@ -122,43 +118,46 @@ MainContentItem.propTypes = {
 	name: PropTypes.string.isRequired,
 }
 
-class SidebarMenuItem extends Component {
-	componentWillMount() {
-		const { name } = this.props
-		const { bond } = getItem(name) || {}
-		if (!isBond(bond)) return
-		this.tieId = bond.tie(() => this.forceUpdate())
-	}
+const SidebarMenuItem = props => {
+	const { isMobile, name, sidebarCollapsed, style } = props
+	const [item, setItem] = useState(getItem(name))
+	const { active, bond, badge, hidden, icon, title } = item || {}
 
-	componentWillUnmount = () => this.props.bond && this.props.bond.untie(this.tieId)
+	useEffect(() => {
+		let mounted = true
+		if (!isBond(bond)) return () => { }
+		const tieId = bond.tie(() => mounted && setItem({ ...getItem(name) }))
 
-	handleClick = e => {
-		const { isMobile, name } = this.props
-		e.stopPropagation()
-		if (e.shiftKey && getItem(name).active) return scrollTo(name)
-		const { active } = toggleActive(name)
-		active && isMobile && toggleSidebarState()
-	}
+		return () => {
+			mounted = false
+			tieId && bond.untie(tieId)
+		}
+	}, [bond])
 
-	render() {
-		const { name, sidebarCollapsed: collapse, style } = this.props
-		const item = getItem(name)
-		if (!item) return ''
-
-		const { active, badge, hidden, icon, title } = item
-		return hidden ? '' : (
-			<Menu.Item {...{ as: "a", active, onClick: this.handleClick, style, title }}>
-				{badge && <Label color='red'>{badge}</Label>}
-				<span>
-					<Icon {...{
-						name: icon || 'folder',
-						color: badge && collapse ? 'red' : undefined,
-					}} />
-					{!collapse ? item.title : ''}
-				</span>
-			</Menu.Item>
-		)
-	}
+	return !item || hidden ? '' : (
+		<Menu.Item {...{
+			as: 'a',
+			active,
+			style,
+			title,
+			onClick: e => {
+				e.stopPropagation()
+				if (e.shiftKey && getItem(name).active) return scrollTo(name)
+				const { active } = toggleActive(name)
+				setItem({ ...item, active })
+				active && isMobile && toggleSidebarState()
+			},
+		}}>
+			{badge && <Label color='red'>{badge}</Label>}
+			<span>
+				<Icon {...{
+					name: icon || 'folder',
+					color: badge && sidebarCollapsed ? 'red' : undefined,
+				}} />
+				{!sidebarCollapsed ? item.title : ''}
+			</span>
+		</Menu.Item>
+	)
 }
 SidebarMenuItem.propTypes = {
 	isMobile: PropTypes.bool.isRequired,

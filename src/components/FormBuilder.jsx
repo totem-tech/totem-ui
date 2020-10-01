@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Button, Form, Header, Icon, Modal } from 'semantic-ui-react'
-import { isDefined, isArr, isBool, isBond, isFn, isObj, isStr, hasValue } from '../utils/utils'
+import { isDefined, isArr, isBool, isFn, isObj, isStr, hasValue } from '../utils/utils'
 import Message, { statuses } from '../components/Message'
 import FormInput, { nonValueTypes } from './FormInput'
 import IModal from './Modal'
@@ -370,7 +370,7 @@ export const fillValues = (inputs, values, forceFill) => {
     Object.keys(values).forEach(name => {
         const input = findInput(inputs, name)
         if (!input) return
-        let { bond, type } = input
+        let { rxValue, type } = input
         const newValue = values[name]
         type = (isStr(type) ? type : 'text').toLowerCase()
         if (type !== 'group' && (
@@ -390,10 +390,7 @@ export const fillValues = (inputs, values, forceFill) => {
             default:
                 input.value = newValue
         }
-
-        // make sure Bond is also updated
-        if (!isBond(bond)) return
-        setTimeout(() => bond.changed(newValue))
+        rxValue && rxValue.next(newValue)
     })
 
     return inputs

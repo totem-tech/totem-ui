@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Bond } from 'oo7'
+import { BehaviorSubject } from 'rxjs'
 import { Progress } from 'semantic-ui-react'
 import { csvToMap, csvToArr } from '../utils/convert'
 import { keyring } from '../utils/polkadotHelper'
@@ -62,7 +62,7 @@ export default class AdminUtils extends Component {
 					useInput: true,
 				},
 				{
-					bond: new Bond(),
+					rxValue: new BehaviorSubject(),
 					hidden: ({ action }) => !action || action === 'language-download',
 					label: 'File contents',
 					name: 'text',
@@ -131,7 +131,7 @@ export default class AdminUtils extends Component {
 				return
 			}
 			reader.onload = le => {
-				findInput(this.state.inputs, 'text').bond.changed(le.target.result)
+				findInput(this.state.inputs, 'text').rxValue.next(le.target.result)
 				e.target.value = null
 			}
 			reader.readAsText(file)

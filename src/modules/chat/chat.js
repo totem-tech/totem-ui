@@ -136,7 +136,7 @@ export function inboxSettings(inboxKey, value) {
     // save settings
     rw({ inbox: settings })
 
-    // update unread count bond
+    // update unread count
     newSettings.unread !== oldSettings.unread && rxUnreadCount.next(getUnreadCount())
     const keys = ['deleted', 'hide', 'name', 'unread', 'lastMessageTS']
     const changed = JSON.stringify(objClean(oldSettings, keys)) !== JSON.stringify(objClean(newSettings, keys))

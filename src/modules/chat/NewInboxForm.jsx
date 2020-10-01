@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import { Bond } from 'oo7'
+import { BehaviorSubject } from 'rxjs'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import { isFn, arrSort, textEllipsis } from '../../utils/utils'
 // services
@@ -41,13 +41,13 @@ export default function NewInboxForm(props) {
     const [inputs, setInputs] = useState([
         {
             autoFocus: true,
-            bond: new Bond(),
             excludeOwnId: true,
             includeFromChat: true,
             includePartners: true,
             message: { content: textsCap.userIdsHint },
             multiple: true,
             name: names.receiverIds,
+            rxValue: new BehaviorSubject(),
             options: arrSort(
                 inboxKeys.map(key => {
                     const receiverIds = key.split(',')
@@ -76,13 +76,12 @@ export default function NewInboxForm(props) {
                 nameIn.hidden = hideName
                 nameIn.required = !hideName
                 setInputs(inputs)
-                nameIn.bond.changed(value)
+                nameIn.rxValue.next(value)
             },
             required: true,
             type: 'UserIdInput',
         },
         {
-            bond: new Bond(),
             hidden: true,
             label: textsCap.nameLabel,
             minLength: 3,
@@ -90,6 +89,7 @@ export default function NewInboxForm(props) {
             name: names.name,
             placeholder: textsCap.namePlaceholder,
             required: true,
+            rxValue: new BehaviorSubject(),
             type: 'text',
             value: '',
         },

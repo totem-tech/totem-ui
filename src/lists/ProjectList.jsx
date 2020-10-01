@@ -13,8 +13,9 @@ import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import { addToQueue } from '../services/queue'
 import { getProjects, openStatuses, query, statusCodes, queueables, forceUpdate } from '../services/project'
-import { layoutBond, getLayout } from '../services/window'
+import { rxLayout, MOBILE } from '../services/window'
 import { getSelected } from '../services/identity'
+import { unsubscribe } from '../services/react'
 
 const toBeImplemented = () => alert('To be implemented')
 const [words, wordsCap] = translated({
@@ -187,12 +188,18 @@ export default class ProjectList extends Component {
 
     async componentWillMount() {
         this._mounted = true
-        this.unsubscribers = {
+        this.subscriptions = {
             projects: null,
             status: null,
         }
+        this.subscriptions.layout = rxLayout.subscribe(layout => {
+            const { columns } = this.state
+            // hide on mobile
+            columns.find(x => x.key === 'description').hidden = layout === MOBILE
+            this.setState({ columns })
+        })
         try {
-            this.unsubscribers.project = await getProjects(true, projects => {
+            this.subscriptions.project = await getProjects(true, projects => {
                 if (!this._mounted) return
                 const recordIds = Array.from(projects).map(([recordId, project]) => {
                     const { status, totalBlocks } = project
@@ -201,27 +208,18 @@ export default class ProjectList extends Component {
                     project._totalTime = `${totalBlocks} ${words.blocks}`
                     return recordId
                 })
-                this.setStatusBond(recordIds, getSelected().address)
+                this.subscribeToStatusChanges(recordIds, getSelected().address)
                 this.setState({ emptyMessage: null, data: projects })
             })
         } catch (err) {
             this.setState({ emptyMessage: { header: textsCap.projectsFailed, content: `${err}` } })
         }
-        this.tieIdLayout = layoutBond.tie(() => {
-            const { columns } = this.state
-            // hide on mobile
-            columns.find(x => x.key === 'description').hidden = getLayout() === 'mobile'
-            this.setState({ columns })
-        })
-
     }
 
     componentWillUnmount() {
         this._mounted = false
-        layoutBond.untie(this.tieIdLayout)
         // unsubscribe from updates
-        Object.values(this.unsubscribers)
-            .forEach(fn => isFn(fn) && fn())
+        unsubscribe(this.subscriptions)
     }
 
     // either close or reopen projects
@@ -328,12 +326,12 @@ export default class ProjectList extends Component {
 
     // ToDo: re-evaluate
     // Reload project list whenever status of any of the projects changes
-    setStatusBond = async (recordIds, ownerAddress) => {
+    subscribeToStatusChanges = async (recordIds, ownerAddress) => {
         recordIds = recordIds.sort()
         // return if all the Record Ids are the same as the ones from previous call
         if (JSON.stringify(this.recordIds) === JSON.stringify(recordIds)) return
         this.recordIds = recordIds
-        this.unsubscribers.status && this.unsubscribers.status()
+        unsubscribe({ x: this.subscriptions.status })
         const updateStatus = (statusCodes) => {
             // return if all status codes received are exactly same as previously set ones
             if (JSON.stringify(this.statusCodes) === JSON.stringify(statusCodes)) return
@@ -341,7 +339,7 @@ export default class ProjectList extends Component {
             // update update project details
             forceUpdate(recordIds, ownerAddress)
         }
-        this.unsubscribers.status = await query.status(this.recordIds, updateStatus, true)
+        this.subscriptions.status = await query.status(this.recordIds, updateStatus, true)
     }
 
     // show project team in a modal

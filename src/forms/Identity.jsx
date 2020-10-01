@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Bond } from 'oo7'
+import { BehaviorSubject } from 'rxjs'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import { isFn, arrUnique } from '../utils/utils'
 // services
@@ -36,7 +36,7 @@ export default class IdentityForm extends Component {
         super(props)
 
         this.values = { ...props.values }
-        this.addressBond = new Bond().defaultTo(this.values.address)
+        this.rxAddress = new BehaviorSubject(this.values.address)
         this.doUpdate = !!this.values.address
         this.validateUri = this.validateUri
 
@@ -65,19 +65,18 @@ export default class IdentityForm extends Component {
                     value: '',
                 },
                 {
-                    bond: new Bond(),
                     hidden: true,
                     label: textsCap.seed,
                     name: 'uri',
                     placeholder: textsCap.seedPlaceholder,
                     readOnly: true,
                     required: true,
+                    rxValue: new BehaviorSubject(),
                     type: 'text',
                     validate: this.values.restore ? this.validateUri : undefined,
                     value: '',
                 },
                 {
-                    bond: new Bond(),
                     hidden: this.doUpdate && (this.values.uri || '').includes('/totem/'),
                     inline: true,
                     label: textsCap.usageType,
@@ -89,12 +88,13 @@ export default class IdentityForm extends Component {
                     ],
                     radio: true,
                     required: true,
+                    rxValue: new BehaviorSubject(),
                     type: 'Checkbox-group',
                 },
                 {
-                    bond: this.addressBond,
                     label: textsCap.address,
                     name: 'address',
+                    rxValue: this.rxAddress,
                     type: 'hidden',
                     value: '',
                 },
@@ -139,8 +139,8 @@ export default class IdentityForm extends Component {
         uriInput.hidden = !restore
         uriInput.validate = restore ? this.validateUri : undefined
         if (restore) {
-            uriInput.bond.changed('')
-            this.addressBond.changed('')
+            uriInput.rxValue.next('')
+            this.rxAddress.next('')
         }
         this.setState({ inputs })
     }
@@ -162,8 +162,8 @@ export default class IdentityForm extends Component {
             seed = seed.split('/totem/')[0] + `/totem/${usageType === 'personal' ? 0 : 1}/0`
         }
         const { address = '' } = seed && identityService.addFromUri(seed) || {}
-        this.addressBond.changed(address)
-        findInput(inputs, 'uri').bond.changed(seed)
+        this.rxAddress.next(address)
+        findInput(inputs, 'uri').rxValue.next(seed)
         this.setState({ inputs })
     }
 
@@ -176,13 +176,13 @@ export default class IdentityForm extends Component {
         const { inputs } = this.state
         const { address } = seed && identityService.addFromUri(seed) || {}
         if (!address) {
-            this.addressBond.changed('')
+            this.rxAddress.next('')
             return textsCap.validSeedRequired
         }
         const existing = identityService.find(address)
         if (existing) return `${textsCap.seedExists} ${existing.name}`
         this.values.address = address
-        this.addressBond.changed(address)
+        this.rxAddress.next(address)
         if (seed.includes('/totem/')) {
             // extract usageType
             const usagetypeInt = parseInt(seed.split('/totem/')[1])
@@ -190,7 +190,7 @@ export default class IdentityForm extends Component {
             const usageTypeIn = findInput(inputs, 'usageType')
             usageTypeIn.hidden = true
             this.values.usageType = usageType
-            usageTypeIn.bond.changed(usageType)
+            usageTypeIn.rxValue.next(usageType)
             this.setState({ inputs })
         }
         return null

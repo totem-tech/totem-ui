@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Bond } from 'oo7'
+import { BehaviorSubject } from 'rxjs'
 import { Button, Icon } from 'semantic-ui-react'
 import { deferred, hasValue, isDefined, isFn, objCopy } from '../../utils/utils'
 import {
@@ -16,18 +16,18 @@ import { query as queryBlockchain, getCurrentBlock } from '../../services/blockc
 import identities, { getSelected } from '../../services/identity'
 import { translated } from '../../services/language'
 import { confirm, closeModal, showForm } from '../../services/modal'
-import { handleTKInvitation } from '../notification/notification'
 import { getAddressName } from '../../services/partner'
 import { openStatuses, query as queryProject } from '../../services/project'
 import { addToQueue } from '../../services/queue'
 import {
-    formData,
+    saveFormData,
     getProjects,
     NEW_RECORD_HASH,
     query,
     queueables,
     statuses
 } from './timekeeping'
+import { handleInvitation } from './notificationHandlers'
 import { unsubscribe } from '../../services/react'
 
 // Hash that indicates creation of new record
@@ -204,7 +204,7 @@ export default class TimekeepingForm extends Component {
     constructor(props) {
         super(props)
 
-        const values = formData() || {}
+        const values = saveFormData() || {}
         const { breakCount, duration, durationValid, inprogress, projectHash, workerAddress } = values
         values.durationValid = !isDefined(durationValid) ? true : durationValid
         values.duration = duration || DURATION_ZERO
@@ -219,7 +219,7 @@ export default class TimekeepingForm extends Component {
             values,
             inputs: [
                 {
-                    bond: new Bond(),
+                    rxValue: new BehaviorSubject(),
                     clearable: true,
                     disabled: projectHashSupplied,
                     inline: true,
@@ -235,7 +235,7 @@ export default class TimekeepingForm extends Component {
                     type: 'dropdown',
                 },
                 {
-                    bond: new Bond(),
+                    rxValue: new BehaviorSubject(),
                     label: wordsCap.identity,
                     name: 'workerAddress',
                     type: 'dropdown',
@@ -256,7 +256,7 @@ export default class TimekeepingForm extends Component {
                     value: DURATION_ZERO
                 },
                 {
-                    bond: new Bond(),
+                    rxValue: new BehaviorSubject(),
                     disabled: !!values.inprogress,
                     name: 'manualEntry',
                     options: [{
@@ -319,7 +319,7 @@ export default class TimekeepingForm extends Component {
         const isValidProject = projectId && (inputs[index].options || []).find(x => x.value === projectId)
         if (!isValidProject) {
             // project hash doesnt exists in the options
-            if (projectId) inputs[index].bond.changed(null)
+            if (projectId) inputs[index].rxValue.next(null)
             return
         }
 
@@ -376,9 +376,9 @@ export default class TimekeepingForm extends Component {
                     {texts.inactiveWorkerMsg3} <br />
                     <ButtonAcceptOrReject
                         onClick={async (accepted) => {
-                            const success = await handleTKInvitation(projectId, workerAddress, accepted)
+                            const success = await handleInvitation(projectId, workerAddress, accepted)
                             // force trigger change
-                            success && inputs[index].bond.changed(projectId)
+                            success && inputs[index].rxValue.next(projectId)
                         }}
                         style={{ marginTop: 10 }}
                     />
@@ -425,7 +425,7 @@ export default class TimekeepingForm extends Component {
             values.breakCount = 0
             inputs.find(x => x.name === 'duration').value = DURATION_ZERO
             this.setState({ values, inputs })
-            formData(values)
+            saveFormData(values)
         }
 
         !doConfirm ? reset() : confirm({
@@ -513,7 +513,7 @@ export default class TimekeepingForm extends Component {
         duraIn.value = values.duration
         values.durationValid = BLOCK_DURATION_REGEX.test(values.duration) && values.duration !== DURATION_ZERO
         this.setState({ blockNumber: currentBlockNumber, inputs, message: {}, values })
-        formData(values)
+        saveFormData(values)
     }
 
     setIdentityOptions = async (projectId, workerAddress) => {
@@ -532,7 +532,7 @@ export default class TimekeepingForm extends Component {
             }))
         identityIn.options = options
         const hasOption = options.find(({ value }) => value === workerAddress)
-        identityIn.bond.changed(hasOption ? workerAddress : null)
+        identityIn.rxValue.next(hasOption ? workerAddress : null)
         this.setState({ inputs })
     }
 
@@ -651,7 +651,7 @@ export class TimekeepingUpdateForm extends Component {
             values: props.values || {},
             inputs: [
                 {
-                    bond: new Bond(),
+                    rxValue: new BehaviorSubject(),
                     label: wordsCap.duration,
                     name: 'duration',
                     onChange: this.handleDurationChange,

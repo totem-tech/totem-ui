@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { Component, useEffect } from 'react'
 import { Image, Segment, Sidebar } from 'semantic-ui-react'
 // Components
 import ErrorBoundary from './components/CatchReactErrors'
@@ -16,11 +16,11 @@ import NotificationView from './modules/notification/NotificationView'
 import partner from './services/partner'
 import project from './services/project'
 import queue, { resumeQueue } from './services/queue'
-import sidebar, { sidebarItems, sidebarStateBond } from './services/sidebar'
+import sidebar, { sidebarItems, rxSidebarState } from './services/sidebar'
 import storage from './services/storage'
 import timeKeeping from './modules/timekeeping/timekeeping'
 import toast, { ToastsContainer } from './services/toast'
-import windw, { gridColumnsBond, getLayout, layoutBond, MOBILE } from './services/window'
+import windw, { rxGridColumns, getLayout, rxLayout, MOBILE } from './services/window'
 // Utils
 import convert from './utils/convert'
 import DataStorage from './utils/DataStorage'
@@ -33,16 +33,17 @@ import TotemButtonLogo from './assets/totem-button-grey.png'
 import PlaceholderImage from './assets/totem-placeholder.png'
 import ChatBar from './modules/chat/ChatBar'
 import PromisE from './utils/PromisE'
+import { useRxSubject } from './services/react'
 
-export class App extends Component {
-	constructor() {
-		super()
-		this.state = {
-			sidebarCollapsed: false,
-			sidebarVisible: getLayout() !== MOBILE,
-			status: {}
-		}
+let queueResumed = false
 
+export default function App() {
+	const [isMobile] = useRxSubject(rxLayout, true, l => l === MOBILE)
+	const [numCol] = useRxSubject(rxGridColumns, true)
+	const logoSrc = TotemButtonLogo
+	const { collapsed, visible } = rxSidebarState.value
+
+	useEffect(() => {
 		// For debug only.
 		window.utils = {
 			convert,
@@ -71,76 +72,59 @@ export class App extends Component {
 
 		window.queryBlockchain = async (func, args, multi) => await blockchain.query(func, args, multi, true)
 		queryBlockchain().then(api => window.api = api)
-	}
 
-	componentWillMount() {
-		this.tieIdIsMobile = layoutBond.tie(layout => this.setState({ isMobile: layout === MOBILE }))
-		this.tieIdNumCol = gridColumnsBond.tie(numCol => this.setState({ numCol }))
-	}
-
-	componentWillUnmount() {
-		layoutBond.untie(this.tieIdIsMobile)
-		gridColumnsBond.untie(this.tieIdNumCol)
-	}
-
-	handleSidebarToggle = (v, c) => this.setState({ sidebarVisible: v, sidebarCollapsed: c })
-
-	render() {
-		const { isMobile, numCol } = this.state
-		if (!isBool(isMobile)) return ''
-		const logoSrc = TotemButtonLogo
-		const { collapsed, visible } = sidebarStateBond._value
-		if (!this.resumed) {
+		if (!queueResumed) {
 			// resume any incomplete queued tasks 
-			this.resumed = true
+			queueResumed = true
 			setTimeout(() => resumeQueue(), 1000)
 		}
+		return () => { }
+	}, [])
 
-		return (
-			<div className={className({
-				wrapper: true,
-				mobile: isMobile,
-				desktop: !isMobile,
-				'sidebar-collapsed': collapsed,
-				'sidebar-visible': visible,
-			})}>
-				<ModalsConainer />
-				<ToastsContainer isMobile={isMobile} />
+	return (
+		<div className={className({
+			wrapper: true,
+			mobile: isMobile,
+			desktop: !isMobile,
+			'sidebar-collapsed': collapsed,
+			'sidebar-visible': visible,
+		})}>
+			<ModalsConainer />
+			<ToastsContainer isMobile={isMobile} />
+			<ErrorBoundary>
+				<PageHeader {...{ logoSrc, isMobile }} />
+			</ErrorBoundary>
+
+			<ErrorBoundary>
+				<NotificationView />
+			</ErrorBoundary>
+
+			<Sidebar.Pushable style={styles.pushable}>
 				<ErrorBoundary>
-					<PageHeader {...{ logoSrc, isMobile }} />
+					<SidebarLeft isMobile={isMobile} />
 				</ErrorBoundary>
 
-				<ErrorBoundary>
-					<NotificationView />
-				</ErrorBoundary>
-
-				<Sidebar.Pushable style={styles.pushable}>
-					<ErrorBoundary>
-						<SidebarLeft isMobile={isMobile} />
-					</ErrorBoundary>
-
-					<Sidebar.Pusher
-						as={Invertible.asCallback(Segment)}
-						className="main-content"
-						dimmed={false}
-						id="main-content"
-						// fluid
-						style={{
-							...styles.mainContent,
-							padding: isMobile ? '0 0 35px 0' : '15px 15px 0',
-							...getGridStyle(numCol),
-						}}
-					>
-						{sidebarItems.map(({ name }, i) => <MainContentItem key={i + name} name={name} />)}
-						<div className='empty-message'>
-							<Image style={{ margin: '100px auto auto' }} src={PlaceholderImage} />
-						</div>
-					</Sidebar.Pusher>
-				</Sidebar.Pushable>
-				<ChatBar {...{ isMobile, inverted: false }} />
-			</div>
-		)
-	}
+				<Sidebar.Pusher
+					as={Invertible.asCallback(Segment)}
+					className="main-content"
+					dimmed={false}
+					id="main-content"
+					// fluid
+					style={{
+						...styles.mainContent,
+						padding: isMobile ? '0 0 35px 0' : '15px 15px 0',
+						...getGridStyle(numCol),
+					}}
+				>
+					{sidebarItems.map(({ name }, i) => <MainContentItem key={i + name} name={name} />)}
+					<div className='empty-message'>
+						<Image style={{ margin: '100px auto auto' }} src={PlaceholderImage} />
+					</div>
+				</Sidebar.Pusher>
+			</Sidebar.Pushable>
+			<ChatBar {...{ isMobile, inverted: false }} />
+		</div>
+	)
 }
 
 const getGridStyle = (numCol = 1) => numCol <= 1 ? {} : {

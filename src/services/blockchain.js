@@ -261,10 +261,12 @@ export default {
     getConfig,
     getConnection,
     getCurrentBlock,
+    getTypes,
     hashTypes,
     nodes,
     query,
-    setConfig,
     queueables,
+    randomHex,
+    setConfig,
     types,
 }

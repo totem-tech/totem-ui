@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Bond } from 'oo7'
+import { BehaviorSubject } from 'rxjs'
 // import FormBuilder, { findInput } from '../components/FormBuilder'
 // import { newSignature, signingKeyPair, verifySignature } from '../utils/naclHelper'
 // import { encodeBase64, decodeBase64, decodeUTF8, hashToStr } from '../utils/convert'
@@ -37,7 +37,7 @@ export default class KeyRegistryPlayground extends Component {
                     value: '',
                 },
                 {
-                    bond: new Bond(),
+                    rxValue: new BehaviorSubject(),
                     label: 'Message (hex)',
                     name: 'dataHex',
                     required: true,
@@ -45,7 +45,7 @@ export default class KeyRegistryPlayground extends Component {
                     value: '',
                 },
                 {
-                    bond: new Bond(),
+                    rxValue: new BehaviorSubject(),
                     label: 'Public key - hex',
                     name: 'publicHex',
                     required: true,
@@ -53,14 +53,14 @@ export default class KeyRegistryPlayground extends Component {
                     value: '',
                 },
                 {
-                    bond: new Bond(),
+                    rxValue: new BehaviorSubject(),
                     label: 'Public key - base64',
                     name: 'publicBase64',
                     type: 'text',
                     value: '',
                 },
                 {
-                    bond: new Bond(),
+                    rxValue: new BehaviorSubject(),
                     label: 'Private key - hex',
                     name: 'privateHex',
                     required: true,
@@ -68,14 +68,14 @@ export default class KeyRegistryPlayground extends Component {
                     value: '',
                 },
                 {
-                    bond: new Bond(),
+                    rxValue: new BehaviorSubject(),
                     label: 'Private key - base64',
                     name: 'privateBase64',
                     type: 'text',
                     value: '',
                 },
                 {
-                    bond: new Bond(),
+                    rxValue: new BehaviorSubject(),
                     label: 'Signature - hex',
                     name: 'signatureHex',
                     required: true,
@@ -83,7 +83,7 @@ export default class KeyRegistryPlayground extends Component {
                     value: '',
                 },
                 {
-                    bond: new Bond(),
+                    rxValue: new BehaviorSubject(),
                     label: 'Signature - base64',
                     name: 'signatureBase64',
                     type: 'text',
@@ -108,7 +108,7 @@ export default class KeyRegistryPlayground extends Component {
         //     privateHex: hashToStr(decodeBase64(keyPair.secretKey)),
         //     privateBase64: keyPair.secretKey,
         // }
-        // Object.keys(newValues).forEach(key => findInput(inputs, key).bond.changed(newValues[key]))
+        // Object.keys(newValues).forEach(key => findInput(inputs, key).rxValue.changed(newValues[key]))
     }
 
     handleSubmit = (e, { address, dataHex, publicHex, signatureHex }) => {

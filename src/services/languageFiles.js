@@ -1,5 +1,5 @@
 export default [
-    "./src/app.jsx",
+    "./src/App.jsx",
     "./src/components/Balance.jsx",
     "./src/components/CatchReactErrors.jsx",
     "./src/components/CheckboxGroup.jsx",
@@ -61,6 +61,7 @@ export default [
     "./src/modules/task/TaskForm.jsx",
     "./src/modules/task/TaskList.jsx",
     "./src/modules/task/TaskView.jsx",
+    "./src/modules/task/notificationHandlers.jsx",
     "./src/modules/task/task.js",
     "./src/modules/task/useTasks.js",
     "./src/modules/timekeeping/TimekeeepingForm.jsx",
@@ -68,6 +69,7 @@ export default [
     "./src/modules/timekeeping/TimekeepingList.jsx",
     "./src/modules/timekeeping/TimekeepingSummaryList.jsx",
     "./src/modules/timekeeping/TimekeepingView.jsx",
+    "./src/modules/timekeeping/notificationHandlers.jsx",
     "./src/modules/timekeeping/timekeeping.js",
     "./src/services/blockchain.js",
     "./src/services/chatClient.js",

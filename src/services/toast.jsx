@@ -1,14 +1,14 @@
 /*
  * Toast service displays toast messages/notifications
  */
-import React, { useEffect, useReducer } from 'react'
+import React, { useEffect, useState } from 'react'
 import uuid from 'uuid'
-import { deferred, isObj, isStr, isFn } from '../utils/utils'
+import { deferred, isObj, isStr } from '../utils/utils'
 import Message from '../components/Message'
 import { rxModals } from './modal'
-import { sidebarStateBond } from './sidebar'
-import { reducer } from './react'
-import { layoutBond, MOBILE } from './window'
+import { rxSidebarState } from './sidebar'
+import { unsubscribe, useRxSubject } from './react'
+import { MOBILE, rxLayout } from './window'
 import DataStorage from '../utils/DataStorage'
 
 const DURATION = 5000
@@ -16,38 +16,27 @@ const toasts = new DataStorage()
 const deferedCloseCbs = new Map()
 
 export const ToastsContainer = () => {
-    const [state, setState] = useReducer(reducer, {})
-    const { animationInProgress, isMobile, isModalOpen, sidebarVisible, toastsArr } = state
+    const [isMobile] = useRxSubject(rxLayout, true, layout => layout === MOBILE)
+    const [isModalOpen] = useRxSubject(rxModals, true, modals => modals.size > 0)
+    const [toastEls] = useRxSubject(toasts.rxData, true, map => Array.from(map).map(([_, el]) => el))
+    const [[animationInProgress, sidebarVisible], setSidebarState] = useState([])
     const mcEl = document.getElementById('main-content')
     const hasScrollbar = mcEl && mcEl.clientHeight !== mcEl.scrollHeight
     const { left = 0, top = 0 } = !isModalOpen && mcEl && mcEl.getBoundingClientRect() || {}
-    const hide = !mcEl || toasts.size === 0 || (isMobile && sidebarVisible)
+    const hide = !mcEl || !toastEls.length || (isMobile && sidebarVisible)
 
     useEffect(() => {
         let mounted = true
-        const unsubscribers = {}
-        unsubscribers.toasts = toasts.rxData.subscribe(map =>
-            mounted && setState({ toastsArr: Array.from(map) })
-        ).unsubscribe
-        unsubscribers.modals = rxModals.subscribe(map =>
-            mounted && setState({ isModalOpen: map.size > 0 })
-        ).unsubscribe
-        const tieIdMobile = layoutBond.tie(layout => mounted && setState({ isMobile: layout === MOBILE }))
-        // delay until sidebar animnation is complete
-        const tieIdSidebar = sidebarStateBond.tie(({ visible }) => {
-            const sidebarWillAnimate = toasts.size > 0 && !isMobile
-            setState({
-                animationInProgress: sidebarWillAnimate,
-                sidebarVisible: visible,
-            })
-            if (!sidebarWillAnimate) return
-            setTimeout(() => setState({ animationInProgress: false }), 500)
+        const subscription = rxSidebarState.subscribe(({ visible }) => {
+            if (!mounted) return
+            const animationInProgress = toasts.size > 0 && rxLayout.value !== MOBILE
+            setSidebarState([animationInProgress, visible])
+            if (!animationInProgress) return
+            setTimeout(() => setSidebarState([false, visible]), 500)
         })
         return () => {
             mounted = false
-            layoutBond.untie(tieIdMobile)
-            sidebarStateBond.untie(tieIdSidebar)
-            Object.values(unsubscribers).forEach(fn => isFn(fn) && fn())
+            unsubscribe({ subscription })
         }
     }, [])
 
@@ -60,7 +49,7 @@ export const ToastsContainer = () => {
                 top: top + 10,
                 right: isModalOpen ? 0 : (hasScrollbar ? 15 : 5),
             }}>
-            {toastsArr.map(([_, el]) => el)}
+            {toastEls}
         </div>
     )
 }

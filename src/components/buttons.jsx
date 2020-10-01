@@ -6,6 +6,7 @@ import { getRawUserID } from './UserIdInput'
 // forms
 import IdentityRequestForm from '../forms/IdentityRequest'
 import IdentityShareForm from '../forms/IdentityShare'
+import IntroduceUserForm from '../forms/IntroduceUser'
 import PartnerForm from '../forms/Partner'
 // services
 import { translated } from '../services/language'
@@ -22,6 +23,7 @@ const textsCap = translated({
     partnerUpdate: 'update partner',
     identityRequest: 'request identity',
     identityShare: 'share identity',
+    introduce: 'introduce',
     reject: 'reject',
     userIdBtnTitle: 'click for more options',
 }, true)[1]
@@ -69,19 +71,19 @@ ButtonAcceptOrReject.defaultProps = {
 export const Reveal = ({ content, hiddenContent, style, defaultVisible = false, El = 'div' }) => {
     const [visible, setVisible] = useState(defaultVisible)
     return (
-        <El
-            onMouseEnter={() => !visible && setVisible(true)}
-            onMouseLeave={() => visible && setVisible(false)}
-            style={style}
-        >
-            {visible ? hiddenContent : content}
-        </El>
+        <El {...{
+            onMouseEnter: () => !visible && setVisible(true),
+            onMouseLeave: () => visible && setVisible(false),
+            style: { style },
+        }}>
+            { visible ? hiddenContent : content}
+        </El >
     )
 }
 
 // placeholder to potentially use this in the future to make all User IDs clickable and open private chat with user
 export const UserID = React.memo(props => {
-    const { onClick, prefix, style, suffix, userId } = props
+    const { El = 'span', onClick, prefix, style, suffix, userId } = props
     const rawId = getRawUserID(userId)
     if (!rawId) return ''
 
@@ -89,8 +91,8 @@ export const UserID = React.memo(props => {
     const allowClick = onClick !== null && !isOwnId
 
     return (
-        <span {...{
-            ...objWithoutKeys(props, ['prefix', 'suffix', 'userId']),
+        <El {...{
+            ...objWithoutKeys(props, ['El', 'prefix', 'suffix', 'userId']),
             onClick: !allowClick ? undefined : (e => e.stopPropagation() | UserID.showModal(userId)),
             style: {
                 cursor: allowClick && 'pointer',
@@ -101,7 +103,7 @@ export const UserID = React.memo(props => {
             title: !allowClick ? name : textsCap.userIdBtnTitle,
         }}>
             <b>{prefix}@{rawId}{suffix}</b>
-        </span>
+        </El>
     )
 })
 
@@ -129,6 +131,11 @@ UserID.showModal = userId => {
             icon: 'share',
             onClick: () => showForm(IdentityShareForm, { values: { userIds: [userId] } }),
         },
+        {
+            content: textsCap.introduce,
+            icon: 'handshake',
+            onClick: () => showForm(IntroduceUserForm, { values: { userId } }),
+        },
     ].filter(Boolean)
 
     const modalId = confirm({
@@ -152,18 +159,20 @@ UserID.showModal = userId => {
                     </div>
                 )}
                 <div>
-                    {buttons.map(props => <Button {...{
-                        fluid: true,
-                        key: props.content,
-                        style: { margin: '3px 0' },
-                        ...props,
-                    }} />)}
+                    {buttons.map(props => (
+                        <Button {...{
+                            fluid: true,
+                            key: props.content,
+                            style: { margin: '3px 0' },
+                            ...props,
+                        }} />
+                    ))}
                 </div>
             </div>
         ),
         header: (
             <div className='header'>
-                @{userId}
+                @{userId + ' '}
                 <Button {...{
                     circular: true,
                     icon: 'chat',

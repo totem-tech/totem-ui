@@ -6,14 +6,14 @@ import { ButtonAcceptOrReject } from '../components/buttons'
 import DataTable from '../components/DataTable'
 import PartnerForm from '../forms/Partner'
 import TimekeepingInviteForm from '../modules/timekeeping/TimekeeepingInviteForm'
-import { handleTKInvitation } from '../modules/notification/notification'
-// services
+import { getUser } from '../services/chatClient'
 import { get as getIdentity } from '../services/identity'
 import { translated } from '../services/language'
 import { showForm } from '../services/modal'
 import { get as getPartner } from '../services/partner'
 import { query } from '../modules/timekeeping/timekeeping'
-import { getUser } from '../services/chatClient'
+import { handleInvitation } from '../modules/timekeeping/notificationHandlers'
+
 
 const wordsCap = translated({
     accepted: 'accepted',
@@ -100,7 +100,7 @@ export default class ProjectTeamList extends Component {
                 _status: accepted ? wordsCap.accepted : (!isOwnIdentity ? wordsCap.invited : (
                     // Worker identity belongs to current user => button to accept or reject
                     <ButtonAcceptOrReject
-                        onClick={accept => handleTKInvitation(
+                        onClick={accept => handleInvitation(
                             projectId,
                             address,
                             accept,

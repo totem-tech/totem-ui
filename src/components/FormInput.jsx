@@ -6,12 +6,9 @@ import {
 	deferred,
 	hasValue,
 	isArr,
-	isBond,
-	isDefined,
 	isFn,
 	isObj,
 	isStr,
-	isValidNumber,
 	objWithoutKeys,
 	searchRanked,
 	isBool,
@@ -41,7 +38,6 @@ const [texts] = translated({
 const validationTypes = Object.values(TYPES)
 // properties exclude from being used in the DOM
 const NON_ATTRIBUTES = Object.freeze([
-	'bond',
 	'collapsed',
 	'defer',
 	'elementRef',
@@ -68,8 +64,7 @@ export class FormInput extends Component {
 	constructor(props) {
 		super(props)
 
-		const { bond, defer } = props
-		this.bond = isBond(bond) ? bond : undefined
+		const { defer } = props
 		this.state = { message: undefined }
 		if (defer !== null) {
 			this.setMessage = deferred(this.setMessage, defer)
@@ -83,18 +78,12 @@ export class FormInput extends Component {
 		this._mounted = true
 		this.subscriptions = {}
 		const { rxValue } = this.props
-		const triggerChange = value => setTimeout(() => this.handleChange({}, { ...this.props, value }))
-		if (this.bond) {
-			this.tieId = this.bond.tie(triggerChange)
-		}
-		if (isObj(rxValue) && isFn(rxValue.subscribe)) {
-			this.subscriptions.rxValue = rxValue.subscribe(triggerChange)
-		}
+		if (!isObj(rxValue) || !isFn(rxValue.subscribe)) return
+		this.subscriptions.rxValue = rxValue.subscribe(value => this.handleChange({}, { ...this.props, value }))
 	}
 
 	componentWillUnmount = () => {
 		this._mounted = false
-		this.bond && this.bond.untie(this.tieId)
 		unsubscribe(this.subscriptions)
 	}
 
@@ -104,6 +93,7 @@ export class FormInput extends Component {
 			integer,
 			onChange,
 			required,
+			rxValue,
 			trueValue: trueValue = true,
 			type,
 			validate,
@@ -155,8 +145,7 @@ export class FormInput extends Component {
 			data.invalid = !!errMsg
 			isFn(onChange) && onChange(event, data, this.props)
 			this.setMessage(message)
-
-			if (isBond(this.bond) && !data.invalid) this.bond._value = data.value
+			// rxValue && rxValue.value !== data.value && rxValue.next(data.value)
 		}
 		if (message || !isFn(validate)) return triggerChange()
 
@@ -185,7 +174,6 @@ export class FormInput extends Component {
 	render() {
 		const {
 			accordion,
-			bond,
 			content,
 			elementRef,
 			error,
@@ -197,6 +185,7 @@ export class FormInput extends Component {
 			message: externalMsg,
 			name,
 			required,
+			rxValue,
 			styleContainer,
 			type,
 			useInput: useInputOrginal,
@@ -230,7 +219,7 @@ export class FormInput extends Component {
 				break
 			case 'checkbox-group':
 			case 'radio-group':
-				attrs.bond = bond
+				attrs.rxValue = rxValue
 				attrs.inline = inline
 				attrs.radio = typeLC === 'radio-group' ? true : attrs.radio
 				inputEl = <CheckboxGroup {...attrs} />
@@ -324,7 +313,6 @@ export class FormInput extends Component {
 	}
 }
 FormInput.propTypes = {
-	bond: PropTypes.any,
 	// Delay, in miliseconds, to display built-in and `validate` error messages
 	// Set `defer` to `null` to prevent using deferred mechanism
 	defer: PropTypes.number,
@@ -366,6 +354,9 @@ FormInput.propTypes = {
 	onChange: PropTypes.func,
 	placeholder: PropTypes.string,
 	readOnly: PropTypes.bool,
+	rxValue: PropTypes.shape({
+		subscribe: PropTypes.func.isRequired,
+	}),
 	// element ref
 	elementRef: PropTypes.any,
 	required: PropTypes.bool,

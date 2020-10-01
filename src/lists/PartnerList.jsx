@@ -7,13 +7,15 @@ import { createInbox } from '../modules/chat/chat'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import addressbook, { getAddressName, rxPartners } from '../services/partner'
-import { layoutBond } from '../services/window'
+import { rxLayout, MOBILE } from '../services/window'
 // forms
 import CompanyForm from '../forms/Company'
 import IdentityRequestForm from '../forms/IdentityRequest'
 import PartnerForm from '../forms/Partner'
 import IntroduceUserForm from '../forms/IntroduceUser'
 import { getUser } from '../services/chatClient'
+import { UserID } from '../components/buttons'
+import { unsubscribe } from '../services/react'
 
 const textsCap = translated({
 	add: 'add',
@@ -42,15 +44,22 @@ export default class PartnerList extends Component {
 		super(props)
 
 		this.state = {
+			isMobile: false,
 			listProps: {
 				columns: [
 					{ key: '_name', title: textsCap.partnerName },
-					{ collapsing: true, key: '_type', title: textsCap.usage },
 					{ key: '_associatedIdentity', title: textsCap.usedBy, style: { maxWidth: 200 } },
 					{
 						key: '_tags',
 						draggable: false, // individual tags are draggable
 						title: textsCap.tags
+					},
+					{ collapsing: true, key: '_type', title: textsCap.usage },
+					{
+						collapsing: true,
+						content: this.getActions,
+						draggable: false,
+						title: textsCap.edit,
 					},
 					{
 						content: ({ address, name, isPublic }) => (
@@ -69,17 +78,19 @@ export default class PartnerList extends Component {
 						textAlign: 'center',
 						title: textsCap.public,
 					},
-					{
-						collapsing: true,
-						content: this.getActions,
-						draggable: false,
-						title: textsCap.edit,
-					},
 				],
 				data: new Map(),
 				defaultSort: 'name',
 				emptyMessage: null,
-				searchExtraKeys: ['address', 'associatedIdentity', 'name', 'visibility', '_tagsStr', '_type'],
+				searchExtraKeys: [
+					'address',
+					'associatedIdentity',
+					'name',
+					'visibility',
+					'_tagsStr',
+					'_type',
+					'userId',
+				],
 				searchable: true,
 				topLeftMenu: [],
 			}
@@ -91,16 +102,36 @@ export default class PartnerList extends Component {
 	componentWillMount() {
 		this._mounted = true
 		this.subscriptions = {}
+		const { id: ownId } = getUser() || {}
 
+		this.subscriptions.layout = rxLayout.subscribe(layout => this.setState({ isMobile: layout === MOBILE }))
 		this.subscriptions.partners = rxPartners.subscribe(map => {
 			const { listProps } = this.state
 			listProps.data = map
 
 			Array.from(listProps.data).forEach(([_, p]) => {
-				const { associatedIdentity, address, name, tags, type } = p
+				const { associatedIdentity, address, name, tags, type, userId } = p
 				p._address = textEllipsis(address, 15, 3)
 				p._associatedIdentity = associatedIdentity && getAddressName(associatedIdentity)
-				p._name = textEllipsis(name, 25, 3, false)
+				p._name = (
+					<span>
+						<Button {...{
+							disabled: !userId || userId === ownId,
+							circular: true,
+							icon: 'chat',
+							onClick: () => createInbox([userId], null, true),
+							size: 'mini',
+							title: textsCap.chat,
+						}} />
+						{textEllipsis(name, 25, 3, false)}
+					</span>
+				)
+				p._name = (
+					<div style={{ margin: !userId ? 0 : '-10px 0' }}>
+						{textEllipsis(name, 25, 3, false)}
+						<UserID El='div' style={{ color: 'grey', fontSize: '80%' }} userId={userId} />
+					</div>
+				)
 				p._tags = (tags || []).map(tag => (
 					<Label
 						key={tag}
@@ -122,38 +153,37 @@ export default class PartnerList extends Component {
 			})
 			this.setState({ listProps })
 		})
-		this.tieIdLayout = layoutBond.tie(layout => this.setState({ layout }))
 	}
 
 	componentWillUnmount = () => {
 		this._mounted = false
-		layoutBond.untie(this.tieIdLayout)
+		unsubscribe(this.subscriptions)
 	}
 
 	getActions = partner => {
 		const { address, name, userId } = partner
-		const { id: ownId } = getUser() || {}
+		// const { id: ownId } = getUser() || {}
 		const updatePartnerCb = onSubmit => () => showForm(PartnerForm, {
 			onSubmit,
 			size: 'tiny',
 			values: partner,
 		})
 		return [
-			{
-				icon: 'handshake',
-				onClick: () => {
-					const introduce = userId => showForm(IntroduceUserForm, { values: { userId } })
-					if (!!userId) return introduce(userId)
+			// {
+			// 	icon: 'handshake',
+			// 	onClick: () => {
+			// 		const introduce = userId => showForm(IntroduceUserForm, { values: { userId } })
+			// 		if (!!userId) return introduce(userId)
 
-					confirm({
-						content: textsCap.noUserIdConfirmMsg,
-						header: textsCap.noUserIdConfirmHeader,
-						onConfirm: updatePartnerCb((success, { userId }) => success && userId && introduce(userId)),
-						size: 'tiny',
-					})
-				},
-				title: textsCap.introducePartner
-			},
+			// 		confirm({
+			// 			content: textsCap.noUserIdConfirmMsg,
+			// 			header: textsCap.noUserIdConfirmHeader,
+			// 			onConfirm: updatePartnerCb((success, { userId }) => success && userId && introduce(userId)),
+			// 			size: 'tiny',
+			// 		})
+			// 	},
+			// 	title: textsCap.introducePartner
+			// },
 			{
 				icon: 'pencil',
 				onClick: updatePartnerCb(),
@@ -170,18 +200,17 @@ export default class PartnerList extends Component {
 				}),
 				title: textsCap.delete,
 			},
-			{
-				disabled: !userId || userId === ownId,
-				icon: 'chat',
-				onClick: () => createInbox([userId], null, true),
-				title: textsCap.chat,
-			},
+			// {
+			// 	disabled: !userId || userId === ownId,
+			// 	icon: 'chat',
+			// 	onClick: () => createInbox([userId], null, true),
+			// 	title: textsCap.chat,
+			// },
 		].filter(Boolean).map(props => <Button key={props.title} {...props} />)
 	}
 
 	render() {
-		const { layout, listProps } = this.state
-		const isMobile = layout === 'mobile'
+		const { isMobile, listProps } = this.state
 		listProps.topLeftMenu = [(
 			<Button.Group fluid={isMobile} key='0'>
 				<Button

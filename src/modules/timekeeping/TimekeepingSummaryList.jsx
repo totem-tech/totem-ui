@@ -81,9 +81,6 @@ export default class TimekeepingSummaryList extends Component {
                 true,
             )
             return
-            // const bonds = recordIds.map(hash => query.worker.totalBlocksByProject(address, hash))
-            // this.bond = Bond.all(bonds)
-            // return this.tieIdBlocks = this.bond.tie(this.getSummary)
         }
         const sumTotalBlocks = arrTotalBlocks.reduce((sum, next) => sum + next, 0)
         const data = arrTotalBlocks.map((totalBlocks, i) => ({
