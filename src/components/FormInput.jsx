@@ -79,7 +79,9 @@ export class FormInput extends Component {
 		this.subscriptions = {}
 		const { rxValue } = this.props
 		if (!isObj(rxValue) || !isFn(rxValue.subscribe)) return
-		this.subscriptions.rxValue = rxValue.subscribe(value => this.handleChange({}, { ...this.props, value }))
+		this.subscriptions.rxValue = rxValue.subscribe(value =>
+			this._mounted && this.handleChange({}, { ...this.props, value })
+		)
 	}
 
 	componentWillUnmount = () => {
@@ -93,7 +95,6 @@ export class FormInput extends Component {
 			integer,
 			onChange,
 			required,
-			rxValue,
 			trueValue: trueValue = true,
 			type,
 			validate,
@@ -145,7 +146,6 @@ export class FormInput extends Component {
 			data.invalid = !!errMsg
 			isFn(onChange) && onChange(event, data, this.props)
 			this.setMessage(message)
-			// rxValue && rxValue.value !== data.value && rxValue.next(data.value)
 		}
 		if (message || !isFn(validate)) return triggerChange()
 
@@ -252,6 +252,7 @@ export class FormInput extends Component {
 				delete attrs.value
 				useInput = true
 			default:
+				attrs.value = !hasValue(attrs.value) ? '' : attrs.value //forces inputs to be controlled
 				attrs.fluid = !useInput ? undefined : attrs.fluid
 				attrs.label = inlineLabel || attrs.label
 				const El = useInput ? Input : Form.Input

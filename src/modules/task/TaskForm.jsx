@@ -3,7 +3,7 @@ import uuid from 'uuid'
 import { Button } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { arrSort, deferred, isObj, isValidNumber, objClean, generateHash, isFn, isHash } from '../../utils/utils'
+import { arrSort, deferred, isObj, isValidNumber, objClean, generateHash, isFn, isHash, isDate } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 import { BLOCK_DURATION_SECONDS, blockNumberToTS, format } from '../../utils/time'
 // components
@@ -144,7 +144,6 @@ export default class TaskForm extends Component {
                     placeholder: textsCap.titlePlaceholder,
                     required: true,
                     type: 'text',
-                    value: '',
                 },
                 {
                     name: this.names.bountyGroup,
@@ -161,17 +160,16 @@ export default class TaskForm extends Component {
                             required: true,
                             type: 'number',
                             useInput: true,
-                            value: '',
                             width: 10,
                         },
                         {// hidden type to store bounty in XTX (regardless of display currency selected)
-                            rxValue: new BehaviorSubject(),
                             hidden: true,
                             name: this.names.amountXTX,
                             required: true,
+                            rxValue: new BehaviorSubject(0),
                         },
                         { // display currency
-                            rxValue: new BehaviorSubject(),
+                            rxValue: new BehaviorSubject(getSelectedCurrency()),
                             label: textsCap.currency,
                             maxLength: 18,
                             name: this.names.currency,
@@ -185,7 +183,7 @@ export default class TaskForm extends Component {
                             },
                             type: 'dropdown',
                             width: 6,
-                            value: getSelectedCurrency(),
+                            // value: getSelectedCurrency(),
                         },
                     ]
                 },
@@ -216,7 +214,6 @@ export default class TaskForm extends Component {
                     search: true,
                     type: 'dropdown',
                     validate: this.validateAssignee,
-                    value: '',
                 },
                 {
                     rxValue: new BehaviorSubject(),
@@ -240,18 +237,19 @@ export default class TaskForm extends Component {
                     required: true,
                     type: 'date',
                     validate: (_, { value: deadline }) => {
-                        if (!deadline) return textsCap.invalidDate
+                        if (!deadline) return
+                        if (!isDate(new Date(deadline))) return textsCap.invalidDate
+
                         const diffMS = strToDate(deadline) - new Date()
                         return diffMS < deadlineMinMS && textsCap.deadlineMinErrorMsg
                     },
-                    value: '',
                 },
                 {
-                    rxValue: new BehaviorSubject(),
                     hidden: values => !values[this.names.deadline], // hide if deadline is not selected
                     label: `${textsCap.dueDateLabel} (${textsCap.dateForamt})`,
                     name: this.names.dueDate,
                     required: true,
+                    rxValue: new BehaviorSubject(),
                     type: 'date',
                     validate: (_, { value: dueDate }, values) => {
                         if (!dueDate) return textsCap.invalidDate
@@ -259,7 +257,6 @@ export default class TaskForm extends Component {
                         const diffMS = strToDate(dueDate) - strToDate(deadline)
                         return diffMS < dueDateMinMS && textsCap.dueDateMinErrorMsg
                     },
-                    value: '',
                 },
                 {
                     // Advanced section (Form type "group" with accordion)
@@ -302,7 +299,6 @@ export default class TaskForm extends Component {
                             placeholder: textsCap.descriptionPlaceholder,
                             required: false,
                             type: 'textarea',
-                            value: '',
                         },
                         {
                             allowAdditions: true,
