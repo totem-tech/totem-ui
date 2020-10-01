@@ -107,8 +107,8 @@ const textsCap = translated({
 
     transferTitle: 'Transfer',
     transferHeader: 'Transfer Funds',
-    transferSubheader: 'Transfer transaction between your Identities and  Partners.',
-    transferSubheaderDetails: 'You can use the transfer module to send some of your transaction balance to other parties on the Totem Network.',
+    transferSubheader: 'Make payments to anyone in your partners list',
+    transferSubheaderDetails: 'Use this module to make payments in any currency using the Totem Network. No matter which currency you use, payments will be converted automatically and instantly to any other currency.',
 
     invoicesTitle: 'Manage Invoices',
     creditNoteTitle: 'Credit Note',
