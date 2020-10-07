@@ -430,7 +430,7 @@ export default class TaskForm extends Component {
         })
     })()
 
-    // check if use has enough balance for the transaction including pre-funding amount (bounty)
+    // check if user has enough balance for the transaction including pre-funding amount (bounty)
     // Two different deferred mechanims used here:
     // 1. deferred: to delay currency conversion while user is typing
     // 2. PromisE.deferred: makes sure even if deferred (1) resolves multiple times, only last execution is applied
@@ -442,7 +442,7 @@ export default class TaskForm extends Component {
         // bounty hasn't changed
         if (taskId && bounty === bountyOriginal) return
 
-        this.bountyPromise = this.bountyPromise || PromisE.deferred()
+        this.bountyDeferred = this.bountyDeferred || PromisE.deferred()
         const { inputs, submitDisabled } = this.state
         const amountXTXIn = findInput(inputs, this.names.amountXTX)
         const bountyGrpIn = findInput(inputs, this.names.bountyGroup)
@@ -455,7 +455,7 @@ export default class TaskForm extends Component {
         bountyGrpIn.message = null
         submitDisabled.bounty = valid
         this.setState({ inputs, submitDisabled })
-        if (!valid) return
+        if (!valid) return this.bountyDeferred(Promise.reject(null))
 
         const promise = new Promise(async (resolve, reject) => {
             try {
@@ -472,7 +472,7 @@ export default class TaskForm extends Component {
                 resolve(result)
             } catch (e) { reject(e) }
         })
-        const handleSuccess = result => {
+        const handleBountyResult = result => {
             const amountXTX = result[0]
             const balanceXTX = result[1]
             const amountTotalXTX = amountXTX + estimatedTxFee + minBalanceAterTx
@@ -509,8 +509,8 @@ export default class TaskForm extends Component {
             this.setState({ inputs, loading: false, submitDisabled })
         }
         const handleErr = err => {
-            bountyIn.invalid = true
-            bountyGrpIn.message = {
+            bountyIn.invalid = !!err
+            bountyGrpIn.message = !err ? null : {
                 content: `${err} `,
                 header: textsCap.conversionErrorHeader,
                 status: 'error'
@@ -518,7 +518,7 @@ export default class TaskForm extends Component {
             submitDisabled.bounty = false
             this.setState({ inputs, loading: false, submitDisabled })
         }
-        this.bountyPromise(promise).then(handleSuccess, handleErr)
+        this.bountyDeferred(promise).then(handleBountyResult, handleErr)
     }, 300)
 
     // disables submit button if values unchanged
@@ -600,20 +600,22 @@ export default class TaskForm extends Component {
             then: thenCb(false),
         }
         const queueProps = fn.apply(null,
-            !doUpdate ? [
-                ownerAddress,
-                ownerAddress,
-                assignee,
-                isSell,
-                amountXTX,
-                isMarket,
-                orderType,
-                deadline,
-                dueDate,
-                taskId,
-                token,
-                extraProps,
-            ] : [
+            !doUpdate ? (
+                [
+                    ownerAddress,
+                    ownerAddress,
+                    assignee,
+                    isSell,
+                    amountXTX,
+                    isMarket,
+                    orderType,
+                    deadline,
+                    dueDate,
+                    taskId,
+                    token,
+                    extraProps,
+                ]
+            ) : [
                     ownerAddress,
                     hashTypes.taskHash,
                     taskId,
@@ -659,9 +661,10 @@ export default class TaskForm extends Component {
                 ownerAddress,
             ]
         }
+
+        // notify assignee on creation only
         if (!this.props.taskId && !findIdentity(assignee)) {
             const { userId } = partners.get(assignee) || {}
-            // notify assignee on creation only
             queueProps.next.next = !userId ? undefined : {
                 args: [
                     [userId],

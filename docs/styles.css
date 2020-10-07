@@ -164,59 +164,68 @@
 
 
 #app, #app > div {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
+	height: 100%;
+	width: 100%;
+  	overflow: hidden;
 }
 .mobile .pusher.main-content {
-  margin: 0 !important;
-  overflow: auto !important;
+  	margin: 0 !important;
+  	overflow: auto !important;
 }
-#app > .mobile #main-content::-webkit-scrollbar {
- width: 3px;
+body .pushable{
+	margin: 0px;
+	height: calc(100% - 59px);
+	overflow: hidden;
+	-webkit-overflow: hidden;
+}
+body.mobile .pushable {
+	height: calc(100% - 94px);
+}
+.mobile #main-content::-webkit-scrollbar {
+ 	width: 3px;
 }
 .empty-message:not(:only-child) {
-  display: none !important;
+  	display: none !important;
 }
 /* Fixes the dimmer height being limited due to the use of scrollbar */ 
 .mobile.sidebar-visible .main-content.pusher.container:after {
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 100%;
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 100%;
 }
 .ui.visible.sidebar.left {
-  transition: all 0.3s ease;
+  	transition: all 0.3s ease;
 }
 .ui.left.visible.sidebar > a {
-  white-space: nowrap;
-  overflow: hidden;
+	white-space: nowrap;
+	overflow: hidden;
 }
 /* hide footer bar when mobile sidebar is open */
 .mobile.sidebar-visible > .ui.menu.bottom {
     display: none;
 }
 .mobile.sidebar-visible > .notification-list {
-  display: none;
+  	display: none;
 }
 /* Main content width and positioning when sidebar is collapsed (icon-only mode) */
-#app > :not(.mobile) .ui.visible.left.sidebar.very.thin ~ .pusher.main-content {
+body:not(.mobile) .ui.visible.left.sidebar.very.thin ~ .pusher.main-content {
   -webkit-transform: translate3d(60px, 0, 0);
   transform: translate3d(60px, 0, 0);
   max-width: calc(100% - 60px) !important;
   margin-left: 0 !important;
   overflow: auto !important;
 }
-#app > :not(.mobile) .ui.visible.left.sidebar:not(.thin) ~ .pusher.main-content {
+body:not(.mobile) .ui.visible.left.sidebar:not(.thin) ~ .pusher.main-content {
   -webkit-transform: translate3d(300px, 0, 0);
   transform: translate3d(235px, 0, 0);
   max-width: calc(100% - 235px) !important;
   margin-left: 0 !important;
   overflow: auto !important;
 }
-#app > :not(.mobile) .ui.black.inverted.vertical.ui.left.wide.visible.sidebar.menu {
+body:not(.mobile) .ui.sidebar.left.wide { 
   width: 235px !important;
 }
 
@@ -226,7 +235,7 @@
   height: 100%;
 }
 .mobile .ui.visible.left.sidebar:not(.thin) ~ .pusher.main-content {
-  transform: 'none' !important;
+  transform: none !important;
   max-width: 100%;
 }
 
@@ -347,16 +356,16 @@ input[readonly] {
     max-width: 60%;
     overflow: hidden;
 }
-#app > .mobile .identity-dropdown:before {
+.mobile .identity-dropdown:before {
     background: transparent !important;
 }
-#app > .mobile .identity-dropdown .menu {
+.mobile .identity-dropdown .menu {
     position: fixed;
     top: 61px;
     width: 100%;
 	overflow-x: auto;
 }
-#app > .mobile .identity-dropdown .menu > div > div:first-child {
+.mobile .identity-dropdown .menu > div > div:first-child {
     max-width: 55%;
     overflow-x: hidden;
 }
@@ -364,72 +373,89 @@ input[readonly] {
 /* 
  * DARK MODE/INVERTED STYLES 
  */
-#app.inverted,
-#app.inverted #main-content.inverted {
+body.inverted,
+body.inverted #main-content.inverted {
 	background: #2e2d2d;
 	color: white;
 }
 /* anything inside the #main-content with .inverted class */
-#app.inverted #main-content .inverted,
-#app.inverted .accordion {
+body.inverted #main-content .inverted,
+body.inverted .accordion {
     background: #464646;
 	color: white;
 }
 /* Chat */
-#app.inverted .chat-container{
+body.inverted .chat-container{
 	background: #2a2a2a;
 	color: white;
 }
 /* Left Sidebar */
-/* #app.inverted .pushable .ui.sidebar.left {
+/* body.inverted .pushable .ui.sidebar.left {
 	background: red
 } */
 /* header bar*/
-/* #app.inverted > * > .ui.top.menu.inverted {
+/* body.inverted > * > .ui.top.menu.inverted {
     background: red;
 } */
 /* Data Table */
-#app.inverted .data-table.inverted,
-.ui.modal.inverted .ui.basic.inverted.segment.data-table {
+body.inverted .data-table.inverted,
+body.inverted .ui.basic.inverted.segment.data-table {
     background: #464646;
     /* border: 1px solid #505050; */
 }
 /* Modals */
-body .modal.inverted { border-radius: 6px;}
-body .modals .ui.modal.inverted > .content,
-body .modals .ui.modal.inverted .accordion, 
-body .modals .ui.modal.inverted .accordion > * {
+body.inverted .ui.modal > .content,
+body.inverted .ui.modal .accordion, 
+body.inverted .ui.modal .accordion > * {
 	background: #464646;
 	color: white;
 }
-body .modals .ui.modal.inverted > .modal-close,
-body .modals .ui.modal.inverted > .header,
-body .modals .ui.modal.inverted > .actions {
+body.inverted .ui.modal > .modal-close,
+body.inverted .ui.modal > .header,
+body.inverted .ui.modal > .actions {
 	background: #2e2d2d;
+	border-radius: 0;
 	color: white;
 }
-body .ui.form.inverted.loading::before {
+body.inverted .ui.form.inverted.loading::before {
     background: rgba(90, 90, 90, 0.8);
 }
 
 /* Form loading backshadow when inverted */
-.ui.modals.invert .ui.inverted.loading.form:before{
+body.inverted .ui.inverted.loading.form:before{
 	background: #464646eb;
 }
 /* Form loading spinner when inverted */
-.ui.modals.invert .ui.inverted.loading.form:after{
+body.inverted .ui.inverted.loading.form:after{
 	border-color: white rgba(0,0,0,.1) rgba(0,0,0,.1) rgba(0,0,0,.1);
 }
 /* Form accordion when inverted */
-.modal.inverted .ui.form > .accordion.styled, 
-#app.inverted .ui.form > .accordion.styled {
+body.inverted .ui.form > .accordion.styled, 
+body.inverted .ui.form > .accordion.styled {
     box-shadow: 1px 3px 3px 0 rgba(34,36,38,.15), 1px 3px 15px 2px rgba(34,36,38,.5);
 }
 
 /* Semantic UI Steps (no built-in inverted!!)*/
-#app.inverted .ui.fluid.ordered.steps * {
+body.inverted .ui.ordered.steps * {
     background: #4c4c4c;
     color: white;
+    transition: none;
+}
+body.inverted .ui.ordered.steps .step.active,
+body.inverted .ui.ordered.steps .step.active *,
+body.inverted .ui.ordered.steps .step:hover,
+body.inverted .ui.ordered.steps .step:hover * {
+    background: #2a2a2a;
+}
+body.inverted .steps > .step:not(:last-child) {
+	border-bottom: 1px solid #545454;
+}
+.inverted .steps .step.active:before {
+	color: white !important;
+}
+.inverted .steps .step.disabled, 
+.inverted .steps .step.disabled * {
+    color: grey !important;
 }
 
 /* Newsletter signup iframe */

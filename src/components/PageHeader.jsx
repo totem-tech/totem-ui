@@ -1,4 +1,4 @@
-import React, { Component, useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { Dropdown, Icon, Image, Menu } from 'semantic-ui-react'
 import Balance from '../components/Balance'
@@ -26,7 +26,7 @@ import { unsubscribe, useRxSubject } from '../services/react'
 import { toggleSidebarState, setActive } from '../services/sidebar'
 import { rxTimerInProgress } from '../modules/timekeeping/timekeeping'
 import { setToast } from '../services/toast'
-import { useInverted, rxInverted } from '../services/window'
+import { useInverted, rxInverted, rxLayout, MOBILE } from '../services/window'
 
 const textsCap = translated({
 	addressCopied: 'your identity copied to clipboard',
@@ -39,81 +39,44 @@ const textsCap = translated({
 	requestFunds: 'request Funds',
 	updateIdentity: 'update identity',
 }, true)[1]
-export default class PageHeader extends Component {
-	constructor(props) {
-		super(props)
 
-		this.state = {
-			id: (getUser() || {}).id,
-			isLoggedIn: rxIsLoggedIn.value,
-			wallets: [],
-		}
-
-		this.originalSetState = this.setState
-		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
+export default function PageHeader(props) {
+	const [wallets] = useRxSubject(rxIdentities, map => Array.from(map).map(([_, x]) => x))
+	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+	const [[userId, isLoggedIn]] = useRxSubject(rxIsLoggedIn, isLoggedIn => ([
+		(getUser() || {}).id,
+		isLoggedIn,
+	]))
+	const viewProps = {
+		...props,
+		userId,
+		isLoggedIn,
+		isMobile,
+		isRegistered: !!userId,
+		wallets,
+		onCopy: () => {
+			const { address } = getSelected()
+			if (!address) return
+			copyToClipboard(address)
+			const msg = { content: textsCap.addressCopied, status: 'success' }
+			this.copiedMsgId = setToast(msg, 2000, this.copiedMsgId)
+		},
+		onEdit: () => showForm(IdentityForm, { values: getSelected() }),
+		onFaucetRequest: () => addToQueue({
+			type: QUEUE_TYPES.CHATCLIENT,
+			func: 'faucetRequest',
+			title: textsCap.faucetRequest,
+			description: textsCap.faucetRequestDetails,
+			args: [getSelected().address]
+		}),
+		onSelection: (_, { value: address }) => setSelected(address),
 	}
-
-	componentWillMount() {
-		this._mounted = true
-		this.unsubscribers = {}
-		this.unsubscribers.identities = rxIdentities.subscribe(map =>
-			this.setState({
-				wallets: Array.from(map).map(([_, x]) => x)
-			})
-		)
-		// Update user ID after registration
-		this.unsubscribers.isLoggedIn = rxIsLoggedIn.subscribe(isLoggedIn => {
-			const { id } = getUser() || {}
-			this.setState({ id, isLoggedIn })
-		})
-	}
-
-	componentWillUnmount = () => {
-		this._mounted = false
-		unsubscribe(this.unsubscribers)
-	}
-
-	handleSelection = (_, { value: address }) => setSelected(address)
-
-	handleCopy = () => {
-		const { address } = getSelected()
-		if (!address) return
-		copyToClipboard(address)
-		const msg = { content: textsCap.addressCopied, status: 'success' }
-		this.copiedMsgId = setToast(msg, 2000, this.copiedMsgId)
-	}
-
-	handleEdit = () => showForm(IdentityForm, { values: getSelected() })
-
-	handleFaucetRequest = () => addToQueue({
-		type: QUEUE_TYPES.CHATCLIENT,
-		func: 'faucetRequest',
-		title: textsCap.faucetRequest,
-		description: textsCap.faucetRequestDetails,
-		args: [getSelected().address]
-	})
-
-	render() {
-		const { id, isLoggedIn, wallets } = this.state
-		const viewProps = {
-			userId: id,
-			isLoggedIn,
-			isRegistered: !!id,
-			wallets,
-			onCopy: this.handleCopy,
-			onEdit: this.handleEdit,
-			onFaucetRequest: this.handleFaucetRequest,
-			onSelection: this.handleSelection,
-		}
-		return <PageHeaderView {...this.props} {...viewProps} />
-	}
+	return <PageHeaderView {...viewProps} />
 }
 
 PageHeader.propTypes = {
 	logoSrc: PropTypes.string,
-	isMobile: PropTypes.bool,
 }
-
 PageHeader.defaultProps = {
 	logoSrc: 'https://react.semantic-ui.com/images/wireframe/image.png'
 }
@@ -172,7 +135,7 @@ const PageHeaderView = props => {
 				width: '100%',
 			}}
 		>
-			<Menu.Item onClick={!isMobile ? undefined : toggleSidebarState}>
+			<Menu.Item onClick={!isRegistered || !isMobile ? undefined : toggleSidebarState}>
 				<Image size="mini" src={logoSrc} />
 			</Menu.Item>
 			<Menu.Menu position="right">
@@ -258,9 +221,9 @@ const PageHeaderView = props => {
 }
 
 export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
-	const [timerInProgress] = useRxSubject(rxTimerInProgress, true)
-	const [unreadMsgCount] = useRxSubject(rxUnreadMsgCount, true)
-	const [unreadNotifCount] = useRxSubject(rxUnreadNotifCount, true)
+	const [timerInProgress] = useRxSubject(rxTimerInProgress)
+	const [unreadMsgCount] = useRxSubject(rxUnreadMsgCount)
+	const [unreadNotifCount] = useRxSubject(rxUnreadNotifCount)
 	const [notifBlink, setNotifBlink] = useState(false)
 	const countStyle = {
 		...styles.countStyle,

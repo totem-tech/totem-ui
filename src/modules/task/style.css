@@ -1,6 +1,6 @@
-#app.inverted .ui.pointing.secondary.menu {
+body.inverted .ui.pointing.secondary.menu {
     border-bottom: 2px solid rgba(197, 201, 204, 0.15);
 }
-#app.inverted .ui.secondary.pointing.menu .active.item {
+body.inverted .ui.secondary.pointing.menu .active.item {
     border-color: white;
 }

@@ -543,7 +543,7 @@ export default class TimekeepingForm extends Component {
         const durationValid = values && BLOCK_DURATION_REGEX.test(duration) && duration !== DURATION_ZERO
         const done = stopped || manualEntry
         const duraIn = inputs.find(x => x.name === 'duration')
-        const btnStyle = { width: 'calc( 50% - 12px )', margin: 3 }
+        const btnStyle = { width: 'calc( 50% - 12px )', margin: '3px 3px 15px' }
         const doneItems = ['workerAddress', 'reset']
         inputs.filter(x => doneItems.indexOf(x.name) >= 0).forEach(x => x.hidden = !done)
         inputs.find(x => x.name === 'projectHash').disabled = inprogress
@@ -563,14 +563,6 @@ export default class TimekeepingForm extends Component {
             }),
             title: texts.resumeTimer,
         }
-
-        // set wallet options
-        // inputs.find(x => x.name === 'workerAddress')
-        //     .options = identities.getAll().map((wallet, key) => ({
-        //         key,
-        //         text: wallet.name,
-        //         value: wallet.address
-        //     }))
 
         const closeBtn = (
             <Button

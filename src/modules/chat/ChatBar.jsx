@@ -6,11 +6,8 @@ import './style.css'
 import { useRxSubject } from '../../services/react'
 
 export default function ChatBar() {
-    const [visible] = useRxSubject(rxVisible, true, visible => {
-        document.getElementById('app').classList[visible ? 'add' : 'remove']('chat-visible')
-        return visible
-    })
-    const [inboxKey] = useRxSubject(rxOpenInboxKey, true)
+    const [visible] = useRxSubject(rxVisible)
+    const [inboxKey] = useRxSubject(rxOpenInboxKey)
     const receiverIds = (inboxKey || '').split(',')
 
     return (

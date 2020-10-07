@@ -19,11 +19,11 @@ import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
 import EventList from '../modules/event/EventList'
 // utils
 import DataStorage from '../utils/DataStorage'
-import { isBool, isBond } from '../utils/utils'
+import { isBool, isBond, deferred } from '../utils/utils'
 // services
 import { translated } from './language'
 import storage from './storage'
-import { MOBILE, rxLayout } from './window'
+import { DESKTOP, MOBILE, rxLayout, setClass } from './window'
 
 const textsCap = translated({
     eventsTtile: 'Events',
@@ -122,22 +122,18 @@ const textsCap = translated({
     utilitiesTitle: 'Utilities',
     utilitiesSubheader: 'Blockchain utilities',
 }, true)[1]
-
 // store items' "active" status in the localStorage
 const MODULE_KEY = 'sidebar'
 const rw = value => storage.settings.module(MODULE_KEY, value)
 const settings = rw() || {} //initial settings
-const statuses = new DataStorage()
-statuses.setAll(new Map(settings.items || []))
-statuses.rxData.subscribe(map => rw({ items: Array.from(map) }))
-
+// in-memory storage. However, values are automatically stored to the settings, on change.
+const statuses = new DataStorage(null, null, new Map(settings.items), map => rw({ items: Array.from(map) }))
 export const rxAllInactive = new BehaviorSubject()
-export const rxSidebarState = new BehaviorSubject(settings.status || {
-    collapsed: false,
+export const rxSidebarState = new BehaviorSubject({
+    ...settings.status,
     visible: rxLayout.value !== MOBILE,
 })
-// save to local storage to preseve state
-rxSidebarState.subscribe(status => rw({ status }))
+
 export const setSidebarState = (collapsed, visible) => {
     const lastState = rxSidebarState.value
     const isMobile = rxLayout.value === MOBILE
@@ -148,25 +144,12 @@ export const setSidebarState = (collapsed, visible) => {
     // state hasn't changed
     if (lastState.collapsed === collapsed && lastState.visible === visible) return
     rxSidebarState.next({ collapsed, visible })
-    // set class
-    const classNames = {
-        'sidebar-visible': visible,
-        'sidebar-collapsed': collapsed,
-    }
-    setTimeout(() => {
-        const { classList } = document.querySelector('#app > .wrapper') || {}
-        classList && Object.keys(classNames).forEach(key => classList[classNames[key] ? 'add' : 'remove'](key))
-    })
 }
+
 export const toggleSidebarState = () => {
     let { collapsed, visible } = rxSidebarState.value
     setSidebarState(!collapsed, !visible)
 }
-// update sidebar state on layout change
-rxLayout.subscribe(() => {
-    const { collapsed, visible } = rxSidebarState.value || {}
-    setSidebarState(collapsed, visible)
-})
 const gsName = 'getting-started'
 const sidebarItemNames = []
 export const sidebarItems = [
@@ -405,11 +388,28 @@ export const scrollTo = name => {
 
 export const toggleActive = name => setActive(name, !(getItem(name) || {}).active)
 
-// store/replace localStorage data
-// adds new and removes any item that's no longer being used (eg: name changed)
+// adds new and removes any deprecated items
 statuses.setAll(sidebarItems.reduce((map, { active, name }) => map.set(name, active), new Map()))
 // if all items are inactive show getting started module
 sidebarItems.every(x => x.hidden || !x.active) && setActive(gsName)
+// update sidebar state on layout change
+rxLayout.subscribe(() => {
+    const { collapsed, visible } = rxSidebarState.value || {}
+    setSidebarState(collapsed, visible)
+})
+// automatically save to the settings storage
+// save to local storage to preseve state
+rxSidebarState.subscribe(() => {
+    const { collapsed, visible } = rxSidebarState.value
+
+    rw({ status })
+    setClass('body', {
+        desktop: rxLayout.value === DESKTOP,
+        mobile: rxLayout.value === MOBILE,
+        'sidebar-visible': visible,
+        'sidebar-collapsed': collapsed,
+    })
+})
 
 export default {
     getItem,

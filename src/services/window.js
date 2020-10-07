@@ -1,6 +1,6 @@
 import React from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { isDefined, isFn, isBool } from '../utils/utils'
+import { isDefined, isFn } from '../utils/utils'
 import storage from './storage'
 import { useRxSubject } from './react'
 
@@ -47,6 +47,14 @@ export function gridColumns(numCol) {
     const value = isDefined(numCol) ? { gridColumns: numCol } : undefined
     value && rxGridColumns.next(numCol)
     return rw(value).gridColumns || 1
+}
+export const setClass = (selector, obj, retry = true) => {
+    const el = document.querySelector(selector)
+    if (!el) return retry && setTimeout(() => setClass(selector, obj, false), 100)
+    Object.keys(obj).forEach(className => {
+        const func = obj[className] ? 'add' : 'remove'
+        el.classList[func](className)
+    })
 }
 
 /**
@@ -99,7 +107,7 @@ export const toggleFullscreen = (selector) => {
  * @reutrns {Boolean}
  */
 export const useInverted = (reverse = false) => {
-    const [inverted] = useRxSubject(rxInverted, true, inverted => {
+    const [inverted] = useRxSubject(rxInverted, inverted => {
         if (!reverse) return inverted
         switch (`${reverse}`) {
             // always reverse the value of inverted
@@ -123,7 +131,7 @@ let ignoredFirstInverted = false
 rxInverted.subscribe(inverted => {
     ignoredFirstInverted && rw({ inverted })
     ignoredFirstInverted = true
-    document.getElementById('app').classList[inverted ? 'add' : 'remove']('inverted')
+    setClass('body', { inverted })
 })
 document.addEventListener('visibilitychange', () =>
     rxVisible.next(document.visibilityState === 'visible')

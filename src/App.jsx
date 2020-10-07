@@ -38,10 +38,9 @@ import { useRxSubject } from './services/react'
 let queueResumed = false
 
 export default function App() {
-	const [isMobile] = useRxSubject(rxLayout, true, l => l === MOBILE)
-	const [numCol] = useRxSubject(rxGridColumns, true)
+	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+	const [numCol] = useRxSubject(rxGridColumns)
 	const logoSrc = TotemButtonLogo
-	const { collapsed, visible } = rxSidebarState.value
 
 	useEffect(() => {
 		// For debug only.
@@ -82,17 +81,11 @@ export default function App() {
 	}, [])
 
 	return (
-		<div className={className({
-			wrapper: true,
-			mobile: isMobile,
-			desktop: !isMobile,
-			'sidebar-collapsed': collapsed,
-			'sidebar-visible': visible,
-		})}>
+		<div className='wrapper'>
 			<ModalsConainer />
-			<ToastsContainer isMobile={isMobile} />
+			<ToastsContainer />
 			<ErrorBoundary>
-				<PageHeader {...{ logoSrc, isMobile }} />
+				<PageHeader logoSrc={logoSrc} />
 			</ErrorBoundary>
 
 			<ErrorBoundary>
@@ -101,7 +94,7 @@ export default function App() {
 
 			<Sidebar.Pushable style={styles.pushable}>
 				<ErrorBoundary>
-					<SidebarLeft isMobile={isMobile} />
+					<SidebarLeft />
 				</ErrorBoundary>
 
 				<Sidebar.Pusher
@@ -142,12 +135,6 @@ const styles = {
 		scrollBehavior: 'smooth',
 		transition: 'resize 0.3s ease',
 		WebkitOverflow: 'hidden auto',
-	},
-	pushable: {
-		margin: 0,
-		height: 'calc(100% - 59px)',
-		overflow: 'hidden',
-		WebkitOverflow: 'hidden',
 	},
 
 }

@@ -21,7 +21,7 @@ import client, { getUser, rxIsLoggedIn } from '../../services/chatClient'
 import { translated } from '../../services/language'
 import Message from '../../components/Message'
 import { getInboxName } from './InboxList'
-import { getLayout, MOBILE } from '../../services/window'
+import { getLayout, MOBILE, setClass } from '../../services/window'
 import { unsubscribe } from '../../services/react'
 
 const [texts, textsCap] = translated({
@@ -47,7 +47,6 @@ const scrollToBottom = (animate = false, force = false) => setTimeout(() => {
     const msgsEl = document.querySelector(msgsSelector)
     const btnWrapEl = document.querySelector(scrollBtnSelector)
     const isMobile = getLayout() === MOBILE
-    const expanded = document.getElementById('app').classList.value.includes('inbox-expanded')
     // prevent scroll if scroll button is visible and not forced
     if (btnWrapEl.classList.value.includes('visible') && !force) return
     const animateClass = 'animate-scroll'
@@ -56,7 +55,7 @@ const scrollToBottom = (animate = false, force = false) => setTimeout(() => {
     setTimeout(() => {
         msgsEl.classList.remove(animateClass)
         // mark inbox as read
-        if (!isMobile || expanded) inboxSettings(rxOpenInboxKey.value, { unread: 0 })
+        if (!isMobile || rxExpanded.value) inboxSettings(rxOpenInboxKey.value, { unread: 0 })
     }, 500)
 })
 // on message list scroll show/hide scroll button

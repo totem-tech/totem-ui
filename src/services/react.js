@@ -1,5 +1,6 @@
 // placeholder for reusable React utility functions that doesn't doesn't specifically fit anywhere else
 import { useState, useEffect } from "react"
+import { BehaviorSubject } from 'rxjs'
 import PromisE from "../utils/PromisE"
 import { isAsyncFn, isFn, isObj } from "../utils/utils"
 
@@ -25,43 +26,39 @@ export const unsubscribe = (subscriptions = {}) => Object.values(subscriptions).
  * 
  * @param   {BehaviorSubject|Subject}   subject RxJS subject to subscribe to. 
  *                 If not object or doesn't have subcribe function will assume subject to be a static value.
- * @param   {Boolean}   ignoreFirst whether to ignore first change. 
+ * @param   {Boolean}                   ignoreFirst whether to ignore first change. 
  *                  Setting `true`, will prevent an additional state update after first load.
- * @param   {Function}  onBeforeSetValue (optional) value modifier. 
+ * @param   {Function}                  valueModifier (optional) value modifier. 
  *                  If an async function is supplied, `ignoreFirst` will be assumed `false`.
- * @param   {*} initialValue (optional) initial value where appropriate
+ * @param   {*}                         initialValue (optional) initial value where appropriate
  * 
- * @returns {Array} [value, setvalue]
+ * @returns {Array}                     [value, setvalue]
  */
-export const useRxSubject = (subject, ignoreFirst, onBeforeSetValue, initialValue) => {
+export const useRxSubject = (subject, valueModifier, initialValue) => {
     if (!isObj(subject) || !isFn(subject.subscribe)) return subject
-    const isAnAsyncFn = isAsyncFn(onBeforeSetValue)
-    const [setRxValue] = useState(() => newValue => subject.next(newValue))
-    const [value, setValue] = useState(() => {
-        if (initialValue || isAnAsyncFn) return initialValue
-        let value = !isFn(onBeforeSetValue) ? subject.value : onBeforeSetValue(subject.value)
-        if (value === useRxSubject.IGNORE_UPDATE) return initialValue
-        return value
-    })
+    let firstValue = isAsyncFn(valueModifier) ? initialValue : (
+        !isFn(valueModifier) ? subject.value : valueModifier(subject.value)
+    )
+    const [value, setValue] = useState(firstValue)
 
     useEffect(() => {
         let mounted = true
-        let ignoredFirst = !isAnAsyncFn && !!ignoreFirst ? false : true
-        const subscribed = subject.subscribe(async (newValue) => {
-            if (!mounted || !ignoredFirst) {
-                ignoredFirst = true
-                return
+        let ignoreFirst = subject instanceof BehaviorSubject ? false : true
+        const subscribed = subject.subscribe((newValue) => {
+            if (!ignoreFirst) {
+                ignoreFirst = true
+                if (firstValue === newValue) return
             }
-            if (!isFn(onBeforeSetValue)) return setValue(newValue)
-
-            newValue = await PromisE(onBeforeSetValue(newValue))
-            if (!mounted || newValue === useRxSubject.IGNORE_UPDATE) return
-            setValue(newValue)
+            if (!isFn(valueModifier)) return mounted && setValue(newValue)
+            PromisE(valueModifier(newValue)).then(newValue => {
+                if (!mounted || newValue === useRxSubject.IGNORE_UPDATE) return
+                setValue(newValue)
+            })
         })
         return () => subscribed.unsubscribe()
     }, [])
 
-    return [value, setRxValue]
+    return [value, () => newValue => subject.next(newValue)]
 }
 // return this in onBeforeSetValue
 useRxSubject.IGNORE_UPDATE = Symbol('ignore-rx-subject-update')

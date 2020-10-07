@@ -20,7 +20,7 @@ import partners, { rxPartners } from '../../services/partner'
 import { getProjects, statuses, query, queueables } from './timekeeping'
 import { addToQueue } from '../../services/queue'
 import { unsubscribe } from '../../services/react'
-import { getLayout } from '../../services/window'
+import { getLayout, MOBILE, rxLayout } from '../../services/window'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -251,7 +251,7 @@ export default class ProjectTimeKeepingList extends Component {
             start_block, submit_status, total_blocks,
             workerAddress
         } = record
-        const editableStatuses = [statuses.draft, statuses.dispute, statuses.reject]
+        // const editableStatuses = [statuses.draft, statuses.dispute, statuses.reject]
         const isSubmitted = submit_status === statuses.submit
         const inProgress = inProgressHashes.includes(hash)
         const isOwner = projectOwnerAddress === getSelected().address
@@ -262,29 +262,29 @@ export default class ProjectTimeKeepingList extends Component {
         }
         const buttons = !archive ? [
             detailsBtn,
-            {
-                disabled: inProgress || !editableStatuses.includes(submit_status) || locked || approved,
-                hidden: manage,
-                icon: 'pencil',
-                onClick: () => showForm(
-                    TimekeepingUpdateForm,
-                    {
-                        values: {
-                            blockCount: total_blocks,
-                            blockEnd: start_block + total_blocks,
-                            blockStart: start_block,
-                            duration,
-                            projectHash,
-                            projectName,
-                            status: submit_status,
-                            workerAddress,
-                        },
-                        hash,
-                        projectName,
-                        onSubmit: ok => ok && this.updateTrigger()
-                    }),
-                title: wordsCap.edit,
-            },
+            // {
+            //     disabled: inProgress || !editableStatuses.includes(submit_status) || locked || approved,
+            //     hidden: manage,
+            //     icon: 'pencil',
+            //     onClick: () => showForm(
+            //         TimekeepingUpdateForm,
+            //         {
+            //             values: {
+            //                 blockCount: total_blocks,
+            //                 blockEnd: start_block + total_blocks,
+            //                 blockStart: start_block,
+            //                 duration,
+            //                 projectHash,
+            //                 projectName,
+            //                 status: submit_status,
+            //                 workerAddress,
+            //             },
+            //             hash,
+            //             projectName,
+            //             onSubmit: ok => ok && this.updateTrigger()
+            //         }),
+            //     title: wordsCap.edit,
+            // },
             {
                 disabled: inProgress || !isSubmitted,
                 hidden: !manage || approved,
@@ -489,11 +489,24 @@ export default class ProjectTimeKeepingList extends Component {
 
     showDetails = (hash, record) => {
         const { manage } = this.props
-        const isMobile = getLayout() === 'mobile'
+        const isMobile = rxLayout.value === MOBILE
+        const editableStatuses = [statuses.draft, statuses.dispute, statuses.reject]
+        const inProgress = inProgressHashes.includes(hash)
         const {
-            duration, end_block, nr_of_breaks, projectHash, projectName,
-            start_block, total_blocks, workerAddress, workerName,
-            _end_block, _status,
+            approved,
+            duration,
+            end_block,
+            locked,
+            nr_of_breaks,
+            projectHash,
+            projectName,
+            start_block,
+            submit_status,
+            total_blocks,
+            workerAddress,
+            workerName,
+            _end_block,
+            _status,
         } = record
         const inputs = [
             manage && [texts.projectName, projectName || projectHash],
@@ -513,7 +526,35 @@ export default class ProjectTimeKeepingList extends Component {
             readOnly: true,
             type: type || 'text',
             value,
-        }))
+        })).concat({
+            type: 'html',
+            name: 'update-button',
+            content: (
+                <Button {...{
+                    disabled: inProgress || !editableStatuses.includes(submit_status) || locked || approved,
+                    hidden: manage,
+                    icon: 'pencil',
+                    onClick: () => showForm(
+                        TimekeepingUpdateForm,
+                        {
+                            values: {
+                                blockCount: total_blocks,
+                                blockEnd: start_block + total_blocks,
+                                blockStart: start_block,
+                                duration,
+                                projectHash,
+                                projectName,
+                                status: submit_status,
+                                workerAddress,
+                            },
+                            hash,
+                            projectName,
+                            onSubmit: ok => ok && this.updateTrigger()
+                        }),
+                    title: wordsCap.edit,
+                }} />
+            ),
+        })
 
         const excludeActionTitles = [
             texts.recordDetails,
@@ -566,11 +607,13 @@ export default class ProjectTimeKeepingList extends Component {
             content: archive ? texts.emptyMessageArchive : (
                 <p>
                     {manage ? texts.noTimeRecords : texts.emptyMessage + ' '}
-                    {manage && <Button
-                        positive
-                        content={texts.orInviteATeamMember}
-                        onClick={() => showForm(TimekeeepingInviteForm)}
-                    />}
+                    {manage && (
+                        <Button
+                            positive
+                            content={texts.orInviteATeamMember}
+                            onClick={() => showForm(TimekeeepingInviteForm)}
+                        />
+                    )}
                 </p>
             )
         }

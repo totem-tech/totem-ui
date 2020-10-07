@@ -125,12 +125,11 @@ export default class GetingStarted extends Component {
 				</ul>
 			</div>
 		),
-		header: texts.confirmHeader,
+		header: texts.backupTitle,
 		size: 'tiny',
 		onConfirm: () => {
 			let { activeStep } = this.state
 			this.setIndex(++activeStep)
-			console.log({ activeStep, saved: rw().activeStep })
 			setTimeout(() => downloadBackup())
 			// assume backup completed?
 			// only way to confirm backup is complete is to force user to upload the downloaded file)
@@ -150,6 +149,7 @@ export default class GetingStarted extends Component {
 			this.setIndex(this.state.activeStep + 1)
 			setToast({ content: texts.registrationSuccess, status: 'success' })
 			this.requestFaucet()
+			this.handleBackup()
 		}
 	})
 

@@ -209,7 +209,6 @@ const InboxListItem = React.memo(({
     const [userIds] = useState(inboxKey.split(',').filter(id => ![userId, TROLLBOX].includes(id)))
     const [status] = useRxSubject(
         userIds.length === 0 ? [OFFLINE] : rxUsersOnline,
-        true,
         online => getStatusColor(online, userIds),
     )
     const isTrollbox = inboxKey === TROLLBOX

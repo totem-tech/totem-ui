@@ -33,24 +33,22 @@ export const ButtonAcceptOrReject = props => {
     return (
         <div title={title} style={{ textAlign: 'center', ...style }}>
             <Button.Group>
-                <Button
-                    color={acceptColor}
-                    disabled={disabled}
-                    loading={loading}
-                    onClick={(e) => e.stopPropagation() | onClick(true)}
-                >
-                    {acceptText}
-                </Button>
+                <Button {...{
+                    content: acceptText,
+                    color: acceptColor,
+                    disabled: disabled,
+                    loading: loading,
+                    onClick: (e) => e.stopPropagation() | onClick(true),
+                }} />
                 <Button.Or onClick={e => e.stopPropagation()} />
-                <Button
-                    color={rejectColor}
-                    disabled={disabled}
-                    loading={loading}
-                    onClick={(e) => e.stopPropagation() | onClick(false)}
-                >
-                    {rejectText}
-                </Button>
-            </Button.Group>
+                <Button {...{
+                    content: rejectText,
+                    color: rejectColor,
+                    disabled: disabled,
+                    loading: loading,
+                    onClick: (e) => e.stopPropagation() | onClick(false),
+                }} />
+            </Button.Group >
         </div>
     )
 }

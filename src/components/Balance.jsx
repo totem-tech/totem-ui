@@ -15,7 +15,7 @@ const textsCap = translated({
 }, true)[1]
 
 export const Balance = (props) => {
-    let { address, emptyMessage, showDetailed, style } = props
+    let { address, emptyMessage, lockSeparator, showDetailed, style } = props
     const [showLocked, setShowLocked] = useState(showDetailed)
     const balance = useBalance(address)
     const locks = userLocks(address)
@@ -37,7 +37,7 @@ export const Balance = (props) => {
             unit: currencyDefault,
             suffix: (
                 <Currency {...{
-                    prefix: ` | ${textsCap.locked}: `,
+                    prefix: <span>{lockSeparator}{textsCap.locked}: </span>,
                     value: lockedBalance,
                     unit: currencyDefault,
                 }} />
@@ -76,6 +76,7 @@ Balance.propTypes = {
     // any other props accepted by Currency component will be passed through
 }
 Balance.defaultProps = {
+    lockSeparator: ' | ',
     showDetailed: false,
 }
 export default React.memo(Balance)

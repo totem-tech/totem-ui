@@ -5,7 +5,7 @@ import { arrUnique, isObj, isValidNumber, isDefined, objClean } from '../../util
 import client, { getUser, rxIsLoggedIn } from '../../services/chatClient'
 import { addToQueue, QUEUE_TYPES, rxOnSave, statuses } from '../../services/queue'
 import storage from '../../services/storage'
-import { getLayout, MOBILE } from '../../services/window'
+import { getLayout, MOBILE, setClass } from '../../services/window'
 
 const PREFIX = 'totem_'
 const MODULE_KEY = 'chat-history'
@@ -348,11 +348,12 @@ setTimeout(() => {
     })
     rxVisible.subscribe(visible => {
         rw({ visible })
+        setClass('body', { 'chat-visible': visible })
         handleChange()
     })
-    // add/remove 'inbox-expanded' class for styling purposes
     rxExpanded.subscribe(expand => {
-        document.getElementById('app').classList[expand ? 'add' : 'remove']('inbox-expanded')
+        // add/remove 'inbox-expanded' class for styling purposes
+        setClass('body', { 'inbox-expanded': expand })
         handleChange()
     })
     // remove if successful, otherwise, update status of queued chat message

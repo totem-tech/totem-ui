@@ -2,14 +2,16 @@ import React from 'react'
 import { ButtonAcceptOrReject } from '../../components/buttons'
 import { find as findIdentity } from '../../services/identity'
 import { translated } from '../../services/language'
+import { confirm } from '../../services/modal'
 import { statuses } from '../../services/queue'
-import { remove, search } from '../notification/notification'
+import { remove, search, setItemViewHandler } from '../notification/notification'
 
-const textsCap = translated({
-    assigntTaskMsg: 'assigned a task to your identity:',
-}, true)[1]
+const [texts, textsCap] = translated({
+    assigntTaskMsg: 'assigned a task to you.',
+    yourIdentity: 'your identity',
+}, true)
 
-export const handleTaskAssignment = async (taskId, assigneeAddress, accepted) => {
+export const handleTaskAssignment = async (taskId, assigneeAddress, accepted = false) => {
     console.log(taskId, assigneeAddress, accepted)
 }
 
@@ -26,7 +28,8 @@ const handleAssignmentItemView = (id, notification = {}, { senderIdBtn }) => {
     return {
         content: (
             <span>
-                {senderIdBtn} {textsCap.assigntTaskMsg} {name}
+                {senderIdBtn} {texts.assigntTaskMsg}
+                <div>{textsCap.yourIdentity}: {name}</div>
                 <ButtonAcceptOrReject {...{
                     acceptColor: 'blue',
                     disabled: status === statuses.LOADING,

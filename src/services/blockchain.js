@@ -57,6 +57,7 @@ export const hashTypes = {
     /// 9000
 }
 export const nodes = [
+    // 'ws://localhost:9944'
     'wss://node1.totem.live',
 ]
 setDefaultConfig(

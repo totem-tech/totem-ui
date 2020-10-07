@@ -13,7 +13,7 @@ export default function CheckboxGroup(props) {
     const allowMultiple = !radio && multiple
     const commonProps = objWithoutKeys(props, excludeKeys)
     const rxValue = props.rxValue || new BehaviorSubject(props.value)
-    let [value, setValue] = useRxSubject(rxValue, true, value => {
+    let [value, setValue] = useRxSubject(rxValue, value => {
         value = !allowMultiple ? value : (
             !hasValue(value) ? [] : !isArr(value) ? [value] : value
         )

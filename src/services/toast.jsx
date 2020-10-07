@@ -16,9 +16,9 @@ const toasts = new DataStorage()
 const deferedCloseCbs = new Map()
 
 export const ToastsContainer = () => {
-    const [isMobile] = useRxSubject(rxLayout, true, layout => layout === MOBILE)
-    const [isModalOpen] = useRxSubject(rxModals, true, modals => modals.size > 0)
-    const [toastEls] = useRxSubject(toasts.rxData, true, map => Array.from(map).map(([_, el]) => el))
+    const [isMobile] = useRxSubject(rxLayout, layout => layout === MOBILE)
+    const [isModalOpen] = useRxSubject(rxModals, modals => modals.size > 0)
+    const [toastEls] = useRxSubject(toasts.rxData, map => Array.from(map).map(([_, el]) => el))
     const [[animationInProgress, sidebarVisible], setSidebarState] = useState([])
     const mcEl = document.getElementById('main-content')
     const hasScrollbar = mcEl && mcEl.clientHeight !== mcEl.scrollHeight
@@ -87,6 +87,7 @@ export const setToast = (message, duration, id) => {
 const styles = {
     message: {
         margin: '5px 0',
+        paddingRight: 35,// prevents close button overlapping text content
         transition: 'all 0.5s ease',
         WebkitTransition: 'all 0.5s ease',
     },
@@ -97,7 +98,7 @@ const styles = {
         overflowY: 'auto',
         paddingRight: 10,
         position: 'fixed',
-        right: 10, // TODO: user 15 when scrollbar visible
+        right: 10, // TODO: use 15 when scrollbar visible
         transition: 'all 0.5s ease',
         WebkitTransition: 'all 0.5s ease',
         top: 61,

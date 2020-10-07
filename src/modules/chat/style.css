@@ -7,24 +7,24 @@
     font-weight: 100;
     position: fixed;
     right: 0px;
-    top: 61px;
+    top: 47px;
     transition: all 0.35s ease;
     width: 400px;
     z-index: 1;
 }
-#app:not(.inverted) .chat-container {
+body:not(.inverted) .chat-container {
     background: white;
 }
-#app > .mobile .chat-container {
+.mobile .chat-container {
     width: 100%;
 }
-#app > .mobile.sidebar-visible > .chat-container {
+.mobile.sidebar-visible > .chat-container {
     display: none;
 }
-#app:not(.chat-visible) .chat-container{
+body:not(.chat-visible) .chat-container{
     right: -410px;
 }
-#app:not(.chat-visible) .mobile .chat-container {
+.mobile:not(.chat-visible) .chat-container {
     right: -100%;
 }
 .mobile .chat-container {
@@ -40,16 +40,16 @@
     height: 40%;
     overflow-y: auto;
 }
-#app.inbox-expanded .chat-container .inbox-list {
+.inbox-expanded .chat-container .inbox-list {
     height: auto;
 }
-#app.inbox-expanded .chat-container .inbox-list .list { 
+.inbox-expanded .chat-container .inbox-list .list { 
     display: none;
 }
-#app.inbox-expanded .mobile .chat-container .inbox-list {
+.mobile.inbox-expanded .chat-container .inbox-list {
     display: none;
 }
-#app:not(.inbox-expanded) .mobile .chat-container .inbox-list {
+.mobile:not(.inbox-expanded) .chat-container .inbox-list {
     height: calc(100% - 57px);
 }
 .chat-container .inbox-list div.search .input {
@@ -72,11 +72,11 @@
     text-align: left;
     font-size: 14px;
 }
-#app.inverted .chat-container .inbox-list .tools .actions button {
+.inverted .chat-container .inbox-list .tools .actions button {
     background: #434446;
     color: white !important;
 }
-#app.inverted .chat-container .inbox-list .tools .actions button:focus:not(.active):not(:hover) {
+.inverted .chat-container .inbox-list .tools .actions button:focus:not(.active):not(:hover) {
     background: #2a2a2a !important;
 }
 .chat-container .inbox-list .tools .actions button:hover,
@@ -104,8 +104,8 @@
 .chat-container .inbox-list .list-item:hover {
     background: #F2F2F2;
 }
-#app.inverted .chat-container .inbox-list .list-item:hover,
-#app.inverted .chat-container .inbox-list .list-item.active {
+.inverted .chat-container .inbox-list .list-item:hover,
+.inverted .chat-container .inbox-list .list-item.active {
     background: grey;
 }
 .chat-container .inbox-list .list-item:not(:last-child) {
@@ -139,7 +139,7 @@
     white-space: nowrap;
     width: 70px;
 }
-#app.inverted .chat-container .inbox-list .list-item:not(:hover):not(.active) .left .label {
+.inverted .chat-container .inbox-list .list-item:not(:hover):not(.active) .left .label {
     background: #80808026;
     color: white;
 }
@@ -171,7 +171,7 @@
 .chat-container .inbox-list .list-item .actions .icon:hover {
     color: #434446 !important;
 }
-#app > div.desktop .chat-container .inbox-list .list-item:not(:hover) .actions {
+.desktop .chat-container .inbox-list .list-item:not(:hover) .actions {
     display: none;
 }
 .chat-container .inbox-list .list-item .actions button:last-child {
@@ -221,13 +221,13 @@
 .chat-container .inbox .header .tools.right .expand.icon:before {
     content: "\f077";
 }
-#app.inbox-expanded .chat-container .inbox .header .expand.icon:before {
+.inbox-expanded .chat-container .inbox .header .expand.icon:before {
     content: "\f078";
 }
-#app.inbox-expanded .chat-container .inbox {
+.inbox-expanded .chat-container .inbox {
     height: 100%;
 }
-#app:not(.inbox-expanded) > .mobile .chat-container .inbox {
+.mobile:not(.inbox-expanded) .chat-container .inbox {
     height: 58px;
     overflow: hidden;
 }
@@ -259,11 +259,11 @@
     position: fixed;
     right: 5px;
 }
-#app .mobile .chat-container .inbox .scroll-to-bottom {
+.mobile #app .chat-container .inbox .scroll-to-bottom {
     bottom: 90px;
 }
 .chat-container .inbox .scroll-to-bottom:not(.visible),
-#app:not(.inbox-expanded) .mobile .chat-container .inbox .scroll-to-bottom {
+.mobile:not(.inbox-expanded) .chat-container .inbox .scroll-to-bottom {
     display: none
 }
 
@@ -273,7 +273,7 @@
     overflow-x: auto;
     position: relative;
 }
-#app:not(.inverted) .chat-container .messages {
+body:not(.inverted) .chat-container .messages {
     background: #EDE8E3;
 }
 .chat-container .messages.animate-scroll {
@@ -335,7 +335,7 @@
     bottom: 0;
     width: 100%;
 }
-#app:not(.inbox-expanded) > .mobile .chat-container .inbox .input-wrap {
+.mobile:not(.inbox-expanded) .chat-container .inbox .input-wrap {
     display: none;
 }
 .chat-container .inbox .input-wrap input {
@@ -343,10 +343,10 @@
 }
 
 /* resize #main-content accordingly */
-#app.chat-visible > :not(.mobile) .pushable > .ui.visible.left.sidebar.very.thin ~ .pusher.main-content {
+.chat-visible:not(.mobile) .pushable > .ui.visible.left.sidebar.very.thin ~ .pusher.main-content {
     max-width: calc(100% - 460px) !important;
 }
-#app.chat-visible > :not(.mobile) .pushable > .ui.visible.left.sidebar.wide ~ .pusher.main-content {
+.chat-visible:not(.mobile) .pushable > .ui.visible.left.sidebar.wide ~ .pusher.main-content {
     max-width: calc(100% - 635px) !important;
 }
 

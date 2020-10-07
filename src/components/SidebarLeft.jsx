@@ -15,10 +15,10 @@ const [_, textsCap] = translated({
 	closeSidebar: 'close sidebar',
 }, true)
 export default function SidebarLeft() {
-	const [allInactive] = useRxSubject(rxAllInactive, true)
-	const [isMobile] = useRxSubject(rxLayout, true, l => l === MOBILE)
-	const [sidebarState] = useRxSubject(rxSidebarState, true)
-	let { collapsed, visible } = sidebarState
+	const [allInactive] = useRxSubject(rxAllInactive)
+	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+	const [sidebarState] = useRxSubject(rxSidebarState)
+	let { collapsed = false, visible = false } = sidebarState
 	collapsed = allInactive ? false : collapsed
 	visible = allInactive ? true : visible
 
@@ -37,10 +37,7 @@ export default function SidebarLeft() {
 				width={collapsed ? 'very thin' : 'wide'}
 				color="black"
 				inverted
-				style={{
-					...(collapsed ? styles.collapsed : styles.expanded),
-					maxHeight: !isMobile ? undefined : 'calc( 100% - 49px )',
-				}}
+				style={(collapsed ? styles.collapsed : styles.expanded)}
 				onHidden={() => isMobile && setSidebarState(false, false)}
 			>
 				<Menu.Item
@@ -77,12 +74,8 @@ export default function SidebarLeft() {
 	)
 }
 
-SidebarLeft.propTypes = {
-	isMobile: PropTypes.bool.isRequired,
-}
-
 export const MainContentItem = props => {
-	const [isMobile] = useRxSubject(rxLayout, true, layout => layout === MOBILE)
+	const [isMobile] = useRxSubject(rxLayout, layout => layout === MOBILE)
 	const [item, setItem] = useState(getItem(props.name) || {})
 	const { active, elementRef, hidden, name } = item
 	const show = active && !hidden

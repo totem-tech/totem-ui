@@ -37,19 +37,18 @@ export default function IdentityList(props) {
         identity._fileBackupTS = format(fileBackupTS) || textsCap.never
         identity._tagsStr = tags.join(' ')
         identity._tags = tags.map(tag => (
-            <Label
-                key={tag}
-                draggable='true'
-                onDragStart={e => e.stopPropagation() | e.dataTransfer.setData("Text", e.target.textContent)}
-                style={{
+            <Label {...{
+                content: tag,
+                key: tag,
+                onDragStart: e => e.stopPropagation() | e.dataTransfer.setData("Text", e.target.textContent),
+                draggable: 'true',
+                style: {
                     cursor: 'grab',
                     display: 'inline',
                     float: 'left',
                     margin: 1,
-                }}
-            >
-                {tag}
-            </Label>
+                }
+            }} />
         ))
         identity._usageType = usageType === 'personal' ? textsCap.personal : textsCap.business
     })
@@ -59,7 +58,7 @@ export default function IdentityList(props) {
             { key: 'name', title: textsCap.name },
             {
                 collapsing: true,
-                content: ({ address }) => <Balance address={address} />,
+                content: ({ address }) => <Balance address={address} lockSeparator={<br />} />,
                 draggable: false,
                 key: '_balance',
                 textAlign: 'center',
