@@ -3,7 +3,7 @@ import Currency from '../../components/Currency'
 import Message from '../../components/Message'
 import DrillDownList from '../../components/DrillDownList'
 import { isArr } from '../../utils/utils'
-import { useSelected } from '../../services/identity'
+import { useSelected } from '../identity/identity'
 import useLedgerAcBalances from './useLedgerAcBalances'
 
 export default function FinancialStatementView() {

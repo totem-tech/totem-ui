@@ -8,7 +8,7 @@ import SystemStatusView from './SystemStatusView'
 import RuntimeUpgradeForm from '../forms/RuntimeUpgrade'
 // services
 import { getConnection, query } from '../services/blockchain'
-import identity from '../services/identity'
+import { find as findIdentity } from '../modules/identity/identity'
 import { BUILD_MODE, translated } from '../services/language'
 
 // import TransactionsView from './TransactionsView'
@@ -31,7 +31,7 @@ export default function UtilitiesView() {
         getConnection().then(async ({ api }) => {
             if (!mounted) return
             const adminAddress = await query(api.query.sudo.key)
-            const userIsAdmin = !!identity.find(adminAddress)
+            const userIsAdmin = !!findIdentity(adminAddress)
             userIsAdmin && setIsAdmin(true)
         })
 

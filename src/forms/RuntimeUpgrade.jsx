@@ -4,7 +4,7 @@ import { compactAddLength } from '@polkadot/util'
 import { ss58Encode } from '../utils/convert'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 import { getConnection } from '../services/blockchain'
-import { get as getIdentity, getSelected } from '../services/identity'
+import { get as getIdentity, getSelected } from '../modules/identity/identity'
 
 // Translation not required
 const texts = {

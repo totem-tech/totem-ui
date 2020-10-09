@@ -4,7 +4,7 @@ import { BehaviorSubject } from 'rxjs'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import { isFn, arrSort, textEllipsis } from '../../utils/utils'
 // services
-import client, { getUser } from '../../services/chatClient'
+import { getUser } from './ChatClient'
 import { translated } from '../../services/language'
 import { showForm, closeModal } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'

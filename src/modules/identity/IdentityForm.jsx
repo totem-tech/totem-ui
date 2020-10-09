@@ -1,12 +1,11 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
-import { isFn, arrUnique } from '../utils/utils'
-// services
-import identityService from '../services/identity'
-import { translated } from '../services/language'
-import { getAllTags } from '../services/partner'
+import { isFn, arrUnique } from '../../utils/utils'
+import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
+import { translated } from '../../services/language'
+import { getAllTags } from '../partner/partner'
+import { addFromUri, find, generateUri, get, set } from './identity'
 
 const textsCap = translated({
     address: 'address',
@@ -35,16 +34,16 @@ export default class IdentityForm extends Component {
     constructor(props) {
         super(props)
 
-        this.values = { ...props.values }
-        this.rxAddress = new BehaviorSubject(this.values.address)
-        this.doUpdate = !!this.values.address
+        const { address } = props.values || {}
+        this.values = { ...get(address) }
+        this.rxAddress = new BehaviorSubject(address)
+        this.doUpdate = !!address
         this.validateUri = this.validateUri
 
         this.state = {
             message: props.message,
-            onChange: (_, values) => this.values = values,
+            onChange: this.handleChange,
             onSubmit: this.handleSubmit,
-            submitText: textsCap.create,
             success: false,
             inputs: [
                 {
@@ -77,7 +76,6 @@ export default class IdentityForm extends Component {
                     value: '',
                 },
                 {
-                    hidden: this.doUpdate && (this.values.uri || '').includes('/totem/'),
                     inline: true,
                     label: textsCap.usageType,
                     name: 'usageType',
@@ -114,7 +112,6 @@ export default class IdentityForm extends Component {
                     type: 'dropdown',
                     search: true,
                     selection: true,
-                    value: this.values.tags || []
                 },
             ],
         }
@@ -129,6 +126,13 @@ export default class IdentityForm extends Component {
             value: data.value
         })
         this.setState({ inputs })
+    }
+
+    handleChange = (...args) => {
+        const { onChange } = this.props
+        const values = args[1]
+        this.values = values
+        isFn(onChange) && onChange(...args)
     }
 
     handleRestoreChange = (_, { restore }) => {
@@ -148,7 +152,7 @@ export default class IdentityForm extends Component {
     handleSubmit = () => {
         const { onSubmit } = this.props
         const { values } = this
-        identityService.set(values.address, { ...values })
+        set(values.address, { ...values })
         isFn(onSubmit) && onSubmit(true, values)
         this.setState({ success: true })
     }
@@ -158,28 +162,28 @@ export default class IdentityForm extends Component {
         const { restore } = this.values
         if (restore) return
         if (!this.doUpdate) {
-            seed = seed || identityService.generateUri()
+            seed = seed || generateUri()
             seed = seed.split('/totem/')[0] + `/totem/${usageType === 'personal' ? 0 : 1}/0`
         }
-        const { address = '' } = seed && identityService.addFromUri(seed) || {}
+        const { address = '' } = seed && addFromUri(seed) || {}
         this.rxAddress.next(address)
         findInput(inputs, 'uri').rxValue.next(seed)
         this.setState({ inputs })
     }
 
     validateName = (_, { value: name }) => {
-        const { address } = identityService.find(name) || {}
+        const { address } = find(name) || {}
         if (address && address !== this.values.address) return textsCap.uniqueNameRequired
     }
 
     validateUri = (_, { value: seed }) => {
         const { inputs } = this.state
-        const { address } = seed && identityService.addFromUri(seed) || {}
+        const { address } = seed && addFromUri(seed) || {}
         if (!address) {
             this.rxAddress.next('')
             return textsCap.validSeedRequired
         }
-        const existing = identityService.find(address)
+        const existing = find(address)
         if (existing) return `${textsCap.seedExists} ${existing.name}`
         this.values.address = address
         this.rxAddress.next(address)
@@ -201,12 +205,14 @@ export default class IdentityForm extends Component {
         const action = doUpdate ? textsCap.update : (restore ? textsCap.restore : textsCap.create)
         state.message = state.message || props.message
         state.header = props.header || `${action} ${textsCap.identity}`
-        state.submitText = props.submitText || action
+        state.submitText = props.submitText === undefined ? action : props.submitText
         return <FormBuilder {...{ ...props, ...state }} />
     }
 }
 IdentityForm.propTypes = {
-    values: PropTypes.object,
+    values: PropTypes.shape({
+        address: PropTypes.string
+    }),
 }
 IdentityForm.defaultProps = {
     closeOnSubmit: true,

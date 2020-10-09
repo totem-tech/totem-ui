@@ -154,6 +154,7 @@ export default class FormBuilder extends Component {
             closeOnSubmit,
             closeText,
             defaultOpen,
+            El,
             header,
             headerIcon,
             hideFooter,
@@ -215,7 +216,9 @@ export default class FormBuilder extends Component {
             }} />
         }
         if (modal && closeText !== null) {
-            const closeProps = React.isValidElement(closeText) ? { ...closeText.props } : {}
+            const closeProps = React.isValidElement(closeText) ? { ...closeText.props } : (
+                isObj(closeText) ? closeText : {}
+            )
             closeProps.content = closeProps.content || (isStr(closeText) ? closeText : (
                 success ? textsCap.close : textsCap.cancel
             ))
@@ -224,8 +227,9 @@ export default class FormBuilder extends Component {
             closeBtn = <Button {...closeProps} />
         }
 
+        const FormEl = El || Invertible
         const form = (
-            <Invertible {...{
+            <FormEl {...(El ? {} : {
                 El: Form,
                 error: message.status === statuses.ERROR,
                 loading: loading,
@@ -234,7 +238,7 @@ export default class FormBuilder extends Component {
                 success: success || message.status === statuses.SUCCESS,
                 warning: message.status === statuses.WARNING,
                 widths: widths,
-            }} >
+            })}>
                 {inputs.map(this.addInterceptor(null, values)).map(props => <FormInput {...props} />)}
                 {/* Include submit button if not a modal */}
                 {!modal && !hideFooter && (
@@ -243,7 +247,7 @@ export default class FormBuilder extends Component {
                         {msg && <Message {...message} />}
                     </div>
                 )}
-            </Invertible>
+            </FormEl>
         )
 
         return !modal ? form : (
@@ -299,8 +303,9 @@ FormBuilder.propTypes = {
     closeOnDimmerClick: PropTypes.bool,
     closeOnSubmit: PropTypes.bool,
     closeText: PropTypes.oneOfType([
+        PropTypes.element,
+        PropTypes.object,
         PropTypes.string,
-        PropTypes.element
     ]),
     defaultOpen: PropTypes.bool,
     // disable inputs on load
@@ -335,9 +340,10 @@ FormBuilder.propTypes = {
         // 
         // Expected return: one fo the following
         //          - string: button text
-        //          - button properties as object: any property supported by Semantic UI's Button component and HTML <button>
+        //          - button properties as object: any property supported by Semantic Button component and HTML <button>
         //          - React element: a valid JSX element
         PropTypes.func,
+        PropTypes.object,
         PropTypes.string,
     ]),
     success: PropTypes.bool,

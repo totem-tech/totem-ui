@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import FormBuilder, { fillValues } from '../components/FormBuilder'
 import { translated } from '../services/language'
-import client from '../services/chatClient'
+import client from '../modules/chat/ChatClient'
 import Message from '../components/Message'
 import { isObj } from '../utils/utils'
 

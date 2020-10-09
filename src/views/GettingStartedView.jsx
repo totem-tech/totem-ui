@@ -1,21 +1,21 @@
 import React, { Component } from 'react'
-import { Button, Icon, Embed, Step } from 'semantic-ui-react'
+import { Button, Icon, Step } from 'semantic-ui-react'
 import { isDefined } from '../utils/utils'
 // services
-import { getUser } from '../services/chatClient'
-import { getSelected } from '../services/identity'
+import { getUser } from '../modules/chat/ChatClient'
+import { getSelected } from '../modules/identity/identity'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import storage, { downloadBackup } from '../services/storage'
 import { setToast } from '../services/toast'
 import { createInbox, SUPPORT, TROLLBOX } from '../modules/chat/chat'
+import Invertible from '../components/Invertible'
 // forms
-import IdentityForm from '../forms/Identity'
-import RegisterForm from '../forms/Register'
+import IdentityForm from '../modules/identity/IdentityForm'
+import RegistrationForm from '../modules/chat/RegistrationForm'
 import RestoreBackupForm from '../forms/RestoreBackup'
 import NewsletteSignup from '../forms/NewsletterSignup'
-import Invertible from '../components/Invertible'
 
 const [texts] = translated({
 	backupTitle: 'Backup your account',
@@ -142,7 +142,7 @@ export default class GetingStarted extends Component {
 		onSubmit: ok => ok && this.setIndex(1) === this.registerStepIndex && this.handleRegister()
 	})
 
-	handleRegister = () => showForm(RegisterForm, {
+	handleRegister = () => showForm(RegistrationForm, {
 		closeOnSubmit: true,
 		onSubmit: ok => {
 			if (!ok) return

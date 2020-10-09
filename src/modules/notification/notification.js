@@ -1,15 +1,13 @@
 import { BehaviorSubject, Subject } from 'rxjs'
 import DataStorage from '../../utils/DataStorage'
+import { isFn} from '../../utils/utils'
 // services
-import client, { getUser, rxIsLoggedIn } from '../../services/chatClient'
+import client, { getUser, rxIsLoggedIn } from '../chat/ChatClient'
 import { translated } from '../../services/language'
-import { getProject } from '../../services/project'
 import { addToQueue, QUEUE_TYPES, rxOnSave } from '../../services/queue'
 import storage from '../../services/storage'
-import { queueables } from '../../modules/timekeeping/timekeeping'
 import TotemLogo from '../../assets/totem-button-grey.png'
 import { rxVisible as rxWindowVisbile } from '../../services/window'
-import { isFn, isStr } from '../../utils/utils'
 
 export const MODULE_KEY = 'notifications'
 storage.settings.module('totem_notifications', null)

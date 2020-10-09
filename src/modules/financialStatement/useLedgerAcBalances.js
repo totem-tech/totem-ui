@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { isAddress, isFn, isDefined } from '../../utils/utils'
-import { query as queryHelper, getConnection } from '../../services/blockchain'
-import client from '../../services/chatClient'
+import { query as queryHelper } from '../../services/blockchain'
+import client from '../chat/ChatClient'
 import { translated } from '../../services/language'
 
 const textsCap = translated({

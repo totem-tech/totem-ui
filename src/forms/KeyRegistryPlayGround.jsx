@@ -4,7 +4,7 @@ import { BehaviorSubject } from 'rxjs'
 // import { newSignature, signingKeyPair, verifySignature } from '../utils/naclHelper'
 // import { encodeBase64, decodeBase64, decodeUTF8, hashToStr } from '../utils/convert'
 // services
-import identities from '../services/identity'
+import identities from '../modules/identity/identity'
 import { queueables } from '../services/blockchain'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 

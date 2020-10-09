@@ -7,14 +7,14 @@ import App from './App'
 import NewsletterSignup from './forms/NewsletterSignup'
 // services
 import { getConnection } from './services/blockchain'
-import client from './services/chatClient'
+import client from './modules/chat/ChatClient'
 import { fetchNSaveTexts } from './services/language'
 import storage from './services/storage'
 import { getUrlParam } from './services/window'
 
 const isSignUp = getUrlParam('NewsletterSignup').toLowerCase() === 'true'
 const isDebug = getUrlParam('debug').toLowerCase() === 'true'
-window.isInIFrame = isSignUp
+window.isInIFrame = isSignUp || true
 if (isDebug) {
     const loggers = [
         ['log', console.log],

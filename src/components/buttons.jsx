@@ -4,16 +4,16 @@ import { Button } from 'semantic-ui-react'
 import { objWithoutKeys } from '../utils/utils'
 import { getRawUserID } from './UserIdInput'
 // forms
-import IdentityRequestForm from '../forms/IdentityRequest'
-import IdentityShareForm from '../forms/IdentityShare'
-import IntroduceUserForm from '../forms/IntroduceUser'
-import PartnerForm from '../forms/Partner'
+import IdentityRequestForm from '../modules/identity/IdentityRequestForm'
+import IdentityShareForm from '../modules/identity/IdentityShareForm'
+import IntroduceUserForm from '../modules/chat/IntroduceUserForm'
 // services
 import { translated } from '../services/language'
 import { confirm, showForm, closeModal } from '../services/modal'
 import { createInbox } from '../modules/chat/chat'
-import { getByUserId } from '../services/partner'
-import { getUser } from '../services/chatClient'
+import { getByUserId } from '../modules/partner/partner'
+import PartnerForm from '../modules/partner/PartnerForm'
+import { getUser } from '../modules/chat/ChatClient'
 
 const textsCap = translated({
     accept: 'accept',

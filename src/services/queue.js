@@ -11,7 +11,7 @@ import { isArr, isFn, isObj, isStr, objClean, isValidNumber, isError } from '../
 import { getClient } from './chatClient'
 import { getConnection, query, getCurrentBlock } from './blockchain'
 import { save as addToHistory } from '../modules/history/history'
-import { find as findIdentity, getSelected } from './identity'
+import { find as findIdentity, getSelected } from '../modules/identity/identity'
 import { translated } from './language'
 import { setToast } from './toast'
 import { rxOnline } from './window'
@@ -145,7 +145,7 @@ const VALID_KEYS = Object.freeze([
     //                          This is particularly usefull when executing tasks that user didn't initiate or should //                            not be bothered with.
     'silent',
 
-    // @title           string: short title for the task. Eg: 'Create project'
+    // @title           string: short title for the task. Eg: 'Create activity'
     'title',
 
     // @then            function: Callback to be executed once task execution is done (status: 'success' or 'error').

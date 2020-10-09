@@ -1,9 +1,9 @@
 import React, { Component } from 'react'
 import uuid from 'uuid'
-import FormBuilder from '../components/FormBuilder'
-import { isFn } from '../utils/utils'
-import { getClient, getUser } from '../services/chatClient'
-import { translated } from '../services/language'
+import FormBuilder from '../../components/FormBuilder'
+import { isFn } from '../../utils/utils'
+import { translated } from '../../services/language'
+import { getClient, getUser } from './ChatClient'
 
 const [texts, textsCap] = translated({
     formHeader: 'Register a Memorable User Name',

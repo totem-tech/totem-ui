@@ -2,9 +2,9 @@ import React, { Component } from 'react'
 import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../../utils/time'
 import { isFn } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
-import { getSelected, rxSelected } from '../../services/identity'
 import { translated } from '../../services/language'
 import { unsubscribe } from '../../services/react'
+import { getSelected, rxSelected } from '../identity/identity'
 import { getProjects, query } from './timekeeping'
 
 const textsCap = translated({

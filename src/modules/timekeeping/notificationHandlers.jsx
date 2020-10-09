@@ -1,12 +1,12 @@
 import React from 'react'
 import { ButtonAcceptOrReject } from '../../components/buttons'
-import { getUser } from '../../services/chatClient'
-import { find as findIdentity } from '../../services/identity'
 import { translated } from '../../services/language'
 import { confirm } from '../../services/modal'
-import { remove, search, setItemViewHandler } from '../notification/notification'
-import { getProject } from '../../services/project'
 import { addToQueue, QUEUE_TYPES, statuses } from '../../services/queue'
+import { getProject } from '../activity/activity'
+import { getUser } from '../chat/ChatClient'
+import { find as findIdentity } from '../identity/identity'
+import { remove, search, setItemViewHandler } from '../notification/notification'
 import { queueables } from './timekeeping'
 
 const textsCap = translated({

@@ -1,16 +1,17 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import Balance from '../components/Balance'
-import { Button } from 'semantic-ui-react'
-import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import { copyToClipboard, isFn } from '../utils/utils'
-// services
-import { get, getSelected, remove } from '../services/identity'
-import { translated } from '../services/language'
-import { confirm } from '../services/modal'
+import { Button, Container, Form } from 'semantic-ui-react'
+import { copyToClipboard, isFn } from '../../utils/utils'
+import Balance from '../../components/Balance'
+import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
+import { translated } from '../../services/language'
+import { closeModal, confirm, showForm } from '../../services/modal'
+import { get, getSelected, remove, set } from './identity'
+import IdentityForm from './IdentityForm'
 
 const textsCap = translated({
     availableBalance: 'available balance',
+    business: 'business',
     close: 'close',
     copyAddress: 'copy address',
     copySeed: 'copy seed',
@@ -24,6 +25,7 @@ const textsCap = translated({
     never: 'never',
     noKeepItHidden: 'no, keep it hidden',
     ok: 'OK',
+    personal: 'personal',
     showSeed: 'show seed',
     removeIdentity: 'remove identity',
     removePermanently: 'remove permanently',
@@ -35,42 +37,44 @@ const textsCap = translated({
     showSeed: 'show seed phrase',
     seed: 'seed',
     tags: 'tags',
+    update: 'update',
     usage: 'usage',
 }, true)[1]
 
 // A read only form to display identity details including seed
-export default class IdentityDetails extends Component {
+export default class IdentityDetails extends IdentityForm {
     constructor(props) {
         super(props)
 
-        const { address, tags } = props.values || {}
-        this.identity = get(address) || {}
+        this.identity = get((props.values || {}).address) || {}
+        const { address, tags } = this.identity
         this.showSeed = false
+        this.names = {
+            address: 'address',
+            name: 'name',
+
+        }
         this.state = {
             closeOnSubmit: true,
-            closeText: (
-                <Button
-                    negative={false}
-                    positive
-                    content={textsCap.close}
-                />
-            ),
-            onSubmit: this.handleSubmit,
-            submitText: (
-                <Button
-                    icon='trash'
-                    negative
-                    positive={false}
-                    content={textsCap.removePermanently}
-                />
-            ),
+            closeText: {
+                content: textsCap.close,
+                negative: false,
+            },
+            // onSubmit: this.handleSubmit,
+            submitText: null, //{ content: textsCap.update, icon: 'pencil' },
             success: false, // sets true  when identity removed
             inputs: [
                 {
-                    label: textsCap.name,
-                    name: 'name',
-                    readOnly: true,
-                    type: 'text',
+                    content: (
+                        <IdentityForm {...{
+                            El: 'div',
+                            onChange: this.handleChange,
+                            submitText: null,
+                            values: this.identity,
+                        }} />
+                    ),
+                    name: 'identity-form',
+                    type: 'html',
                 },
                 {
                     action: {
@@ -80,7 +84,7 @@ export default class IdentityDetails extends Component {
                         title: textsCap.copyAddress,
                     },
                     label: textsCap.identity,
-                    name: 'address',
+                    name: this.names.address,
                     readOnly: true,
                     type: 'text',
                 },
@@ -101,7 +105,7 @@ export default class IdentityDetails extends Component {
                                 }
                                 uriIn.inlineLabel.icon.name = `eye${this.showSeed ? ' slash' : ''}`
                                 uriIn.inlineLabel.title = `${this.showSeed ? textsCap.hideSeed : textsCap.showSeed}`
-                                uriIn.value = this.getUri()
+                                uriIn.value = this.getUri(this.identity.uri)
                                 this.setState({ inputs })
                             }
                             this.showSeed ? toggle() : confirm({
@@ -126,22 +130,6 @@ export default class IdentityDetails extends Component {
                     readOnly: true,
                 },
                 {
-                    label: textsCap.usage,
-                    name: 'usageType',
-                    readOnly: true,
-                    type: 'text',
-                },
-                {
-                    disabled: true,
-                    label: textsCap.tags,
-                    multiple: true,
-                    name: 'tags',
-                    options: (tags || []).map(tag => ({ key: tag, text: tag, value: tag })),
-                    search: true,
-                    selection: true,
-                    type: 'dropdown',
-                },
-                {
                     label: textsCap.lastBackup,
                     name: 'fileBackupTS',
                     readOnly: true,
@@ -161,19 +149,26 @@ export default class IdentityDetails extends Component {
                     name: 'txAllocations',
                     type: 'html'
                 },
+                {
+                    content: textsCap.removePermanently,
+                    icon: 'trash',
+                    fluid: true,
+                    name: 'delete',
+                    negative: true,
+                    onClick: this.handleDelete,
+                    type: 'button'
+                }
             ],
         }
 
-        fillValues(this.state.inputs, { ...this.identity, uri: this.getUri() })
+        fillValues(this.state.inputs, { ...this.identity, uri: this.getUri(this.identity.uri) })
     }
 
-    getUri = () => {
-        const { uri } = this.identity
-        return this.showSeed ? uri : '*'.repeat(uri.length)
-    }
+    getUri = uri => this.showSeed || !uri ? uri : '*'.repeat(uri.length)
 
-    // Delete identity on submit
-    handleSubmit = () => {
+    handleChange = (_, values) => set(values.address, values)
+
+    handleDelete = () => {
         const { onSubmit } = this.props
         const { address, name } = this.identity
         if (address === getSelected().address) {
@@ -205,6 +200,15 @@ export default class IdentityDetails extends Component {
             size: 'tiny',
         })
     }
+
+    // Open update form
+    // handleSubmit = () => {
+    //     const { modalId, values } = this.props
+    //     const { address } = values || {}
+    //     if (!address) return
+    //     closeModal(modalId)
+    //     showForm(IdentityForm, { values: this.identity })
+    // }
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }

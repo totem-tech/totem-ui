@@ -3,30 +3,25 @@ import uuid from 'uuid'
 import { Button } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { arrSort, deferred, isObj, isValidNumber, objClean, generateHash, isFn, isHash, isDate } from '../../utils/utils'
+import {
+    arrSort, deferred, generateHash, isDate, isFn, isHash, isObj, isValidNumber, objClean,
+} from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 import { BLOCK_DURATION_SECONDS, blockNumberToTS, format } from '../../utils/time'
-// components
+import { Balance } from '../../components/Balance'
 import Currency from '../../components/Currency'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
-import PartnerForm from '../../forms/Partner'
-// services
 import { getCurrentBlock, hashTypes, query, queueables as bcQueueables } from '../../services/blockchain'
-import {
-    convertTo,
-    currencyDefault,
-    getCurrencies,
-    getSelected as getSelectedCurrency
-} from '../../services/currency'
-import { find as findIdentity, getSelected } from '../../services/identity'
+import { convertTo, currencyDefault, getCurrencies, getSelected as getSelectedCurrency } from '../../services/currency'
 import { translated } from '../../services/language'
-import partners from '../../services/partner'
-import { queueables } from './task'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import { showForm } from '../../services/modal'
 import { getById } from '../history/history'
+import { find as findIdentity, getSelected } from '../identity/identity'
+import { get as getPartner, getAll as getPartners } from '../partner/partner'
+import PartnerForm from '../partner/PartnerForm'
+import { queueables } from './task'
 import { rxUpdater } from './useTasks'
-import { Balance } from '../../components/Balance'
 
 const textsCap = translated({
     addedToQueue: 'request added to queue',
@@ -342,7 +337,7 @@ export default class TaskForm extends Component {
         const assigneeIn = findInput(inputs, this.names.assignee)
         const currencyIn = findInput(inputs, this.names.currency)
         const tagsIn = findInput(inputs, this.names.tags)
-        const assigneeOptions = Array.from(partners.getAll())
+        const assigneeOptions = Array.from(getPartners())
             .map(([address, { name, userId }]) => ({
                 description: !userId ? '' : `@${userId}`,
                 key: address,
@@ -664,7 +659,7 @@ export default class TaskForm extends Component {
 
         // notify assignee on creation only
         if (!this.props.taskId && !findIdentity(assignee)) {
-            const { userId } = partners.get(assignee) || {}
+            const { userId } = getPartner(assignee) || {}
             queueProps.next.next = !userId ? undefined : {
                 args: [
                     [userId],
@@ -707,7 +702,7 @@ export default class TaskForm extends Component {
         const { address } = getSelected() || {}
         if (assignee === address) return textsCap.assigneeErrOwnIdentitySelected
 
-        const partner = partners.get(assignee) || {}
+        const partner = getPartner(assignee) || {}
         const { inputs } = this.state
         const assigneeIn = findInput(inputs, this.names.assignee)
         const onClick = e => {

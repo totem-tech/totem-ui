@@ -1,8 +1,8 @@
 import { generateHash, isDefined } from "../../utils/utils"
 import { query as queryHelper, randomHex } from '../../services/blockchain'
-import client from '../../services/chatClient'
 import { translated } from '../../services/language'
 import storage from '../../services/storage'
+import client from '../chat/ChatClient'
 import { setHandlers } from "./notificationHandlers"
 
 // set notification item view handlers

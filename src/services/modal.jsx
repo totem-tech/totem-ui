@@ -120,13 +120,16 @@ export const showForm = (FormComponent, props, id) => {
     return add(
         id,
         <FormComponent
-            {...props}
-            modal={true}
-            onClose={(e, d) => {
-                setTimeout(() => closeModal(id))
-                isFn(props.onClose) && props.onClose(e, d)
+            {...{
+                ...props,
+                modal: true,
+                modalId: id,
+                open: true,
+                onClose: (e, d) => {
+                    setTimeout(() => closeModal(id))
+                    isFn(props.onClose) && props.onClose(e, d)
+                },
             }}
-            open={true}
         />
     )
 }

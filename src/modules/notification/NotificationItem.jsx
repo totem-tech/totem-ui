@@ -4,8 +4,8 @@ import { ButtonAcceptOrReject, UserID } from '../../components/buttons'
 import TimeSince from '../../components/TimeSince'
 import { Message } from '../../components/Message'
 // forms
-import IdentityShareForm from '../../forms/IdentityShare'
-import PartnerForm from '../../forms/Partner'
+import IdentityShareForm from '../identity/IdentityShareForm'
+import PartnerForm from '../partner/PartnerForm'
 // services
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'

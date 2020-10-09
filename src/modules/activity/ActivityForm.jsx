@@ -1,39 +1,38 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import Balance from '../components/Balance'
-import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import { arrSort, generateHash, isFn, objClean } from '../utils/utils'
-import { getAll, getSelected } from '../services/identity'
-import { translated } from '../services/language'
-import { getProjects, queueables } from '../services/project'
-import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import { arrSort, generateHash, isFn, objClean } from '../../utils/utils'
+import Balance from '../../components/Balance'
+import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
+import { translated } from '../../services/language'
+import { addToQueue, QUEUE_TYPES } from '../../services/queue'
+import { getAll, getSelected } from '../identity/identity'
+import { getProjects, queueables } from './activity'
 
-const [words, wordsCap] = translated({
+const textsCap = translated({
     cancel: 'cancel',
     close: 'close',
     create: 'create',
     description: 'description',
     name: 'name',
     update: 'update',
-}, true)
-const [texts] = translated({
-    descLabel: 'Activity Description',
-    descPlaceholder: 'Enter short description of the activity... (max 160 characters)',
-    formHeaderCreate: 'Create a new Activity',
-    formHeaderUpdate: 'Update Activity',
-    nameLabel: 'Activity Name',
-    namePlaceholder: 'Enter activity name',
-    ownerLabel: 'Select the owner Identity for this Activity ',
-    ownerPlaceholder: 'Select owner',
-    saveBONSAIToken: 'Save BONSAI auth token',
-    saveDetailsTitle: 'Save Activity details to messaging service',
-    submitErrorHeader: 'Request failed',
-    submitQueuedMsg: 'Your request has been added to background queue. You may close the dialog now.',
-    submitQueuedHeader: 'Activity has been queued',
-    submitSuccessHeader: 'Activity saved successfully',
-    submitTitleCreate: 'Create activity',
-    submitTitleUpdate: 'Update activity',
-})
+
+    descLabel: 'activity Description',
+    descPlaceholder: 'enter short description of the activity... (max 160 characters)',
+    formHeaderCreate: 'create a new Activity',
+    formHeaderUpdate: 'update Activity',
+    nameLabel: 'activity Name',
+    namePlaceholder: 'enter activity name',
+    ownerLabel: 'select the owner Identity for this Activity ',
+    ownerPlaceholder: 'select owner',
+    saveBONSAIToken: 'save BONSAI auth token',
+    saveDetailsTitle: 'save Activity details to messaging service',
+    submitErrorHeader: 'request failed',
+    submitQueuedMsg: 'your request has been added to background queue. You may close the dialog now.',
+    submitQueuedHeader: 'activity has been queued',
+    submitSuccessHeader: 'activity saved successfully',
+    submitTitleCreate: 'create activity',
+    submitTitleUpdate: 'update activity',
+})[1]
 const validKeys = ['name', 'ownerAddress', 'description']
 
 // Create or update project form
@@ -46,29 +45,29 @@ export default class ProjectForm extends Component {
             success: false,
             inputs: [
                 {
-                    label: texts.nameLabel,
+                    label: textsCap.nameLabel,
                     name: 'name',
                     minLength: 3,
-                    placeholder: texts.namePlaceholder,
+                    placeholder: textsCap.namePlaceholder,
                     required: true,
                     type: 'text',
                     value: ''
                 },
                 {
                     disabled: !!props.hash,
-                    label: texts.ownerLabel,
+                    label: textsCap.ownerLabel,
                     name: 'ownerAddress',
-                    placeholder: texts.ownerPlaceholder,
+                    placeholder: textsCap.ownerPlaceholder,
                     required: true,
                     search: ['text', 'value'],
                     selection: true,
                     type: 'dropdown',
                 },
                 {
-                    label: texts.descLabel,
+                    label: textsCap.descLabel,
                     name: 'description',
                     maxLength: 160,
-                    placeholder: texts.descPlaceholder,
+                    placeholder: textsCap.descPlaceholder,
                     required: true,
                     type: 'textarea',
                     value: '',
@@ -99,8 +98,8 @@ export default class ProjectForm extends Component {
         fillValues(inputs, values)
         this.setState({
             inputs,
-            header: header || (hash ? texts.formHeaderUpdate : texts.formHeaderCreate),
-            submitText: hash ? wordsCap.update : wordsCap.create,
+            header: header || (hash ? textsCap.formHeaderUpdate : textsCap.formHeaderCreate),
+            submitText: hash ? textsCap.update : textsCap.create,
         })
     }
 
@@ -112,18 +111,18 @@ export default class ProjectForm extends Component {
         const hash = existingHash || generateHash(values)
         const token = generateHash(objClean(values, validKeys))
         const { description: desc, name: projectName, ownerAddress } = values
-        const title = create ? texts.submitTitleCreate : texts.submitTitleUpdate
-        const description = `${wordsCap.name}: ${projectName}` + '\n' + `${wordsCap.description}: ${desc}`
+        const title = create ? textsCap.submitTitleCreate : textsCap.submitTitleUpdate
+        const description = `${textsCap.name}: ${projectName}` + '\n' + `${textsCap.description}: ${desc}`
         const message = {
-            content: texts.submitQueuedMsg,
-            header: texts.submitQueuedHeader,
+            content: textsCap.submitQueuedMsg,
+            header: textsCap.submitQueuedHeader,
             status: 'loading',
             icon: true
         }
         const handleTxError = (ok, err) => !ok && this.setState({
             message: {
                 content: `${err}`,
-                header: texts.submitErrorHeader,
+                header: textsCap.submitErrorHeader,
                 icon: true,
                 status: 'error'
             },
@@ -134,13 +133,13 @@ export default class ProjectForm extends Component {
 
         // save auth token to blockchain and then store data to off-chain DB
         const updateTask = queueables.saveBONSAIToken(ownerAddress, hash, token, {
-            title: texts.saveBONSAIToken,
+            title: textsCap.saveBONSAIToken,
             description: token,
             then: handleTxError,
             next: {
                 type: QUEUE_TYPES.CHATCLIENT,
                 func: 'project',
-                title: texts.saveDetailsTitle,
+                title: textsCap.saveDetailsTitle,
                 description,
                 args: [
                     hash,
@@ -151,7 +150,7 @@ export default class ProjectForm extends Component {
                         this.setState({
                             message: {
                                 content: err || '',
-                                header: err ? texts.submitErrorHeader : texts.submitSuccessHeader,
+                                header: err ? textsCap.submitErrorHeader : textsCap.submitSuccessHeader,
                                 icon: true,
                                 status: !err ? 'success' : 'warning',
                             },
@@ -188,6 +187,6 @@ ProjectForm.propTypes = {
     }),
 }
 ProjectForm.defaultProps = {
-    closeText: wordsCap.close,
+    closeText: textsCap.close,
     size: 'tiny',
 }

@@ -1,13 +1,12 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { isFn, isObj, isArr } from '../utils/utils'
-import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-// services
-import client from '../services/chatClient'
-import identities from '../services/identity'
-import { translated } from '../services/language'
-import partners from '../services/partner'
-import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import { isFn, isObj, isArr } from '../../utils/utils'
+import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
+import { translated } from '../../services/language'
+import { addToQueue, QUEUE_TYPES } from '../../services/queue'
+import client from '../chat/ChatClient'
+import partners from '../partner/partner'
+import { find, getAll } from './identity'
 
 const notificationType = 'identity'
 const childType = 'share'
@@ -105,7 +104,7 @@ export default class IdentityShareForm extends Component {
                 value: '' // keep
             })
             identityIn.options.push(
-                ...identities.getAll().map(({ address, name }) => ({
+                ...getAll().map(({ address, name }) => ({
                     key: address,
                     name, // keep
                     text: name,
@@ -169,7 +168,7 @@ export default class IdentityShareForm extends Component {
         const { onSubmit } = this.props
         const { inputs } = this.state
         const { address, name, userIds } = values
-        const sharePartner = !identities.find(address)
+        const sharePartner = !find(address)
         const data = {
             address,
             name: name || findInput(inputs, 'address').options.find(x => x.value === address).name,

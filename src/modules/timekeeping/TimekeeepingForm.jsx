@@ -3,32 +3,20 @@ import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Button, Icon } from 'semantic-ui-react'
 import { deferred, hasValue, isDefined, isFn, objCopy } from '../../utils/utils'
-import {
-    BLOCK_DURATION_SECONDS,
-    BLOCK_DURATION_REGEX,
-    durationToSeconds,
-    secondsToDuration,
-} from '../../utils/time'
-import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
+import { BLOCK_DURATION_SECONDS, BLOCK_DURATION_REGEX, durationToSeconds, secondsToDuration } from '../../utils/time'
 import { ButtonAcceptOrReject } from '../../components/buttons'
+import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 // services
 import { query as queryBlockchain, getCurrentBlock } from '../../services/blockchain'
-import identities, { getSelected } from '../../services/identity'
 import { translated } from '../../services/language'
 import { confirm, closeModal, showForm } from '../../services/modal'
-import { getAddressName } from '../../services/partner'
-import { openStatuses, query as queryProject } from '../../services/project'
 import { addToQueue } from '../../services/queue'
-import {
-    saveFormData,
-    getProjects,
-    NEW_RECORD_HASH,
-    query,
-    queueables,
-    statuses
-} from './timekeeping'
-import { handleInvitation } from './notificationHandlers'
 import { unsubscribe } from '../../services/react'
+import { openStatuses, query as queryProject } from '../activity/activity'
+import identities, { getSelected } from '../identity/identity'
+import { getAddressName } from '../partner/partner'
+import { saveFormData, getProjects, NEW_RECORD_HASH, query, queueables, statuses } from './timekeeping'
+import { handleInvitation } from './notificationHandlers'
 
 // Hash that indicates creation of new record
 const DURATION_ZERO = '00:00:00'

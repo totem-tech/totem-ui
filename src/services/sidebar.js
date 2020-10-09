@@ -6,9 +6,9 @@ import { BehaviorSubject } from 'rxjs'
 import FinancialStatementsView from '../modules/financialStatement/FinancialStatementView'
 import GettingStarted from '../views/GettingStartedView'
 import HistoryList from '../modules/history/HistoryList'
-import IdentityList from '../lists/IdentityList'
-import PartnerList from '../lists/PartnerList'
-import ProjectList from '../lists/ProjectList'
+import IdentityList from '../modules/identity/IdentityList'
+import PartnerList from '../modules/partner/PartnerList'
+import ActivityList from '../modules/activity/ActivityList'
 import SettingsForm from '../forms/Settings'
 import TaskView from '../modules/task/TaskView'
 import TimekeepingView from '../modules/timekeeping/TimekeepingView'
@@ -19,7 +19,7 @@ import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
 import EventList from '../modules/event/EventList'
 // utils
 import DataStorage from '../utils/DataStorage'
-import { isBool, isBond, deferred } from '../utils/utils'
+import { isBool, isBond } from '../utils/utils'
 // services
 import { translated } from './language'
 import storage from './storage'
@@ -208,7 +208,7 @@ export const sidebarItems = [
         title: textsCap.partnersTitle,
     },
     {
-        content: ProjectList,
+        content: ActivityList,
         // headerDividerHidden: true,
         icon: 'briefcase',
         name: 'projects',

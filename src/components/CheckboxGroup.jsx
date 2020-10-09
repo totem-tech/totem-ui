@@ -1,28 +1,33 @@
-import React from 'react'
-import { BehaviorSubject } from 'rxjs'
+import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Checkbox } from 'semantic-ui-react'
 import Text from './Text'
 import { hasValue, isArr, isFn, isObj, objWithoutKeys } from '../utils/utils'
-import { useRxSubject } from '../services/react'
 
 const excludeKeys = ['inline', 'multiple', 'name', 'options', 'required', 'rxValue', 'type', 'value', 'width']
 
 export default function CheckboxGroup(props) {
-    const { inline, multiple, name, options, radio, style } = props
+    const { inline, multiple, name, options, radio, rxValue, style } = props
     const allowMultiple = !radio && multiple
     const commonProps = objWithoutKeys(props, excludeKeys)
-    const rxValue = props.rxValue || new BehaviorSubject(props.value)
-    let [value, setValue] = useRxSubject(rxValue, value => {
-        value = !allowMultiple ? value : (
-            !hasValue(value) ? [] : !isArr(value) ? [value] : value
-        )
-        return value
-    })
+    let [value, setValue] = useState(rxValue && rxValue.value || props.value)
+
+    rxValue && useEffect(() => {
+        let mounted = true
+        const subscribed = rxValue.subscribe(v => mounted && setValue(v))
+
+        return () => {
+            mounted = false
+            subscribed.unsubscribe()
+        }
+    }, [setValue])
 
     return (
         <div style={style}>
             {(options || []).map((option, i) => {
+                value = !allowMultiple ? value : (
+                    !hasValue(value) ? [] : !isArr(value) ? [value] : value
+                )
                 const checked = allowMultiple ? value.indexOf(option.value) >= 0 : value === option.value
                 return option.hidden ? '' : (
                     <Checkbox
@@ -45,10 +50,8 @@ export default function CheckboxGroup(props) {
                                     // add/remove from values
                                     checked ? value.push(val) : value.splice(value.indexOf(val), 1)
                                 }
-                                data.value = value
-
                                 setValue(value)
-                                isFn(onChange) && onChange(e, data)
+                                isFn(onChange) && onChange(e, { ...data, value })
                             },
                             required: false, // handled by CheckboxGroup
                             style: {

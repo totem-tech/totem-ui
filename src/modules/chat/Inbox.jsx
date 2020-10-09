@@ -17,7 +17,7 @@ import {
     SUPPORT,
     TROLLBOX,
 } from './chat'
-import client, { getUser, rxIsLoggedIn } from '../../services/chatClient'
+import client, { getUser, rxIsLoggedIn } from './ChatClient'
 import { translated } from '../../services/language'
 import Message from '../../components/Message'
 import { getInboxName } from './InboxList'

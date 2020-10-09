@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { generateHash, arrSort, isArr } from '../utils/utils'
 import PromisE from '../utils/PromisE'
-import client from './chatClient'
+import client from '../modules/chat/ChatClient'
 import { translated } from './language'
 import storage from './storage'
 

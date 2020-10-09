@@ -1,15 +1,11 @@
 
 import { BehaviorSubject, Subject } from 'rxjs'
-import { isObj, mapJoin, isFn, isDefined } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
-// services
-import { getSelected } from '../../services/identity'
-import {
-    fetchProjects,
-    getProjects as getUserProjects,
-} from '../../services/project'
-import storage from '../../services/storage'
+import { isObj, mapJoin, isFn, isDefined } from '../../utils/utils'
 import { getConnection, query as queryBlockchain } from '../../services/blockchain'
+import storage from '../../services/storage'
+import { fetchProjects, getProjects as getUserProjects} from '../activity/activity'
+import { getSelected } from '../identity/identity'
 import { setHandlers } from './notificationHandlers'
 
 // to sumbit a new time record must submit with this hash

@@ -1,33 +1,32 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
-import { isFn } from '../utils/utils'
-import { ButtonAcceptOrReject } from '../components/buttons'
-import DataTable from '../components/DataTable'
-import PartnerForm from '../forms/Partner'
-import TimekeepingInviteForm from '../modules/timekeeping/TimekeeepingInviteForm'
-import { getUser } from '../services/chatClient'
-import { get as getIdentity } from '../services/identity'
-import { translated } from '../services/language'
-import { showForm } from '../services/modal'
-import { get as getPartner } from '../services/partner'
-import { query } from '../modules/timekeeping/timekeeping'
-import { handleInvitation } from '../modules/timekeeping/notificationHandlers'
+import { isFn } from '../../utils/utils'
+import { ButtonAcceptOrReject } from '../../components/buttons'
+import DataTable from '../../components/DataTable'
+import { translated } from '../../services/language'
+import { showForm } from '../../services/modal'
 
+import { getUser } from '../chat/ChatClient'
+import { get as getIdentity } from '../identity/identity'
+import { get as getPartner } from '../partner/partner'
+import PartnerForm from '../partner/PartnerForm'
+import { query } from '../timekeeping/timekeeping'
+import TimekeepingInviteForm from '../timekeeping/TimekeeepingInviteForm'
+import { handleInvitation as handleTkInvitation } from '../timekeeping/notificationHandlers'
 
-const wordsCap = translated({
+const textsCap = translated({
     accepted: 'accepted',
     invite: 'invite',
     invited: 'invited',
     status: 'status',
     team: 'team',
-}, true)[1]
-const [texts] = translated({
-    addPartner: 'Add Partner',
+
+    addPartner: 'add partner',
     emptyMessage: 'No team member available. Click on the invite button to invite parters.',
     userId: 'User ID',
-    unknownUser: 'Unknown user',
-})
+    unknownUser: 'unknown user',
+}, true)[1]
 
 export default class ProjectTeamList extends Component {
     constructor(props) {
@@ -35,15 +34,15 @@ export default class ProjectTeamList extends Component {
 
         this.state = {
             columns: [
-                { key: 'name', title: wordsCap.team },
-                { key: '_status', textAlign: 'center', title: wordsCap.status },
+                { key: 'name', title: textsCap.team },
+                { key: '_status', textAlign: 'center', title: textsCap.status },
             ],
             data: new Map(),
-            emptyMessage: { content: texts.emptyMessage },
+            emptyMessage: { content: textsCap.emptyMessage },
             rowProps: ({ accepted }) => ({ positive: accepted }),
             searchExtraKeys: ['address', 'userId'],
             topLeftMenu: [{
-                content: wordsCap.invite,
+                content: textsCap.invite,
                 onClick: () => showForm(TimekeepingInviteForm, {
                     values: { projectHash: this.props.projectHash }
                 })
@@ -91,16 +90,16 @@ export default class ProjectTeamList extends Component {
                 address,
                 name: name || (
                     <Button
-                        content={texts.addPartner}
+                        content={textsCap.addPartner}
                         onClick={() => showForm(PartnerForm, { values: { address } })}
                     />
                 ),
                 invited: true,
                 userId,
-                _status: accepted ? wordsCap.accepted : (!isOwnIdentity ? wordsCap.invited : (
+                _status: accepted ? textsCap.accepted : (!isOwnIdentity ? textsCap.invited : (
                     // Worker identity belongs to current user => button to accept or reject
                     <ButtonAcceptOrReject
-                        onClick={accept => handleInvitation(
+                        onClick={accept => handleTkInvitation(
                             projectId,
                             address,
                             accept,

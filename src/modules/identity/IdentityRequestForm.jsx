@@ -1,9 +1,9 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
-import { isFn } from '../utils/utils'
-import { translated } from '../services/language'
-import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import { isFn } from '../../utils/utils'
+import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
+import { translated } from '../../services/language'
+import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 
 const notificationType = 'identity'
 const childType = 'request'

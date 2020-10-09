@@ -2,32 +2,22 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Subject } from 'rxjs'
 import { Icon } from 'semantic-ui-react'
+import { ss58Decode } from '../utils/convert'
+import { getTxFee } from '../utils/polkadotHelper'
+import { arrSort, textEllipsis, deferred, isValidNumber } from '../utils/utils'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import Balance from '../components/Balance'
-import { arrSort, textEllipsis, deferred, isValidNumber } from '../utils/utils'
-import { ss58Decode } from '../utils/convert'
-import PartnerForm from '../forms/Partner'
-// services
-import { getConnection, query, queueables } from '../services/blockchain'
-import {
-    convertTo,
-    currencyDefault,
-    getCurrencies,
-    rxSelected as rxSelectedCurrency,
-} from '../services/currency'
-import {
-    find as findIdentity,
-    rxIdentities,
-    rxSelected,
-} from '../services/identity'
-import { translated } from '../services/language'
-import { confirm, showForm } from '../services/modal'
-import { getAddressName, rxPartners } from '../services/partner'
-import { addToQueue } from '../services/queue'
-import { unsubscribe } from '../services/react'
-import { getTxFee } from '../utils/polkadotHelper'
 import Currency from '../components/Currency'
 import Text from '../components/Text'
+import PartnerForm from '../modules/partner/PartnerForm'
+import { find as findIdentity, rxIdentities, rxSelected } from '../modules/identity/identity'
+import { getAddressName, rxPartners } from '../modules/partner/partner'
+import { getConnection, query, queueables } from '../services/blockchain'
+import { convertTo, currencyDefault, getCurrencies, rxSelected as rxSelectedCurrency } from '../services/currency'
+import { translated } from '../services/language'
+import { confirm, showForm } from '../services/modal'
+import { addToQueue } from '../services/queue'
+import { unsubscribe } from '../services/react'
 
 const textsCap = translated({
     amount: 'amount',

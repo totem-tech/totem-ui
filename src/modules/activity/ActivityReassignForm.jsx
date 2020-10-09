@@ -1,39 +1,37 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { arrSort, isFn, textEllipsis } from '../utils/utils'
-import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import PartnerForm from '../forms/Partner'
+import { arrSort, isFn, textEllipsis } from '../../utils/utils'
+import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 // services
-import identities from '../services/identity'
-import { translated } from '../services/language'
-import { confirm, showForm } from '../services/modal'
-import partners from '../services/partner'
-import { queueables } from '../services/project'
-import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import { translated } from '../../services/language'
+import { confirm, showForm } from '../../services/modal'
+import { addToQueue, QUEUE_TYPES } from '../../services/queue'
+import { find as findIdentity, getAll as getIdentities } from '../identity/identity'
+import partners from '../partner/partner'
+import PartnerForm from '../partner/PartnerForm'
+import { queueables } from './activity'
 
-const [words, wordsCap] = translated({
+const textsCap = translated({
     cancel: 'cancel',
     proceed: 'proceed',
-}, true)
-const [texts] = translated({
-    confirmHeader: 'Are you sure you want to reassign this activity?',
-    confirmMsg: `You are about to assign the ownership of this activity to an Identity that does not belong to you. 
-        If you proceed, you will no longer be able to update or manage this activity.`,
-    formHeader: 'Re-assign Activity Owner',
-    hashLabel: 'Activity Unique ID',
-    identityOptionsHeader: 'Select own identity',
-    nameLabel: 'Activity Name',
-    newOwnerLabel: 'New Activity Owner',
-    newOwnerPlaceholder: 'Select new owner',
-    newOwnerReassignSelfMsg: 'Cannot reassign activity to yourself',
-    ownerLabel: 'Current Activity Owner',
-    partnerOptionsHeader: 'Select a partner',
-    queueDescription: 'Activity Name: ',
-    queuedMsgHeader: 'Re-assign request added to queue',
-    queuedMsgContent: 'Your request to reassign the activity has been added to queue. ',
-    queueTitle: 'Re-assign activity owner',
-})
+    confirmHeader: 'are you sure you want to reassign this activity?',
+    confirmMsg1: 'you are about to assign the ownership of this activity to an Identity that does not belong to you.',
+    confirmMsg2: 'if you proceed, you will no longer be able to update or manage this activity.',
+    formHeader: 're-assign activity Owner',
+    activityIdLabel: 'activity ID',
+    identityOptionsHeader: 'select own identity',
+    nameLabel: 'activity Name',
+    newOwnerLabel: 'new activity Owner',
+    newOwnerPlaceholder: 'select new owner',
+    newOwnerReassignSelfMsg: 'cannot reassign activity to yourself',
+    ownerLabel: 'current Activity Owner',
+    partnerOptionsHeader: 'select a partner',
+    queueDescription: 'activity Name: ',
+    queuedMsgHeader: 're-assign request added to queue',
+    queuedMsgContent: 'your request to reassign the activity has been added to queue',
+    queueTitle: 're-assign activity owner',
+}, true)[1]
 
 export default class ReassignProjectForm extends Component {
     constructor(props) {
@@ -45,7 +43,7 @@ export default class ReassignProjectForm extends Component {
             success: false,
             inputs: [
                 {
-                    label: texts.nameLabel,
+                    label: textsCap.nameLabel,
                     name: 'name',
                     readOnly: true,
                     required: true,
@@ -53,7 +51,7 @@ export default class ReassignProjectForm extends Component {
                     value: ''
                 },
                 {
-                    label: texts.hashLabel,
+                    label: textsCap.activityIdLabel,
                     name: 'hash',
                     readOnly: true,
                     required: true,
@@ -62,7 +60,7 @@ export default class ReassignProjectForm extends Component {
                 },
                 {
                     disabled: true,
-                    label: texts.ownerLabel,
+                    label: textsCap.ownerLabel,
                     name: 'ownerAddress',
                     required: true,
                     search: true,
@@ -70,10 +68,10 @@ export default class ReassignProjectForm extends Component {
                     type: 'dropdown',
                 },
                 {
-                    label: texts.newOwnerLabel,
+                    label: textsCap.newOwnerLabel,
                     name: 'newOwnerAddress',
                     onChange: this.handleNewOwnerChange,
-                    placeholder: texts.newOwnerPlaceholder,
+                    placeholder: textsCap.newOwnerPlaceholder,
                     rxValue: new BehaviorSubject(),
                     search: ['text', 'value'], // search both name and project hash
                     selection: true,
@@ -107,7 +105,7 @@ export default class ReassignProjectForm extends Component {
         const { inputs } = this.state
         const { hash, values } = this.props
         const { ownerAddress } = values
-        const identityOptions = identities.getAll()
+        const identityOptions = getIdentities()
             // dropdown options
             .map(({ address, name }) => ({
                 description: textEllipsis(address, 15),
@@ -118,7 +116,7 @@ export default class ReassignProjectForm extends Component {
 
         const partnerOptions = Array.from(partners.getAll())
             // exclude any possible duplicates (if any identity is also in partner list)
-            .filter(([address]) => !identities.find(address))
+            .filter(([address]) => !findIdentity(address))
             .map(([address, { name }]) => ({
                 description: textEllipsis(address, 15),
                 key: 'partner-' + address,
@@ -130,7 +128,7 @@ export default class ReassignProjectForm extends Component {
         identityOptions.length > 0 && options.push({
             key: 'identities',
             style: styles.itemHeader,
-            text: texts.identityOptionsHeader,
+            text: textsCap.identityOptionsHeader,
             value: '' // keep
         }, ...arrSort(
             // exclude current owner
@@ -140,7 +138,7 @@ export default class ReassignProjectForm extends Component {
         partnerOptions.length > 0 && options.push({
             key: 'partners',
             style: styles.itemHeader,
-            text: texts.partnerOptionsHeader,
+            text: textsCap.partnerOptionsHeader,
             value: '' // keep
         }, ...arrSort(partnerOptions, 'text'))
         findInput(inputs, 'ownerAddress').options = identityOptions
@@ -169,10 +167,10 @@ export default class ReassignProjectForm extends Component {
         const { values: project, onSubmit } = this.props
         const { hash, name, ownerAddress, newOwnerAddress } = values
         // confirm if re-assigning to someone else
-        const doConfirm = !!identities.find(newOwnerAddress)
+        const doConfirm = !!findIdentity(newOwnerAddress)
         const task = queueables.reassign(ownerAddress, newOwnerAddress, hash, {
-            title: texts.queueTitle,
-            description: texts.queueDescription + name,
+            title: textsCap.queueTitle,
+            description: textsCap.queueDescription + name,
             next: {
                 type: QUEUE_TYPES.CHATCLIENT,
                 func: 'project',
@@ -186,8 +184,8 @@ export default class ReassignProjectForm extends Component {
         })
         const proceed = () => addToQueue(task) | this.setState({
             message: {
-                header: texts.queuedMsgHeader,
-                content: texts.queuedMsgContent,
+                header: textsCap.queuedMsgHeader,
+                content: textsCap.queuedMsgContent,
                 status: 'success',
                 icon: true
             },
@@ -195,10 +193,10 @@ export default class ReassignProjectForm extends Component {
         })
 
         !!doConfirm ? proceed() : confirm({
-            cancelButton: { content: wordsCap.cancel, color: 'green' },
-            confirmButton: { content: wordsCap.proceed, negative: true },
-            content: texts.confirmMsg,
-            header: texts.confirmHeader,
+            cancelButton: { content: textsCap.cancel, color: 'green' },
+            confirmButton: { content: textsCap.proceed, negative: true },
+            content: textsCap.confirmMsg,
+            header: textsCap.confirmHeader,
             onConfirm: () => proceed(),
             size: 'tiny'
         })
@@ -215,7 +213,7 @@ ReassignProjectForm.propTypes = {
     }).isRequired
 }
 ReassignProjectForm.defaultProps = {
-    header: texts.formHeader,
+    header: textsCap.formHeader,
     size: 'tiny',
 }
 

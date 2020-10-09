@@ -5,11 +5,11 @@ import Balance from '../components/Balance'
 // utils
 import { arrSort, className, copyToClipboard, textEllipsis } from '../utils/utils'
 // forms
-import IdentityForm from '../forms/Identity'
+import IdentityForm from '../modules/identity/IdentityForm'
 import TimekeepingForm from '../modules/timekeeping/TimekeeepingForm'
 // services
-import { getUser, rxIsLoggedIn } from '../services/chatClient'
-import { getSelected, setSelected, rxIdentities } from '../services/identity'
+import { getUser, rxIsLoggedIn } from '../modules/chat/ChatClient'
+import { getSelected, setSelected, rxIdentities } from '../modules/identity/identity'
 import { getSelected as getSelectedLang, translated } from '../services/language'
 import { showForm } from '../services/modal'
 import {

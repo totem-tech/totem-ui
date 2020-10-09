@@ -3,9 +3,9 @@ import PropTypes from 'prop-types'
 import FormInput from './FormInput'
 import { arrUnique, isFn, objWithoutKeys, textCapitalize, arrSort, isStr } from '../utils/utils'
 import { getChatUserIds } from '../modules/chat/chat'
-import client, { getUser } from '../services/chatClient'
+import client, { getUser } from '../modules/chat/ChatClient'
+import partners from '../modules/partner/partner'
 import { translated } from '../services/language'
-import partners from '../services/partner'
 
 const [texts, textsCap] = translated({
     add: 'add',

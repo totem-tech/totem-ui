@@ -3,16 +3,16 @@
 // It has not been replaced in the code.
 // *********
 import { Subject } from 'rxjs'
-import { bytesToHex } from '../utils/convert'
-import PromisE from '../utils/PromisE'
-import { arrUnique, isFn, isStr } from '../utils/utils'
+import { bytesToHex } from '../../utils/convert'
+import PromisE from '../../utils/PromisE'
+import { arrUnique, isFn, isStr } from '../../utils/utils'
 // services
-import { hashTypes, query as queryBlockchain, getConnection } from './blockchain'
-import client from './chatClient'
-import identities, { getSelected, rxSelected } from './identity'
-import partners from './partner'
-import storage from './storage'
-import { query as tkQuery } from '../modules/timekeeping/timekeeping'
+import { hashTypes, query as queryBlockchain, getConnection } from '../../services/blockchain'
+import storage from '../../services/storage'
+import client from '../chat/ChatClient'
+import identities, { getSelected, rxSelected } from '../identity/identity'
+import partners from '../partner/partner'
+import { query as tkQuery } from '../timekeeping/timekeeping'
 
 export const MODULE_KEY = 'projects'
 const rxProjects = new Subject()

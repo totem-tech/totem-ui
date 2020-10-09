@@ -1,82 +1,79 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { BehaviorSubject } from 'rxjs'
-import { ss58Decode, addressToStr } from '../utils/convert'
-import { arrSort, deferred, isFn, isObj, arrUnique } from '../utils/utils'
-import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import CompanyForm from './Company'
-// services
-import client from '../services/chatClient'
-import identityService from '../services/identity'
-import { showForm } from '../services/modal'
-import { translated } from '../services/language'
-import addressbook, { getAddressName, getAllTags } from '../services/partner'
+import { ss58Decode, addressToStr } from '../../utils/convert'
+import { arrSort, deferred, isFn, isObj, arrUnique } from '../../utils/utils'
+import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
+import CompanyForm from '../../forms/Company'
+import { showForm } from '../../services/modal'
+import { translated } from '../../services/language'
+import client from '../chat/ChatClient'
+import identityService from '../identity/identity'
+import addressbook, { getAddressName, getAllTags } from './partner'
 
-const [words, wordsCap] = translated({
+const textsCap = translated({
     business: 'business',
     close: 'close',
     personal: 'personal',
     tags: 'tags',
     private: 'private',
     public: 'public',
-}, true)
-const [texts] = translated({
-    addressAdditionLabel: 'Use',
-    addressLabel: 'Search for Company or Identity',
-    addressPlaceholder: 'Search by company details or identity',
-    addressValidationMsg1: 'Partner already exists with the following name:',
-    addressValidationMsg2: 'Please enter a valid Totem Identity',
-    associatedIdentityLabel: 'Associated with your identity',
-    associatedIdentityPlaceholder: 'Select one of your identities',
+
+    addressAdditionLabel: 'use',
+    addressLabel: 'search for Company or Identity',
+    addressPlaceholder: 'search by company details or identity',
+    addressValidationMsg1: 'partner already exists with the following name:',
+    addressValidationMsg2: 'please enter a valid Totem Identity',
+    associatedIdentityLabel: 'associated with your identity',
+    associatedIdentityPlaceholder: 'select one of your identities',
     companyFormOnOpenMsg: `
         You have chosen to make this partner public.
         Please ensure you fill in the correct details.
         Click cancel to abort making public.
     `,
-    header1: 'Add partner',
-    header2: 'Update partner',
-    nameLabel: 'Enter Partner Name',
-    namePlaceholder: 'Enter a name for this partner',
-    nameValidationMsg: 'Please choose an unique partner name.',
-    submitSuccessMsg1: 'Partner created successfully',
-    submitSuccessMsg2: 'Partner updated successfully',
-    tagsNoResultsMsg: 'Enter tag and press enter to add, to tags list.',
-    tagsPlaceholder: 'Enter tags',
-    typeLabel: 'Partner Usage Type',
-    userIdInvalidMsg: 'Please enter a valid User ID',
-    userIdLabel: 'User ID for this partner',
-    userIdPlaceholder: 'Enter User ID for this partner',
-    visibilityLabel: 'Decide Partner Visibility (on the network)',
-})
+    header1: 'add partner',
+    header2: 'update partner',
+    nameLabel: 'enter partner name',
+    namePlaceholder: 'enter a name for this partner',
+    nameValidationMsg: 'please choose an unique partner name.',
+    submitSuccessMsg1: 'partner created successfully',
+    submitSuccessMsg2: 'partner updated successfully',
+    tagsNoResultsMsg: 'enter tag and press enter to add, to tags list.',
+    tagsPlaceholder: 'enter tags',
+    typeLabel: 'partner usage type',
+    userIdInvalidMsg: 'please enter a valid user ID',
+    userIdLabel: 'user ID for this partner',
+    userIdPlaceholder: 'enter user ID for this partner',
+    visibilityLabel: 'decide partner visibility (on the network)',
+}, true)[1]
 
-class Partner extends Component {
+class PartnerForm extends Component {
     constructor(props) {
         super(props)
 
-        const partner = props.values && addressbook.get(props.values.address)
-        this.doUpdate = !!partner
-        const values = { ...partner, ...props.values }
+        this.partner = props.values && addressbook.get(props.values.address)
+        this.doUpdate = !!this.partner
+        const values = { ...this.partner, ...props.values }
         const { address, name, tags = [], visibility } = values
 
         // placeholder to store user added address to the dropdown list
         this.customAddresses = []
         this.state = {
-            closeText: props.closeText,
-            header: props.header || (this.doUpdate ? texts.header2 : texts.header1),
+            closeText: props.closeText || (this.doUpdate ? textsCap.close : undefined),
+            header: props.header || (this.doUpdate ? textsCap.header2 : textsCap.header1),
             message: {},
-            onChange: (_, values) => this.setState({ values }),
+            onChange: this.handleChange,
             onSubmit: this.handleSubmit,
-            submitText: props.submitText || (this.doUpdate ? texts.header2 : texts.header1),
+            submitText: props.submitText || (this.doUpdate ? null : textsCap.header1),
             success: false,
             values,
             inputs: [
                 {
                     inline: true,
-                    label: texts.typeLabel,
+                    label: textsCap.typeLabel,
                     name: 'type',
                     options: [
-                        { label: wordsCap.personal, value: 'personal' },
-                        { label: wordsCap.business, value: 'business' }
+                        { label: textsCap.personal, value: 'personal' },
+                        { label: textsCap.business, value: 'business' }
                     ],
                     radio: true,
                     required: true,
@@ -85,12 +82,12 @@ class Partner extends Component {
                 },
                 {
                     allowAdditions: false,
-                    additionLabel: texts.addressAdditionLabel + ' ',
+                    additionLabel: textsCap.addressAdditionLabel + ' ',
                     clearable: true,
                     // disable when adding new and address is prefilled (possibly from notification)
                     disabled: !this.doUpdate && !!ss58Decode(address),
                     hidden: this.doUpdate && visibility !== 'public',
-                    label: texts.addressLabel,
+                    label: textsCap.addressLabel,
                     name: 'address',
                     onAddItem: this.handleAddressAddItem,
                     onChange: this.handleAddressChange,
@@ -100,39 +97,37 @@ class Partner extends Component {
                         text: name || address,
                         value: address,
                     }],
-                    placeholder: texts.addressPlaceholder,
+                    placeholder: textsCap.addressPlaceholder,
                     required: true,
-                    // rxValue: new BehaviorSubject(),
                     search: ['text', 'value', 'key'],
                     selection: true,
                     type: 'dropdown',
                     validate: this.doUpdate ? null : this.validateAddress,
                 },
                 {
-                    label: texts.nameLabel,
+                    label: textsCap.nameLabel,
                     name: 'name',
-                    placeholder: texts.namePlaceholder,
+                    placeholder: textsCap.namePlaceholder,
                     required: true,
-                    // rxValue: new BehaviorSubject(),
                     type: 'text',
                     validate: this.validateName,
                     value: '',
                 },
                 {
                     clearable: true,
-                    label: texts.associatedIdentityLabel,
+                    label: textsCap.associatedIdentityLabel,
                     name: 'associatedIdentity',
                     options: [],
-                    placeholder: texts.associatedIdentityPlaceholder,
+                    placeholder: textsCap.associatedIdentityPlaceholder,
                     selection: true,
                     search: true,
                     type: 'dropdown',
                 },
                 {
                     allowAdditions: true,
-                    label: wordsCap.tags,
+                    label: textsCap.tags,
                     name: 'tags',
-                    noResultsMessage: texts.tagsNoResultsMsg,
+                    noResultsMessage: textsCap.tagsNoResultsMsg,
                     multiple: true,
                     onAddItem: this.handleAddTag,
                     options: arrUnique([...getAllTags(), ...tags]).map(tag => ({
@@ -140,7 +135,7 @@ class Partner extends Component {
                         text: tag,
                         value: tag,
                     })),
-                    placeholder: texts.tagsPlaceholder,
+                    placeholder: textsCap.tagsPlaceholder,
                     type: 'dropdown',
                     search: true,
                     selection: true,
@@ -149,23 +144,21 @@ class Partner extends Component {
                 {
                     disabled: false, // only disable when company address selected
                     inline: true,
-                    label: texts.visibilityLabel,
+                    label: textsCap.visibilityLabel,
                     name: 'visibility',
                     options: [
-                        { label: wordsCap.private, value: 'private' },
-                        { label: wordsCap.public, value: 'public' }
+                        { label: textsCap.private, value: 'private' },
+                        { label: textsCap.public, value: 'public' }
                     ],
                     radio: true,
-                    // rxValue: new BehaviorSubject(),
                     type: 'checkbox-group',
                     value: values.visibility || 'private'
                 },
                 {
-                    label: texts.userIdLabel,
+                    label: textsCap.userIdLabel,
                     name: 'userId',
                     multiple: false,
-                    placeholder: texts.userIdPlaceholder,
-                    // rxValue: new BehaviorSubject(),
+                    placeholder: textsCap.userIdPlaceholder,
                     type: 'UserIdInput',
                 },
             ]
@@ -273,6 +266,20 @@ class Partner extends Component {
         this.setState({ inputs })
     }
 
+    handleChange = (_, values) => {
+        this.setState({ values })
+        const { address, name, tags, type, userId, visibility, associatedIdentity } = values
+        if (this.doUpdate) addressbook.set(
+            address,
+            name,
+            tags,
+            type,
+            userId,
+            visibility,
+            associatedIdentity,
+        )
+    }
+
     handleSubmit = () => {
         const { closeOnSubmit, onSubmit } = this.props
         const { inputs, values } = this.state
@@ -289,9 +296,9 @@ class Partner extends Component {
 
         addressbook.set(address, name, tags, type, userId, addCompany ? 'private' : visibility, associatedIdentity)
         this.setState({
-            closeText: wordsCap.close,
+            closeText: textsCap.close,
             message: closeOnSubmit ? null : {
-                content: this.doUpdate ? texts.submitSuccessMsg2 : texts.submitSuccessMsg1,
+                content: this.doUpdate ? textsCap.submitSuccessMsg2 : textsCap.submitSuccessMsg1,
                 icon: true,
                 status: 'success'
             },
@@ -302,8 +309,8 @@ class Partner extends Component {
         isFn(onSubmit) && onSubmit(true, values)
         addCompany && showForm(CompanyForm, {
             message: {
-                header: this.doUpdate ? texts.submitSuccessMsg2 : texts.submitSuccessMsg1,
-                content: texts.companyFormOnOpenMsg,
+                header: this.doUpdate ? textsCap.submitSuccessMsg2 : textsCap.submitSuccessMsg1,
+                content: textsCap.companyFormOnOpenMsg,
                 icon: true,
                 status: 'success'
             },
@@ -321,23 +328,23 @@ class Partner extends Component {
         const partner = addressbook.get(address)
         if (partner) return (
             <p>
-                {texts.addressValidationMsg1} <br />
+                {textsCap.addressValidationMsg1} <br />
                 {partner.name}
             </p>
         )
-        if (!ss58Decode(address)) return texts.addressValidationMsg2
+        if (!ss58Decode(address)) return textsCap.addressValidationMsg2
     }
 
     validateName = (e, { value: name }) => {
         const { values: oldValues } = this.props
         name = name.trim()
         if (this.doUpdate && isObj(oldValues) && oldValues.name === name) return
-        if (addressbook.getByName(name)) return texts.nameValidationMsg
+        if (addressbook.getByName(name)) return textsCap.nameValidationMsg
     }
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
-Partner.propTypes = {
+PartnerForm.propTypes = {
     closeOnSubmit: PropTypes.bool,
     header: PropTypes.string,
     modal: PropTypes.bool,
@@ -348,8 +355,8 @@ Partner.propTypes = {
     // values to be prefilled into inputs
     values: PropTypes.object,
 }
-Partner.defaultProps = {
+PartnerForm.defaultProps = {
     closeOnSubmit: true,
     size: 'tiny'
 }
-export default Partner
+export default PartnerForm

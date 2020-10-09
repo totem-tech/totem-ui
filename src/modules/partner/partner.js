@@ -1,11 +1,12 @@
-import { textEllipsis, arrUnique } from '../utils/utils'
-import DataStorage from '../utils/DataStorage'
-import identities from './identity'
+import DataStorage from '../../utils/DataStorage'
+import { textEllipsis, arrUnique } from '../../utils/utils'
+import identities from '../identity/identity'
 
 const partners = new DataStorage('totem_partners')
 export const rxPartners = partners.rxData
 
 export const get = address => partners.get(address)
+
 // returns name of an address if available in identity or partner lists.
 // Otherwise, returns shortened address
 export const getAddressName = address => (identities.find(address) || {}).name
@@ -16,6 +17,7 @@ export const getAddressName = address => (identities.find(address) || {}).name
     // display the address itself with ellipsis
     || textEllipsis(address, 15, 5)
 export const getAll = () => partners.getAll()
+
 // returns an array of unique tags used in partner and identity modules
 export const getAllTags = () => {
     const iTags = identities.getAll()
@@ -29,9 +31,12 @@ export const getAllTags = () => {
     return arrUnique([...iTags, ...pTags]).sort()
 }
 export const getByName = name => partners.find({ name }, true, true, true)
+
 // returns first matching partner with userId
 export const getByUserId = id => (Array.from(partners.getAll()).find(([_, { userId }]) => userId === id) || [])[1]
+
 export const remove = address => partners.delete(address)
+
 // Add/update partner
 export const set = (address, name, tags, type, userId, visibility, associatedIdentity) => {
     name = name.trim()
@@ -40,7 +45,14 @@ export const set = (address, name, tags, type, userId, visibility, associatedIde
     type = type || 'personal'
     if (!name || !address) return
     partners.set(address, {
-        address, name, tags, type, userId, visibility, associatedIdentity, isPublic: visibility === 'public'
+        address,
+        name,
+        tags,
+        type,
+        userId,
+        visibility,
+        associatedIdentity,
+        isPublic: visibility === 'public',
     })
 }
 

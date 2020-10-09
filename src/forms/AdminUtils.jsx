@@ -1,12 +1,10 @@
 import React, { Component } from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { Progress } from 'semantic-ui-react'
-import { csvToMap, csvToArr } from '../utils/convert'
-import { keyring } from '../utils/polkadotHelper'
-import { downloadFile, objWithoutKeys } from '../utils/utils'
+import { csvToMap } from '../utils/convert'
+import { downloadFile } from '../utils/utils'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 // services
-import client from '../services/chatClient'
+import client from '../modules/chat/ChatClient'
 import { downloadTextListCSV, translated } from '../services/language'
 import storage from '../services/storage'
 

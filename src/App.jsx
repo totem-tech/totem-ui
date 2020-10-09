@@ -1,4 +1,4 @@
-import React, { Component, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { Image, Segment, Sidebar } from 'semantic-ui-react'
 // Components
 import ErrorBoundary from './components/CatchReactErrors'
@@ -7,26 +7,25 @@ import PageHeader from './components/PageHeader'
 import SidebarLeft, { MainContentItem } from './components/SidebarLeft'
 // Services
 import blockchain from './services/blockchain'
-import chatClient from './services/chatClient'
+import chatClient from './modules/chat/ChatClient'
 import currency from './services/currency'
-import identity from './services/identity'
+import identity from './modules/identity/identity'
 import language from './services/language'
 import modal, { ModalsConainer } from './services/modal'
 import NotificationView from './modules/notification/NotificationView'
-import partner from './services/partner'
-import project from './services/project'
+import partner from './modules/partner/partner'
+import activity from './modules/activity/activity'
 import queue, { resumeQueue } from './services/queue'
-import sidebar, { sidebarItems, rxSidebarState } from './services/sidebar'
+import sidebar, { sidebarItems } from './services/sidebar'
 import storage from './services/storage'
 import timeKeeping from './modules/timekeeping/timekeeping'
 import toast, { ToastsContainer } from './services/toast'
-import windw, { rxGridColumns, getLayout, rxLayout, MOBILE } from './services/window'
+import windw, { rxGridColumns, rxLayout, MOBILE } from './services/window'
 // Utils
 import convert from './utils/convert'
 import DataStorage from './utils/DataStorage'
 import naclHelper from './utils/naclHelper'
 import polkadotHelper from './utils/polkadotHelper'
-import { className, isBool } from './utils/utils'
 import validator from './utils/validator'
 // Images
 import TotemButtonLogo from './assets/totem-button-grey.png'
@@ -53,6 +52,7 @@ export default function App() {
 		}
 		window.DataStorage = DataStorage
 		window.services = {
+			activity,
 			blockchain,
 			chatClient,
 			currency,
@@ -60,7 +60,6 @@ export default function App() {
 			language,
 			modal,
 			partner,
-			project,
 			queue,
 			sidebar,
 			storage,

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { generateMnemonic } from 'bip39'
-import DataStorage from '../utils/DataStorage'
-import { keyring } from '../utils/polkadotHelper'
-import { isObj, objClean } from '../utils/utils'
+import DataStorage from '../../utils/DataStorage'
+import { keyring } from '../../utils/polkadotHelper'
+import { isObj, objClean } from '../../utils/utils'
 
 const DEFAULT_NAME = 'Default'
 const identities = new DataStorage('totem_identities')

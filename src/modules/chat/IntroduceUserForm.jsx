@@ -1,10 +1,10 @@
+// ToDo: move to modules/chat
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { BehaviorSubject } from 'rxjs'
-import FormBuilder, { fillValues, findInput } from '../components/FormBuilder'
-import { isFn } from '../utils/utils'
-import { translated } from '../services/language'
-import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
+import { isFn } from '../../utils/utils'
+import { translated } from '../../services/language'
+import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 
 const [_, textsCap] = translated({
     addedToQueueContent: 'you will be notified once request is processed',
@@ -39,7 +39,6 @@ export default class IntroduceUser extends Component {
                     multiple: false,
                     name: 'userId',
                     required: true,
-                    // rxValue: new BehaviorSubject(),
                     type: 'UserIdInput'
                 },
                 {
@@ -49,7 +48,6 @@ export default class IntroduceUser extends Component {
                     name: 'recipients',
                     options: [],
                     required: true,
-                    // rxValue: new BehaviorSubject(),
                     type: 'UserIdInput'
                 }
             ],

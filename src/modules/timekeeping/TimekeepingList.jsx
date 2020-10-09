@@ -2,29 +2,27 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
-import { isArr, deferred, copyToClipboard, textEllipsis } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 import { BLOCK_DURATION_SECONDS, secondsToDuration, blockNumberToTS } from '../../utils/time'
+import { isArr, deferred, copyToClipboard, textEllipsis } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
 import FormBuilder from '../../components/FormBuilder'
-// Forms
-import PartnerForm from '../../forms/Partner'
-import TimekeepingForm, { TimekeepingUpdateForm } from './TimekeeepingForm'
-import TimekeeepingInviteForm from './TimekeeepingInviteForm'
-// Services
 import { hashTypes, queueables as bcQueueables, getCurrentBlock } from '../../services/blockchain'
-import identities, { getSelected, rxIdentities, rxSelected } from '../../services/identity'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
-import partners, { rxPartners } from '../../services/partner'
-import { getProjects, statuses, query, queueables } from './timekeeping'
 import { addToQueue } from '../../services/queue'
 import { unsubscribe } from '../../services/react'
-import { getLayout, MOBILE, rxLayout } from '../../services/window'
+import { MOBILE, rxLayout } from '../../services/window'
+import identities, { getSelected, rxIdentities, rxSelected } from '../identity/identity'
+import { getAddressName, rxPartners } from '../partner/partner'
+import PartnerForm from '../partner/PartnerForm'
+import { getProjects, statuses, query, queueables } from './timekeeping'
+import TimekeepingForm, { TimekeepingUpdateForm } from './TimekeeepingForm'
+import TimekeeepingInviteForm from './TimekeeepingInviteForm'
 
 const toBeImplemented = () => alert('To be implemented')
 
-const [words, wordsCap] = translated({
+const textsCap = translated({
     action: 'action',
     activity: 'activity',
     approve: 'approve',
@@ -41,7 +39,6 @@ const [words, wordsCap] = translated({
     identity: 'identity',
     invoiced: 'invoiced',
     no: 'no',
-    project: 'project',
     reject: 'reject',
     rejected: 'rejected',
     selected: 'selected',
@@ -53,48 +50,35 @@ const [words, wordsCap] = translated({
     unarchive: 'unarchive',
     unknown: 'unknown',
     worker: 'worker',
-}, true)
-const [texts] = translated({
-    addPartner: 'Add Partner',
-    approveRecord: 'Approve record',
-    archiveRecord: 'Archive record',
-    bannedUser: 'User has been banned from this activity',
-    banUser: 'Ban User',
-    banUsers: 'Ban Users',
-    blockStart: 'Start Block',
-    blockEnd: 'End Block',
-    blockCount: 'Number Of Blocks',
-    cannotBanOwnIdentity: 'You cannot ban your own identity!',
-    emptyMessage: 'No time records available.',
-    emptyMessageArchive: 'No records have been archived yet',
-    finishedAt: 'Finished at',
-    orInviteATeamMember: 'invite someone to an activity?',
-    noTimeRecords: 'Your team have not yet booked time. Maybe ',
-    notProjectOwner: 'You do not own this activity',
-    numberOfBreaks: 'Number Of Breaks',
-    projectName: 'Activity Name',
-    recordDetails: 'Record Details',
-    recordId: 'Record ID',
-    rejectRecord: 'Reject record',
-    selectedIdentitiesAlreadyBanned: 'Selected identities are already banned',
-    selectProjectForRecords: 'Please select an Activity to view the time records',
-    setAsDraft: 'Set as draft',
-    setAsDraftDetailed: 'Set as draft and force user to submit again',
-    timeKeepingBanWarning: 'Warning: You are about to ban the following addresses permanently from the Activity named',
-    uhOh: 'Uh oh!',
-    unarchiveRecord: 'Restore from Archive',
-    whatDoesThisMean: 'What does this mean?',
-    whatDoesThisMeanItemOne: 'No further booking or other actions will be accepted from the Team',
-    whatDoesThisMeanItemTwo: 'Only approved bookings will be visible to you',
-})
+
+    approveRecord: 'approve record',
+    archiveRecord: 'archive record',
+    banUser: 'ban user',
+    blockStart: 'start block',
+    blockEnd: 'end block',
+    blockCount: 'number of blocks',
+    emptyMessage: 'no time records available',
+    emptyMessageArchive: 'no records have been archived yet',
+    finishedAt: 'finished at',
+    orInviteATeamMember: 'maybe invite someone to an activity?',
+    noTimeRecords: 'your team have not yet booked time.',
+    numberOfBreaks: 'number of breaks',
+    projectName: 'activity name',
+    recordDetails: 'record details',
+    recordId: 'record ID',
+    rejectRecord: 'reject record',
+    setAsDraft: 'set as draft',
+    setAsDraftDetailed: 'set as draft and force user to submit again',
+    unarchiveRecord: 'restore from archive',
+}, true)[1]
 const statusTexts = {}
-statusTexts[statuses.draft] = words.draft
-statusTexts[statuses.submit] = words.submitted
-statusTexts[statuses.dispute] = words.disputed
-statusTexts[statuses.reject] = words.rejected
-statusTexts[statuses.accept] = words.approved
-statusTexts[statuses.invoice] = words.invoiced
-statusTexts[statuses.delete] = words.deleted
+statusTexts[statuses.draft] = textsCap.draft
+statusTexts[statuses.submit] = textsCap.submitted
+statusTexts[statuses.dispute] = textsCap.disputed
+statusTexts[statuses.reject] = textsCap.rejected
+statusTexts[statuses.accept] = textsCap.approved
+statusTexts[statuses.invoice] = textsCap.invoiced
+statusTexts[statuses.delete] = textsCap.deleted
 
 // trigger refresh on not-archived records tables if multiple open at the same time 
 const rxTrigger = new BehaviorSubject()
@@ -108,20 +92,20 @@ export default class ProjectTimeKeepingList extends Component {
         this.state = {
             inProgressHashes: [],
             columns: [
-                { collapsing: true, key: '_end_block', title: texts.finishedAt },
-                { collapsing: true, key: 'projectName', title: wordsCap.activity },
-                { key: '_workerName', title: wordsCap.identity },
-                { key: 'duration', textAlign: 'center', title: wordsCap.duration },
+                { collapsing: true, key: '_end_block', title: textsCap.finishedAt },
+                { collapsing: true, key: 'projectName', title: textsCap.activity },
+                { key: '_workerName', title: textsCap.identity },
+                { key: 'duration', textAlign: 'center', title: textsCap.duration },
                 // { key: 'start_block', title: texts.blockStart },
                 // { key: 'end_block', title: texts.blockEnd },
-                { collapsing: true, key: '_status', textAlign: 'center', title: wordsCap.status },
+                { collapsing: true, key: '_status', textAlign: 'center', title: textsCap.status },
                 {
                     collapsing: true,
                     content: this.getActionContent,
                     draggable: false,
                     style: { padding: '0px 5px' },
                     textAlign: 'center',
-                    title: wordsCap.action,
+                    title: textsCap.action,
                 }
             ],
             data: new Map(),
@@ -130,12 +114,11 @@ export default class ProjectTimeKeepingList extends Component {
             loading: false,
             perPage: 10,
             rowProps: item => {
-                const { address, approved, draft, rejected } = item
-                // if (isBanned) return { error: true, title: texts.bannedUser }
+                const { approved, draft, rejected } = item
                 return !rejected && draft ? {} : {
                     warning: rejected,
                     positive: approved,
-                    title: approved ? wordsCap.approved : (rejected ? wordsCap.rejected : '')
+                    title: approved ? textsCap.approved : (rejected ? textsCap.rejected : '')
                 }
             },
             searchExtraKeys: ['address', 'hash', 'approved'],
@@ -143,7 +126,7 @@ export default class ProjectTimeKeepingList extends Component {
             topLeftMenu: [
                 {
                     active: false,
-                    content: wordsCap.timer,
+                    content: textsCap.timer,
                     icon: 'clock outline',
                     key: 'timer',
                     onClick: () => showForm(TimekeepingForm, { projectHash: this.props.projectHash })
@@ -151,19 +134,19 @@ export default class ProjectTimeKeepingList extends Component {
             ],
             topRightMenu: [
                 {
-                    content: wordsCap.approve,
+                    content: textsCap.approve,
                     icon: { color: 'green', name: 'check' },
                     key: 'actionApprove',
                     onClick: selectedKeys => selectedKeys.forEach(hash => this.handleApprove(hash, true)),
                 },
                 {
-                    content: wordsCap.reject,
+                    content: textsCap.reject,
                     icon: { color: 'red', name: 'x' },
                     key: 'actionReject',
                     onClick: selectedKeys => selectedKeys.forEach(hash => this.handleApprove(hash, false)),
                 },
                 {
-                    content: texts.banUser,
+                    content: textsCap.banUser,
                     icon: { color: 'red', name: 'ban' },
                     key: 'actionBan',
                     onClick: toBeImplemented //this.handleBan
@@ -171,8 +154,8 @@ export default class ProjectTimeKeepingList extends Component {
                 {
                     key: 'actionArchive',
                     onClick: selectedHashes => confirm({
-                        content: `${wordsCap.selected}: ${selectedHashes.length}`,
-                        header: `${this.props.archive ? texts.unarchiveRecord : texts.archiveRecord}?`,
+                        content: `${textsCap.selected}: ${selectedHashes.length}`,
+                        header: `${this.props.archive ? textsCap.unarchiveRecord : textsCap.archiveRecord}?`,
                         onConfirm: () => selectedHashes.forEach(h => this.handleArchive(h, !this.props.archive)),
                         size: 'mini',
                     }),
@@ -258,7 +241,7 @@ export default class ProjectTimeKeepingList extends Component {
         const detailsBtn = {
             icon: 'eye',
             onClick: () => this.showDetails(hash, record),
-            title: texts.recordDetails,
+            title: textsCap.recordDetails,
         }
         const buttons = !archive ? [
             detailsBtn,
@@ -291,7 +274,7 @@ export default class ProjectTimeKeepingList extends Component {
                 icon: 'check',
                 onClick: () => this.handleApprove(hash, true),
                 positive: true,
-                title: wordsCap.approve,
+                title: textsCap.approve,
             },
             {
                 // set as draft button
@@ -299,11 +282,11 @@ export default class ProjectTimeKeepingList extends Component {
                 hidden: !manage || !approved,
                 icon: 'reply',
                 onClick: () => confirm({
-                    content: <h3>{texts.setAsDraftDetailed}?</h3>,
+                    content: <h3>{textsCap.setAsDraftDetailed}?</h3>,
                     onConfirm: () => this.handleSetAsDraft(hash),
                     size: 'tiny',
                 }),
-                title: texts.setAsDraft,
+                title: textsCap.setAsDraft,
             },
             {
                 // dispute button
@@ -311,7 +294,7 @@ export default class ProjectTimeKeepingList extends Component {
                 hidden: !manage,
                 icon: 'bug',
                 onClick: toBeImplemented,
-                title: wordsCap.dispute,
+                title: textsCap.dispute,
             },
             {
                 // reject button
@@ -319,12 +302,12 @@ export default class ProjectTimeKeepingList extends Component {
                 hidden: !manage,
                 icon: 'close',
                 onClick: () => confirm({
-                    confirmButton: <Button negative content={wordsCap.reject} />,
+                    confirmButton: <Button negative content={textsCap.reject} />,
                     onConfirm: () => this.handleApprove(hash, false),
                     size: 'tiny'
                 }),
                 negative: true,
-                title: wordsCap.reject,
+                title: textsCap.reject,
             },
         ] : [
                 detailsBtn,
@@ -332,7 +315,7 @@ export default class ProjectTimeKeepingList extends Component {
                     disabled: inProgress,
                     icon: 'reply all',
                     onClick: () => this.handleArchive(hash, false),
-                    title: wordsCap.unarchive
+                    title: textsCap.unarchive
                 }
             ]
 
@@ -383,8 +366,8 @@ export default class ProjectTimeKeepingList extends Component {
         record.approved = submit_status === statuses.accept
         record.rejected = submit_status === statuses.reject
         record.draft = submit_status === statuses.draft
-        record.workerName = partners.getAddressName(workerAddress)
-        record.projectName = projectName || wordsCap.unknown
+        record.workerName = getAddressName(workerAddress)
+        record.projectName = projectName || textsCap.unknown
         // banned = ....
         // if worker is not in the partner or identity lists, show button to add as partner
         record._workerName = record.workerName || (
@@ -398,7 +381,7 @@ export default class ProjectTimeKeepingList extends Component {
                 })}
             />
         )
-        record._status = locked ? words.locked : statusTexts[submit_status]
+        record._status = locked ? textsCap.locked : statusTexts[submit_status]
     }) | this.setState({ data: records })
 
     handleApprove = (hash, approve = false) => {
@@ -408,8 +391,8 @@ export default class ProjectTimeKeepingList extends Component {
         if (!workerAddress || submit_status !== statuses.submit || targetStatus === submit_status) return
         rxInProgressIds.next(inProgressHashes.concat(hash))
         const task = queueables.record.approve(projectOwnerAddress, workerAddress, projectHash, hash, approve, null, {
-            title: `${wordsCap.timekeeping} - ${approve ? texts.approveRecord : texts.rejectRecord}`,
-            description: `${texts.recordId}: ${hash}`,
+            title: `${textsCap.timekeeping} - ${approve ? textsCap.approveRecord : textsCap.rejectRecord}`,
+            description: `${textsCap.recordId}: ${hash}`,
             then: success => {
                 rxInProgressIds.next(inProgressHashes.filter(h => h !== hash))
                 success && this.updateTrigger()
@@ -428,8 +411,8 @@ export default class ProjectTimeKeepingList extends Component {
         this.setState({ inProgressHashes })
 
         addToQueue(bcQueueables.archiveRecord(address, hashTypes.timeRecordHash, hash, archive, {
-            title: texts.archiveRecord,
-            description: `${wordsCap.hash}: ${hash}`,
+            title: textsCap.archiveRecord,
+            description: `${textsCap.hash}: ${hash}`,
             then: () => {
                 inProgressHashes.shift(hash)
                 this.setState({ inProgressHashes })
@@ -475,8 +458,8 @@ export default class ProjectTimeKeepingList extends Component {
             end_block,
             nr_of_breaks,
             {
-                title: `${wordsCap.timekeeping} - ${texts.setAsDraft}`,
-                description: `${texts.recordId}: ${hash}`,
+                title: `${textsCap.timekeeping} - ${textsCap.setAsDraft}`,
+                description: `${textsCap.recordId}: ${hash}`,
                 then: success => {
                     inProgressHashes.shift(hash)
                     this.setState({ inProgressHashes })
@@ -509,18 +492,18 @@ export default class ProjectTimeKeepingList extends Component {
             _status,
         } = record
         const inputs = [
-            manage && [texts.projectName, projectName || projectHash],
-            [texts.recordId, textEllipsis(hash, 30)],
-            [wordsCap.worker, workerName || workerAddress],
-            [wordsCap.status, _status],
-            [wordsCap.duration, duration],
-            [texts.numberOfBreaks, nr_of_breaks, 'number'],
-            [texts.finishedAt, _end_block],
-            [texts.blockCount, total_blocks],
-            [texts.blockStart, start_block],
-            [texts.blockEnd, end_block],
+            manage && [textsCap.projectName, projectName || projectHash],
+            [textsCap.recordId, textEllipsis(hash, 30)],
+            [textsCap.worker, workerName || workerAddress],
+            [textsCap.status, _status],
+            [textsCap.duration, duration],
+            [textsCap.numberOfBreaks, nr_of_breaks, 'number'],
+            [textsCap.finishedAt, _end_block],
+            [textsCap.blockCount, total_blocks],
+            [textsCap.blockStart, start_block],
+            [textsCap.blockEnd, end_block],
         ].filter(Boolean).map(([label, value, type]) => ({
-            action: label !== texts.recordId ? undefined : { icon: 'copy', onClick: () => copyToClipboard(hash) },
+            action: label !== textsCap.recordId ? undefined : { icon: 'copy', onClick: () => copyToClipboard(hash) },
             label,
             name: label,
             readOnly: true,
@@ -551,14 +534,14 @@ export default class ProjectTimeKeepingList extends Component {
                             projectName,
                             onSubmit: ok => ok && this.updateTrigger()
                         }),
-                    title: wordsCap.edit,
+                    title: textsCap.edit,
                 }} />
             ),
         })
 
         const excludeActionTitles = [
-            texts.recordDetails,
-            wordsCap.edit,
+            textsCap.recordDetails,
+            textsCap.edit,
         ]
         const actions = this.getActionContent(record, hash)
             .filter(button => !excludeActionTitles.includes(button.props.title))
@@ -579,8 +562,8 @@ export default class ProjectTimeKeepingList extends Component {
         })
 
         showForm(FormBuilder, {
-            closeText: wordsCap.close,
-            header: texts.recordDetails,
+            closeText: textsCap.close,
+            header: textsCap.recordDetails,
             inputs,
             size: 'tiny',
             submitText: null,
@@ -600,17 +583,17 @@ export default class ProjectTimeKeepingList extends Component {
                 item.hidden = !manage || archive
                 return
             }
-            item.content = archive ? wordsCap.unarchive : wordsCap.archive
+            item.content = archive ? textsCap.unarchive : textsCap.archive
             item.icon = archive ? 'reply all' : 'file archive'
         })
         this.state.emptyMessage = {
-            content: archive ? texts.emptyMessageArchive : (
+            content: archive ? textsCap.emptyMessageArchive : (
                 <p>
-                    {manage ? texts.noTimeRecords : texts.emptyMessage + ' '}
+                    {manage ? textsCap.noTimeRecords : textsCap.emptyMessage + ' '}
                     {manage && (
                         <Button
                             positive
-                            content={texts.orInviteATeamMember}
+                            content={textsCap.orInviteATeamMember}
                             onClick={() => showForm(TimekeeepingInviteForm)}
                         />
                     )}

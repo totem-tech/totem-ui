@@ -1,16 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { Subject } from 'rxjs'
+import { format } from '../../utils/time'
 import { isFn, arrUnique, objCopy, isMap, isArr } from '../../utils/utils'
-import PromisE from '../../utils/PromisE'
 // services
 import { translated } from '../../services/language'
-import { getAddressName } from '../../services/partner'
-import {
-    approvalStatuses,
-    approvalStatusNames,
-    query, rwCache, statuses, statusNames
-} from './task'
-import { format } from '../../utils/time'
+import { getAddressName } from '../partner/partner'
+import { approvalStatuses, approvalStatusNames, query, rwCache, statuses, statusNames } from './task'
 
 const textsCap = translated({
     errorHeader: 'failed to load tasks',

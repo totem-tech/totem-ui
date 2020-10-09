@@ -1,6 +1,6 @@
 import React from 'react'
 import { ButtonAcceptOrReject } from '../../components/buttons'
-import { find as findIdentity } from '../../services/identity'
+import { find as findIdentity } from '../../modules/identity/identity'
 import { translated } from '../../services/language'
 import { confirm } from '../../services/modal'
 import { statuses } from '../../services/queue'

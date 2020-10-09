@@ -1,17 +1,14 @@
 import React from 'react'
 import { Button, Label } from 'semantic-ui-react'
-import { format } from '../utils/time'
-// components
-import Balance from '../components/Balance'
-import DataTable from '../components/DataTable'
-// forms
-import IdentityShareForm from '../forms/IdentityShare'
-import IdentityForm from '../forms/Identity'
-import IdentityDetailsForm from '../forms/IdentityDetails'
-// services
-import { useIdentities } from '../services/identity'
-import { translated } from '../services/language'
-import { showForm } from '../services/modal'
+import { format } from '../../utils/time'
+import Balance from '../../components/Balance'
+import DataTable from '../../components/DataTable'
+import { translated } from '../../services/language'
+import { showForm } from '../../services/modal'
+import IdentityShareForm from './IdentityShareForm'
+import IdentityForm from './IdentityForm'
+import IdentityDetailsForm from './IdentityDetailsForm'
+import { useIdentities } from './identity'
 
 const textsCap = translated({
     actions: 'actions',
@@ -29,6 +26,7 @@ const textsCap = translated({
     txAllocations: 'transaction balance',
     updateIdentity: 'update your identity',
 }, true)[1]
+
 
 export default function IdentityList(props) {
     const [identities] = useIdentities()
@@ -77,7 +75,7 @@ export default function IdentityList(props) {
             { collapsing: true, key: '_usageType', title: textsCap.usage },
             {
                 collapsing: true,
-                content: identity => ([
+                content: ({ address, name }) => ([
                     {
                         icon: 'share',
                         onClick: () => showForm(IdentityShareForm, {
@@ -85,22 +83,14 @@ export default function IdentityList(props) {
                             includeOwnIdentities: true,
                             includePartners: false,
                             size: 'tiny',
-                            values: {
-                                address: identity.address,
-                                name: identity.name,
-                            },
+                            values: { address: address, name: name },
                         }),
                         title: textsCap.shareIdentityDetails,
                     },
                     {
-                        icon: 'eye',
-                        onClick: () => showForm(IdentityDetailsForm, { values: identity }),
-                        title: textsCap.showDetails,
-                    },
-                    {
                         icon: 'pencil',
-                        onClick: () => showForm(IdentityForm, { values: identity }),
-                        title: textsCap.updateIdentity,
+                        onClick: () => showForm(IdentityDetailsForm, { values: { address } }),
+                        title: textsCap.showDetails,
                     },
                 ].map(props => <Button {...props} key={props.title} />)),
                 draggable: false,
