@@ -3,7 +3,6 @@ import { Checkbox, Button, Label } from 'semantic-ui-react'
 import { textEllipsis } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
 import { UserID } from '../../components/buttons'
-import CompanyForm from '../../forms/Company'
 // services
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
@@ -15,6 +14,7 @@ import { getUser } from '../chat/ChatClient'
 // import IntroduceUserForm from '../chat/IntroduceUserForm'
 import IdentityRequestForm from '../identity/IdentityRequestForm'
 import addressbook, { getAddressName, rxPartners } from './partner'
+import CompanyForm from './CompanyForm'
 import PartnerForm from './PartnerForm'
 
 const textsCap = translated({

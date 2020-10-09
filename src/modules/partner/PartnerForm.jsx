@@ -3,12 +3,12 @@ import PropTypes from 'prop-types'
 import { ss58Decode, addressToStr } from '../../utils/convert'
 import { arrSort, deferred, isFn, isObj, arrUnique } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
-import CompanyForm from '../../forms/Company'
 import { showForm } from '../../services/modal'
 import { translated } from '../../services/language'
 import client from '../chat/ChatClient'
 import identityService from '../identity/identity'
 import addressbook, { getAddressName, getAllTags } from './partner'
+import CompanyForm from './CompanyForm'
 
 const textsCap = translated({
     business: 'business',

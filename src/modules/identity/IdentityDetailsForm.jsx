@@ -1,11 +1,11 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Button, Container, Form } from 'semantic-ui-react'
+import { Button } from 'semantic-ui-react'
 import { copyToClipboard, isFn } from '../../utils/utils'
 import Balance from '../../components/Balance'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
-import { closeModal, confirm, showForm } from '../../services/modal'
+import { confirm } from '../../services/modal'
 import { get, getSelected, remove, set } from './identity'
 import IdentityForm from './IdentityForm'
 
@@ -42,7 +42,7 @@ const textsCap = translated({
 }, true)[1]
 
 // A read only form to display identity details including seed
-export default class IdentityDetails extends IdentityForm {
+export default class IdentityDetailsForm extends Component {
     constructor(props) {
         super(props)
 
@@ -212,12 +212,12 @@ export default class IdentityDetails extends IdentityForm {
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
-IdentityDetails.propTypes = {
+IdentityDetailsForm.propTypes = {
     values: PropTypes.shape({
         address: PropTypes.string.isRequired,
     }).isRequired,
 }
-IdentityDetails.defaultProps = {
+IdentityDetailsForm.defaultProps = {
     closeOnDimmerClick: true,
     closeOnDocumentClick: true,
     closeOnEscape: true,

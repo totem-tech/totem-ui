@@ -57,6 +57,7 @@ export default [
     "./src/modules/notification/NotificationItem.jsx",
     "./src/modules/notification/NotificationView.jsx",
     "./src/modules/notification/notification.js",
+    "./src/modules/partner/CompanyForm.jsx",
     "./src/modules/partner/PartnerForm.jsx",
     "./src/modules/partner/PartnerList.jsx",
     "./src/modules/partner/partner.js",

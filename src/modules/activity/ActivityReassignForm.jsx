@@ -33,7 +33,7 @@ const textsCap = translated({
     queueTitle: 're-assign activity owner',
 }, true)[1]
 
-export default class ReassignProjectForm extends Component {
+export default class ActivityReassignForm extends Component {
     constructor(props) {
         super(props)
 
@@ -205,14 +205,14 @@ export default class ReassignProjectForm extends Component {
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
 
-ReassignProjectForm.propTypes = {
+ActivityReassignForm.propTypes = {
     hash: PropTypes.string.isRequired,
     values: PropTypes.shape({
         name: PropTypes.string.isRequired,
         ownerAddress: PropTypes.string.isRequired,
     }).isRequired
 }
-ReassignProjectForm.defaultProps = {
+ActivityReassignForm.defaultProps = {
     header: textsCap.formHeader,
     size: 'tiny',
 }

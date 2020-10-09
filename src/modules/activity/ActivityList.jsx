@@ -11,9 +11,9 @@ import { rxLayout, MOBILE } from '../../services/window'
 import { getSelected } from '../identity/identity'
 import TimekeepingList from '../timekeeping/TimekeepingList'
 import { getProjects, openStatuses, query, statusCodes, queueables, forceUpdate } from './activity'
-import ProjectForm from './ActivityForm'
-import ReassignProjectForm from './ActivityReassignForm'
-import ProjectTeamList from './ActivityTeamList'
+import ActivityForm from './ActivityForm'
+import ActivityReassignForm from './ActivityReassignForm'
+import ActivityTeamList from './ActivityTeamList'
 
 const toBeImplemented = () => alert('To be implemented')
 const textsCap = translated({
@@ -75,7 +75,7 @@ statusTexts[statusCodes.cancel] = textsCap.canceled
 statusTexts[statusCodes.close] = textsCap.closed
 statusTexts[statusCodes.delete] = textsCap.deleted
 
-export default class ProjectList extends Component {
+export default class ActivityList extends Component {
     constructor(props) {
         super(props)
 
@@ -117,7 +117,7 @@ export default class ProjectList extends Component {
                         {
                             key: 'edit',
                             icon: 'pencil',
-                            onClick: () => showForm(ProjectForm, { hash: recordId, values: project }),
+                            onClick: () => showForm(ActivityForm, { hash: recordId, values: project }),
                             title: textsCap.editProject,
                         },
                         {
@@ -143,7 +143,7 @@ export default class ProjectList extends Component {
                 content: textsCap.create,
                 icon: 'plus',
                 name: 'create',
-                onClick: () => showForm(ProjectForm)
+                onClick: () => showForm(ActivityForm)
             }],
             topRightMenu: [
                 {
@@ -299,7 +299,7 @@ export default class ProjectList extends Component {
         const { data: projects } = this.state
         const recordId = selectedIds[0]
         const project = projects.get(recordId)
-        project && showForm(ReassignProjectForm, { hash: recordId, values: project })
+        project && showForm(ActivityReassignForm, { hash: recordId, values: project })
     }
 
     handleRowSelection = selectedIds => {
@@ -343,7 +343,7 @@ export default class ProjectList extends Component {
     showTeam = (recordId, projectName) => confirm({
         cancelButton: textsCap.close,
         confirmButton: null,
-        content: <ProjectTeamList projectHash={recordId} />,
+        content: <ActivityTeamList projectHash={recordId} />,
         header: `${textsCap.projectTeam} - ${projectName}`,
     })
 

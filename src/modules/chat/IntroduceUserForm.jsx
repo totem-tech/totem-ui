@@ -23,7 +23,7 @@ const [_, textsCap] = translated({
 const TYPE = 'identity'
 const CHILD_TYPE = 'introduce'
 
-export default class IntroduceUser extends Component {
+export default class IntroduceUserForm extends Component {
     constructor(props) {
         super(props)
 
@@ -106,13 +106,13 @@ export default class IntroduceUser extends Component {
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
-IntroduceUser.propTypes = {
+IntroduceUserForm.propTypes = {
     values: PropTypes.shape({
         recipients: PropTypes.array,
         userId: PropTypes.string,
     }),
 }
-IntroduceUser.defaultProps = {
+IntroduceUserForm.defaultProps = {
     header: textsCap.header,
     size: 'tiny',
     subheader: textsCap.subheader,

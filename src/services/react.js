@@ -55,7 +55,10 @@ export const useRxSubject = (subject, valueModifier, initialValue) => {
                 setValue(newValue)
             })
         })
-        return () => subscribed.unsubscribe()
+        return () => {
+            mounted = false
+            subscribed.unsubscribe()
+        }
     }, [])
 
     return [value, () => newValue => subject.next(newValue)]

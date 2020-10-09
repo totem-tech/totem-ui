@@ -36,7 +36,7 @@ const textsCap = translated({
 const validKeys = ['name', 'ownerAddress', 'description']
 
 // Create or update project form
-export default class ProjectForm extends Component {
+export default class ActivityForm extends Component {
     constructor(props) {
         super(props)
 
@@ -177,7 +177,7 @@ export default class ProjectForm extends Component {
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
-ProjectForm.propTypes = {
+ActivityForm.propTypes = {
     // Project hash
     hash: PropTypes.string,
     values: PropTypes.shape({
@@ -186,7 +186,7 @@ ProjectForm.propTypes = {
         ownerAddress: PropTypes.string.isRequired,
     }),
 }
-ProjectForm.defaultProps = {
+ActivityForm.defaultProps = {
     closeText: textsCap.close,
     size: 'tiny',
 }

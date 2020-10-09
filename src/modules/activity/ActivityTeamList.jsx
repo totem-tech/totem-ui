@@ -28,7 +28,7 @@ const textsCap = translated({
     unknownUser: 'unknown user',
 }, true)[1]
 
-export default class ProjectTeamList extends Component {
+export default class ActivityTeamList extends Component {
     constructor(props) {
         super(props)
 
@@ -115,6 +115,6 @@ export default class ProjectTeamList extends Component {
 
     render = () => <DataTable {...this.state} />
 }
-ProjectTeamList.propTypes = {
+ActivityTeamList.propTypes = {
     projectHash: PropTypes.string.isRequired,
 }

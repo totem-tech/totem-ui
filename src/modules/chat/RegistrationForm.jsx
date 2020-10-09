@@ -5,21 +5,21 @@ import { isFn } from '../../utils/utils'
 import { translated } from '../../services/language'
 import { getClient, getUser } from './ChatClient'
 
-const [texts, textsCap] = translated({
-    formHeader: 'Register a Memorable User Name',
-    formSubheader: 'Choose an unique alias for use with Totem chat messaging.',
+const textsCap = translated({
+    formHeader: 'register a memorable user name',
+    formSubheader: 'choose an unique alias for use with Totem chat messaging.',
     register: 'register',
-    registrationComplete: 'Registration complete',
-    registrationFailed: 'Registration failed',
+    registrationComplete: 'registration complete',
+    registrationFailed: 'registration failed',
     userId: 'User ID',
-    userIdCriteria: 'Please enter an User ID that meets the following criteria:',
+    userIdCriteria: 'please enter an User ID that meets the following criteria:',
     userIdCriteria1: 'starts with a letter',
     userIdCriteria2: 'contains minimum 3 characters',
     userIdCriteria3: 'contains only alphanumeric characters',
-    userIdPlaceholder: 'Enter your desired ID',
-}, true)
+    userIdPlaceholder: 'enter your desired ID',
+}, true)[1]
 
-export default class FormRegister extends Component {
+export default class RegistrationForm extends Component {
     constructor(props) {
         super(props)
 
@@ -31,15 +31,15 @@ export default class FormRegister extends Component {
             inputs: [
                 {
                     disabled: !!id,
-                    label: texts.userId,
+                    label: textsCap.userId,
                     message: {
                         content: (
                             <div>
-                                {texts.userIdCriteria}
+                                {textsCap.userIdCriteria}
                                 <ul>
-                                    <li>{texts.userIdCriteria1}</li>
-                                    <li>{texts.userIdCriteria2}</li>
-                                    <li>{texts.userIdCriteria3}</li>
+                                    <li>{textsCap.userIdCriteria1}</li>
+                                    <li>{textsCap.userIdCriteria2}</li>
+                                    <li>{textsCap.userIdCriteria3}</li>
                                 </ul>
                             </div>
                         ),
@@ -49,7 +49,7 @@ export default class FormRegister extends Component {
                     name: 'userId',
                     multiple: false,
                     newUser: true,
-                    placeholder: texts.userIdPlaceholder,
+                    placeholder: textsCap.userIdPlaceholder,
                     type: 'UserIdInput',
                     required: true,
                     value: '',
@@ -66,7 +66,7 @@ export default class FormRegister extends Component {
             const success = !err
             const message = {
                 content: err,
-                header: success ? texts.registrationComplete : texts.registrationFailed,
+                header: success ? textsCap.registrationComplete : textsCap.registrationFailed,
                 icon: true,
                 status: success ? 'success' : 'error'
             }
@@ -77,10 +77,10 @@ export default class FormRegister extends Component {
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
-FormRegister.defaultProps = {
-    header: texts.formHeader,
+RegistrationForm.defaultProps = {
+    header: textsCap.formHeader,
     headerIcon: 'sign-in',
     size: 'tiny',
-    subheader: texts.formSubheader,
+    subheader: textsCap.formSubheader,
     submitText: textsCap.register
 }
