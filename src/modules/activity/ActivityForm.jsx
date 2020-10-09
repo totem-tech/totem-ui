@@ -5,7 +5,7 @@ import Balance from '../../components/Balance'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import { getAll, getSelected } from '../identity/identity'
+import { getAll as getIdentities, getSelected } from '../identity/identity'
 import { getProjects, queueables } from './activity'
 
 const textsCap = translated({
@@ -32,7 +32,7 @@ const textsCap = translated({
     submitSuccessHeader: 'activity saved successfully',
     submitTitleCreate: 'create activity',
     submitTitleUpdate: 'update activity',
-})[1]
+}, true)[1]
 const validKeys = ['name', 'ownerAddress', 'description']
 
 // Create or update project form
@@ -40,9 +40,12 @@ export default class ActivityForm extends Component {
     constructor(props) {
         super(props)
 
+        const { hash, header } = props
         this.state = {
             onSubmit: this.handleSubmit,
             success: false,
+            header: header || (hash ? textsCap.formHeaderUpdate : textsCap.formHeaderCreate),
+            submitText: hash ? textsCap.update : textsCap.create,
             inputs: [
                 {
                     label: textsCap.nameLabel,
@@ -81,13 +84,12 @@ export default class ActivityForm extends Component {
     componentWillMount() {
         this._mounted = true
         this.unsubscribers = {}
-        const { hash, header } = this.props
         const { inputs } = this.state
         const values = this.props.values || {}
         const ownerAddressIn = findInput(inputs, 'ownerAddress')
         values.ownerAddress = values.ownerAddress || getSelected().address
 
-        const options = getAll().map(({ address, name }) => ({
+        const options = getIdentities().map(({ address, name }) => ({
             description: <Balance address={address} className='description' />,
             key: address,
             text: name,
@@ -96,11 +98,7 @@ export default class ActivityForm extends Component {
         ownerAddressIn.options = arrSort(options, 'text')
 
         fillValues(inputs, values)
-        this.setState({
-            inputs,
-            header: header || (hash ? textsCap.formHeaderUpdate : textsCap.formHeaderCreate),
-            submitText: hash ? textsCap.update : textsCap.create,
-        })
+        this.setState({ inputs })
     }
 
     componentWillUnmount = () => this._mounted = false
@@ -175,7 +173,10 @@ export default class ActivityForm extends Component {
         addToQueue(create ? createTask : updateTask)
     }
 
-    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
+    render = () => {
+        return <FormBuilder {...{ ...this.props, ...this.state }} />
+
+    }
 }
 ActivityForm.propTypes = {
     // Project hash

@@ -20,7 +20,6 @@ export default [
     "./src/components/UserIdInput.jsx",
     "./src/components/buttons.jsx",
     "./src/forms/AdminUtils.jsx",
-    "./src/forms/Company.jsx",
     "./src/forms/KeyRegistryPlayGround.jsx",
     "./src/forms/NewsletterSignup.jsx",
     "./src/forms/RestoreBackup.jsx",
