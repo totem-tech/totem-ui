@@ -10,12 +10,14 @@ import { getConnection } from './services/blockchain'
 import client from './modules/chat/ChatClient'
 import { fetchNSaveTexts } from './services/language'
 import storage from './services/storage'
-import { getUrlParam } from './services/window'
+import { getUrlParam, MOBILE, rxLayout } from './services/window'
 
 const isSignUp = getUrlParam('NewsletterSignup').toLowerCase() === 'true'
-const isDebug = getUrlParam('debug').toLowerCase() === 'true'
-window.isInIFrame = isSignUp || true
-if (isDebug) {
+window.isDebug = getUrlParam('debug').toLowerCase() === 'true'
+window.isInIFrame = isSignUp
+if (!window.isInIFrame && window.isDebug && rxLayout.value === MOBILE) {
+    // for debugging purposes only, when on a mobile device
+    // adds interceptors to below console functions and prints all logs into a DOM element above page contents
     const loggers = [
         ['log', console.log],
         ['info', console.info, 'teal'],
