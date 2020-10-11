@@ -119,7 +119,7 @@ UserID.showModal = userId => {
                 values: { userId },
             }),
         },
-        {
+        !name && {
             content: textsCap.identityRequest,
             icon: 'download',
             onClick: () => showForm(IdentityRequestForm, { values: { userIds: [userId] } }),

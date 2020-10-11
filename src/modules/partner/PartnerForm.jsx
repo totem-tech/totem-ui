@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import { BehaviorSubject } from 'rxjs'
 import { ss58Decode, addressToStr } from '../../utils/convert'
 import { arrSort, deferred, isFn, isObj, arrUnique } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
@@ -25,6 +26,7 @@ const textsCap = translated({
     addressValidationMsg2: 'please enter a valid Totem Identity',
     associatedIdentityLabel: 'associated with your identity',
     associatedIdentityPlaceholder: 'select one of your identities',
+    autoSaved: 'changes will be auto saved',
     companyFormOnOpenMsg: `
         You have chosen to make this partner public.
         Please ensure you fill in the correct details.
@@ -46,8 +48,8 @@ const textsCap = translated({
     visibilityLabel: 'decide partner visibility (on the network)',
 }, true)[1]
 
-class PartnerForm extends Component {
-    constructor(props) {
+export default class PartnerForm extends Component {
+    constructor(props = {}) {
         super(props)
 
         this.partner = props.values && addressbook.get(props.values.address)
@@ -86,7 +88,7 @@ class PartnerForm extends Component {
                     clearable: true,
                     // disable when adding new and address is prefilled (possibly from notification)
                     disabled: !this.doUpdate && !!ss58Decode(address),
-                    hidden: this.doUpdate && visibility !== 'public',
+                    hidden: this.doUpdate,
                     label: textsCap.addressLabel,
                     name: 'address',
                     onAddItem: this.handleAddressAddItem,
@@ -142,7 +144,7 @@ class PartnerForm extends Component {
                     value: tags || []
                 },
                 {
-                    disabled: false, // only disable when company address selected
+                    disabled: this.doUpdate && visibility === 'public',
                     inline: true,
                     label: textsCap.visibilityLabel,
                     name: 'visibility',
@@ -151,8 +153,8 @@ class PartnerForm extends Component {
                         { label: textsCap.public, value: 'public' }
                     ],
                     radio: true,
+                    rxValue: new BehaviorSubject(values.visibility || 'private'),
                     type: 'checkbox-group',
-                    value: values.visibility || 'private'
                 },
                 {
                     label: textsCap.userIdLabel,
@@ -163,9 +165,16 @@ class PartnerForm extends Component {
                 },
             ]
         }
+        if (this.doUpdate) {
+            this.state.subheader = <i style={{ color: 'grey' }}>{textsCap.autoSaved}</i>
+        }
+
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
     componentWillMount() {
+        this._mounted = true
         const { inputs, values } = this.state
         // const addressIn = findInput(inputs, 'address')
         const assocIn = findInput(inputs, 'associatedIdentity')
@@ -178,34 +187,39 @@ class PartnerForm extends Component {
             'text'
         )
 
-        fillValues(inputs, values, true)
-        this.setState({ inputs })
-        if (!values.address) return
-        // const optionExists = addressIn.options.find()
-        setTimeout(() => {
+        values.address && setTimeout(() => {
             this.checkVisibility(values.address)
             this.handleAddressSearchChange({}, { searchQuery: values.address })
         })
+
+        fillValues(inputs, values, true)
+        this.setState({ inputs })
     }
 
-    checkVisibility(address) {
+    componentWillUnmount = () => this._mounted = false
+
+    checkVisibility = async (address) => {
         if (!address) return
         const { inputs, values } = this.state
         const addressIn = findInput(inputs, 'address')
+        const visibilityIn = findInput(inputs, 'visibility')
+        const nameIn = findInput(inputs, 'name')
         addressIn.loading = !!address
         this.setState({ inputs })
 
         // check if address is aleady public
-        client.companySearch(address, true, (_, result) => {
-            const exists = result.size > 0
-            addressIn.loading = false
-            findInput(inputs, 'visibility').hidden = exists
-            findInput(inputs, 'name').hidden = exists
+        const result = await client.companySearch.promise(address, true)
+        const exists = result.size > 0
+        const visibility = exists ? 'public' : 'private'
+        addressIn.loading = false
+        addressIn.disabled = exists
+        visibilityIn.disabled = exists
+        visibilityIn.rxValue.next(visibility)
+        nameIn.disabled = exists
 
-            // make sure addressbook is also updated
-            this.doUpdate && exists && addressbook.setPublic(address)
-            this.setState({ inputs, values })
-        })
+        // make sure addressbook is also updated
+        this.doUpdate && addressbook.setPublic(address, visibility)
+        this.setState({ inputs, values })
     }
 
     handleAddressAddItem = (_, { value }) => {
@@ -268,19 +282,10 @@ class PartnerForm extends Component {
 
     handleChange = (_, values) => {
         this.setState({ values })
-        const { address, name, tags, type, userId, visibility, associatedIdentity } = values
-        if (this.doUpdate) addressbook.set(
-            address,
-            name,
-            tags,
-            type,
-            userId,
-            visibility,
-            associatedIdentity,
-        )
+        this.doUpdate && this.handleSubmit()
     }
 
-    handleSubmit = () => {
+    handleSubmit = deferred(() => {
         const { closeOnSubmit, onSubmit } = this.props
         const { inputs, values } = this.state
         const { company } = findInput(inputs, 'address').options.find(x => x.value === values.address) || {}
@@ -295,8 +300,7 @@ class PartnerForm extends Component {
         const addCompany = !visibilityDisabled && visibility === 'public' && !company
 
         addressbook.set(address, name, tags, type, userId, addCompany ? 'private' : visibility, associatedIdentity)
-        this.setState({
-            closeText: textsCap.close,
+        !this.doUpdate && this.setState({
             message: closeOnSubmit ? null : {
                 content: this.doUpdate ? textsCap.submitSuccessMsg2 : textsCap.submitSuccessMsg1,
                 icon: true,
@@ -321,7 +325,7 @@ class PartnerForm extends Component {
                 identity: address,
             }
         })
-    }
+    }, 100)
 
     validateAddress(e, { value: address }) {
         if (!address) return
@@ -345,18 +349,9 @@ class PartnerForm extends Component {
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
 PartnerForm.propTypes = {
-    closeOnSubmit: PropTypes.bool,
-    header: PropTypes.string,
-    modal: PropTypes.bool,
-    onSubmit: PropTypes.func,
-    open: PropTypes.bool,
-    size: PropTypes.string,
-    subheader: PropTypes.string,
     // values to be prefilled into inputs
     values: PropTypes.object,
 }
 PartnerForm.defaultProps = {
-    closeOnSubmit: true,
-    size: 'tiny'
+    size: 'tiny',
 }
-export default PartnerForm

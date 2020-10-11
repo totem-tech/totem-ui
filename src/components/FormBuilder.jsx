@@ -324,7 +324,7 @@ FormBuilder.propTypes = {
     open: PropTypes.bool,
     size: PropTypes.string,
     style: PropTypes.object,
-    subheader: PropTypes.string,
+    subheader: PropTypes.any,
     submitDisabled: PropTypes.oneOfType([
         PropTypes.bool,
         // submit button will be disabled if one or more values is truthy

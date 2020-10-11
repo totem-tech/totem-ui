@@ -84,6 +84,8 @@ export default class CompanyForm extends Component {
             ]
         }
         fillValues(this.state.inputs, props.values)
+        this.originalSetState = this.setState
+        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
     handleIdentityChange = (_, { identity }) => {
@@ -115,8 +117,10 @@ export default class CompanyForm extends Component {
         })
     }
 
-    handleSubmit = (e, values) => client.company(generateHash(values), values, err => {
+    handleSubmit = async (e, values) => {
         const { onSubmit } = this.props
+        const companyId = generateHash(values)
+        const err = await client.company.promise(companyId, values)
         const success = !err
         const message = {
             content: success ? textsCap.submitSuccessMsg : err,
@@ -127,7 +131,7 @@ export default class CompanyForm extends Component {
         this.setState({ success, message })
 
         isFn(onSubmit) && onSubmit(e, values, success)
-    })
+    }
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }

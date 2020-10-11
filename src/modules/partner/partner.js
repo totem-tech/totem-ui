@@ -57,12 +57,13 @@ export const set = (address, name, tags, type, userId, visibility, associatedIde
 }
 
 // Set partner as public
-export const setPublic = address => {
+export const setPublic = (address, visibility = 'public') => {
     const partner = partners.get(address)
-    if (!partner) return
-    partner.isPublic = true
-    partner.visibility = 'public'
-    partners.set(address, { ...partner })
+    partner && partners.set(address, {
+        ...partner,
+        isPublic : visibility === 'public',
+        visibility,
+    })
 }
 
 export default {

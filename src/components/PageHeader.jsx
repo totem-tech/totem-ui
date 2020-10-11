@@ -39,6 +39,7 @@ const textsCap = translated({
 	requestFunds: 'request Funds',
 	updateIdentity: 'update identity',
 }, true)[1]
+let copiedMsgId
 
 export default function PageHeader(props) {
 	const [wallets] = useRxSubject(rxIdentities, map => Array.from(map).map(([_, x]) => x))
@@ -59,7 +60,7 @@ export default function PageHeader(props) {
 			if (!address) return
 			copyToClipboard(address)
 			const msg = { content: textsCap.addressCopied, status: 'success' }
-			this.copiedMsgId = setToast(msg, 2000, this.copiedMsgId)
+			copiedMsgId = setToast(msg, 2000, copiedMsgId)
 		},
 		onEdit: () => showForm(IdentityForm, { values: getSelected() }),
 		onFaucetRequest: () => addToQueue({

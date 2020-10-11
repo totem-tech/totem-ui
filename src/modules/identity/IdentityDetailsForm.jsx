@@ -11,6 +11,7 @@ import IdentityForm from './IdentityForm'
 
 const textsCap = translated({
     availableBalance: 'available balance',
+    autoSaved: 'changes will be auto saved',
     business: 'business',
     close: 'close',
     copyAddress: 'copy address',
@@ -60,14 +61,15 @@ export default class IdentityDetailsForm extends Component {
                 content: textsCap.close,
                 negative: false,
             },
-            // onSubmit: this.handleSubmit,
-            submitText: null, //{ content: textsCap.update, icon: 'pencil' },
-            success: false, // sets true  when identity removed
+            subheader: <i style={{ color: 'grey' }}>{textsCap.autoSaved}</i>,
+            submitText: null, // hide submit button
+            success: false, // sets true  when identity removed and modal will be auto closed
             inputs: [
                 {
                     content: (
                         <IdentityForm {...{
                             El: 'div',
+                            // auto save changes
                             onChange: this.handleChange,
                             submitText: null,
                             values: this.identity,

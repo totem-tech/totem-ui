@@ -87,6 +87,7 @@ export const confirm = (confirmProps, id) => {
         />
     )
 }
+// Invertible Confirm component
 const IConfirm = props => {
     const inverted = useInverted()
     return (
@@ -117,21 +118,19 @@ export const showForm = (FormComponent, props, id) => {
     if (!isFn(FormComponent)) return
     id = id || uuid.v1()
     props = props || {}
-    return add(
-        id,
-        <FormComponent
-            {...{
-                ...props,
-                modal: true,
-                modalId: id,
-                open: true,
-                onClose: (e, d) => {
-                    setTimeout(() => closeModal(id))
-                    isFn(props.onClose) && props.onClose(e, d)
-                },
-            }}
-        />
+    const form = (
+        <FormComponent {...{
+            ...props,
+            modal: true,
+            modalId: id,
+            open: true,
+            onClose: (e, d) => {
+                setTimeout(() => closeModal(id))
+                isFn(props.onClose) && props.onClose(e, d)
+            },
+        }} />
     )
+    return add(id, form)
 }
 
 // open any form within './forms/ in a modal
