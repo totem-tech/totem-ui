@@ -1,11 +1,7 @@
 const React = require('react');
-const { Bond } = require('oo7');
-const { ReactiveComponent, Rimg } = require('oo7-react');
 // const Identicon = require('polkadot-identicon').default;
-const { Label, Input } = require('semantic-ui-react');
 const { InputBond } = require('./InputBond');
-const nacl = require('tweetnacl');
-const { stringToSeed, hexToBytes, bytesToHex, runtime, secretStore, addressBook, ss58Decode, AccountId } = require('oo7-substrate');
+const { runtime, secretStore, addressBook } = require('oo7-substrate');
 import addressbook from '../modules/partner/partner'
 
 class AccountIdBond extends InputBond {
