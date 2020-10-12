@@ -17,6 +17,7 @@ import UtilitiesView from '../views/UtilitiesView'
 // temp
 import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
 import EventList from '../modules/event/EventList'
+import LocationForm from '../modules/identity/LocationForm'
 // utils
 import DataStorage from '../utils/DataStorage'
 import { isBool, isBond } from '../utils/utils'
@@ -308,18 +309,22 @@ export const sidebarItems = [
         title: textsCap.utilitiesTitle,
     },
     {
-        hidden: false,
+        content: FinancialStatementsView,
+        icon: '',
+        name: 'financial-statement',
+        title: textsCap.financialStatementTitle,
+    },
+    {
         content: EventList,
         icon: '',
         name: 'blockchain-events',
         title: textsCap.eventsTtile,
     },
     {
-        content: FinancialStatementsView,
-        icon: '',
-        name: 'financial-statement',
-        title: textsCap.financialStatementTitle,
-    },
+        content: LocationForm,
+        name: 'location',
+        title: 'Location'
+    }
 ].map(item => {
     const {
         active = false,
