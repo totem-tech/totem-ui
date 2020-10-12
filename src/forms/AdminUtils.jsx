@@ -12,7 +12,7 @@ export default class AdminUtils extends Component {
 	constructor() {
 		super()
 
-		this.countries = Array.from(storage.countries.getAll())
+		// this.countries = Array.from(storage.countries.getAll())
 
 		this.state = {
 			fileType: '',
