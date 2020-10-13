@@ -6,6 +6,7 @@ import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder
 import { translated } from '../../services/language'
 import { getAllTags } from '../partner/partner'
 import { addFromUri, find, generateUri, get, set } from './identity'
+import { getAll as getLocations } from './location'
 
 const textsCap = translated({
     address: 'address',
@@ -20,6 +21,8 @@ const textsCap = translated({
     tags: 'tags',
     update: 'update',
     identityNamePlaceholder: 'a name for the identity',
+    locationLabel: 'contact address',
+    locationPlaceholder: 'select a contact address for this identity',
     restoreInputLabel: 'restore my existing identity',
     seedExists: 'seed already exists in the identity list with name:',
     seedPlaceholder: 'enter existing seed or generate one',
@@ -112,6 +115,30 @@ export default class IdentityForm extends Component {
                     type: 'dropdown',
                     search: true,
                     selection: true,
+                },
+                {
+                    clearable: true,
+                    label: textsCap.locationLabel,
+                    name: 'locationId',
+                    options: Array.from(getLocations()).map(([id, location]) => ({
+                        description: [
+                            location.state,
+                            location.countryCode,
+                        ].filter(Boolean).join(', '),
+                        key: id,
+                        text: location.name,
+                        title: [
+                            location.addressLine1,
+                            location.addressLine2,
+                            location.city,
+                            location.postcode,
+                        ].filter(Boolean).join(' '),
+                        value: id,
+                    })),
+                    placeholder: textsCap.locationPlaceholder,
+                    search: ['text'],
+                    selection: true,
+                    type: 'dropdown',
                 },
             ],
         }

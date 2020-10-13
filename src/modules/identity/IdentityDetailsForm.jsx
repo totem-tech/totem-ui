@@ -158,7 +158,7 @@ export default class IdentityDetailsForm extends Component {
                     name: 'delete',
                     negative: true,
                     onClick: this.handleDelete,
-                    style: { marginTop: 15 },
+                    style: { marginTop: 15, textTransform: 'capitalize' },
                     type: 'button'
                 }
             ],

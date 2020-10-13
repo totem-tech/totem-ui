@@ -2,17 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Accordion, Button, Dropdown, Form, Input, TextArea } from 'semantic-ui-react'
 import PromisE from '../utils/PromisE'
-import {
-	deferred,
-	hasValue,
-	isArr,
-	isFn,
-	isObj,
-	isStr,
-	objWithoutKeys,
-	searchRanked,
-	isBool,
-} from '../utils/utils'
+import { deferred, hasValue, isArr, isFn, isObj, isStr, objWithoutKeys, searchRanked, isBool } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
 import Message from './Message'
 // Custom Inputs
@@ -61,14 +51,14 @@ const NON_ATTRIBUTES = Object.freeze([
 export const nonValueTypes = Object.freeze(['button', 'html'])
 
 export class FormInput extends Component {
-	constructor(props) {
+	constructor(props = {}) {
 		super(props)
 
 		const { defer } = props
-		this.state = { message: undefined }
-		if (defer !== null) {
-			this.setMessage = deferred(this.setMessage, defer)
+		this.state = {
+			message: undefined,
 		}
+		this.setMessage = defer !== null ? deferred(this.setMessage, defer) : this.setMessage
 
 		this.originalSetState = this.setState
 		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
@@ -79,9 +69,9 @@ export class FormInput extends Component {
 		this.subscriptions = {}
 		const { rxValue } = this.props
 		if (!isObj(rxValue) || !isFn(rxValue.subscribe)) return
-		this.subscriptions.rxValue = rxValue.subscribe(value =>
+		this.subscriptions.rxValue = rxValue.subscribe(value => {
 			this._mounted && this.handleChange({}, { ...this.props, value })
-		)
+		})
 	}
 
 	componentWillUnmount = () => {
@@ -99,7 +89,6 @@ export class FormInput extends Component {
 			type,
 			validate,
 		} = this.props
-
 		// for custom input types (eg: UserIdInput)
 		if (data.invalid) return isFn(onChange) && onChange(event, data, this.props)
 
@@ -137,7 +126,7 @@ export class FormInput extends Component {
 			}
 		}
 
-		if (!errMsg && hasVal && validationTypes.includes(typeLower) || validatorConfig) {
+		if ((!errMsg && hasVal && validationTypes.includes(typeLower)) || validatorConfig) {
 			errMsg = validator.validate(data.value, { ...this.props, ...validatorConfig }, customMsgs)
 		}
 
@@ -149,18 +138,14 @@ export class FormInput extends Component {
 		}
 		if (message || !isFn(validate)) return triggerChange()
 
-		// !isFn(validate) && isFn(onChange) && onChange(event, data, this.props)
-
 		const handleValidate = vMsg => {
 			if (vMsg === true) {
 				// means field is invalid but no message to display
 				errMsg = true
 				return triggerChange()
 			}
-			message = !vMsg && !isStr(vMsg) && !React.isValidElement(vMsg) ? vMsg : {
-				content: vMsg,
-				status: 'error',
-			}
+			const isMsg = !vMsg && !isStr(vMsg) && !React.isValidElement(vMsg)
+			message = isMsg ? vMsg : { content: vMsg, status: 'error' }
 			errMsg = message && message.status === 'error' ? message.content : errMsg
 			triggerChange()
 		}
@@ -191,15 +176,15 @@ export class FormInput extends Component {
 			useInput: useInputOrginal,
 			width,
 		} = this.props
-		if (hidden) return ''
 		let useInput = useInputOrginal
 		const { message: internalMsg } = this.state
 		const message = internalMsg || externalMsg
 		let hideLabel = false
 		let inputEl = ''
+		if (hidden) return ''
 		// Remove attributes that are used by the form or Form.Field but
 		// shouldn't be used or may cause error when using with inputEl
-		let attrs = objWithoutKeys(this.props, NON_ATTRIBUTES)
+		let attrs = objWithoutKeys({ ...this.props, key: name }, NON_ATTRIBUTES)
 		attrs.ref = elementRef
 		attrs.onChange = this.handleChange
 		let isGroup = false
@@ -207,6 +192,7 @@ export class FormInput extends Component {
 
 		switch (typeLC) {
 			case 'button':
+				console.log({attrs})
 				inputEl = <Button {...attrs} />
 				break
 			case 'checkbox':
@@ -225,12 +211,12 @@ export class FormInput extends Component {
 				inputEl = <CheckboxGroup {...attrs} />
 				break
 			case 'dropdown':
-				if (isArr(attrs.search)) {
-					attrs.search = searchRanked(attrs.search)
-				}
+				attrs.inline = inline
+				// if number of options is higher than 50 and if lazyLoad is disabled, can slowdown FormBuilder
+				attrs.lazyLoad = isBool(attrs.lazyLoad) ? attrs.lazyLoad : true
+				attrs.search = isArr(attrs.search) ? searchRanked(attrs.search) : attrs.search
 				attrs.style = { maxWidth: '100%', minWidth: '100%', ...attrs.style }
 				inputEl = <Dropdown {...attrs} />
-
 				break
 			case 'group':
 				// NB: if `widths` property is used `unstackable` property is ignored by Semantic UI!!!
@@ -249,7 +235,6 @@ export class FormInput extends Component {
 				inputEl = <UserIdInput {...attrs} />
 				break
 			case 'file':
-				delete attrs.value
 				useInput = true
 			default:
 				attrs.value = !hasValue(attrs.value) ? '' : attrs.value //forces inputs to be controlled
@@ -259,34 +244,33 @@ export class FormInput extends Component {
 				inputEl = <El {...attrs} />
 		}
 
-		if (!isGroup) return (
-			<Form.Field
-				error={(message && message.status === 'error') || !!error || !!invalid}
-				required={required}
-				style={styleContainer}
-				width={width}
-			>
-				{!hideLabel && label && (
-					<label htmlFor={name}>
-						{label}
-					</label>
-				)}
-				{inputEl}
-				{message && <Message {...message} />}
-			</Form.Field>
-		)
+		if (!isGroup)
+			return (
+				<Form.Field
+					error={(message && message.status === 'error') || !!error || !!invalid}
+					required={required}
+					style={styleContainer}
+					width={width}
+				>
+					{!hideLabel && label && <label htmlFor={name}>{label}</label>}
+					{inputEl}
+					{message && <Message {...message} />}
+				</Form.Field>
+			)
 
 		let groupEl = (
 			<React.Fragment>
-				<Form.Group {...{
-					className: 'form-group',
-					...objWithoutKeys(attrs, ['inputs']),
-					style: {
-						margin: '0px -5px 15px -5px',
-						...styleContainer,
-						...attrs.style,
-					},
-				}}>
+				<Form.Group
+					{...{
+						className: 'form-group',
+						...objWithoutKeys(attrs, ['inputs']),
+						style: {
+							margin: '0px -5px 15px -5px',
+							...styleContainer,
+							...attrs.style,
+						},
+					}}
+				>
 					{inputEl}
 				</Form.Group>
 				{message && <Message {...message} />}
@@ -348,10 +332,7 @@ FormInput.propTypes = {
 	useInput: PropTypes.bool,
 	message: PropTypes.object,
 	name: PropTypes.string.isRequired,
-	label: PropTypes.oneOfType([
-		PropTypes.string,
-		PropTypes.element,
-	]),
+	label: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
 	onChange: PropTypes.func,
 	placeholder: PropTypes.string,
 	readOnly: PropTypes.bool,
@@ -364,7 +345,7 @@ FormInput.propTypes = {
 	slider: PropTypes.bool, // For checkbox/radio
 	toggle: PropTypes.bool, // For checkbox/radio
 	value: PropTypes.any,
-	onValidate: PropTypes.func,//????
+	onValidate: PropTypes.func, //????
 	width: PropTypes.number,
 }
 FormInput.defaultProps = {
@@ -373,6 +354,5 @@ FormInput.defaultProps = {
 	type: 'text',
 	width: 16,
 }
-
 
 export default React.memo(FormInput)

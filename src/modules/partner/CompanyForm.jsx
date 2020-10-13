@@ -8,6 +8,7 @@ import { translated } from '../../services/language'
 import storage from '../../services/storage'
 import client from '../chat/ChatClient'
 import { setPublic } from './partner'
+import { FormInput } from '../../components/FormInput'
 
 const textsCap = translated({
     companyExistsMsg: 'An entity already exists with the following name. You cannot resubmit.',
@@ -35,6 +36,7 @@ export default class CompanyForm extends Component {
             message: props.message || {},
             success: false,
             onSubmit: this.handleSubmit,
+            submitDisabled: {},
             inputs: [
                 {
                     label: textsCap.identity,
@@ -88,13 +90,17 @@ export default class CompanyForm extends Component {
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
+    componentWillMount = ()=> this._mounted = true
+    componentWillUnmount = ()=> this._mounted = true
+
     handleIdentityChange = (_, { identity }) => {
         // check if a company already exists with address
-        const { inputs } = this.state
+        const { inputs, submitDisabled } = this.state
         const input = findInput(inputs, 'identity')
         input.loading = true
         input.message = null
-        this.setState({ inputs, submitDisabled: true })
+        submitDisabled.identity = true
+        this.setState({ inputs, submitDisabled })
 
         client.companySearch(identity, true, (_, result) => {
             const exists = result.size > 0
@@ -110,7 +116,8 @@ export default class CompanyForm extends Component {
                 icon: true,
                 status: 'error',
             }
-            this.setState({ inputs, submitDisabled: false })
+            submitDisabled.identity = false
+            this.setState({ inputs, submitDisabled })
             // if a company already exists associated with this address
             // update partner accordingly
             exists && setPublic(identity)

@@ -36,9 +36,8 @@ export const unsubscribe = (subscriptions = {}) => Object.values(subscriptions).
  */
 export const useRxSubject = (subject, valueModifier, initialValue) => {
     if (!isObj(subject) || !isFn(subject.subscribe)) return subject
-    let firstValue = isAsyncFn(valueModifier) ? initialValue : (
-        !isFn(valueModifier) ? subject.value : valueModifier(subject.value)
-    )
+    const v = subject instanceof BehaviorSubject ? subject.value : initialValue
+    let firstValue = !isFn(valueModifier) ? v : valueModifier(v)
     const [value, setValue] = useState(firstValue)
 
     useEffect(() => {

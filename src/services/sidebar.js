@@ -17,7 +17,7 @@ import UtilitiesView from '../views/UtilitiesView'
 // temp
 import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
 import EventList from '../modules/event/EventList'
-import LocationForm from '../modules/identity/LocationForm'
+import LocationForm from '../modules/identity/LocationsList'
 // utils
 import DataStorage from '../utils/DataStorage'
 import { isBool, isBond } from '../utils/utils'
@@ -407,7 +407,7 @@ rxLayout.subscribe(() => {
 rxSidebarState.subscribe(() => {
     const { collapsed, visible } = rxSidebarState.value
 
-    rw({ status })
+    rw({ status: rxSidebarState.value })
     setClass('body', {
         desktop: rxLayout.value === DESKTOP,
         mobile: rxLayout.value === MOBILE,

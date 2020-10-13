@@ -4,17 +4,19 @@ import { format } from '../../utils/time'
 import Balance from '../../components/Balance'
 import DataTable from '../../components/DataTable'
 import { translated } from '../../services/language'
-import { showForm } from '../../services/modal'
+import { confirm, showForm } from '../../services/modal'
 import IdentityShareForm from './IdentityShareForm'
 import IdentityForm from './IdentityForm'
 import IdentityDetailsForm from './IdentityDetailsForm'
 import { rxIdentities } from './identity'
 import { useRxSubject } from '../../services/react'
+import { showModal as showLocationsModal } from './LocationsList'
 
 const textsCap = translated({
     actions: 'actions',
     business: 'business',
     create: 'create',
+    locations: 'locations',
     name: 'name',
     never: 'never',
     personal: 'personal',
@@ -77,6 +79,9 @@ export default function IdentityList(props) {
             { collapsing: true, key: '_usageType', title: textsCap.usage },
             {
                 collapsing: true,
+                draggable: false,
+                textAlign: 'center',
+                title: textsCap.actions,
                 content: ({ address, name }) => ([
                     {
                         icon: 'share',
@@ -95,18 +100,23 @@ export default function IdentityList(props) {
                         title: textsCap.showDetails,
                     },
                 ].map(props => <Button {...props} key={props.title} />)),
-                draggable: false,
-                title: textsCap.actions
             }
         ],
         data: identities,
         emptyMessage: { content: textsCap.emptyMessage },
         searchExtraKeys: ['address', '_tagsStr'],
-        topLeftMenu: [{
-            content: textsCap.create,
-            icon: 'plus',
-            onClick: () => showForm(IdentityForm)
-        }]
+        topLeftMenu: [
+            {
+                content: textsCap.create,
+                icon: 'plus',
+                onClick: () => showForm(IdentityForm)
+            },
+            {
+                content: textsCap.locations,
+                icon: 'building',
+                onClick: showLocationsModal,
+            },
+        ]
     }
 
     return <DataTable {...{ ...props, ...tableProps }} />
