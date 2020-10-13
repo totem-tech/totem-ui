@@ -22,7 +22,7 @@ const textsCap = translated({
     statePlaceholder: 'enter your state or province',
 }, true)[1]
 
-export const names = {
+export const inputNames = {
     city: 'city',
     country: 'country',
     postcode: 'postcode',
@@ -42,7 +42,7 @@ export default class LocationForm extends Component {
                     label: textsCap.addressLine1Label,
                     minLength: 3,
                     maxLength: 64,
-                    name: names.addressLine1,
+                    name: inputNames.addressLine1,
                     placeholder: textsCap.addressLine1Placeholder,
                     required: true,
                     type: 'text',
@@ -50,7 +50,7 @@ export default class LocationForm extends Component {
                 {
                     label: textsCap.addressLine2Label,
                     maxLength: 64,
-                    name: names.addressLine2,
+                    name: inputNames.addressLine2,
                     placeholder: textsCap.addressLine2Placeholder,
                     required: false,
                     type: 'text',
@@ -59,7 +59,7 @@ export default class LocationForm extends Component {
                     label: textsCap.cityLabel,
                     minLength: 3,
                     maxLength: 64,
-                    name: names.city,
+                    name: inputNames.city,
                     placeholder: textsCap.cityPlaceholder,
                     required: true,
                     type: 'text',
@@ -68,23 +68,23 @@ export default class LocationForm extends Component {
                     label: textsCap.postcodeLabel,
                     minLength: 3,
                     maxLength: 64,
-                    name: names.postcode,
+                    name: inputNames.postcode,
                     placeholder: textsCap.postcodePlaceholder,
                     required: true,
                     type: 'text',
                 },
                 {
                     label: textsCap.stateLabel,
-                    minLength: 3,
+                    minLength: 2,
                     maxLength: 64,
-                    name: names.state,
+                    name: inputNames.state,
                     placeholder: textsCap.statePlaceholder,
                     required: true,
                     type: 'text',
                 },
                 {
                     label: textsCap.countryLabel,
-                    name: names.country,
+                    name: inputNames.country,
                     options: arrSort(
                         storage.countries
                             .toArray()

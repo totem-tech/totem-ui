@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { isValidNumber, isFn, isDefined } from '../utils/utils'
-import { convertTo, currencyDefault, useSelected, getCurrencies } from '../services/currency'
+import { convertTo, currencyDefault, rxSelected } from '../services/currency'
+import { useRxSubject } from '../services/react'
 
 export const Currency = props => {
     let {
@@ -19,7 +20,7 @@ export const Currency = props => {
         unitDisplayed,
         value,
     } = props
-    const [selected] = !unit && !unitDisplayed ? [] : useSelected()
+    const [selected] = !unit && !unitDisplayed ? [] : useRxSubject(rxSelected)
     unit = unit || selected
     unitDisplayed = unitDisplayed || selected
     const isSame = unit === unitDisplayed

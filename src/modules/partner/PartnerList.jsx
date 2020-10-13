@@ -107,13 +107,12 @@ export default class PartnerList extends Component {
         this.subscriptions.layout = rxLayout.subscribe(layout => this.setState({ isMobile: layout === MOBILE }))
         this.subscriptions.partners = rxPartners.subscribe(map => {
             const { listProps } = this.state
-            listProps.data = map
-
-            Array.from(listProps.data).forEach(([_, p]) => {
-                const { associatedIdentity, address, name, tags, type, userId } = p
-                p._address = textEllipsis(address, 15, 3)
-                p._associatedIdentity = associatedIdentity && getAddressName(associatedIdentity)
-                p._name = (
+            const partners = Array.from(map).map(([_, partnerOrg]) => {
+                const partner = { ...partnerOrg }
+                const { associatedIdentity, address, name, tags, type, userId } = partner
+                partner._address = textEllipsis(address, 15, 3)
+                partner._associatedIdentity = associatedIdentity && getAddressName(associatedIdentity)
+                partner._name = (
                     <span>
                         <Button {...{
                             disabled: !userId || userId === ownId,
@@ -126,14 +125,15 @@ export default class PartnerList extends Component {
                         {textEllipsis(name, 25, 3, false)}
                     </span>
                 )
-                p._name = (
+                partner._name = (
                     <div style={{ margin: !userId ? 0 : '-10px 0' }}>
                         {textEllipsis(name, 25, 3, false)}
                         <UserID El='div' style={{ color: 'grey', fontSize: '80%' }} userId={userId} />
                     </div>
                 )
-                p._tags = (tags || []).map(tag => (
+                partner._tags = (tags || []).map(tag => (
                     <Label
+                        content={tag}
                         key={tag}
                         draggable='true'
                         onDragStart={e => e.stopPropagation() | e.dataTransfer.setData("Text", e.target.textContent)}
@@ -143,14 +143,15 @@ export default class PartnerList extends Component {
                             float: 'left',
                             margin: 1,
                         }}
-                    >
-                        {tag}
-                    </Label>
+                    />
                 ))
                 // makes tags searchable
-                p._tagsStr = tags.join(' ')
-                p._type = type === 'personal' ? textsCap.personal : textsCap.business
+                partner._tagsStr = tags.join(' ')
+                partner._type = type === 'personal' ? textsCap.personal : textsCap.business
+                return partner
             })
+
+            listProps.data = partners
             this.setState({ listProps })
         })
     }

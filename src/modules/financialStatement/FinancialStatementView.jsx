@@ -3,11 +3,12 @@ import Currency from '../../components/Currency'
 import Message from '../../components/Message'
 import DrillDownList from '../../components/DrillDownList'
 import { isArr } from '../../utils/utils'
-import { useSelected } from '../identity/identity'
+import { rxSelected } from '../identity/identity'
 import useLedgerAcBalances from './useLedgerAcBalances'
+import { useRxSubject } from '../../services/react'
 
 export default function FinancialStatementView() {
-    const selectedAddress = useSelected()
+    const [selectedAddress] = useRxSubject(rxSelected)
     const [glAcBalances, message] = useLedgerAcBalances(selectedAddress)
     const nestedBalances = getNestedBalances(glAcBalances)
 

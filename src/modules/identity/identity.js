@@ -6,7 +6,9 @@ import { keyring } from '../../utils/polkadotHelper'
 import { isObj, objClean } from '../../utils/utils'
 
 const DEFAULT_NAME = 'Default'
-const identities = new DataStorage('totem_identities')
+const PREFIX = 'totem_'
+const identities = new DataStorage(PREFIX + 'identities')
+const locations = new DataStorage(PREFIX + 'identities')
 export const rxIdentities = identities.rxData
 export const rxSelected = new BehaviorSubject()
 const USAGE_TYPES = Object.freeze({
@@ -45,6 +47,12 @@ export const get = address => identities.get(address)
 // todo: migrate from array to map for consistency
 export const getAll = () => identities.map(([_, x]) => ({ ...x }))
 
+/**
+ * @name    getSelected
+ * @summary getSelected identity
+ * 
+ * @returns {Object}
+ */
 export const getSelected = () => identities.find({ selected: true }, true, true) || getAll()[0]
 
 export const find = addressOrName => identities.find({ address: addressOrName, name: addressOrName }, true, false, true)
@@ -71,10 +79,17 @@ export const set = (address, identity) => {
     return identity
 }
 
+/**
+ * @name    setSelected
+ * @summary set selected identity
+ * 
+ * @param {String} address identity/wallet address
+ */
 export const setSelected = address => {
     const identity = identities.get(address)
     if (!identity) return
     const selected = identities.search({ selected: true }, true, true)
+    // unset previously selected
     Array.from(selected).forEach(([addr, next]) => {
         next.selected = false
         identities.set(addr, next)
@@ -82,48 +97,6 @@ export const setSelected = address => {
     identity.selected = true
     identities.set(address, identity)
     rxSelected.next(address)
-}
-
-// Custom hook to use the selected identity in a functional component
-export const useSelected = () => {
-    const [selected, setSelected] = useState(rxSelected.value)
-
-    useEffect(() => {
-        let mounted = true
-        let ignoredFirst = false
-        const subscribed = rxSelected.subscribe(address => {
-            if (!mounted) return
-            if (!ignoredFirst) return ignoredFirst = true
-            setSelected(address)
-        })
-        return () => {
-            mounted = false
-            subscribed.unsubscribe()
-        }
-    }, [])
-
-    return selected
-}
-
-// Custom React hook use get the list of identities and subscribe to changes
-export const useIdentities = () => {
-    const [list, setList] = useState(getAll())
-
-    useEffect(() => {
-        let mounted = true
-        let ignoredFirst
-        const subscribed = identities.rxData.subscribe(() => {
-            // prevents one extra render
-            ignoredFirst && mounted && setList(getAll())
-            ignoredFirst = true
-        })
-        return () => {
-            mounted = false
-            subscribed.unsubscribe()
-        }
-    }, [])
-
-    return [list]
 }
 
 const init = () => {

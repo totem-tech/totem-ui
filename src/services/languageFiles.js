@@ -52,6 +52,7 @@ export default [
     "./src/modules/identity/IdentityList.jsx",
     "./src/modules/identity/IdentityRequestForm.jsx",
     "./src/modules/identity/IdentityShareForm.jsx",
+    "./src/modules/identity/LocationForm.jsx",
     "./src/modules/identity/identity.js",
     "./src/modules/notification/NotificationItem.jsx",
     "./src/modules/notification/NotificationView.jsx",

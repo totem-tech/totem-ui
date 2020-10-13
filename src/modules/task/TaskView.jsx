@@ -3,11 +3,12 @@ import { Menu, Tab } from 'semantic-ui-react'
 import Message from '../../components/Message'
 import Text from '../../components/Text'
 import TaskList from './TaskList'
-import { useSelected } from '../identity/identity'
+import { rxSelected } from '../identity/identity'
 import { translated } from '../../services/language'
 import useTasks from './useTasks'
 import { rwSettings } from './task'
 import { useInverted } from '../../services/window'
+import { useRxSubject } from '../../services/react'
 
 const textsCap = translated({
     approver: 'to approve',
@@ -22,8 +23,8 @@ const textsCap = translated({
 }, true)[1]
 
 export default function TaskView({ address }) {
-    address = address || useSelected()
     const inverted = useInverted()
+    address = address || useRxSubject(rxSelected)[0]
     const [allTasks = new Map(), message] = useTasks(['owner', 'approver', 'beneficiary'], address)
     const [activeType, setActiveType] = useState(rwSettings().activeType || 'owner')
     const panes = [

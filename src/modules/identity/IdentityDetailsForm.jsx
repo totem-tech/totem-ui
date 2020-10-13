@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
-import { copyToClipboard, isFn } from '../../utils/utils'
+import { copyToClipboard, deferred, isFn } from '../../utils/utils'
 import Balance from '../../components/Balance'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
@@ -11,7 +11,7 @@ import IdentityForm from './IdentityForm'
 
 const textsCap = translated({
     availableBalance: 'available balance',
-    autoSaved: 'changes will be auto saved',
+    autoSaved: 'changes will be auto-saved',
     business: 'business',
     close: 'close',
     copyAddress: 'copy address',
@@ -158,6 +158,7 @@ export default class IdentityDetailsForm extends Component {
                     name: 'delete',
                     negative: true,
                     onClick: this.handleDelete,
+                    style: { marginTop: 15 },
                     type: 'button'
                 }
             ],
@@ -168,7 +169,7 @@ export default class IdentityDetailsForm extends Component {
 
     getUri = uri => this.showSeed || !uri ? uri : '*'.repeat(uri.length)
 
-    handleChange = (_, values) => set(values.address, values)
+    handleChange = deferred((_, values) => set(values.address, values), 300)
 
     handleDelete = () => {
         const { onSubmit } = this.props
@@ -202,15 +203,6 @@ export default class IdentityDetailsForm extends Component {
             size: 'tiny',
         })
     }
-
-    // Open update form
-    // handleSubmit = () => {
-    //     const { modalId, values } = this.props
-    //     const { address } = values || {}
-    //     if (!address) return
-    //     closeModal(modalId)
-    //     showForm(IdentityForm, { values: this.identity })
-    // }
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }

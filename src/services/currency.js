@@ -104,32 +104,6 @@ export const updateCurrencies = async () => {
     }
 }
 
-/**
- * @name useSelected
- * @summary custom React hook to get/set the latest selected currency
- */
-export const useSelected = () => {
-    const [value, setValue] = useState(getSelected())
-
-    useEffect(() => {
-        let mounted = true
-        const subscribed = rxSelected.subscribe(value => mounted && setValue(value))
-        return () => {
-            mounted = false
-            subscribed.unsubscribe()
-        }
-    }, [])
-
-    return [value, setSelected]
-}
-
-// build custom hook so that currency columns can be sortable
-export const useConvertedCurrency = (amounts = [], unit, unitDisplayed = getSelected()) => {
-    amounts = !isArr(amounts) ? [amounts] : amounts
-    if (!unit) return amounts
-
-}
-
 export default {
     currencyDefault,
     rxSelected,
@@ -138,6 +112,4 @@ export default {
     getCurrencies,
     setSelected,
     updateCurrencies,
-    useSelected,
-    useConvertedCurrency,
 }

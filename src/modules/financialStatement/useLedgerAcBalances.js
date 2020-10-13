@@ -6,6 +6,7 @@ import { translated } from '../../services/language'
 
 const textsCap = translated({
     errorHeader: 'failed to retrieve accounts',
+    invalidAddress: 'invalid or no identity supplied',
     loading: 'loading accounts',
     timeoutMsg: 'request is taking longer than expected',
     emptyMessage: 'no data available'
@@ -25,7 +26,6 @@ export default function useLedgerAcBalances(address, timeout = 10000) {
     const [message, setMessage] = useState()
 
     useEffect(() => {
-        if (!isAddress(address)) return
         let mounted = true
         const unsubscribers = {}
         let loaded = false
@@ -40,6 +40,8 @@ export default function useLedgerAcBalances(address, timeout = 10000) {
             icon: true,
             status: 'error',
         }
+        if (!isAddress(address)) return setMessage({ ...errorMsg, header: textsCap.invalidAddress })
+        
         const handleAccounts = async (accounts = []) => {
             if (!mounted) return
             let empty = !accounts.length

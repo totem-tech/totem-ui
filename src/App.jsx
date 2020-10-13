@@ -104,7 +104,7 @@ export default function App() {
 					// fluid
 					style={{
 						...styles.mainContent,
-						padding: isMobile ? '0 0 35px 0' : '15px 15px 0',
+						...(isMobile ? styles.mainContentMobile : {}),
 						...getGridStyle(numCol),
 					}}
 				>
@@ -130,12 +130,15 @@ const styles = {
 		borderRadius: 0,
 		height: '100%',
 		margin: 0,
+		padding: '15px 15px 0',
 		overflow: 'hidden auto',
 		scrollBehavior: 'smooth',
 		transition: 'resize 0.3s ease',
 		WebkitOverflow: 'hidden auto',
 	},
-
+	mainContentMobile: {
+		padding: 0
+	}
 }
 
 

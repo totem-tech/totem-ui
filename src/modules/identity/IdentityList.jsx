@@ -8,7 +8,8 @@ import { showForm } from '../../services/modal'
 import IdentityShareForm from './IdentityShareForm'
 import IdentityForm from './IdentityForm'
 import IdentityDetailsForm from './IdentityDetailsForm'
-import { useIdentities } from './identity'
+import { rxIdentities } from './identity'
+import { useRxSubject } from '../../services/react'
 
 const textsCap = translated({
     actions: 'actions',
@@ -29,8 +30,8 @@ const textsCap = translated({
 
 
 export default function IdentityList(props) {
-    const [identities] = useIdentities()
-    identities.forEach(identity => {
+    const [identities] = useRxSubject(rxIdentities, map => Array.from(map).map(([_, identityOrg]) => {
+        const identity = { ...identityOrg }
         const { fileBackupTS, tags = [], usageType } = identity
         identity._fileBackupTS = format(fileBackupTS) || textsCap.never
         identity._tagsStr = tags.join(' ')
@@ -49,7 +50,8 @@ export default function IdentityList(props) {
             }} />
         ))
         identity._usageType = usageType === 'personal' ? textsCap.personal : textsCap.business
-    })
+        return identity
+    }))
 
     const tableProps = {
         columns: [
@@ -58,7 +60,7 @@ export default function IdentityList(props) {
                 collapsing: true,
                 content: ({ address }) => <Balance address={address} lockSeparator={<br />} />,
                 draggable: false,
-                key: '_balance',
+                // key: '_balance',
                 textAlign: 'center',
                 title: textsCap.txAllocations,
             },
