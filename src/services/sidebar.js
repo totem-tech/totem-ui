@@ -17,7 +17,6 @@ import UtilitiesView from '../views/UtilitiesView'
 // temp
 import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
 import EventList from '../modules/event/EventList'
-import LocationForm from '../modules/identity/LocationsList'
 // utils
 import DataStorage from '../utils/DataStorage'
 import { isBool, isBond } from '../utils/utils'
@@ -320,11 +319,6 @@ export const sidebarItems = [
         name: 'blockchain-events',
         title: textsCap.eventsTtile,
     },
-    {
-        content: LocationForm,
-        name: 'location',
-        title: 'Location'
-    }
 ].map(item => {
     const {
         active = false,

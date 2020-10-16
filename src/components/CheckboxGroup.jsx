@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Checkbox } from 'semantic-ui-react'
 import Text from './Text'
-import { hasValue, isArr, isFn, isObj, objWithoutKeys } from '../utils/utils'
+import { className, hasValue, isArr, isFn, isObj, objWithoutKeys } from '../utils/utils'
 
 const excludeKeys = ['inline', 'multiple', 'name', 'options', 'required', 'rxValue', 'type', 'value', 'width']
 
@@ -30,39 +30,57 @@ export default function CheckboxGroup(props) {
                 )
                 const checked = allowMultiple ? value.indexOf(option.value) >= 0 : value === option.value
                 return option.hidden ? '' : (
-                    <Checkbox
-                        {...{
-                            ...commonProps,
-                            ...option,
-                            checked,
-                            key: i,
-                            label: <Text EL='label' htmlFor={name}>{option.label}</Text>,
-                            name: name + (allowMultiple ? i : ''),
-                            onChange: (e, data) => {
-                                isObj(e) && isFn(e.persist) && e.persist()
-                                const { onChange } = props
-                                const { checked } = data
-                                const { value: val } = option
-                                if (!allowMultiple) {
-                                    value = checked ? val : undefined
-                                } else {
-                                    value = isArr(value) ? value : (hasValue(value) ? [value] : [])
-                                    // add/remove from values
-                                    checked ? value.push(val) : value.splice(value.indexOf(val), 1)
-                                }
-                                setValue(value)
-                                isFn(onChange) && onChange(e, { ...data, value })
-                            },
-                            required: false, // handled by CheckboxGroup
-                            style: {
-                                ...option.style,
-                                margin: '5px',
-                                width: inline ? 'auto' : '100%'
-                            },
-                            type: 'checkbox',
-                            value: checked ? `${option.value}` : '',
-                        }}
-                    />
+                    <Checkbox {...{
+                        ...commonProps,
+                        ...option,
+                        checked,
+                        key: i,
+                        label: (
+                            <Text {...{
+                                EL: 'label',
+                                children: option.label,
+                                className: className({
+                                    'checkbox-group-item': true,
+                                    checked, 
+                                }),
+                                htmlFor: name
+                            }} />
+                        ),
+                        label: (
+                            <label {...{
+                                children: option.label,
+                                className: className({
+                                    'checkbox-group-item': true,
+                                    checked, 
+                                }),
+                                htmlFor: name
+                            }} />
+                        ),
+                        name: name + (allowMultiple ? i : ''),
+                        onChange: (e, data) => {
+                            isObj(e) && isFn(e.persist) && e.persist()
+                            const { onChange } = props
+                            const { checked } = data
+                            const { value: val } = option
+                            if (!allowMultiple) {
+                                value = checked ? val : undefined
+                            } else {
+                                value = isArr(value) ? value : (hasValue(value) ? [value] : [])
+                                // add/remove from values
+                                checked ? value.push(val) : value.splice(value.indexOf(val), 1)
+                            }
+                            setValue(value)
+                            isFn(onChange) && onChange(e, { ...data, value })
+                        },
+                        required: false, // handled by CheckboxGroup
+                        style: {
+                            ...option.style,
+                            margin: '5px',
+                            width: inline ? 'auto' : '100%'
+                        },
+                        type: 'checkbox',
+                        value: checked ? `${option.value}` : '',
+                    }} />
                 )
             })}
         </div>

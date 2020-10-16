@@ -16,6 +16,7 @@ const textsCap = translated({
     country: 'country',
     create: 'create',
     delete: 'delete',
+    emptyMessage: 'no locations available',
     locations: 'locations',
     name: 'name',
 	postcode: 'postcode or zip',
@@ -29,7 +30,7 @@ export default function LocationsList(props = {}) {
         map => Array.from(map).map(([id, location]) => ({ ...location, id })),
         initialValue,
     )
-    const [listProps, setListProps] = useState({
+    const [listProps] = useState({
         stackable: true,
         columns: [
             { key: 'name', title: textsCap.name },
@@ -50,7 +51,9 @@ export default function LocationsList(props = {}) {
                         key: 'update',
                         onClick: () => showForm(LocationForm, { id }),
                     }
-                ].filter(Boolean).map(props => <Button { ...props } />)
+                ]
+                    .filter(Boolean)
+                    .map(props => <Button {...props} />)
             },
         ],
         topLeftMenu: [{
@@ -62,10 +65,14 @@ export default function LocationsList(props = {}) {
 
     return <DataTable {...{ ...props, ...listProps, data: locations }} />
 }
+LocationsList.defaultProps = {
+    emptyMessage: textsCap.emptyMessage,
+}
 
-export const showModal =() => confirm({
+export const showModal = size => confirm({
     cancelButton: textsCap.close,
     confirmButton: null,
     content: <LocationsList />,
     header: textsCap.locations,
+    size: size || 'large',
 })

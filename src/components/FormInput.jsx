@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Accordion, Button, Dropdown, Form, Input, TextArea } from 'semantic-ui-react'
+import { Accordion, Button, Dropdown, Form, Icon, Input, TextArea } from 'semantic-ui-react'
 import PromisE from '../utils/PromisE'
 import { deferred, hasValue, isArr, isFn, isObj, isStr, objWithoutKeys, searchRanked, isBool } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
@@ -11,20 +11,22 @@ import UserIdInput from './UserIdInput'
 import { translated } from '../services/language'
 import { unsubscribe } from '../services/react'
 
-const [texts] = translated({
-	decimals: 'Maximum number of decimals allowed',
-	email: 'Please enter a valid email address',
-	fileType: 'Invalid file type selected',
-	integer: 'Please enter a number without decimals',
-	max: 'Number must be smaller than or equal to',
-	maxLengthNum: 'Maximum number of digits allowed',
-	maxLengthText: 'Maximum number of characters allowed',
-	min: 'Number must be greater or equal',
-	minLengthNum: 'Minimum number of digits required',
-	minLengthText: 'Minimum number of characters required',
-	number: 'Please enter a valid number',
-	required: 'Required field',
-})
+const textsCap = translated({
+	decimals: 'maximum number of decimals allowed',
+	email: 'please enter a valid email address',
+	fileType: 'invalid file type selected',
+	integer: 'please enter a number without decimals',
+	max: 'number must be smaller than or equal to',
+	maxLengthNum: 'maximum number of digits allowed',
+	maxLengthText: 'maximum number of characters allowed',
+	min: 'number must be greater or equal',
+	minLengthNum: 'minimum number of digits required',
+	minLengthText: 'minimum number of characters required',
+	number: 'please enter a valid number',
+	required: 'required field',
+
+	readOnlyField: 'read only field',
+}, true)[1]
 const validationTypes = Object.values(TYPES)
 // properties exclude from being used in the DOM
 const NON_ATTRIBUTES = Object.freeze([
@@ -98,7 +100,7 @@ export class FormInput extends Component {
 		const typeLower = (type || '').toLowerCase()
 		const isCheck = ['checkbox', 'radio'].indexOf(typeLower) >= 0
 		const hasVal = hasValue(isCheck ? data.checked : data.value)
-		const customMsgs = { ...texts }
+		const customMsgs = { ...textsCap }
 		let errMsg, validatorConfig
 
 		if (hasVal && !errMsg) {
@@ -108,26 +110,30 @@ export class FormInput extends Component {
 					// Sematic UI's Checkbox component only supports string and number as value
 					// This allows support for any value types
 					data.value = data.checked ? trueValue : falseValue
-					if (required && !data.checked) errMsg = texts.required
+					if (required && !data.checked) errMsg = textsCap.required
 					break
 				case 'number':
 					validatorConfig = { type: integer ? TYPES.integer : TYPES.number }
 					data.value = !data.value ? data.value : parseFloat(data.value)
-					customMsgs.lengthMax = texts.maxLengthNum
-					customMsgs.lengthMin = texts.minLengthNum
+					customMsgs.lengthMax = textsCap.maxLengthNum
+					customMsgs.lengthMin = textsCap.minLengthNum
 					break
 				case 'hex':
 					validatorConfig = { type: TYPES.hex }
 				case 'text':
 				case 'textarea':
 					validatorConfig = validatorConfig || { type: TYPES.string }
-					customMsgs.lengthMax = texts.maxLengthText
-					customMsgs.lengthMin = texts.minLengthText
+					customMsgs.lengthMax = textsCap.maxLengthText
+					customMsgs.lengthMin = textsCap.minLengthText
 			}
 		}
 
 		if ((!errMsg && hasVal && validationTypes.includes(typeLower)) || validatorConfig) {
-			errMsg = validator.validate(data.value, { ...this.props, ...validatorConfig }, customMsgs)
+			errMsg = validator.validate(
+				data.value,
+				{ ...this.props, ...validatorConfig },
+				customMsgs,
+			)
 		}
 
 		let message = !errMsg ? null : { content: errMsg, status: 'error' }
@@ -189,10 +195,10 @@ export class FormInput extends Component {
 		attrs.onChange = this.handleChange
 		let isGroup = false
 		const typeLC = type.toLowerCase()
+		const editable = !attrs.readOnly && !attrs.disabled
 
 		switch (typeLC) {
 			case 'button':
-				console.log({attrs})
 				inputEl = <Button {...attrs} />
 				break
 			case 'checkbox':
@@ -250,9 +256,27 @@ export class FormInput extends Component {
 					error={(message && message.status === 'error') || !!error || !!invalid}
 					required={required}
 					style={styleContainer}
+					title={editable ? undefined : textsCap.readOnlyField}
 					width={width}
 				>
-					{!hideLabel && label && <label htmlFor={name}>{label}</label>}
+					{!hideLabel && label && (
+						<label htmlFor={name}>
+							{label}
+							{editable ? '' : (
+								<Icon.Group style={{marginLeft: 5}}>
+									<Icon
+										className='no-margin'
+										name='pencil'
+									/>
+									<Icon
+										className='no-margin'
+										color='red'
+										name='ban'
+									/>
+								</Icon.Group>
+							)}
+						</label>
+					)}
 					{inputEl}
 					{message && <Message {...message} />}
 				</Form.Field>
@@ -260,27 +284,25 @@ export class FormInput extends Component {
 
 		let groupEl = (
 			<React.Fragment>
-				<Form.Group
-					{...{
-						className: 'form-group',
-						...objWithoutKeys(attrs, ['inputs']),
-						style: {
-							margin: '0px -5px 15px -5px',
-							...styleContainer,
-							...attrs.style,
-						},
-					}}
-				>
-					{inputEl}
-				</Form.Group>
-				{message && <Message {...message} />}
+				<Form.Group {...{
+					className: 'form-group',
+					content: inputEl,
+					...objWithoutKeys(attrs, ['inputs']),
+					style: {
+						margin: '0px -5px 15px -5px',
+						...styleContainer,
+						...attrs.style,
+					},
+				}} />
+				<Message {...message} />
 			</React.Fragment>
 		)
-
 		if (!isObj(accordion)) return groupEl
+
 		// use accordion if label is supplied
 		let { collapsed } = this.state
 		if (!isBool(collapsed)) collapsed = accordion.collapsed
+
 		return (
 			<Accordion {...objWithoutKeys(accordion, NON_ATTRIBUTES)} style={{ marginBottom: 15, ...accordion.style }}>
 				<Accordion.Title

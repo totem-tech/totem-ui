@@ -385,15 +385,15 @@ export const fillValues = (inputs, values, forceFill) => {
 	return inputs
 }
 
-export const resetValues = (inputs = []) =>
-	inputs.map(input => {
-		if ((input.type || '').toLowerCase() === 'group') {
-			resetValues(input.inputs)
-		} else {
-			input.value = undefined
-		}
-		return input
-	})
+export const resetValues = (inputs = []) => inputs.map(input => {
+	if ((input.type || '').toLowerCase() === 'group') {
+		resetValues(input.inputs)
+	} else {
+		input.value = undefined
+		input.rxValue && input.rxValue.next(undefined)
+	}
+	return input
+})
 
 export const isInputInvalid = (formValues = {}, input) => {
 	const inType = (input.type || 'text').toLowerCase()
@@ -423,20 +423,27 @@ export const isInputInvalid = (formValues = {}, input) => {
 	return isCheckbox && isRequired ? !value : !hasValue(value)
 }
 
-export const isFormInvalid = (inputs = [], values = {}) =>
-	inputs.reduce((invalid, input) => {
-		return invalid || isInputInvalid(values, input)
-	}, false)
+export const isFormInvalid = (inputs = [], values = {}) => {
+	for (let i = 0; i < inputs.length; i++) {
+		if (isInputInvalid(values, inputs[i])) return true
+	}
+	return false
+}
 
 // findInput returns the first item matching supplied name.
 // If any input type is group it will recursively search in the child inputs as well
-export const findInput = (inputs, name) =>
-	inputs.find(x => x.name === name) ||
-	inputs
-		.filter(x => x.type === 'group')
-		.reduce((input, group = {}) => {
-			return input || findInput(group.inputs || [], name)
-		}, undefined)
+export const findInput = (inputs, name) => {
+	let input
+	for (let i = 0; i < inputs.length; i++) {
+		const { inputs: childInputs, name: iName, type } = inputs[i]
+		if (name === iName) return inputs[i]
+		const isGroup = `${type}`.toLowerCase() === 'group'
+		if (!isGroup) continue
+		input = findInput(childInputs, name)
+		if (input) return input
+	}
+}
+
 // show message on a input or if input name not found/undefined, show form message
 // Should be used with a form component and be invoked with .call/.apply
 export function showMessage(inputName, content, status, header) {

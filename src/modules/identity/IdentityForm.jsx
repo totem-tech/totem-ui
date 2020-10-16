@@ -7,6 +7,9 @@ import { translated } from '../../services/language'
 import { getAllTags } from '../partner/partner'
 import { addFromUri, find, generateUri, get, set } from './identity'
 import { getAll as getLocations } from './location'
+import { showForm } from '../../services/modal'
+import LocationForm from './LocationForm'
+import { Button } from 'semantic-ui-react'
 
 const textsCap = translated({
     address: 'address',
@@ -42,46 +45,54 @@ export default class IdentityForm extends Component {
         this.rxAddress = new BehaviorSubject(address)
         this.doUpdate = !!address
         this.validateUri = this.validateUri
+        this.names = {
+            address: 'address',
+            locationId: 'locationId',
+            name: 'name',
+            restore: 'restore',
+            tags: 'tags',
+            uri: 'uri',
+            usageType: 'usageType',
+        }
 
         this.state = {
             message: props.message,
             onChange: this.handleChange,
             onSubmit: this.handleSubmit,
             success: false,
-            inputs: [
+            inputs: fillValues([
                 {
                     hidden: this.doUpdate,
-                    name: 'restore',
+                    name: this.names.restore,
                     onChange: this.handleRestoreChange,
-                    options: [
-                        { label: textsCap.restoreInputLabel, value: true },
-                    ],
+                    options: [{
+                        label: textsCap.restoreInputLabel,
+                        value: true,
+                    }],
                     type: 'Checkbox-group',
                 },
                 {
                     label: textsCap.name,
-                    name: 'name',
+                    name: this.names.name,
                     placeholder: textsCap.identityNamePlaceholder,
                     required: true,
                     validate: this.validateName,
-                    value: '',
                 },
                 {
                     hidden: true,
                     label: textsCap.seed,
-                    name: 'uri',
+                    name: this.names.uri,
                     placeholder: textsCap.seedPlaceholder,
                     readOnly: true,
                     required: true,
                     rxValue: new BehaviorSubject(),
                     type: 'text',
                     validate: this.values.restore ? this.validateUri : undefined,
-                    value: '',
                 },
                 {
                     inline: true,
                     label: textsCap.usageType,
-                    name: 'usageType',
+                    name: this.names.usageType,
                     onChange: (_, { usageType }) => this.updateSeed(this.values.uri, usageType),
                     options: [
                         { label: textsCap.personal, value: 'personal' },
@@ -94,15 +105,14 @@ export default class IdentityForm extends Component {
                 },
                 {
                     label: textsCap.address,
-                    name: 'address',
+                    name: this.names.address,
                     rxValue: this.rxAddress,
                     type: 'hidden',
-                    value: '',
                 },
                 {
                     allowAdditions: true,
                     label: textsCap.tags,
-                    name: 'tags',
+                    name: this.names.tags,
                     noResultsMessage: textsCap.tagsInputEmptyMessage,
                     multiple: true,
                     onAddItem: this.handleAddTag,
@@ -118,36 +128,66 @@ export default class IdentityForm extends Component {
                 },
                 {
                     clearable: true,
-                    label: textsCap.locationLabel,
-                    name: 'locationId',
-                    options: Array.from(getLocations()).map(([id, location]) => ({
-                        description: [
-                            location.state,
-                            location.countryCode,
-                        ].filter(Boolean).join(', '),
-                        key: id,
-                        text: location.name,
-                        title: [
-                            location.addressLine1,
-                            location.addressLine2,
-                            location.city,
-                            location.postcode,
-                        ].filter(Boolean).join(' '),
-                        value: id,
-                    })),
+                    label: (
+                        <div>
+                            {textsCap.locationLabel}
+                            <div style={{
+                                position: 'absolute',
+                                zIndex: 11,
+                                marginTop: 4,
+                            }}>
+                                <Button {...{
+                                    // button to add contact address
+                                    icon: 'plus',
+                                    onClick: () => showForm(
+                                        LocationForm,
+                                        {
+                                            closeOnSubmit: true,
+                                            onSubmit: this.handleLocationCreate,
+                                        }
+                                    ),
+                                    style: {
+                                        borderTopRightRadius: 0,
+                                        borderBottomRightRadius: 0,
+                                        cursor: 'pointer',
+                                        marginLeft: 1,
+                                        padding: 12,
+                                    },
+                                }} />
+                            </div>
+                        </div>
+                    ),
+                    name: this.names.locationId,
+                    options: this.getLocationOptions(),
                     placeholder: textsCap.locationPlaceholder,
                     search: ['text'],
                     selection: true,
+                    style: { 
+                        borderLeft: 'none',
+                        borderTopLeftRadius: 0,
+                        borderBottomLeftRadius: 0,
+                        maxWidth: 'calc( 100% - 42px )',
+                        marginLeft: 42,
+                        minWidth: 'auto',
+                     }, // extra spacing for the plus button
                     type: 'dropdown',
                 },
-            ],
+            ], this.values),
         }
-        fillValues(this.state.inputs, this.values)
     }
+
+    getLocationOptions = () => Array.from(getLocations())
+        .map(([id, loc]) => ({
+            description: [ loc.state, loc.countryCode ].filter(Boolean).join(', '),
+            key: id,
+            text: loc.name,
+            title: [ loc.addressLine1, loc.addressLine2, loc.city, loc.postcode ].filter(Boolean).join(' '),
+            value: id,
+        }))
 
     handleAddTag = (_, data) => {
         const { inputs } = this.state
-        inputs.find(x => x.name === 'tags').options.push({
+        findInput(inputs, this.names.tags).options.push({
             key: data.value,
             text: data.value,
             value: data.value
@@ -162,9 +202,19 @@ export default class IdentityForm extends Component {
         isFn(onChange) && onChange(...args)
     }
 
-    handleRestoreChange = (_, { restore }) => {
+    handleLocationCreate = (success, _, id) => { 
+        if (!success) return
         const { inputs } = this.state
-        const uriInput = findInput(inputs, 'uri')
+        const locationIdIn = findInput(inputs, this.names.locationId)
+        locationIdIn.options = this.getLocationOptions()
+        locationIdIn.value = id
+        this.setState({ inputs })
+    }
+
+    handleRestoreChange = (_, values) => {
+        const restore = values[this.names.restore]
+        const { inputs } = this.state
+        const uriInput = findInput(inputs, this.names.uri)
         uriInput.action = restore ? undefined : this.generateBtn
         uriInput.readOnly = !restore
         uriInput.hidden = !restore
@@ -179,14 +229,15 @@ export default class IdentityForm extends Component {
     handleSubmit = () => {
         const { onSubmit } = this.props
         const { values } = this
-        set(values.address, { ...values })
+        const address = values[this.names.address]
+        set(address, { ...values })
         isFn(onSubmit) && onSubmit(true, values)
         this.setState({ success: true })
     }
 
     updateSeed(seed, usageType = 'personal') {
         const { inputs } = this.state
-        const { restore } = this.values
+        const restore = this.values[this.names.restore]
         if (restore) return
         if (!this.doUpdate) {
             seed = seed || generateUri()
@@ -194,7 +245,7 @@ export default class IdentityForm extends Component {
         }
         const { address = '' } = seed && addFromUri(seed) || {}
         this.rxAddress.next(address)
-        findInput(inputs, 'uri').rxValue.next(seed)
+        findInput(inputs, this.names.uri).rxValue.next(seed)
         this.setState({ inputs })
     }
 
@@ -212,13 +263,13 @@ export default class IdentityForm extends Component {
         }
         const existing = find(address)
         if (existing) return `${textsCap.seedExists} ${existing.name}`
-        this.values.address = address
+        this.values[this.names.address] = address
         this.rxAddress.next(address)
         if (seed.includes('/totem/')) {
             // extract usageType
             const usagetypeInt = parseInt(seed.split('/totem/')[1])
             const usageType = usagetypeInt === 1 ? 'business' : 'personal'
-            const usageTypeIn = findInput(inputs, 'usageType')
+            const usageTypeIn = findInput(inputs, this.names.usageType)
             usageTypeIn.hidden = true
             this.values.usageType = usageType
             usageTypeIn.rxValue.next(usageType)
@@ -228,7 +279,8 @@ export default class IdentityForm extends Component {
     }
 
     render() {
-        const { doUpdate, props, state, values: { restore } } = this
+        const { doUpdate, props, state, values } = this
+        const restore = values[this.names.restore]
         const action = doUpdate ? textsCap.update : (restore ? textsCap.restore : textsCap.create)
         state.message = state.message || props.message
         state.header = props.header || `${action} ${textsCap.identity}`
@@ -238,7 +290,7 @@ export default class IdentityForm extends Component {
 }
 IdentityForm.propTypes = {
     values: PropTypes.shape({
-        address: PropTypes.string
+        address: PropTypes.string,
     }),
 }
 IdentityForm.defaultProps = {

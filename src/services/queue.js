@@ -8,7 +8,7 @@ import DataStorage from '../utils/DataStorage'
 import { signAndSend } from '../utils/polkadotHelper'
 import { isArr, isFn, isObj, isStr, objClean, isValidNumber, isError } from '../utils/utils'
 // services
-import { getClient } from './chatClient'
+import { getClient } from '../modules/chat/ChatClient'
 import { getConnection, query, getCurrentBlock } from './blockchain'
 import { save as addToHistory } from '../modules/history/history'
 import { find as findIdentity, getSelected } from '../modules/identity/identity'

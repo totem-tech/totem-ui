@@ -79,7 +79,6 @@ export default [
     "./src/modules/timekeeping/notificationHandlers.jsx",
     "./src/modules/timekeeping/timekeeping.js",
     "./src/services/blockchain.js",
-    "./src/services/chatClient.js",
     "./src/services/currency.js",
     "./src/services/language.js",
     "./src/services/languageFiles.js",

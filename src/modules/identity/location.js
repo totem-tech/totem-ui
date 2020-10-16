@@ -4,7 +4,7 @@ import { inputNames, requiredFields } from './LocationForm'
 import { isObj, isStr, objClean, objContains } from '../../utils/utils'
 
 const locations = new DataStorage('totem_locations', true)
-export const rxLocations = locations.rxData // RxJS Subject (since caching is disabled)
+export const rxLocations = locations.rxData // RxJS Subject (because caching is disabled)
 
 /**
  * @name    get
@@ -22,11 +22,7 @@ export const get = id => locations.get(id)
  *
  * @returns {Map}
  */
-export const getAll = () => {
-	const all = locations.getAll()
-	console.log({ all })
-	return all
-}
+export const getAll = () => locations.getAll()
 
 /**
  * @name	remove
@@ -55,5 +51,5 @@ export const set = (location, id = randomHex()) => {
 	// save to localStorage
 	locations.set(id, location)
 
-	return location
+	return id
 }

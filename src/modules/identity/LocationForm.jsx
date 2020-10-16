@@ -41,7 +41,11 @@ export const requiredFields = {
 export const optionalFields = {
 	addressLine2: 'addressLine2',
 }
-export const inputNames = { ...requiredFields, ...optionalFields }
+export const inputNames = {
+	...requiredFields,
+	...optionalFields,
+	removeBtn: 'removeBtn',
+}
 
 export default class LocationForm extends Component {
 	constructor(props) {
@@ -56,7 +60,9 @@ export default class LocationForm extends Component {
 			header: header || (this.isUpdate ? textsCap.formHeaderUpdate : textsCap.formHeaderCreate),
 			onChange: this.handleChange,
 			onSubmit: this.handleSubmit,
-			subheader: subheader || (this.isUpdate ? textsCap.formSubheaderUpdate : undefined),
+			subheader: subheader || (!this.isUpdate ? '' : (
+				<span style={{ color: 'grey' }}> {textsCap.formSubheaderUpdate}</span>
+			)),
 			submitText: this.isUpdate ? null : undefined,
 			inputs: fillValues([
 				{
@@ -135,7 +141,7 @@ export default class LocationForm extends Component {
 					fluid: true,
 					hidden: !this.isUpdate,
 					icon: 'trash',
-					name: 'removeBtn',
+					name: inputNames.removeBtn,
 					negative: true,
 					style: { textTransform: 'capitalize' },
 					type: 'button',
@@ -176,10 +182,10 @@ export default class LocationForm extends Component {
 	}
 
 	handleSubmit = deferred((_, values) => {
-		const { id, onSubmit } = this.props
-		set(values, id)
+		let { id, onSubmit } = this.props
+		id = set(values, id)
 		!this.isUpdate && this.setState({ success: true})
-		isFn(onSubmit) && onSubmit(true, values)
+		isFn(onSubmit) && onSubmit(true, values, id)
 	}, 300)
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state}} />
