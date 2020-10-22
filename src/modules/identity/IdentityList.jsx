@@ -4,13 +4,13 @@ import { format } from '../../utils/time'
 import Balance from '../../components/Balance'
 import DataTable from '../../components/DataTable'
 import { translated } from '../../services/language'
-import { confirm, showForm } from '../../services/modal'
+import { showForm } from '../../services/modal'
 import IdentityShareForm from './IdentityShareForm'
 import IdentityForm from './IdentityForm'
 import IdentityDetailsForm from './IdentityDetailsForm'
 import { rxIdentities } from './identity'
 import { useRxSubject } from '../../services/react'
-import { showModal as showLocationsModal } from './LocationsList'
+import { showModal as showLocationsModal } from '../location/LocationsList'
 
 const textsCap = translated({
     actions: 'actions',
@@ -30,13 +30,12 @@ const textsCap = translated({
     updateIdentity: 'update your identity',
 }, true)[1]
 
-
 export default function IdentityList(props) {
     const [identities] = useRxSubject(rxIdentities, map => Array.from(map).map(([_, identityOrg]) => {
         const identity = { ...identityOrg }
         const { fileBackupTS, tags = [], usageType } = identity
         identity._fileBackupTS = format(fileBackupTS) || textsCap.never
-        identity._tagsStr = tags.join(' ')
+        identity._tagsStr = tags.join(' ') // for search
         identity._tags = tags.map(tag => (
             <Label {...{
                 content: tag,
@@ -85,13 +84,16 @@ export default function IdentityList(props) {
                 content: ({ address, name }) => ([
                     {
                         icon: 'share',
-                        onClick: () => showForm(IdentityShareForm, {
-                            inputsDisabled: ['address'],
-                            includeOwnIdentities: true,
-                            includePartners: false,
-                            size: 'tiny',
-                            values: { address: address, name: name },
-                        }),
+                        onClick: () => showForm(
+                            IdentityShareForm,
+                            {
+                                inputsDisabled: ['address'],
+                                includeOwnIdentities: true,
+                                includePartners: false,
+                                size: 'tiny',
+                                values: { address, name },
+                            }
+                        ),
                         title: textsCap.shareIdentityDetails,
                     },
                     {
@@ -114,7 +116,7 @@ export default function IdentityList(props) {
             {
                 content: textsCap.locations,
                 icon: 'building',
-                onClick: showLocationsModal,
+                onClick: ()=> showLocationsModal(),
             },
         ]
     }

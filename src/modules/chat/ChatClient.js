@@ -127,14 +127,14 @@ export class ChatClient {
         // search companies
         //
         // Params:
-        // @query           string
-        // @findIdentity    boolean: if false will search for both identity and parentIdentity
-        // @cb              function: params =>
-        //                      @err    string/null : error message or null if success
-        //                      @result Map         : Map of companies with identity as key
-        this.companySearch = (query, findIdentity, cb) => isFn(cb) && socket.emit('company-search',
+        // @query                   string
+        // @searchParentIdentity    boolean: if false will search for both identity and parentIdentity
+        // @cb                      function: params =>
+        //                              @err    string/null : error message or null if success
+        //                              @result Map         : Map of companies with identity as key
+        this.companySearch = (query, searchParentIdentity, cb) => isFn(cb) && socket.emit('company-search',
             query,
-            findIdentity,
+            searchParentIdentity,
             (err, result) => cb(err, new Map(result)),
         )
 

@@ -34,16 +34,16 @@ export default class FormBuilder extends Component {
 
 	// recursive interceptor for infinite level of child inputs
 	addInterceptor = (index, values) => (input, i) => {
-		const { inputsDisabled = [] } = this.props
+		const { inputsDisabled = [], inputsHidden = [] } = this.props
 		const { disabled, hidden, inputs: childInputs, key, name, type, validate: validate } = input || {}
 		const isGroup = `${type}`.toLowerCase() === 'group' && isArr(childInputs)
 		index = isDefined(index) ? index : null
 		const props = {
 			...input,
 			disabled: inputsDisabled.includes(name) || (isFn(disabled) ? disabled(value, i) : disabled),
-			hidden: !isFn(hidden) ? hidden : !!hidden(values, i),
+			hidden: inputsHidden.includes(name) || (!isFn(hidden) ? hidden : !!hidden(values, i)),
 			inputs: !isGroup ? undefined : childInputs.map(this.addInterceptor(index ? index : i, values)),
-			key: key || name,
+			key: name,
 			onChange: isGroup ? undefined : (
 				(e, data) => this.handleChange(e, data, input, index ? index : i, index ? i : undefined)
 			),
@@ -219,20 +219,16 @@ export default class FormBuilder extends Component {
 
 		const FormEl = El || Invertible
 		const form = (
-			<FormEl
-				{...(El
-					? {}
-					: {
-							El: Form,
-							error: message.status === statuses.ERROR,
-							loading: loading,
-							onSubmit: onSubmit,
-							style: style,
-							success: success || message.status === statuses.SUCCESS,
-							warning: message.status === statuses.WARNING,
-							widths: widths,
-					  })}
-			>
+			<FormEl {...(El ? { className: 'ui form', style} : {
+				El: Form,
+				error: message.status === statuses.ERROR,
+				loading,
+				onSubmit,
+				style,
+				success: success || message.status === statuses.SUCCESS,
+				warning: message.status === statuses.WARNING,
+				widths,
+			})}>
 				{inputs.map(this.addInterceptor(null, values)).map(props => (
 					<FormInput {...props} />
 				))}
@@ -246,9 +242,7 @@ export default class FormBuilder extends Component {
 			</FormEl>
 		)
 
-		return !modal ? (
-			form
-		) : (
+		return !modal ? form : (
 			<IModal
 				closeOnEscape={!!closeOnEscape}
 				closeOnDimmerClick={!!closeOnDimmerClick}
@@ -297,6 +291,8 @@ FormBuilder.propTypes = {
 	defaultOpen: PropTypes.bool,
 	// disable inputs on load
 	inputsDisabled: PropTypes.arrayOf(PropTypes.string),
+	// inputs to hide
+	inputsHidden: PropTypes.arrayOf(PropTypes.string),
 	header: PropTypes.string,
 	headerIcon: PropTypes.string,
 	hideFooter: PropTypes.bool,

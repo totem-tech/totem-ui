@@ -2,7 +2,7 @@ import { BehaviorSubject } from 'rxjs'
 import { generateMnemonic } from 'bip39'
 import DataStorage from '../../utils/DataStorage'
 import { keyring } from '../../utils/polkadotHelper'
-import { isObj, isStr, objClean, objContains } from '../../utils/utils'
+import { isObj, isStr, objClean, objHasKeys } from '../../utils/utils'
 
 const DEFAULT_NAME = 'Default' // default identity name
 const identities = new DataStorage('totem_identities')
@@ -55,7 +55,7 @@ export const find = addressOrName => identities.find({ address: addressOrName, n
  *
  * @param   {String} address
  */
-export const remove = address => identities.delete(address)
+export const remove = address => { identities.delete(address) }
 
 /**
  * @name    set
@@ -70,7 +70,7 @@ export const remove = address => identities.delete(address)
 export const set = (address, identity) => {
 	if (!isStr(address) || !isObj(identity)) return
 	const existingItem = identities.get(address)
-	if (!existingItem && objContains(identity, REQUIRED_KEYS)) return
+	if (!existingItem && objHasKeys(identity, REQUIRED_KEYS, true)) return
 
 	const { selected, type, usageType } = identity
 	const isUsageTypeValid = Object.values(USAGE_TYPES).includes(usageType)

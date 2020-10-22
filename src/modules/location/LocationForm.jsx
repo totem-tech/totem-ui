@@ -1,11 +1,12 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import { arrSort, deferred, isFn } from '../../utils/utils'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
-import { arrSort, deferred, isFn, isObj } from '../../utils/utils'
 import { translated } from '../../services/language'
 import { closeModal, confirm } from '../../services/modal'
 import storage from '../../services/storage'
-import { getAll as getIdentities, set as saveIdentity } from './identity'
+import { getAll as getIdentities, set as saveIdentity } from '../identity/identity'
+import { get as getPartner } from '../partner/partner'
 import { get, remove, set } from './location'
 
 const textsCap = translated({
@@ -23,11 +24,13 @@ const textsCap = translated({
 	locationRemoveWarning: 'this location is used by the following identities:',
 	nameLabel: 'location name',
 	namePlaceholder: 'enter a name for this location',
+	partnerNameLabel: 'partner name',
 	postcodeLabel: 'postcode or zip',
 	postcodePlaceholder: 'enter your postcode or zip',
 	remove: 'remove location',
 	stateLabel: 'state or province',
 	statePlaceholder: 'enter your state or province',
+	partnerIdentityLabel: 'partner user ID',
 }, true)[1]
 
 export const requiredFields = {
@@ -40,10 +43,12 @@ export const requiredFields = {
 }
 export const optionalFields = {
 	addressLine2: 'addressLine2',
+	partnerIdentity: 'partnerIdentity', // if owned by partner
 }
 export const inputNames = {
 	...requiredFields,
 	...optionalFields,
+	partnerName: 'partnerName',
 	removeBtn: 'removeBtn',
 }
 
@@ -51,9 +56,11 @@ export default class LocationForm extends Component {
 	constructor(props) {
 		super(props)
 
-		const { header, id, subheader } = props
+		const { header, id, subheader, values } = props
 		const location = get(id)
+		const { partnerIdentity } = location || values || {}
 		this.isUpdate = !!id && !!location
+		const partner = getPartner(partnerIdentity)
 		
 		this.state = {
 			closeText: !this.isUpdate ? undefined : { negative: false },
@@ -65,6 +72,22 @@ export default class LocationForm extends Component {
 			)),
 			submitText: this.isUpdate ? null : undefined,
 			inputs: fillValues([
+				{
+					hidden: true,
+					name: inputNames.partnerIdentity,
+					type: 'text',
+					value: partnerIdentity,
+				},
+				// for display purposes only
+				{
+					// action: {}// remove location
+					hidden: !partner,
+					label: textsCap.partnerNameLabel,
+					name: inputNames.partnerName,
+					readOnly: true,
+					type: 'text',
+					value: (partner || {}).name,
+				},
 				{
 					label: textsCap.nameLabel,
 					minLength: 3,
@@ -92,54 +115,65 @@ export default class LocationForm extends Component {
 					type: 'text',
 				},
 				{
-					label: textsCap.cityLabel,
-					minLength: 3,
-					maxLength: 64,
-					name: inputNames.city,
-					placeholder: textsCap.cityPlaceholder,
-					required: true,
-					type: 'text',
+					name: 'group_city-postcode',
+					type: 'group',
+					inputs: [
+						{
+							label: textsCap.cityLabel,
+							minLength: 3,
+							maxLength: 64,
+							name: inputNames.city,
+							placeholder: textsCap.cityPlaceholder,
+							required: true,
+							type: 'text',
+						},
+						{
+							label: textsCap.postcodeLabel,
+							minLength: 3,
+							maxLength: 16,
+							name: inputNames.postcode,
+							placeholder: textsCap.postcodePlaceholder,
+							required: true,
+							type: 'text',
+						},
+					],
 				},
 				{
-					label: textsCap.postcodeLabel,
-					minLength: 3,
-					maxLength: 16,
-					name: inputNames.postcode,
-					placeholder: textsCap.postcodePlaceholder,
-					required: true,
-					type: 'text',
+					name: 'group_state-country',
+					type: 'group',
+					inputs: [
+						{
+							label: textsCap.stateLabel,
+							minLength: 2,
+							maxLength: 64,
+							name: inputNames.state,
+							placeholder: textsCap.statePlaceholder,
+							required: true,
+							type: 'text',
+						},
+						{
+							label: textsCap.countryLabel,
+							name: inputNames.countryCode,
+							options: arrSort(
+								storage.countries.toArray().map(([_, { code, name }]) => ({
+									description: code,
+									key: code,
+									text: name,
+									value: code,
+								})),
+								'text'
+							),
+							placeholder: textsCap.countryPlaceholder,
+							required: true,
+							selection: true,
+							search: ['description', 'text'],
+							type: 'dropdown',
+						},
+					]
 				},
-				{
-					label: textsCap.stateLabel,
-					minLength: 2,
-					maxLength: 64,
-					name: inputNames.state,
-					placeholder: textsCap.statePlaceholder,
-					required: true,
-					type: 'text',
-				},
-				{
-					label: textsCap.countryLabel,
-					name: inputNames.countryCode,
-					options: arrSort(
-						storage.countries.toArray().map(([_, { code, name }]) => ({
-							description: code,
-							key: code,
-							text: name,
-							value: code,
-						})),
-						'text'
-					),
-					placeholder: textsCap.countryPlaceholder,
-					required: true,
-					selection: true,
-					search: ['description', 'text'],
-					type: 'dropdown',
-				},
-				{
+				this.isUpdate && {
 					content: textsCap.remove,
 					fluid: true,
-					hidden: !this.isUpdate,
 					icon: 'trash',
 					name: inputNames.removeBtn,
 					negative: true,
@@ -147,6 +181,7 @@ export default class LocationForm extends Component {
 					type: 'button',
 					onClick: () => {
 						const { id, modalId } = this.props
+						// find identities that are associated with this locaiton
 						const identities = getIdentities().filter(x => x.locationId === id)
 						confirm({
 							content: !identities.length ? '' : (
@@ -159,18 +194,18 @@ export default class LocationForm extends Component {
 							),
 							header: textsCap.areYouSure,
 							onConfirm: () => {
+								const { onRemove } = this. props
 								closeModal(modalId)
 								remove(id)
-								identities.forEach(x => saveIdentity(
-									x.address,
-									{...x, locationId: null}
-								))
+								// remove location ID form associated identitites
+								identities.forEach(x => saveIdentity(x.address, { ...x, locationId: null }))
+								isFn(onRemove) && onRemove(id)
 							},
 							size: 'mini',
 						})
 					},
 				}
-			], location)
+			].filter(Boolean), location)
 		}
 	}
 
@@ -192,7 +227,11 @@ export default class LocationForm extends Component {
 }
 LocationForm.propTypes = {
 	id: PropTypes.string,
+	// callback to be invoked when location is removed
+	onRemove: PropTypes.func,
+	values: PropTypes.object
 }
 LocationForm.defaultProps = {
+	closeOnSubmit: true,
 	size: 'tiny', // modal size
 }

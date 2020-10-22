@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
+import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
 import DataTable from '../../components/DataTable'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
 import { useRxSubject } from '../../services/react'
 import { getAll, rxLocations } from './location'
-import LocationForm from './LocationForm'
+import LocationForm, { inputNames } from './LocationForm'
 
 const textsCap = translated({
     actions: 'actions',
@@ -17,7 +18,7 @@ const textsCap = translated({
     create: 'create',
     delete: 'delete',
     emptyMessage: 'no locations available',
-    locations: 'locations',
+    myLocations: 'my locations',
     name: 'name',
 	postcode: 'postcode or zip',
 	state: 'state or province',
@@ -27,7 +28,11 @@ export default function LocationsList(props = {}) {
     const [initialValue] = useState(getAll)
     const [locations] = useRxSubject(
         rxLocations,
-        map => Array.from(map).map(([id, location]) => ({ ...location, id })),
+        map => {
+            const locations = Array.from(map).map(([id, location]) => ({ ...location, id }))
+            if (props.includePartners) return locations
+            return locations.filter(loc => !loc[inputNames.partnerIdentity])
+        },
         initialValue,
     )
     const [listProps] = useState({
@@ -38,7 +43,7 @@ export default function LocationsList(props = {}) {
             // { key: 'addressLine2', title: textsCap.addressLine2},
             { key: 'city', title: textsCap.city},
             { key: 'postcode', textAlign: 'center', title: textsCap.postcode},
-            { key: 'state', textAlign: 'center', title: textsCap.state},
+            // { key: 'state', textAlign: 'center', title: textsCap.state},
             // { key: 'countryCode', title: textsCap.country },
             {
                 collapsing: true,
@@ -65,14 +70,19 @@ export default function LocationsList(props = {}) {
 
     return <DataTable {...{ ...props, ...listProps, data: locations }} />
 }
+LocationsList.propTypes = {
+    // whether to include partner locations
+    includePartners: PropTypes.bool,
+}
 LocationsList.defaultProps = {
     emptyMessage: textsCap.emptyMessage,
+    includePartners: false,
 }
 
 export const showModal = size => confirm({
     cancelButton: textsCap.close,
     confirmButton: null,
     content: <LocationsList />,
-    header: textsCap.locations,
-    size: size || 'large',
+    header: textsCap.myLocations,
+    size,
 })

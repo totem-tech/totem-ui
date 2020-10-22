@@ -6,7 +6,6 @@ import { getConnection, query as queryBlockchain } from '../../services/blockcha
 import storage from '../../services/storage'
 import { fetchProjects, getProjects as getUserProjects} from '../activity/activity'
 import { getSelected } from '../identity/identity'
-import { setHandlers } from './notificationHandlers'
 
 // to sumbit a new time record must submit with this hash
 export const NEW_RECORD_HASH = '0x40518ed7e875ba87d6c7358c06b1cac9d339144f8367a0632af7273423dd124e'
@@ -411,9 +410,6 @@ export const queueables = {
         }),
     },
 }
-
-// set notification item handlers
-setHandlers()
 
 export default {
     saveFormData,

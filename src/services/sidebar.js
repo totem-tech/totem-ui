@@ -403,8 +403,6 @@ rxSidebarState.subscribe(() => {
 
     rw({ status: rxSidebarState.value })
     setClass('body', {
-        desktop: rxLayout.value === DESKTOP,
-        mobile: rxLayout.value === MOBILE,
         'sidebar-visible': visible,
         'sidebar-collapsed': collapsed,
     })

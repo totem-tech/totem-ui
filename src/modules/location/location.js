@@ -1,10 +1,20 @@
 import DataStorage from '../../utils/DataStorage'
 import { randomHex } from '../../services/blockchain'
-import { inputNames, requiredFields } from './LocationForm'
-import { isObj, isStr, objClean, objContains } from '../../utils/utils'
+import { optionalFields, requiredFields } from './LocationForm'
+import { isObj, isStr, objClean, objHasKeys } from '../../utils/utils'
 
 const locations = new DataStorage('totem_locations', true)
 export const rxLocations = locations.rxData // RxJS Subject (because caching is disabled)
+export const allKeys = { ...requiredFields, ...optionalFields }
+
+/**
+ * @name	find
+ * @summary find locations
+ * @param	{...any} args see `DataStorage.find` for details
+ * 
+ * @returns	{*}
+ */
+export const find = (...args) => locations.find(...args)
 
 /**
  * @name    get
@@ -33,18 +43,28 @@ export const getAll = () => locations.getAll()
 export const remove = ids => { locations.delete(ids) }
 
 /**
+ * @name	search
+ * @summary search locations
+ * @param	{...any} args see `DataStorage.find` for details
+ * 
+ * @returns	{*}
+ */
+export const search = (...args) => locations.search(...args)
+
+/**
  * @name    set
  * @summary add or update location
  *
- * @param   {Object} location See `inputNames` for a list of accepted properties
+ * @param   {Object} location See `allKeys` for a list of accepted properties
  * @param   {String} id (optional) if not supplied, will generate a new random hex string
  */
 export const set = (location, id = randomHex()) => {
 	if (!isStr(id) || !isObj(location)) return
 	const existingItem = locations.get(id)
 	const requiredKeys = Object.values(requiredFields)
-	const validKeys = Object.values(inputNames)
-	if (!existingItem && !objContains(location, requiredKeys)) return console.log({location, validKeys})
+	const validKeys = Object.values(allKeys)
+	if (!existingItem && !objHasKeys(location, requiredKeys, true))
+		return console.log('Location save failed', { location, validKeys })
 
 	// merge with existing item and get rid of any unwanted properties
 	location = objClean({ ...existingItem, ...location }, validKeys)

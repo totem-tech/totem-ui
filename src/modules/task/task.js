@@ -3,10 +3,6 @@ import { query as queryHelper, randomHex } from '../../services/blockchain'
 import { translated } from '../../services/language'
 import storage from '../../services/storage'
 import client from '../chat/ChatClient'
-import { setHandlers } from "./notificationHandlers"
-
-// set notification item view handlers
-setHandlers()
 
 export const PRODUCT_HASH_LABOUR = generateHash('labour')
 const MODULE_KEY = 'task'

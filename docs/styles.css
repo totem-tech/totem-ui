@@ -329,24 +329,41 @@ form.ui.form .field > label {
 .ui.form .fields.form-group > .field > .field {
     padding: 0;
 }
+body.mobile .form-group > .field:not(:last-child) {
+    padding-bottom: 15px;
+}
 /* Input group with accordion */
 .ui.form > .accordion.styled {
     box-shadow: 1px 3px 3px 0 rgba(34,36,38,.15), 1px 3px 15px 2px rgba(34,36,38,.15);
+}
+/* secondary form inside accordion */
+.ui.form > .accordion .ui.form > .field {
+    margin-bottom: 10px;
+}
+.ui.form > .accordion .ui.form > .fields {
+    margin: 0 0 10px;
 }
 /* checkbox/radios: bold text when checked */
 input:checked~label {
 	font-weight: bold;
 }
 
-/* Message */
-/* forces close icon to be over content */
+/* read only inputs */
+.ui.input > input[readonly],
+input[readonly] {
+	background: #cccccc !important;
+	cursor: not-allowed;
+}
+
+/* Message : forces close icon to be over content */
 .ui.message .icon.close {
   z-index: 1;
 }
 
-input[readonly] {
-  cursor: not-allowed;
+.ui.modal > .header {
+	text-transform: capitalize;
 }
+
 
 
 /* Page header:

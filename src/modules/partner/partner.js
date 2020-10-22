@@ -1,9 +1,19 @@
 import DataStorage from '../../utils/DataStorage'
-import { textEllipsis, arrUnique } from '../../utils/utils'
+import { textEllipsis, arrUnique, objHasKeys, isAddress, objClean } from '../../utils/utils'
 import identities from '../identity/identity'
+import { remove as removeLocation } from '../location/location'
+import { inputNames as allFields, requiredFields } from './PartnerForm'
 
 const partners = new DataStorage('totem_partners')
 export const rxPartners = partners.rxData
+export const types = Object.freeze({
+    BUSINESS: 'business',
+    PERSONAL: 'personal',
+})
+export const visibilityTypes = {
+    PRIVATE: 'private',
+    PUBLIC: 'public',
+}
 
 export const get = address => partners.get(address)
 
@@ -35,35 +45,72 @@ export const getByName = name => partners.find({ name }, true, true, true)
 // returns first matching partner with userId
 export const getByUserId = id => (Array.from(partners.getAll()).find(([_, { userId }]) => userId === id) || [])[1]
 
-export const remove = address => partners.delete(address)
-
-// Add/update partner
-export const set = (address, name, tags, type, userId, visibility, associatedIdentity) => {
-    name = name.trim()
-    address = address.trim()
-    tags = tags || []
-    type = type || 'personal'
-    if (!name || !address) return
-    partners.set(address, {
-        address,
-        name,
-        tags,
-        type,
-        userId,
-        visibility,
-        associatedIdentity,
-        isPublic: visibility === 'public',
-    })
+export const remove = address => {
+    const { name, locationId } = partners.get(address) || {}
+    name && partners.delete(address)
+    locationId && removeLocation(locationId)
 }
 
+// Add/update partner
+// export const set = (address, name, tags, type, userId, visibility, associatedIdentity) => {
+//     name = name.trim()
+//     address = address.trim()
+//     tags = tags || []
+//     type = type || 'personal'
+//     if (!name || !address) return
+//     partners.set(address, {
+//         address,
+//         name,
+//         tags,
+//         type,
+//         userId,
+//         visibility,
+//         associatedIdentity,
+//         isPublic: visibility === 'public',
+//     })
+// }
+/**
+ * @name    set
+ * @summary add or update partner
+ * 
+ * @param   {String}      values.address              partner address/identity. Also used as key/ID.
+ * @param   {String}      values.name                 partner name
+ * @param   {String}      values.type                 partner type: public or personal
+ * @param   {String}      values.visibility           whether partner is public or private
+ * @param   {String}      values.associatedIdentity   (optional) own identity/address
+ * @param   {locationId}  values.locationId           (optional) partner location ID
+ * @param   {Array}       values.tags                 (optional)
+ * @param   {String}      values.userId               (optional) partner user ID
+ * 
+ * @returns {Boolean} indicates save success or failure
+ */
+export const set = values => {
+    const { address, name, tags, type } = values
+    values.name = name.trim()
+    values.address = address.trim()
+    values.tags = tags || []
+    values.type = Object.values(types).includes(type) ? type : types.PERSONAL
+    if (!objHasKeys(values, Object.values(requiredFields), true)) return false
+    if (!isAddress(values.address)) return false
+    // get rid of any unwanted properties
+    values = objClean(values, Object.values(allFields))
+    partners.set(address, values)
+
+    return true
+}
+
+/**
+ * @name    setPublic
+ * @summary set partner visibility
+ * 
+ * @param {String} address 
+ * @param {String} visibility 
+ */
 // Set partner as public
-export const setPublic = (address, visibility = 'public') => {
+export const setPublic = (address, visibility) => {
     const partner = partners.get(address)
-    partner && partners.set(address, {
-        ...partner,
-        isPublic : visibility === 'public',
-        visibility,
-    })
+    visibility = Object.values(visibilityTypes).includes(visibility) ? visibility : visibilityTypes.PUBLIC
+    partner && partners.set(address, { ...partner, visibility })
 }
 
 export default {

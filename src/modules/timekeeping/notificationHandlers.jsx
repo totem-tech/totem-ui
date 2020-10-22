@@ -143,7 +143,7 @@ const handleInvitationResponseItemView = (id, notification, { senderIdBtn }) => 
     return item
 }
 
-export const itemViewHandlers = [
+setTimeout(()=> [
     {
         childType: 'invitation',
         handler: hanldeInvitationItemView,
@@ -154,8 +154,4 @@ export const itemViewHandlers = [
         handler: handleInvitationResponseItemView,
         type: 'timekeeping',
     }
-]
-
-
-// set notification item handlers
-export const setHandlers = () => itemViewHandlers.forEach(x => setItemViewHandler(x.type, x.childType, x.handler))
+].forEach(x => setItemViewHandler(x.type, x.childType, x.handler)))

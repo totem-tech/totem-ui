@@ -10,7 +10,8 @@ import { getAll as getPartners } from '../partner/partner'
 import { find as findIdentity, getAll as getIdentities } from './identity'
 import { Button } from 'semantic-ui-react'
 import { showForm } from '../../services/modal'
-import LocationForm, { inputNames as locFormInputNames} from './LocationForm'
+import LocationForm, { inputNames as locFormInputNames} from '../location/LocationForm'
+import { get as getLocation } from '../location/location'
 
 const notificationType = 'identity'
 const childType = 'share'
@@ -196,11 +197,15 @@ export default class IdentityShareForm extends Component {
                     <Button {...{
                         circular: true,
                         icon: 'pencil',
-                        onClick: e => e.preventDefault() | showForm( LocationForm, {
-                            id: locationId,
-                            // disable remove button prevent location being deleted from here
-                            inputsDisabled: [locFormInputNames.removeBtn],
-                        }),
+                        onClick: e => {
+                            e.stopPropagation()
+                            e.preventDefault()
+                            showForm(LocationForm, {
+                                id: locationId,
+                                // disable remove button prevent location being deleted from here
+                                inputsDisabled: [locFormInputNames.removeBtn],
+                            })
+                        },
                         size: 'mini',
                         title: textsCap.updateLocation,
                     }} />
@@ -214,14 +219,16 @@ export default class IdentityShareForm extends Component {
     handleSubmit = (e, values) => {
         const { onSubmit } = this.props
         const { inputs } = this.state
+        const addressIn = findInput(inputs, this.names.address)
         const address = values[this.names.address]
-        const name = values[this.names.name]
+        const identity = findIdentity(address)
+        const sharePartner = !identity
+        const includeLocation = values[this.names.includeLocation]
+        const name = values[this.names.name] || addressIn.options.find(x => x.value === address).name
         const userIds = values[this.names.userIds]
-        const sharePartner = !findIdentity(address)
-        const data = {
-            address,
-            name: name || findInput(inputs, this.names.address).options.find(x => x.value === address).name,
-        }
+        const location = includeLocation && identity ? getLocation(identity.locationId) : undefined
+        const data = { address, name, location }
+        
         this.setState({ loading: true })
         const callback = err => {
             const success = !err

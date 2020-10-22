@@ -2,14 +2,18 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { ss58Decode, addressToStr } from '../../utils/convert'
+import PromisE from '../../utils/PromisE'
 import { arrSort, deferred, isFn, isObj, arrUnique } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { showForm } from '../../services/modal'
 import { translated } from '../../services/language'
 import client from '../chat/ChatClient'
 import identityService from '../identity/identity'
-import addressbook, { getAddressName, getAllTags } from './partner'
+import { search as searchLocation } from '../location/location'
+import { inputNames as locationInputNames } from '../location/LocationForm'
+import { get, getAddressName, getAllTags, getByName, set, setPublic, types, visibilityTypes } from './partner'
 import CompanyForm from './CompanyForm'
+import LocationForm from '../location/LocationForm'
 
 const textsCap = translated({
     business: 'business',
@@ -34,6 +38,7 @@ const textsCap = translated({
     `,
     header1: 'add partner',
     header2: 'update partner',
+    locationGroupLabel: 'location',
     nameLabel: 'enter partner name',
     namePlaceholder: 'enter a name for this partner',
     nameValidationMsg: 'please choose an unique partner name.',
@@ -48,14 +53,35 @@ const textsCap = translated({
     visibilityLabel: 'decide partner visibility (on the network)',
 }, true)[1]
 
+export const requiredFields = {
+    address: 'address',
+    name: 'name',
+    type: 'type',
+    visibility: 'visibility',
+}
+export const inputNames = {
+    ...requiredFields,
+    associatedIdentity: 'associatedIdentity',
+    locationFormHtml: 'locationFormHtml',
+    locationGroup: 'locationGroup',
+    tags: 'tags',
+    userId: 'userId',
+}
+
 export default class PartnerForm extends Component {
     constructor(props = {}) {
         super(props)
 
-        this.partner = props.values && addressbook.get(props.values.address)
+        this.partner = props.values && get(props.values.address)
         this.doUpdate = !!this.partner
+        this.companySearchDP = PromisE.deferred()
         const values = { ...this.partner, ...props.values }
         const { address, name, tags = [], visibility } = values
+        const locationQuery = {}
+        locationQuery[locationInputNames.partnerIdentity] = address
+        const locationResult = searchLocation(locationQuery, true, true, false, 1)
+        const [ locationId, location ] = Array.from(locationResult)[0] || []
+
 
         // placeholder to store user added address to the dropdown list
         this.customAddresses = []
@@ -72,15 +98,15 @@ export default class PartnerForm extends Component {
                 {
                     inline: true,
                     label: textsCap.typeLabel,
-                    name: 'type',
+                    name: inputNames.type,
                     options: [
-                        { label: textsCap.personal, value: 'personal' },
-                        { label: textsCap.business, value: 'business' }
+                        { label: textsCap.personal, value: types.PERSONAL },
+                        { label: textsCap.business, value: types.BUSINESS }
                     ],
                     radio: true,
                     required: true,
                     type: 'checkbox-group',
-                    value: 'personal'
+                    value: types.PERSONAL,
                 },
                 {
                     allowAdditions: false,
@@ -90,7 +116,7 @@ export default class PartnerForm extends Component {
                     disabled: !this.doUpdate && !!ss58Decode(address),
                     hidden: this.doUpdate,
                     label: textsCap.addressLabel,
-                    name: 'address',
+                    name: inputNames.address,
                     onAddItem: this.handleAddressAddItem,
                     onChange: this.handleAddressChange,
                     onSearchChange: this.handleAddressSearchChange,
@@ -108,7 +134,7 @@ export default class PartnerForm extends Component {
                 },
                 {
                     label: textsCap.nameLabel,
-                    name: 'name',
+                    name: inputNames.name,
                     placeholder: textsCap.namePlaceholder,
                     required: true,
                     type: 'text',
@@ -118,7 +144,7 @@ export default class PartnerForm extends Component {
                 {
                     clearable: true,
                     label: textsCap.associatedIdentityLabel,
-                    name: 'associatedIdentity',
+                    name: inputNames.associatedIdentity,
                     options: [],
                     placeholder: textsCap.associatedIdentityPlaceholder,
                     selection: true,
@@ -128,7 +154,7 @@ export default class PartnerForm extends Component {
                 {
                     allowAdditions: true,
                     label: textsCap.tags,
-                    name: 'tags',
+                    name: inputNames.tags,
                     noResultsMessage: textsCap.tagsNoResultsMsg,
                     multiple: true,
                     onAddItem: this.handleAddTag,
@@ -144,26 +170,57 @@ export default class PartnerForm extends Component {
                     value: tags || []
                 },
                 {
-                    disabled: this.doUpdate && visibility === 'public',
+                    disabled: this.doUpdate && visibility === visibilityTypes.PUBLIC,
                     inline: true,
                     label: textsCap.visibilityLabel,
-                    name: 'visibility',
+                    name: inputNames.visibility,
                     options: [
-                        { label: textsCap.private, value: 'private' },
-                        { label: textsCap.public, value: 'public' }
+                        { label: textsCap.private, value: visibilityTypes.PRIVATE },
+                        { label: textsCap.public, value: visibilityTypes.PUBLIC }
                     ],
                     radio: true,
-                    rxValue: new BehaviorSubject(values.visibility || 'private'),
+                    required: true,
+                    rxValue: new BehaviorSubject(values.visibility || visibilityTypes.PRIVATE),
                     type: 'checkbox-group',
                 },
                 {
                     label: textsCap.userIdLabel,
-                    name: 'userId',
+                    name: inputNames.userId,
                     multiple: false,
                     placeholder: textsCap.userIdPlaceholder,
                     type: 'UserIdInput',
                 },
-            ]
+                location && {
+                    accordion: {
+						collapsed: true,
+						styled: true,
+                    },
+                    label: textsCap.locationGroupLabel,
+                    name: inputNames.locationGroup,
+                    type: 'group',
+                    inputs: [{
+                        name: inputNames.locationFormHtml,
+                        type: 'html',
+                        content: (
+                            <LocationForm {...{
+                                El: 'div',
+                                id: locationId,
+                                inputsHidden: [locationInputNames.partnerName],
+                                style: { width: '100%' },
+                                submitText: null,
+                                values: location,
+                                // hide location related inputs when partner location is removed
+                                onRemove: () => {
+                                    const { inputs } = this.state
+                                    const locationGroupIn = findInput(inputs, inputNames.locationGroup) || {}
+                                    locationGroupIn.hidden = true
+                                    this.setState({ inputs })
+                                },
+                            }} />
+                        ),
+                    }],
+                }
+            ].filter(Boolean)
         }
         if (this.doUpdate) {
             this.state.subheader = <i style={{ color: 'grey' }}>{textsCap.autoSaved}</i>
@@ -177,7 +234,7 @@ export default class PartnerForm extends Component {
         this._mounted = true
         const { inputs, values } = this.state
         // const addressIn = findInput(inputs, 'address')
-        const assocIn = findInput(inputs, 'associatedIdentity')
+        const assocIn = findInput(inputs, inputNames.associatedIdentity)
         assocIn.options = arrSort(
             identityService.getAll().map(({ name, address }) => ({
                 key: address,
@@ -201,31 +258,31 @@ export default class PartnerForm extends Component {
     checkVisibility = async (address) => {
         if (!address) return
         const { inputs, values } = this.state
-        const addressIn = findInput(inputs, 'address')
-        const visibilityIn = findInput(inputs, 'visibility')
-        const nameIn = findInput(inputs, 'name')
+        const addressIn = findInput(inputs, inputNames.address)
+        const visibilityIn = findInput(inputs, inputNames.visibility)
+        const nameIn = findInput(inputs, inputNames.name)
         addressIn.loading = !!address
         this.setState({ inputs })
 
         // check if address is aleady public
         const result = await client.companySearch.promise(address, true)
         const exists = result.size > 0
-        const visibility = exists ? 'public' : 'private'
+        const visibility = exists ? visibilityTypes.PUBLIC : visibilityTypes.PRIVATE
         addressIn.loading = false
         addressIn.disabled = exists
         visibilityIn.disabled = exists
         visibilityIn.rxValue.next(visibility)
         nameIn.disabled = exists
 
-        // make sure addressbook is also updated
-        this.doUpdate && addressbook.setPublic(address, visibility)
+        // make sure partner list is also updated
+        this.doUpdate && setPublic(address, visibility)
         this.setState({ inputs, values })
     }
 
     handleAddressAddItem = (_, { value }) => {
         if (this.customAddresses.includes(value)) return
         const { inputs } = this.state
-        findInput(inputs, 'address').options.push({
+        findInput(inputs, inputNames.address).options.push({
             key: value,
             text: value,
             value,
@@ -235,9 +292,9 @@ export default class PartnerForm extends Component {
 
     handleAddressChange = (e, { address }, i) => {
         const { inputs } = this.state
-        const nameIn = findInput(inputs, 'name')
+        const nameIn = findInput(inputs, inputNames.name)
         const { company } = inputs[i].options.find(x => x.value === address) || {}
-        findInput(inputs, 'visibility').hidden = !!company
+        findInput(inputs, inputNames.visibility).hidden = !!company
         nameIn.hidden = !!company
         this.setState({ inputs })
     }
@@ -245,16 +302,20 @@ export default class PartnerForm extends Component {
     handleAddressSearchChange = deferred((_, { searchQuery }) => {
         if (!searchQuery) return
         const { inputs } = this.state
-        const addressIn = findInput(inputs, 'address')
+        const { values = {} } = this.props
+        const addressIn = findInput(inputs, inputNames.address)
         const isValidAddress = !!addressToStr(searchQuery)
+        const promise = client.companySearch.promise(searchQuery, false)
         addressIn.allowAdditions = false
         addressIn.loading = true
         this.setState({ inputs })
 
-        client.companySearch(searchQuery, false, (err, companies) => {
+        const handleResult = success => result => {
+            const err = !success ? result : null
+            const companies = success ? result : new Map()
             addressIn.loading = false
             addressIn.allowAdditions = !err && companies.size === 0 && isValidAddress
-            addressIn.options = err ? [] : Array.from(companies).map(([hash, company]) => {
+            addressIn.options = err || !companies ? [] : Array.from(companies).map(([hash, company]) => {
                 const identityName = getAddressName(company.address)
                 return {
                     company, // keep
@@ -265,14 +326,24 @@ export default class PartnerForm extends Component {
                     value: company.identity,
                 }
             })
+            if (values.address && isValidAddress && addressIn.options.length === 0) {
+                // valid address
+                addressIn.hidden = true
+                addressIn.options = [{
+                    key: searchQuery,
+                    text: searchQuery,
+                    value: searchQuery,
+                }]
+            }
             addressIn.message = !err ? null : { content: err, status: 'error' }
             this.setState({ inputs })
-        })
+        }
+        this.companySearchDP(promise).then(handleResult(true), handleResult(false))
     }, 300)
 
     handleAddTag = (_, data) => {
         const { inputs } = this.state
-        inputs.find(x => x.name === 'tags').options.push({
+        inputs.find(x => x.name === inputNames.tags).options.push({
             key: data.value,
             text: data.value,
             value: data.value
@@ -288,18 +359,19 @@ export default class PartnerForm extends Component {
     handleSubmit = deferred(() => {
         const { closeOnSubmit, onSubmit } = this.props
         const { inputs, values } = this.state
-        const { company } = findInput(inputs, 'address').options.find(x => x.value === values.address) || {}
-        const visibilityIn = findInput(inputs, 'visibility')
+        const { company = {} } = (findInput(inputs, inputNames.address) || { options: []})
+            .options.find(x => x.value === values.address) || {}
+        const visibilityIn = findInput(inputs, inputNames.visibility)
         const visibilityDisabled = visibilityIn.disabled || visibilityIn.hidden
         const companyExists = !!company || visibilityDisabled
-        let { associatedIdentity, name, address, tags, type, userId, visibility } = values
+        let { name, address, visibility } = values
         if (!!companyExists) {
             name = company && company.name || name
-            visibility = 'public'
+            visibility = visibilityTypes.PUBLIC
         }
-        const addCompany = !visibilityDisabled && visibility === 'public' && !company
-
-        addressbook.set(address, name, tags, type, userId, addCompany ? 'private' : visibility, associatedIdentity)
+        const addCompany = !visibilityDisabled && visibility === visibilityTypes.PUBLIC && !company
+        // save partner
+        set(values)
         !this.doUpdate && this.setState({
             message: closeOnSubmit ? null : {
                 content: this.doUpdate ? textsCap.submitSuccessMsg2 : textsCap.submitSuccessMsg1,
@@ -318,18 +390,15 @@ export default class PartnerForm extends Component {
                 icon: true,
                 status: 'success'
             },
-            onSubmit: (e, v, success) => success && addressbook.setPublic(address),
+            onSubmit: (e, v, success) => !success && setPublic(address, visibilityTypes.PRIVATE),
             size: 'tiny',
-            values: {
-                name,
-                identity: address,
-            }
+            values: { name, identity: address }
         })
     }, 100)
 
     validateAddress(e, { value: address }) {
         if (!address) return
-        const partner = addressbook.get(address)
+        const partner = get(address)
         if (partner) return (
             <p>
                 {textsCap.addressValidationMsg1} <br />
@@ -343,7 +412,7 @@ export default class PartnerForm extends Component {
         const { values: oldValues } = this.props
         name = name.trim()
         if (this.doUpdate && isObj(oldValues) && oldValues.name === name) return
-        if (addressbook.getByName(name)) return textsCap.nameValidationMsg
+        if (getByName(name)) return textsCap.nameValidationMsg
     }
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />

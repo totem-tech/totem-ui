@@ -8,12 +8,8 @@ import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
 import { unsubscribe } from '../../services/react'
 import { rxLayout, MOBILE } from '../../services/window'
-// forms
-import { createInbox } from '../chat/chat'
-import { getUser } from '../chat/ChatClient'
-// import IntroduceUserForm from '../chat/IntroduceUserForm'
 import IdentityRequestForm from '../identity/IdentityRequestForm'
-import addressbook, { getAddressName, rxPartners } from './partner'
+import { getAddressName, remove, rxPartners, setPublic, visibilityTypes } from './partner'
 import CompanyForm from './CompanyForm'
 import PartnerForm from './PartnerForm'
 
@@ -62,18 +58,21 @@ export default class PartnerList extends Component {
                         title: textsCap.edit,
                     },
                     {
-                        content: ({ address, name, isPublic }) => (
-                            <div title={isPublic ? textsCap.columnPublicTitle1 : textsCap.columnPublicTitle2}>
-                                <Checkbox
-                                    checked={isPublic}
-                                    toggle
-                                    onChange={(_, { checked }) => checked && showForm(CompanyForm, {
-                                        values: { name, identity: address },
-                                        onSubmit: (e, v, success) => success && addressbook.setPublic(address),
-                                    })}
-                                />
-                            </div>
-                        ),
+                        content: ({ address, name, visibility }) => {
+                            const isPublic = visibility === visibilityTypes.PUBLIC
+                            return (
+                                <div title={isPublic ? textsCap.columnPublicTitle1 : textsCap.columnPublicTitle2}>
+                                    <Checkbox
+                                        checked={isPublic}
+                                        toggle
+                                        onChange={(_, { checked }) => checked && showForm(CompanyForm, {
+                                            values: { name, identity: address },
+                                            onSubmit: (e, v, success) => success && setPublic(address),
+                                        })}
+                                    />
+                                </div>
+                            )
+                        },
                         collapsing: true,
                         textAlign: 'center',
                         title: textsCap.public,
@@ -102,8 +101,6 @@ export default class PartnerList extends Component {
     componentWillMount() {
         this._mounted = true
         this.subscriptions = {}
-        const { id: ownId } = getUser() || {}
-
         this.subscriptions.layout = rxLayout.subscribe(layout => this.setState({ isMobile: layout === MOBILE }))
         this.subscriptions.partners = rxPartners.subscribe(map => {
             const { listProps } = this.state
@@ -113,22 +110,18 @@ export default class PartnerList extends Component {
                 partner._address = textEllipsis(address, 15, 3)
                 partner._associatedIdentity = associatedIdentity && getAddressName(associatedIdentity)
                 partner._name = (
-                    <span>
-                        <Button {...{
-                            disabled: !userId || userId === ownId,
-                            circular: true,
-                            icon: 'chat',
-                            onClick: () => createInbox([userId], null, true),
-                            size: 'mini',
-                            title: textsCap.chat,
-                        }} />
-                        {textEllipsis(name, 25, 3, false)}
-                    </span>
-                )
-                partner._name = (
                     <div style={{ margin: !userId ? 0 : '-10px 0' }}>
                         {textEllipsis(name, 25, 3, false)}
-                        <UserID El='div' style={{ color: 'grey', fontSize: '80%' }} userId={userId} />
+                        <UserID {...{
+                            El: 'div',
+                            style: {
+                                color: 'grey',
+                                fontSize: '80%',
+                                marginTop: -15,
+                                paddingTop: 15,
+                            },
+                            userId,
+                        }} />
                     </div>
                 )
                 partner._tags = (tags || []).map(tag => (
@@ -196,7 +189,7 @@ export default class PartnerList extends Component {
                     confirmButton: <Button negative content={textsCap.delete} />,
                     content: <p>{textsCap.partnerName}: <b>{name}</b></p>,
                     header: `${textsCap.removePartner}?`,
-                    onConfirm: () => addressbook.remove(address),
+                    onConfirm: () => remove(address),
                     size: 'mini',
                 }),
                 title: textsCap.delete,

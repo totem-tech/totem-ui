@@ -11,6 +11,7 @@ import chatClient from './modules/chat/ChatClient'
 import currency from './services/currency'
 import identity from './modules/identity/identity'
 import language from './services/language'
+import filePaths from './services/languageFiles'
 import modal, { ModalsConainer } from './services/modal'
 import NotificationView from './modules/notification/NotificationView'
 import partner from './modules/partner/partner'
@@ -76,6 +77,9 @@ export default function App() {
 			queueResumed = true
 			setTimeout(() => resumeQueue(), 1000)
 		}
+		filePaths
+			.filter(path => path.includes('/notificationHandlers.js'))
+			.forEach(path => require(`./${path.replace('./src/', '')}`))
 		return () => { }
 	}, [])
 
@@ -140,5 +144,3 @@ const styles = {
 		padding: 0
 	}
 }
-
-

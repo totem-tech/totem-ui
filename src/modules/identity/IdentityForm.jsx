@@ -6,9 +6,9 @@ import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder
 import { translated } from '../../services/language'
 import { getAllTags } from '../partner/partner'
 import { addFromUri, find, generateUri, get, set } from './identity'
-import { getAll as getLocations } from './location'
+import { getAll as getLocations } from '../location/location'
 import { showForm } from '../../services/modal'
-import LocationForm from './LocationForm'
+import LocationForm from '../location/LocationForm'
 import { Button } from 'semantic-ui-react'
 
 const textsCap = translated({
@@ -139,18 +139,11 @@ export default class IdentityForm extends Component {
                                 <Button {...{
                                     // button to add contact address
                                     icon: 'plus',
-                                    onClick: () => showForm(
-                                        LocationForm,
-                                        {
-                                            closeOnSubmit: true,
-                                            onSubmit: this.handleLocationCreate,
-                                        }
-                                    ),
+                                    onClick: () => showForm(LocationForm, { onSubmit: this.handleLocationCreate }),
                                     style: {
                                         borderTopRightRadius: 0,
                                         borderBottomRightRadius: 0,
                                         cursor: 'pointer',
-                                        marginLeft: 1,
                                         padding: 12,
                                     },
                                 }} />
@@ -167,7 +160,7 @@ export default class IdentityForm extends Component {
                         borderTopLeftRadius: 0,
                         borderBottomLeftRadius: 0,
                         maxWidth: 'calc( 100% - 42px )',
-                        marginLeft: 42,
+                        marginLeft: 40,
                         minWidth: 'auto',
                      }, // extra spacing for the plus button
                     type: 'dropdown',

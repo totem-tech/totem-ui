@@ -48,12 +48,10 @@ const handleAssignmentItemView = (id, notification = {}, { senderIdBtn }) => {
 
 // export const handleAssignmentResponseItemView
 
-const itemViewHandlers = [
+setTimeout(() => [
     {
         childType: 'assignment',
         handler: handleAssignmentItemView,
         type: 'task',
     }
-]
-
-export const setHandlers = () => itemViewHandlers.forEach(x => setItemViewHandler(x.type, x.childType, x.handler))
+].forEach(x => setItemViewHandler(x.type, x.childType, x.handler)))

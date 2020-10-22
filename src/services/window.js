@@ -133,6 +133,12 @@ rxInverted.subscribe(inverted => {
     ignoredFirstInverted = true
     setClass('body', { inverted })
 })
+rxLayout.subscribe(layout => {
+    setClass('body', {
+        desktop: layout === DESKTOP,
+        mobile: layout === MOBILE,
+    })
+})
 document.addEventListener('visibilitychange', () =>
     rxVisible.next(document.visibilityState === 'visible')
 )

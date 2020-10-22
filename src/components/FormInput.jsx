@@ -5,6 +5,7 @@ import PromisE from '../utils/PromisE'
 import { deferred, hasValue, isArr, isFn, isObj, isStr, objWithoutKeys, searchRanked, isBool } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
 import Message from './Message'
+import Invertible from './Invertible'
 // Custom Inputs
 import CheckboxGroup from './CheckboxGroup'
 import UserIdInput from './UserIdInput'
@@ -227,7 +228,7 @@ export class FormInput extends Component {
 			case 'group':
 				// NB: if `widths` property is used `unstackable` property is ignored by Semantic UI!!!
 				isGroup = true
-				inputEl = attrs.inputs.map((subInput, i) => <FormInput key={i} {...subInput} />)
+				inputEl = attrs.inputs.map((props, i) => <FormInput key={attrs.name + i} {...props} />)
 				break
 			case 'hidden':
 				hideLabel = true
@@ -250,50 +251,33 @@ export class FormInput extends Component {
 				inputEl = <El {...attrs} />
 		}
 
-		if (!isGroup)
-			return (
-				<Form.Field
-					error={(message && message.status === 'error') || !!error || !!invalid}
-					required={required}
-					style={styleContainer}
-					title={editable ? undefined : textsCap.readOnlyField}
-					width={width}
-				>
-					{!hideLabel && label && (
-						<label htmlFor={name}>
-							{label}
-							{editable ? '' : (
-								<Icon.Group style={{marginLeft: 5}}>
-									<Icon
-										className='no-margin'
-										name='pencil'
-									/>
-									<Icon
-										className='no-margin'
-										color='red'
-										name='ban'
-									/>
-								</Icon.Group>
-							)}
-						</label>
-					)}
-					{inputEl}
-					{message && <Message {...message} />}
-				</Form.Field>
-			)
+		if (!isGroup) return (
+			<Form.Field
+				error={(message && message.status === 'error') || !!error || !!invalid}
+				required={required}
+				style={styleContainer}
+				title={editable ? undefined : textsCap.readOnlyField}
+				width={width}
+			>
+				{!hideLabel && label && <label htmlFor={name}>{label}</label>}
+				{inputEl}
+				{message && <Message {...message} />}
+			</Form.Field>
+		)
 
 		let groupEl = (
 			<React.Fragment>
 				<Form.Group {...{
 					className: 'form-group',
-					content: inputEl,
 					...objWithoutKeys(attrs, ['inputs']),
 					style: {
-						margin: '0px -5px 15px -5px',
+						// margin: '0px -5px 15px -5px',
 						...styleContainer,
 						...attrs.style,
 					},
-				}} />
+				}}>
+					{inputEl}
+				</Form.Group>
 				<Message {...message} />
 			</React.Fragment>
 		)
@@ -304,7 +288,11 @@ export class FormInput extends Component {
 		if (!isBool(collapsed)) collapsed = accordion.collapsed
 
 		return (
-			<Accordion {...objWithoutKeys(accordion, NON_ATTRIBUTES)} style={{ marginBottom: 15, ...accordion.style }}>
+			<Invertible {...{
+				El: Accordion,
+				...objWithoutKeys(accordion, NON_ATTRIBUTES),
+				style:{ marginBottom: 15, ...accordion.style },
+			}}>
 				<Accordion.Title
 					active={!collapsed}
 					content={accordion.title || label}
@@ -315,7 +303,7 @@ export class FormInput extends Component {
 					}}
 				/>
 				<Accordion.Content {...{ active: !collapsed, content: groupEl }} />
-			</Accordion>
+			</Invertible>
 		)
 	}
 }
