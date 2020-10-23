@@ -17,7 +17,7 @@ const textsCap = translated({
     givenNamePlaceholder: 'enter your given name',
     formHeader: 'request deposit address',
     identityErrorLocation: 'please select an identity with contact address',
-    identityLabel: 'identity',
+    identityLabel: 'identity (to receive funds)',
     identityPlaceholder: 'select an identity',
 }, true)[1]
 export const inputNames = {
@@ -28,16 +28,17 @@ export const inputNames = {
 }
 
 export default function RequestFrom(props = {}) {
-    const [inputs] = useState(() => fillValues(formInputs, props.values))
-    const [state, setState] = useState({ })
+    const [inputs] = useState(fillValues(formInputs, props.values))
+    const [state, setState] = useState({})
     const [identityOptions] = useRxSubject(
         rxIdentities,
         map => Array.from(map).map(([_, { address, locationId, name }]) => {
             const location = getLocation(locationId)
+            const locationName = textEllipsis(location.name, 15, 3, false)
             return {
                 description: !location ? '' : (
                     <span>
-                        <Icon className='no-margin' name='building' /> {textEllipsis(location.name, 15, 3, false)}
+                        <Icon className='no-margin' name='building' /> {locationName}
                     </span>
                 ), //location name with icon
                 key: address,
@@ -58,7 +59,7 @@ export default function RequestFrom(props = {}) {
             ...props,
             ...state,
             inputs,
-            onSubmit: handleSubmit.bind({ props, state, setState }),
+            onSubmit: handleSubmit.bind({ props, state, setState, inputs }),
         }} />
     )
 }
@@ -84,22 +85,28 @@ const formInputs = [
         }
     },
     {
-        label: textsCap.givenNameLabel,
-        maxLength: 64,
-        minLength: 3,
-        name: inputNames.givenName,
-        placeholder: textsCap.givenNamePlaceholder,
-        required: true,
-        type: 'text',
-    },
-    {
-        label: textsCap.familyNameLabel,
-        maxLength: 64,
-        minLength: 3,
-        name: inputNames.familyName,
-        placeholder: textsCap.familyNamePlaceholder,
-        required: true,
-        type: 'text',
+        name: 'names',
+        type: 'group',
+        inputs: [
+            {
+                label: textsCap.givenNameLabel,
+                maxLength: 64,
+                minLength: 3,
+                name: inputNames.givenName,
+                placeholder: textsCap.givenNamePlaceholder,
+                required: true,
+                type: 'text',
+            },
+            {
+                label: textsCap.familyNameLabel,
+                maxLength: 64,
+                minLength: 3,
+                name: inputNames.familyName,
+                placeholder: textsCap.familyNamePlaceholder,
+                required: true,
+                type: 'text',
+            },
+        ],
     },
     {
         label: textsCap.emailLabel,
@@ -122,5 +129,4 @@ function handleSubmit(_, values) {
         setState.mounted && setState({...state, loading: false, success: true})
     }, 3000)
 }
-
-// showForm(RequestFrom)
+showForm(RequestFrom)
