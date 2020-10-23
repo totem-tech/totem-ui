@@ -5,7 +5,7 @@ import { showForm } from '../../services/modal'
 import { generateHash, isObj } from '../../utils/utils'
 import { remove as removeLocation, set as saveLocation } from '../location/location'
 import { inputNames as locationKeys } from '../location/LocationForm'
-import { remove, setItemViewHandler } from '../notification/notification'
+import { remove, rxVisible, setItemViewHandler } from '../notification/notification'
 import { get } from './partner'
 import PartnerForm from './PartnerForm'
 
@@ -25,36 +25,33 @@ const textsCap = translated({
 const handleIdentityReceived = (id, notification, { senderId, senderIdBtn }) => {
     const { data, message } = notification
     const { address, introducedBy, location } = data || {}
-    const actionBtn = (
-        <ButtonAcceptOrReject {...{
-            acceptColor: 'blue',
-            acceptText: textsCap.addPartner,
-            rejectText: textsCap.ignore,
-            onClick: accepted => {
-                if (!accepted) return remove(id)
+    const handleClick = accepted => {
+        if (!accepted) return remove(id)
 
-                const locationId = generateHash(address)
-                const hasLocation = isObj(location)
-                // remove the location if partner wasn't added
-                const removeLocIfNoPartner = () => !get(address) && removeLocation(locationId)
-                if (hasLocation) {
-                    location[locationKeys.partnerIdentity] = address
-                    saveLocation(location, locationId)
-                }
-                                        
-                showForm(PartnerForm, {
-                    values: { ...data, userId: senderId },
-                    onClose: removeLocIfNoPartner,
-                    onSubmit: success => {
-                        // remove notification
-                        if (success) return
-                        // partner wasn't created
-                        removeLocIfNoPartner()
-                    },
-                })
-            }
-        }} />
-    )
+        const locationId = generateHash(address)
+        const hasLocation = isObj(location)
+        // remove the location if partner wasn't added
+        const removeLocIfNoPartner = () => !get(address) && removeLocation(locationId)
+        if (hasLocation) {
+            location[locationKeys.partnerIdentity] = address
+            saveLocation(location, locationId)
+        }
+                                
+        showForm(PartnerForm, {
+            values: { ...data, userId: senderId },
+            onClose: removeLocIfNoPartner,
+            onSubmit: success => {
+                // partner wasn't created
+                if (!success) return removeLocIfNoPartner()
+                // remove notification
+                remove(id)
+                // hide notifications
+                rxVisible.next(false)
+                
+            },
+        })
+    }
+    
     return {
         icon: { name: 'user plus' },
         content: (
@@ -65,7 +62,12 @@ const handleIdentityReceived = (id, notification, { senderId, senderIdBtn }) => 
                         {textsCap.introducedBy} <UserID userId={introducedBy} />
                     </div>
                 )}
-                {actionBtn}
+                <ButtonAcceptOrReject {...{
+                    acceptColor: 'blue',
+                    acceptText: textsCap.addPartner,
+                    rejectText: textsCap.ignore,
+                    onClick: handleClick,
+                }} />
                 <div>{message}</div>
             </div>
         )
