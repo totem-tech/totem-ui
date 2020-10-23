@@ -2,8 +2,8 @@ import React from 'react'
 import { ButtonAcceptOrReject, UserID } from '../../components/buttons'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
-import { isObj } from '../../utils/utils'
-import { set as saveLocation } from '../location/location'
+import { generateHash, isObj } from '../../utils/utils'
+import { remove as removeLocation, set as saveLocation } from '../location/location'
 import { inputNames as locationKeys } from '../location/LocationForm'
 import { remove, setItemViewHandler } from '../notification/notification'
 import { get } from './partner'
@@ -25,6 +25,36 @@ const textsCap = translated({
 const handleIdentityReceived = (id, notification, { senderId, senderIdBtn }) => {
     const { data, message } = notification
     const { address, introducedBy, location } = data || {}
+    const actionBtn = (
+        <ButtonAcceptOrReject {...{
+            acceptColor: 'blue',
+            acceptText: textsCap.addPartner,
+            rejectText: textsCap.ignore,
+            onClick: accepted => {
+                if (!accepted) return remove(id)
+
+                const locationId = generateHash(address)
+                const hasLocation = isObj(location)
+                // remove the location if partner wasn't added
+                const removeLocIfNoPartner = () => !get(address) && removeLocation(locationId)
+                if (hasLocation) {
+                    location[locationKeys.partnerIdentity] = address
+                    saveLocation(location, locationId)
+                }
+                                        
+                showForm(PartnerForm, {
+                    values: { ...data, userId: senderId },
+                    onClose: removeLocIfNoPartner,
+                    onSubmit: success => {
+                        // remove notification
+                        if (success) return
+                        // partner wasn't created
+                        removeLocIfNoPartner()
+                    },
+                })
+            }
+        }} />
+    )
     return {
         icon: { name: 'user plus' },
         content: (
@@ -35,34 +65,7 @@ const handleIdentityReceived = (id, notification, { senderId, senderIdBtn }) => 
                         {textsCap.introducedBy} <UserID userId={introducedBy} />
                     </div>
                 )}
-                <ButtonAcceptOrReject
-                    acceptColor='blue'
-                    acceptText={textsCap.addPartner}
-                    rejectText={textsCap.ignore}
-                    onClick={accepted => {
-                        if (!accepted) return remove(id)
-                        const hasLocation = isObj(location)
-                        let saved = false
-                        const _saveLocation = () => {
-                            if (saved || !hasLocation) return
-                            location[locationKeys.partnerIdentity] = address
-                            get(address) && saveLocation(location, address)
-                            saved = true
-                        }
-                        _saveLocation()
-                        
-                        setTimeout(() => showForm(PartnerForm, {
-                            values: { ...data, userId: senderId },
-                            onSubmit: success => {
-                                if (!success) return
-                                // remove notification
-                                remove(id)
-                                _saveLocation()
-                            },
-                        }), 100)
-                    }}
-                    rejectText={textsCap.ignore}
-                />
+                {actionBtn}
                 <div>{message}</div>
             </div>
         )

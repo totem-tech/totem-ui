@@ -117,7 +117,6 @@ export const showForm = (FormComponent, props, id) => {
     // Invalid component supplied
     if (!isFn(FormComponent)) return
     id = id || uuid.v1()
-    props = props || {}
     const form = (
         <FormComponent {...{
             ...props,
@@ -125,8 +124,9 @@ export const showForm = (FormComponent, props, id) => {
             modalId: id,
             open: true,
             onClose: (e, d) => {
-                setTimeout(() => closeModal(id))
-                isFn(props.onClose) && props.onClose(e, d)
+                const { onClose } = props || {}
+                closeModal(id)
+                isFn(onClose) && onClose(e, d)
             },
         }} />
     )

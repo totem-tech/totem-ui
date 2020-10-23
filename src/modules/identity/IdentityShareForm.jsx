@@ -192,10 +192,10 @@ export default class IdentityShareForm extends Component {
         includeLocationIn.hidden = !locationId
         includeLocationIn.options = [{
             label: (
-                <div style={{marginTop: -5}}>
-                    {textsCap.includeLocation}
+                <div style={{ marginTop: -5 }}>
+                    {textsCap.includeLocation + ' '}
                     <Button {...{
-                        circular: true,
+                        // circular: true,
                         icon: 'pencil',
                         onClick: e => {
                             e.stopPropagation()

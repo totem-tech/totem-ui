@@ -38,7 +38,7 @@ const textsCap = translated({
     `,
     header1: 'add partner',
     header2: 'update partner',
-    locationGroupLabel: 'location',
+    locationGroupLabel: 'contact address',
     nameLabel: 'enter partner name',
     namePlaceholder: 'enter a name for this partner',
     nameValidationMsg: 'please choose an unique partner name.',
@@ -205,7 +205,10 @@ export default class PartnerForm extends Component {
                             <LocationForm {...{
                                 El: 'div',
                                 id: locationId,
-                                inputsHidden: [locationInputNames.partnerName],
+                                inputsHidden: [
+                                    locationInputNames.partnerName,
+                                    locationInputNames.removeBtn,
+                                ],
                                 style: { width: '100%' },
                                 submitText: null,
                                 values: location,

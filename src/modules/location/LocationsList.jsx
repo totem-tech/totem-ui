@@ -50,22 +50,19 @@ export default function LocationsList(props = {}) {
                 draggable: false,
                 textAlign: 'center',
                 title: textsCap.actions,
-                content: ({ id }) => [
-                    {
+                content: ({ id }) => (
+                    <Button {...{
                         icon: 'pencil',
-                        key: 'update',
                         onClick: () => showForm(LocationForm, { id }),
-                    }
-                ]
-                    .filter(Boolean)
-                    .map(props => <Button {...props} />)
+                    }} />
+                )
             },
         ],
         topLeftMenu: [{
             content: textsCap.create,
             icon: 'plus',
-            onClick: () => showForm(LocationForm)
-        }]
+            onClick: () => showForm(LocationForm),
+        }],
     })
 
     return <DataTable {...{ ...props, ...listProps, data: locations }} />

@@ -61,10 +61,11 @@ export const search = (...args) => locations.search(...args)
 export const set = (location, id = randomHex()) => {
 	if (!isStr(id) || !isObj(location)) return
 	const existingItem = locations.get(id)
-	const requiredKeys = Object.values(requiredFields)
 	const validKeys = Object.values(allKeys)
-	if (!existingItem && !objHasKeys(location, requiredKeys, true))
-		return console.log('Location save failed', { location, validKeys })
+	const requiredKeys = Object.values(requiredFields)
+	const hasRequiredKeys = objHasKeys(location, requiredKeys, true)
+	// new item must have all the required keys
+	if (!existingItem && !hasRequiredKeys) return
 
 	// merge with existing item and get rid of any unwanted properties
 	location = objClean({ ...existingItem, ...location }, validKeys)
