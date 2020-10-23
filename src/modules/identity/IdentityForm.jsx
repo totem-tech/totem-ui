@@ -25,7 +25,7 @@ const textsCap = translated({
     update: 'update',
     identityNamePlaceholder: 'a name for the identity',
     locationLabel: 'contact address',
-    locationPlaceholder: 'select a contact address for this identity',
+    locationPlaceholder: 'select a location for this identity',
     restoreInputLabel: 'restore my existing identity',
     seedExists: 'seed already exists in the identity list with name:',
     seedPlaceholder: 'enter existing seed or generate one',

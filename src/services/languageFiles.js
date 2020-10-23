@@ -27,6 +27,7 @@ export default [
     "./src/forms/Settings.jsx",
     "./src/forms/Transfer.jsx",
     "./src/index.js",
+    "./src/modules/DAA/RequestForm.jsx",
     "./src/modules/activity/ActivityForm.jsx",
     "./src/modules/activity/ActivityList.jsx",
     "./src/modules/activity/ActivityReassignForm.jsx",

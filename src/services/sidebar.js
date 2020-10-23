@@ -17,6 +17,7 @@ import UtilitiesView from '../views/UtilitiesView'
 // temp
 import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
 import EventList from '../modules/event/EventList'
+import DAARequestForm from '../modules/DAA/RequestForm'
 // utils
 import DataStorage from '../utils/DataStorage'
 import { isBool, isBond } from '../utils/utils'
@@ -318,6 +319,12 @@ export const sidebarItems = [
         icon: '',
         name: 'blockchain-events',
         title: textsCap.eventsTtile,
+    },
+    {
+        content: DAARequestForm,
+        icon: '',
+        name: 'DAARequestForm',
+        title: 'DAARequestForm',
     },
 ].map(item => {
     const {
