@@ -9,8 +9,12 @@ import { get as getIdentity, rxIdentities } from '../identity/identity'
 import { get as getLocation } from '../location/location'
 
 const textsCap = translated({
+    blockchainLabel: 'Blockchain',
+    blockchainPlaceholder: 'select Blockchain you want to make deposit in',
     emailLabel: 'email address',
     emailPlaceholder: 'enter you email address',
+    ethAddressLabel: 'your Ethereum address',
+    ethAddressPlaceholder: 'enter the address you will deposit from',
     familyNameLabel: 'family name',
     familyNamePlaceholder: 'enter your family name',
     givenNameLabel: 'given name',
@@ -21,7 +25,9 @@ const textsCap = translated({
     identityPlaceholder: 'select an identity',
 }, true)[1]
 export const inputNames = {
+    blockchain: 'blockchain',
     email: 'email',
+    ethAddress: 'ethAddress',
     familyName: 'familyName',
     givenName: 'givenName',
     identity: 'identity',
@@ -116,6 +122,42 @@ const formInputs = [
         required: true,
         type: 'email',
     },
+    {
+        label: textsCap.blockchainLabel,
+        name: inputNames.blockchain,
+        options: [
+            {
+                description: 'BTC',
+                icon: 'bitcoin',
+                text: 'Bitcoin',
+                value: 'BTC',
+            },
+            {
+                description: 'ETH',
+                icon: 'ethereum',
+                text: 'Ethereum',
+                value: 'ETH',
+            },
+            {
+                description: 'DOT',
+                icon: 'pinterest',
+                text: 'Polkadot',
+                value: 'DOT',
+            },
+        ],
+        placeholder: textsCap.blockchainPlaceholder,
+        required: true,
+        search: ['text', 'value'],
+        selection: true,
+        type: 'dropdown'
+    },
+    {
+        label: textsCap.ethAddressLabel,
+        name: inputNames.ethAddress,
+        placeholder: textsCap.ethAddressPlaceholder,
+        required: false, // only required when ETH selected
+        type: 'text',
+    }
 ]
 
 function handleSubmit(_, values) {
