@@ -472,6 +472,7 @@ export default class ProjectTimeKeepingList extends Component {
 
     showDetails = (hash, record) => {
         const { manage } = this.props
+        const { inProgressHashes } = this.state
         const isMobile = rxLayout.value === MOBILE
         const editableStatuses = [statuses.draft, statuses.dispute, statuses.reject]
         const inProgress = inProgressHashes.includes(hash)
