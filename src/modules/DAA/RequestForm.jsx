@@ -33,12 +33,11 @@ export default function RequestFrom(props = {}) {
     const [identityOptions] = useRxSubject(
         rxIdentities,
         map => Array.from(map).map(([_, { address, locationId, name }]) => {
-            const location = getLocation(locationId)
-            const locationName = textEllipsis(location.name, 15, 3, false)
+            let location = getLocation(locationId)
             return {
                 description: !location ? '' : (
                     <span>
-                        <Icon className='no-margin' name='building' /> {locationName}
+                        <Icon className='no-margin' name='building' /> {textEllipsis(location.name, 15, 3, false)}
                     </span>
                 ), //location name with icon
                 key: address,

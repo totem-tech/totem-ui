@@ -432,7 +432,7 @@ DataTable.defaultProps = {
         selectable: true,
         sortable: true,
         unstackable: true,
-        singleLine: true,
+        singleLine: false,
     }
 }
 
