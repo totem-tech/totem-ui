@@ -48,7 +48,6 @@ export default class TimekeepingView extends Component {
                     this.setState({ viewOptions })
                     // update local storage with module settings
                     rw({ viewOptions })
-                    console.log('saved ', {viewOptions})
                 },
                 toggle: true,
                 options: [
@@ -168,5 +167,6 @@ export default class TimekeepingView extends Component {
     }
 }
 TimekeepingView.propTypes = {
+    // Default: ['records']
     viewOptions: PropTypes.array,
-}
+}['records']
