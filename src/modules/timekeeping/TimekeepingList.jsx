@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, Subject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
 import PromisE from '../../utils/PromisE'
 import { BLOCK_DURATION_SECONDS, secondsToDuration, blockNumberToTS } from '../../utils/time'
@@ -82,7 +82,7 @@ statusTexts[statuses.delete] = textsCap.deleted
 
 // trigger refresh on not-archived records tables if multiple open at the same time 
 const rxTrigger = new BehaviorSubject()
-const rxInProgressIds = new BehaviorSubject()
+const rxInProgressIds = new BehaviorSubject([])
 
 export default class ProjectTimeKeepingList extends Component {
     constructor(props) {
@@ -93,7 +93,7 @@ export default class ProjectTimeKeepingList extends Component {
             inProgressHashes: [],
             columns: [
                 { collapsing: true, key: '_end_block', title: textsCap.finishedAt },
-                { collapsing: true, key: 'projectName', title: textsCap.activity },
+                { key: 'projectName', title: textsCap.activity },
                 { key: '_workerName', title: textsCap.identity },
                 { key: 'duration', textAlign: 'center', title: textsCap.duration },
                 // { key: 'start_block', title: texts.blockStart },
@@ -184,8 +184,8 @@ export default class ProjectTimeKeepingList extends Component {
             arg = projectIds
             multi = true
         }
-        const queryFn = archive ?
-            (manage ? listByProjectArchive : listArchive)
+        const queryFn = archive
+            ? (manage ? listByProjectArchive : listArchive)
             : (manage ? listByProject : list)
         // subscribe to changes on the list of recordIds
         this.subscriptions.recordIds = queryFn.call(null, arg, this.getRecords, multi)
