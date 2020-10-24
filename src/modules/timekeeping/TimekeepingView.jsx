@@ -38,15 +38,17 @@ export default class TimekeepingView extends Component {
         super(props)
 
         const style = { textAlign: 'left' }
+        const viewOptions = props.viewOptions || rw().viewOptions || ['records']
         this.state = {
             optionsInput: {
-                rxValue: new BehaviorSubject(),
+                rxValue: new BehaviorSubject(viewOptions),
                 multiple: true,
                 name: 'option',
                 onChange: (_, { value: viewOptions }) => {
                     this.setState({ viewOptions })
                     // update local storage with module settings
                     rw({ viewOptions })
+                    console.log('saved ', {viewOptions})
                 },
                 toggle: true,
                 options: [
@@ -57,7 +59,6 @@ export default class TimekeepingView extends Component {
                     { label: textsCap.manageArchive, style, value: 'manage-archive' },
                 ],
                 style: { display: 'inline', paddingTop: 7, textAlign: 'center' },
-                value: props.viewOptions,
             },
             timerButton: {
                 active: false,
@@ -67,7 +68,7 @@ export default class TimekeepingView extends Component {
                 onClick: () => showForm(TimeKeepingForm, { projectHash: this.props.projectHash }),
                 style: { display: 'inline' }
             },
-            viewOptions: props.viewOptions
+            viewOptions,
         }
         this.originalSetState = this.setState
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
@@ -167,8 +168,5 @@ export default class TimekeepingView extends Component {
     }
 }
 TimekeepingView.propTypes = {
-    viewOptions: PropTypes.array.isRequired,
-}
-TimekeepingView.defaultProps = {
-    viewOptions: rw().viewOptions || ['records']
+    viewOptions: PropTypes.array,
 }

@@ -457,8 +457,8 @@ body.inverted .ui.form > .accordion.styled {
 }
 
 /* checkbox/radio label when inverted */
-body.inverted .ui.checkbox input:checked~label,
-body.inverted .ui.checkbox input:focus:checked~label {
+body.inverted .ui.checkbox input+label.checkbox-group-item,
+body.inverted .ui.checkbox input:focus+label.checkbox-group-item {
 	color: white !important;
 }
 
