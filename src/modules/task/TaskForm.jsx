@@ -670,7 +670,7 @@ export default class TaskForm extends Component {
                         __taskName: nameSaveTask,
                         // grab the taskId from the save previous item in the queue chain
                         __resultSelector: `(r, rt, saveTask) => ({
-                            assigneeAddress: "${assignee}",
+                            fulfillerAddress: "${assignee}",
                             taskId: saveTask.argsProcessed[0],
                         })`,
                     },

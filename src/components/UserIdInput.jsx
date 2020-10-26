@@ -52,10 +52,12 @@ export default class UserIdInput extends Component {
             multiple,
             options,
             placeholder,
+            rxValue,
+            searchQuery,
             value,
-            rxValue = new BehaviorSubject(value || (multiple? [] : '')),
         } = props
         placeholder = placeholder || textsCap.enterUserId
+        rxValue = rxValue || new BehaviorSubject(value || (multiple ? [] : ''))
         let input = {
             defer: null,
             inlineLabel: { icon: { className: 'no-margin', name: 'at' } },
@@ -83,10 +85,9 @@ export default class UserIdInput extends Component {
             placeholder,
             rxValue,
             search: true,
-            searchQuery: props.searchQuery || rxValue.value || '',
+            searchQuery,
             selection: true,
             type: 'dropdown',
-            // value: multiple ? [] : value,
         }
 
         this.state = {

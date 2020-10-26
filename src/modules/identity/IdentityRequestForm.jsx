@@ -59,6 +59,7 @@ export default class IdentityRequestForm extends Component {
                 },
                 {
                     label: wordsCap.reason,
+                    maxLength: 160,
                     name: 'reason',
                     onChange: (e, values, i) => {
                         const { inputs } = this.state

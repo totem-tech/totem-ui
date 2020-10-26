@@ -17,7 +17,7 @@ import { addToQueue, rxOnSave, statuses as queueStatuses } from '../../services/
 import { reducer, useRxSubject } from '../../services/react'
 import { getSelected, rxSelected } from '../identity/identity'
 import { approvalStatuses, query, queueableApis, queueables, statuses } from './task'
-import { handleTaskAssignment, handleUpdateStatus } from './notificationHandlers'
+import { handleAssignmentResponse, handleInvoicedResponse, handleUpdateStatus } from './notificationHandlers'
 import TaskDetailsForm from './TaskDetailsForm'
 
 const textsCap = translated({
@@ -134,7 +134,7 @@ function TaskList(props) {
                                     loading={inProgress}
                                     onClick={accept => confirm({
                                         header: textsCap.acceptTask,
-                                        onConfirm: () => handleTaskAssignment(taskId, address, accept),
+                                        onConfirm: () => handleAssignmentResponse(taskId, address, accept),
                                         size: 'mini',
                                     })}
                                 />
@@ -172,24 +172,25 @@ function TaskList(props) {
                                     acceptText={textsCap.pay}
                                     disabled={inProgress}
                                     loading={inProgress}
-                                    onClick={accept => confirm({
-                                        confirmButton: (
-                                            <Button {...{
-                                                content: accept ? textsCap.pay : textsCap.dispute,
-                                                negative: !accept,
-                                                positive: accept,
-                                            }} />
-                                        ),
-                                        content: accept ? textsCap.acceptInvoiceDesc : undefined,
-                                        header: accept ? textsCap.acceptInvoice : textsCap.dispute,
-                                        onConfirm: () => handleUpdateStatus(
-                                            address,
-                                            taskId,
-                                            accept ? statuses.completed : statuses.disputed,
-                                            accept ? textsCap.acceptInvoiceTitle : textsCap.disputeTask,
-                                        ),
-                                        size: 'mini',
-                                    })}
+                                    onClick={accepted => handleInvoicedResponse(taskId, address, accepted)}
+                                    // onClick={accept => confirm({
+                                    //     confirmButton: (
+                                    //         <Button {...{
+                                    //             content: accept ? textsCap.pay : textsCap.dispute,
+                                    //             negative: !accept,
+                                    //             positive: accept,
+                                    //         }} />
+                                    //     ),
+                                    //     content: accept ? textsCap.acceptInvoiceDesc : undefined,
+                                    //     header: accept ? textsCap.acceptInvoice : textsCap.dispute,
+                                    //     onConfirm: () => handleUpdateStatus(
+                                    //         address,
+                                    //         taskId,
+                                    //         accept ? statuses.completed : statuses.disputed,
+                                    //         accept ? textsCap.acceptInvoiceTitle : textsCap.disputeTask,
+                                    //     ),
+                                    //     size: 'mini',
+                                    // })}
                                     rejectText={textsCap.dispute}
                                     title={textsCap.acceptInvoiceDesc}
                                 />

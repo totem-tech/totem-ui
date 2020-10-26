@@ -140,7 +140,10 @@ const VALID_KEYS = Object.freeze([
     //                          Will only be executed if the parent task was successful.
     'next',
 
-    // @recordId        string: (optional) for reference only
+    // @notificationId  string: (optional) when task is related to a specific notifcation
+    'notificationId',
+
+    // @recordId        string: (optional) when task is related to a specific record
     'recordId',
 
     // @silent          bool: (optional) If true, enables silent mode and no toast messages will be displayed.

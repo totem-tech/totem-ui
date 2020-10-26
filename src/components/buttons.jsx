@@ -29,7 +29,18 @@ const textsCap = translated({
 }, true)[1]
 
 export const ButtonAcceptOrReject = props => {
-    const { acceptColor, acceptText, disabled, loading, onClick, rejectColor, rejectText, style, title } = props
+    const {
+        acceptColor,
+        acceptText,
+        children,
+        disabled,
+        loading,
+        onClick,
+        rejectColor,
+        rejectText,
+        style,
+        title
+    } = props
     return (
         <div title={title} style={{ textAlign: 'center', ...style }}>
             <Button.Group>
@@ -48,6 +59,7 @@ export const ButtonAcceptOrReject = props => {
                     loading: loading,
                     onClick: (e) => e.stopPropagation() | onClick(false),
                 }} />
+                {children}
             </Button.Group >
         </div>
     )

@@ -132,7 +132,7 @@ export const search = (...args) => notifications.search.apply(notifications, arg
  */
 export const setItemViewHandler = (type, childType, renderer) => {
     if (!isFn(renderer)) return
-    const key = `${type}:${childType}`
+    const key = `${type}:${childType || ''}`
     itemViewHandlers[key] = renderer
 }
 
@@ -238,9 +238,9 @@ setTimeout(() => {
 
     // mark notifications as loading whenever queue service processes a notification response
     rxOnSave.subscribe(data => {
-        const { task: { recordId, status } } = data || { task: {} }
-        const notification = notifications.get(recordId)
-        notification && notifications.set(recordId, { ...notification, status })
+        const { task: { notificationId, status } } = data || { task: {} }
+        const notification = notifications.get(notificationId)
+        notification && notifications.set(notificationId, { ...notification, status })
     })
 })
 
