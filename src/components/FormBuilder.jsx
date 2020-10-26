@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Button, Form, Header, Icon, Modal } from 'semantic-ui-react'
-import { isDefined, isArr, isBool, isFn, isObj, isStr, hasValue } from '../utils/utils'
+import { isDefined, isArr, isBool, isFn, isObj, isStr, hasValue, isSubjectLike } from '../utils/utils'
 import Message, { statuses } from '../components/Message'
 import FormInput, { nonValueTypes } from './FormInput'
 import IModal from './Modal'
@@ -35,19 +35,19 @@ export default class FormBuilder extends Component {
 	// recursive interceptor for infinite level of child inputs
 	addInterceptor = (index, values) => (input, i) => {
 		const { inputsDisabled = [], inputsHidden = [] } = this.props
-		const { disabled, hidden, inputs: childInputs, key, name, type, validate: validate } = input || {}
+		const { disabled, hidden, inputs: childInputs, name, rxValue, type, validate: validate } = input || {}
 		const isGroup = `${type}`.toLowerCase() === 'group' && isArr(childInputs)
 		index = isDefined(index) ? index : null
 		const props = {
 			...input,
 			disabled: inputsDisabled.includes(name) || (isFn(disabled) ? disabled(value, i) : disabled),
-			hidden: inputsHidden.includes(name) || (!isFn(hidden) ? hidden : !!hidden(values, i)),
+			hidden: inputsHidden.includes(name) || (!isFn(hidden) ? hidden : !!hidden(values, name)),
 			inputs: !isGroup ? undefined : childInputs.map(this.addInterceptor(index ? index : i, values)),
 			key: name,
 			onChange: isGroup ? undefined : (
 				(e, data) => this.handleChange(e, data, input, index ? index : i, index ? i : undefined)
 			),
-			validate: isFn(validate) ? (e, v) => validate(e, v, this.state.values) : undefined,
+			validate: isFn(validate) ? (e, v) => validate(e, v, this.state.values, rxValue) : undefined,
 		}
 		return props
 	}
@@ -167,6 +167,7 @@ export default class FormBuilder extends Component {
 		let { message: sMsg, open: sOpen, values } = this.state
 		// whether the 'open' status is controlled or uncontrolled
 		let modalOpen = isFn(onClose) ? open : sOpen
+		inputs = inputs.map(this.addInterceptor(null, values))
 		if (success && closeOnSubmit) {
 			modalOpen = false
 			isFn(onClose) && onClose({}, {})
@@ -229,9 +230,7 @@ export default class FormBuilder extends Component {
 				warning: message.status === statuses.WARNING,
 				widths,
 			})}>
-				{inputs.map(this.addInterceptor(null, values)).map(props => (
-					<FormInput {...props} />
-				))}
+				{inputs.map(props => <FormInput {...props} />)}
 				{/* Include submit button if not a modal */}
 				{!modal && !hideFooter && (
 					<div>
@@ -381,42 +380,45 @@ export const fillValues = (inputs, values, forceFill) => {
 	return inputs
 }
 
-export const resetValues = (inputs = []) => inputs.map(input => {
-	if ((input.type || '').toLowerCase() === 'group') {
-		resetValues(input.inputs)
-	} else {
-		input.value = undefined
-		input.rxValue && input.rxValue.next(undefined)
-	}
-	return input
-})
+export const resetValues = (inputs = []) => {
+	if (!isArr(inputs)) return
+	inputs.forEach(input => {
+		const { inputs, rxValue, type } = input || {}
+		if (`${type}`.toLowerCase() === 'group') {
+			resetValues(inputs)
+		} else {
+			input.value = undefined
+			rxValue && rxValue.next(undefined)
+		}
+		return input
+	})
+}
 
 export const isInputInvalid = (formValues = {}, input) => {
-	const inType = (input.type || 'text').toLowerCase()
-	const isCheckbox = ['checkbox', 'radio'].indexOf(inType) >= 0
-	const isGroup = inType === 'group'
-	const isRequired = !!input.required
+	let { _invalid, groupValues, hidden, inputs, invalid, name, required, rxValue, type, value } = input || {}
+	type = (type || 'text').toLowerCase()
 	// ignore current input if conditions met
-	if (
-		// input's type is invalid
-		!inType ||
-		// current input is hidden
-		inType === 'hidden' ||
-		input.hidden === true ||
-		// current input is not required and does not have a value
-		(!isGroup && !isRequired && !hasValue(formValues[input.name])) ||
-		// not a valid input type
-		['button'].indexOf(inType) >= 0
-	)
-		return false
+	if (['hidden', 'button'].includes(type)) return false
+	if (hidden === true || isFn(hidden) && hidden(formValues, name)) return false
 
-	// if input is set invalid externally or internally by FormInput
-	if (input.invalid || input._invalid) return true
+	let gotValue = hasValue(formValues[name])
+	const isGroup = type === 'group'
+	if((!isGroup && !required && !gotValue)) return false
 
 	// Use recursion to validate input groups
-	if (isGroup) return isFormInvalid(input.inputs, !input.groupValues ? formValues : formValues[input.name] || {})
-	const value = isDefined(formValues[input.name]) ? formValues[input.name] : input.value
-	return isCheckbox && isRequired ? !value : !hasValue(value)
+	if (isGroup) return isFormInvalid(inputs, !groupValues ? formValues : formValues[name] || {})
+
+	// if input is set invalid externally or internally by FormInput
+	if (invalid || _invalid) return true
+
+	const isCheckbox = ['checkbox', 'radio'].indexOf(type) >= 0
+	value = gotValue
+		? formValues[name]
+		: !hasValue(value) && isSubjectLike(rxValue)
+			? rxValue.value
+			: value
+	
+	return isCheckbox && required ? !value : !hasValue(value)
 }
 
 export const isFormInvalid = (inputs = [], values = {}) => {

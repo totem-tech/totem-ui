@@ -137,6 +137,7 @@ export default class IdentityForm extends Component {
                                 marginTop: 4,
                             }}>
                                 <Button {...{
+                                    as: 'a',
                                     // button to add contact address
                                     icon: 'plus',
                                     onClick: () => showForm(LocationForm, { onSubmit: this.handleLocationCreate }),

@@ -61,6 +61,8 @@ export default class LocationForm extends Component {
 		const { partnerIdentity } = location || values || {}
 		this.isUpdate = !!id && !!location
 		const partner = getPartner(partnerIdentity)
+		const noFlags = ['aq', 'bl', 'bq', 'cw', 'gg', 'im', 'je', 'mf', 'ss', 'sx', 'xk']
+			.map(x => x.toUpperCase())
 		
 		this.state = {
 			closeText: !this.isUpdate ? undefined : { negative: false },
@@ -155,8 +157,9 @@ export default class LocationForm extends Component {
 							label: textsCap.countryLabel,
 							name: inputNames.countryCode,
 							options: arrSort(
-								storage.countries.toArray().map(([_, { code, name }]) => ({
+								storage.countries.map(([_, { code, name }]) => ({
 									description: code,
+									flag: !noFlags.includes(code) ? code.toLowerCase() : '',
 									key: code,
 									text: name,
 									value: code,
@@ -166,7 +169,7 @@ export default class LocationForm extends Component {
 							placeholder: textsCap.countryPlaceholder,
 							required: true,
 							selection: true,
-							search: ['description', 'text'],
+							search: ['description', 'text', 'code3'],
 							type: 'dropdown',
 						},
 					]

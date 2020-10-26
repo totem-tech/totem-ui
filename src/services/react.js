@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react"
 import { BehaviorSubject } from 'rxjs'
 import PromisE from "../utils/PromisE"
-import { isAsyncFn, isFn, isObj } from "../utils/utils"
+import { isFn, isObj } from "../utils/utils"
 
 // for use with useReducer hook on a functional component to imitate the behaviour of `setState()` of a class component
 export const reducer = (state = {}, newValue = {}) => ({ ...state, ...newValue })
@@ -24,21 +24,26 @@ export const unsubscribe = (subscriptions = {}) => Object.values(subscriptions).
  * @name    useRxSubject
  * @summary custom React hook for use with RxJS subjects
  * 
- * @param   {BehaviorSubject|Subject}   subject RxJS subject to subscribe to. 
- *                 If not object or doesn't have subcribe function will assume subject to be a static value.
- * @param   {Boolean}                   ignoreFirst whether to ignore first change. 
- *                  Setting `true`, will prevent an additional state update after first load.
- * @param   {Function}                  valueModifier (optional) value modifier. 
- *                  If an async function is supplied, `ignoreFirst` will be assumed `false`.
- * @param   {*}                         initialValue (optional) initial value where appropriate
+ * @param   {BehaviorSubject|Subject}   subject RxJS subject or subject like Object (with subscribe function)
+ *              If not object or doesn't have subcribe function will assume subject to be a static value.
+ * @param   {Boolean}   ignoreFirst whether to ignore first change. 
+ *              Setting `true`, will prevent an additional state update after first load.
+ * @param   {Function}  valueModifier (optional) value modifier. 
+ *              If an async function is supplied, `ignoreFirst` will be assumed `false`.
+ * @param   {*}         initialValue (optional) initial value where appropriate
+ * @param   {Boolean}   allowSubjectUpdate whether to allow update of the subject or only state.
+ *              CAUTION: if true and @subject is sourced from a DataStorage instance,
+ *              it may override values in the LocalStorage values.
+ *              Default: false
  * 
- * @returns {Array}                     [value, setvalue]
+ * @returns {Array}     [value, setvalue]
  */
-export const useRxSubject = (subject, valueModifier, initialValue) => {
+export const useRxSubject = (subject, valueModifier, initialValue, allowSubjectUpdate = false) => {
     if (!isObj(subject) || !isFn(subject.subscribe)) return subject
     const v = subject instanceof BehaviorSubject ? subject.value : initialValue
     let firstValue = !isFn(valueModifier) ? v : valueModifier(v)
     const [value, setValue] = useState(firstValue)
+    const valueSetter = !allowSubjectUpdate ? setValue : () => newValue => subject.next(newValue)
 
     useEffect(() => {
         let mounted = true
@@ -60,7 +65,7 @@ export const useRxSubject = (subject, valueModifier, initialValue) => {
         }
     }, [])
 
-    return [value, () => newValue => subject.next(newValue)]
+    return [ value, valueSetter ]
 }
 // return this in onBeforeSetValue
 useRxSubject.IGNORE_UPDATE = Symbol('ignore-rx-subject-update')

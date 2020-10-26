@@ -50,6 +50,7 @@ const NON_ATTRIBUTES = Object.freeze([
 	'rxValue',
 	'width',
 	'onInalid',
+	'customMessages',
 ])
 export const nonValueTypes = Object.freeze(['button', 'html'])
 
@@ -73,7 +74,7 @@ export class FormInput extends Component {
 		const { rxValue } = this.props
 		if (!isObj(rxValue) || !isFn(rxValue.subscribe)) return
 		this.subscriptions.rxValue = rxValue.subscribe(value => {
-			this._mounted && this.handleChange({}, { ...this.props, value })
+			this.handleChange({}, { ...this.props, value })
 		})
 	}
 
@@ -84,10 +85,12 @@ export class FormInput extends Component {
 
 	handleChange = (event = {}, data = {}) => {
 		const {
+			customMessages,
 			falseValue: falseValue = false,
 			integer,
 			onChange,
 			required,
+			rxValue,
 			trueValue: trueValue = true,
 			type,
 			validate,
@@ -101,7 +104,7 @@ export class FormInput extends Component {
 		const typeLower = (type || '').toLowerCase()
 		const isCheck = ['checkbox', 'radio'].indexOf(typeLower) >= 0
 		const hasVal = hasValue(isCheck ? data.checked : data.value)
-		const customMsgs = { ...textsCap }
+		const customMsgs = { ...textsCap, ...customMessages }
 		let errMsg, validatorConfig
 
 		if (hasVal && !errMsg) {
@@ -200,7 +203,7 @@ export class FormInput extends Component {
 
 		switch (typeLC) {
 			case 'button':
-				inputEl = <Button {...attrs} />
+				inputEl = <Button as='a' {...attrs} />
 				break
 			case 'checkbox':
 			case 'radio':

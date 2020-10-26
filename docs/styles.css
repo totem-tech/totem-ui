@@ -332,6 +332,10 @@ form.ui.form .field > label {
 body.mobile .form-group > .field:not(:last-child) {
     padding-bottom: 15px;
 }
+/* hide if no children */
+.form-group:empty {
+    display: none;
+}
 /* Input group with accordion */
 .ui.form > .accordion.styled {
     box-shadow: 1px 3px 3px 0 rgba(34,36,38,.15), 1px 3px 15px 2px rgba(34,36,38,.15);

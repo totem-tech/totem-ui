@@ -2,7 +2,7 @@ import React from 'react'
 import { render } from 'react-dom'
 import 'semantic-ui-css/semantic.min.css'
 import PromisE from './utils/PromisE'
-import { generateHash, isObj, isStr } from './utils/utils'
+import { generateHash, isObj, isStr, objClean } from './utils/utils'
 import App from './App'
 import NewsletterSignup from './forms/NewsletterSignup'
 // services
@@ -13,9 +13,10 @@ import storage from './services/storage'
 import { getUrlParam, MOBILE, rxLayout } from './services/window'
 
 const isSignUp = getUrlParam('NewsletterSignup').toLowerCase() === 'true'
-window.isDebug = getUrlParam('debug').toLowerCase() === 'true'
+const debug = getUrlParam('debug').toLowerCase()
+window.isDebug = debug === 'force' || debug === 'true' && rxLayout.value === MOBILE
 window.isInIFrame = isSignUp
-if (!window.isInIFrame && window.isDebug && rxLayout.value === MOBILE) {
+if (!window.isInIFrame && window.isDebug) {
     // for debugging purposes only, when on a mobile device
     // adds interceptors to below console functions and prints all logs into a DOM element above page contents
     const loggers = [
@@ -51,13 +52,18 @@ if (!window.isInIFrame && window.isDebug && rxLayout.value === MOBILE) {
 
 const init = () => PromisE.timeout((resolve, reject) => {
     const countries = storage.countries.getAll()
-    let hasCountries = countries.size > 0
+    let countriesSaved = countries.size > 0
     let translationChecked = false
     client.onConnect(async () => {
         // Retrieve a list of countries and store in the browser local storage
-        !hasCountries && client.countries(generateHash(countries), (_, countries) => {
-            countries && storage.countries.setAll(countries)
-            hasCountries = true
+        !countriesSaved && client.countries(null, (err, countries) => {
+            if (err) return
+            // get rid of unwanted properties
+            countries = new Map(Array.from(countries)
+                .map(([id, country]) => [id, objClean(country, ['code', 'name'])])
+            )
+            storage.countries.setAll(countries)
+            countriesSaved = true
         })
 
         // check and update selected language texts
