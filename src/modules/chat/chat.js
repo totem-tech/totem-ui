@@ -268,7 +268,7 @@ export const send = (receiverIds, message, encrypted = false) => {
         ],
         func: 'message',
         silent: true,
-        txId: tempId,
+        recordId: tempId,
         type: QUEUE_TYPES.CHATCLIENT,
     })
     return tempId
@@ -359,7 +359,7 @@ setTimeout(() => {
     // remove if successful, otherwise, update status of queued chat message
     rxOnSave.subscribe(data => {
         if (!data) return
-        const { task: { args, errorMessage, func, status, txId: msgId, type } } = data
+        const { task: { args, errorMessage, func, status, recordId: msgId, type } } = data
         const [receiverIds] = args || []
         // only handle outgoing chat messages
         if (func !== 'message' || type !== QUEUE_TYPES.CHATCLIENT) return

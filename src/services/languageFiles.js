@@ -22,6 +22,7 @@ export default [
     "./src/forms/AdminUtils.jsx",
     "./src/forms/KeyRegistryPlayGround.jsx",
     "./src/forms/NewsletterSignup.jsx",
+    "./src/forms/RegistrationForm.jsx",
     "./src/forms/RestoreBackup.jsx",
     "./src/forms/RuntimeUpgrade.jsx",
     "./src/forms/Settings.jsx",

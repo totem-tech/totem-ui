@@ -1,13 +1,19 @@
 import React, { Component } from 'react'
+import PropTypes from 'prop-types'
+import { BehaviorSubject } from 'rxjs'
 import uuid from 'uuid'
-import FormBuilder from '../../components/FormBuilder'
 import { isFn } from '../../utils/utils'
+import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
+import { setActiveStep } from '../../views/GettingStartedView'
 import { getClient, getUser } from './ChatClient'
 
 const textsCap = translated({
+    alreadyRegistered: 'you have already registered!',
     formHeader: 'register a memorable user name',
     formSubheader: 'choose an unique alias for use with Totem chat messaging.',
+    referredByLabel: 'referred by',
+    referredByPlaceholder: 'ID of the user who referred you',
     register: 'register',
     registrationComplete: 'registration complete',
     registrationFailed: 'registration failed',
@@ -24,16 +30,17 @@ export default class RegistrationForm extends Component {
         super(props)
 
         const { id } = getUser() || {}
+        const { values = {}} = props
         this.state = {
             onSubmit: this.handleSubmit,
             submitDisabled: !!id,
             success: false,
-            inputs: [
+            inputs: fillValues([
                 {
                     disabled: !!id,
                     label: textsCap.userId,
                     message: {
-                        content: (
+                        content: !!id ? '' : (
                             <div>
                                 {textsCap.userIdCriteria}
                                 <ul>
@@ -43,7 +50,9 @@ export default class RegistrationForm extends Component {
                                 </ul>
                             </div>
                         ),
-                        status: 'warning',
+                        header: !id ? '' : textsCap.alreadyRegistered,
+                        icon: !!id,
+                        status: !!id ? 'error' : 'warning',
                         style: { textAlign: 'left' },
                     },
                     name: 'userId',
@@ -53,16 +62,25 @@ export default class RegistrationForm extends Component {
                     type: 'UserIdInput',
                     required: true,
                     value: '',
-                }
-            ],
+                },
+                {
+                    label: textsCap.referredByLabel,
+                    name: 'referredBy',
+                    placeholder: textsCap.referredByPlaceholder,
+                    rxValue: new BehaviorSubject(''),
+                    type: 'UserIdInput',
+                },
+            ], values),
         }
     }
 
     handleSubmit = (_, values) => {
         const { onSubmit } = this.props
-        const { userId } = values
+        const { referredBy, userId } = values
+        const secret = uuid.v1()
 
-        getClient().register(userId, uuid.v1(), err => {
+        this.setState({ submitDisabled: true })
+        getClient().register(userId, secret, referredBy, err => {
             const success = !err
             const message = {
                 content: err,
@@ -70,12 +88,22 @@ export default class RegistrationForm extends Component {
                 icon: true,
                 status: success ? 'success' : 'error'
             }
-            this.setState({ message, success: success })
+            this.setState({
+                message,
+                submitDisabled: false,
+                success,
+            })
             isFn(onSubmit) && onSubmit(success, values)
+
+            success && setActiveStep(1)
         })
     }
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
+}
+
+RegistrationForm.propsTypes = {
+    values: PropTypes.object,
 }
 RegistrationForm.defaultProps = {
     header: textsCap.formHeader,

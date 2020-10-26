@@ -100,7 +100,7 @@ export const query = {
         return await queryHelper('api.queryMulti', [args, callback].filter(isDefined))
     },
     /**
-     * @name    orders
+     * @name    query.orders
      * @summary retrieve a list of orders by Task IDs
      * 
      * @param {String|Array}    address user identity
@@ -118,6 +118,15 @@ export const query = {
         multi,
     ),
 }
+
+// list of PolkadotJS APIs used in the `queueables`
+export const queueableApis = {
+    changeApproval: 'api.tx.orders.changeApproval',
+    changeSpfso: 'api.tx.orders.changeSpfso',
+    createPo: 'api.tx.orders.createPo',
+    createSpfso: 'api.tx.orders.createSpfso',
+    handleSpfso: 'api.tx.orders.handleSpfso',
+}
 export const queueables = {
     approve: (address, taskId, approve = true, queueProps) => {
         const txId = randomHex(address)
@@ -129,7 +138,8 @@ export const queueables = {
                 approve ? approvalStatuses.approved : approvalStatuses.rejected,
                 txId,
             ],
-            func: 'api.tx.orders.changeApproval',
+            func: queueableApis.changeApproval,
+            recordId: taskId,
             txId,
             type: TX_STORAGE,
         }
@@ -147,7 +157,7 @@ export const queueables = {
      */
     changeStatus: (address, taskId, statusCode, queueProps) => {
         const txId = randomHex(address)
-        return {
+        const props = {
             ...queueProps,
             address,
             args: [
@@ -155,10 +165,13 @@ export const queueables = {
                 statusCode,
                 txId,
             ],
-            func: 'api.tx.orders.handleSpfso',
+            func: queueableApis.handleSpfso,
+            recordId: taskId,
             txId,
             type: TX_STORAGE,
         }
+        console.log({ props })
+        return props
     },
     createPo: (
         owner,
@@ -174,7 +187,7 @@ export const queueables = {
         token, // BONSAI token hash
         queueProps,
     ) => {
-        const func = 'api.tx.orders.createPo'
+        const func = queueableApis.createPo
         const orderItem = {
             Product: PRODUCT_HASH_LABOUR,
             UnitPrice: amountXTX,
@@ -211,10 +224,11 @@ export const queueables = {
             ...queueProps,
             address: owner,
             amountXTX,
-            func,
-            type: TX_STORAGE,
             args,
+            func,
+            recordId: taskId,
             txId,
+            type: TX_STORAGE,
         }
     },
     save: (
@@ -231,7 +245,7 @@ export const queueables = {
         token, // BONSAI token hash
         queueProps,
     ) => {
-        const func = !!taskId ? 'api.tx.orders.changeSpfso' : 'api.tx.orders.createSpfso'
+        const func = !!taskId ? queueableApis.changeSpfso : queueableApis.createSpfso
         const orderItem = {
             Product: PRODUCT_HASH_LABOUR,
             UnitPrice: amountXTX,
@@ -267,10 +281,11 @@ export const queueables = {
             ...queueProps,
             address: owner,
             amountXTX,
-            func,
-            type: TX_STORAGE,
             args,
+            func,
+            recordId: taskId,
             txId,
+            type: TX_STORAGE,
         }
     },
 }

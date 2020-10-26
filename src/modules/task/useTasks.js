@@ -96,7 +96,7 @@ export default function useTasks(types, address, timeout = 5000) {
                         // ignore error. should only happen when amountXTX is messed up due to blockchain storage reset
                         console.log('AmontXTX parse error', err)
                     }
-                    const _owner = getAddressName(owner)
+                    const _owner = getAddressName(owner, true)
                     const isOwner = address === owner
                     const isSubmitted = orderStatus === statuses.submitted
                     const isPendingApproval = approvalStatus == approvalStatuses.pendingApproval

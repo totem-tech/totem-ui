@@ -10,13 +10,14 @@ import Balance from '../components/Balance'
 import Currency from '../components/Currency'
 import Text from '../components/Text'
 import PartnerForm from '../modules/partner/PartnerForm'
-import { find as findIdentity, rxIdentities, rxSelected } from '../modules/identity/identity'
-import { getAddressName, rxPartners } from '../modules/partner/partner'
+import { get as getIdentity, rxIdentities, rxSelected } from '../modules/identity/identity'
+import { remove as removeNotif, setItemViewHandler } from '../modules/notification/notification'
+import { get as getPartner, getAddressName, rxPartners } from '../modules/partner/partner'
 import { getConnection, query, queueables } from '../services/blockchain'
 import { convertTo, currencyDefault, getCurrencies, rxSelected as rxSelectedCurrency } from '../services/currency'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
-import { addToQueue } from '../services/queue'
+import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { unsubscribe } from '../services/react'
 
 const textsCap = translated({
@@ -48,8 +49,12 @@ const textsCap = translated({
     toLabel: 'recipient (select a partner)',
     total: 'total',
     totalRequired: 'total required',
+    transferedFunds: 'transfered funds to you',
     txFee: 'transaction fee',
+    yourIdentity: 'your identity',
 }, true)[1]
+// notification type
+const TRANSFER_TYPE = 'transfer'
 
 export default class Transfer extends Component {
     constructor(props) {
@@ -313,7 +318,7 @@ export default class Transfer extends Component {
         const from = values[this.names.from]
         const to = values[this.names.to]
         const valid = isValidNumber(amountReceived) && amountReceived > 0
-        const identity = findIdentity(from)
+        const identity = getIdentity(from)
         const { inputs, submitDisabled } = this.state
         const amountIn = findInput(inputs, this.names.amountReceived)
         const amountGroupIn = findInput(inputs, this.names.amountReceivedGroup)
@@ -393,8 +398,10 @@ export default class Transfer extends Component {
         const currencyReceived = values[this.names.currencyReceived]
         const from = values[this.names.from]
         const to = values[this.names.to]
+        const toSelf = getIdentity(to)
+        const userId = !toSelf && (getPartner(to) || {}).userId
         const description = [
-            `${textsCap.sender}: ${findIdentity(from).name}`,
+            `${textsCap.sender}: ${getIdentity(from).name}`,
             `${textsCap.recipient}: ${getAddressName(to)}`,
             `${textsCap.amount}: ${amountReceived} ${currencyReceived}`,
         ]
@@ -405,6 +412,22 @@ export default class Transfer extends Component {
             {
                 description: description.join('\n'),
                 title: textsCap.queueTitle,
+                next: !userId ? null : {
+                    args: [
+                        [userId],
+                        TRANSFER_TYPE,
+                        null,
+                        'transfered funds',
+                        {
+                            addressFrom: from,
+                            addressTo: to,
+                            amountXTX: this.amountXTX,
+                        },
+                    ],
+                    func: 'notify',
+                    silent: true,
+                    type: QUEUE_TYPES.CHATCLIENT,
+                },
                 then: (success, resultOrError) => {
                     if (!success) return this.setPostSubmitMessage(resultOrError)
                     this.setPostSubmitMessage(null, resultOrError, description)
@@ -494,3 +517,31 @@ Transfer.defaultProps = {
     size: 'tiny',
     submitText: textsCap.send,
 }
+
+// set transfer notificaton item view handler
+setItemViewHandler(
+    TRANSFER_TYPE,
+    null,
+    (id, notification = {}, { senderIdBtn }) => {
+        const { data = {} } = notification
+        const { addressFrom, addressTo, amountXTX } = data
+        const identity = getIdentity(addressTo)
+        if (!identity || !isValidNumber(amountXTX)) return removeNotif(id)
+
+        return {
+            icon: 'money bill alternate outline',
+            content: (
+                <div>
+                    {senderIdBtn} {textsCap.transferedFunds}
+                    <Currency {...{
+                        EL: 'div',
+                        prefix: <b>{textsCap.amount}: </b>,
+                        value: amountXTX,
+                    }} />
+                    <div><b>{textsCap.payerIdentity}: </b>{getAddressName(addressFrom)}</div>
+                    <div><b>{textsCap.yourIdentity}: </b>{identity.name}</div>
+                </div>
+            ),
+        }
+    },
+)

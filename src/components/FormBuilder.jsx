@@ -184,7 +184,13 @@ export default class FormBuilder extends Component {
 			const submitProps = !isObj(submitText) ? {} : React.isValidElement(submitText) ? { ...submitText.props } : submitText
 
 			let { content, disabled, icon, loading, onClick, positive, style } = submitProps
-			icon = icon || icon === null ? icon : shouldDisable ? 'exclamation circle' : 'check'
+			icon = icon || icon === null
+				? icon
+				: success
+					? 'check' // form has been successfully submitted
+					: shouldDisable
+						? 'exclamation circle' // one or more fields are invalid or unfilled
+						: 'thumbs up' // all fields are valid and user can now submit
 			submitBtn = (
 				<Button
 					{...{
