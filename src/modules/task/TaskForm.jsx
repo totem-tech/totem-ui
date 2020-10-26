@@ -183,7 +183,7 @@ export default class TaskForm extends Component {
                     ]
                 },
                 {
-                    rxValue: new BehaviorSubject(),
+                    rxValue: new BehaviorSubject(false),
                     inline: true,
                     label: textsCap.marketplace,
                     multiple: false,

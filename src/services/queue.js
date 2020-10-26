@@ -5,7 +5,7 @@ import React from 'react'
 import uuid from 'uuid'
 import { BehaviorSubject, Subject } from 'rxjs'
 import DataStorage from '../utils/DataStorage'
-import { signAndSend } from '../utils/polkadotHelper'
+import { getTxFee, signAndSend } from '../utils/polkadotHelper'
 import { isArr, isFn, isObj, isStr, objClean, isValidNumber, isError } from '../utils/utils'
 // services
 import { getClient } from '../modules/chat/ChatClient'
@@ -52,6 +52,7 @@ const ERROR = 'error'
 const SUCCESS = 'success'
 // indicates task execution started
 const LOADING = 'loading'
+const REMOVED = 'removed'
 const SUSPENDED = 'suspended'
 // Minimum balance required to make a transaction.
 // This is a guesstimated transaction fee. PolkadotJS V2 required to pre-calculate fee.
@@ -70,10 +71,11 @@ export const QUEUE_TYPES = Object.freeze({
     TX_STORAGE: 'tx_storage',
 })
 export const statuses = Object.freeze({
-    ERROR: ERROR,
-    LOADING: LOADING,
-    SUCCESS: SUCCESS,
-    SUSPENDED: SUSPENDED,
+    ERROR,
+    LOADING,
+    REMOVED,
+    SUCCESS,
+    SUSPENDED,
 })
 // translated version of the statuses
 export const statusTitles = Object.freeze({
@@ -138,8 +140,8 @@ const VALID_KEYS = Object.freeze([
     //                          Will only be executed if the parent task was successful.
     'next',
 
-    // @notificationId  string: (optional) if the task is a in responding to a specific notification
-    'notificationId',
+    // @recordId        string: (optional) for reference only
+    'recordId',
 
     // @silent          bool: (optional) If true, enables silent mode and no toast messages will be displayed.
     //                          This is particularly usefull when executing tasks that user didn't initiate or should //                            not be bothered with.
@@ -166,10 +168,9 @@ const VALID_KEYS = Object.freeze([
     //                          Only root task's toast ID will be used. Child tasks will inherit the root's toast ID.
     'toastId',
 
-    // @txId            string: (optional) for Blockchain translations, include a "Transaction ID" (a hash of 
+    // @txId            string: (optional) for Blockchain translations ONLY, include a "Transaction ID" (a hash of 
     //                          an UUID and address combined). The @txId will be used to verify the status of 
     //                          the a transaction, in case, user leaves the page befor the transaction is completed.
-    //                          For non-Blockchain tasks (eg: for chat client), can be used for external reference.
     'txId',
 
     // @type            string: name of the service. Currently supported: blockchain, chatclient
@@ -454,14 +455,15 @@ const handleTx = async (id, rootTask, task, toastId) => {
             txSuccess ? SUCCESS : ERROR,
             txSuccess ? [] : textsCap.txFailed,
         )
+        // attempt to execute the transaction
+        const tx = txFunc.apply(null, task.argsProcessed || args)
 
         // retrieve and store account balance before starting the transaction
         let balance = await query('api.query.balances.freeBalance', address)
-        if (balance < (amountXTX + MIN_BALANCE)) throw textsCap.insufficientBalance
+        const txFee = await getTxFee(api, address, tx)
+        if (balance < (amountXTX + txFee)) throw textsCap.insufficientBalance
         _save(LOADING, null, { before: balance })
 
-        // attempt to execute the transaction
-        const tx = txFunc.apply(null, task.argsProcessed || args)
         const result = await signAndSend(api, address, tx)
 
         // retrieve and store account balance after execution

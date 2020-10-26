@@ -357,9 +357,19 @@ export class ChatClient {
         )
     }
 
-    register = (id, secret, cb) => isFn(cb) && socket.emit('register',
+    /**
+     * @name    register
+     * @summary register new user
+     * 
+     * @param   {String}    id          new user ID
+     * @param   {String}    secret
+     * @param   {String}    referredBy  (optional) referrer user ID
+     * @param   {Function}  cb 
+     */
+    register = (id, secret, referredBy, cb) => isFn(cb) && socket.emit('register',
         id,
         secret,
+        referredBy,
         err => {
             if (!err) {
                 setUser({ id, secret })

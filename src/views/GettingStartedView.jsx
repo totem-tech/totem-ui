@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { Button, Icon, Step } from 'semantic-ui-react'
-import { isDefined } from '../utils/utils'
+import { isDefined, isValidNumber } from '../utils/utils'
 // services
 import { getUser } from '../modules/chat/ChatClient'
 import { getSelected } from '../modules/identity/identity'
@@ -73,6 +73,15 @@ const [texts] = translated({
 const MODULE_KEY = 'getting-started'
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
+/**
+ * @name	setActiveStep
+ * @summary	get/set active step
+ * 
+ * @param	{Number} stepNo (optional) if not supplied will return saved active step
+ * 
+ * @returns {Number}
+ */
+export const setActiveStep = stepNo => isValidNumber(stepNo) ? rw({activeStep: stepNo}) : rw().activeStep || 0
 // old localStorage key for active step 
 const legacyKey = 'totem_getting-started-step-index'
 try {
@@ -81,7 +90,7 @@ try {
 		localStorage.removeItem(legacyKey)
 		storage.settings.global(MODULE_KEY, null)
 		const activeStep = parseInt(localStorage.getItem(legacyKey) || storage.settings.global(MODULE_KEY).activeStep)
-		rw({ activeStep })
+		setActiveStep(activeStep)
 	}
 } catch (e) { }
 
@@ -89,22 +98,22 @@ export default class GetingStarted extends Component {
 	constructor(props) {
 		super(props)
 
-		this.registerStepIndex = 1
+		this.registerStepIndex = 0
 		this.backupStepIndex = 2
 		const isRegistered = !!(getUser() || {}).id
-		const { activeStep = 0 } = rw()
+		const activeStep = setActiveStep()
 		this.state = {
 			activeStep: (isRegistered && activeStep <= 1) ? 2 : activeStep,
 			steps: [
 				{
-					description: texts.step1Description,
-					onClick: this.handleIdentity,
-					title: texts.step1Title,
-				},
-				{
 					description: texts.step2Description,
 					onClick: this.handleRegister,
 					title: texts.step2Title,
+				},
+				{
+					description: texts.step1Description,
+					onClick: this.handleIdentity,
+					title: texts.step1Title,
 				},
 				{
 					disabled: false, // allow the user to backup even after step is completed
@@ -129,7 +138,7 @@ export default class GetingStarted extends Component {
 		size: 'tiny',
 		onConfirm: () => {
 			let { activeStep } = this.state
-			this.setIndex(++activeStep)
+			this.setStep(++activeStep)
 			setTimeout(() => downloadBackup())
 			// assume backup completed?
 			// only way to confirm backup is complete is to force user to upload the downloaded file)
@@ -139,17 +148,19 @@ export default class GetingStarted extends Component {
 	handleIdentity = () => showForm(IdentityForm, {
 		values: getSelected(),
 		// automatically open register form only if user isn't already registered
-		onSubmit: ok => ok && this.setIndex(1) === this.registerStepIndex && this.handleRegister()
+		onSubmit: ok => {
+			if (!ok) return
+			this.setStep(this.state.activeStep + 1)
+		}
 	})
 
 	handleRegister = () => showForm(RegistrationForm, {
 		closeOnSubmit: true,
 		onSubmit: ok => {
 			if (!ok) return
-			this.setIndex(this.state.activeStep + 1)
+			this.setStep(this.state.activeStep + 1)
 			setToast({ content: texts.registrationSuccess, status: 'success' })
 			this.requestFaucet()
-			this.handleBackup()
 		}
 	})
 
@@ -165,7 +176,7 @@ export default class GetingStarted extends Component {
 		header: texts.confirmHeader,
 		size: 'tiny',
 		onConfirm: () => showForm(RestoreBackupForm, {
-			onSubmit: done => done && this.setIndex(this.backupStepIndex + 1)
+			onSubmit: done => done && this.setStep(this.backupStepIndex + 1)
 		}),
 	})
 
@@ -177,15 +188,27 @@ export default class GetingStarted extends Component {
 		args: [getSelected().address]
 	})
 
-	setIndex(stepIndex) {
+	setStep(nextStep) {
 		const { id } = getUser() || {}
-		if (stepIndex === this.registerStepIndex && id) {
+		if (nextStep === this.registerStepIndex && id) {
 			// user Already registered => mark register step as done
-			stepIndex++
+			nextStep++
 		}
-		rw({ activeStep: stepIndex })
-		this.setState({ activeStep: stepIndex })
-		return stepIndex
+		setActiveStep(nextStep)
+		this.setState({ activeStep: nextStep })
+
+		switch (nextStep) {
+			case 0:
+				this.handleRegister()
+				break
+			case 1:
+				this.handleIdentity()
+				break
+			case 2: 
+				this.handleBackup()
+				break
+		}
+		return nextStep
 	}
 
 	render() {

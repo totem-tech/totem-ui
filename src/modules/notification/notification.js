@@ -1,6 +1,6 @@
 import { BehaviorSubject, Subject } from 'rxjs'
 import DataStorage from '../../utils/DataStorage'
-import { isFn} from '../../utils/utils'
+import { isArr, isFn, isObj} from '../../utils/utils'
 // services
 import client, { getUser, rxIsLoggedIn } from '../chat/ChatClient'
 import { translated } from '../../services/language'
@@ -65,17 +65,47 @@ const notify = (id, notification) => setTimeout(() => {
     }
 })
 
-export const remove = id => setTimeout(() => {
-    notifications.delete(id)
+/**
+ * @name    remove
+ * @summary remove one or more notificaiton by ID(s)
+ * 
+ * @param {String|Array} ids notification ID(s)
+ */
+export const remove = ids => setTimeout(() => {
+    ids = isArr(ids) ? ids : [ids]
+    notifications.delete(ids)
 
-    addToQueue({
+    ids.forEach(id => addToQueue({
         args: [id, null, true],
         func: 'notificationSetStatus',
         notificationId: id,
         silent: true,
         type: QUEUE_TYPES.CHATCLIENT,
-    })
+    }))
 })
+
+/**
+ * @name    removeMatching
+ * @summary remove all notifications matching extact notification values and data
+ * 
+ * @param   {Object}    values  notification values to match
+ * @param   {Object}    data    (optional) notification data
+ */ 
+export const removeMatching = (values = {}, data = {}) => {
+    const result = notifications.search(values, true, true, true)
+    // no matching notificaion found
+    if (!result.size) return
+
+    const resultArr = Array.from(result)
+    const dataKeys = isObj(data) ? Object.keys(data) : []
+    const idsToRemove = dataKeys.length ? [] : resultArr.map(([id]) => id)
+    // find notifications matching data
+    dataKeys.length && resultArr.forEach(([id, { data : iData }]) => {
+        const match = dataKeys.every(key => data[key] === iData[key])
+        match && idsToRemove.push(id)
+    })
+    remove(idsToRemove)
+}
 
 /**
  * @name    search
@@ -120,7 +150,7 @@ export const toggleRead = id => {
     addToQueue({
         args: [id, item.read, false],
         func: 'notificationSetStatus',
-        notificationId: id,
+        recordId: id,
         type: QUEUE_TYPES.CHATCLIENT,
         silent: true,
     })
@@ -184,18 +214,17 @@ setTimeout(() => {
                     }
                     return !deleted
                 })
-            const mostRecentId = itemsArr[0][0]
-            const mostRecent = itemsArr[0][1]
+            const [mostRecentId, mostRecent] = itemsArr[0] || []
             const gotNew = itemsArr.find(([_, { tsCreated }]) => tsCreated > tsLastReceived)
 
             // save latest item's timestamp as last received
-            rw({ tsLastReceived: mostRecent.tsCreated })
+            mostRecent && rw({ tsLastReceived: mostRecent.tsCreated })
             notifications.setAll(items, true).sort('tsCreated', true, true)
             if (!gotNew) return
 
             rxNewNotification.next(mostRecentId)
 
-            !mostRecent.read && notify(mostRecentId, mostRecent)
+            mostRecent && !mostRecent.read && notify(mostRecentId, mostRecent)
         })
     })
 
@@ -209,9 +238,9 @@ setTimeout(() => {
 
     // mark notifications as loading whenever queue service processes a notification response
     rxOnSave.subscribe(data => {
-        const { task: { notificationId: id, status } } = data || { task: {} }
-        const notification = notifications.get(id)
-        notification && notifications.set(id, { ...notification, status })
+        const { task: { recordId, status } } = data || { task: {} }
+        const notification = notifications.get(recordId)
+        notification && notifications.set(recordId, { ...notification, status })
     })
 })
 
@@ -222,6 +251,6 @@ export default {
     rxVisible,
     rxUnreadCount,
     remove,
-    setItemHandler: setItemViewHandler,
+    setItemViewHandler,
     toggleRead,
 }

@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import { BehaviorSubject } from 'rxjs'
 import { arrUnique, isFn, objWithoutKeys, arrSort, isStr } from '../utils/utils'
 import FormInput from './FormInput'
 import { getChatUserIds } from '../modules/chat/chat'
@@ -43,16 +44,27 @@ export default class UserIdInput extends Component {
     constructor(props) {
         super(props)
 
-        const { allowAdditions, clearable, includePartners, includeFromChat, multiple, options, value } = props
+        let {
+            allowAdditions,
+            clearable,
+            includePartners,
+            includeFromChat,
+            multiple,
+            options,
+            placeholder,
+            value,
+            rxValue = new BehaviorSubject(value || (multiple? [] : '')),
+        } = props
+        placeholder = placeholder || textsCap.enterUserId
         let input = {
             defer: null,
             inlineLabel: { icon: { className: 'no-margin', name: 'at' } },
             labelPosition: 'left',
             maxLength: 16,
-            placeholder: textsCap.enterUserId,
+            placeholder,
+            rxValue,
             type: 'text',
             validate: this.validateTextField,
-            value: '',
             useInput: true,
         }
 
@@ -68,12 +80,13 @@ export default class UserIdInput extends Component {
             onOpen: () => this.setState({ open: true }),
             onSearchChange: this.handleSearchChange,
             options: options || [],
-            placeholder: textsCap.enterUserIds,
+            placeholder,
+            rxValue,
             search: true,
-            searchQuery: props.searchQuery || '',
+            searchQuery: props.searchQuery || rxValue.value || '',
             selection: true,
             type: 'dropdown',
-            value: multiple ? [] : value,
+            // value: multiple ? [] : value,
         }
 
         this.state = {

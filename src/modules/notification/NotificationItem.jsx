@@ -15,10 +15,13 @@ export default React.memo(({ id, notification }) => {
     const senderIdBtn = <UserID userId={senderId} />
     const isCustom = isFn(handler)
     let msg = {
-        ...(isCustom ? handler(id, notification, { senderId, senderIdBtn }) : {
-            content: <span>{senderIdBtn}: {message}</span>,
-            header: <div className='header'>{type.replace(/-|_/g, ' ')} {childType.replace(/-|_/g, ' ')}</div>,
-        })
+        ...(isCustom
+            ? handler(id, notification, { senderId, senderIdBtn })
+            : {
+                content: <span>{senderIdBtn}: {message}</span>,
+                header: <div className='header'>{type.replace(/-|_/g, ' ')} {childType.replace(/-|_/g, ' ')}</div>,
+            }
+        )
     }
     msg.icon = msg.icon || { name: 'bell outline' }
     msg.content = (
