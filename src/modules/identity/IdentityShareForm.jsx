@@ -201,9 +201,10 @@ export default class IdentityShareForm extends Component {
                             e.stopPropagation()
                             e.preventDefault()
                             showForm(LocationForm, {
+                                autoSave: true,
                                 id: locationId,
                                 // disable remove button prevent location being deleted from here
-                                inputsDisabled: [locFormInputNames.removeBtn],
+                                inputsHidden: [locFormInputNames.removeBtn],
                             })
                         },
                         size: 'mini',

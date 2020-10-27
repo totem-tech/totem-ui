@@ -50,11 +50,6 @@ export default class IdentityDetailsForm extends Component {
         this.identity = get((props.values || {}).address) || {}
         const { address, tags } = this.identity
         this.showSeed = false
-        this.names = {
-            address: 'address',
-            name: 'name',
-
-        }
         this.state = {
             closeOnSubmit: true,
             closeText: {
@@ -70,7 +65,7 @@ export default class IdentityDetailsForm extends Component {
                         <IdentityForm {...{
                             El: 'div',
                             // auto save changes
-                            onChange: this.handleChange,
+                            autoSave: true,
                             submitText: null,
                             values: this.identity,
                         }} />
@@ -86,7 +81,7 @@ export default class IdentityDetailsForm extends Component {
                         title: textsCap.copyAddress,
                     },
                     label: textsCap.identity,
-                    name: this.names.address,
+                    name: 'address',
                     readOnly: true,
                     type: 'text',
                 },
@@ -169,7 +164,12 @@ export default class IdentityDetailsForm extends Component {
 
     getUri = uri => this.showSeed || !uri ? uri : '*'.repeat(uri.length)
 
-    handleChange = deferred((_, values) => set(values.address, values), 300)
+    handleChange = deferred((_, values) => {
+        // const requiredKeys = Object.keys(requiredFields)
+        // // prevent saving if one or more fields are empty
+        // if (!objHasKeys(values, requiredKeys, true)) return
+        // set(values.address, values)
+    }, 300)
 
     handleDelete = () => {
         const { onSubmit } = this.props

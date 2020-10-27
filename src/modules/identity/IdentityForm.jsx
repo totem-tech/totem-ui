@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { isFn, arrUnique } from '../../utils/utils'
+import { isFn, arrUnique, deferred, objHasKeys } from '../../utils/utils'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { getAllTags } from '../partner/partner'
@@ -13,6 +13,7 @@ import { Button } from 'semantic-ui-react'
 
 const textsCap = translated({
     address: 'address',
+    autoSaved: 'changes will be auto-saved',
     create: 'create',
     business: 'business',
     generate: 'generate',
@@ -23,6 +24,9 @@ const textsCap = translated({
     seed: 'seed',
     tags: 'tags',
     update: 'update',
+    headerCreate: 'create identity',
+    headerRestore: 'restore identity',
+    headerUpdate: 'update identity',
     identityNamePlaceholder: 'a name for the identity',
     locationLabel: 'contact address',
     locationPlaceholder: 'select a location for this identity',
@@ -36,52 +40,79 @@ const textsCap = translated({
     validSeedRequired: 'please enter a valid seed',
 }, true)[1]
 
+export const requiredFields = Object.freeze({
+    address: 'address',
+    name: 'name',
+    uri: 'uri',
+    usageType: 'usageType',
+})
+export const inputNames = Object.freeze({
+    ...requiredFields,
+    locationId: 'locationId',
+    restore: 'restore',
+    tags: 'tags',
+})
+
 export default class IdentityForm extends Component {
     constructor(props) {
         super(props)
 
-        const { address } = props.values || {}
-        this.values = { ...get(address) }
+        let  { autoSave, header, message, submitText, values } = props
+        const { address, restore } = values || {}
+        const existingValues = get(address)
+        this.values = { ...existingValues, ...values }
         this.rxAddress = new BehaviorSubject(address)
-        this.doUpdate = !!address
-        this.validateUri = this.validateUri
-        this.names = {
-            address: 'address',
-            locationId: 'locationId',
-            name: 'name',
-            restore: 'restore',
-            tags: 'tags',
-            uri: 'uri',
-            usageType: 'usageType',
-        }
+        this.doUpdate = !!existingValues
 
+        if (submitText !== null) {
+            submitText = submitText || (
+                this.doUpdate
+                    ? autoSave
+                        ? null
+                        : textsCap.update
+                    : restore
+                        ? textsCap.restore
+                        : textsCap.create
+            )
+        }
+        this.header = header || (
+            this.doUpdate
+                ? textsCap.headerUpdate
+                : textsCap.headerCreate
+        )
         this.state = {
-            message: props.message,
+            header: this.header,
+            message,
             onChange: this.handleChange,
             onSubmit: this.handleSubmit,
+            submitText,
             success: false,
             inputs: fillValues([
                 {
                     hidden: this.doUpdate,
-                    name: this.names.restore,
+                    name: inputNames.restore,
                     onChange: this.handleRestoreChange,
                     options: [{
                         label: textsCap.restoreInputLabel,
                         value: true,
                     }],
+                    rxValue: new BehaviorSubject(),
                     type: 'Checkbox-group',
                 },
                 {
                     label: textsCap.name,
-                    name: this.names.name,
+                    maxLength: 64,
+                    minLength: 3,
+                    name: inputNames.name,
                     placeholder: textsCap.identityNamePlaceholder,
                     required: true,
+                    rxValue: new BehaviorSubject(),
                     validate: this.validateName,
                 },
                 {
                     hidden: true,
                     label: textsCap.seed,
-                    name: this.names.uri,
+                    name: inputNames.uri,
                     placeholder: textsCap.seedPlaceholder,
                     readOnly: true,
                     required: true,
@@ -92,7 +123,7 @@ export default class IdentityForm extends Component {
                 {
                     inline: true,
                     label: textsCap.usageType,
-                    name: this.names.usageType,
+                    name: inputNames.usageType,
                     onChange: (_, { usageType }) => this.updateSeed(this.values.uri, usageType),
                     options: [
                         { label: textsCap.personal, value: 'personal' },
@@ -105,14 +136,14 @@ export default class IdentityForm extends Component {
                 },
                 {
                     label: textsCap.address,
-                    name: this.names.address,
+                    name: inputNames.address,
                     rxValue: this.rxAddress,
                     type: 'hidden',
                 },
                 {
                     allowAdditions: true,
                     label: textsCap.tags,
-                    name: this.names.tags,
+                    name: inputNames.tags,
                     noResultsMessage: textsCap.tagsInputEmptyMessage,
                     multiple: true,
                     onAddItem: this.handleAddTag,
@@ -151,7 +182,7 @@ export default class IdentityForm extends Component {
                             </div>
                         </div>
                     ),
-                    name: this.names.locationId,
+                    name: inputNames.locationId,
                     options: this.getLocationOptions(),
                     placeholder: textsCap.locationPlaceholder,
                     search: ['text'],
@@ -181,7 +212,7 @@ export default class IdentityForm extends Component {
 
     handleAddTag = (_, data) => {
         const { inputs } = this.state
-        findInput(inputs, this.names.tags).options.push({
+        findInput(inputs, inputNames.tags).options.push({
             key: data.value,
             text: data.value,
             value: data.value
@@ -190,25 +221,30 @@ export default class IdentityForm extends Component {
     }
 
     handleChange = (...args) => {
-        const { onChange } = this.props
+        const { autoSave, onChange } = this.props
         const values = args[1]
         this.values = values
         isFn(onChange) && onChange(...args)
+        if (!autoSave || !this.doUpdate) return
+
+        // prevent saving if one or more fields are empty
+        if (!objHasKeys(values, Object.keys(requiredFields), true)) return
+        this.handleSubmit(...args)
     }
 
     handleLocationCreate = (success, _, id) => { 
         if (!success) return
         const { inputs } = this.state
-        const locationIdIn = findInput(inputs, this.names.locationId)
+        const locationIdIn = findInput(inputs, inputNames.locationId)
         locationIdIn.options = this.getLocationOptions()
         locationIdIn.value = id
         this.setState({ inputs })
     }
 
     handleRestoreChange = (_, values) => {
-        const restore = values[this.names.restore]
-        const { inputs } = this.state
-        const uriInput = findInput(inputs, this.names.uri)
+        const { header, inputs } = this.state
+        const restore = values[inputNames.restore]
+        const uriInput = findInput(inputs, inputNames.uri)
         uriInput.action = restore ? undefined : this.generateBtn
         uriInput.readOnly = !restore
         uriInput.hidden = !restore
@@ -217,21 +253,26 @@ export default class IdentityForm extends Component {
             uriInput.rxValue.next('')
             this.rxAddress.next('')
         }
-        this.setState({ inputs })
+        this.setState({
+            inputs,
+            header: restore
+                ? textsCap.headerRestore
+                : this.header
+        })
     }
 
-    handleSubmit = () => {
+    handleSubmit = deferred(() => {
         const { onSubmit } = this.props
         const { values } = this
-        const address = values[this.names.address]
+        const address = values[inputNames.address]
         set(address, { ...values })
         isFn(onSubmit) && onSubmit(true, values)
         this.setState({ success: true })
-    }
+    }, 100)
 
     updateSeed(seed, usageType = 'personal') {
         const { inputs } = this.state
-        const restore = this.values[this.names.restore]
+        const restore = this.values[inputNames.restore]
         if (restore) return
         if (!this.doUpdate) {
             seed = seed || generateUri()
@@ -239,7 +280,7 @@ export default class IdentityForm extends Component {
         }
         const { address = '' } = seed && addFromUri(seed) || {}
         this.rxAddress.next(address)
-        findInput(inputs, this.names.uri).rxValue.next(seed)
+        findInput(inputs, inputNames.uri).rxValue.next(seed)
         this.setState({ inputs })
     }
 
@@ -257,13 +298,13 @@ export default class IdentityForm extends Component {
         }
         const existing = find(address)
         if (existing) return `${textsCap.seedExists} ${existing.name}`
-        this.values[this.names.address] = address
+        this.values[inputNames.address] = address
         this.rxAddress.next(address)
         if (seed.includes('/totem/')) {
             // extract usageType
             const usagetypeInt = parseInt(seed.split('/totem/')[1])
             const usageType = usagetypeInt === 1 ? 'business' : 'personal'
-            const usageTypeIn = findInput(inputs, this.names.usageType)
+            const usageTypeIn = findInput(inputs, inputNames.usageType)
             usageTypeIn.hidden = true
             this.values.usageType = usageType
             usageTypeIn.rxValue.next(usageType)
@@ -272,22 +313,17 @@ export default class IdentityForm extends Component {
         return null
     }
 
-    render() {
-        const { doUpdate, props, state, values } = this
-        const restore = values[this.names.restore]
-        const action = doUpdate ? textsCap.update : (restore ? textsCap.restore : textsCap.create)
-        state.message = state.message || props.message
-        state.header = props.header || `${action} ${textsCap.identity}`
-        state.submitText = props.submitText === undefined ? action : props.submitText
-        return <FormBuilder {...{ ...props, ...state }} />
-    }
+    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
 IdentityForm.propTypes = {
+    // whether to auto save when upadating identity
+    autoSave: PropTypes.bool,
     values: PropTypes.shape({
         address: PropTypes.string,
     }),
 }
 IdentityForm.defaultProps = {
+    autoSave: false,
     closeOnSubmit: true,
     size: 'tiny'
 }

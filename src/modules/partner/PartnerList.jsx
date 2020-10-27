@@ -25,11 +25,8 @@ const textsCap = translated({
     tags: 'tags',
     update: 'update',
     usage: 'usage',
-    introducePartner: 'introduce a partner',
     columnPublicTitle1: 'a public company cannot be changed to private.',
     columnPublicTitle2: 'click to add a company with this identity to the public database',
-    noUserIdConfirmHeader: 'partner User ID Required',
-    noUserIdConfirmMsg: 'selected Partner does not include a User ID. In order to introduce partner a user ID is required. Would you like to update the partner?',
     partnerName: 'partner name',
     removePartner: 'remove partner',
     usedBy: 'used by',
@@ -155,29 +152,18 @@ export default class PartnerList extends Component {
     }
 
     getActions = partner => {
-        const { address, name, userId } = partner
-        // const { id: ownId } = getUser() || {}
-        const updatePartnerCb = onSubmit => () => showForm(PartnerForm, {
-            onSubmit,
-            size: 'tiny',
-            values: partner,
-        })
+        const { address, name } = partner
+        const updatePartnerCb = onSubmit => () => showForm(
+            PartnerForm,
+            {
+                // auto save updates
+                autoSave: true,
+                onSubmit,
+                size: 'tiny',
+                values: partner,
+            }
+        )
         return [
-            // {
-            // 	icon: 'handshake',
-            // 	onClick: () => {
-            // 		const introduce = userId => showForm(IntroduceUserForm, { values: { userId } })
-            // 		if (!!userId) return introduce(userId)
-
-            // 		confirm({
-            // 			content: textsCap.noUserIdConfirmMsg,
-            // 			header: textsCap.noUserIdConfirmHeader,
-            // 			onConfirm: updatePartnerCb((success, { userId }) => success && userId && introduce(userId)),
-            // 			size: 'tiny',
-            // 		})
-            // 	},
-            // 	title: textsCap.introducePartner
-            // },
             {
                 icon: 'pencil',
                 onClick: updatePartnerCb(),
@@ -194,12 +180,6 @@ export default class PartnerList extends Component {
                 }),
                 title: textsCap.delete,
             },
-            // {
-            // 	disabled: !userId || userId === ownId,
-            // 	icon: 'chat',
-            // 	onClick: () => createInbox([userId], null, true),
-            // 	title: textsCap.chat,
-            // },
         ].filter(Boolean).map(props => <Button key={props.title} {...props} />)
     }
 

@@ -53,7 +53,7 @@ export default function LocationsList(props = {}) {
                 content: ({ id }) => (
                     <Button {...{
                         icon: 'pencil',
-                        onClick: () => showForm(LocationForm, { id }),
+                        onClick: () => showForm(LocationForm, { autoSave: true, id }),
                     }} />
                 )
             },

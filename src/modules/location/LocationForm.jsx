@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { arrSort, deferred, isFn } from '../../utils/utils'
+import { arrSort, deferred, isFn, objHasKeys } from '../../utils/utils'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { closeModal, confirm } from '../../services/modal'
@@ -56,7 +56,7 @@ export default class LocationForm extends Component {
 	constructor(props) {
 		super(props)
 
-		const { header, id, subheader, values } = props
+		let { autoSave, header, id, subheader, submitText, values } = props
 		const location = get(id)
 		const { partnerIdentity } = location || values || {}
 		this.isUpdate = !!id && !!location
@@ -69,10 +69,14 @@ export default class LocationForm extends Component {
 			header: header || (this.isUpdate ? textsCap.formHeaderUpdate : textsCap.formHeaderCreate),
 			onChange: this.handleChange,
 			onSubmit: this.handleSubmit,
-			subheader: subheader || (!this.isUpdate ? '' : (
+			subheader: subheader || (!this.isUpdate || !autoSave ? '' : (
 				<span style={{ color: 'grey' }}> {textsCap.formSubheaderUpdate}</span>
 			)),
-			submitText: this.isUpdate ? null : undefined,
+			submitText: submitText === null || submitText
+				? submitText
+				: this.isUpdate && autoSave
+					? null
+					: undefined,
 			inputs: fillValues([
 				{
 					hidden: true,
@@ -213,10 +217,13 @@ export default class LocationForm extends Component {
 	}
 
 	handleChange = (e, values) => {
-		const { onChange } = this.props
+		const { autoSave, onChange } = this.props
 		isFn(onChange) && onChange(e, values)
 		// auto save if update
-		this.isUpdate && this.handleSubmit(e, values)
+		if (!this.isUpdate || !autoSave) return
+		// prevent saving without required fields
+		if (!objHasKeys(values, Object.keys(requiredFields), true)) return
+		this.handleSubmit(e, values)
 	}
 
 	handleSubmit = deferred((_, values) => {
@@ -229,12 +236,14 @@ export default class LocationForm extends Component {
     render = () => <FormBuilder {...{ ...this.props, ...this.state}} />
 }
 LocationForm.propTypes = {
+	autoSave: PropTypes.bool,
 	id: PropTypes.string,
 	// callback to be invoked when location is removed
 	onRemove: PropTypes.func,
 	values: PropTypes.object
 }
 LocationForm.defaultProps = {
+	autoSave: false,
 	closeOnSubmit: true,
 	size: 'tiny', // modal size
 }

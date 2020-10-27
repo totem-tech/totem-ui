@@ -8,6 +8,7 @@ import IModal from './Modal'
 import Text from './Text'
 import { translated } from '../services/language'
 import Invertible from './Invertible'
+import { closeModal } from '../services/modal'
 
 const textsCap = translated({
 	cancel: 'cancel',
@@ -150,6 +151,7 @@ export default class FormBuilder extends Component {
 			loading,
 			message: msg,
 			modal,
+			modalId,
 			onClose,
 			onOpen,
 			onSubmit,
@@ -170,6 +172,7 @@ export default class FormBuilder extends Component {
 		inputs = inputs.map(this.addInterceptor(null, values))
 		if (success && closeOnSubmit) {
 			modalOpen = false
+			if (modalId) return closeModal(modalId)
 			isFn(onClose) && onClose({}, {})
 		}
 		msg = sMsg || msg

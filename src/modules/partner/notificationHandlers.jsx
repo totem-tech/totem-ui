@@ -3,7 +3,7 @@ import { ButtonAcceptOrReject, UserID } from '../../components/buttons'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
 import { generateHash, isObj } from '../../utils/utils'
-import { remove as removeLocation, set as saveLocation } from '../location/location'
+import { get as getLocation, remove as removeLocation, set as saveLocation } from '../location/location'
 import { inputNames as locationKeys } from '../location/LocationForm'
 import { remove, rxVisible, setItemViewHandler } from '../notification/notification'
 import { get } from './partner'
@@ -18,6 +18,7 @@ const textsCap = translated({
     identityRequestMsg: 'requested an identity',
     identityShareMsg: 'identity received from:',
     introducedBy: 'introduced by',
+    updatePartner: 'update partner',
     yourIdentity: 'your identity',
 }, true)[1]
 
@@ -25,24 +26,36 @@ const textsCap = translated({
 const handleIdentityReceived = (id, notification, { senderId, senderIdBtn }) => {
     const { data, message } = notification
     const { address, introducedBy, location } = data || {}
+    const partnerIdentity = get(address)
     const handleClick = accepted => {
         if (!accepted) return remove(id)
 
         const locationId = generateHash(address)
+        const existingLocation = getLocation(locationId)
         const hasLocation = isObj(location)
+        let partnerSaved = false
         // remove the location if partner wasn't added
-        const removeLocIfNoPartner = () => !get(address) && removeLocation(locationId)
+        const removeLocIfNoPartner = () => {
+            if (partnerSaved) return
+            // partner wasn't saved/updated but location already exists -> restore to location to original values
+            if (existingLocation) return saveLocation(existingLocation, locationId, true)
+            removeLocation(locationId)
+        }
         if (hasLocation) {
             location[locationKeys.partnerIdentity] = address
-            saveLocation(location, locationId)
+            saveLocation({ ...existingLocation, ...location }, locationId)
         }
                                 
         showForm(PartnerForm, {
-            values: { ...data, userId: senderId },
+            // prevent saving changes unless user clicks on the submit button
+            autoSave: false,
+            closeOnSubmit: true,
             onClose: removeLocIfNoPartner,
+            values: { ...partnerIdentity, ...data, userId: senderId },
             onSubmit: success => {
                 // partner wasn't created
                 if (!success) return removeLocIfNoPartner()
+                partnerSaved = true
                 // remove notification
                 remove(id)
                 // hide notifications
@@ -64,7 +77,7 @@ const handleIdentityReceived = (id, notification, { senderId, senderIdBtn }) => 
                 )}
                 <ButtonAcceptOrReject {...{
                     acceptColor: 'blue',
-                    acceptText: textsCap.addPartner,
+                    acceptText: partnerIdentity ? textsCap.updatePartner : textsCap.addPartner,
                     rejectText: textsCap.ignore,
                     onClick: handleClick,
                 }} />
