@@ -55,20 +55,24 @@ export const search = (...args) => locations.search(...args)
  * @name    set
  * @summary add or update location
  *
- * @param   {Object} location See `allKeys` for a list of accepted properties
- * @param   {String} id (optional) if not supplied, will generate a new random hex string
+ * @param   {Object} location	See `allKeys` for a list of accepted properties
+ * @param   {String} id			(optional) Default: randomly generate unique hex string
+ * @param	{String} replace	(optional) whether to replace existing values instead of merging when updating.
+ * 								Default: false
+ * 
+ * @returns	{String|null}		null if save failed
  */
-export const set = (location, id = randomHex()) => {
-	if (!isStr(id) || !isObj(location)) return
+export const set = (location, id = randomHex(), replace = false) => {
+	if (!isStr(id) || !isObj(location)) return null
 	const existingItem = locations.get(id)
 	const validKeys = Object.values(allKeys)
 	const requiredKeys = Object.values(requiredFields)
+	// merge with existing item and get rid of any unwanted properties
+	location = objClean({ ...(replace ? {} : existingItem), ...location }, validKeys)
 	const hasRequiredKeys = objHasKeys(location, requiredKeys, true)
 	// new item must have all the required keys
-	if (!existingItem && !hasRequiredKeys) return
+	if (!existingItem && !hasRequiredKeys) return null
 
-	// merge with existing item and get rid of any unwanted properties
-	location = objClean({ ...existingItem, ...location }, validKeys)
 	// save to localStorage
 	locations.set(id, location)
 

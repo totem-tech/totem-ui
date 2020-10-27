@@ -116,6 +116,10 @@ function TaskList(props) {
                 style: { textAlign: 'center' },
             },
             {
+                collapsing: true,
+                key: '_orderStatus',
+                textAlign: 'center',
+                title: textsCap.status,
                 content: (task, taskId) => {
                     const { fulfiller, isMarket, orderStatus, owner, _orderStatus } = task
                     if (isMarket) return _orderStatus
@@ -173,24 +177,6 @@ function TaskList(props) {
                                     disabled={inProgress}
                                     loading={inProgress}
                                     onClick={accepted => handleInvoicedResponse(taskId, address, accepted)}
-                                    // onClick={accept => confirm({
-                                    //     confirmButton: (
-                                    //         <Button {...{
-                                    //             content: accept ? textsCap.pay : textsCap.dispute,
-                                    //             negative: !accept,
-                                    //             positive: accept,
-                                    //         }} />
-                                    //     ),
-                                    //     content: accept ? textsCap.acceptInvoiceDesc : undefined,
-                                    //     header: accept ? textsCap.acceptInvoice : textsCap.dispute,
-                                    //     onConfirm: () => handleUpdateStatus(
-                                    //         address,
-                                    //         taskId,
-                                    //         accept ? statuses.completed : statuses.disputed,
-                                    //         accept ? textsCap.acceptInvoiceTitle : textsCap.disputeTask,
-                                    //     ),
-                                    //     size: 'mini',
-                                    // })}
                                     rejectText={textsCap.dispute}
                                     title={textsCap.acceptInvoiceDesc}
                                 />
@@ -199,10 +185,6 @@ function TaskList(props) {
                     }
                     return _orderStatus
                 },
-                collapsing: true,
-                key: '_orderStatus',
-                textAlign: 'center',
-                title: textsCap.status,
             },
             // {
             //     content: (task, taskId) => {

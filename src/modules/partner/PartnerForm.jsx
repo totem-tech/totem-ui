@@ -3,17 +3,16 @@ import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { ss58Decode, addressToStr } from '../../utils/convert'
 import PromisE from '../../utils/PromisE'
-import { arrSort, deferred, isFn, isObj, arrUnique } from '../../utils/utils'
+import { arrSort, deferred, isFn, isObj, arrUnique, objHasKeys } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { showForm } from '../../services/modal'
 import { translated } from '../../services/language'
 import client from '../chat/ChatClient'
 import identityService from '../identity/identity'
 import { search as searchLocation } from '../location/location'
-import { inputNames as locationInputNames } from '../location/LocationForm'
+import LocationForm, { inputNames as locationInputNames } from '../location/LocationForm'
 import { get, getAddressName, getAllTags, getByName, set, setPublic, types, visibilityTypes } from './partner'
 import CompanyForm from './CompanyForm'
-import LocationForm from '../location/LocationForm'
 
 const textsCap = translated({
     business: 'business',
@@ -72,26 +71,35 @@ export default class PartnerForm extends Component {
     constructor(props = {}) {
         super(props)
 
-        this.partner = props.values && get(props.values.address)
+        let { autoSave, closeText, header, subheader, submitText, values } = props
+        this.partner = values && get(values.address)
         this.doUpdate = !!this.partner
-        this.companySearchDP = PromisE.deferred()
-        const values = { ...this.partner, ...props.values }
+        values = { ...this.partner, ...values }
         const { address, name, tags = [], visibility } = values
         const locationQuery = {}
         locationQuery[locationInputNames.partnerIdentity] = address
         const locationResult = searchLocation(locationQuery, true, true, false, 1)
         const [ locationId, location ] = Array.from(locationResult)[0] || []
-
+        this.companySearchDP = PromisE.deferred()
 
         // placeholder to store user added address to the dropdown list
         this.customAddresses = []
         this.state = {
-            closeText: props.closeText || (this.doUpdate ? textsCap.close : undefined),
-            header: props.header || (this.doUpdate ? textsCap.header2 : textsCap.header1),
+            closeText: closeText || (this.doUpdate ? textsCap.close : undefined),
+            header: header || (this.doUpdate ? textsCap.header2 : textsCap.header1),
             message: {},
             onChange: this.handleChange,
             onSubmit: this.handleSubmit,
-            submitText: props.submitText || (this.doUpdate ? null : textsCap.header1),
+            subheader: subheader || (
+                this.doUpdate  && autoSave 
+                    ? <i style={{ color: 'grey' }}>{textsCap.autoSaved}</i>
+                    : undefined
+            ),
+            submitText: submitText || (
+                this.doUpdate
+                    ? autoSave ? null : textsCap.header2
+                    : textsCap.header1
+            ),
             success: false,
             values,
             inputs: [
@@ -204,6 +212,7 @@ export default class PartnerForm extends Component {
                         content: (
                             <LocationForm {...{
                                 El: 'div',
+                                autoSave: true,
                                 id: locationId,
                                 inputsHidden: [
                                     locationInputNames.partnerName,
@@ -224,9 +233,6 @@ export default class PartnerForm extends Component {
                     }],
                 }
             ].filter(Boolean)
-        }
-        if (this.doUpdate) {
-            this.state.subheader = <i style={{ color: 'grey' }}>{textsCap.autoSaved}</i>
         }
 
         this.originalSetState = this.setState
@@ -356,13 +362,16 @@ export default class PartnerForm extends Component {
 
     handleChange = (_, values) => {
         this.setState({ values })
+        if (!this.props.autoSave) return
+        // prevent saving if 
+        if (!objHasKeys(values, Object.keys(requiredFields), true)) return
         this.doUpdate && this.handleSubmit()
     }
 
     handleSubmit = deferred(() => {
-        const { closeOnSubmit, onSubmit } = this.props
+        const { autoSave, closeOnSubmit, onSubmit } = this.props
         const { inputs, values } = this.state
-        const { company = {} } = (findInput(inputs, inputNames.address) || { options: []})
+        const { company } = (findInput(inputs, inputNames.address) || { options: []})
             .options.find(x => x.value === values.address) || {}
         const visibilityIn = findInput(inputs, inputNames.visibility)
         const visibilityDisabled = visibilityIn.disabled || visibilityIn.hidden
@@ -374,16 +383,23 @@ export default class PartnerForm extends Component {
         }
         const addCompany = !visibilityDisabled && visibility === visibilityTypes.PUBLIC && !company
         // save partner
+        const valuesTemp = { ...values }
+        if (addCompany) {
+            // temporary set visibility to private and only update when company is successfully published
+            valuesTemp[inputNames.visibility] = visibilityTypes.PRIVATE
+            visibilityIn.rxValue.next(visibilityTypes.PRIVATE)
+        }
         set(values)
-        !this.doUpdate && this.setState({
-            message: closeOnSubmit ? null : {
+        this.setState({
+            message: closeOnSubmit || this.doUpdate ? null : {
                 content: this.doUpdate ? textsCap.submitSuccessMsg2 : textsCap.submitSuccessMsg1,
                 icon: true,
                 status: 'success'
             },
-            success: true,
+            success: !this.doUpdate || !autoSave,
         })
 
+        console.log({ closeOnSubmit, success: this.doUpdate && autoSave})
         // Open add partner form
         isFn(onSubmit) && onSubmit(true, values)
         addCompany && showForm(CompanyForm, {
@@ -393,7 +409,7 @@ export default class PartnerForm extends Component {
                 icon: true,
                 status: 'success'
             },
-            onSubmit: (e, v, success) => !success && setPublic(address, visibilityTypes.PRIVATE),
+            onSubmit: (e, v, ok) => !ok && visibilityIn.rxValue.next(visibilityTypes.PUBLIC),
             size: 'tiny',
             values: { name, identity: address }
         })
@@ -402,28 +418,34 @@ export default class PartnerForm extends Component {
     validateAddress(e, { value: address }) {
         if (!address) return
         const partner = get(address)
-        if (partner) return (
+        // attempting to add a new partner with duplicate address
+        if (partner && !this.doUpdate) return (
             <p>
                 {textsCap.addressValidationMsg1} <br />
                 {partner.name}
             </p>
         )
-        if (!ss58Decode(address)) return textsCap.addressValidationMsg2
+        return !ss58Decode(address) && textsCap.addressValidationMsg2
     }
 
-    validateName = (e, { value: name }) => {
-        const { values: oldValues } = this.props
+    validateName = (e, { value: name }, values) => {
+        const address = values[inputNames.address]
         name = name.trim()
-        if (this.doUpdate && isObj(oldValues) && oldValues.name === name) return
-        if (getByName(name)) return textsCap.nameValidationMsg
+        const partner = getByName(name)
+        return !partner || partner.address === address
+            ? null
+            : textsCap.nameValidationMsg
     }
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
 PartnerForm.propTypes = {
+    // whether to autosave on update
+    autoSave: PropTypes.bool,
     // values to be prefilled into inputs
     values: PropTypes.object,
 }
 PartnerForm.defaultProps = {
+    autoSave: false,
     size: 'tiny',
 }
