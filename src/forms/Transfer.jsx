@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Subject } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import { Icon } from 'semantic-ui-react'
 import { ss58Decode } from '../utils/convert'
 import { getTxFee } from '../utils/polkadotHelper'
@@ -31,7 +31,7 @@ const textsCap = translated({
     currency: 'currency',
     currencyReceivedLabel: 'payment currency',
     currencySentLabel: 'your display currency',
-    includesTxFee: 'Includes a transaction fee of',
+    includesTxFee: 'plus a transaction fee of',
     insufficientBalance: 'insufficient balance',
     loadingBalance: 'loading account balance',
     partnerEmptyMsg1: 'You do not have any partners yet. Add one in the Partner Module',
@@ -86,11 +86,10 @@ export default class Transfer extends Component {
                     name: this.names.from,
                     options: [],
                     required: true,
-                    rxValue: new Subject(),
+                    rxValue: new BehaviorSubject(''),
                     search: ['text', 'value'],
                     selection: true,
                     type: 'dropdown',
-                    value: '',
                 },
                 {
                     additionLabel: `${textsCap.addPartner}: `,
@@ -99,7 +98,7 @@ export default class Transfer extends Component {
                     label: textsCap.toLabel,
                     name: this.names.to,
                     noResultsMessage: textsCap.partnerEmptyMsg1,
-                    rxValue: new Subject(),
+                    rxValue: new BehaviorSubject(),
                     onAddItem: (_, { value: address }) => {
                         // in case, if partner is not added or user cancels modal makes sure to remove the item
                         const { inputs } = this.state
@@ -141,19 +140,18 @@ export default class Transfer extends Component {
                             min: 0,
                             name: this.names.amountSent,
                             readOnly: true,
-                            rxValue: new Subject(),
+                            rxValue: new BehaviorSubject(''),
                             type: 'number',
                             useInput: true,
-                            value: '',
                             width: 8,
                         },
                         {
                             disabled: true,
                             label: textsCap.currencySentLabel,
                             name: this.names.currencySent,
-                            onChange: this.handleCurrencySentChange,
+                            // onChange: this.handleCurrencySentChange,
                             options: [],
-                            rxValue: new Subject(),
+                            rxValue: new BehaviorSubject(),
                             search: ['text', 'description'],
                             selection: true,
                             type: 'dropdown',
@@ -184,10 +182,9 @@ export default class Transfer extends Component {
                             onInvalid: this.handleAmountReceivedInvalid,
                             placeholder: textsCap.amountReceivedPlaceholder,
                             required: true,
-                            rxValue: new Subject(),
+                            rxValue: new BehaviorSubject(''),
                             type: 'number',
                             useInput: true,
-                            value: '',
                             width: 8,
                         },
                         {
@@ -196,7 +193,7 @@ export default class Transfer extends Component {
                             onChange: this.handleCurrencyReceivedChange,
                             options: [],
                             required: true,
-                            rxValue: new Subject(),
+                            rxValue: new BehaviorSubject(),
                             search: ['text', 'description'],
                             selection: true,
                             type: 'dropdown',
@@ -282,23 +279,15 @@ export default class Transfer extends Component {
 
     getTxFeeEl = feeXTX => {
         const { values } = this.state
-        const currencyReceived = values[this.names.currencyReceived]
         const currentSent = values[this.names.currencySent]
-        const secondCurEl = currencyReceived === currentSent ? null : (
-            <Currency {...{
-                prefix: ' | ',
-                value: feeXTX,
-                unitDisplayed: currencyReceived,
-            }} />
-        )
+
         return (
             <Text EL='div' style={{ margin: `${feeXTX ? '-' : ''}15px 0 15px 3px` }}>
                 {feeXTX && (
                     <Currency {...{
-                        prefix: `${textsCap.includesTxFee} : `,
+                        prefix: `${textsCap.includesTxFee} `,
                         value: feeXTX,
                         unitDisplayed: currentSent,
-                        // suffix: secondCurEl,
                     }} />
                 )}
                 <div style={{
@@ -317,7 +306,7 @@ export default class Transfer extends Component {
         const currencyReceived = values[this.names.currencyReceived]
         const from = values[this.names.from]
         const to = values[this.names.to]
-        const valid = isValidNumber(amountReceived) && amountReceived > 0
+        const valid = isValidNumber(amountReceived)
         const identity = getIdentity(from)
         const { inputs, submitDisabled } = this.state
         const amountIn = findInput(inputs, this.names.amountReceived)
@@ -325,7 +314,7 @@ export default class Transfer extends Component {
         const amountSentIn = findInput(inputs, this.names.amountSent)
         const txFeeIn = findInput(inputs, this.names.txFee)
         amountIn.loading = valid
-        amountIn.invalid = !valid
+        amountIn.invalid = false
         submitDisabled.loadingAmount = valid
         amountGroupIn.message = null
         this.setState({ inputs, submitDisabled })
@@ -383,14 +372,17 @@ export default class Transfer extends Component {
     }
 
     handleCurrencyReceivedChange = (_, values) => {
+        if (!this.currencies) return
         const { inputs } = this.state
         const amountReceived = values[this.names.amountReceived]
         const currencyReceived = values[this.names.currencyReceived]
         const amountReceivedIn = findInput(inputs, this.names.amountReceived)
         const currencyObj = this.currencies.find(x => x.ISO === currencyReceived) || {}
         amountReceivedIn.decimals = parseInt(currencyObj.decimals || 0)
-        // this.setState({ inputs })
-        isValidNumber(amountReceived) && amountReceivedIn.rxValue.next(amountReceived)
+        this.setState({ inputs })
+        if (!isValidNumber(amountReceived)) return
+        amountReceivedIn.rxValue.next('')
+        amountReceivedIn.rxValue.next(amountReceived)
     }
 
     handleSubmit = (_, values) => {
