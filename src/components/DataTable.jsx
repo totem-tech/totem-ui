@@ -216,30 +216,32 @@ export default class DataTable extends Component {
         )
 
         // if searchable is a valid element search is assumed to be externally handled
-        const searchEl = showSearch && React.isValidElement(searchable)
-            ? searchable
-            : (
-                <Input {...{
-                    action:!keywords ? undefined : {
-                        basic: true,
-                        icon: { className: 'no-margin', name: 'close' },
-                        onClick: () => triggerSearchChange('')
-                    },
-                    fluid: isMobile,
-                    icon: 'search',
-                    iconPosition: 'left',
-                    onChange: (_, d) => triggerSearchChange(d.value),
-                    onDragOver: e => e.preventDefault(),
-                    onDrop: e => {
-                        const keywords = e.dataTransfer.getData('Text')
-                        if (!keywords.trim()) return
-                        triggerSearchChange(keywords)
-                    },
-                    placeholder: textsCap.search,
-                    type: 'search', // enables escape to clear
-                    value: keywords,
-                }} />
-            )
+        const searchEl = showSearch && (
+            React.isValidElement(searchable)
+                ? searchable
+                : (
+                    <Input {...{
+                        action:!keywords ? undefined : {
+                            basic: true,
+                            icon: { className: 'no-margin', name: 'close' },
+                            onClick: () => triggerSearchChange('')
+                        },
+                        fluid: isMobile,
+                        icon: 'search',
+                        iconPosition: 'left',
+                        onChange: (_, d) => triggerSearchChange(d.value),
+                        onDragOver: e => e.preventDefault(),
+                        onDrop: e => {
+                            const keywords = e.dataTransfer.getData('Text')
+                            if (!keywords.trim()) return
+                            triggerSearchChange(keywords)
+                        },
+                        placeholder: textsCap.search,
+                        type: 'search', // enables escape to clear
+                        value: keywords,
+                    }} />
+                )
+        )
 
         const leftBtns = (
             <Grid.Column tablet={16} computer={showSearch ? 11 : 16} style={{ padding: 0 }}>
