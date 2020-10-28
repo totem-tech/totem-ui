@@ -7,7 +7,7 @@ import { isDate, isFn, isStr, objWithoutKeys, strFill } from '../utils/utils'
 // import { showForm } from '../services/modal'
 
 export default function DateInput(props) {
-    const { clearable, disabled, ignoreAttributes, rxValue, value } = props
+    const { clearable, disabled, icon, ignoreAttributes, rxValue, value } = props
     const [[yearOptions, monthOptions, dayOptions]] = useState(() => [years, months, days]
         .map((arr, i) =>
             arr.map(value => {
@@ -40,24 +40,31 @@ export default function DateInput(props) {
         <div {...objWithoutKeys(props, ignoreAttributes)}>
             <Dropdown {...{
                 disabled,
+                icon: yyyy ? null : icon,
                 lazyLoad: true,
                 onChange: (e, d) => triggerChange(e, props, [d.value, mm, dd], setValue),
                 options: yearOptions,
                 placeholder: 'YYYY',
                 search: true,
+                style: { marginRight: yyyy ? 3 : -10 },
                 value: yyyy || '',
             }} />
+            {yyyy && ' - '}
             <Dropdown {...{
                 disabled,
+                icon: mm ? null : icon,
                 lazyLoad: true,
                 onChange: (e, d) => triggerChange(e, props, [yyyy, d.value, dd], setValue),
                 options: monthOptions,
                 placeholder: 'MM',
                 search: true,
+                style: { marginRight: mm ? 3 : -10 },
                 value: mm || '',
             }} />
+            {mm && ' - '}
             <Dropdown {...{
                 disabled,
+                icon: dd ? null : icon,
                 lazyLoad: true,
                 onChange: (e, d) => triggerChange(e, props, [yyyy, mm, d.value], setValue),
                 options: dayOptions,
@@ -90,8 +97,10 @@ DateInput.propTypes = {
 }
 DateInput.defaultProps = {
     clearable: true,
+    icon: { name: 'dropdown' },
     ignoreAttributes: [
         'clearable',
+        'icon',
         'ignoreAttributes',
         'rxValue',
     ],
