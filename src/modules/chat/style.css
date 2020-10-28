@@ -259,7 +259,7 @@ body:not(.chat-visible) .chat-container{
     position: fixed;
     right: 5px;
 }
-.mobile #app .chat-container .inbox .scroll-to-bottom {
+body.mobile .chat-container .inbox .scroll-to-bottom {
     bottom: 90px;
 }
 .chat-container .inbox .scroll-to-bottom:not(.visible),

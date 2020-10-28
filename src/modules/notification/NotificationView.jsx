@@ -8,25 +8,29 @@ import { MOBILE, rxLayout } from '../../services/window'
 
 export default React.memo(() => {
     const [visible] = useRxSubject(rxVisible, visible => {
-        const cl = document.getElementById('app').classList
-        cl[visible ? 'add' : 'remove']('notification-visible')
+        const { classList } = document.body
+        classList[visible ? 'add' : 'remove']('notification-visible')
         return visible
     })
     const [items] = useRxSubject(rxNotifications, map => {
         const isMobile = rxLayout.value === MOBILE
         const items = Array.from(map)
             //// dummy notifications for testing only
-            // .concat([
-            //     {
-            //         from: 'jackie',
-            //         type: 'task',
-            //         childType: 'test',
-            //         message: 'this is a test message',
-            //         data: {},
-            //         tsCreated: new Date().toISOString(),
-            //         deleted: false,
-            //         read: false,
-            //     },
+            .concat([
+                {
+                    from: 'jackie',
+                    type: 'task',
+                    childType: 'invoiced',
+                    message: 'this is a test message',
+                    data: {
+                        ownerAddress: '5G1iRKXyqeX9WLzS6bT7i41NUntmtCHZG2vwReZomnaxHvsD',
+                        taskId: '0x00',
+                        taskTitle: 'dummy task'
+                    },
+                    tsCreated: new Date().toISOString(),
+                    deleted: false,
+                    read: false,
+                },
             //     {
             //         from: 'jackie',
             //         type: 'task',
@@ -37,7 +41,7 @@ export default React.memo(() => {
             //         deleted: false,
             //         read: false,
             //     },
-            // ].map((n, id) => [`${id}`, n]))
+            ].map((n, id) => [`${id}`, n]))
             .map(([id, notification]) => (
                 <ListItem {...{
                     id,

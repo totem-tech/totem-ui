@@ -79,7 +79,7 @@ const handleIdentityReceived = (id, notification, { senderId, senderIdBtn }) => 
                     acceptColor: 'blue',
                     acceptText: partnerIdentity ? textsCap.updatePartner : textsCap.addPartner,
                     rejectText: textsCap.ignore,
-                    onClick: handleClick,
+                    onAction: handleClick,
                 }} />
                 <div>{message}</div>
             </div>

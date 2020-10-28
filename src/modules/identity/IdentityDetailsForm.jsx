@@ -6,13 +6,12 @@ import Balance from '../../components/Balance'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { confirm } from '../../services/modal'
-import { get, getSelected, remove, set } from './identity'
+import { get, getSelected, remove } from './identity'
 import IdentityForm from './IdentityForm'
 
 const textsCap = translated({
     availableBalance: 'available balance',
     autoSaved: 'changes will be auto-saved',
-    business: 'business',
     close: 'close',
     copyAddress: 'copy address',
     copySeed: 'copy seed',
@@ -22,12 +21,9 @@ const textsCap = translated({
     identityDetails: 'identity details',
     lastBackup: 'last backup',
     loadingBalance: 'loading account balance',
-    name: 'name',
     never: 'never',
     noKeepItHidden: 'no, keep it hidden',
     ok: 'OK',
-    personal: 'personal',
-    showSeed: 'show seed',
     removeIdentity: 'remove identity',
     removePermanently: 'remove permanently',
     removeWarningPart1: 'you are about to remove the following identity',
@@ -37,9 +33,6 @@ const textsCap = translated({
     show: 'show',
     showSeed: 'show seed phrase',
     seed: 'seed',
-    tags: 'tags',
-    update: 'update',
-    usage: 'usage',
 }, true)[1]
 
 // A read only form to display identity details including seed
@@ -52,10 +45,7 @@ export default class IdentityDetailsForm extends Component {
         this.showSeed = false
         this.state = {
             closeOnSubmit: true,
-            closeText: {
-                content: textsCap.close,
-                negative: false,
-            },
+            closeText: { content: textsCap.close, negative: false },
             subheader: <i style={{ color: 'grey' }}>{textsCap.autoSaved}</i>,
             submitText: null, // hide submit button
             success: false, // sets true  when identity removed and modal will be auto closed

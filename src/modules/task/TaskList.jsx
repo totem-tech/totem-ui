@@ -136,7 +136,7 @@ function TaskList(props) {
                                 <ButtonAcceptOrReject
                                     disabled={inProgress}
                                     loading={inProgress}
-                                    onClick={accept => confirm({
+                                    onAction={accept => confirm({
                                         header: textsCap.acceptTask,
                                         onConfirm: () => handleAssignmentResponse(taskId, address, accept),
                                         size: 'mini',
@@ -198,7 +198,7 @@ function TaskList(props) {
             //                 acceptText={textsCap.approve}
             //                 disabled={approveInProgress}
             //                 loading={approveInProgress}
-            //                 onClick={approve => handleApprove(taskId, approve)}
+            //                 onAction={approve => handleApprove(taskId, approve)}
             //             />
             //         )
             //     },

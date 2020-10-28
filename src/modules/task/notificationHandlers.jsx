@@ -1,6 +1,6 @@
 import React from 'react'
 import { isArr, isFn } from '../../utils/utils'
-import { ButtonAcceptOrReject } from '../../components/buttons'
+import { ButtonAcceptOrReject, ButtonGroup } from '../../components/buttons'
 import { translated } from '../../services/language'
 import { confirm } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES, statuses as queueStatuses } from '../../services/queue'
@@ -229,7 +229,7 @@ setTimeout(() => [
                 <ButtonAcceptOrReject {...{
                     acceptColor: 'blue',
                     disabled: status === queueStatuses.LOADING,
-                    onClick: accepted => confirm({
+                    onAction: accepted => confirm({
                         onConfirm: () => handleAssignmentResponse(
                             taskId,
                             fulfillerAddress,
@@ -284,25 +284,21 @@ setTimeout(() => [
             // invalid task or does task not belong to user
             if (!taskId || !ownerIdentity) return remove(id)
             const responseBtn = (
-                <ButtonAcceptOrReject {...{
-                    acceptColor: 'blue',
-                    acceptText: textsCap.pay,
-                    rejectText: textsCap.dispute,
+                <ButtonGroup {...{
                     disabled: status === queueStatuses.LOADING,
-                    onClick: accepted => handleInvoicedResponse(
-                        taskId,
-                        ownerAddress,
-                        accepted,
-                        id,
-                    )
-                }}>
-                    <Button.Or onClick={e => e.stopPropagation()} />
-                    <Button {...{
-                        content: textsCap.ignore,
-                        disabled: status === queueStatuses.LOADING,
-                        onClick: (e) => e.stopPropagation() | remove(id),
-                    }} />   
-                </ButtonAcceptOrReject>
+                    buttons: [
+                        { color: 'blue', content: textsCap.pay },
+                        { color: 'red', content: textsCap.dispute },
+                        { content: textsCap.ignore },
+                    ],
+                    onAction: accepted => { 
+                        alert(JSON.stringify(accepted))
+                        if (accepted === null) return remove(id)
+                        handleInvoicedResponse(taskId, ownerAddress, accepted, id)
+                    },
+                    or: true,
+                    values: [true, false, null]
+                }} />
             )
             
             return {

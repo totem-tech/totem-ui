@@ -113,7 +113,7 @@ const hanldeInvitationItemView = (id, notification, { senderId, senderIdBtn }) =
             <ButtonAcceptOrReject
                 acceptColor='blue'
                 disabled={status === statuses.LOADING}
-                onClick={accepted => confirm({
+                onAction={accepted => confirm({
                     onConfirm: () => handleInvitation(
                         projectHash,
                         workerAddress,

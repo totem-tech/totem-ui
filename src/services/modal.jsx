@@ -23,9 +23,9 @@ export const ModalsConainer = () => {
             if (!mounted) return
             setModalsArr(Array.from(map))
 
-            // add/remove class to #app element to inticate at least one modal is open
+            // add/remove class to element to inticate at least one modal is open
             const func = !!modals.size ? 'add' : 'remove'
-            document.getElementById('app').classList[func]('modal-open')
+            // document.getElementById('app').classList[func]('modal-open')
         })
         return () => {
             mounted = false

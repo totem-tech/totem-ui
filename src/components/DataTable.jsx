@@ -10,7 +10,7 @@ import {
     Table,
 } from 'semantic-ui-react'
 import {
-    arrMapSlice, getKeys, isArr, isFn, objWithoutKeys, objCopy, search, sort, isStr, arrReverse, arrUnique
+    arrMapSlice, getKeys, isArr, isFn, objWithoutKeys, objCopy, search, sort, isStr, arrReverse, arrUnique, isObj
 } from '../utils/utils'
 import Invertible from './Invertible'
 import Message from './Message'
@@ -169,6 +169,7 @@ export default class DataTable extends Component {
 
     getTopContent(totalRows, selectedIndexes) {
         let {
+            data,
             searchable,
             searchHideOnEmpty,
             searchOnChange,
@@ -189,77 +190,96 @@ export default class DataTable extends Component {
         }
 
         const actions = showActions && (
-            <Dropdown
-                button
-                disabled={selectedIndexes.length === 0}
-                fluid={isMobile}
-                style={{
+            <Dropdown {...{
+                button: true,
+                disabled: selectedIndexes.length === 0,
+                fluid: isMobile,
+                style: {
                     margin: !isMobile ? undefined : '5px 0',
                     textAlign: 'center',
-                }}
-                text={textsCap.actions}
-            >
+                },
+                text: textsCap.actions,
+            }}>
                 <Dropdown.Menu direction='right' style={{ minWidth: 'auto' }}>
-                    {onSelectMenu.map((item, i) => React.isValidElement(item) ? item : (
-                        <Dropdown.Item
-                            {...item}
-                            key={i}
-                            onClick={() => isFn(item.onClick) && item.onClick(selectedIndexes)}
-                        />
-                    ))}
+                    {onSelectMenu.map((item, i) => React.isValidElement(item)
+                        ? item
+                        : (
+                            <Dropdown.Item
+                                {...item}
+                                key={i}
+                                onClick={() => isFn(item.onClick) && item.onClick(selectedIndexes)}
+                            />
+                        )
+                    )}
                 </Dropdown.Menu>
             </Dropdown>
         )
 
-        const searchCol = !showSearch ? '' : (
-            <Grid.Column key='0' tablet={16} computer={5} style={{ padding: 0, textAlign: 'right' }}>
-                {// if searchable is a valid element search is assumed to be externally handled
-                    React.isValidElement(searchable) ? searchable : (
-                        <Input {...{
-                            action:!keywords ? undefined : {
-                                basic: true,
-                                icon: { className: 'no-margin', name: 'close' },
-                                onClick: () => triggerSearchChange('')
-                            },
-                            fluid: isMobile,
-                            icon: 'search',
-                            iconPosition: 'left',
-                            onChange: (_, d) => triggerSearchChange(d.value),
-                            onDragOver: e => e.preventDefault(),
-                            onDrop: e => {
-                                const keywords = e.dataTransfer.getData('Text')
-                                if (!keywords.trim()) return
-                                triggerSearchChange(keywords)
-                            },
-                            placeholder: textsCap.search,
-                            type: 'search', // enables escape to clear
-                            value: keywords,
-                        }} />
-                    )}
-                {isMobile && actions}
-            </Grid.Column>
-        )
+        // if searchable is a valid element search is assumed to be externally handled
+        const searchEl = showSearch && React.isValidElement(searchable)
+            ? searchable
+            : (
+                <Input {...{
+                    action:!keywords ? undefined : {
+                        basic: true,
+                        icon: { className: 'no-margin', name: 'close' },
+                        onClick: () => triggerSearchChange('')
+                    },
+                    fluid: isMobile,
+                    icon: 'search',
+                    iconPosition: 'left',
+                    onChange: (_, d) => triggerSearchChange(d.value),
+                    onDragOver: e => e.preventDefault(),
+                    onDrop: e => {
+                        const keywords = e.dataTransfer.getData('Text')
+                        if (!keywords.trim()) return
+                        triggerSearchChange(keywords)
+                    },
+                    placeholder: textsCap.search,
+                    type: 'search', // enables escape to clear
+                    value: keywords,
+                }} />
+            )
 
-        const leftCol = (
+        const leftBtns = (
             <Grid.Column tablet={16} computer={showSearch ? 11 : 16} style={{ padding: 0 }}>
                 {!isMobile && actions}
-                {topLeftMenu.map((item, i) => React.isValidElement(item) ? item : (
-                    <Button
-                        {...item}
-                        fluid={isMobile}
-                        key={i}
-                        onClick={() => isFn(item.onClick) && item.onClick(selectedIndexes)}
-                        style={!isMobile ? item.style : objCopy({ marginBottom: 5 }, item.style)}
-                    />
-                ))}
+                {topLeftMenu.map((item, i) => {
+                    if (React.isValidElement(item) || !isObj(item)) return item
+                    let { El = Button, onClick, style } = item
+                    return (
+                        <El {...{
+                            ...objWithoutKeys(item, ['El']),
+                            fluid: isMobile,
+                            key: i,
+                            onClick: !isFn(onClick)
+                                ? null
+                                : e => onClick(selectedIndexes, data, e),
+                            style: {
+                                ...(isMobile ? { marginBottom: 5 } : {}),
+                                ...style,
+                            }
+                        }}/>
+                    )
+                })}
             </Grid.Column>
         )
 
         return (
             <Grid columns={showSearch ? 2 : 1} style={styles.tableTopContent}>
                 <Grid.Row>
-                    {leftCol}
-                    {searchCol}
+                    {leftBtns}
+                    <Grid.Column
+                        tablet={16}
+                        computer={5}
+                        style={{
+                            padding: 0,
+                            textAlign: 'right',
+                        }}
+                    >
+                        {searchEl}
+                        {isMobile && actions}
+                    </Grid.Column>
                 </Grid.Row>
             </Grid>
         )

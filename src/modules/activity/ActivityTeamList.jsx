@@ -99,11 +99,7 @@ export default class ActivityTeamList extends Component {
                 _status: accepted ? textsCap.accepted : (!isOwnIdentity ? textsCap.invited : (
                     // Worker identity belongs to current user => button to accept or reject
                     <ButtonAcceptOrReject
-                        onClick={accept => handleTkInvitation(
-                            projectId,
-                            address,
-                            accept,
-                        )}
+                        onAction={accept => handleTkInvitation( projectId, address, accept )}
                         style={{ marginTop: 10 }}
                     />
                 ))

@@ -168,7 +168,7 @@
 	width: 100%;
   	overflow: hidden;
 }
-.mobile .pusher.main-content {
+body.mobile .pusher.main-content {
   	margin: 0 !important;
   	overflow: auto !important;
 }
@@ -188,7 +188,7 @@ body.mobile .pushable {
   	display: none !important;
 }
 /* Fixes the dimmer height being limited due to the use of scrollbar */ 
-.mobile.sidebar-visible .main-content.pusher.container:after {
+body.mobile.sidebar-visible .main-content:after {
 	position: fixed;
 	top: 0;
 	bottom: 0;
@@ -369,12 +369,11 @@ input[readonly] {
 }
 
 
-
 /* Page header:
  * identity dropdown style fix
  */
 .identity-dropdown .menu {
-	 width: 400px;
+	width: 400px;
  }
 .identity-dropdown .menu > div > div:first-child {
     float: left;
@@ -385,13 +384,13 @@ input[readonly] {
     background: transparent !important;
 }
 .mobile .identity-dropdown .menu {
-    position: fixed;
-    top: 61px;
-    width: 100%;
 	overflow-x: auto;
+	position: fixed !important;
+    top: 61px !important;
+    width: 100%;
 }
 .mobile .identity-dropdown .menu > div > div:first-child {
-    max-width: 55%;
+    max-width: 55% !important;
     overflow-x: hidden;
 }
 

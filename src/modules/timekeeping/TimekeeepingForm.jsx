@@ -363,7 +363,7 @@ export default class TimekeepingForm extends Component {
                 <div>
                     {texts.inactiveWorkerMsg3} <br />
                     <ButtonAcceptOrReject
-                        onClick={async (accepted) => {
+                        onAction={async (accepted) => {
                             const success = await handleInvitation(projectId, workerAddress, accepted)
                             // force trigger change
                             success && inputs[index].rxValue.next(projectId)
