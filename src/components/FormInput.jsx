@@ -9,6 +9,8 @@ import Invertible from './Invertible'
 // Custom Inputs
 import CheckboxGroup from './CheckboxGroup'
 import UserIdInput from './UserIdInput'
+import DateInput from './DateInput'
+//
 import { translated } from '../services/language'
 import { unsubscribe } from '../services/react'
 
@@ -113,6 +115,9 @@ export class FormInput extends Component {
 					data.value = data.checked ? trueValue : falseValue
 					if (required && !data.checked) errMsg = textsCap.required
 					break
+				case 'date':
+					validatorConfig = { type: TYPES.date }
+					break
 				case 'number':
 					validatorConfig = { type: integer ? TYPES.integer : TYPES.number }
 					data.value = !data.value ? data.value : parseFloat(data.value)
@@ -132,7 +137,10 @@ export class FormInput extends Component {
 		if ((!errMsg && hasVal && validationTypes.includes(typeLower)) || validatorConfig) {
 			errMsg = validator.validate(
 				data.value,
-				{ ...this.props, ...validatorConfig },
+				{
+					...this.props,
+					...validatorConfig,
+				},
 				customMsgs,
 			)
 		}
@@ -216,6 +224,11 @@ export class FormInput extends Component {
 				attrs.inline = inline
 				attrs.radio = typeLC === 'radio-group' ? true : attrs.radio
 				inputEl = <CheckboxGroup {...attrs} />
+				break
+			case 'date':
+			case 'dateinput': 
+				attrs.rxValue = rxValue
+				inputEl = <DateInput {...attrs} />
 				break
 			case 'dropdown':
 				attrs.inline = inline

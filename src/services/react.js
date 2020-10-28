@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react"
 import { BehaviorSubject } from 'rxjs'
 import PromisE from "../utils/PromisE"
-import { isAsyncFn, isFn, isObj } from "../utils/utils"
+import { isAsyncFn, isFn, isObj, isSubjectLike } from "../utils/utils"
 
 // for use with useReducer hook on a functional component to imitate the behaviour of `setState()` of a class component
 export const reducer = (state = {}, newValue = {}) => ({ ...state, ...newValue })
@@ -35,7 +35,7 @@ export const unsubscribe = (subscriptions = {}) => Object.values(subscriptions).
  * @returns {Array}                     [value, setvalue]
  */
 export const useRxSubject = (subject, valueModifier, initialValue) => {
-    if (!isObj(subject) || !isFn(subject.subscribe)) return subject
+    if (!isSubjectLike(subject)) return subject
     const v = subject instanceof BehaviorSubject ? subject.value : initialValue
     let firstValue = !isFn(valueModifier) ? v : valueModifier(v)
     const [value, setValue] = useState(firstValue)

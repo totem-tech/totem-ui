@@ -95,6 +95,7 @@ export default class TaskForm extends Component {
             bounty: 'bounty',
             bountyGroup: 'bountyGroup',
             currency: 'currency',
+            dates: 'dates',
             deadline: 'deadline',
             dueDate: 'dueDate',
             description: 'description',
@@ -210,48 +211,57 @@ export default class TaskForm extends Component {
                     type: 'dropdown',
                     validate: this.validateAssignee,
                 },
-                {
-                    rxValue: new BehaviorSubject(),
-                    label: `${textsCap.deadlineLabel} (${textsCap.dateForamt})`,
-                    name: this.names.deadline,
-                    onChange: (_, values) => {
-                        const { taskId } = this.props
-                        let dueDate = values[this.names.dueDate]
-                        const deadline = values[this.names.deadline]
-                        const dueDateIn = findInput(this.state.inputs, this.names.dueDate)
-                        if (!dueDate || !taskId) {
-                            // reset 1 day after deadline if not already set or creating new task
-                            const date = strToDate(deadline)
-                            date.setSeconds(date.getSeconds() + dueDateMinMS / 1000 + 1)
-                            dueDate = format(date).substr(0, 10)
-                        }
-                        // reset and force re-evaluate due date
-                        !!taskId && dueDateIn.rxValue.next('')
-                        dueDateIn.rxValue.next(dueDate)
-                    },
-                    required: true,
-                    type: 'date',
-                    validate: (_, { value: deadline }) => {
-                        if (!deadline) return
-                        if (!isDate(new Date(deadline))) return textsCap.invalidDate
 
-                        const diffMS = strToDate(deadline) - new Date()
-                        return diffMS < deadlineMinMS && textsCap.deadlineMinErrorMsg
-                    },
-                },
                 {
-                    hidden: values => !values[this.names.deadline], // hide if deadline is not selected
-                    label: `${textsCap.dueDateLabel} (${textsCap.dateForamt})`,
-                    name: this.names.dueDate,
-                    required: true,
-                    rxValue: new BehaviorSubject(),
-                    type: 'date',
-                    validate: (_, { value: dueDate }, values) => {
-                        if (!dueDate) return textsCap.invalidDate
-                        const deadline = values[this.names.deadline]
-                        const diffMS = strToDate(dueDate) - strToDate(deadline)
-                        return diffMS < dueDateMinMS && textsCap.dueDateMinErrorMsg
-                    },
+                    name: this.names.dates,
+                    title: textsCap.dateForamt,
+                    type: 'group',
+                    inputs: [
+                        {
+                            rxValue: new BehaviorSubject(),
+                            label: textsCap.deadlineLabel,
+                            name: this.names.deadline,
+                            onChange: (_, values) => {
+                                const { taskId } = this.props
+                                let dueDate = values[this.names.dueDate]
+                                const deadline = values[this.names.deadline]
+                                const dueDateIn = findInput(this.state.inputs, this.names.dueDate)
+                                if (!dueDate || !taskId) {
+                                    // reset 1 day after deadline if not already set or creating new task
+                                    const date = strToDate(deadline)
+                                    date.setSeconds(date.getSeconds() + dueDateMinMS / 1000 + 1)
+                                    dueDate = format(date).substr(0, 10)
+                                }
+                                // reset and force re-evaluate due date
+                                !!taskId && dueDateIn.rxValue.next('')
+                                dueDateIn.rxValue.next(dueDate)
+                            },
+                            required: true,
+                            type: 'date',
+                            validate: (_, { value: deadline }) => {
+                                if (!deadline) return
+                                // if (!isDate(new Date(deadline))) return textsCap.invalidDate
+
+                                const diffMS = strToDate(deadline) - new Date()
+                                return diffMS < deadlineMinMS && textsCap.deadlineMinErrorMsg
+                            },
+                        },
+                        {
+                            disabled: values => !values[this.names.deadline],
+                            // hidden: values => !values[this.names.deadline], // hide if deadline is not selected
+                            label: textsCap.dueDateLabel,
+                            name: this.names.dueDate,
+                            required: true,
+                            rxValue: new BehaviorSubject(),
+                            type: 'date',
+                            validate: (_, { value: dueDate }, values) => {
+                                if (!dueDate) return
+                                const deadline = values[this.names.deadline]
+                                const diffMS = strToDate(dueDate) - strToDate(deadline)
+                                return diffMS < dueDateMinMS && textsCap.dueDateMinErrorMsg
+                            },
+                        },
+                    ],
                 },
                 {
                     // Advanced section (Form type "group" with accordion)
