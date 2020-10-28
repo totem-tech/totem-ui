@@ -58,7 +58,7 @@ export const ButtonAcceptOrReject = React.memo(props => {
                     loading: loading,
                 }
             ],
-            ignoreAttributes: [...ignoreAttributes, ...ButtonGroupOr.defaultProps.ignoreAttributes],
+            ignoreAttributes: [...ignoreAttributes, ...ButtonGroup.defaultProps.ignoreAttributes],
             or: true,
             values: [ true, false ],
         }} />
@@ -89,10 +89,10 @@ ButtonAcceptOrReject.defaultProps = {
 }
 
 /**
- * @name    ButtonGroupOr
+ * @name    ButtonGroup
  * @summary Shorthand for Or button group
  * 
- * @param   {Object}    props see `ButtonGroupOr.propTypes` for accepted props
+ * @param   {Object}    props see `ButtonGroup.propTypes` for accepted props
  * 
  * @returns {Element}
  */
