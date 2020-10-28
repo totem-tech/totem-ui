@@ -17,30 +17,30 @@ export default React.memo(() => {
         const items = Array.from(map)
             //// dummy notifications for testing only
             .concat([
-                {
-                    from: 'jackie',
-                    type: 'task',
-                    childType: 'invoiced',
-                    message: 'this is a test message',
-                    data: {
-                        ownerAddress: '5G1iRKXyqeX9WLzS6bT7i41NUntmtCHZG2vwReZomnaxHvsD',
-                        taskId: '0x00',
-                        taskTitle: 'dummy task'
-                    },
-                    tsCreated: new Date().toISOString(),
-                    deleted: false,
-                    read: false,
-                },
-            //     {
-            //         from: 'jackie',
-            //         type: 'task',
-            //         childType: 'invitation',
-            //         message: 'this is a test message',
-            //         data: {},
-            //         tsCreated: new Date().toISOString(),
-            //         deleted: false,
-            //         read: false,
-            //     },
+                // {
+                //     from: 'jackie',
+                //     type: 'task',
+                //     childType: 'invoiced',
+                //     message: 'this is a test message',
+                //     data: {
+                //         ownerAddress: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+                //         taskId: '0x00',
+                //         taskTitle: 'dummy task'
+                //     },
+                //     tsCreated: new Date().toISOString(),
+                //     deleted: false,
+                //     read: false,
+                // },
+                // {
+                //     from: 'jackie',
+                //     type: 'task',
+                //     childType: 'invitation',
+                //     message: 'this is a test message',
+                //     data: {},
+                //     tsCreated: new Date().toISOString(),
+                //     deleted: false,
+                //     read: false,
+                // },
             ].map((n, id) => [`${id}`, n]))
             .map(([id, notification]) => (
                 <ListItem {...{

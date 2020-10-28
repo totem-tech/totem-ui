@@ -176,7 +176,7 @@ function TaskList(props) {
                                     acceptText={textsCap.pay}
                                     disabled={inProgress}
                                     loading={inProgress}
-                                    onClick={accepted => handleInvoicedResponse(taskId, address, accepted)}
+                                    onAction={accepted => handleInvoicedResponse(taskId, address, accepted)}
                                     rejectText={textsCap.dispute}
                                     title={textsCap.acceptInvoiceDesc}
                                 />

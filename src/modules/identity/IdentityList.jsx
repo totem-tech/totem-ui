@@ -30,7 +30,7 @@ const textsCap = translated({
     updateIdentity: 'update your identity',
 }, true)[1]
 
-export default React.memo(props => {
+export default function IdentityList(props){
     const [data] = useRxSubject(rxIdentities, map => Array.from(map).map(([_, identityOrg]) => {
         const identity = { ...identityOrg }
         const { fileBackupTS, tags = [], usageType } = identity
@@ -55,7 +55,7 @@ export default React.memo(props => {
     }))
 
     return <DataTable {...{ ...props, ...tableProps, data }} />
-})
+}
 
 const tableProps = Object.freeze({
     columns: [
