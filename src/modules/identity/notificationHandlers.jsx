@@ -55,7 +55,7 @@ const handleIdentityRequest = (id, notification, { senderId, senderIdBtn }) => {
                 acceptColor='blue'
                 acceptText={textsCap.share}
                 rejectText={textsCap.ignore}
-                onClick={accepted => {
+                onAction={accepted => {
                     if (!accepted) return remove(id)
                     const locationId = !location ? undefined : saveLocation(location)
                     showForm(IdentityShareForm, {

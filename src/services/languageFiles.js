@@ -15,6 +15,7 @@ export default [
     "./src/components/PageHeader.jsx",
     "./src/components/Paginator.jsx",
     "./src/components/SidebarLeft.jsx",
+    "./src/components/Tags.jsx",
     "./src/components/Text.jsx",
     "./src/components/TimeSince.jsx",
     "./src/components/UserIdInput.jsx",

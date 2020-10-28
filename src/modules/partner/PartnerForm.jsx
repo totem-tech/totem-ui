@@ -399,7 +399,6 @@ export default class PartnerForm extends Component {
             success: !this.doUpdate || !autoSave,
         })
 
-        console.log({ closeOnSubmit, success: this.doUpdate && autoSave})
         // Open add partner form
         isFn(onSubmit) && onSubmit(true, values)
         addCompany && showForm(CompanyForm, {
