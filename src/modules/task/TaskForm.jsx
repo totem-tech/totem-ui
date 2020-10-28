@@ -37,7 +37,7 @@ const textsCap = translated({
     close: 'close',
     conversionErrorHeader: 'currency conversion failed',
     currency: 'currency',
-    dateForamt: 'DD-MM-YYYY',
+    dateForamt: 'YYYY-MM-DD',
     deadlineLabel: 'deadline to accept task',
     deadlineMinErrorMsg: 'deadline must be at least 48 hours from now',
     dueDateLabel: 'due date',
