@@ -41,8 +41,8 @@ export default class FormBuilder extends Component {
 		index = isDefined(index) ? index : null
 		const props = {
 			...input,
-			disabled: inputsDisabled.includes(name) || (isFn(disabled) ? disabled(value, i) : disabled),
-			hidden: inputsHidden.includes(name) || (!isFn(hidden) ? hidden : !!hidden(values, name)),
+			disabled: inputsDisabled.includes(name) || (isFn(disabled) ? disabled(values, i) : disabled),
+			hidden: inputsHidden.includes(name) || (!isFn(hidden) ? hidden : !!hidden(values, i)),
 			inputs: !isGroup ? undefined : childInputs.map(this.addInterceptor(index ? index : i, values)),
 			key: name,
 			onChange: isGroup ? undefined : (

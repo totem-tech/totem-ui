@@ -320,12 +320,12 @@ export const sidebarItems = [
         name: 'blockchain-events',
         title: textsCap.eventsTtile,
     },
-    {
-        content: DAARequestForm,
-        icon: '',
-        name: 'DAARequestForm',
-        title: 'DAARequestForm',
-    },
+    // {
+    //     content: DAARequestForm,
+    //     icon: '',
+    //     name: 'DAARequestForm',
+    //     title: 'DAARequestForm',
+    // },
 ].map(item => {
     const {
         active = false,

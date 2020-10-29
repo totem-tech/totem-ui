@@ -27,7 +27,7 @@ const handleIdentityReceived = (id, notification, { senderId, senderIdBtn }) => 
     const { data, message } = notification
     const { address, introducedBy, location } = data || {}
     const partnerIdentity = get(address)
-    const handleClick = accepted => {
+    const onAction = (_, accepted) => {
         if (!accepted) return remove(id)
 
         const locationId = generateHash(address)
@@ -78,7 +78,7 @@ const handleIdentityReceived = (id, notification, { senderId, senderIdBtn }) => 
                 <ButtonAcceptOrReject {...{
                     acceptColor: 'blue',
                     acceptText: partnerIdentity ? textsCap.updatePartner : textsCap.addPartner,
-                    onAction: handleClick,
+                    onAction,
                     rejectText: textsCap.ignore,
                 }} />
                 <div>{message}</div>

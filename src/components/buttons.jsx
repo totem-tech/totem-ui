@@ -15,7 +15,7 @@ import { getByUserId } from '../modules/partner/partner'
 import PartnerForm from '../modules/partner/PartnerForm'
 import { getUser } from '../modules/chat/ChatClient'
 
-const textsCap = translated({
+const [texts, textsCap] = translated({
     accept: 'accept',
     close: 'close',
     identityRequest: 'request identity',
@@ -27,7 +27,7 @@ const textsCap = translated({
     partnerUpdate: 'update partner',
     reject: 'reject',
     userIdBtnTitle: 'click for more options',
-}, true)[1]
+}, true)
 
 export const ButtonAcceptOrReject = React.memo(props => {
     const {
@@ -103,7 +103,7 @@ export const ButtonGroup = React.memo(props => {
             <Button.Or {...{
                 key: 'or',
                 onClick: e => e.stopPropagation(),
-                text: textsCap.or,
+                text: texts.or,
             }} />
         ),
         <Button {...{

@@ -107,7 +107,10 @@ const tableProps = Object.freeze({
             { content: textsCap.add, icon: 'plus' },
             { content: textsCap.request },
         ],
-        onAction: addPartner => showForm(addPartner ? PartnerForm : IdentityRequestForm),
+        onAction: (_, addPartner) => {
+            console.log({addPartner})
+            showForm(addPartner ? PartnerForm : IdentityRequestForm)
+        },
         or: true,
         values: [true, false],
     }],
