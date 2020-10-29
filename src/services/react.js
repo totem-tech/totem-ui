@@ -2,11 +2,7 @@
 import { useState, useEffect } from "react"
 import { BehaviorSubject } from 'rxjs'
 import PromisE from "../utils/PromisE"
-<<<<<<< HEAD
-import { isFn, isObj } from "../utils/utils"
-=======
-import { isAsyncFn, isFn, isObj, isSubjectLike } from "../utils/utils"
->>>>>>> 140-build-tasks-with-rewards
+import { isFn, isSubjectLike } from "../utils/utils"
 
 // for use with useReducer hook on a functional component to imitate the behaviour of `setState()` of a class component
 export const reducer = (state = {}, newValue = {}) => ({ ...state, ...newValue })
