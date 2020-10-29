@@ -3,9 +3,7 @@ import uuid from 'uuid'
 import { Button } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import {
-    arrSort, deferred, generateHash, isDate, isFn, isHash, isObj, isValidNumber, objClean,
-} from '../../utils/utils'
+import { arrSort, deferred, generateHash, isFn, isHash, isObj, isValidNumber, objClean } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 import { BLOCK_DURATION_SECONDS, blockNumberToTS, format } from '../../utils/time'
 import { Balance } from '../../components/Balance'
@@ -240,7 +238,6 @@ export default class TaskForm extends Component {
                             type: 'date',
                             validate: (_, { value: deadline }) => {
                                 if (!deadline) return
-                                // if (!isDate(new Date(deadline))) return textsCap.invalidDate
 
                                 const diffMS = strToDate(deadline) - new Date()
                                 return diffMS < deadlineMinMS && textsCap.deadlineMinErrorMsg

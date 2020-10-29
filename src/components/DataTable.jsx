@@ -87,22 +87,27 @@ export default class DataTable extends Component {
     }
 
     getHeaders(totalRows, columns, selectedIndexes) {
-        let { selectable } = this.props
+        let { columnsHidden, selectable } = this.props
         const { sortAsc, sortBy } = this.state
 
-        const headers = columns.filter(x => !x.hidden).map((x, i) => (
-            <Table.HeaderCell
-                {...x.headerProps}
-                key={i}
-                onClick={() => x.key && this.setState({ sortBy: x.key, sortAsc: sortBy === x.key ? !sortAsc : true })}
-                sorted={sortBy !== x.key ? null : (sortAsc ? 'ascending' : 'descending')}
-                style={{ ...((x.headerProps || {}).style), ...styles.columnHeader }}
-                textAlign='center'
-            >
-                {x.title}
-            </Table.HeaderCell>
-        ))
-
+        const headersColumns = columns
+            .filter(x => !x.hidden && !columnsHidden.includes(x.name))
+        const headers = headersColumns
+            .map((x, i) => (
+                <Table.HeaderCell {...{
+                    ...x.headerProps,
+                    content: x.title,
+                    key: i,
+                    onClick: () => x.key && this.setState({
+                        sortBy: x.key,
+                        sortAsc: sortBy === x.key ? !sortAsc : true
+                    }),
+                    sorted: sortBy !== x.key ? null : (sortAsc ? 'ascending' : 'descending'),
+                    style: { ...((x.headerProps || {}).style), ...styles.columnHeader },
+                    textAlign: 'center',
+                }} />
+            ))
+              
         if (!selectable) return headers
         // include checkbox to select items
         const n = selectedIndexes.length
@@ -128,12 +133,12 @@ export default class DataTable extends Component {
     }
 
     getRows(filteredData, columns, selectedIndexes, pageNo) {
-        let { perPage, rowProps, selectable } = this.props
+        let { columnsHidden, perPage, rowProps, selectable } = this.props
 
         return mapItemsByPage(filteredData, pageNo, perPage, (item, key, items, isMap) => (
             <Table.Row
                 key={key}
-                {...(isFn(rowProps) ? rowProps(item, key, items, isMap) : rowProps || {})}
+                {...(isFn(rowProps) ? rowProps(item, key, items, this.props) : rowProps || {})}
             >
                 {selectable && ( /* include checkbox to select items */
                     <Table.Cell onClick={() => this.handleRowSelect(key, selectedIndexes)} style={styles.checkboxCell}>
@@ -144,25 +149,28 @@ export default class DataTable extends Component {
                         />
                     </Table.Cell>
                 )}
-                {columns.filter(x => !x.hidden).map((cell, j) => {
-                    let { collapsing, content, draggable, key: contentKey, style, textAlign = 'left' } = cell || {}
-                    draggable = draggable !== false
-                    content = isFn(content) ? content(item, key, items, isMap) : cell.content || item[contentKey]
-                    style = {
-                        cursor: draggable ? 'grab' : undefined,
-                        padding: collapsing ? '0 5px' : undefined,
-                        ...style
-                    }
-                    const props = {
-                        ...objWithoutKeys(cell, ['content', 'headerProps', 'title']),
-                        key: key + j,
-                        draggable,
-                        onDragStart: !draggable ? undefined : this.handleDragStart,
-                        style,
-                        textAlign,
-                    }
-                    return <Table.Cell {...props}>{content}</Table.Cell>
-                })}
+                {columns
+                    .filter(({ hidden, name }) => !hidden && !columnsHidden.includes(name))
+                    .map((cell, j) => {
+                        let { collapsing, content, draggable, key: contentKey, style, textAlign = 'left' } = cell || {}
+                        draggable = draggable !== false
+                        content = isFn(content) ? content(item, key, items, this.props) : cell.content || item[contentKey]
+                        style = {
+                            cursor: draggable ? 'grab' : undefined,
+                            padding: collapsing ? '0 5px' : undefined,
+                            ...style
+                        }
+                        const props = {
+                            ...objWithoutKeys(cell, ['content', 'headerProps', 'title']),
+                            key: key + j,
+                            draggable,
+                            onDragStart: !draggable ? undefined : this.handleDragStart,
+                            style,
+                            textAlign,
+                        }
+                        return <Table.Cell {...props}>{content}</Table.Cell>
+                    })
+                }
             </Table.Row>
         ))
     }
@@ -181,14 +189,14 @@ export default class DataTable extends Component {
         topLeftMenu = (topLeftMenu || []).filter(x => !x.hidden)
         onSelectMenu = (onSelectMenu || []).filter(x => !x.hidden)
         const showSearch = searchable && (keywords || totalRows > 0 || !searchHideOnEmpty)
-
         if (topLeftMenu.length + onSelectMenu.length === 0 && !showSearch) return
+
+        const hasSearchOnChange = isFn(searchOnChange)
         const showActions = selectable && onSelectMenu && onSelectMenu.length > 0 && selectedIndexes.length > 0
         const triggerSearchChange = keywords => {
             this.setState({ keywords})
-            isFn(searchOnChange) && searchOnChange(keywords)
+            hasSearchOnChange && searchOnChange(keywords, this.props)
         }
-
         const actions = showActions && (
             <Dropdown {...{
                 button: true,
@@ -292,7 +300,7 @@ export default class DataTable extends Component {
     handlePageSelect = pageNo => {
         const { pageOnSelect } = this.props
         this.setState({ pageNo })
-        isFn(pageOnSelect) && pageOnSelect(pageNo)
+        isFn(pageOnSelect) && pageOnSelect(pageNo, this.props)
     }
 
     handleRowSelect(key, selectedIndexes) {
@@ -402,9 +410,12 @@ DataTable.propTypes = {
             headerProps: PropTypes.object,
             hidden: PropTypes.bool,
             key: PropTypes.string,
+            name: PropTypes.string,
             title: PropTypes.string.isRequired
         })
     ).isRequired,
+    // array of column `name`s to hide
+    columnsHidden: PropTypes.array,
     // Object key to set initial sort by
     defaultSort: PropTypes.string,
     defaultSortAsc: PropTypes.bool.isRequired,
@@ -437,6 +448,7 @@ DataTable.propTypes = {
 }
 DataTable.defaultProps = {
     columns: [],
+    columnsHidden: [],
     data: [],
     defaultSortAsc: true,
     emptyMessage: {

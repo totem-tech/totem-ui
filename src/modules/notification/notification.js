@@ -66,13 +66,39 @@ const notify = (id, notification) => setTimeout(() => {
 })
 
 /**
+ * @name    getMatchingIds
+ * @summary get notifications matching specific values and data
+ * 
+ * @param   {Object}    values  notification values to match
+ * @param   {Object}    data    (optional) notification data
+ * 
+ * @returns {Array}     notification IDs
+ */
+export const getMatchingIds = (values = {}, data = {}) => {
+    const result = notifications.search(values, true, true, true)
+    // no matching notificaion found
+    if (!result.size) return
+
+    const resultArr = Array.from(result)
+    const dataKeys = isObj(data) ? Object.keys(data) : []
+    const ids = dataKeys.length ? [] : resultArr.map(([id]) => id)
+    // find notifications matching data
+    dataKeys.length && resultArr.forEach(([id, { data : iData }]) => {
+        const match = dataKeys.every(key => data[key] === iData[key])
+        match && ids.push(id)
+    })
+    return ids
+}
+
+/**
  * @name    remove
  * @summary remove one or more notificaiton by ID(s)
  * 
  * @param {String|Array} ids notification ID(s)
  */
 export const remove = ids => setTimeout(() => {
-    ids = isArr(ids) ? ids : [ids]
+    ids = (isArr(ids) ? ids : [ids]).filter(Boolean)
+    if (!ids.length) return // nothing to do
     notifications.delete(ids)
 
     ids.forEach(id => addToQueue({
@@ -91,21 +117,7 @@ export const remove = ids => setTimeout(() => {
  * @param   {Object}    values  notification values to match
  * @param   {Object}    data    (optional) notification data
  */ 
-export const removeMatching = (values = {}, data = {}) => {
-    const result = notifications.search(values, true, true, true)
-    // no matching notificaion found
-    if (!result.size) return
-
-    const resultArr = Array.from(result)
-    const dataKeys = isObj(data) ? Object.keys(data) : []
-    const idsToRemove = dataKeys.length ? [] : resultArr.map(([id]) => id)
-    // find notifications matching data
-    dataKeys.length && resultArr.forEach(([id, { data : iData }]) => {
-        const match = dataKeys.every(key => data[key] === iData[key])
-        match && idsToRemove.push(id)
-    })
-    remove(idsToRemove)
-}
+export const removeMatching = (values, data) => remove(getMatchingIds(values, data))
 
 /**
  * @name    search
@@ -238,9 +250,13 @@ setTimeout(() => {
 
     // mark notifications as loading whenever queue service processes a notification response
     rxOnSave.subscribe(data => {
-        const { task: { notificationId, status } } = data || { task: {} }
-        const notification = notifications.get(notificationId)
-        notification && notifications.set(notificationId, { ...notification, status })
+        if (!data) return
+        let { task: { notificationId: ids, status } } = data
+        ids = (isArr(ids) ? ids : [ids]).filter(Boolean)
+        ids.forEach(id => {
+            const notification = notifications.get(id)
+            notification && notifications.set(id, { ...notification, status })
+        })
     })
 })
 

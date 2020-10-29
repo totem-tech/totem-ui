@@ -1,4 +1,4 @@
-import React, { Component, useReducer } from 'react'
+import React, { useReducer } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Button, Label } from 'semantic-ui-react'
@@ -13,10 +13,10 @@ import TaskForm from './TaskForm'
 // services
 import { translated } from '../../services/language'
 import { showForm, confirm } from '../../services/modal'
-import { addToQueue, rxOnSave, statuses as queueStatuses } from '../../services/queue'
+import { rxOnSave, statuses as queueStatuses } from '../../services/queue'
 import { reducer, useRxSubject } from '../../services/react'
-import { getSelected, rxSelected } from '../identity/identity'
-import { approvalStatuses, query, queueableApis, queueables, statuses } from './task'
+import { getSelected } from '../identity/identity'
+import { queueableApis, statuses } from './task'
 import { handleAssignmentResponse, handleInvoicedResponse, handleUpdateStatus } from './notificationHandlers'
 import TaskDetailsForm from './TaskDetailsForm'
 
@@ -24,7 +24,6 @@ const textsCap = translated({
     acceptInvoice: 'accept invoice',
     acceptInvoiceDesc: 'accept the invoice and pay the assignee?',
     acceptInvoiceTitle: 'task - accept invoice',
-    acceptTask: 'accept task',
     action: 'action',
     approve: 'approve',
     approved: 'approved',
@@ -63,7 +62,8 @@ const tempCache = new Map()
 const toBeImplemented = () => alert('to be implemented')
 const rxInProgressIds = new BehaviorSubject(new Set())
 
-function TaskList(props) {
+export default function TaskList(props) {
+    const [inProgressIds] = useRxSubject(rxInProgressIds)
     const listType = listTypes[props.type] || listTypes.owner
     const isOwnedList = listType === listTypes.owner
     // const isApproverList = listType === listTypes.approver
@@ -71,189 +71,20 @@ function TaskList(props) {
     const isMarketPlace = listType === listTypes.marketplace
     const keywordsKey = 'keywords' + listType
     const showCreate = isOwnedList || isMarketPlace
-    const [inProgressIds] = useRxSubject(rxInProgressIds)
-    const [ state ] = useReducer(reducer, {
-        columns: [
-            { collapsing: true, key: '_tsCreated', title: textsCap.createdAt },
-            { key: 'title', title: textsCap.title },
-            {
-                collapsing: true,
-                content: ({ amountXTX }) => <Currency value={amountXTX} emptyMessage={textsCap.loading} />,
-                key: 'amountXTX',
-                title: textsCap.bounty,
-            },
-            {
-                hidden: isOwnedList,
-                key: '_owner',
-                title: textsCap.taskOwner,
-            },
-            {
-                hidden: isFulfillerList,
-                key: '_fulfiller',
-                title: textsCap.assignee,
-            },
-            {
-                content: ({ tags = [] }) => tags.map(tag => (
-                    <Label
-                        key={tag}
-                        draggable='true'
-                        onDragStart={e => {
-                            e.stopPropagation()
-                            e.dataTransfer.setData("Text", e.target.textContent)
-                        }}
-                        style={{
-                            cursor: 'grab',
-                            display: 'inline',
-                            // float: 'left',
-                            margin: 1,
-                        }}
-                    >
-                        {tag}
-                    </Label>
-                )),
-                key: 'tags',
-                title: textsCap.tags,
-                style: { textAlign: 'center' },
-            },
-            {
-                collapsing: true,
-                key: '_orderStatus',
-                textAlign: 'center',
-                title: textsCap.status,
-                content: (task, taskId) => {
-                    const { fulfiller, isMarket, orderStatus, owner, _orderStatus } = task
-                    if (isMarket) return _orderStatus
-                    const { address } = getSelected()
-                    const isOwner = address === owner
-                    const isFulfiller = address === fulfiller
-                    const inProgress = rxInProgressIds.value.has(taskId)
 
-                    switch (orderStatus) {
-                        // fulfiller hasn't accepted/rejected yet
-                        case statuses.submitted:
-                            // assignement response
-                            if (isFulfiller) return (
-                                <ButtonAcceptOrReject
-                                    disabled={inProgress}
-                                    loading={inProgress}
-                                    onAction={accept => confirm({
-                                        header: textsCap.acceptTask,
-                                        onConfirm: () => handleAssignmentResponse(taskId, address, accept),
-                                        size: 'mini',
-                                    })}
-                                />
-                            )
-                            break
-                        // fulfiller accepted but hasn't finished/invoiced the task
-                        case statuses.accepted:
-                            // invoice
-                            if (isFulfiller) return (
-                                <Button
-                                    content={textsCap.createInvoice}
-                                    disabled={inProgress}
-                                    loading={inProgress}
-                                    onClick={() => confirm({
-                                        confirmButton: textsCap.createInvoice,
-                                        content: textsCap.createInvoiceDesc,
-                                        header: textsCap.createInvoice,
-                                        onConfirm: () => handleUpdateStatus(
-                                            address,
-                                            taskId,
-                                            statuses.invoiced,
-                                            textsCap.createInvoiceTitle,
-                                        ),
-                                        size: 'mini',
-                                    })}
-                                    positive
-                                    title={textsCap.createInvoiceDesc}
-                                />
-                            )
-                            break
-                        case statuses.invoiced:
-                            // invoice response
-                            if (isOwner) return (
-                                <ButtonAcceptOrReject
-                                    acceptText={textsCap.pay}
-                                    disabled={inProgress}
-                                    loading={inProgress}
-                                    onAction={accepted => handleInvoicedResponse(taskId, address, accepted)}
-                                    rejectText={textsCap.dispute}
-                                    title={textsCap.acceptInvoiceDesc}
-                                />
-                            )
-                            break
-                    }
-                    return _orderStatus
-                },
-            },
-            // {
-            //     content: (task, taskId) => {
-            //         const { approvalStatus, approver, _approvalStatus } = task
-            //         const isPendingAproval = approvalStatus === approvalStatuses.pendingApproval
-            //         const isApprover = selectedAddress === approver
-            //         const approveInProgress = rxInProgressIds.value.has(taskId)
-            //
-            //         return !isApprover || !isPendingAproval ? _approvalStatus : (
-            //             <ButtonAcceptOrReject
-            //                 acceptText={textsCap.approve}
-            //                 disabled={approveInProgress}
-            //                 loading={approveInProgress}
-            //                 onAction={approve => handleApprove(taskId, approve)}
-            //             />
-            //         )
-            //     },
-            //     collapsing: true,
-            //     key: '_approvalStatus',
-            //     title: textsCap.approved,
-            // },
-            {
-                collapsing: true,
-                content: (task, taskId) => [
-                    isOwnedList && task.allowEdit && {
-                        icon: 'pencil',
-                        onClick: () => showForm(TaskForm, { taskId, values: task }),
-                        title: textsCap.update,
-                    },
-                    {
-                        icon: 'eye',
-                        onClick: () => showForm(TaskDetailsForm, { id: taskId, values: task }),
-                        title: textsCap.techDetails
-                    }
-                ].filter(Boolean)
-                    .map((props, i) => <Button {...props} key={`${i}-${props.title}`} />),
-                textAlign: 'center',
-                title: textsCap.action
-            },
-        ],
-        defaultSort: '_tsCreated',
-        defaultSortAsc: false,
+    return <DataTable {...{
+        ...props,
+        ...tableProps,
+        columnsHidden: [
+            isOwnedList && '_owner',
+            isFulfillerList && '_fulfiller',
+        ].filter(Boolean),
         emptyMessage: isMarketPlace ? textsCap.emptyMsgMarketPlace : undefined,
+        inProgressIds,
+        isOwnedList,
         // preserve search keywords
         keywords: tempCache.get(keywordsKey),
-        // perPage: 100,
-        searchable: !isMarketPlace ? true : (
-            <FormInput {...{
-                // for advanced filtering
-                // filter by: 
-                //      tags(categories?),
-                //      amountXTX (convert from display currency if necessary)
-                //      deadline (convert timestamp to block number before search)
-                //      created after (tsCreated)
-                // search by: title, description, userId (filter by partner userId or own (default on first load??))
-                action: {
-                    icon: 'filter',
-                    onClick: toBeImplemented
-                },
-                icon: 'search',
-                iconPosition: 'left',
-                name: 'search',
-                placeholder: 'search',
-                type: 'search'
-            }} />
-        ),
-        searchExtraKeys: ['_taskId'],
-        searchHideOnEmpty: !isMarketPlace,
-        searchOnChange: keywords => tempCache.set(keywordsKey, keywords),
+        listType,
         topLeftMenu: [
             showCreate && {
                 content: textsCap.create,
@@ -264,13 +95,28 @@ function TaskList(props) {
                 }),
             }
         ].filter(Boolean)
-    })
 
-    return <DataTable {...{
-        ...props,
-        ...state,
-        // disable all actions if there is an unfinished queue item for this task ID
-        rowProps: (task, taskId) => inProgressIds.has(taskId) && { disabled: true },
+        // searchHideOnEmpty: !isMarketPlace,
+        // searchable: !isMarketPlace ? true : (
+        //     <FormInput {...{
+        //         // for advanced filtering
+        //         // filter by: 
+        //         //      tags(categories?),
+        //         //      amountXTX (convert from display currency if necessary)
+        //         //      deadline (convert timestamp to block number before search)
+        //         //      created after (tsCreated)
+        //         // search by: title, description, userId (filter by partner userId or own (default on first load??))
+        //         action: {
+        //             icon: 'filter',
+        //             onClick: toBeImplemented
+        //         },
+        //         icon: 'search',
+        //         iconPosition: 'left',
+        //         name: 'search',
+        //         placeholder: 'search',
+        //         type: 'search'
+        //     }} />
+        // ),
     }} />
 }
 TaskList.propTypes = {
@@ -280,7 +126,172 @@ TaskList.propTypes = {
 TaskList.defaultProps = {
     listType: listTypes.owner,
 }
-export default React.memo(TaskList)
+
+const getActions = (task, taskId, { inProgressIds, isOwnedList }) => [
+    isOwnedList && task.allowEdit && {
+        disabled: inProgressIds.has(taskId),
+        icon: 'pencil',
+        onClick: () => showForm(TaskForm, { taskId, values: task }),
+        title: textsCap.update,
+    },
+    {
+        icon: 'eye',
+        onClick: () => showForm(TaskDetailsForm, { id: taskId, values: task }),
+        title: textsCap.techDetails
+    }
+]
+    .filter(Boolean)
+    .map((props, i) => <Button {...props} key={`${i}-${props.title}`} />)
+
+// status cell view (with status related action buttons where appropriate)
+const getStatusView = (task, taskId) => {
+    const { fulfiller, isMarket, orderStatus, owner, _orderStatus } = task
+    if (isMarket) return _orderStatus
+    const { address } = getSelected()
+    const isOwner = address === owner
+    const isFulfiller = address === fulfiller
+    const inProgress = rxInProgressIds.value.has(taskId)
+
+    switch (orderStatus) {
+        // fulfiller hasn't accepted/rejected yet
+        case statuses.submitted:
+            // fulfiller responds to assignement (also handles relevant notifications)
+            if (isFulfiller) return (
+                <ButtonAcceptOrReject
+                    disabled={inProgress}
+                    loading={inProgress}
+                    onAction={(_, accepted) => handleAssignmentResponse(taskId, address, accepted)}
+                />
+            )
+            break
+        // fulfiller accepted but hasn't finished/invoiced the task
+        case statuses.accepted:
+            // fulfiller marks as done
+            if (isFulfiller) return (
+                <Button
+                    content={textsCap.createInvoice}
+                    disabled={inProgress}
+                    loading={inProgress}
+                    onClick={() => confirm({
+                        confirmButton: textsCap.createInvoice,
+                        content: textsCap.createInvoiceDesc,
+                        header: textsCap.createInvoice,
+                        onConfirm: () => handleUpdateStatus(
+                            address,
+                            taskId,
+                            statuses.invoiced,
+                            textsCap.createInvoiceTitle,
+                        ),
+                        size: 'mini',
+                    })}
+                    positive
+                    title={textsCap.createInvoiceDesc}
+                />
+            )
+            break
+        // fulfiller created invoice for a task
+        case statuses.invoiced:
+            // owner responds to invoice (also handles relevant notifications)
+            if (isOwner) return (
+                <ButtonAcceptOrReject
+                    acceptText={textsCap.pay}
+                    disabled={inProgress}
+                    loading={inProgress}
+                    onAction={(_, accepted) => handleInvoicedResponse(taskId, address, accepted)}
+                    rejectText={textsCap.dispute}
+                    title={textsCap.acceptInvoiceDesc}
+                />
+            )
+            break
+    }
+    return _orderStatus
+}
+
+const tableProps = Object.freeze({
+    columns: [
+        { collapsing: true, key: '_tsCreated', title: textsCap.createdAt },
+        { key: 'title', title: textsCap.title },
+        {
+            collapsing: true,
+            content: ({ amountXTX }) => <Currency value={amountXTX} emptyMessage={textsCap.loading} />,
+            key: 'amountXTX',
+            title: textsCap.bounty,
+        },
+        {
+            key: '_owner',
+            name: '_owner',
+            title: textsCap.taskOwner,
+        },
+        {
+            key: '_fulfiller',
+            title: textsCap.assignee,
+        },
+        {
+            content: ({ tags }) => [...tags || []].map(tag => (
+                <Label
+                    key={tag}
+                    draggable='true'
+                    onDragStart={e => {
+                        e.stopPropagation()
+                        e.dataTransfer.setData("Text", e.target.textContent)
+                    }}
+                    style={{
+                        cursor: 'grab',
+                        display: 'inline',
+                        // float: 'left',
+                        margin: 1,
+                    }}
+                >
+                    {tag}
+                </Label>
+            )),
+            key: 'tags',
+            title: textsCap.tags,
+            style: { textAlign: 'center' },
+        },
+        {
+            collapsing: true,
+            key: '_orderStatus',
+            textAlign: 'center',
+            title: textsCap.status,
+            content: getStatusView,
+        },
+        // {
+        //     content: (task, taskId) => {
+        //         const { approvalStatus, approver, _approvalStatus } = task
+        //         const isPendingAproval = approvalStatus === approvalStatuses.pendingApproval
+        //         const isApprover = selectedAddress === approver
+        //         const approveInProgress = rxInProgressIds.value.has(taskId)
+        //
+        //         return !isApprover || !isPendingAproval ? _approvalStatus : (
+        //             <ButtonAcceptOrReject
+        //                 acceptText={textsCap.approve}
+        //                 disabled={approveInProgress}
+        //                 loading={approveInProgress}
+        //                 onAction={(_, approve) => handleApprove(taskId, approve)}
+        //             />
+        //         )
+        //     },
+        //     collapsing: true,
+        //     key: '_approvalStatus',
+        //     title: textsCap.approved,
+        // },
+        {
+            collapsing: true,
+            content: getActions,
+            textAlign: 'center',
+            title: textsCap.action,
+        },
+    ],
+    defaultSort: '_tsCreated',
+    defaultSortAsc: false,
+    // disable all actions if there is an unfinished queue item for this task ID
+    rowProps: (task, taskId, tasks, { inProgressIds }) => inProgressIds.has(taskId) && { disabled: true },
+    // perPage: 100,
+    searchable: true,
+    searchExtraKeys: ['_taskId'],
+    searchOnChange: (keywords, { listType }) => tempCache.set('keywords-' + listType, keywords),
+})
 
 setTimeout(() => {
     // subscribe to queue item changes and store taskIds
