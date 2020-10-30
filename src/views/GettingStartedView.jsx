@@ -101,9 +101,9 @@ export default class GetingStarted extends Component {
 		this.registerStepIndex = 0
 		this.backupStepIndex = 2
 		const isRegistered = !!(getUser() || {}).id
-		const activeStep = setActiveStep()
+		const activeStep = setActiveStep() 
 		this.state = {
-			activeStep: (isRegistered && activeStep <= 1) ? 2 : activeStep,
+			activeStep: (isRegistered && activeStep < 1) ? 1 : activeStep,
 			steps: [
 				{
 					description: texts.step2Description,

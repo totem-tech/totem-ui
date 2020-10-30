@@ -1,16 +1,8 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import { Button, Dropdown, Grid, Icon, Input, Segment, Table } from 'semantic-ui-react'
 import {
-    Button,
-    Dropdown,
-    Grid,
-    Icon,
-    Input,
-    Segment,
-    Table,
-} from 'semantic-ui-react'
-import {
-    arrMapSlice, getKeys, isArr, isFn, objWithoutKeys, objCopy, search, sort, isStr, arrReverse, arrUnique, isObj
+    arrMapSlice, getKeys, isArr, isFn, objWithoutKeys, search, sort, isStr, arrUnique, isObj
 } from '../utils/utils'
 import Invertible from './Invertible'
 import Message from './Message'
