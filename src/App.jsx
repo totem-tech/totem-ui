@@ -114,7 +114,7 @@ export default function App() {
 				>
 					{sidebarItems.map(({ name }, i) => <MainContentItem key={i + name} name={name} />)}
 					<div className='empty-message'>
-						<Image style={{ margin: '100px auto auto' }} src={PlaceholderImage} />
+						{/* <Image style={{ margin: '100px auto auto' }} src={PlaceholderImage} /> */}
 					</div>
 				</Sidebar.Pusher>
 			</Sidebar.Pushable>
