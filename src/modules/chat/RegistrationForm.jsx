@@ -25,6 +25,14 @@ const textsCap = translated({
     userIdPlaceholder: 'enter your desired ID',
 }, true)[1]
 
+export const inputNames = {
+    redirectTo: 'redirectTo',
+    referredBy: 'referredBy',
+    secret: 'secret',
+    url: 'url',
+    userId: 'userId',
+}
+
 export default class RegistrationForm extends Component {
     constructor(props) {
         super(props)
@@ -55,7 +63,7 @@ export default class RegistrationForm extends Component {
                         status: !!id ? 'error' : 'warning',
                         style: { textAlign: 'left' },
                     },
-                    name: 'userId',
+                    name: inputNames.userId,
                     multiple: false,
                     newUser: true,
                     placeholder: textsCap.userIdPlaceholder,
@@ -65,10 +73,16 @@ export default class RegistrationForm extends Component {
                 },
                 {
                     label: textsCap.referredByLabel,
-                    name: 'referredBy',
+                    name: inputNames.referredBy,
                     placeholder: textsCap.referredByPlaceholder,
                     rxValue: new BehaviorSubject(''),
                     type: 'UserIdInput',
+                },
+                {
+                    // auto redirect after successful registration
+                    hidden: true,
+                    name: inputNames.redirectTo,
+                    type: 'url',
                 },
             ], values),
         }
@@ -76,7 +90,9 @@ export default class RegistrationForm extends Component {
 
     handleSubmit = (_, values) => {
         const { onSubmit } = this.props
-        const { referredBy, userId } = values
+        const userId = values[inputNames.userId]
+        const referredBy = values[inputNames.referredBy]
+        const redirectTo = values[inputNames.redirectTo]
         const secret = uuid.v1()
 
         this.setState({ submitDisabled: true })
@@ -95,7 +111,9 @@ export default class RegistrationForm extends Component {
             })
             isFn(onSubmit) && onSubmit(success, values)
 
-            success && setActiveStep(1)
+            if (!success) return
+            setActiveStep(1)
+            redirectTo && setTimeout(() => window.location.href = redirectTo, 300)
         })
     }
 
@@ -103,7 +121,13 @@ export default class RegistrationForm extends Component {
 }
 
 RegistrationForm.propsTypes = {
-    values: PropTypes.object,
+    values: PropTypes.shape({
+        redirectTo: PropTypes.string,
+        referredBy: PropTypes.string,
+        secret: PropTypes.string,
+        url: PropTypes.string,
+        userId: PropTypes.string,        
+    }),
 }
 RegistrationForm.defaultProps = {
     header: textsCap.formHeader,
