@@ -4,7 +4,7 @@ import { compactAddLength } from '@polkadot/util'
 import { ss58Encode } from '../utils/convert'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 import { getConnection } from '../services/blockchain'
-import { get as getIdentity, getSelected } from '../services/identity'
+import { get as getIdentity, getSelected } from '../modules/identity/identity'
 
 // Translation not required
 const texts = {
@@ -63,7 +63,7 @@ export default class UpgradeForm extends Component {
                             <div><b>Processed hash:</b><br />{blake2AsHex(codeBytes, 256)}</div>
                         </div>
                     ),
-                    showIcon: true,
+                    icon: true,
                     status: 'info',
                 }
                 this.setState({ inputs, codeBytes, submitDisabled: false })
@@ -74,7 +74,7 @@ export default class UpgradeForm extends Component {
             fileIn.message = {
                 content: `${err}`,
                 header: texts.fileErr,
-                showIcon: true,
+                icon: true,
                 status: 'error',
             }
             this.setState({ inputs, codeBytes: null, submitDisabled: false })
@@ -91,7 +91,7 @@ export default class UpgradeForm extends Component {
             this.setState({
                 message: {
                     header: identity ? texts.upgradingRuntime : texts.accessDenied,
-                    showIcon: true,
+                    icon: true,
                     status: identity ? 'loading' : 'error',
                 },
                 submitDisabled: !!identity,
@@ -123,7 +123,7 @@ export default class UpgradeForm extends Component {
                 this.setState({
                     message: {
                         header: texts.upgradeSuccessful,// : textsCap.upgradeFailed,
-                        showIcon: true,
+                        icon: true,
                         status: 'success',// : 'error',
                     },
                     submitDisabled: false,
@@ -135,7 +135,7 @@ export default class UpgradeForm extends Component {
                 message: {
                     content: `${err}`,
                     header: texts.upgradeFailed,
-                    showIcon: true,
+                    icon: true,
                     status: 'error',
                 },
                 submitDisabled: false,

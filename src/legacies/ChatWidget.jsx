@@ -1,22 +1,26 @@
-import React from 'react'
-import { ReactiveComponent } from 'oo7-react'
-import {
-	Widget,
-	// addResponseMessage,
-	// addLinkSnippet,
-	addUserMessage,
-	renderCustomComponent,
-	// dropMessages,
-	// isWidgetOpened,
-	// toggleInputDisabled,
-	// toggleMsgLoader
-} from 'react-chat-widget'
-import 'react-chat-widget/lib/styles.css'
+import React, { Component } from 'react'
+// import {
+// 	Widget,
+// 	// addResponseMessage,
+// 	// addLinkSnippet,
+// 	addUserMessage,
+// 	renderCustomComponent,
+// 	// dropMessages,
+// 	// isWidgetOpened,
+// 	// toggleInputDisabled,
+// 	// toggleMsgLoader
+// } from 'react-chat-widget'
+// import 'react-chat-widget/lib/styles.css'
 import { objCopy } from '../utils/utils'
 // import { getNow } from '../utils/time'
 import TotemLogoCircle from '../assets/totem-button-grey.png'
 // import { getClient, getUser, getHistory, onLogin } from '../services/chatClient'
 import { translated } from '../services/language'
+
+// placeholders
+const renderCustomComponent = () => { }
+const Widget = () => ''
+
 
 const [texts] = translated({
 	loggedInAs: 'Logged in as',
@@ -64,7 +68,7 @@ const MessageEntry = (props) => (
 	</div>
 )
 
-export default class ChatWidget extends ReactiveComponent {
+export default class ChatWidget extends Component {
 	constructor() {
 		super([])
 		this.state = {

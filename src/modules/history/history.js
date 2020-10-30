@@ -58,7 +58,7 @@ const notificationIcons = {
         share: 'upload',
     },
     // task: 'tasks',
-    time_keeping: {
+    timekeeping: {
         invitation: 'group',
         invitation_response: 'group',
     }
@@ -93,13 +93,14 @@ export const historyWorthy = (func, args) => {
 // Params:
 // @identity    string: address of the identity that executed the action.
 //                      For transaction actions, the source address of the transaction will be used.
-//                      For messaging serivce, if action is independant of the identity the User ID, otherwise the selected identity, should be used.
+//                      For messaging serivce, if action is independant of the identity the User ID,
+//                      otherwise the selected identity, should be used.
 // @action      string: queued task's `func` property or a string that describe what action user has taken.
 //                      For messaging service related actions, should start with 'client.'.
 //                      For transaction related actions, should start with 'api.tx.'. 
 // @data        array: values used for this action so that the action can be repeat if the user desires so.
 //                      Typically, queued task's `args` property will be used.
-// @title       string: title of the action.
+// @title       string: (required) title of the history event.
 //                      Typically, same as the title of the queued task.
 // @description string: description of the action.
 //                      Typically, same as the description of the queued task.
@@ -126,7 +127,7 @@ export const save = (
     txId,
     timestamp = new Date().toISOString(),
 ) => {
-    const icon = historyWorthy(action, data)
+    const icon = title && historyWorthy(action, data)
     if (!icon) return
     // id already exists remove it from history to re-appear at the end of the list
     if (history.get(id)) history.delete(id)

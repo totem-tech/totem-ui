@@ -4,11 +4,11 @@
  */
 import { downloadFile, hasValue, isMap, isObj } from '../utils/utils'
 import DataStorage from '../utils/DataStorage'
-import identities from './identity'
+import identities from '../modules/identity/identity'
 
 // Local Storage item key prefix for all items
 const PREFIX = 'totem_'
-const PREFIX_STATIC = 'totem_static_'
+const PREFIX_STATIC = PREFIX + 'static_'
 const CACHE_KEY = PREFIX + 'cache'
 const storage = {}
 const cache = new DataStorage(CACHE_KEY, true)
@@ -58,19 +58,31 @@ export const generateBackupData = () => {
     }, {})
 }
 
-// Read/write to storage
-//
-// @storage DataStorege instance:
-// @key     string: module/item key
-// @propKey string: name of the property to read/write to. If not supplied, will return value for @key
-// @value   any: use `null` to remove the @propKey from storage. If not specified, will return value for @propKey
+/**
+ * @name    rw
+ * @summary Read/write to storage
+ * 
+ * @param   {DataStorage} storage 
+ * @param   {String}      key       module/item key
+ * @param   {String|null} propKey   name of the property to read/write to.
+ *                                  If null, will remove all data stored for the @key
+ *                                  If not supplied, will return value for the @key
+ * @param   {*}         value       If not specified, will return value for @propKey
+ *                                  If null, will remove value for @propKey
+ *                                  If Map supplied, will be converted to 2D array using `Array.from`.
+ *                                  If Object supplied, will merge with existing values.
+ * 
+ * @returns {*} 
+ */
 export const rw = (storage, key, propKey, value) => {
     if (!storage || !key) return {}
     const data = storage.get(key) || {}
-    let save = true
     if (!propKey) return data
-
-    if (value === null) {
+    
+    let save = true
+    if (propKey === null) {
+        data.delete(key)
+    } else if (value === null) {
         // remove from storage
         delete data[propKey]
     } else if (isMap(value)) {
@@ -105,7 +117,26 @@ storage.settings = {
     // @value   object: (optional) settings/value to replace existing.
     module: (moduleKey, value) => rw(settings, 'module_settings', moduleKey, value)
 }
+
+/**
+ * @name    storage.cache
+ * @summary read/write to module cache storage
+ * 
+ * @param   {String}        moduleKey 
+ * @param   {String|null}   itemKey 
+ * @param   {*|null}        value 
+ * 
+ * @returns {*}
+ */
 storage.cache = (moduleKey, itemKey, value) => rw(cache, moduleKey, itemKey, value)
+
+/**
+ * @name    storage.cacheDelete
+ * @summary remove all cached data for a module
+ * 
+ * @param   {String} moduleKey 
+ */
+storage.cacheDelete = moduleKey => rw(cache, moduleKey, null)
 
 // removes cache and static data
 // Caution: can remove 

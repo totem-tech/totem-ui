@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { isAddress, isFn, isDefined } from '../../utils/utils'
-import { query as queryHelper, getConnection } from '../../services/blockchain'
-import client from '../../services/chatClient'
+import { query as queryHelper } from '../../services/blockchain'
+import client from '../chat/ChatClient'
 import { translated } from '../../services/language'
 
 const textsCap = translated({
     errorHeader: 'failed to retrieve accounts',
+    invalidAddress: 'invalid or no identity supplied',
     loading: 'loading accounts',
     timeoutMsg: 'request is taking longer than expected',
     emptyMessage: 'no data available'
@@ -25,21 +26,22 @@ export default function useLedgerAcBalances(address, timeout = 10000) {
     const [message, setMessage] = useState()
 
     useEffect(() => {
-        if (!isAddress(address)) return
         let mounted = true
         const unsubscribers = {}
         let loaded = false
         let error = false
         const loadingMsg = {
             content: textsCap.loading,
-            showIcon: true,
+            icon: true,
             status: 'loading',
         }
         const errorMsg = {
             header: textsCap.errorHeader,
-            showIcon: true,
+            icon: true,
             status: 'error',
         }
+        if (!isAddress(address)) return setMessage({ ...errorMsg, header: textsCap.invalidAddress })
+        
         const handleAccounts = async (accounts = []) => {
             if (!mounted) return
             let empty = !accounts.length

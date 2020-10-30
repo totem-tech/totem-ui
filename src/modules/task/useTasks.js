@@ -1,16 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { Subject } from 'rxjs'
+import { format } from '../../utils/time'
 import { isFn, arrUnique, objCopy, isMap, isArr } from '../../utils/utils'
-import PromisE from '../../utils/PromisE'
 // services
 import { translated } from '../../services/language'
-import { getAddressName } from '../../services/partner'
-import {
-    approvalStatuses,
-    approvalStatusNames,
-    query, rwCache, statuses, statusNames
-} from './task'
-import { format } from '../../utils/time'
+import { getAddressName } from '../partner/partner'
+import { approvalStatuses, approvalStatusNames, query, rwCache, statuses, statusNames } from './task'
 
 const textsCap = translated({
     errorHeader: 'failed to load tasks',
@@ -70,12 +65,12 @@ export default function useTasks(types, address, timeout = 5000) {
         const unsubscribers = {}
         const loadingMsg = {
             content: textsCap.loadingMsg,
-            showIcon: true,
+            icon: true,
             status: 'loading',
         }
         const errorMsg = {
             header: textsCap.errorHeader,
-            showIcon: true,
+            icon: true,
             status: 'error'
         }
 
@@ -101,7 +96,7 @@ export default function useTasks(types, address, timeout = 5000) {
                         // ignore error. should only happen when amountXTX is messed up due to blockchain storage reset
                         console.log('AmontXTX parse error', err)
                     }
-                    const _owner = getAddressName(owner)
+                    const _owner = getAddressName(owner, true)
                     const isOwner = address === owner
                     const isSubmitted = orderStatus === statuses.submitted
                     const isPendingApproval = approvalStatus == approvalStatuses.pendingApproval
@@ -166,7 +161,7 @@ export default function useTasks(types, address, timeout = 5000) {
             setTasks(getCached(address, types))
         }, timeout)
         setMessage(loadingMsg)
-        console.log({ address })
+        window.isDbug && console.log({ address })
 
         query.getTaskIds(types, address, handleTaskIds).then(
             fn => unsubscribers.taskIds2d = fn,
@@ -195,7 +190,7 @@ export default function useTasks(types, address, timeout = 5000) {
                 console.error(err)
                 msg = {
                     content: `${err}`,
-                    showIcon: true,
+                    icon: true,
                     status: 'error',
                 }
             }
@@ -209,7 +204,9 @@ export default function useTasks(types, address, timeout = 5000) {
 }
 
 const addDetails = (address, tasks, detailsMap, uniqueTaskIds, save = true) => {
-    if (!detailsMap.size || !isMap(tasks)) return
+    if (!isMap(tasks)) return new Map()
+    // no off-chain details to attach
+    if (!detailsMap.size) return tasks
     const newTasks = new Map()
     const cacheableAr = Array.from(tasks).map(([type, typeTasks = new Map()]) => {
         uniqueTaskIds.forEach(id => {

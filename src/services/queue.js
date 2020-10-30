@@ -3,14 +3,15 @@
  */
 import React from 'react'
 import uuid from 'uuid'
+import { BehaviorSubject, Subject } from 'rxjs'
 import DataStorage from '../utils/DataStorage'
-import { signAndSend } from '../utils/polkadotHelper'
-import { isArr, isFn, isObj, isStr, objClean, isValidNumber } from '../utils/utils'
+import { getTxFee, signAndSend } from '../utils/polkadotHelper'
+import { isArr, isFn, isObj, isStr, objClean, isValidNumber, isError } from '../utils/utils'
 // services
-import { getClient } from './chatClient'
+import { getClient } from '../modules/chat/ChatClient'
 import { getConnection, query, getCurrentBlock } from './blockchain'
 import { save as addToHistory } from '../modules/history/history'
-import { find as findIdentity, getSelected } from './identity'
+import { find as findIdentity, getSelected } from '../modules/identity/identity'
 import { translated } from './language'
 import { setToast } from './toast'
 import { rxOnline } from './window'
@@ -43,6 +44,7 @@ const textsCap = translated({
         sender identity, recipient identity and amount`,
 }, true)[1]
 const queue = new DataStorage('totem_queue-data', false)
+export const rxOnSave = new BehaviorSubject()
 /* Queue statuses */
 // indicates task failed
 const ERROR = 'error'
@@ -50,6 +52,7 @@ const ERROR = 'error'
 const SUCCESS = 'success'
 // indicates task execution started
 const LOADING = 'loading'
+const REMOVED = 'removed'
 const SUSPENDED = 'suspended'
 // Minimum balance required to make a transaction.
 // This is a guesstimated transaction fee. PolkadotJS V2 required to pre-calculate fee.
@@ -68,10 +71,11 @@ export const QUEUE_TYPES = Object.freeze({
     TX_STORAGE: 'tx_storage',
 })
 export const statuses = Object.freeze({
-    ERROR: ERROR,
-    LOADING: LOADING,
-    SUCCESS: SUCCESS,
-    SUSPENDED: SUSPENDED,
+    ERROR,
+    LOADING,
+    REMOVED,
+    SUCCESS,
+    SUSPENDED,
 })
 // translated version of the statuses
 export const statusTitles = Object.freeze({
@@ -136,11 +140,17 @@ const VALID_KEYS = Object.freeze([
     //                          Will only be executed if the parent task was successful.
     'next',
 
+    // @notificationId  string: (optional) when task is related to a specific notifcation
+    'notificationId',
+
+    // @recordId        string: (optional) when task is related to a specific record
+    'recordId',
+
     // @silent          bool: (optional) If true, enables silent mode and no toast messages will be displayed.
     //                          This is particularly usefull when executing tasks that user didn't initiate or should //                            not be bothered with.
     'silent',
 
-    // @title           string: short title for the task. Eg: 'Create project'
+    // @title           string: short title for the task. Eg: 'Create activity'
     'title',
 
     // @then            function: Callback to be executed once task execution is done (status: 'success' or 'error').
@@ -161,9 +171,9 @@ const VALID_KEYS = Object.freeze([
     //                          Only root task's toast ID will be used. Child tasks will inherit the root's toast ID.
     'toastId',
 
-    // @txId            string: (optional) for supported Blockchain translations, include a "Transaction ID" (hex of 
-    //                          an UUID after stripping off the dashes). The @txId will be used to verify the status of 
-    //                          the transaction, in case, user leaves the page befor the transaction is completed.
+    // @txId            string: (optional) for Blockchain translations ONLY, include a "Transaction ID" (a hash of 
+    //                          an UUID and address combined). The @txId will be used to verify the status of 
+    //                          the a transaction, in case, user leaves the page befor the transaction is completed.
     'txId',
 
     // @type            string: name of the service. Currently supported: blockchain, chatclient
@@ -448,14 +458,15 @@ const handleTx = async (id, rootTask, task, toastId) => {
             txSuccess ? SUCCESS : ERROR,
             txSuccess ? [] : textsCap.txFailed,
         )
+        // attempt to execute the transaction
+        const tx = txFunc.apply(null, task.argsProcessed || args)
 
         // retrieve and store account balance before starting the transaction
         let balance = await query('api.query.balances.freeBalance', address)
-        if (balance < (amountXTX + MIN_BALANCE)) throw textsCap.insufficientBalance
+        const txFee = await getTxFee(api, address, tx)
+        if (balance < (amountXTX + txFee)) throw textsCap.insufficientBalance
         _save(LOADING, null, { before: balance })
 
-        // attempt to execute the transaction
-        const tx = txFunc.apply(null, task.argsProcessed || args)
         const result = await signAndSend(api, address, tx)
 
         // retrieve and store account balance after execution
@@ -494,10 +505,10 @@ const processArgs = (rootTask = {}, currentTask = {}) => {
         if (!hasDynamicArg) return []
 
         // throw 'test error 0'
-        const getResultByName = (task, name) => {
+        const getTaskByName = (task, name) => {
             // throw 'test error 2'
-            if (task.name === name) return task.result
-            return !isObj(task.next) ? undefined : getResultByName(task.next, name)
+            if (task.name === name) return task
+            return !isObj(task.next) ? undefined : getTaskByName(task.next, name)
         }
         for (let i = 0; i < args.length; i++) {
             const arg = args[i]
@@ -508,9 +519,10 @@ const processArgs = (rootTask = {}, currentTask = {}) => {
                 continue
             }
             // throw 'test error 1'
-            const result = getResultByName(rootTask, __taskName)
+            const task = getTaskByName(rootTask, __taskName)
+            const { result } = task || {}
             const argValue = eval(__resultSelector)
-            const processedArg = !isFn(argValue) ? argValue : argValue(result, rootTask)
+            const processedArg = !isFn(argValue) ? argValue : argValue(result, rootTask, task)
             argsProcessed.push(processedArg)
         }
 
@@ -606,19 +618,15 @@ const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, du
     const isSuccess = status === SUCCESS
     const isSuspended = status === SUSPENDED
     task.status = status
-    task.errorMessage = isStr(errMsg) ? errMsg : (
-        errMsg instanceof Error ? `${errMsg}` : null
+    task.errorMessage = !errMsg || isStr(errMsg) ? errMsg : (
+        isError(errMsg) ? `${errMsg}` : JSON.stringify(errMsg, null, 4)
     )
     const hasError = status === ERROR && task.errorMessage
     hasError && msg.content.unshift(task.errorMessage)
-    if (!isSuspended) {
-        // no need to display toast if status is suspended
-        task.toastId = setMessage(task, msg, duration, toastId, silent)
-    }
-    if (balance) {
-        // store account balance before and after TX
-        task.balance = { ...task.balance, ...balance }
-    }
+    // no need to display toast if status is suspended
+    task.toastId = isSuspended ? toastId : setMessage(task, msg, duration, toastId, silent)
+    // store account balance before and after TX
+    task.balance = { ...task.balance, ...balance }
 
     switch (status) {
         case LOADING:
@@ -652,7 +660,7 @@ const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, du
         task.result,
         task.txId,
     )
-
+    rxOnSave.next({ rootTask, task })
     if (!done) return
 
     try {
@@ -665,7 +673,7 @@ const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, du
     // execute next only if current task is successful
     if (isSuccess && isObj(task.next)) return _processTask(task.next, id, toastId)
 
-    // delete root item if no error occured
+    // execution complete -> delete entire queue chain
     queue.delete(id)
 }
 
@@ -696,4 +704,5 @@ export default {
     queue,
     QUEUE_TYPES,
     resumeQueue,
+    rxOnSave,
 }

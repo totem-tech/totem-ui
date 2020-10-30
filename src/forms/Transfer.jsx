@@ -1,85 +1,115 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Dropdown } from 'semantic-ui-react'
-import { Bond } from 'oo7'
+import { BehaviorSubject } from 'rxjs'
+import { Icon } from 'semantic-ui-react'
+import { ss58Decode } from '../utils/convert'
+import { getTxFee } from '../utils/polkadotHelper'
+import { arrSort, textEllipsis, deferred, isValidNumber } from '../utils/utils'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import Balance from '../components/Balance'
-import { arrSort, textEllipsis, isFn } from '../utils/utils'
-import { ss58Decode } from '../utils/convert'
-import PartnerForm from '../forms/Partner'
-// services
-import { denominations, queueables } from '../services/blockchain'
-import { find as findIdentity, getAll, rxIdentities, rxSelected } from '../services/identity'
+import Currency from '../components/Currency'
+import Text from '../components/Text'
+import PartnerForm from '../modules/partner/PartnerForm'
+import { get as getIdentity, rxIdentities, rxSelected } from '../modules/identity/identity'
+import { remove as removeNotif, setItemViewHandler } from '../modules/notification/notification'
+import { get as getPartner, getAddressName, rxPartners } from '../modules/partner/partner'
+import { getConnection, query, queueables } from '../services/blockchain'
+import { convertTo, currencyDefault, getCurrencies, rxSelected as rxSelectedCurrency } from '../services/currency'
 import { translated } from '../services/language'
-import { showForm } from '../services/modal'
-import partners, { getAddressName, rxPartners } from '../services/partner'
+import { confirm, showForm } from '../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import { currencyDefault, getSelected } from '../services/currency'
 import { unsubscribe } from '../services/react'
 
-const wordsCap = translated({
+const textsCap = translated({
     amount: 'amount',
-    balance: 'balance',
-    identity: 'identity',
-    partner: 'partner',
+    amountReceivedLabel: 'payment amount',
+    amountReceivedPlaceholder: 'enter amount',
+    amountSentLabel: 'amount in your display currency',
+    amountToSend: 'amount to send',
+    addPartner: 'add partner',
+    availableBalance: 'available balance',
+    currency: 'currency',
+    currencyReceivedLabel: 'payment currency',
+    currencySentLabel: 'your display currency',
+    includesTxFee: 'plus a transaction fee of',
+    insufficientBalance: 'insufficient balance',
+    loadingBalance: 'loading account balance',
+    partnerEmptyMsg1: 'You do not have any partners yet. Add one in the Partner Module',
+    partnerEmptyMsg2: 'No match found. Enter a valid address to add as a partner.',
+    partnerPlaceholder: 'select a partner',
+    payerIdentity: 'payer',
+    queueTitle: 'transfer funds',
     recipient: 'recipient',
+    send: 'send',
     sender: 'sender',
     status: 'status',
+    submitErrorHeader: 'transfer error',
+    submitInprogressHeader: 'transfer in-progress',
+    submitSuccessHeader: 'transfer successful',
+    toLabel: 'recipient (select a partner)',
+    total: 'total',
+    totalRequired: 'total required',
+    transferedFunds: 'transfered funds to you',
+    txFee: 'transaction fee',
+    yourIdentity: 'your identity',
 }, true)[1]
-const texts = translated({
-    amountPlaceholder: 'Enter the amount to send',
-    loadingBalance: 'Loading account balance',
-    partnerEmptyMsg1: 'You do not have any partner yet. Add one in the Partner Module',
-    partnerEmptyMsg2: 'No match found. Enter a valid address to add as a partner.',
-    partnerPlaceholder: 'Select a Partner',
-    queueTitle: 'Transfer Transactions',
-    submitErrorHeader: 'Transfer error',
-    submitInprogressHeader: 'Transfer in-progress',
-    submitSuccessHeader: 'Transfer successful',
-    txFee: 'Transaction fee',
-})[0]
+// notification type
+const TRANSFER_TYPE = 'transfer'
 
 export default class Transfer extends Component {
     constructor(props) {
         super(props)
 
-        const primary = 'Transactions'
+        this.names = {
+            amountReceived: 'amountReceived',
+            amountReceivedGroup: 'amountReceivedGroup',
+            amountSent: 'amountSent',
+            amountSentGroup: 'amountSentGroup',
+            currencyReceived: 'currencyReceived',
+            currencySent: 'currencySent',
+            from: 'from',
+            to: 'to',
+            txFee: 'txFeeHTML'
+        }
         this.state = {
-            denomination: primary,
             message: undefined,
+            onChange: (_, values) => this.setState({ values }),
             onSubmit: this.handleSubmit,
+            submitDisabled: {},
             success: false,
+            values: {
+                currency: rxSelectedCurrency.value,
+            },
             inputs: [
                 {
-                    bond: new Bond(),
-                    label: wordsCap.identity,
-                    name: 'from',
+                    label: undefined,
+                    name: this.names.from,
                     options: [],
                     required: true,
+                    rxValue: new BehaviorSubject(''),
                     search: ['text', 'value'],
                     selection: true,
                     type: 'dropdown',
-                    value: '',
                 },
                 {
-                    additionLabel: 'Add partner: ',
+                    additionLabel: `${textsCap.addPartner}: `,
                     allowAdditions: false,
-                    bond: new Bond(),
                     clearable: true,
-                    label: wordsCap.partner,
-                    name: 'to',
-                    noResultsMessage: texts.partnerEmptyMsg1,
+                    label: textsCap.toLabel,
+                    name: this.names.to,
+                    noResultsMessage: textsCap.partnerEmptyMsg1,
+                    rxValue: new BehaviorSubject(),
                     onAddItem: (_, { value: address }) => {
                         // in case, if partner is not added or user cancels modal makes sure to remove the item
                         const { inputs } = this.state
-                        const toIn = findInput(inputs, 'to')
+                        const toIn = findInput(inputs, this.names.to)
                         toIn.options = toIn.options.filter(({ value }) => value !== address)
-                        toIn.bond.changed(null)
+                        toIn.rxValue.next(null)
                         this.setState({ inputs })
 
                         // Open add partner modal
                         showForm(PartnerForm, {
-                            onSubmit: (ok, { address }) => ok && toIn.bond.changed(address),
+                            onSubmit: (ok, { address }) => ok && toIn.rxValue.next(address),
                             values: { address }
                         })
                     },
@@ -87,13 +117,13 @@ export default class Transfer extends Component {
                         q = q.trim()
                         const { inputs } = this.state
                         const valid = !!ss58Decode(q)
-                        const toIn = findInput(inputs, 'to')
+                        const toIn = findInput(inputs, this.names.to)
                         toIn.allowAdditions = valid && !toIn.options.find(x => x.value === q)
-                        toIn.noResultsMessage = !valid && q.length > 0 ? texts.partnerEmptyMsg2 : texts.partnerEmptyMsg1
+                        toIn.noResultsMessage = !valid && q.length > 0 ? textsCap.partnerEmptyMsg2 : textsCap.partnerEmptyMsg1
                         this.setState({ inputs })
                     },
                     options: [],
-                    placeholder: texts.partnerPlaceholder,
+                    placeholder: textsCap.partnerPlaceholder,
                     required: true,
                     search: ['text', 'value'],
                     selection: true,
@@ -102,60 +132,115 @@ export default class Transfer extends Component {
                     type: 'dropdown',
                 },
                 {
-                    inlineLabel: (
-                        <Dropdown
-                            basic
-                            className='no-margin'
-                            defaultValue={primary}
-                            disabled={true}
-                            onChange={(_, { value: denomination }) => {
-                                const { inputs } = this.state
-                                findInput(inputs, 'amount').min = this.getAmountMin(denomination)
-                                this.setState({ denomination, inputs })
-                            }}
-                            options={[{ key: 0, text: primary, value: primary }]}
-                        // options={Object.keys(denominations).map(key => ({ key, text: key, value: key }))}
-                        />
-                    ),
-                    label: wordsCap.amount,
-                    labelPosition: 'right', //inline label position
-                    min: this.getAmountMin(primary),
-                    name: 'amount',
-                    placeholder: texts.amountPlaceholder,
-                    required: true,
-                    type: 'number',
-                    useInput: true,
-                    value: '',
-                }
+                    name: this.names.amountSentGroup,
+                    inputs: [
+                        {
+                            disabled: true,
+                            label: textsCap.amountSentLabel,
+                            min: 0,
+                            name: this.names.amountSent,
+                            readOnly: true,
+                            rxValue: new BehaviorSubject(''),
+                            type: 'number',
+                            useInput: true,
+                            width: 8,
+                        },
+                        {
+                            disabled: true,
+                            label: textsCap.currencySentLabel,
+                            name: this.names.currencySent,
+                            // onChange: this.handleCurrencySentChange,
+                            options: [],
+                            rxValue: new BehaviorSubject(),
+                            search: ['text', 'description'],
+                            selection: true,
+                            type: 'dropdown',
+                            width: 8,
+                        },
+                    ],
+                    type: 'group',
+                    unstackable: true,
+                },
+                {
+                    content: undefined,
+                    name: this.names.txFee,
+                    type: 'html',
+                },
+                {
+                    name: this.names.amountReceivedGroup,
+                    type: 'group',
+                    unstackable: true,
+                    inputs: [
+                        {
+                            icon: 'money',
+                            iconPosition: 'left',
+                            label: textsCap.amountReceivedLabel,
+                            maxLength: 12,
+                            min: 0,
+                            name: this.names.amountReceived,
+                            onChange: deferred(this.handleAmountReceivedChange, 500),
+                            onInvalid: this.handleAmountReceivedInvalid,
+                            placeholder: textsCap.amountReceivedPlaceholder,
+                            required: true,
+                            rxValue: new BehaviorSubject(''),
+                            type: 'number',
+                            useInput: true,
+                            width: 8,
+                        },
+                        {
+                            label: textsCap.currencyReceivedLabel,
+                            name: this.names.currencyReceived,
+                            onChange: this.handleCurrencyReceivedChange,
+                            options: [],
+                            required: true,
+                            rxValue: new BehaviorSubject(),
+                            search: ['text', 'description'],
+                            selection: true,
+                            type: 'dropdown',
+                            width: 8,
+                        },
+                    ],
+                },
             ],
         }
         this.originalSetState = this.setState
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
-    componentWillMount() {
+    async componentWillMount() {
         this._mounted = true
         this.subscriptions = {}
         const { inputs } = this.state
-        const { values } = this.props
-        const fromIn = findInput(inputs, 'from')
-        const toIn = findInput(inputs, 'to')
+        const { values = {} } = this.props
+        const fromIn = findInput(inputs, this.names.from)
+        const toIn = findInput(inputs, this.names.to)
+        this.currencies = await getCurrencies()
+        const currencyReceivedIn = findInput(inputs, this.names.currencyReceived)
+        const currencySentIn = findInput(inputs, this.names.currencySent)
+        const options = arrSort(
+            this.currencies.map(({ currency, nameInLanguage, ISO }) => ({
+                description: (
+                    <span className='description' style={{ fontSize: '75%' }}>
+                        {nameInLanguage}
+                    </span>
+                ),
+                key: ISO,
+                text: currency,
+                value: ISO
+            })),
+            'text'
+        )
+        currencyReceivedIn.options = options
+        currencySentIn.options = options
+        values[this.names.currencyReceived] = rxSelectedCurrency.value
+        values[this.names.currencySent] = rxSelectedCurrency.value
+        fillValues(inputs, values)
+        findInput(inputs, this.names.txFee).content = this.getTxFeeEl()
+        this.setState({ inputs })
+
+        this.subscriptions.selectedCurency = rxSelectedCurrency.subscribe(v => currencySentIn.rxValue.next(v))
         // change value when selected address changes
-        this.subscriptions.selected = rxSelected.subscribe(address => {
-            fromIn.bond.changed(address)
-            fromIn.message = !address ? '' : {
-                content: (
-                    <Balance {...{
-                        address,
-                        emptyMessage: texts.loadingBalance + '...',
-                        key: 'XTX',
-                        prefix: `${wordsCap.balance}: `,
-                        unitDisplayed: currencyDefault,
-                    }} />
-                )
-            }
-            this.setState({ inputs })
-        })
+        this.subscriptions.selected = rxSelected.subscribe(v => fromIn.rxValue.next(v))
         // re-/populate options if identity list changes
         this.subscriptions.identities = rxIdentities.subscribe(map => {
             const options = Array.from(map).map(([address, { name }]) => ({
@@ -179,9 +264,6 @@ export default class Transfer extends Component {
             )
             this.setState({ inputs })
         })
-
-        fillValues(inputs, values)
-        this.setState({ inputs })
     }
 
     componentWillUnmount() {
@@ -195,64 +277,222 @@ export default class Transfer extends Component {
         this.setState({ inputs })
     }
 
-    handleSubmit = (_, { amount, from, to }) => {
-        const { denomination } = this.state
-        const { name } = partners.get(to)
-        // amount in transactions
-        const amountXTX = amount * Math.pow(10, denominations[denomination])
-        const description = [
-            `${wordsCap.sender}: ${findIdentity(from).name}`,
-            `${wordsCap.recipient}: ${getAddressName(to)}`,
-            `${wordsCap.amount}: ${amount} ${currencyDefault}`,
-        ].join('\n')
-        const then = (success, resultOrError) => {
-            if (!success) return this.setMessage(resultOrError)
-            this.setMessage(null, resultOrError, name, amountXTX)
-            this.clearForm()
-        }
-        this.setMessage()
+    getTxFeeEl = feeXTX => {
+        const { values } = this.state
+        const currentSent = values[this.names.currencySent]
 
+        return (
+            <Text EL='div' style={{ margin: `${feeXTX ? '-' : ''}15px 0 15px 3px` }}>
+                {feeXTX && (
+                    <Currency {...{
+                        prefix: `${textsCap.includesTxFee} `,
+                        value: feeXTX,
+                        unitDisplayed: currentSent,
+                    }} />
+                )}
+                <div style={{
+                    fontSize: 32,
+                    paddingTop: !feeXTX ? 0 : 15,
+                    textAlign: 'center',
+                }}>
+                    <Icon {...{ name: 'exchange', rotated: 'counterclockwise' }} />
+                </div>
+            </Text>
+        )
+    }
+
+    handleAmountReceivedChange = async (_, values) => {
+        const amountReceived = values[this.names.amountReceived]
+        const currencyReceived = values[this.names.currencyReceived]
+        const from = values[this.names.from]
+        const to = values[this.names.to]
+        const valid = isValidNumber(amountReceived)
+        const identity = getIdentity(from)
+        const { inputs, submitDisabled } = this.state
+        const amountIn = findInput(inputs, this.names.amountReceived)
+        const amountGroupIn = findInput(inputs, this.names.amountReceivedGroup)
+        const amountSentIn = findInput(inputs, this.names.amountSent)
+        const txFeeIn = findInput(inputs, this.names.txFee)
+        amountIn.loading = valid
+        amountIn.invalid = false
+        submitDisabled.loadingAmount = valid
+        amountGroupIn.message = null
+        this.setState({ inputs, submitDisabled })
+        if (!valid) return
+
+        const res = await convertTo(
+            amountReceived,
+            currencyReceived,
+            currencyDefault,
+        )
+        this.amountXTX = res[0]
+        const resAmountSent = await convertTo(
+            this.amountXTX,
+            currencyDefault,
+            rxSelectedCurrency.value,
+        )
+        const { api } = await getConnection()
+        const [balance, locks] = await query(api.queryMulti, [[
+            [api.query.balances.freeBalance, from],
+            [api.query.balances.locks, from]
+        ]])
+        const freeBalance = balance - locks.reduce((sum, x) => sum + x.amount, 0)
+        this.fee = await getTxFee(
+            api,
+            from,
+            await api.tx.balances.transfer(to || from, this.amountXTX),
+            identity.uri,
+        )
+        txFeeIn.content = this.getTxFeeEl(this.fee)
+        const total = this.fee + this.amountXTX
+        const gotFund = freeBalance - total > 0
+        submitDisabled.loadingAmount = false
+        amountIn.invalid = !gotFund
+        amountIn.loading = false
+        amountIn.icon = gotFund ? 'check' : 'exclamation circle'
+        amountIn.iconPosition = 'left'
+        amountGroupIn.message = gotFund ? null : {
+            content: textsCap.insufficientBalance,
+            status: 'error',
+        }
+
+        amountSentIn.rxValue.next(resAmountSent[1])
+        this.setState({ inputs, submitDisabled })
+    }
+
+    handleAmountReceivedInvalid = () => {
+        const { inputs } = this.state
+        const amountReceivedIn = findInput(inputs, this.names.amountReceived)
+        const amountReceivedGrpIn = findInput(inputs, this.names.amountReceivedGroup)
+        const amountSentIn = findInput(inputs, this.names.amountSent)
+        amountSentIn.rxValue.next('')
+        amountReceivedIn.icon = 'money'
+        amountReceivedGrpIn.message = null
+        this.setState({ inputs })
+    }
+
+    handleCurrencyReceivedChange = (_, values) => {
+        if (!this.currencies) return
+        const { inputs } = this.state
+        const amountReceived = values[this.names.amountReceived]
+        const currencyReceived = values[this.names.currencyReceived]
+        const amountReceivedIn = findInput(inputs, this.names.amountReceived)
+        const currencyObj = this.currencies.find(x => x.ISO === currencyReceived) || {}
+        amountReceivedIn.decimals = parseInt(currencyObj.decimals || 0)
+        this.setState({ inputs })
+        if (!isValidNumber(amountReceived)) return
+        amountReceivedIn.rxValue.next('')
+        amountReceivedIn.rxValue.next(amountReceived)
+    }
+
+    handleSubmit = (_, values) => {
+        const amountReceived = values[this.names.amountReceived]
+        const currencyReceived = values[this.names.currencyReceived]
+        const from = values[this.names.from]
+        const to = values[this.names.to]
+        const toSelf = getIdentity(to)
+        const userId = !toSelf && (getPartner(to) || {}).userId
+        const description = [
+            `${textsCap.sender}: ${getIdentity(from).name}`,
+            `${textsCap.recipient}: ${getAddressName(to)}`,
+            `${textsCap.amount}: ${amountReceived} ${currencyReceived}`,
+        ]
         const queueProps = queueables.balanceTransfer(
             from,
             to,
-            amount,
-            { description, title: texts.queueTitle, then },
+            this.amountXTX,
+            {
+                description: description.join('\n'),
+                title: textsCap.queueTitle,
+                next: !userId ? null : {
+                    args: [
+                        [userId],
+                        TRANSFER_TYPE,
+                        null,
+                        'transfered funds',
+                        {
+                            addressFrom: from,
+                            addressTo: to,
+                            amountXTX: this.amountXTX,
+                        },
+                    ],
+                    func: 'notify',
+                    silent: true,
+                    type: QUEUE_TYPES.CHATCLIENT,
+                },
+                then: (success, resultOrError) => {
+                    if (!success) return this.setPostSubmitMessage(resultOrError)
+                    this.setPostSubmitMessage(null, resultOrError, description)
+                    this.clearForm()
+                },
+            },
         )
-        addToQueue(queueProps)
+
+        confirm({
+            onConfirm: () => this.setPostSubmitMessage() | addToQueue(queueProps),
+            size: 'mini',
+        })
+
     }
 
-    // returns the min value acceptable for the selected denomination
-    getAmountMin = denomination => {
-        const n = denominations[denomination] || 0
-        return Math.pow(10, -n).toFixed(n)
-    }
-
-    setMessage = (err, result = [], recipientName, amount) => {
+    setPostSubmitMessage = (err, result = [], description) => {
+        const { submitDisabled } = this.state
         const [hash] = result
-        const inProgress = !err && !hash
-        const { denomination } = this.state
+        const submitInProgress = !err && !hash
         let content = ''
-        let header = texts.submitInprogressHeader
+        let header = textsCap.submitInprogressHeader
         let status = 'loading'
-        if (!inProgress) {
-            content = err ? `${err}` : (
+        if (!submitInProgress) {
+            content = err ? `${err}` : description && (
                 <ul style={{ listStyleType: 'none', margin: 0, paddingLeft: 0 }}>
-                    <li>{wordsCap.recipient}: {recipientName}</li>
-                    <li>{wordsCap.amount}: {amount} {denomination}</li>
-                    {/* <li>{texts.txFee}: {}</li> */}
+                    {description.map((content, i) => <li key={i}>{content}</li>)}
                 </ul>
             )
-            header = err ? texts.submitErrorHeader : texts.submitSuccessHeader
+            header = err ? textsCap.submitErrorHeader : textsCap.submitSuccessHeader
             status = err ? 'error' : 'success'
         }
-
+        // submitDisabled.submission = submitInProgress
         this.setState({
-            message: { content, header, showIcon: true, status },
-            submitDisabled: inProgress,
+            message: { content, header, icon: true, status },
+            submitDisabled,
+            submitInProgress,
         })
     }
 
-    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
+    render = () => {
+        const { inputs, values } = this.state
+        const address = rxSelected.value
+        const currencyReceived = values[this.names.currencyReceived]
+        const currencySent = rxSelectedCurrency.value
+        const dualBalance = currencyReceived && currencyReceived !== currencySent
+        if (this.address !== address || this.curs !== currencyReceived + currencySent) {
+            this.curs = currencyReceived + currencySent
+            this.address = address
+            const fromIn = findInput(inputs, this.names.from)
+            fromIn.label = !address ? undefined : (
+                <span>
+                    {textsCap.payerIdentity} (
+                    <Balance {...{
+                        address,
+                        emptyMessage: textsCap.loadingBalance + '...',
+                        prefix: `${textsCap.availableBalance}: `,
+                        unitDisplayed: currencySent,
+                        suffix: !dualBalance ? '' : (
+                            <Balance {...{
+                                address,
+                                prefix: ' | ',
+                                showDetailed: null,
+                                unitDisplayed: currencyReceived,
+                            }} />
+                        )
+                    }} />
+                    )
+                </span>
+            )
+        }
+
+        return <FormBuilder {...{ ...this.props, ...this.state }} />
+    }
 }
 
 Transfer.propTypes = {
@@ -260,8 +500,40 @@ Transfer.propTypes = {
         amount: PropTypes.number,
         from: PropTypes.string,
         to: PropTypes.string,
+        currency: PropTypes.string,
     })
 }
 Transfer.defaultProps = {
-    inputsDisabled: ['from']
+    inputsDisabled: ['from'],
+    header: textsCap.queueTitle,
+    size: 'tiny',
+    submitText: textsCap.send,
 }
+
+// set transfer notificaton item view handler
+setItemViewHandler(
+    TRANSFER_TYPE,
+    null,
+    (id, notification = {}, { senderIdBtn }) => {
+        const { data = {} } = notification
+        const { addressFrom, addressTo, amountXTX } = data
+        const identity = getIdentity(addressTo)
+        if (!identity || !isValidNumber(amountXTX)) return removeNotif(id)
+
+        return {
+            icon: 'money bill alternate outline',
+            content: (
+                <div>
+                    {senderIdBtn} {textsCap.transferedFunds}
+                    <Currency {...{
+                        EL: 'div',
+                        prefix: <b>{textsCap.amount}: </b>,
+                        value: amountXTX,
+                    }} />
+                    <div><b>{textsCap.payerIdentity}: </b>{getAddressName(addressFrom)}</div>
+                    <div><b>{textsCap.yourIdentity}: </b>{identity.name}</div>
+                </div>
+            ),
+        }
+    },
+)

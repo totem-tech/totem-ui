@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { isValidNumber, isFn, isDefined } from '../utils/utils'
-import { round } from '../utils/number'
-import { convertTo, currencyDefault, useSelected, getCurrencies } from '../services/currency'
+import { convertTo, currencyDefault, rxSelected } from '../services/currency'
+import { useRxSubject } from '../services/react'
 
 export const Currency = props => {
     let {
@@ -11,14 +11,16 @@ export const Currency = props => {
         EL,
         emptyMessage,
         onChange,
+        onClick,
         prefix,
         style,
         suffix,
+        title,
         unit,
         unitDisplayed,
         value,
     } = props
-    const [selected] = !unit && !unitDisplayed ? [] : useSelected()
+    const [selected] = !unit && !unitDisplayed ? [] : useRxSubject(rxSelected)
     unit = unit || selected
     unitDisplayed = unitDisplayed || selected
     const isSame = unit === unitDisplayed
@@ -31,15 +33,14 @@ export const Currency = props => {
         const convert = async (value) => {
             if (!mounted) return
             try {
-                valueConverted = !value || isSame ? value || 0 : await convertTo(value, unit, unitDisplayed)
+                const [_, rounded] = await convertTo(
+                    value || 0,
+                    unit,
+                    unitDisplayed,
+                    decimalPlaces,
+                )
                 error = null
-                if (!isValidNumber(decimalPlaces)) {
-                    const currencies = await getCurrencies()
-                    let { decimals } = currencies.find(x => x.ISO === unitDisplayed) || {}
-                    decimals = parseInt(decimals)
-                    decimalPlaces = isValidNumber(decimals) ? decimals : 8
-                }
-                valueConverted = round(valueConverted, decimalPlaces)
+                valueConverted = rounded
             } catch (err) {
                 error = err
                 valueConverted = 0
@@ -58,13 +59,14 @@ export const Currency = props => {
     }, [unit, unitDisplayed, value])
 
     const content = !isDefined(valueConverted) ? (emptyMessage || '') : (
-        `${prefix || ''}${valueConverted} ${unitDisplayed}${suffix || ''}`
+        <span>{prefix || ''}{valueConverted} {unitDisplayed}{suffix || ''}</span>
     )
     return (
         <EL {...{
             className,
+            onClick,
             style: { color: error ? 'red' : undefined, ...style },
-            title: error ? `${error}` : (
+            title: error ? `${error}` : title || (
                 !isDefined(value) || isSame ? '' : `${value || 0} ${unit}`
             ),
         }}>
@@ -83,9 +85,11 @@ Currency.propTypes = {
     ]),
     // @onChange is invoked whenever the account balance/value changes. 
     onChange: PropTypes.func,
+    onClick: PropTypes.func,
     prefix: PropTypes.any,
     style: PropTypes.object,
     suffix: PropTypes.any,
+    title: PropTypes.any,
     unit: PropTypes.string,
     // Display currency. Default: selected currency from currency service
     unitDisplayed: PropTypes.string,

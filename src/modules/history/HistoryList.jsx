@@ -1,22 +1,14 @@
 import React, { Component } from 'react'
 import { Button, Icon } from 'semantic-ui-react'
-import DataTable from '../../components/DataTable'
-import FormBuilder from '../../components/FormBuilder'
 import { format } from '../../utils/time'
-import { clearClutter, isValidNumber, isObj, isDefined, copyToClipboard, textEllipsis } from '../../utils/utils'
-// services
-import { clearAll, remove as removeHistoryItem, rxHistory, getAll } from './history'
+import { clearClutter, textEllipsis } from '../../utils/utils'
+import DataTable from '../../components/DataTable'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
-import { getAddressName } from '../../services/partner'
-import {
-    getById as getQueueItemById,
-    remove as removeQueueItem,
-    statuses,
-    statusTitles,
-    checkComplete,
-} from '../../services/queue'
+import { getById as getQueueItemById, remove as removeQueueItem, statuses, checkComplete } from '../../services/queue'
 import { unsubscribe } from '../../services/react'
+import { getAddressName } from '../partner/partner'
+import { clearAll, remove as removeHistoryItem, rxHistory, getAll } from './history'
 import HistoryItemDetailsForm from './HistoryItemDetailsForm'
 
 const textsCap = translated({
@@ -200,55 +192,6 @@ export default class HistoryList extends Component {
         })
         this.setState({ data: history })
     }
-
-    // showDetails = (item, id) => {
-    //     const errMsg = `${item.message}` // in case message is an Error object
-    //     const { before, after } = isObj(item.balance) ? item.balance : {}
-    //     const balanceExtProps = { action: { content: 'XTX' } }
-
-    //     const inputDefs = [
-    //         item.txId && [textsCap.txId, item.txId, 'text', {
-    //             action: {
-    //                 icon: 'copy',
-    //                 onClick: () => copyToClipboard(item.txId),
-    //             }
-    //         }],
-    //         // title describes what the task is about
-    //         [textsCap.action, item.title],
-    //         // description about the task that is displayed in the queue toast message
-    //         [textsCap.description, item.description, 'textarea'],
-    //         [textsCap.status, statusTitles[item.status] || textsCap.pendingExecution],
-    //         // show error message only if available
-    //         errMsg && [textsCap.errorMessage, errMsg, 'textarea', { invalid: item.status === 'error' }],
-    //         // blockchain or chat client function path in string format
-    //         [textsCap.function, item.action],
-    //         // user's identity that was used to create the transaction
-    //         item.identity && [textsCap.identity, item.identity],
-    //         [textsCap.timestamp, format(item.timestamp, true, true)],
-    //         // [textsCap.groupId, item.groupId], // ID of the parent (rootTask) queue item
-    //         // [textsCap.taskId, id], // ID of the child/parent(rootTask) queue item
-    //         isValidNumber(before) && [textsCap.balanceBeforeTx, before, 'number', balanceExtProps],
-    //         isValidNumber(after) && [textsCap.balanceAfterTx, after, 'number', balanceExtProps],
-    //         [textsCap.dataSent, JSON.stringify(item.data, null, 4), 'textarea'],
-    //         isDefined(item.result) && [textsCap.dataReceived, JSON.stringify(item.result, null, 4), 'textarea']
-    //     ]
-
-    //     showForm(FormBuilder, {
-    //         closeText: textsCap.close,
-    //         header: textsCap.techDetails,
-    //         inputs: inputDefs.filter(Boolean)
-    //             .map(([label, value, type = 'text', extraProps = {}], i) => ({
-    //                 ...extraProps,
-    //                 label,
-    //                 name: `${i}-${label}`,
-    //                 readOnly: true,
-    //                 type,
-    //                 value,
-    //             })),
-    //         size: 'tiny',
-    //         submitText: null,
-    //     })
-    // }
 
     render() {
         const { data, topLeftMenu } = this.state

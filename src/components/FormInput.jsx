@@ -1,55 +1,38 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Accordion, Button, Dropdown, Form, Input, TextArea } from 'semantic-ui-react'
+import { Accordion, Button, Dropdown, Form, Icon, Input, TextArea } from 'semantic-ui-react'
 import PromisE from '../utils/PromisE'
-import {
-	deferred,
-	hasValue,
-	isArr,
-	isBond,
-	isDefined,
-	isFn,
-	isObj,
-	isStr,
-	isValidNumber,
-	objWithoutKeys,
-	searchRanked,
-	isBool,
-} from '../utils/utils'
+import { deferred, hasValue, isArr, isFn, isObj, isStr, objWithoutKeys, searchRanked, isBool } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
 import Message from './Message'
+import Invertible from './Invertible'
 // Custom Inputs
 import CheckboxGroup from './CheckboxGroup'
 import UserIdInput from './UserIdInput'
+import DateInput from './DateInput'
+//
 import { translated } from '../services/language'
 import { unsubscribe } from '../services/react'
 
-const [texts] = translated({
-	email: 'Please enter a valida email address',
-	fileType: 'Invalid file type selected',
-	integer: 'Number must be an integer (no decimals)',
-	max: 'Number must be smaller than or equal to',
-	maxLengthNum: 'Maximum number of digits allowed',
-	maxLengthText: 'Maximum number of characters allowed',
-	min: 'Number must be greater or equal',
-	minLengthNum: 'Minimum number of digits required',
-	minLengthText: 'Minimum number of characters required',
-	number: 'Please enter a valid number',
-	required: 'Required field',
-})
-const VALIDATION_MESSAGES = Object.freeze({
-	integer: texts.integer,
-	max: max => `${texts.max} ${max}`,
-	maxLength: (value, max) => `${isStr(value) ? texts.maxLengthText : texts.maxLengthNum}: ${max}`,
-	min: min => `${texts.min} ${min}`,
-	minLength: (value, min) => `${isStr(value) ? texts.minLengthText : texts.minLengthNum}: ${min}`,
-	number: texts.number,
-	required: texts.required,
-})
+const textsCap = translated({
+	decimals: 'maximum number of decimals allowed',
+	email: 'please enter a valid email address',
+	fileType: 'invalid file type selected',
+	integer: 'please enter a number without decimals',
+	max: 'number must be smaller than or equal to',
+	maxLengthNum: 'maximum number of digits allowed',
+	maxLengthText: 'maximum number of characters allowed',
+	min: 'number must be greater or equal',
+	minLengthNum: 'minimum number of digits required',
+	minLengthText: 'minimum number of characters required',
+	number: 'please enter a valid number',
+	required: 'required field',
+
+	readOnlyField: 'read only field',
+}, true)[1]
 const validationTypes = Object.values(TYPES)
 // properties exclude from being used in the DOM
 const NON_ATTRIBUTES = Object.freeze([
-	'bond',
 	'collapsed',
 	'defer',
 	'elementRef',
@@ -67,19 +50,21 @@ const NON_ATTRIBUTES = Object.freeze([
 	'useInput',
 	'validate',
 	'rxValue',
+	'width',
+	'onInalid',
+	'customMessages',
 ])
 export const nonValueTypes = Object.freeze(['button', 'html'])
 
 export class FormInput extends Component {
-	constructor(props) {
+	constructor(props = {}) {
 		super(props)
 
-		const { bond, defer } = props
-		this.bond = isBond(bond) ? bond : undefined
-		this.state = { message: undefined }
-		if (defer !== null) {
-			this.setMessage = deferred(this.setMessage, defer)
+		const { defer } = props
+		this.state = {
+			message: undefined,
 		}
+		this.setMessage = defer !== null ? deferred(this.setMessage, defer) : this.setMessage
 
 		this.originalSetState = this.setState
 		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
@@ -89,32 +74,29 @@ export class FormInput extends Component {
 		this._mounted = true
 		this.subscriptions = {}
 		const { rxValue } = this.props
-		const triggerChange = value => setTimeout(() => this.handleChange({}, { ...this.props, value }))
-		if (this.bond) {
-			this.tieId = this.bond.tie(triggerChange)
-		}
-		if (isObj(rxValue) && isFn(rxValue.subscribe)) {
-			this.subscriptions.rxValue = rxValue.subscribe(triggerChange)
-		}
+		if (!isObj(rxValue) || !isFn(rxValue.subscribe)) return
+		this.subscriptions.rxValue = rxValue.subscribe(value => {
+			this.handleChange({}, { ...this.props, value })
+		})
 	}
 
 	componentWillUnmount = () => {
 		this._mounted = false
-		this.bond && this.bond.untie(this.tieId)
 		unsubscribe(this.subscriptions)
 	}
 
 	handleChange = (event = {}, data = {}) => {
 		const {
+			customMessages,
 			falseValue: falseValue = false,
 			integer,
 			onChange,
 			required,
+			rxValue,
 			trueValue: trueValue = true,
 			type,
 			validate,
 		} = this.props
-
 		// for custom input types (eg: UserIdInput)
 		if (data.invalid) return isFn(onChange) && onChange(event, data, this.props)
 
@@ -124,7 +106,7 @@ export class FormInput extends Component {
 		const typeLower = (type || '').toLowerCase()
 		const isCheck = ['checkbox', 'radio'].indexOf(typeLower) >= 0
 		const hasVal = hasValue(isCheck ? data.checked : data.value)
-		const customMsgs = { ...texts }
+		const customMsgs = { ...textsCap, ...customMessages }
 		let errMsg, validatorConfig
 
 		if (hasVal && !errMsg) {
@@ -134,26 +116,36 @@ export class FormInput extends Component {
 					// Sematic UI's Checkbox component only supports string and number as value
 					// This allows support for any value types
 					data.value = data.checked ? trueValue : falseValue
-					if (required && !data.checked) errMsg = VALIDATION_MESSAGES.required
+					if (required && !data.checked) errMsg = textsCap.required
+					break
+				case 'date':
+					validatorConfig = { type: TYPES.date }
 					break
 				case 'number':
 					validatorConfig = { type: integer ? TYPES.integer : TYPES.number }
 					data.value = !data.value ? data.value : parseFloat(data.value)
-					customMsgs.lengthMax = texts.maxLengthNum
-					customMsgs.lengthMin = texts.minLengthNum
+					customMsgs.lengthMax = textsCap.maxLengthNum
+					customMsgs.lengthMin = textsCap.minLengthNum
 					break
 				case 'hex':
 					validatorConfig = { type: TYPES.hex }
 				case 'text':
 				case 'textarea':
 					validatorConfig = validatorConfig || { type: TYPES.string }
-					customMsgs.lengthMax = texts.maxLengthText
-					customMsgs.lengthMin = texts.minLengthText
+					customMsgs.lengthMax = textsCap.maxLengthText
+					customMsgs.lengthMin = textsCap.minLengthText
 			}
 		}
 
-		if (!errMsg && validationTypes.includes(typeLower) || validatorConfig) {
-			errMsg = validator.validate(data.value, { ...this.props, ...validatorConfig }, customMsgs)
+		if ((!errMsg && hasVal && validationTypes.includes(typeLower)) || validatorConfig) {
+			errMsg = validator.validate(
+				data.value,
+				{
+					...this.props,
+					...validatorConfig,
+				},
+				customMsgs,
+			)
 		}
 
 		let message = !errMsg ? null : { content: errMsg, status: 'error' }
@@ -161,12 +153,8 @@ export class FormInput extends Component {
 			data.invalid = !!errMsg
 			isFn(onChange) && onChange(event, data, this.props)
 			this.setMessage(message)
-
-			if (isBond(this.bond) && !data.invalid) this.bond._value = data.value
 		}
 		if (message || !isFn(validate)) return triggerChange()
-
-		!isFn(validate) && isFn(onChange) && onChange(event, data, this.props)
 
 		const handleValidate = vMsg => {
 			if (vMsg === true) {
@@ -174,10 +162,8 @@ export class FormInput extends Component {
 				errMsg = true
 				return triggerChange()
 			}
-			message = !vMsg && !isStr(vMsg) && !React.isValidElement(vMsg) ? vMsg : {
-				content: vMsg,
-				status: 'error',
-			}
+			const isMsg = !vMsg && !isStr(vMsg) && !React.isValidElement(vMsg)
+			message = isMsg ? vMsg : { content: vMsg, status: 'error' }
 			errMsg = message && message.status === 'error' ? message.content : errMsg
 			triggerChange()
 		}
@@ -191,7 +177,6 @@ export class FormInput extends Component {
 	render() {
 		const {
 			accordion,
-			bond,
 			content,
 			elementRef,
 			error,
@@ -203,28 +188,30 @@ export class FormInput extends Component {
 			message: externalMsg,
 			name,
 			required,
+			rxValue,
 			styleContainer,
 			type,
 			useInput: useInputOrginal,
 			width,
 		} = this.props
-		if (hidden) return ''
 		let useInput = useInputOrginal
 		const { message: internalMsg } = this.state
 		const message = internalMsg || externalMsg
 		let hideLabel = false
 		let inputEl = ''
+		if (hidden) return ''
 		// Remove attributes that are used by the form or Form.Field but
 		// shouldn't be used or may cause error when using with inputEl
-		let attrs = objWithoutKeys(this.props, NON_ATTRIBUTES)
+		let attrs = objWithoutKeys({ ...this.props, key: name }, NON_ATTRIBUTES)
 		attrs.ref = elementRef
 		attrs.onChange = this.handleChange
 		let isGroup = false
 		const typeLC = type.toLowerCase()
+		const editable = !attrs.readOnly && !attrs.disabled
 
 		switch (typeLC) {
 			case 'button':
-				inputEl = <Button {...attrs} />
+				inputEl = <Button as='a' {...attrs} />
 				break
 			case 'checkbox':
 			case 'radio':
@@ -232,24 +219,32 @@ export class FormInput extends Component {
 				attrs.type = 'checkbox'
 				delete attrs.value
 				hideLabel = true
-				inputEl = <Form.Checkbox {...attrs} label={label} />
+				inputEl = <Checkbox {...attrs} label={label} />
 				break
 			case 'checkbox-group':
 			case 'radio-group':
-				attrs.bond = bond
+				attrs.rxValue = rxValue
 				attrs.inline = inline
 				attrs.radio = typeLC === 'radio-group' ? true : attrs.radio
 				inputEl = <CheckboxGroup {...attrs} />
 				break
+			case 'date':
+			case 'dateinput': 
+				attrs.rxValue = rxValue
+				inputEl = <DateInput {...attrs} />
+				break
 			case 'dropdown':
-				if (isArr(attrs.search)) {
-					attrs.search = searchRanked(attrs.search)
-				}
+				attrs.inline = inline
+				// if number of options is higher than 50 and if lazyLoad is disabled, can slowdown FormBuilder
+				attrs.lazyLoad = isBool(attrs.lazyLoad) ? attrs.lazyLoad : true
+				attrs.search = isArr(attrs.search) ? searchRanked(attrs.search) : attrs.search
+				attrs.style = { maxWidth: '100%', minWidth: '100%', ...attrs.style }
 				inputEl = <Dropdown {...attrs} />
 				break
 			case 'group':
+				// NB: if `widths` property is used `unstackable` property is ignored by Semantic UI!!!
 				isGroup = true
-				inputEl = attrs.inputs.map((subInput, i) => <FormInput key={i} {...subInput} />)
+				inputEl = attrs.inputs.map((props, i) => <FormInput key={attrs.name + i} {...props} />)
 				break
 			case 'hidden':
 				hideLabel = true
@@ -263,9 +258,9 @@ export class FormInput extends Component {
 				inputEl = <UserIdInput {...attrs} />
 				break
 			case 'file':
-				delete attrs.value
 				useInput = true
 			default:
+				attrs.value = !hasValue(attrs.value) ? '' : attrs.value //forces inputs to be controlled
 				attrs.fluid = !useInput ? undefined : attrs.fluid
 				attrs.label = inlineLabel || attrs.label
 				const El = useInput ? Input : Form.Input
@@ -277,37 +272,43 @@ export class FormInput extends Component {
 				error={(message && message.status === 'error') || !!error || !!invalid}
 				required={required}
 				style={styleContainer}
+				title={editable ? undefined : textsCap.readOnlyField}
 				width={width}
 			>
-				{!hideLabel && label && (
-					<label htmlFor={name}>
-						{label}
-					</label>
-				)}
+				{!hideLabel && label && <label htmlFor={name}>{label}</label>}
 				{inputEl}
 				{message && <Message {...message} />}
 			</Form.Field>
 		)
 
 		let groupEl = (
-			<div>
+			<React.Fragment>
 				<Form.Group {...{
 					className: 'form-group',
 					...objWithoutKeys(attrs, ['inputs']),
-					style: { ...styleContainer, ...attrs.style },
+					style: {
+						// margin: '0px -5px 15px -5px',
+						...styleContainer,
+						...attrs.style,
+					},
 				}}>
 					{inputEl}
 				</Form.Group>
-				{message && <Message {...message} />}
-			</div>
+				<Message {...message} />
+			</React.Fragment>
 		)
-
 		if (!isObj(accordion)) return groupEl
+
 		// use accordion if label is supplied
 		let { collapsed } = this.state
 		if (!isBool(collapsed)) collapsed = accordion.collapsed
+
 		return (
-			<Accordion {...objWithoutKeys(accordion, NON_ATTRIBUTES)} style={{ marginBottom: 15, ...accordion.style }}>
+			<Invertible {...{
+				El: Accordion,
+				...objWithoutKeys(accordion, NON_ATTRIBUTES),
+				style:{ marginBottom: 15, ...accordion.style },
+			}}>
 				<Accordion.Title
 					active={!collapsed}
 					content={accordion.title || label}
@@ -318,12 +319,11 @@ export class FormInput extends Component {
 					}}
 				/>
 				<Accordion.Content {...{ active: !collapsed, content: groupEl }} />
-			</Accordion>
+			</Invertible>
 		)
 	}
 }
 FormInput.propTypes = {
-	bond: PropTypes.any,
 	// Delay, in miliseconds, to display built-in and `validate` error messages
 	// Set `defer` to `null` to prevent using deferred mechanism
 	defer: PropTypes.number,
@@ -358,17 +358,20 @@ FormInput.propTypes = {
 	useInput: PropTypes.bool,
 	message: PropTypes.object,
 	name: PropTypes.string.isRequired,
-	label: PropTypes.string,
+	label: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
 	onChange: PropTypes.func,
 	placeholder: PropTypes.string,
 	readOnly: PropTypes.bool,
+	rxValue: PropTypes.shape({
+		subscribe: PropTypes.func.isRequired,
+	}),
 	// element ref
 	elementRef: PropTypes.any,
 	required: PropTypes.bool,
 	slider: PropTypes.bool, // For checkbox/radio
 	toggle: PropTypes.bool, // For checkbox/radio
 	value: PropTypes.any,
-	onValidate: PropTypes.func,//????
+	onValidate: PropTypes.func, //????
 	width: PropTypes.number,
 }
 FormInput.defaultProps = {
@@ -377,6 +380,5 @@ FormInput.defaultProps = {
 	type: 'text',
 	width: 16,
 }
-
 
 export default React.memo(FormInput)

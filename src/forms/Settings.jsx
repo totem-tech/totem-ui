@@ -87,7 +87,8 @@ export default class Settings extends Component {
                     label: textsCap.chatLimitLabel,
                     name: 'chatMsgLimit',
                     onChange: this.handleChatLimitChange,
-                    options: [10, 50, 100, 500].map((limit, i) => ({ //0 for unlimited
+                    //0 for unlimited
+                    options: [10, 50, 100, 200, 300, 500].map((limit, i) => ({
                         key: i,
                         text: limit || textsCap.unlimited,
                         value: limit,
@@ -159,7 +160,7 @@ export default class Settings extends Component {
             this.setInputMessage('languageCode', {
                 content: `${err}`,
                 header: textsCap.error,
-                showIcon: true,
+                icon: true,
                 status: 'error',
             })
         })

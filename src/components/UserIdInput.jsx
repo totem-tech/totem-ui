@@ -1,23 +1,24 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import { BehaviorSubject } from 'rxjs'
+import { arrUnique, isFn, objWithoutKeys, arrSort, isStr } from '../utils/utils'
 import FormInput from './FormInput'
-import { arrUnique, isFn, objWithoutKeys, textCapitalize, arrSort, isStr } from '../utils/utils'
 import { getChatUserIds } from '../modules/chat/chat'
-import client, { getUser } from '../services/chatClient'
+import client, { getUser } from '../modules/chat/ChatClient'
 import { translated } from '../services/language'
-import partners from '../services/partner'
+import partners from '../modules/partner/partner'
 
-const [texts, textsCap] = translated({
+const textsCap = translated({
     add: 'add',
-    enterUserId: 'Enter User ID',
-    enterUserIds: 'Enter User ID(s)',
-    fromChatHistory: 'From recent chats',
-    invalidUserId: 'Invalid User ID',
-    noResultsMessage: 'Type a User ID and press enter to add',
+    enterUserId: 'enter user ID',
+    enterUserIds: 'enter user IDs',
+    fromChatHistory: 'from recent chats',
+    invalidUserId: 'invalid user ID',
+    noResultsMessage: 'type a User ID and press enter to add',
     partner: 'partner',
-    validatingUserId: 'Checking if User ID exists...',
-    ownIdEntered: 'Please enter an ID other than your own',
-}, true)
+    validatingUserId: 'checking if user ID exists...',
+    ownIdEntered: 'please enter an ID other than your own',
+}, true)[1]
 const noAttrs = [
     'excludeOwnId',
     'includeFromChat',
@@ -37,26 +38,35 @@ const invalidIcon = { color: 'red', name: 'warning circle', size: 'large' }
 const validIcon = { color: 'green', name: 'check circle', size: 'large' }
 const userIdRegex = /^[a-z][a-z0-9]+$/
 // removes surrounding whitespaces, removes '@' at the beginning and transforms to lowercase
-export const getRawUserID = userId => {
-    if (!isStr(userId)) return ''
-    userId = userId.trim()
-    return userId.replace('@', '').toLowerCase()
-}
+export const getRawUserID = userId => !isStr(userId) ? '' : userId.trim().replace('@', '').toLowerCase()
 
 export default class UserIdInput extends Component {
     constructor(props) {
         super(props)
 
-        const { allowAdditions, clearable, includePartners, includeFromChat, multiple, options, value } = props
+        let {
+            allowAdditions,
+            clearable,
+            includePartners,
+            includeFromChat,
+            multiple,
+            options,
+            placeholder,
+            rxValue,
+            searchQuery,
+            value,
+        } = props
+        placeholder = placeholder || textsCap.enterUserId
+        rxValue = rxValue || new BehaviorSubject(value || (multiple ? [] : ''))
         let input = {
             defer: null,
             inlineLabel: { icon: { className: 'no-margin', name: 'at' } },
             labelPosition: 'left',
             maxLength: 16,
-            placeholder: texts.enterUserId,
+            placeholder,
+            rxValue,
             type: 'text',
             validate: this.validateTextField,
-            value: '',
             useInput: true,
         }
 
@@ -66,18 +76,18 @@ export default class UserIdInput extends Component {
             allowAdditions,
             clearable,
             multiple: multiple,
-            noResultsMessage: texts.noResultsMessage,
+            noResultsMessage: textsCap.noResultsMessage,
             onAddItem: this.handleAddUser,
             onClose: () => this.setState({ open: false }),
             onOpen: () => this.setState({ open: true }),
             onSearchChange: this.handleSearchChange,
             options: options || [],
-            placeholder: texts.enterUserIds,
+            placeholder,
+            rxValue,
             search: true,
-            searchQuery: props.searchQuery || '',
+            searchQuery,
             selection: true,
             type: 'dropdown',
-            value: multiple ? [] : value,
         }
 
         this.state = {
@@ -121,7 +131,7 @@ export default class UserIdInput extends Component {
                 icon: 'chat',
                 key: id,
                 text: id,
-                title: texts.fromChatHistory,
+                title: textsCap.fromChatHistory,
                 value: id,
             })), 'text')
             options = options.concat(huiOptions)
@@ -149,11 +159,11 @@ export default class UserIdInput extends Component {
         this.setState({
             loading: !isOwnId,
             message: !isOwnId ? undefined : {
-                content: texts.ownIdEntered,
-                showIcon: true,
+                content: textsCap.ownIdEntered,
+                icon: true,
                 status: 'warning'
             },
-            noResultsMessage: isOwnId ? texts.noResultsMessage : texts.validatingUserId,
+            noResultsMessage: isOwnId ? textsCap.noResultsMessage : textsCap.validatingUserId,
             open: !isOwnId,
             searchQuery: '',
             value,
@@ -167,8 +177,8 @@ export default class UserIdInput extends Component {
             const input = this.state
             input.loading = false
             input.message = exists ? undefined : {
-                content: `${texts.invalidUserId}: ${userId}`,
-                showIcon: true,
+                content: `${textsCap.invalidUserId}: ${userId}`,
+                icon: true,
                 status: 'warning',
             }
 
@@ -190,7 +200,7 @@ export default class UserIdInput extends Component {
             isFn(onChange) && onChange(e, { ...data, invalid: false, value })
             this.setState({
                 ...input,
-                noResultsMessage: texts.noResultsMessage,
+                noResultsMessage: textsCap.noResultsMessage,
                 open: exists && multiple,
                 value,
                 searchQuery: '',
@@ -232,7 +242,7 @@ export default class UserIdInput extends Component {
         }
         if (isOwnId || value.length < 3) {
             triggerChagne(true)
-            return isOwnId ? texts.ownIdEntered : true
+            return isOwnId ? textsCap.ownIdEntered : true
         }
         if (!userIdRegex.test(value)) {
             triggerChagne(true)
@@ -284,10 +294,4 @@ UserIdInput.defaultProps = {
     includePartners: false,
     multiple: false,
     newUser: false,
-}
-
-const styles = {
-    optionCategory: {
-        background: 'gray',
-    }
 }
