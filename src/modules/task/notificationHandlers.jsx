@@ -20,6 +20,8 @@ const [texts, textsCap] = translated({
     invoiceDisputeConfirm: 'reject invoice and dispute task?',
     pay: 'pay',
     reject: 'reject',
+    removeNotification: 'remove notification?',
+    removeNotificationDesc: 'You will still be able to see the task in the tasks module',
     task: 'task',
     taskAccept: 'accept task',
     taskAccepted: 'accepted the following task:',
@@ -73,8 +75,9 @@ export const handleAssignmentResponse = async (taskId, fulfillerAddress, accepte
     
     confirm({
         size: 'mini',
-        header: accepted === null
-            ? textsCap.taskIgnore
+        header: accepted === null ? textsCap.removeNotification : undefined,
+        content: accepted === null
+            ? textsCap.removeNotificationDesc
             : accepted
                 ? textsCap.taskAccept
                 : textsCap.taskReject,
@@ -106,7 +109,12 @@ export const handleAssignmentResponse = async (taskId, fulfillerAddress, accepte
  */
 export const handleInvoicedResponse = async (taskId, ownerAddress, accepted, notificationId) => {
     confirm({
-        content: accepted ? textsCap.invoiceAcceptConfirm : textsCap.invoiceDisputeConfirm,
+        header: accepted === null ? textsCap.removeNotification : undefined,
+        content: accepted === null
+            ? textsCap.removeNotificationDesc
+            : accepted
+                ? textsCap.invoiceAcceptConfirm
+                : textsCap.invoiceDisputeConfirm,
         onConfirm: () => {
             if (accepted === null) return remove(notificationId)
             handleUpdateStatus(
