@@ -466,7 +466,7 @@ export default class TaskForm extends Component {
                 const requireConversion = bounty && currency !== currencyDefault
                 // amountXTX
                 result[0] = !requireConversion
-                    ? bounty
+                    ? [bounty, bounty]
                     : await convertTo(bounty, currency, currencyDefault)
                 // user account balance
                 result[1] = await query('api.query.balances.freeBalance', address)
@@ -475,7 +475,7 @@ export default class TaskForm extends Component {
             } catch (e) { reject(e) }
         })
         const handleBountyResult = result => {
-            const amountXTX = Math.ceil((result[0] || [])[0])
+            const amountXTX = result[0][0]
             const balanceXTX = result[1]
             const amountTotalXTX = amountXTX + estimatedTxFee + minBalanceAterTx
             const gotBalance = balanceXTX - amountTotalXTX >= 0
