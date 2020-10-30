@@ -15,7 +15,7 @@ const textsCap = translated({
 }, true)[1]
 
 export const Balance = (props) => {
-    let { address, emptyMessage, lockSeparator, showDetailed, style } = props
+    let { address, emptyMessage, lockSeparator, showDetailed, style, unitDisplayed } = props
     const [showLocked, setShowLocked] = useState(showDetailed)
     const balance = useBalance(address)
     const locks = userLocks(address)
@@ -40,6 +40,7 @@ export const Balance = (props) => {
                     prefix: <span>{lockSeparator}{textsCap.locked}: </span>,
                     value: lockedBalance,
                     unit: currencyDefault,
+                    unitDisplayed,
                 }} />
             )
         }} />
