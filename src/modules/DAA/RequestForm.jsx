@@ -165,8 +165,7 @@ const formInputs = Object.freeze([
     {
         hidden: hideIfKycDone,
         label: textsCap.emailLabel,
-        maxLength: 64,
-        minLength: 3,
+        maxLength: 128,
         name: inputNames.email,
         placeholder: textsCap.emailPlaceholder,
         required: true,
