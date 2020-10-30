@@ -2,31 +2,24 @@ import React, { Component } from 'react'
 import uuid from 'uuid'
 import { Button } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
-import { Bond } from 'oo7'
-import { arrSort, deferred, isObj, isValidNumber, objClean, generateHash, isFn, isHash } from '../../utils/utils'
+import { BehaviorSubject } from 'rxjs'
+import { arrSort, deferred, generateHash, isFn, isHash, isObj, isValidNumber, objClean } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 import { BLOCK_DURATION_SECONDS, blockNumberToTS, format } from '../../utils/time'
-// components
+import { Balance } from '../../components/Balance'
 import Currency from '../../components/Currency'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
-import PartnerForm from '../../forms/Partner'
-// services
 import { getCurrentBlock, hashTypes, query, queueables as bcQueueables } from '../../services/blockchain'
-import {
-    convertTo,
-    currencyDefault,
-    getCurrencies,
-    getSelected as getSelectedCurrency
-} from '../../services/currency'
-import { getSelected } from '../../services/identity'
+import { convertTo, currencyDefault, getCurrencies, getSelected as getSelectedCurrency } from '../../services/currency'
 import { translated } from '../../services/language'
-import partners from '../../services/partner'
-import { queueables } from './task'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import { showForm } from '../../services/modal'
 import { getById } from '../history/history'
+import { find as findIdentity, getSelected } from '../identity/identity'
+import { get as getPartner, getAll as getPartners } from '../partner/partner'
+import PartnerForm from '../partner/PartnerForm'
+import { queueables } from './task'
 import { rxUpdater } from './useTasks'
-import { Balance } from '../../components/Balance'
 
 const textsCap = translated({
     addedToQueue: 'request added to queue',
@@ -42,8 +35,8 @@ const textsCap = translated({
     close: 'close',
     conversionErrorHeader: 'currency conversion failed',
     currency: 'currency',
-    dateForamt: 'MM-DD-YYYY',
-    deadlineLabel: 'deadline',
+    dateForamt: 'YYYY-MM-DD',
+    deadlineLabel: 'deadline to accept task',
     deadlineMinErrorMsg: 'deadline must be at least 48 hours from now',
     dueDateLabel: 'due date',
     dueDateMinErrorMsg: 'due date must be at least 24 hours after deadline',
@@ -64,6 +57,7 @@ const textsCap = translated({
     `,
     minBalanceRequired: 'minimum balance required',
     myself: 'myself',
+    nofityAssignee: 'notify assignee',
     orderTypeLabel: 'order type',
     publishToMarketPlace: 'publish to marketplace',
     taskIdParseError: 'failed to parse Task ID from transaction event data',
@@ -99,6 +93,7 @@ export default class TaskForm extends Component {
             bounty: 'bounty',
             bountyGroup: 'bountyGroup',
             currency: 'currency',
+            dates: 'dates',
             deadline: 'deadline',
             dueDate: 'dueDate',
             description: 'description',
@@ -135,7 +130,7 @@ export default class TaskForm extends Component {
             onSubmit: this.handleSubmit,
             inputs: [
                 {
-                    bond: new Bond(),
+                    rxValue: new BehaviorSubject(),
                     label: textsCap.title,
                     maxLength: 160,
                     minLength: 3,
@@ -143,7 +138,6 @@ export default class TaskForm extends Component {
                     placeholder: textsCap.titlePlaceholder,
                     required: true,
                     type: 'text',
-                    value: '',
                 },
                 {
                     name: this.names.bountyGroup,
@@ -151,7 +145,7 @@ export default class TaskForm extends Component {
                     unstackable: true,
                     inputs: [
                         {
-                            bond: new Bond(),
+                            rxValue: new BehaviorSubject(),
                             label: textsCap.bountyLabel,
                             min: 0, // allows bounty-free tasks
                             name: this.names.bounty,
@@ -160,17 +154,16 @@ export default class TaskForm extends Component {
                             required: true,
                             type: 'number',
                             useInput: true,
-                            value: '',
                             width: 10,
                         },
                         {// hidden type to store bounty in XTX (regardless of display currency selected)
-                            bond: new Bond(),
                             hidden: true,
                             name: this.names.amountXTX,
                             required: true,
+                            rxValue: new BehaviorSubject(0),
                         },
                         { // display currency
-                            bond: new Bond(),
+                            rxValue: new BehaviorSubject(getSelectedCurrency()),
                             label: textsCap.currency,
                             maxLength: 18,
                             name: this.names.currency,
@@ -184,12 +177,12 @@ export default class TaskForm extends Component {
                             },
                             type: 'dropdown',
                             width: 6,
-                            value: getSelectedCurrency(),
+                            // value: getSelectedCurrency(),
                         },
                     ]
                 },
                 {
-                    bond: new Bond(),
+                    rxValue: new BehaviorSubject(false),
                     inline: true,
                     label: textsCap.marketplace,
                     multiple: false,
@@ -204,7 +197,7 @@ export default class TaskForm extends Component {
                     type: 'checkbox-group',
                 },
                 {
-                    bond: new Bond(),
+                    rxValue: new BehaviorSubject(),
                     hidden: values => !values[this.names.isMarket],
                     label: textsCap.assignee,
                     name: this.names.assignee,
@@ -215,50 +208,57 @@ export default class TaskForm extends Component {
                     search: true,
                     type: 'dropdown',
                     validate: this.validateAssignee,
-                    value: '',
                 },
+
                 {
-                    bond: new Bond(),
-                    label: `${textsCap.deadlineLabel} (${textsCap.dateForamt})`,
-                    name: this.names.deadline,
-                    onChange: (_, values) => {
-                        const { taskId } = this.props
-                        let dueDate = values[this.names.dueDate]
-                        const deadline = values[this.names.deadline]
-                        const dueDateIn = findInput(this.state.inputs, this.names.dueDate)
-                        if (!dueDate || !taskId) {
-                            // reset 1 day after deadline if not already set or creating new task
-                            const date = strToDate(deadline)
-                            date.setSeconds(date.getSeconds() + dueDateMinMS / 1000 + 1)
-                            dueDate = format(date).substr(0, 10)
-                        }
-                        // reset and force re-evaluate due date
-                        !!taskId && dueDateIn.bond.changed('')
-                        dueDateIn.bond.changed(dueDate)
-                    },
-                    required: true,
-                    type: 'date',
-                    validate: (_, { value: deadline }) => {
-                        if (!deadline) return textsCap.invalidDate
-                        const diffMS = strToDate(deadline) - new Date()
-                        return diffMS < deadlineMinMS && textsCap.deadlineMinErrorMsg
-                    },
-                    value: '',
-                },
-                {
-                    bond: new Bond(),
-                    hidden: values => !values[this.names.deadline], // hide if deadline is not selected
-                    label: `${textsCap.dueDateLabel} (${textsCap.dateForamt})`,
-                    name: this.names.dueDate,
-                    required: true,
-                    type: 'date',
-                    validate: (_, { value: dueDate }, values) => {
-                        if (!dueDate) return textsCap.invalidDate
-                        const deadline = values[this.names.deadline]
-                        const diffMS = strToDate(dueDate) - strToDate(deadline)
-                        return diffMS < dueDateMinMS && textsCap.dueDateMinErrorMsg
-                    },
-                    value: '',
+                    name: this.names.dates,
+                    title: textsCap.dateForamt,
+                    type: 'group',
+                    inputs: [
+                        {
+                            rxValue: new BehaviorSubject(),
+                            label: textsCap.deadlineLabel,
+                            name: this.names.deadline,
+                            onChange: (_, values) => {
+                                const { taskId } = this.props
+                                let dueDate = values[this.names.dueDate]
+                                const deadline = values[this.names.deadline]
+                                const dueDateIn = findInput(this.state.inputs, this.names.dueDate)
+                                if (!dueDate || !taskId) {
+                                    // reset 1 day after deadline if not already set or creating new task
+                                    const date = strToDate(deadline)
+                                    date.setSeconds(date.getSeconds() + dueDateMinMS / 1000 + 1)
+                                    dueDate = format(date).substr(0, 10)
+                                }
+                                // reset and force re-evaluate due date
+                                !!taskId && dueDateIn.rxValue.next('')
+                                dueDateIn.rxValue.next(dueDate)
+                            },
+                            required: true,
+                            type: 'date',
+                            validate: (_, { value: deadline }) => {
+                                if (!deadline) return
+
+                                const diffMS = strToDate(deadline) - new Date()
+                                return diffMS < deadlineMinMS && textsCap.deadlineMinErrorMsg
+                            },
+                        },
+                        {
+                            disabled: values => !values[this.names.deadline],
+                            // hidden: values => !values[this.names.deadline], // hide if deadline is not selected
+                            label: textsCap.dueDateLabel,
+                            name: this.names.dueDate,
+                            required: true,
+                            rxValue: new BehaviorSubject(),
+                            type: 'date',
+                            validate: (_, { value: dueDate }, values) => {
+                                if (!dueDate) return
+                                const deadline = values[this.names.deadline]
+                                const diffMS = strToDate(dueDate) - strToDate(deadline)
+                                return diffMS < dueDateMinMS && textsCap.dueDateMinErrorMsg
+                            },
+                        },
+                    ],
                 },
                 {
                     // Advanced section (Form type "group" with accordion)
@@ -301,7 +301,6 @@ export default class TaskForm extends Component {
                             placeholder: textsCap.descriptionPlaceholder,
                             required: false,
                             type: 'textarea',
-                            value: '',
                         },
                         {
                             allowAdditions: true,
@@ -345,7 +344,7 @@ export default class TaskForm extends Component {
         const assigneeIn = findInput(inputs, this.names.assignee)
         const currencyIn = findInput(inputs, this.names.currency)
         const tagsIn = findInput(inputs, this.names.tags)
-        const assigneeOptions = Array.from(partners.getAll())
+        const assigneeOptions = Array.from(getPartners())
             .map(([address, { name, userId }]) => ({
                 description: !userId ? '' : `@${userId}`,
                 key: address,
@@ -379,7 +378,7 @@ export default class TaskForm extends Component {
                 // temporarily set currency to default currency 
                 values.currency = currencyDefault
                 // after a delay set it to the currency of the task, to make sure currency conversion is done
-                setTimeout(() => currencyIn.bond.changed(currency), 100)
+                setTimeout(() => currencyIn.rxValue.next(currency), 100)
             }
         }
         if (tags.length) {
@@ -433,7 +432,7 @@ export default class TaskForm extends Component {
         })
     })()
 
-    // check if use has enough balance for the transaction including pre-funding amount (bounty)
+    // check if user has enough balance for the transaction including pre-funding amount (bounty)
     // Two different deferred mechanims used here:
     // 1. deferred: to delay currency conversion while user is typing
     // 2. PromisE.deferred: makes sure even if deferred (1) resolves multiple times, only last execution is applied
@@ -445,7 +444,7 @@ export default class TaskForm extends Component {
         // bounty hasn't changed
         if (taskId && bounty === bountyOriginal) return
 
-        this.bountyPromise = this.bountyPromise || PromisE.deferred()
+        this.bountyDeferred = this.bountyDeferred || PromisE.deferred()
         const { inputs, submitDisabled } = this.state
         const amountXTXIn = findInput(inputs, this.names.amountXTX)
         const bountyGrpIn = findInput(inputs, this.names.bountyGroup)
@@ -458,7 +457,7 @@ export default class TaskForm extends Component {
         bountyGrpIn.message = null
         submitDisabled.bounty = valid
         this.setState({ inputs, submitDisabled })
-        if (!valid) return
+        if (!valid) return this.bountyDeferred(Promise.reject(null))
 
         const promise = new Promise(async (resolve, reject) => {
             try {
@@ -475,12 +474,12 @@ export default class TaskForm extends Component {
                 resolve(result)
             } catch (e) { reject(e) }
         })
-        const handleSuccess = result => {
+        const handleBountyResult = result => {
             const amountXTX = result[0]
             const balanceXTX = result[1]
             const amountTotalXTX = amountXTX + estimatedTxFee + minBalanceAterTx
             const gotBalance = balanceXTX - amountTotalXTX >= 0
-            amountXTXIn.bond.changed(amountXTX)
+            amountXTXIn.rxValue.next(amountXTX)
             bountyIn.invalid = !gotBalance
             bountyGrpIn.message = {
                 content: (
@@ -512,8 +511,8 @@ export default class TaskForm extends Component {
             this.setState({ inputs, loading: false, submitDisabled })
         }
         const handleErr = err => {
-            bountyIn.invalid = true
-            bountyGrpIn.message = {
+            bountyIn.invalid = !!err
+            bountyGrpIn.message = !err ? null : {
                 content: `${err} `,
                 header: textsCap.conversionErrorHeader,
                 status: 'error'
@@ -521,7 +520,7 @@ export default class TaskForm extends Component {
             submitDisabled.bounty = false
             this.setState({ inputs, loading: false, submitDisabled })
         }
-        this.bountyPromise(promise).then(handleSuccess, handleErr)
+        this.bountyDeferred(promise).then(handleBountyResult, handleErr)
     }, 300)
 
     // disables submit button if values unchanged
@@ -570,7 +569,8 @@ export default class TaskForm extends Component {
         const dbValues = objClean(values, this.bonsaiKeys)
         const tokenData = hashTypes.taskHash + ownerAddress + JSON.stringify(dbValues)
         const token = generateHash(tokenData)
-        const queueTaskName = 'createTask'
+        const nameCreateTask = 'createTask'
+        const nameSaveTask = 'saveTask'
         const queueId = uuid.v1()
         const orderType = values[this.names.orderType]
         const thenCb = isLastInQueue => (success, err) => {
@@ -582,7 +582,7 @@ export default class TaskForm extends Component {
                 message: {
                     content: !success && `${err} `, // error can be string or Error object.
                     header: success ? textsCap.submitSuccess : textsCap.submitFailed,
-                    showIcon: true,
+                    icon: true,
                     status: success ? 'success' : 'error',
                 },
                 submitDisabled,
@@ -597,25 +597,27 @@ export default class TaskForm extends Component {
         const fn = !doUpdate ? queueables.save : bcQueueables.bonsaiSaveToken
         const extraProps = {
             description,
-            name: queueTaskName,
+            name: nameCreateTask,
             title: !doUpdate ? textsCap.formHeader : textsCap.formHeaderUpdate,
             then: thenCb(false),
         }
         const queueProps = fn.apply(null,
-            !doUpdate ? [
-                ownerAddress,
-                ownerAddress,
-                assignee,
-                isSell,
-                amountXTX,
-                isMarket,
-                orderType,
-                deadline,
-                dueDate,
-                taskId,
-                token,
-                extraProps,
-            ] : [
+            !doUpdate ? (
+                [
+                    ownerAddress,
+                    ownerAddress,
+                    assignee,
+                    isSell,
+                    amountXTX,
+                    isMarket,
+                    orderType,
+                    deadline,
+                    dueDate,
+                    taskId,
+                    token,
+                    extraProps,
+                ]
+            ) : [
                     ownerAddress,
                     hashTypes.taskHash,
                     taskId,
@@ -632,10 +634,11 @@ export default class TaskForm extends Component {
             then: thenCb(true),
             title: textsCap.saveOffChainData,
             description: title,
+            name: nameSaveTask,
             args: [
                 taskId || {
                     // need to process tx result (events' data) to get the taskId
-                    __taskName: queueTaskName,
+                    __taskName: nameCreateTask,
                     __resultSelector: `result => {
                         const [txHash, eventsArr = []] = result || []
                         const txId = '${queueProps.txId}'
@@ -661,6 +664,31 @@ export default class TaskForm extends Component {
             ]
         }
 
+        // notify assignee on creation only
+        if (!this.props.taskId && !findIdentity(assignee)) {
+            const { userId } = getPartner(assignee) || {}
+            queueProps.next.next = !userId ? undefined : {
+                args: [
+                    [userId],
+                    'task',
+                    'assignment',
+                    null,
+                    { // ToDo: test required
+                        __taskName: nameSaveTask,
+                        // grab the taskId from the save previous item in the queue chain
+                        __resultSelector: `(r, rt, saveTask) => ({
+                            fulfillerAddress: "${assignee}",
+                            taskId: saveTask.argsProcessed[0],
+                        })`,
+                    },
+                ],
+                description: title,
+                func: 'notify',
+                title: textsCap.nofityAssignee,
+                type: QUEUE_TYPES.CHATCLIENT,
+            }
+        }
+
         submitDisabled.submit = true
         // add requests to the queue
         this.setState({
@@ -668,7 +696,7 @@ export default class TaskForm extends Component {
             loading: true,
             message: {
                 header: textsCap.addedToQueue,
-                showIcon: true,
+                icon: true,
                 status: 'loading',
             },
             submitDisabled,
@@ -681,7 +709,7 @@ export default class TaskForm extends Component {
         const { address } = getSelected() || {}
         if (assignee === address) return textsCap.assigneeErrOwnIdentitySelected
 
-        const partner = partners.get(assignee) || {}
+        const partner = getPartner(assignee) || {}
         const { inputs } = this.state
         const assigneeIn = findInput(inputs, this.names.assignee)
         const onClick = e => {
@@ -692,8 +720,8 @@ export default class TaskForm extends Component {
                     // partner wasn't updated with an user Id
                     if (!success || !userId) return
                     // force assignee to be re-validated
-                    assigneeIn.bond.changed('')
-                    assigneeIn.bond.changed(assignee)
+                    assigneeIn.rxValue.next('')
+                    assigneeIn.rxValue.next(assignee)
                 }
             })
         }

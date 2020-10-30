@@ -1,55 +1,21 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import Inbox from './Inbox'
 import InboxList from './InboxList'
-import { openInboxBond, visibleBond } from './chat'
+import { rxOpenInboxKey, rxVisible } from './chat'
 import './style.css'
+import { useRxSubject } from '../../services/react'
 
 export default function ChatBar() {
-    const [visible, setVisible] = useState(visibleBond._value)
-    const [inboxKey, setInboxKey] = useState(openInboxBond._value)
+    const [visible] = useRxSubject(rxVisible)
+    const [inboxKey] = useRxSubject(rxOpenInboxKey)
     const receiverIds = (inboxKey || '').split(',')
-    const container = 'chat-container'
-    const className = [
-        container,
-    ].filter(Boolean).join(' ')
-
-
-    useEffect(() => {
-        let mounted = true
-        const tieIdOpenInbox = openInboxBond.tie(key => mounted && setInboxKey(key))
-        const tieId = visibleBond.tie(show => {
-            if (!mounted) return
-            document.querySelector('.' + container)
-                .classList[show ? 'remove' : 'add']('hiding')
-
-            setTimeout(() => {
-                setVisible(show)
-                document.getElementById('app')
-                    .classList[show ? 'add' : 'remove']('chat-visible')
-
-                document.querySelector('.' + container).classList.remove('hiding')
-            }, 350)
-        })
-
-        return () => {
-            mounted = false
-            visibleBond.untie(tieId)
-            openInboxBond.untie(tieIdOpenInbox)
-        }
-    }, [])
 
     return (
-        <div className={className}>
+        <div className='chat-container'>
             {!visible ? '' : (
                 <div className='chat-contents'>
-                    <InboxList {...{ inboxKey }} />
-                    {receiverIds.length > 0 && (
-                        <Inbox {...{
-                            inboxKey,
-                            key: inboxKey,
-                            receiverIds,
-                        }} />
-                    )}
+                    <InboxList inboxKey={inboxKey} />
+                    {receiverIds.length > 0 && <Inbox {...{ inboxKey, key: inboxKey, receiverIds }} />}
                 </div>
             )}
         </div>

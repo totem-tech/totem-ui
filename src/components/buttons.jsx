@@ -1,87 +1,170 @@
 import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
-import { objWithoutKeys } from '../utils/utils'
+import { isFn, objWithoutKeys } from '../utils/utils'
 import { getRawUserID } from './UserIdInput'
 // forms
-import IdentityRequestForm from '../forms/IdentityRequest'
-import IdentityShareForm from '../forms/IdentityShare'
-import PartnerForm from '../forms/Partner'
+import IdentityRequestForm from '../modules/identity/IdentityRequestForm'
+import IdentityShareForm from '../modules/identity/IdentityShareForm'
+import IntroduceUserForm from '../modules/chat/IntroduceUserForm'
 // services
 import { translated } from '../services/language'
 import { confirm, showForm, closeModal } from '../services/modal'
 import { createInbox } from '../modules/chat/chat'
-import { getByUserId } from '../services/partner'
-import { getUser } from '../services/chatClient'
+import { getByUserId } from '../modules/partner/partner'
+import PartnerForm from '../modules/partner/PartnerForm'
+import { getUser } from '../modules/chat/ChatClient'
 
-const textsCap = translated({
+const [texts, textsCap] = translated({
     accept: 'accept',
     close: 'close',
+    identityRequest: 'request identity',
+    identityShare: 'share identity',
+    introduce: 'introduce',
+    or: 'or',
     partnerAdd: 'add partner',
     partnerName: 'partner name',
     partnerUpdate: 'update partner',
-    identityRequest: 'request identity',
-    identityShare: 'share identity',
     reject: 'reject',
     userIdBtnTitle: 'click for more options',
-}, true)[1]
+}, true)
 
-export const ButtonAcceptOrReject = props => {
-    const { acceptColor, acceptText, disabled, loading, onClick, rejectColor, rejectText, style, title } = props
+export const ButtonAcceptOrReject = React.memo(props => {
+    const {
+        acceptColor,
+        acceptProps,
+        acceptText,
+        ignoreAttributes,
+        loading,
+        rejectColor,
+        rejectProps,
+        rejectText,
+    } = props
+
     return (
-        <div title={title} style={{ textAlign: 'center', ...style }}>
-            <Button.Group>
-                <Button
-                    color={acceptColor}
-                    disabled={disabled}
-                    loading={loading}
-                    onClick={(e) => e.stopPropagation() | onClick(true)}
-                >
-                    {acceptText}
-                </Button>
-                <Button.Or onClick={e => e.stopPropagation()} />
-                <Button
-                    color={rejectColor}
-                    disabled={disabled}
-                    loading={loading}
-                    onClick={(e) => e.stopPropagation() | onClick(false)}
-                >
-                    {rejectText}
-                </Button>
-            </Button.Group>
-        </div>
+        <ButtonGroup {...{
+            ...props,
+            buttons: [
+                {
+                    ...acceptProps,
+                    content: acceptText,
+                    color: acceptColor,
+                    loading: loading,
+                },
+                {
+                    ...rejectProps,
+                    content: rejectText,
+                    color: rejectColor,
+                    loading: loading,
+                }
+            ],
+            ignoreAttributes: [...ignoreAttributes, ...ButtonGroup.defaultProps.ignoreAttributes],
+            or: true,
+            values: [ true, false ],
+        }} />
     )
-}
+})
 ButtonAcceptOrReject.propTypes = {
-    onClick: PropTypes.func.isRequired,
     acceptColor: PropTypes.string, // colors supported by SemanticUI buttons
     acceptText: PropTypes.string,
+    ignoreAttributes: PropTypes.arrayOf(PropTypes.string).isRequired,
+    onAction: PropTypes.func.isRequired,
     rejectColor: PropTypes.string, // colors supported by SemanticUI buttons
     rejectText: PropTypes.string
 }
 ButtonAcceptOrReject.defaultProps = {
     acceptColor: 'green',
     acceptText: textsCap.accept,
+    ignoreAttributes: [
+        'acceptColor',
+        'acceptProps',
+        'acceptText',
+        'ignoreAttributes',
+        'rejectColor',
+        'rejectProps',
+        'rejectText',
+    ],
     rejectColor: 'red',
     rejectText: textsCap.reject
+}
+
+/**
+ * @name    ButtonGroup
+ * @summary Shorthand for Or button group
+ * 
+ * @param   {Object}    props see `ButtonGroup.propTypes` for accepted props
+ * 
+ * @returns {Element}
+ */
+export const ButtonGroup = React.memo(props => {
+    const { buttons, disabled, El, ignoreAttributes, loading, onAction, or, values } = props
+    const buttonsEl = buttons.map((button, i) => [
+        or && i > 0 && (
+            <Button.Or {...{
+                key: 'or',
+                onClick: e => e.stopPropagation(),
+                text: texts.or,
+            }} />
+        ),
+        <Button {...{
+            key: 'btn',
+            ...button,
+            disabled: button.disabled || disabled,
+            loading: button.loading || loading,
+            onClick: event => {
+                event.stopPropagation()
+                event.preventDefault()
+                isFn(button.onClick) && button.onClick(event, values[i])
+                isFn(onAction) && onAction(event, values[i])
+            },
+        }} />
+    ].filter(Boolean))
+    return <El {...objWithoutKeys(props, ignoreAttributes)}>{buttonsEl}</El>
+})
+ButtonGroup.propTypes = {
+    buttons: PropTypes.arrayOf(PropTypes.object).isRequired,
+    El: PropTypes.oneOfType([ PropTypes.string, PropTypes.func, ]).isRequired,
+    ignoreAttributes: PropTypes.arrayOf(PropTypes.string).isRequired,
+    loading: PropTypes.bool,
+    // @onAction triggered whenever any of the @buttons are clicked. 
+    //          Arguments:
+    //          @value  value specified for the button in the @values array
+    //          @event  synthetic event
+    onAction: PropTypes.func,
+    or: PropTypes.bool,
+    orText: PropTypes.string,
+    // @values: specific value to be passed on when @onClick is triggered for the respective button index
+    values: PropTypes.array,
+}
+ButtonGroup.defaultProps = {
+    buttons: [],
+    El: Button.Group,
+    ignoreAttributes: [
+        'buttons',
+        'El',
+        'ignoreAttributes',
+        'loading',
+        'onAction',
+        'or',
+        'values',
+    ]
 }
 
 export const Reveal = ({ content, hiddenContent, style, defaultVisible = false, El = 'div' }) => {
     const [visible, setVisible] = useState(defaultVisible)
     return (
-        <El
-            onMouseEnter={() => !visible && setVisible(true)}
-            onMouseLeave={() => visible && setVisible(false)}
-            style={style}
-        >
-            {visible ? hiddenContent : content}
-        </El>
+        <El {...{
+            children: visible ? hiddenContent : content,
+            onMouseEnter: () => !visible && setVisible(true),
+            onMouseLeave: () => visible && setVisible(false),
+            style: { style },
+        }} />
     )
 }
 
 // placeholder to potentially use this in the future to make all User IDs clickable and open private chat with user
 export const UserID = React.memo(props => {
-    const { onClick, prefix, style, suffix, userId } = props
+    const { El = 'span', onClick, prefix, style, suffix, userId } = props
     const rawId = getRawUserID(userId)
     if (!rawId) return ''
 
@@ -89,8 +172,8 @@ export const UserID = React.memo(props => {
     const allowClick = onClick !== null && !isOwnId
 
     return (
-        <span {...{
-            ...objWithoutKeys(props, ['prefix', 'suffix', 'userId']),
+        <El {...{
+            ...objWithoutKeys(props, ['El', 'prefix', 'suffix', 'userId']),
             onClick: !allowClick ? undefined : (e => e.stopPropagation() | UserID.showModal(userId)),
             style: {
                 cursor: allowClick && 'pointer',
@@ -101,7 +184,7 @@ export const UserID = React.memo(props => {
             title: !allowClick ? name : textsCap.userIdBtnTitle,
         }}>
             <b>{prefix}@{rawId}{suffix}</b>
-        </span>
+        </El>
     )
 })
 
@@ -119,7 +202,7 @@ UserID.showModal = userId => {
                 values: { userId },
             }),
         },
-        {
+        !name && {
             content: textsCap.identityRequest,
             icon: 'download',
             onClick: () => showForm(IdentityRequestForm, { values: { userIds: [userId] } }),
@@ -128,6 +211,11 @@ UserID.showModal = userId => {
             content: textsCap.identityShare,
             icon: 'share',
             onClick: () => showForm(IdentityShareForm, { values: { userIds: [userId] } }),
+        },
+        {
+            content: textsCap.introduce,
+            icon: 'handshake',
+            onClick: () => showForm(IntroduceUserForm, { values: { userId } }),
         },
     ].filter(Boolean)
 
@@ -152,18 +240,20 @@ UserID.showModal = userId => {
                     </div>
                 )}
                 <div>
-                    {buttons.map(props => <Button {...{
-                        fluid: true,
-                        key: props.content,
-                        style: { margin: '3px 0' },
-                        ...props,
-                    }} />)}
+                    {buttons.map(props => (
+                        <Button {...{
+                            fluid: true,
+                            key: props.content,
+                            style: { margin: '3px 0' },
+                            ...props,
+                        }} />
+                    ))}
                 </div>
             </div>
         ),
         header: (
             <div className='header'>
-                @{userId}
+                @{userId + ' '}
                 <Button {...{
                     circular: true,
                     icon: 'chat',

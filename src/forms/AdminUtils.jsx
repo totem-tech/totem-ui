@@ -1,12 +1,10 @@
 import React, { Component } from 'react'
-import { Bond } from 'oo7'
-import { Progress } from 'semantic-ui-react'
-import { csvToMap, csvToArr } from '../utils/convert'
-import { keyring } from '../utils/polkadotHelper'
-import { downloadFile, objWithoutKeys } from '../utils/utils'
+import { BehaviorSubject } from 'rxjs'
+import { csvToMap } from '../utils/convert'
+import { downloadFile } from '../utils/utils'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 // services
-import client from '../services/chatClient'
+import client from '../modules/chat/ChatClient'
 import { downloadTextListCSV, translated } from '../services/language'
 import storage from '../services/storage'
 
@@ -14,7 +12,7 @@ export default class AdminUtils extends Component {
 	constructor() {
 		super()
 
-		this.countries = Array.from(storage.countries.getAll())
+		// this.countries = Array.from(storage.countries.getAll())
 
 		this.state = {
 			fileType: '',
@@ -62,7 +60,7 @@ export default class AdminUtils extends Component {
 					useInput: true,
 				},
 				{
-					bond: new Bond(),
+					rxValue: new BehaviorSubject(),
 					hidden: ({ action }) => !action || action === 'language-download',
 					label: 'File contents',
 					name: 'text',
@@ -113,7 +111,7 @@ export default class AdminUtils extends Component {
 			message: {
 				content: 'Read up the howto-language.md file',
 				header: 'Not sure what to do next?',
-				showIcon: true,
+				icon: true,
 				status: 'info'
 			}
 		})
@@ -131,7 +129,7 @@ export default class AdminUtils extends Component {
 				return
 			}
 			reader.onload = le => {
-				findInput(this.state.inputs, 'text').bond.changed(le.target.result)
+				findInput(this.state.inputs, 'text').rxValue.next(le.target.result)
 				e.target.value = null
 			}
 			reader.readAsText(file)

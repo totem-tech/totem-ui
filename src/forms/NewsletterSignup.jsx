@@ -1,10 +1,8 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Bond } from 'oo7'
 import FormBuilder, { fillValues } from '../components/FormBuilder'
 import { translated } from '../services/language'
-import client from '../services/chatClient'
-import { validate, TYPES } from '../utils/validator'
+import client from '../modules/chat/ChatClient'
 import Message from '../components/Message'
 import { isObj } from '../utils/utils'
 
@@ -41,7 +39,6 @@ export default class NewsletteSignup extends Component {
                     widths: 'equal',
                     inputs: [
                         {
-                            bond: new Bond(),
                             label: textsCap.firstNameLabel,
                             maxLength: 30,
                             name: 'firstName',
@@ -51,7 +48,6 @@ export default class NewsletteSignup extends Component {
                             value: '',
                         },
                         {
-                            bond: new Bond(),
                             label: textsCap.lastNameLabel,
                             maxLength: 30,
                             name: 'lastName',
@@ -63,7 +59,6 @@ export default class NewsletteSignup extends Component {
                     ]
                 },
                 {
-                    bond: new Bond(),
                     defer: null,
                     label: textsCap.emailLabel,
                     name: 'email',
@@ -102,7 +97,7 @@ export default class NewsletteSignup extends Component {
             message: {
                 content: error ? `${error}` : textsCap.successMsg,
                 header: textsCap.successHeader,
-                showIcon: true,
+                icon: true,
                 status: error ? 'error' : 'success'
             },
         })
@@ -126,7 +121,7 @@ export default class NewsletteSignup extends Component {
                         </div>
                     </span>
                 ),
-                showIcon: false,
+                icon: false,
                 status: 'basic',
             }} />
         )

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import { Bond } from 'oo7'
-import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
+import { BehaviorSubject } from 'rxjs'
+import FormBuilder, { findInput,  } from '../../components/FormBuilder'
 import { isFn, arrSort, textEllipsis } from '../../utils/utils'
 // services
-import client, { getUser } from '../../services/chatClient'
+import { getUser } from './ChatClient'
 import { translated } from '../../services/language'
 import { showForm, closeModal } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
@@ -31,23 +31,24 @@ const [_, textsCap] = translated({
 }, true)
 const EVERYONE = 'everyone'
 
+const inputNames = {
+    name: 'name',
+    receiverIds: 'receiverIds'
+}
 export default function NewInboxForm(props) {
-    const names = {
-        name: 'name',
-        receiverIds: 'receiverIds'
-    }
     const inboxKeys = Object.keys(inboxesSettings())
     const [success, setSuccess] = useState(false)
-    const [inputs, setInputs] = useState([
+    
+    const [inputs, setInputs] = useState(([
         {
             autoFocus: true,
-            bond: new Bond(),
             excludeOwnId: true,
             includeFromChat: true,
             includePartners: true,
             message: { content: textsCap.userIdsHint },
             multiple: true,
-            name: names.receiverIds,
+            name: inputNames.receiverIds,
+            rxValue: new BehaviorSubject(''),
             options: arrSort(
                 inboxKeys.map(key => {
                     const receiverIds = key.split(',')
@@ -68,36 +69,35 @@ export default function NewInboxForm(props) {
                 'text',
             ),
             onChange: (_, values) => {
-                let userIds = values[names.receiverIds].map(x => x.split(',')).flat()
-                const nameIn = findInput(inputs, names.name)
+                let userIds = values[inputNames.receiverIds].map(x => x.split(',')).flat()
+                const nameIn = findInput(inputs, inputNames.name)
                 const inboxKey = getInboxKey(userIds)
                 const hideName = !inboxKey || inboxKey.split(',').length <= 1 || userIds.includes(SUPPORT)
                 const value = hideName ? '' : inboxSettings(inboxKey).name || nameIn.value
                 nameIn.hidden = hideName
                 nameIn.required = !hideName
                 setInputs(inputs)
-                nameIn.bond.changed(value)
+                nameIn.rxValue.next(value)
             },
             required: true,
             type: 'UserIdInput',
         },
         {
-            bond: new Bond(),
             hidden: true,
             label: textsCap.nameLabel,
             minLength: 3,
             maxLength: 18,
-            name: names.name,
+            name: inputNames.name,
             placeholder: textsCap.namePlaceholder,
             required: true,
+            rxValue: new BehaviorSubject(''),
             type: 'text',
-            value: '',
         },
-    ])
+    ], props.values))
 
     const handleSubmit = async (_, values) => {
         const { onSubmit } = props
-        let receiverIds = values[names.receiverIds].map(x => x.split(',')).flat()
+        let receiverIds = values[inputNames.receiverIds].map(x => x.split(',')).flat()
         const { id: ownId, roles = [] } = getUser() || {}
         if (receiverIds.includes(SUPPORT)) {
             receiverIds = [
@@ -105,7 +105,7 @@ export default function NewInboxForm(props) {
                 !roles.includes(SUPPORT) ? null : receiverIds.filter(id => ![SUPPORT, ownId].includes(id))[0]
             ].filter(Boolean)
         }
-        const name = receiverIds.length > 1 ? values[names.name] : null
+        const name = receiverIds.length > 1 ? values[inputNames.name] : null
         const inboxKey = createInbox(receiverIds, name, true)
         setSuccess(true)
         isFn(onSubmit) && onSubmit(true, { inboxKey, ...values })

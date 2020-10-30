@@ -1,6 +1,6 @@
 import DataStorage from '../utils/DataStorage'
 import { clearClutter, downloadFile, generateHash, textCapitalize } from '../utils/utils'
-import client from './chatClient'
+import client from '../modules/chat/ChatClient'
 import storage from './storage'
 import { getUrlParam } from './window'
 

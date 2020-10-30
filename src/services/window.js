@@ -1,17 +1,15 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { Bond } from 'oo7'
-import { isDefined, isFn, isBool } from '../utils/utils'
+import { isDefined, isFn } from '../utils/utils'
 import storage from './storage'
 import { useRxSubject } from './react'
 
 const MODULE_KEY = 'window'
-let _forcedSize = ''
+let _forcedLayout = ''
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 export const MOBILE = 'mobile'
 export const DESKTOP = 'desktop'
-export const gridColumnsBond = new Bond().defaultTo(gridColumns())
-export const layoutBond = new Bond().defaultTo(getLayout())
+export const rxGridColumns = new BehaviorSubject(gridColumns())
 export const rxOnline = new BehaviorSubject()
 export const rxInverted = new BehaviorSubject(rw().inverted)
 export const rxLayout = new BehaviorSubject(getLayout())
@@ -22,12 +20,12 @@ export const rxVisible = new BehaviorSubject(true)
 // Params:
 // @size    string: a valid size name listed in `validSizes`. If not valid will set to dynamic layout base on `window.innerWidth` value.
 export const forceLayout = size => {
-    _forcedSize = [DESKTOP, MOBILE].includes(size) ? size : ''
+    _forcedLayout = [DESKTOP, MOBILE].includes(size) ? size : ''
     window.onresize()
 }
 
 export function getLayout() {
-    return _forcedSize || (window.innerWidth <= 991 ? MOBILE : DESKTOP)
+    return _forcedLayout || (window.innerWidth <= 991 ? MOBILE : DESKTOP)
 }
 
 // getUrlParam reads the URL parameters
@@ -47,8 +45,16 @@ export const getUrlParam = name => {
 // gridColumns read/writes main content grid column count
 export function gridColumns(numCol) {
     const value = isDefined(numCol) ? { gridColumns: numCol } : undefined
-    value && gridColumnsBond.changed(numCol)
+    value && rxGridColumns.next(numCol)
     return rw(value).gridColumns || 1
+}
+export const setClass = (selector, obj, retry = true) => {
+    const el = document.querySelector(selector)
+    if (!el) return retry && setTimeout(() => setClass(selector, obj, false), 100)
+    Object.keys(obj).forEach(className => {
+        const func = obj[className] ? 'add' : 'remove'
+        el.classList[func](className)
+    })
 }
 
 /**
@@ -92,50 +98,61 @@ export const toggleFullscreen = (selector) => {
     isFn(goFS) && setTimeout(() => goFS.call(el), isFS ? 50 : 0)
 }
 
+/**
+ * @name    useInverted
+ * @summary custom React hook that returns a boolean value indicating whether inverted/dark mode is in use
+ * 
+ * @param   {Boolean|String} reverse whether to reverse the value of inverted
+ * 
+ * @reutrns {Boolean}
+ */
 export const useInverted = (reverse = false) => {
-    const [inverted] = useRxSubject(rxInverted, false)
-    if (!reverse) return inverted
-
-    switch (`${reverse}`) {
-        // always reverse
-        case 'true':
-        case 'always': return !inverted
-        // reverse only when inverted
-        case 'inverted': return inverted && !inverted
-        // reverse only when not inverted
-        case 'not inverted': return !inverted && inverted
-        default: return inverted
-    }
+    const [inverted] = useRxSubject(rxInverted, inverted => {
+        if (!reverse) return inverted
+        switch (`${reverse}`) {
+            // always reverse the value of inverted
+            case 'true':
+            case 'always': return !inverted
+            // reverse only when inverted
+            case 'inverted': return inverted ? !inverted : inverted
+            // reverse only when not inverted
+            case 'not inverted': return inverted ? inverted : !inverted
+            default: return inverted
+        }
+    })
+    return inverted
 }
 
 // set layout name on window resize 
-window.onresize = () => {
-    const layout = getLayout()
-    layoutBond.changed(layout)
-    rxLayout.next(layout)
-}
+window.onresize = () => rxLayout.next(getLayout())
 window.addEventListener('online', () => rxOnline.next(true))
 window.addEventListener('offline', () => rxOnline.next(false))
 let ignoredFirstInverted = false
 rxInverted.subscribe(inverted => {
     ignoredFirstInverted && rw({ inverted })
     ignoredFirstInverted = true
-    document.getElementById('app').classList[inverted ? 'add' : 'remove']('inverted')
+    setClass('body', { inverted })
 })
-document.addEventListener('visibilitychange', () => {
-    const visible = document.visibilityState === 'visible'
-    rxVisible.next(visible)
+rxLayout.subscribe(layout => {
+    setClass('body', {
+        desktop: layout === DESKTOP,
+        mobile: layout === MOBILE,
+    })
 })
+document.addEventListener('visibilitychange', () =>
+    rxVisible.next(document.visibilityState === 'visible')
+)
 export default {
     MOBILE,
     DESKTOP,
-    gridColumnsBond,
-    layoutBond,
-    rxInverted,
-    rxOnline,
     forceLayout,
-    toggleFullscreen,
     getLayout,
     getUrlParam,
     gridColumns,
+    rxGridColumns,
+    rxInverted,
+    rxLayout,
+    rxOnline,
+    rxVisible,
+    toggleFullscreen,
 }

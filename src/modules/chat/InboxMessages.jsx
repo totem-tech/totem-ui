@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Button } from 'semantic-ui-react'
 import { isObj } from '../../utils/utils'
 import { UserID } from '../../components/buttons'
 import Message from '../../components/Message'
 import TimeSince from '../../components/TimeSince'
-import { getUser } from '../../services/chatClient'
+import { getUser } from './ChatClient'
 import { translated } from '../../services/language'
 
 const [texts, textsCap] = translated({

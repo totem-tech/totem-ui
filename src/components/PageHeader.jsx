@@ -1,32 +1,32 @@
-import React, { Component, useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { Dropdown, Icon, Image, Menu } from 'semantic-ui-react'
 import Balance from '../components/Balance'
 // utils
-import { arrSort, copyToClipboard, textEllipsis } from '../utils/utils'
+import { arrSort, className, copyToClipboard, textEllipsis } from '../utils/utils'
 // forms
-import IdentityForm from '../forms/Identity'
-import TimeKeepingForm from '../forms/TimeKeeping'
+import IdentityForm from '../modules/identity/IdentityForm'
+import TimekeepingForm from '../modules/timekeeping/TimekeeepingForm'
 // services
-import { getUser, rxIsLoggedIn } from '../services/chatClient'
-import { getSelected, setSelected, rxIdentities } from '../services/identity'
+import { getUser, rxIsLoggedIn } from '../modules/chat/ChatClient'
+import { getSelected, setSelected, rxIdentities } from '../modules/identity/identity'
 import { getSelected as getSelectedLang, translated } from '../services/language'
 import { showForm } from '../services/modal'
 import {
-	unreadCountBond as unreadMsgCountBond,
-	visibleBond as chatVisibleBond,
+	rxUnreadCount as rxUnreadMsgCount,
+	rxVisible as rxChatVisible,
 } from '../modules/chat/chat'
 import {
-	newNotificationBond,
-	visibleBond as notifVisibleBond,
-	unreadCountBond as unreadNotifCountBond,
+	rxNewNotification,
+	rxVisible as rxNotifVisible,
+	rxUnreadCount as rxUnreadNotifCount,
 } from '../modules/notification/notification'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import { unsubscribe, useRxSubject } from '../services/react'
 import { toggleSidebarState, setActive } from '../services/sidebar'
-import timeKeeping from '../services/timeKeeping'
+import { rxTimerInProgress } from '../modules/timekeeping/timekeeping'
 import { setToast } from '../services/toast'
-import { useInverted, rxInverted } from '../services/window'
-import { unsubscribe } from '../services/react'
+import { useInverted, rxInverted, rxLayout, MOBILE } from '../services/window'
 
 const textsCap = translated({
 	addressCopied: 'your identity copied to clipboard',
@@ -39,81 +39,45 @@ const textsCap = translated({
 	requestFunds: 'request Funds',
 	updateIdentity: 'update identity',
 }, true)[1]
-export default class PageHeader extends Component {
-	constructor(props) {
-		super(props)
+let copiedMsgId
 
-		this.state = {
-			id: (getUser() || {}).id,
-			isLoggedIn: rxIsLoggedIn.value,
-			wallets: [],
-		}
-
-		this.originalSetState = this.setState
-		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
+export default function PageHeader(props) {
+	const [wallets] = useRxSubject(rxIdentities, map => Array.from(map).map(([_, x]) => x))
+	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+	const [[userId, isLoggedIn]] = useRxSubject(rxIsLoggedIn, isLoggedIn => ([
+		(getUser() || {}).id,
+		isLoggedIn,
+	]))
+	const viewProps = {
+		...props,
+		userId,
+		isLoggedIn,
+		isMobile,
+		isRegistered: !!userId,
+		wallets,
+		onCopy: () => {
+			const { address } = getSelected()
+			if (!address) return
+			copyToClipboard(address)
+			const msg = { content: textsCap.addressCopied, status: 'success' }
+			copiedMsgId = setToast(msg, 2000, copiedMsgId)
+		},
+		onEdit: () => showForm(IdentityForm, { values: getSelected() }),
+		onFaucetRequest: () => addToQueue({
+			type: QUEUE_TYPES.CHATCLIENT,
+			func: 'faucetRequest',
+			title: textsCap.faucetRequest,
+			description: textsCap.faucetRequestDetails,
+			args: [getSelected().address]
+		}),
+		onSelection: (_, { value: address }) => setSelected(address),
 	}
-
-	componentWillMount() {
-		this._mounted = true
-		this.unsubscribers = {}
-		this.unsubscribers.identities = rxIdentities.subscribe(map =>
-			this.setState({
-				wallets: Array.from(map).map(([_, x]) => x)
-			})
-		)
-		// Update user ID after registration
-		this.unsubscribers.isLoggedIn = rxIsLoggedIn.subscribe(isLoggedIn => {
-			const { id } = getUser() || {}
-			this.setState({ id, isLoggedIn })
-		})
-	}
-
-	componentWillUnmount = () => {
-		this._mounted = false
-		unsubscribe(this.unsubscribers)
-	}
-
-	handleSelection = (_, { value: address }) => setSelected(address)
-
-	handleCopy = () => {
-		const { address } = getSelected()
-		if (!address) return
-		copyToClipboard(address)
-		const msg = { content: textsCap.addressCopied, status: 'success' }
-		this.copiedMsgId = setToast(msg, 2000, this.copiedMsgId)
-	}
-
-	handleEdit = () => showForm(IdentityForm, { values: getSelected() })
-
-	handleFaucetRequest = () => addToQueue({
-		type: QUEUE_TYPES.CHATCLIENT,
-		func: 'faucetRequest',
-		title: textsCap.faucetRequest,
-		description: textsCap.faucetRequestDetails,
-		args: [getSelected().address]
-	})
-
-	render() {
-		const { id, isLoggedIn, wallets } = this.state
-		const viewProps = {
-			userId: id,
-			isLoggedIn,
-			isRegistered: !!id,
-			wallets,
-			onCopy: this.handleCopy,
-			onEdit: this.handleEdit,
-			onFaucetRequest: this.handleFaucetRequest,
-			onSelection: this.handleSelection,
-		}
-		return <PageHeaderView {...this.props} {...viewProps} />
-	}
+	return <PageHeaderView {...viewProps} />
 }
 
 PageHeader.propTypes = {
 	logoSrc: PropTypes.string,
-	isMobile: PropTypes.bool,
 }
-
 PageHeader.defaultProps = {
 	logoSrc: 'https://react.semantic-ui.com/images/wireframe/image.png'
 }
@@ -135,7 +99,7 @@ const PageHeaderView = props => {
 	} = props
 	const selected = getSelected() || {}
 	const buttons = <HeaderMenuButtons {...{ isLoggedIn, isMobile, isRegistered }} />
-	const walletOptions = arrSort(wallets, 'name')
+	const walletOptions = arrSort(wallets || [], 'name')
 		.map(({ address, name }) => ({
 			key: address,
 			text: (
@@ -151,6 +115,7 @@ const PageHeaderView = props => {
 					<Balance {...{
 						address: address,
 						EL: 'div',
+						showDetailed: null,
 						style: {
 							color: 'grey',
 							textAlign: 'right',
@@ -171,7 +136,7 @@ const PageHeaderView = props => {
 				width: '100%',
 			}}
 		>
-			<Menu.Item>
+			<Menu.Item onClick={!isRegistered || !isMobile ? undefined : toggleSidebarState}>
 				<Image size="mini" src={logoSrc} />
 			</Menu.Item>
 			<Menu.Menu position="right">
@@ -182,11 +147,11 @@ const PageHeaderView = props => {
 					item
 					labeled
 					onChange={onSelection}
-					onClick={() => notifVisibleBond.changed(false)}
+					onClick={() => rxNotifVisible.next(false)}
+					options={walletOptions}
+					style={{ paddingRight: 0 }}
 					text={textEllipsis(selected.name, isMobile ? 25 : 50, 3, false)}
 					value={selected.address}
-					style={{ paddingRight: 0 }}
-					options={walletOptions}
 				/>
 				<Dropdown
 					item
@@ -196,7 +161,7 @@ const PageHeaderView = props => {
 						size: 'large',
 						// className: 'no-margin',
 					}}
-					onClick={() => setShowTools(!showTools) | notifVisibleBond.changed(false)}
+					onClick={() => setShowTools(!showTools) | rxNotifVisible.next(false)}
 				>
 					<Dropdown.Menu className='left'>
 						{[
@@ -257,35 +222,27 @@ const PageHeaderView = props => {
 }
 
 export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
-	const [timerInProgress, setTimerActive] = useState(timeKeeping.formData().inprogress)
-	const [unreadMsgCount, setUnreadMsgCount] = useState(unreadMsgCountBond._value)
-	const [unreadNotifCount, setUnreadNotifCount] = useState(unreadNotifCountBond._value)
+	const [timerInProgress] = useRxSubject(rxTimerInProgress)
+	const [unreadMsgCount] = useRxSubject(rxUnreadMsgCount)
+	const [unreadNotifCount] = useRxSubject(rxUnreadNotifCount)
 	const [notifBlink, setNotifBlink] = useState(false)
 	const countStyle = {
-		color: 'white',
-		fontSize: 13,
-		fontWeight: 'bold',
-		left: 0,
-		position: 'absolute',
-		textAlign: 'center',
-		top: isMobile ? 17 : 24,
-		width: '100%',
+		...styles.countStyle,
+		top: isMobile ? 17 : styles.countStyle.top,
 	}
 
 	useEffect(() => {
-		const tieIdTimer = timeKeeping.formDataBond.tie(() => setTimerActive(!!timeKeeping.formData().inprogress))
-		const tieIdUnreadMsg = unreadMsgCountBond.tie(unread => setUnreadMsgCount(unread))
-		const tieIdUnreadNotif = unreadNotifCountBond.tie(unread => setUnreadNotifCount(unread))
-		const tieIdNew = newNotificationBond.tie(() => {
+		let mounted = true
+		const subscriptions = {}
+		subscriptions.newNotif = rxNewNotification.subscribe(() => {
+			if (!mounted) return
 			setNotifBlink(true)
 			setTimeout(() => setNotifBlink(false), 5000)
 		})
 
 		return () => {
-			timeKeeping.formDataBond.untie(tieIdTimer)
-			unreadMsgCountBond.untie(tieIdUnreadMsg)
-			unreadNotifCountBond.untie(tieIdUnreadNotif)
-			newNotificationBond.untie(tieIdNew)
+			mounted = false
+			unsubscribe(subscriptions)
 		}
 	}, [])
 
@@ -293,7 +250,11 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 		<React.Fragment>
 			{isMobile && (
 				<Menu.Item
-					icon={{ name: 'sidebar', size: 'large', className: 'no-margin' }}
+					icon={{
+						name: 'sidebar',
+						size: 'large',
+						className: 'no-margin',
+					}}
 					onClick={toggleSidebarState}
 				/>
 			)}
@@ -305,27 +266,39 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 					name: 'clock outline',
 					size: 'large'
 				}}
-				onClick={() => showForm(TimeKeepingForm, {})}
+				onClick={() => showForm(TimekeepingForm, {})}
 			/>
 
 			<Menu.Item {...{
-				className: notifBlink ? 'blink' : '',
+				className: className([
+					notifBlink ? 'blink' : '',
+					'shake-trigger',
+				]),
 				disabled: unreadNotifCount === -1,
-				onClick: () => setNotifBlink(false) | notifVisibleBond.changed(!notifVisibleBond._value),
+				onClick: () => setNotifBlink(false) | rxNotifVisible.next(!rxNotifVisible.value),
 				style: { background: unreadNotifCount > 0 ? '#2185d0' : '' }
 			}}>
 				<Icon {...{
-					className: 'no-margin',
+					// className: 'no-margin',
+					className: className([
+						'no-margin',
+						unreadNotifCount && 'shake',
+						notifBlink && 'shake forever',
+					]),
 					color: unreadNotifCount === -1 ? 'grey' : undefined,
 					name: 'bell',
 					size: 'large',
 				}} />
-				{unreadNotifCount > 0 && <div style={{ ...countStyle, color: '#2185d0' }}>{unreadNotifCount}</div>}
+				{unreadNotifCount > 0 && (
+					<div style={{ ...countStyle, color: '#2185d0' }}>
+						{unreadNotifCount}
+					</div>
+				)}
 			</Menu.Item>
 
 			<Menu.Item onClick={() => {
-				chatVisibleBond.changed(!chatVisibleBond._value)
-				notifVisibleBond.changed(false)
+				rxChatVisible.next(!rxChatVisible.value)
+				rxNotifVisible.next(false)
 			}}>
 				<Icon {...{
 					className: 'no-margin',
@@ -337,4 +310,17 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 			</Menu.Item>
 		</React.Fragment>
 	)
+}
+
+const styles = {
+	countStyle: {
+		color: 'white',
+		fontSize: 13,
+		fontWeight: 'bold',
+		left: 0,
+		position: 'absolute',
+		textAlign: 'center',
+		top: 24,
+		width: '100%',
+	}
 }

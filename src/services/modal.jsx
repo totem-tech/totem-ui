@@ -23,9 +23,9 @@ export const ModalsConainer = () => {
             if (!mounted) return
             setModalsArr(Array.from(map))
 
-            // add/remove class to #app element to inticate at least one modal is open
+            // add/remove class to element to inticate at least one modal is open
             const func = !!modals.size ? 'add' : 'remove'
-            document.getElementById('app').classList[func]('modal-open')
+            // document.getElementById('app').classList[func]('modal-open')
         })
         return () => {
             mounted = false
@@ -87,6 +87,7 @@ export const confirm = (confirmProps, id) => {
         />
     )
 }
+// Invertible Confirm component
 const IConfirm = props => {
     const inverted = useInverted()
     return (
@@ -116,19 +117,20 @@ export const showForm = (FormComponent, props, id) => {
     // Invalid component supplied
     if (!isFn(FormComponent)) return
     id = id || uuid.v1()
-    props = props || {}
-    return add(
-        id,
-        <FormComponent
-            {...props}
-            modal={true}
-            onClose={(e, d) => {
-                setTimeout(() => closeModal(id))
-                isFn(props.onClose) && props.onClose(e, d)
-            }}
-            open={true}
-        />
+    const form = (
+        <FormComponent {...{
+            ...props,
+            modal: true,
+            modalId: id,
+            open: true,
+            onClose: (e, d) => {
+                const { onClose } = props || {}
+                closeModal(id)
+                isFn(onClose) && onClose(e, d)
+            },
+        }} />
     )
+    return add(id, form)
 }
 
 // open any form within './forms/ in a modal

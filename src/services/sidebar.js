@@ -1,30 +1,32 @@
 import React from 'react'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
+import { BehaviorSubject } from 'rxjs'
 // Views (including lists and forms)
 import FinancialStatementsView from '../modules/financialStatement/FinancialStatementView'
 import GettingStarted from '../views/GettingStartedView'
 import HistoryList from '../modules/history/HistoryList'
-import IdentityList from '../lists/IdentityList'
-import PartnerList from '../lists/PartnerList'
-import ProjectList from '../lists/ProjectList'
+import IdentityList from '../modules/identity/IdentityList'
+import PartnerList from '../modules/partner/PartnerList'
+import ActivityList from '../modules/activity/ActivityList'
 import SettingsForm from '../forms/Settings'
 import TaskView from '../modules/task/TaskView'
-import TimeKeepingView from '../views/TimeKeepingView'
+import TimekeepingView from '../modules/timekeeping/TimekeepingView'
 import TransferForm from '../forms/Transfer'
 import UtilitiesView from '../views/UtilitiesView'
 // temp
 import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
 import EventList from '../modules/event/EventList'
+import DAARequestForm from '../modules/DAA/RequestForm'
 // utils
 import DataStorage from '../utils/DataStorage'
 import { isBool, isBond } from '../utils/utils'
 // services
 import { translated } from './language'
 import storage from './storage'
-import { getLayout, layoutBond } from './window'
+import { DESKTOP, MOBILE, rxLayout, setClass } from './window'
 
-const [texts] = translated({
+const textsCap = translated({
     eventsTtile: 'Events',
 
     financialStatementTitle: 'Financial statement',
@@ -105,9 +107,9 @@ const [texts] = translated({
     timekeepingSubheader: 'Manage timekeeping against activities that you have been invited to, or that you have created yourself.',
 
     transferTitle: 'Transfer',
-    transferHeader: 'Transfer Transactions',
-    transferSubheader: 'Transfer transaction between your Identities and  Partners.',
-    transferSubheaderDetails: 'You can use the transfer module to send some of your transaction balance to other parties on the Totem Network.',
+    transferHeader: 'Transfer Funds',
+    transferSubheader: 'Make payments to anyone in your partners list',
+    transferSubheaderDetails: 'Use this module to make payments in any currency using the Totem Network. No matter which currency you use, payments will be converted automatically and instantly to any other currency.',
 
     invoicesTitle: 'Manage Invoices',
     creditNoteTitle: 'Credit Note',
@@ -120,51 +122,35 @@ const [texts] = translated({
     settingsTitle: 'Settings',
     utilitiesTitle: 'Utilities',
     utilitiesSubheader: 'Blockchain utilities',
-})
-
+}, true)[1]
 // store items' "active" status in the localStorage
 const MODULE_KEY = 'sidebar'
 const rw = value => storage.settings.module(MODULE_KEY, value)
-const statuses = new DataStorage()
-statuses.setAll(new Map((rw() || {}).items || []))
-statuses.rxData.subscribe(map => rw({ items: Array.from(map) }))
-
-export const allInactiveBond = new Bond().defaultTo(false)
-export const sidebarStateBond = new Bond().defaultTo((rw() || {}).status || {
-    collapsed: false,
-    visible: getLayout() !== 'mobile',
+const settings = rw() || {} //initial settings
+// in-memory storage. However, values are automatically stored to the settings, on change.
+const statuses = new DataStorage(null, null, new Map(settings.items), map => rw({ items: Array.from(map) }))
+export const rxAllInactive = new BehaviorSubject()
+export const rxSidebarState = new BehaviorSubject({
+    ...settings.status,
+    visible: rxLayout.value !== MOBILE,
 })
-// save to local storage to preseve state
-sidebarStateBond.tie(status => rw({ status }))
+
 export const setSidebarState = (collapsed, visible) => {
-    const lastState = sidebarStateBond._value
-    const isMobile = getLayout() === 'mobile'
+    const lastState = rxSidebarState.value
+    const isMobile = rxLayout.value === MOBILE
     // force expand on mobile mode
     collapsed = !isMobile && collapsed
     // always visible when not on mobile mode
     visible = !isMobile || visible
     // state hasn't changed
     if (lastState.collapsed === collapsed && lastState.visible === visible) return
-    sidebarStateBond.changed({ collapsed, visible })
-    // set class
-    const classNames = {
-        'sidebar-visible': visible,
-        'sidebar-collapsed': collapsed,
-    }
-    setTimeout(() => {
-        const { classList } = document.querySelector('#app > .wrapper') || {}
-        classList && Object.keys(classNames).forEach(key => classList[classNames[key] ? 'add' : 'remove'](key))
-    })
+    rxSidebarState.next({ collapsed, visible })
 }
+
 export const toggleSidebarState = () => {
-    const { collapsed, visible } = sidebarStateBond._value
+    let { collapsed, visible } = rxSidebarState.value
     setSidebarState(!collapsed, !visible)
 }
-// update sidebar state on layout change
-layoutBond.tie(() => {
-    const { collapsed, visible } = sidebarStateBond._value || {}
-    setSidebarState(collapsed, visible)
-})
 const gsName = 'getting-started'
 const sidebarItemNames = []
 export const sidebarItems = [
@@ -174,7 +160,7 @@ export const sidebarItems = [
         // headerDividerHidden: true,
         icon: 'play circle outline',
         name: gsName,
-        title: texts.gettingStartedTitle,
+        title: textsCap.gettingStartedTitle,
     },
     {
         content: KeyRegistryPlayground,
@@ -194,147 +180,152 @@ export const sidebarItems = [
         content: IdentityList,
         icon: 'id badge outline',
         name: 'identities',
-        subHeader: texts.identitySubheader,
+        subHeader: textsCap.identitySubheader,
         subHeaderDetails: (
             <div>
-                <p>{texts.identitySubheaderDetails1}</p>
-                <p>{texts.identitySubheaderDetails2}</p>
-                <p>{texts.identitySubheaderDetails3}</p>
-                <p>{texts.identitySubheaderDetails4}</p>
-                <p>{texts.identitySubheaderDetails5}</p>
+                <p>{textsCap.identitySubheaderDetails1}</p>
+                <p>{textsCap.identitySubheaderDetails2}</p>
+                <p>{textsCap.identitySubheaderDetails3}</p>
+                <p>{textsCap.identitySubheaderDetails4}</p>
+                <p>{textsCap.identitySubheaderDetails5}</p>
             </div>
         ),
-        title: texts.identityTitle,
+        title: textsCap.identityTitle,
     },
     {
         content: PartnerList,
         icon: 'users',
-        header: texts.partnersHeader,
+        header: textsCap.partnersHeader,
         name: 'partners',
-        subHeader: texts.partnersSubheader,
+        subHeader: textsCap.partnersSubheader,
         subHeaderDetails: (
             <div>
-                <p>{texts.partnersSubheaderDetails1}</p>
-                <p>{texts.partnersSubheaderDetails2}</p>
-                <p>{texts.partnersSubheaderDetails3}</p>
-                <p>{texts.partnersSubheaderDetails4}</p>
+                <p>{textsCap.partnersSubheaderDetails1}</p>
+                <p>{textsCap.partnersSubheaderDetails2}</p>
+                <p>{textsCap.partnersSubheaderDetails3}</p>
+                <p>{textsCap.partnersSubheaderDetails4}</p>
             </div>
         ),
-        title: texts.partnersTitle,
+        title: textsCap.partnersTitle,
     },
     {
-        content: ProjectList,
+        content: ActivityList,
         // headerDividerHidden: true,
         icon: 'briefcase',
         name: 'projects',
-        subHeader: texts.projectSubheader,
+        subHeader: textsCap.projectSubheader,
         subHeaderDetails: (
             <div>
-                <p>{texts.projectSubheaderDetails1}</p>
-                <p>{texts.projectSubheaderDetails2}</p>
+                <p>{textsCap.projectSubheaderDetails1}</p>
+                <p>{textsCap.projectSubheaderDetails2}</p>
             </div>
         ),
-        title: texts.projectTitle,
+        title: textsCap.projectTitle,
     },
     {
-        content: TimeKeepingView,
+        content: TimekeepingView,
         icon: 'clock outline',
         name: 'timekeeping',
-        subHeader: texts.timekeepingSubheader,
-        title: texts.timekeepingTitle,
+        subHeader: textsCap.timekeepingSubheader,
+        title: textsCap.timekeepingTitle,
     },
     {
         content: TaskView,
         icon: 'tasks',
         name: 'tasks',
-        title: texts.tasksTitle,
-        subHeader: texts.tasksSubheader,
+        title: textsCap.tasksTitle,
+        subHeader: textsCap.tasksSubheader,
     },
     {
         content: TransferForm,
-        contentProps: { style: { maxWidth: 400 } },
+        contentProps: { style: { maxWidth: 450 } },
         icon: 'money bill alternate outline',
-        header: texts.transferHeader,
+        header: textsCap.transferHeader,
         name: 'transfer',
-        subHeader: texts.transferSubheader,
-        subHeaderDetails: texts.transferSubheaderDetails,
-        title: texts.transferTitle,
+        subHeader: textsCap.transferSubheader,
+        subHeaderDetails: textsCap.transferSubheaderDetails,
+        title: textsCap.transferTitle,
     },
     // { icon: 'file alternate', title: 'Invoice', subHeader: '', active: false, content: <Invoice /> },
     {
         icon: 'file alternate',
         name: 'invoices',
-        title: texts.invoicesTitle,
+        title: textsCap.invoicesTitle,
     },
     {
         icon: 'file alternate outline',
         name: 'credit-note',
-        title: texts.creditNoteTitle,
+        title: textsCap.creditNoteTitle,
     },
     {
         icon: 'exchange',
         name: 'purchase-order',
-        title: texts.purchaseOrderTitle,
+        title: textsCap.purchaseOrderTitle,
     },
     {
         icon: 'inbox',
         name: 'manage-orders',
-        title: texts.manageOrderTitle,
+        title: textsCap.manageOrderTitle,
     },
     {
         icon: 'cc mastercard',
         name: 'expense',
-        title: texts.expenseTitle,
+        title: textsCap.expenseTitle,
     },
     {
         icon: 'exclamation circle',
         name: 'disputed-items',
-        title: texts.disputedItemsTitle,
+        title: textsCap.disputedItemsTitle,
     },
     {
         icon: 'chart bar outline',
         name: 'edit-accounting',
-        title: texts.editAccountingTitle,
+        title: textsCap.editAccountingTitle,
     },
     {
         icon: 'lightbulb',
         name: 'products',
-        title: texts.productsTitle,
+        title: textsCap.productsTitle,
     },
     {
         content: HistoryList,
         icon: 'history',
         name: 'history',
-        title: texts.historyTitle,
-        subHeader: texts.historySubheader
+        title: textsCap.historyTitle,
+        subHeader: textsCap.historySubheader
     },
     {
         content: SettingsForm,
-        contentProps: { style: { maxWidth: 400 } },
+        contentProps: { style: { maxWidth: 450 } },
         icon: 'cogs',
         name: 'settings',
-        title: texts.settingsTitle,
+        title: textsCap.settingsTitle,
     },
     {
         content: UtilitiesView,
         icon: 'stethoscope',
         name: 'utilities',
-        subHeader: texts.utilitiesSubheader,
-        title: texts.utilitiesTitle,
-    },
-    {
-        hidden: false,
-        content: EventList,
-        icon: '',
-        name: 'blockchain-events',
-        title: texts.eventsTtile,
+        subHeader: textsCap.utilitiesSubheader,
+        title: textsCap.utilitiesTitle,
     },
     {
         content: FinancialStatementsView,
         icon: '',
         name: 'financial-statement',
-        title: texts.financialStatementTitle,
+        title: textsCap.financialStatementTitle,
     },
+    {
+        content: EventList,
+        icon: '',
+        name: 'blockchain-events',
+        title: textsCap.eventsTtile,
+    },
+    // {
+    //     content: DAARequestForm,
+    //     icon: '',
+    //     name: 'DAARequestForm',
+    //     title: 'DAARequestForm',
+    // },
 ].map(item => {
     const {
         active = false,
@@ -368,7 +359,8 @@ export const setActive = (name, active = true, contentProps, hidden) => {
     item.contentProps = { ...item.contentProps, ...contentProps }
     statuses.set(name, active)
     item.bond.changed(uuid.v1())
-    allInactiveBond.changed(sidebarItems.every(({ active, hidden }) => !active || hidden))
+    const allInactive = sidebarItems.every(({ active, hidden }) => !active || hidden)
+    rxAllInactive.next(allInactive)
 
     scrollTo(name)
     return item
@@ -402,20 +394,35 @@ export const scrollTo = name => {
 
 export const toggleActive = name => setActive(name, !(getItem(name) || {}).active)
 
-// store/replace localStorage data
-// adds new and removes any item that's no longer being used (eg: name changed)
+// adds new and removes any deprecated items
 statuses.setAll(sidebarItems.reduce((map, { active, name }) => map.set(name, active), new Map()))
 // if all items are inactive show getting started module
 sidebarItems.every(x => x.hidden || !x.active) && setActive(gsName)
+// update sidebar state on layout change
+rxLayout.subscribe(() => {
+    const { collapsed, visible } = rxSidebarState.value || {}
+    setSidebarState(collapsed, visible)
+})
+// automatically save to the settings storage
+// save to local storage to preseve state
+rxSidebarState.subscribe(() => {
+    const { collapsed, visible } = rxSidebarState.value
+
+    rw({ status: rxSidebarState.value })
+    setClass('body', {
+        'sidebar-visible': visible,
+        'sidebar-collapsed': collapsed,
+    })
+})
 
 export default {
-    allInactiveBond,
     getItem,
     setActive,
     setContentProps,
     scrollTo,
     setSidebarState,
-    sidebarStateBond,
+    rxAllInactive,
+    rxSidebarState,
     toggleActive,
     toggleSidebarState,
 }
