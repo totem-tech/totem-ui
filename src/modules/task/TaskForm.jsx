@@ -469,8 +469,9 @@ export default class TaskForm extends Component {
                     ? [bounty, bounty]
                     : await convertTo(bounty, currency, currencyDefault)
                 // user account balance
-                result[1] = await query('api.query.balances.freeBalance', address)
-
+                let balance = await query('api.query.balances.freeBalance', address)
+                const locks =  await query('api.query.balances.locks', address)
+                result[1] = balance - locks.reduce((totalLocked, lock) => totalLocked + lock.amount)
                 resolve(result)
             } catch (e) { reject(e) }
         })
