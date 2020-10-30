@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import FormBuilder, { findInput,  } from '../../components/FormBuilder'
+import FormBuilder, { fillValues, findInput,  } from '../../components/FormBuilder'
 import { isFn, arrSort, textEllipsis } from '../../utils/utils'
 // services
 import { getUser } from './ChatClient'
@@ -39,7 +39,7 @@ export default function NewInboxForm(props) {
     const inboxKeys = Object.keys(inboxesSettings())
     const [success, setSuccess] = useState(false)
     
-    const [inputs, setInputs] = useState(([
+    const [inputs, setInputs] = useState(fillValues([
         {
             autoFocus: true,
             excludeOwnId: true,
@@ -48,7 +48,7 @@ export default function NewInboxForm(props) {
             message: { content: textsCap.userIdsHint },
             multiple: true,
             name: inputNames.receiverIds,
-            rxValue: new BehaviorSubject(''),
+            rxValue: new BehaviorSubject([]),
             options: arrSort(
                 inboxKeys.map(key => {
                     const receiverIds = key.split(',')
@@ -69,7 +69,7 @@ export default function NewInboxForm(props) {
                 'text',
             ),
             onChange: (_, values) => {
-                let userIds = values[inputNames.receiverIds].map(x => x.split(',')).flat()
+                const  userIds = values[inputNames.receiverIds].map(x => x.split(',')).flat()
                 const nameIn = findInput(inputs, inputNames.name)
                 const inboxKey = getInboxKey(userIds)
                 const hideName = !inboxKey || inboxKey.split(',').length <= 1 || userIds.includes(SUPPORT)
