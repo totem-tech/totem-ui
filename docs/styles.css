@@ -466,10 +466,10 @@ body.inverted .ui.checkbox input:focus+label.checkbox-group-item {
 }
 
 /* dropdown */
-body.inverted .ui.dropdown {
-    color: black;
+body.inverted .ui.dropdown.selection > .text {
+	color: black;
+    font-weight: normal;
 }
-
 /* Semantic UI Steps (no built-in inverted!!)*/
 body.inverted .ui.ordered.steps * {
     background: #4c4c4c;
