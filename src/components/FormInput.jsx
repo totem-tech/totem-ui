@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Accordion, Button, Dropdown, Form, Icon, Input, TextArea } from 'semantic-ui-react'
 import PromisE from '../utils/PromisE'
-import { deferred, hasValue, isArr, isFn, isObj, isStr, objWithoutKeys, searchRanked, isBool } from '../utils/utils'
+import { deferred, hasValue, isArr, isFn, isObj, isStr, objWithoutKeys, searchRanked, isBool, isPromise } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
 import Message from './Message'
 import Invertible from './Invertible'
@@ -163,13 +163,21 @@ export class FormInput extends Component {
 				return triggerChange()
 			}
 			const isMsg = !vMsg && !isStr(vMsg) && !React.isValidElement(vMsg)
-			message = isMsg ? vMsg : { content: vMsg, status: 'error' }
+			message = isMsg ? vMsg : { content: `${vMsg}`, status: 'error' }
 			errMsg = message && message.status === 'error' ? message.content : errMsg
 			triggerChange()
 		}
 
 		// forces any unexpected error to be handled gracefully
-		PromisE(async () => await validate(event, data)).then(handleValidate, handleValidate)
+		PromisE(async () => {
+			let result = validate(event, data)
+			if (!isPromise(result)) return result
+
+			this.setState({ loading: true })
+			result = await result
+			this.setState({ loading: false })
+			return result
+		}).then(handleValidate, handleValidate)
 	}
 
 	setMessage = (message = {}) => this.setState({ message })
@@ -185,6 +193,7 @@ export class FormInput extends Component {
 			inlineLabel,
 			invalid,
 			label,
+			loading,
 			message: externalMsg,
 			name,
 			required,
@@ -195,14 +204,21 @@ export class FormInput extends Component {
 			width,
 		} = this.props
 		let useInput = useInputOrginal
-		const { message: internalMsg } = this.state
+		const { loading: loadingS, message: internalMsg } = this.state
 		const message = internalMsg || externalMsg
 		let hideLabel = false
 		let inputEl = ''
 		if (hidden) return ''
 		// Remove attributes that are used by the form or Form.Field but
 		// shouldn't be used or may cause error when using with inputEl
-		let attrs = objWithoutKeys({ ...this.props, key: name }, NON_ATTRIBUTES)
+		let attrs = objWithoutKeys(
+			{
+				...this.props,
+				key: name,
+				loading: loadingS || loading,
+			},
+			NON_ATTRIBUTES,
+		)
 		attrs.ref = elementRef
 		attrs.onChange = this.handleChange
 		let isGroup = false

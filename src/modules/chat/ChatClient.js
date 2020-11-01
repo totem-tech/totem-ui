@@ -355,6 +355,11 @@ export class ChatClient {
             ids,
             (err, result) => cb(err, new Map(result)),
         )
+        
+        /**
+         * 
+         */
+        this.kyc = (kyc, cb) => isFn(cb) && socket.emit('')
     }
 
     /**

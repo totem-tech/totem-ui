@@ -9,6 +9,7 @@ import { reducer, useRxSubject } from '../../services/react'
 import { get as getIdentity, rxIdentities } from '../identity/identity'
 import { get as getLocation } from '../location/location'
 import IdentityForm from '../identity/IdentityForm'
+import PromisE from '../../utils/PromisE'
 
 const textsCap = translated({
     blockchainLabel: 'Blockchain',
@@ -83,7 +84,7 @@ RequestFrom.defaultProps = {
     size: 'tiny',
 }
 
-// showForm(RequestFrom) // remove
+showForm(RequestFrom) // remove
 
 const handleSubmitCb = setState => (_, values) => {
     console.log('onSumbit: loading start')
@@ -197,12 +198,15 @@ const formInputs = Object.freeze([
         placeholder: textsCap.blockchainPlaceholder,
         required: true,
         search: ['text', 'value'],
+        selectOnNavigation: false,
         selection: true,
+        simple: true,
         type: 'dropdown',
         // check if user already has been assigned a requested deposit address for selected chain
         validate: async () => {
-            // await PromisE.delay(3000)
+            await PromisE.delay(3000)
             // return 'you have already been assigned an address for this chain'
+            return
         },
     },
     {
