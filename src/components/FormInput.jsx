@@ -254,7 +254,7 @@ export class FormInput extends Component {
 				// if number of options is higher than 50 and if lazyLoad is disabled, can slowdown FormBuilder
 				attrs.lazyLoad = isBool(attrs.lazyLoad) ? attrs.lazyLoad : true
 				attrs.search = isArr(attrs.search) ? searchRanked(attrs.search) : attrs.search
-				attrs.style = { maxWidth: '100%', minWidth: '100%', ...attrs.style }
+				attrs.style = { ...attrs.style }//maxWidth: '100%', minWidth: '100%',
 				inputEl = <Dropdown {...attrs} />
 				break
 			case 'group':

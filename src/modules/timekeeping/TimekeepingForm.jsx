@@ -210,7 +210,6 @@ export default class TimekeepingForm extends Component {
                     rxValue: new BehaviorSubject(),
                     clearable: true,
                     disabled: projectHashSupplied,
-                    inline: true,
                     label: wordsCap.activity,
                     name: 'projectHash',
                     onChange: this.handleProjectChange,

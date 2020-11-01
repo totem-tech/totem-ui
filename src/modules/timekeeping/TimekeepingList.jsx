@@ -17,8 +17,8 @@ import identities, { getSelected, rxIdentities, rxSelected } from '../identity/i
 import { getAddressName, rxPartners } from '../partner/partner'
 import PartnerForm from '../partner/PartnerForm'
 import { getProjects, statuses, query, queueables } from './timekeeping'
-import TimekeepingForm, { TimekeepingUpdateForm } from './TimekeeepingForm'
-import TimekeeepingInviteForm from './TimekeeepingInviteForm'
+import TimekeepingForm, { TimekeepingUpdateForm } from './TimekeepingForm'
+import TimekeeepingInviteForm from './TimekeepingInviteForm'
 
 const toBeImplemented = () => alert('To be implemented')
 
