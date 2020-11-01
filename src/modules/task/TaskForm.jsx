@@ -461,23 +461,22 @@ export default class TaskForm extends Component {
 
         const promise = new Promise(async (resolve, reject) => {
             try {
-                const result = []
-                // no need to convert currency if amount is zero or XTX is the selected currency
-                const requireConversion = bounty && currency !== currencyDefault
-                // amountXTX
-                result[0] = !requireConversion
-                    ? [bounty, bounty]
-                    : await convertTo(bounty, currency, currencyDefault)
                 // user account balance
                 let balance = await query('api.query.balances.freeBalance', address)
                 const locks =  await query('api.query.balances.locks', address)
-                result[1] = balance - locks.reduce((totalLocked, lock) => totalLocked + lock.amount)
-                resolve(result)
+                const freeBalance = balance - locks.reduce((totalLocked, lock) => totalLocked + lock.amount, 0)
+                // no need to convert currency if amount is zero or XTX is the selected currency
+                const requireConversion = bounty && currency !== currencyDefault
+                // amountXTX
+                const amount = !requireConversion
+                    ? [bounty, bounty]
+                    : await convertTo(bounty, currency, currencyDefault)
+                const amountXTX = parseInt(amount[0])
+                resolve([ amountXTX, freeBalance ])
             } catch (e) { reject(e) }
         })
         const handleBountyResult = result => {
-            const amountXTX = Math.ceil((result[0] || [])[0] || 0)
-            const balanceXTX = result[1]
+            const [amountXTX, balanceXTX] = result || []
             const amountTotalXTX = amountXTX + estimatedTxFee + minBalanceAterTx
             const gotBalance = balanceXTX - amountTotalXTX >= 0
             amountXTXIn.rxValue.next(amountXTX)
