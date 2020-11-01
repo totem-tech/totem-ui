@@ -78,7 +78,9 @@ export default class PartnerForm extends Component {
         const { address, name, tags = [], visibility } = values
         const locationQuery = {}
         locationQuery[locationInputNames.partnerIdentity] = address
-        const locationResult = searchLocation(locationQuery, true, true, false, 1)
+        const locationResult = !address
+            ? new Map()
+            : searchLocation(locationQuery, true, true, false, 1)
         const [ locationId, location ] = Array.from(locationResult)[0] || []
         this.companySearchDP = PromisE.deferred()
 
