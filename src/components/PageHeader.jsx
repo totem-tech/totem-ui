@@ -6,7 +6,7 @@ import Balance from '../components/Balance'
 import { arrSort, className, copyToClipboard, textEllipsis } from '../utils/utils'
 // forms
 import IdentityForm from '../modules/identity/IdentityForm'
-import TimekeepingForm from '../modules/timekeeping/TimekeeepingForm'
+import TimekeepingForm from '../modules/timekeeping/TimekeepingForm'
 // services
 import { getUser, rxIsLoggedIn } from '../modules/chat/ChatClient'
 import { getSelected, setSelected, rxIdentities } from '../modules/identity/identity'

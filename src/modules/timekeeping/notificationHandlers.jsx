@@ -39,7 +39,7 @@ const textsCap = translated({
 export const handleInvitation = (
     projectId, workerAddress, accepted,
     // optional args
-    projectOwnerId, projectName
+    projectOwnerId, projectName//, notificationId
 ) => new Promise(resolve => {
     const type = 'timekeeping'
     const childType = 'invitation'

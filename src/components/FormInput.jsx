@@ -53,6 +53,7 @@ const NON_ATTRIBUTES = Object.freeze([
 	'width',
 	'onInalid',
 	'customMessages',
+	'ignoreAttributes',
 ])
 export const nonValueTypes = Object.freeze(['button', 'html'])
 
@@ -92,7 +93,6 @@ export class FormInput extends Component {
 			integer,
 			onChange,
 			required,
-			rxValue,
 			trueValue: trueValue = true,
 			type,
 			validate,
@@ -189,6 +189,7 @@ export class FormInput extends Component {
 			elementRef,
 			error,
 			hidden,
+			ignoreAttributes,
 			inline,
 			inlineLabel,
 			invalid,
@@ -217,7 +218,7 @@ export class FormInput extends Component {
 				key: name,
 				loading: loadingS || loading,
 			},
-			NON_ATTRIBUTES,
+			[...NON_ATTRIBUTES, ...ignoreAttributes || []],
 		)
 		attrs.ref = elementRef
 		attrs.onChange = this.handleChange
@@ -343,6 +344,8 @@ FormInput.propTypes = {
 	// Delay, in miliseconds, to display built-in and `validate` error messages
 	// Set `defer` to `null` to prevent using deferred mechanism
 	defer: PropTypes.number,
+	// attributes to ignore when passing on to input element
+	ignoreAttributes: PropTypes.arrayOf(PropTypes.string),
 	// For text field types
 	inlineLabel: PropTypes.any,
 	// If field types is 'number', will validate as an integer. Otherwise, float is assumed.
@@ -392,6 +395,7 @@ FormInput.propTypes = {
 }
 FormInput.defaultProps = {
 	defer: 300,
+	ignoreAttributes: [],
 	integer: false,
 	type: 'text',
 	width: 16,

@@ -22,17 +22,10 @@ import storage from './services/storage'
 import timeKeeping from './modules/timekeeping/timekeeping'
 import toast, { ToastsContainer } from './services/toast'
 import windw, { rxGridColumns, rxLayout, MOBILE } from './services/window'
-// Utils
-import convert from './utils/convert'
-import DataStorage from './utils/DataStorage'
-import naclHelper from './utils/naclHelper'
-import polkadotHelper from './utils/polkadotHelper'
-import validator from './utils/validator'
 // Images
 import TotemButtonLogo from './assets/totem-button-grey.png'
-import PlaceholderImage from './assets/totem-placeholder.png'
+// import PlaceholderImage from './assets/totem-placeholder.png'
 import ChatBar from './modules/chat/ChatBar'
-import PromisE from './utils/PromisE'
 import { useRxSubject } from './services/react'
 
 let queueResumed = false
@@ -45,13 +38,14 @@ export default function App() {
 	useEffect(() => {
 		// For debug only.
 		window.utils = {
-			convert,
-			naclHelper,
-			polkadotHelper,
-			PromisE: PromisE,
-			validator,
+			convert: require('./utils/convert'),
+			naclHelper: require('./utils/naclHelper'),
+			polkadotHelper: require('./utils/polkadotHelper'),
+			PromisE: require('./utils/PromisE'),
+			utils: require('./utils/utils'),
+			validator: require('./utils/validator'),
 		}
-		window.DataStorage = DataStorage
+		window.DataStorage = require('./utils/DataStorage')
 		window.services = {
 			activity,
 			blockchain,

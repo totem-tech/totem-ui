@@ -84,7 +84,7 @@ RequestFrom.defaultProps = {
     size: 'tiny',
 }
 
-// showForm(RequestFrom) // remove
+showForm(RequestFrom) // remove
 
 const handleSubmitCb = setState => (_, values) => {
     console.log('onSumbit: loading start')
@@ -210,15 +210,14 @@ const formInputs = Object.freeze([
         },
     },
     {
-        customMessages: { hex: textsCap.ethAddressError },
+        chainType: 'ethereum', // validates the identity type as Ethereum address
+        customMessages: { identity: textsCap.ethAddressError },
         hidden: values => values[inputNames.blockchain] !== 'ETH',
+        ignoreAttributes: [ 'chainType' ], // prevents the chainType property being passed to an element
         label: textsCap.ethAddressLabel,
-        // number of characters required including '0x'
-        minLength: 42, 
-        maxLength: 42,
         name: inputNames.ethAddress,
         placeholder: textsCap.ethAddressPlaceholder,
         required: true,
-        type: 'hex',
+        type: 'identity',
     }
 ])

@@ -179,7 +179,7 @@ body .pushable{
 	-webkit-overflow: hidden;
 }
 body.mobile .pushable {
-	height: calc(100% - 94px);
+	height: calc(100% - 108px);
 }
 .mobile #main-content::-webkit-scrollbar {
  	width: 3px;
