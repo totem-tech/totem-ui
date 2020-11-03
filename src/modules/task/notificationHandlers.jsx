@@ -1,32 +1,28 @@
 import React from 'react'
-import { isArr, isBool } from '../../utils/utils'
-import { ButtonAcceptOrReject, ButtonGroup } from '../../components/buttons'
+import { isArr } from '../../utils/utils'
+import { ButtonGroup } from '../../components/buttons'
 import { translated } from '../../services/language'
 import { confirm } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES, statuses as queueStatuses } from '../../services/queue'
 import { get as getIdentity } from '../identity/identity'
 import { get as getPartner } from '../partner/partner'
-import { getMatchingIds, remove, removeMatching, setItemViewHandler } from '../notification/notification'
-import task, { query, queueables, statuses } from './task'
+import { getMatchingIds, remove, setItemViewHandler } from '../notification/notification'
+import { query, queueables, statuses } from './task'
 
 const [texts, textsCap] = translated({
     accept: 'accept',
     assigntTaskMsg: 'assigned a task to you.',
     dispute: 'dispute',
-    ignore: 'ignore',
     invoiceAccept: 'accept task invoice',
     invoiceAcceptConfirm: 'accept invoice and pay the assignee?',
     invoiceDispute: 'reject task invoice',
     invoiceDisputeConfirm: 'reject invoice and dispute task?',
     pay: 'pay',
     reject: 'reject',
-    removeNotification: 'remove notification?',
-    removeNotificationDesc: 'You will still be able to see the task in the tasks module',
     task: 'task',
     taskAccept: 'accept task',
     taskAccepted: 'accepted the following task:',
     taskDisputed: 'disputed a task',
-    taskIgnore: 'ignore task',
     taskInvoiced: 'created an invoice',
     taskPaid: 'made a payment to you',
     taskReject: 'reject task',
@@ -43,17 +39,25 @@ const CHILD_TYPES = {
     invoicedResponse: 'invoiced_response',
 }
 
-const getNotifIds = (taskId, childType) => getMatchingIds({ type: TASK_TYPE, childType }, { taskId })
+/**
+ * @name    getTaskNotifIds
+ * @summary get task notification IDs matching @taskId and @childType
+ * 
+ * @param   {String}    taskId 
+ * @param   {String}    childType notification child type
+ * 
+ * @returns {Array}
+ */
+const getTaskNotifIds = (taskId, childType) => getMatchingIds({ type: TASK_TYPE, childType }, { taskId })
 
 /**
- * @name    removeNotifs
- * @summary remove notifications matching `childType` and task ID in `data` property
+ * @name    removeTaskNotifs
+ * @summary remove task notifications matching `childType` and task ID in `data` property
  * 
- * @param {String} taskId 
- * @param {String} childType
+ * @param   {String}    taskId 
+ * @param   {String}    childType notification child type
  */
-const removeNotifs = (taskId, childType) => remove(getNotifIds(taskId, childType))
-    //removeMatching({ type: TASK_TYPE, childType }, { taskId })
+const removeTaskNotifs = (taskId, childType) => remove(getTaskNotifIds(taskId, childType))
 
 /**
  * @name    handleAssignmentResponse
@@ -71,28 +75,19 @@ export const handleAssignmentResponse = async (taskId, fulfillerAddress, accepte
     const isFulfiller = task && task.fulfiller === fulfillerAddress
     // invalid taskId or task cannot be accepted
     if (!task || !isFulfiller || orderStatus !== statuses.submitted)
-        return removeNotifs(taskId, CHILD_TYPES.assignment)
+        return removeTaskNotifs(taskId, CHILD_TYPES.assignment)
     
     confirm({
         size: 'mini',
-        header: accepted === null ? textsCap.removeNotification : undefined,
-        content: accepted === null
-            ? textsCap.removeNotificationDesc
-            : accepted
-                ? textsCap.taskAccept
-                : textsCap.taskReject,
-        onConfirm: () => {
-            // user ignored notification
-            if (accepted === null) return remove(notificationId)
-            handleUpdateStatus(
-                fulfillerAddress,
-                taskId,
-                accepted ? statuses.accepted : statuses.rejected,
-                accepted ? textsCap.taskAccept : textsCap.taskReject,
-                success => success && removeNotifs( taskId, CHILD_TYPES.assignment ),
-                notificationId || getNotifIds(taskId, CHILD_TYPES.assignment),
-            )
-        },
+        content: accepted ? textsCap.taskAccept : textsCap.taskReject,
+        onConfirm: () => handleUpdateStatus(
+            fulfillerAddress,
+            taskId,
+            accepted ? statuses.accepted : statuses.rejected,
+            accepted ? textsCap.taskAccept : textsCap.taskReject,
+            success => success && removeTaskNotifs( taskId, CHILD_TYPES.assignment ),
+            notificationId || getTaskNotifIds(taskId, CHILD_TYPES.assignment),
+        ),
     })
 
     
@@ -109,24 +104,16 @@ export const handleAssignmentResponse = async (taskId, fulfillerAddress, accepte
  */
 export const handleInvoicedResponse = async (taskId, ownerAddress, accepted, notificationId) => {
     confirm({
-        header: accepted === null ? textsCap.removeNotification : undefined,
-        content: accepted === null
-            ? textsCap.removeNotificationDesc
-            : accepted
-                ? textsCap.invoiceAcceptConfirm
-                : textsCap.invoiceDisputeConfirm,
-        onConfirm: () => {
-            if (accepted === null) return remove(notificationId)
-            handleUpdateStatus(
-                ownerAddress,
-                taskId,
-                accepted ? statuses.completed : statuses.disputed,
-                accepted ? textsCap.invoiceAccept : textsCap.invoiceDispute,
-                // remove matching notifications
-                () => removeNotifs(taskId, CHILD_TYPES.invoiced),
-                notificationId || getNotifIds(taskId, CHILD_TYPES.invoiced),
-            )
-        },
+        content: accepted ? textsCap.invoiceAcceptConfirm : textsCap.invoiceDisputeConfirm,
+        onConfirm: () => handleUpdateStatus(
+            ownerAddress,
+            taskId,
+            accepted ? statuses.completed : statuses.disputed,
+            accepted ? textsCap.invoiceAccept : textsCap.invoiceDispute,
+            // remove matching notifications
+            () => removeTaskNotifs(taskId, CHILD_TYPES.invoiced),
+            notificationId || getTaskNotifIds(taskId, CHILD_TYPES.invoiced),
+        ),
         size: 'mini',
     })
 }
@@ -257,7 +244,6 @@ setTimeout(() => [
             const buttons = [
                 { color: 'blue', content: textsCap.accept },
                 { color: 'red', content: textsCap.reject },
-                { content: textsCap.ignore },
             ]
             const onAction = (_, accepted) => handleAssignmentResponse(taskId, fulfillerAddress, accepted, id)
             const content = (
@@ -313,7 +299,6 @@ setTimeout(() => [
             const buttons = [
                 { color: 'blue', content: textsCap.pay },
                 { color: 'red', content: textsCap.dispute },
-                { content: textsCap.ignore },
             ]
             const onAction = (_, accepted) => handleInvoicedResponse(taskId, ownerAddress, accepted, id)
             const content = (

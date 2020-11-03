@@ -150,6 +150,16 @@ ButtonGroup.defaultProps = {
     ]
 }
 
+/**
+ * @name    ButtonGroupOr
+ * @summary shorthand for `ButtonGroup` with property `or = true`
+ * 
+ * @param   {Object} props 
+ * 
+ * @returns {Element}
+ */
+export const ButtonGroupOr = props => <ButtonGroup {...props} or={true}/>
+
 export const Reveal = ({ content, hiddenContent, style, defaultVisible = false, El = 'div' }) => {
     const [visible, setVisible] = useState(defaultVisible)
     return (

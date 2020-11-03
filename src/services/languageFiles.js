@@ -33,6 +33,7 @@ export default [
     "./src/index.js",
     "./src/modules/DAA/DAA.js",
     "./src/modules/DAA/DAA.jsx",
+    "./src/modules/DAA/KYCForm.jsx",
     "./src/modules/DAA/RequestForm.jsx",
     "./src/modules/activity/ActivityForm.jsx",
     "./src/modules/activity/ActivityList.jsx",

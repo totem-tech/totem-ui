@@ -54,7 +54,7 @@ const [texts] = translated({
     inactiveWorkerHeader1: 'You are not part of this Team! Request an invitation',
     inactiveWorkerHeader2: 'Action required',
     inactiveWorkerMsg1: 'Please select an activity you have been invited to and already accepted.',
-    inactiveWorkerMsg3: 'You are yet to accept/reject invitation for this activity.',
+    inactiveWorkerMsg3: 'You are yet to accept or reject invitation to join this activity team.',
     inactiveProjectSelected: 'This Activity is inactive!',
     invalidDuration: 'Invalid duration',
     invalidDurationMsgPart1: 'Please enter a valid duration using the following format:',

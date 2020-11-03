@@ -1,15 +1,16 @@
 import React, { useEffect, useReducer, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Button, Icon } from 'semantic-ui-react'
-import { arrUnique, textEllipsis } from '../../utils/utils'
+import PromisE from '../../utils/PromisE'
+import { objCopy, textEllipsis } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
 import { reducer, useRxSubject } from '../../services/react'
+import client from '../chat/ChatClient'
 import { get as getIdentity, rxIdentities } from '../identity/identity'
 import { get as getLocation } from '../location/location'
 import IdentityForm from '../identity/IdentityForm'
-import PromisE from '../../utils/PromisE'
 
 const textsCap = translated({
     blockchainLabel: 'Blockchain',
@@ -46,7 +47,7 @@ export default function RequestFrom(props = {}) {
     const [state, setStateOrg] = useReducer(reducer, {})
     const [setState] = useState(() => (...args) => setState.mounted && setStateOrg(...args))
     const [inputs] = useRxSubject(rxIdentities, identitiesMap => {
-        const inputs = [...formInputs.map(x => ({ ...x }))]
+        const inputs = formInputs.map(x => ({...x})) //objCopy(x, {})
         const identityIn = findInput(inputs, inputNames.identity)
         identityIn.options = Array.from(identitiesMap)
             .map(([_, { address, locationId, name }]) => {
@@ -67,13 +68,20 @@ export default function RequestFrom(props = {}) {
 
     useEffect(() => {
         setState.mounted = true
-        setState({ loading: true, onSubmit: handleSubmitCb(setState) })
-        setTimeout(() => {
-            findInput(inputs, inputNames.kycDone)
-                .rxValue.next(false)
-            setState({ loading: false })
-            return
-        }, 300)
+        setState({
+            loading: true,
+            onSubmit: handleSubmitCb(setState),
+        })
+        client.crowdsaleKYC
+            .promise(true)
+            .then(kycDone => {
+                const { rxValue } = findInput(inputs, inputNames.kycDone) || {}
+                rxValue && rxValue.next(kycDone)
+                setState({ loading: false })
+                return
+            })
+            // ignore error | should not occur
+            .catch(console.log)
         return () => setState.mounted = false
     }, [setState])
 
@@ -84,7 +92,7 @@ RequestFrom.defaultProps = {
     size: 'tiny',
 }
 
-showForm(RequestFrom) // remove
+// showForm(RequestFrom) // remove
 
 const handleSubmitCb = setState => (_, values) => {
     console.log('onSumbit: loading start')
@@ -100,7 +108,7 @@ const hideIfKycDone = values => !!values[inputNames.kycDone]
 const formInputs = Object.freeze([
     {
         name: inputNames.kycDone,
-        rxValue: new BehaviorSubject(false),
+        rxValue: new BehaviorSubject(),
         type: 'hidden',
     },
     {
@@ -203,10 +211,14 @@ const formInputs = Object.freeze([
         simple: true,
         type: 'dropdown',
         // check if user already has been assigned a requested deposit address for selected chain
-        validate: async () => {
-            await PromisE.delay(3000)
-            // return 'you have already been assigned an address for this chain'
-            return
+        validate: async (_, { value: blockchain }, values) => {
+            // await PromisE.delay(3000)
+            try {
+                const address = await client.crowdsaleDAA.promise(blockchain, '')
+                return address && 'you have already been assigned an address for this chain'
+            } catch (err) {
+                return err
+            }
         },
     },
     {
