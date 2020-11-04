@@ -140,6 +140,7 @@ export const showForm = (FormComponent, props, id) => {
         const Form = require(`../forms/${form}${form.endsWith('.jsx') ? '' : '.jsx'}`)
         const values = getUrlParam()
         showForm(Form.default, { values })
+        history.pushState({}, null, `${location.protocol}//${location.host}`)
     } catch (e) {
         form && console.log(e)
     }
