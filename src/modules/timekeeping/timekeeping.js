@@ -321,7 +321,7 @@ export const queueables = {
         // @status          int: record status code
         // @reason          object: valid properties => ReasonCodeKey, ReasonCodeTypeKey
         // @postingPeriod   u16: 15 fiscal periods (0-14) // not yet implemented use default 0
-        // @blockStart      int: block number when timekeeeping started
+        // @blockStart      int: block number when timekeeping started
         // @blockEnd        int: block number when timekeeping ended
         // @blockCount      int: total number of blocks worker has been active
         // @breakCount      int: number of breaks taken during record period

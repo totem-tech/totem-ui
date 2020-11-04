@@ -17,8 +17,8 @@ import identities, { getSelected, rxIdentities, rxSelected } from '../identity/i
 import { getAddressName, rxPartners } from '../partner/partner'
 import PartnerForm from '../partner/PartnerForm'
 import { getProjects, statuses, query, queueables } from './timekeeping'
-import TimekeepingForm, { TimekeepingUpdateForm } from './TimekeeepingForm'
-import TimekeeepingInviteForm from './TimekeeepingInviteForm'
+import TimekeepingForm, { TimekeepingUpdateForm } from './TimekeepingForm'
+import TimekeepingInviteForm from './TimekeepingInviteForm'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -595,7 +595,7 @@ export default class ProjectTimeKeepingList extends Component {
                         <Button
                             positive
                             content={textsCap.orInviteATeamMember}
-                            onClick={() => showForm(TimekeeepingInviteForm)}
+                            onClick={() => showForm(TimekeepingInviteForm)}
                         />
                     )}
                 </p>

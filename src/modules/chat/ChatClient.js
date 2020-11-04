@@ -1,6 +1,7 @@
 import io from 'socket.io-client'
 import { BehaviorSubject } from 'rxjs'
-import { isFn } from '../../utils/utils'
+import { isFn, isStr } from '../../utils/utils'
+import { translated } from '../../services/language'
 import storage from '../../services/storage'
 
 // chat server port
@@ -65,10 +66,9 @@ export const getClient = () => {
                     // if last argument is not a callback increment index to add a new callback
                     // on page reload callbacks stored by queue service will become null, due to JSON spec
                     if (!isFn(originalCallback) && originalCallback !== null) callbackIndex++
-                    args[callbackIndex] = function () {
-                        const cbArgs = [...arguments]
+                    args[callbackIndex] = (...cbArgs) => {
                         // first argument indicates whether there is an error.
-                        const err = cbArgs[0]
+                        const err = translateError(cbArgs[0])
                         isFn(originalCallback) && originalCallback.apply({}, cbArgs)
                         if (!!err) return reject(err)
                         const result = cbArgs.slice(1)
@@ -94,6 +94,25 @@ export const getClient = () => {
     instance.onConnect(() => instance.login(id, secret, () => { }))
     instance.onConnectError(() => rxIsLoggedIn.next(false))
     return instance
+}
+
+/**
+ * @name    translateInterceptor
+ * @summary translate error messages returned from messaging
+ * 
+ * @param {Function} cb 
+ */
+export const translateError = err => { 
+    // if no error return as is
+    if (!err) return err
+
+    // translate if there is any error message
+    const separator = ' => '
+    if (!err.includes(separator)) return translated({ err })[0].err
+    
+    const [prefix, msg] = err.split(separator)
+    const [texts] = translated({ prefix, msg })
+    return `${texts.prefix}${separator}${texts.msg}`
 }
 
 // Make sure to always keep the callback as the last argument
@@ -354,6 +373,24 @@ export class ChatClient {
         this.taskGetById = (ids, cb) => isFn(cb) && socket.emit('task-get-by-id',
             ids,
             (err, result) => cb(err, new Map(result)),
+        )
+        
+        /**
+         * 
+         */
+        this.crowdsaleKYC = (kycData, cb) => isFn(cb) && socket.emit(
+            'crowdsale-kyc',
+            kycData,
+            cb,
+        )
+        /**
+         * 
+         */
+        this.crowdsaleDAA = (blockchain, ethAddress, cb) => isFn(cb) && socket.emit(
+            'crowdsale-daa',
+            blockchain,
+            ethAddress,
+            cb,
         )
     }
 

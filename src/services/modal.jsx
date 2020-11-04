@@ -10,8 +10,9 @@ const modals = new DataStorage()
 export const rxModals = modals.rxData
 const textsCap = translated({
     areYouSure: 'are you sure?',
-    ok: 'ok',
     cancel: 'cancel',
+    close: 'close',
+    ok: 'ok',
 }, true)[1]
 
 export const ModalsConainer = () => {
@@ -63,28 +64,26 @@ export const closeModal = (id, delay = 0) => setTimeout(() => modals.delete(id),
 export const confirm = (confirmProps, id) => {
     id = id || uuid.v1()
     let { cancelButton, confirmButton, content, open, onCancel, onConfirm } = confirmProps
-    if (!cancelButton && cancelButton !== null) {
-        cancelButton = textsCap.cancel
-    }
-    if (!confirmButton && confirmButton !== null) {
+    if (confirmButton !== null && !confirmButton) {
         confirmButton = textsCap.ok
+    }
+    if (cancelButton !== null && !cancelButton) {
+        cancelButton = !confirmButton ? textsCap.close : textsCap.cancel
     }
     if (!content && content !== null) {
         content = textsCap.areYouSure
     }
     return add(
         id,
-        <IConfirm
-            {...confirmProps}
-            {...{
-                cancelButton,
-                confirmButton,
-                content: content && <div className="content">{content}</div>,
-                open: isBool(open) ? open : true,
-                onCancel: (e, d) => closeModal(id) | (isFn(onCancel) && onCancel(e, d)),
-                onConfirm: (e, d) => closeModal(id) | (isFn(onConfirm) && onConfirm(e, d)),
-            }}
-        />
+        <IConfirm {...{
+            ...confirmProps,
+            cancelButton,
+            confirmButton,
+            content: content && <div className="content">{content}</div>,
+            open: isBool(open) ? open : true,
+            onCancel: (e, d) => closeModal(id) | (isFn(onCancel) && onCancel(e, d)),
+            onConfirm: (e, d) => closeModal(id) | (isFn(onConfirm) && onConfirm(e, d)),
+        }} />
     )
 }
 // Invertible Confirm component
@@ -141,6 +140,7 @@ export const showForm = (FormComponent, props, id) => {
         const Form = require(`../forms/${form}${form.endsWith('.jsx') ? '' : '.jsx'}`)
         const values = getUrlParam()
         showForm(Form.default, { values })
+        history.pushState({}, null, `${location.protocol}//${location.host}`)
     } catch (e) {
         form && console.log(e)
     }

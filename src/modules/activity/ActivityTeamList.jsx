@@ -12,7 +12,7 @@ import { get as getIdentity } from '../identity/identity'
 import { get as getPartner } from '../partner/partner'
 import PartnerForm from '../partner/PartnerForm'
 import { query } from '../timekeeping/timekeeping'
-import TimekeepingInviteForm from '../timekeeping/TimekeeepingInviteForm'
+import TimekeepingInviteForm from '../timekeeping/TimekeepingInviteForm'
 import { handleInvitation as handleTkInvitation } from '../timekeeping/notificationHandlers'
 
 const textsCap = translated({

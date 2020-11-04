@@ -202,13 +202,17 @@ export default class IdentityForm extends Component {
     }
 
     getLocationOptions = () => Array.from(getLocations())
-        .map(([id, loc]) => ({
-            description: [ loc.state, loc.countryCode ].filter(Boolean).join(', '),
-            key: id,
-            text: loc.name,
-            title: [ loc.addressLine1, loc.addressLine2, loc.city, loc.postcode ].filter(Boolean).join(' '),
-            value: id,
-        }))
+        .map(([id, loc]) => loc.partnerIdentity
+            ? null
+            : ({
+                description: [ loc.state, loc.countryCode ].filter(Boolean).join(', '),
+                key: id,
+                text: loc.name,
+                title: [ loc.addressLine1, loc.addressLine2, loc.city, loc.postcode ].filter(Boolean).join(' '),
+                value: id,
+            })
+        )
+        .filter(Boolean)
 
     handleAddTag = (_, data) => {
         const { inputs } = this.state

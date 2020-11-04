@@ -26,6 +26,7 @@ export const getAddressName = address => (identities.find(address) || {}).name
     // not available in addressbok or wallet list
     // display the address itself with ellipsis
     || textEllipsis(address, 15, 5)
+    
 export const getAll = () => partners.getAll()
 
 // returns an array of unique tags used in partner and identity modules
@@ -43,7 +44,7 @@ export const getAllTags = () => {
 export const getByName = name => partners.find({ name }, true, true, true)
 
 // returns first matching partner with userId
-export const getByUserId = id => (Array.from(partners.getAll()).find(([_, { userId }]) => userId === id) || [])[1]
+export const getByUserId = userId => partners.find({ userId }, true, true, false)
 
 export const remove = address => {
     const { name, locationId } = partners.get(address) || {}
@@ -51,24 +52,6 @@ export const remove = address => {
     locationId && removeLocation(locationId)
 }
 
-// Add/update partner
-// export const set = (address, name, tags, type, userId, visibility, associatedIdentity) => {
-//     name = name.trim()
-//     address = address.trim()
-//     tags = tags || []
-//     type = type || 'personal'
-//     if (!name || !address) return
-//     partners.set(address, {
-//         address,
-//         name,
-//         tags,
-//         type,
-//         userId,
-//         visibility,
-//         associatedIdentity,
-//         isPublic: visibility === 'public',
-//     })
-// }
 /**
  * @name    set
  * @summary add or update partner

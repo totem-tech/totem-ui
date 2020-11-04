@@ -1,32 +1,42 @@
 import React from 'react'
-import { ButtonAcceptOrReject } from '../../components/buttons'
+import { ButtonGroupOr } from '../../components/buttons'
 import { translated } from '../../services/language'
-import { confirm } from '../../services/modal'
+import { closeModal, confirm } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES, statuses } from '../../services/queue'
-import { getProject } from '../activity/activity'
+import { fetchProjects } from '../activity/activity'
 import { getUser } from '../chat/ChatClient'
 import { find as findIdentity } from '../identity/identity'
-import { remove, search, setItemViewHandler } from '../notification/notification'
-import { queueables } from './timekeeping'
+import { getMatchingIds, remove, search, setItemViewHandler } from '../notification/notification'
+import { getProject, getProjects, queueables } from './timekeeping'
 
 const textsCap = translated({
+    accept: 'accept',
+    reject: 'reject',
     activity: 'activity',
+    activityNotFound: 'activity not found',
     tkInvitationMsg: 'invited you to start booking time.',
     tkInviteAcceptMsg: 'accepted your invitation to the following activity',
     tkInviteRejectMsg: 'rejected your invitation to the following activity',
     yourIdentity: 'your identity',
-
 
     acceptInvitation: 'accept invitation',
     acceptedInvitation: 'accepted invitation to activity',
     rejectInvitation: 'reject invitation',
     rejectedInvitation: 'rejected invitation to activity',
     timekeeping: 'timekeeping',
+    
+    loadingData: 'loading data',
 }, true)[1]
+// notification types
+const TK_TYPE = 'timekeeping'
+const TK_ChildTypes = {
+    invitation: 'invitation',
+    invitationResponse: 'invitation_response',
+}
 
 /**
  * @name    handleInvitation
- * @summary respond to time keeping invitation
+ * @summary respond to timekeeping invitation
  * 
  * @param   {String}    projectId
  * @param   {String}    workerAddress
@@ -35,123 +45,144 @@ const textsCap = translated({
  * @param   {String}    projectName
  * @param   {String}    notificationId
  * 
+ * @returns {Boolean}   resolves with a boolean value indicating success or failue
  */
-export const handleInvitation = (
-    projectId, workerAddress, accepted,
-    // optional args
-    projectOwnerId, projectName
-) => new Promise(resolve => {
-    const type = 'timekeeping'
-    const childType = 'invitation'
-    const currentUserId = (getUser() || {}).id
-    // relevant notifications
-    const notifications = search({ from: projectOwnerId, type, childType, }, true, true)
-    const notificationIds = Array.from(notifications)
-        .filter(([_, notification]) => {
-            const { data } = notification
-            const { projectHash: iProjectId, workerAddress: iWorkerAddress } = data || {}
-            return iProjectId === iProjectId && iWorkerAddress === workerAddress
+export const handleInvitation = (projectId, workerAddress, accepted, notificationId) => new Promise(async (resolve) => {
+    let alertId
+    const resolver = err => {
+        resolve(!err)
+        err && confirm({
+            content: `${err}`,
+            confirmButton: null,
+            size: 'tiny'
         })
-        .map(([id]) => id)
-    const notificationId = notificationIds.slice(-1)[0]
+        closeModal(alertId)
+    }
+    try {
+        const currentUserId = (getUser() || {}).id
+        alertId = confirm({
+            cancelButton: null,
+            content: loadingData,
+            loading: true,
+        })
+        const project = (await fetchProjects([projectId])).get(projectId)
+        if (!project) return resolver(textsCap.activityNotFound)
 
-    const getprops = (projectOwnerId, projectName) => queueables.worker.accept(projectId, workerAddress, accepted, {
-        title: `${textsCap.timekeeping} - ${accepted ? textsCap.acceptInvitation : textsCap.rejectInvitation}`,
-        description: `${textsCap.activity}: ${projectName}`,
-        notificationId,
-        then: success => !success && resolve(false),
-        // no need to notify if current user is the project owner
-        next: !projectOwnerId || projectOwnerId === currentUserId ? undefined : {
+        const { name: projectName, userId: projectOwnerId } = project
+        // find any notifications matching the for the specific invitation
+        notificationId = getMatchingIds( //notificationId || 
+            { type: TK_TYPE, childType: TK_ChildTypes.invitation },
+            { projectHash: projectId, workerAddress },
+        )
+        const description = `${textsCap.activity}: ${projectName}`
+        const actionStr = `${accepted ? textsCap.acceptInvitation : textsCap.rejectInvitation}`
+        const title = `${textsCap.timekeeping} - ${actionStr}`
+        const shoudNotify = projectOwnerId && projectOwnerId !== currentUserId
+        // notify project owner, if current user is not the owner
+        const next = !shoudNotify ? undefined : {
             address: workerAddress, // for automatic balance check
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'notify',
             notificationId,
             args: [
-                [projectOwnerId],
-                type,
-                'invitation_response',
+                [projectOwnerId], // recipient user IDs
+                TK_TYPE,
+                TK_ChildTypes.invitationResponse,
                 `${accepted ? textsCap.acceptedInvitation : textsCap.rejectedInvitation}: "${projectName}"`,
-                { accepted, projectHash: projectId, projectName, workerAddress },
-                err => {
-                    // remove all invitation notifications matching exact save type and data
-                    if (!err) notificationIds.forEach(([id]) => remove(id))
-                    resolve(!err)
-                }
+                {
+                    accepted,
+                    projectHash: projectId,
+                    projectName,
+                    workerAddress,
+                },
+                err => resolver(err)
             ]
         }
-    })
+        const queueProps = queueables.worker.accept(
+            projectId,
+            workerAddress,
+            accepted,
+            {
+                title,
+                description,
+                notificationId,
+                then: success => {
+                    remove(notificationId)
+                    !shoudNotify && resolver(!success)
+                },
+                next,
+            },
+        )
 
-    if (!!projectOwnerId && !!projectName) return addToQueue(getprops(projectOwnerId, projectName))
-
-    // retrieve project details to get project name and owners user id
-    getProject(projectId).then(project => {
-        const { name, userId } = project || {}
-        addToQueue(getprops(userId, name))
-    })
-})
-
-/**
-* @name    hanldeInvitationItemView
-* @summary handles how timekeeping invitation notification is diplayed
-*/
-const hanldeInvitationItemView = (id, notification, { senderId, senderIdBtn }) => {
-    const { data, status } = notification
-    const item = { icon: 'clock outline' }
-    const { projectHash, projectName, workerAddress } = data || {}
-    const identity = findIdentity(workerAddress)
-    if (!identity) {
-        // wrong user id used to send invitation or address no longer belong to user
-        remove(id)
-        return ''
+        confirm({
+            confirmButton: {
+                content: actionStr,
+                positive: accepted,
+                negative: !accepted,
+            },
+            onConfirm: () => addToQueue(queueProps),
+            size: 'mini',
+        })
+    } catch (err) {
+        resolver(err)
     }
-
-    item.content = (
-        <div>
-            {senderIdBtn} {textsCap.tkInvitationMsg}<br />
-            {textsCap.yourIdentity}: <b>{identity.name}</b><br />
-            {textsCap.activity}: <b>{projectName}</b><br />
-            <ButtonAcceptOrReject
-                acceptColor='blue'
-                disabled={status === statuses.LOADING}
-                onAction={(_, accepted) => confirm({
-                    onConfirm: () => handleInvitation(
-                        projectHash,
-                        workerAddress,
-                        accepted,
-                        senderId,
-                        projectName,
-                        id,
-                    ),
-                    size: 'mini',
-                })}
-            />
-        </div>
-    )
-    return item
-}
-
-const handleInvitationResponseItemView = (id, notification, { senderIdBtn }) => {
-    const { data } = notification
-    const { accepted, projectName } = data || {}
-    const item = { icon: 'clock outline' }
-    item.content = (
-        <div>
-            {senderIdBtn} {accepted ? textsCap.tkInviteAcceptMsg : textsCap.tkInviteRejectMsg}:
-            <b> {projectName}</b>
-        </div>
-    )
-    return item
-}
+})
 
 setTimeout(()=> [
     {
-        childType: 'invitation',
-        handler: hanldeInvitationItemView,
-        type: 'timekeeping',
+        childType: TK_ChildTypes.invitation,
+        handler: (id, notification, { senderId, senderIdBtn }) => {
+            const { data, status } = notification
+            const item = { icon: 'clock outline' }
+            const { projectHash, projectName, workerAddress } = data || {}
+            const identity = findIdentity(workerAddress)
+            if (!identity) {
+                // wrong user id used to send invitation or address no longer belong to user
+                remove(id)
+                return ''
+            }
+
+            item.content = (
+                <div>
+                    {senderIdBtn} {textsCap.tkInvitationMsg}<br />
+                    {textsCap.yourIdentity}: <b>{identity.name}</b><br />
+                    {textsCap.activity}: <b>{projectName}</b><br />
+                    <ButtonGroupOr {...{
+                        buttons: [
+                            { color: 'green', content: textsCap.accept, value: false },
+                            { color: 'red', content: textsCap.reject },
+                        ],
+                        disabled: status === statuses.LOADING,
+                        fluid: true,
+                        loading: status === statuses.LOADING,
+                        onAction: (_, accepted) => handleInvitation(
+                            projectHash,
+                            workerAddress,
+                            accepted,
+                            id,
+                        ),
+                        values: [true, false],
+                    }} />
+                </div>
+            )
+            return item
+        },
+        type: TK_TYPE,
     },
     {
-        childType: 'invitation_response',
-        handler: handleInvitationResponseItemView,
-        type: 'timekeeping',
+        childType: TK_ChildTypes.invitationResponse,
+        handler: (id, notification, { senderIdBtn }) => {
+            const { data } = notification
+            const { accepted, projectName } = data || {}
+            const item = { icon: 'clock outline' }
+            item.content = (
+                <div>
+                    {senderIdBtn} {accepted ? textsCap.tkInviteAcceptMsg : textsCap.tkInviteRejectMsg}:
+                    <b> {projectName}</b>
+                </div>
+            )
+            return item
+        },
+        type: TK_TYPE,
     }
 ].forEach(x => setItemViewHandler(x.type, x.childType, x.handler)))

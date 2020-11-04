@@ -1,18 +1,17 @@
-import React, { Component } from 'react'
-import { Checkbox, Button, Label } from 'semantic-ui-react'
+import React from 'react'
+import { Checkbox, Button } from 'semantic-ui-react'
 import { textEllipsis } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
 import { ButtonGroup, UserID } from '../../components/buttons'
+import Tags from '../../components/Tags'
 // services
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
-import { unsubscribe, useRxSubject } from '../../services/react'
-import { rxLayout, MOBILE } from '../../services/window'
+import { useRxSubject } from '../../services/react'
 import IdentityRequestForm from '../identity/IdentityRequestForm'
 import { getAddressName, remove, rxPartners, setPublic, visibilityTypes } from './partner'
 import CompanyForm from './CompanyForm'
 import PartnerForm from './PartnerForm'
-import Tags from '../../components/Tags'
 
 const textsCap = translated({
     add: 'add',
@@ -44,6 +43,7 @@ export default function PartnerList(props = {}) {
                 <div style={{ margin: !userId ? 0 : '-10px 0' }}>
                     {textEllipsis(name, 25, 3, false)}
                     <UserID {...{
+                        address,
                         El: 'div',
                         style: {
                             color: 'grey',
@@ -107,10 +107,10 @@ const tableProps = Object.freeze({
             { content: textsCap.add, icon: 'plus' },
             { content: textsCap.request },
         ],
-        onAction: (_, addPartner) => {
-            console.log({addPartner})
-            showForm(addPartner ? PartnerForm : IdentityRequestForm)
-        },
+        onAction: (_, addPartner) => showForm(addPartner
+            ? PartnerForm
+            : IdentityRequestForm
+        ),
         or: true,
         values: [true, false],
     }],

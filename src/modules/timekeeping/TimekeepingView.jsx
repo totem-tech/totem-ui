@@ -5,7 +5,7 @@ import { Button } from 'semantic-ui-react'
 import ContentSegment from '../../components/ContentSegment'
 import CheckboxGroup from '../../components/CheckboxGroup'
 // forms
-import TimeKeepingForm from './TimekeeepingForm'
+import TimeKeepingForm from './TimekeepingForm'
 // lists
 import TimekeepingList from './TimekeepingList'
 import TimekeepingSummaryList from './TimekeepingSummaryList'

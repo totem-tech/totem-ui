@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Accordion, Button, Dropdown, Form, Icon, Input, TextArea } from 'semantic-ui-react'
 import PromisE from '../utils/PromisE'
-import { deferred, hasValue, isArr, isFn, isObj, isStr, objWithoutKeys, searchRanked, isBool } from '../utils/utils'
+import { deferred, hasValue, isArr, isFn, isObj, isStr, objWithoutKeys, searchRanked, isBool, isPromise } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
 import Message from './Message'
 import Invertible from './Invertible'
@@ -53,6 +53,7 @@ const NON_ATTRIBUTES = Object.freeze([
 	'width',
 	'onInalid',
 	'customMessages',
+	'ignoreAttributes',
 ])
 export const nonValueTypes = Object.freeze(['button', 'html'])
 
@@ -92,7 +93,6 @@ export class FormInput extends Component {
 			integer,
 			onChange,
 			required,
-			rxValue,
 			trueValue: trueValue = true,
 			type,
 			validate,
@@ -163,13 +163,21 @@ export class FormInput extends Component {
 				return triggerChange()
 			}
 			const isMsg = !vMsg && !isStr(vMsg) && !React.isValidElement(vMsg)
-			message = isMsg ? vMsg : { content: vMsg, status: 'error' }
+			message = isMsg ? vMsg : { content: `${vMsg}`, status: 'error' }
 			errMsg = message && message.status === 'error' ? message.content : errMsg
 			triggerChange()
 		}
 
 		// forces any unexpected error to be handled gracefully
-		PromisE(async () => await validate(event, data)).then(handleValidate, handleValidate)
+		PromisE(async () => {
+			let result = validate(event, data)
+			if (!isPromise(result)) return result
+
+			this.setState({ loading: true })
+			result = await result
+			this.setState({ loading: false })
+			return result
+		}).then(handleValidate, handleValidate)
 	}
 
 	setMessage = (message = {}) => this.setState({ message })
@@ -181,10 +189,12 @@ export class FormInput extends Component {
 			elementRef,
 			error,
 			hidden,
+			ignoreAttributes,
 			inline,
 			inlineLabel,
 			invalid,
 			label,
+			loading,
 			message: externalMsg,
 			name,
 			required,
@@ -195,14 +205,21 @@ export class FormInput extends Component {
 			width,
 		} = this.props
 		let useInput = useInputOrginal
-		const { message: internalMsg } = this.state
+		const { loading: loadingS, message: internalMsg } = this.state
 		const message = internalMsg || externalMsg
 		let hideLabel = false
 		let inputEl = ''
 		if (hidden) return ''
 		// Remove attributes that are used by the form or Form.Field but
 		// shouldn't be used or may cause error when using with inputEl
-		let attrs = objWithoutKeys({ ...this.props, key: name }, NON_ATTRIBUTES)
+		let attrs = objWithoutKeys(
+			{
+				...this.props,
+				key: name,
+				loading: loadingS || loading,
+			},
+			[...NON_ATTRIBUTES, ...ignoreAttributes || []],
+		)
 		attrs.ref = elementRef
 		attrs.onChange = this.handleChange
 		let isGroup = false
@@ -238,7 +255,7 @@ export class FormInput extends Component {
 				// if number of options is higher than 50 and if lazyLoad is disabled, can slowdown FormBuilder
 				attrs.lazyLoad = isBool(attrs.lazyLoad) ? attrs.lazyLoad : true
 				attrs.search = isArr(attrs.search) ? searchRanked(attrs.search) : attrs.search
-				attrs.style = { maxWidth: '100%', minWidth: '100%', ...attrs.style }
+				attrs.style = { ...attrs.style }//maxWidth: '100%', minWidth: '100%',
 				inputEl = <Dropdown {...attrs} />
 				break
 			case 'group':
@@ -327,6 +344,8 @@ FormInput.propTypes = {
 	// Delay, in miliseconds, to display built-in and `validate` error messages
 	// Set `defer` to `null` to prevent using deferred mechanism
 	defer: PropTypes.number,
+	// attributes to ignore when passing on to input element
+	ignoreAttributes: PropTypes.arrayOf(PropTypes.string),
 	// For text field types
 	inlineLabel: PropTypes.any,
 	// If field types is 'number', will validate as an integer. Otherwise, float is assumed.
@@ -376,6 +395,7 @@ FormInput.propTypes = {
 }
 FormInput.defaultProps = {
 	defer: 300,
+	ignoreAttributes: [],
 	integer: false,
 	type: 'text',
 	width: 16,

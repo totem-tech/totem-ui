@@ -11,7 +11,7 @@ import IntroduceUserForm from '../modules/chat/IntroduceUserForm'
 import { translated } from '../services/language'
 import { confirm, showForm, closeModal } from '../services/modal'
 import { createInbox } from '../modules/chat/chat'
-import { getByUserId } from '../modules/partner/partner'
+import { get as getPartner, getByUserId } from '../modules/partner/partner'
 import PartnerForm from '../modules/partner/PartnerForm'
 import { getUser } from '../modules/chat/ChatClient'
 
@@ -150,6 +150,16 @@ ButtonGroup.defaultProps = {
     ]
 }
 
+/**
+ * @name    ButtonGroupOr
+ * @summary shorthand for `ButtonGroup` with property `or = true`
+ * 
+ * @param   {Object} props 
+ * 
+ * @returns {Element}
+ */
+export const ButtonGroupOr = props => <ButtonGroup {...props} or={true}/>
+
 export const Reveal = ({ content, hiddenContent, style, defaultVisible = false, El = 'div' }) => {
     const [visible, setVisible] = useState(defaultVisible)
     return (
@@ -164,7 +174,7 @@ export const Reveal = ({ content, hiddenContent, style, defaultVisible = false, 
 
 // placeholder to potentially use this in the future to make all User IDs clickable and open private chat with user
 export const UserID = React.memo(props => {
-    const { El = 'span', onClick, prefix, style, suffix, userId } = props
+    const { address, El, ignoreAttributes, onClick, prefix, style, suffix, userId } = props
     const rawId = getRawUserID(userId)
     if (!rawId) return ''
 
@@ -173,8 +183,9 @@ export const UserID = React.memo(props => {
 
     return (
         <El {...{
-            ...objWithoutKeys(props, ['El', 'prefix', 'suffix', 'userId']),
-            onClick: !allowClick ? undefined : (e => e.stopPropagation() | UserID.showModal(userId)),
+            ...objWithoutKeys(props, ignoreAttributes),
+            children: <b>{prefix}@{rawId}{suffix}</b>,
+            onClick: !allowClick ? undefined : (e => e.stopPropagation() | UserID.showModal(userId, address)),
             style: {
                 cursor: allowClick && 'pointer',
                 fontWeight: 'bold',
@@ -182,14 +193,43 @@ export const UserID = React.memo(props => {
                 ...style,
             },
             title: !allowClick ? name : textsCap.userIdBtnTitle,
-        }}>
-            <b>{prefix}@{rawId}{suffix}</b>
-        </El>
+        }} />
     )
 })
+UserID.propTypes = {
+    //@address partner identity
+    address: PropTypes.string,
+    El: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.func,
+        PropTypes.object, //for React.memo elements
+    ]).isRequired,
+    ignoreAttributes: PropTypes.arrayOf(PropTypes.string),
+    // @onClick use `null` to prevent showing modal
+    onClick: PropTypes.func,
+    prefix: PropTypes.oneOfType([
+        PropTypes.element,
+        PropTypes.number,
+        PropTypes.string,
+    ]),
+    style: PropTypes.object,
+    suffix: PropTypes.oneOfType([
+        PropTypes.element,
+        PropTypes.number,
+        PropTypes.string,
+    ]),
+    userId: PropTypes.string,
+}
+UserID.defaultProps = {
+    El: 'span',
+    ignoreAttributes: ['El', 'ignoreAttributes', 'prefix', 'suffix', 'userId'],
+}
 
-UserID.showModal = userId => {
-    const { address, name = '' } = getByUserId(userId) || {}
+UserID.showModal = (userId, partnerAddress) => {
+    const { address, name = '' } = (partnerAddress
+        ? getPartner(partnerAddress)
+        : getByUserId(userId)
+    ) || {}
     const buttons = [
         !name && {
             content: textsCap.partnerAdd,
@@ -226,8 +266,7 @@ UserID.showModal = userId => {
             <div>
                 {name && (
                     <div>
-                        <b>{textsCap.partnerName}:</b>
-                        {` ${name} `}
+                        <b>{textsCap.partnerName}:</b> {`${name} `}
                         <Button {...{
                             circular: true,
                             icon: 'pencil',
