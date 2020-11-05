@@ -178,7 +178,7 @@ export default class FormBuilder extends Component {
 		msg = sMsg || msg
 		const msgStyle = { ...(modal ? styles.messageModal : styles.messageInline), ...(msg || {}).style }
 		const message = { ...msg, style: msgStyle }
-		let submitBtn, closeBtn
+		let submitBtn
 		submitDisabled = !isObj(submitDisabled) ? !!submitDisabled : Object.values(submitDisabled).filter(Boolean).length > 0
 		const formIsInvalid = isFormInvalid(inputs, values)
 		const shouldDisable = submitInProgress || submitDisabled || success || formIsInvalid
@@ -224,7 +224,7 @@ export default class FormBuilder extends Component {
 			)
 			closeProps.negative = isDefined(closeProps.negative) ? closeProps.negative : true
 			closeProps.onClick = closeProps.onClick || this.handleClose
-			closeBtn = <Button {...closeProps} />
+			closeText = <Button {...closeProps} />
 		}
 
 		const FormEl = El || Invertible
@@ -250,44 +250,47 @@ export default class FormBuilder extends Component {
 			</FormEl>
 		)
 
-		return !modal ? form : (
-			<IModal
-				closeOnEscape={!!closeOnEscape}
-				closeOnDimmerClick={!!closeOnDimmerClick}
-				defaultOpen={defaultOpen}
-				dimmer={true}
-				onClose={this.handleClose}
-				onOpen={onOpen}
-				open={modalOpen}
-				size={size}
-				trigger={trigger}
-			>
-				<div className='modal-close' style={styles.closeButton}>
-					<Icon className='no-margin' color='grey' link name='times circle outline' onClick={this.handleClose} size='large' />
-				</div>
-				{header && (
-					<Header as={Modal.Header}>
-						<Header.Content style={styles.header}>
-							{headerIcon && <Icon name={headerIcon} size='large' />}
-							{header}
-						</Header.Content>
-						{subheader && (
-							<Header.Subheader>
-								<Text>{subheader}</Text>
-							</Header.Subheader>
-						)}
-					</Header>
-				)}
-				<Modal.Content>{form}</Modal.Content>
-				{!hideFooter && (
-					<Modal.Actions>
-						{closeBtn}
-						{submitBtn}
-					</Modal.Actions>
-				)}
-				{msg && <Message {...message} />}
-			</IModal>
-		)
+		return !modal
+			? form
+			: (
+				<IModal
+					closeOnEscape={!!closeOnEscape}
+					closeOnDimmerClick={!!closeOnDimmerClick}
+					defaultOpen={defaultOpen}
+					dimmer={true}
+					onClose={this.handleClose}
+					onOpen={onOpen}
+					open={modalOpen}
+					size={size}
+					trigger={trigger}
+				>
+					<div className='modal-close' style={styles.closeButton}>
+						<Icon className='no-margin' color='grey' link name='times circle outline' onClick={this.handleClose} size='large' />
+					</div>
+					{header && (
+						<Header as={Modal.Header}>
+							<Header.Content style={styles.header}>
+								{headerIcon && <Icon name={headerIcon} size='large' />}
+								{header}
+							</Header.Content>
+							{subheader && (
+								<Header.Subheader {...{
+									children: subheader,
+									style: { color: 'grey' },
+								}} />
+							)}
+						</Header>
+					)}
+					<Modal.Content children={form} />
+					{!hideFooter && (
+						<Modal.Actions>
+							{closeText}
+							{submitBtn}
+						</Modal.Actions>
+					)}
+					{msg && <Message {...message} />}
+				</IModal>
+			)
 	}
 }
 

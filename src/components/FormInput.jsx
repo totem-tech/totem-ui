@@ -107,16 +107,17 @@ export class FormInput extends Component {
 		const isCheck = ['checkbox', 'radio'].indexOf(typeLower) >= 0
 		const hasVal = hasValue(isCheck ? data.checked : data.value)
 		const customMsgs = { ...textsCap, ...customMessages }
-		let errMsg, validatorConfig
+		let err, validatorConfig
 
-		if (hasVal && !errMsg) {
+		if (hasVal && !err) {
 			switch (typeLower) {
 				case 'checkbox':
 				case 'radio':
 					// Sematic UI's Checkbox component only supports string and number as value
 					// This allows support for any value types
 					data.value = data.checked ? trueValue : falseValue
-					if (required && !data.checked) errMsg = textsCap.required
+					if (!required || data.checked) break
+					err = textsCap.required
 					break
 				case 'date':
 					validatorConfig = { type: TYPES.date }
@@ -137,38 +138,38 @@ export class FormInput extends Component {
 			}
 		}
 
-		if ((!errMsg && hasVal && validationTypes.includes(typeLower)) || validatorConfig) {
-			errMsg = validator.validate(
+		const doValidate = (!err && hasVal && validationTypes.includes(typeLower)) || validatorConfig
+		err = !doValidate
+			? err
+			: validator.validate(
 				data.value,
-				{
-					...this.props,
-					...validatorConfig,
-				},
+				{ ...this.props, ...validatorConfig },
 				customMsgs,
 			)
-		}
 
-		let message = !errMsg ? null : { content: errMsg, status: 'error' }
+		let message = !err ? null : { content: err, status: 'error' }
 		const triggerChange = () => {
-			data.invalid = !!errMsg
+			data.invalid = !!err
 			isFn(onChange) && onChange(event, data, this.props)
 			this.setMessage(message)
 		}
 		if (message || !isFn(validate)) return triggerChange()
 
-		const handleValidate = vMsg => {
-			if (vMsg === true) {
-				// means field is invalid but no message to display
-				errMsg = true
-				return triggerChange()
-			}
-			const isMsg = !vMsg && !isStr(vMsg) && !React.isValidElement(vMsg)
-			message = isMsg ? vMsg : { content: `${vMsg}`, status: 'error' }
-			errMsg = message && message.status === 'error' ? message.content : errMsg
+		const handleValidate = msg => {
+			err = !!msg
+			const isEl = React.isValidElement(msg)
+			message = isBool(msg) || !msg 
+				? null // no need to display a message
+				: {
+					content: isEl ? msg : `${msg}`,
+					status: 'error',
+					...(!isEl && isObj(msg) ? msg : {}),
+				}
 			triggerChange()
 		}
 
 		// forces any unexpected error to be handled gracefully
+		// and add loading spinner if `validate()` returns a promise
 		PromisE(async () => {
 			let result = validate(event, data)
 			if (!isPromise(result)) return result
@@ -177,7 +178,10 @@ export class FormInput extends Component {
 			result = await result
 			this.setState({ loading: false })
 			return result
-		}).then(handleValidate, handleValidate)
+		}).then(
+			handleValidate,
+			handleValidate,
+		)
 	}
 
 	setMessage = (message = {}) => this.setState({ message })

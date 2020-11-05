@@ -37,7 +37,7 @@ export default function CheckboxGroup(props) {
                         key: i,
                         label: (
                             <Text {...{
-                                EL: 'label',
+                                El: 'label',
                                 children: option.label,
                                 className: className({
                                     'checkbox-group-item': true,

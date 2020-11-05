@@ -17,7 +17,7 @@ import UtilitiesView from '../views/UtilitiesView'
 // temp
 import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
 import EventList from '../modules/event/EventList'
-import DAARequestForm from '../modules/DAA/RequestForm'
+import CrowdsaleView from '../modules/crowdsale/Crowdsale'
 // utils
 import DataStorage from '../utils/DataStorage'
 import { isBool, isBond } from '../utils/utils'
@@ -27,16 +27,18 @@ import storage from './storage'
 import { DESKTOP, MOBILE, rxLayout, setClass } from './window'
 
 const textsCap = translated({
-    eventsTtile: 'Events',
+    crowdsaleTitle: 'crowdsale',
 
-    financialStatementTitle: 'Financial statement',
+    eventsTtile: 'events',
+
+    financialStatementTitle: 'Financial Statement',
 
     gettingStartedTitle: 'Getting Started',
 
-    historyTitle: 'History',
+    historyTitle: 'history',
     historySubheader: 'List of actions recently taken by you. This data is only stored locally on your computer.',
 
-    identityTitle: 'Identities',
+    identityTitle: 'identities',
     identitySubheader: 'Identities are like companies - and you can create as many as you like!',
     identitySubheaderDetails1: `
         In Totem, you can create multiple identities to suit your needs. 
@@ -63,7 +65,7 @@ const textsCap = translated({
         To find out more, watch the video!
     `,
 
-    partnersTitle: 'Partners',
+    partnersTitle: 'partners',
     partnersHeader: 'Partner Contact List',
     partnersSubheader: 'Manage suppliers, customers, and any other party that you have contact with in Totem.',
     partnersSubheaderDetails1: `In Totem, a partner is anyone that you intend to interact with.`,
@@ -86,8 +88,8 @@ const textsCap = translated({
         Once a partner is stored in this list you can use it all over Totem.
     `,
 
-    projectTitle: 'Activities',
-    projectSubheader: 'Manage activities',
+    projectTitle: 'activities',
+    projectSubheader: 'manage activities',
     projectSubheaderDetails1: `
         You can use the activity module to account for any activity, task project.
         You can invite team members to activities or assign individuals an activity,
@@ -100,13 +102,13 @@ const textsCap = translated({
         Activities are then automatically mapped to invoices or other payments, and all accounting will be correctly posted even into your partners' accounts.
     `,
 
-    tasksTitle: 'Tasks',
+    tasksTitle: 'tasks',
     tasksSubheader: 'Create and manage tasks',
 
-    timekeepingTitle: 'Timekeeping',
+    timekeepingTitle: 'timekeeping',
     timekeepingSubheader: 'Manage timekeeping against activities that you have been invited to, or that you have created yourself.',
 
-    transferTitle: 'Transfer',
+    transferTitle: 'transfer',
     transferHeader: 'Transfer Funds',
     transferSubheader: 'Make payments to anyone in your partners list',
     transferSubheaderDetails: 'Use this module to make payments in any currency using the Totem Network. No matter which currency you use, payments will be converted automatically and instantly to any other currency.',
@@ -115,13 +117,13 @@ const textsCap = translated({
     creditNoteTitle: 'Credit Note',
     purchaseOrderTitle: 'Purchase Order',
     manageOrderTitle: 'Manage Orders',
-    expenseTitle: 'Expense',
+    expenseTitle: 'expense',
     disputedItemsTitle: 'Disputed Items',
     editAccountingTitle: 'Edit Accounting',
-    productsTitle: 'Products',
-    settingsTitle: 'Settings',
-    utilitiesTitle: 'Utilities',
-    utilitiesSubheader: 'Blockchain utilities',
+    productsTitle: 'products',
+    settingsTitle: 'settings',
+    utilitiesTitle: 'utilities',
+    utilitiesSubheader: 'blockchain utilities',
 }, true)[1]
 // store items' "active" status in the localStorage
 const MODULE_KEY = 'sidebar'
@@ -320,12 +322,12 @@ export const sidebarItems = [
         name: 'blockchain-events',
         title: textsCap.eventsTtile,
     },
-    // {
-    //     content: DAARequestForm,
-    //     icon: '',
-    //     name: 'DAARequestForm',
-    //     title: 'DAARequestForm',
-    // },
+    {
+        content: CrowdsaleView,
+        icon: '',
+        name: 'CrowdsaleView',
+        title: textsCap.crowdsaleTitle,
+    },
 ].map(item => {
     const {
         active = false,

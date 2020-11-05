@@ -1,51 +1,41 @@
 import React, { useEffect, useReducer, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Button, Icon } from 'semantic-ui-react'
-import PromisE from '../../utils/PromisE'
-import { objCopy, textEllipsis } from '../../utils/utils'
-import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
+import { isFn, textEllipsis } from '../../utils/utils'
+import FormBuilder, { findInput } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
 import { reducer, useRxSubject } from '../../services/react'
 import client from '../chat/ChatClient'
 import { get as getIdentity, rxIdentities } from '../identity/identity'
-import { get as getLocation } from '../location/location'
 import IdentityForm from '../identity/IdentityForm'
+import { get as getLocation } from '../location/location'
 
 const textsCap = translated({
-    blockchainLabel: 'Blockchain',
-    blockchainPlaceholder: 'select Blockchain you want to make deposit in',
     emailLabel: 'email address',
     emailPlaceholder: 'enter you email address',
-    ethAddressError: 'valid Ethereum address required',
-    ethAddressLabel: 'whitelist your Ethereum address',
-    ethAddressPlaceholder: 'enter the address you will deposit from',
     familyNameLabel: 'family name',
     familyNamePlaceholder: 'enter your family name',
     givenNameLabel: 'given name',
     givenNamePlaceholder: 'enter your given name',
-    formHeader: 'request deposit address',
+    formHeader: 'Crowsale - Know Your Customer (KYC)',
+    formSubheader: 'in order to participate in the crowdsale you must complete your KYC data',
     identityErrorLocation: 'please select an identity with contact address',
     identityLabel: 'identity (to receive funds)',
     identityPlaceholder: 'select an identity',
+    kycDoneMsg: 'you have already submitted your KYC!',
     updateIdentity: 'update identity',
 }, true)[1]
-const kycFields = {
+export const inputNames = {
     email: 'email',
     familyName: 'familyName',
     givenName: 'givenName',
     identity: 'identity',
 }
-export const inputNames = {
-    ...kycFields,
-    kycDone: 'kycDone',
-    blockchain: 'blockchain',
-    ethAddress: 'ethAddress',
-}
 
-export default function RequestFrom(props = {}) {
+export default function KYCForm(props = {}) {
     const [state, setStateOrg] = useReducer(reducer, {})
-    const [setState] = useState(() => (...args) => setState.mounted && setStateOrg(...args))
+    const [setState] = useState(() => (...args) => setStateOrg.mounted && setStateOrg(...args))
     const [inputs] = useRxSubject(rxIdentities, identitiesMap => {
         const inputs = formInputs.map(x => ({...x})) //objCopy(x, {})
         const identityIn = findInput(inputs, inputNames.identity)
@@ -67,52 +57,80 @@ export default function RequestFrom(props = {}) {
     })
 
     useEffect(() => {
-        setState.mounted = true
-        setState({
-            loading: true,
-            onSubmit: handleSubmitCb(setState),
-        })
+        setStateOrg.mounted = true
+        setState({ loading: true })
         client.crowdsaleKYC
             .promise(true)
             .then(kycDone => {
-                const { rxValue } = findInput(inputs, inputNames.kycDone) || {}
-                rxValue && rxValue.next(kycDone)
-                setState({ loading: false })
+                setState({
+                    loading: false,
+                    inputsDisabled: kycDone
+                        ? Object.values(inputNames)
+                        : props.inputsDisabled,
+                    message: !kycDone
+                        ? null
+                        : {
+                            header: textsCap.kycDoneMsg,
+                            icon: true,
+                            status: 'error',
+                        },
+                    submitDisabled: !!kycDone,
+                })
                 return
             })
             // ignore error | should not occur
             .catch(console.log)
-        return () => setState.mounted = false
-    }, [setState])
+        return () => setStateOrg.mounted = false
+    }, [setStateOrg])
 
-    return <FormBuilder {...{ ...props, ...state, inputs }} />
+    return (
+        <FormBuilder {...{
+            ...props,
+            ...state,
+            inputs,
+            onSubmit: handleSubmitCb(props, setState)
+        }} />
+    )
 }
-RequestFrom.defaultProps = {
+KYCForm.defaultProps = {
+    closeOnSubmit: true,
     header: textsCap.formHeader,
     size: 'tiny',
+    subheader: textsCap.formSubheader,
 }
 
-// showForm(RequestFrom) // remove
+// showForm(KYCForm) // remove
 
-const handleSubmitCb = setState => (_, values) => {
-    console.log('onSumbit: loading start')
+const handleSubmitCb = (props, setState) => async (_, values) => {
+    const { onSubmit } = props || {}
+    const address = values[inputNames.identity]
+    const { locationId } = getIdentity(address)
+    const location = getLocation(locationId)
+    values = {...values, location}
     setState({ loading: true })
+    let newState = {
+        loading: false,
+        message: null,
+        success: false,
+    }
+    try {
+        const result = await client.crowdsaleKYC.promise(values)
+        newState.success = result === true
+    } catch (err) {
+        newState.message = {
+            content: `${err}`,
+            icon: true,
+            status: 'error',
+        }
+    }
 
-    setTimeout(() => {
-        console.log('onSumbit: loading stop')
-        setState({ loading: false, success: true })
-    }, 3000)
+    setState(newState)
+
+    isFn(onSubmit) && onSubmit(newState.success, values)
 }
 
-const hideIfKycDone = values => !!values[inputNames.kycDone]
 const formInputs = Object.freeze([
     {
-        name: inputNames.kycDone,
-        rxValue: new BehaviorSubject(),
-        type: 'hidden',
-    },
-    {
-        hidden: hideIfKycDone,
         label: textsCap.identityLabel,
         name: inputNames.identity,
         options: [],
@@ -147,7 +165,6 @@ const formInputs = Object.freeze([
         },
     },
     {
-        hidden: hideIfKycDone,
         name: 'names',
         type: 'group',
         inputs: [
@@ -172,7 +189,6 @@ const formInputs = Object.freeze([
         ],
     },
     {
-        hidden: hideIfKycDone,
         label: textsCap.emailLabel,
         maxLength: 128,
         name: inputNames.email,
@@ -180,56 +196,4 @@ const formInputs = Object.freeze([
         required: true,
         type: 'email',
     },
-    {
-        label: textsCap.blockchainLabel,
-        name: inputNames.blockchain,
-        options: [
-            {
-                description: 'BTC',
-                icon: 'bitcoin',
-                text: 'Bitcoin',
-                value: 'BTC',
-            },
-            {
-                description: 'ETH',
-                icon: 'ethereum',
-                text: 'Ethereum',
-                value: 'ETH',
-            },
-            {
-                description: 'DOT',
-                icon: 'pinterest',
-                text: 'Polkadot',
-                value: 'DOT',
-            },
-        ],
-        placeholder: textsCap.blockchainPlaceholder,
-        required: true,
-        search: ['text', 'value'],
-        selectOnNavigation: false,
-        selection: true,
-        simple: true,
-        type: 'dropdown',
-        // check if user already has been assigned a requested deposit address for selected chain
-        validate: async (_, { value: blockchain }, values) => {
-            // await PromisE.delay(3000)
-            try {
-                const address = await client.crowdsaleDAA.promise(blockchain, '')
-                return address && 'you have already been assigned an address for this chain'
-            } catch (err) {
-                return err
-            }
-        },
-    },
-    {
-        chainType: 'ethereum', // validates the identity type as Ethereum address
-        customMessages: { identity: textsCap.ethAddressError },
-        hidden: values => values[inputNames.blockchain] !== 'ETH',
-        ignoreAttributes: [ 'chainType' ], // prevents the chainType property being passed to an element
-        label: textsCap.ethAddressLabel,
-        name: inputNames.ethAddress,
-        placeholder: textsCap.ethAddressPlaceholder,
-        required: true,
-        type: 'identity',
-    }
 ])

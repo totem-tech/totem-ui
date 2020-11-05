@@ -47,7 +47,7 @@ export const DrillDownList = (props) => {
                             {nestedLevelNum > 0 && (
                                 <Text {...{
                                     color: null,
-                                    EL: 'div',
+                                    El: 'div',
                                     invertedColor: active ? 'white' : 'grey',
                                     style: {
                                         position: 'absolute',

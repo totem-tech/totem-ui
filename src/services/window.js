@@ -122,7 +122,6 @@ export const useInverted = (reverse = false) => {
     })
     return inverted
 }
-
 // set layout name on window resize 
 window.onresize = () => rxLayout.next(getLayout())
 window.addEventListener('online', () => rxOnline.next(true))
