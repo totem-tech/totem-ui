@@ -185,6 +185,7 @@ export default class IdentityForm extends Component {
                     name: inputNames.locationId,
                     options: this.getLocationOptions(),
                     placeholder: textsCap.locationPlaceholder,
+                    rxValue: new BehaviorSubject(),
                     search: ['text'],
                     selection: true,
                     style: { 
@@ -241,7 +242,7 @@ export default class IdentityForm extends Component {
         const { inputs } = this.state
         const locationIdIn = findInput(inputs, inputNames.locationId)
         locationIdIn.options = this.getLocationOptions()
-        locationIdIn.value = id
+        locationIdIn.rxValue.next(id)
         this.setState({ inputs })
     }
 
