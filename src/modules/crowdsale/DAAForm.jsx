@@ -25,7 +25,7 @@ export const inputNames = {
 export default function DAAForm(props = {}) {
     const [state, setStateOrg] = useReducer(reducer, { message: props.message })
     const [setState] = useState(() => (...args) => setState.mounted && setStateOrg(...args))
-    const [inputs] = useState(() => fillValues(formInputs, props.values))
+    const [inputs] = useState(() => fillValues(formInputs, props.values, true))
 
     useEffect(() => {
         setState.mounted = true

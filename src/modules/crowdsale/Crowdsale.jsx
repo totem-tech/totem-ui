@@ -4,10 +4,11 @@ import DataTable from '../../components/DataTable'
 import { Message } from '../../components/Message'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
-import { reducer } from '../../services/react'
+import { reducer, useRxSubject } from '../../services/react'
 // import storage from '../../services/storage'
 import PromisE from '../../utils/PromisE'
-import client from '../chat/ChatClient'
+import client, { getUser, rxIsLoggedIn } from '../chat/ChatClient'
+import RegistrationForm from '../chat/RegistrationForm'
 import DAAForm from './DAAForm'
 import KYCForm from './KYCForm'
 
@@ -16,6 +17,7 @@ const textsCap = translated({
     blockchain: 'blockchain',
     despositAddress: 'deposit address',
     loadingMsg: 'loading',
+    loginRequired: 'you must be online to access this section',
     requestBtnTxt: 'request address',
     successHeader: 'KYC data submitted',
     successContent: 'you can now select your desired blockchain and request your personal deposit address',
@@ -30,7 +32,8 @@ const BLOCKCHAINS = {
     ETH: 'Ethereum',
 }
 
-export default function(props) {
+export default function () {
+    const [isLoggedIn] = useRxSubject(rxIsLoggedIn)
     const [state, setStateOrg] = useReducer(reducer, {
         data: [],
         depositAddresses: {},
@@ -50,8 +53,8 @@ export default function(props) {
                     message: null,
                 })
                 kycDone && fetchDepositAddresses( state, setState )
-            })
-            .catch(err => setState({
+            },
+            err => setState({
                 loading: false,
                 message: {
                     content: `${err}`,
@@ -62,6 +65,25 @@ export default function(props) {
             
         return () => setStateOrg.mounted = false
     }, [setStateOrg])
+
+    if (!isLoggedIn) {
+        const isRegistered = !!(getUser() || {}).id
+        //registered but not online
+        if (!navigator.onLine || isRegistered) return (
+            <Message {...{
+                header: textsCap.loginRequired,
+                icon: true,
+                status: 'error',
+            }} />
+        )
+        return (
+            <div>
+                <h3>{RegistrationForm.defaultProps.header}</h3>
+                <h4>{RegistrationForm.defaultProps.subheader}</h4>
+                <RegistrationForm />
+            </div>
+        )
+    }
 
     // show loading spinner
     if (state.loading) return (

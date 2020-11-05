@@ -78,8 +78,14 @@ export default function KYCForm(props = {}) {
                 })
                 return
             })
-            // ignore error | should not occur
-            .catch(console.log)
+            .catch(err => setState({
+                loading: false,
+                message: {
+                    content: `${err}`,
+                    icon: true,
+                    status: 'error',
+                },
+            }))
         return () => setStateOrg.mounted = false
     }, [setStateOrg])
 
