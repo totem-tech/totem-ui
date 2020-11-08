@@ -12,7 +12,7 @@ const MODULE_KEY = 'messaging'
 const PREFIX = 'totem_'
 // include any ChatClient property that is not a function or event that does not have a callback
 const nonCbs = ['isConnected', 'disconnect']
-export const rxIsLoggedIn = new BehaviorSubject(false)
+export const rxIsLoggedIn = new BehaviorSubject(null)
 // read or write to messaging settings storage
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 

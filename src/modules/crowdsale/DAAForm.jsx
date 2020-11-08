@@ -65,8 +65,6 @@ DAAForm.defaultProps = {
     size: 'tiny',
 }
 
-// showForm(RequestFrom) // remove
-
 const handleSubmitCb = (setState, props) => async (_, values) => {
     const { onSubmit } = props
     const blockchain = values[inputNames.blockchain]

@@ -17,7 +17,7 @@ const textsCap = translated({
     blockchain: 'blockchain',
     despositAddress: 'deposit address',
     loadingMsg: 'loading',
-    loginRequired: 'you must be online to access this section',
+    loginRequired: 'you must be registered and online to access this section',
     requestBtnTxt: 'request address',
     successHeader: 'KYC data submitted',
     successContent: 'you can now select your desired blockchain and request your personal deposit address',
@@ -66,33 +66,20 @@ export default function () {
         return () => setStateOrg.mounted = false
     }, [setStateOrg])
 
-    if (!isLoggedIn) {
-        const isRegistered = !!(getUser() || {}).id
-        //registered but not online
-        if (!navigator.onLine || isRegistered) return (
+    if (!isLoggedIn || state.loading) {
+        const isLoading = state.loading || isLoggedIn === null
+        return (
             <Message {...{
-                header: textsCap.loginRequired,
+                header: isLoading
+                    ? textsCap.loadingMsg
+                    : textsCap.loginRequired,
                 icon: true,
-                status: 'error',
+                status: isLoading
+                    ? 'loading'
+                    : 'error',
             }} />
         )
-        return (
-            <div>
-                <h3>{RegistrationForm.defaultProps.header}</h3>
-                <h4>{RegistrationForm.defaultProps.subheader}</h4>
-                <RegistrationForm />
-            </div>
-        )
     }
-
-    // show loading spinner
-    if (state.loading) return (
-        <Message {...{
-            content: textsCap.loadingMsg,
-            icon: true,
-            status: 'loading',
-        }} />
-    )
 
     // show inline KYC form
     if (!state.kycDone) return (

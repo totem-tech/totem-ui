@@ -48,7 +48,7 @@ export default class FormBuilder extends Component {
 			onChange: isGroup ? undefined : (
 				(e, data) => this.handleChange(e, data, input, index ? index : i, index ? i : undefined)
 			),
-			validate: isFn(validate) ? (e, v) => validate(e, v, this.state.values, rxValue) : undefined,
+			validate: isFn(validate) ? (e, d) => validate(e, d, this.state.values, rxValue) : undefined,
 		}
 		return props
 	}
@@ -81,9 +81,9 @@ export default class FormBuilder extends Component {
 
 	handleChange = async (event, data, input, index, childIndex) => {
 		try {
+			const { onChange: formOnChange } = this.props
 			const { name, onChange: onInputChange, onInvalid } = input
 			let { inputs } = this.props
-			const { onChange: formOnChange } = this.props
 			let { values } = this.state
 			const { value } = data
 			input._invalid = data.invalid
@@ -91,8 +91,8 @@ export default class FormBuilder extends Component {
 			values = this.getValues(inputs, values, name, value)
 			this.setState({ message: null, values })
 
+			// trigger input `onchange` callback if valid, otherwise `onInvalid` callback
 			const fn = data.invalid ? onInvalid : onInputChange
-			// trigger input items's onchange callback
 			isFn(fn) && (await fn(event, values, index, childIndex))
 			// trigger form's onchange callback
 			isFn(formOnChange) && !data.invalid && (await formOnChange(event, values, index, childIndex))
@@ -359,6 +359,7 @@ FormBuilder.defaultProps = {
 /**
  * @name    fillValues
  * @summary fill values into array of inputs
+ * 
  * @param   {Array}     inputs
  * @param   {Object}    values values to fill into the input. Property name/key is the name of the input.
  * @param   {Boolean}   forceFill whether to override existing, if any.
@@ -392,20 +393,54 @@ export const fillValues = (inputs, values, forceFill) => {
 	return inputs
 }
 
-export const resetValues = (inputs = []) => {
-	if (!isArr(inputs)) return
-	inputs.forEach(input => {
-		const { inputs, rxValue, type } = input || {}
-		if (`${type}`.toLowerCase() === 'group') {
-			resetValues(inputs)
-		} else {
-			input.value = undefined
-			rxValue && rxValue.next(undefined)
-		}
-		return input
-	})
+
+/**
+ * @name	resetInput
+ * @summary	reset an input's value and rxValue to undefined
+ * 
+ * @param	{Object} input 
+ */
+export const resetInput = input => {
+	if (!isObj(input)) return
+	if (input.hasOwnProperty('value')) input.value = undefined
+	if (input.hasOwnProperty('rxValue')) input.rxValue.next(undefined)
 }
 
+/**
+ * @name	resetForm
+ * @summary	reset given inputs' values to undefined
+ * 
+ * @param	{Array} inputs 
+ */
+export const resetForm = inputs => inputsForEach(inputs, resetInput)
+
+/**
+ * @name	inputsForEach
+ * @summary execute a callback for each input including group inputs
+ * 
+ * @param	{Array}		inputs 
+ * @param	{Function}	callback 
+ */
+export const inputsForEach = (inputs = [], callback) => {
+	if (!isArr(inputs)) return
+	for (let i = 0; i < inputs.length; i++) {
+		const input = inputs[i] || {}
+		const { inputs: childInputs, type } = input
+		const isGroup = `${type}`.toLowerCase() === 'group'
+		if (isGroup) inputsForEach(childInputs, callback)
+		callback(input, inputs)
+	}
+}
+
+/**
+ * @name	isInputInvalid
+ * @summary	checks if an input is invalid
+ * 
+ * @param	{Object}	formValues 
+ * @param	{Object}	input
+ * 
+ * @returns	{Boolean}
+ */
 export const isInputInvalid = (formValues = {}, input) => {
 	let { _invalid, groupValues, hidden, inputs, invalid, name, required, rxValue, type, value } = input || {}
 	type = (type || 'text').toLowerCase()
@@ -432,7 +467,15 @@ export const isInputInvalid = (formValues = {}, input) => {
 	
 	return isCheckbox && required ? !value : !hasValue(value)
 }
-
+/**
+ * @name	isFormInvalid
+ * @summary	checks if oe or more of a given list of inputs is invalid
+ * 
+ * @param	{Array}		inputs
+ * @param	{Object}	values
+ * 
+ * @returns	{Boolean}
+ */
 export const isFormInvalid = (inputs = [], values = {}) => {
 	for (let i = 0; i < inputs.length; i++) {
 		if (isInputInvalid(values, inputs[i])) return true
@@ -452,19 +495,6 @@ export const findInput = (inputs, name) => {
 		input = findInput(childInputs, name)
 		if (input) return input
 	}
-}
-
-// show message on a input or if input name not found/undefined, show form message
-// Should be used with a form component and be invoked with .call/.apply
-export function showMessage(inputName, content, status, header) {
-	const { inputs } = this.state
-	const message = { content, header, status }
-	const input = findInput(inputs, inputName)
-	if (!input) this.setState({ message })
-
-	input.message = message
-	input.invalid = status === statuses.ERROR
-	this.setState({ inputs })
 }
 
 const styles = {

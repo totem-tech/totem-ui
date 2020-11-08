@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import uuid from 'uuid'
 import { Table, Button } from 'semantic-ui-react'
-import FormBuilder, { findInput, showMessage } from '../components/FormBuilder'
+import FormBuilder, { findInput } from '../components/FormBuilder'
 import { objClean, textCapitalize, isFn, objWithoutKeys, hasValue } from '../utils/utils'
 import { rxForeUpdateCache } from '../utils/DataStorage'
 import { getUser, setUser } from '../modules/chat/ChatClient'
@@ -247,9 +247,9 @@ export default class RestoreBackup extends Component {
 	}
 
 	handleFileChange = (e) => {
+		const { inputs } = this.state
+		const fileIn = findInput(inputs, 'file')
 		try {
-			const { inputs } = this.state
-			const fileIn = findInput(inputs, 'file')
 			const file = e.target.files[0]
 			const name = e.target.value
 			var reader = new FileReader()
@@ -260,9 +260,15 @@ export default class RestoreBackup extends Component {
 				file.target.value = null
 			}
 			reader.readAsText(file)
+			fileIn.message = null
 		} catch (err) {
-			showMessage.call(this, this.names.file, err, 'error')
+			fileIn.message = {
+				content: `${err}`,
+				icon: true,
+				status: 'error'
+			}
 		}
+		this.setState({ inputs })
 	}
 
 	handleRestoreOptionChange = (_, values, index, childIndex) => {

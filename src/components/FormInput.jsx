@@ -1,8 +1,9 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import { BehaviorSubject } from 'rxjs'
 import { Accordion, Button, Dropdown, Form, Icon, Input, TextArea } from 'semantic-ui-react'
 import PromisE from '../utils/PromisE'
-import { deferred, hasValue, isArr, isFn, isObj, isStr, objWithoutKeys, searchRanked, isBool, isPromise } from '../utils/utils'
+import { deferred, hasValue, isArr, isFn, isObj, isStr, objWithoutKeys, searchRanked, isBool, isPromise, isSubjectLike } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
 import Message from './Message'
 import Invertible from './Invertible'
@@ -54,6 +55,10 @@ const NON_ATTRIBUTES = Object.freeze([
 	'onInalid',
 	'customMessages',
 	'ignoreAttributes',
+	'onInvalid',
+	// dynamic options for input types with options
+	'rxOptions',
+	'rxOptionsModifier',
 ])
 export const nonValueTypes = Object.freeze(['button', 'html'])
 
@@ -62,9 +67,8 @@ export class FormInput extends Component {
 		super(props)
 
 		const { defer } = props
-		this.state = {
-			message: undefined,
-		}
+		this.state = { message: undefined }
+		this.value = undefined
 		this.setMessage = defer !== null ? deferred(this.setMessage, defer) : this.setMessage
 
 		this.originalSetState = this.setState
@@ -74,11 +78,27 @@ export class FormInput extends Component {
 	componentWillMount() {
 		this._mounted = true
 		this.subscriptions = {}
-		const { rxValue } = this.props
-		if (!isObj(rxValue) || !isFn(rxValue.subscribe)) return
-		this.subscriptions.rxValue = rxValue.subscribe(value => {
-			this.handleChange({}, { ...this.props, value })
-		})
+		const { rxOptions, rxOptionsModifier, rxValue } = this.props
+		if (isSubjectLike(rxValue)) {
+			this.subscriptions.rxValue = rxValue.subscribe(value => {
+				if (this.value === value) return
+				this.handleChange({ }, { ...this.props, value })
+			})
+		}
+		if (isSubjectLike(rxOptions)) {
+			this.subscriptions.rxOptions = rxOptions.subscribe(options => {
+				options = !isFn(rxOptionsModifier)
+					? options
+					: rxOptionsModifier(options)
+				isArr(options) && this.setState({ options })
+				if (!isSubjectLike(rxValue) || !hasValue(this.value)) return
+				const isOption = !!options.find(o => o.value === this.value)
+				if (isOption) return
+				// value no longer exists in the options list
+				// force clear selection
+				rxValue.next(undefined)		
+			})
+		}
 	}
 
 	componentWillUnmount = () => {
@@ -93,6 +113,7 @@ export class FormInput extends Component {
 			integer,
 			onChange,
 			required,
+			rxValue,
 			trueValue: trueValue = true,
 			type,
 			validate,
@@ -151,6 +172,8 @@ export class FormInput extends Component {
 		const triggerChange = () => {
 			data.invalid = !!err
 			isFn(onChange) && onChange(event, data, this.props)
+			this.value = data.value
+			rxValue && rxValue.next(data.value)
 			this.setMessage(message)
 		}
 		if (message || !isFn(validate)) return triggerChange()
@@ -209,7 +232,11 @@ export class FormInput extends Component {
 			width,
 		} = this.props
 		let useInput = useInputOrginal
-		const { loading: loadingS, message: internalMsg } = this.state
+		const {
+			loading: loadingS,
+			message: internalMsg,
+			options,
+		} = this.state
 		const message = internalMsg || externalMsg
 		let hideLabel = false
 		let inputEl = ''
@@ -244,9 +271,11 @@ export class FormInput extends Component {
 				break
 			case 'checkbox-group':
 			case 'radio-group':
-				attrs.rxValue = rxValue
 				attrs.inline = inline
+				attrs.options = !!options ? options : attrs.options
 				attrs.radio = typeLC === 'radio-group' ? true : attrs.radio
+				attrs.rxValue = rxValue
+				attrs.value = (rxValue ? rxValue.value : attrs.value) || (attrs.multiple ? [] : '')
 				inputEl = <CheckboxGroup {...attrs} />
 				break
 			case 'date':
@@ -259,7 +288,9 @@ export class FormInput extends Component {
 				// if number of options is higher than 50 and if lazyLoad is disabled, can slowdown FormBuilder
 				attrs.lazyLoad = isBool(attrs.lazyLoad) ? attrs.lazyLoad : true
 				attrs.search = isArr(attrs.search) ? searchRanked(attrs.search) : attrs.search
-				attrs.style = { ...attrs.style }//maxWidth: '100%', minWidth: '100%',
+				attrs.style = { ...attrs.style }
+				attrs.options = !!options ? options : attrs.options
+				attrs.value = (rxValue ? rxValue.value : attrs.value) || (attrs.multiple ? [] : '')
 				inputEl = <Dropdown {...attrs} />
 				break
 			case 'group':
