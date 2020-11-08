@@ -18,6 +18,7 @@ export const essentialKeys = [
     'totem_chat-history', // chat history
     'totem_history', // user activity history
     'totem_identities',
+    'totem_locations',
     // notifications are essential because user may need to respond to them in case they are migrating to a new device.
     'totem_notifications',
     'totem_partners',
