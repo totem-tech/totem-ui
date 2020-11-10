@@ -6,6 +6,7 @@ import { translated } from '../../services/language'
 import { reducer } from '../../services/react'
 import client from '../chat/ChatClient'
 import { isFn } from '../../utils/utils'
+import { crowdsaleData } from './crowdsale'
 
 const textsCap = translated({
     addressAlreadyAllocated: 'you have already been assigned an address for this chain',
@@ -13,7 +14,8 @@ const textsCap = translated({
     blockchainPlaceholder: 'select Blockchain you want to make deposit in',
     ethAddressError: 'valid Ethereum address required',
     ethAddressLabel: 'whitelist your own Ethereum address',
-    ethAddressPlaceholder: 'enter the address you will deposit from',
+    ethAddressLabelDetails: 'this is the Ethereum address you will be sending funds from',
+    ethAddressPlaceholder: 'enter the Ethereum address you will deposit from',
     formHeader: 'request deposit address',
     kycNotDoneMsg: 'you have not submitted your KYC yet!',
 }, true)[1]
@@ -25,7 +27,7 @@ export const inputNames = {
 export default function DAAForm(props = {}) {
     const [state, setStateOrg] = useReducer(reducer, { message: props.message })
     const [setState] = useState(() => (...args) => setState.mounted && setStateOrg(...args))
-    const [inputs] = useState(() => fillValues(formInputs, props.values, true))
+    const [inputs] = useState(() => fillValues(getInputs(), props.values, true))
 
     useEffect(() => {
         setState.mounted = true
@@ -75,6 +77,8 @@ const handleSubmitCb = (setState, props) => async (_, values) => {
     try {
         const address = await client.crowdsaleDAA.promise(blockchain, ethAddress)
         newState.success = !!address
+        // makes sure to save the ethAddress to localStorage
+        blockchain === 'ETH' && crowdsaleData( { ethAddress })
     } catch (err) {
         newState.message = {
             content: `${err}`,
@@ -87,7 +91,7 @@ const handleSubmitCb = (setState, props) => async (_, values) => {
     isFn(onSubmit) && onSubmit(newState.success, values)
 }
 
-const formInputs = Object.freeze([
+export const getInputs = () => [
     {
         label: textsCap.blockchainLabel,
         name: inputNames.blockchain,
@@ -135,9 +139,10 @@ const formInputs = Object.freeze([
         hidden: values => values[inputNames.blockchain] !== 'ETH',
         ignoreAttributes: [ 'chainType' ], // prevents the chainType property being passed to an element
         label: textsCap.ethAddressLabel,
+        labelDetails: textsCap.ethAddressLabelDetails,
         name: inputNames.ethAddress,
         placeholder: textsCap.ethAddressPlaceholder,
         required: true,
         type: 'identity',
     }
-])
+]

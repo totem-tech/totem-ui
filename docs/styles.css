@@ -317,12 +317,11 @@ div.ui.padded.segment {
  * Form Builder
  */
 /* adds extra spacing to Dropdown field when active. ":not(.item)" excludes Dropdown fields inside Menu */
-.form :not(.item) > .ui.dropdown.active.visible:not(.no-margin):not(.item) {
+/* .form :not(.item) > .ui.dropdown.active.visible:not(.no-margin):not(.item) {
   margin-bottom: 37px;
-}
+} */
 /* Capitalise input labels */
-form.ui.form label,
-form.ui.form .field > label {
+form.ui.form div.field > label {
     text-transform: capitalize;
 }
 /* Group inputs: remove extra padding */
@@ -367,7 +366,16 @@ input[readonly] {
 .ui.modal > .header {
 	text-transform: capitalize;
 }
-
+body.mobile .ui.modal {
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    margin: 0 !important;
+    max-height: 100%;
+}
+body.mobile .ui.modals::-webkit-scrollbar {
+ 	width: 3px;
+}
 
 /* Page header:
  * identity dropdown style fix

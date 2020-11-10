@@ -1,4 +1,4 @@
-import React, { useEffect, useState, isValidElement } from 'react'
+import React, { useEffect, useState } from 'react'
 import uuid from 'uuid'
 import { Confirm } from 'semantic-ui-react'
 import DataStorage from '../utils/DataStorage'
@@ -133,7 +133,7 @@ export const showForm = (FormComponent, props, id) => {
 }
 
 // open any form within './forms/ in a modal
-(() => {
+setTimeout(() => {
     const form = (getUrlParam('form') || '').trim()
     if (!form) return
     try {
@@ -144,10 +144,11 @@ export const showForm = (FormComponent, props, id) => {
     } catch (e) {
         form && console.log(e)
     }
-})()
+})
 export default {
     closeModal,
     confirm,
     ModalsConainer,
+    rxModals,
     showForm,
 }

@@ -129,6 +129,7 @@ const years = new Array(100)
     .map((_, i) => [currentYear + i, currentYear - i - 1])
     .flat()
     .sort()
+    .reverse()
 
 // const demoFormProps = {
 //     header: 'Demoing DateInput',

@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { Accordion, Button, Dropdown, Form, Icon, Input, TextArea } from 'semantic-ui-react'
+import { Accordion, Button, Checkbox, Dropdown, Form, Icon, Input, TextArea } from 'semantic-ui-react'
 import PromisE from '../utils/PromisE'
 import { deferred, hasValue, isArr, isFn, isObj, isStr, objWithoutKeys, searchRanked, isBool, isPromise, isSubjectLike } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
@@ -45,6 +45,7 @@ const NON_ATTRIBUTES = Object.freeze([
 	'_invalid',
 	'inlineLabel',
 	'label',
+	'labelDetails',
 	'trueValue',
 	'falseValue',
 	'styleContainer',
@@ -221,6 +222,7 @@ export class FormInput extends Component {
 			inlineLabel,
 			invalid,
 			label,
+			labelDetails,
 			loading,
 			message: externalMsg,
 			name,
@@ -265,9 +267,10 @@ export class FormInput extends Component {
 			case 'radio':
 				attrs.toggle = typeLC !== 'radio' && attrs.toggle
 				attrs.type = 'checkbox'
+				attrs.label = label
 				delete attrs.value
 				hideLabel = true
-				inputEl = <Checkbox {...attrs} label={label} />
+				inputEl = <Checkbox {...attrs} />
 				break
 			case 'checkbox-group':
 			case 'radio-group':
@@ -310,6 +313,7 @@ export class FormInput extends Component {
 				inputEl = <UserIdInput {...attrs} />
 				break
 			case 'file':
+				delete attrs.value
 				useInput = true
 			default:
 				attrs.value = !hasValue(attrs.value) ? '' : attrs.value //forces inputs to be controlled
@@ -327,7 +331,14 @@ export class FormInput extends Component {
 				title={editable ? undefined : textsCap.readOnlyField}
 				width={width}
 			>
-				{!hideLabel && label && <label htmlFor={name}>{label}</label>}
+				{!hideLabel && label && [
+					<label htmlFor={name} key='label'>{label}</label>,
+					labelDetails && (
+						<div key='labelDetails' style={{ lineHeight: '15px', margin: '-5px 0 8px 0' }}>
+						<small>{labelDetails}</small>
+						</div>
+					)
+				]}
 				{inputEl}
 				{message && <Message {...message} />}
 			</Form.Field>

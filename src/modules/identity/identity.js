@@ -22,7 +22,6 @@ const VALID_KEYS = Object.freeze([
 	'selected',
 	'tags',
 	'usageType',
-	'isCrowdsale',
 ])
 
 export const addFromUri = (uri, type = 'sr25519') => {

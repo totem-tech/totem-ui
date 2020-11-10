@@ -9,9 +9,9 @@ import { unsubscribe } from '../services/react'
 import { currencyDefault } from '../services/currency'
 
 const textsCap = translated({
-    balance: 'balance',
     loadingAccBal: 'loading account balance',
-    locked: 'locked'
+    locked: 'locked',
+    total: 'total',
 }, true)[1]
 
 export const Balance = (props) => {
@@ -31,7 +31,7 @@ export const Balance = (props) => {
         <Currency {...{
             ...props,
             onClick: handleClick,
-            prefix: `${textsCap.balance}: `,
+            prefix: `${textsCap.total}: `,
             style,
             value: balance,
             unit: currencyDefault,

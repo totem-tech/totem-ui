@@ -8,7 +8,6 @@ export const rxLocations = locations.rxData // RxJS Subject (because caching is 
 export const validKeys = Object.freeze([
 	...Object.values(requiredFields),
 	...Object.values(optionalFields),
-	'isCrowdsale',
 ])
 
 /**

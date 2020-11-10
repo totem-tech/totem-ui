@@ -1,21 +1,23 @@
 import React, { Component } from 'react'
 import { Button, Icon, Step } from 'semantic-ui-react'
-import { isDefined, isValidNumber } from '../utils/utils'
-// services
-import { getUser } from '../modules/chat/ChatClient'
-import { getSelected } from '../modules/identity/identity'
+import { generateHash, isDefined, isValidNumber } from '../utils/utils'
+import FormBuilder from '../components/FormBuilder'
+import Invertible from '../components/Invertible'
+
 import { translated } from '../services/language'
-import { confirm, showForm } from '../services/modal'
+import { closeModal, confirm, showForm } from '../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import storage, { downloadBackup } from '../services/storage'
 import { setToast } from '../services/toast'
-import { createInbox, SUPPORT, TROLLBOX } from '../modules/chat/chat'
-import Invertible from '../components/Invertible'
-// forms
-import IdentityForm from '../modules/identity/IdentityForm'
-import RegistrationForm from '../modules/chat/RegistrationForm'
 import RestoreBackupForm from '../forms/RestoreBackup'
 import NewsletteSignup from '../forms/NewsletterSignup'
+
+import { createInbox, SUPPORT, TROLLBOX } from '../modules/chat/chat'
+import { getUser } from '../modules/chat/ChatClient'
+import RegistrationForm from '../modules/chat/RegistrationForm'
+import { getSelected, rxIdentities } from '../modules/identity/identity'
+import IdentityForm from '../modules/identity/IdentityForm'
+import PromisE from '../utils/PromisE'
 
 const [texts] = translated({
 	backupTitle: 'Backup your account',
@@ -28,7 +30,7 @@ const [texts] = translated({
 		The following information will be included: 
 	`,
 	// keep the commas. they will be used to generate an unordered list
-	confirmBackupTypes: 'history, identities, notifications, partners, recent chat messages, settings',
+	confirmBackupTypes: 'history, identities, locations, notifications, partners, recent chat messages, settings, user credentials',
 	confirmHeader: 'Are you sure?',
 	confirmRestoreContent: `
 		You are about to replace application data with the JSON file. 
@@ -70,6 +72,26 @@ const [texts] = translated({
 	video1Title: 'What am I looking at? Watch the video:',
 	video2Title: 'Backup your account. Watch the video:',
 })
+const textsCap = translated({
+	backupNow: 'backup now',
+	backupConfirmHeader: 'confirm backup',
+	backupFileInvalid: `
+		Uploaded file contents do not match the backup file contents!
+		If you did not save the backup file, please click on the close icon and initiate the backup process again.
+	`,
+	backupFileinvalidType: 'please select the .json file you have just downloaded',
+	backupFileLabel: 'backup file',
+	backupFileLabelDetails: `
+		Please select the file you have just downloaded.
+		You can drag-and-drop the file in the file chooser below.
+	`,
+	backupSuccessContent: `
+		Excellent! You have just downloaded your account data. 
+		You can use this file to restore your account on any other devices you may have.
+		Make sure to keep the downloaded file in a safe place. :)
+	`,
+	backupSuccessHeader: 'backup complete!'
+}, true)[1]
 const MODULE_KEY = 'getting-started'
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
@@ -126,11 +148,15 @@ export default class GetingStarted extends Component {
 	}
 
 	handleBackup = () => confirm({
+		confirmButton: textsCap.backupNow,
 		content: (
 			<div>
 				{texts.confirmBackupContent}
 				<ul>
-					{texts.confirmBackupTypes.split(',').map((str, i) => <li key={i}>{str}</li>)}
+					{texts.confirmBackupTypes
+						.split(',')
+						.map((str, i) => <li key={i}>{str}</li>)
+					}
 				</ul>
 			</div>
 		),
@@ -139,7 +165,7 @@ export default class GetingStarted extends Component {
 		onConfirm: () => {
 			let { activeStep } = this.state
 			this.setStep(++activeStep)
-			setTimeout(() => downloadBackup())
+			confirmBackup()
 			// assume backup completed?
 			// only way to confirm backup is complete is to force user to upload the downloaded file)
 		},
@@ -333,3 +359,79 @@ const styles = {
 		maxWidth: '100%'
 	},
 }
+
+
+/*
+ * confrim backup by forcing user to upload the file user just downloaded
+ */
+/**
+ * 
+ * @param	{Boolean}	showSuccess whether to show success message after backup has been confirmed
+ */
+export const confirmBackup = (showSuccess = false) => new PromisE(resolve => {
+	const [content, fileBackupTS] = downloadBackup()
+    const contentHash = generateHash(content)
+	let modalId
+	// update identities with the new backup timestamp
+	const updateIdentities = () => {
+		const arr = Array.from(rxIdentities.value)
+			.map(([key, value]) => [
+				key,
+				{ ...value, fileBackupTS },
+			])
+		rxIdentities.next(new Map(arr))
+	}
+	const validateFile = e => new Promise(resolveValidate => {
+		try {
+			const file = e.target.files[0]
+			const name = e.target.value
+			var reader = new FileReader()
+			if (name && !name.endsWith('.json')) throw textsCap.invalidFileType
+
+			reader.onload = file => {
+				const match = contentHash === generateHash(file.target.result)
+				resolveValidate(!match && textsCap.backupFileInvalid)
+				if (!match) {
+					file.target.value = null // reset file
+					return
+				}
+				updateIdentities()
+				const onClose = () => resolve(true) | closeModal(modalId)
+
+				!showSuccess
+					? onClose()
+					: confirm({
+						content: textsCap.backupSuccessContent,
+						confirmButton: null,
+						header: textsCap.backupSuccessHeader,
+						onClose,
+						size: 'tiny',
+					})
+			}
+			reader.readAsText(file)
+		} catch (err) {
+			resolveValidate(err)
+		}
+	})
+	
+    const props = {
+        header: textsCap.backupConfirmHeader,
+        size: 'tiny',
+        submitText: null,
+		closeText: null,
+		// in case user doesnt confirm download
+		onClose: () => resolve(false),
+        inputs: [{
+            accept: '.json',
+            label: textsCap.backupFileLabel,
+            labelDetails: textsCap.backupFileLabelDetails,
+            name: 'file',
+            type: 'file',
+            validate: validateFile,
+        }],
+    }
+	
+	modalId = showForm(FormBuilder, props)
+})
+
+window.confirmBackup = confirmBackup

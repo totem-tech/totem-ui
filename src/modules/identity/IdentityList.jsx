@@ -1,16 +1,19 @@
 import React from 'react'
-import { Button, Label } from 'semantic-ui-react'
+import { Button, Icon } from 'semantic-ui-react'
 import { format } from '../../utils/time'
 import Balance from '../../components/Balance'
+import { ButtonGroup } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
+import Tags from '../../components/Tags'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
-import IdentityShareForm from './IdentityShareForm'
-import IdentityForm from './IdentityForm'
-import IdentityDetailsForm from './IdentityDetailsForm'
-import { rxIdentities } from './identity'
 import { useRxSubject } from '../../services/react'
-import { showModal as showLocationsModal } from '../location/LocationsList'
+import { showLocations } from '../location/LocationsList'
+import { rxIdentities } from './identity'
+import IdentityDetailsForm from './IdentityDetailsForm'
+import IdentityForm from './IdentityForm'
+import IdentityShareForm from './IdentityShareForm'
+import { getCrowdsaleIdentity } from '../crowdsale/crowdsale'
 
 const textsCap = translated({
     actions: 'actions',
@@ -22,6 +25,7 @@ const textsCap = translated({
     personal: 'personal',
     tags: 'tags',
     usage: 'usage',
+    crowdsaleIdentity: 'this is your crowdsale identity',
     emptyMessage: 'no matching identity found', // assumes there will always be an itentity
     lastBackup: 'last backup',
     showDetails: 'show details',
@@ -31,40 +35,73 @@ const textsCap = translated({
 }, true)[1]
 
 export default function IdentityList(props){
-    const [data] = useRxSubject(rxIdentities, map => Array.from(map).map(([_, identityOrg]) => {
-        const identity = { ...identityOrg }
-        const { fileBackupTS, tags = [], usageType } = identity
-        identity._fileBackupTS = format(fileBackupTS) || textsCap.never
-        identity._tagsStr = tags.join(' ') // for search
-        identity._tags = tags.map(tag => (
-            <Label {...{
-                content: tag,
-                key: tag,
-                onDragStart: e => e.stopPropagation() | e.dataTransfer.setData("Text", e.target.textContent),
-                draggable: 'true',
-                style: {
-                    cursor: 'grab',
-                    display: 'inline',
-                    float: 'left',
-                    margin: 1,
-                }
-            }} />
-        ))
-        identity._usageType = usageType === 'personal' ? textsCap.personal : textsCap.business
-        return identity
-    }))
+    const [data] = useRxSubject(
+        rxIdentities,
+        map => {
+            const csIdentity = getCrowdsaleIdentity()
+            return Array.from(map)
+                .map(([_, identityOrg]) => {
+                    const identity = { ...identityOrg }
+                    const { address, fileBackupTS, name, tags = [], usageType } = identity
+                    const isCrowdsale = address === csIdentity
+                    identity._balance = <Balance {...{ address, lockSeparator: <br /> }} />
+                    identity._fileBackupTS = format(fileBackupTS) || textsCap.never
+                    identity._name = (
+                        <div key={address} title={isCrowdsale ? textsCap.crowdsaleIdentity : ''}>
+                            {isCrowdsale && (
+                                <Icon {...{
+                                    name: 'chess queen',
+                                    style: { color: 'gold' },
+                                }} />
+                            )}
+                            {name}
+                        </div>
+                    )
+                    identity._tagsStr = tags.join(' ') // for tags search
+                    identity._tags = <Tags key={address} tags={tags} />
+                    identity._usageType = usageType === 'personal' ? textsCap.personal : textsCap.business
+                    return identity
+                })
+        }
+    )
 
-    return <DataTable {...{ ...props, ...tableProps, data }} />
+    return <DataTable {...{ ...props, ...getTableProps(), data }} />
 }
 
-const tableProps = Object.freeze({
+const getActions = ({ address, name }) => [
+    {
+        icon: 'share',
+        onClick: () => showForm(
+            IdentityShareForm,
+            {
+                inputsDisabled: ['address'],
+                includeOwnIdentities: true,
+                includePartners: false,
+                size: 'tiny',
+                values: { address, name },
+            }
+        ),
+        title: textsCap.shareIdentityDetails,
+    },
+    {
+        icon: 'pencil',
+        onClick: () => showForm(IdentityDetailsForm, { values: { address } }),
+        title: textsCap.showDetails,
+    },
+]
+    .map(props => <Button {...props} key={props.title + props.icon} />)
+
+const getTableProps = () => ({
     columns: [
-        { key: 'name', title: textsCap.name },
+        {
+            key: '_name',
+            style: { minWidth: 150 },
+            title: textsCap.name,
+        },
         {
             collapsing: true,
-            content: ({ address }) => <Balance address={address} lockSeparator={<br />} />,
             draggable: false,
-            // key: '_balance',
+            key: '_balance',
             textAlign: 'center',
             title: textsCap.txAllocations,
         },
@@ -88,43 +125,23 @@ const tableProps = Object.freeze({
         }
     ],
     emptyMessage: { content: textsCap.emptyMessage },
-    searchExtraKeys: ['address', '_tagsStr'],
+    searchExtraKeys: ['address', 'name', '_tagsStr'],
     topLeftMenu: [
         {
-            content: textsCap.create,
-            icon: 'plus',
-            onClick: () => showForm(IdentityForm)
-        },
-        {
-            content: textsCap.locations,
-            icon: 'building',
-            onClick: ()=> showLocationsModal(),
+            El:ButtonGroup,
+            buttons: [
+                {
+                    content: textsCap.create,
+                    icon: 'plus',
+                    onClick: () => showForm(IdentityForm)
+                },
+                {
+                    content: textsCap.locations,
+                    icon: 'building',
+                    onClick: ()=> showLocations(),
+                },
+            ],
+            key: 0,
         },
     ]
 })
-
-function getActions(identity) {
-    const { address, name } = identity
-    return [
-        {
-            icon: 'share',
-            onClick: () => showForm(
-                IdentityShareForm,
-                {
-                    inputsDisabled: ['address'],
-                    includeOwnIdentities: true,
-                    includePartners: false,
-                    size: 'tiny',
-                    values: { address, name },
-                }
-            ),
-            title: textsCap.shareIdentityDetails,
-        },
-        {
-            icon: 'pencil',
-            onClick: () => showForm(IdentityDetailsForm, { values: { address } }),
-            title: textsCap.showDetails,
-        },
-    ]
-        .map(props => <Button {...props} key={props.title + props.icon} />)
-}

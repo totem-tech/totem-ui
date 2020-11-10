@@ -1,18 +1,26 @@
 import React, { useEffect, useReducer, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Button, Icon } from 'semantic-ui-react'
-import { isFn, textEllipsis } from '../../utils/utils'
-import FormBuilder, { findInput, inputsForEach, resetForm } from '../../components/FormBuilder'
+import { isArr, isFn, textEllipsis } from '../../utils/utils'
+import FormBuilder, { fillValues, findInput, inputsForEach } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
-import { showForm } from '../../services/modal'
-import { reducer, useRxSubject } from '../../services/react'
+import { confirm, showForm } from '../../services/modal'
+import { reducer } from '../../services/react'
 import client from '../chat/ChatClient'
-import { get as getIdentity, rxIdentities } from '../identity/identity'
-import IdentityForm from '../identity/IdentityForm'
+import { get as getIdentity, rxIdentities, set as saveIdentity } from '../identity/identity'
 import { get as getLocation, getAll as getLocations, rxLocations, set as setLocation } from '../location/location'
 import LocationForm from '../location/LocationForm'
+import { getInputs as getDAAInputs, inputNames as daaInputNames, } from './DAAForm'
+import { confirmBackup } from '../../views/GettingStartedView'
+import PromisE from '../../utils/PromisE'
+import { crowdsaleData } from './crowdsale'
 
 const textsCap = translated({
+    blockchainsLabel: 'select blockchains',
+    blockchainsLabelDetails: `
+        Select the blockchains that you will be sending funds from.
+        You will be allocated a payment address for each selected blockchain once registration is complete.
+    `,
     emailLabel: 'email address',
     emailPlaceholder: 'enter you email address',
     familyNameLabel: 'family name',
@@ -28,10 +36,19 @@ const textsCap = translated({
     locationIdLabel: 'contact address',
     locationIdPlaceholder: 'select a location',
     offlineMsg: 'you must be online to access this area',
+    ok: 'OK',
     kycDoneMsg: 'you have already submitted your KYC!',
+    submitConfirmMsg: `
+        In the last step you will backup your account data.
+        This backup will be used to claim your tokens on the MainNet.
+        Press OK to continue or cancel to return to the form.
+    `,
+    submitFailedBackupNotDone: 'you must complete the backup process',
     updateIdentity: 'update identity',
 }, true)[1]
 export const inputNames = {
+    blockchains: 'blockchains',
+    ethAddress: 'ethAddress',
     email: 'email',
     familyName: 'familyName',
     givenName: 'givenName',
@@ -60,43 +77,46 @@ export default function KYCForm(props = {}) {
                     break
             }
         })
-        return inputs
+        return fillValues(inputs, props.values)
     })
 
     useEffect(() => {
         setStateOrg.mounted = true
+        // no need to check KYC status if form is in view only mode
+        const checkStatus = props.submitText !== null
         setState({
-            loading: true,
+            loading: checkStatus,
             onSubmit: handleSubmitCb(props, setState),
         })
         // on-load check if user has already submitted KYC
-        client.crowdsaleKYC
-            .promise(true)
-            .then(kycDone => {
-                setState({
-                    loading: false,
-                    inputsDisabled: kycDone
-                        ? Object.values(inputNames)
-                        : props.inputsDisabled,
-                    message: !kycDone
-                        ? null
-                        : {
-                            header: textsCap.kycDoneMsg,
-                            icon: true,
-                            status: 'error',
-                        },
-                    submitDisabled: !!kycDone,
+        if (checkStatus) {
+            client.crowdsaleKYC.promise(true)
+                .then(kycDone => {
+                    setState({
+                        loading: false,
+                        inputsDisabled: kycDone
+                            ? Object.values(inputNames)
+                            : props.inputsDisabled,
+                        message: !kycDone
+                            ? null
+                            : {
+                                header: textsCap.kycDoneMsg,
+                                icon: true,
+                                status: 'error',
+                            },
+                        submitDisabled: !!kycDone,
+                    })
+                    return
                 })
-                return
-            })
-            .catch(err => setState({
-                loading: false,
-                message: {
-                    content: `${err}`,
-                    icon: true,
-                    status: 'error',
-                },
-            }))
+                .catch(err => setState({
+                    loading: false,
+                    message: {
+                        content: `${err}`,
+                        icon: true,
+                        status: 'error',
+                    },
+                }))
+        }
         return () => setStateOrg.mounted = false
     }, [setStateOrg])
 
@@ -114,26 +134,56 @@ KYCForm.defaultProps = {
     size: 'tiny',
     subheader: textsCap.formSubheader,
 }
-
-// showForm(KYCForm) // remove
-
 const handleSubmitCb = (props, setState) => async (_, values) => {
     const { onSubmit } = props || {}
     const locationId = values[inputNames.locationId]
     const location = getLocation(locationId)
+    const blockchains = values[inputNames.blockchains]
+    const ethAddress = values[inputNames.ethAddress]
     values = { ...values, location }
-    setState({ loading: true })
     let newState = {
         loading: false,
         message: null,
         success: false,
     }
-    try {
-        const result = await client.crowdsaleKYC.promise(values)
-        newState.success = result === true
-        // mark location
-        setLocation({ isCrowdsale: true }, locationId)
+    const confirmSubmit = () => new PromisE(resolve => {
+        confirm({
+            confirmButton: textsCap.ok,
+            content: textsCap.submitConfirmMsg,
+            onCancel: () => resolve(false),
+            onConfirm: () => resolve(true),
+            size: 'tiny',
+        })
+    })
 
+    try {
+        setState({ loading: true, message: null })
+        const ok = await confirmSubmit()
+        if (!ok) return setState({ loading: false })
+
+        const backupDone = await confirmBackup()
+        if (!backupDone) throw textsCap.submitFailedBackupNotDone
+
+        const result = await client.crowdsaleKYC.promise(values)
+        // save crowdsale data to localStorage
+        crowdsaleData(values)
+        newState.success = !!result
+        // request deposit addresses for selected blockchains
+        const promises = blockchains.map(ticker =>
+            client.crowdsaleDAA.promise(
+                ticker,
+                ticker === 'ETH' ? ethAddress : '',
+            )
+        )
+        try {
+            const depositAddresses = await PromisE.timeout(
+                PromisE.all(promises), // makes sure the result is an array
+                5000,
+            )
+            crowdsaleData({...values, depositAddresses})
+        } catch (err) {
+            console.log({err})
+        }
     } catch (err) {
         newState.message = {
             content: `${err}`,
@@ -147,120 +197,6 @@ const handleSubmitCb = (props, setState) => async (_, values) => {
     isFn(onSubmit) && onSubmit(newState.success, values)
 }
 
-const getInputs = () => [
-    {
-        label: textsCap.identityLabel,
-        name: inputNames.identity,
-        options: [],
-        placeholder: textsCap.identityPlaceholder,
-        required: true,
-        rxOptions: rxIdentities,
-        rxOptionsModifier: identitiesMap => Array.from(identitiesMap)
-            .map(([_, { address, locationId, name }]) => {
-                let location = getLocation(locationId)
-                return {
-                    description: !location ? '' : (
-                        <span>
-                            <Icon className='no-margin' name='building' /> {textEllipsis(location.name, 15, 3, false)}
-                        </span>
-                    ), //location name with icon
-                    key: address,
-                    text: name,
-                    value: address,
-                }
-            }),
-        rxValue: new BehaviorSubject(),
-        search: ['text', 'value', 'description'],
-        selection: true,
-        type: 'dropdown',
-        // validate: (_, { value: address }, v, rxValue) => {
-        //     const { locationId } = address && getIdentity(address) || {}
-        //     if (!address || locationId) return false
-        //     const updateBtn = (
-        //         <Button {...{
-        //             basic: true,
-        //             icon: 'pencil',
-        //             content: textsCap.updateIdentity,
-        //             onClick: e => e.preventDefault() | showForm(IdentityForm, {
-        //                 // force re-validate
-        //                 onSubmit: ok => ok && rxValue && rxValue.next(address),
-        //                 values: { address },
-        //             }),
-        //             size: 'tiny'
-        //         }} />
-        //     )
-        //     return (
-        //         <div>
-        //             {textsCap.identityErrorLocation}
-        //             <div>{updateBtn}</div>
-        //         </div>
-        //     )
-        // },
-    },
-    {
-        name: 'names',
-        type: 'group',
-        inputs: [
-            {
-                label: textsCap.givenNameLabel,
-                maxLength: 64,
-                minLength: 3,
-                name: inputNames.givenName,
-                placeholder: textsCap.givenNamePlaceholder,
-                required: true,
-                type: 'text',
-            },
-            {
-                label: textsCap.familyNameLabel,
-                maxLength: 64,
-                minLength: 3,
-                name: inputNames.familyName,
-                placeholder: textsCap.familyNamePlaceholder,
-                required: true,
-                type: 'text',
-            },
-        ],
-    },
-    {
-        clearable: true,
-        // disable if identity not selected
-        disabled: values => !values[inputNames.identity],
-        // show plus icon along with label to create a new location
-        label: (
-            <span>
-                {textsCap.locationIdLabel}
-                <Button {...{
-                    icon: 'plus',
-                    onClick: e => e.preventDefault() | showForm(LocationForm),
-                    size: 'mini',
-                    style: { padding: 3 },
-                    title: textsCap.locationIdCreateTittle,
-                }} />
-            </span>
-        ),
-        name: inputNames.locationId,
-        // set initial options
-        options: getLocationOptions(getLocations()),
-        placeholder: textsCap.locationIdPlaceholder,
-        required: true,
-        // update options whenever locations list changes
-        rxOptions: rxLocations,
-        rxOptionsModifier: getLocationOptions,
-        rxValue: new BehaviorSubject(),
-        search: true,
-        selection: true,
-        type: 'dropdown',
-    },
-    {
-        label: textsCap.emailLabel,
-        maxLength: 128,
-        name: inputNames.email,
-        placeholder: textsCap.emailPlaceholder,
-        required: true,
-        type: 'email',
-    },
-]
-
 const getLocationOptions = locationsMap => Array.from(locationsMap)
     .map(([locationId, location]) => {
         const { addressLine1, city, countryCode, name, state } = location || {}
@@ -272,3 +208,141 @@ const getLocationOptions = locationsMap => Array.from(locationsMap)
             value: locationId,
         }
     })
+
+const getInputs = () => {
+    const daaInputs = getDAAInputs()
+    const blockchainOptions = (findInput(daaInputs, daaInputNames.blockchain) || { options: [] })
+        .options
+        .map(o => ({ ...o, label: o.text }))
+    const ethAddressIn = findInput(daaInputs, daaInputNames.ethAddress)
+    
+    return [
+        {
+            label: textsCap.identityLabel,
+            name: inputNames.identity,
+            options: [],
+            placeholder: textsCap.identityPlaceholder,
+            required: true,
+            rxOptions: rxIdentities,
+            rxOptionsModifier: identitiesMap => Array.from(identitiesMap)
+                .map(([_, { address, locationId, name }]) => {
+                    let location = getLocation(locationId)
+                    return {
+                        description: !location ? '' : (
+                            <span>
+                                <Icon className='no-margin' name='building' /> {textEllipsis(location.name, 15, 3, false)}
+                            </span>
+                        ), //location name with icon
+                        key: address,
+                        text: name,
+                        value: address,
+                    }
+                }),
+            rxValue: new BehaviorSubject(),
+            search: ['text', 'value', 'description'],
+            selection: true,
+            type: 'dropdown',
+            // validate: (_, { value: address }, v, rxValue) => {
+            //     const { locationId } = address && getIdentity(address) || {}
+            //     if (!address || locationId) return false
+            //     const updateBtn = (
+            //         <Button {...{
+            //             basic: true,
+            //             icon: 'pencil',
+            //             content: textsCap.updateIdentity,
+            //             onClick: e => e.preventDefault() | showForm(IdentityForm, {
+            //                 // force re-validate
+            //                 onSubmit: ok => ok && rxValue && rxValue.next(address),
+            //                 values: { address },
+            //             }),
+            //             size: 'tiny'
+            //         }} />
+            //     )
+            //     return (
+            //         <div>
+            //             {textsCap.identityErrorLocation}
+            //             <div>{updateBtn}</div>
+            //         </div>
+            //     )
+            // },
+        },
+        {
+            name: 'names',
+            type: 'group',
+            inputs: [
+                {
+                    label: textsCap.givenNameLabel,
+                    maxLength: 64,
+                    minLength: 3,
+                    name: inputNames.givenName,
+                    placeholder: textsCap.givenNamePlaceholder,
+                    required: true,
+                    type: 'text',
+                },
+                {
+                    label: textsCap.familyNameLabel,
+                    maxLength: 64,
+                    minLength: 3,
+                    name: inputNames.familyName,
+                    placeholder: textsCap.familyNamePlaceholder,
+                    required: true,
+                    type: 'text',
+                },
+            ],
+        },
+        {
+            clearable: true,
+            // disable if identity not selected
+            disabled: values => !values[inputNames.identity],
+            // show plus icon along with label to create a new location
+            label: (
+                <span>
+                    {textsCap.locationIdLabel + ' '}
+                    <Button {...{
+                        as: 'a', // prevents form being submitted unexpectedly
+                        icon: 'plus',
+                        onClick: () => showForm(LocationForm),
+                        size: 'mini',
+                        style: { padding: 3 },
+                        title: textsCap.locationIdCreateTittle,
+                    }} />
+                </span>
+            ),
+            name: inputNames.locationId,
+            // set initial options
+            options: getLocationOptions(getLocations()),
+            placeholder: textsCap.locationIdPlaceholder,
+            required: true,
+            // update options whenever locations list changes
+            rxOptions: rxLocations,
+            rxOptionsModifier: getLocationOptions,
+            rxValue: new BehaviorSubject(),
+            search: true,
+            selection: true,
+            type: 'dropdown',
+        },
+        {
+            label: textsCap.emailLabel,
+            maxLength: 128,
+            name: inputNames.email,
+            placeholder: textsCap.emailPlaceholder,
+            required: true,
+            type: 'email',
+        },
+        {
+            inline: true,
+            label: textsCap.blockchainsLabel,
+            labelDetails: textsCap.blockchainsLabelDetails,
+            multiple: true,
+            name: inputNames.blockchains,
+            options: blockchainOptions,
+            radio: false,
+            required: true,
+            type: 'checkbox-group',
+            },
+        {
+            ...ethAddressIn,
+            hidden: values => !(values[inputNames.blockchains] || []).includes('ETH')
+        },
+    ]
+}

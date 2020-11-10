@@ -76,10 +76,10 @@ LocationsList.defaultProps = {
     includePartners: false,
 }
 
-export const showModal = size => confirm({
+export const showLocations = (size, tableProps = {}) => confirm({
     cancelButton: textsCap.close,
     confirmButton: null,
-    content: <LocationsList />,
+    content: <LocationsList { ...tableProps }/>,
     header: textsCap.myLocations,
     size,
 })

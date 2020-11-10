@@ -2,9 +2,11 @@
  * Storage Service: to handle all interactions with browser's localStorage.
  * Typically this should be used by other services
  */
-import { downloadFile, hasValue, isMap, isObj } from '../utils/utils'
+import { downloadFile, generateHash, hasValue, isMap, isObj, objClean } from '../utils/utils'
 import DataStorage from '../utils/DataStorage'
-import identities from '../modules/identity/identity'
+// import FormBuilder from '../components/FormBuilder'
+import { getAll as getIdentities, set as saveIdentity} from '../modules/identity/identity'
+import { translated } from './language'
 
 // Local Storage item key prefix for all items
 const PREFIX = 'totem_'
@@ -13,6 +15,7 @@ const CACHE_KEY = PREFIX + 'cache'
 const storage = {}
 const cache = new DataStorage(CACHE_KEY, true)
 const settings = new DataStorage(PREFIX + 'settings', true) // keep cache disabled
+
 // LocalStorage items that are essential for the applicaiton to run. 
 export const essentialKeys = [
     'totem_chat-history', // chat history
@@ -25,38 +28,45 @@ export const essentialKeys = [
     'totem_settings',
 ]
 
-// download backup of application data
-//
-// Params:
-// @backup  any: if falsy, will generate a new backup
-export const downloadBackup = (backup = generateBackupData()) => {
-    const timestamp = new Date().toISOString()
+/**
+ * @name    downloadBackup
+ * @summary download backup of application data
+ * 
+ * @param   {String}    backup (optional) will be generated if not supplied
+ * 
+ * @returns {Array}     [backupContent: string, timestamp: string]
+ */
+export const downloadBackup = () => {
+    const fileBackupTS = new Date().toISOString()
+    const content = JSON.stringify(generateBackupData(fileBackupTS))
     downloadFile(
-        JSON.stringify(backup),
-        `totem-backup-${timestamp}.json`,
+        content,
+        `totem-backup-${fileBackupTS}.json`,
         'application/json'
     )
-    // assume file has been downloaded (no simple way to actually confirm file was downloaded)
-    // update file backup timestamp on identities
-    identities.getAll().forEach(identity => identities.set(
-        identity.address,
-        {
-            ...identity,
-            fileBackupTS: timestamp
-        }
-    ))
+    return [content, fileBackupTS]
 }
 
+/**
+ * @name    generateBackupData
+ * @summary generate a replica of the localStorage contents only includes the properties specified in `essentialKeys`
+ * @param   {String}    fileBackupTS (optional) if supplied downloaded identities will be updated
+ */
 // generates user data for backup, excluding non-essential items such as cache etc...
-export const generateBackupData = () => {
-    const keys = Object.keys(localStorage)
-        .map(key => !essentialKeys.includes(key) ? null : key)
-        .filter(Boolean)
-        .sort()
-    return keys.reduce((data, key) => {
-        data[key] = JSON.parse(localStorage[key])
-        return data
-    }, {})
+export const generateBackupData = (fileBackupTS) => {
+    const data =  objClean(localStorage, essentialKeys)
+    const keys = Object.keys(data)
+    keys.forEach(key => {
+        // parse JSON string
+        data[key] = JSON.parse(data[key])
+        if (!fileBackupTS || key !== 'totem_identities') return
+        // update backup timestamp
+        data[key]
+            .forEach(([_, identity]) =>
+            identity.fileBackupTS = fileBackupTS
+        )
+    })
+    return data
 }
 
 /**
