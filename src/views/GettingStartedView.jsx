@@ -171,14 +171,19 @@ export default class GetingStarted extends Component {
 		},
 	})
 
-	handleIdentity = () => showForm(IdentityForm, {
-		values: getSelected(),
-		// automatically open register form only if user isn't already registered
-		onSubmit: ok => {
-			if (!ok) return
-			this.setStep(this.state.activeStep + 1)
-		}
-	})
+	handleIdentity = () => {
+		const values = getSelected()
+		// forces user to enter a new name for the identity
+		if (values.name === 'Default') values.name = ''
+		showForm(IdentityForm, {
+			values,
+			// automatically open register form only if user isn't already registered
+			onSubmit: ok => {
+				if (!ok) return
+				this.setStep(this.state.activeStep + 1)
+			}
+		})
+	}
 
 	handleRegister = () => showForm(RegistrationForm, {
 		closeOnSubmit: true,

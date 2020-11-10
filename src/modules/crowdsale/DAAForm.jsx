@@ -7,9 +7,11 @@ import { reducer } from '../../services/react'
 import client from '../chat/ChatClient'
 import { isFn } from '../../utils/utils'
 import { crowdsaleData } from './crowdsale'
+import PromisE from '../../utils/PromisE'
 
 const textsCap = translated({
-    addressAlreadyAllocated: 'you have already been assigned an address for this chain',
+    addressAlreadyAllocated: 'you have already been assigned an address for this chain.',
+    addressAlreadyAllocated2: 'Reload page to see your missing address.',
     blockchainLabel: 'Blockchain',
     blockchainPlaceholder: 'select Blockchain you want to make deposit in',
     ethAddressError: 'valid Ethereum address required',
@@ -70,16 +72,29 @@ DAAForm.defaultProps = {
 const handleSubmitCb = (setState, props) => async (_, values) => {
     const { onSubmit } = props
     const blockchain = values[inputNames.blockchain]
-    const ethAddress = values[inputNames.ethAddress]
+    const isETH =  blockchain === 'ETH'
     const newState = { loading: true, message: null, success: false }
     setState(newState)
     
     try {
-        const address = await client.crowdsaleDAA.promise(blockchain, ethAddress)
+        const address = await client.crowdsaleDAA.promise(
+            blockchain,
+            isETH ? values[inputNames.ethAddress] : ''
+        )
         newState.success = !!address
+        let { blockchains = [], depositAddresses = {}, ethAddress } = crowdsaleData()
+        depositAddresses[blockchain] = address
+        ethAddress = isETH
+            ? values[inputNames.ethAddress]
+            : ethAddress
+        
+        if (!blockchains.includes(blockchain)) blockchains.push(blockchain)
+
         // makes sure to save the ethAddress to localStorage
-        blockchain === 'ETH' && crowdsaleData( { ethAddress })
+        crowdsaleData({ blockchains, ethAddress, depositAddresses })
+        await PromisE.delay(1000)
     } catch (err) {
+        newState.success = false
         newState.message = {
             content: `${err}`,
             icon: true,
@@ -126,8 +141,13 @@ export const getInputs = () => [
         // check if user already has been assigned a requested deposit address for selected chain
         validate: async (_, { value: blockchain }, values) => {
             try {
+                const { depositAddresses = {} } = crowdsaleData()
+                if (!!depositAddresses[blockchain]) return textsCap.addressAlreadyAllocated
+
                 const address = await client.crowdsaleDAA.promise(blockchain, '0x0')
-                return address && textsCap.addressAlreadyAllocated
+                depositAddresses[blockchain] = address
+                crowdsaleData({ depositAddresses })
+                return address && `${textsCap.addressAlreadyAllocated} ${textsCap.addressAlreadyAllocated2}`
             } catch (err) {
                 return err
             }

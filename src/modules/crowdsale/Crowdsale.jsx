@@ -1,5 +1,5 @@
 import React, { useEffect, useReducer, useState } from 'react'
-import { Button, Step } from 'semantic-ui-react'
+import { Button, Icon, Step } from 'semantic-ui-react'
 import { ButtonGroup } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import FormBuilder from '../../components/FormBuilder'
@@ -8,8 +8,9 @@ import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
 import { reducer, useRxSubject } from '../../services/react'
 import PromisE from '../../utils/PromisE'
-import client, { rxIsLoggedIn } from '../chat/ChatClient'
-import { crowdsaleData } from './crowdsale'
+import { copyToClipboard } from '../../utils/utils'
+import client, { getUser, rxIsLoggedIn } from '../chat/ChatClient'
+import { crowdsaleData, rxData } from './crowdsale'
 import DAAForm from './DAAForm'
 import KYCForm, { inputNames as kycInputNames} from './KYCForm'
 
@@ -20,8 +21,9 @@ const textsCap = translated({
     despositAddress: 'pay to address',
     level: 'level',
     loadingMsg: 'loading',
-    loginRequired: 'you must be registered and online to access this section',
+    loginRequired: 'you must be logged in and online to access this section',
     multiplierAchieved: 'multiplier achieved!',
+    registrationRequired: 'please complete the getting started steps',
     requestBtnTxt: 'request address',
     successMsg: `
         Fantastic! You have now been registered for the Totem Live Association crowdsale.
@@ -48,60 +50,54 @@ const BLOCKCHAINS = {
 }
 
 export default function () {
+    const [data] = useRxSubject(rxData, generateTableData)
     const [isLoggedIn] = useRxSubject(rxIsLoggedIn)
     const [state, setStateOrg] = useReducer(reducer, {
+        blockchains: [],
         data: [],
-        depositAddresses: {},
+        depositAddresses: [],
         kycDone: false,
-        loading: true,
+        loading: false,
         multiplierLevel: 1,
     })
     const [setState] = useState(() => (...args) => setStateOrg.mounted && setStateOrg(...args))
 
     useEffect(() => {
         setStateOrg.mounted = true
-        const newState = {
-            ...getTableProps(state, setState),
-            steps: getSteps(),
-            loading: false,
-            message: null,
-        }
-        client.crowdsaleKYC
-            .promise(true)
-            .then(kycDone => {
-                const { blockchains = [], depositAddresses: addresses = [] } = crowdsaleData() || {}
-                const depositAddresses = Object.keys(BLOCKCHAINS)
-                    .reduce((obj, ticker) => {
-                        const index = blockchains.indexOf(ticker)
-                        obj[ticker] = addresses[index]
-                        return obj
-                    }, {})
-                setState({
-                    ...newState,
-                    kycDone,
-                    depositAddresses,
+        isLoggedIn && !state.kycDone && setTimeout(async () => {
+            setState({ loading: true })
+            let newState = { message: null}
+            await client.crowdsaleKYC
+                .promise(true)
+                .then(done => newState.kycDone = done)
+                .catch(err => {
+                    newState.message = {
+                        content: `${err}`,
+                        icon: true,
+                        status: 'error',
+                    }
                 })
-                fetchDepositAddresses({ depositAddresses }, setState)
-            },
-            err => setState({
-                ...newState,
-                message: {
-                    content: `${err}`,
-                    icon: true,
-                    status: 'error',
-                },
-            }))
+                .finally(() => setState({
+                    ...newState,
+                    // data: generateTableData(),
+                    loading: false,
+                    steps: getSteps(),
+                }))
+        })
             
         return () => setStateOrg.mounted = false
-    }, [setStateOrg])
+    }, [setState, isLoggedIn])
 
     if (!isLoggedIn || state.loading) {
-        const isLoading = state.loading || isLoggedIn === null
+        const isRegistered = !!(getUser() || {}).id
+        const isLoading = state.loading || isLoggedIn === null && isRegistered
         return (
             <Message {...{
                 header: isLoading
                     ? textsCap.loadingMsg
-                    : textsCap.loginRequired,
+                    : isRegistered
+                        ? textsCap.loginRequired
+                        : textsCap.registrationRequired,
                 icon: true,
                 status: isLoading
                     ? 'loading'
@@ -119,14 +115,14 @@ export default function () {
                 onSubmit: kycDone => {
                     if (!kycDone) return
                     setState({ kycDone })
-                    fetchDepositAddresses(state, setState)
+                    // generateTableData(setState)
                     showNotes()
                 },
                 style: { maxWidth: 400 },
             }} />
         </div>
     )
-                           
+    
     return (
         <div>
             <Step.Group fluid>
@@ -163,7 +159,10 @@ export default function () {
                     )
                 })}
             </Step.Group>
-            <DataTable {...state} />
+            <DataTable {...{
+                ...getTableProps(state, setState),
+                data,
+            }} />
         </div>
     )
 }
@@ -198,16 +197,12 @@ const getSteps = () => [
 
 const getTableProps = (state, setState) => ({
     columns: [
-        { key: 'blockchain', title: textsCap.blockchain },
+        { key: 'blockchainName', title: textsCap.blockchain },
         {
-            content: ({ address, ticker }) => address || (
+            content: ({ address, blockchain }) => address || (
                 <Button {...{
                     content: textsCap.requestBtnTxt,
-                    onClick: () => showDAAForm(
-                        state,
-                        setState,
-                        { values: { blockchain: ticker } },
-                    ),
+                    onClick: () => showForm(DAAForm, { values: { blockchain } }),
                 }} />
             ),
             key: 'address',
@@ -247,46 +242,32 @@ const getTableProps = (state, setState) => ({
     ],
 })
 
-const fetchDepositAddresses = async (state, setState) => {
-    let { depositAddresses = {} } = state
-    const blockchains = Object.keys(BLOCKCHAINS)
-        .filter(ticker => !depositAddresses[ticker])
-    const promises = blockchains.map(chain =>
-        client.crowdsaleDAA.promise(chain, '0x0')
-    )
-    const promise = PromisE.timeout(
-        PromisE.all(promises),
-        5000,
-    )
-    try {
-        setState({ loading: true, message: null })
-        const results = await promise
-        depositAddresses = blockchains.reduce((obj, ticker, i) => {
-            if (!results[i]) return obj
-            obj[ticker] = results[i]
-            return obj
-        }, depositAddresses)
-        const data = Object.keys(BLOCKCHAINS)
-            .map(ticker => ({
-                address: state.depositAddresses[ticker],
-                blockchain: BLOCKCHAINS[ticker],
-                ticker,
-            }))
-        setState({ loading: false, data, depositAddresses })
-        // save updated list to localStorage
-        crowdsaleData({ 
-            blockchains,
-            depositAddresses: blockchains.map(ticker => depositAddresses[ticker])
+const generateTableData = (csData) => {
+    csData = csData || crowdsaleData()
+    let { depositAddresses = {} } = csData || {} 
+    const data = Object.keys(BLOCKCHAINS)
+        .map(blockchain => {
+            const hasAddress = !!depositAddresses[blockchain]
+            return [
+                blockchain,
+                {
+                    address: !hasAddress
+                        ? ''
+                        : (
+                            <div {...{
+                                onClick: () => copyToClipboard(depositAddresses[blockchain]),
+                                style: { cursor: 'pointer' },
+                            }}>
+                                {depositAddresses[blockchain]} <Icon name='copy outline' />
+                            </div>
+                        ),
+                    blockchain,
+                    blockchainName: BLOCKCHAINS[blockchain],
+                    amount: undefined,
+                },
+            ]
         })
-    } catch (err) {
-        setState({
-            loading: false,
-            message: {
-                header: `${err}`,
-                content: err instanceof Error ? err.stack : ''
-            },
-        })
-    }
+    return new Map(data)
 }
 
 const showNotes = () => confirm({
@@ -310,12 +291,3 @@ const showNotes = () => confirm({
         </div>
     )
 })
-
-const showDAAForm = (state, setState, formProps) => {
-    // open deposit address allocation form
-    showForm(DAAForm, {
-        ...formProps,
-        // on success load deposit addresses
-        onSubmit: ok => ok && fetchDepositAddresses( state, setState ),
-    })
-}

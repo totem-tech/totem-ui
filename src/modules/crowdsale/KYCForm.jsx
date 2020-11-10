@@ -1,7 +1,7 @@
 import React, { useEffect, useReducer, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Button, Icon } from 'semantic-ui-react'
-import { isArr, isFn, textEllipsis } from '../../utils/utils'
+import { isArr, isFn, objWithoutKeys, textEllipsis } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput, inputsForEach } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
@@ -13,7 +13,8 @@ import LocationForm from '../location/LocationForm'
 import { getInputs as getDAAInputs, inputNames as daaInputNames, } from './DAAForm'
 import { confirmBackup } from '../../views/GettingStartedView'
 import PromisE from '../../utils/PromisE'
-import { crowdsaleData } from './crowdsale'
+import { crowdsaleData, rxData } from './crowdsale'
+import { setToast } from '../../services/toast'
 
 const textsCap = translated({
     blockchainsLabel: 'select blockchains',
@@ -27,7 +28,7 @@ const textsCap = translated({
     familyNamePlaceholder: 'enter your family name',
     givenNameLabel: 'given name',
     givenNamePlaceholder: 'enter your given name',
-    formHeader: 'Crowdsale - Know Your Customer (KYC)',
+    formHeader: 'Crowdsale registration',
     formSubheader: 'in order to participate in the crowdsale you must complete your KYC data',
     identityErrorLocation: 'please select an identity with contact address',
     identityLabel: 'identity to receive XTX tokens',
@@ -138,7 +139,7 @@ const handleSubmitCb = (props, setState) => async (_, values) => {
     const { onSubmit } = props || {}
     const locationId = values[inputNames.locationId]
     const location = getLocation(locationId)
-    const blockchains = values[inputNames.blockchains]
+    let blockchains = values[inputNames.blockchains]
     const ethAddress = values[inputNames.ethAddress]
     values = { ...values, location }
     let newState = {
@@ -161,29 +162,28 @@ const handleSubmitCb = (props, setState) => async (_, values) => {
         const ok = await confirmSubmit()
         if (!ok) return setState({ loading: false })
 
+        // save crowdsale data to localStorage
+        crowdsaleData(objWithoutKeys(values, [inputNames.blockchains]))
         const backupDone = await confirmBackup()
         if (!backupDone) throw textsCap.submitFailedBackupNotDone
 
         const result = await client.crowdsaleKYC.promise(values)
-        // save crowdsale data to localStorage
-        crowdsaleData(values)
         newState.success = !!result
-        // request deposit addresses for selected blockchains
-        const promises = blockchains.map(ticker =>
-            client.crowdsaleDAA.promise(
-                ticker,
-                ticker === 'ETH' ? ethAddress : '',
-            )
-        )
-        try {
-            const depositAddresses = await PromisE.timeout(
-                PromisE.all(promises), // makes sure the result is an array
-                5000,
-            )
-            crowdsaleData({...values, depositAddresses})
-        } catch (err) {
-            console.log({err})
+        if (blockchains.length > 1 && blockchains.includes('ETH')) {
+            // put ethereum at last
+            blockchains = [...blockchains.filter(b => b !== 'ETH'), 'ETH']
         }
+        // request deposit addresses for selected blockchains
+        blockchains.map(blockchain => {
+            const ethAddr = blockchain === 'ETH' ? ethAddress : ''
+            client.crowdsaleDAA.promise(blockchain, ethAddr)
+                .then(address => {
+                    const { depositAddresses = {} } = rxData.value || {}
+                    depositAddresses[blockchain] = address
+                    crowdsaleData({ depositAddresses })
+                })
+                .catch(err => setToast({ content: `${err}`, status: 'error' }, 0, blockchain))
+        })
     } catch (err) {
         newState.message = {
             content: `${err}`,
@@ -215,7 +215,16 @@ const getInputs = () => {
         .options
         .map(o => ({ ...o, label: o.text }))
     const ethAddressIn = findInput(daaInputs, daaInputNames.ethAddress)
-    
+    const createLocationBtn = (
+        <Button {...{
+            as: 'a', // prevents form being submitted unexpectedly
+            icon: 'plus',
+            onClick: () => showForm(LocationForm, { closeOnSubmit: false }),
+            size: 'mini',
+            style: { padding: 3 },
+            title: textsCap.locationIdCreateTittle,
+        }} />
+    )
     return [
         {
             label: textsCap.identityLabel,
@@ -298,17 +307,11 @@ const getInputs = () => {
             label: (
                 <span>
                     {textsCap.locationIdLabel + ' '}
-                    <Button {...{
-                        as: 'a', // prevents form being submitted unexpectedly
-                        icon: 'plus',
-                        onClick: () => showForm(LocationForm),
-                        size: 'mini',
-                        style: { padding: 3 },
-                        title: textsCap.locationIdCreateTittle,
-                    }} />
+                    {createLocationBtn}
                 </span>
             ),
             name: inputNames.locationId,
+            noResultsMessage: textsCap.locationIdCreateTittle,
             // set initial options
             options: getLocationOptions(getLocations()),
             placeholder: textsCap.locationIdPlaceholder,

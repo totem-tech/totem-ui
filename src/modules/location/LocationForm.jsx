@@ -24,13 +24,14 @@ const textsCap = translated({
 	locationRemoveWarning: 'this location is used by the following identities:',
 	nameLabel: 'location name',
 	namePlaceholder: 'enter a name for this location',
+	partnerIdentityLabel: 'partner user ID',
 	partnerNameLabel: 'partner name',
 	postcodeLabel: 'postcode or zip',
 	postcodePlaceholder: 'enter your postcode or zip',
 	remove: 'remove location',
 	stateLabel: 'state or province',
 	statePlaceholder: 'enter your state or province',
-	partnerIdentityLabel: 'partner user ID',
+	successMsg: 'location created successfully'
 }, true)[1]
 
 export const requiredFields = {
@@ -229,7 +230,15 @@ export default class LocationForm extends Component {
 	handleSubmit = deferred((_, values) => {
 		let { id, onSubmit } = this.props
 		id = set(values, id)
-		!this.isUpdate && this.setState({ success: true})
+		// new location created
+		!this.isUpdate && this.setState({
+			message: {
+				content: textsCap.successMsg,
+				icon: true,
+				status: 'success',
+			},
+			success: true,
+		})
 		isFn(onSubmit) && onSubmit(true, values, id)
 	}, 300)
 
