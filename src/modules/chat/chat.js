@@ -191,7 +191,7 @@ export const removeMessage = (inboxKey, id) => {
     rxInboxListChanged.next(uuid.v1())
 }
 
-const saveMessage = msg => {
+const saveMessage = (msg, trigger = false) => {
     let { action, message, senderId, receiverIds, encrypted, timestamp, status = 'success', id, errorMessage } = msg
     receiverIds = receiverIds.sort()
     const inboxKey = getInboxKey(receiverIds)
@@ -237,6 +237,8 @@ const saveMessage = msg => {
     // Store (global) last received (including own) message timestamp.
     // This is used to retrieve missed messages from server
     rw({ lastMessageTS: timestamp })
+
+    trigger && rxMsg.next([inboxKey, msg])
 }
 
 // send message
@@ -281,7 +283,7 @@ rxIsLoggedIn.subscribe(loggedIn => {
     // check & retrieve any unread mesages
     client.messageGetRecent(lastMessageTS, (err, messages = []) => {
         if (err) return console.log('Failed to retrieve recent inbox messages', err)
-        messages.forEach(saveMessage)
+        messages.forEach(msg => saveMessage(msg, true))
     })
 
     checkOnlineStatus()
@@ -400,7 +402,7 @@ export default {
     removeInboxMessages,
     rxExpanded,
     rxInboxListChanged,
-    rxNewMsgReceived: rxMsg,
+    rxMsg,
     rxOpenInboxKey,
     rxUnreadCount,
     rxVisible,
