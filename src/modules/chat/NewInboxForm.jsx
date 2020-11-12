@@ -8,6 +8,7 @@ import { getUser, rxIsRegistered } from './ChatClient'
 import { translated } from '../../services/language'
 import { showForm, closeModal } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
+import { useRxSubject } from '../../services/react'
 import {
     createInbox,
     getInboxKey,
@@ -16,9 +17,10 @@ import {
     SUPPORT,
     TROLLBOX,
     rxOpenInboxKey,
+    TROLLBOX_ALT,
 } from './chat'
 import { getInboxName } from './InboxList'
-import { useRxSubject } from '../../services/react'
+import RegistrationForm from './RegistrationForm'
 
 const [_, textsCap] = translated({
     group: 'group',
@@ -36,12 +38,18 @@ const EVERYONE = 'everyone'
 
 const inputNames = {
     name: 'name',
-    receiverIds: 'receiverIds'
+    userIds: 'userIds'
 }
 export default function NewInboxForm(props) {
     const [isRegistered] = useRxSubject(rxIsRegistered)
     const [success, setSuccess] = useState(false)
-    const [inputs] = useRxSubject(getRxInputs())
+    if (!isRegistered) {
+        showForm(RegistrationForm,  { values: { silent: true } })
+        return ''
+    }
+
+    const [inputs] = useRxSubject(getRxInputs(props))
+
     return (
         <FormBuilder {...{
             ...props,
@@ -63,12 +71,22 @@ NewInboxForm.propTypes = {
 }
 
 
-const getRxInputs = values => {
-    const allInboxKeys = Object.keys(inboxesSettings())
-    const receiverIdOptions = allInboxKeys.map(key => {
-        const receiverIds = key.split(',')
-        const isTrollbox = key === EVERYONE
-        const isSupport = receiverIds.includes(SUPPORT)
+const getRxInputs = props => {
+    const { values = {} } = props || {}
+    let { userids, userIds } = values
+    userIds = userIds || userids
+    values.userIds = isArr(userIds)
+        ? userIds 
+        : `${userIds || ''}`
+            .split(',') 
+            .map(x => x.trim())
+            .filter(Boolean)
+    
+    const allInboxKeys = arrUnique([...Object.keys(inboxesSettings()), ...values.userIds])
+    const userIdOptions = allInboxKeys.map(key => {
+        const userIds = key.split(',')
+        const isTrollbox = [TROLLBOX, TROLLBOX_ALT].includes(key)
+        const isSupport = userIds.includes(SUPPORT)
         const isGroup = !isSupport && key.split(',').length > 1
         const name = getInboxName(key)
         const members = textEllipsis(key.replace(/\,/g, ', '), 30, 3, false)
@@ -81,64 +99,65 @@ const getRxInputs = values => {
             value: key,
         }
     })
-    const rxInputs = new BehaviorSubject(
-        fillValues([
-            {
-                autoFocus: true,
-                excludeOwnId: true,
-                includeFromChat: true,
-                includePartners: true,
-                message: { content: textsCap.userIdsHint },
-                multiple: true,
-                name: inputNames.receiverIds,
-                options: arrSort(receiverIdOptions, 'text'),
-                onChange: (_, values) => {
-                    const nameIn = findInput(rxInputs.value, inputNames.name)
-                    const userIds = values[inputNames.receiverIds]
-                        .map(x => x.split(','))
-                        .flat()
-                    const inboxKey = getInboxKey(userIds)
-                    const [_ig, allowNaming] = checkGroup(userIds)
-                    nameIn.hidden =
-                        nameIn.rxValue.next(allowNaming && inboxSettings(inboxKey).name || '')
-                },
-                required: true,
-                rxValue: new BehaviorSubject([]),
-                type: 'UserIdInput',
+
+    const rxInputs = new BehaviorSubject(fillValues([
+        {
+            autoFocus: true,
+            excludeOwnId: true,
+            includeFromChat: true,
+            includePartners: true,
+            message: { content: textsCap.userIdsHint },
+            multiple: true,
+            name: inputNames.userIds,
+            options: arrSort(userIdOptions, 'text'),
+            onChange: (_, values) => {
+                const inputs = rxInputs.value
+                const nameIn = findInput(inputs, inputNames.name)
+                const userIds = values[inputNames.userIds]
+                    .map(x => x.split(','))
+                    .flat()
+                const inboxKey = getInboxKey(userIds)
+                const [_ig, allowNaming] = checkGroup(userIds)
+                nameIn.hidden = !allowNaming
+                nameIn.rxValue.next(allowNaming && inboxSettings(inboxKey).name || '')
+                rxInputs.next([...inputs])
             },
-            {
-                label: textsCap.nameLabel,
-                minLength: 3,
-                maxLength: 32,
-                name: inputNames.name,
-                placeholder: textsCap.namePlaceholder,
-                required: true,
-                rxValue: new BehaviorSubject(''),
-                type: 'text',
-            },
-        ], values)
-    )
+            required: true,
+            rxValue: new BehaviorSubject([]),
+            type: 'UserIdInput',
+        },
+        {
+            label: textsCap.nameLabel,
+            minLength: 3,
+            maxLength: 32,
+            name: inputNames.name,
+            placeholder: textsCap.namePlaceholder,
+            required: true,
+            rxValue: new BehaviorSubject(''),
+            type: 'text',
+        },
+    ], values))
     return rxInputs
 }
 const handleSubmit = (setSuccess, onSubmit) => async (_, values) => {
-    let receiverIds = arrUnique(
-        values[inputNames.receiverIds]
+    let userIds = arrUnique(
+        values[inputNames.userIds]
             .map(x => x.split(','))
             .flat()
     )
     const { id: ownId, roles = [] } = getUser() || {}
-    if (receiverIds.includes(SUPPORT)) {
-        receiverIds = [
+    if (userIds.includes(SUPPORT)) {
+        userIds = [
             SUPPORT,
             !roles.includes(SUPPORT)
                 ? null
-                : receiverIds.filter(id =>
+                : userIds.filter(id =>
                     ![SUPPORT, ownId].includes(id)
                 )[0]
         ].filter(Boolean)
     }
-    const name = receiverIds.length > 1 ? values[inputNames.name] : null
-    const inboxKey = createInbox(receiverIds, name, true)
+    const name = userIds.length > 1 ? values[inputNames.name] : null
+    const inboxKey = createInbox(userIds, name, true)
     rxOpenInboxKey.next(inboxKey)
     setSuccess(true)
     isFn(onSubmit) && onSubmit(true, { inboxKey, ...values })
@@ -148,20 +167,21 @@ const handleSubmit = (setSuccess, onSubmit) => async (_, values) => {
  * @name    checkGroup
  * @summary checks if supplied is a group and whether group can be named
  *  
- * @param   {String|Array} keyOrIds inboxKey or receiver IDs
+ * @param   {String|Array} keyOrIds inboxKey or recipient IDs
  * 
- * @returns {Array} [isGroup, allowNaming, receiverIds]
+ * @returns {Array} [isGroup, allowNaming, recipientIds]
  */
 const checkGroup = keyOrIds => {
-    let receiverIds = isArr(keyOrIds)
+    let userIds = isArr(keyOrIds)
         ? keyOrIds
         : isStr(keyOrIds)
             ? keyOrIds.split(',')
             : []
-    receiverIds = arrUnique(receiverIds).filter(Boolean)
-    const isGroup = receiverIds.length > 1
-    const allowNaming = isGroup && !receiverIds.find(x => [SUPPORT, TROLLBOX].includes(x))
-    return [isGroup, allowNaming, receiverIds]
+    userIds = arrUnique(userIds).filter(Boolean)
+    const isGroup = userIds.length > 1
+    const allowNaming = isGroup && !userIds.find(x => [SUPPORT, TROLLBOX, TROLLBOX_ALT].includes(x))
+    console.log({allowNaming, userIds})
+    return [isGroup, allowNaming, userIds]
 }
 /**
  * @name    showEditNameFrom
@@ -171,7 +191,7 @@ const checkGroup = keyOrIds => {
  * @param   {Function}  onSubmit 
  */
 export const showEditNameFrom = (inboxKey, onSubmit) => {
-    const [_, isValidGroup, receiverIds] = checkGroup(inboxKey)
+    const [_, isValidGroup, userIds] = checkGroup(inboxKey)
     // inbox is not a valid group or does not support name change
     if (!isValidGroup) return
     const originalName = inboxSettings(inboxKey).name || ''
@@ -194,7 +214,7 @@ export const showEditNameFrom = (inboxKey, onSubmit) => {
                 if (name === originalName) return
 
                 addToQueue({
-                    args: [receiverIds, name],
+                    args: [userIds, name],
                     func: 'messageGroupName',
                     silent: true,
                     type: QUEUE_TYPES.CHATCLIENT,
