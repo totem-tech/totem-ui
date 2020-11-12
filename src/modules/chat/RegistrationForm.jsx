@@ -1,12 +1,13 @@
-import React, { Component } from 'react'
+import React, { Component, useEffect, useReducer, useState } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import uuid from 'uuid'
 import { isFn } from '../../utils/utils'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
-import { setActiveStep } from '../../views/GettingStartedView'
-import client, { getUser, referralCode } from './ChatClient'
+import { registerStepIndex, setActiveStep } from '../../views/GettingStartedView'
+import client, { getUser, referralCode, rxIsRegistered } from './ChatClient'
+import { reducer, useRxSubject } from '../../services/react'
 
 const textsCap = translated({
     alreadyRegistered: 'you have already registered!',
@@ -33,111 +34,132 @@ export const inputNames = {
     userId: 'userId',
 }
 
-export default class RegistrationForm extends Component {
-    constructor(props) {
-        super(props)
+// export default class RegistrationForm extends Component {
+//     constructor(props) {
+//         super(props)
 
-        const { id } = getUser() || {}
-        const { values = {} } = props
-        let { referredBy , referralCode : rfc} = values
-        const referredBySaved = referralCode()
-        // if user has already been referred by someone use the first referrer's code
-        referredBy = referredBySaved || referredBy || rfc || ''
-        values.referredBy = referredBy
-        // save referral information to local storage
-        if (referredBy && !referredBySaved) referralCode(referredBy)
+//         const { id } = getUser() || {}
+//         const isRegistered = !!id
+//         const { values = {} } = props
+//         let { referredBy , referralCode : rfc} = values
+//         const referredBySaved = referralCode()
+//         // if user has already been referred by someone use the first referrer's code
+//         referredBy = referredBySaved || referredBy || rfc || ''
+//         values.referredBy = referredBy
+//         // save referral information to local storage
+//         if (referredBy && !referredBySaved) referralCode(referredBy)
 
-        this.state = {
-            onSubmit: this.handleSubmit,
-            submitDisabled: !!id,
-            success: false,
-            inputs: fillValues([
-                {
-                    disabled: !!id,
-                    label: textsCap.userId,
-                    message: {
-                        content: !!id ? '' : (
-                            <div>
-                                {textsCap.userIdCriteria}
-                                <ul>
-                                    <li>{textsCap.userIdCriteria1}</li>
-                                    <li>{textsCap.userIdCriteria2}</li>
-                                    <li>{textsCap.userIdCriteria3}</li>
-                                </ul>
-                            </div>
-                        ),
-                        header: !id ? '' : textsCap.alreadyRegistered,
-                        icon: !!id,
-                        status: !!id ? 'error' : 'warning',
-                        style: { textAlign: 'left' },
-                    },
-                    name: inputNames.userId,
-                    multiple: false,
-                    newUser: true,
-                    placeholder: textsCap.userIdPlaceholder,
-                    type: 'UserIdInput',
-                    required: true,
-                },
-                {
-                    hidden: values => !!referredBy && values[inputNames.referredBy] === referredBy,
-                    label: textsCap.referredByLabel,
-                    name: inputNames.referredBy,
-                    placeholder: textsCap.referredByPlaceholder,
-                    rxValue: new BehaviorSubject(referredBy),
-                    type: 'UserIdInput',
-                    validate: async (_, { value }, _v, rxValue) => {
-                        if (!value || !values.referredBy || await client.idExists.promise(value)) return
-                        // reset value, if invalid referral code used in the URL
-                        rxValue.next('')
-                        referralCode(null)
-                    },
-                },
-                {
-                    // auto redirect after successful registration
-                    hidden: true,
-                    name: inputNames.redirectTo,
-                    type: 'url',
-                },
-            ], values),
-        }
-    }
+//         this.state = {
+//             onSubmit: this.handleSubmit,
+//             submitDisabled: isRegistered,
+//             success: false,
+//             inputs: fillValues([
+//                 {
+//                     disabled: isRegistered,
+//                     label: textsCap.userId,
+//                     message: {
+//                         content: isRegistered ? '' : (
+//                             <div>
+//                                 {textsCap.userIdCriteria}
+//                                 <ul>
+//                                     <li>{textsCap.userIdCriteria1}</li>
+//                                     <li>{textsCap.userIdCriteria2}</li>
+//                                     <li>{textsCap.userIdCriteria3}</li>
+//                                 </ul>
+//                             </div>
+//                         ),
+//                         header: !isRegistered ? '' : textsCap.alreadyRegistered,
+//                         icon: isRegistered,
+//                         status: isRegistered ? 'error' : 'warning',
+//                         style: { textAlign: 'left' },
+//                     },
+//                     name: inputNames.userId,
+//                     multiple: false,
+//                     newUser: true,
+//                     placeholder: textsCap.userIdPlaceholder,
+//                     type: 'UserIdInput',
+//                     required: true,
+//                 },
+//                 {
+//                     hidden: values => !!referredBy && values[inputNames.referredBy] === referredBy,
+//                     label: textsCap.referredByLabel,
+//                     name: inputNames.referredBy,
+//                     placeholder: textsCap.referredByPlaceholder,
+//                     rxValue: new BehaviorSubject(referredBy),
+//                     type: 'UserIdInput',
+//                     validate: async (_, { value }, _v, rxValue) => {
+//                         if (!value || !values.referredBy || await client.idExists.promise(value)) return
+//                         // reset value, if invalid referral code used in the URL
+//                         rxValue.next('')
+//                         referralCode(null)
+//                     },
+//                 },
+//                 {
+//                     // auto redirect after successful registration
+//                     hidden: true,
+//                     name: inputNames.redirectTo,
+//                     type: 'url',
+//                 },
+//             ], values),
+//         }
+//     }
 
-    handleSubmit = (_, values) => {
-        const { onSubmit } = this.props
-        const userId = values[inputNames.userId]
-        const referredBy = values[inputNames.referredBy]
-        const redirectTo = values[inputNames.redirectTo]
-        const secret = uuid.v1()
+//     handleSubmit = (_, values) => {
+//         const { onSubmit, silent } = this.props
+//         const userId = values[inputNames.userId]
+//         const referredBy = values[inputNames.referredBy]
+//         const redirectTo = values[inputNames.redirectTo]
+//         const secret = uuid.v1()
 
-        this.setState({ submitDisabled: true })
-        client.register(userId, secret, referredBy, err => {
-            const success = !err
-            const message = {
-                content: err,
-                header: success ? textsCap.registrationComplete : textsCap.registrationFailed,
-                icon: true,
-                status: success ? 'success' : 'error'
-            }
-            this.setState({
-                message,
-                submitDisabled: false,
-                success,
-            })
-            isFn(onSubmit) && onSubmit(success, values)
+//         this.setState({ submitDisabled: true })
+//         client.register(userId, secret, referredBy, err => {
+//             const success = !err
+//             const message = {
+//                 content: err,
+//                 header: success ? textsCap.registrationComplete : textsCap.registrationFailed,
+//                 icon: true,
+//                 status: success ? 'success' : 'error'
+//             }
+//             this.setState({
+//                 message,
+//                 submitDisabled: false,
+//                 success,
+//             })
+//             isFn(onSubmit) && onSubmit(success, values)
 
-            if (!success) return
-            setActiveStep(1)
-            redirectTo && setTimeout(() => window.location.href = redirectTo, 300)
+//             if (!success) return
+//             setActiveStep(1, silent)
+//             redirectTo && setTimeout(() => window.location.href = redirectTo, 100)
 
-            // delete referral information from device
-            referralCode(null)
+//             // delete referral information from device
+//             referralCode(null)
+//         })
+//     }
+
+//     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
+// }
+
+export default function RegistrationForm(props) {
+    const [isRegistered] = useRxSubject(rxIsRegistered)
+    const [state, setStateOrg] = useReducer(reducer, { inputs: []})
+    const [setState] = useState(() => (...args) => setStateOrg.mounted && setStateOrg(...args))
+
+    useEffect(() => {
+        setStateOrg.mounted = true
+        setState({
+            inputs: getInputs(props, isRegistered),
+            submitDisabled: isRegistered,
+            onSubmit: handleSubmit(props, setState),
         })
-    }
-
-    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
+        return ()=> setStateOrg.mounted = false
+    }, [setState, isRegistered])
+    
+    return <FormBuilder {...{ ...props, ...state }} />
 }
 
 RegistrationForm.propsTypes = {
+    // @silent: whether to continue with next step in the gettings started process
+    silent: PropTypes.bool,
     values: PropTypes.shape({
         redirectTo: PropTypes.string,
         referralCode: PropTypes.string,
@@ -151,7 +173,101 @@ RegistrationForm.defaultProps = {
     closeOnSubmit: true,
     header: textsCap.formHeader,
     headerIcon: 'sign-in',
+    silent: true,
     size: 'tiny',
     subheader: textsCap.formSubheader,
     submitText: textsCap.register
+}
+
+const getInputs = (props, isRegistered) => {
+    const { values = {} } = props
+    let { referredBy, referralCode: rfc } = values
+    const referredBySaved = referralCode()
+    // if user has already been referred by someone use the first referrer's code
+    referredBy = referredBySaved || referredBy || rfc || ''
+    values.referredBy = referredBy
+    // save referral information to local storage
+    if (referredBy && !referredBySaved) referralCode(referredBy)
+    return fillValues([
+        {
+            disabled: isRegistered,
+            label: textsCap.userId,
+            message: {
+                content: isRegistered ? '' : (
+                    <div>
+                        {textsCap.userIdCriteria}
+                        <ul>
+                            <li>{textsCap.userIdCriteria1}</li>
+                            <li>{textsCap.userIdCriteria2}</li>
+                            <li>{textsCap.userIdCriteria3}</li>
+                        </ul>
+                    </div>
+                ),
+                header: !isRegistered ? '' : textsCap.alreadyRegistered,
+                icon: isRegistered,
+                status: isRegistered ? 'error' : 'warning',
+                style: { textAlign: 'left' },
+            },
+            name: inputNames.userId,
+            multiple: false,
+            newUser: true,
+            placeholder: textsCap.userIdPlaceholder,
+            type: 'UserIdInput',
+            required: true,
+        },
+        {
+            hidden: values => !!referredBy && values[inputNames.referredBy] === referredBy,
+            label: textsCap.referredByLabel,
+            name: inputNames.referredBy,
+            placeholder: textsCap.referredByPlaceholder,
+            rxValue: new BehaviorSubject(referredBy),
+            type: 'UserIdInput',
+            validate: async (_, { value }, _v, rxValue) => {
+                if (!value || !values.referredBy || await client.idExists.promise(value)) return
+                // reset value, if invalid referral code used in the URL
+                rxValue.next('')
+                referralCode(null)
+            },
+        },
+        {
+            // auto redirect after successful registration
+            hidden: true,
+            name: inputNames.redirectTo,
+            type: 'url',
+        },
+    ], values)
+}
+
+const handleSubmit = (props, setState) => (_, values) => {
+    const { onSubmit, silent } = props
+    const userId = values[inputNames.userId]
+    const referredBy = values[inputNames.referredBy]
+    const redirectTo = values[inputNames.redirectTo]
+    const secret = uuid.v1()
+
+    setState({ submitInProgress: true })
+    client.register(userId, secret, referredBy, err => {
+        const success = !err
+        const message = {
+            content: err,
+            header: success ? textsCap.registrationComplete : textsCap.registrationFailed,
+            icon: true,
+            status: success ? 'success' : 'error'
+        }
+        setState({
+            message,
+            submitInProgress: false,
+            success,
+        })
+        isFn(onSubmit) && onSubmit(success, values)
+
+        if (!success) return
+        // set getting started active step
+        setActiveStep(registerStepIndex + 1, silent)
+        // redirect URL
+        redirectTo && setTimeout(() => window.location.href = redirectTo, 100)
+
+        // delete referral information from device
+        referralCode(null)
+    })
 }

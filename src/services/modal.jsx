@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import uuid from 'uuid'
-import { Confirm } from 'semantic-ui-react'
+import { Confirm, Icon } from 'semantic-ui-react'
 import DataStorage from '../utils/DataStorage'
 import { isBool, isFn, className } from '../utils/utils'
 import { translated } from './language'
@@ -63,7 +63,7 @@ export const closeModal = (id, delay = 0) => setTimeout(() => modals.delete(id),
 // @id              string : random id assigned to the modal. Can be used to remove using the remove function
 export const confirm = (confirmProps, id) => {
     id = id || uuid.v1()
-    let { cancelButton, confirmButton, content, open, onCancel, onConfirm } = confirmProps
+    let { cancelButton, confirmButton, content, header, open, onCancel, onConfirm } = confirmProps
     if (confirmButton !== null && !confirmButton) {
         confirmButton = textsCap.ok
     }
@@ -73,10 +73,30 @@ export const confirm = (confirmProps, id) => {
     if (!content && content !== null) {
         content = textsCap.areYouSure
     }
+    if (!confirmButton && !cancelButton && !header && content) {
+        // add a close button
+        content = (
+            <div>
+                <div style={{
+                    position: 'absolute',
+                    right: 15,
+                    top: 15,
+                }}>
+                    <Icon {...{
+                        className: 'grey large link icon no-margin',
+                        name: 'times circle outline',
+                        onClick: () => closeModal(id) | (isFn(onCancel) && onCancel(e, d))
+                    }} />
+                </div>
+                    {content}
+            </div>
+        )
+    }
     return add(
         id,
         <IConfirm {...{
             ...confirmProps,
+            className: 'confirm-modal',
             cancelButton,
             confirmButton,
             content: content && <div className="content">{content}</div>,
@@ -134,15 +154,22 @@ export const showForm = (FormComponent, props, id) => {
 
 // open any form within './forms/ in a modal
 setTimeout(() => {
-    const form = (getUrlParam('form') || '').trim()
-    if (!form) return
+    let fileName = (getUrlParam('form') || '')
+        .trim()
+        .toLowerCase()
+    if (!fileName) return
     try {
-        const Form = require(`../forms/${form}${form.endsWith('.jsx') ? '' : '.jsx'}`)
+        fileName = (require('./languageFiles').default || [])
+            .map(x => x.split('./src/forms/')[1])
+            .filter(Boolean)
+            .find(x => x.toLowerCase().startsWith(fileName))
+        if (!fileName) return
+        const Form = require(`../forms/${fileName}`)
         const values = getUrlParam()
         showForm(Form.default, { values })
         history.pushState({}, null, `${location.protocol}//${location.host}`)
     } catch (e) {
-        form && console.log(e)
+        fileName && console.log(e)
     }
 })
 export default {

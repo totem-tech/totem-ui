@@ -1,15 +1,13 @@
 import React, { useEffect, useReducer, useState } from 'react'
 import { Button, Icon, Step } from 'semantic-ui-react'
-import { ButtonGroup } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
-import FormBuilder from '../../components/FormBuilder'
 import { Message } from '../../components/Message'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
 import { reducer, useRxSubject } from '../../services/react'
-import PromisE from '../../utils/PromisE'
 import { copyToClipboard } from '../../utils/utils'
-import client, { getUser, rxIsLoggedIn } from '../chat/ChatClient'
+import client, { getUser, rxIsLoggedIn, rxIsRegistered } from '../chat/ChatClient'
+import RegistrationForm from '../chat/RegistrationForm'
 import { crowdsaleData, rxData } from './crowdsale'
 import DAAForm from './DAAForm'
 import KYCForm, { inputNames as kycInputNames} from './KYCForm'
@@ -51,6 +49,7 @@ const BLOCKCHAINS = {
 
 export default function () {
     const [data] = useRxSubject(rxData, generateTableData)
+    const [isRegistered] = useRxSubject(rxIsRegistered)
     const [isLoggedIn] = useRxSubject(rxIsLoggedIn)
     const [state, setStateOrg] = useReducer(reducer, {
         ...getTableProps(),
@@ -89,16 +88,14 @@ export default function () {
         return () => setStateOrg.mounted = false
     }, [setState, isLoggedIn])
 
+    if (!isRegistered) return getInlineForm(RegistrationForm, {})
     if (!isLoggedIn || state.loading) {
-        const isRegistered = !!(getUser() || {}).id
-        const isLoading = state.loading || isLoggedIn === null && isRegistered
+        const isLoading = state.loading || isLoggedIn === null
         return (
             <Message {...{
                 header: isLoading
                     ? textsCap.loadingMsg
-                    : isRegistered
-                        ? textsCap.loginRequired
-                        : textsCap.registrationRequired,
+                    : textsCap.loginRequired,
                 icon: true,
                 status: isLoading
                     ? 'loading'
@@ -108,21 +105,15 @@ export default function () {
     }
 
     // show inline KYC form
-    if (!state.kycDone) return (
-        <div>
-            <h3>{KYCForm.defaultProps.header}</h3>
-            <h4>{KYCForm.defaultProps.subheader}</h4>
-            <KYCForm {...{
-                onSubmit: kycDone => {
-                    if (!kycDone) return
-                    setState({ kycDone })
-                    // generateTableData(setState)
-                    showNotes()
-                },
-                style: { maxWidth: 400 },
-            }} />
-        </div>
-    )
+    if (!state.kycDone) return getInlineForm(KYCForm, {
+        onSubmit: kycDone => {
+            if (!kycDone) return
+            setState({ kycDone })
+            // generateTableData(setState)
+            showNotes()
+        },
+        style: { maxWidth: 400 },
+    })
     
     return (
         <div>
@@ -167,6 +158,16 @@ export default function () {
         </div>
     )
 }
+
+const getInlineForm = (Form, props) => (
+    <div>
+        <h3>{Form.defaultProps.header}</h3>
+        <h4 style={{ color: 'grey', marginTop: 0 }}>
+            {Form.defaultProps.subheader}
+        </h4>
+        <Form {...props} />
+    </div>
+)
 
 const getSteps = () => [
     {

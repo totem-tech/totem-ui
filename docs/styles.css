@@ -376,6 +376,10 @@ body.mobile .ui.modal {
 body.mobile .ui.modals::-webkit-scrollbar {
  	width: 3px;
 }
+/* hide actions container if empty */
+.ui.modal > .actions:empty {
+    display: none;
+}
 
 /* Page header:
  * identity dropdown style fix

@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import FormBuilder, { fillValues, findInput,  } from '../../components/FormBuilder'
-import { isFn, arrSort, textEllipsis } from '../../utils/utils'
+import { isFn, arrSort, textEllipsis, isArr, isStr, arrUnique } from '../../utils/utils'
 // services
-import { getUser } from './ChatClient'
+import { getUser, rxIsRegistered } from './ChatClient'
 import { translated } from '../../services/language'
 import { showForm, closeModal } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
@@ -14,8 +14,11 @@ import {
     inboxSettings,
     inboxesSettings,
     SUPPORT,
+    TROLLBOX,
+    rxOpenInboxKey,
 } from './chat'
 import { getInboxName } from './InboxList'
+import { useRxSubject } from '../../services/react'
 
 const [_, textsCap] = translated({
     group: 'group',
@@ -36,92 +39,14 @@ const inputNames = {
     receiverIds: 'receiverIds'
 }
 export default function NewInboxForm(props) {
-    const inboxKeys = Object.keys(inboxesSettings())
+    const [isRegistered] = useRxSubject(rxIsRegistered)
     const [success, setSuccess] = useState(false)
-    
-    const [inputs, setInputs] = useState(fillValues([
-        {
-            autoFocus: true,
-            excludeOwnId: true,
-            includeFromChat: true,
-            includePartners: true,
-            message: { content: textsCap.userIdsHint },
-            multiple: true,
-            name: inputNames.receiverIds,
-            rxValue: new BehaviorSubject([]),
-            options: arrSort(
-                inboxKeys.map(key => {
-                    const receiverIds = key.split(',')
-                    const isTrollbox = key === EVERYONE
-                    const isSupport = receiverIds.includes(SUPPORT)
-                    const isGroup = !isSupport && key.split(',').length > 1
-                    const name = getInboxName(key)
-                    const members = textEllipsis(key.replace(/\,/g, ', '), 30, 3, false)
-                    const text = name || members
-                    return {
-                        description: !isSupport && !isTrollbox && name && members,
-                        icon: isSupport ? 'heartbeat' : isTrollbox ? 'globe' : (isGroup ? 'group' : 'chat'),
-                        key,
-                        text: `${isGroup ? textsCap.group + ': ' : ''}${text}`,
-                        value: key,
-                    }
-                }),
-                'text',
-            ),
-            onChange: (_, values) => {
-                const  userIds = values[inputNames.receiverIds].map(x => x.split(',')).flat()
-                const nameIn = findInput(inputs, inputNames.name)
-                const inboxKey = getInboxKey(userIds)
-                const hideName = !inboxKey || inboxKey.split(',').length <= 1 || userIds.includes(SUPPORT)
-                const value = hideName ? '' : inboxSettings(inboxKey).name || nameIn.value
-                nameIn.hidden = hideName
-                nameIn.required = !hideName
-                setInputs(inputs)
-                nameIn.rxValue.next(value)
-            },
-            required: true,
-            type: 'UserIdInput',
-        },
-        {
-            hidden: true,
-            label: textsCap.nameLabel,
-            minLength: 3,
-            maxLength: 18,
-            name: inputNames.name,
-            placeholder: textsCap.namePlaceholder,
-            required: true,
-            rxValue: new BehaviorSubject(''),
-            type: 'text',
-        },
-    ], props.values))
-
-    const handleSubmit = async (_, values) => {
-        const { onSubmit } = props
-        let receiverIds = values[inputNames.receiverIds].map(x => x.split(',')).flat()
-        const { id: ownId, roles = [] } = getUser() || {}
-        if (receiverIds.includes(SUPPORT)) {
-            receiverIds = [
-                SUPPORT,
-                !roles.includes(SUPPORT) ? null : receiverIds.filter(id => ![SUPPORT, ownId].includes(id))[0]
-            ].filter(Boolean)
-        }
-        const name = receiverIds.length > 1 ? values[inputNames.name] : null
-        const inboxKey = createInbox(receiverIds, name, true)
-        setSuccess(true)
-        isFn(onSubmit) && onSubmit(true, { inboxKey, ...values })
-    }
-
-    props.values && useEffect(() => {
-        // on mount prefill values
-        fillValues(inputs, props.values)
-        return () => { }
-    }, [])
-
+    const [inputs] = useRxSubject(getRxInputs())
     return (
         <FormBuilder {...{
             ...props,
             inputs,
-            onSubmit: handleSubmit,
+            onSubmit: handleSubmit(setSuccess, props.onSubmit),
             success,
         }} />
     )
@@ -137,8 +62,118 @@ NewInboxForm.propTypes = {
     values: PropTypes.object
 }
 
-// edit group inbox name
-export const editName = (inboxKey, onSubmit) => {
+
+const getRxInputs = values => {
+    const allInboxKeys = Object.keys(inboxesSettings())
+    const receiverIdOptions = allInboxKeys.map(key => {
+        const receiverIds = key.split(',')
+        const isTrollbox = key === EVERYONE
+        const isSupport = receiverIds.includes(SUPPORT)
+        const isGroup = !isSupport && key.split(',').length > 1
+        const name = getInboxName(key)
+        const members = textEllipsis(key.replace(/\,/g, ', '), 30, 3, false)
+        const text = name || members
+        return {
+            description: !isSupport && !isTrollbox && name && members,
+            icon: isSupport ? 'heartbeat' : isTrollbox ? 'globe' : (isGroup ? 'group' : 'chat'),
+            key,
+            text: `${isGroup ? textsCap.group + ': ' : ''}${text}`,
+            value: key,
+        }
+    })
+    const rxInputs = new BehaviorSubject(
+        fillValues([
+            {
+                autoFocus: true,
+                excludeOwnId: true,
+                includeFromChat: true,
+                includePartners: true,
+                message: { content: textsCap.userIdsHint },
+                multiple: true,
+                name: inputNames.receiverIds,
+                options: arrSort(receiverIdOptions, 'text'),
+                onChange: (_, values) => {
+                    const nameIn = findInput(rxInputs.value, inputNames.name)
+                    const userIds = values[inputNames.receiverIds]
+                        .map(x => x.split(','))
+                        .flat()
+                    const inboxKey = getInboxKey(userIds)
+                    const [_ig, allowNaming] = checkGroup(userIds)
+                    nameIn.hidden =
+                        nameIn.rxValue.next(allowNaming && inboxSettings(inboxKey).name || '')
+                },
+                required: true,
+                rxValue: new BehaviorSubject([]),
+                type: 'UserIdInput',
+            },
+            {
+                label: textsCap.nameLabel,
+                minLength: 3,
+                maxLength: 32,
+                name: inputNames.name,
+                placeholder: textsCap.namePlaceholder,
+                required: true,
+                rxValue: new BehaviorSubject(''),
+                type: 'text',
+            },
+        ], values)
+    )
+    return rxInputs
+}
+const handleSubmit = (setSuccess, onSubmit) => async (_, values) => {
+    let receiverIds = arrUnique(
+        values[inputNames.receiverIds]
+            .map(x => x.split(','))
+            .flat()
+    )
+    const { id: ownId, roles = [] } = getUser() || {}
+    if (receiverIds.includes(SUPPORT)) {
+        receiverIds = [
+            SUPPORT,
+            !roles.includes(SUPPORT)
+                ? null
+                : receiverIds.filter(id =>
+                    ![SUPPORT, ownId].includes(id)
+                )[0]
+        ].filter(Boolean)
+    }
+    const name = receiverIds.length > 1 ? values[inputNames.name] : null
+    const inboxKey = createInbox(receiverIds, name, true)
+    rxOpenInboxKey.next(inboxKey)
+    setSuccess(true)
+    isFn(onSubmit) && onSubmit(true, { inboxKey, ...values })
+}
+
+/**
+ * @name    checkGroup
+ * @summary checks if supplied is a group and whether group can be named
+ *  
+ * @param   {String|Array} keyOrIds inboxKey or receiver IDs
+ * 
+ * @returns {Array} [isGroup, allowNaming, receiverIds]
+ */
+const checkGroup = keyOrIds => {
+    let receiverIds = isArr(keyOrIds)
+        ? keyOrIds
+        : isStr(keyOrIds)
+            ? keyOrIds.split(',')
+            : []
+    receiverIds = arrUnique(receiverIds).filter(Boolean)
+    const isGroup = receiverIds.length > 1
+    const allowNaming = isGroup && !receiverIds.find(x => [SUPPORT, TROLLBOX].includes(x))
+    return [isGroup, allowNaming, receiverIds]
+}
+/**
+ * @name    showEditNameFrom
+ * @summary open a modal form to update name of a group chat
+ * 
+ * @param   {String}    inboxKey 
+ * @param   {Function}  onSubmit 
+ */
+export const showEditNameFrom = (inboxKey, onSubmit) => {
+    const [_, isValidGroup, receiverIds] = checkGroup(inboxKey)
+    // inbox is not a valid group or does not support name change
+    if (!isValidGroup) return
     const originalName = inboxSettings(inboxKey).name || ''
     const formId = showForm(
         FormBuilder,
@@ -158,7 +193,6 @@ export const editName = (inboxKey, onSubmit) => {
                 closeModal(formId)
                 if (name === originalName) return
 
-                const receiverIds = inboxKey.split(',')
                 addToQueue({
                     args: [receiverIds, name],
                     func: 'messageGroupName',

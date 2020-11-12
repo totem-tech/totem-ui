@@ -22,7 +22,7 @@ import {
     rxUsersOnline,
     jumpToMessage,
 } from './chat'
-import NewInboxForm, { editName } from './NewInboxForm'
+import NewInboxForm, { showEditNameFrom } from './NewInboxForm'
 import { unsubscribe, useRxSubject } from '../../services/react'
 
 const ALL_ONLINE = 'green'
@@ -316,9 +316,7 @@ const ToolsBar = React.memo(({ query, onSeachChange, showAll, toggleShowAll }) =
                         labelPosition: 'right',
                         icon: 'edit',
                         key: 'new',
-                        onClick: () => showForm(NewInboxForm, {
-                            onSubmit: (ok, { inboxKey }) => ok && rxOpenInboxKey.next(inboxKey)
-                        }),
+                        onClick: () => showForm(NewInboxForm),
                         style: { textAlign: 'right' }
                     }
                 ]
@@ -347,7 +345,7 @@ const InboxActions = React.memo(({ inboxKey, isGroup, isSupport, isTrollbox, isE
     const actions = [
         isGroup && !isTrollbox && !isSupport && {
             icon: 'pencil',
-            onClick: e => e.stopPropagation() | editName(inboxKey, () => setShowActions(false)),
+            onClick: e => e.stopPropagation() | showEditNameFrom(inboxKey, () => setShowActions(false)),
             title: textsCap.changeGroupName,
         },
         !deleted && !archived && {

@@ -24,7 +24,7 @@ import { isBool, isBond } from '../utils/utils'
 // services
 import { translated } from './language'
 import storage from './storage'
-import { DESKTOP, MOBILE, rxLayout, setClass } from './window'
+import { DESKTOP, getUrlParam, MOBILE, rxLayout, setClass } from './window'
 
 const textsCap = translated({
     crowdsaleTitle: 'crowdsale',
@@ -157,12 +157,17 @@ const gsName = 'getting-started'
 const sidebarItemNames = []
 export const sidebarItems = [
     {
-        active: true,
         content: GettingStarted,
         // headerDividerHidden: true,
         icon: 'play circle outline',
         name: gsName,
         title: textsCap.gettingStartedTitle,
+    },
+    {
+        content: CrowdsaleView,
+        icon: '',
+        name: 'crowdsale',
+        title: textsCap.crowdsaleTitle,
     },
     {
         content: KeyRegistryPlayground,
@@ -322,12 +327,6 @@ export const sidebarItems = [
         name: 'blockchain-events',
         title: textsCap.eventsTtile,
     },
-    {
-        content: CrowdsaleView,
-        icon: '',
-        name: 'CrowdsaleView',
-        title: textsCap.crowdsaleTitle,
-    },
 ].map(item => {
     const {
         active = false,
@@ -417,6 +416,18 @@ rxSidebarState.subscribe(() => {
     })
 })
 
+setTimeout(() => {
+    const modules = (getUrlParam('module') || '').trim()
+    if (!modules) return
+    
+    const names = modules.split(',')
+        .map(x => x.trim().toLowerCase())
+    const validNames = names.map(name => (setActive(name) || {}).name)
+        .filter(Boolean)
+    validNames.length && sidebarItems.forEach(x =>
+        !validNames.includes(x.name) && setActive(x.name, false)
+    )
+})
 export default {
     getItem,
     setActive,

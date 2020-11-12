@@ -98,8 +98,7 @@ const MODULE_KEY = 'getting-started'
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 const rxActiveStep = new BehaviorSubject(rw().activeStep || 0)
-const registerStepIndex = 0
-const backupStepIndex = 2
+export const registerStepIndex = 0
 /**
  * @name	setActiveStep
  * @summary	get/set active step
@@ -283,9 +282,9 @@ const handleUpdateIdentity = () => {
 
 const handleRegister = () => showForm(RegistrationForm, {
 	closeOnSubmit: true,
+	silent: false,
 	onSubmit: ok => {
 		if (!ok) return
-		incrementStep()
 		setToast({ content: texts.registrationSuccess, status: 'success' })
 		addToQueue({
 			type: QUEUE_TYPES.CHATCLIENT,
