@@ -18,8 +18,8 @@ export default React.memo(({ id, notification }) => {
         ...(isCustom
             ? handler(id, notification, { senderId, senderIdBtn })
             : {
-                content: <span>{senderIdBtn}: {message}</span>,
-                header: (
+                content: <span>{senderIdBtn} {message}</span>,
+                header: !message && (
                     <div className='header'>
                         {`${type || ''}`.replace(/-|_/g, ' ')} {`${childType || ''}`.replace(/-|_/g, ' ')}
                     </div>
