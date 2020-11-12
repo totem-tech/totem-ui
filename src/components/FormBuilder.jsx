@@ -233,7 +233,7 @@ export default class FormBuilder extends Component {
 				El: Form,
 				error: message.status === statuses.ERROR,
 				loading,
-				onSubmit,
+				onSubmit: (...args) => !shouldDisable && this.handleSubmit(...args),
 				style,
 				success: success || message.status === statuses.SUCCESS,
 				warning: message.status === statuses.WARNING,

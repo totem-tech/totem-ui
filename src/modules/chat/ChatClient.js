@@ -1,6 +1,6 @@
 import io from 'socket.io-client'
 import { BehaviorSubject } from 'rxjs'
-import { isFn, isStr } from '../../utils/utils'
+import { isFn, isObj, isStr, objWithoutKeys } from '../../utils/utils'
 import { translated } from '../../services/language'
 import storage from '../../services/storage'
 
@@ -32,6 +32,26 @@ if (rw().history) rw({ history: null })
 // retrieves user credentails from local storage
 export const getUser = () => rw().user
 export const setUser = (user = {}) => rw({ user })
+/**
+ * @name    referralCode
+ * @summary get/set referral code to LocalStorage
+ * 
+ * @param   {String|null} code referral code. User `null` to remove from storage
+ * 
+ * @returns {String} referral code
+ */
+export const referralCode = code => {
+    const override =  code === null
+    const value = isStr(code)
+        ? { referralCode: code }
+        : override
+            // completely remove referral code property from storage
+            ? objWithoutKeys(rw(), ['referralCode'])
+            : undefined
+    
+    return (storage.settings.module(MODULE_KEY, value, override) || {})
+        .referralCode
+}
 
 // Returns a singleton instance of the websocket client
 // Instantiates the client if not already done
@@ -105,6 +125,13 @@ export const getClient = () => {
 export const translateError = err => { 
     // if no error return as is
     if (!err) return err
+
+    if (isObj(err)) {
+        const keys = Object.keys(err)
+        // no errors
+        if (keys.length === 0) return null
+        return keys.forEach(key => err[key] = translateError(err[key]))
+    }
 
     // translate if there is any error message
     const separator = ' => '

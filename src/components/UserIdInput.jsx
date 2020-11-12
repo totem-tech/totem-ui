@@ -235,10 +235,7 @@ export default class UserIdInput extends Component {
             this.setState({
                 icon: !value ? undefined : (invalid ? invalidIcon : validIcon),
             })
-            isFn(onChange) && onChange(e, {
-                ...data,
-                invalid,
-            })
+            isFn(onChange) && onChange(e, { ...data, invalid })
         }
         if (isOwnId || value.length < 3) {
             triggerChagne(true)

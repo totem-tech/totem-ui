@@ -29,7 +29,7 @@ const textsCap = translated({
     givenNameLabel: 'given name',
     givenNamePlaceholder: 'enter your given name',
     formHeader: 'Crowdsale registration',
-    formSubheader: 'in order to participate in the crowdsale you must complete your KYC data',
+    formSubheader: 'in order to participate in the crowdsale you must submit your KYC data',
     identityErrorLocation: 'please select an identity with contact address',
     identityLabel: 'identity to receive XTX tokens',
     identityPlaceholder: 'select an identity',
@@ -45,6 +45,7 @@ const textsCap = translated({
         Press OK to continue or cancel to return to the form.
     `,
     submitFailedBackupNotDone: 'you must complete the backup process',
+    submitText: 'register',
     updateIdentity: 'update identity',
 }, true)[1]
 export const inputNames = {
@@ -58,7 +59,9 @@ export const inputNames = {
 }
 
 export default function KYCForm(props = {}) {
-    const [state, setStateOrg] = useReducer(reducer, {})
+    const [state, setStateOrg] = useReducer(reducer, {
+        submitText: textsCap.submitText
+    })
     // prevents triggering state change when component is not mounted
     const [setState] = useState(() => (...args) => setStateOrg.mounted && setStateOrg(...args))
     const [inputs] = useState(() => {

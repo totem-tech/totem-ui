@@ -6,14 +6,14 @@ import { isFn } from '../../utils/utils'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { setActiveStep } from '../../views/GettingStartedView'
-import { getClient, getUser } from './ChatClient'
+import client, { getUser, referralCode } from './ChatClient'
 
 const textsCap = translated({
     alreadyRegistered: 'you have already registered!',
     formHeader: 'register a memorable user name',
     formSubheader: 'choose an unique alias for use with Totem chat messaging.',
-    referredByLabel: 'referred by',
-    referredByPlaceholder: 'ID of the user who referred you',
+    referredByLabel: 'referral code',
+    referredByPlaceholder: 'if you have a referral code enter it here',
     register: 'register',
     registrationComplete: 'registration complete',
     registrationFailed: 'registration failed',
@@ -38,7 +38,15 @@ export default class RegistrationForm extends Component {
         super(props)
 
         const { id } = getUser() || {}
-        const { values = {}} = props
+        const { values = {} } = props
+        let { referredBy , referralCode : rfc} = values
+        const referredBySaved = referralCode()
+        // if user has already been referred by someone use the first referrer's code
+        referredBy = referredBySaved || referredBy || rfc || ''
+        values.referredBy = referredBy
+        // save referral information to local storage
+        if (referredBy && !referredBySaved) referralCode(referredBy)
+
         this.state = {
             onSubmit: this.handleSubmit,
             submitDisabled: !!id,
@@ -69,14 +77,20 @@ export default class RegistrationForm extends Component {
                     placeholder: textsCap.userIdPlaceholder,
                     type: 'UserIdInput',
                     required: true,
-                    value: '',
                 },
                 {
+                    hidden: values => !!referredBy && values[inputNames.referredBy] === referredBy,
                     label: textsCap.referredByLabel,
                     name: inputNames.referredBy,
                     placeholder: textsCap.referredByPlaceholder,
-                    rxValue: new BehaviorSubject(''),
+                    rxValue: new BehaviorSubject(referredBy),
                     type: 'UserIdInput',
+                    validate: async (_, { value }, _v, rxValue) => {
+                        if (!value || !values.referredBy || await client.idExists.promise(value)) return
+                        // reset value, if invalid referral code used in the URL
+                        rxValue.next('')
+                        referralCode(null)
+                    },
                 },
                 {
                     // auto redirect after successful registration
@@ -96,7 +110,7 @@ export default class RegistrationForm extends Component {
         const secret = uuid.v1()
 
         this.setState({ submitDisabled: true })
-        getClient().register(userId, secret, referredBy, err => {
+        client.register(userId, secret, referredBy, err => {
             const success = !err
             const message = {
                 content: err,
@@ -114,6 +128,9 @@ export default class RegistrationForm extends Component {
             if (!success) return
             setActiveStep(1)
             redirectTo && setTimeout(() => window.location.href = redirectTo, 300)
+
+            // delete referral information from device
+            referralCode(null)
         })
     }
 
@@ -123,6 +140,7 @@ export default class RegistrationForm extends Component {
 RegistrationForm.propsTypes = {
     values: PropTypes.shape({
         redirectTo: PropTypes.string,
+        referralCode: PropTypes.string,
         referredBy: PropTypes.string,
         secret: PropTypes.string,
         url: PropTypes.string,
@@ -130,6 +148,7 @@ RegistrationForm.propsTypes = {
     }),
 }
 RegistrationForm.defaultProps = {
+    closeOnSubmit: true,
     header: textsCap.formHeader,
     headerIcon: 'sign-in',
     size: 'tiny',

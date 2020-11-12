@@ -1,6 +1,7 @@
-import React, { Component } from 'react'
+import React, { useState } from 'react'
+import { BehaviorSubject } from 'rxjs'
 import { Button, Icon, Step } from 'semantic-ui-react'
-import { generateHash, isDefined, isValidNumber } from '../utils/utils'
+import { generateHash, isFn, isValidNumber } from '../utils/utils'
 import FormBuilder from '../components/FormBuilder'
 import Invertible from '../components/Invertible'
 
@@ -18,8 +19,9 @@ import RegistrationForm from '../modules/chat/RegistrationForm'
 import { getSelected, rxIdentities } from '../modules/identity/identity'
 import IdentityForm from '../modules/identity/IdentityForm'
 import PromisE from '../utils/PromisE'
+import { useRxSubject } from '../services/react'
 
-const [texts] = translated({
+const texts = translated({
 	backupTitle: 'Backup your account',
 	backupDescription: `
 		Creating a backup will help you make sure that you do not lose your account. 
@@ -71,7 +73,7 @@ const [texts] = translated({
 	videoGuidTitle: 'Further essential steps:',
 	video1Title: 'What am I looking at? Watch the video:',
 	video2Title: 'Backup your account. Watch the video:',
-})
+})[0]
 const textsCap = translated({
 	backupNow: 'backup now',
 	backupConfirmHeader: 'confirm backup',
@@ -95,6 +97,9 @@ const textsCap = translated({
 const MODULE_KEY = 'getting-started'
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
+const rxActiveStep = new BehaviorSubject(rw().activeStep || 0)
+const registerStepIndex = 0
+const backupStepIndex = 2
 /**
  * @name	setActiveStep
  * @summary	get/set active step
@@ -103,11 +108,18 @@ const rw = value => storage.settings.module(MODULE_KEY, value) || {}
  * 
  * @returns {Number}
  */
-export const setActiveStep = stepNo => isValidNumber(stepNo) ? rw({activeStep: stepNo}) : rw().activeStep || 0
+export const saveActiveStep = stepNo => {
+	const v = !isValidNumber(stepNo) 
+		? undefined
+		: { activeStep: stepNo }
+	stepNo = rw(v).activeStep || 0
+	v && rxActiveStep.next(stepNo)
+	return stepNo
+}
 // old localStorage key for active step 
 const legacyKey = 'totem_getting-started-step-index'
 try {
-	// migrate to new location and remove legacy key
+	// migrate global to module settings and remove legacy key
 	if (localStorage.getItem(legacyKey) || (storage.settings.global(MODULE_KEY) || {}).activeStep) {
 		localStorage.removeItem(legacyKey)
 		storage.settings.global(MODULE_KEY, null)
@@ -116,255 +128,213 @@ try {
 	}
 } catch (e) { }
 
-export default class GetingStarted extends Component {
-	constructor(props) {
-		super(props)
-
-		this.registerStepIndex = 0
-		this.backupStepIndex = 2
-		const isRegistered = !!(getUser() || {}).id
-		const activeStep = setActiveStep() 
-		this.state = {
-			activeStep: (isRegistered && activeStep < 1) ? 1 : activeStep,
-			steps: [
-				{
-					description: texts.step2Description,
-					onClick: this.handleRegister,
-					title: texts.step2Title,
-				},
-				{
-					description: texts.step1Description,
-					onClick: this.handleIdentity,
-					title: texts.step1Title,
-				},
-				{
-					disabled: false, // allow the user to backup even after step is completed
-					description: texts.backupDescription,
-					onClick: this.handleBackup,
-					title: texts.backupTitle,
-				},
-			],
-		}
-	}
-
-	handleBackup = () => confirm({
-		confirmButton: textsCap.backupNow,
-		content: (
-			<div>
-				{texts.confirmBackupContent}
-				<ul>
-					{texts.confirmBackupTypes
-						.split(',')
-						.map((str, i) => <li key={i}>{str}</li>)
-					}
-				</ul>
-			</div>
-		),
-		header: texts.backupTitle,
-		size: 'tiny',
-		onConfirm: () => {
-			let { activeStep } = this.state
-			this.setStep(++activeStep)
-			confirmBackup()
-			// assume backup completed?
-			// only way to confirm backup is complete is to force user to upload the downloaded file)
+export default function GetingStarted() {
+	const [steps] = useState(() => [
+		{
+			description: texts.step2Description,
+			onClick: handleRegister,
+			title: texts.step2Title,
 		},
-	})
+		{
+			description: texts.step1Description,
+			onClick: handleUpdateIdentity,
+			title: texts.step1Title,
+		},
+		{
+			// allow the user to backup even after step is completed
+			disabled: activeStep =>  activeStep <= registerStepIndex, 
+			description: texts.backupDescription,
+			onClick: handleBackup,
+			title: texts.backupTitle,
+		},
+	])
+	const [activeStep] = useRxSubject(rxActiveStep)
+	const isRegistered = activeStep > registerStepIndex
 
-	handleIdentity = () => {
-		const values = getSelected()
-		// forces user to enter a new name for the identity
-		if (values.name === 'Default') values.name = ''
-		showForm(IdentityForm, {
-			values,
-			// automatically open register form only if user isn't already registered
-			onSubmit: ok => {
-				if (!ok) return
-				this.setStep(this.state.activeStep + 1)
-			}
+	return (
+		<div>
+			<h3>{texts.quickGuideTitle}</h3>
+			<p>{texts.quickGuidePara1}</p>
+			<p>{texts.quickGuidePara2}</p>
+			<p>{texts.quickGuidePara3}</p>
+			<h4>{texts.stepsTitle}</h4>
+			<div style={{ overflowX: 'auto' }}>
+				<Step.Group fluid ordered>
+					{steps.map(({ description, disabled, onClick, title }, index) => (
+						<Step {...{
+							active: activeStep === index,
+							completed: activeStep > index,
+							disabled: isFn(disabled)
+								? disabled(activeStep, steps)
+								: activeStep !== index,
+							key: index,
+							onClick,
+						}}>
+							<Step.Content>
+								<Step.Title>{title}</Step.Title>
+								<Step.Description style={styles.stepDescription}>
+									{description}
+								</Step.Description>
+							</Step.Content>
+						</Step>
+					)).filter(Boolean)}
+				</Step.Group>
+			</div>
+
+			{/* <h3>{texts.videoGuidTitle}</h3>
+				<h5>{texts.video1Title}</h5>
+				<div style={styles.videoContainer}>
+					<Embed
+						aspectRatio='16:9'
+						id='1'
+						source='vimeo'
+					/>
+				</div>
+				<h5>{texts.video2Title}</h5>
+				<div style={styles.videoContainer}>
+					<Embed
+						aspectRatio='16:9'
+						id='1'
+						source='vimeo'
+					/>
+				</div> */}
+			
+			{/* Restore backup section */}
+			<div style={styles.space}>
+				<h3>{texts.restoreTitle}</h3>
+				<Button {...{
+					content: texts.restoreBtnTitle,
+					onClick: handleRestoreBackup,
+				}} />
+			</div>
+
+			{/* Social links and support chat section */}
+			<div style={styles.space}>
+				<h3>{texts.supportChatHeader}</h3>
+				<div>
+					{texts.supportChatDesc1}
+					<div>
+						{[
+							isRegistered && {
+								content: texts.supportContact,
+								icon: 'heartbeat',
+								onClick: () => createInbox([SUPPORT], null, true),
+								size: 'mini',
+								style: styles.btnStyle,
+							},
+							isRegistered && {
+								content: texts.trollbox,
+								icon: 'globe',
+								onClick: () => createInbox([TROLLBOX], null, true),
+								size: 'mini',
+								style: styles.btnStyle,
+							},
+							{
+								content: texts.newsletterSignup,
+								icon: 'mail',
+								onClick: () => showForm(NewsletteSignup),
+								size: 'mini',
+								style: styles.btnStyle,
+							},
+						]
+							.filter(Boolean)
+							.map((props, i) => <Button {...props} key={props.icon + i}/>)
+						}
+					</div>
+				</div>
+				{texts.supportChatDesc2}
+				<div>
+					<a href='https://discord.gg/Vx7qbgn' target='_blank'>
+						<Invertible El={Icon} name='discord' style={styles.appIconStyle} />
+					</a>
+					<a href='https://t.me/totemchat' target='_blank'>
+						<Invertible El={Icon} name='telegram' style={styles.appIconStyle} />
+					</a>
+				</div>
+			</div>
+		</div >
+	)
+}
+
+const handleBackup = () => confirm({
+	confirmButton: textsCap.backupNow,
+	content: (
+		<div>
+			{texts.confirmBackupContent}
+			<ul>
+				{texts.confirmBackupTypes
+					.split(',')
+					.map((str, i) => <li key={i}>{str}</li>)
+				}
+			</ul>
+		</div>
+	),
+	header: texts.backupTitle,
+	size: 'tiny',
+	onConfirm: () => confirmBackup().then(ok => ok && incrementStep()),
+})
+
+const handleUpdateIdentity = () => {
+	const values = getSelected()
+	// forces user to enter a new name for the identity
+	if (values.name === 'Default') values.name = ''
+	showForm(IdentityForm, { values })
+}
+
+const handleRegister = () => showForm(RegistrationForm, {
+	closeOnSubmit: true,
+	onSubmit: ok => {
+		if (!ok) return
+		incrementStep()
+		setToast({ content: texts.registrationSuccess, status: 'success' })
+		addToQueue({
+			type: QUEUE_TYPES.CHATCLIENT,
+			func: 'faucetRequest',
+			title: texts.faucetRequest,
+			description: texts.faucetRequestDetails,
+			args: [getSelected().address]
 		})
 	}
+})
 
-	handleRegister = () => showForm(RegistrationForm, {
-		closeOnSubmit: true,
-		onSubmit: ok => {
-			if (!ok) return
-			this.setStep(this.state.activeStep + 1)
-			setToast({ content: texts.registrationSuccess, status: 'success' })
-			this.requestFaucet()
-		}
-	})
+const handleRestoreBackup = () => confirm({
+	content: (
+		<div>
+			{texts.confirmRestoreContent}
+			<ul>
+				{texts.confirmBackupTypes.split(',').map((str, i) => <li key={i}>{str}</li>)}
+			</ul>
+		</div>
+	),
+	header: texts.confirmHeader,
+	size: 'tiny',
+	onConfirm: () => showForm(RestoreBackupForm),
+})
 
-	handleRestore = () => confirm({
-		content: (
-			<div>
-				{texts.confirmRestoreContent}
-				<ul>
-					{texts.confirmBackupTypes.split(',').map((str, i) => <li key={i}>{str}</li>)}
-				</ul>
-			</div>
-		),
-		header: texts.confirmHeader,
-		size: 'tiny',
-		onConfirm: () => showForm(RestoreBackupForm, {
-			onSubmit: done => done && this.setStep(this.backupStepIndex + 1)
-		}),
-	})
+const incrementStep = () => setActiveStep((rxActiveStep.value || 0) + 1)
 
-	requestFaucet = () => addToQueue({
-		type: QUEUE_TYPES.CHATCLIENT,
-		func: 'faucetRequest',
-		title: texts.faucetRequest,
-		description: texts.faucetRequestDetails,
-		args: [getSelected().address]
-	})
-
-	setStep(nextStep) {
-		const { id } = getUser() || {}
-		if (nextStep === this.registerStepIndex && id) {
-			// user Already registered => mark register step as done
-			nextStep++
-		}
-		setActiveStep(nextStep)
-		this.setState({ activeStep: nextStep })
-
-		switch (nextStep) {
-			case 0:
-				this.handleRegister()
-				break
-			case 1:
-				this.handleIdentity()
-				break
-			case 2: 
-				this.handleBackup()
-				break
-		}
-		return nextStep
+export const setActiveStep = (nextStep = rxActiveStep.value, silent = false) => {
+	if (nextStep === registerStepIndex && !!(getUser() || {}).id) {
+		// user Already registered => mark register step as done
+		nextStep++
 	}
+	saveActiveStep(nextStep)
 
-	render() {
-		const { activeStep, steps } = this.state
+	if (silent) return nextStep
 
-		return (
-			<div>
-				<h3>{texts.quickGuideTitle}</h3>
-				<p>{texts.quickGuidePara1}</p>
-				<p>{texts.quickGuidePara2}</p>
-				<p>{texts.quickGuidePara3}</p>
-				<h4>{texts.stepsTitle}</h4>
-				<div style={{ overflowX: 'auto' }}>
-					<Step.Group fluid ordered>
-						{steps.map(({ description, disabled, onClick, title }, index) => (
-							<Step {...{
-								active: activeStep === index,
-								completed: activeStep > index,
-								disabled: isDefined(disabled) ? disabled : activeStep !== index,
-								key: index,
-								onClick,
-							}}>
-								<Step.Content>
-									<Step.Title>{title}</Step.Title>
-									<Step.Description style={styles.stepDescription}>
-										{description}
-									</Step.Description>
-								</Step.Content>
-							</Step>
-						)).filter(Boolean)}
-					</Step.Group>
-				</div>
-
-				{/* <h3>{texts.videoGuidTitle}</h3>
-					<h5>{texts.video1Title}</h5>
-					<div style={styles.videoContainer}>
-						<Embed
-							aspectRatio='16:9'
-							id='1'
-							source='vimeo'
-						/>
-					</div>
-					<h5>{texts.video2Title}</h5>
-					<div style={styles.videoContainer}>
-						<Embed
-							aspectRatio='16:9'
-							id='1'
-							source='vimeo'
-						/>
-					</div> */}
-				{// activeStep <= this.registerStepIndex &&
-					(
-						<div style={styles.space}>
-							<h3>{texts.restoreTitle}</h3>
-							<Button {...{
-								content: texts.restoreBtnTitle,
-								onClick: this.handleRestore,
-							}} />
-						</div>
-					)
-				}
-
-				{// Once user is registered display links to social applications and buttons to support and trollbox
-					activeStep >= this.registerStepIndex && (
-						<div style={styles.space}>
-							<h3>{texts.supportChatHeader}</h3>
-							<div>
-								{texts.supportChatDesc1}
-								<div>
-									<Button {...{
-										content: texts.supportContact,
-										icon: 'heartbeat',
-										onClick: () => createInbox([SUPPORT], null, true),
-										size: 'mini',
-										style: styles.btnStyle,
-									}} />
-									<Button {...{
-										content: texts.trollbox,
-										icon: 'globe',
-										onClick: () => createInbox([TROLLBOX], null, true),
-										size: 'mini',
-										style: styles.btnStyle,
-									}} />
-									<Button {...{
-										content: texts.newsletterSignup,
-										icon: 'mail',
-										onClick: () => showForm(NewsletteSignup),
-										size: 'mini',
-										style: styles.btnStyle,
-									}} />
-								</div>
-							</div>
-							{texts.supportChatDesc2}
-							<div>
-								<a href='https://discord.gg/Vx7qbgn' target='_blank'>
-									<Invertible El={Icon} name='discord' style={styles.appIconStyle} />
-								</a>
-								<a href='https://t.me/totemchat' target='_blank'>
-									<Invertible El={Icon} name='telegram' style={styles.appIconStyle} />
-								</a>
-							</div>
-						</div>
-					)}
-			</div >
-		)
+	switch (nextStep) {
+		case 0:
+			handleRegister()
+			break
+		case 1:
+			handleUpdateIdentity()
+			break
+		case 2: 
+			handleBackup()
+			break
 	}
+	return nextStep
 }
-
-const styles = {
-	appIconStyle: {
-		fontSize: 32,
-		lineHeight: '40px',
-	},
-	btnStyle: { marginTop: 5, marginBottom: 5 },
-	space: { marginTop: 25 },
-	stepDescription: {
-		maxWidth: 215,
-	},
-	videoContainer: {
-		height: 225,
-		width: 400,
-		maxWidth: '100%'
-	},
-}
-
 
 /*
  * confrim backup by forcing user to upload the file user just downloaded
@@ -439,4 +409,19 @@ export const confirmBackup = (showSuccess = false) => new PromisE(resolve => {
 	modalId = showForm(FormBuilder, props)
 })
 
-window.confirmBackup = confirmBackup
+const styles = {
+	appIconStyle: {
+		fontSize: 32,
+		lineHeight: '40px',
+	},
+	btnStyle: { marginTop: 5, marginBottom: 5 },
+	space: { marginTop: 25 },
+	stepDescription: {
+		maxWidth: 215,
+	},
+	videoContainer: {
+		height: 225,
+		width: 400,
+		maxWidth: '100%'
+	},
+}

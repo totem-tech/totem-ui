@@ -27,7 +27,7 @@ const textsCap = translated({
     headerCreate: 'create identity',
     headerRestore: 'restore identity',
     headerUpdate: 'update identity',
-    identityNamePlaceholder: 'a name for the identity',
+    identityNamePlaceholder: 'enter a name for your Blockchain identity',
     locationIdLabel: 'contact address',
     locationIdPlaceholder: 'select a location for this identity',
     locationIdCreateTittle: 'create a new location',

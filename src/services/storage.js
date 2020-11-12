@@ -2,7 +2,7 @@
  * Storage Service: to handle all interactions with browser's localStorage.
  * Typically this should be used by other services
  */
-import { downloadFile, generateHash, hasValue, isMap, isObj, objClean } from '../utils/utils'
+import { downloadFile, generateHash, hasValue, isMap, isObj, isSet, isStr, objClean } from '../utils/utils'
 import DataStorage from '../utils/DataStorage'
 // import FormBuilder from '../components/FormBuilder'
 import { getAll as getIdentities, set as saveIdentity} from '../modules/identity/identity'
@@ -78,36 +78,40 @@ export const generateBackupData = (fileBackupTS) => {
  * @param   {String|null} propKey   name of the property to read/write to.
  *                                  If null, will remove all data stored for the @key
  *                                  If not supplied, will return value for the @key
- * @param   {*}         value       If not specified, will return value for @propKey
+ * @param   {*}           value       If not specified, will return value for @propKey
  *                                  If null, will remove value for @propKey
- *                                  If Map supplied, will be converted to 2D array using `Array.from`.
+ *                                  If Map or Set supplied, will be converted to array using `Array.from`.
  *                                  If Object supplied, will merge with existing values.
+ * @param   {Boolean}     override  If @value is an Object, whether to override or merge with existing value. 
+ *                                  Default: false
  * 
  * @returns {*} 
  */
-export const rw = (storage, key, propKey, value) => {
+export const rw = (storage, key, propKey, value, override = false) => {
     if (!storage || !key) return {}
     const data = storage.get(key) || {}
-    if (!propKey) return data
+    if (!isStr(propKey) && propKey !== null) return data
     
-    let save = true
     if (propKey === null) {
         data.delete(key)
     } else if (value === null) {
         // remove from storage
         delete data[propKey]
-    } else if (isMap(value)) {
+    } else if (isMap(value) || isSet(value)) {
         // convert map to array. PS: may need to convert back to Map on retrieval
         data[propKey] = Array.from(value)
     } else if (isObj(value)) {
         // merge with existing value
-        data[propKey] = { ...data[propKey], ...value }
+        data[propKey] = override
+            ? value
+            : { ...data[propKey], ...value }
     } else if (hasValue(value)) {
         data[propKey] = value
     } else {
-        save = false
+        // nothing to save | read-only operation
+        return data[propKey]
     }
-    save && storage.set(key, data)
+    storage.set(key, data)
     return data[propKey]
 }
 
@@ -121,12 +125,18 @@ storage.settings = {
     // @value   object: (optional) settings/value to replace existing.
     global: (itemKey, value) => rw(settings, 'global_settings', itemKey, value),
 
-    // store and retrieve module specific settings
-    // 
-    // Params: 
-    // @moduleKey     string: unique identifier for target module
-    // @value   object: (optional) settings/value to replace existing.
-    module: (moduleKey, value) => rw(settings, 'module_settings', moduleKey, value)
+    /**
+     * @name    storage.settings.module
+     * @summary read/write module related settings to localStorage
+     * 
+     * @param   {String}    moduleKey   a unique identifier for the module
+     * @param   {*}         value
+     * @param   {Boolean}   override    if @value is an Object, whether to override or merge with existing value.
+     *                                  Default: false
+     * 
+     * @returns {*} returns the saved value
+     */
+    module: (moduleKey, value, override = false) => rw(settings, 'module_settings', moduleKey, value, override)
 }
 
 /**

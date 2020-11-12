@@ -53,6 +53,7 @@ export default function () {
     const [data] = useRxSubject(rxData, generateTableData)
     const [isLoggedIn] = useRxSubject(rxIsLoggedIn)
     const [state, setStateOrg] = useReducer(reducer, {
+        ...getTableProps(),
         blockchains: [],
         data: [],
         depositAddresses: [],
@@ -160,7 +161,7 @@ export default function () {
                 })}
             </Step.Group>
             <DataTable {...{
-                ...getTableProps(state, setState),
+                ...state,
                 data,
             }} />
         </div>
@@ -195,7 +196,7 @@ const getSteps = () => [
     // },
 ]
 
-const getTableProps = (state, setState) => ({
+const getTableProps = () => ({
     columns: [
         { key: 'blockchainName', title: textsCap.blockchain },
         {
@@ -242,6 +243,14 @@ const getTableProps = (state, setState) => ({
     ],
 })
 
+/**
+ * @name    generateTableData
+ * @summary generate a list using crowdsale data locally stored in the device
+ * 
+ * @param   {Object} csData crowdsale data from localStorage
+ * 
+ * @returns {Map}
+ */
 const generateTableData = (csData) => {
     csData = csData || crowdsaleData()
     let { depositAddresses = {} } = csData || {} 
