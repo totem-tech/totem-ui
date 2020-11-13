@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import FormBuilder, { fillValues, findInput,  } from '../../components/FormBuilder'
@@ -34,7 +34,6 @@ const [_, textsCap] = translated({
     updateName: 'update group name',
     userIdsHint: 'To start a group chat enter multiple User IDs',
 }, true)
-const EVERYONE = 'everyone'
 
 const inputNames = {
     name: 'name',
@@ -42,12 +41,12 @@ const inputNames = {
 }
 export default function NewInboxForm(props) {
     const [isRegistered] = useRxSubject(rxIsRegistered)
-    const [success, setSuccess] = useState(false)
     if (!isRegistered) {
         showForm(RegistrationForm,  { values: { silent: true } })
         return ''
     }
 
+    const [success, setSuccess] = useState(false)
     const [inputs] = useRxSubject(getRxInputs(props))
 
     return (
@@ -69,7 +68,6 @@ NewInboxForm.defaultProps = {
 NewInboxForm.propTypes = {
     values: PropTypes.object
 }
-
 
 const getRxInputs = props => {
     const { values = {} } = props || {}
@@ -190,7 +188,7 @@ const checkGroup = keyOrIds => {
  * @param   {String}    inboxKey 
  * @param   {Function}  onSubmit 
  */
-export const showEditNameFrom = (inboxKey, onSubmit) => {
+export const showEditNameForm = (inboxKey, onSubmit) => {
     const [_, isValidGroup, userIds] = checkGroup(inboxKey)
     // inbox is not a valid group or does not support name change
     if (!isValidGroup) return

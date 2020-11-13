@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Button, Label } from 'semantic-ui-react'
-import { arrSort, deferred, textEllipsis } from '../../utils/utils'
+import { arrSort, textEllipsis } from '../../utils/utils'
 import FormInput from '../../components/FormInput'
 import Message from '../../components/Message'
 import { getUser } from './ChatClient'
@@ -22,7 +22,7 @@ import {
     rxUsersOnline,
     jumpToMessage,
 } from './chat'
-import NewInboxForm, { showEditNameFrom } from './NewInboxForm'
+import NewInboxForm, { showEditNameForm } from './NewInboxForm'
 import { unsubscribe, useRxSubject } from '../../services/react'
 
 const ALL_ONLINE = 'green'
@@ -137,6 +137,7 @@ export default function InboxList() {
     // whether to include archived and deleted items
     const [showAll, setShowAllOrg] = useState(false)
     const [items, setItems] = useState(filterInboxes(query, showAll))
+    const [showActions, setShowActions] = useState(null)
     const setShowAll = showAll => {
         rxExpanded.next(false)
         // update list 
@@ -172,12 +173,16 @@ export default function InboxList() {
                 toggleShowAll: () => setShowAll(!showAll),
             }} />
             <div className='list'>
-                {items.map(item => <InboxListItem {...{
-                    ...item,
-                    active: rxOpenInboxKey.value === item.inboxKey,
-                    key: JSON.stringify(item),
-                    query,
-                }} />)}
+                {items.map(item => (
+                    <InboxListItem {...{
+                        ...item,
+                        active: rxOpenInboxKey.value === item.inboxKey,
+                        key: JSON.stringify(item),
+                        query,
+                        setShowActions,
+                        showActions,
+                    }} />
+                ))}
 
                 {query && <Message className='empty-message' content={textsCap.noResultMsg} />}
             </div>
@@ -204,6 +209,8 @@ const InboxListItem = React.memo(({
     query = '',
     unreadCount,
     userId,
+    setShowActions,
+    showActions,
 }) => {
     query = query.trim().toLowerCase()
     const [userIds] = useState(inboxKey.split(',').filter(id => ![userId, TROLLBOX].includes(id)))
@@ -281,13 +288,15 @@ const InboxListItem = React.memo(({
                 )}
             </div>
             <InboxActions {...{
+                archived,
+                deleted,
                 inboxKey,
+                isEmpty,
                 isGroup,
                 isSupport,
                 isTrollbox,
-                isEmpty,
-                archived,
-                deleted,
+                setShowActions,
+                showActions,
             }} />
         </div>
     )
@@ -340,12 +349,22 @@ const ToolsBar = React.memo(({ query, onSeachChange, showAll, toggleShowAll }) =
     </div>
 ))
 
-const InboxActions = React.memo(({ inboxKey, isGroup, isSupport, isTrollbox, isEmpty, archived, deleted }) => {
-    const [showActions, setShowActions] = useState(false)
+const InboxActions = React.memo(props => {
+    const {
+        archived,
+        deleted,
+        inboxKey,
+        isEmpty,
+        isGroup,
+        isSupport,
+        isTrollbox,
+        setShowActions,
+        showActions,
+    } = props
     const actions = [
         isGroup && !isTrollbox && !isSupport && {
             icon: 'pencil',
-            onClick: e => e.stopPropagation() | showEditNameFrom(inboxKey, () => setShowActions(false)),
+            onClick: e => e.stopPropagation() | showEditNameForm(inboxKey, () => setShowActions(false)),
             title: textsCap.changeGroupName,
         },
         !deleted && !archived && {

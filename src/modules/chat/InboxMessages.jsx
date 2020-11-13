@@ -45,7 +45,14 @@ export default function InboxMessages(props) {
     const userId = (getUser() || {}).id
     return (
         <div {...{ className, onScroll, }}>
-            {messages.map((message, key) => <InboxMessage {...{ key, isPrivate, userId, ...message }} />)}
+            {messages.map(message => (
+                <InboxMessage {...{
+                    key: message.id,
+                    isPrivate,
+                    userId,
+                    ...message,
+                }} />
+            ))}
         </ div>
     )
 }
