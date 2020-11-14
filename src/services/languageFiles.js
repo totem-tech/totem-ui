@@ -48,6 +48,7 @@ export default [
     "./src/modules/crowdsale/Crowdsale.jsx",
     "./src/modules/crowdsale/DAAForm.jsx",
     "./src/modules/crowdsale/KYCForm.jsx",
+    "./src/modules/crowdsale/KYCViewForm.jsx",
     "./src/modules/crowdsale/crowdsale.js",
     "./src/modules/event/EventList.jsx",
     "./src/modules/financialStatement/FinancialStatementView.jsx",

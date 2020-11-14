@@ -1,20 +1,21 @@
 import React, { useEffect, useReducer, useState } from 'react'
+import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Button, Icon } from 'semantic-ui-react'
+import PromisE from '../../utils/PromisE'
 import { isArr, isFn, objWithoutKeys, textEllipsis } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput, inputsForEach } from '../../components/FormBuilder'
+import { confirmBackup } from '../../views/GettingStartedView'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
-import { reducer } from '../../services/react'
-import client from '../chat/ChatClient'
-import { get as getIdentity, rxIdentities, set as saveIdentity } from '../identity/identity'
-import { get as getLocation, getAll as getLocations, rxLocations, set as setLocation } from '../location/location'
-import LocationForm from '../location/LocationForm'
-import { getInputs as getDAAInputs, inputNames as daaInputNames, } from './DAAForm'
-import { confirmBackup } from '../../views/GettingStartedView'
-import PromisE from '../../utils/PromisE'
-import { crowdsaleData, rxData } from './crowdsale'
+import { reducer, useRxSubject } from '../../services/react'
 import { setToast } from '../../services/toast'
+import client from '../chat/ChatClient'
+import { get as getIdentity, rxIdentities } from '../identity/identity'
+import { get as getLocation, getAll as getLocations, rxLocations } from '../location/location'
+import LocationForm, { inputNames as locInputNames } from '../location/LocationForm'
+import { getInputs as getDAAInputs, inputNames as daaInputNames, } from './DAAForm'
+import { crowdsaleData, rxCrowdsaleData } from './crowdsale'
 
 const textsCap = translated({
     blockchainsLabel: 'select blockchains',
@@ -28,7 +29,8 @@ const textsCap = translated({
     familyNamePlaceholder: 'enter your family name',
     givenNameLabel: 'given name',
     givenNamePlaceholder: 'enter your given name',
-    formHeader: 'Crowdsale registration',
+    formHeader: 'crowdsale registration',
+    formHeaderView: 'your crowdsale data',
     formSubheader: 'in order to participate in the crowdsale you must submit your KYC data',
     identityErrorLocation: 'please select an identity with contact address',
     identityLabel: 'identity to receive XTX tokens',
@@ -59,9 +61,7 @@ export const inputNames = {
 }
 
 export default function KYCForm(props = {}) {
-    const [state, setStateOrg] = useReducer(reducer, {
-        submitText: textsCap.submitText
-    })
+    const [state, setStateOrg] = useReducer(reducer, {})
     // prevents triggering state change when component is not mounted
     const [setState] = useState(() => (...args) => setStateOrg.mounted && setStateOrg(...args))
     const [inputs] = useState(() => {
@@ -81,7 +81,7 @@ export default function KYCForm(props = {}) {
                     break
             }
         })
-        return fillValues(inputs, props.values)
+        return fillValues([...inputs, ...props.inputs || []], props.values)
     })
 
     useEffect(() => {
@@ -124,20 +124,20 @@ export default function KYCForm(props = {}) {
         return () => setStateOrg.mounted = false
     }, [setStateOrg])
 
-    return (
-        <FormBuilder {...{
-            ...props,
-            ...state,
-            inputs
-        }} />
-    )
+    return <FormBuilder {...{ ...props, ...state, inputs }} />
 }
+KYCForm.propTypes = {
+    values: PropTypes.object,
+} 
 KYCForm.defaultProps = {
     closeOnSubmit: true,
     header: textsCap.formHeader,
     size: 'tiny',
     subheader: textsCap.formSubheader,
+    submitText: textsCap.submitText,
 }
+
+
 const handleSubmitCb = (props, setState) => async (_, values) => {
     const { onSubmit } = props || {}
     const locationId = values[inputNames.locationId]
@@ -181,7 +181,7 @@ const handleSubmitCb = (props, setState) => async (_, values) => {
             const ethAddr = blockchain === 'ETH' ? ethAddress : ''
             client.crowdsaleDAA.promise(blockchain, ethAddr)
                 .then(address => {
-                    const { depositAddresses = {} } = rxData.value || {}
+                    const { depositAddresses = {} } = rxCrowdsaleData.value || {}
                     depositAddresses[blockchain] = address
                     crowdsaleData({ depositAddresses })
                 })
@@ -212,7 +212,7 @@ const getLocationOptions = locationsMap => Array.from(locationsMap)
         }
     })
 
-const getInputs = () => {
+export const getInputs = () => {
     const daaInputs = getDAAInputs()
     const blockchainOptions = (findInput(daaInputs, daaInputNames.blockchain) || { options: [] })
         .options
@@ -348,6 +348,7 @@ const getInputs = () => {
             },
         {
             ...ethAddressIn,
+            // hide if ETH not selected
             hidden: values => !(values[inputNames.blockchains] || []).includes('ETH')
         },
     ]

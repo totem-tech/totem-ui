@@ -58,8 +58,8 @@ export default class LocationForm extends Component {
 		super(props)
 
 		let { autoSave, header, id, subheader, submitText, values } = props
-		const location = get(id)
-		const { partnerIdentity } = location || values || {}
+		const location = get(id) || values || {}
+		const { partnerIdentity } = location 
 		this.isUpdate = !!id && !!location
 		const partner = getPartner(partnerIdentity)
 		const noFlags = ['aq', 'bl', 'bq', 'cw', 'gg', 'im', 'je', 'mf', 'ss', 'sx', 'xk']

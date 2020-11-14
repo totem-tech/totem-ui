@@ -2,20 +2,23 @@ import { BehaviorSubject } from 'rxjs'
 import storage from '../../services/storage'
 
 const MODULE_KEY = 'crowdsale'
-export const rxData = new BehaviorSubject()
+export const rxCrowdsaleData = new BehaviorSubject()
 
 /**
  * @name    crowdsaleData
  * @summary get/set crowdsale data to localStorage
  * 
- * @param {Object} data (optional)
+ * @param   {Object}    data (optional)
+ * 
+ * @returns {Object}    returns saved data
  */
 export const crowdsaleData = data => {
     const saved = storage.settings.module(MODULE_KEY, data) || {}
-    data && rxData.next(saved)
+    data && rxCrowdsaleData.next(saved)
     return saved
 }
 
 export const getCrowdsaleIdentity = () => crowdsaleData().identity
 
-rxData.next(crowdsaleData())
+// set initial value
+rxCrowdsaleData.next(crowdsaleData())

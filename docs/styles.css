@@ -312,7 +312,10 @@ div.ui.padded.segment {
 .ui.sidebar.left a span {
   font-weight: normal;
 }
-
+/* overrides `font-weight: bolder` which doesn't seem to work for the fonts used */
+body b, body strong {
+	font-weight: bold;
+}
 /*
  * Form Builder
  */

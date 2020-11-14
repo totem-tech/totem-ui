@@ -8,9 +8,10 @@ import { reducer, useRxSubject } from '../../services/react'
 import { copyToClipboard } from '../../utils/utils'
 import client, { getUser, rxIsLoggedIn, rxIsRegistered } from '../chat/ChatClient'
 import RegistrationForm from '../chat/RegistrationForm'
-import { crowdsaleData, rxData } from './crowdsale'
+import { crowdsaleData, rxCrowdsaleData } from './crowdsale'
 import DAAForm from './DAAForm'
-import KYCForm, { inputNames as kycInputNames} from './KYCForm'
+import KYCForm from './KYCForm'
+import KYCViewForm from './KYCViewForm'
 
 const textsCap = translated({
     amountDeposited: 'amount deposited',
@@ -48,7 +49,7 @@ const BLOCKCHAINS = {
 }
 
 export default function () {
-    const [data] = useRxSubject(rxData, generateTableData)
+    const [data] = useRxSubject(rxCrowdsaleData, generateTableData)
     const [isRegistered] = useRxSubject(rxIsRegistered)
     const [isLoggedIn] = useRxSubject(rxIsLoggedIn)
     const [state, setStateOrg] = useReducer(reducer, {
@@ -228,12 +229,13 @@ const getTableProps = () => ({
             content: textsCap.viewCrowdsaleData,
             icon: 'eye',
             onClick: () => {
-                const values = crowdsaleData() || {}
-                showForm(KYCForm, {
-                    inputsDisabled: Object.values(kycInputNames),
-                    submitText: null,
-                    values,
-                })
+                showForm(KYCViewForm)
+                // const values = crowdsaleData() || {}
+                // showForm(KYCForm, {
+                //     inputsDisabled: Object.values(kycInputNames),
+                //     submitText: null,
+                //     values,
+                // })
             },
         },
         {
