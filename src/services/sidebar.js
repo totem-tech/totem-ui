@@ -424,9 +424,12 @@ setTimeout(() => {
         .map(x => x.trim().toLowerCase())
     const validNames = names.map(name => (setActive(name) || {}).name)
         .filter(Boolean)
-    validNames.length && sidebarItems.forEach(x =>
+    // hide all other modules
+    if (!validNames.length) return
+    sidebarItems.forEach(x =>
         !validNames.includes(x.name) && setActive(x.name, false)
     )
+    history.pushState({}, null, `${location.protocol}//${location.host}`)
 })
 export default {
     getItem,
