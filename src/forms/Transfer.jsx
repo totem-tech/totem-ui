@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { Icon } from 'semantic-ui-react'
+import { Button, Icon } from 'semantic-ui-react'
 import { ss58Decode } from '../utils/convert'
 import { getTxFee } from '../utils/polkadotHelper'
 import { arrSort, textEllipsis, deferred, isValidNumber } from '../utils/utils'
@@ -24,7 +24,7 @@ const textsCap = translated({
     amount: 'amount',
     amountReceivedLabel: 'payment amount',
     amountReceivedPlaceholder: 'enter amount',
-    amountSentLabel: 'amount in your display currency',
+    amountSentLabel: 'amount in display currency',
     amountToSend: 'amount to send',
     addPartner: 'add partner',
     availableBalance: 'available balance',
@@ -143,19 +143,21 @@ export default class Transfer extends Component {
                             rxValue: new BehaviorSubject(''),
                             type: 'number',
                             useInput: true,
-                            width: 8,
+                            width: 9,
                         },
                         {
+                            // mimics a `selection` dropdown without limitting the width of the dropdown list
+                            className: 'button fluid',
                             disabled: true,
                             label: textsCap.currencySentLabel,
                             name: this.names.currencySent,
-                            // onChange: this.handleCurrencySentChange,
+                            onChange: this.handleCurrencySentChange,
                             options: [],
                             rxValue: new BehaviorSubject(),
                             search: ['text', 'description'],
-                            selection: true,
+                            selection: false,
                             type: 'dropdown',
-                            width: 8,
+                            width: 7,
                         },
                     ],
                     type: 'group',
@@ -185,9 +187,11 @@ export default class Transfer extends Component {
                             rxValue: new BehaviorSubject(''),
                             type: 'number',
                             useInput: true,
-                            width: 8,
+                            width: 9,
                         },
                         {
+                            // mimics a `selection` dropdown without limitting the width of the dropdown list
+                            className: 'button fluid',
                             label: textsCap.currencyReceivedLabel,
                             name: this.names.currencyReceived,
                             onChange: this.handleCurrencyReceivedChange,
@@ -195,9 +199,9 @@ export default class Transfer extends Component {
                             required: true,
                             rxValue: new BehaviorSubject(),
                             search: ['text', 'description'],
-                            selection: true,
+                            selection: false,
                             type: 'dropdown',
-                            width: 8,
+                            width: 7,
                         },
                     ],
                 },
