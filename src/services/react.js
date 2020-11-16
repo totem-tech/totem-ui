@@ -16,14 +16,22 @@ import { isFn, isSubjectLike } from "../utils/utils"
  * @returns {Array}     [@state {Object}, @setState {Function}]
  */
 export const iUseReducer = (reducerFn, initialState = {}) => {
-    const [rxSetState] = useState(() => isFn(initialState) && new Subject())
-    const [state, setStateOrg] = useReducer(
-        reducerFn || reducer,
-        !rxSetState
+    const [[rxSetState, iniState]] = useState(() => {
+        const rxSetState = isFn(initialState) && new Subject()
+        initialState = !rxSetState
             ? initialState
-            : initialState(rxSetState),
+            : initialState(rxSetState)
+        
+        return [ rxSetState, initialState ]
+    })
+    const [state, setStateOrg] = useReducer(
+        isFn(reducerFn) ? reducerFn : reducer,
+        iniState,
     )
-    const setState = (...args) => setStateOrg.mounted && setStateOrg(...args)
+    // ignores state update if component is unmounted
+    const [setState] = useState(() =>
+        (...args) => setStateOrg.mounted && setStateOrg(...args)
+    )
 
     useEffect(() => {
         setStateOrg.mounted = true

@@ -43,6 +43,8 @@ export default function RegistrationForm(props) {
         }),
         false
     )
+
+    console.log({props})
     
     return (
         <FormBuilder {...{
@@ -140,6 +142,7 @@ const handleSubmit = (props, setState) => (_, values) => {
     const referredBy = values[inputNames.referredBy]
     const redirectTo = values[inputNames.redirectTo]
     const secret = uuid.v1()
+    console.log({props, silent})
 
     setState({ submitInProgress: true })
     client.register(userId, secret, referredBy, err => {

@@ -1,6 +1,6 @@
 import { BehaviorSubject } from 'rxjs'
-import storage from '../../services/storage'
 import { isValidNumber, objClean } from '../../utils/utils'
+import storage from '../../services/storage'
 
 export const rxCrowdsaleData = new BehaviorSubject()
 const MODULE_KEY = 'crowdsale'
@@ -37,6 +37,9 @@ export const LEVEL_ENTRY_XTX = [
     4541350000,
     9082700000,
 ]
+// start of level 9 (negotiable multiplier)
+export const ENTRY_NEGOTIATE_XTX = 90827000000
+
 const findLevel = (amtDepositedXTX = 0) => {
     let level = 0
     for (let i = 0; i < LEVEL_ENTRY_XTX.length; i++) {
@@ -45,7 +48,7 @@ const findLevel = (amtDepositedXTX = 0) => {
     }
     return level
 }
-export const calculateAllocation = (chainAmounts = {}) => {
+export const calculateAllocation = async (chainAmounts = {}) => {
     chainAmounts = objClean(chainAmounts, Object.keys(BLOCKCHAINS))
     const amtDepositedXTX = Object.keys(chainAmounts)
         .reduce((sum, chain) => {
@@ -54,33 +57,43 @@ export const calculateAllocation = (chainAmounts = {}) => {
             return sum + amountXTX
         }, 0)
     const level = findLevel(amtDepositedXTX)
+    const isLevel0 = level === 0
     const multiplier = LEVEL_MULTIPLIERS[level]
-    const amtMultipliedXTX = level === 0
-        ? 0
-        : Math.ceil(multiplier * amtDepositedXTX)
+    const amtMultipliedXTX = level && Math.ceil(multiplier * amtDepositedXTX)
+    const amtToBeUnlockedXTX = level && Math.floor(LEVEL_MULTIPLIERS[1] * amtDepositedXTX)
     return [
+        // total amount contributed in base level XTX
         amtDepositedXTX,
+        // totam amount allocated in XTX after multiplier applied
         amtMultipliedXTX,
+        // level index
         level,
+        // level multiplier
         multiplier,
+        // amount of XTX to be unlocked soon after the crowdsale
+        amtToBeUnlockedXTX,
     ]
 }
 
-export const calculateToNextLevel = (blockchain, amtDepositedXTX = 0, level = findLevel(amtDepositedXTX)) => {
-    if (!BLOCKCHAINS[blockchain]) return 0
+export const calculateToNextLevel = async (currency, amtDepositedXTX = 0, level = findLevel(amtDepositedXTX)) => {
     const nextLevel = level + 1
     const nextEntry = LEVEL_ENTRY_XTX[nextLevel]
+    const ratio = RATIO2XTX[currency] ||  1 // assume XTX for display purposes
     // last level reached!
     if (!isValidNumber(nextEntry)) return null
 
     const nextMultiplier = LEVEL_MULTIPLIERS[nextLevel]
     const amtXTXToNextEntry = nextEntry - amtDepositedXTX + 1
-    const amtToNextEntry = amtXTXToNextEntry / RATIO2XTX[blockchain]
+    const amtToNextEntry = amtXTXToNextEntry / ratio
     
     return [
+        // amount in XTX to reach next level
         amtXTXToNextEntry,
+        // amount in @currency required to reach next level
         amtToNextEntry,
+        // next level index
         nextLevel,
+        // next level multiplier
         nextMultiplier,
     ]
 }
@@ -100,6 +113,13 @@ export const crowdsaleData = data => {
 }
 
 export const getCrowdsaleIdentity = () => crowdsaleData().identity
+
+// placeholder
+export const getDeposits = async () => ({
+    BTC: 0.01,
+    DOT: 0,
+    ETH: 0,
+})
 
 // set initial value
 rxCrowdsaleData.next(crowdsaleData())

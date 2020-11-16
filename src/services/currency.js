@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { generateHash, arrSort, isArr } from '../utils/utils'
+import { generateHash, arrSort, isArr, isValidNumber } from '../utils/utils'
 import PromisE from '../utils/PromisE'
 import client from '../modules/chat/ChatClient'
 import { translated } from './language'
@@ -42,12 +42,16 @@ export const convertTo = async (amount = 0, from, to, decimals) => {
     const currencies = await getCurrencies()
     const fromTo = currencies.filter(({ ISO }) => ft.includes(ISO))
     if (!ft.every(x => fromTo.find(c => c.ISO === x))) throw new Error(textsCap.invalidCurency)
+    
     const fromCurrency = fromTo.find(({ ISO }) => ISO === from)
     const toCurrency = currencies.find(({ ISO }) => ISO === to)
     const convertedAmount = (fromCurrency.ratioOfExchange / toCurrency.ratioOfExchange) * amount
-    decimals = decimals || parseInt(toCurrency.decimals)
+    
+    if (!isValidNumber(decimals)) {
+        decimals = parseInt(toCurrency.decimals)
+    }
     const rounded = convertedAmount.toFixed(decimals)
-    return [convertedAmount, rounded]
+    return [convertedAmount, rounded, decimals]
 }
 
 // get selected currency code

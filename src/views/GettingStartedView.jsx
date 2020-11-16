@@ -277,7 +277,10 @@ const handleUpdateIdentity = () => {
 	const values = getSelected()
 	// forces user to enter a new name for the identity
 	if (values.name === 'Default') values.name = ''
-	showForm(IdentityForm, { values })
+	showForm(IdentityForm, {
+		onSubmit: incrementStep,
+		values,
+	})
 }
 
 const handleRegister = () => showForm(RegistrationForm, {

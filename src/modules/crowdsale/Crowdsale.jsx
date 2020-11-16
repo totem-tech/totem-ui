@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer, useState } from 'react'
+import React, { useEffect } from 'react'
 import { Button, Icon, Step } from 'semantic-ui-react'
 import DataTable from '../../components/DataTable'
 import Text from '../../components/Text'
@@ -10,12 +10,21 @@ import { MOBILE, rxLayout } from '../../services/window'
 import { copyToClipboard } from '../../utils/utils'
 import client, { rxIsLoggedIn, rxIsRegistered } from '../chat/ChatClient'
 import RegistrationForm from '../chat/RegistrationForm'
-import { BLOCKCHAINS, crowdsaleData, rxCrowdsaleData } from './crowdsale'
+import {
+    BLOCKCHAINS,
+    calculateAllocation,
+    calculateToNextLevel,
+    crowdsaleData,
+    ENTRY_NEGOTIATE_XTX,
+    getDeposits,
+    rxCrowdsaleData,
+} from './crowdsale'
 import DAAForm from './DAAForm'
 import KYCForm from './KYCForm'
 import KYCViewForm from './KYCViewForm'
 import CalculatorForm from './CalculatorForm'
-// import Invertible from '../../components/Invertible'
+import { Currency } from '../../components/Currency'
+import { currencyDefault } from '../../services/currency'
 
 const textsCap = translated({
     achieved: 'achieved!',
@@ -31,6 +40,10 @@ const textsCap = translated({
     multiplierHighest: 'highest multiplier level',
     registrationRequired: 'please complete the getting started steps',
     requestBtnTxt: 'request address',
+    stepMsgContributed: 'you contributed value equivalent to',
+    stepMsgAllocation: 'your total crowdsale allocation will be',
+    stepMsgLevel: 'Yeey! You have reached the last level. Contact us for a special bonus if you would like to invest more than',
+    stepMsgToNextLevel: 'contribution required to reach next level',
     successMsg: `
         Fantastic! You have now been registered for the Totem Live Association crowdsale.
         You are now ready to deposit funds using any of your chosen Blockchains.
@@ -50,7 +63,6 @@ const textsCap = translated({
     viewNotes: 'view notes',
 }, true)[1]
 
-
 export default function () {
     const [data] = useRxSubject(rxCrowdsaleData, generateTableData)
     const [isRegistered] = useRxSubject(rxIsRegistered)
@@ -58,27 +70,35 @@ export default function () {
     const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
     const [state, setState] = iUseReducer(reducer, {
         ...getTableProps(),
-        blockchains: [],
-        depositAddresses: [],
+        // blockchains: [],
+        // depositAddresses: [],
         kycDone: false,
         loading: true,
-        multiplierLevel: 1,
+        steps: [],
     })
 
     useEffect(() => {
-        isLoggedIn && !state.kycDone && setTimeout(async () => {
-            let newState = { message: null}
-            await client.crowdsaleKYC
-                .promise(true)
-                .then(done => newState.kycDone = done)
-                .catch(err => {
-                    newState.message = {
-                        content: `${err}`,
-                        icon: true,
-                        status: 'error',
-                    }
-                })
-                .finally(() => setState({ ...newState, loading: false }))
+        if (!isLoggedIn || state.kycDone) return
+        
+        setTimeout(async () => {
+            let newState = { message: null }
+            try {
+                // check if KYC done
+                newState.kycDone = await client.crowdsaleKYC.promise(true)
+                newState.deposits = await getDeposits()
+                // retrieve any existing amounts deposited
+                newState.steps = await getSteps(
+                    newState.deposits,
+                    isMobile,
+                )
+            } catch (err) {
+                newState.message = {
+                    content: `${err}`,
+                    icon: true,
+                    status: 'error',
+                }
+            }
+            setState({ ...newState, loading: false })
         })
         
     }, [isLoggedIn])
@@ -109,14 +129,9 @@ export default function () {
         style: { maxWidth: 400 },
     })
     
-    const steps = getSteps(
-        state.multiplierLevel,
-        99999,
-        isMobile,
-    )
     return (
         <div>
-            <Step.Group fluid stackable='tablet' items={steps}/>
+            <Step.Group fluid stackable='tablet' items={state.steps}/>
             <DataTable {...{ ...state, data }} />
         </div>
     )
@@ -132,27 +147,20 @@ const getInlineForm = (Form, props) => (
     </div>
 )
 
-const getSteps = (currentLevel = 0, totalContributedXTX, isMobile = false) => { 
-    currentLevel = 1
+const getSteps = async (deposits = {}, isMobile = false) => {
     const lastLevel = 8
     const maxLevels = 3
-    const xtxToNextLevel = 9999 // to be calcualated
+    const [
+        amtDepositedXTX = 0,
+        amtMultipliedXTX = 0,
+        currentLevel = 0,
+        multiplier,
+    ] = await calculateAllocation(deposits)
+    const [amtXTXToNextLevel] = await calculateToNextLevel('XTX', amtDepositedXTX)
     let showIndicator = false
     let startLevel = currentLevel + maxLevels - 1 > lastLevel
         ? lastLevel - maxLevels + 1
         : currentLevel
-    
-    // const levelIcons = [
-    //     'user outline',
-    //     'chess pawn',
-    //     'chess knight',
-    //     'chess bishop',
-    //     'chess bishop',
-    //     'chess rook',
-    //     'chess rook',
-    //     'chess queen',
-    //     'chess king',
-    // ]
 
     const indexes = new Array(maxLevels)
         .fill(0)
@@ -167,11 +175,11 @@ const getSteps = (currentLevel = 0, totalContributedXTX, isMobile = false) => {
         const isCurrent = level === currentLevel
         const isLast = currentLevel === lastLevel && level === lastLevel
         const isLevel0 = level === 0
+
         return {
             active: level === currentLevel,
             disabled: !isCurrent,
             level,
-            // icon: <Invertible {...{ El: Icon, name: levelIcons[index] }} />,
             key: level,
             title: isCurrent && (
                 <h1>
@@ -193,27 +201,43 @@ const getSteps = (currentLevel = 0, totalContributedXTX, isMobile = false) => {
                         <div>
                             {!isLevel0 && (
                                 <h4 style={styles.stepHeader4}>
-                                    {'You contributed value equivalent to 99999 XTX'}
+                                    <Currency {...{
+                                        prefix: `${textsCap.stepMsgContributed} `,
+                                        value: amtDepositedXTX,
+                                    }} />
                                 </h4>
                             )}
                             {!isLevel0 && (
                                 <Text {...{
-                                    children: 'Your total crowdsale allocation will be 99999 XTX',
                                     El: 'h3',
                                     style: styles.stepHeader3,
-                                }} />
+                                }}>
+                                    <Currency {...{
+                                        prefix: `${textsCap.stepMsgAllocation} `,
+                                        value: amtMultipliedXTX,
+                                    }} />
+                                </Text>
                             )}
                             <h4 style={styles.stepHeader4}>
-                                {isLast
-                                    ? `Yeey! You have reached the last level. Contact us for a special bonus if you would like to invest more than 9999999999 XTX!`
-                                    : `Contribution required to reach next level: 99999 XTX`
-                                }
+                                {isLast && (
+                                    <Currency {...{
+                                        prefix: `${textsCap.stepMsgLevel} `,
+                                        value: ENTRY_NEGOTIATE_XTX,
+                                    }} />
+                                )}
+                                {/* {isLast && `${textsCap.stepMsgLevel} ${ENTRY_NEGOTIATE_XTX} XTX!`} */}
+                                <Currency {...{
+                                    prefix: `${isLast ? textsCap.stepMsgLevel : textsCap.stepMsgToNextLevel}: `,
+                                    unit: currencyDefault,
+                                    value: isLast ? ENTRY_NEGOTIATE_XTX : amtXTXToNextLevel,
+                                }} />
                             </h4>
                         </div>
                     )}
                     {showIndicator && level === lastLevel && (
                         <div style={{
                             ...styles.lastLevelIndicator,
+                            // create styles.css
                             ...(isMobile ? styles.lastLevelIndicatorMobile : {})
                         }}>~</div>
                     )}
