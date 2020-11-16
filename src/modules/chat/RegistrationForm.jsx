@@ -1,4 +1,4 @@
-import React, { Component, useEffect, useReducer, useState } from 'react'
+import React, { useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import uuid from 'uuid'
@@ -7,7 +7,7 @@ import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { registerStepIndex, setActiveStep } from '../../views/GettingStartedView'
 import client, { getUser, referralCode, rxIsRegistered } from './ChatClient'
-import { reducer, useRxSubject } from '../../services/react'
+import { iUseReducer, reducer, useRxSubject } from '../../services/react'
 
 const textsCap = translated({
     alreadyRegistered: 'you have already registered!',
@@ -34,127 +34,23 @@ export const inputNames = {
     userId: 'userId',
 }
 
-// export default class RegistrationForm extends Component {
-//     constructor(props) {
-//         super(props)
-
-//         const { id } = getUser() || {}
-//         const isRegistered = !!id
-//         const { values = {} } = props
-//         let { referredBy , referralCode : rfc} = values
-//         const referredBySaved = referralCode()
-//         // if user has already been referred by someone use the first referrer's code
-//         referredBy = referredBySaved || referredBy || rfc || ''
-//         values.referredBy = referredBy
-//         // save referral information to local storage
-//         if (referredBy && !referredBySaved) referralCode(referredBy)
-
-//         this.state = {
-//             onSubmit: this.handleSubmit,
-//             submitDisabled: isRegistered,
-//             success: false,
-//             inputs: fillValues([
-//                 {
-//                     disabled: isRegistered,
-//                     label: textsCap.userId,
-//                     message: {
-//                         content: isRegistered ? '' : (
-//                             <div>
-//                                 {textsCap.userIdCriteria}
-//                                 <ul>
-//                                     <li>{textsCap.userIdCriteria1}</li>
-//                                     <li>{textsCap.userIdCriteria2}</li>
-//                                     <li>{textsCap.userIdCriteria3}</li>
-//                                 </ul>
-//                             </div>
-//                         ),
-//                         header: !isRegistered ? '' : textsCap.alreadyRegistered,
-//                         icon: isRegistered,
-//                         status: isRegistered ? 'error' : 'warning',
-//                         style: { textAlign: 'left' },
-//                     },
-//                     name: inputNames.userId,
-//                     multiple: false,
-//                     newUser: true,
-//                     placeholder: textsCap.userIdPlaceholder,
-//                     type: 'UserIdInput',
-//                     required: true,
-//                 },
-//                 {
-//                     hidden: values => !!referredBy && values[inputNames.referredBy] === referredBy,
-//                     label: textsCap.referredByLabel,
-//                     name: inputNames.referredBy,
-//                     placeholder: textsCap.referredByPlaceholder,
-//                     rxValue: new BehaviorSubject(referredBy),
-//                     type: 'UserIdInput',
-//                     validate: async (_, { value }, _v, rxValue) => {
-//                         if (!value || !values.referredBy || await client.idExists.promise(value)) return
-//                         // reset value, if invalid referral code used in the URL
-//                         rxValue.next('')
-//                         referralCode(null)
-//                     },
-//                 },
-//                 {
-//                     // auto redirect after successful registration
-//                     hidden: true,
-//                     name: inputNames.redirectTo,
-//                     type: 'url',
-//                 },
-//             ], values),
-//         }
-//     }
-
-//     handleSubmit = (_, values) => {
-//         const { onSubmit, silent } = this.props
-//         const userId = values[inputNames.userId]
-//         const referredBy = values[inputNames.referredBy]
-//         const redirectTo = values[inputNames.redirectTo]
-//         const secret = uuid.v1()
-
-//         this.setState({ submitDisabled: true })
-//         client.register(userId, secret, referredBy, err => {
-//             const success = !err
-//             const message = {
-//                 content: err,
-//                 header: success ? textsCap.registrationComplete : textsCap.registrationFailed,
-//                 icon: true,
-//                 status: success ? 'success' : 'error'
-//             }
-//             this.setState({
-//                 message,
-//                 submitDisabled: false,
-//                 success,
-//             })
-//             isFn(onSubmit) && onSubmit(success, values)
-
-//             if (!success) return
-//             setActiveStep(1, silent)
-//             redirectTo && setTimeout(() => window.location.href = redirectTo, 100)
-
-//             // delete referral information from device
-//             referralCode(null)
-//         })
-//     }
-
-//     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
-// }
-
 export default function RegistrationForm(props) {
-    const [isRegistered] = useRxSubject(rxIsRegistered)
-    const [state, setStateOrg] = useReducer(reducer, { inputs: []})
-    const [setState] = useState(() => (...args) => setStateOrg.mounted && setStateOrg(...args))
-
-    useEffect(() => {
-        setStateOrg.mounted = true
-        setState({
+    const [state, setState] = useRxSubject(
+        rxIsRegistered,
+        isRegistered => ({
             inputs: getInputs(props, isRegistered),
-            submitDisabled: isRegistered,
-            onSubmit: handleSubmit(props, setState),
-        })
-        return ()=> setStateOrg.mounted = false
-    }, [setState, isRegistered])
+            submitDisabled: { isRegistered },
+        }),
+        false
+    )
     
-    return <FormBuilder {...{ ...props, ...state }} />
+    return (
+        <FormBuilder {...{
+            ...props,
+            ...state,
+            onSubmit: handleSubmit(props, setState),
+        }} />
+    )
 }
 
 RegistrationForm.propsTypes = {

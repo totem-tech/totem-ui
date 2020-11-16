@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { arrSort, deferred, isFn, objHasKeys } from '../../utils/utils'
+import { arrSort, deferred, isFn, objHasKeys, textEllipsis } from '../../utils/utils'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { closeModal, confirm } from '../../services/modal'
@@ -51,6 +51,8 @@ export const inputNames = {
 	...optionalFields,
 	partnerName: 'partnerName',
 	removeBtn: 'removeBtn',
+	groupCityPostcode: 'groupCityPostcode',
+	groupStateCountry: 'groupStateCountry',
 }
 
 export default class LocationForm extends Component {
@@ -122,8 +124,10 @@ export default class LocationForm extends Component {
 					type: 'text',
 				},
 				{
-					name: 'group_city-postcode',
+					name: inputNames.groupCityPostcode,
 					type: 'group',
+					unstackable: true,
+					widths: 'equal',
 					inputs: [
 						{
 							label: textsCap.cityLabel,
@@ -146,8 +150,10 @@ export default class LocationForm extends Component {
 					],
 				},
 				{
-					name: 'group_state-country',
+					name: inputNames.groupStateCountry,
 					type: 'group',
+					unstackable: true,
+					widths: 'equal',
 					inputs: [
 						{
 							label: textsCap.stateLabel,
@@ -166,7 +172,7 @@ export default class LocationForm extends Component {
 									description: code,
 									flag: !noFlags.includes(code) ? code.toLowerCase() : '',
 									key: code,
-									text: name,
+									text: textEllipsis(name, 25, 3, false),
 									value: code,
 								})),
 								'text'

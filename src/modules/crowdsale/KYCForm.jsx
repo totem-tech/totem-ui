@@ -8,7 +8,7 @@ import FormBuilder, { fillValues, findInput, inputsForEach } from '../../compone
 import { confirmBackup } from '../../views/GettingStartedView'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
-import { reducer, useRxSubject } from '../../services/react'
+import { iUseReducer, reducer, useRxSubject } from '../../services/react'
 import { setToast } from '../../services/toast'
 import client from '../chat/ChatClient'
 import { get as getIdentity, rxIdentities } from '../identity/identity'
@@ -32,7 +32,6 @@ const textsCap = translated({
     formHeader: 'crowdsale registration',
     formHeaderView: 'your crowdsale data',
     formSubheader: 'in order to participate in the crowdsale you must submit your KYC data',
-    identityErrorLocation: 'please select an identity with contact address',
     identityLabel: 'identity to receive XTX tokens',
     identityPlaceholder: 'select an identity',
     locationIdCreateTittle: 'create new location',
@@ -48,7 +47,6 @@ const textsCap = translated({
     `,
     submitFailedBackupNotDone: 'you must complete the backup process',
     submitText: 'register',
-    updateIdentity: 'update identity',
 }, true)[1]
 export const inputNames = {
     blockchains: 'blockchains',
@@ -58,73 +56,61 @@ export const inputNames = {
     givenName: 'givenName',
     identity: 'identity',
     locationId: 'locationId',
+    namesGroup: 'namesGroup',
 }
 
 export default function KYCForm(props = {}) {
-    const [state, setStateOrg] = useReducer(reducer, {})
-    // prevents triggering state change when component is not mounted
-    const [setState] = useState(() => (...args) => setStateOrg.mounted && setStateOrg(...args))
-    const [inputs] = useState(() => {
+    const [state, setState] = iUseReducer(null, rxSetState => {
         const inputs = getInputs()
-        inputsForEach(inputs, input => {
-            switch (input.name) {
-                case inputNames.identity:
-                    // on identity change update locationId 
-                    input.onChange = (e, values) => {
-                        const identity = values[inputNames.identity]
-                        const { locationId } = identity && getIdentity(identity) || {}
-                        if (!identity || !locationId) return
+        findInput(inputs, inputNames.identity).onChange = (e, values) => {
+            const identity = values[inputNames.identity]
+            const { locationId } = identity && getIdentity(identity) || {}
+            if (!identity || !locationId) return
 
-                        const { rxValue } = findInput(inputs, inputNames.locationId) || {}
-                        rxValue && rxValue.next(locationId)
-                    }
-                    break
-            }
-        })
-        return fillValues([...inputs, ...props.inputs || []], props.values)
+            const { rxValue } = findInput(inputs, inputNames.locationId) || {}
+            rxValue && rxValue.next(locationId)
+        }
+        fillValues(inputs, props.values)
+
+        return {
+            inputs,
+            onSubmit: handleSubmitCb(rxSetState, props),
+        }
     })
 
-    useEffect(() => {
-        setStateOrg.mounted = true
-        // no need to check KYC status if form is in view only mode
-        const checkStatus = props.submitText !== null
-        setState({
-            loading: checkStatus,
-            onSubmit: handleSubmitCb(props, setState),
-        })
+    // no need to check KYC status if form is in view only mode
+    props.submitText !== null && useEffect(() => {
+        setState({ loading: true })
         // on-load check if user has already submitted KYC
-        if (checkStatus) {
-            client.crowdsaleKYC.promise(true)
-                .then(kycDone => {
-                    setState({
-                        loading: false,
-                        inputsDisabled: kycDone
-                            ? Object.values(inputNames)
-                            : props.inputsDisabled,
-                        message: !kycDone
-                            ? null
-                            : {
-                                header: textsCap.kycDoneMsg,
-                                icon: true,
-                                status: 'error',
-                            },
-                        submitDisabled: !!kycDone,
-                    })
-                    return
-                })
-                .catch(err => setState({
+        client.crowdsaleKYC.promise(true)
+            .then(kycDone => {
+                setState({
                     loading: false,
-                    message: {
-                        content: `${err}`,
-                        icon: true,
-                        status: 'error',
-                    },
-                }))
-        }
-        return () => setStateOrg.mounted = false
-    }, [setStateOrg])
+                    inputsDisabled: kycDone
+                        ? Object.values(inputNames)
+                        : props.inputsDisabled,
+                    message: !kycDone
+                        ? null
+                        : {
+                            header: textsCap.kycDoneMsg,
+                            icon: true,
+                            status: 'error',
+                        },
+                    submitDisabled: !!kycDone,
+                })
+                return
+            })
+            .catch(err => setState({
+                loading: false,
+                message: {
+                    content: `${err}`,
+                    icon: true,
+                    status: 'error',
+                },
+            }))
+    }, [])
 
-    return <FormBuilder {...{ ...props, ...state, inputs }} />
+    return <FormBuilder {...{ ...props, ...state }} />
 }
 KYCForm.propTypes = {
     values: PropTypes.object,
@@ -138,8 +124,8 @@ KYCForm.defaultProps = {
 }
 
 
-const handleSubmitCb = (props, setState) => async (_, values) => {
-    const { onSubmit } = props || {}
+const handleSubmitCb = (rxSetState, props = {}) => async (_, values) => {
+    const { onSubmit } = props
     const locationId = values[inputNames.locationId]
     const location = getLocation(locationId)
     let blockchains = values[inputNames.blockchains]
@@ -161,9 +147,9 @@ const handleSubmitCb = (props, setState) => async (_, values) => {
     })
 
     try {
-        setState({ loading: true, message: null })
+        rxSetState.next({ loading: true, message: null })
         const ok = await confirmSubmit()
-        if (!ok) return setState({ loading: false })
+        if (!ok) return rxSetState.next({ loading: false })
 
         // save crowdsale data to localStorage
         crowdsaleData(objWithoutKeys(values, [inputNames.blockchains]))
@@ -195,7 +181,7 @@ const handleSubmitCb = (props, setState) => async (_, values) => {
         }
     }
 
-    setState(newState)
+    rxSetState.next(newState)
 
     isFn(onSubmit) && onSubmit(newState.success, values)
 }
@@ -213,6 +199,7 @@ const getLocationOptions = locationsMap => Array.from(locationsMap)
     })
 
 export const getInputs = () => {
+    const rxLocationId = new BehaviorSubject('')
     const daaInputs = getDAAInputs()
     const blockchainOptions = (findInput(daaInputs, daaInputNames.blockchain) || { options: [] })
         .options
@@ -222,7 +209,9 @@ export const getInputs = () => {
         <Button {...{
             as: 'a', // prevents form being submitted unexpectedly
             icon: 'plus',
-            onClick: () => showForm(LocationForm, { closeOnSubmit: false }),
+            onClick: () => showForm(LocationForm, {
+                onSubmit: (ok, _, locationId) => ok && rxLocationId.next(locationId)
+            }),
             size: 'mini',
             style: { padding: 3 },
             title: textsCap.locationIdCreateTittle,
@@ -254,33 +243,12 @@ export const getInputs = () => {
             search: ['text', 'value', 'description'],
             selection: true,
             type: 'dropdown',
-            // validate: (_, { value: address }, v, rxValue) => {
-            //     const { locationId } = address && getIdentity(address) || {}
-            //     if (!address || locationId) return false
-            //     const updateBtn = (
-            //         <Button {...{
-            //             basic: true,
-            //             icon: 'pencil',
-            //             content: textsCap.updateIdentity,
-            //             onClick: e => e.preventDefault() | showForm(IdentityForm, {
-            //                 // force re-validate
-            //                 onSubmit: ok => ok && rxValue && rxValue.next(address),
-            //                 values: { address },
-            //             }),
-            //             size: 'tiny'
-            //         }} />
-            //     )
-            //     return (
-            //         <div>
-            //             {textsCap.identityErrorLocation}
-            //             <div>{updateBtn}</div>
-            //         </div>
-            //     )
-            // },
         },
         {
-            name: 'names',
+            name: inputNames.namesGroup,
             type: 'group',
+            unstackable: true,
+            widths: 'equal',
             inputs: [
                 {
                     label: textsCap.givenNameLabel,
@@ -322,7 +290,7 @@ export const getInputs = () => {
             // update options whenever locations list changes
             rxOptions: rxLocations,
             rxOptionsModifier: getLocationOptions,
-            rxValue: new BehaviorSubject(),
+            rxValue: rxLocationId,
             search: true,
             selection: true,
             type: 'dropdown',
@@ -348,7 +316,7 @@ export const getInputs = () => {
             },
         {
             ...ethAddressIn,
-            // hide if ETH not selected
+            // hide if ETH not
             hidden: values => !(values[inputNames.blockchains] || []).includes('ETH')
         },
     ]

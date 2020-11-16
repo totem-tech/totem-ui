@@ -166,7 +166,7 @@ export default class IdentityForm extends Component {
                             <Button {...{
                                 as: 'a', // prevents form being submitted unexpectedly
                                 icon: 'plus',
-                                onClick: () => showForm(LocationForm),
+                                onClick: () => showForm(LocationForm, { onSubmit: this.handleLocationCreate }),
                                 size: 'mini',
                                 style: { padding: 3 },
                                 title: textsCap.locationIdCreateTittle,
@@ -226,13 +226,11 @@ export default class IdentityForm extends Component {
         if (!success) return
         const { inputs } = this.state
         const locationIdIn = findInput(inputs, inputNames.locationId)
-        locationIdIn.options = this.getLocationOptions()
         locationIdIn.rxValue.next(id)
-        this.setState({ inputs })
     }
 
     handleRestoreChange = (_, values) => {
-        const { header, inputs } = this.state
+        const { inputs } = this.state
         const restore = values[inputNames.restore]
         const uriInput = findInput(inputs, inputNames.uri)
         uriInput.action = restore ? undefined : this.generateBtn

@@ -243,6 +243,9 @@ body:not(.mobile) .ui.sidebar.left.wide {
 .ui.menu .ui.dropdown .menu>.item .icon:not(.dropdown).no-margin {
   margin: 0 !important;
 }
+.clickable {
+	cursor: pointer;
+}
 .blink {
   animation: blinker 1s linear infinite;
 }
@@ -331,8 +334,8 @@ form.ui.form div.field > label {
 .ui.form .fields.form-group > .field > .field {
     padding: 0;
 }
-body.mobile .form-group > .field:not(:last-child) {
-    padding-bottom: 15px;
+body.mobile .fields.form-group > .field:not(:last-child) {
+    margin-bottom: 10px;
 }
 /* hide if no children */
 .form-group:empty {
@@ -343,11 +346,15 @@ body.mobile .form-group > .field:not(:last-child) {
     box-shadow: 1px 3px 3px 0 rgba(34,36,38,.15), 1px 3px 15px 2px rgba(34,36,38,.15);
 }
 /* secondary form inside accordion */
-.ui.form > .accordion .ui.form > .field {
+.ui.form > .accordion .ui.form > .field,
+.ui.form .accordion .ui.form > .fields > .field {
     margin-bottom: 10px;
 }
 .ui.form > .accordion .ui.form > .fields {
     margin: 0 0 10px;
+}
+.ui.form .fields.equal.width .field:not(.width) {
+	width: initial;
 }
 /* checkbox/radios: bold text when checked */
 input:checked~label {
@@ -368,6 +375,9 @@ input[readonly] {
 
 .ui.modal > .header {
 	text-transform: capitalize;
+}
+.ui.modal > .header > .sub {
+	text-transform: initial;
 }
 body.mobile .ui.modal {
     bottom: 0;
@@ -422,6 +432,9 @@ body.inverted #main-content .inverted,
 body.inverted .accordion {
     background: #464646;
 	color: white;
+}
+body.inverted #main-content .icon.inverted {
+	background: inherit;
 }
 /* Chat */
 body.inverted .chat-container{
@@ -481,11 +494,16 @@ body.inverted .ui.checkbox input:focus+label.checkbox-group-item {
 }
 
 /* Semantic UI Steps (no built-in inverted!!)*/
-body.inverted .ui.ordered.steps * {
+body.inverted .ui.steps .step,
+body.inverted .ui.ordered.steps .step {
     background: #4c4c4c;
     color: white;
     transition: none;
 }
+body.inverted .ui.steps .step.active,
+body.inverted .ui.steps .step.active *,
+body.inverted .ui.steps .step:hover,
+body.inverted .ui.steps .step:hover *,
 body.inverted .ui.ordered.steps .step.active,
 body.inverted .ui.ordered.steps .step.active *,
 body.inverted .ui.ordered.steps .step:hover,

@@ -147,7 +147,7 @@ export default class Transfer extends Component {
                         },
                         {
                             // mimics a `selection` dropdown without limitting the width of the dropdown list
-                            className: 'button fluid',
+                            className: 'selection fluid',
                             disabled: true,
                             label: textsCap.currencySentLabel,
                             name: this.names.currencySent,
@@ -191,7 +191,8 @@ export default class Transfer extends Component {
                         },
                         {
                             // mimics a `selection` dropdown without limitting the width of the dropdown list
-                            className: 'button fluid',
+                            className: 'selection fluid',
+                            direction: 'left',
                             label: textsCap.currencyReceivedLabel,
                             name: this.names.currencyReceived,
                             onChange: this.handleCurrencyReceivedChange,

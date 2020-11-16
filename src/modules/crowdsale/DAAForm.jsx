@@ -1,9 +1,9 @@
-import React, { useEffect, useReducer, useState } from 'react'
+import React, { useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
+import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
-import { reducer } from '../../services/react'
+import { iUseReducer } from '../../services/react'
 import client from '../chat/ChatClient'
 import { isFn } from '../../utils/utils'
 import { crowdsaleData } from './crowdsale'
@@ -27,16 +27,14 @@ export const inputNames = {
 }
 
 export default function DAAForm(props = {}) {
-    const [state, setStateOrg] = useReducer(reducer, { message: props.message })
-    const [setState] = useState(() => (...args) => setState.mounted && setStateOrg(...args))
-    const [inputs] = useState(() => fillValues(getInputs(), props.values, true))
+    const [state, setState] = iUseReducer(null, rxSetState => ({
+        inputs: fillValues(getInputs(), props.values, true),
+        message: props.message,
+        onSubmit: handleSubmitCb(rxSetState, props),
+    }))
 
     useEffect(() => {
-        setState.mounted = true
-        setState({
-            loading: true,
-            onSubmit: handleSubmitCb(setState, props),
-        })
+        setState({ loading: true })
         client.crowdsaleKYC
             .promise(true)
             .then(kycDone => {
@@ -55,10 +53,9 @@ export default function DAAForm(props = {}) {
             })
             // ignore error | should not occur
             .catch(console.log)
-        return () => setState.mounted = false
-    }, [setState])
+    }, [])
 
-    return <FormBuilder {...{ ...props, ...state, inputs }} />
+    return <FormBuilder {...{ ...props, ...state }} />
 }
 DAAForm.propTypes = {
     values: PropTypes.object,
@@ -69,12 +66,12 @@ DAAForm.defaultProps = {
     size: 'tiny',
 }
 
-const handleSubmitCb = (setState, props) => async (_, values) => {
+const handleSubmitCb = (rxSetState, props) => async (_, values) => {
     const { onSubmit } = props
     const blockchain = values[inputNames.blockchain]
     const isETH =  blockchain === 'ETH'
     const newState = { loading: true, message: null, success: false }
-    setState(newState)
+    rxSetState.next(newState)
     
     try {
         const address = await client.crowdsaleDAA.promise(
@@ -102,7 +99,7 @@ const handleSubmitCb = (setState, props) => async (_, values) => {
         }
     }
     newState.loading = false
-    setState(newState)
+    rxSetState.next(newState)
     isFn(onSubmit) && onSubmit(newState.success, values)
 }
 

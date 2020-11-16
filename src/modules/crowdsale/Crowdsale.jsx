@@ -1,27 +1,34 @@
 import React, { useEffect, useReducer, useState } from 'react'
 import { Button, Icon, Step } from 'semantic-ui-react'
 import DataTable from '../../components/DataTable'
-import { Message } from '../../components/Message'
+import Text from '../../components/Text'
+import Message from '../../components/Message'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
-import { reducer, useRxSubject } from '../../services/react'
+import { iUseReducer, reducer, useRxSubject } from '../../services/react'
+import { MOBILE, rxLayout } from '../../services/window'
 import { copyToClipboard } from '../../utils/utils'
-import client, { getUser, rxIsLoggedIn, rxIsRegistered } from '../chat/ChatClient'
+import client, { rxIsLoggedIn, rxIsRegistered } from '../chat/ChatClient'
 import RegistrationForm from '../chat/RegistrationForm'
-import { crowdsaleData, rxCrowdsaleData } from './crowdsale'
+import { BLOCKCHAINS, crowdsaleData, rxCrowdsaleData } from './crowdsale'
 import DAAForm from './DAAForm'
 import KYCForm from './KYCForm'
 import KYCViewForm from './KYCViewForm'
+import CalculatorForm from './CalculatorForm'
+// import Invertible from '../../components/Invertible'
 
 const textsCap = translated({
+    achieved: 'achieved!',
     amountDeposited: 'amount deposited',
     blockchain: 'blockchain',
+    calculator: 'calculator',
     checkDepositStatus: 'check deposit status',
     despositAddress: 'pay to address',
     level: 'level',
     loadingMsg: 'loading',
     loginRequired: 'you must be logged in and online to access this section',
-    multiplierAchieved: 'multiplier achieved!',
+    multiplierLevel: 'multiplier level',
+    multiplierHighest: 'highest multiplier level',
     registrationRequired: 'please complete the getting started steps',
     requestBtnTxt: 'request address',
     successMsg: `
@@ -42,31 +49,24 @@ const textsCap = translated({
     viewCrowdsaleData: 'view crowdsale data',
     viewNotes: 'view notes',
 }, true)[1]
-const BLOCKCHAINS = {
-    BTC: 'Bitcoin',
-    DOT: 'Polkadot',
-    ETH: 'Ethereum',
-}
+
 
 export default function () {
     const [data] = useRxSubject(rxCrowdsaleData, generateTableData)
     const [isRegistered] = useRxSubject(rxIsRegistered)
     const [isLoggedIn] = useRxSubject(rxIsLoggedIn)
-    const [state, setStateOrg] = useReducer(reducer, {
+    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+    const [state, setState] = iUseReducer(reducer, {
         ...getTableProps(),
         blockchains: [],
-        data: [],
         depositAddresses: [],
         kycDone: false,
-        loading: false,
+        loading: true,
         multiplierLevel: 1,
     })
-    const [setState] = useState(() => (...args) => setStateOrg.mounted && setStateOrg(...args))
 
     useEffect(() => {
-        setStateOrg.mounted = true
         isLoggedIn && !state.kycDone && setTimeout(async () => {
-            setState({ loading: true })
             let newState = { message: null}
             await client.crowdsaleKYC
                 .promise(true)
@@ -78,16 +78,10 @@ export default function () {
                         status: 'error',
                     }
                 })
-                .finally(() => setState({
-                    ...newState,
-                    // data: generateTableData(),
-                    loading: false,
-                    steps: getSteps(),
-                }))
+                .finally(() => setState({ ...newState, loading: false }))
         })
-            
-        return () => setStateOrg.mounted = false
-    }, [setState, isLoggedIn])
+        
+    }, [isLoggedIn])
 
     if (!isRegistered) return getInlineForm(RegistrationForm, {})
     if (!isLoggedIn || state.loading) {
@@ -110,52 +104,20 @@ export default function () {
         onSubmit: kycDone => {
             if (!kycDone) return
             setState({ kycDone })
-            // generateTableData(setState)
             showNotes()
         },
         style: { maxWidth: 400 },
     })
     
+    const steps = getSteps(
+        state.multiplierLevel,
+        99999,
+        isMobile,
+    )
     return (
         <div>
-            <Step.Group fluid>
-                {state.steps.map((step, i) => {
-                    step = {...step}
-                    const { description, icon, title } = step
-                    const active = state.multiplierLevel === i
-                    const disabled = state.multiplierLevel < i
-                    step.description = (
-                        <div>
-                            {description}
-                            <div>
-                                <h4 style={{ color: 'grey', margin: 0 }}>
-                                    You contributed value equivalent to 99999 XTX
-                                </h4>
-                                <h3 style={{ margin: 0 }}>
-                                    Your total crowdsale allocation will be 99999 XTX
-                                </h3>
-                                <h4 style={{ color: 'grey', margin: 0 }}>
-                                    Contribution required to reach next level: 99999 XTX
-                                </h4>
-                            </div>
-                        </div>
-                    )
-                    step.title = <h2 className='title' style={{ fontSize: '150%'}}>{title}</h2>
-                    return (
-                        <Step {...{
-                            ...(active ? step : { icon }),
-                            active,
-                            // completed,
-                            disabled,
-                            key: i,
-                        }} />
-                    )
-                })}
-            </Step.Group>
-            <DataTable {...{
-                ...state,
-                data,
-            }} />
+            <Step.Group fluid stackable='tablet' items={steps}/>
+            <DataTable {...{ ...state, data }} />
         </div>
     )
 }
@@ -170,33 +132,96 @@ const getInlineForm = (Form, props) => (
     </div>
 )
 
-const getSteps = () => [
-    {
-        icon: 'chess pawn',
-        // description: 'You have not made any deposits yet.',
-        title: 'Multiplier Level 0',
-    },
-    {
-        icon: 'chess knight',
-        // description: 'Choose your shipping options',
-        title: 'Multiplier Level 1 Achieved!',
-    },
-    {
-        icon: 'chess bishop',
-        // description: 'Choose your shipping options',
-        title: 'Multiplier Level 2',
-    },
-    {
-        icon: 'chess queen',
-        // description: 'Choose your shipping options',
-        title: 'Multiplier Level 3',
-    },
-    // {
-    //     icon: 'truck',
-    //     description: 'Choose your shipping options',
-    //     title: 'Shipping',
-    // },
-]
+const getSteps = (currentLevel = 0, totalContributedXTX, isMobile = false) => { 
+    currentLevel = 1
+    const lastLevel = 8
+    const maxLevels = 3
+    const xtxToNextLevel = 9999 // to be calcualated
+    let showIndicator = false
+    let startLevel = currentLevel + maxLevels - 1 > lastLevel
+        ? lastLevel - maxLevels + 1
+        : currentLevel
+    
+    // const levelIcons = [
+    //     'user outline',
+    //     'chess pawn',
+    //     'chess knight',
+    //     'chess bishop',
+    //     'chess bishop',
+    //     'chess rook',
+    //     'chess rook',
+    //     'chess queen',
+    //     'chess king',
+    // ]
+
+    const indexes = new Array(maxLevels)
+        .fill(0)
+        .map((_, i) => i + startLevel)
+
+    if (!indexes.includes(lastLevel)) {
+        showIndicator = true
+        indexes[indexes.length - 1] = lastLevel
+    }
+
+    return indexes.map(level => {
+        const isCurrent = level === currentLevel
+        const isLast = currentLevel === lastLevel && level === lastLevel
+        const isLevel0 = level === 0
+        return {
+            active: level === currentLevel,
+            disabled: !isCurrent,
+            level,
+            // icon: <Invertible {...{ El: Icon, name: levelIcons[index] }} />,
+            key: level,
+            title: isCurrent && (
+                <h1>
+                    {isLast
+                        ? textsCap.multiplierHighest
+                        : `${textsCap.multiplierLevel} ${level}`
+                    }
+                    {level > 0 && ' ' + textsCap.achieved}
+                </h1>
+            ),
+            description: (
+                <div>
+                    {!isCurrent && (
+                        <h1 style={styles.stepIndex}>
+                            {textsCap.level} {level}
+                        </h1>
+                    )}
+                    {isCurrent && (
+                        <div>
+                            {!isLevel0 && (
+                                <h4 style={styles.stepHeader4}>
+                                    {'You contributed value equivalent to 99999 XTX'}
+                                </h4>
+                            )}
+                            {!isLevel0 && (
+                                <Text {...{
+                                    children: 'Your total crowdsale allocation will be 99999 XTX',
+                                    El: 'h3',
+                                    style: styles.stepHeader3,
+                                }} />
+                            )}
+                            <h4 style={styles.stepHeader4}>
+                                {isLast
+                                    ? `Yeey! You have reached the last level. Contact us for a special bonus if you would like to invest more than 9999999999 XTX!`
+                                    : `Contribution required to reach next level: 99999 XTX`
+                                }
+                            </h4>
+                        </div>
+                    )}
+                    {showIndicator && level === lastLevel && (
+                        <div style={{
+                            ...styles.lastLevelIndicator,
+                            ...(isMobile ? styles.lastLevelIndicatorMobile : {})
+                        }}>~</div>
+                    )}
+                </div>
+            ),
+        }
+    })
+}
 
 const getTableProps = () => ({
     columns: [
@@ -228,21 +253,18 @@ const getTableProps = () => ({
         {
             content: textsCap.viewCrowdsaleData,
             icon: 'eye',
-            onClick: () => {
-                showForm(KYCViewForm)
-                // const values = crowdsaleData() || {}
-                // showForm(KYCForm, {
-                //     inputsDisabled: Object.values(kycInputNames),
-                //     submitText: null,
-                //     values,
-                // })
-            },
+            onClick: () => showForm(KYCViewForm),
         },
         {
             content: textsCap.checkDepositStatus,
             icon: 'find',
             onClick: () => alert('To be implemented')
         },
+        {
+            content: textsCap.calculator,
+            icon: 'calculator',
+            onClick: () => showForm(CalculatorForm)
+        }
     ],
 })
 
@@ -263,16 +285,14 @@ const generateTableData = (csData) => {
             return [
                 blockchain,
                 {
-                    address: !hasAddress
-                        ? ''
-                        : (
-                            <div {...{
-                                onClick: () => copyToClipboard(depositAddresses[blockchain]),
-                                style: { cursor: 'pointer' },
-                            }}>
-                                {depositAddresses[blockchain]} <Icon name='copy outline' />
-                            </div>
-                        ),
+                    address: hasAddress && (
+                        <div {...{
+                            onClick: () => copyToClipboard(depositAddresses[blockchain]),
+                            style: { cursor: 'pointer' },
+                        }}>
+                            {depositAddresses[blockchain]} <Icon name='copy outline' />
+                        </div>
+                    ) || '',
                     blockchain,
                     blockchainName: BLOCKCHAINS[blockchain],
                     amount: undefined,
@@ -303,3 +323,28 @@ const showNotes = () => confirm({
         </div>
     )
 })
+
+const styles = {
+    lastLevelIndicator: {
+        position: 'absolute',
+        left: -9,
+        top: '43%',
+        zIndex: 9999,
+        fontSize: '200%',
+    },
+    lastLevelIndicatorMobile: {
+        left: '48%',
+        top: -9,
+        transform: 'rotate(-90deg)',
+    },
+    stepHeader3: { margin: 0 },
+    stepHeader4: { color: 'grey', margin: 0 },
+    stepIndex: {
+        fontSize: '300%',
+        margin: 0,
+    },
+    stepTitle: {
+        fontSize: '150%',
+        textTransform: 'capitalize',
+    },
+}

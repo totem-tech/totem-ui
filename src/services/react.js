@@ -1,10 +1,54 @@
 // placeholder for reusable React utility functions that doesn't doesn't specifically fit anywhere else
-import { useState, useEffect } from "react"
-import { BehaviorSubject } from 'rxjs'
+import { useEffect, useReducer, useState } from "react"
+import { BehaviorSubject,  Subject } from 'rxjs'
 import PromisE from "../utils/PromisE"
 import { isFn, isSubjectLike } from "../utils/utils"
 
-// for use with useReducer hook on a functional component to imitate the behaviour of `setState()` of a class component
+/**
+ * @name    iUseReducer
+ * @summary A sugar for React `userReducer` with added benefit of tracking of component mounted status.
+ *          Prevents state update if component is not mounted.
+ * 
+ * @param   {Function}          reducerFn       if falsy, will use `reducer` function
+ * @param   {Object|Function}   initialState    if function, a RxJS Subject will be supplied as argument 
+ *                                              as an alternative to setState
+ * 
+ * @returns {Array}     [@state {Object}, @setState {Function}]
+ */
+export const iUseReducer = (reducerFn, initialState = {}) => {
+    const [rxSetState] = useState(() => isFn(initialState) && new Subject())
+    const [state, setStateOrg] = useReducer(
+        reducerFn || reducer,
+        !rxSetState
+            ? initialState
+            : initialState(rxSetState),
+    )
+    const setState = (...args) => setStateOrg.mounted && setStateOrg(...args)
+
+    useEffect(() => {
+        setStateOrg.mounted = true
+        const subscription = rxSetState && rxSetState.subscribe(newState =>
+            setStateOrg.mounted && setStateOrg(newState)
+        )
+
+        return () => {
+            setStateOrg.mounted = false
+            subscription && subscription.unsubscribe()
+        }
+    }, [setStateOrg, rxSetState])
+
+    return [state, setState]
+}
+
+/**
+ * @name    reducer
+ * @summary simple reducer to mimic Class component setState behavior
+ * 
+ * @param   {Object}    state 
+ * @param   {Object}    newValue 
+ * 
+ * @returns {Object}
+ */
 export const reducer = (state = {}, newValue = {}) => ({ ...state, ...newValue })
 
 /**
@@ -40,6 +84,38 @@ export const unsubscribe = (subscriptions = {}) => Object.values(subscriptions).
  */
 export const useRxSubject = (subject, valueModifier, initialValue, allowSubjectUpdate = false) => {
     if (!isSubjectLike(subject)) return subject
+
+    const v = subject instanceof BehaviorSubject ? subject.value : initialValue
+    let firstValue = !isFn(valueModifier) ? v : valueModifier(v)
+    const [{ value }, setState] = iUseReducer(reducer, { value : firstValue})
+    const setValue = newValue => !allowSubjectUpdate
+            ? setState({ value: newValue })
+            : subject.next(newValue)
+
+    useEffect(() => {
+        let ignoreFirst = subject instanceof BehaviorSubject ? false : true
+        const subscribed = subject.subscribe((newValue) => {
+            if (!ignoreFirst) {
+                ignoreFirst = true
+                if (firstValue === newValue) return
+            }
+            if (!isFn(valueModifier)) return setState({ value: newValue })
+
+            PromisE(valueModifier(newValue)).then(newValue => {
+                if (newValue === useRxSubject.IGNORE_UPDATE) return
+                setState({ value: newValue })
+            })
+        })
+        return () => subscribed.unsubscribe()
+    }, [])
+
+    return [ value, setValue ]
+}
+// To prevent an update return this in valueModifier
+useRxSubject.IGNORE_UPDATE = Symbol('ignore-rx-subject-update')
+/*
+export const useRxSubject = (subject, valueModifier, initialValue, allowSubjectUpdate = false) => {
+    if (!isSubjectLike(subject)) return subject
     const v = subject instanceof BehaviorSubject ? subject.value : initialValue
     let firstValue = !isFn(valueModifier) ? v : valueModifier(v)
     const [value, setValue] = useState(firstValue)
@@ -66,6 +142,4 @@ export const useRxSubject = (subject, valueModifier, initialValue, allowSubjectU
     }, [])
 
     return [ value, valueSetter ]
-}
-// return this in onBeforeSetValue
-useRxSubject.IGNORE_UPDATE = Symbol('ignore-rx-subject-update')
+}*/

@@ -147,14 +147,13 @@ export default class FormBuilder extends Component {
 			header,
 			headerIcon,
 			hideFooter,
-			inputs,
+			inputs = [],
 			loading,
 			message: msg,
 			modal,
 			modalId,
 			onClose,
 			onOpen,
-			onSubmit,
 			open,
 			size,
 			style,
@@ -354,6 +353,7 @@ FormBuilder.defaultProps = {
 		// see https://react.semantic-ui.com/collections/message/ for more options
 	},
 	submitText: textsCap.submit,
+	size: 'tiny',
 }
 
 /**

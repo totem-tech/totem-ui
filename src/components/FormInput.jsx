@@ -14,6 +14,7 @@ import DateInput from './DateInput'
 //
 import { translated } from '../services/language'
 import { unsubscribe } from '../services/react'
+import { MOBILE, rxLayout } from '../services/window'
 
 const textsCap = translated({
 	decimals: 'maximum number of decimals allowed',
@@ -44,6 +45,7 @@ const NON_ATTRIBUTES = Object.freeze([
 	'invalid',
 	'_invalid',
 	'inlineLabel',
+	'isMobile',
 	'label',
 	'labelDetails',
 	'trueValue',
@@ -299,7 +301,18 @@ export class FormInput extends Component {
 			case 'group':
 				// NB: if `widths` property is used `unstackable` property is ignored by Semantic UI!!!
 				isGroup = true
-				inputEl = attrs.inputs.map((props, i) => <FormInput key={attrs.name + i} {...props} />)
+				const numChild = attrs.inputs.filter(({ hidden }) => !hidden).length
+				const childContainerStyle = attrs.widths !== 'equal'
+					? {}
+					: { width: `${100 / numChild}%` }
+				inputEl = attrs.inputs.map(childInput =>  (
+					<FormInput {...{
+						...childInput,
+						key: childInput.name,
+						styleContainer: { ...childContainerStyle, ...childInput.styleContainer },
+						width: childInput.width || (attrs.widths === 'equal' ? null : attrs.widths),
+					}} />
+				))
 				break
 			case 'hidden':
 				hideLabel = true
@@ -324,18 +337,22 @@ export class FormInput extends Component {
 		}
 
 		if (!isGroup) return (
-			<Form.Field
-				error={(message && message.status === 'error') || !!error || !!invalid}
-				required={required}
-				style={styleContainer}
-				title={editable ? undefined : textsCap.readOnlyField}
-				width={width}
-			>
+			<Form.Field {...{
+				error: (message && message.status === 'error') || !!error || !!invalid,
+				required,
+				style: styleContainer,
+				title: editable ? undefined : textsCap.readOnlyField,
+				width: width === null ? undefined : width,
+			}}>
 				{!hideLabel && label && [
 					<label htmlFor={name} key='label'>{label}</label>,
 					labelDetails && (
-						<div key='labelDetails' style={{ lineHeight: '15px', margin: '-5px 0 8px 0' }}>
-						<small>{labelDetails}</small>
+						<div
+							key='labelDetails'
+							style={{ lineHeight: '15px', margin: '-5px 0 8px 0' }}>
+							<small style={{ color: 'grey' }}>
+								{labelDetails}
+							</small>
 						</div>
 					)
 				]}
@@ -347,10 +364,10 @@ export class FormInput extends Component {
 		let groupEl = (
 			<React.Fragment>
 				<Form.Group {...{
+					...attrs,
 					className: 'form-group',
 					...objWithoutKeys(attrs, ['inputs']),
 					style: {
-						// margin: '0px -5px 15px -5px',
 						...styleContainer,
 						...attrs.style,
 					},
