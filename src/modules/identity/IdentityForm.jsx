@@ -212,10 +212,10 @@ export default class IdentityForm extends Component {
 
     handleChange = (...args) => {
         const { autoSave, onChange } = this.props
-        const values = args[1]
+        const [_, values, invalid] = args
         this.values = values
         isFn(onChange) && onChange(...args)
-        if (!autoSave || !this.doUpdate) return
+        if (invalid || !autoSave || !this.doUpdate) return
 
         // prevent saving if one or more fields are empty
         if (!objHasKeys(values, Object.keys(requiredFields), true)) return
