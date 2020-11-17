@@ -330,7 +330,7 @@ export default class Transfer extends Component {
             currencyReceived,
             currencyDefault,
         )
-        this.amountXTX = res[0]
+        this.amountXTX = eval(res[1] || '') || 0
         const resAmountSent = await convertTo(
             this.amountXTX,
             currencyDefault,

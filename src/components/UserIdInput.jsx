@@ -239,16 +239,11 @@ export default class UserIdInput extends Component {
 
     handleSearchChange = (_, { searchQuery: s }) => this.setState({ searchQuery: getRawUserID(s) })
 
-    validateTextField = async (e, data) => {
-        const { newUser } = this.props
-        const { value } = data
+    validateTextField = async (e, { value }) => {
         if (!value) return
-        try {
-            const exists = await client.idExists.promise(getRawUserID(value))
-            return newUser ? exists : !exists
-        } catch (err) {
-            return err
-        }
+        const { newUser } = this.props
+        const exists = await client.idExists.promise(getRawUserID(value))
+        return newUser ? exists : !exists
     }
 
     render() {
