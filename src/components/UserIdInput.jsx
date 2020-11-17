@@ -34,6 +34,8 @@ const noAttrsTextField = [
     'allowAdditions',
     'clearable',
 ]
+const MAX_LENGTH = 16
+const MIN_LENGTH = 3
 const invalidIcon = { color: 'red', name: 'warning circle', size: 'large' }
 const validIcon = { color: 'green', name: 'check circle', size: 'large' }
 const userIdRegex = /^[a-z][a-z0-9]+$/
@@ -47,48 +49,56 @@ export default class UserIdInput extends Component {
         let {
             allowAdditions,
             clearable,
+            excludeOwnId,
             includePartners,
             includeFromChat,
             multiple,
             options,
             placeholder,
+            reject = [],
             rxValue,
             searchQuery,
             value,
         } = props
         placeholder = placeholder || textsCap.enterUserId
         rxValue = rxValue || new BehaviorSubject(value || (multiple ? [] : ''))
-        let input = {
-            defer: null,
-            inlineLabel: { icon: { className: 'no-margin', name: 'at' } },
-            labelPosition: 'left',
-            maxLength: 16,
-            placeholder,
-            rxValue,
-            type: 'text',
-            validate: this.validateTextField,
-            useInput: true,
-        }
-
-        // use dropdown
-        if (multiple || includeFromChat || includePartners || options) input = {
-            additionLabel: `${textsCap.add} @`,
-            allowAdditions,
-            clearable,
-            multiple: multiple,
-            noResultsMessage: textsCap.noResultsMessage,
-            onAddItem: this.handleAddUser,
-            onClose: () => this.setState({ open: false }),
-            onOpen: () => this.setState({ open: true }),
-            onSearchChange: this.handleSearchChange,
-            options: options || [],
-            placeholder,
-            rxValue,
-            search: true,
-            searchQuery,
-            selection: true,
-            type: 'dropdown',
-        }
+        const useDropwdown = multiple || includeFromChat || includePartners || options
+        const ownId = (getUser() || {}).id
+        let input = !useDropwdown
+            ? {
+                customMessages: {
+                    reject: textsCap.ownIdEntered,
+                },
+                inlineLabel: { icon: { className: 'no-margin', name: 'at' } },
+                labelPosition: 'left',
+                minLength: MIN_LENGTH,
+                maxLength: MAX_LENGTH,
+                placeholder,
+                regex: userIdRegex,
+                reject: [ excludeOwnId && ownId, ...reject ].filter(Boolean),
+                rxValue,
+                type: 'text',
+                validate: this.validateTextField,
+                useInput: true,
+            }
+            : {
+                additionLabel: `${textsCap.add} @`,
+                allowAdditions,
+                clearable,
+                multiple: multiple,
+                noResultsMessage: textsCap.noResultsMessage,
+                onAddItem: this.handleAddUser,
+                onClose: () => this.setState({ open: false }),
+                onOpen: () => this.setState({ open: true }),
+                onSearchChange: this.handleSearchChange,
+                options: options || [],
+                placeholder,
+                rxValue,
+                search: true,
+                searchQuery,
+                selection: true,
+                type: 'dropdown',
+            }
 
         this.state = {
             ...input,
@@ -211,13 +221,17 @@ export default class UserIdInput extends Component {
     handleChange = (e, data) => {
         const { onChange } = this.props
         const { type } = this.state
-        if (type !== 'dropdown') data.value = getRawUserID(data.value)
-        const { value } = data
+        const isDD = type == 'dropdown'
+        data.value = isDD ? data.value : getRawUserID(data.value)
+        const { invalid, value } = data
         const s = { value }
-        if (type === 'dropdown') {
-            // only for dropdown
+        this.invalid = invalid
+        // only for dropdown
+        if (isDD) {
             s.message = undefined
             s.searchQuery = ''
+        } else {
+            s.icon = !value ? undefined : (invalid ? invalidIcon : validIcon)
         }
         this.setState(s)
         isFn(onChange) && onChange(e, data)
@@ -225,49 +239,33 @@ export default class UserIdInput extends Component {
 
     handleSearchChange = (_, { searchQuery: s }) => this.setState({ searchQuery: getRawUserID(s) })
 
-    validateTextField = (e, data) => {
-        data.value = getRawUserID(data.value)
+    validateTextField = async (e, data) => {
+        const { newUser } = this.props
         const { value } = data
-        const { excludeOwnId, newUser, onChange } = this.props
-        const isOwnId = excludeOwnId && (getUser() || {}).id === value
-        // trigger a value change
-        const triggerChagne = invalid => {
-            this.setState({
-                icon: !value ? undefined : (invalid ? invalidIcon : validIcon),
-            })
-            isFn(onChange) && onChange(e, { ...data, invalid })
+        if (!value) return
+        try {
+            const exists = await client.idExists.promise(getRawUserID(value))
+            return newUser ? exists : !exists
+        } catch (err) {
+            return err
         }
-        if (isOwnId || value.length < 3) {
-            triggerChagne(true)
-            return isOwnId ? textsCap.ownIdEntered : true
-        }
-        if (!userIdRegex.test(value)) {
-            triggerChagne(true)
-            return true
-        }
-        client.idExists(value, (err, exists) => {
-            const invalid = err ? true : (
-                newUser ? exists : !exists
-            )
-            triggerChagne(invalid)
-        })
     }
 
     render() {
-        let { invalid, loading, options } = this.state
         const { multiple } = this.props
-        invalid = invalid || this.props.invalid
+        let { loading, options } = this.state
         loading = loading || this.props.loading
-        return <FormInput {...{
-            ...objWithoutKeys(
-                this.props,
-                !multiple ? noAttrsTextField : noAttrs
-            ),
-            ...this.state,
-            invalid,
-            loading,
-            options,
-        }} />
+        return (
+            <FormInput {...{
+                ...objWithoutKeys(
+                    this.props,
+                    !multiple ? noAttrsTextField : noAttrs
+                ),
+                ...this.state,
+                loading,
+                options,
+            }} />
+        )
     }
 }
 UserIdInput.propTypes = {

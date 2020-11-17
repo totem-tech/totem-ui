@@ -14,7 +14,6 @@ import DateInput from './DateInput'
 //
 import { translated } from '../services/language'
 import { unsubscribe } from '../services/react'
-import { MOBILE, rxLayout } from '../services/window'
 
 const textsCap = translated({
 	decimals: 'maximum number of decimals allowed',
@@ -156,9 +155,11 @@ export class FormInput extends Component {
 					validatorConfig = { type: TYPES.hex }
 				case 'text':
 				case 'textarea':
+				// default: 
 					validatorConfig = validatorConfig || { type: TYPES.string }
 					customMsgs.lengthMax = textsCap.maxLengthText
 					customMsgs.lengthMin = textsCap.minLengthText
+					break
 			}
 		}
 

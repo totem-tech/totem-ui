@@ -85,17 +85,19 @@ export default class FormBuilder extends Component {
 			const { name, onChange: onInputChange, onInvalid } = input
 			let { inputs } = this.props
 			let { values } = this.state
-			const { value } = data
-			input._invalid = data.invalid
+			const { invalid = false, value } = data
+			// for FormBuilder internal use
+			input._invalid = invalid
 			input.value = value
 			values = this.getValues(inputs, values, name, value)
 			this.setState({ message: null, values })
 
 			// trigger input `onchange` callback if valid, otherwise `onInvalid` callback
-			const fn = data.invalid ? onInvalid : onInputChange
+			const fn = invalid ? onInvalid : onInputChange
 			isFn(fn) && (await fn(event, values, index, childIndex))
 			// trigger form's onchange callback
-			isFn(formOnChange) && !data.invalid && (await formOnChange(event, values, index, childIndex))
+			isFn(formOnChange) && !invalid
+				&& await formOnChange(event, values, invalid)
 		} catch (err) {
 			console.error(err)
 			this.setState({

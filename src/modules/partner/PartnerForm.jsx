@@ -372,10 +372,10 @@ export default class PartnerForm extends Component {
         this.setState({ inputs })
     }
 
-    handleFormChange = (_, values) => {
+    handleFormChange = (_, values, invalid) => {
         this.setState({ values })
-        if (!this.props.autoSave) return
-        // prevent saving if 
+        if (!this.props.autoSave || invalid) return
+        // prevent saving if missing one or more requiredFields
         if (!objHasKeys(values, Object.keys(requiredFields), true)) return
         this.doUpdate && this.handleSubmit()
     }
