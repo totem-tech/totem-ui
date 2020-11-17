@@ -24,7 +24,7 @@ import { isBool, isBond } from '../utils/utils'
 // services
 import { translated } from './language'
 import storage from './storage'
-import { DESKTOP, getUrlParam, MOBILE, rxLayout, setClass } from './window'
+import { getUrlParam, MOBILE, rxLayout, setClass } from './window'
 
 const textsCap = translated({
     crowdsaleTitle: 'crowdsale',
@@ -163,12 +163,12 @@ export const sidebarItems = [
         name: gsName,
         title: textsCap.gettingStartedTitle,
     },
-    {
-        content: CrowdsaleView,
-        icon: '',
-        name: 'crowdsale',
-        title: textsCap.crowdsaleTitle,
-    },
+    // {
+    //     content: CrowdsaleView,
+    //     icon: '',
+    //     name: 'crowdsale',
+    //     title: textsCap.crowdsaleTitle,
+    // },
     {
         content: KeyRegistryPlayground,
         icon: 'play circle outline',

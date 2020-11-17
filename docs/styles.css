@@ -464,8 +464,7 @@ body.inverted .ui.modal .accordion > * {
 }
 body.inverted .ui.modal > .modal-close,
 body.inverted .ui.modal > .header,
-body.inverted .ui.modal > .actions,
-body.inverted .ui.modal > .message {
+body.inverted .ui.modal > .actions {
 	background: #2e2d2d;
 	border-radius: 0;
 	color: white;
