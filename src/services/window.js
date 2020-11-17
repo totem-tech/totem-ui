@@ -15,7 +15,7 @@ export const rxInverted = new BehaviorSubject(rw().inverted)
 export const rxLayout = new BehaviorSubject(getLayout())
 export const rxVisible = new BehaviorSubject(true)
 export const gridClasses = [
-    'col-1',
+    '',
     'col-2',
     'col-3',
     'col-4',
@@ -156,7 +156,7 @@ rxGridColumns.subscribe(numCol => {
     const el = document.getElementById('main-content')
     if (!el) return
     const next = gridClasses[numCol - 1]
-    el.classList.remove(...gridClasses.filter(c => c !== next))
+    el.classList.remove('simple-grid', ...gridClasses.filter(c => c && c !== next))
     next && el.classList.add('simple-grid', next)
 })
 export default {

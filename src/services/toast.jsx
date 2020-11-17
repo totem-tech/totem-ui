@@ -98,7 +98,7 @@ const styles = {
         overflowY: 'auto',
         paddingRight: 10,
         position: 'fixed',
-        right: 10, // TODO: use 15 when scrollbar visible
+        right: 0, // TODO: use 15 when scrollbar visible
         transition: 'all 0.5s ease',
         WebkitTransition: 'all 0.5s ease',
         top: 61,

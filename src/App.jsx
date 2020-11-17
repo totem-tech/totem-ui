@@ -74,6 +74,7 @@ export default function App() {
 		return () => { }
 	}, [])
 
+	const gridClass = gridClasses[rxGridColumns.value - 1]
 	return (
 		<div className='wrapper'>
 			<ErrorBoundary>
@@ -93,8 +94,8 @@ export default function App() {
 					as={Invertible.asCallback(Segment)}
 					className={className([
 						'main-content',
-						'simple-grid',
-						gridClasses[rxGridColumns.value - 1]
+						gridClass,
+						{ 'simple-grid': !!gridClass },
 					])}
 					dimmed={false}
 					id="main-content"
