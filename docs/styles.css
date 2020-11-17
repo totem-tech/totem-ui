@@ -168,7 +168,18 @@
 	width: 100%;
   	overflow: hidden;
 }
-body.mobile .pusher.main-content {
+#main-content {
+	border-radius: 0;
+	height: 100%;
+	margin: 0;
+	padding: 15px 15px 0;
+	overflow: hidden auto;
+	scroll-behavior: smooth;
+	transition: resize 0.3s ease;
+	--webkit-overflow: hidden auto;
+}
+body.mobile #main-content {
+	padding: 0;
   	margin: 0 !important;
   	overflow: auto !important;
 }
@@ -188,7 +199,7 @@ body.mobile .pushable {
   	display: none !important;
 }
 /* Fixes the dimmer height being limited due to the use of scrollbar */ 
-body.mobile.sidebar-visible .main-content:after {
+body.mobile.sidebar-visible #main-content:after {
 	position: fixed;
 	top: 0;
 	bottom: 0;
@@ -211,14 +222,14 @@ body.mobile.sidebar-visible .main-content:after {
   	display: none;
 }
 /* Main content width and positioning when sidebar is collapsed (icon-only mode) */
-body:not(.mobile) .ui.visible.left.sidebar.very.thin ~ .pusher.main-content {
+body:not(.mobile) .ui.visible.left.sidebar.very.thin ~ .pusher#main-content {
   -webkit-transform: translate3d(60px, 0, 0);
   transform: translate3d(60px, 0, 0);
   max-width: calc(100% - 60px) !important;
   margin-left: 0 !important;
   overflow: auto !important;
 }
-body:not(.mobile) .ui.visible.left.sidebar:not(.thin) ~ .pusher.main-content {
+body:not(.mobile) .ui.visible.left.sidebar:not(.thin) ~ .pusher#main-content {
   -webkit-transform: translate3d(300px, 0, 0);
   transform: translate3d(235px, 0, 0);
   max-width: calc(100% - 235px) !important;
@@ -234,7 +245,7 @@ body:not(.mobile) .ui.sidebar.left.wide {
   width: 62% !important;
   height: 100%;
 }
-.mobile .ui.visible.left.sidebar:not(.thin) ~ .pusher.main-content {
+.mobile .ui.visible.left.sidebar:not(.thin) ~ .pusher#main-content {
   transform: none !important;
   max-width: 100%;
 }
@@ -277,7 +288,29 @@ body:not(.mobile) .ui.sidebar.left.wide {
   100% { transform: translate(1px, -2px) rotate(0deg); }
 }
 
-
+/* Simple Grid View */
+.simple-grid,
+.simple-grid.col-1 {
+	display: grid;
+	grid-template-columns: repeat(1, 1fr);
+	grid-gap: 15px;
+	grid-auto-rows: auto;
+}
+.simple-grid.col-2 {
+	grid-template-columns: repeat(2, 1fr);
+}
+.simple-grid.col-3 {
+	grid-template-columns: repeat(3, 1fr);
+}
+.simple-grid.col-4 {
+	grid-template-columns: repeat(4, 1fr);
+}
+.simple-grid.col-5 {
+	grid-template-columns: repeat(5, 1fr);
+}
+.simple-grid.col-6 {
+	grid-template-columns: repeat(6, 1fr);
+}
 /* Prevents text selection. Useful for clickable icons */
 .text-deselect,
 i.icon {

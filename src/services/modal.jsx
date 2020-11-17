@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { render } from 'react-dom'
 import uuid from 'uuid'
 import { Confirm, Icon } from 'semantic-ui-react'
 import DataStorage from '../utils/DataStorage'
@@ -25,8 +26,8 @@ export const ModalsConainer = () => {
             setModalsArr(Array.from(map))
 
             // add/remove class to element to inticate at least one modal is open
-            const func = !!modals.size ? 'add' : 'remove'
-            // document.getElementById('app').classList[func]('modal-open')
+            const func = !!map.size ? 'add' : 'remove'
+            document.body.classList[func]('modal-open')
         })
         return () => {
             mounted = false
@@ -34,13 +35,9 @@ export const ModalsConainer = () => {
         }
     }, [])
 
-    return (
-        <div className="modal-service">
-            {modalsArr.map(([id, modalEl]) => (
-                <span {...{ key: id, id }}>{modalEl}</span>
-            ))}
-        </div>
-    )
+    return modalsArr.map(([id, modalEl]) => (
+        <span {...{ key: id, id }}>{modalEl}</span>
+    ))
 }
 
 const add = (id, element) => {
@@ -172,6 +169,9 @@ setTimeout(() => {
         fileName && console.log(e)
     }
 })
+
+const el = document.getElementById('modals-container')
+el && render(<ModalsConainer />, el)
 export default {
     closeModal,
     confirm,

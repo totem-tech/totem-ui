@@ -2,7 +2,7 @@ import React from 'react'
 import { render } from 'react-dom'
 import 'semantic-ui-css/semantic.min.css'
 import PromisE from './utils/PromisE'
-import { generateHash, isObj, isStr, objClean } from './utils/utils'
+import { isObj, isStr, objClean } from './utils/utils'
 import App from './App'
 import NewsletterSignup from './forms/NewsletterSignup'
 // services
@@ -14,7 +14,9 @@ import { getUrlParam, MOBILE, rxLayout } from './services/window'
 
 const isSignUp = getUrlParam('NewsletterSignup').toLowerCase() === 'true'
 const debug = getUrlParam('debug').toLowerCase()
-window.isDebug = debug === 'force' || debug === 'true' && rxLayout.value === MOBILE
+window.isDebug = debug === 'force'
+    || debug === 'true'
+    && rxLayout.value === MOBILE
 window.isInIFrame = isSignUp
 if (!window.isInIFrame && window.isDebug) {
     // for debugging purposes only, when on a mobile device
@@ -36,7 +38,11 @@ if (!window.isInIFrame && window.isDebug) {
             let content = args.map(x => {
                 let str = x
                 try {
-                    str = isStr(x) ? x : isObj(x) && x.stack || JSON.stringify(x, null, 4)
+                    str = isStr(x)
+                        ? x
+                        : isObj(x)
+                            && x.stack
+                            || JSON.stringify(x, null, 4)
                 } catch (e) {
                     // in case of Object circular dependency
                     str = `${x}`
@@ -80,8 +86,8 @@ const init = () => PromisE.timeout((resolve, reject) => {
 }, 2000)
 const doRender = () => {
     if (isSignUp) {
+        document.body.classList.add('iframe')
         render(<NewsletterSignup />, document.getElementById('app'))
-        setTimeout(() => document.querySelector('body').classList.add('iframe'), 100)
         return
     }
     render(<App />, document.getElementById('app'))
@@ -89,4 +95,6 @@ const doRender = () => {
 
 // initiate connection to blockchain
 getConnection()
-init().then(doRender).catch(doRender)
+init()
+    .then(doRender)
+    .catch(doRender)

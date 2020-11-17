@@ -343,10 +343,10 @@ body:not(.inverted) .chat-container .messages {
 }
 
 /* resize #main-content accordingly */
-.chat-visible:not(.mobile) .pushable > .ui.visible.left.sidebar.very.thin ~ .pusher.main-content {
+.chat-visible:not(.mobile) .pushable > .ui.visible.left.sidebar.very.thin ~ .pusher#main-content {
     max-width: calc(100% - 460px) !important;
 }
-.chat-visible:not(.mobile) .pushable > .ui.visible.left.sidebar.wide ~ .pusher.main-content {
+.chat-visible:not(.mobile) .pushable > .ui.visible.left.sidebar.wide ~ .pusher#main-content {
     max-width: calc(100% - 635px) !important;
 }
 

@@ -14,6 +14,14 @@ export const rxOnline = new BehaviorSubject()
 export const rxInverted = new BehaviorSubject(rw().inverted)
 export const rxLayout = new BehaviorSubject(getLayout())
 export const rxVisible = new BehaviorSubject(true)
+export const gridClasses = [
+    'col-1',
+    'col-2',
+    'col-3',
+    'col-4',
+    'col-5',
+    'col-6',
+]
 
 // forceLayout enforces and reverts a specific layout size and ignores layout change when window resizes
 //
@@ -96,7 +104,10 @@ export const toggleFullscreen = (selector) => {
 
 
     isFn(goFS) && setTimeout(() => goFS.call(el), isFS ? 50 : 0)
+    toggleFullscreen.lastSelector = el && selector || ''
+    return el
 }
+toggleFullscreen.lastSelector = null
 
 /**
  * @name    useInverted
@@ -141,6 +152,13 @@ rxLayout.subscribe(layout => {
 document.addEventListener('visibilitychange', () =>
     rxVisible.next(document.visibilityState === 'visible')
 )
+rxGridColumns.subscribe(numCol => {
+    const el = document.getElementById('main-content')
+    if (!el) return
+    const next = gridClasses[numCol - 1]
+    el.classList.remove(...gridClasses.filter(c => c !== next))
+    next && el.classList.add('simple-grid', next)
+})
 export default {
     MOBILE,
     DESKTOP,

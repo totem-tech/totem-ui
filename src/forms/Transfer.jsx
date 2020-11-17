@@ -284,7 +284,7 @@ export default class Transfer extends Component {
 
     getTxFeeEl = feeXTX => {
         const { values } = this.state
-        const currentSent = values[this.names.currencySent]
+        // const currentSent = values[this.names.currencySent]
 
         return (
             <Text El='div' style={{ margin: `${feeXTX ? '-' : ''}15px 0 15px 3px` }}>
@@ -292,7 +292,7 @@ export default class Transfer extends Component {
                     <Currency {...{
                         prefix: `${textsCap.includesTxFee} `,
                         value: feeXTX,
-                        unitDisplayed: currentSent,
+                        // unitDisplayed: currentSent,
                     }} />
                 )}
                 <div style={{
