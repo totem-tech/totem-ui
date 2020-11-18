@@ -1,28 +1,26 @@
-import React from 'react'
+import React, { useState } from 'react'
+import { isArr, objClean } from '../../utils/utils'
 import Currency from '../../components/Currency'
 import Message from '../../components/Message'
 import DrillDownList from '../../components/DrillDownList'
-import { isArr } from '../../utils/utils'
-import { rxSelected } from '../identity/identity'
 import useLedgerAcBalances from './useLedgerAcBalances'
-import { useRxSubject } from '../../services/react'
 
-export default function FinancialStatementView() {
-    const [selectedAddress] = useRxSubject(rxSelected)
-    const [glAcBalances, message] = useLedgerAcBalances(selectedAddress)
-    const nestedBalances = getNestedBalances(glAcBalances)
+export default function FinancialStatementView(props) {
+    const [nestedBalances = [], message] = useLedgerAcBalances(null, getNestedBalances)
+    const [activeTitles, setActiveTitles] = useState({})
 
     return (
-        <div style={{ whiteSpace: 'pre' }}>
-            {glAcBalances && (
-                nestedBalances.map((level, i) => (
+        <div {...{ ...props, style: { whiteSpace: 'pre', ...props.style } }}>
+            {nestedBalances.map((level, i) => (
                     <DrillDownList {...{
+                        activeTitles: objClean(activeTitles, [level.title]),
                         items: [level],
                         key: i + level.title + level.balance,
+                        setActiveTitles: children => setActiveTitles({ ...activeTitles, ...children }),
                         style: { margin: '15px 0' }
                     }} />
                 ))
-            )}
+            }
             <Message {...message} className='empty-message' />
         </div>
     )

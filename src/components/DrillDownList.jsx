@@ -3,13 +3,23 @@ import PropTypes from 'prop-types'
 import { Accordion, Icon } from 'semantic-ui-react'
 import Text from './Text'
 import { useInverted } from '../services/window'
-import { className } from '../utils/utils'
+import { className, isFn } from '../utils/utils'
 
-export const DrillDownList = (props) => {
-    const { className: clsName, items = [], nestedLevelNum = 0, style = {} } = props
-    const [activeIndex, setActiveIndex] = useState()
+const DrillDownList = (props) => {
+    const {
+        activeTitles: parentActive,
+        className: clsName,
+        items,
+        setActiveTitles: parentSetActive,
+        nestedLevelNum,
+        singleMode,
+        style,
+    } = props
+    const [activeTitles = {}, setActiveTitles] = isFn(parentSetActive)
+        ? [parentActive || {}, parentSetActive] // assume state is externally managed
+        : useState() // manage state locally
     const inverted = useInverted()
-    const AccordionEL = nestedLevelNum ? Accordion.Accordion : Accordion
+    const AccordionEl = nestedLevelNum ? Accordion.Accordion : Accordion
     const elProps = {
         className: className([clsName, { inverted }]),
         styled: nestedLevelNum ? undefined : true,
@@ -21,15 +31,25 @@ export const DrillDownList = (props) => {
         }
     }
     return (
-        <AccordionEL {...elProps}>
-            {items.map(({ children = [], subtitle, title }, i) => {
-                const active = activeIndex === i || !children.length
+        <AccordionEl {...elProps}>
+            {items.map(({ balance, children = [], subtitle, title }, i) => {
+                const hasChildren = !!children.length
+                const self = activeTitles[title] || { active: false }
+                const isActive = !hasChildren || !!self.active
                 return (
-                    <React.Fragment key={title + i}>
+                    <React.Fragment key={title + balance}>
                         <Accordion.Title {...{
-                            active,
+                            active: isActive,
                             index: i,
-                            onClick: () => setActiveIndex(activeIndex === i ? -1 : i),
+                            onClick: () => {
+                                if (!hasChildren) return
+                                const x = singleMode
+                                    ? {}
+                                    : {...activeTitles}
+                                
+                                x[title] = { ...activeTitles[title], active: !isActive }
+                                setActiveTitles(x)
+                            },
                             style: {
                                 paddingLeft: nestedLevelNum * 15 + (children.length ? 0 : 15),
                                 position: 'relative',
@@ -39,7 +59,7 @@ export const DrillDownList = (props) => {
                             {children.length > 0 && <Icon inverted={inverted} name='dropdown' />}
                             <Text {...{
                                 color: null,
-                                invertedColor: active ? 'white' : 'grey'
+                                invertedColor: isActive ? 'white' : 'grey'
                             }}>
                                 {title}
                             </Text>
@@ -48,7 +68,7 @@ export const DrillDownList = (props) => {
                                 <Text {...{
                                     color: null,
                                     El: 'div',
-                                    invertedColor: active ? 'white' : 'grey',
+                                    invertedColor: isActive ? 'white' : 'grey',
                                     style: {
                                         position: 'absolute',
                                         right: 20,
@@ -62,25 +82,43 @@ export const DrillDownList = (props) => {
                         {children.length > 0 && (
                             <Accordion.Content
                                 level={nestedLevelNum}
-                                active={active}
+                                active={isActive}
                                 style={{ padding: 0 }}>
-                                <DrillDownList items={children} nestedLevelNum={nestedLevelNum + 1} />
+                                <DrillDownList {...{
+                                    activeTitles: self._children || {},
+                                    items: children,
+                                    nestedLevelNum: nestedLevelNum + 1,
+                                    setActiveTitles: _children => {
+                                        const x = { ...activeTitles }
+                                        x[title] = { ...self, _children }
+                                        setActiveTitles(x)
+                                    },
+                                    singleMode,
+                                }} />
                             </Accordion.Content>
                         )}
                     </React.Fragment>
                 )
             })}
-        </AccordionEL >
+        </AccordionEl>
     )
 }
 DrillDownList.propTypes = {
+    activeTitles: PropTypes.object,
+    className: PropTypes.string,
     items: PropTypes.arrayOf(PropTypes.shape({
         children: PropTypes.array,
         subtitle: PropTypes.any,
-        title: PropTypes.any,
+        title: PropTypes.any.isRequired,
     })),
     nestedLevelNum: PropTypes.number,
+    setActiveTitles: PropTypes.func,
+    singleMode: PropTypes.bool,
     style: PropTypes.object,
 }
-
+DrillDownList.defaultProps = {
+    items: [],
+    nestedLevelNum: 0,
+    singleMode: true,
+}
 export default React.memo(DrillDownList)
