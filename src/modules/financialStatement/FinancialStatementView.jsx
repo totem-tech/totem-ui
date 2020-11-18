@@ -7,16 +7,16 @@ import useLedgerAcBalances from './useLedgerAcBalances'
 
 export default function FinancialStatementView(props) {
     const [nestedBalances = [], message] = useLedgerAcBalances(null, getNestedBalances)
-    const [activeTitles, setActiveTitles] = useState({})
+    const [expandedTitles, setExpandedTitles] = useState({})
 
     return (
         <div {...{ ...props, style: { whiteSpace: 'pre', ...props.style } }}>
             {nestedBalances.map((level, i) => (
                     <DrillDownList {...{
-                        activeTitles: objClean(activeTitles, [level.title]),
+                        activeTitles: objClean(expandedTitles, [level.title]),
                         items: [level],
                         key: i + level.title + level.balance,
-                        setActiveTitles: children => setActiveTitles({ ...activeTitles, ...children }),
+                        setActiveTitles: children => setExpandedTitles({ ...expandedTitles, ...children }),
                         style: { margin: '15px 0' }
                     }} />
                 ))

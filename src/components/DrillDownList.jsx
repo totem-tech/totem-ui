@@ -5,17 +5,17 @@ import Text from './Text'
 import { useInverted } from '../services/window'
 import { className, isFn } from '../utils/utils'
 
-const DrillDownList = (props) => {
+const DrillDownList = props => {
     const {
-        activeTitles: parentActive,
+        expandedTitles: parentActive,
         className: clsName,
         items,
-        setActiveTitles: parentSetActive,
+        setExpandedTitles: parentSetActive,
         nestedLevelNum,
         singleMode,
         style,
     } = props
-    const [activeTitles = {}, setActiveTitles] = isFn(parentSetActive)
+    const [expandedTitles = {}, setExpandedTitles] = isFn(parentSetActive)
         ? [parentActive || {}, parentSetActive] // assume state is externally managed
         : useState() // manage state locally
     const inverted = useInverted()
@@ -34,7 +34,7 @@ const DrillDownList = (props) => {
         <AccordionEl {...elProps}>
             {items.map(({ balance, children = [], subtitle, title }, i) => {
                 const hasChildren = !!children.length
-                const self = activeTitles[title] || { active: false }
+                const self = expandedTitles[title] || { active: false }
                 const isActive = !hasChildren || !!self.active
                 return (
                     <React.Fragment key={title + balance}>
@@ -43,12 +43,10 @@ const DrillDownList = (props) => {
                             index: i,
                             onClick: () => {
                                 if (!hasChildren) return
-                                const x = singleMode
-                                    ? {}
-                                    : {...activeTitles}
+                                const x = singleMode ? {} : {...expandedTitles}
                                 
-                                x[title] = { ...activeTitles[title], active: !isActive }
-                                setActiveTitles(x)
+                                x[title] = { ...expandedTitles[title], active: !isActive }
+                                setExpandedTitles(x)
                             },
                             style: {
                                 paddingLeft: nestedLevelNum * 15 + (children.length ? 0 : 15),
@@ -85,13 +83,13 @@ const DrillDownList = (props) => {
                                 active={isActive}
                                 style={{ padding: 0 }}>
                                 <DrillDownList {...{
-                                    activeTitles: self._children || {},
+                                    expandedTitles: self._children || {},
                                     items: children,
                                     nestedLevelNum: nestedLevelNum + 1,
-                                    setActiveTitles: _children => {
-                                        const x = { ...activeTitles }
+                                    setExpandedTitles: _children => {
+                                        const x = { ...expandedTitles }
                                         x[title] = { ...self, _children }
-                                        setActiveTitles(x)
+                                        setExpandedTitles(x)
                                     },
                                     singleMode,
                                 }} />
@@ -104,15 +102,20 @@ const DrillDownList = (props) => {
     )
 }
 DrillDownList.propTypes = {
-    activeTitles: PropTypes.object,
     className: PropTypes.string,
+    // @expandedTitles    required only if @setExpandedTitles is a function
+    expandedTitles: PropTypes.object,
     items: PropTypes.arrayOf(PropTypes.shape({
         children: PropTypes.array,
         subtitle: PropTypes.any,
         title: PropTypes.any.isRequired,
     })),
+    // @nestedLevelNum for internal use only
     nestedLevelNum: PropTypes.number,
-    setActiveTitles: PropTypes.func,
+    // @setExpandedTitles (optional) use this to maintain expanded statues externally.
+    //                  If not a function, active statues are maintained internally
+    setExpandedTitles: PropTypes.func,
+    // if `false`, allows multiple children to be active at the same time
     singleMode: PropTypes.bool,
     style: PropTypes.object,
 }
