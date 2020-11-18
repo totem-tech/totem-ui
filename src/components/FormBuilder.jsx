@@ -180,7 +180,10 @@ export default class FormBuilder extends Component {
 		const msgStyle = { ...(modal ? styles.messageModal : styles.messageInline), ...(msg || {}).style }
 		const message = { ...msg, style: msgStyle }
 		let submitBtn
-		submitDisabled = !isObj(submitDisabled) ? !!submitDisabled : Object.values(submitDisabled).filter(Boolean).length > 0
+		submitDisabled = !isObj(submitDisabled)
+			? !!submitDisabled
+			: Object.values(submitDisabled)
+				.filter(Boolean).length > 0
 		const formIsInvalid = isFormInvalid(inputs, values)
 		const shouldDisable = submitInProgress || submitDisabled || success || formIsInvalid
 		submitText = !isFn(submitText) ? submitText : submitText(values, shouldDisable)
@@ -202,7 +205,7 @@ export default class FormBuilder extends Component {
 						content: content || (!isStr(submitText) ? content : submitText),
 						disabled: isBool(disabled) ? disabled : shouldDisable,
 						icon,
-						loading: submitInProgress || loading,
+						loading: !success && (submitInProgress || loading),
 						onClick: isFn(onClick) ? onClick : this.handleSubmit,
 						positive: isBool(positive) ? positive : true,
 						style: {
