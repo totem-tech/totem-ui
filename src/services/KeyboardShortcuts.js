@@ -1,5 +1,6 @@
+import React from 'react'
 import { deferred } from '../utils/utils'
-import { closeModal, get, showForm } from './modal'
+import { closeModal, confirm, get, showForm } from './modal'
 import { toggleSidebarState } from './sidebar'
 import SettingsForm from '../forms/Settings'
 import { rxIdentityListVisible } from '../components/PageHeader'
@@ -31,6 +32,26 @@ const handlers = {
         handler: rxIdentityListVisible,
         type: 'subject-toggle'
     },
+    K: {
+        handler: () => confirm({
+            cancelButton: null,
+            confirmButton: null,
+            content: (
+                <div>
+                    SHIFT + C => start new chat<br />
+                    SHIFT + S => Settings <br />
+                    SHIFT + T => TimekeepingForm<br />
+                    C => toggle chat bar visibility<br />
+                    I => toggle identity dropdown visibility<br />
+                    N => toggle notification visibility<br />
+                    S => toggle sidebar<br />
+                </div>
+            ),
+            header: 'Keyboard shortcuts',
+            size: 'mini',
+        }, getModalId('K')),
+        type: 'func',
+    },
     N: { 
         handler: rxNotifVisible,
         type: 'subject-toggle'
@@ -40,12 +61,16 @@ const handlers = {
         type: 'func'
     }
 }
+const getModalId = activeKeys => `shortcutKey-${activeKeys}`
 const handleKeypress = deferred(shiftKey => {
     let activeKeys = (shiftKey ? 'SHIFT_' : '') + [...keys].sort()
     keys.clear()
     const { handler, props, type } = handlers[activeKeys] || {}
     if (!handler) return
 
+    const modalId = getModalId(activeKeys)
+    // close modal form if already open
+    if (get(modalId)) return closeModal(modalId)
     switch (type) {
         case 'subject-toggle':
             // handler is a subject
@@ -57,9 +82,6 @@ const handleKeypress = deferred(shiftKey => {
             break
         case 'form':
             // handler is a form
-            const modalId = `shortcutKey-${activeKeys}`
-            // close modal form if already open
-            if (get(modalId)) return closeModal(modalId)
             showForm(
                 handler,
                 {
