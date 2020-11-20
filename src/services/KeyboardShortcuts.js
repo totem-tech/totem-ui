@@ -38,13 +38,13 @@ const handlers = {
             confirmButton: null,
             content: (
                 <div>
-                    SHIFT + C => start new chat<br />
+                    SHIFT + C => Start new chat<br />
                     SHIFT + S => Settings <br />
-                    SHIFT + T => TimekeepingForm<br />
-                    C => toggle chat bar visibility<br />
-                    I => toggle identity dropdown visibility<br />
-                    N => toggle notification visibility<br />
-                    S => toggle sidebar<br />
+                    SHIFT + T => Timekeeping form<br />
+                    C => Toggle chat bar visibility<br />
+                    I => Toggle identity dropdown visibility<br />
+                    N => Toggle notification visibility<br />
+                    S => Toggle sidebar<br />
                 </div>
             ),
             header: 'Keyboard shortcuts',
