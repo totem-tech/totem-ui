@@ -143,7 +143,12 @@ export default class HistoryList extends Component {
                 // positive: status === 'success',
                 warning: status === 'loading',
             }),
-            searchExtraKeys: ['action', 'identity', 'description'],
+            searchExtraKeys: [
+                'action',
+                'description',
+                'identity',
+                'txId',
+            ],
             searchable: true,
             selectable: true,
             topLeftMenu: [{

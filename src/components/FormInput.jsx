@@ -388,7 +388,11 @@ export class FormInput extends Component {
 			<Invertible {...{
 				El: Accordion,
 				...objWithoutKeys(accordion, NON_ATTRIBUTES),
-				style:{ marginBottom: 15, ...accordion.style },
+				style: {
+					marginBottom: 15,
+					width: '100%',
+					...accordion.style,
+				},
 			}}>
 				<Accordion.Title
 					active={!collapsed}

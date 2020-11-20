@@ -183,6 +183,5 @@ export default class SettingsForm extends Component {
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
 SettingsForm.defaultProps = {
-    closeText: null,
     header: textsCap.settings,
 }

@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import { copyToClipboard, isObj, textEllipsis, isArr } from '../../utils/utils'
+import { Icon } from 'semantic-ui-react'
+import { copyToClipboard, isObj } from '../../utils/utils'
 import { format } from '../../utils/time'
 import DataTable from '../../components/DataTable'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
+import JSONView from '../../components/JSONView'
 import { translated } from '../../services/language'
 import { statusTitles } from '../../services/queue'
 import { query } from '../../services/blockchain'
-import { Button, Icon } from 'semantic-ui-react'
-import { useRxSubject } from '../../services/react'
-import { rxLayout, MOBILE } from '../../services/window'
 
 // Read-only form
 const textsCap = translated({
@@ -72,8 +71,6 @@ export default function HistoryItemDetailsForm(props) {
     } = values
     const { before, after } = isObj(balance) ? balance : {}
     const isTx = `${action}`.includes('api.tx.')
-    const [layout] = useRxSubject(rxLayout)
-    const maxLength = layout === MOBILE ? 13 : 25
     const [inputs, setInputs] = useState([
         {
             accordion: {
@@ -89,7 +86,7 @@ export default function HistoryItemDetailsForm(props) {
             inputs: [
                 txId && {
                     action: {
-                        icon: 'copy',
+                        icon: 'copy outline',
                         onClick: () => copyToClipboard(txId),
                     },
                     name: 'txId',
@@ -100,12 +97,16 @@ export default function HistoryItemDetailsForm(props) {
                 },
                 {
                     label: textsCap.function,
-                    name: 'function',
+                    name: 'action',
                     readOnly: true,
                     type: 'text',
                     value: action,
                 },
                 identity && {
+                    action: {
+                        icon: 'copy outline',
+                        onClick: ()=> copyToClipboard(identity)
+                    },
                     label: textsCap.identity,
                     name: 'identity',
                     readOnly: true,
@@ -116,7 +117,10 @@ export default function HistoryItemDetailsForm(props) {
                     content: (
                         <div style={{ padding: '0 10px' }}>
                             <h5 style={{ margin: 0 }}>{textsCap.dataSent}</h5>
-                            {isTx ? <Icon loading={true} name='spinner' /> : dataToStr(data, maxLength)}
+                            {isTx
+                                ? <Icon loading={true} name='spinner' />
+                                : <JSONView data={data} />
+                            }
                         </div>
                     ),
                     name: 'dataSent',
@@ -126,7 +130,7 @@ export default function HistoryItemDetailsForm(props) {
                     content: (
                         <div style={{ padding: '0 10px' }}>
                             <h5 style={{ margin: 0 }}>{textsCap.dataReceived}</h5>
-                            {dataToStr(result, maxLength)}
+                            <JSONView data={result} />
                         </div>
                     ),
                     name: 'result',
@@ -176,7 +180,7 @@ export default function HistoryItemDetailsForm(props) {
             grouped: false,
             name: 'group-balances',
             type: 'group',
-            widths: 'equal', unstackable: true,
+            widths: 8,
             inputs: [
                 before && {
                     action: { content: 'XTX' },
@@ -185,7 +189,6 @@ export default function HistoryItemDetailsForm(props) {
                     readOnly: true,
                     value: before,
                     type: 'number',
-                    // unstackable: true,
                 },
                 after && {
                     action: { content: 'XTX' },
@@ -194,7 +197,6 @@ export default function HistoryItemDetailsForm(props) {
                     readOnly: true,
                     value: after,
                     type: 'number',
-                    // unstackable: true,
                 },
             ].filter(Boolean),
         },
@@ -209,7 +211,7 @@ export default function HistoryItemDetailsForm(props) {
                 data: args.map((arg, i) => ({
                     ...arg,
                     value: data[i],
-                    _value: dataToStr(data[i], maxLength)
+                    _value: <JSONView data={data[i]} />,
                 })),
                 columns: [
                     { key: '_value', title: textsCap.value },
@@ -246,35 +248,10 @@ HistoryItemDetailsForm.propTypes = {
     values: PropTypes.object,
 }
 HistoryItemDetailsForm.defaultProps = {
-    closeText: textsCap.close,
+    closeOnDimmerClick: true,
+    closeOnEscape: true,
+    closeText: null,
     header: textsCap.techDetails,
     size: 'tiny',
     submitText: null,
-}
-
-const dataToStr = (data, maxLength = 15) => {
-    data = !isObj(data) && !isArr(data) ? `${data}` : JSON.stringify(data, null, 4)
-    data = data
-        .split(' ')
-        .map((word, i) => {
-            const isLarge = word.length > maxLength
-            return (
-                <React.Fragment key={i}>
-                    {isLarge && (
-                        <Button
-                            // className='no-margin'
-                            icon='copy'
-                            onClick={() => copyToClipboard(word.replace(/\,|\"/g, ''))}
-                            size='mini'
-                        />
-                    )}
-                    {!isLarge ? word || ' ' : textEllipsis(word, maxLength)}
-                </React.Fragment>
-            )
-        })
-    return (
-        <span style={{ whiteSpace: 'pre-wrap' }}>
-            {data}
-        </span>
-    )
 }

@@ -11,6 +11,8 @@ export default [
     "./src/components/FormBuilder.jsx",
     "./src/components/FormInput.jsx",
     "./src/components/Invertible.jsx",
+    "./src/components/JSONView.jsx",
+    "./src/components/LabelCopy.jsx",
     "./src/components/Message.jsx",
     "./src/components/Modal.jsx",
     "./src/components/PageHeader.jsx",

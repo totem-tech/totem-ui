@@ -121,6 +121,8 @@ const IConfirm = props => {
     )
 }
 
+export const get = id => modals.get(id)
+
 // showForm opens form in a modal dialog
 //
 // Params: 

@@ -35,8 +35,8 @@ export default class FormBuilder extends Component {
 
 	// recursive interceptor for infinite level of child inputs
 	addInterceptor = (index, values) => (input, i) => {
-		const { inputsDisabled = [], inputsHidden = [] } = this.props
-		const { disabled, hidden, inputs: childInputs, name, rxValue, type, validate: validate } = input || {}
+		const { inputsDisabled = [], inputsHidden = [], inputsReadOnly = [] } = this.props
+		const { disabled, hidden, inputs: childInputs, name, readOnly, rxValue, type, validate: validate } = input || {}
 		const isGroup = `${type}`.toLowerCase() === 'group' && isArr(childInputs)
 		index = isDefined(index) ? index : null
 		const props = {
@@ -45,6 +45,7 @@ export default class FormBuilder extends Component {
 			hidden: inputsHidden.includes(name) || (!isFn(hidden) ? hidden : !!hidden(values, i)),
 			inputs: !isGroup ? undefined : childInputs.map(this.addInterceptor(index ? index : i, values)),
 			key: name,
+			readOnly: inputsReadOnly.includes(name) || readOnly,
 			onChange: isGroup ? undefined : (
 				(e, data) => this.handleChange(e, data, input, index ? index : i, index ? i : undefined)
 			),
@@ -167,6 +168,11 @@ export default class FormBuilder extends Component {
 			trigger,
 			widths,
 		} = this.props
+		if (submitText === null && closeText === null) {
+			// enable close on escase and dimmer click
+			closeOnDimmerClick = true
+			closeOnEscape = true
+		}
 		let { message: sMsg, open: sOpen, values } = this.state
 		// whether the 'open' status is controlled or uncontrolled
 		let modalOpen = isFn(onClose) ? open : sOpen
@@ -308,6 +314,8 @@ FormBuilder.propTypes = {
 	inputsDisabled: PropTypes.arrayOf(PropTypes.string),
 	// inputs to hide
 	inputsHidden: PropTypes.arrayOf(PropTypes.string),
+	// read only inputs
+	inputsReadOnly: PropTypes.arrayOf(PropTypes.string),
 	header: PropTypes.string,
 	headerIcon: PropTypes.string,
 	hideFooter: PropTypes.bool,

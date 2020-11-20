@@ -34,7 +34,7 @@ export default function KYCViewForm(props) {
                     <LocationForm {...{
                         El: 'div',
                         // disable all inputs
-                        inputsDisabled: Object.values(locInputNames),
+                        inputsReadOnly: Object.values(locInputNames),
                         style: { width: '100%'},
                         submitText: null,
                         values: location,
@@ -60,7 +60,7 @@ export default function KYCViewForm(props) {
         <FormBuilder {...{
             ...props,
             inputs,
-            inputsDisabled: Object.values(inputNames),
+            inputsReadOnly: Object.values(inputNames),
             submitText: null,
         }} />
     )

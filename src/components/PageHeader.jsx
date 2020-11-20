@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
+import { BehaviorSubject } from 'rxjs'
 import { Dropdown, Icon, Image, Menu } from 'semantic-ui-react'
 import Balance from '../components/Balance'
 // utils
@@ -27,6 +28,7 @@ import { toggleSidebarState, setActive } from '../services/sidebar'
 import { rxTimerInProgress } from '../modules/timekeeping/timekeeping'
 import { setToast } from '../services/toast'
 import { useInverted, rxInverted, rxLayout, MOBILE } from '../services/window'
+import SettingsForm from '../forms/Settings'
 
 const textsCap = translated({
 	addressCopied: 'your identity copied to clipboard',
@@ -40,6 +42,7 @@ const textsCap = translated({
 	updateIdentity: 'update identity',
 }, true)[1]
 let copiedMsgId
+export const rxIdentityListVisible = new BehaviorSubject(false)
 
 export default function PageHeader(props) {
 	const [wallets] = useRxSubject(rxIdentities, map => Array.from(map).map(([_, x]) => x))
@@ -83,6 +86,7 @@ PageHeader.defaultProps = {
 }
 
 const PageHeaderView = props => {
+	const [open] = useRxSubject(rxIdentityListVisible)
 	const [showTools, setShowTools] = useState(false)
 	const inverted = useInverted()
 	const {
@@ -141,18 +145,27 @@ const PageHeaderView = props => {
 			</Menu.Item>
 			<Menu.Menu position="right">
 				{!isMobile && isRegistered && buttons}
-				<Dropdown
-					className='identity-dropdown'
-					direction='left'
-					item
-					labeled
-					onChange={onSelection}
-					onClick={() => rxNotifVisible.next(false)}
-					options={walletOptions}
-					style={{ paddingRight: 0 }}
-					text={textEllipsis(selected.name, isMobile ? 25 : 50, 3, false)}
-					value={selected.address}
-				/>
+				<Dropdown {...{
+					className: 'identity-dropdown',
+					closeOnBlur: true,
+					closeOnChange: true,
+					closeOnEscape: true,
+					direction: 'left',
+					item: true,
+					labeled: true,
+					onChange: onSelection,
+					onClose:  () => rxIdentityListVisible.next(false),
+					onClick: () => {
+						rxIdentityListVisible.next(!rxIdentityListVisible.value)
+						rxNotifVisible.next(false)
+					},
+					open,
+					options: walletOptions,
+					selectOnNavigation: false,
+					style: { paddingRight: 0 },
+					text: textEllipsis(selected.name, isMobile ? 25 : 50, 3, false),
+					value: selected.address,
+				}} />
 				<Dropdown
 					item
 					text={getSelectedLang()}
@@ -188,12 +201,12 @@ const PageHeaderView = props => {
 							{
 								icon: 'currency',
 								content: textsCap.changeCurrency,
-								onClick: () => setActive('settings'),
+								onClick: () => showForm(SettingsForm),
 							},
 							{
 								icon: 'language',
 								content: 'Change language', // Better left un-translated
-								onClick: () => setActive('settings'),
+								onClick: () => showForm(SettingsForm),
 							},
 						].filter(Boolean).map((props, i) =>
 							<Dropdown.Item {...props} key={props.icon + i} />
@@ -226,6 +239,8 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 	const [unreadMsgCount] = useRxSubject(rxUnreadMsgCount)
 	const [unreadNotifCount] = useRxSubject(rxUnreadNotifCount)
 	const [notifBlink, setNotifBlink] = useState(false)
+	const [notifVisible] = useRxSubject(rxNotifVisible)
+	const [chatVisible] = useRxSubject(rxChatVisible)
 	const countStyle = {
 		...styles.countStyle,
 		top: isMobile ? 17 : styles.countStyle.top,
@@ -249,14 +264,19 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 	return (
 		<React.Fragment>
 			{isMobile && (
-				<Menu.Item
-					icon={{
+				<Menu.Item {...{
+					icon: {
 						name: 'sidebar',
 						size: 'large',
 						className: 'no-margin',
-					}}
-					onClick={toggleSidebarState}
-				/>
+					},
+					onClick: () => {
+						toggleSidebarState()
+						// hide notification and chat
+						rxChatVisible.next(!rxChatVisible.value)
+						rxNotifVisible.next(!rxNotifVisible.value)
+					}
+				}} />
 			)}
 
 			<Menu.Item
@@ -270,6 +290,7 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 			/>
 
 			<Menu.Item {...{
+				active: !!notifVisible,
 				className: className([
 					notifBlink ? 'blink' : '',
 					'shake-trigger',
@@ -279,7 +300,6 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 				style: { background: unreadNotifCount > 0 ? '#2185d0' : '' }
 			}}>
 				<Icon {...{
-					// className: 'no-margin',
 					className: className([
 						'no-margin',
 						unreadNotifCount && 'shake',
@@ -296,7 +316,8 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 				)}
 			</Menu.Item>
 
-			<Menu.Item onClick={() => {
+			<Menu.Item {...{ active: chatVisible }}
+				onClick={() => {
 				rxChatVisible.next(!rxChatVisible.value)
 				rxNotifVisible.next(false)
 			}}>

@@ -25,6 +25,8 @@ import KYCViewForm from './KYCViewForm'
 import CalculatorForm from './CalculatorForm'
 import { Currency } from '../../components/Currency'
 import { currencyDefault } from '../../services/currency'
+import JSONView from '../../components/JSONView'
+import LabelCopy from '../../components/LabelCopy'
 
 const textsCap = translated({
     achieved: 'achieved!',
@@ -311,25 +313,15 @@ const generateTableData = (csData) => {
     csData = csData || crowdsaleData()
     let { depositAddresses = {} } = csData || {} 
     const data = Object.keys(BLOCKCHAINS)
-        .map(blockchain => {
-            const hasAddress = !!depositAddresses[blockchain]
-            return [
+        .map(blockchain =>  [
+            blockchain,
+            {
+                address: <LabelCopy value={depositAddresses[blockchain]} maxLength={null} />,
                 blockchain,
-                {
-                    address: hasAddress && (
-                        <div {...{
-                            onClick: () => copyToClipboard(depositAddresses[blockchain]),
-                            style: { cursor: 'pointer' },
-                        }}>
-                            {depositAddresses[blockchain]} <Icon name='copy outline' />
-                        </div>
-                    ) || '',
-                    blockchain,
-                    blockchainName: BLOCKCHAINS[blockchain],
-                    amount: undefined,
-                },
-            ]
-        })
+                blockchainName: BLOCKCHAINS[blockchain],
+                amount: undefined,
+            },
+        ])
     return new Map(data)
 }
 

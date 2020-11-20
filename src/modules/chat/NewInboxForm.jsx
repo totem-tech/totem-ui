@@ -178,7 +178,6 @@ const checkGroup = keyOrIds => {
     userIds = arrUnique(userIds).filter(Boolean)
     const isGroup = userIds.length > 1
     const allowNaming = isGroup && !userIds.find(x => [SUPPORT, TROLLBOX, TROLLBOX_ALT].includes(x))
-    console.log({allowNaming, userIds})
     return [isGroup, allowNaming, userIds]
 }
 /**

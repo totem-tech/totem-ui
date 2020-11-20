@@ -431,6 +431,8 @@ body.mobile .ui.modals::-webkit-scrollbar {
  * identity dropdown style fix
  */
 .identity-dropdown .menu {
+	max-height: 370px;
+	overflow: auto;
 	width: 400px;
  }
 .identity-dropdown .menu > div > div:first-child {
