@@ -28,10 +28,11 @@ const [texts, textsCap] = translated({
     historyLimitLabel: 'history limit',
     unlimited: 'unlimited',
     saved: 'saved',
+    settings: 'settings',
 }, true)
 const savedMsg = { content: textsCap.saved, status: 'success' }
 
-export default class Settings extends Component {
+export default class SettingsForm extends Component {
     constructor(props) {
         super(props)
 
@@ -180,4 +181,8 @@ export default class Settings extends Component {
     }
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
+}
+SettingsForm.defaultProps = {
+    closeText: null,
+    header: textsCap.settings,
 }

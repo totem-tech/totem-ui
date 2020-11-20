@@ -163,12 +163,12 @@ export const sidebarItems = [
         name: gsName,
         title: textsCap.gettingStartedTitle,
     },
-    // {
-    //     content: CrowdsaleView,
-    //     icon: '',
-    //     name: 'crowdsale',
-    //     title: textsCap.crowdsaleTitle,
-    // },
+    {
+        content: CrowdsaleView,
+        icon: 'rocket',
+        name: 'crowdsale',
+        title: textsCap.crowdsaleTitle,
+    },
     {
         content: KeyRegistryPlayground,
         icon: 'play circle outline',

@@ -1,5 +1,6 @@
 import { BehaviorSubject } from 'rxjs'
 import { isValidNumber, objClean } from '../../utils/utils'
+import { convertTo, currencyDefault, getCurrencies } from '../../services/currency'
 import storage from '../../services/storage'
 
 export const rxCrowdsaleData = new BehaviorSubject()
@@ -9,11 +10,9 @@ export const BLOCKCHAINS = Object.freeze({
     DOT: 'Polkadot',
     ETH: 'Ethereum',
 })
-// ToDo: Change values
+// ToDo: add DOT to currencies module
 export const RATIO2XTX = {
-    BTC: 1442914053,
     DOT: 40327188,
-    ETH: 396006,
 }
 export const LEVEL_MULTIPLIERS = [
     1.0000,
@@ -48,16 +47,21 @@ const findLevel = (amtDepositedXTX = 0) => {
     }
     return level
 }
-export const calculateAllocation = async (chainAmounts = {}) => {
-    chainAmounts = objClean(chainAmounts, Object.keys(BLOCKCHAINS))
-    const amtDepositedXTX = Object.keys(chainAmounts)
-        .reduce((sum, chain) => {
-            const amount = chainAmounts[chain]
-            const amountXTX = amount * RATIO2XTX[chain]
-            return sum + amountXTX
-        }, 0)
+export const calculateAllocation = async (deposits = {}) => {
+    deposits = objClean(deposits, Object.keys(BLOCKCHAINS))
+    const currencies = await getCurrencies()
+    let amtDepositedXTX = 0
+    const keys = Object.keys(deposits)
+    for (let i = 0; i < keys.length; i++) {
+        const currency = keys[i]
+        const isValidCurrency = !!currencies.find(({ ISO }) => ISO === currency)
+        if (!isValidCurrency) continue 
+
+        const amount = deposits[currency] || 0
+        const [_, amountXTX] = await convertTo(amount, currency, currencyDefault)
+        amtDepositedXTX += eval(amountXTX) || 0   
+    }
     const level = findLevel(amtDepositedXTX)
-    const isLevel0 = level === 0
     const multiplier = LEVEL_MULTIPLIERS[level]
     const amtMultipliedXTX = level && Math.ceil(multiplier * amtDepositedXTX)
     const amtToBeUnlockedXTX = level && Math.floor(LEVEL_MULTIPLIERS[1] * amtDepositedXTX)
@@ -78,13 +82,21 @@ export const calculateAllocation = async (chainAmounts = {}) => {
 export const calculateToNextLevel = async (currency, amtDepositedXTX = 0, level = findLevel(amtDepositedXTX)) => {
     const nextLevel = level + 1
     const nextEntry = LEVEL_ENTRY_XTX[nextLevel]
-    const ratio = RATIO2XTX[currency] ||  1 // assume XTX for display purposes
     // last level reached!
     if (!isValidNumber(nextEntry)) return null
-
+    
+    const isValidCurrency = !!(await getCurrencies())
+        .find(({ ISO }) => ISO === currency)
     const nextMultiplier = LEVEL_MULTIPLIERS[nextLevel]
     const amtXTXToNextEntry = nextEntry - amtDepositedXTX + 1
-    const amtToNextEntry = amtXTXToNextEntry / ratio
+    let amtToNextEntry = 0
+    let nextLevelAmt = 0
+    if (isValidCurrency) {
+        const amtToNextResult = await convertTo(amtXTXToNextEntry, currencyDefault, currency)
+        const nextLevelResult = await convertTo(LEVEL_ENTRY_XTX[level], currencyDefault, currency)
+        amtToNextEntry = eval(amtToNextResult[1])
+        nextLevelAmt = eval(nextLevelResult[1])
+    }
     
     return [
         // amount in XTX to reach next level
@@ -95,6 +107,8 @@ export const calculateToNextLevel = async (currency, amtDepositedXTX = 0, level 
         nextLevel,
         // next level multiplier
         nextMultiplier,
+        // next level amount in selected currency
+        nextLevelAmt,
     ]
 }
 
@@ -116,7 +130,7 @@ export const getCrowdsaleIdentity = () => crowdsaleData().identity
 
 // placeholder
 export const getDeposits = async () => ({
-    BTC: 0.01,
+    BTC: 0.0144,
     DOT: 0,
     ETH: 0,
 })

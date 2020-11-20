@@ -90,6 +90,7 @@ export default [
     "./src/modules/timekeeping/TimekeepingView.jsx",
     "./src/modules/timekeeping/notificationHandlers.jsx",
     "./src/modules/timekeeping/timekeeping.js",
+    "./src/services/KeyboardShortcuts.js",
     "./src/services/blockchain.js",
     "./src/services/currency.js",
     "./src/services/language.js",

@@ -70,8 +70,6 @@ export default function () {
     const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
     const [state, setState] = iUseReducer(reducer, {
         ...getTableProps(),
-        // blockchains: [],
-        // depositAddresses: [],
         kycDone: false,
         loading: true,
         steps: [],
@@ -81,21 +79,29 @@ export default function () {
         if (!isLoggedIn || state.kycDone) return
         
         setTimeout(async () => {
-            let newState = { message: null }
+            let newState = {}
             try {
                 // check if KYC done
-                newState.kycDone = await client.crowdsaleKYC.promise(true)
-                newState.deposits = await getDeposits()
+                const kycDone = await client.crowdsaleKYC.promise(true)
+                const deposits = await getDeposits()
                 // retrieve any existing amounts deposited
-                newState.steps = await getSteps(
-                    newState.deposits,
-                    isMobile,
-                )
+                const steps = await getSteps(deposits, isMobile)
+                newState = {
+                    ...state,
+                    ...getTableProps(deposits),
+                    deposits,
+                    kycDone,
+                    message: null, 
+                    steps,
+                }
             } catch (err) {
-                newState.message = {
-                    content: `${err}`,
-                    icon: true,
-                    status: 'error',
+                console.trace(err)
+                newState = {
+                    message: {
+                        content: `${err}`,
+                        icon: true,
+                        status: 'error',
+                    }
                 }
             }
             setState({ ...newState, loading: false })
@@ -247,7 +253,7 @@ const getSteps = async (deposits = {}, isMobile = false) => {
     })
 }
 
-const getTableProps = () => ({
+const getTableProps = deposits => ({
     columns: [
         { key: 'blockchainName', title: textsCap.blockchain },
         {
@@ -285,9 +291,10 @@ const getTableProps = () => ({
             onClick: () => alert('To be implemented')
         },
         {
+            hidden: !deposits,
             content: textsCap.calculator,
             icon: 'calculator',
-            onClick: () => showForm(CalculatorForm)
+            onClick: () => showForm(CalculatorForm, { deposits} )
         }
     ],
 })

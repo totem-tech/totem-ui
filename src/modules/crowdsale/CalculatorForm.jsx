@@ -1,35 +1,38 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Icon } from 'semantic-ui-react'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
-import { iUseReducer, useRxSubject } from '../../services/react'
-import { BLOCKCHAINS, calculateAllocation, calculateToNextLevel, rxCrowdsaleData } from './crowdsale'
+import { iUseReducer } from '../../services/react'
+import { BLOCKCHAINS, calculateAllocation, calculateToNextLevel } from './crowdsale'
 import { className, isValidNumber } from '../../utils/utils'
 import { Currency } from '../../components/Currency'
 import { convertTo, currencyDefault, rxSelected } from '../../services/currency'
 
 const textsCap = translated({
     allocationEstimation: 'allocation estimation',
-    allocatedXTXLabel: 'amount already allocated',
-    allocatedXTXLabelDetails: 'this is the amount that you have been allocated for all amounts across all supported Blockchains that you have already deposited and has been processed by our system',
+    allocatedLabel: 'amount allocated',
+    // allocatedLabelDetails: 'this is the amount that you have been allocated for all amounts across all supported Blockchains that you have already deposited and has been processed by our system',
     amountLabel: 'amount to deposit',
     amountPlaceholder: 'enter amount',
-    currencyLabel: 'currency',
+    currencyLabel: 'deposit currency',
+    depositedLabel: 'amount deposited',
     formHeader: 'crowdsale allocation calculator',
-    formSubheader: 'this calculator is to help you get an estimation on the amount of allocation in Totem native currency, XTX, you will receive.',
+    formSubheader: 'this calculator is to help you get an estimation on the amount of allocation you can will receive',
     msgAmountUnlocked: 'amount to be unlocked soon after the crowdsale',
     msgContributed: 'your contributed value will be equivalent to',
-    msgCrowdsaleAllocation: 'your total crowdsale allocation will be',
+    msgCrowdsaleAllocation: 'your total allocation will be equivalent to',
     msgToReachLevel: 'to reach multiplier level',
-    msgTxFeeWarning: 'please note that transaction fee is not included in any of the amounts displayed here and does not count towards your allocation ',
+    msgTxFeeWarning: 'please note that transaction fee is not included in any of the amounts displayed and does not count towards allocation',
     msgUseAmount: 'use amount greater or equal to',
     msgYourMultiplier: 'your multiplier will be',
     msgYourMultiplierLevel: 'your multiplier level will be',
 }, true)[1]
 const inputNames = {
     // sum previously allocated amount in XTX
-    allocatedXTX: 'allocatedXTX',
+    allocated: 'allocated',
+    deposited: 'deposited',
     // expected deposit amount
     amount: 'amount',
     // exptected deposit Blockchain
@@ -41,7 +44,8 @@ const inputNames = {
 }
 /**
  * @name    Calculator
- * @summary form to calculate crowdsale XTX allocation based on user's existing deposited total XTX and future deposits
+ * @summary calculates crowdsale allocation based on user's existing deposited amounts 
+ *          and the amount user expects to deposit in the future.
  * 
  * @param   {Object} props 
  * 
@@ -49,67 +53,103 @@ const inputNames = {
  */
 export default function CalculatorForm(props) {
     const [state] = iUseReducer(null, rxSetState => {
-        const { depositAmounts = {
-            BTC: 0.01,
-            ETH: 1,
-        } } = rxCrowdsaleData.value || {}
-        const inputs = getInputs( rxSetState, depositAmounts)
-        const allocatedIn = findInput(inputs, inputNames.allocatedXTX)
-        const { action } = allocatedIn
-        allocatedIn.action = null
+        const { deposits = {} } = props
+        const inputs = getInputs( rxSetState, deposits)
+        const selectedCurrency = rxSelected.value
+        const allocatedIn = findInput(inputs, inputNames.allocated)
+        const depositedIn = findInput(inputs, inputNames.deposited)
+        depositedIn.action.content = selectedCurrency
+        allocatedIn.action.content = selectedCurrency
         allocatedIn.loading = true
+        depositedIn.loading = true
                         
         setTimeout(async () => {
             // calculate total allocatted amount in XTX
-            let [allocated] = await calculateAllocation(depositAmounts)
-            const currency = rxSelected.value
+            let [depositedXTX, allocatedXTX] = await calculateAllocation(deposits)
+            console.log({deposited: depositedXTX, allocated: allocatedXTX})
             // convert amount to selected currency
-            const [_, amount, decimals] = await convertTo(allocated, currencyDefault, currency)
-            allocatedIn.decimals = decimals
-            console.log({ _, amount, decimals })
-            action.content = currency
-            allocatedIn.action = action
+            const [_a, allocated] = await convertTo(allocatedXTX, currencyDefault, selectedCurrency)
+            const [_d, deposited] = await convertTo(depositedXTX, currencyDefault, selectedCurrency)
             allocatedIn.loading = false
+            depositedIn.loading = false
+            // update inputs
             rxSetState.next({ inputs })
-            allocatedIn.rxValue.next(amount)
+            // trigger value change
+            allocatedIn.rxValue.next(allocated)
+            depositedIn.rxValue.next(deposited)
         })
         return { inputs }
     })
 
     return <FormBuilder {...{...props, ...state}} />
 }
+CalculatorForm.propTypes = {
+    deposits: PropTypes.shape(
+        // only accept supported blockchains
+        Object.keys(BLOCKCHAINS)
+            .reduce((obj, key) => {
+                obj[key] = PropTypes.number
+                return obj
+            }, {})
+    )
+}
 CalculatorForm.defaultProps = {
     closeText: null,
     closeOnDimmerClick: true,
     closeOnEscape: true,
     header: textsCap.formHeader,
-    size: 'mini',
+    size: 'tiny',
     subheader: textsCap.formSubheader,
     // hide submit button as it has no use
     submitText: null,
 }
 
-export const getInputs = (rxSetState, depositAmounts = {}) => {
+export const getInputs = (rxSetState, deposits = {}) => {
     const rxAmount = new BehaviorSubject()
-    const onChange = handleAmountChange(rxAmount, rxSetState, depositAmounts)
+    const onChange = handleAmountChange(rxAmount, rxSetState, deposits)
     return [
         {
-            action: {
-                content: 'XTX',
-                onClick: e => e.preventDefault()
-            },
-            decimals: 0,
-            label: textsCap.allocatedXTXLabel,
-            labelDetails: textsCap.allocatedXTXLabelDetails,
-            name: inputNames.allocatedXTX,
-            readOnly: true,
-            rxValue: new BehaviorSubject(),
-            type: 'number',
+            name: 'group-allocated-deposited',
+            type: 'group',
+            unstackable: true,
+            widths: 8,
+            inputs: [
+                {
+                    action: {
+                        content: 'XTX',
+                        onClick: e => e.preventDefault(),
+                        style: { padding: '0 10px' },
+                    },
+                    icon: 'exchange',
+                    iconPosition: 'left',
+                    label: textsCap.depositedLabel,
+                    name: inputNames.deposited,
+                    readOnly: true,
+                    rxValue: new BehaviorSubject(0),
+                    type: 'number',
+                },
+                {
+                    action: {
+                        content: 'XTX',
+                        onClick: e => e.preventDefault(),
+                        style: { padding: '0 10px' },
+                    },
+                    icon: 'exchange',
+                    iconPosition: 'left',
+                    label: textsCap.allocatedLabel,
+                    // labelDetails: textsCap.allocatedLabelDetails,
+                    name: inputNames.allocated,
+                    readOnly: true,
+                    rxValue: new BehaviorSubject(0),
+                    type: 'number',
+                },
+            ],
         },
         {
             name: 'group',
             type: 'group',
             unstackable: true,
+            widths: 8,
             inputs: [
                 {
                     decimals: 8,
@@ -120,7 +160,6 @@ export const getInputs = (rxSetState, depositAmounts = {}) => {
                     rxValue: rxAmount,
                     required: true,
                     type: 'number',
-                    width: 9,
                 },
                 {
                     className: 'selection fluid',
@@ -134,27 +173,26 @@ export const getInputs = (rxSetState, depositAmounts = {}) => {
                     search: true,
                     selection: false,
                     type: 'dropdown',
-                    width: 7,
                 },
             ],
         },
     ]
 }
 
-const handleAmountChange = (rxAmount, rxSetState, depositAmounts) => async (_, values) => {
+const handleAmountChange = (rxAmount, rxSetState, deposits) => async (_, values) => {
     const amount = values[inputNames.amount]
     const currency = values[inputNames.currency]
     if (!currency || !isValidNumber(amount)) return rxSetState.next({ message: null })
 
-    const amounts = { ...depositAmounts }
-    amounts[currency] = (amounts[currency] || 0) + amount
+    const depositAmounts = { ...deposits }
+    depositAmounts[currency] = (depositAmounts[currency] || 0) + amount
     const [
         amtDepositedXTX,
         amtMultipliedXTX,
         level,
         multiplier,
         amtToBeUnlockedXTX,
-    ] = await calculateAllocation(amounts)
+    ] = await calculateAllocation(depositAmounts)
     const result = await calculateToNextLevel(currency, amtDepositedXTX, level)
 
     const [
@@ -166,6 +204,7 @@ const handleAmountChange = (rxAmount, rxSetState, depositAmounts) => async (_, v
     const isValidLevel = level > 0
     const amountNext = ((amount + amtToNextEntry) * 1.0001) // multiply to get around rounding issues
         .toFixed(8)
+    console.log({amount, amtToNextEntry, amountNext})
     const content = (
         <div>
             <h4 className='no-margin'>
