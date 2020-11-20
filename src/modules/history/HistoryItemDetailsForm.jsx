@@ -9,6 +9,7 @@ import JSONView from '../../components/JSONView'
 import { translated } from '../../services/language'
 import { statusTitles } from '../../services/queue'
 import { query } from '../../services/blockchain'
+import LabelCopy from '../../components/LabelCopy'
 
 // Read-only form
 const textsCap = translated({
@@ -85,10 +86,8 @@ export default function HistoryItemDetailsForm(props) {
             grouped: true,
             inputs: [
                 txId && {
-                    action: {
-                        icon: 'copy outline',
-                        onClick: () => copyToClipboard(txId),
-                    },
+                    inlineLabel: <LabelCopy {...{ content: null, value: txId }} />,
+                    labelPosition: 'right',
                     name: 'txId',
                     label: textsCap.txId,
                     readOnly: true,
@@ -103,10 +102,8 @@ export default function HistoryItemDetailsForm(props) {
                     value: action,
                 },
                 identity && {
-                    action: {
-                        icon: 'copy outline',
-                        onClick: ()=> copyToClipboard(identity)
-                    },
+                    inlineLabel: <LabelCopy {...{ content: null, value: identity }} />,
+                    labelPosition: 'right',
                     label: textsCap.identity,
                     name: 'identity',
                     readOnly: true,

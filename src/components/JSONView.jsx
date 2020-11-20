@@ -35,14 +35,15 @@ export default function JSONView({ data, asEl = true }) {
                 dataX[key] = value
                 return
             }
-            const useElipsis = isAddress(value)
-                    || isAddress(value, 'ETH')
-                    || isHex(value) && value.length > maxLength
-            if (useElipsis) {
-                const valueShort = textEllipsis(value, maxLength)
-                ellipsed[valueShort] = value
-                value = valueShort
-            }
+            const useElipsis = (isHex(value) && value.length > maxLength)
+                || isAddress(value, 'ethereum')
+                || isAddress(value)
+                if (useElipsis) {
+                    const valueShort = textEllipsis(value, maxLength)
+                    ellipsed[valueShort] = value
+                    value = valueShort
+                }
+            value === '0x1200' && console.log({value, useElipsis})
             dataX[key] = value
         })
     

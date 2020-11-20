@@ -8,6 +8,7 @@ import { arrSort, className, copyToClipboard, textEllipsis } from '../utils/util
 // forms
 import IdentityForm from '../modules/identity/IdentityForm'
 import TimekeepingForm from '../modules/timekeeping/TimekeepingForm'
+import SettingsForm, { inputNames as settingsInputNames} from '../forms/Settings'
 // services
 import { getUser, rxIsLoggedIn } from '../modules/chat/ChatClient'
 import { getSelected, setSelected, rxIdentities } from '../modules/identity/identity'
@@ -28,7 +29,6 @@ import { toggleSidebarState, setActive } from '../services/sidebar'
 import { rxTimerInProgress } from '../modules/timekeeping/timekeeping'
 import { setToast } from '../services/toast'
 import { useInverted, rxInverted, rxLayout, MOBILE } from '../services/window'
-import SettingsForm from '../forms/Settings'
 
 const textsCap = translated({
 	addressCopied: 'your identity copied to clipboard',
@@ -201,12 +201,22 @@ const PageHeaderView = props => {
 							{
 								icon: 'currency',
 								content: textsCap.changeCurrency,
-								onClick: () => showForm(SettingsForm),
+								onClick: () => showForm(SettingsForm, {
+									header: null, //textsCap.changeCurrency,
+									inputsHidden: Object.values(settingsInputNames)
+										.filter(x => x !== settingsInputNames.currency),
+									size: 'mini',
+								}),
 							},
 							{
 								icon: 'language',
 								content: 'Change language', // Better left un-translated
-								onClick: () => showForm(SettingsForm),
+								onClick: () => showForm( SettingsForm, {
+									header: null,// 'Change language',
+									inputsHidden: Object.values(settingsInputNames)
+										.filter(x => x !== settingsInputNames.languageCode),
+									size: 'mini',
+								}),
 							},
 						].filter(Boolean).map((props, i) =>
 							<Dropdown.Item {...props} key={props.icon + i} />

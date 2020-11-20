@@ -14,6 +14,7 @@ const textsCap = translated({
 export default function LabelCopy(props) {
     let {
         content,
+        El,
         ignoreAttributes,
         maxLength,
         numDots,
@@ -26,7 +27,7 @@ export default function LabelCopy(props) {
         // catch circular objects
         value = ''
     }
-    if (!content) {
+    if (!content && content !== null) {
         maxLength = isValidNumber(maxLength)
             ? maxLength
             : maxLength === null
@@ -34,14 +35,17 @@ export default function LabelCopy(props) {
                 : useRxSubject(rxLayout, l => l !== MOBILE ? 20 : 13)[0]
     }
     return (
-        <Label {...{
+        <El {...{
             ...objWithoutKeys(props, ignoreAttributes),
-            content: `${content}` || textEllipsis(value, maxLength, numDots, split),
+            content: content === null || content
+                ? content
+                : textEllipsis(value, maxLength, numDots, split),
             onClick: () => {
                 copyToClipboard(value)
                 setToast({
                     content: `${textsCap.copiedMsg} ${value}`,
-                    style: { overflowX: 'hidden' }
+                    status: 'success',
+                    style: { overflowX: 'hidden' },
                 }, 1000, value)
             },
         }} />
@@ -50,6 +54,10 @@ export default function LabelCopy(props) {
 LabelCopy.propTypes = {
     // @content if not supplied and @maxLength is not `null` will be shortened
     content: PropTypes.any,
+    El: PropTypes.oneOfType([
+        PropTypes.func,
+        PropTypes.string,
+    ]).isRequired,
     // @ignoreAttributes attributes to not pass on to the element
     ignoreAttributes: PropTypes.array.isRequired,
     // @maxLength if `null`, text will not be shortened.
@@ -62,12 +70,14 @@ LabelCopy.propTypes = {
 }
 LabelCopy.defaultProps = {
     className: 'clickable',
+    El: Label,
     icon: {
         className: 'no-margin',
         name: 'copy outline',
         style: { paddingRight: 5 }
     },
     ignoreAttributes: [
+        'El',
         'ignoreAttributes',
         'maxLength',
         'numDots',

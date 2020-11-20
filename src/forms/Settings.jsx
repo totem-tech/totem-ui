@@ -32,6 +32,14 @@ const [texts, textsCap] = translated({
 }, true)
 const savedMsg = { content: textsCap.saved, status: 'success' }
 
+export const inputNames = {
+    chatMsgLimit: 'chatMsgLimit',
+    currency: 'currency',
+    gridCols: 'gridCols',
+    historyLimit: 'historyLimit',
+    languageCode: 'languageCode',
+}
+
 export default class SettingsForm extends Component {
     constructor(props) {
         super(props)
@@ -43,7 +51,7 @@ export default class SettingsForm extends Component {
             inputs: [
                 {
                     label: textsCap.gsLanguageLabel,
-                    name: 'languageCode',
+                    name: inputNames.languageCode,
                     onChange: this.handleLanguageChange,
                     options: arrSort(
                         Object.keys(languages).sort().map(code => ({
@@ -63,7 +71,7 @@ export default class SettingsForm extends Component {
                 },
                 {
                     label: textsCap.gsCurrencyLabel,
-                    name: 'currency',
+                    name: inputNames.currency,
                     onChange: this.handleCurrencyChange,
                     options: [],
                     search: ['text', 'description', 'value'],
@@ -73,7 +81,7 @@ export default class SettingsForm extends Component {
                 },
                 {
                     label: textsCap.historyLimitLabel,
-                    name: 'historyLimit',
+                    name: inputNames.historyLimit,
                     onChange: this.handleHistoryLimitChange,
                     options: [0, 10, 50, 100, 500, 1000].map((limit, i) => ({
                         key: i,
@@ -86,7 +94,7 @@ export default class SettingsForm extends Component {
                 },
                 {
                     label: textsCap.chatLimitLabel,
-                    name: 'chatMsgLimit',
+                    name: inputNames.chatMsgLimit,
                     onChange: this.handleChatLimitChange,
                     //0 for unlimited
                     options: [10, 50, 100, 200, 300, 500].map((limit, i) => ({
@@ -100,7 +108,7 @@ export default class SettingsForm extends Component {
                 },
                 {
                     label: textsCap.gridColumnsLabel,
-                    name: 'gridCols',
+                    name: inputNames.gridCols,
                     onChange: this.handleGridCollumnsChange,
                     options: [1, 2, 3, 4, 5, 6].map(n => ({
                         icon: n === 1 ? 'bars' : 'grid layout',
@@ -183,5 +191,8 @@ export default class SettingsForm extends Component {
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
 SettingsForm.defaultProps = {
+    closeOnDimmerClick: true,
+    closeOnEscape: true,
+    closeText: null,
     header: textsCap.settings,
 }

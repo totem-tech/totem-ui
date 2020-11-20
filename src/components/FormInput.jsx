@@ -333,7 +333,7 @@ export class FormInput extends Component {
 				attrs.value = !hasValue(attrs.value) ? '' : attrs.value //forces inputs to be controlled
 				attrs.fluid = !useInput ? undefined : attrs.fluid
 				attrs.label = inlineLabel || attrs.label
-				const El = useInput ? Input : Form.Input
+				const El = useInput || inlineLabel ? Input : Form.Input
 				inputEl = <El {...attrs} />
 		}
 

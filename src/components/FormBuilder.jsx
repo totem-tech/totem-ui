@@ -275,7 +275,14 @@ export default class FormBuilder extends Component {
 					trigger={trigger}
 				>
 					<div className='modal-close' style={styles.closeButton}>
-						<Icon className='no-margin' color='grey' link name='times circle outline' onClick={this.handleClose} size='large' />
+						<Icon {...{
+							className: 'no-margin',
+							color: 'grey',
+							link: true,
+							name: 'times circle outline',
+							onClick: this.handleClose,
+							size: 'large',
+						}} />
 					</div>
 					{header && (
 						<Header as={Modal.Header}>
@@ -515,6 +522,7 @@ const styles = {
 		position: 'absolute',
 		top: 15,
 		right: 15,
+		zIndex: 1, // for modals without header
 	},
 	messageInline: {
 		padding: 15,
