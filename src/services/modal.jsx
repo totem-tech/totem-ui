@@ -3,7 +3,7 @@ import { render } from 'react-dom'
 import uuid from 'uuid'
 import { Confirm, Icon } from 'semantic-ui-react'
 import DataStorage from '../utils/DataStorage'
-import { isBool, isFn, className } from '../utils/utils'
+import { isBool, isFn, className, isStr } from '../utils/utils'
 import { translated } from './language'
 import { toggleFullscreen, useInverted, getUrlParam } from './window'
 
@@ -50,28 +50,39 @@ const add = (id, element) => {
 
 export const closeModal = (id, delay = 0) => setTimeout(() => modals.delete(id), delay)
 
-// confirm opens a confirm dialog
-//
-// Params: 
-// @confirmProps    object: properties to be supplied to the Confirm component
-// @id              string: if supplied and any modal with this ID will be replaced
-//
-// returns
-// @id              string : random id assigned to the modal. Can be used to remove using the remove function
-export const confirm = (confirmProps, id) => {
-    id = id || uuid.v1()
+/**
+ * @name        confirm
+ * @summary     opens a confirm modal/dialog
+ * 
+ * @param   {Object|String} confirmProps props to be used in Semantic UI Confirm component.
+ *                                       If string supplied, it will be used as `content` prop
+ * @param   {String}        modalId      (optional) if supplied and any existing modal with this ID will be replaced.
+ *                                       Otherwise, a random UUID will be generated.
+ * 
+ * @returns {String}       @modalId      can be used with `closeModal` function to externally close the modal
+ */
+export const confirm = (confirmProps, modalId = uuid.v1()) => {
+    if (isStr(confirmProps)) {
+        confirmProps = { content: confirmProps }
+    }
     let { cancelButton, confirmButton, content, header, open, onCancel, onConfirm } = confirmProps
     if (confirmButton !== null && !confirmButton) {
+        // use default translated text for confirm button
         confirmButton = textsCap.ok
     }
     if (cancelButton !== null && !cancelButton) {
-        cancelButton = !confirmButton ? textsCap.close : textsCap.cancel
+        // use default translated text for cancel button
+        cancelButton = !confirmButton
+            ? textsCap.close
+            : textsCap.cancel
     }
     if (!content && content !== null) {
+        // use default translated text for content
         content = textsCap.areYouSure
     }
-    if (!confirmButton && !cancelButton && !header && content) {
-        // add a close button
+    if (!confirmButton && !cancelButton && (header || content)) {
+        // add a close button if both confirm and cancel buttons are hidden
+        // (Semantic confirm dialoge doesn't have a close icon by default)
         content = (
             <div>
                 <div style={{
@@ -82,7 +93,7 @@ export const confirm = (confirmProps, id) => {
                     <Icon {...{
                         className: 'grey large link icon no-margin',
                         name: 'times circle outline',
-                        onClick: () => closeModal(id) | (isFn(onCancel) && onCancel(e, d))
+                        onClick: () => closeModal(modalId) | (isFn(onCancel) && onCancel(e, d))
                     }} />
                 </div>
                     {content}
@@ -90,7 +101,7 @@ export const confirm = (confirmProps, id) => {
         )
     }
     return add(
-        id,
+        modalId,
         <IConfirm {...{
             ...confirmProps,
             className: 'confirm-modal',
@@ -98,12 +109,17 @@ export const confirm = (confirmProps, id) => {
             confirmButton,
             content: content && <div className="content">{content}</div>,
             open: isBool(open) ? open : true,
-            onCancel: (e, d) => closeModal(id) | (isFn(onCancel) && onCancel(e, d)),
-            onConfirm: (e, d) => closeModal(id) | (isFn(onConfirm) && onConfirm(e, d)),
+            onCancel: confirm.handleCloseCb(modalId, onCancel),
+            onConfirm: confirm.handleCloseCb(modalId, onConfirm),
         }} />
     )
 }
+confirm.handleCloseCb = (modalId, cb) => (...args) => {
+    closeModal(modalId)
+    isFn(modalId) && cb(...args)
+}
 // Invertible Confirm component
+// This is a sugar for the Confirm component with auto inverted/dark mode
 const IConfirm = props => {
     const inverted = useInverted()
     return (
@@ -121,37 +137,48 @@ const IConfirm = props => {
     )
 }
 
-export const get = id => modals.get(id)
+/**
+ * @name    get
+ * @summary get modal elememnt by it's ID
+ * 
+ * @param {String} modalId 
+ * 
+ * @returns {Element}
+ */
+export const get = modalId => modals.get(modalId)
 
-// showForm opens form in a modal dialog
-//
-// Params: 
-// @FormComponent   function/class  : FormBuilder or any other form that uses FormBuilder component (not element) class 
-// @id              string          : if supplied and any modal with this ID will be replaced
-//
-// returns
-// @id              string : random id assigned to the modal. Can be used to remove using the remove function
-export const showForm = (FormComponent, props, id) => {
+/**
+ * @name    showForm
+ * @summary opens form in a modal dialog
+ * 
+ * @param   {Function}  FormComponent FormBuilder or any other form that uses FormBuilder component (not element) class 
+ * @param   {Object}    props         (optional) any props to supply when instantiating the form element
+ * @param   {String}    modalId       (optional) if not supplied, will generate a random UUID
+ * 
+ * @returns {String}    @modalId      can be used with `closeModal` function to externally close the modal
+ */
+export const showForm = (FormComponent, props, modalId = uuid.v1()) => {
     // Invalid component supplied
     if (!isFn(FormComponent)) return
-    id = id || uuid.v1()
+
     const form = (
         <FormComponent {...{
             ...props,
             modal: true,
-            modalId: id,
+            modalId: modalId,
             open: true,
             onClose: (e, d) => {
                 const { onClose } = props || {}
-                closeModal(id)
+                closeModal(modalId)
                 isFn(onClose) && onClose(e, d)
             },
         }} />
     )
-    return add(id, form)
+    return add(modalId, form)
 }
 
-// open any form within './forms/ in a modal
+// enable user to open any form within './forms/ in a modal by using URL parameter `?form=FormComponentFileName`
+// any other URL parameter will be supplied to the from as the `values` prop.
 setTimeout(() => {
     let fileName = (getUrlParam('form') || '')
         .trim()
