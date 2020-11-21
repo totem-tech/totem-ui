@@ -290,6 +290,7 @@ export class FormInput extends Component {
 				inputEl = <DateInput {...attrs} />
 				break
 			case 'dropdown':
+				attrs.disabled = attrs.disabled || attrs.readOnly
 				attrs.inline = inline
 				// if number of options is higher than 50 and if lazyLoad is disabled, can slowdown FormBuilder
 				attrs.lazyLoad = isBool(attrs.lazyLoad) ? attrs.lazyLoad : true

@@ -35,21 +35,52 @@ export default class FormBuilder extends Component {
 
 	// recursive interceptor for infinite level of child inputs
 	addInterceptor = (index, values) => (input, i) => {
-		const { inputsDisabled = [], inputsHidden = [], inputsReadOnly = [] } = this.props
-		const { disabled, hidden, inputs: childInputs, name, readOnly, rxValue, type, validate: validate } = input || {}
+		const {
+			inputsDisabled = [],
+			inputsHidden = [],
+			inputsReadOnly = [],
+		} = this.props
+		let {
+			disabled,
+			hidden,
+			inputs: childInputs,
+			name,
+			readOnly,
+			rxValue,
+			type,
+			validate: validate,
+		} = input || {}
 		const isGroup = `${type}`.toLowerCase() === 'group' && isArr(childInputs)
 		index = isDefined(index) ? index : null
 		const props = {
 			...input,
-			disabled: inputsDisabled.includes(name) || (isFn(disabled) ? disabled(values, i) : disabled),
-			hidden: inputsHidden.includes(name) || (!isFn(hidden) ? hidden : !!hidden(values, i)),
-			inputs: !isGroup ? undefined : childInputs.map(this.addInterceptor(index ? index : i, values)),
+			disabled: inputsDisabled.includes(name)
+				|| isFn(disabled)
+					? disabled(values, i)
+					: disabled
+				,
+			hidden: inputsHidden.includes(name)
+				|| (!isFn(hidden)
+					? hidden
+					: !!hidden(values, i)
+				),
+			inputs: isGroup
+				? childInputs.map(this.addInterceptor(index ? index : i, values))
+				: undefined,
 			key: name,
 			readOnly: inputsReadOnly.includes(name) || readOnly,
-			onChange: isGroup ? undefined : (
-				(e, data) => this.handleChange(e, data, input, index ? index : i, index ? i : undefined)
-			),
-			validate: isFn(validate) ? (e, d) => validate(e, d, this.state.values, rxValue) : undefined,
+			onChange: isGroup
+				? undefined
+				: (e, data) => this.handleChange(
+					e,
+					data,
+					input,
+					index ? index : i,
+					index ? i : undefined,
+				),
+			validate: isFn(validate)
+				? (e, d) => validate(e, d, this.state.values, rxValue)
+				: undefined,
 		}
 		return props
 	}

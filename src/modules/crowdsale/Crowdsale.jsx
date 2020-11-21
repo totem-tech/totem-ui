@@ -7,7 +7,6 @@ import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
 import { iUseReducer, reducer, useRxSubject } from '../../services/react'
 import { MOBILE, rxLayout } from '../../services/window'
-import { copyToClipboard } from '../../utils/utils'
 import client, { rxIsLoggedIn, rxIsRegistered } from '../chat/ChatClient'
 import RegistrationForm from '../chat/RegistrationForm'
 import {
@@ -25,7 +24,6 @@ import KYCViewForm from './KYCViewForm'
 import CalculatorForm from './CalculatorForm'
 import { Currency } from '../../components/Currency'
 import { currencyDefault } from '../../services/currency'
-import JSONView from '../../components/JSONView'
 import LabelCopy from '../../components/LabelCopy'
 
 const textsCap = translated({
@@ -276,6 +274,11 @@ const getTableProps = deposits => ({
         },
     ],
     searchable: false,
+    tableProps: {
+        basic: 'very',
+        celled: false,
+        compact: true,
+    },
     topLeftMenu: [
         {
             content: textsCap.viewNotes,
@@ -296,8 +299,8 @@ const getTableProps = deposits => ({
             hidden: !deposits,
             content: textsCap.calculator,
             icon: 'calculator',
-            onClick: () => showForm(CalculatorForm, { deposits} )
-        }
+            onClick: () => showForm(CalculatorForm, { deposits } ),
+        },
     ],
 })
 

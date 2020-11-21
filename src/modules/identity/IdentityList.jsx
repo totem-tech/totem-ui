@@ -126,6 +126,11 @@ const getTableProps = () => ({
     ],
     emptyMessage: { content: textsCap.emptyMessage },
     searchExtraKeys: ['address', 'name', '_tagsStr'],
+    tableProps: {
+        // basic:  'very',
+        celled: false,
+        compact: true,
+    },
     topLeftMenu: [
         {
             El:ButtonGroup,
