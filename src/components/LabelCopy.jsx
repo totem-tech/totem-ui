@@ -19,6 +19,7 @@ export default function LabelCopy(props) {
         maxLength,
         numDots,
         split,
+        style,
         value,
     } = props
     try {
@@ -34,6 +35,7 @@ export default function LabelCopy(props) {
                 ? value.length
                 : useRxSubject(rxLayout, l => l !== MOBILE ? 20 : 13)[0]
     }
+    
     return (
         <El {...{
             ...objWithoutKeys(props, ignoreAttributes),
@@ -48,6 +50,10 @@ export default function LabelCopy(props) {
                     style: { overflowX: 'hidden' },
                 }, 1000, value)
             },
+            style: {
+                whiteSpace: 'nowrap',
+                ...style,
+            }
         }} />
     )
 }
@@ -63,6 +69,7 @@ LabelCopy.propTypes = {
     // @maxLength if `null`, text will not be shortened.
     // Otherwise, if falsy, will use 20 for desktop and 13 for mobile
     maxLength: PropTypes.number,
+    // @numDots number of dots to use when shortening the value.
     // Deafult: 3
     numDots: PropTypes.number,
     split: PropTypes.bool,
@@ -84,8 +91,4 @@ LabelCopy.defaultProps = {
         'split',
         'value',
     ],
-    size: 'tiny',
-    style: {
-        whiteSpace: 'nowrap',
-    }
 }
