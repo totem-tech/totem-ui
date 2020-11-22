@@ -14,6 +14,7 @@ const PREFIX = 'totem_'
 const nonCbs = ['isConnected', 'disconnect']
 // read or write to messaging settings storage
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
+export const rxIsConnected = new BehaviorSubject(false)
 export const rxIsLoggedIn = new BehaviorSubject(null)
 export const rxIsRegistered = new BehaviorSubject(!!(rw().user || {}).id)
 
@@ -111,9 +112,15 @@ export const getClient = () => {
     const { id, secret } = getUser() || {}
     if (!id) return instance
 
-    // auto login on connect to messaging service
-    instance.onConnect(() => instance.login(id, secret, () => { }))
-    instance.onConnectError(() => rxIsLoggedIn.next(false))
+    instance.onConnect(() => {
+        rxIsConnected.next(true)
+        // auto login on connect to messaging service
+        instance.login(id, secret, () => { })
+    })
+    instance.onConnectError(() => {
+        rxIsLoggedIn.next(false)
+        rxIsConnected.next(false)
+    })
     return instance
 }
 

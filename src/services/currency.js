@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { generateHash, arrSort, isArr, isValidNumber } from '../utils/utils'
 import PromisE from '../utils/PromisE'
-import client from '../modules/chat/ChatClient'
+import client, { rxIsConnected } from '../modules/chat/ChatClient'
 import { translated } from './language'
 import storage from './storage'
+import { subjectAsPromise } from './react'
 
 const textsCap = translated({
     invalidCurency: 'invalid currency supplied',
@@ -39,6 +39,8 @@ export const convertTo = async (amount = 0, from, to, decimals) => {
     to = to.toUpperCase()
     const ft = [from, to]
     // await client.currencyConvert.promise(from, to, amount)
+    // wait up to 10 seconds if messaging service is not connected yet
+    if (!rxIsConnected.value) await subjectAsPromise(rxIsConnected, true, 10000)[0]
     const currencies = await getCurrencies()
     const fromTo = currencies.filter(({ ISO }) => ft.includes(ISO))
     if (!ft.every(x => fromTo.find(c => c.ISO === x))) throw new Error(textsCap.invalidCurency)
@@ -85,6 +87,15 @@ export const updateCurrencies = async () => {
         if (updatePromise) return await updatePromise
 
         const sortedArr = rwCache().currencies
+        // messaging service is not connected
+        if (!rxIsConnected.value) {
+            // return existing list if available
+            if (!sortedArr.length) return sortedArr
+
+            // wait till connected
+            await subjectAsPromise(rxIsConnected, true)[0]
+        }
+
         const hash = generateHash(sortedArr)
         const currencyPromise = client.currencyList.promise(hash)
         const handleCurrencies = async (currencies) => {
@@ -104,7 +115,7 @@ export const updateCurrencies = async () => {
         updateCurrencies.updatePromise = !sortedArr ? currencyPromise : PromisE.timeout(currencyPromise, 3000)
         await updateCurrencies.updatePromise
     } catch (err) {
-        console.error('Failed to retrieve currencies', err)
+        console.trace('Failed to retrieve currencies:', err)
     }
 }
 

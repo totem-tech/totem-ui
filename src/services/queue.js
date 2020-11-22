@@ -369,7 +369,7 @@ const handleChatClient = async (id, rootTask, task, toastId) => {
     )
 
     try {
-        if (!navigator.onLine) {
+        if (!navigator.onLine || !client.isConnected()) {
             suspendedIds.push(id)
             _save(SUSPENDED)
             console.log('Queue task execution suspended due to being offline. ID:', id)

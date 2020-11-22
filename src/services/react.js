@@ -2,7 +2,44 @@
 import { useEffect, useReducer, useState } from "react"
 import { BehaviorSubject,  Subject } from 'rxjs'
 import PromisE from "../utils/PromisE"
-import { isFn, isSubjectLike } from "../utils/utils"
+import { isFn, isSubjectLike, isValidNumber } from "../utils/utils"
+
+
+/**
+ * @name    subjectAsPromise
+ * @summary sugar for RxJS subject as promise and, optionally, wait until an expected value is received
+ * 
+ * @param   {Subject}           subject         RxJS subject or similar subscribable
+ * @param   {*}                 expectedValue   (optional) if undefined, will resolve on first value received
+ * @param   {Number|Function}   timeout         (optional) will reject if no value received within given time
+ * 
+ * @returns {[Promise, Function]}   will reject with: 
+ *                                  - `null` if times out
+ *                                  - `undefined` if @subject is not a valid RxJS subject like subscribable
+ */
+export const subjectAsPromise = (subject, expectedValue, timeout) => {
+    if (!isSubjectLike(subject)) return reject()
+
+    let subscription, timeoutId
+    const requiredValue = expectedValue !== undefined
+    const unsubscribe = () => setTimeout(() => {
+        subscription.unsubscribe()
+        clearTimeout(timeoutId)
+    }, 50)
+    const promise = new PromisE((resolve, reject) => {
+        subscription = subject.subscribe(value => {
+            if (requiredValue && value !== expectedValue) return
+            unsubscribe()
+            resolve(value)
+        })
+        timeoutId = isValidNumber(timeout) && setTimeout(() => {
+            unsubscribe()
+            reject(null)
+        }, timeout)
+
+    })
+    return [promise, unsubscribe]
+}
 
 /**
  * @name    iUseReducer
@@ -121,33 +158,3 @@ export const useRxSubject = (subject, valueModifier, initialValue, allowSubjectU
 }
 // To prevent an update return this in valueModifier
 useRxSubject.IGNORE_UPDATE = Symbol('ignore-rx-subject-update')
-/*
-export const useRxSubject = (subject, valueModifier, initialValue, allowSubjectUpdate = false) => {
-    if (!isSubjectLike(subject)) return subject
-    const v = subject instanceof BehaviorSubject ? subject.value : initialValue
-    let firstValue = !isFn(valueModifier) ? v : valueModifier(v)
-    const [value, setValue] = useState(firstValue)
-    const valueSetter = !allowSubjectUpdate ? setValue : () => newValue => subject.next(newValue)
-
-    useEffect(() => {
-        let mounted = true
-        let ignoreFirst = subject instanceof BehaviorSubject ? false : true
-        const subscribed = subject.subscribe((newValue) => {
-            if (!ignoreFirst) {
-                ignoreFirst = true
-                if (firstValue === newValue) return
-            }
-            if (!isFn(valueModifier)) return mounted && setValue(newValue)
-            PromisE(valueModifier(newValue)).then(newValue => {
-                if (!mounted || newValue === useRxSubject.IGNORE_UPDATE) return
-                setValue(newValue)
-            })
-        })
-        return () => {
-            mounted = false
-            subscribed.unsubscribe()
-        }
-    }, [])
-
-    return [ value, valueSetter ]
-}*/
