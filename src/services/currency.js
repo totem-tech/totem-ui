@@ -90,7 +90,7 @@ export const updateCurrencies = async () => {
         // messaging service is not connected
         if (!rxIsConnected.value) {
             // return existing list if available
-            if (!sortedArr.length) return sortedArr
+            if (sortedArr && sortedArr.length) return sortedArr
 
             // wait till connected
             await subjectAsPromise(rxIsConnected, true)[0]

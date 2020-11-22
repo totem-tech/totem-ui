@@ -319,7 +319,12 @@ const generateTableData = (csData) => {
         .map(blockchain =>  [
             blockchain,
             {
-                address: <LabelCopy value={depositAddresses[blockchain]} maxLength={null} />,
+                address: depositAddresses[blockchain] && (
+                    <LabelCopy
+                        maxLength={null}
+                        value={depositAddresses[blockchain]}
+                    />
+                ),
                 blockchain,
                 blockchainName: BLOCKCHAINS[blockchain],
                 amount: undefined,

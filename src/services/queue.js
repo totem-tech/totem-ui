@@ -684,7 +684,7 @@ window.addEventListener('beforeunload', function (e) {
     // Chrome requires returnValue to be set
     e.returnValue = ''
 })
-const resultSuspended = async (online) => {
+const resumeSuspended = async (online) => {
     if (!online) return
     // attempt to reconnect to blockchain, in case, first it failed.
     await getConnection(true)
@@ -697,8 +697,8 @@ const resultSuspended = async (online) => {
     }
 }
 // resume suspended tasks whenever browser is back online
-rxOnline.subscribe(resultSuspended)
-rxIsConnected.subscribe(resultSuspended)
+rxOnline.subscribe(resumeSuspended)
+rxIsConnected.subscribe(resumeSuspended)
 
 export default {
     addToQueue,

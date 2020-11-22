@@ -116,7 +116,7 @@ export const confirm = (confirmProps, modalId = uuid.v1()) => {
 }
 confirm.handleCloseCb = (modalId, cb) => (...args) => {
     closeModal(modalId)
-    isFn(modalId) && cb(...args)
+    isFn(cb) && cb(...args)
 }
 // Invertible Confirm component
 // This is a sugar for the Confirm component with auto inverted/dark mode
