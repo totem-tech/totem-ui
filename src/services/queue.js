@@ -8,7 +8,7 @@ import DataStorage from '../utils/DataStorage'
 import { getTxFee, signAndSend } from '../utils/polkadotHelper'
 import { isArr, isFn, isObj, isStr, objClean, isValidNumber, isError } from '../utils/utils'
 // services
-import { getClient } from '../modules/chat/ChatClient'
+import { getClient, rxIsConnected } from '../modules/chat/ChatClient'
 import { getConnection, query, getCurrentBlock } from './blockchain'
 import { save as addToHistory } from '../modules/history/history'
 import { find as findIdentity, getSelected } from '../modules/identity/identity'
@@ -369,7 +369,7 @@ const handleChatClient = async (id, rootTask, task, toastId) => {
     )
 
     try {
-        if (!navigator.onLine || !client.isConnected()) {
+        if (!rxIsConnected.value) {
             suspendedIds.push(id)
             _save(SUSPENDED)
             console.log('Queue task execution suspended due to being offline. ID:', id)
@@ -557,7 +557,6 @@ export const remove = id => {
  * @summary resume execution of queued tasks that are incomplete, partially complete or never started.
  */
 export const resumeQueue = () => queue.map(([id, task]) => {
-    // if (!navigator.onLine) return suspendedIds.push(id)
     _processTask(task, id, task.toastId, true)
 })
 
@@ -685,8 +684,7 @@ window.addEventListener('beforeunload', function (e) {
     // Chrome requires returnValue to be set
     e.returnValue = ''
 })
-// resume suspended tasks whenever browser is back online
-rxOnline.subscribe(async (online) => {
+const resultSuspended = async (online) => {
     if (!online) return
     // attempt to reconnect to blockchain, in case, first it failed.
     await getConnection(true)
@@ -697,7 +695,10 @@ rxOnline.subscribe(async (online) => {
         // resume execution by checking each step starting from the top level task
         _processTask(task, id, task.toastId, true)
     }
-})
+}
+// resume suspended tasks whenever browser is back online
+rxOnline.subscribe(resultSuspended)
+rxIsConnected.subscribe(resultSuspended)
 
 export default {
     addToQueue,
