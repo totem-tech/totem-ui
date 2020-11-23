@@ -7,7 +7,7 @@ import { className, hasValue, isArr, isFn, isObj, objWithoutKeys } from '../util
 const excludeKeys = ['inline', 'multiple', 'name', 'options', 'required', 'rxValue', 'type', 'value', 'width']
 
 export default function CheckboxGroup(props) {
-    const { inline, multiple, name, options, radio, rxValue, style } = props
+    const { disabled, inline, multiple, name, options, radio, readOnly, rxValue, style } = props
     const allowMultiple = !radio && multiple
     const commonProps = objWithoutKeys(props, excludeKeys)
     let [value, setValue] = useState(rxValue && rxValue.value || props.value)
@@ -25,13 +25,20 @@ export default function CheckboxGroup(props) {
     return (
         <div style={style}>
             {(options || []).map((option, i) => {
-                value = !allowMultiple ? value : (
-                    !hasValue(value) ? [] : !isArr(value) ? [value] : value
-                )
-                const checked = allowMultiple ? value.indexOf(option.value) >= 0 : value === option.value
+                value = !allowMultiple
+                    ? value
+                    : !hasValue(value)
+                        ? []
+                        : !isArr(value)
+                            ? [value]
+                            : value
+                const checked = allowMultiple
+                    ? value.indexOf(option.value) >= 0
+                    : value === option.value
                 return option.hidden ? '' : (
                     <Checkbox {...{
                         ...commonProps,
+                        disabled: disabled || readOnly,
                         ...option,
                         checked,
                         key: i,

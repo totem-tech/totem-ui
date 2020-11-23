@@ -26,7 +26,7 @@ const textsCap = translated({
 
 export default function KYCViewForm(props) {
     const [inputs] = useRxSubject(rxCrowdsaleData, kycData => {
-        const { location = {} } = kycData
+        const { depositAddresses = {}, location = {} } = kycData
         const locationIn = {
             accordion: { collapsed: true, styled: true },
             inputs: [{
@@ -53,7 +53,9 @@ export default function KYCViewForm(props) {
                 ? locationIn
                 : input
         )
-        return fillValues(inputs, kycData)
+        const blockchains = Object.keys(depositAddresses)
+            .filter(x => !!depositAddresses[x])
+        return fillValues(inputs, { ...kycData, blockchains })
     })
 
     return (

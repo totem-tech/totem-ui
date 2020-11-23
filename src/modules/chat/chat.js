@@ -1,7 +1,7 @@
 import DataStorage from '../../utils/DataStorage'
 import uuid from 'uuid'
 import { BehaviorSubject, Subject } from 'rxjs'
-import { arrUnique, isObj, isValidNumber, isDefined, objClean } from '../../utils/utils'
+import { arrUnique, isObj, isValidNumber, isDefined, objClean, isArr } from '../../utils/utils'
 import client, { getUser, rxIsLoggedIn } from './ChatClient'
 import { addToQueue, QUEUE_TYPES, rxOnSave, statuses } from '../../services/queue'
 import storage from '../../services/storage'
@@ -87,11 +87,15 @@ export const getChatUserIds = (includeTrollbox = true) => arrUnique(Object.keys(
 
 // returns inbox storage key
 export const getInboxKey = receiverIds => {
+    receiverIds = isArr(receiverIds)
+        ? receiverIds
+        : [receiverIds].filter(Boolean)
     const { id: userId } = getUser() || {}
-    receiverIds = arrUnique(receiverIds).filter(id => id !== userId)
+    receiverIds = arrUnique(receiverIds)
+        .filter(id => id !== userId)
 
     // Trollbox
-    if (receiverIds.includes(TROLLBOX)) return TROLLBOX
+    if (receiverIds.includes(TROLLBOX) || !receiverIds.length) return TROLLBOX
     // Trollbox
     if (receiverIds.includes(TROLLBOX_ALT)) return TROLLBOX
     // Private chat
@@ -103,7 +107,9 @@ export const getInboxKey = receiverIds => {
         .join()
 }
 
-export const getMessages = inboxKey => !inboxKey ? chatHistory.getAll() : [...chatHistory.get(inboxKey)]
+export const getMessages = inboxKey => !inboxKey
+    ? chatHistory.getAll()
+    : [...chatHistory.get(inboxKey) || []]
 
 // get list of User IDs by inbox key
 export const getInboxUserIds = inboxKey => arrUnique((chatHistory.get(inboxKey) || []).map(x => x.senderId))
@@ -340,7 +346,10 @@ setTimeout(() => {
         const visible = rxVisible.value
         const inboxKey = rxOpenInboxKey.value
         const expanded = rxExpanded.value
-        const doUpdate = visible && inboxKey && (getLayout() !== MOBILE || expanded) && inboxSettings(inboxKey).unread
+        const doUpdate = visible
+            && inboxKey
+            && (getLayout() !== MOBILE || expanded)
+            && inboxSettings(inboxKey).unread
         doUpdate && inboxSettings(inboxKey, { unread: 0 })
     }
     rxOpenInboxKey.subscribe(key => {

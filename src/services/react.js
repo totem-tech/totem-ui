@@ -1,45 +1,8 @@
-// placeholder for reusable React utility functions that doesn't doesn't specifically fit anywhere else
+// a set of reusable React and state related utility functions
 import { useEffect, useReducer, useState } from "react"
 import { BehaviorSubject,  Subject } from 'rxjs'
 import PromisE from "../utils/PromisE"
 import { isFn, isSubjectLike, isValidNumber } from "../utils/utils"
-
-
-/**
- * @name    subjectAsPromise
- * @summary sugar for RxJS subject as promise and, optionally, wait until an expected value is received
- * 
- * @param   {Subject}           subject         RxJS subject or similar subscribable
- * @param   {*}                 expectedValue   (optional) if undefined, will resolve on first value received
- * @param   {Number|Function}   timeout         (optional) will reject if no value received within given time
- * 
- * @returns {[Promise, Function]}   will reject with: 
- *                                  - `null` if times out
- *                                  - `undefined` if @subject is not a valid RxJS subject like subscribable
- */
-export const subjectAsPromise = (subject, expectedValue, timeout) => {
-    if (!isSubjectLike(subject)) return reject()
-
-    let subscription, timeoutId
-    const requiredValue = expectedValue !== undefined
-    const unsubscribe = () => setTimeout(() => {
-        subscription.unsubscribe()
-        clearTimeout(timeoutId)
-    }, 50)
-    const promise = new PromisE((resolve, reject) => {
-        subscription = subject.subscribe(value => {
-            if (requiredValue && value !== expectedValue) return
-            unsubscribe()
-            resolve(value)
-        })
-        timeoutId = isValidNumber(timeout) && setTimeout(() => {
-            unsubscribe()
-            reject(null)
-        }, timeout)
-
-    })
-    return [promise, unsubscribe]
-}
 
 /**
  * @name    iUseReducer
@@ -86,6 +49,42 @@ export const iUseReducer = (reducerFn, initialState = {}) => {
 }
 
 /**
+ * @name    subjectAsPromise
+ * @summary sugar for RxJS subject as promise and, optionally, wait until an expected value is received
+ * 
+ * @param   {Subject}           subject         RxJS subject or similar subscribable
+ * @param   {*}                 expectedValue   (optional) if undefined, will resolve on first value received
+ * @param   {Number|Function}   timeout         (optional) will reject if no value received within given time
+ * 
+ * @returns {[Promise, Function]}   will reject with: 
+ *                                  - `null` if times out
+ *                                  - `undefined` if @subject is not a valid RxJS subject like subscribable
+ */
+export const subjectAsPromise = (subject, expectedValue, timeout) => {
+    if (!isSubjectLike(subject)) return reject()
+
+    let subscription, timeoutId
+    const requiredValue = expectedValue !== undefined
+    const unsubscribe = () => setTimeout(() => {
+        subscription.unsubscribe()
+        clearTimeout(timeoutId)
+    }, 50)
+    const promise = new PromisE((resolve, reject) => {
+        subscription = subject.subscribe(value => {
+            if (requiredValue && value !== expectedValue) return
+            unsubscribe()
+            resolve(value)
+        })
+        timeoutId = isValidNumber(timeout) && setTimeout(() => {
+            unsubscribe()
+            reject(null)
+        }, timeout)
+
+    })
+    return [promise, unsubscribe]
+}
+
+/**
  * @name    reducer
  * @summary simple reducer to mimic Class component setState behavior
  * 
@@ -97,17 +96,41 @@ export const iUseReducer = (reducerFn, initialState = {}) => {
 export const reducer = (state = {}, newValue = {}) => ({ ...state, ...newValue })
 
 /**
- * @name    unsubscribe
- * @summary unsubscribe to multiple RxJS subscriptions
- * @param   {Object|Array} subscriptions 
+ * @name        usePromise
+ * @summary     a custom React hook for use with a Promise
+ * @description state update will occur only once when then @promise is either rejected or resolved.
+ *              
+ * 
+ * @param   {Promise|Function}  promise
+ * @param   {Function}          resultModifier 
+ * @param   {Function}          errorModifier 
+ * 
+ * @returns {Array} [
+ *                      0. @result : anyting the promise resolves with
+ *                      1. @error  : anything the promise rejects with
+ *                  ]
  */
-export const unsubscribe = (subscriptions = {}) => Object.values(subscriptions).forEach(x => {
-    try {
-        if (!x) return
-        const fn = isFn(x) ? x : isFn(x.unsubscribe) ? x.unsubscribe : null
-        fn && fn()
-    } catch (e) { } // ignore
-})
+export const usePromise = (promise, resultModifier, errorModifier) => {
+    const [state, setState] = iUseReducer(null, () => ({
+        promise: PromisE(promise),
+    }))
+
+    useState(() => {
+        let mounted = true
+        const handler = (key, modifier) => x => {
+            if (!mounted) return
+            const newState = {}
+            newState[key] = isFn(modifier) ? modifier(x) : x
+            setState(newState)            
+        }
+        state.promise
+            .then(handler('result', resultModifier))
+            .catch(handler('error', errorModifier))
+        return () => mounted = false
+    }, [state.promise])
+
+    return [state.result, state.error]
+}
 
 /**
  * @name    useRxSubject
@@ -158,3 +181,16 @@ export const useRxSubject = (subject, valueModifier, initialValue, allowSubjectU
 }
 // To prevent an update return this in valueModifier
 useRxSubject.IGNORE_UPDATE = Symbol('ignore-rx-subject-update')
+
+/**
+ * @name    unsubscribe
+ * @summary unsubscribe to multiple RxJS subscriptions
+ * @param   {Object|Array} subscriptions 
+ */
+export const unsubscribe = (subscriptions = {}) => Object.values(subscriptions).forEach(x => {
+    try {
+        if (!x) return
+        const fn = isFn(x) ? x : isFn(x.unsubscribe) ? x.unsubscribe : null
+        fn && fn()
+    } catch (e) { } // ignore
+})

@@ -5,7 +5,7 @@ import Text from '../../components/Text'
 import Message from '../../components/Message'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
-import { iUseReducer, reducer, useRxSubject } from '../../services/react'
+import { iUseReducer, reducer, subjectAsPromise, usePromise, useRxSubject } from '../../services/react'
 import { MOBILE, rxLayout } from '../../services/window'
 import client, { rxIsLoggedIn, rxIsRegistered } from '../chat/ChatClient'
 import RegistrationForm from '../chat/RegistrationForm'
@@ -25,6 +25,8 @@ import CalculatorForm from './CalculatorForm'
 import { Currency } from '../../components/Currency'
 import { currencyDefault } from '../../services/currency'
 import LabelCopy from '../../components/LabelCopy'
+import AddressList from './AddressList'
+import { showFaqs } from './FAQ'
 
 const textsCap = translated({
     achieved: 'achieved!',
@@ -49,7 +51,7 @@ const textsCap = translated({
         You are now ready to deposit funds using any of your chosen Blockchains.
     `,
     successEndingMsg: 'Click close to view your pay to addresses.',
-    successNote0: 'Here are a few things for you to note:',
+    successNote0: 'Here are answers to a few frequently asked questions:',
     successNote1: 'You can deposit as many times as you wish to any of your pay to addresses',
     successNote2: 'The number of tokens you receive on the MainNet will be based on the sum of all funds deposited across all supported Blockchains',
     successNote3: 'The more you depost the higher level of multiplier will be unlocked for you',
@@ -60,25 +62,24 @@ const textsCap = translated({
     successNote8: 'MOST IMPORTANTLY, remember to come back once you have made your deposits and the transaction received required confirmations for the respective Blockchain and check your deposit status to avoid delays',
     successNote9: 'If you are in doubt, feel free to contact us the support chat channel which can be found by clicking on the chat icon in the header bar (desktop) or footer bar (mobile)',
     viewCrowdsaleData: 'view crowdsale data',
-    viewNotes: 'view notes',
+    viewNotes: 'FAQs',
 }, true)[1]
 
 export default function () {
-    const [data] = useRxSubject(rxCrowdsaleData, generateTableData)
-    const [isRegistered] = useRxSubject(rxIsRegistered)
-    const [isLoggedIn] = useRxSubject(rxIsLoggedIn)
+    // checks if user is registered
+    const [isRegistered] = usePromise(async () => await subjectAsPromise(rxIsRegistered, true)[0])
+    // waits until user is logged in for the first time after page load
+    // will not update if user goes offline and messaging service disconnects
+    const [isLoggedIn] = usePromise(async () => await subjectAsPromise(rxIsLoggedIn, true)[0])
     const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
     const [state, setState] = iUseReducer(reducer, {
-        ...getTableProps(),
         kycDone: false,
         loading: true,
         steps: [],
     })
 
-    useEffect(() => {
-        if (!isLoggedIn || state.kycDone) return
-        
-        setTimeout(async () => {
+    useEffect(() => {        
+        isLoggedIn && !state.kycDone && (async () => {
             let newState = {}
             try {
                 // check if KYC done
@@ -88,7 +89,6 @@ export default function () {
                 const steps = await getSteps(deposits, isMobile)
                 newState = {
                     ...state,
-                    ...getTableProps(deposits),
                     deposits,
                     kycDone,
                     message: null, 
@@ -105,11 +105,12 @@ export default function () {
                 }
             }
             setState({ ...newState, loading: false })
-        })
+        })()
         
     }, [isLoggedIn])
 
     if (!isRegistered) return getInlineForm(RegistrationForm, {})
+
     if (!isLoggedIn || state.loading) {
         const isLoading = state.loading || isLoggedIn === null
         return (
@@ -130,7 +131,7 @@ export default function () {
         onSubmit: kycDone => {
             if (!kycDone) return
             setState({ kycDone })
-            showNotes()
+            showFaqs({ content: textsCap.successMsg })
         },
         style: { maxWidth: 400 },
     })
@@ -138,7 +139,7 @@ export default function () {
     return (
         <div>
             <Step.Group fluid stackable='tablet' items={state.steps}/>
-            <DataTable {...{ ...state, data }} />
+            <AddressList />
         </div>
     )
 }
@@ -252,108 +253,6 @@ const getSteps = async (deposits = {}, isMobile = false) => {
         }
     })
 }
-
-const getTableProps = deposits => ({
-    columns: [
-        { key: 'blockchainName', title: textsCap.blockchain },
-        {
-            content: ({ address, blockchain }) => address || (
-                <Button {...{
-                    content: textsCap.requestBtnTxt,
-                    onClick: () => showForm(DAAForm, { values: { blockchain } }),
-                }} />
-            ),
-            key: 'address',
-            textAlign: 'center',
-            title: textsCap.despositAddress,
-        },
-        {
-            key: 'amount',
-            textAlign: 'center',
-            title: textsCap.amountDeposited,
-        },
-    ],
-    searchable: false,
-    tableProps: {
-        basic: 'very',
-        celled: false,
-        compact: true,
-    },
-    topLeftMenu: [
-        {
-            content: textsCap.viewNotes,
-            icon: 'info',
-            onClick: showNotes,
-        },
-        {
-            content: textsCap.viewCrowdsaleData,
-            icon: 'eye',
-            onClick: () => showForm(KYCViewForm),
-        },
-        {
-            content: textsCap.checkDepositStatus,
-            icon: 'find',
-            onClick: () => alert('To be implemented')
-        },
-        {
-            hidden: !deposits,
-            content: textsCap.calculator,
-            icon: 'calculator',
-            onClick: () => showForm(CalculatorForm, { deposits } ),
-        },
-    ],
-})
-
-/**
- * @name    generateTableData
- * @summary generate a list using crowdsale data locally stored in the device
- * 
- * @param   {Object} csData crowdsale data from localStorage
- * 
- * @returns {Map}
- */
-const generateTableData = (csData) => {
-    csData = csData || crowdsaleData()
-    let { depositAddresses = {} } = csData || {} 
-    const data = Object.keys(BLOCKCHAINS)
-        .map(blockchain =>  [
-            blockchain,
-            {
-                address: depositAddresses[blockchain] && (
-                    <LabelCopy
-                        maxLength={null}
-                        value={depositAddresses[blockchain]}
-                    />
-                ),
-                blockchain,
-                blockchainName: BLOCKCHAINS[blockchain],
-                amount: undefined,
-            },
-        ])
-    return new Map(data)
-}
-
-const showNotes = () => confirm({
-    confirmButton: null,
-    content: (
-        <div>
-            {textsCap.successMsg}
-            <div>{textsCap.successNote0}</div>
-            <ul> 
-                <li>{textsCap.successNote1}</li>
-                <li>{textsCap.successNote2}</li>
-                <li>{textsCap.successNote3}</li>
-                <li>{textsCap.successNote4}</li>
-                <li>{textsCap.successNote5}</li>
-                <li>{textsCap.successNote6}</li>
-                <li>{textsCap.successNote7}</li>
-                <li>{textsCap.successNote8}</li>
-                <li>{textsCap.successNote9}</li>
-            </ul>
-            {textsCap.successEndingMsg}
-        </div>
-    )
-})
 
 const styles = {
     lastLevelIndicator: {

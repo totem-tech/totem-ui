@@ -58,10 +58,12 @@ export const closeModal = (id, delay = 0) => setTimeout(() => modals.delete(id),
  *                                       If string supplied, it will be used as `content` prop
  * @param   {String}        modalId      (optional) if supplied and any existing modal with this ID will be replaced.
  *                                       Otherwise, a random UUID will be generated.
+ * @param   {Object}        contentProps (optional) props to be passed on to the content element
  * 
- * @returns {String}       @modalId      can be used with `closeModal` function to externally close the modal
+ * @returns {String}        @modalId      can be used with `closeModal` function to externally close the modal
  */
-export const confirm = (confirmProps, modalId = uuid.v1()) => {
+export const confirm = (confirmProps, modalId, contentProps = {}) => {
+    modalId = modalId || uuid.v1()
     if (isStr(confirmProps)) {
         confirmProps = { content: confirmProps }
     }
@@ -107,7 +109,16 @@ export const confirm = (confirmProps, modalId = uuid.v1()) => {
             className: 'confirm-modal',
             cancelButton,
             confirmButton,
-            content: content && <div className="content">{content}</div>,
+            content: content && (
+                <div {...{
+                    ...contentProps,
+                    children: content,
+                    className: className([
+                        'content',
+                        contentProps.className,
+                    ])
+                }}/>
+            ),
             open: isBool(open) ? open : true,
             onCancel: confirm.handleCloseCb(modalId, onCancel),
             onConfirm: confirm.handleCloseCb(modalId, onConfirm),
