@@ -55,10 +55,10 @@ export default class FormBuilder extends Component {
 		const props = {
 			...input,
 			disabled: inputsDisabled.includes(name)
-				|| isFn(disabled)
+				|| (isFn(disabled)
 					? disabled(values, i)
 					: disabled
-				,
+				),
 			hidden: inputsHidden.includes(name)
 				|| (!isFn(hidden)
 					? hidden
