@@ -250,10 +250,24 @@ export default function GetingStarted() {
 						<Invertible El={Icon} name='linkedin' style={styles.appIconStyle} />
 					</a>
 					<a href='https://medium.com/totemlive' target='_blank'>
-						<Invertible El={Icon} name='medium' style={styles.appIconStyle} />
+						<Invertible {...{
+							dynamicProps: inverted => ({ color: !inverted ? 'black' : undefined }),
+							El: Icon,
+							name: 'medium',
+							style: styles.appIconStyle,
+						}} />
 					</a>
 					<a href='https://www.reddit.com/r/totemlive' target='_blank'>
-						<Invertible El={Icon} name='reddit' style={styles.appIconStyle} />
+						<Invertible {...{
+							dynamicProps: inverted => ({
+								style: {
+									...styles.appIconStyle,
+									color: inverted ? undefined : '#FF4500'
+								},
+							}),
+							El: Icon,
+							name: 'reddit',
+						}} />
 					</a>
 					<a href='https://t.me/totemchat' target='_blank'>
 						<Invertible El={Icon} name='telegram' style={styles.appIconStyle} />
@@ -262,7 +276,14 @@ export default function GetingStarted() {
 						<Invertible El={Icon} name='twitter' style={styles.appIconStyle} />
 					</a>
 					<a href='https://www.youtube.com/channel/UCV0ZV3kCLfi3AnlNR1Eyr0A' target='_blank'>
-						<Invertible El={Icon} name='youtube' style={styles.appIconStyle} />
+						<Invertible {...{
+							dynamicProps: inverted => ({
+								className: !inverted ? 'red' : undefined,
+							}),
+							El: Icon,
+							name: 'youtube',
+							style: styles.appIconStyle,
+						}} />
 					</a>
 				</div>
 			</div>
