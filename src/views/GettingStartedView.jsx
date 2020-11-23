@@ -261,6 +261,9 @@ export default function GetingStarted() {
 					<a href='https://twitter.com/Totem_Live_' target='_blank'>
 						<Invertible El={Icon} name='twitter' style={styles.appIconStyle} />
 					</a>
+					<a href='https://www.youtube.com/channel/UCV0ZV3kCLfi3AnlNR1Eyr0A' target='_blank'>
+						<Invertible El={Icon} name='youtube' style={styles.appIconStyle} />
+					</a>
 				</div>
 			</div>
 		</div >
