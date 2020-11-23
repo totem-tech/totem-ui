@@ -246,8 +246,20 @@ export default function GetingStarted() {
 					<a href='https://discord.gg/Vx7qbgn' target='_blank'>
 						<Invertible El={Icon} name='discord' style={styles.appIconStyle} />
 					</a>
+					<a href='https://www.linkedin.com/company/totem-live-accounting' target='_blank'>
+						<Invertible El={Icon} name='linkedin' style={styles.appIconStyle} />
+					</a>
+					<a href='https://medium.com/totemlive' target='_blank'>
+						<Invertible El={Icon} name='medium' style={styles.appIconStyle} />
+					</a>
+					<a href='https://www.reddit.com/r/totemlive' target='_blank'>
+						<Invertible El={Icon} name='reddit' style={styles.appIconStyle} />
+					</a>
 					<a href='https://t.me/totemchat' target='_blank'>
 						<Invertible El={Icon} name='telegram' style={styles.appIconStyle} />
+					</a>
+					<a href='https://twitter.com/Totem_Live_' target='_blank'>
+						<Invertible El={Icon} name='twitter' style={styles.appIconStyle} />
 					</a>
 				</div>
 			</div>
