@@ -178,10 +178,6 @@ export const query = async (func, args = [], multi = false, print = false) => aw
     args,
     multi,
     print,
-    // translated error messages
-    textsCap.invalidApiPromise,
-    textsCap.invalidApiFunc,
-    textsCap.invalidMultiQueryArgs,
 )
 
 // Save general (not specific to a module or used by multiple modules) data to blockchain storage.
