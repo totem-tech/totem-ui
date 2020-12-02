@@ -17,7 +17,6 @@ import {
 } from '../services/language'
 import { gridColumns } from '../services/window'
 import { confirm } from '../services/modal'
-import { showKeyboardShortcuts } from '../services/KeyboardShortcuts'
 
 const [texts, textsCap] = translated({
     chatLimitLabel: 'chat message limit per conversation',
@@ -225,3 +224,23 @@ SettingsForm.defaultProps = {
     // prevents multiple modal being open at the same time
     modalId: 'SettingsForm',
 }
+
+
+export const showKeyboardShortcuts = () => confirm({
+    cancelButton: null,
+    confirmButton: null,
+    content: (
+        <div>
+            SHIFT + C => Start new chat<br />
+            SHIFT + S => Settings<br />
+            SHIFT + T => Timekeeping form<br />
+            C => Toggle chat bar visibility<br />
+            K => Toggle keyboard shortcuts view<br />
+            I => Toggle identity dropdown visibility<br />
+            N => Toggle notification visibility<br />
+            S => Toggle sidebar<br />
+        </div>
+    ),
+    header: 'Keyboard shortcuts',
+    size: 'mini',
+}, 'shortcutKey-K')

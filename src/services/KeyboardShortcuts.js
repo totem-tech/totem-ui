@@ -1,8 +1,7 @@
-import React from 'react'
 import { deferred } from '../utils/utils'
-import { closeModal, confirm, get, showForm } from './modal'
+import { closeModal, get, showForm } from './modal'
 import { toggleSidebarState } from './sidebar'
-import SettingsForm from '../forms/Settings'
+import SettingsForm, { showKeyboardShortcuts } from '../forms/Settings'
 import { rxIdentityListVisible } from '../components/PageHeader'
 import NewInboxForm from '../modules/chat/NewInboxForm'
 import { rxVisible as rxChatVisible } from '../modules/chat/chat'
@@ -77,27 +76,6 @@ const handleKeypress = deferred(shiftKey => {
             break
     }
 }, 200)
-
-export function showKeyboardShortcuts() {
-    confirm({
-        cancelButton: null,
-        confirmButton: null,
-        content: (
-            <div>
-                SHIFT + C => Start new chat<br />
-                SHIFT + S => Settings<br />
-                SHIFT + T => Timekeeping form<br />
-                C => Toggle chat bar visibility<br />
-                K => Toggle keyboard shortcuts view<br />
-                I => Toggle identity dropdown visibility<br />
-                N => Toggle notification visibility<br />
-                S => Toggle sidebar<br />
-            </div>
-        ),
-        header: 'Keyboard shortcuts',
-        size: 'mini',
-    }, getModalId('K'))
-}
 
 window.addEventListener('keypress', e => {
     // ignore if user is typing into an input
