@@ -61,6 +61,7 @@ export default function NewInboxForm(props) {
 NewInboxForm.defaultProps = {
     closeOnSubmit: true,
     header: textsCap.header,
+    modalId: 'NewInboxForm',
     size: 'tiny',
     subheader: textsCap.subheader,
     submitText: textsCap.open,

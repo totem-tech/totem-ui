@@ -47,7 +47,10 @@ export const downloadTextListCSV = !BUILD_MODE ? null : () => {
 // retrieve latest translated texts from server and save to local storage
 export const fetchNSaveTexts = async () => {
     const selected = getSelected()
-    if (selected === EN) return setTexts(selected, null, null)
+    if (selected === EN) {
+        setTexts(selected, null, null)
+        return
+    }
 
     const selectedHash = generateHash(getTexts(selected) || '')
     const engHash = generateHash(getTexts(EN) || '')
@@ -57,10 +60,13 @@ export const fetchNSaveTexts = async () => {
         func(selected, selectedHash),
     ])
 
+    // update not required => existing list of language is exactly the same as in the database
     if (!texts && !textsEn) return
     console.log('Language text list updated', { selected, texts, textsEn })
     // save only if update required
     setTexts(selected, texts, textsEn)
+    // success
+    return true
 }
 
 // get selected language code
@@ -73,9 +79,8 @@ export const setSelected = async (selected, delay = true) => {
     rw({ selected })
     _selected = selected
     // retrieve translated texts from server
-    await fetchNSaveTexts()
-    // reload page
-    setTimeout(() => window.location.reload(true), delay)
+    const listUpdated = await fetchNSaveTexts()
+    return listUpdated
 }
 
 // save translated list of texts retrieved from server

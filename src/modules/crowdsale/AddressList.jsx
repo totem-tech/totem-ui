@@ -7,6 +7,7 @@ import { showForm } from '../../services/modal'
 import { useRxSubject } from '../../services/react'
 import CalculatorForm from './CalculatorForm'
 import { BLOCKCHAINS, rxCrowdsaleData } from './crowdsale'
+import DAAForm from './DAAForm'
 import { showFaqs } from './FAQ'
 import KYCViewForm from './KYCViewForm'
 

@@ -294,17 +294,18 @@ export default class FormBuilder extends Component {
 		return !modal
 			? form
 			: (
-				<IModal
-					closeOnEscape={!!closeOnEscape}
-					closeOnDimmerClick={!!closeOnDimmerClick}
-					defaultOpen={defaultOpen}
-					dimmer={true}
-					onClose={this.handleClose}
-					onOpen={onOpen}
-					open={modalOpen}
-					size={size}
-					trigger={trigger}
-				>
+				<IModal {...{
+					closeOnEscape: !!closeOnEscape,
+					closeOnDimmerClick: !!closeOnDimmerClick,
+					defaultOpen: defaultOpen,
+					dimmer: true,
+					id: `form-${modalId}`,
+					onClose: this.handleClose,
+					onOpen: onOpen,
+					open: modalOpen,
+					size: size,
+					trigger: trigger,
+				}}>
 					<div className='modal-close' style={styles.closeButton}>
 						<Icon {...{
 							className: 'no-margin',

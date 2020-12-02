@@ -613,6 +613,8 @@ TimekeepingForm.defaultProps = {
     closeOnEscape: true,
     closeOnDimmerClick: true,
     header: wordsCap.timekeeping,
+    // prevents multiple modal being open
+    modalId: 'TimekeepingForm',
     size: 'tiny'
 }
 

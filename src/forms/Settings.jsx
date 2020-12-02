@@ -10,25 +10,31 @@ import {
 } from '../services/currency'
 import { limit as historyItemsLimit } from '../modules/history/history'
 import {
-    getSelected as getSelectedLanguage,
+    getSelected as getSelectedLang,
     languages,
     setSelected as setSelectedLang,
     translated,
 } from '../services/language'
 import { gridColumns } from '../services/window'
+import { confirm } from '../services/modal'
+import { showKeyboardShortcuts } from '../services/KeyboardShortcuts'
 
 const [texts, textsCap] = translated({
+    chatLimitLabel: 'chat message limit per conversation',
     column: 'column',
     columns: 'columns',
-    chatLimitLabel: 'chat message limit per conversation',
     error: 'error',
     gridColumnsLabel: 'number of columns on main content (experimental)',
     gsCurrencyLabel: 'display currency',
     gsLanguageLabel: 'display language (experimental)',
     historyLimitLabel: 'history limit',
-    unlimited: 'unlimited',
+    kbShortcuts: 'keyboard shortcuts',
+    langConfirmCancelBtn: 'later',
+    langConfirmHeader: 'page reload required',
+    langConfirmOk: 'reload page',
     saved: 'saved',
     settings: 'settings',
+    unlimited: 'unlimited',
 }, true)
 const savedMsg = { content: textsCap.saved, status: 'success' }
 
@@ -37,6 +43,7 @@ export const inputNames = {
     currency: 'currency',
     gridCols: 'gridCols',
     historyLimit: 'historyLimit',
+    kbShortcutsBtn: 'kbShortcutsBtn',
     languageCode: 'languageCode',
 }
 
@@ -67,7 +74,7 @@ export default class SettingsForm extends Component {
                     selectOnNavigation: false,
                     selection: true,
                     type: 'dropdown',
-                    value: getSelectedLanguage(),
+                    value: getSelectedLang(),
                 },
                 {
                     label: textsCap.gsCurrencyLabel,
@@ -120,6 +127,13 @@ export default class SettingsForm extends Component {
                     type: 'dropdown',
                     value: gridColumns(),
                 },
+                {
+                    content: textsCap.kbShortcuts,
+                    icon: 'keyboard',
+                    name: inputNames.kbShortcutsBtn,
+                    onClick: showKeyboardShortcuts,
+                    type: 'button'
+                },
             ]
         }
 
@@ -165,7 +179,20 @@ export default class SettingsForm extends Component {
 
     handleLanguageChange = (_, { languageCode }) => {
         this.setInputMessage('languageCode', savedMsg, 0)
-        setSelectedLang(languageCode).catch(err => {
+        const changed = getSelectedLang() !== languageCode
+        setSelectedLang(languageCode)
+            .then(updated => {
+                const reloadRequired = changed || updated
+                if (!reloadRequired) return
+                confirm({
+                    cancelButton: textsCap.langConfirmCancelBtn,
+                    confirmButton: textsCap.langConfirmOk,
+                    header: textsCap.langConfirmHeader,
+                    onConfirm: () => window.location.reload(true),
+                    size: 'mini',
+                })
+            })
+            .catch(err => {
             this.setInputMessage('languageCode', {
                 content: `${err}`,
                 header: textsCap.error,
@@ -195,4 +222,6 @@ SettingsForm.defaultProps = {
     closeOnEscape: true,
     closeText: null,
     header: textsCap.settings,
+    // prevents multiple modal being open at the same time
+    modalId: 'SettingsForm',
 }
