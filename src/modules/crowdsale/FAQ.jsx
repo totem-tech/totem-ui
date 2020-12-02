@@ -25,6 +25,20 @@ const questions = [
         question: 'Making deposits',
         children: [
             {
+                question: 'Can I pay with Fiat?',
+                answer: 'No. Only the follow cryptocurrencies are accepted:',
+                render: answer => (
+                    <div>
+                        {answer}
+                        <ul>
+                            <li>Bitcoin (BTC)</li>
+                            <li>Polkadot (DOT)</li>
+                            <li>Ethereum (ETH)</li>
+                        </ul>
+                    </div>
+                )
+            },
+            {
                 question: 'How do I make a deposit?',
                 answer: `
                     You have already whitelisted or been assigned a deposit address for you chosen Blockchain. Simply, use your prefered wallet application for the Blockchain and transfer the amount you wish to contribute to the address assigned to you. To view the list of addresses you have been assigned and/or request for a new address on a different Blockchain please check out the address list in the crowdsale module.
@@ -216,20 +230,6 @@ const questions = [
                     <div>
                         <p><b>{answer.line1}</b></p>
                         <p>{answer.line2}</p>
-                    </div>
-                )
-            },
-            {
-                question: 'Can I pay with Fiat?',
-                answer: 'No. Only the follow cryptocurrencies are accepted:',
-                render: answer => (
-                    <div>
-                        {answer}
-                        <ul>
-                            <li>Bitcoin (BTC)</li>
-                            <li>Polkadot (DOT)</li>
-                            <li>Ethereum (ETH)</li>
-                        </ul>
                     </div>
                 )
             },
