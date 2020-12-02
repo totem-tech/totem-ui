@@ -17,6 +17,7 @@ import {
 } from '../services/language'
 import { gridColumns } from '../services/window'
 import { confirm } from '../services/modal'
+import DataTable from '../components/DataTable'
 
 const [texts, textsCap] = translated({
     chatLimitLabel: 'chat message limit per conversation',
@@ -226,10 +227,40 @@ SettingsForm.defaultProps = {
 }
 
 
-export const showKeyboardShortcuts = () => confirm({
-    cancelButton: null,
-    confirmButton: null,
-    content: (
+export const showKeyboardShortcuts = () => confirm(
+    {
+        cancelButton: null,
+        confirmButton: null,
+        content: (
+                <DataTable {...{
+                    searchable: false,
+                    columns: [
+                        { key: 'key', title: 'Shortcut Key'},
+                        { key: 'action', title: 'Action'},
+                    ],
+                    data: [
+                        { key: 'SHIFT + C', action: 'Start new chat'},
+                        { key: 'SHIFT + S', action: 'Settings'},
+                        { key: 'SHIFT + T', action: 'Timekeeping form'},
+                        { key: 'C', action: 'Toggle chat bar visibility'},
+                        { key: 'K', action: 'Toggle keyboard shortcuts view'},
+                        { key: 'I', action: 'Toggle identity dropdown visibility'},
+                        { key: 'N', action: 'Toggle notification visibility'},
+                        { key: 'S', action: 'Toggle sidebar'},
+                ],
+                style: {margin: '-15px 0'}
+                }} />
+        ),
+        header: 'Keyboard shortcuts',
+        size: 'mini',
+    },
+    'shortcutKey-K',
+    { style: { padding: 0 }},
+)
+
+/*
+
+
         <div>
             SHIFT + C => Start new chat<br />
             SHIFT + S => Settings<br />
@@ -239,8 +270,6 @@ export const showKeyboardShortcuts = () => confirm({
             I => Toggle identity dropdown visibility<br />
             N => Toggle notification visibility<br />
             S => Toggle sidebar<br />
+
         </div>
-    ),
-    header: 'Keyboard shortcuts',
-    size: 'mini',
-}, 'shortcutKey-K')
+        */
