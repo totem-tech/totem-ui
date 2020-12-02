@@ -252,7 +252,14 @@ const questions = [
                                 children: answer.line4,
                                 El: 'pre',
                                 invertedColor: 'black',
-                                style: { background: '#f2f0f0', margin: 0, padding: 15 },
+                                style: {
+                                    background: '#f2f0f0',
+                                    borderLeft: '3px solid cornflowerblue',
+                                    borderBottomLeftRadius: 3,
+                                    borderTopLeftRadius: 3,
+                                    margin: 0,
+                                    padding: 15,
+                                },
                             }} />
                         </div>
                     </div>
