@@ -411,20 +411,64 @@ export class ChatClient {
         )
         
         /**
+         * @name    crowdsaleCheckDeposits
+         * @summary check and retrieve user's crowdsale deposits
+         * 
+         * @param {Function}    cb  callback function arguments:
+         *                          @err        string: if request failed
+         *                          @result     object: 
+         *                              @result.deposits    object: deposit amounts for each allocated addresses
+         *                              @result.lastChecked string: timestamp of last checked
          * 
          */
-        this.crowdsaleKYC = (kycData, cb) => isFn(cb) && socket.emit(
-            'crowdsale-kyc',
-            kycData,
-            cb,
-        )
+        this.crowdsaleCheckDeposits = cb => isFn(cb) && socket.emit('crowdsale-check-deposits', cb)
+        
         /**
+         * @name    crowdsaleConstants
+         * @summary retrieve crowdsale related constants for use with calcuation of allocation and multiplier levels
          * 
+         * @param {Function}    cb  callback function arguments:
+         *                          @err        string: if request failed
+         *                          @result     object:
+         *                              @result.Level_NEGOTIATE_Entry_USD   Number: amount in USD for negotiation
+         *                              @result.LEVEL_MULTIPLIERS   Array: multipliers for each level
+         *                              @result.LEVEL_ENTRY_USD     Array: minimum deposit amount in USD for each level 
+         */
+        this.crowdsaleConstants = cb => isFn(cb) && socket.emit('crowdsale-constants', cb)
+        /**
+         * @name    crowdsaleDAA
+         * @summary request new or retrieve exisitng deposit address
+         * 
+         * @param   {String}    blockchain  ticker/symbol of the Blockchain to request/retrieve address of
+         * @param   {String}    ethAddress  use `0x0` to retrieve existing address.
+         *                                  If the @blockchain is `ETH`, user's Ethereum address for whitelisting.
+         *                                  Otherwise, leave an empty string.
+         * @param   {Function}  cb          callback function arguments:
+         *                                  @err     string: if request failed
+         *                                  @address string: deposit address
          */
         this.crowdsaleDAA = (blockchain, ethAddress, cb) => isFn(cb) && socket.emit(
             'crowdsale-daa',
             blockchain,
             ethAddress,
+            cb,
+        )
+
+        /**
+         * @name    crowdsaleKYC
+         * @summary register for crowdsale or check if already registered
+         * 
+         * @param   {Object|Boolean}    kycData use `true` to check if user already registered.
+         *                                      Required object properties:
+         *                                      @email      string
+         *                                      @familyName string
+         *                                      @givenName  string
+         *                                      @identity   string
+         *                                      @location   object
+         */
+        this.crowdsaleKYC = (kycData, cb) => isFn(cb) && socket.emit(
+            'crowdsale-kyc',
+            kycData,
             cb,
         )
     }

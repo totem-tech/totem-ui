@@ -5,6 +5,7 @@ import LabelCopy from '../../components/LabelCopy'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
 import { useRxSubject } from '../../services/react'
+import CalculatorForm from './CalculatorForm'
 import { BLOCKCHAINS, rxCrowdsaleData } from './crowdsale'
 import { showFaqs } from './FAQ'
 import KYCViewForm from './KYCViewForm'
@@ -19,7 +20,6 @@ const textsCap = translated({
     requestBtnTxt: 'request address',
     viewCrowdsaleData: 'view crowdsale data',
 }, true)[1]
-
 // list of deposit addresses and balances using rxCrowdsaleData
 export default function AddressList(props) {
     const [state] = useRxSubject(rxCrowdsaleData, csData => {

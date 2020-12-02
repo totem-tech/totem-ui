@@ -29,8 +29,9 @@ module.exports = {
   },
   // ignore nodejs modules and not found warning
   plugins: [
-    new webpack.IgnorePlugin(/node-localstorage/),
     new webpack.IgnorePlugin(/abort-controller/),
+    new webpack.IgnorePlugin(/form-data/),
+    new webpack.IgnorePlugin(/node-localstorage/),
     new webpack.IgnorePlugin(/node-fetch/),
   ],
   resolve: {
