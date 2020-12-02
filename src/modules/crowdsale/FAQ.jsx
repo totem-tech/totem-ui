@@ -60,7 +60,7 @@ const questions = [
                 `,
             },
             {
-                question: 'I have already made a deposit. Can I deposit again?',
+                question: 'I have already made a deposit. Can I deposit more funds?',
                 answer: `
                     Yes, absolutely! You can deposit as many times as you wish before the crowdsale period ends. The more you deposit the higher multiplier level you will achieve.
                 `,
