@@ -4,7 +4,7 @@ import client from '../modules/chat/ChatClient'
 import storage from './storage'
 import { getUrlParam } from './window'
 
-const translations = new DataStorage('totem_static_translations', true)
+const translations = new DataStorage('totem_static_translations')
 export const EN = 'EN'
 const MODULE_KEY = 'language'
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
@@ -99,6 +99,7 @@ export const translated = (texts = {}, capitalized = false) => {
     if (BUILD_MODE) {
         window.enList = window.enList || []
         Object.values(texts).forEach(text => {
+            if (!text) return
             text = clearClutter(text)
             enList.indexOf(text) === -1 && enList.push(text)
         })
@@ -106,6 +107,7 @@ export const translated = (texts = {}, capitalized = false) => {
     }
 
     Object.keys(texts).forEach(key => {
+        if(!texts[key]) return
         const text = clearClutter(texts[key])
         const enIndex = en.indexOf(text)
         const translatedText = selected[enIndex]

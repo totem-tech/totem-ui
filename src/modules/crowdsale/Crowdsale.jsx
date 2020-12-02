@@ -33,7 +33,6 @@ const textsCap = translated({
     amountDeposited: 'amount deposited',
     blockchain: 'blockchain',
     calculator: 'calculator',
-    checkDepositStatus: 'check deposit status',
     despositAddress: 'pay to address',
     level: 'level',
     loadingMsg: 'loading',
