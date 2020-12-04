@@ -128,7 +128,7 @@ export default class SettingsForm extends Component {
                     value: gridColumns(),
                 },
                 {
-                    content: textsCap.kbShortcuts,
+                    content: `${textsCap.kbShortcuts} (K)`,
                     icon: 'keyboard',
                     name: inputNames.kbShortcutsBtn,
                     onClick: showKeyboardShortcuts,
