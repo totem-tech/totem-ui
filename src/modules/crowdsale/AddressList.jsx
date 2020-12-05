@@ -21,7 +21,9 @@ const textsCap = translated({
     despositAddress: 'pay to address',
     faqs: 'FAQs',
     requestBtnTxt: 'request address',
+    updatingDeposits: 'update crowdsale deposits',
     viewCrowdsaleData: 'view crowdsale data',
+    waitB4Check: 'please try again in' 
 }, true)[1]
 const explorerUrls = {
     BTC: 'https://explorer.bitcoin.com/btc/search',
@@ -79,12 +81,6 @@ const getTableProps = deposits => ({
     columns: [
         { key: '_blockchain', title: textsCap.blockchain },
         {
-            // content: ({ address, blockchain }) => address || (
-            //     <Button {...{
-            //         content: textsCap.requestBtnTxt,
-            //         onClick: () => showForm(DAAForm, { values: { blockchain } }),
-            //     }} />
-            // ),
             key: '_address',
             textAlign: 'center',
             title: textsCap.despositAddress,
@@ -117,16 +113,25 @@ const getTableProps = deposits => ({
             content: textsCap.checkDepositStatus,
             icon: 'find',
             onClick: () => {
+                const { lastChecked } = rxCrowdsaleData.value || {}
+                const diffSeconds = (new Date() - new Date(lastChecked)) / 1000
+                const toastId = 'crowdsale-checkDepositStatus'
+                // tell user to wait x amount of minutes if previous check was in less than 30 minutes
+                if (!!lastChecked && diffSeconds < 30 * 60) return setToast({
+                    content: `${textsCap.waitB4Check} ${30 - Math.floor(diffSeconds / 60)} minutes`,
+                    status: 'warning',
+                }, 3000, toastId)
+
                 addToQueue({
                     args: [false],
                     func: 'crowdsaleCheckDeposits',  
+                    title: textsCap.updatingDeposits,
                     type: QUEUE_TYPES.CHATCLIENT,
-                    silent: true,
                     then: (ok, result) => ok && crowdsaleData({
                         ...rxCrowdsaleData.value,
                         ...result,
                     })
-                })
+                }, undefined, toastId)
             }
         },
         {

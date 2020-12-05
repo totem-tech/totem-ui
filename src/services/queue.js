@@ -623,7 +623,9 @@ const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, du
     const hasError = status === ERROR && task.errorMessage
     hasError && msg.content.unshift(task.errorMessage)
     // no need to display toast if status is suspended
-    task.toastId = isSuspended ? toastId : setMessage(task, msg, duration, toastId, silent)
+    task.toastId = isSuspended
+        ? toastId
+        : setMessage(task, msg, duration, toastId, silent)
     // store account balance before and after TX
     task.balance = { ...task.balance, ...balance }
 
