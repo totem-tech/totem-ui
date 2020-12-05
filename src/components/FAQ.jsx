@@ -14,18 +14,107 @@ const textsCap = translated({
 /**
  * @name    FAQ
  * @summary generates a list of recursive FAQs using Accordion
- * @param {Object} props
+ * 
+ * @param   {Object} props
+ * 
+ * @returns {Element}
+ * @example
+ * ```javascript
+ * const questions = [
+ *      { 
+ *          // simple question-answer, default active
+ *          active: true,
+ *          answer: 'Read the docs!',
+ *          question: 'How do I use Totem?',
+ *      },
+ *      { 
+ *          // question with a simple button without render()
+ *          action: { 
+ *              content: 'Visit out webpage!',
+ *              onClick: () => window.location.href = 'https://totemaccounting.com',
+ *          },
+ *          active: true,
+ *          answer: 'Yes, we do!',
+ *          question: 'Do you have a webpage?', 
+ *      },
+ *      {
+ *          // question with custom render function
+ *          answer: {
+ *              text: 'You can use our support chat channel 24/7!',
+ *              btnTxt: 'Contact support'
+ *          },
+ *          question: 'How can I get in touch?',
+ *          render: answer => (
+ *              <div>
+ *                  <p>{answer.text}</p>
+ *                  <button className='ui button'>{answer.btnTxt}</button>
+ *              </div>
+ *          )
+ *      }
+ * ]
+ * // view as inline element
+ * const faq = <FAQ questions={questions} exclusive={false} />
+ * // open on a modal
+ * const modalId = FAQ.asModal({ questions, exclusive: true })
+ * ```
  */
 export default function FAQ(props) {
     const { exclusive, modalId, questions = [] } = props
+    const defaultActiveIndex = exclusive
+        ? questions.findIndex(({ active }) => !!active)
+        : questions.reduce((arr, { active }, index) => [
+            ...arr,
+            ...(active ? [index] : []),
+        ], [])
     return (
         <Accordion {...{
             ...objWithoutKeys(props, props.ignoredAttributes),
-            defaultActiveIndex: [questions.findIndex(({ active }) => !!active) || 0],
+            defaultActiveIndex,
+            exclusive,
             panels: questionsToPanels(questions, exclusive, modalId),
         }} />
     )
 }
+FAQ.propTypes = {
+    ignoredAttributes: PropTypes.arrayOf(PropTypes.string).isRequired,
+    questions: PropTypes.arrayOf(RecursiveShapeType({
+        // @action: properties to be supplied to action Button
+        action: PropTypes.object,
+        // @active: only the first active one will be used to set `defaultActiveIndex` in the `Accordion`
+        active: PropTypes.bool,
+        // @answer: plain-text if no `@render` function supplied
+        answer: PropTypes.oneOfType([
+            PropTypes.string,
+            PropTypes.objectOf(PropTypes.string),
+        ]),
+        // children: PropTypes.arrayOf(QuestionShapeType),
+        question: PropTypes.string,
+        render: PropTypes.func,
+    })).isRequired,
+    // @modalId: If FAQ is displayed in a modal,
+    // supplying `modalId` will close the modal whenever question action(button) is clicked
+    modalId: PropTypes.string,
+    // any other properties supported by `Accordion`
+}
+FAQ.defaultProps = {
+    exclusive: false,
+    fluid: true,
+    ignoredAttributes: [
+        'ignoredAttributes',
+        'modalId',
+        'questions',
+    ],
+    styled: true,
+}
+/**
+ * @name    FAQ.asModal
+ * @summary open FAQs on a modal
+ * 
+ * @param   {Object}    faqProps 
+ * @param   {Object}    confirmProps 
+ * 
+ * @returns {String} modal ID
+ */
 FAQ.asModal = (faqProps, confirmProps = {}) => {
     const { modalId = uuid.v1() } = faqProps || {}
     const { content, header = textsCap.faqs } = confirmProps
@@ -46,54 +135,6 @@ FAQ.asModal = (faqProps, confirmProps = {}) => {
         // remove spacing from confirm content
         { style: { padding: 0 } },
     )
-}
-
-/**
- * @name    QuestionPropType
- * @summary custom PropType for recursive validation
- */
-// const RecursiveShapeType = (propsTypes = {}, recursiveKey = 'children') => {
-//     const x = {}
-//     x[recursiveKey] = PropTypes.arrayOf(Type)
-//     function Type(...args) {
-//         return PropTypes.shape({
-//             ...propsTypes,
-//             ...x,
-//         }).apply(null, args)
-//     }
-//     return Type
-// }
-const QuestionShapeType = RecursiveShapeType({
-    // @action: properties to be supplied to action Button
-    action: PropTypes.object,
-    // @active: only the first active one will be used to set `defaultActiveIndex` in the `Accordion`
-    active: PropTypes.bool,
-    // @answer: plain-text if no `@render` function supplied
-    answer: PropTypes.oneOfType([
-        PropTypes.string,
-        PropTypes.objectOf(PropTypes.string),
-    ]),
-    // children: PropTypes.arrayOf(QuestionShapeType),
-    question: PropTypes.string,
-    render: PropTypes.func,
-})
-FAQ.propTypes = {
-    ignoredAttributes: PropTypes.arrayOf(PropTypes.string).isRequired,
-    questions: PropTypes.arrayOf(QuestionShapeType).isRequired,
-    // @modalId: If FAQ is displayed in a modal,
-    // supplying `modalId` will close the modal whenever question action(button) is clicked
-    modalId: PropTypes.string,
-    // any other properties supported by `Accordion`
-}
-FAQ.defaultProps = {
-    exclusive: false,
-    fluid: true,
-    ignoredAttributes: [
-        'ignoredAttributes',
-        'modalId',
-        'questions',
-    ],
-    styled: true,
 }
 
 /**
@@ -130,6 +171,7 @@ const questionsToPanels = (questions, exclusive, modalId) => questions
                 {children.length > 0 && (
                     <Accordion.Accordion {...{
                         defaultActiveIndex,
+                        exclusive,
                         panels: questionsToPanels(children, exclusive, modalId),
                         style: { margin: 0 },
                     }} />
