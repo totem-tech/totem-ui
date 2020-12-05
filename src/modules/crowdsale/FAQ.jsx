@@ -16,14 +16,12 @@ const textsCap = translated({
 export default function CrowdsaleFAQ(props) {
     return <FAQ {...{...props, questions }} />
 }
-export const showFaqs = (confirmProps, modalId) => FAQ.asModal(
+export const showFaqs = (confirmProps) => FAQ.asModal(
     {
         exclusive: false,
         questions,
-        modalId,
     },
     confirmProps,
-    modalId
 )
 
 // Translation of `answer` and `question` properties have been done using translateFAQs() resursively

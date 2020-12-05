@@ -17,16 +17,17 @@ const textsCap = translated({
  * @param {Object} props
  */
 export default function FAQ(props) {
-    const { modalId, questions = [] } = props
+    const { exclusive, modalId, questions = [] } = props
     return (
         <Accordion {...{
             ...objWithoutKeys(props, props.ignoredAttributes),
             defaultActiveIndex: [questions.findIndex(({ active }) => !!active) || 0],
-            panels: questionsToPanels(questions, modalId),
+            panels: questionsToPanels(questions, exclusive, modalId),
         }} />
     )
 }
-FAQ.asModal = (faqProps, confirmProps = {}, modalId = uuid.v1()) => {
+FAQ.asModal = (faqProps, confirmProps = {}) => {
+    const { modalId = uuid.v1() } = faqProps || {}
     const { content, header = textsCap.faqs } = confirmProps
     return confirm(
         {
