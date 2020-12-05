@@ -5,7 +5,7 @@ import { Icon } from 'semantic-ui-react'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { iUseReducer } from '../../services/react'
-import { BLOCKCHAINS, calculateAllocation, calculateToNextLevel } from './crowdsale'
+import { BLOCKCHAINS, calculateAllocation, calculateToNextLevel, rxCrowdsaleData } from './crowdsale'
 import { className, isValidNumber } from '../../utils/utils'
 import { Currency } from '../../components/Currency'
 import { convertTo, currencyDefault, rxSelected } from '../../services/currency'
@@ -53,7 +53,7 @@ const inputNames = {
  */
 export default function CalculatorForm(props) {
     const [state] = iUseReducer(null, rxSetState => {
-        const { deposits = {} } = props
+        const { deposits = {} } = rxCrowdsaleData.value || {}
         const inputs = getInputs( rxSetState, deposits)
         const selectedCurrency = rxSelected.value
         const allocatedIn = findInput(inputs, inputNames.allocated)
@@ -83,16 +83,16 @@ export default function CalculatorForm(props) {
 
     return <FormBuilder {...{...props, ...state}} />
 }
-CalculatorForm.propTypes = {
-    deposits: PropTypes.shape(
-        // only accept supported blockchains
-        Object.keys(BLOCKCHAINS)
-            .reduce((obj, key) => {
-                obj[key] = PropTypes.number
-                return obj
-            }, {})
-    )
-}
+// CalculatorForm.propTypes = {
+//     deposits: PropTypes.shape(
+//         // only accept supported blockchains
+//         Object.keys(BLOCKCHAINS)
+//             .reduce((obj, key) => {
+//                 obj[key] = PropTypes.number
+//                 return obj
+//             }, {})
+//     )
+// }
 CalculatorForm.defaultProps = {
     closeText: null,
     closeOnDimmerClick: true,
@@ -238,7 +238,7 @@ const handleAmountChange = (rxAmount, rxSetState, deposits) => async (_, values)
             )}
             {isValidLevel && <div>{textsCap.msgYourMultiplierLevel} <b>{level}</b></div>}
             {isValidLevel && <div>{textsCap.msgYourMultiplier} <b>x{multiplier}</b></div>}
-            {nextLevel && (
+            {nextMultiplier && (
                 <div>
                     <br />
                     <h4 className='no-margin'>

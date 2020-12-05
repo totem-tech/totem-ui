@@ -95,7 +95,7 @@ export const calculateToNextLevel = async (currency, amtDepositedXTX = 0, level)
     const lastLevel = LEVEL_MULTIPLIERS.length - 1
     const negotiable = nextLevel >= lastLevel && amtDepositedXTX >= Level_NEGOTIATE_Entry_XTX
     // last level reached!
-    if (!isValidNumber(nextEntry)) return null
+    // if (!isValidNumber(nextEntry)) return null
     
     const isValidCurrency = !!(await getCurrencies())
         .find(({ ISO }) => ISO === currency)
@@ -191,8 +191,8 @@ export const fetchConstants = async () => {
 export const getCrowdsaleIdentity = () => crowdsaleData().identity
 
 // placeholder
-export const getDeposits = async () => {
-    const result = await client.crowdsaleCheckDeposits.promise()
+export const getDeposits = async (cached = true) => {
+    const result = await client.crowdsaleCheckDeposits.promise(cached)
     console.log({ result })
     return result
     // return { deposits: {}, lastChecked: new Date().toISOString()}

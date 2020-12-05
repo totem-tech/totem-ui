@@ -67,7 +67,7 @@ export const iUseReducer = (reducerFn, initialState = {}) => {
  *        // define shape properties here
  *        value: PropTypes.number.isRequired,
  *        // 'items' property will be automatically added
- *    }, 'items')
+ *    }, 'items'))
  * }
  * 
  * const childItems = [

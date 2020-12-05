@@ -405,7 +405,8 @@ export class ChatClient {
          *                      @err    String: error message if query failed
          *                      @result Map: list of tasks with details
          */
-        this.taskGetById = (ids, cb) => isFn(cb) && socket.emit('task-get-by-id',
+        this.taskGetById = (ids, cb) => isFn(cb) && socket.emit(
+            'task-get-by-id',
             ids,
             (err, result) => cb(err, new Map(result)),
         )
@@ -421,7 +422,11 @@ export class ChatClient {
          *                              @result.lastChecked string: timestamp of last checked
          * 
          */
-        this.crowdsaleCheckDeposits = cb => isFn(cb) && socket.emit('crowdsale-check-deposits', cb)
+        this.crowdsaleCheckDeposits = (cached = true, cb) => isFn(cb) && socket.emit(
+            'crowdsale-check-deposits',
+            cached,
+            cb,
+        )
         
         /**
          * @name    crowdsaleConstants
@@ -434,7 +439,10 @@ export class ChatClient {
          *                              @result.LEVEL_MULTIPLIERS   Array: multipliers for each level
          *                              @result.LEVEL_ENTRY_USD     Array: minimum deposit amount in USD for each level 
          */
-        this.crowdsaleConstants = cb => isFn(cb) && socket.emit('crowdsale-constants', cb)
+        this.crowdsaleConstants = cb => isFn(cb) && socket.emit(
+            'crowdsale-constants',
+            cb,
+        )
         /**
          * @name    crowdsaleDAA
          * @summary request new or retrieve exisitng deposit address
