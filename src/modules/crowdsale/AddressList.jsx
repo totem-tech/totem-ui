@@ -23,25 +23,49 @@ const textsCap = translated({
     requestBtnTxt: 'request address',
     viewCrowdsaleData: 'view crowdsale data',
 }, true)[1]
+const explorerUrls = {
+    BTC: 'https://explorer.bitcoin.com/btc/search',
+    DOT: 'https://polkascan.io/polkadot/account',
+    ETH: 'https://etherscan.io/address',
+}
 // list of deposit addresses and balances using rxCrowdsaleData
 export default function AddressList(props) {
     const [state] = useRxSubject(rxCrowdsaleData, csData => {
         const { depositAddresses: addresses = {}, deposits = {} } = csData || {}
         const data = Object.keys(BLOCKCHAINS)
-            .map(chain =>  [
-                chain,
-                {
-                    address: addresses[chain] && (
-                        <LabelCopy
-                            maxLength={null}
-                            value={addresses[chain]}
-                        />
-                    ),
-                    amount: addresses[chain] && `${deposits[chain] || 0.00} ${chain}`,
-                    blockchain: chain,
-                    _blockchain: BLOCKCHAINS[chain],
-                },
-            ])
+            .map(chain => {
+                const address = addresses[chain]
+                return [
+                    chain,
+                    {
+                        address,
+                        amount: address && `${deposits[chain] || 0.00} ${chain}`,
+                        blockchain: chain,
+                        _address: address
+                            ? (
+                                <span>
+                                    <LabelCopy
+                                        maxLength={null}
+                                        value={address}
+                                    />
+                                    <Button {...{
+                                        as: 'a',
+                                        href: `${explorerUrls[chain]}/${address}`,
+                                        icon: 'world',
+                                        target: '_blank',
+                                        size: 'mini',
+                                    }} />
+                                </span>
+                            ) : (
+                                <Button {...{
+                                    content: textsCap.requestBtnTxt,
+                                    onClick: () => showForm(DAAForm, { values: { blockchain: chain } }),
+                                }} />
+                            ),
+                        _blockchain: BLOCKCHAINS[chain],
+                    },
+                ]
+            })
         return {
             ...getTableProps(deposits),
             data: new Map(data),
@@ -51,18 +75,17 @@ export default function AddressList(props) {
     return <DataTable {...{...props, ...state }} />
 }
 
-
 const getTableProps = deposits => ({
     columns: [
         { key: '_blockchain', title: textsCap.blockchain },
         {
-            content: ({ address, blockchain }) => address || (
-                <Button {...{
-                    content: textsCap.requestBtnTxt,
-                    onClick: () => showForm(DAAForm, { values: { blockchain } }),
-                }} />
-            ),
-            key: 'address',
+            // content: ({ address, blockchain }) => address || (
+            //     <Button {...{
+            //         content: textsCap.requestBtnTxt,
+            //         onClick: () => showForm(DAAForm, { values: { blockchain } }),
+            //     }} />
+            // ),
+            key: '_address',
             textAlign: 'center',
             title: textsCap.despositAddress,
         },

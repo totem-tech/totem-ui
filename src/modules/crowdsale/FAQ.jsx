@@ -82,7 +82,7 @@ const questions = [
             {
                 question: 'I have already made a deposit. What to do next?',
                 answer: `
-                    Once you have made a deposit, it needs to reach a minimum number of network confirmations before our system will accept this as a valid deposit. Please make sure to click on the check deposit status button to tell our system that your deposit transaction has the required number of confirmations. Only then you will receive the allocation for all your valid deposits. You will be able to view your processed deposited amounts in the crowdsale module.
+                    Once you have made a deposit, it needs to reach a minimum number of network confirmations before our system will accept this as a confirmed transaction. Please make sure to click on the check deposit status button to tell our system that your deposit transaction has the required number of confirmations. Only then you will receive the allocation for all your confirmed transactions. You will be able to view your processed deposited amounts in the crowdsale module.
                 `,
             },
             {
