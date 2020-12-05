@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { Accordion, Icon } from 'semantic-ui-react'
-import Text from './Text'
-import { useInverted } from '../services/window'
 import { className, isFn } from '../utils/utils'
+import { useInverted } from '../services/window'
+import { RecursiveShapeType } from '../services/react'
+import Text from './Text'
 
 const DrillDownList = props => {
     const {
@@ -105,11 +106,12 @@ DrillDownList.propTypes = {
     className: PropTypes.string,
     // @expandedTitles    required only if @setExpandedTitles is a function
     expandedTitles: PropTypes.object,
-    items: PropTypes.arrayOf(PropTypes.shape({
-        children: PropTypes.array,
-        subtitle: PropTypes.any,
-        title: PropTypes.any.isRequired,
-    })),
+    items: PropTypes.arrayOf(
+        RecursiveShapeType({
+            subtitle: PropTypes.any,
+            title: PropTypes.any.isRequired,
+        }, 'children')
+    ).isRequired,
     // @nestedLevelNum for internal use only
     nestedLevelNum: PropTypes.number,
     // @setExpandedTitles (optional) use this to maintain expanded statues externally.

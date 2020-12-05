@@ -1,9 +1,9 @@
 import React from 'react'
-import { Accordion, Button } from 'semantic-ui-react'
+import { isObj } from '../../utils/utils'
+import FAQ from '../../components/FAQ'
 import Text from '../../components/Text'
 import { translated } from '../../services/language'
-import { closeModal, confirm, showForm } from '../../services/modal'
-import { isArr, isFn, isObj, isStr } from '../../utils/utils'
+import { showForm } from '../../services/modal'
 import { getInboxKey, rxOpenInboxKey, rxVisible, SUPPORT } from '../chat/chat'
 import CalculatorForm from './CalculatorForm'
 
@@ -12,6 +12,19 @@ const textsCap = translated({
     contactSupport: 'contact support',
     faqs: 'Frequently asked questions',
 }, true)[1]
+
+export default function CrowdsaleFAQ(props) {
+    return <FAQ {...{...props, questions }} />
+}
+export const showFaqs = (confirmProps, modalId) => FAQ.asModal(
+    {
+        exclusive: false,
+        questions,
+        modalId,
+    },
+    confirmProps,
+    modalId
+)
 
 // Translation of `answer` and `question` properties have been done using translateFAQs() resursively
 const calculatorBtn = {
@@ -31,12 +44,13 @@ const questions = [
                     <div>
                         {answer}
                         <ul>
+                            {/* intentionally left untranslated */}
                             <li>Bitcoin (BTC)</li>
                             <li>Polkadot (DOT)</li>
                             <li>Ethereum (ETH)</li>
                         </ul>
                     </div>
-                )
+                ),
             },
             {
                 question: 'How do I make a deposit?',
@@ -293,7 +307,7 @@ const questions = [
                         <p><b>{answer.line1}</b></p>
                         <p>{answer.line2}</p>
                     </div>
-                )
+                ),
             },
         ],
     },
@@ -315,94 +329,27 @@ const questions = [
                 rxOpenInboxKey.next(getInboxKey([SUPPORT]))
             }
         },
-        render: answer => {
-            console.log({ renderAnswer: answer })
-            return (
-                <div>
-                    <div>{answer.line1}</div>
-                    <br />
-                    <div>{answer.line2}</div>
-                    <br />
-                    <div><b>{answer.line3A}</b> {answer.line3B}</div>
-                </div>
-            )
-        }
+        render: answer =>  (
+            <div>
+                <div>{answer.line1}</div>
+                <br />
+                <div>{answer.line2}</div>
+                <br />
+                <div><b>{answer.line3A}</b> {answer.line3B}</div>
+            </div>
+        ),
     },
 ]
 
-export const showFaqs = (props) => {
-    const modalId = 'crowdsale-faqs'
-    confirm(
-        {
-            cancelButton: null,
-            confirmButton: null,
-            ...props,
-            header: props.header || textsCap.faqs,
-            content: (
-                <div>
-                    {props.content}
-                    <Accordion {...{
-                        defaultActiveIndex: [questions.findIndex(({ active }) => !!active) || 0],
-                        exclusive: false,
-                        fluid: true,
-                        panels: getPanels(questions, modalId),
-                        styled: true,
-                    }} />
-                </div>
-            ),
-        },
-        modalId,
-        { style: { padding: 0 } },
-    )
-    return modalId
-}
-const getPanels = (questions, modalId) => questions
-    .map(({ action, answer, children = [], question, render }, i) => ({
-        key: `panel-${i}`,
-        title: [<Text {...{
-            children: question,
-            color: null,
-            invertedColor: 'white',
-            key: 'children',
-        }} />],
-        content: [
-            <div key='answer'>
-                {isFn(render) && render(answer) || answer}
-                {children.length > 0 && (
-                    <Accordion.Accordion {...{
-                        defaultActiveIndex: children.findIndex(({active}) => !!active) || 0,
-                        panels: getPanels(children, modalId),
-                        style: { margin: 0 },
-                    }} />
-                )}
-            </div>,
-            action && (
-                <Button {...{
-                    ...action,
-                    key: 'action',
-                    onClick: (...args) => {
-                        isFn(action.onClick) && action.onClick(...args)
-                        closeModal(modalId)
-                    },
-                    style: { marginTop: 15 },
-                }} />
-            ),
-        ].filter(Boolean),
-    }))
-
-
-
 setTimeout(() => {
     // recursively translate question and answer properties
-    const translateFAQs = (questions = []) => questions.forEach(entry => {
-        const { answer, children = [], question } = entry
-        entry.question =  translated({ question })[0].question
-        if (isObj(answer)) {
-            entry.answer = translated(answer)[0]
-        } else {
-            entry.answer = translated({ answer })[0].answer
-        }
-        children.length && translateFAQs(children)
-    })
-    translateFAQs(questions)
+    const translateQuestion = (q = {}) => {
+        const { answer, children = [], question } = q
+        q.question =  translated({ question })[0].question
+        q.answer = isObj(answer)
+            ? translated(answer)[0]
+            : translated({ answer })[0].answer
+        children.forEach(translateQuestion)
+    }
+    questions.forEach(translateQuestion)
 })

@@ -83,7 +83,7 @@ export default function () {
             try {
                 // check if KYC done
                 const kycDone = await client.crowdsaleKYC.promise(true)
-                const { deposits, lastChecked } = await getDeposits()
+                const { deposits = {}, lastChecked } = (kycDone && await getDeposits()) || {}
                 // retrieve any existing amounts deposited
                 const steps = await getSteps(deposits, isMobile)
                 newState = {

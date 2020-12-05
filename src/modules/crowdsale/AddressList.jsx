@@ -81,7 +81,7 @@ const getTableProps = deposits => ({
         {
             content: textsCap.faqs,
             icon: 'info',
-            onClick: showFaqs,
+            onClick: () => showFaqs(),
         },
         {
             content: textsCap.viewCrowdsaleData,
