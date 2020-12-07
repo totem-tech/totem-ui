@@ -42,17 +42,16 @@ const textsCap = translated({
     userIdsPlaceholder: 'enter user IDs',
 }, true)[1]
 
+export const inputNames = {
+    address: 'address',
+    includeLocation: 'includeLocation',
+    introducedBy: 'introducedBy',
+    name: 'name',
+    userIds: 'userIds',
+}
 export default class IdentityShareForm extends Component {
     constructor(props) {
         super(props)
-
-        this.names = {
-            address: 'address',
-            includeLocation: 'includeLocation',
-            introducedBy: 'introducedBy',
-            name: 'name',
-            userIds: 'userIds',
-        }
 
         this.state = {
             header: textsCap.formHeader1,
@@ -62,7 +61,7 @@ export default class IdentityShareForm extends Component {
             inputs: [
                 {
                     label: textsCap.identityLabel1,
-                    name: this.names.address,
+                    name: inputNames.address,
                     onChange: this.handleAddressChange,
                     placeholder: textsCap.identityPlaceholder,
                     required: true,
@@ -72,7 +71,7 @@ export default class IdentityShareForm extends Component {
                     type: 'dropdown',
                 },
                 {
-                    name: this.names.includeLocation,
+                    name: inputNames.includeLocation,
                     options: [],
                     type: 'checkbox-group',
                     toggle: true,
@@ -80,7 +79,7 @@ export default class IdentityShareForm extends Component {
                 },
                 {
                     label: textsCap.nameLabel,
-                    name: this.names.name,
+                    name: inputNames.name,
                     placeholder: textsCap.namePlaceholder,
                     required: false,
                     type: 'text',
@@ -88,7 +87,7 @@ export default class IdentityShareForm extends Component {
                 {
                     includePartners: true,
                     label: textsCap.userIdsLabel,
-                    name: this.names.userIds,
+                    name: inputNames.userIds,
                     multiple: true,
                     noResultsMessage: textsCap.userIdsLabel,
                     placeholder: textsCap.userIdsPlaceholder,
@@ -99,7 +98,7 @@ export default class IdentityShareForm extends Component {
                     hidden: true,
                     label: textsCap.introducedByLabel,
                     multiple: false,
-                    name: this.names.introducedBy,
+                    name: inputNames.introducedBy,
                     readOnly: true,
                     type: 'UserIdInput',
                 },
@@ -110,10 +109,10 @@ export default class IdentityShareForm extends Component {
     componentWillMount() {
         // prefill and disable fields 
         const { includePartners, includeOwnIdentities, values } = this.props
-        const address = values[this.names.address]
-        const userIds = values[this.names.userIds]
+        const address = values[inputNames.address]
+        const userIds = values[inputNames.userIds]
         const { inputs } = this.state
-        const identityIn = findInput(inputs, this.names.address)
+        const identityIn = findInput(inputs, inputNames.address)
         // add identity options
         identityIn.options = []
         if (includeOwnIdentities) {
@@ -159,7 +158,7 @@ export default class IdentityShareForm extends Component {
 
         // add User Ids as options if supplied in values
         if (isArr(userIds) && userIds.length > 0) {
-            const userIdIn = findInput(inputs, this.names.userIds)
+            const userIdIn = findInput(inputs, inputNames.userIds)
             userIdIn.options = (userIds || []).map(id => ({
                 key: id,
                 text: id,
@@ -171,7 +170,7 @@ export default class IdentityShareForm extends Component {
         fillValues(inputs, values)
 
         // show introducedBy only if value exists
-        findInput(inputs, this.names.introducedBy).hidden = !values[this.names.introducedBy]
+        findInput(inputs, inputNames.introducedBy).hidden = !values[inputNames.introducedBy]
         this.setState({ header, inputs })
 
         if (!address) return
@@ -179,15 +178,15 @@ export default class IdentityShareForm extends Component {
         identityIn.loading = true
         client.company(address, null, (_, company) => {
             identityIn.loading = false
-            if (isObj(company)) findInput(inputs, this.names.name).hidden = true
+            if (isObj(company)) findInput(inputs, inputNames.name).hidden = true
             this.setState({ inputs })
         })
     }
 
     handleAddressChange = (_, values) => {
         const { inputs } = this.state
-        const includeLocationIn = findInput(inputs, this.names.includeLocation)
-        const address = values[this.names.address]
+        const includeLocationIn = findInput(inputs, inputNames.includeLocation)
+        const address = values[inputNames.address]
         const { locationId } = findIdentity(address) || {}
         includeLocationIn.hidden = !locationId
         includeLocationIn.options = [{
@@ -220,13 +219,13 @@ export default class IdentityShareForm extends Component {
     handleSubmit = (e, values) => {
         const { onSubmit } = this.props
         const { inputs } = this.state
-        const addressIn = findInput(inputs, this.names.address)
-        const address = values[this.names.address]
+        const addressIn = findInput(inputs, inputNames.address)
+        const address = values[inputNames.address]
         const identity = findIdentity(address)
         const sharePartner = !identity
-        const includeLocation = values[this.names.includeLocation]
-        const name = values[this.names.name] || addressIn.options.find(x => x.value === address).name
-        const userIds = values[this.names.userIds]
+        const includeLocation = values[inputNames.includeLocation]
+        const name = values[inputNames.name] || addressIn.options.find(x => x.value === address).name
+        const userIds = values[inputNames.userIds]
         const location = includeLocation && identity ? getLocation(identity.locationId) : undefined
         const data = { address, name, location }
         

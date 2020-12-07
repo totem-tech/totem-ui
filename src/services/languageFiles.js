@@ -48,6 +48,7 @@ export default [
     "./src/modules/chat/NewInboxForm.jsx",
     "./src/modules/chat/RegistrationForm.jsx",
     "./src/modules/chat/chat.js",
+    "./src/modules/chat/notificationHandlers.jsx",
     "./src/modules/crowdsale/AddressList.jsx",
     "./src/modules/crowdsale/CalculatorForm.jsx",
     "./src/modules/crowdsale/Crowdsale.jsx",

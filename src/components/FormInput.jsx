@@ -114,6 +114,7 @@ export class FormInput extends Component {
 			falseValue: falseValue = false,
 			integer,
 			onChange,
+			regex,
 			required,
 			rxValue,
 			trueValue: trueValue = true,
@@ -163,14 +164,14 @@ export class FormInput extends Component {
 			}
 		}
 
-		const doValidate = (!err && hasVal && validationTypes.includes(typeLower)) || validatorConfig
-		err = !doValidate
-			? err
-			: validator.validate(
+		const requireValidator = (hasVal && validationTypes.includes(typeLower)) || validatorConfig
+		if (!err && requireValidator) {
+			err = validator.validate(
 				data.value,
 				{ ...this.props, ...validatorConfig },
 				customMsgs,
 			)
+		}
 
 		let message = !err ? null : { content: err, status: 'error' }
 		const triggerChange = () => {

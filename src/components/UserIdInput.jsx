@@ -67,6 +67,7 @@ export default class UserIdInput extends Component {
         let input = !useDropwdown
             ? {
                 customMessages: {
+                    regex: textsCap.invalidUserId,
                     reject: textsCap.ownIdEntered,
                 },
                 inlineLabel: { icon: { className: 'no-margin', name: 'at' } },

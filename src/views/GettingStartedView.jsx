@@ -1,25 +1,26 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Button, Icon, Step } from 'semantic-ui-react'
+import PromisE from '../utils/PromisE'
 import { generateHash, isFn, isValidNumber } from '../utils/utils'
+// forms and components
 import FormBuilder from '../components/FormBuilder'
 import Invertible from '../components/Invertible'
-
+import RestoreBackupForm from '../forms/RestoreBackup'
+import NewsletteSignup from '../forms/NewsletterSignup'
+// services
 import { translated } from '../services/language'
 import { closeModal, confirm, showForm } from '../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
+import { useRxSubject } from '../services/react'
 import storage, { downloadBackup } from '../services/storage'
 import { setToast } from '../services/toast'
-import RestoreBackupForm from '../forms/RestoreBackup'
-import NewsletteSignup from '../forms/NewsletterSignup'
-
+// modules
 import { createInbox, SUPPORT, TROLLBOX } from '../modules/chat/chat'
-import { getUser } from '../modules/chat/ChatClient'
+import { getUser, rxIsRegistered } from '../modules/chat/ChatClient'
 import RegistrationForm from '../modules/chat/RegistrationForm'
 import { getSelected, rxIdentities } from '../modules/identity/identity'
 import IdentityForm from '../modules/identity/IdentityForm'
-import PromisE from '../utils/PromisE'
-import { useRxSubject } from '../services/react'
 
 const texts = translated({
 	backupTitle: 'Backup your account',
@@ -63,6 +64,7 @@ const texts = translated({
 		Chat is how you communicate with other Totem users. Choose a unique name (preferably not your own name!)
 	`,
 	step2Title: 'Create Chat User ID',
+	step2Title2: 'Your User ID',
 	supportChatHeader: 'Got any questions?',
 	supportChatDesc1: `
 		Now that you are registered with our chat service you can contact us anytime using the support chat channel.
@@ -128,27 +130,32 @@ try {
 } catch (e) { }
 
 export default function GetingStarted() {
-	const [steps] = useState(() => [
-		{
-			description: texts.step2Description,
-			onClick: handleRegister,
-			title: texts.step2Title,
-		},
-		{
-			description: texts.step1Description,
-			onClick: handleUpdateIdentity,
-			title: texts.step1Title,
-		},
-		{
-			// allow the user to backup even after step is completed
-			disabled: activeStep =>  activeStep <= registerStepIndex, 
-			description: texts.backupDescription,
-			onClick: handleBackup,
-			title: texts.backupTitle,
-		},
-	])
+	const [[isRegistered, steps]] = useRxSubject(rxIsRegistered, isRegistered => {
+		const steps = [
+			{
+				description: texts.step2Description,
+				onClick: handleRegister,
+				title: isRegistered
+					? `${texts.step2Title2}: @${getUser().id}`
+					: texts.step2Title,
+			},
+			{
+				description: texts.step1Description,
+				onClick: handleUpdateIdentity,
+				title: texts.step1Title,
+			},
+			{
+				// allow the user to backup even after step is completed
+				disabled: activeStep =>  activeStep <= registerStepIndex, 
+				description: texts.backupDescription,
+				onClick: handleBackup,
+				title: texts.backupTitle,
+			},
+		]
+
+		return [isRegistered, steps]
+	})
 	const [activeStep] = useRxSubject(rxActiveStep)
-	const isRegistered = activeStep > registerStepIndex
 
 	return (
 		<div>

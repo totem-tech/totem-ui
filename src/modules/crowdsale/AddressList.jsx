@@ -23,7 +23,7 @@ const textsCap = translated({
     requestBtnTxt: 'request address',
     updatingDeposits: 'update crowdsale deposits',
     viewCrowdsaleData: 'view crowdsale data',
-    waitB4Check: 'please try again in' 
+    waitB4Check: 'please try again after' 
 }, true)[1]
 const explorerUrls = {
     BTC: 'https://explorer.bitcoin.com/btc/search',
@@ -130,7 +130,7 @@ const getTableProps = deposits => ({
                     then: (ok, result) => ok && crowdsaleData({
                         ...rxCrowdsaleData.value,
                         ...result,
-                    })
+                    }),
                 }, undefined, toastId)
             }
         },
