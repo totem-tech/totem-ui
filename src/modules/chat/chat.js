@@ -264,7 +264,7 @@ export const send = (receiverIds, message, encrypted = false) => {
     }
 
     // save as loading (sending in-progress)
-    saveMessage(msg)
+    saveMessage(msg, true)
 
     addToQueue({
         args: [
@@ -318,8 +318,7 @@ client.onMessage((m, s, r, e, t, id, action) => {
         status: 'success',
         timestamp: t,
     }
-    saveMessage(msg)
-    rxMsg.next([inboxKey, msg])
+    saveMessage(msg, true)
 })
 
 // initialize

@@ -4,7 +4,7 @@ import FAQ from '../../components/FAQ'
 import Text from '../../components/Text'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
-import { getInboxKey, rxOpenInboxKey, rxVisible, SUPPORT } from '../chat/chat'
+import { createInbox, getInboxKey, rxOpenInboxKey, rxVisible, SUPPORT } from '../chat/chat'
 import CalculatorForm from './CalculatorForm'
 
 const textsCap = translated({
@@ -215,7 +215,7 @@ const questions = [
                         <p>{answer.line1}</p>
                         <p>{answer.line2}</p>
                     </div>
-                )
+                ),
             },
         ],
     },
@@ -271,6 +271,7 @@ const questions = [
                                     borderTopLeftRadius: 3,
                                     margin: 0,
                                     padding: 15,
+                                    whiteSpace: 'normal',
                                 },
                             }} />
                         </div>
@@ -292,7 +293,7 @@ const questions = [
                             <li>{answer.line3}</li>
                         </ul>
                     </div>
-                )
+                ),
             },
             {
                 question: 'Can I invest more than the Level 8 Multiplier?',
@@ -324,8 +325,8 @@ const questions = [
             key: 'button',
             onClick: () => {
                 rxVisible.next(true)
-                rxOpenInboxKey.next(getInboxKey([SUPPORT]))
-            }
+                createInbox([SUPPORT], null, true)
+            },
         },
         render: answer =>  (
             <div>

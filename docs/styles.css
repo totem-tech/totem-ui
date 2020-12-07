@@ -254,6 +254,10 @@ body:not(.mobile) .ui.sidebar.left.wide {
 .ui.menu .ui.dropdown .menu>.item .icon:not(.dropdown).no-margin {
   margin: 0 !important;
 }
+body .no-padding,
+body .ui.modal .no-padding {
+	padding: 0 !important;
+}
 .clickable {
 	cursor: pointer;
 }

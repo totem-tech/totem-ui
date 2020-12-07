@@ -133,7 +133,8 @@ FAQ.asModal = (faqProps, confirmProps = {}) => {
         },
         modalId,
         // remove spacing from confirm content
-        { style: { padding: 0 } },
+        { className: 'no-padding'}
+        // { style: { padding: 0 } },
     )
 }
 

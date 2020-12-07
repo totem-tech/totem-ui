@@ -17,7 +17,11 @@ const textsCap = translated({
     amountLabel: 'amount to deposit',
     amountPlaceholder: 'enter amount',
     currencyLabel: 'deposit currency',
-    depositedLabel: 'amount deposited',
+    depositedLabel: 'amount contributed',
+    estimatedAllocationLabel: 'total allocation',
+    estimatedContributionLabel: 'total contribution',
+    estimatedLevelLabel: 'multiplier level',
+    estimatedUnlockedLabel: 'unlocked after Crowdsale',
     formHeader: 'crowdsale allocation calculator',
     formSubheader: 'this calculator is to help you get an estimation on the amount of allocation you can will receive',
     msgAmountUnlocked: 'amount to be unlocked soon after the crowdsale',
@@ -39,6 +43,15 @@ const inputNames = {
     currency: 'currency',
     // estimated difference after @amount is deposited using the selected @blockchain
     differenceXTX: 'differenceXTX',
+    estimatedAllocation: 'estimatedAllocation',
+    estimatedContribution: 'estimatedContribution',
+    estimatedLevel: 'estimatedLevel',
+    estimatedMultiplier: 'estimatedMultiplier',
+    estimatedUnlocked: 'estimatedUnlocked',
+    groupAllocatedDeposited: 'group-allocated-deposited',
+    groupAmountCurrency: 'group-amount-currency',
+    groupEstAllocCont: 'group-estimated-allocation-contribution',
+    groupEstMultiUnlocked: 'group-estimated-multiplier-unlocked',
     // estimated total allocation
     totalXTX: 'totalXTX',
 }
@@ -54,19 +67,16 @@ const inputNames = {
 export default function CalculatorForm(props) {
     const [state] = iUseReducer(null, rxSetState => {
         const { deposits = {} } = rxCrowdsaleData.value || {}
-        const inputs = getInputs( rxSetState, deposits)
+        const inputs = getInputs(rxSetState, deposits)
         const selectedCurrency = rxSelected.value
         const allocatedIn = findInput(inputs, inputNames.allocated)
         const depositedIn = findInput(inputs, inputNames.deposited)
-        depositedIn.action.content = selectedCurrency
-        allocatedIn.action.content = selectedCurrency
         allocatedIn.loading = true
         depositedIn.loading = true
                         
         setTimeout(async () => {
             // calculate total allocatted amount in XTX
             let [depositedXTX, allocatedXTX] = await calculateAllocation(deposits)
-            console.log({deposited: depositedXTX, allocated: allocatedXTX})
             // convert amount to selected currency
             const [_a, allocated] = await convertTo(allocatedXTX, currencyDefault, selectedCurrency)
             const [_d, deposited] = await convertTo(depositedXTX, currencyDefault, selectedCurrency)
@@ -83,16 +93,6 @@ export default function CalculatorForm(props) {
 
     return <FormBuilder {...{...props, ...state}} />
 }
-// CalculatorForm.propTypes = {
-//     deposits: PropTypes.shape(
-//         // only accept supported blockchains
-//         Object.keys(BLOCKCHAINS)
-//             .reduce((obj, key) => {
-//                 obj[key] = PropTypes.number
-//                 return obj
-//             }, {})
-//     )
-// }
 CalculatorForm.defaultProps = {
     closeText: null,
     closeOnDimmerClick: true,
@@ -105,21 +105,24 @@ CalculatorForm.defaultProps = {
 }
 
 export const getInputs = (rxSetState, deposits = {}) => {
-    const rxAmount = new BehaviorSubject()
-    const onChange = handleAmountChange(rxAmount, rxSetState, deposits)
-    return [
+    const actionCurrency = {
+        content: rxSelected.value,
+        onClick: e => e.preventDefault(),
+        style: { padding: '0 10px' },
+    }
+    const actionExchangeIcon = {
+        icon: 'exchange',
+        style: { padding: '0 8px' },
+    }
+    const inputs = [
         {
-            name: 'group-allocated-deposited',
+            name: inputNames.groupAllocatedDeposited,
             type: 'group',
             unstackable: true,
             widths: 8,
             inputs: [
                 {
-                    action: {
-                        content: 'XTX',
-                        onClick: e => e.preventDefault(),
-                        style: { padding: '0 10px' },
-                    },
+                    action: actionCurrency,
                     icon: 'exchange',
                     iconPosition: 'left',
                     label: textsCap.depositedLabel,
@@ -129,11 +132,7 @@ export const getInputs = (rxSetState, deposits = {}) => {
                     type: 'number',
                 },
                 {
-                    action: {
-                        content: 'XTX',
-                        onClick: e => e.preventDefault(),
-                        style: { padding: '0 10px' },
-                    },
+                    action: actionCurrency,
                     icon: 'exchange',
                     iconPosition: 'left',
                     label: textsCap.allocatedLabel,
@@ -146,7 +145,7 @@ export const getInputs = (rxSetState, deposits = {}) => {
             ],
         },
         {
-            name: 'group',
+            name: inputNames.groupAmountCurrency,
             type: 'group',
             unstackable: true,
             widths: 8,
@@ -154,10 +153,10 @@ export const getInputs = (rxSetState, deposits = {}) => {
                 {
                     decimals: 8,
                     label: textsCap.amountLabel,
+                    min: 0,
                     name: inputNames.amount,
-                    onChange,
                     placeholder: textsCap.amountPlaceholder,
-                    rxValue: rxAmount,
+                    rxValue: new BehaviorSubject(),
                     required: true,
                     type: 'number',
                 },
@@ -165,7 +164,6 @@ export const getInputs = (rxSetState, deposits = {}) => {
                     className: 'selection fluid',
                     label: textsCap.currencyLabel,
                     name: inputNames.currency,
-                    onChange,
                     options: Object.keys(BLOCKCHAINS)
                         .map(value => ({ key: value, text: BLOCKCHAINS[value], value })),
                     required: true,
@@ -176,14 +174,87 @@ export const getInputs = (rxSetState, deposits = {}) => {
                 },
             ],
         },
+        {
+            // hide group if amount not entered
+            hidden: values => !values[inputNames.amount],
+            name: inputNames.groupEstAllocCont,
+            type: 'group',
+            unstackable: true,
+            inputs: [
+                {
+                    action: actionExchangeIcon,
+                    actionPosition: 'left',
+                    label: textsCap.estimatedContributionLabel,
+                    name: inputNames.estimatedContribution,
+                    readOnly: true,
+                    rxValue: new BehaviorSubject(''),
+                    type: 'text',
+                    width: 6,
+                },
+                {
+                    action: { ...actionExchangeIcon, icon: 'bars' },
+                    inlineLabel: { icon: { className: 'no-margin', name: 'x' } },
+                    input: <input style={{ padding: 0, textAlign: 'center' }} />,
+                    label: <br />,
+                    name: inputNames.estimatedMultiplier,
+                    readOnly: true,
+                    rxValue: new BehaviorSubject(''),
+                    type: 'number',
+                    width: 4,
+                },
+                {
+                    action: actionExchangeIcon,
+                    actionPosition: 'left',
+                    label: textsCap.estimatedAllocationLabel,
+                    name: inputNames.estimatedAllocation,
+                    readOnly: true,
+                    rxValue: new BehaviorSubject(''),
+                    type: 'text',
+                    width: 6,
+                },
+            ],
+        },
+        {
+            // hide group if amount not entered
+            hidden: values => !values[inputNames.amount],
+            name: inputNames.groupEstMultiUnlocked,
+            type: 'group',
+            unstackable: true,
+            inputs: [
+                {
+                    action: actionExchangeIcon,
+                    actionPosition: 'left',
+                    label: textsCap.estimatedUnlockedLabel,
+                    name: inputNames.estimatedUnlocked,
+                    readOnly: true,
+                    rxValue: new BehaviorSubject(''),
+                    type: 'text',
+                    width: 10,
+                },
+                {
+                    label: textsCap.estimatedLevelLabel,
+                    name: inputNames.estimatedLevel,
+                    readOnly: true,
+                    rxValue: new BehaviorSubject(''),
+                    type: 'number',
+                    width: 6,
+                },
+            ]
+        }
     ]
+
+    const handleChange = handleAmountChange(inputs, rxSetState, deposits)
+    findInput(inputs, inputNames.amount).onChange = handleChange
+    findInput(inputs, inputNames.currency).onChange = handleChange
+    return inputs
 }
 
-const handleAmountChange = (rxAmount, rxSetState, deposits) => async (_, values) => {
+const handleAmountChange = (inputs, rxSetState, deposits) => async (_, values) => {
     const amount = values[inputNames.amount]
     const currency = values[inputNames.currency]
     if (!currency || !isValidNumber(amount)) return rxSetState.next({ message: null })
-
+    
+    const rxAmount = findInput(inputs, inputNames.amount).rxValue
     const depositAmounts = { ...deposits }
     depositAmounts[currency] = (depositAmounts[currency] || 0) + amount
     const [
@@ -194,6 +265,31 @@ const handleAmountChange = (rxAmount, rxSetState, deposits) => async (_, values)
         amtToBeUnlockedXTX,
     ] = await calculateAllocation(depositAmounts)
     const result = await calculateToNextLevel(currency, amtDepositedXTX, level)
+
+    // update estimated contribution, allocation and other fields
+    findInput(inputs, inputNames.estimatedContribution).rxValue.next(
+        (await convertTo(
+            amtDepositedXTX,
+            currencyDefault,
+            rxSelected.value,
+        ))[1]
+    )
+    findInput(inputs, inputNames.estimatedAllocation).rxValue.next(
+        (await convertTo(
+            amtMultipliedXTX,
+            currencyDefault,
+            rxSelected.value,
+        ))[1]
+    )
+    findInput(inputs, inputNames.estimatedMultiplier).rxValue.next(multiplier)
+    findInput(inputs, inputNames.estimatedLevel).rxValue.next(level)
+    findInput(inputs, inputNames.estimatedUnlocked).rxValue.next(
+        (await convertTo(
+            amtToBeUnlockedXTX,
+            currencyDefault,
+            rxSelected.value,
+        ))[1]
+    )
 
     const [
         amtXTXToNextEntry,
@@ -207,7 +303,7 @@ const handleAmountChange = (rxAmount, rxSetState, deposits) => async (_, values)
     console.log({amount, amtToNextEntry, amountNext})
     const content = (
         <div>
-            <h4 className='no-margin'>
+            {/* <h4 className='no-margin'>
                 {textsCap.allocationEstimation}:
             </h4>
             {isValidLevel && (
@@ -237,10 +333,10 @@ const handleAmountChange = (rxAmount, rxSetState, deposits) => async (_, values)
                 }} />
             )}
             {isValidLevel && <div>{textsCap.msgYourMultiplierLevel} <b>{level}</b></div>}
-            {isValidLevel && <div>{textsCap.msgYourMultiplier} <b>x{multiplier}</b></div>}
+            {isValidLevel && <div>{textsCap.msgYourMultiplier} <b>x{multiplier}</b></div>} */}
             {nextMultiplier && (
                 <div>
-                    <br />
+                    {/* <br /> */}
                     <h4 className='no-margin'>
                         {textsCap.msgToReachLevel} <b>{nextLevel}</b> (x<b>{nextMultiplier}</b>)
                     </h4>

@@ -16,6 +16,7 @@ import { get as getLocation, getAll as getLocations, rxLocations } from '../loca
 import LocationForm, { inputNames as locInputNames } from '../location/LocationForm'
 import { getInputs as getDAAInputs, inputNames as daaInputNames, } from './DAAForm'
 import { crowdsaleData, rxCrowdsaleData } from './crowdsale'
+import { showFaqs } from './FAQ'
 
 const textsCap = translated({
     blockchainsLabel: 'select blockchains',
@@ -47,6 +48,10 @@ const textsCap = translated({
     `,
     submitFailedBackupNotDone: 'you must complete the backup process',
     submitText: 'register',
+    successMsg: `
+        Fantastic! You have now been registered for the Totem Live Association crowdsale.
+        You are now ready to deposit funds using any of your chosen Blockchains.
+    `,
 }, true)[1]
 export const inputNames = {
     blockchains: 'blockchains',
@@ -100,14 +105,16 @@ export default function KYCForm(props = {}) {
                 })
                 return
             })
-            .catch(err => setState({
-                loading: false,
-                message: {
-                    content: `${err}`,
-                    icon: true,
-                    status: 'error',
-                },
-            }))
+            .catch(err => {
+                setState({
+                    loading: false,
+                    message: {
+                        content: `${err}`,
+                        icon: true,
+                        status: 'error',
+                    },
+                })
+            })
     }, [])
 
     return <FormBuilder {...{ ...props, ...state }} />
@@ -184,6 +191,7 @@ const handleSubmitCb = (rxSetState, props = {}) => async (_, values) => {
     rxSetState.next(newState)
 
     isFn(onSubmit) && onSubmit(newState.success, values)
+    newState.success && showFaqs({ content: textsCap.successMsg })
 }
 
 const getLocationOptions = locationsMap => Array.from(locationsMap)

@@ -218,10 +218,10 @@ body:not(.chat-visible) .chat-container{
     padding-right: 15px;
     cursor: pointer;
 }
-.chat-container .inbox .header .tools.right .expand.icon:before {
+.chat-container .inbox .expand.icon:before {
     content: "\f077";
 }
-.inbox-expanded .chat-container .inbox .header .expand.icon:before {
+body.inbox-expanded .chat-container .inbox .expand.icon:before {
     content: "\f078";
 }
 .inbox-expanded .chat-container .inbox {

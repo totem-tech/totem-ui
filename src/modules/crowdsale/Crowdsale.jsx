@@ -1,32 +1,22 @@
 import React, { useEffect } from 'react'
-import { Button, Icon, Step } from 'semantic-ui-react'
-import DataTable from '../../components/DataTable'
+import { Step } from 'semantic-ui-react'
 import Text from '../../components/Text'
 import Message from '../../components/Message'
 import { translated } from '../../services/language'
-import { confirm, showForm } from '../../services/modal'
 import { iUseReducer, reducer, subjectAsPromise, usePromise, useRxSubject } from '../../services/react'
 import { MOBILE, rxLayout } from '../../services/window'
 import client, { rxIsLoggedIn, rxIsRegistered } from '../chat/ChatClient'
 import RegistrationForm from '../chat/RegistrationForm'
 import {
-    BLOCKCHAINS,
     calculateAllocation,
     calculateToNextLevel,
-    crowdsaleData,
     ENTRY_NEGOTIATE_XTX,
     getDeposits,
-    rxCrowdsaleData,
 } from './crowdsale'
-import DAAForm from './DAAForm'
 import KYCForm from './KYCForm'
-import KYCViewForm from './KYCViewForm'
-import CalculatorForm from './CalculatorForm'
 import { Currency } from '../../components/Currency'
 import { currencyDefault } from '../../services/currency'
-import LabelCopy from '../../components/LabelCopy'
 import AddressList from './AddressList'
-import { showFaqs } from './FAQ'
 
 const textsCap = translated({
     achieved: 'achieved!',
@@ -45,10 +35,6 @@ const textsCap = translated({
     stepMsgAllocation: 'your total crowdsale allocation will be',
     stepMsgLevel: 'Yeey! You have reached the last level. Contact us for a special bonus if you would like to invest more than',
     stepMsgToNextLevel: 'contribution required to reach next level',
-    successMsg: `
-        Fantastic! You have now been registered for the Totem Live Association crowdsale.
-        You are now ready to deposit funds using any of your chosen Blockchains.
-    `,
     successEndingMsg: 'Click close to view your pay to addresses.',
     successNote0: 'Here are answers to a few frequently asked questions:',
     successNote1: 'You can deposit as many times as you wish to any of your pay to addresses',
@@ -131,7 +117,6 @@ export default function () {
         onSubmit: kycDone => {
             if (!kycDone) return
             setState({ kycDone })
-            showFaqs({ content: textsCap.successMsg })
         },
         style: { maxWidth: 400 },
     })

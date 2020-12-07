@@ -16,6 +16,7 @@ import KYCViewForm from './KYCViewForm'
 const textsCap = translated({
     amountDeposited: 'amount deposited',
     blockchain: 'blockchain',
+    blockchainExplorer: 'view in explorer',
     checkDepositStatus: 'check deposit status',
     calculator: 'calculator',
     despositAddress: 'pay to address',
@@ -23,7 +24,8 @@ const textsCap = translated({
     requestBtnTxt: 'request address',
     updatingDeposits: 'update crowdsale deposits',
     viewCrowdsaleData: 'view crowdsale data',
-    waitB4Check: 'please try again after' 
+    waitB4Check: 'please try again after',
+    whitelistAddress: 'whitelist address',
 }, true)[1]
 const explorerUrls = {
     BTC: 'https://explorer.bitcoin.com/btc/search',
@@ -54,13 +56,16 @@ export default function AddressList(props) {
                                         as: 'a',
                                         href: `${explorerUrls[chain]}/${address}`,
                                         icon: 'world',
-                                        target: '_blank',
                                         size: 'mini',
+                                        target: '_blank',
+                                        title: textsCap.blockchainExplorer,
                                     }} />
                                 </span>
                             ) : (
                                 <Button {...{
-                                    content: textsCap.requestBtnTxt,
+                                    content: chain === 'ETH'
+                                        ? textsCap.whitelistAddress
+                                        : textsCap.requestBtnTxt,
                                     onClick: () => showForm(DAAForm, { values: { blockchain: chain } }),
                                 }} />
                             ),
@@ -81,14 +86,15 @@ const getTableProps = deposits => ({
     columns: [
         { key: '_blockchain', title: textsCap.blockchain },
         {
-            key: '_address',
-            textAlign: 'center',
-            title: textsCap.despositAddress,
-        },
-        {
             key: 'amount',
             textAlign: 'center',
             title: textsCap.amountDeposited,
+        },
+        {
+            key: '_address',
+            style: { whiteSpace: 'nowrap' },
+            textAlign: 'center',
+            title: textsCap.despositAddress,
         },
     ],
     searchable: false,

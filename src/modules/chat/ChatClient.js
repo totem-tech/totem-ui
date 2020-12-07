@@ -59,6 +59,8 @@ export const referralCode = code => {
 // Instantiates the client if not already done
 export const getClient = () => {
     if (instance) return instance
+    // automatically login to messaging service
+    const { id, secret } = getUser() || {}
 
     instance = new ChatClient()
     // attach a promise() functions to all event related methods. 
@@ -108,18 +110,14 @@ export const getClient = () => {
         }
     })
 
-    // automatically login to messaging service
-    const { id, secret } = getUser() || {}
-    if (!id) return instance
-
     instance.onConnect(() => {
         rxIsConnected.next(true)
         // auto login on connect to messaging service
-        instance.login(id, secret, () => { })
+        !!id && instance.login(id, secret, () => { })
     })
     instance.onConnectError(() => {
-        rxIsLoggedIn.next(false)
         rxIsConnected.next(false)
+        !!id && rxIsLoggedIn.next(false)
     })
     return instance
 }
