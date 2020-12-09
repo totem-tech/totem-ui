@@ -193,9 +193,7 @@ export const getCrowdsaleIdentity = () => crowdsaleData().identity
 // placeholder
 export const getDeposits = async (cached = true) => {
     const result = await client.crowdsaleCheckDeposits.promise(cached)
-    console.log({ result })
     return result
-    // return { deposits: {}, lastChecked: new Date().toISOString()}
 }
 
 // set initial value

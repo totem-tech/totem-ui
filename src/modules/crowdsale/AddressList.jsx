@@ -13,6 +13,7 @@ import DAAForm from './DAAForm'
 import { showFaqs } from './FAQ'
 import KYCViewForm from './KYCViewForm'
 
+const CACHE_DURATION_MS = 1000 * 60 * 30 // 30 minutes
 const textsCap = translated({
     amountDeposited: 'amount deposited',
     blockchain: 'blockchain',
@@ -39,36 +40,37 @@ export default function AddressList(props) {
         const data = Object.keys(BLOCKCHAINS)
             .map(chain => {
                 const address = addresses[chain]
+                const _address = address
+                    ? (
+                        <span>
+                            <LabelCopy
+                                maxLength={null}
+                                value={address}
+                            />
+                            <Button {...{
+                                as: 'a',
+                                href: `${explorerUrls[chain]}/${address}`,
+                                icon: 'world',
+                                size: 'mini',
+                                target: '_blank',
+                                title: textsCap.blockchainExplorer,
+                            }} />
+                        </span>
+                    ) : (
+                        <Button {...{
+                            content: chain === 'ETH'
+                                ? textsCap.whitelistAddress
+                                : textsCap.requestBtnTxt,
+                            onClick: () => showForm(DAAForm, { values: { blockchain: chain } }),
+                        }} />
+                    )
                 return [
                     chain,
                     {
                         address,
                         amount: address && `${deposits[chain] || 0.00} ${chain}`,
                         blockchain: chain,
-                        _address: address
-                            ? (
-                                <span>
-                                    <LabelCopy
-                                        maxLength={null}
-                                        value={address}
-                                    />
-                                    <Button {...{
-                                        as: 'a',
-                                        href: `${explorerUrls[chain]}/${address}`,
-                                        icon: 'world',
-                                        size: 'mini',
-                                        target: '_blank',
-                                        title: textsCap.blockchainExplorer,
-                                    }} />
-                                </span>
-                            ) : (
-                                <Button {...{
-                                    content: chain === 'ETH'
-                                        ? textsCap.whitelistAddress
-                                        : textsCap.requestBtnTxt,
-                                    onClick: () => showForm(DAAForm, { values: { blockchain: chain } }),
-                                }} />
-                            ),
+                        _address,
                         _blockchain: BLOCKCHAINS[chain],
                     },
                 ]
@@ -120,11 +122,11 @@ const getTableProps = deposits => ({
             icon: 'find',
             onClick: () => {
                 const { lastChecked } = rxCrowdsaleData.value || {}
-                const diffSeconds = (new Date() - new Date(lastChecked)) / 1000
-                const toastId = 'crowdsale-checkDepositStatus'
+                const diffMS = (new Date() - new Date(lastChecked))
+                const toastId = 'crowdsale-checkDepositStatus' // prevent multiple toasts
                 // tell user to wait x amount of minutes if previous check was in less than 30 minutes
-                if (!!lastChecked && diffSeconds < 30 * 60) return setToast({
-                    content: `${textsCap.waitB4Check} ${30 - Math.floor(diffSeconds / 60)} minutes`,
+                if (!!lastChecked && diffMS < CACHE_DURATION_MS) return setToast({
+                    content: `${textsCap.waitB4Check} ${Math.floor((CACHE_DURATION_MS - diffMS)/60000)} minutes`,
                     status: 'warning',
                 }, 3000, toastId)
 
@@ -136,7 +138,7 @@ const getTableProps = deposits => ({
                     then: (ok, result) => ok && crowdsaleData({
                         ...rxCrowdsaleData.value,
                         ...result,
-                    }),
+                    }) | console.log({result}),
                 }, undefined, toastId)
             }
         },
