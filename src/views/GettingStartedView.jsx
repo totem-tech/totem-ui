@@ -59,7 +59,7 @@ const texts = translated({
 	restoreBtnTitle: 'Restore backup',
 	step1Description: `Identities are only known to you. You can create as many as you like in the Identities Module.`,
 	step1Title: 'Edit Default Identity',
-	stepsTitle: `Only 2 short steps to begin. Let's go!`,
+	stepsTitle: `Only 3 short steps to begin. Let's go!`,
 	step2Description: `
 		Chat is how you communicate with other Totem users. Choose a unique name (preferably not your own name!)
 	`,
