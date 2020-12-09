@@ -31,6 +31,7 @@ module.exports = {
   plugins: [
     new webpack.IgnorePlugin(/abort-controller/),
     new webpack.IgnorePlugin(/form-data/),
+    new webpack.IgnorePlugin(/nano/), // CouchDB Client
     new webpack.IgnorePlugin(/node-localstorage/),
     new webpack.IgnorePlugin(/node-fetch/),
   ],
