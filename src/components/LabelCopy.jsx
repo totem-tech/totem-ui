@@ -105,11 +105,6 @@ LabelCopy.propTypes = {
 LabelCopy.defaultProps = {
     className: 'clickable',
     El: Label,
-    // icon: {
-    //     className: 'no-margin',
-    //     name: 'copy outline',
-    //     style: { paddingRight: 5 }
-    // },
     ignoreAttributes: [
         'El',
         'ignoreAttributes',

@@ -234,10 +234,13 @@ export const showForm = (FormComponent, props, modalId, focusRef) => {
 
 // enable user to open any form within './forms/ in a modal by using URL parameter `?form=FormComponentFileName`
 // any other URL parameter will be supplied to the from as the `values` prop.
+// Exception: `?ref=XXX` is a shortcut to `?form=registration&user=XXX`
 setTimeout(() => {
     let fileName = (getUrlParam('form') || '')
         .trim()
         .toLowerCase()
+    const referralCode = !fileName && getUrlParam('ref')
+    if (!!referralCode) fileName = 'registration'
     if (!fileName) return
     try {
         fileName = (require('./languageFiles').default || [])
@@ -245,8 +248,12 @@ setTimeout(() => {
             .filter(Boolean)
             .find(x => x.toLowerCase().startsWith(fileName))
         if (!fileName) return
+
         const Form = require(`../forms/${fileName}`)
-        const values = getUrlParam()
+        const values = !referralCode
+            ? getUrlParam()
+            : { referralCode }
+
         showForm(Form.default, { values })
         history.pushState({}, null, `${location.protocol}//${location.host}`)
     } catch (e) {

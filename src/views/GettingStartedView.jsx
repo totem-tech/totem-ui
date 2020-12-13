@@ -21,6 +21,7 @@ import { getUser, rxIsRegistered } from '../modules/chat/ChatClient'
 import RegistrationForm from '../modules/chat/RegistrationForm'
 import { getSelected, rxIdentities } from '../modules/identity/identity'
 import IdentityForm from '../modules/identity/IdentityForm'
+import LabelCopy from '../components/LabelCopy'
 
 const texts = translated({
 	backupTitle: 'Backup your account',
@@ -54,6 +55,9 @@ const texts = translated({
 	`,
 	quickGuidePara3: 'If you use up your balance - no problemo! Simply request some more from our automated faucet.',
 	quickGuideTitle: 'A quick guide to getting started with Totem Live Accounting.',
+	referDesc1: 'Totem works best when you have partners. Referring will get both you and your friends free tokens.',
+	referDesc2: 'Invite your friends to join Totem using the following link:',
+	referTitle: 'Refer to earn free tokens!',
 	restoreTitle: 'Got a backup of an existing account?',
 	restoreTitle2: 'Want to restore an existing backup?',
 	restoreBtnTitle: 'Restore backup',
@@ -67,7 +71,7 @@ const texts = translated({
 	step2Title2: 'Your User ID',
 	supportChatHeader: 'Got any questions?',
 	supportChatDesc1: `
-		Now that you are registered with our chat service you can contact us anytime using the support chat channel.
+		Now that you are registered with our messaging service you can contact us anytime using the support chat channel.
 	`,
 	supportChatDesc2: 'You can also reach us over on the following applications:',
 	supportContact: 'Contact Support',
@@ -214,6 +218,19 @@ export default function GetingStarted() {
 				}} />
 			</div>
 
+			{/* Referral Link*/}
+			{isRegistered && (	
+				<div style={styles.space}>
+					<h3>{texts.referTitle}</h3>
+					<div>{texts.referDesc1}</div>
+					<div>{texts.referDesc2}</div>
+					<LabelCopy {...{
+						maxLength: null,
+						value: getReferralURL(),
+					}} />
+				</div>
+			)}
+
 			{/* Social links and support chat section */}
 			<div style={styles.space}>
 				<h3>{texts.supportChatHeader}</h3>
@@ -297,6 +314,12 @@ export default function GetingStarted() {
 		</div >
 	)
 }
+
+export const getReferralURL = () => location.protocol
+	+ '//'
+	+ location.hostname
+	+ (location.port ? ':' + location.port : '')
+	+ '?ref=' + getUser().id
 
 const handleBackup = () => confirm({
 	confirmButton: textsCap.backupNow,
