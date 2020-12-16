@@ -55,6 +55,7 @@ const texts = translated({
 	`,
 	quickGuidePara3: 'If you use up your balance - no problemo! Simply request some more from our automated faucet.',
 	quickGuideTitle: 'A quick guide to getting started with Totem Live Accounting.',
+	referCopy: 'Copy your referral link',
 	referDesc1: 'Totem works best when you have partners. Referring will get both you and your friends free tokens.',
 	referDesc2: 'Invite your friends to join Totem using the following link:',
 	referTitle: 'Refer to earn free tokens!',
@@ -225,6 +226,7 @@ export default function GetingStarted() {
 					<div>{texts.referDesc1}</div>
 					<div>{texts.referDesc2}</div>
 					<LabelCopy {...{
+						content: texts.referCopy,
 						maxLength: null,
 						value: getReferralURL(),
 					}} />

@@ -35,15 +35,16 @@ export const rxSelected = new BehaviorSubject(getSelected())
  * @returns {Array} [@convertedAmount Number, @rounded String]
  */
 export const convertTo = async (amount = 0, from, to, decimals) => {
-    from = from.toUpperCase()
-    to = to.toUpperCase()
+    // from = from.toUpperCase()
+    // to = to.toUpperCase()
     const ft = [from, to]
     // await client.currencyConvert.promise(from, to, amount)
     // wait up to 10 seconds if messaging service is not connected yet
     if (!rxIsConnected.value) await subjectAsPromise(rxIsConnected, true, 10000)[0]
     const currencies = await getCurrencies()
     const fromTo = currencies.filter(({ ISO }) => ft.includes(ISO))
-    if (!ft.every(x => fromTo.find(c => c.ISO === x))) throw new Error(textsCap.invalidCurency)
+    const gotBoth = ft.every(x => fromTo.find(c => c.ISO === x))
+    if (!gotBoth) throw new Error(textsCap.invalidCurency)
     
     const fromCurrency = fromTo.find(({ ISO }) => ISO === from)
     const toCurrency = currencies.find(({ ISO }) => ISO === to)

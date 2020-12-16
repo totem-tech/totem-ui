@@ -84,6 +84,7 @@ export default class Transfer extends Component {
                 {
                     label: undefined,
                     name: this.names.from,
+                    onChange: this.handleCurrencyReceivedChange,
                     options: [],
                     required: true,
                     rxValue: new BehaviorSubject(''),
@@ -151,7 +152,7 @@ export default class Transfer extends Component {
                             disabled: true,
                             label: textsCap.currencySentLabel,
                             name: this.names.currencySent,
-                            onChange: this.handleCurrencySentChange,
+                            onChange: this.handleCurrencyReceivedChange,
                             options: [],
                             rxValue: new BehaviorSubject(),
                             search: ['text', 'description'],
@@ -180,7 +181,7 @@ export default class Transfer extends Component {
                             maxLength: 12,
                             min: 0,
                             name: this.names.amountReceived,
-                            onChange: deferred(this.handleAmountReceivedChange, 500),
+                            onChange: this.handleAmountReceivedChange,
                             onInvalid: this.handleAmountReceivedInvalid,
                             placeholder: textsCap.amountReceivedPlaceholder,
                             required: true,
@@ -306,7 +307,7 @@ export default class Transfer extends Component {
         )
     }
 
-    handleAmountReceivedChange = async (_, values) => {
+    handleAmountReceivedChange =  deferred(async (_, values) => {
         const amountReceived = values[this.names.amountReceived]
         const currencyReceived = values[this.names.currencyReceived]
         const from = values[this.names.from]
@@ -363,9 +364,9 @@ export default class Transfer extends Component {
 
         amountSentIn.rxValue.next(resAmountSent[1])
         this.setState({ inputs, submitDisabled })
-    }
+    }, 200)
 
-    handleAmountReceivedInvalid = () => {
+    handleAmountReceivedInvalid =  deferred(() => {
         const { inputs } = this.state
         const amountReceivedIn = findInput(inputs, this.names.amountReceived)
         const amountReceivedGrpIn = findInput(inputs, this.names.amountReceivedGroup)
@@ -374,9 +375,9 @@ export default class Transfer extends Component {
         amountReceivedIn.icon = 'money'
         amountReceivedGrpIn.message = null
         this.setState({ inputs })
-    }
+    }, 100)
 
-    handleCurrencyReceivedChange = (_, values) => {
+    handleCurrencyReceivedChange = deferred((_, values) => {
         if (!this.currencies) return
         const { inputs } = this.state
         const amountReceived = values[this.names.amountReceived]
@@ -385,10 +386,11 @@ export default class Transfer extends Component {
         const currencyObj = this.currencies.find(x => x.ISO === currencyReceived) || {}
         amountReceivedIn.decimals = parseInt(currencyObj.decimals || 0)
         this.setState({ inputs })
+
         if (!isValidNumber(amountReceived)) return
         amountReceivedIn.rxValue.next('')
         amountReceivedIn.rxValue.next(amountReceived)
-    }
+    }, 200)
 
     handleSubmit = (_, values) => {
         const amountReceived = values[this.names.amountReceived]
