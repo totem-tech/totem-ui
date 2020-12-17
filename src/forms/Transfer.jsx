@@ -364,7 +364,7 @@ export default class Transfer extends Component {
 
         amountSentIn.rxValue.next(resAmountSent[1])
         this.setState({ inputs, submitDisabled })
-    }, 200)
+    }, 500)
 
     handleAmountReceivedInvalid =  deferred(() => {
         const { inputs } = this.state

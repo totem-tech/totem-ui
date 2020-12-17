@@ -57,6 +57,25 @@ export const convertTo = async (amount = 0, from, to, decimals) => {
     return [convertedAmount, rounded, decimals]
 }
 
+const fetchCurrencies = async (cached = rwCache().currencies) => {
+    const hash = generateHash(cached)
+    let currencies = await client.currencyList.promise(hash)
+    // currencies list is the same as in the server => use cached
+    if (currencies.length === 0) return cached
+
+    // sort by ISO and  makes sure there is a name and ISO
+    currencies = arrSort(currencies.map(c => {
+        c.nameInLanguage = c.nameInLanguage || c.currency
+        c.ISO = c.ISO || c.currency
+        return c
+    }), 'ISO')
+
+    rwCache('currencies', currencies)
+    lastUpdated = new Date()
+    console.log('Currency list updated', currencies)
+    return currencies
+}
+
 // get selected currency code
 export function getSelected() {
     return rw().selected || currencyDefault
@@ -87,34 +106,19 @@ export const updateCurrencies = async () => {
         // prevents making multiple requests
         if (updatePromise) return await updatePromise
 
-        const sortedArr = rwCache().currencies
+        const cached = rwCache().currencies
         // messaging service is not connected
         if (!rxIsConnected.value) {
             // return existing list if available
-            if (sortedArr && sortedArr.length) return sortedArr
+            if (cached && cached.length) return cached
 
             // wait till connected
             await subjectAsPromise(rxIsConnected, true)[0]
         }
 
-        const hash = generateHash(sortedArr)
-        const currencyPromise = client.currencyList.promise(hash)
-        const handleCurrencies = async (currencies) => {
-            if (currencies.length === 0) return
-            currencies.forEach(x => {
-                x.nameInLanguage = x.nameInLanguage || x.currency
-                x.ISO = x.ISO || x.currency
-            })
-            rwCache('currencies', arrSort(currencies, 'ISO'))
-            lastUpdated = new Date()
-            console.log('Currency list updated', currencies)
-        }
-        currencyPromise.then(handleCurrencies)
+        updateCurrencies.updatePromise = PromisE.timeout(fetchCurrencies(cached), 3000)
 
-        // for first time user wait as long at it takes otherwise, timeout and force use cached
-        // cached list of currencies exists, timeout if list not loaded within 3 seconds
-        updateCurrencies.updatePromise = !sortedArr ? currencyPromise : PromisE.timeout(currencyPromise, 3000)
-        await updateCurrencies.updatePromise
+        return await updateCurrencies.updatePromise
     } catch (err) {
         console.trace('Failed to retrieve currencies:', err)
     }

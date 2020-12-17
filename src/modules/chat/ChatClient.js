@@ -1,4 +1,4 @@
-import io from 'socket.io-client'
+import ioClient from 'socket.io-client'
 import { BehaviorSubject } from 'rxjs'
 import { isFn, isObj, isStr, objWithoutKeys } from '../../utils/utils'
 import { translated } from '../../services/language'
@@ -152,7 +152,11 @@ export const translateError = err => {
 export class ChatClient {
     constructor(url) {
         this.url = url || `${window.location.hostname}:${port}`
-        socket = io(this.url)
+        socket = ioClient(this.url, {
+            transports: ['websocket'],
+            // secure: true,
+            // rejectUnauthorized: false,
+        })
 
         this.isConnected = () => socket.connected
         this.onConnect = cb => socket.on('connect', cb)
