@@ -14,6 +14,8 @@ import DepositStats from './DepositStats'
 import KYCForm from './KYCForm'
 import KYCViewForm from './KYCViewForm'
 
+const START_BLOCK = 1787748
+const END_BLOCK = 9999
 const textsCap = translated({
     loading: 'loading',
     loginRequired: 'you must be logged in and online to access this section',

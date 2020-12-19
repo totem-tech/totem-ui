@@ -67,7 +67,7 @@ export default React.memo(() => {
     return (
         <div>
             <div>
-                <h3 style={{ margin: 0 }}>
+                <h4 style={{ margin: 0 }}>
                     {textsCap.amountContributed}:
                     <Currency {...{
                         prefix: ' ',
@@ -75,8 +75,8 @@ export default React.memo(() => {
                         unit: currencyDefault,
                         value: amtDepositedXTX,
                     }} />
-                </h3>
-                <h3 style={{ margin: 0 }}>
+                </h4>
+                <h4 style={{ margin: 0 }}>
                     {textsCap.amountAllocated} (x{multiplier}):
                     <Currency {...{
                         prefix: ' ',
@@ -84,9 +84,9 @@ export default React.memo(() => {
                         unit: currencyDefault,
                         value: amtMultipliedXTX,
                     }} />
-                </h3>
+                </h4>
                 {!!nextLevelAmountXTX && (
-                    <h3 style={{ margin: 0 }}>
+                    <h4 style={{ margin: 0 }}>
                         {textsCap.amountToNextLevel} (x{nextMultiplier}):
                         <Currency {...{
                             prefix: ' ',
@@ -94,7 +94,7 @@ export default React.memo(() => {
                             unit: currencyDefault,
                             value: nextLevelAmountXTX,
                         }} />
-                    </h3>
+                    </h4>
                 )}
                 
                 {!nextLevelAmountXTX && (

@@ -79,8 +79,9 @@ export default class DataTable extends Component {
     }
 
     getHeaders(totalRows, columns, selectedIndexes) {
-        let { columnsHidden, selectable } = this.props
+        let { columnsHidden, selectable, tableProps = {} } = this.props
         const { sortAsc, sortBy } = this.state
+        const { sortable } = tableProps
 
         const headersColumns = columns
             .filter(x => !x.hidden && !columnsHidden.includes(x.name))
@@ -90,7 +91,7 @@ export default class DataTable extends Component {
                     ...x.headerProps,
                     content: x.title,
                     key: i,
-                    onClick: () => x.key && this.setState({
+                    onClick: () => x.key && sortable && this.setState({
                         sortBy: x.key,
                         sortAsc: sortBy === x.key ? !sortAsc : true
                     }),

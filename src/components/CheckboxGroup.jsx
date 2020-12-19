@@ -8,7 +8,7 @@ const excludeKeys = ['inline', 'multiple', 'name', 'options', 'required', 'rxVal
 
 export default function CheckboxGroup(props) {
     const { disabled, inline, multiple, name, options, radio, readOnly, rxValue, style } = props
-    const allowMultiple = !radio && multiple
+    const allowMultiple = !radio && !!multiple
     const commonProps = objWithoutKeys(props, excludeKeys)
     let [value, setValue] = useState(rxValue && rxValue.value || props.value)
 

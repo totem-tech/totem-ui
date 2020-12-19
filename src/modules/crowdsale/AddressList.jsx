@@ -103,6 +103,7 @@ const getTableProps = deposits => ({
         basic: 'very',
         celled: false,
         compact: true,
+        sortable: false,   
         unstackable: true,
     },
     topLeftMenu: [
@@ -111,11 +112,6 @@ const getTableProps = deposits => ({
             icon: 'info',
             onClick: () => showFaqs(),
         },
-        // {
-        //     content: textsCap.viewCrowdsaleData,
-        //     icon: 'eye',
-        //     onClick: () => showForm(KYCViewForm),
-        // },
         {
             content: textsCap.updateBalances,
             icon: 'find',

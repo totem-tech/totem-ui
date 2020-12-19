@@ -1,4 +1,5 @@
 import uuid from 'uuid'
+import { BehaviorSubject } from 'rxjs'
 // utils
 import PromisE from '../utils/PromisE'
 import { connect, query as queryHelper, setDefaultConfig } from '../utils/polkadotHelper'
@@ -11,6 +12,7 @@ import storage from './storage'
 import { setToast } from './toast'
 import { rxOnline } from './window'
 
+export const rxBlockNumber = new BehaviorSubject()
 const MODULE_KEY = 'blockchain'
 const textsCap = translated({
     invalidApiPromise: 'ApiPromise instance required',
@@ -113,6 +115,9 @@ export const getConnection = async (create = false) => {
             errorShown: false,
         }
 
+        if (isFn(getCurrentBlock.unsubscribe)) getCurrentBlock.unsubscribe()
+        getCurrentBlock.unsubscribe = await getCurrentBlock(blockNumber => rxBlockNumber.next(blockNumber))
+
         // none of these work!!!!
         // provider.websocket.addEventListener('disconnected', (err) => console.log('disconnected', err))
         // provider.websocket.addEventListener('error', (err) => console.log('error', err))
@@ -136,6 +141,7 @@ export const getConnection = async (create = false) => {
     }
     return connection
 }
+
 /**
  * @name    getCurrentBlock
  * @summary get current block number
@@ -251,8 +257,6 @@ export const setConfig = newConfig => {
     storage.settings.module(MODULE_KEY, { config })
 }
 
-// Include all functions here that will be used by Queue Service
-// Only blockchain transactions
 export default {
     denominations,
     getConfig,
@@ -264,6 +268,7 @@ export default {
     query,
     queueables,
     randomHex,
+    rxBlockNumber,
     setConfig,
     types,
 }
