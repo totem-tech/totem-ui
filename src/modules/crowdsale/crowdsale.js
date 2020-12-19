@@ -6,7 +6,7 @@ import client, { rxIsLoggedIn } from '../chat/ChatClient'
 import PromisE from '../../utils/PromisE'
 import { subjectAsPromise } from '../../services/react'
 
-export const rxCrowdsaleData = new BehaviorSubject()
+export const rxCrowdsaleData = new BehaviorSubject({})
 const MODULE_KEY = 'crowdsale'
 export const BLOCKCHAINS = Object.freeze({
     BTC: 'Bitcoin',
@@ -41,7 +41,7 @@ let LEVEL_ENTRY_XTX
 //     9082652134,
 // ]
 // start of level 9 (negotiable multiplier) //18165304269
-let Level_NEGOTIATE_Entry_XTX
+export let Level_NEGOTIATE_Entry_XTX
 
 const findLevel = async (amtDepositedXTX = 0) => {
     await fetchConstants()
@@ -97,7 +97,7 @@ export const calculateToNextLevel = async (currency, amtDepositedXTX = 0, level)
     // last level reached!
     // if (!isValidNumber(nextEntry)) return null
     
-    const isValidCurrency = !!(await getCurrencies())
+    const isValidCurrency = !!currency && !!(await getCurrencies())
         .find(({ ISO }) => ISO === currency)
     const nextMultiplier = LEVEL_MULTIPLIERS[nextLevel]
     const amtXTXToNextEntry = nextEntry - amtDepositedXTX + 1
@@ -172,13 +172,12 @@ export const fetchConstants = async () => {
     // convert USD to XTX
     LEVEL_ENTRY_XTX = []
     for (let i = 0; i < result.LEVEL_ENTRY_USD.length; i++) {
-        LEVEL_ENTRY_XTX[i] = eval(
-            (await convertTo(
-                result.LEVEL_ENTRY_USD[i],
-                'USD',
-                'XTX',
-            ))[1]
+        const [_, rounded] = await convertTo(
+            result.LEVEL_ENTRY_USD[i],
+            'USD',
+            'XTX',
         )
+        LEVEL_ENTRY_XTX[i] = eval(rounded)
     }
 
     console.log({
@@ -193,6 +192,11 @@ export const getCrowdsaleIdentity = () => crowdsaleData().identity
 // placeholder
 export const getDeposits = async (cached = true) => {
     const result = await client.crowdsaleCheckDeposits.promise(cached)
+    // update localStorage
+    crowdsaleData({
+        ...rxCrowdsaleData.value,
+        ...result,
+    })
     return result
 }
 

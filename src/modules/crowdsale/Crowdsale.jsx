@@ -1,53 +1,30 @@
 import React, { useEffect } from 'react'
-import { Step } from 'semantic-ui-react'
-import Text from '../../components/Text'
+import { Button, Step } from 'semantic-ui-react'
+import { isBool } from '../../utils/utils'
 import Message from '../../components/Message'
 import { translated } from '../../services/language'
+import { showForm } from '../../services/modal'
 import { iUseReducer, reducer, subjectAsPromise, usePromise, useRxSubject } from '../../services/react'
 import { MOBILE, rxLayout } from '../../services/window'
 import client, { rxIsLoggedIn, rxIsRegistered } from '../chat/ChatClient'
 import RegistrationForm from '../chat/RegistrationForm'
-import {
-    calculateAllocation,
-    calculateToNextLevel,
-    ENTRY_NEGOTIATE_XTX,
-    getDeposits,
-} from './crowdsale'
-import KYCForm from './KYCForm'
-import { Currency } from '../../components/Currency'
-import { currencyDefault } from '../../services/currency'
+import { getDeposits } from './crowdsale'
 import AddressList from './AddressList'
+import DepositStats from './DepositStats'
+import KYCForm from './KYCForm'
+import KYCViewForm from './KYCViewForm'
 
 const textsCap = translated({
-    achieved: 'achieved!',
-    amountDeposited: 'amount deposited',
-    blockchain: 'blockchain',
-    calculator: 'calculator',
-    despositAddress: 'pay to address',
-    level: 'level',
-    loadingMsg: 'loading',
+    loading: 'loading',
     loginRequired: 'you must be logged in and online to access this section',
-    multiplierLevel: 'multiplier level',
-    multiplierHighest: 'highest multiplier level',
-    registrationRequired: 'please complete the getting started steps',
-    requestBtnTxt: 'request address',
-    stepMsgContributed: 'you contributed value equivalent to',
-    stepMsgAllocation: 'your total crowdsale allocation will be',
-    stepMsgLevel: 'Yeey! You have reached the last level. Contact us for a special bonus if you would like to invest more than',
-    stepMsgToNextLevel: 'contribution required to reach next level',
-    successEndingMsg: 'Click close to view your pay to addresses.',
-    successNote0: 'Here are answers to a few frequently asked questions:',
-    successNote1: 'You can deposit as many times as you wish to any of your pay to addresses',
-    successNote2: 'The number of tokens you receive on the MainNet will be based on the sum of all funds deposited across all supported Blockchains',
-    successNote3: 'The more you depost the higher level of multiplier will be unlocked for you',
-    successNote4: 'Each higher level of multiplier will get you more bonus tokens than the predecessors',
-    successNote5: 'The tokens you recieve will be locked until the end of the crowdsale',
-    successNote6: 'You will be able to unlock some of tokens soon after the crowdsale',
-    successNote7: 'You will be able to unlocked your bonus tokens when the MainNet launches',
-    successNote8: 'MOST IMPORTANTLY, remember to come back once you have made your deposits and the transaction received required confirmations for the respective Blockchain and check your deposit status to avoid delays',
-    successNote9: 'If you are in doubt, feel free to contact us the support chat channel which can be found by clicking on the chat icon in the header bar (desktop) or footer bar (mobile)',
-    viewCrowdsaleData: 'view crowdsale data',
-    viewNotes: 'FAQs',
+    stepAccountDesc: 'create an account so that you can continue with the crowdsale registration',
+    stepAccountTitle: 'create an account',
+    stepDepositDesc: 'contibute to the crowdsale by depositing funds using one or more of your chosen Blockchains',
+    stepDepositTitle: 'deposit funds',
+    stepKYCTitle: 'register for crowdsale',
+    stepUnlockDesc: 'you will be able to unlock equivalent to three times the total contribution amount as soon as crowdsale ends',
+    stepUnlockTitle: 'unlock funds',
+    viewCrowdsaleData: 'view your crowdsale data',
 }, true)[1]
 
 export default function () {
@@ -57,10 +34,10 @@ export default function () {
     // will not update if user goes offline and messaging service disconnects
     const [isLoggedIn] = usePromise(async () => await subjectAsPromise(rxIsLoggedIn, true)[0])
     const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+    const [isActive] = [true] // use block number to determine active
     const [state, setState] = iUseReducer(reducer, {
         kycDone: false,
         loading: true,
-        steps: [],
     })
 
     useEffect(() => {        
@@ -69,16 +46,14 @@ export default function () {
             try {
                 // check if KYC done
                 const kycDone = await client.crowdsaleKYC.promise(true)
-                const { deposits = {}, lastChecked } = (kycDone && await getDeposits()) || {}
                 // retrieve any existing amounts deposited
-                const steps = await getSteps(deposits, isMobile)
+                const { deposits = {}, lastChecked } = (kycDone && await getDeposits()) || {}
                 newState = {
                     ...state,
                     deposits,
                     kycDone,
                     lastChecked,
                     message: null, 
-                    steps,
                 }
             } catch (err) {
                 console.trace(err)
@@ -95,36 +70,114 @@ export default function () {
         
     }, [isLoggedIn])
 
-    if (!isRegistered) return getInlineForm(RegistrationForm, {})
+    const activeIndex = !isRegistered
+        ? 0
+        : !isLoggedIn || state.loading || !!state.message
+            ? -1
+            : !state.kycDone
+                ? 1
+                : isActive ? 2 : 3
+    const showProgress = activeIndex >= 0
+    const progressSteps = showProgress && [
+        {
+            title: textsCap.stepAccountTitle,
+            description: textsCap.stepAccountDesc,
+        },
+        {
+            description: '',
+            disabled: false,
+            title: (
+                <div className='title'>
+                    {state.kycDone && (
+                        <Button {...{
+                            circular: true,
+                            icon: 'eye',
+                            onClick: () => showForm(KYCViewForm),
+                            size: 'mini',
+                            title: textsCap.viewCrowdsaleData,
+                        }} />
+                    )}
+                    {textsCap.stepKYCTitle}
+                </div>
+            ),
+        },
+        {
+            description: (
+                <div>
+                    {textsCap.stepDepositDesc}
+                    <br />
+                    {state.kycDone && <DepositStats />}
+                </div>
+            ),
+            title: textsCap.stepDepositTitle,
+        },
+        {
+            description: textsCap.stepUnlockDesc,
+            title: textsCap.stepUnlockTitle,
+        },
+    ].map((x, i) => ({
+        ...x,
+        active: activeIndex === i, 
+        completed: isBool(x.completed)
+            ? x.completed
+            : activeIndex > i,
+        description: activeIndex === i
+            ? x.description
+            : undefined, // hide when not active
+        disabled: isBool(x.disabled)
+            ? x.disabled
+            : activeIndex !== i,
+        key: i,
+        style: isMobile
+            ? null
+            : { maxWidth: 450 },
+    }))
 
-    if (!isLoggedIn || state.loading) {
-        const isLoading = state.loading || isLoggedIn === null
-        return (
-            <Message {...{
+    let content = ''
+    switch (activeIndex) {
+        case -1:
+            const isLoading = state.loading || isLoggedIn === null
+            const msgProps = state.message || {
                 header: isLoading
-                    ? textsCap.loadingMsg
+                    ? textsCap.loading
                     : textsCap.loginRequired,
                 icon: true,
                 status: isLoading
                     ? 'loading'
                     : 'error',
-            }} />
-        )
+            }
+            content = <Message {...msgProps} />
+            break
+        case 0: 
+            content = getInlineForm(RegistrationForm)
+            break
+        case 1: 
+            content = getInlineForm(KYCForm, {
+                onSubmit: kycDone => kycDone && setState({ kycDone }),
+                style: { maxWidth: 400 },
+            })
+            break
+        case 2:
+        case 3:
+            content = <AddressList />
+            break
     }
-
-    // show inline KYC form
-    if (!state.kycDone) return getInlineForm(KYCForm, {
-        onSubmit: kycDone => {
-            if (!kycDone) return
-            setState({ kycDone })
-        },
-        style: { maxWidth: 400 },
-    })
-    
+        
     return (
         <div>
-            <Step.Group fluid stackable='tablet' items={state.steps}/>
-            <AddressList />
+            {showProgress && (
+                <Step.Group {...{
+                    items: progressSteps,
+                    fluid: true,
+                    // ordered: true,
+                    stackable: 'tablet',
+                    style: {
+                        maxWidth: '100%',
+                        overflowX: 'auto',
+                    },
+                }} />
+            )}
+            {content}
         </div>
     )
 }
@@ -138,128 +191,3 @@ const getInlineForm = (Form, props) => (
         <Form {...props} />
     </div>
 )
-
-const getSteps = async (deposits = {}, isMobile = false) => {
-    const lastLevel = 8
-    const maxLevels = 3
-    const [
-        amtDepositedXTX = 0,
-        amtMultipliedXTX = 0,
-        currentLevel = 0,
-        multiplier,
-    ] = await calculateAllocation(deposits)
-    const [amtXTXToNextLevel] = await calculateToNextLevel('XTX', amtDepositedXTX)
-    let showIndicator = false
-    let startLevel = currentLevel + maxLevels - 1 > lastLevel
-        ? lastLevel - maxLevels + 1
-        : currentLevel
-
-    const indexes = new Array(maxLevels)
-        .fill(0)
-        .map((_, i) => i + startLevel)
-
-    if (!indexes.includes(lastLevel)) {
-        showIndicator = true
-        indexes[indexes.length - 1] = lastLevel
-    }
-
-    return indexes.map(level => {
-        const isCurrent = level === currentLevel
-        const isLast = currentLevel === lastLevel && level === lastLevel
-        const isLevel0 = level === 0
-
-        return {
-            active: level === currentLevel,
-            disabled: !isCurrent,
-            level,
-            key: level,
-            title: isCurrent && (
-                <h1>
-                    {isLast
-                        ? textsCap.multiplierHighest
-                        : `${textsCap.multiplierLevel} ${level}`
-                    }
-                    {level > 0 && ' ' + textsCap.achieved}
-                </h1>
-            ),
-            description: (
-                <div>
-                    {!isCurrent && (
-                        <h1 style={styles.stepIndex}>
-                            {textsCap.level} {level}
-                        </h1>
-                    )}
-                    {isCurrent && (
-                        <div>
-                            {!isLevel0 && (
-                                <h4 style={styles.stepHeader4}>
-                                    <Currency {...{
-                                        prefix: `${textsCap.stepMsgContributed} `,
-                                        value: amtDepositedXTX,
-                                    }} />
-                                </h4>
-                            )}
-                            {!isLevel0 && (
-                                <Text {...{
-                                    El: 'h3',
-                                    style: styles.stepHeader3,
-                                }}>
-                                    <Currency {...{
-                                        prefix: `${textsCap.stepMsgAllocation} `,
-                                        value: amtMultipliedXTX,
-                                    }} />
-                                </Text>
-                            )}
-                            <h4 style={styles.stepHeader4}>
-                                {isLast && (
-                                    <Currency {...{
-                                        prefix: `${textsCap.stepMsgLevel} `,
-                                        value: ENTRY_NEGOTIATE_XTX,
-                                    }} />
-                                )}
-                                {/* {isLast && `${textsCap.stepMsgLevel} ${ENTRY_NEGOTIATE_XTX} XTX!`} */}
-                                <Currency {...{
-                                    prefix: `${isLast ? textsCap.stepMsgLevel : textsCap.stepMsgToNextLevel}: `,
-                                    unit: currencyDefault,
-                                    value: isLast ? ENTRY_NEGOTIATE_XTX : amtXTXToNextLevel,
-                                }} />
-                            </h4>
-                        </div>
-                    )}
-                    {showIndicator && level === lastLevel && (
-                        <div style={{
-                            ...styles.lastLevelIndicator,
-                            // create styles.css
-                            ...(isMobile ? styles.lastLevelIndicatorMobile : {})
-                        }}>~</div>
-                    )}
-                </div>
-            ),
-        }
-    })
-}
-
-const styles = {
-    lastLevelIndicator: {
-        position: 'absolute',
-        left: -9,
-        top: '43%',
-        zIndex: 9999,
-        fontSize: '200%',
-    },
-    lastLevelIndicatorMobile: {
-        left: '48%',
-        top: -9,
-        transform: 'rotate(-90deg)',
-    },
-    stepHeader3: { margin: 0 },
-    stepHeader4: { color: 'grey', margin: 0 },
-    stepIndex: {
-        fontSize: '300%',
-        margin: 0,
-    },
-    stepTitle: {
-        fontSize: '150%',
-        textTransform: 'capitalize',
-    },
-}

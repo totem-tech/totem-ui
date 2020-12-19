@@ -11,20 +11,19 @@ import CalculatorForm from './CalculatorForm'
 import { BLOCKCHAINS, crowdsaleData, rxCrowdsaleData } from './crowdsale'
 import DAAForm from './DAAForm'
 import { showFaqs } from './FAQ'
-import KYCViewForm from './KYCViewForm'
+// import KYCViewForm from './KYCViewForm'
 
 const CACHE_DURATION_MS = 1000 * 60 * 30 // 30 minutes
 const textsCap = translated({
     amountDeposited: 'amount deposited',
     blockchain: 'blockchain',
     blockchainExplorer: 'view in explorer',
-    checkDepositStatus: 'check deposit status',
     calculator: 'calculator',
     despositAddress: 'pay to address',
     faqs: 'FAQs',
     requestBtnTxt: 'request address',
-    updatingDeposits: 'update crowdsale deposits',
-    viewCrowdsaleData: 'view crowdsale data',
+    updateBalances: 'update balances',
+    // viewCrowdsaleData: 'view crowdsale data',
     waitB4Check: 'please try again after',
     whitelistAddress: 'whitelist address',
 }, true)[1]
@@ -112,18 +111,18 @@ const getTableProps = deposits => ({
             icon: 'info',
             onClick: () => showFaqs(),
         },
+        // {
+        //     content: textsCap.viewCrowdsaleData,
+        //     icon: 'eye',
+        //     onClick: () => showForm(KYCViewForm),
+        // },
         {
-            content: textsCap.viewCrowdsaleData,
-            icon: 'eye',
-            onClick: () => showForm(KYCViewForm),
-        },
-        {
-            content: textsCap.checkDepositStatus,
+            content: textsCap.updateBalances,
             icon: 'find',
             onClick: () => {
                 const { lastChecked } = rxCrowdsaleData.value || {}
                 const diffMS = (new Date() - new Date(lastChecked))
-                const toastId = 'crowdsale-checkDepositStatus' // prevent multiple toasts
+                const toastId = 'crowdsale-updateBalances' // prevent multiple toasts
                 // tell user to wait x amount of minutes if previous check was in less than 30 minutes
                 if (!!lastChecked && diffMS < CACHE_DURATION_MS) return setToast({
                     content: `${textsCap.waitB4Check} ${Math.floor((CACHE_DURATION_MS - diffMS)/60000)} minutes`,
@@ -133,12 +132,12 @@ const getTableProps = deposits => ({
                 addToQueue({
                     args: [false],
                     func: 'crowdsaleCheckDeposits',  
-                    title: textsCap.updatingDeposits,
+                    title: textsCap.updateBalances,
                     type: QUEUE_TYPES.CHATCLIENT,
                     then: (ok, result) => ok && crowdsaleData({
                         ...rxCrowdsaleData.value,
                         ...result,
-                    }) | console.log({result}),
+                    }),
                 }, undefined, toastId)
             }
         },

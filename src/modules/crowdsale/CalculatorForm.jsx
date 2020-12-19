@@ -2,18 +2,15 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Icon } from 'semantic-ui-react'
+import { isValidNumber } from '../../utils/utils'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
+import { convertTo, currencyDefault, rxSelected } from '../../services/currency'
 import { translated } from '../../services/language'
 import { iUseReducer } from '../../services/react'
 import { BLOCKCHAINS, calculateAllocation, calculateToNextLevel, rxCrowdsaleData } from './crowdsale'
-import { className, isValidNumber } from '../../utils/utils'
-import { Currency } from '../../components/Currency'
-import { convertTo, currencyDefault, rxSelected } from '../../services/currency'
 
 const textsCap = translated({
-    allocationEstimation: 'allocation estimation',
     allocatedLabel: 'amount allocated',
-    // allocatedLabelDetails: 'this is the amount that you have been allocated for all amounts across all supported Blockchains that you have already deposited and has been processed by our system',
     amountLabel: 'amount to deposit',
     amountPlaceholder: 'enter amount',
     currencyLabel: 'deposit currency',
@@ -24,14 +21,9 @@ const textsCap = translated({
     estimatedUnlockedLabel: 'unlocked after Crowdsale',
     formHeader: 'crowdsale allocation calculator',
     formSubheader: 'this calculator is to help you get an estimation on the amount of allocation you can will receive',
-    msgAmountUnlocked: 'amount to be unlocked soon after the crowdsale',
-    msgContributed: 'your contributed value will be equivalent to',
-    msgCrowdsaleAllocation: 'your total allocation will be equivalent to',
     msgToReachLevel: 'to reach multiplier level',
     msgTxFeeWarning: 'please note that transaction fee is not included in any of the amounts displayed and does not count towards allocation',
     msgUseAmount: 'use amount greater or equal to',
-    msgYourMultiplier: 'your multiplier will be',
-    msgYourMultiplierLevel: 'your multiplier level will be',
 }, true)[1]
 const inputNames = {
     // sum previously allocated amount in XTX
@@ -136,7 +128,6 @@ export const getInputs = (rxSetState, deposits = {}) => {
                     icon: 'exchange',
                     iconPosition: 'left',
                     label: textsCap.allocatedLabel,
-                    // labelDetails: textsCap.allocatedLabelDetails,
                     name: inputNames.allocated,
                     readOnly: true,
                     rxValue: new BehaviorSubject(0),
@@ -297,46 +288,13 @@ const handleAmountChange = (inputs, rxSetState, deposits) => async (_, values) =
         nextLevel,
         nextMultiplier,
     ] = result || []
-    const isValidLevel = level > 0
     const amountNext = ((amount + amtToNextEntry) * 1.0001) // multiply to get around rounding issues
         .toFixed(8)
     console.log({amount, amtToNextEntry, amountNext})
     const content = (
         <div>
-            {/* <h4 className='no-margin'>
-                {textsCap.allocationEstimation}:
-            </h4>
-            {isValidLevel && (
-                <div>
-                    {textsCap.msgContributed}
-                    <div>
-                        <Currency {...{ EL: 'b', value: amtDepositedXTX }} />
-                    </div>
-                </div>
-            )}
-            <h3 className={className([
-                'no-margin',
-                'ui',
-                'header',
-                isValidLevel ? 'green' : 'red'
-            ])}>
-                <Currency {...{
-                    EL: 'b',
-                    prefix: `${textsCap.msgCrowdsaleAllocation} `,
-                    value: amtMultipliedXTX,
-                }} />
-            </h3>
-            {isValidLevel && (
-                <Currency {...{
-                    prefix: `${textsCap.msgAmountUnlocked}: `,
-                    value: amtToBeUnlockedXTX,
-                }} />
-            )}
-            {isValidLevel && <div>{textsCap.msgYourMultiplierLevel} <b>{level}</b></div>}
-            {isValidLevel && <div>{textsCap.msgYourMultiplier} <b>x{multiplier}</b></div>} */}
             {nextMultiplier && (
                 <div>
-                    {/* <br /> */}
                     <h4 className='no-margin'>
                         {textsCap.msgToReachLevel} <b>{nextLevel}</b> (x<b>{nextMultiplier}</b>)
                     </h4>
@@ -353,9 +311,9 @@ const handleAmountChange = (inputs, rxSetState, deposits) => async (_, values) =
                             }} />
                         </div>
                     </div>
+                    <br />
                 </div>
             )}
-            <br />
             <div style={{ color: 'orange', textTransform: 'uppercase' }}>
                 <b>{textsCap.msgTxFeeWarning}</b>
             </div>

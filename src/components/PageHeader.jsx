@@ -283,8 +283,8 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 					onClick: () => {
 						toggleSidebarState()
 						// hide notification and chat
-						rxChatVisible.next(!rxChatVisible.value)
-						rxNotifVisible.next(!rxNotifVisible.value)
+						rxChatVisible.next(false)
+						rxNotifVisible.next(false)
 					}
 				}} />
 			)}

@@ -1,28 +1,15 @@
-import React, { useEffect, useReducer, useState } from 'react'
-import PropTypes from 'prop-types'
-import { BehaviorSubject } from 'rxjs'
-import { Button, Icon } from 'semantic-ui-react'
-import { isArr, isFn, objWithoutKeys, textEllipsis } from '../../utils/utils'
-import FormBuilder, { fillValues, findInput, inputsForEach } from '../../components/FormBuilder'
+import React from 'react'
+import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
-import { confirm, showForm } from '../../services/modal'
-import { reducer, useRxSubject } from '../../services/react'
-import client from '../chat/ChatClient'
-import { get as getIdentity, rxIdentities, set as saveIdentity } from '../identity/identity'
-import { get as getLocation, getAll as getLocations, rxLocations, set as setLocation } from '../location/location'
+import { useRxSubject } from '../../services/react'
 import LocationForm, { inputNames as locInputNames } from '../location/LocationForm'
-import { getInputs as getDAAInputs, inputNames as daaInputNames, } from './DAAForm'
-import { confirmBackup } from '../../views/GettingStartedView'
-import PromisE from '../../utils/PromisE'
-import { crowdsaleData, rxCrowdsaleData } from './crowdsale'
-import { setToast } from '../../services/toast'
+import { rxCrowdsaleData } from './crowdsale'
 import { getInputs, inputNames } from './KYCForm'
 
 const textsCap = translated({
     formHeaderView: 'your crowdsale data',
     locationLabel: 'contact address',
 }, true)[1]
-
 
 export default function KYCViewForm(props) {
     const [inputs] = useRxSubject(rxCrowdsaleData, kycData => {
@@ -68,6 +55,9 @@ export default function KYCViewForm(props) {
     )
 }
 KYCViewForm.defaultProps = {
+    closeOnEscapse: true,
+    closeOnDimmerClick: true,
+    closeText: null,
     header: textsCap.formHeaderView,
     size: 'tiny',
 }

@@ -11,7 +11,6 @@ import PromisE from '../../utils/PromisE'
 
 const textsCap = translated({
     addressAlreadyAllocated: 'you have already been assigned an address for this chain.',
-    addressAlreadyAllocated2: 'Reload page to see your missing address.',
     blockchainLabel: 'Blockchain',
     blockchainPlaceholder: 'select Blockchain you want to make deposit in',
     ethAddressError: 'valid Ethereum address required',
@@ -144,7 +143,7 @@ export const getInputs = () => [
                 const address = await client.crowdsaleDAA.promise(blockchain, '0x0')
                 depositAddresses[blockchain] = address
                 crowdsaleData({ depositAddresses })
-                return address && `${textsCap.addressAlreadyAllocated} ${textsCap.addressAlreadyAllocated2}`
+                return address && textsCap.addressAlreadyAllocated
             } catch (err) {
                 return err
             }

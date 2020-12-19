@@ -1,21 +1,21 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import uuid from 'uuid'
 import { isFn } from '../../utils/utils'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
+import { useRxSubject } from '../../services/react'
 import { registerStepIndex, setActiveStep } from '../../views/GettingStartedView'
-import client, { getUser, referralCode, rxIsRegistered } from './ChatClient'
-import { iUseReducer, reducer, useRxSubject } from '../../services/react'
+import client, { referralCode, rxIsRegistered } from './ChatClient'
 
 const textsCap = translated({
     alreadyRegistered: 'you have already registered!',
+    createAccount: 'create account',
     formHeader: 'register a memorable user name',
-    formSubheader: 'choose an unique alias for use with Totem chat messaging.',
+    formSubheader: 'choose an unique alias for use with Totem messaging service.',
     referredByLabel: 'referral code',
     referredByPlaceholder: 'if you have a referral code enter it here',
-    register: 'register',
     registrationComplete: 'registration complete',
     registrationFailed: 'registration failed',
     userId: 'User ID',
@@ -72,7 +72,7 @@ RegistrationForm.defaultProps = {
     silent: true,
     size: 'tiny',
     subheader: textsCap.formSubheader,
-    submitText: textsCap.register
+    submitText: textsCap.createAccount
 }
 
 const getInputs = (props, isRegistered) => {

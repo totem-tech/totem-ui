@@ -82,7 +82,7 @@ const questions = [
             {
                 question: 'I have already made a deposit. What to do next?',
                 answer: `
-                    Once you have made a deposit, it needs to reach a minimum number of network confirmations before our system will accept this as a confirmed transaction. Please make sure to click on the check deposit status button to tell our system that your deposit transaction has the required number of confirmations. Only then you will receive the allocation for all your confirmed transactions. You will be able to view your processed deposited amounts in the crowdsale module.
+                    Once you have made a deposit, it needs to reach a minimum number of network confirmations before our system will accept this as a confirmed transaction. Please make sure to click on the "update balances" button to tell our system that your deposit transaction has the required number of confirmations. Only then you will receive the allocation for all your confirmed transactions. You will be able to view your processed deposited amounts in the crowdsale module.
                 `,
             },
             {
@@ -93,7 +93,7 @@ const questions = [
             },
             {
                 question: 'I have not received allocation for my deposit! What do I do?',
-                answer: 'First of make sure that your deposit transaction has the minimum number of required confirmations. Once you have the confirmations required, go to the crowdsale module and click on the "check deposit status" button.',
+                answer: 'First of make sure that your deposit transaction has the minimum number of required confirmations. Once you have the confirmations required, go to the crowdsale module and click on the "update balances" button.',
             },
             {
                 question: 'What does contributed value mean?',
