@@ -6,8 +6,8 @@ import client, { rxIsLoggedIn } from '../chat/ChatClient'
 import PromisE from '../../utils/PromisE'
 import { subjectAsPromise } from '../../services/react'
 
-export const rxCrowdsaleData = new BehaviorSubject({})
 const MODULE_KEY = 'crowdsale'
+export const rxCrowdsaleData = new BehaviorSubject(crowdsaleData() || {})
 export const BLOCKCHAINS = Object.freeze({
     BTC: 'Bitcoin',
     DOT: 'Polkadot',
@@ -135,7 +135,7 @@ export const calculateToNextLevel = async (currency, amtDepositedXTX = 0, level)
  * 
  * @returns {Object}    returns saved data
  */
-export const crowdsaleData = data => {
+export function crowdsaleData(data) {
     const saved = storage.settings.module(
         MODULE_KEY,
         isObj(data)
@@ -192,13 +192,5 @@ export const getCrowdsaleIdentity = () => crowdsaleData().identity
 // placeholder
 export const getDeposits = async (cached = true) => {
     const result = await client.crowdsaleCheckDeposits.promise(cached)
-    // update localStorage
-    crowdsaleData({
-        ...rxCrowdsaleData.value,
-        ...result,
-    })
     return result
 }
-
-// set initial value
-rxCrowdsaleData.next(crowdsaleData())

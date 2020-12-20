@@ -114,7 +114,7 @@ const InboxMessage = props => {
                                     fontSize: 11,
                                     color: 'grey',
                                 },
-                                time: timestamp,
+                                date: timestamp,
                             }} />
                         )}
                     </span>

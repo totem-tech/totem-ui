@@ -1,17 +1,19 @@
 import React from 'react'
 import { Button } from 'semantic-ui-react'
 import DataTable from '../../components/DataTable'
+import { FormInput } from '../../components/FormInput'
 import LabelCopy from '../../components/LabelCopy'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import { useRxSubject } from '../../services/react'
 import { setToast } from '../../services/toast'
+import { MOBILE, rxLayout } from '../../services/window'
 import CalculatorForm from './CalculatorForm'
 import { BLOCKCHAINS, crowdsaleData, rxCrowdsaleData } from './crowdsale'
 import DAAForm from './DAAForm'
 import { showFaqs } from './FAQ'
-// import KYCViewForm from './KYCViewForm'
+import KYCViewForm from './KYCViewForm'
 
 const CACHE_DURATION_MS = 1000 * 60 * 30 // 30 minutes
 const textsCap = translated({
@@ -19,11 +21,12 @@ const textsCap = translated({
     blockchain: 'blockchain',
     blockchainExplorer: 'view in explorer',
     calculator: 'calculator',
-    despositAddress: 'pay to address',
+    despositAddress: 'pay-to address',
+    explorer: 'explorer',
     faqs: 'FAQs',
     requestBtnTxt: 'request address',
     updateBalances: 'update balances',
-    // viewCrowdsaleData: 'view crowdsale data',
+    viewCrowdsaleData: 'view registration data',
     waitB4Check: 'please try again after',
     whitelistAddress: 'whitelist address',
 }, true)[1]
@@ -34,28 +37,42 @@ const explorerUrls = {
 }
 // list of deposit addresses and balances using rxCrowdsaleData
 export default function AddressList(props) {
+    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
     const [state] = useRxSubject(rxCrowdsaleData, csData => {
         const { depositAddresses: addresses = {}, deposits = {} } = csData || {}
         const data = Object.keys(BLOCKCHAINS)
             .map(chain => {
                 const address = addresses[chain]
-                const _address = address
-                    ? (
-                        <span>
-                            <LabelCopy
-                                maxLength={null}
-                                value={address}
-                            />
-                            <Button {...{
-                                as: 'a',
-                                href: `${explorerUrls[chain]}/${address}`,
-                                icon: 'world',
-                                size: 'mini',
-                                target: '_blank',
-                                title: textsCap.blockchainExplorer,
-                            }} />
-                        </span>
-                    ) : (
+                let _action, _address
+                if (address) {
+                    _address = (
+                        <FormInput {...{
+                            // fluid: true,
+                            inlineLabel: <LabelCopy content={null} maxLength={null} value={address} />,
+                            labelPosition: 'right',
+                            name: '_address',
+                            readOnly: true,
+                            style: {
+                                background: 'transparent',
+                                width: '100%',
+                            },
+                            title: null, // hides the "read only field" title
+                            type: 'text',
+                            value: address,
+                        }} />
+                    )
+                    _action = (
+                        <Button {...{
+                            as: 'a',
+                            href: `${explorerUrls[chain]}/${address}`,
+                            icon: 'world',
+                            // size: 'mini',
+                            target: '_blank',
+                            title: textsCap.blockchainExplorer,
+                        }} />
+                    )
+                } else {
+                    _address = (
                         <Button {...{
                             content: chain === 'ETH'
                                 ? textsCap.whitelistAddress
@@ -63,19 +80,21 @@ export default function AddressList(props) {
                             onClick: () => showForm(DAAForm, { values: { blockchain: chain } }),
                         }} />
                     )
+                }
                 return [
                     chain,
                     {
                         address,
                         amount: address && `${deposits[chain] || 0.00} ${chain}`,
                         blockchain: chain,
+                        _action,
                         _address,
                         _blockchain: BLOCKCHAINS[chain],
                     },
                 ]
             })
         return {
-            ...getTableProps(deposits),
+            ...getTableProps(deposits, isMobile),
             data: new Map(data),
         }
     })
@@ -83,65 +102,87 @@ export default function AddressList(props) {
     return <DataTable {...{...props, ...state }} />
 }
 
-const getTableProps = deposits => ({
+const getTableProps = (deposits, isMobile) => ({
     columns: [
-        { key: '_blockchain', title: textsCap.blockchain },
+        {
+            key: '_blockchain',
+            title: textsCap.blockchain,
+        },
+        {
+            key: '_address',
+            style: { whiteSpace: 'nowrap' },
+            // textAlign:,
+            title: textsCap.despositAddress,
+        },
         {
             key: 'amount',
             textAlign: 'center',
             title: textsCap.amountDeposited,
         },
         {
-            key: '_address',
-            style: { whiteSpace: 'nowrap' },
+            collapsing: true,
+            key: '_action',
             textAlign: 'center',
-            title: textsCap.despositAddress,
+            title: textsCap.explorer,
         },
     ],
     searchable: false,
-    tableProps: {
-        basic: 'very',
-        celled: false,
-        compact: true,
-        sortable: false,   
-        unstackable: true,
-    },
-    topLeftMenu: [
-        {
-            content: textsCap.faqs,
-            icon: 'info',
-            onClick: () => showFaqs(),
-        },
-        {
-            content: textsCap.updateBalances,
-            icon: 'find',
-            onClick: () => {
-                const { lastChecked } = rxCrowdsaleData.value || {}
-                const diffMS = (new Date() - new Date(lastChecked))
-                const toastId = 'crowdsale-updateBalances' // prevent multiple toasts
-                // tell user to wait x amount of minutes if previous check was in less than 30 minutes
-                if (!!lastChecked && diffMS < CACHE_DURATION_MS) return setToast({
-                    content: `${textsCap.waitB4Check} ${Math.floor((CACHE_DURATION_MS - diffMS)/60000)} minutes`,
-                    status: 'warning',
-                }, 3000, toastId)
+    // tableProps: {
+    //     basic: 'very',
+    //     celled: false,
+    //     compact: true,
+    //     sortable: false,   
+    //     unstackable: true,
+    // },
+    footerContent: (
+        <div style={{ float: !isMobile ? 'right' : 'left' }}>
+            {[
+                {
+                    content: textsCap.viewCrowdsaleData,
+                    icon: 'eye',
+                    onClick: () => showForm(KYCViewForm),
+                },
+                {
+                    content: textsCap.updateBalances,
+                    icon: 'find',
+                    onClick: () => {
+                        const { lastChecked } = rxCrowdsaleData.value || {}
+                        const diffMS = (new Date() - new Date(lastChecked))
+                        console.log({lastChecked})
+                        const toastId = 'crowdsale-updateBalances' // prevent multiple toasts
+                        // tell user to wait x amount of minutes if previous check was in less than 30 minutes
+                        if (!!lastChecked && diffMS < CACHE_DURATION_MS) return setToast({
+                            content: `${textsCap.waitB4Check} ${Math.floor((CACHE_DURATION_MS - diffMS)/60000)} minutes`,
+                            status: 'warning',
+                        }, 3000, toastId)
 
-                addToQueue({
-                    args: [false],
-                    func: 'crowdsaleCheckDeposits',  
-                    title: textsCap.updateBalances,
-                    type: QUEUE_TYPES.CHATCLIENT,
-                    then: (ok, result) => ok && crowdsaleData({
-                        ...rxCrowdsaleData.value,
-                        ...result,
-                    }),
-                }, undefined, toastId)
-            }
-        },
-        {
-            hidden: !deposits,
-            content: textsCap.calculator,
-            icon: 'calculator',
-            onClick: () => showForm(CalculatorForm, { deposits }),
-        },
-    ],
+                        addToQueue({
+                            args: [false],
+                            func: 'crowdsaleCheckDeposits',  
+                            title: textsCap.updateBalances,
+                            type: QUEUE_TYPES.CHATCLIENT,
+                            then: (ok, result) => ok && crowdsaleData({
+                                ...rxCrowdsaleData.value,
+                                ...result,
+                            }),
+                        }, undefined, toastId)
+                    }
+                },
+                {
+                    hidden: !deposits,
+                    content: textsCap.calculator,
+                    icon: 'calculator',
+                    onClick: () => showForm(CalculatorForm, { deposits }),
+                },
+            ]
+                .map((props, i) => <Button {...{
+                    ...props,
+                    fluid: isMobile,
+                    key: i,
+                    style: {
+                        margin: isMobile ? '3px 0' : null
+                    },
+                }} />)}
+        </div>
+    )
 })

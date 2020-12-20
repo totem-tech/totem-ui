@@ -31,7 +31,7 @@ export default React.memo(({ id, notification }) => {
     msg.content = (
         <div className='details'>
             {msg.content}
-            <TimeSince className='time-since' time={tsCreated} />
+            <TimeSince className='time-since' date={tsCreated} />
         </div>
     )
     return (

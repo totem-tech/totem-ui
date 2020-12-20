@@ -15,6 +15,13 @@ const textsCap = translated({
     amountContributed: 'you contributed',
     amountToNextLevel: 'contribution required for next multiplier',
     lastLevelReached: 'Yeey! You have reached the highest multiplier level. Contact us for special bonus multiplier if you would like to invest more than',
+
+    currentMultiLevel: 'current multiplier level',
+    in: 'in',
+    or: 'or',
+    out: 'out',
+    nextLevel: 'next achievement level',
+    depositAtLeast: 'deposit at least',
 }, true)[1]
 
 export default React.memo(() => {
@@ -65,8 +72,8 @@ export default React.memo(() => {
     } = state
 
     return (
-        <div>
-            <div>
+        <div style={{ margin: '25px 0'}}>
+            {/* <div>
                 <h4 style={{ margin: 0 }}>
                     {textsCap.amountContributed}:
                     <Currency {...{
@@ -107,6 +114,46 @@ export default React.memo(() => {
                         style: { color: 'green', marginTop: 10 }
                     }} />
                 )}
+            </div> */}
+
+            <h3 className='no-margin' style={{ textTransform: 'capitalize'}}>
+                {textsCap.currentMultiLevel}: {currentLevel} ({multiplier})x
+            </h3>
+            <h3 className='no-margin'>
+                <Currency {...{
+                    prefix: '[ ',
+                    suffix: ` ${textsCap.in}`,
+                    unit: currencyDefault,
+                    value: amtDepositedXTX,
+                }} />
+                <Currency {...{
+                    prefix: ' => ',
+                    suffix: ` ${textsCap.out} ]`,
+                    unit: currencyDefault,
+                    value: amtMultipliedXTX,
+                }} />
+            </h3>
+            <div style={{ textTransform: 'capitalize'}}>
+                {textsCap.nextLevel} {nextLevel} ({nextMultiplier}x) {textsCap.depositAtLeast}
+                <Currency {...{
+                    prefix: ' ',
+                    unit: currencyDefault,
+                    unitDisplayed: 'BTC',
+                    value: nextLevelAmountXTX,
+                }} />
+                <Currency {...{
+                    prefix: ' ',
+                    unit: currencyDefault,
+                    unitDisplayed: 'ETH',
+                    value: nextLevelAmountXTX,
+                }} />
+                <Currency {...{
+                    prefix: ' ',
+                    unit: currencyDefault,
+                    unitDisplayed: 'DOT',
+                    value: nextLevelAmountXTX,
+                }} />
+                
             </div>
         </div>
     )

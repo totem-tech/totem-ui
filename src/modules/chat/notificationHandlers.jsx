@@ -17,7 +17,6 @@ setTimeout(()=> [
     {
         childType: 'referralSuccess',
         handler: (id, notification, { senderId, senderIdBtn }) => {
-            console.log({id, notification, senderId})
             const item = { icon: 'clock outline' }
             const removeAndClose = () => remove(id) | rxVisible.next(false)
             item.content = (

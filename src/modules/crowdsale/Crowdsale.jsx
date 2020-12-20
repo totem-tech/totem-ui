@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { Button, Step } from 'semantic-ui-react'
+import { Button, Progress, Step } from 'semantic-ui-react'
 import { isBool } from '../../utils/utils'
 import Message from '../../components/Message'
 import { translated } from '../../services/language'
@@ -12,21 +12,22 @@ import { getDeposits } from './crowdsale'
 import AddressList from './AddressList'
 import DepositStats from './DepositStats'
 import KYCForm from './KYCForm'
-import KYCViewForm from './KYCViewForm'
+import { showFaqs } from './FAQ'
+import TimeSince from '../../components/TimeSince'
 
 const START_BLOCK = 1787748
 const END_BLOCK = 9999
 const textsCap = translated({
+    crowdsaleFAQ: 'crowdsale FAQ',
     loading: 'loading',
     loginRequired: 'you must be logged in and online to access this section',
     stepAccountDesc: 'create an account so that you can continue with the crowdsale registration',
-    stepAccountTitle: 'create an account',
+    stepAccountTitle: 'create account',
     stepDepositDesc: 'contibute to the crowdsale by depositing funds using one or more of your chosen Blockchains',
     stepDepositTitle: 'deposit funds',
     stepKYCTitle: 'register for crowdsale',
     stepUnlockDesc: 'you will be able to unlock equivalent to three times the total contribution amount as soon as crowdsale ends',
-    stepUnlockTitle: 'unlock funds',
-    viewCrowdsaleData: 'view your crowdsale data',
+    stepUnlockTitle: 'withdraw',
 }, true)[1]
 
 export default function () {
@@ -36,12 +37,17 @@ export default function () {
     // will not update if user goes offline and messaging service disconnects
     const [isLoggedIn] = usePromise(async () => await subjectAsPromise(rxIsLoggedIn, true)[0])
     const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
-    const [isActive] = [true] // use block number to determine active
+    // whether crowdsale is currently active
+    const [isActive, isDone] = [false, false] // use block number to determine active
     const [state, setState] = iUseReducer(reducer, {
         kycDone: false,
         loading: true,
+        totalRaisedUSD: 0,
+        softCapUSD: 2500000, // 2.5 mil
+        targetCapUSD: 10000000, // 10 mil
     })
 
+    // on load check if KYC is done and if yes retrieve deposits/balances
     useEffect(() => {        
         isLoggedIn && !state.kycDone && (async () => {
             let newState = {}
@@ -67,18 +73,24 @@ export default function () {
                     }
                 }
             }
-            setState({ ...newState, loading: false })
+            newState.loading = false
+            setState(newState)
         })()
         
     }, [isLoggedIn])
 
+    const targetCapReached = state.targetCapUSD <= state.totalRaisedUSD
+    const softCapReached = state.softCapUSD <= state.totalRaisedUSD
+    let stepContent = ''
     const activeIndex = !isRegistered
         ? 0
         : !isLoggedIn || state.loading || !!state.message
             ? -1
             : !state.kycDone
                 ? 1
-                : isActive ? 2 : 3
+                : !isDone
+                    ? 2
+                    : 3
     const showProgress = activeIndex >= 0
     const progressSteps = showProgress && [
         {
@@ -87,30 +99,10 @@ export default function () {
         },
         {
             description: '',
-            disabled: false,
-            title: (
-                <div className='title'>
-                    {state.kycDone && (
-                        <Button {...{
-                            circular: true,
-                            icon: 'eye',
-                            onClick: () => showForm(KYCViewForm),
-                            size: 'mini',
-                            title: textsCap.viewCrowdsaleData,
-                        }} />
-                    )}
-                    {textsCap.stepKYCTitle}
-                </div>
-            ),
+            title: textsCap.stepKYCTitle,
         },
         {
-            description: (
-                <div>
-                    {textsCap.stepDepositDesc}
-                    <br />
-                    {state.kycDone && <DepositStats />}
-                </div>
-            ),
+            description: textsCap.stepDepositDesc,
             title: textsCap.stepDepositTitle,
         },
         {
@@ -118,24 +110,19 @@ export default function () {
             title: textsCap.stepUnlockTitle,
         },
     ].map((x, i) => ({
-        ...x,
         active: activeIndex === i, 
-        completed: isBool(x.completed)
-            ? x.completed
-            : activeIndex > i,
-        description: activeIndex === i
-            ? x.description
-            : undefined, // hide when not active
-        disabled: isBool(x.disabled)
-            ? x.disabled
-            : activeIndex !== i,
+        completed: i < activeIndex,
+        description: null,
+        disabled: activeIndex !== i,
         key: i,
-        style: isMobile
-            ? null
-            : { maxWidth: 450 },
+        style: { maxWidth: isMobile ? null : 450 },
+        title: (
+            <div className='title' style={{ textTransform: 'capitalize' }}>
+                {x.title}
+            </div>
+        )
     }))
 
-    let content = ''
     switch (activeIndex) {
         case -1:
             const isLoading = state.loading || isLoggedIn === null
@@ -148,30 +135,83 @@ export default function () {
                     ? 'loading'
                     : 'error',
             }
-            content = <Message {...msgProps} />
+            stepContent = <Message {...msgProps} />
             break
         case 0: 
-            content = getInlineForm(RegistrationForm)
+            stepContent = getInlineForm(RegistrationForm)
             break
         case 1: 
-            content = getInlineForm(KYCForm, {
+            stepContent = getInlineForm(KYCForm, {
                 onSubmit: kycDone => kycDone && setState({ kycDone }),
                 style: { maxWidth: 400 },
             })
             break
         case 2:
         case 3:
-            content = <AddressList />
+            stepContent = <AddressList />
             break
     }
         
     return (
         <div>
+            {!isDone && (
+                <div style={{ width: '100%', textAlign: 'center' }}>
+                    <h1>
+                        {isDone
+                            ? 'Crowdsale is now over!'
+                            : !isActive
+                                ? 'Crowdsale starts in'
+                                : 'Crowdsale ends in'}
+                    </h1>
+                    <TimeSince {...{
+                        asDuration: true,
+                        date: new Date('2021-01-20T00:00:00'),
+                        durationConfig: {
+                            fill: false, // fills with 0 if length is less that 2
+                            statisticProps: {
+                                color: isActive
+                                    ? 'yellow'
+                                    : 'green',
+                            },
+                            withSeconds: !isMobile,
+                        },
+                    }} />
+
+                    {isActive && !!state.totalRaisedUSD && (
+                        <Progress {...{
+                            color: targetCapReached
+                                ? 'green'
+                                : softCapReached
+                                    ? 'teal'
+                                    : undefined,
+                            label: `US$${state.totalRaisedUSD} raised`
+                                + (
+                                    targetCapReached 
+                                        ? ' | Target cap reached!'
+                                        : softCapReached
+                                            ? ' | Soft cap reached!'
+                                            : ''
+                                ),
+                            progress: 'percent',
+                            total: state.targetCapUSD,
+                            value: state.totalRaisedUSD,
+                        }} />
+                    )}
+                </div>
+            )}
+            {state.kycDone && (
+                <Button {...{
+                    content: textsCap.crowdsaleFAQ,
+                    fluid: isMobile,
+                    icon: 'question',
+                    onClick: () => showFaqs(),
+                }} />
+            )}
             {showProgress && (
                 <Step.Group {...{
                     items: progressSteps,
                     fluid: true,
-                    // ordered: true,
+                    ordered: true,
                     stackable: 'tablet',
                     style: {
                         maxWidth: '100%',
@@ -179,7 +219,9 @@ export default function () {
                     },
                 }} />
             )}
-            {content}
+
+            {state.kycDone && <DepositStats />}
+            {stepContent}
         </div>
     )
 }

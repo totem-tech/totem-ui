@@ -363,7 +363,7 @@ body b, body strong {
 /* .form :not(.item) > .ui.dropdown.active.visible:not(.no-margin):not(.item) {
   margin-bottom: 37px;
 } */
-/* Capitalise input labels */
+/* Capitalize input labels */
 form.ui.form div.field > label {
     text-transform: capitalize;
 }
