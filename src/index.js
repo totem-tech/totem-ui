@@ -11,13 +11,16 @@ import client from './modules/chat/ChatClient'
 import { fetchNSaveTexts } from './services/language'
 import storage from './services/storage'
 import { getUrlParam, MOBILE, rxLayout } from './services/window'
+import CountDown from './modules/crowdsale/CountDown'
 
-const isSignUp = getUrlParam('NewsletterSignup').toLowerCase() === 'true'
+const urlParams = getUrlParam()
+const isSignUp = urlParams.hasOwnProperty('NewsletterSignup')
+const isCountDown = urlParams.hasOwnProperty('countdown')
 const debug = getUrlParam('debug').toLowerCase()
 window.isDebug = debug === 'force'
     || debug === 'true'
     && rxLayout.value === MOBILE
-window.isInIFrame = isSignUp
+window.isInIFrame = isSignUp || isCountDown
 if (!window.isInIFrame && window.isDebug) {
     // for debugging purposes only, when on a mobile device
     // adds interceptors to below console functions and prints all logs into a DOM element above page contents
@@ -85,9 +88,12 @@ const init = () => PromisE.timeout((resolve, reject) => {
     })
 }, 2000)
 const doRender = () => {
-    if (isSignUp) {
+    if (isSignUp || isCountDown) {
+        const El = isSignUp 
+            ? NewsletterSignup
+            : CountDown
         document.body.classList.add('iframe')
-        render(<NewsletterSignup />, document.getElementById('app'))
+        render(<El />, document.getElementById('app'))
         return
     }
     render(<App />, document.getElementById('app'))

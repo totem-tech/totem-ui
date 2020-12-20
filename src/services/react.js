@@ -3,7 +3,7 @@ import { useEffect, useReducer, useState } from "react"
 import PropTypes from 'prop-types'
 import { BehaviorSubject,  Subject } from 'rxjs'
 import PromisE from "../utils/PromisE"
-import { isFn, isSubjectLike, isValidNumber } from "../utils/utils"
+import { hasValue, isFn, isSubjectLike, isValidNumber } from "../utils/utils"
 
 /**
  * @name    iUseReducer
@@ -95,7 +95,7 @@ export const RecursiveShapeType = (propsTypes = {}, recursiveKey = 'children') =
  * @summary sugar for RxJS subject as promise and, optionally, wait until an expected value is received
  * 
  * @param   {Subject}           subject         RxJS subject or similar subscribable
- * @param   {*}                 expectedValue   (optional) if undefined, will resolve on first value received
+ * @param   {*|Function}        expectedValue   (optional) if undefined, will resolve on first value received
  * @param   {Number|Function}   timeout         (optional) will reject if no value received within given time
  * 
  * @returns {[Promise, Function]}   will reject with: 
@@ -103,17 +103,21 @@ export const RecursiveShapeType = (propsTypes = {}, recursiveKey = 'children') =
  *                                  - `undefined` if @subject is not a valid RxJS subject like subscribable
  */
 export const subjectAsPromise = (subject, expectedValue, timeout) => {
-    if (!isSubjectLike(subject)) return reject()
+    if (!isSubjectLike(subject)) return
 
     let subscription, timeoutId
-    const requiredValue = expectedValue !== undefined
     const unsubscribe = () => setTimeout(() => {
         subscription.unsubscribe()
         clearTimeout(timeoutId)
     }, 50)
     const promise = new PromisE((resolve, reject) => {
         subscription = subject.subscribe(value => {
-            if (requiredValue && value !== expectedValue) return
+            const isExpectedValue = isFn(expectedValue)
+                ? expectedValue(value)
+                : hasValue(expectedValue)
+                    ? value === expectedValue
+                    : true
+            if (!isExpectedValue) return
             unsubscribe()
             resolve(value)
         })
@@ -153,23 +157,23 @@ export const reducer = (state = {}, newValue = {}) => ({ ...state, ...newValue }
  *                  ]
  */
 export const usePromise = (promise, resultModifier, errorModifier) => {
-    const [state, setState] = iUseReducer(null, () => ({
-        promise: PromisE(promise),
-    }))
+    const [state, setState] = useState({})
 
     useState(() => {
         let mounted = true
-        const handler = (key, modifier) => x => {
-            if (!mounted) return
+        const handler = (key, modifier, setState) => value => {
+            if (!mounted) return console.log({mounted})
             const newState = {}
-            newState[key] = isFn(modifier) ? modifier(x) : x
+            newState[key] = isFn(modifier)
+                ? modifier(value)
+                : value
             setState(newState)            
         }
-        state.promise
-            .then(handler('result', resultModifier))
-            .catch(handler('error', errorModifier))
+        new PromisE(promise)
+            .then(handler('result', resultModifier,setState))
+            .catch(handler('error', errorModifier,setState))
         return () => mounted = false
-    }, [state.promise])
+    }, [setState, promise])
 
     return [state.result, state.error]
 }
@@ -195,15 +199,18 @@ export const usePromise = (promise, resultModifier, errorModifier) => {
 export const useRxSubject = (subject, valueModifier, initialValue, allowSubjectUpdate = false) => {
     if (!isSubjectLike(subject)) return subject
 
-    const v = subject instanceof BehaviorSubject ? subject.value : initialValue
-    let firstValue = !isFn(valueModifier) ? v : valueModifier(v)
-    const [{ value }, setState] = iUseReducer(reducer, { value : firstValue})
-    const setValue = newValue => !allowSubjectUpdate
-            ? setState({ value: newValue })
-            : subject.next(newValue)
+    const [{ firstValue, value }, setState] = iUseReducer(reducer, () => {
+        let value = subject instanceof BehaviorSubject
+            ? subject.value
+            : initialValue
+        value = !isFn(valueModifier)
+            ? value
+            : valueModifier(value)
+        return { firstValue: value, value }
+    })
 
     useEffect(() => {
-        let ignoreFirst = subject instanceof BehaviorSubject ? false : true
+        let ignoreFirst = !(subject instanceof BehaviorSubject)
         const subscribed = subject.subscribe((newValue) => {
             if (!ignoreFirst) {
                 ignoreFirst = true
@@ -219,6 +226,9 @@ export const useRxSubject = (subject, valueModifier, initialValue, allowSubjectU
         return () => subscribed.unsubscribe()
     }, [])
 
+    const setValue = newValue => !allowSubjectUpdate
+            ? setState({ value: newValue })
+            : subject.next(newValue)
     return [ value, setValue ]
 }
 // To prevent an update return this in valueModifier
@@ -232,7 +242,11 @@ useRxSubject.IGNORE_UPDATE = Symbol('ignore-rx-subject-update')
 export const unsubscribe = (subscriptions = {}) => Object.values(subscriptions).forEach(x => {
     try {
         if (!x) return
-        const fn = isFn(x) ? x : isFn(x.unsubscribe) ? x.unsubscribe : null
+        const fn = isFn(x)
+            ? x
+            : isFn(x.unsubscribe)
+                ? x.unsubscribe
+                : null
         fn && fn()
     } catch (e) { } // ignore
 })

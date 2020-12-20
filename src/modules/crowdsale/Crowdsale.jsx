@@ -14,6 +14,9 @@ import DepositStats from './DepositStats'
 import KYCForm from './KYCForm'
 import { showFaqs } from './FAQ'
 import TimeSince from '../../components/TimeSince'
+import IdentityForm from '../identity/IdentityForm'
+import { DEFAULT_NAME, getAll } from '../identity/identity'
+import CountDown from './CountDown'
 
 const START_BLOCK = 1787748
 const END_BLOCK = 9999
@@ -21,37 +24,35 @@ const textsCap = translated({
     crowdsaleFAQ: 'crowdsale FAQ',
     loading: 'loading',
     loginRequired: 'you must be logged in and online to access this section',
-    stepAccountDesc: 'create an account so that you can continue with the crowdsale registration',
     stepAccountTitle: 'create account',
-    stepDepositDesc: 'contibute to the crowdsale by depositing funds using one or more of your chosen Blockchains',
     stepDepositTitle: 'deposit funds',
     stepKYCTitle: 'register for crowdsale',
-    stepUnlockDesc: 'you will be able to unlock equivalent to three times the total contribution amount as soon as crowdsale ends',
     stepUnlockTitle: 'withdraw',
 }, true)[1]
 
+const promises = {
+    isRegistered: subjectAsPromise(rxIsRegistered, true)[0],
+    isLoggedIn: subjectAsPromise(rxIsLoggedIn, true)[0],
+}
 export default function () {
     // checks if user is registered
-    const [isRegistered] = usePromise(async () => await subjectAsPromise(rxIsRegistered, true)[0])
-    // waits until user is logged in for the first time after page load
-    // will not update if user goes offline and messaging service disconnects
-    const [isLoggedIn] = usePromise(async () => await subjectAsPromise(rxIsLoggedIn, true)[0])
-    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+    const [isRegistered] = usePromise(promises.isRegistered)
+    const [isMobile] =  useRxSubject(rxLayout, l => l === MOBILE)
     // whether crowdsale is currently active
-    const [isActive, isDone] = [false, false] // use block number to determine active
+    const [isActive, isCrowdsaleDone] = [true, false] // use block number to determine active
     const [state, setState] = iUseReducer(reducer, {
         kycDone: false,
         loading: true,
-        totalRaisedUSD: 0,
-        softCapUSD: 2500000, // 2.5 mil
-        targetCapUSD: 10000000, // 10 mil
     })
 
     // on load check if KYC is done and if yes retrieve deposits/balances
     useEffect(() => {        
-        isLoggedIn && !state.kycDone && (async () => {
+        if (state.kycDone) return
+        (async () => {
             let newState = {}
             try {
+                // wait until user logs in
+                const loggedIn = await subjectAsPromise(rxIsLoggedIn, true)[0]
                 // check if KYC done
                 const kycDone = await client.crowdsaleKYC.promise(true)
                 // retrieve any existing amounts deposited
@@ -76,40 +77,27 @@ export default function () {
             newState.loading = false
             setState(newState)
         })()
-        
-    }, [isLoggedIn])
+    }, [])
 
-    const targetCapReached = state.targetCapUSD <= state.totalRaisedUSD
-    const softCapReached = state.softCapUSD <= state.totalRaisedUSD
     let stepContent = ''
-    const activeIndex = !isRegistered
+    const activeIndex =!isRegistered
         ? 0
-        : !isLoggedIn || state.loading || !!state.message
+        : state.loading || !!state.message
             ? -1
             : !state.kycDone
                 ? 1
-                : !isDone
+                : isActive 
                     ? 2
-                    : 3
-    const showProgress = activeIndex >= 0
-    const progressSteps = showProgress && [
-        {
-            title: textsCap.stepAccountTitle,
-            description: textsCap.stepAccountDesc,
-        },
-        {
-            description: '',
-            title: textsCap.stepKYCTitle,
-        },
-        {
-            description: textsCap.stepDepositDesc,
-            title: textsCap.stepDepositTitle,
-        },
-        {
-            description: textsCap.stepUnlockDesc,
-            title: textsCap.stepUnlockTitle,
-        },
-    ].map((x, i) => ({
+                    : isCrowdsaleDone
+                        ? 3
+                        : -1
+    const showSteps = activeIndex >= 0 //&& (isActive || !!state.kycDone)
+    const progressSteps = showSteps && [
+        textsCap.stepAccountTitle,
+        textsCap.stepKYCTitle,
+        textsCap.stepDepositTitle,
+        textsCap.stepUnlockTitle,
+    ].map((title, i) => ({
         active: activeIndex === i, 
         completed: i < activeIndex,
         description: null,
@@ -118,27 +106,39 @@ export default function () {
         style: { maxWidth: isMobile ? null : 450 },
         title: (
             <div className='title' style={{ textTransform: 'capitalize' }}>
-                {x.title}
+                {title}
             </div>
         )
     }))
 
     switch (activeIndex) {
         case -1:
-            const isLoading = state.loading || isLoggedIn === null
             const msgProps = state.message || {
-                header: isLoading
+                header: state.loading
                     ? textsCap.loading
                     : textsCap.loginRequired,
                 icon: true,
-                status: isLoading
+                status: state.loading
                     ? 'loading'
                     : 'error',
             }
             stepContent = <Message {...msgProps} />
             break
         case 0: 
-            stepContent = getInlineForm(RegistrationForm)
+            stepContent = getInlineForm(RegistrationForm, {
+                onSubmit: success => {
+                    const identities = getAll()
+                    const ok = success && identities.length === 1 && identities[0].name === DEFAULT_NAME
+                    // prompt user to change default identity name if not already done so
+                    if (!ok) return
+                    showForm(IdentityForm, {
+                        values: {
+                            ...identities[0],
+                            name: '', // force update name
+                        },
+                    })
+                }
+            })
             break
         case 1: 
             stepContent = getInlineForm(KYCForm, {
@@ -153,61 +153,17 @@ export default function () {
     }
         
     return (
-        <div>
-            {!isDone && (
-                <div style={{ width: '100%', textAlign: 'center' }}>
-                    <h1>
-                        {isDone
-                            ? 'Crowdsale is now over!'
-                            : !isActive
-                                ? 'Crowdsale starts in'
-                                : 'Crowdsale ends in'}
-                    </h1>
-                    <TimeSince {...{
-                        asDuration: true,
-                        date: new Date('2021-01-20T00:00:00'),
-                        durationConfig: {
-                            fill: false, // fills with 0 if length is less that 2
-                            statisticProps: {
-                                color: isActive
-                                    ? 'yellow'
-                                    : 'green',
-                            },
-                            withSeconds: !isMobile,
-                        },
-                    }} />
-
-                    {isActive && !!state.totalRaisedUSD && (
-                        <Progress {...{
-                            color: targetCapReached
-                                ? 'green'
-                                : softCapReached
-                                    ? 'teal'
-                                    : undefined,
-                            label: `US$${state.totalRaisedUSD} raised`
-                                + (
-                                    targetCapReached 
-                                        ? ' | Target cap reached!'
-                                        : softCapReached
-                                            ? ' | Soft cap reached!'
-                                            : ''
-                                ),
-                            progress: 'percent',
-                            total: state.targetCapUSD,
-                            value: state.totalRaisedUSD,
-                        }} />
-                    )}
-                </div>
-            )}
+        <div>            
+            {!isCrowdsaleDone && <CountDown showProgress={true} />}
             {state.kycDone && (
                 <Button {...{
                     content: textsCap.crowdsaleFAQ,
                     fluid: isMobile,
-                    icon: 'question',
+                    // icon: 'question',
                     onClick: () => showFaqs(),
                 }} />
             )}
-            {showProgress && (
+            {showSteps && (
                 <Step.Group {...{
                     items: progressSteps,
                     fluid: true,
@@ -221,7 +177,7 @@ export default function () {
             )}
 
             {state.kycDone && <DepositStats />}
-            {stepContent}
+            {showSteps && stepContent}
         </div>
     )
 }

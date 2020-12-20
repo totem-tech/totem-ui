@@ -20,7 +20,7 @@ const textsCap = translated({
     amountDeposited: 'amount deposited',
     blockchain: 'blockchain',
     blockchainExplorer: 'view in explorer',
-    calculator: 'calculator',
+    calculatorBtnText: 'deposit award calculator',
     despositAddress: 'pay-to address',
     explorer: 'explorer',
     faqs: 'FAQs',
@@ -116,7 +116,7 @@ const getTableProps = (deposits, isMobile) => ({
         },
         {
             key: 'amount',
-            textAlign: 'center',
+            textAlign: 'right',
             title: textsCap.amountDeposited,
         },
         {
@@ -170,7 +170,7 @@ const getTableProps = (deposits, isMobile) => ({
                 },
                 {
                     hidden: !deposits,
-                    content: textsCap.calculator,
+                    content: textsCap.calculatorBtnText,
                     icon: 'calculator',
                     onClick: () => showForm(CalculatorForm, { deposits }),
                 },
@@ -180,7 +180,7 @@ const getTableProps = (deposits, isMobile) => ({
                     fluid: isMobile,
                     key: i,
                     style: {
-                        margin: isMobile ? '3px 0' : null
+                        margin: isMobile ? '3px 0' : '0 5px',
                     },
                 }} />)}
         </div>

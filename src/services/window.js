@@ -46,8 +46,13 @@ export function getLayout() {
 export const getUrlParam = name => {
     const params = {}
     const regex = /[?&]+([^=&]+)=([^&]*)/gi
-    window.location.href.replace(regex, (_, key, value) => params[key] = decodeURIComponent(value))
-    return name ? params[name] || '' : params
+    window.location.href.replace(
+        regex,
+        (_, key, value) => params[key] = decodeURIComponent(value)
+    )
+    return name
+        ? params[name] || ''
+        : params
 }
 
 // gridColumns read/writes main content grid column count
@@ -134,7 +139,10 @@ export const useInverted = (reverse = false) => {
     return inverted
 }
 // set layout name on window resize 
-window.onresize = () => rxLayout.next(getLayout())
+window.onresize = () => {
+    const layout = getLayout()
+    rxLayout.value !== layout && rxLayout.next(layout)
+}
 window.addEventListener('online', () => rxOnline.next(true))
 window.addEventListener('offline', () => rxOnline.next(false))
 let ignoredFirstInverted = false
