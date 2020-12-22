@@ -24,7 +24,7 @@ export default function FinancialStatementView(props) {
     
     return (
         <div {...{ ...props, style: { whiteSpace: 'pre', ...props.style } }}>
-            {nestedBalances.length > 1 && (
+            {nestedBalances.length > 0 && (
                 <Button {...{
                     content: !shouldExpand
                         ? textsCap.collapseAll
