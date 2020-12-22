@@ -20,7 +20,9 @@ const DrillDownList = props => {
         ? [parentActive || {}, parentSetActive] // assume state is externally managed
         : useState() // manage state locally
     const inverted = useInverted()
-    const AccordionEl = nestedLevelNum ? Accordion.Accordion : Accordion
+    const AccordionEl = nestedLevelNum
+        ? Accordion.Accordion
+        : Accordion
     const elProps = {
         className: className([clsName, { inverted }]),
         styled: nestedLevelNum ? undefined : true,
@@ -44,10 +46,13 @@ const DrillDownList = props => {
                             index: i,
                             onClick: () => {
                                 if (!hasChildren) return
-                                const x = singleMode ? {} : {...expandedTitles}
+                                const titles = singleMode ? {} : expandedTitles
                                 
-                                x[title] = { ...expandedTitles[title], active: !isActive }
-                                setExpandedTitles(x)
+                                titles[title] = {
+                                    ...expandedTitles[title],
+                                    active: !isActive,
+                                }
+                                setExpandedTitles({ ...titles })
                             },
                             style: {
                                 paddingLeft: nestedLevelNum * 15 + (children.length ? 0 : 15),
@@ -84,13 +89,13 @@ const DrillDownList = props => {
                                 active={isActive}
                                 style={{ padding: 0 }}>
                                 <DrillDownList {...{
-                                    expandedTitles: self._children || {},
+                                    expandedTitles: self.children || {},
                                     items: children,
                                     nestedLevelNum: nestedLevelNum + 1,
-                                    setExpandedTitles: _children => {
-                                        const x = { ...expandedTitles }
-                                        x[title] = { ...self, _children }
-                                        setExpandedTitles(x)
+                                    setExpandedTitles: children => {
+                                        const titles = { ...expandedTitles }
+                                        titles[title] = { ...self, children }
+                                        setExpandedTitles(titles)
                                     },
                                     singleMode,
                                 }} />
