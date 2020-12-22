@@ -173,8 +173,8 @@ export const getInputs = (rxSetState, deposits = {}) => {
             unstackable: true,
             inputs: [
                 {
-                    action: actionExchangeIcon,
-                    actionPosition: 'left',
+                    action: actionCurrency,//actionExchangeIcon,
+                    // actionPosition: 'left',
                     label: textsCap.estimatedContributionLabel,
                     name: inputNames.estimatedContribution,
                     readOnly: true,
@@ -194,8 +194,8 @@ export const getInputs = (rxSetState, deposits = {}) => {
                     width: 4,
                 },
                 {
-                    action: actionExchangeIcon,
-                    actionPosition: 'left',
+                    action: actionCurrency, //actionExchangeIcon,
+                    // actionPosition: 'left',
                     label: textsCap.estimatedAllocationLabel,
                     name: inputNames.estimatedAllocation,
                     readOnly: true,
@@ -213,8 +213,8 @@ export const getInputs = (rxSetState, deposits = {}) => {
             unstackable: true,
             inputs: [
                 {
-                    action: actionExchangeIcon,
-                    actionPosition: 'left',
+                    action: actionCurrency, //actionExchangeIcon,
+                    // actionPosition: 'left',
                     label: textsCap.estimatedUnlockedLabel,
                     name: inputNames.estimatedUnlocked,
                     readOnly: true,
@@ -241,9 +241,9 @@ export const getInputs = (rxSetState, deposits = {}) => {
 }
 
 const handleAmountChange = (inputs, rxSetState, deposits) => async (_, values) => {
-    const amount = values[inputNames.amount]
+    const amount = values[inputNames.amount] || 0
     const currency = values[inputNames.currency]
-    if (!currency || !isValidNumber(amount)) return rxSetState.next({ message: null })
+    if (!currency) return rxSetState.next({ message: null }) //|| !isValidNumber(amount)
     
     const rxAmount = findInput(inputs, inputNames.amount).rxValue
     const depositAmounts = { ...deposits }

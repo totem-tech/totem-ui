@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react'
-import { Button, Progress, Step } from 'semantic-ui-react'
-import { isBool } from '../../utils/utils'
+import { Button, Step } from 'semantic-ui-react'
 import Message from '../../components/Message'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
@@ -13,10 +12,10 @@ import AddressList from './AddressList'
 import DepositStats from './DepositStats'
 import KYCForm from './KYCForm'
 import { showFaqs } from './FAQ'
-import TimeSince from '../../components/TimeSince'
 import IdentityForm from '../identity/IdentityForm'
 import { DEFAULT_NAME, getAll } from '../identity/identity'
 import CountDown from './CountDown'
+import { rxBlockNumber } from '../../services/blockchain'
 
 const START_BLOCK = 1787748
 const END_BLOCK = 9999
@@ -37,7 +36,11 @@ const promises = {
 export default function () {
     // checks if user is registered
     const [isRegistered] = usePromise(promises.isRegistered)
-    const [isMobile] =  useRxSubject(rxLayout, l => l === MOBILE)
+    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+    const [currentBlock] = usePromise(subjectAsPromise(
+        rxBlockNumber,
+        b => b > 0 && b, // waits until block number is received
+    )[0])
     // whether crowdsale is currently active
     const [isActive, isCrowdsaleDone] = [true, false] // use block number to determine active
     const [state, setState] = iUseReducer(reducer, {
@@ -80,9 +83,10 @@ export default function () {
     }, [])
 
     let stepContent = ''
+    const loading = state.loading || !currentBlock
     const activeIndex =!isRegistered
         ? 0
-        : state.loading || !!state.message
+        : loading || !!state.message
             ? -1
             : !state.kycDone
                 ? 1
@@ -114,11 +118,11 @@ export default function () {
     switch (activeIndex) {
         case -1:
             const msgProps = state.message || {
-                header: state.loading
+                header: loading
                     ? textsCap.loading
                     : textsCap.loginRequired,
                 icon: true,
-                status: state.loading
+                status: loading
                     ? 'loading'
                     : 'error',
             }
@@ -151,10 +155,12 @@ export default function () {
             stepContent = <AddressList />
             break
     }
-        
+    
+    if (loading) return stepContent
+    
     return (
         <div>            
-            {!isCrowdsaleDone && <CountDown showProgress={true} />}
+            <CountDown showProgress={true} />
             {state.kycDone && (
                 <Button {...{
                     content: textsCap.crowdsaleFAQ,

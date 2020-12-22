@@ -2,7 +2,7 @@ import React from 'react'
 import { render } from 'react-dom'
 import 'semantic-ui-css/semantic.min.css'
 import PromisE from './utils/PromisE'
-import { isObj, isStr, objClean } from './utils/utils'
+import { isArrLike, isError, isObj, isStr, objClean } from './utils/utils'
 import App from './App'
 import NewsletterSignup from './forms/NewsletterSignup'
 // services
@@ -41,11 +41,15 @@ if (!window.isInIFrame && window.isDebug) {
             let content = args.map(x => {
                 let str = x
                 try {
-                    str = isStr(x)
-                        ? x
-                        : isObj(x)
-                            && x.stack
-                            || JSON.stringify(x, null, 4)
+                    str = isError(x)
+                        ? x.stack
+                        : typeof x !== 'object'
+                            ? x
+                            : JSON.stringify(
+                                isArrLike(x) ? Array.from(x) : x,
+                                null,
+                                4,
+                            )
                 } catch (e) {
                     // in case of Object circular dependency
                     str = `${x}`

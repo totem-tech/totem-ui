@@ -225,6 +225,11 @@ export const getInputs = () => {
             title: textsCap.locationIdCreateTittle,
         }} />
     )
+
+    // pre-select identity if only one available
+    const identityValue = rxIdentities.value.size === 1
+        ? Array.from(rxIdentities.value)[0][0]
+        : undefined
     return [
         {
             label: textsCap.identityLabel,
@@ -247,7 +252,7 @@ export const getInputs = () => {
                         value: address,
                     }
                 }),
-            rxValue: new BehaviorSubject(),
+            rxValue: new BehaviorSubject(identityValue),
             search: ['text', 'value', 'description'],
             selection: true,
             type: 'dropdown',

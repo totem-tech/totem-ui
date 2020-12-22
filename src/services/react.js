@@ -3,7 +3,7 @@ import { useEffect, useReducer, useState } from "react"
 import PropTypes from 'prop-types'
 import { BehaviorSubject,  Subject } from 'rxjs'
 import PromisE from "../utils/PromisE"
-import { hasValue, isFn, isSubjectLike, isValidNumber } from "../utils/utils"
+import { hasValue, isDefined, isFn, isSubjectLike, isValidNumber } from "../utils/utils"
 
 /**
  * @name    iUseReducer
@@ -113,8 +113,8 @@ export const subjectAsPromise = (subject, expectedValue, timeout) => {
     const promise = new PromisE((resolve, reject) => {
         subscription = subject.subscribe(value => {
             const isExpectedValue = isFn(expectedValue)
-                ? expectedValue(value)
-                : hasValue(expectedValue)
+                ? expectedValue(value) === value
+                : isDefined(expectedValue)
                     ? value === expectedValue
                     : true
             if (!isExpectedValue) return

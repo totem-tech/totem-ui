@@ -10,7 +10,7 @@ import {
     Level_NEGOTIATE_Entry_XTX,
 } from './crowdsale'
 
-const textsCap = translated({  
+const [texts, textsCap] = translated({  
     amountAllocated: 'your allocation',
     amountContributed: 'you contributed',
     amountToNextLevel: 'contribution required for next multiplier',
@@ -22,7 +22,7 @@ const textsCap = translated({
     out: 'out',
     nextLevel: 'next achievement level',
     depositAtLeast: 'deposit at least',
-}, true)[1]
+}, true)
 
 export default React.memo(() => {
     const [deposits] = useRxSubject(rxCrowdsaleData, ({ deposits = {} }) => ({ ...deposits }))
@@ -116,39 +116,46 @@ export default React.memo(() => {
                 )}
             </div> */}
 
-            <h3 className='no-margin' style={{ textTransform: 'capitalize'}}>
-                {textsCap.currentMultiLevel}: {currentLevel} ({multiplier})x
+            <h3 className='no-margin' style={styles.capitalize}>
+                {textsCap.currentMultiLevel}: {currentLevel} ({multiplier}
+                <span style={styles.decapitalize}>x</span>)
             </h3>
-            <h3 className='no-margin'>
-                <Currency {...{
-                    prefix: '[ ',
-                    suffix: ` ${textsCap.in}`,
-                    unit: currencyDefault,
-                    value: amtDepositedXTX,
-                }} />
-                <Currency {...{
-                    prefix: ' => ',
-                    suffix: ` ${textsCap.out} ]`,
-                    unit: currencyDefault,
-                    value: amtMultipliedXTX,
-                }} />
-            </h3>
-            <div style={{ textTransform: 'capitalize'}}>
-                {textsCap.nextLevel} {nextLevel} ({nextMultiplier}x) {textsCap.depositAtLeast}
+            {!!amtDepositedXTX && (
+                <h3 className='no-margin'>
+                    <Currency {...{
+                        prefix: '[ ',
+                        suffix: ` ${textsCap.in}`,
+                        unit: currencyDefault,
+                        value: amtDepositedXTX,
+                    }} />
+                    <Currency {...{
+                        prefix: ' => ',
+                        suffix: ` ${textsCap.out} ]`,
+                        unit: currencyDefault,
+                        value: amtMultipliedXTX,
+                    }} />
+                </h3>
+            )}
+            <div style={styles.capitalize}>
+                {textsCap.nextLevel} {nextLevel} (
+                    {nextMultiplier}<span style={styles.decapitalize}>x</span>):
+                <br />{textsCap.depositAtLeast}
                 <Currency {...{
                     prefix: ' ',
                     unit: currencyDefault,
                     unitDisplayed: 'BTC',
                     value: nextLevelAmountXTX,
                 }} />
+                
                 <Currency {...{
-                    prefix: ' ',
+                    prefix: ` ${texts.or} `,
                     unit: currencyDefault,
                     unitDisplayed: 'ETH',
                     value: nextLevelAmountXTX,
                 }} />
+                {textsCap.or}
                 <Currency {...{
-                    prefix: ' ',
+                    prefix: ` ${texts.or} `,
                     unit: currencyDefault,
                     unitDisplayed: 'DOT',
                     value: nextLevelAmountXTX,
@@ -160,6 +167,8 @@ export default React.memo(() => {
 })
 
 const styles = {
+    capitalize: { textTransform: 'capitalize' },
+    decapitalize: { textTransform: 'initial' },
     initialFont: {
         fontSize: 'initial',
         fontWeight: 'initial',

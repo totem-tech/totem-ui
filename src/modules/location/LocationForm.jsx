@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { arrSort, deferred, isFn, objHasKeys, textEllipsis } from '../../utils/utils'
+import { arrSort, deferred, isBool, isFn, objCopy, objHasKeys, textEllipsis } from '../../utils/utils'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { closeModal, confirm } from '../../services/modal'
@@ -59,7 +59,17 @@ export default class LocationForm extends Component {
 	constructor(props) {
 		super(props)
 
-		let { autoSave, header, id, subheader, submitText, values } = props
+		let {
+			autoSave,
+			closeOnDimmerClick,
+			closeOnEscape,
+			closeText,
+			header,
+			id,
+			subheader,
+			submitText,
+			values,
+		} = props
 		const location = get(id) || values || {}
 		const { partnerIdentity } = location 
 		this.isUpdate = !!id && !!location
@@ -67,8 +77,19 @@ export default class LocationForm extends Component {
 		const noFlags = ['aq', 'bl', 'bq', 'cw', 'gg', 'im', 'je', 'mf', 'ss', 'sx', 'xk']
 			.map(x => x.toUpperCase())
 		
+		autoSave = this.isUpdate && autoSave
 		this.state = {
-			closeText: !this.isUpdate ? undefined : { negative: false },
+			closeOnDimmerClick: isBool(closeOnDimmerClick)
+				? closeOnDimmerClick
+				: autoSave,
+			closeOnEscape:  isBool(closeOnEscape)
+				? closeOnEscape
+				: autoSave,
+			closeText: closeText || (
+				autoSave
+					? null
+					: undefined
+			),
 			header: header || (this.isUpdate ? textsCap.formHeaderUpdate : textsCap.formHeaderCreate),
 			onChange: this.handleChange,
 			onSubmit: this.handleSubmit,
@@ -172,6 +193,7 @@ export default class LocationForm extends Component {
 									description: code,
 									flag: !noFlags.includes(code) ? code.toLowerCase() : '',
 									key: code,
+									name,
 									text: textEllipsis(name, 25, 3, false),
 									value: code,
 								})),
@@ -180,7 +202,7 @@ export default class LocationForm extends Component {
 							placeholder: textsCap.countryPlaceholder,
 							required: true,
 							selection: true,
-							search: ['description', 'text', 'code3'],
+							search: ['description', 'name', 'code3'],
 							type: 'dropdown',
 						},
 					]

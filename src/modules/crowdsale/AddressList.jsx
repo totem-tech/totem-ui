@@ -143,6 +143,12 @@ const getTableProps = (deposits, isMobile) => ({
                     onClick: () => showForm(KYCViewForm),
                 },
                 {
+                    hidden: !deposits,
+                    content: textsCap.calculatorBtnText,
+                    icon: 'calculator',
+                    onClick: () => showForm(CalculatorForm, { deposits }),
+                }, 
+                {
                     content: textsCap.updateBalances,
                     icon: 'find',
                     onClick: () => {
@@ -168,21 +174,27 @@ const getTableProps = (deposits, isMobile) => ({
                         }, undefined, toastId)
                     }
                 },
-                {
-                    hidden: !deposits,
-                    content: textsCap.calculatorBtnText,
-                    icon: 'calculator',
-                    onClick: () => showForm(CalculatorForm, { deposits }),
-                },
             ]
-                .map((props, i) => <Button {...{
-                    ...props,
-                    fluid: isMobile,
-                    key: i,
-                    style: {
-                        margin: isMobile ? '3px 0' : '0 5px',
-                    },
-                }} />)}
+                .map((props, i) => {
+                    const btn = (
+                        <Button {...{
+                            ...props,
+                            fluid: isMobile,
+                            key: i,
+                            style: {
+                                ...styles.capitalize,
+                                margin: isMobile ? '3px 0' : '0 5px',
+                            },
+                        }} />
+                    )
+                    return !isMobile
+                        ? btn
+                        : <div key={i}>{btn}</div>
+                })}
         </div>
     )
 })
+
+const styles = {
+    capitalize: { textTransform: 'capitalize' },
+}

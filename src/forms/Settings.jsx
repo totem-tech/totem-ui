@@ -81,7 +81,7 @@ export default class SettingsForm extends Component {
                     name: inputNames.currency,
                     onChange: this.handleCurrencyChange,
                     options: [],
-                    search: ['text', 'description', 'value'],
+                    search: ['text', 'description'],
                     selection: true,
                     type: 'dropdown',
                     value: getSelectedCurrency()
