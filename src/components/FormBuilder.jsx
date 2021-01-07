@@ -178,6 +178,7 @@ export default class FormBuilder extends Component {
 			closeText,
 			defaultOpen,
 			El,
+			formProps,
 			header,
 			headerIcon,
 			hideFooter,
@@ -279,6 +280,7 @@ export default class FormBuilder extends Component {
 				success: success || message.status === statuses.SUCCESS,
 				warning: message.status === statuses.WARNING,
 				widths,
+				...formProps,
 			})}>
 				{inputs.map(props => <FormInput {...props} />)}
 				{/* Include submit button if not a modal */}
@@ -349,6 +351,9 @@ FormBuilder.propTypes = {
 	closeOnSubmit: PropTypes.bool,
 	closeText: PropTypes.oneOfType([PropTypes.element, PropTypes.object, PropTypes.string]),
 	defaultOpen: PropTypes.bool,
+	El: PropTypes.elementType,
+	// props to be passed on to the Form or `El` component 
+	formProps: PropTypes.object,
 	// disable inputs on load
 	inputsDisabled: PropTypes.arrayOf(PropTypes.string),
 	// inputs to hide

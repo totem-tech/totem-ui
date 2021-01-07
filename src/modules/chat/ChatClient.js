@@ -475,10 +475,26 @@ export class ChatClient {
          *                                      @givenName  string
          *                                      @identity   string
          *                                      @location   object
+         * @param   {Function}          cb      arguments:
+         *                                      @err        string
+         *                                      @publicKey  string
          */
         this.crowdsaleKYC = (kycData, cb) => isFn(cb) && socket.emit(
             'crowdsale-kyc',
             kycData,
+            cb,
+        )
+
+        /**
+         * @name    crowdsaleKYCPublicKey
+         * @summary get Totem Live Association's encryption public key
+         * 
+         * @param   {Function}          cb      arguments:
+         *                                      @err        string
+         *                                      @publicKey  string
+         */
+        this.crowdsaleKYCPublicKey = cb => isFn(cb) && socket.emit(
+            'crowdsale-kyc-publicKey',
             cb,
         )
     }

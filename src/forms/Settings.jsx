@@ -61,12 +61,13 @@ export default class SettingsForm extends Component {
                     name: inputNames.languageCode,
                     onChange: this.handleLanguageChange,
                     options: arrSort(
-                        Object.keys(languages).sort().map(code => ({
-                            description: code,
-                            key: code,
-                            text: languages[code],
-                            value: code,
-                        })),
+                        Object.keys(languages).sort()
+                            .map(code => ({
+                                description: code,
+                                key: code,
+                                text: languages[code],
+                                value: code,
+                            })),
                         'text',
                     ),
                     search: ['text', 'description'], // sort search results by specific keys
@@ -90,11 +91,12 @@ export default class SettingsForm extends Component {
                     label: textsCap.historyLimitLabel,
                     name: inputNames.historyLimit,
                     onChange: this.handleHistoryLimitChange,
-                    options: [0, 10, 50, 100, 500, 1000].map((limit, i) => ({
-                        key: i,
-                        text: limit || textsCap.unlimited,
-                        value: limit,
-                    })),
+                    options: [0, 10, 50, 100, 500, 1000]
+                        .map((limit, i) => ({
+                            key: i,
+                            text: limit || textsCap.unlimited,
+                            value: limit,
+                        })),
                     selection: true,
                     type: 'dropdown',
                     value: historyItemsLimit(),
@@ -104,11 +106,12 @@ export default class SettingsForm extends Component {
                     name: inputNames.chatMsgLimit,
                     onChange: this.handleChatLimitChange,
                     //0 for unlimited
-                    options: [10, 50, 100, 200, 300, 500].map((limit, i) => ({
-                        key: i,
-                        text: limit || textsCap.unlimited,
-                        value: limit,
-                    })),
+                    options: [10, 50, 100, 200, 300, 500]
+                        .map((limit, i) => ({
+                            key: i,
+                            text: limit || textsCap.unlimited,
+                            value: limit,
+                        })),
                     selection: true,
                     type: 'dropdown',
                     value: chatHistoryLimit(),
@@ -117,12 +120,13 @@ export default class SettingsForm extends Component {
                     label: textsCap.gridColumnsLabel,
                     name: inputNames.gridCols,
                     onChange: this.handleGridCollumnsChange,
-                    options: [1, 2, 3, 4, 5, 6].map(n => ({
-                        icon: n === 1 ? 'bars' : 'grid layout',
-                        key: n,
-                        text: `${n} ${n > 1 ? texts.columns : texts.column}`,
-                        value: n,
-                    })),
+                    options: [1, 2, 3, 4, 5, 6]
+                        .map(n => ({
+                            icon: n === 1 ? 'bars' : 'grid layout',
+                            key: n,
+                            text: `${n} ${n > 1 ? texts.columns : texts.column}`,
+                            value: n,
+                        })),
                     selection: true,
                     type: 'dropdown',
                     value: gridColumns(),
@@ -140,11 +144,11 @@ export default class SettingsForm extends Component {
         const { inputs } = this.state
         const currencyIn = findInput(inputs, 'currency')
         getCurrencies().then(currencies => {
-            const options = currencies.map(({ currency, nameInLanguage, ISO }) => ({
-                description: currency,
-                key: ISO,
-                text: nameInLanguage,
-                value: ISO
+            const options = currencies.map(c => ({
+                description: c.currency,
+                key: c.ISO,
+                text: c.nameInLanguage,
+                value: c.ISO,
             }))
             currencyIn.options = arrSort(options, 'text')
             this.setState({ inputs })

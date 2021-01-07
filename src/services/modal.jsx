@@ -6,6 +6,7 @@ import DataStorage from '../utils/DataStorage'
 import { isBool, isFn, className, isStr, isObj } from '../utils/utils'
 import { translated } from './language'
 import { toggleFullscreen, useInverted, getUrlParam } from './window'
+import PromisE from '../utils/PromisE'
 
 const modals = new DataStorage()
 export const rxModals = modals.rxData
@@ -80,9 +81,9 @@ export const closeModal = (id, delay = 0) => setTimeout(() => modals.delete(id),
 export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm = false) => {
     const focusRef = createRef()
     modalId = modalId || uuid.v1()
-    if (isStr(confirmProps)) {
-        confirmProps = { content: confirmProps }
-    }
+    confirmProps = !isStr(confirmProps)
+        ? confirmProps
+        : { content: confirmProps }
     let { cancelButton, confirmButton, content, header, open, onCancel, onConfirm } = confirmProps
     if (confirmButton !== null && !confirmButton) {
         // use default translated text for confirm button
@@ -94,10 +95,10 @@ export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm =
             ? textsCap.close
             : textsCap.cancel
     }
-    if (!content && content !== null) {
-        // use default translated text for content
-        content = textsCap.areYouSure
-    }
+    // use default translated text for content
+    content = !content && content !== null
+        ? textsCap.areYouSure
+        : content
     // add a close button if both confirm and cancel buttons are hidden
     // (Semantic confirm dialoge doesn't have a close icon by default)
     if (!confirmButton && !cancelButton && (header || content)) {
@@ -153,17 +154,50 @@ export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm =
                     ])
                 }}/>
             ),
-            open: isBool(open) ? open : true,
-            onCancel: confirm.handleCloseCb(modalId, onCancel),
-            onConfirm: confirm.handleCloseCb(modalId, onConfirm),
+            open: !isBool(open) || open,
+            onCancel: (...args) => {
+                closeModal(modalId)
+                isFn(onCancel) && onCancel(...args)
+            },
+            onConfirm: (...args) => {
+                closeModal(modalId)
+                isFn(onConfirm) && onConfirm(...args)
+            },
         }} />,
         focusRef,
     )
 }
-confirm.handleCloseCb = (modalId, cb) => (...args) => {
-    closeModal(modalId)
-    isFn(cb) && cb(...args)
-}
+
+/**
+ * @name    confirmAsPromise
+ * @summary opens a confirm modal and returns a promise that resolves with `true` or `false`
+ *          indicating user accepted or rejected respectively
+ * 
+ * @param   {Object|String} props 
+ * @param   {...any}        args    see `confirm` for rest of the accepted arguments
+ * 
+ * @returns {Promise}       promise will reject only if there was an uncaught error 
+ */
+export const confirmAsPromise = (props, ...args) => new PromisE((resolve, reject) => {
+    try {
+        props = !isStr(props)
+            ? props
+            : { content: props }
+        const { onCancel, onConfirm } = props
+        props.onCancel = (...args) => {
+            isFn(onCancel) && onCancel(...args)
+            resolve(false)
+        }
+        props.onConfirm = (...args) => {
+            isFn(onConfirm) && onConfirm(...args)
+            resolve(true)
+        }
+        confirm(props, ...args)
+    } catch (err) {
+        reject(err)
+    }
+})
+
 // Invertible Confirm component
 // This is a sugar for the Confirm component with auto inverted/dark mode
 const IConfirm = props => {

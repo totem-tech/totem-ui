@@ -160,5 +160,5 @@ export const getInputs = () => [
         placeholder: textsCap.ethAddressPlaceholder,
         required: true,
         type: 'identity',
-    }
+    },
 ]
