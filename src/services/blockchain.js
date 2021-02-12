@@ -59,6 +59,7 @@ export const hashTypes = {
     /// 9000
 }
 export const nodes = [
+    //'wss://rpc.polkadot.io',
     // 'ws://localhost:9944'
     'wss://node1.totem.live',
 ]

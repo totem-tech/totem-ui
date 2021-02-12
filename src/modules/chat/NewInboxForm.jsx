@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import FormBuilder, { fillValues, findInput,  } from '../../components/FormBuilder'
-import { isFn, arrSort, textEllipsis, isArr, isStr, arrUnique } from '../../utils/utils'
+import { isFn, arrSort, textEllipsis, isArr, isStr, arrUnique, escapeStringRegexp } from '../../utils/utils'
 // services
 import { getUser, rxIsRegistered } from './ChatClient'
 import { translated } from '../../services/language'
@@ -42,7 +42,16 @@ const inputNames = {
 export default function NewInboxForm(props) {
     const [isRegistered] = useRxSubject(rxIsRegistered)
     if (!isRegistered) {
-        showForm(RegistrationForm,  { values: { silent: true } })
+        const values = props.values || {}
+        const params = [
+            'form=chat',
+            ...Object.keys(values)
+            .map(key => `${key}=${escapeStringRegexp(values[key])}`)
+        ].join('&')
+        const redirectTo = `${location.protocol}//${location.host}?${params}`
+        
+        console.log({props, redirectTo})
+        showForm(RegistrationForm, { values: { redirectTo, silent: true } })
         return ''
     }
 
