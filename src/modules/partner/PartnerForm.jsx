@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { ss58Decode, addressToStr } from '../../utils/convert'
 import PromisE from '../../utils/PromisE'
-import { arrSort, deferred, isFn, isObj, arrUnique, objHasKeys } from '../../utils/utils'
+import { arrSort, deferred, isFn, isObj, arrUnique, objHasKeys, isStr } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { showForm } from '../../services/modal'
 import { translated } from '../../services/language'
@@ -24,6 +24,7 @@ const textsCap = translated({
 
     addressAdditionLabel: 'use',
     addressLabel: 'search for Company or Identity',
+    addressEmptySearchMessage: 'enter a compnay name to search',
     addressPlaceholder: 'search by company details or identity',
     addressValidationMsg1: 'partner already exists with the following name:',
     addressValidationMsg2: 'please enter a valid Totem Identity',
@@ -41,6 +42,7 @@ const textsCap = translated({
     nameLabel: 'enter partner name',
     namePlaceholder: 'enter a name for this partner',
     nameValidationMsg: 'please choose an unique partner name.',
+    submitFailedMsg: 'failed to save partner',
     submitSuccessMsg1: 'partner created successfully',
     submitSuccessMsg2: 'partner updated successfully',
     tagsNoResultsMsg: 'enter tag and press enter to add, to tags list.',
@@ -90,7 +92,7 @@ export default class PartnerForm extends Component {
             closeText: closeText || (this.doUpdate ? textsCap.close : undefined),
             header: header || (this.doUpdate ? textsCap.header2 : textsCap.header1),
             message: {},
-            onChange: this.handleChange,
+            onChange: this.handleFormChange,
             onSubmit: this.handleSubmit,
             subheader: subheader || (
                 this.doUpdate  && autoSave 
@@ -127,6 +129,7 @@ export default class PartnerForm extends Component {
                     hidden: this.doUpdate,
                     label: textsCap.addressLabel,
                     name: inputNames.address,
+                    noResultsMessage: textsCap.addressEmptySearchMessage,
                     onAddItem: this.handleAddressAddItem,
                     onChange: this.handleAddressChange,
                     onSearchChange: this.handleAddressSearchChange,
@@ -140,16 +143,16 @@ export default class PartnerForm extends Component {
                     search: ['text', 'value', 'key'],
                     selection: true,
                     type: 'dropdown',
-                    validate: this.doUpdate ? null : this.validateAddress,
+                    validate: this.validateAddress,
                 },
                 {
                     label: textsCap.nameLabel,
                     name: inputNames.name,
                     placeholder: textsCap.namePlaceholder,
                     required: true,
+                    rxValue: new BehaviorSubject(''),
                     type: 'text',
                     validate: this.validateName,
-                    value: '',
                 },
                 {
                     clearable: true,
@@ -241,7 +244,7 @@ export default class PartnerForm extends Component {
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
-    componentWillMount() {
+    componentWillMount = () => {
         this._mounted = true
         const { inputs, values } = this.state
         // const addressIn = findInput(inputs, 'address')
@@ -304,9 +307,13 @@ export default class PartnerForm extends Component {
     handleAddressChange = (e, { address }, i) => {
         const { inputs } = this.state
         const nameIn = findInput(inputs, inputNames.name)
-        const { company } = inputs[i].options.find(x => x.value === address) || {}
+        const { company } = inputs[i].options
+            .find(x => x.value === address) || {}
         findInput(inputs, inputNames.visibility).hidden = !!company
-        nameIn.hidden = !!company
+        nameIn.type = !!company ? 'hidden' : 'text'
+        if (company) {
+            nameIn.rxValue.next(company.name)
+        }
         this.setState({ inputs })
     }
 
@@ -349,7 +356,10 @@ export default class PartnerForm extends Component {
             addressIn.message = !err ? null : { content: err, status: 'error' }
             this.setState({ inputs })
         }
-        this.companySearchDP(promise).then(handleResult(true), handleResult(false))
+        this.companySearchDP(promise).then(
+            handleResult(true),
+            handleResult(false),
+        )
     }, 300)
 
     handleAddTag = (_, data) => {
@@ -362,10 +372,10 @@ export default class PartnerForm extends Component {
         this.setState({ inputs })
     }
 
-    handleChange = (_, values) => {
+    handleFormChange = (_, values, invalid) => {
         this.setState({ values })
-        if (!this.props.autoSave) return
-        // prevent saving if 
+        if (!this.props.autoSave || invalid) return
+        // prevent saving if missing one or more requiredFields
         if (!objHasKeys(values, Object.keys(requiredFields), true)) return
         this.doUpdate && this.handleSubmit()
     }
@@ -391,15 +401,17 @@ export default class PartnerForm extends Component {
             valuesTemp[inputNames.visibility] = visibilityTypes.PRIVATE
             visibilityIn.rxValue.next(visibilityTypes.PRIVATE)
         }
-        set(values)
-        this.setState({
-            message: closeOnSubmit || this.doUpdate ? null : {
-                content: this.doUpdate ? textsCap.submitSuccessMsg2 : textsCap.submitSuccessMsg1,
+        const success = set(values) && (!this.doUpdate || !autoSave)
+        const message = closeOnSubmit || this.doUpdate
+            ? null
+            : {
+                content: !success
+                    ? textsCap.submitFailedMsg
+                    : this.doUpdate ? textsCap.submitSuccessMsg2 : textsCap.submitSuccessMsg1,
                 icon: true,
-                status: 'success'
-            },
-            success: !this.doUpdate || !autoSave,
-        })
+                status: success ? 'success' : 'error',
+            }
+        this.setState({ message, success })
 
         // Open add partner form
         isFn(onSubmit) && onSubmit(true, values)
@@ -416,8 +428,8 @@ export default class PartnerForm extends Component {
         })
     }, 100)
 
-    validateAddress(e, { value: address }) {
-        if (!address) return
+    validateAddress = (e, { value: address }) => {
+        if (!address || this.doUpdate) return
         const partner = get(address)
         // attempting to add a new partner with duplicate address
         if (partner && !this.doUpdate) return (

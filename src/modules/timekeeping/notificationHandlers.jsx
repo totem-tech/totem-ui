@@ -62,7 +62,7 @@ export const handleInvitation = (projectId, workerAddress, accepted, notificatio
         const currentUserId = (getUser() || {}).id
         alertId = confirm({
             cancelButton: null,
-            content: loadingData,
+            content: textsCap.loadingData,
             loading: true,
         })
         const project = (await fetchProjects([projectId])).get(projectId)

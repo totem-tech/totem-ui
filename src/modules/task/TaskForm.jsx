@@ -555,7 +555,6 @@ export default class TaskForm extends Component {
         values[dueDateN] = this.dateStrToBlockNum(values[dueDateN], currentBlock)
 
         let { onSubmit, taskId, values: valueP = {} } = this.props
-        const { submitDisabled } = this.state
         const doUpdate = !!taskId
         const ownerAddress = valueP.owner || getSelected().address
         const amountXTX = values[this.names.amountXTX]
@@ -575,7 +574,6 @@ export default class TaskForm extends Component {
         const orderType = values[this.names.orderType]
         const thenCb = isLastInQueue => (success, err) => {
             if (!isLastInQueue && success) return
-            submitDisabled.submit = false
             this.setState({
                 closeText: success ? textsCap.close : undefined,
                 loading: false,
@@ -585,7 +583,7 @@ export default class TaskForm extends Component {
                     icon: true,
                     status: success ? 'success' : 'error',
                 },
-                submitDisabled,
+                submitInProgress: false,
                 success,
             })
 
@@ -689,7 +687,6 @@ export default class TaskForm extends Component {
             }
         }
 
-        submitDisabled.submit = true
         // add requests to the queue
         this.setState({
             closeText: textsCap.close,
@@ -699,7 +696,7 @@ export default class TaskForm extends Component {
                 icon: true,
                 status: 'loading',
             },
-            submitDisabled,
+            submitInProgress: true,
         })
         addToQueue(queueProps)
     }

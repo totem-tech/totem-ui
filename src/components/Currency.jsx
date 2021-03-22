@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { isValidNumber, isFn, isDefined } from '../utils/utils'
 import { convertTo, currencyDefault, rxSelected } from '../services/currency'
-import { useRxSubject } from '../services/react'
+import { subjectAsPromise, unsubscribe, useRxSubject } from '../services/react'
+import { rxIsConnected } from '../modules/chat/ChatClient'
 
 export const Currency = props => {
     let {
@@ -30,9 +31,17 @@ export const Currency = props => {
     useEffect(() => {
         if (!isValidNumber(value)) return () => { }
         let mounted = true
+        const subscriptions = {}
         const convert = async (value) => {
             if (!mounted) return
             try {
+                // if messaging service is not connected. Wait until connected
+                if (!rxIsConnected.value) {
+                    const [connectionPromise, unsubscriber] = subjectAsPromise(rxIsConnected, true)
+                    // makes sure to unsubscribe if component is unmounted
+                    subscriptions.isConnected = unsubscriber
+                    await connectionPromise
+                }
                 const [_, rounded] = await convertTo(
                     value || 0,
                     unit,
@@ -55,7 +64,10 @@ export const Currency = props => {
         // convert and display value supplied
         convert(value)
 
-        return () => mounted = false
+        return () => {
+            mounted = false
+            unsubscribe(subscriptions)
+        }
     }, [unit, unitDisplayed, value])
 
     const content = !isDefined(valueConverted) ? (emptyMessage || '') : (

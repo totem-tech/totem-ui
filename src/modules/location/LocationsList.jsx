@@ -13,7 +13,6 @@ const textsCap = translated({
 	addressLine1: 'address line 1',
 	addressLine2: 'address line 2',
     city: 'city',
-    close: 'close',
     country: 'country',
     create: 'create',
     delete: 'delete',
@@ -76,10 +75,10 @@ LocationsList.defaultProps = {
     includePartners: false,
 }
 
-export const showModal = size => confirm({
-    cancelButton: textsCap.close,
+export const showLocations = (size, tableProps = {}) => confirm({
+    cancelButton: null,
     confirmButton: null,
-    content: <LocationsList />,
+    content: <LocationsList { ...tableProps }/>,
     header: textsCap.myLocations,
     size,
 })

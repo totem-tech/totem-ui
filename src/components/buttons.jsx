@@ -14,6 +14,7 @@ import { createInbox } from '../modules/chat/chat'
 import { get as getPartner, getByUserId } from '../modules/partner/partner'
 import PartnerForm from '../modules/partner/PartnerForm'
 import { getUser } from '../modules/chat/ChatClient'
+import { useInverted } from '../services/window'
 
 const [texts, textsCap] = translated({
     accept: 'accept',
@@ -97,13 +98,14 @@ ButtonAcceptOrReject.defaultProps = {
  * @returns {Element}
  */
 export const ButtonGroup = React.memo(props => {
-    const { buttons, disabled, El, ignoreAttributes, loading, onAction, or, values } = props
+    const inverted = useInverted()
+    const { buttons, disabled, El, ignoreAttributes, loading, onAction, or, orText, values = [] } = props
     const buttonsEl = buttons.map((button, i) => [
         or && i > 0 && (
             <Button.Or {...{
                 key: 'or',
                 onClick: e => e.stopPropagation(),
-                text: texts.or,
+                text: orText,
             }} />
         ),
         <Button {...{
@@ -119,7 +121,7 @@ export const ButtonGroup = React.memo(props => {
             },
         }} />
     ].filter(Boolean))
-    return <El {...objWithoutKeys(props, ignoreAttributes)}>{buttonsEl}</El>
+    return <El {...objWithoutKeys({ ...props, children: buttonsEl, inverted }, ignoreAttributes)} />
 })
 ButtonGroup.propTypes = {
     buttons: PropTypes.arrayOf(PropTypes.object).isRequired,
@@ -146,8 +148,10 @@ ButtonGroup.defaultProps = {
         'loading',
         'onAction',
         'or',
+        'orText',
         'values',
-    ]
+    ],
+    orText: texts.or,
 }
 
 /**
@@ -160,16 +164,98 @@ ButtonGroup.defaultProps = {
  */
 export const ButtonGroupOr = props => <ButtonGroup {...props} or={true}/>
 
-export const Reveal = ({ content, hiddenContent, style, defaultVisible = false, El = 'div' }) => {
+export const Reveal = props => {
+    const {
+        content,
+        contentHidden,
+        defaultVisible = false,
+        El = 'div',
+        exclusive = true,
+        ignoreAttributes,
+        onClick,
+        onMouseEnter,
+        onMouseLeave,
+        style,
+        toggleOnClick = false,
+        toggleOnMousePresence = true,
+    } = props
     const [visible, setVisible] = useState(defaultVisible)
+    const [triggerEvent] = useState(() => (fn, args = []) => isFn(fn) && fn(...args))
+    const children = !visible
+        ? content
+        : exclusive
+            ? contentHidden
+            : (
+                <React.Fragment>
+                    {content}
+                    <div onClick={exclusive
+                        ? null 
+                        : e => e.preventDefault() | e.stopPropagation()
+                    }>
+                        {contentHidden}
+                    </div>
+                </React.Fragment>
+            )
     return (
         <El {...{
-            children: visible ? hiddenContent : content,
-            onMouseEnter: () => !visible && setVisible(true),
-            onMouseLeave: () => visible && setVisible(false),
-            style: { style },
+            ...objWithoutKeys(props, ignoreAttributes),
+            children,
+            onClick: (...args) => {
+                args[0].preventDefault()
+                toggleOnClick && setVisible(!visible)
+                triggerEvent(onClick)
+            },
+            onMouseEnter: () => {
+                toggleOnMousePresence && !visible && setVisible(true)
+                triggerEvent(onMouseEnter)
+            },
+            onMouseLeave: () => {
+                toggleOnMousePresence && visible && setVisible(false)
+                triggerEvent(onMouseLeave)
+            },
+            style:{
+                cursor: 'pointer',
+                ...style,
+            },
         }} />
     )
+}
+Reveal.propTypes = {
+    // content to show when visible
+    content: PropTypes.any.isRequired,
+    // content to show when not visible
+    contentHidden: PropTypes.any.isRequired,
+    // initial state of `hiddenContent`
+    defaultVisible: PropTypes.any,
+    El: PropTypes.oneOfType([
+        PropTypes.element,
+        PropTypes.func,
+        PropTypes.string,
+    ]).isRequired,
+    // whether to only display `content` and `hiddenContent` together or exclusively
+    exclusive: PropTypes.bool,
+    ignoreAttributes: PropTypes.arrayOf(PropTypes.string).isRequired,
+    // whether to triggle visibility on mouse click
+    toggleOnClick: PropTypes.bool,
+    // whether to trigger visibility on mouse enter and leave
+    toggleOnMousePresence: PropTypes.bool,
+}
+Reveal.defaultProps = {
+    defaultVisible: false,
+    El: 'div',
+    exclusive: true,
+    ignoreAttributes: [
+        'content',
+        'contentHidden',
+        'defaultVisible',
+        'El',
+        'exclusive',
+        'ignoreAttributes',
+        'toggleOnClick',
+        'toggleOnMousePresence',
+    ],
+    toggleOnClick: false,
+    toggleOnMousePresence: true,
 }
 
 // placeholder to potentially use this in the future to make all User IDs clickable and open private chat with user

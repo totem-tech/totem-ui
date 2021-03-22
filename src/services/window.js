@@ -14,6 +14,14 @@ export const rxOnline = new BehaviorSubject()
 export const rxInverted = new BehaviorSubject(rw().inverted)
 export const rxLayout = new BehaviorSubject(getLayout())
 export const rxVisible = new BehaviorSubject(true)
+export const gridClasses = [
+    '',
+    'col-2',
+    'col-3',
+    'col-4',
+    'col-5',
+    'col-6',
+]
 
 // forceLayout enforces and reverts a specific layout size and ignores layout change when window resizes
 //
@@ -38,8 +46,13 @@ export function getLayout() {
 export const getUrlParam = name => {
     const params = {}
     const regex = /[?&]+([^=&]+)=([^&]*)/gi
-    window.location.href.replace(regex, (_, key, value) => params[key] = decodeURIComponent(value))
-    return name ? params[name] || '' : params
+    window.location.href.replace(
+        regex,
+        (_, key, value) => params[key] = decodeURIComponent(value)
+    )
+    return name
+        ? params[name] || ''
+        : params
 }
 
 // gridColumns read/writes main content grid column count
@@ -96,7 +109,10 @@ export const toggleFullscreen = (selector) => {
 
 
     isFn(goFS) && setTimeout(() => goFS.call(el), isFS ? 50 : 0)
+    toggleFullscreen.lastSelector = el && selector || ''
+    return el
 }
+toggleFullscreen.lastSelector = null
 
 /**
  * @name    useInverted
@@ -122,9 +138,11 @@ export const useInverted = (reverse = false) => {
     })
     return inverted
 }
-
 // set layout name on window resize 
-window.onresize = () => rxLayout.next(getLayout())
+window.onresize = () => {
+    const layout = getLayout()
+    rxLayout.value !== layout && rxLayout.next(layout)
+}
 window.addEventListener('online', () => rxOnline.next(true))
 window.addEventListener('offline', () => rxOnline.next(false))
 let ignoredFirstInverted = false
@@ -142,6 +160,13 @@ rxLayout.subscribe(layout => {
 document.addEventListener('visibilitychange', () =>
     rxVisible.next(document.visibilityState === 'visible')
 )
+rxGridColumns.subscribe(numCol => {
+    const el = document.getElementById('main-content')
+    if (!el) return
+    const next = gridClasses[numCol - 1]
+    el.classList.remove('simple-grid', ...gridClasses.filter(c => c && c !== next))
+    next && el.classList.add('simple-grid', next)
+})
 export default {
     MOBILE,
     DESKTOP,

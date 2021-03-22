@@ -35,20 +35,52 @@ export default class FormBuilder extends Component {
 
 	// recursive interceptor for infinite level of child inputs
 	addInterceptor = (index, values) => (input, i) => {
-		const { inputsDisabled = [], inputsHidden = [] } = this.props
-		const { disabled, hidden, inputs: childInputs, name, rxValue, type, validate: validate } = input || {}
+		const {
+			inputsDisabled = [],
+			inputsHidden = [],
+			inputsReadOnly = [],
+		} = this.props
+		let {
+			disabled,
+			hidden,
+			inputs: childInputs,
+			name,
+			readOnly,
+			rxValue,
+			type,
+			validate: validate,
+		} = input || {}
 		const isGroup = `${type}`.toLowerCase() === 'group' && isArr(childInputs)
 		index = isDefined(index) ? index : null
 		const props = {
 			...input,
-			disabled: inputsDisabled.includes(name) || (isFn(disabled) ? disabled(values, i) : disabled),
-			hidden: inputsHidden.includes(name) || (!isFn(hidden) ? hidden : !!hidden(values, i)),
-			inputs: !isGroup ? undefined : childInputs.map(this.addInterceptor(index ? index : i, values)),
+			disabled: inputsDisabled.includes(name)
+				|| (isFn(disabled)
+					? disabled(values, i)
+					: disabled
+				),
+			hidden: inputsHidden.includes(name)
+				|| (!isFn(hidden)
+					? hidden
+					: !!hidden(values, i)
+				),
+			inputs: isGroup
+				? childInputs.map(this.addInterceptor(index ? index : i, values))
+				: undefined,
 			key: name,
-			onChange: isGroup ? undefined : (
-				(e, data) => this.handleChange(e, data, input, index ? index : i, index ? i : undefined)
-			),
-			validate: isFn(validate) ? (e, v) => validate(e, v, this.state.values, rxValue) : undefined,
+			readOnly: inputsReadOnly.includes(name) || readOnly,
+			onChange: isGroup
+				? undefined
+				: (e, data) => this.handleChange(
+					e,
+					data,
+					input,
+					index ? index : i,
+					index ? i : undefined,
+				),
+			validate: isFn(validate)
+				? (e, d) => validate(e, d, this.state.values, rxValue)
+				: undefined,
 		}
 		return props
 	}
@@ -81,21 +113,23 @@ export default class FormBuilder extends Component {
 
 	handleChange = async (event, data, input, index, childIndex) => {
 		try {
+			const { onChange: formOnChange } = this.props
 			const { name, onChange: onInputChange, onInvalid } = input
 			let { inputs } = this.props
-			const { onChange: formOnChange } = this.props
 			let { values } = this.state
-			const { value } = data
-			input._invalid = data.invalid
+			const { invalid = false, value } = data
+			// for FormBuilder internal use
+			input._invalid = invalid
 			input.value = value
 			values = this.getValues(inputs, values, name, value)
 			this.setState({ message: null, values })
 
-			const fn = data.invalid ? onInvalid : onInputChange
-			// trigger input items's onchange callback
+			// trigger input `onchange` callback if valid, otherwise `onInvalid` callback
+			const fn = invalid ? onInvalid : onInputChange
 			isFn(fn) && (await fn(event, values, index, childIndex))
 			// trigger form's onchange callback
-			isFn(formOnChange) && !data.invalid && (await formOnChange(event, values, index, childIndex))
+			isFn(formOnChange) && !invalid
+				&& await formOnChange(event, values, invalid)
 		} catch (err) {
 			console.error(err)
 			this.setState({
@@ -144,17 +178,17 @@ export default class FormBuilder extends Component {
 			closeText,
 			defaultOpen,
 			El,
+			formProps,
 			header,
 			headerIcon,
 			hideFooter,
-			inputs,
+			inputs = [],
 			loading,
 			message: msg,
 			modal,
 			modalId,
 			onClose,
 			onOpen,
-			onSubmit,
 			open,
 			size,
 			style,
@@ -166,6 +200,11 @@ export default class FormBuilder extends Component {
 			trigger,
 			widths,
 		} = this.props
+		if (submitText === null && closeText === null) {
+			// enable close on escase and dimmer click
+			closeOnDimmerClick = true
+			closeOnEscape = true
+		}
 		let { message: sMsg, open: sOpen, values } = this.state
 		// whether the 'open' status is controlled or uncontrolled
 		let modalOpen = isFn(onClose) ? open : sOpen
@@ -178,8 +217,11 @@ export default class FormBuilder extends Component {
 		msg = sMsg || msg
 		const msgStyle = { ...(modal ? styles.messageModal : styles.messageInline), ...(msg || {}).style }
 		const message = { ...msg, style: msgStyle }
-		let submitBtn, closeBtn
-		submitDisabled = !isObj(submitDisabled) ? !!submitDisabled : Object.values(submitDisabled).filter(Boolean).length > 0
+		let submitBtn
+		submitDisabled = !isObj(submitDisabled)
+			? !!submitDisabled
+			: Object.values(submitDisabled)
+				.filter(Boolean).length > 0
 		const formIsInvalid = isFormInvalid(inputs, values)
 		const shouldDisable = submitInProgress || submitDisabled || success || formIsInvalid
 		submitText = !isFn(submitText) ? submitText : submitText(values, shouldDisable)
@@ -201,7 +243,7 @@ export default class FormBuilder extends Component {
 						content: content || (!isStr(submitText) ? content : submitText),
 						disabled: isBool(disabled) ? disabled : shouldDisable,
 						icon,
-						loading: submitInProgress || loading,
+						loading: !success && (submitInProgress || loading),
 						onClick: isFn(onClick) ? onClick : this.handleSubmit,
 						positive: isBool(positive) ? positive : true,
 						style: {
@@ -224,7 +266,7 @@ export default class FormBuilder extends Component {
 			)
 			closeProps.negative = isDefined(closeProps.negative) ? closeProps.negative : true
 			closeProps.onClick = closeProps.onClick || this.handleClose
-			closeBtn = <Button {...closeProps} />
+			closeText = <Button {...closeProps} />
 		}
 
 		const FormEl = El || Invertible
@@ -233,11 +275,12 @@ export default class FormBuilder extends Component {
 				El: Form,
 				error: message.status === statuses.ERROR,
 				loading,
-				onSubmit,
+				onSubmit: (...args) => !shouldDisable && this.handleSubmit(...args),
 				style,
 				success: success || message.status === statuses.SUCCESS,
 				warning: message.status === statuses.WARNING,
 				widths,
+				...formProps,
 			})}>
 				{inputs.map(props => <FormInput {...props} />)}
 				{/* Include submit button if not a modal */}
@@ -250,44 +293,55 @@ export default class FormBuilder extends Component {
 			</FormEl>
 		)
 
-		return !modal ? form : (
-			<IModal
-				closeOnEscape={!!closeOnEscape}
-				closeOnDimmerClick={!!closeOnDimmerClick}
-				defaultOpen={defaultOpen}
-				dimmer={true}
-				onClose={this.handleClose}
-				onOpen={onOpen}
-				open={modalOpen}
-				size={size}
-				trigger={trigger}
-			>
-				<div className='modal-close' style={styles.closeButton}>
-					<Icon className='no-margin' color='grey' link name='times circle outline' onClick={this.handleClose} size='large' />
-				</div>
-				{header && (
-					<Header as={Modal.Header}>
-						<Header.Content style={styles.header}>
-							{headerIcon && <Icon name={headerIcon} size='large' />}
-							{header}
-						</Header.Content>
-						{subheader && (
-							<Header.Subheader>
-								<Text>{subheader}</Text>
-							</Header.Subheader>
-						)}
-					</Header>
-				)}
-				<Modal.Content>{form}</Modal.Content>
-				{!hideFooter && (
-					<Modal.Actions>
-						{closeBtn}
-						{submitBtn}
-					</Modal.Actions>
-				)}
-				{msg && <Message {...message} />}
-			</IModal>
-		)
+		return !modal
+			? form
+			: (
+				<IModal {...{
+					closeOnEscape: !!closeOnEscape,
+					closeOnDimmerClick: !!closeOnDimmerClick,
+					defaultOpen: defaultOpen,
+					dimmer: true,
+					id: `form-${modalId}`,
+					onClose: this.handleClose,
+					onOpen: onOpen,
+					open: modalOpen,
+					size: size,
+					trigger: trigger,
+				}}>
+					<div className='modal-close' style={styles.closeButton}>
+						<Icon {...{
+							className: 'no-margin',
+							color: 'grey',
+							link: true,
+							name: 'times circle outline',
+							onClick: this.handleClose,
+							size: 'large',
+						}} />
+					</div>
+					{header && (
+						<Header as={Modal.Header}>
+							<Header.Content style={styles.header}>
+								{headerIcon && <Icon name={headerIcon} size='large' />}
+								{header}
+							</Header.Content>
+							{subheader && (
+								<Header.Subheader {...{
+									children: subheader,
+									style: { color: 'grey' },
+								}} />
+							)}
+						</Header>
+					)}
+					<Modal.Content children={form} />
+					{!hideFooter && (
+						<Modal.Actions>
+							{closeText}
+							{submitBtn}
+						</Modal.Actions>
+					)}
+					{msg && <Message {...message} />}
+				</IModal>
+			)
 	}
 }
 
@@ -297,10 +351,15 @@ FormBuilder.propTypes = {
 	closeOnSubmit: PropTypes.bool,
 	closeText: PropTypes.oneOfType([PropTypes.element, PropTypes.object, PropTypes.string]),
 	defaultOpen: PropTypes.bool,
+	El: PropTypes.elementType,
+	// props to be passed on to the Form or `El` component 
+	formProps: PropTypes.object,
 	// disable inputs on load
 	inputsDisabled: PropTypes.arrayOf(PropTypes.string),
 	// inputs to hide
 	inputsHidden: PropTypes.arrayOf(PropTypes.string),
+	// read only inputs
+	inputsReadOnly: PropTypes.arrayOf(PropTypes.string),
 	header: PropTypes.string,
 	headerIcon: PropTypes.string,
 	hideFooter: PropTypes.bool,
@@ -351,11 +410,13 @@ FormBuilder.defaultProps = {
 		// see https://react.semantic-ui.com/collections/message/ for more options
 	},
 	submitText: textsCap.submit,
+	size: 'tiny',
 }
 
 /**
  * @name    fillValues
  * @summary fill values into array of inputs
+ * 
  * @param   {Array}     inputs
  * @param   {Object}    values values to fill into the input. Property name/key is the name of the input.
  * @param   {Boolean}   forceFill whether to override existing, if any.
@@ -389,20 +450,54 @@ export const fillValues = (inputs, values, forceFill) => {
 	return inputs
 }
 
-export const resetValues = (inputs = []) => {
-	if (!isArr(inputs)) return
-	inputs.forEach(input => {
-		const { inputs, rxValue, type } = input || {}
-		if (`${type}`.toLowerCase() === 'group') {
-			resetValues(inputs)
-		} else {
-			input.value = undefined
-			rxValue && rxValue.next(undefined)
-		}
-		return input
-	})
+
+/**
+ * @name	resetInput
+ * @summary	reset an input's value and rxValue to undefined
+ * 
+ * @param	{Object} input 
+ */
+export const resetInput = input => {
+	if (!isObj(input)) return
+	if (input.hasOwnProperty('value')) input.value = undefined
+	if (input.hasOwnProperty('rxValue')) input.rxValue.next(undefined)
 }
 
+/**
+ * @name	resetForm
+ * @summary	reset given inputs' values to undefined
+ * 
+ * @param	{Array} inputs 
+ */
+export const resetForm = inputs => inputsForEach(inputs, resetInput)
+
+/**
+ * @name	inputsForEach
+ * @summary execute a callback for each input including group inputs
+ * 
+ * @param	{Array}		inputs 
+ * @param	{Function}	callback 
+ */
+export const inputsForEach = (inputs = [], callback) => {
+	if (!isArr(inputs)) return
+	for (let i = 0; i < inputs.length; i++) {
+		const input = inputs[i] || {}
+		const { inputs: childInputs, type } = input
+		const isGroup = `${type}`.toLowerCase() === 'group'
+		if (isGroup) inputsForEach(childInputs, callback)
+		callback(input, inputs)
+	}
+}
+
+/**
+ * @name	isInputInvalid
+ * @summary	checks if an input is invalid
+ * 
+ * @param	{Object}	formValues 
+ * @param	{Object}	input
+ * 
+ * @returns	{Boolean}
+ */
 export const isInputInvalid = (formValues = {}, input) => {
 	let { _invalid, groupValues, hidden, inputs, invalid, name, required, rxValue, type, value } = input || {}
 	type = (type || 'text').toLowerCase()
@@ -429,7 +524,15 @@ export const isInputInvalid = (formValues = {}, input) => {
 	
 	return isCheckbox && required ? !value : !hasValue(value)
 }
-
+/**
+ * @name	isFormInvalid
+ * @summary	checks if oe or more of a given list of inputs is invalid
+ * 
+ * @param	{Array}		inputs
+ * @param	{Object}	values
+ * 
+ * @returns	{Boolean}
+ */
 export const isFormInvalid = (inputs = [], values = {}) => {
 	for (let i = 0; i < inputs.length; i++) {
 		if (isInputInvalid(values, inputs[i])) return true
@@ -451,24 +554,12 @@ export const findInput = (inputs, name) => {
 	}
 }
 
-// show message on a input or if input name not found/undefined, show form message
-// Should be used with a form component and be invoked with .call/.apply
-export function showMessage(inputName, content, status, header) {
-	const { inputs } = this.state
-	const message = { content, header, status }
-	const input = findInput(inputs, inputName)
-	if (!input) this.setState({ message })
-
-	input.message = message
-	input.invalid = status === statuses.ERROR
-	this.setState({ inputs })
-}
-
 const styles = {
 	closeButton: {
 		position: 'absolute',
 		top: 15,
 		right: 15,
+		zIndex: 1, // for modals without header
 	},
 	messageInline: {
 		padding: 15,

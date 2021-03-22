@@ -1,28 +1,54 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import { useInverted } from '../services/window'
+import { objWithoutKeys } from '../utils/utils'
 
-export default React.memo(props => {
+function Text(props) {
     const {
-        className,
-        children,
-        color = 'black',
-        EL = 'span',
-        invertedColor = 'white',
-        reverseInverted = false,
+        color,
+        El,
+        ignoreAttributes,
+        invertedColor,
+        reverseInverted,
         style
     } = props
     const inverted = useInverted(reverseInverted)
     
     return (
-        <EL {...{
-            className,
+        <El {...{
+            ...objWithoutKeys(props, ignoreAttributes),
             style: {
                 background: 'transparent',
                 color: inverted ? invertedColor : color,
                 ...style,
             },
-        }}>
-            {children}
-        </EL>
+        }}/>
     )
-})
+}
+Text.propTypes = {
+    color: PropTypes.string,
+    El: PropTypes.oneOfType([
+        PropTypes.func,
+        PropTypes.string,
+    ]).isRequired,
+    ignoreAttributes: PropTypes.array.isRequired,
+    invertedColor: PropTypes.string,
+    // whether to reverse the value of inverted. See `useInverted` for more details
+    reverseInverted: PropTypes.oneOfType([
+        PropTypes.bool,
+        PropTypes.string,
+    ]),
+}
+Text.defaultProps = {
+    color: 'black',
+    El: 'span',
+    ignoreAttributes: [
+        'El',
+        'ignoreAttributes',
+        'invertedColor',
+        'reverseInverted',
+    ],
+    invertedColor: 'white',
+    reverseInverted: false,
+}
+export default React.memo(Text)

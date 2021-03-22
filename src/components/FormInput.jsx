@@ -1,8 +1,9 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Accordion, Button, Dropdown, Form, Icon, Input, TextArea } from 'semantic-ui-react'
+import { BehaviorSubject } from 'rxjs'
+import { Accordion, Button, Checkbox, Dropdown, Form, Icon, Input, TextArea } from 'semantic-ui-react'
 import PromisE from '../utils/PromisE'
-import { deferred, hasValue, isArr, isFn, isObj, isStr, objWithoutKeys, searchRanked, isBool, isPromise } from '../utils/utils'
+import { deferred, hasValue, isArr, isFn, isObj, isStr, objWithoutKeys, searchRanked, isBool, isPromise, isSubjectLike, isValidNumber } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
 import Message from './Message'
 import Invertible from './Invertible'
@@ -43,7 +44,9 @@ const NON_ATTRIBUTES = Object.freeze([
 	'invalid',
 	'_invalid',
 	'inlineLabel',
+	'isMobile',
 	'label',
+	'labelDetails',
 	'trueValue',
 	'falseValue',
 	'styleContainer',
@@ -54,6 +57,10 @@ const NON_ATTRIBUTES = Object.freeze([
 	'onInalid',
 	'customMessages',
 	'ignoreAttributes',
+	'onInvalid',
+	// dynamic options for input types with options
+	'rxOptions',
+	'rxOptionsModifier',
 ])
 export const nonValueTypes = Object.freeze(['button', 'html'])
 
@@ -62,9 +69,8 @@ export class FormInput extends Component {
 		super(props)
 
 		const { defer } = props
-		this.state = {
-			message: undefined,
-		}
+		this.state = { message: undefined }
+		this.value = undefined
 		this.setMessage = defer !== null ? deferred(this.setMessage, defer) : this.setMessage
 
 		this.originalSetState = this.setState
@@ -74,11 +80,27 @@ export class FormInput extends Component {
 	componentWillMount() {
 		this._mounted = true
 		this.subscriptions = {}
-		const { rxValue } = this.props
-		if (!isObj(rxValue) || !isFn(rxValue.subscribe)) return
-		this.subscriptions.rxValue = rxValue.subscribe(value => {
-			this.handleChange({}, { ...this.props, value })
-		})
+		const { rxOptions, rxOptionsModifier, rxValue } = this.props
+		if (isSubjectLike(rxValue)) {
+			this.subscriptions.rxValue = rxValue.subscribe(value => {
+				if (this.value === value) return
+				this.handleChange({ }, { ...this.props, value })
+			})
+		}
+		if (isSubjectLike(rxOptions)) {
+			this.subscriptions.rxOptions = rxOptions.subscribe(options => {
+				options = !isFn(rxOptionsModifier)
+					? options
+					: rxOptionsModifier(options)
+				isArr(options) && this.setState({ options })
+				if (!isSubjectLike(rxValue) || !hasValue(this.value)) return
+				const isOption = !!options.find(o => o.value === this.value)
+				if (isOption) return
+				// value no longer exists in the options list
+				// force clear selection
+				rxValue.next(undefined)		
+			})
+		}
 	}
 
 	componentWillUnmount = () => {
@@ -92,7 +114,9 @@ export class FormInput extends Component {
 			falseValue: falseValue = false,
 			integer,
 			onChange,
+			regex,
 			required,
+			rxValue,
 			trueValue: trueValue = true,
 			type,
 			validate,
@@ -107,16 +131,17 @@ export class FormInput extends Component {
 		const isCheck = ['checkbox', 'radio'].indexOf(typeLower) >= 0
 		const hasVal = hasValue(isCheck ? data.checked : data.value)
 		const customMsgs = { ...textsCap, ...customMessages }
-		let errMsg, validatorConfig
+		let err, validatorConfig
 
-		if (hasVal && !errMsg) {
+		if (hasVal && !err) {
 			switch (typeLower) {
 				case 'checkbox':
 				case 'radio':
 					// Sematic UI's Checkbox component only supports string and number as value
 					// This allows support for any value types
 					data.value = data.checked ? trueValue : falseValue
-					if (required && !data.checked) errMsg = textsCap.required
+					if (!required || data.checked) break
+					err = textsCap.required
 					break
 				case 'date':
 					validatorConfig = { type: TYPES.date }
@@ -131,44 +156,48 @@ export class FormInput extends Component {
 					validatorConfig = { type: TYPES.hex }
 				case 'text':
 				case 'textarea':
+				// default: 
 					validatorConfig = validatorConfig || { type: TYPES.string }
 					customMsgs.lengthMax = textsCap.maxLengthText
 					customMsgs.lengthMin = textsCap.minLengthText
+					break
 			}
 		}
 
-		if ((!errMsg && hasVal && validationTypes.includes(typeLower)) || validatorConfig) {
-			errMsg = validator.validate(
+		const requireValidator = (hasVal && validationTypes.includes(typeLower)) || validatorConfig
+		if (!err && requireValidator) {
+			err = validator.validate(
 				data.value,
-				{
-					...this.props,
-					...validatorConfig,
-				},
+				{ ...this.props, ...validatorConfig },
 				customMsgs,
 			)
 		}
 
-		let message = !errMsg ? null : { content: errMsg, status: 'error' }
+		let message = !err ? null : { content: err, status: 'error' }
 		const triggerChange = () => {
-			data.invalid = !!errMsg
+			data.invalid = !!err
 			isFn(onChange) && onChange(event, data, this.props)
+			this.value = data.value
+			rxValue && rxValue.next(data.value)
 			this.setMessage(message)
 		}
 		if (message || !isFn(validate)) return triggerChange()
 
-		const handleValidate = vMsg => {
-			if (vMsg === true) {
-				// means field is invalid but no message to display
-				errMsg = true
-				return triggerChange()
-			}
-			const isMsg = !vMsg && !isStr(vMsg) && !React.isValidElement(vMsg)
-			message = isMsg ? vMsg : { content: `${vMsg}`, status: 'error' }
-			errMsg = message && message.status === 'error' ? message.content : errMsg
+		const handleValidate = msg => {
+			err = !!msg
+			const isEl = React.isValidElement(msg)
+			message = isBool(msg) || !msg 
+				? null // no need to display a message
+				: {
+					content: isEl ? msg : `${msg}`,
+					status: 'error',
+					...(!isEl && isObj(msg) ? msg : {}),
+				}
 			triggerChange()
 		}
 
 		// forces any unexpected error to be handled gracefully
+		// and add loading spinner if `validate()` returns a promise
 		PromisE(async () => {
 			let result = validate(event, data)
 			if (!isPromise(result)) return result
@@ -177,7 +206,10 @@ export class FormInput extends Component {
 			result = await result
 			this.setState({ loading: false })
 			return result
-		}).then(handleValidate, handleValidate)
+		}).then(
+			handleValidate,
+			handleValidate,
+		)
 	}
 
 	setMessage = (message = {}) => this.setState({ message })
@@ -194,6 +226,7 @@ export class FormInput extends Component {
 			inlineLabel,
 			invalid,
 			label,
+			labelDetails,
 			loading,
 			message: externalMsg,
 			name,
@@ -205,7 +238,11 @@ export class FormInput extends Component {
 			width,
 		} = this.props
 		let useInput = useInputOrginal
-		const { loading: loadingS, message: internalMsg } = this.state
+		const {
+			loading: loadingS,
+			message: internalMsg,
+			options,
+		} = this.state
 		const message = internalMsg || externalMsg
 		let hideLabel = false
 		let inputEl = ''
@@ -234,15 +271,18 @@ export class FormInput extends Component {
 			case 'radio':
 				attrs.toggle = typeLC !== 'radio' && attrs.toggle
 				attrs.type = 'checkbox'
+				attrs.label = label
 				delete attrs.value
 				hideLabel = true
-				inputEl = <Checkbox {...attrs} label={label} />
+				inputEl = <Checkbox {...attrs} />
 				break
 			case 'checkbox-group':
 			case 'radio-group':
-				attrs.rxValue = rxValue
 				attrs.inline = inline
+				attrs.options = !!options ? options : attrs.options
 				attrs.radio = typeLC === 'radio-group' ? true : attrs.radio
+				attrs.rxValue = rxValue
+				attrs.value = (rxValue ? rxValue.value : attrs.value) || (attrs.multiple ? [] : '')
 				inputEl = <CheckboxGroup {...attrs} />
 				break
 			case 'date':
@@ -251,17 +291,34 @@ export class FormInput extends Component {
 				inputEl = <DateInput {...attrs} />
 				break
 			case 'dropdown':
+				attrs.openOnFocus = isBool(attrs.openOnFocus)
+					? attrs.openOnFocus
+					: false // change default to false
+				attrs.disabled = attrs.disabled || attrs.readOnly
 				attrs.inline = inline
 				// if number of options is higher than 50 and if lazyLoad is disabled, can slowdown FormBuilder
 				attrs.lazyLoad = isBool(attrs.lazyLoad) ? attrs.lazyLoad : true
 				attrs.search = isArr(attrs.search) ? searchRanked(attrs.search) : attrs.search
-				attrs.style = { ...attrs.style }//maxWidth: '100%', minWidth: '100%',
+				attrs.style = { ...attrs.style }
+				attrs.options = !!options ? options : attrs.options
+				attrs.value = (rxValue ? rxValue.value : attrs.value) || (attrs.multiple ? [] : '')
 				inputEl = <Dropdown {...attrs} />
 				break
 			case 'group':
 				// NB: if `widths` property is used `unstackable` property is ignored by Semantic UI!!!
 				isGroup = true
-				inputEl = attrs.inputs.map((props, i) => <FormInput key={attrs.name + i} {...props} />)
+				const numChild = attrs.inputs.filter(({ hidden }) => !hidden).length
+				const childContainerStyle = attrs.widths !== 'equal'
+					? {}
+					: { width: `${100 / numChild}%` }
+				inputEl = attrs.inputs.map(childInput =>  (
+					<FormInput {...{
+						...childInput,
+						key: childInput.name,
+						styleContainer: { ...childContainerStyle, ...childInput.styleContainer },
+						width: childInput.width || (attrs.widths === 'equal' ? null : attrs.widths),
+					}} />
+				))
 				break
 			case 'hidden':
 				hideLabel = true
@@ -275,24 +332,36 @@ export class FormInput extends Component {
 				inputEl = <UserIdInput {...attrs} />
 				break
 			case 'file':
+				delete attrs.value
 				useInput = true
 			default:
 				attrs.value = !hasValue(attrs.value) ? '' : attrs.value //forces inputs to be controlled
 				attrs.fluid = !useInput ? undefined : attrs.fluid
 				attrs.label = inlineLabel || attrs.label
-				const El = useInput ? Input : Form.Input
+				const El = useInput || inlineLabel ? Input : Form.Input
 				inputEl = <El {...attrs} />
 		}
 
 		if (!isGroup) return (
-			<Form.Field
-				error={(message && message.status === 'error') || !!error || !!invalid}
-				required={required}
-				style={styleContainer}
-				title={editable ? undefined : textsCap.readOnlyField}
-				width={width}
-			>
-				{!hideLabel && label && <label htmlFor={name}>{label}</label>}
+			<Form.Field {...{
+				error: (message && message.status === 'error') || !!error || !!invalid,
+				required,
+				style: styleContainer,
+				title: editable ? undefined : textsCap.readOnlyField,
+				width: width === null ? undefined : width,
+			}}>
+				{!hideLabel && label && [
+					<label htmlFor={name} key='label'>{label}</label>,
+					labelDetails && (
+						<div
+							key='labelDetails'
+							style={{ lineHeight: '15px', margin: '-5px 0 8px 0' }}>
+							<small style={{ color: 'grey' }}>
+								{labelDetails}
+							</small>
+						</div>
+					)
+				]}
 				{inputEl}
 				{message && <Message {...message} />}
 			</Form.Field>
@@ -301,10 +370,10 @@ export class FormInput extends Component {
 		let groupEl = (
 			<React.Fragment>
 				<Form.Group {...{
+					...attrs,
 					className: 'form-group',
 					...objWithoutKeys(attrs, ['inputs']),
 					style: {
-						// margin: '0px -5px 15px -5px',
 						...styleContainer,
 						...attrs.style,
 					},
@@ -324,7 +393,11 @@ export class FormInput extends Component {
 			<Invertible {...{
 				El: Accordion,
 				...objWithoutKeys(accordion, NON_ATTRIBUTES),
-				style:{ marginBottom: 15, ...accordion.style },
+				style: {
+					marginBottom: 15,
+					width: '100%',
+					...accordion.style,
+				},
 			}}>
 				<Accordion.Title
 					active={!collapsed}

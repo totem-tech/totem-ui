@@ -4,8 +4,8 @@ import DataStorage from '../../utils/DataStorage'
 import { keyring } from '../../utils/polkadotHelper'
 import { isObj, isStr, objClean, objHasKeys } from '../../utils/utils'
 
-const DEFAULT_NAME = 'Default' // default identity name
 const identities = new DataStorage('totem_identities')
+export const DEFAULT_NAME = 'Default' // default identity name
 export const rxIdentities = identities.rxData
 export const rxSelected = new BehaviorSubject()
 const USAGE_TYPES = Object.freeze({

@@ -381,7 +381,7 @@ export default class TimekeepingForm extends Component {
 
     handleValuesChange = (_, formValues) => {
         let { inputs, values } = this.state
-        values = objCopy(formValues, values)
+        values = { ...values, ...formValues }
         const { blockEnd, blockStart, manualEntry } = values
         const duraIn = inputs.find(x => x.name === 'duration')
         let duration
@@ -395,7 +395,7 @@ export default class TimekeepingForm extends Component {
 
         // Disable duration input when in timer mode
         duraIn.readOnly = !manualEntry
-        this.setState({ inputs: inputs })
+        this.setState({ inputs, values })
         setTimeout(() => this.saveValues(null, duration))
     }
 
@@ -613,6 +613,8 @@ TimekeepingForm.defaultProps = {
     closeOnEscape: true,
     closeOnDimmerClick: true,
     header: wordsCap.timekeeping,
+    // prevents multiple modal being open
+    modalId: 'TimekeepingForm',
     size: 'tiny'
 }
 

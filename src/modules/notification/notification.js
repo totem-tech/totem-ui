@@ -151,16 +151,17 @@ export const setItemViewHandler = (type, childType, renderer) => {
 /**
  * @name    toggleRead
  * @summary toggle notification read status
+ * 
  * @param   {String} id Notification ID
  */
 export const toggleRead = id => {
     const item = notifications.get(id)
     if (!item) return
-    item.read = !item.read
-    notifications.set(id, item)
+    const read = !item.read
+    notifications.set(id, { ...item, read })
 
     addToQueue({
-        args: [id, item.read, false],
+        args: [id, read, false],
         func: 'notificationSetStatus',
         recordId: id,
         type: QUEUE_TYPES.CHATCLIENT,

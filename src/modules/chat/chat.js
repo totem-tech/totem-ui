@@ -1,7 +1,7 @@
 import DataStorage from '../../utils/DataStorage'
 import uuid from 'uuid'
 import { BehaviorSubject, Subject } from 'rxjs'
-import { arrUnique, isObj, isValidNumber, isDefined, objClean } from '../../utils/utils'
+import { arrUnique, isObj, isValidNumber, isDefined, objClean, isArr } from '../../utils/utils'
 import client, { getUser, rxIsLoggedIn } from './ChatClient'
 import { addToQueue, QUEUE_TYPES, rxOnSave, statuses } from '../../services/queue'
 import storage from '../../services/storage'
@@ -87,11 +87,15 @@ export const getChatUserIds = (includeTrollbox = true) => arrUnique(Object.keys(
 
 // returns inbox storage key
 export const getInboxKey = receiverIds => {
+    receiverIds = isArr(receiverIds)
+        ? receiverIds
+        : [receiverIds].filter(Boolean)
     const { id: userId } = getUser() || {}
-    receiverIds = arrUnique(receiverIds).filter(id => id !== userId)
+    receiverIds = arrUnique(receiverIds)
+        .filter(id => id !== userId)
 
     // Trollbox
-    if (receiverIds.includes(TROLLBOX)) return TROLLBOX
+    if (receiverIds.includes(TROLLBOX) || !receiverIds.length) return TROLLBOX
     // Trollbox
     if (receiverIds.includes(TROLLBOX_ALT)) return TROLLBOX
     // Private chat
@@ -103,7 +107,9 @@ export const getInboxKey = receiverIds => {
         .join()
 }
 
-export const getMessages = inboxKey => !inboxKey ? chatHistory.getAll() : [...chatHistory.get(inboxKey)]
+export const getMessages = inboxKey => !inboxKey
+    ? chatHistory.getAll()
+    : [...chatHistory.get(inboxKey) || []]
 
 // get list of User IDs by inbox key
 export const getInboxUserIds = inboxKey => arrUnique((chatHistory.get(inboxKey) || []).map(x => x.senderId))
@@ -191,7 +197,7 @@ export const removeMessage = (inboxKey, id) => {
     rxInboxListChanged.next(uuid.v1())
 }
 
-const saveMessage = msg => {
+const saveMessage = (msg, trigger = false) => {
     let { action, message, senderId, receiverIds, encrypted, timestamp, status = 'success', id, errorMessage } = msg
     receiverIds = receiverIds.sort()
     const inboxKey = getInboxKey(receiverIds)
@@ -237,6 +243,8 @@ const saveMessage = msg => {
     // Store (global) last received (including own) message timestamp.
     // This is used to retrieve missed messages from server
     rw({ lastMessageTS: timestamp })
+
+    trigger && rxMsg.next([inboxKey, msg])
 }
 
 // send message
@@ -256,7 +264,7 @@ export const send = (receiverIds, message, encrypted = false) => {
     }
 
     // save as loading (sending in-progress)
-    saveMessage(msg)
+    saveMessage(msg, true)
 
     addToQueue({
         args: [
@@ -281,7 +289,7 @@ rxIsLoggedIn.subscribe(loggedIn => {
     // check & retrieve any unread mesages
     client.messageGetRecent(lastMessageTS, (err, messages = []) => {
         if (err) return console.log('Failed to retrieve recent inbox messages', err)
-        messages.forEach(saveMessage)
+        messages.forEach(msg => saveMessage(msg, true))
     })
 
     checkOnlineStatus()
@@ -310,8 +318,7 @@ client.onMessage((m, s, r, e, t, id, action) => {
         status: 'success',
         timestamp: t,
     }
-    saveMessage(msg)
-    rxMsg.next([inboxKey, msg])
+    saveMessage(msg, true)
 })
 
 // initialize
@@ -338,7 +345,10 @@ setTimeout(() => {
         const visible = rxVisible.value
         const inboxKey = rxOpenInboxKey.value
         const expanded = rxExpanded.value
-        const doUpdate = visible && inboxKey && (getLayout() !== MOBILE || expanded) && inboxSettings(inboxKey).unread
+        const doUpdate = visible
+            && inboxKey
+            && (getLayout() !== MOBILE || expanded)
+            && inboxSettings(inboxKey).unread
         doUpdate && inboxSettings(inboxKey, { unread: 0 })
     }
     rxOpenInboxKey.subscribe(key => {
@@ -400,7 +410,7 @@ export default {
     removeInboxMessages,
     rxExpanded,
     rxInboxListChanged,
-    rxNewMsgReceived: rxMsg,
+    rxMsg,
     rxOpenInboxKey,
     rxUnreadCount,
     rxVisible,

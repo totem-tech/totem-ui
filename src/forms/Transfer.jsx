@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { Icon } from 'semantic-ui-react'
+import { Button, Icon } from 'semantic-ui-react'
 import { ss58Decode } from '../utils/convert'
 import { getTxFee } from '../utils/polkadotHelper'
 import { arrSort, textEllipsis, deferred, isValidNumber } from '../utils/utils'
@@ -24,7 +24,7 @@ const textsCap = translated({
     amount: 'amount',
     amountReceivedLabel: 'payment amount',
     amountReceivedPlaceholder: 'enter amount',
-    amountSentLabel: 'amount in your display currency',
+    amountSentLabel: 'amount in display currency',
     amountToSend: 'amount to send',
     addPartner: 'add partner',
     availableBalance: 'available balance',
@@ -84,6 +84,7 @@ export default class Transfer extends Component {
                 {
                     label: undefined,
                     name: this.names.from,
+                    onChange: this.handleCurrencyReceivedChange,
                     options: [],
                     required: true,
                     rxValue: new BehaviorSubject(''),
@@ -143,19 +144,21 @@ export default class Transfer extends Component {
                             rxValue: new BehaviorSubject(''),
                             type: 'number',
                             useInput: true,
-                            width: 8,
+                            width: 9,
                         },
                         {
+                            // mimics a `selection` dropdown without limitting the width of the dropdown list
+                            className: 'selection fluid',
                             disabled: true,
                             label: textsCap.currencySentLabel,
                             name: this.names.currencySent,
-                            // onChange: this.handleCurrencySentChange,
+                            onChange: this.handleCurrencyReceivedChange,
                             options: [],
                             rxValue: new BehaviorSubject(),
                             search: ['text', 'description'],
-                            selection: true,
+                            selection: false,
                             type: 'dropdown',
-                            width: 8,
+                            width: 7,
                         },
                     ],
                     type: 'group',
@@ -178,16 +181,19 @@ export default class Transfer extends Component {
                             maxLength: 12,
                             min: 0,
                             name: this.names.amountReceived,
-                            onChange: deferred(this.handleAmountReceivedChange, 500),
+                            onChange: this.handleAmountReceivedChange,
                             onInvalid: this.handleAmountReceivedInvalid,
                             placeholder: textsCap.amountReceivedPlaceholder,
                             required: true,
                             rxValue: new BehaviorSubject(''),
                             type: 'number',
                             useInput: true,
-                            width: 8,
+                            width: 9,
                         },
                         {
+                            // mimics a `selection` dropdown without limitting the width of the dropdown list
+                            className: 'selection fluid',
+                            direction: 'left',
                             label: textsCap.currencyReceivedLabel,
                             name: this.names.currencyReceived,
                             onChange: this.handleCurrencyReceivedChange,
@@ -195,9 +201,9 @@ export default class Transfer extends Component {
                             required: true,
                             rxValue: new BehaviorSubject(),
                             search: ['text', 'description'],
-                            selection: true,
+                            selection: false,
                             type: 'dropdown',
-                            width: 8,
+                            width: 7,
                         },
                     ],
                 },
@@ -279,15 +285,15 @@ export default class Transfer extends Component {
 
     getTxFeeEl = feeXTX => {
         const { values } = this.state
-        const currentSent = values[this.names.currencySent]
+        // const currentSent = values[this.names.currencySent]
 
         return (
-            <Text EL='div' style={{ margin: `${feeXTX ? '-' : ''}15px 0 15px 3px` }}>
+            <Text El='div' style={{ margin: `${feeXTX ? '-' : ''}15px 0 15px 3px` }}>
                 {feeXTX && (
                     <Currency {...{
                         prefix: `${textsCap.includesTxFee} `,
                         value: feeXTX,
-                        unitDisplayed: currentSent,
+                        // unitDisplayed: currentSent,
                     }} />
                 )}
                 <div style={{
@@ -301,7 +307,7 @@ export default class Transfer extends Component {
         )
     }
 
-    handleAmountReceivedChange = async (_, values) => {
+    handleAmountReceivedChange =  deferred(async (_, values) => {
         const amountReceived = values[this.names.amountReceived]
         const currencyReceived = values[this.names.currencyReceived]
         const from = values[this.names.from]
@@ -325,7 +331,7 @@ export default class Transfer extends Component {
             currencyReceived,
             currencyDefault,
         )
-        this.amountXTX = res[0]
+        this.amountXTX = eval(res[1] || '') || 0
         const resAmountSent = await convertTo(
             this.amountXTX,
             currencyDefault,
@@ -358,9 +364,9 @@ export default class Transfer extends Component {
 
         amountSentIn.rxValue.next(resAmountSent[1])
         this.setState({ inputs, submitDisabled })
-    }
+    }, 500)
 
-    handleAmountReceivedInvalid = () => {
+    handleAmountReceivedInvalid =  deferred(() => {
         const { inputs } = this.state
         const amountReceivedIn = findInput(inputs, this.names.amountReceived)
         const amountReceivedGrpIn = findInput(inputs, this.names.amountReceivedGroup)
@@ -369,9 +375,9 @@ export default class Transfer extends Component {
         amountReceivedIn.icon = 'money'
         amountReceivedGrpIn.message = null
         this.setState({ inputs })
-    }
+    }, 100)
 
-    handleCurrencyReceivedChange = (_, values) => {
+    handleCurrencyReceivedChange = deferred((_, values) => {
         if (!this.currencies) return
         const { inputs } = this.state
         const amountReceived = values[this.names.amountReceived]
@@ -380,10 +386,11 @@ export default class Transfer extends Component {
         const currencyObj = this.currencies.find(x => x.ISO === currencyReceived) || {}
         amountReceivedIn.decimals = parseInt(currencyObj.decimals || 0)
         this.setState({ inputs })
+
         if (!isValidNumber(amountReceived)) return
         amountReceivedIn.rxValue.next('')
         amountReceivedIn.rxValue.next(amountReceived)
-    }
+    }, 200)
 
     handleSubmit = (_, values) => {
         const amountReceived = values[this.names.amountReceived]

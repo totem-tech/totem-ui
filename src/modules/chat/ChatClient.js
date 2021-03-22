@@ -1,6 +1,6 @@
-import io from 'socket.io-client'
+import ioClient from 'socket.io-client'
 import { BehaviorSubject } from 'rxjs'
-import { isFn, isStr } from '../../utils/utils'
+import { isFn, isObj, isStr, objWithoutKeys } from '../../utils/utils'
 import { translated } from '../../services/language'
 import storage from '../../services/storage'
 
@@ -12,9 +12,11 @@ const MODULE_KEY = 'messaging'
 const PREFIX = 'totem_'
 // include any ChatClient property that is not a function or event that does not have a callback
 const nonCbs = ['isConnected', 'disconnect']
-export const rxIsLoggedIn = new BehaviorSubject(false)
 // read or write to messaging settings storage
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
+export const rxIsConnected = new BehaviorSubject(false)
+export const rxIsLoggedIn = new BehaviorSubject(null)
+export const rxIsRegistered = new BehaviorSubject(!!(rw().user || {}).id)
 
 //- migrate existing user data
 const deprecatedKey = PREFIX + 'chat-user'
@@ -32,11 +34,33 @@ if (rw().history) rw({ history: null })
 // retrieves user credentails from local storage
 export const getUser = () => rw().user
 export const setUser = (user = {}) => rw({ user })
+/**
+ * @name    referralCode
+ * @summary get/set referral code to LocalStorage
+ * 
+ * @param   {String|null} code referral code. User `null` to remove from storage
+ * 
+ * @returns {String} referral code
+ */
+export const referralCode = code => {
+    const override =  code === null
+    const value = isStr(code)
+        ? { referralCode: code }
+        : override
+            // completely remove referral code property from storage
+            ? objWithoutKeys(rw(), ['referralCode'])
+            : undefined
+    
+    return (storage.settings.module(MODULE_KEY, value, override) || {})
+        .referralCode
+}
 
 // Returns a singleton instance of the websocket client
 // Instantiates the client if not already done
 export const getClient = () => {
     if (instance) return instance
+    // automatically login to messaging service
+    const { id, secret } = getUser() || {}
 
     instance = new ChatClient()
     // attach a promise() functions to all event related methods. 
@@ -86,13 +110,15 @@ export const getClient = () => {
         }
     })
 
-    // automatically login to messaging service
-    const { id, secret } = getUser() || {}
-    if (!id) return instance
-
-    // auto login on connect to messaging service
-    instance.onConnect(() => instance.login(id, secret, () => { }))
-    instance.onConnectError(() => rxIsLoggedIn.next(false))
+    instance.onConnect(() => {
+        rxIsConnected.next(true)
+        // auto login on connect to messaging service
+        !!id && instance.login(id, secret, () => { })
+    })
+    instance.onConnectError(() => {
+        rxIsConnected.next(false)
+        !!id && rxIsLoggedIn.next(false)
+    })
     return instance
 }
 
@@ -105,6 +131,13 @@ export const getClient = () => {
 export const translateError = err => { 
     // if no error return as is
     if (!err) return err
+
+    if (isObj(err)) {
+        const keys = Object.keys(err)
+        // no errors
+        if (keys.length === 0) return null
+        return keys.forEach(key => err[key] = translateError(err[key]))
+    }
 
     // translate if there is any error message
     const separator = ' => '
@@ -119,7 +152,11 @@ export const translateError = err => {
 export class ChatClient {
     constructor(url) {
         this.url = url || `${window.location.hostname}:${port}`
-        socket = io(this.url)
+        socket = ioClient(this.url, {
+            transports: ['websocket'],
+            // secure: true,
+            // rejectUnauthorized: false,
+        })
 
         this.isConnected = () => socket.connected
         this.onConnect = cb => socket.on('connect', cb)
@@ -370,26 +407,94 @@ export class ChatClient {
          *                      @err    String: error message if query failed
          *                      @result Map: list of tasks with details
          */
-        this.taskGetById = (ids, cb) => isFn(cb) && socket.emit('task-get-by-id',
+        this.taskGetById = (ids, cb) => isFn(cb) && socket.emit(
+            'task-get-by-id',
             ids,
             (err, result) => cb(err, new Map(result)),
         )
         
         /**
+         * @name    crowdsaleCheckDeposits
+         * @summary check and retrieve user's crowdsale deposits
          * 
+         * @param {Function}    cb  callback function arguments:
+         *                          @err        string: if request failed
+         *                          @result     object: 
+         *                              @result.deposits    object: deposit amounts for each allocated addresses
+         *                              @result.lastChecked string: timestamp of last checked
+         * 
+         */
+        this.crowdsaleCheckDeposits = (cached = true, cb) => isFn(cb) && socket.emit(
+            'crowdsale-check-deposits',
+            cached,
+            cb,
+        )
+        
+        /**
+         * @name    crowdsaleConstants
+         * @summary retrieve crowdsale related constants for use with calcuation of allocation and multiplier levels
+         * 
+         * @param {Function}    cb  callback function arguments:
+         *                          @err        string: if request failed
+         *                          @result     object:
+         *                              @result.Level_NEGOTIATE_Entry_USD   Number: amount in USD for negotiation
+         *                              @result.LEVEL_MULTIPLIERS   Array: multipliers for each level
+         *                              @result.LEVEL_ENTRY_USD     Array: minimum deposit amount in USD for each level 
+         */
+        this.crowdsaleConstants = cb => isFn(cb) && socket.emit(
+            'crowdsale-constants',
+            cb,
+        )
+        /**
+         * @name    crowdsaleDAA
+         * @summary request new or retrieve exisitng deposit address
+         * 
+         * @param   {String}    blockchain  ticker/symbol of the Blockchain to request/retrieve address of
+         * @param   {String}    ethAddress  use `0x0` to retrieve existing address.
+         *                                  If the @blockchain is `ETH`, user's Ethereum address for whitelisting.
+         *                                  Otherwise, leave an empty string.
+         * @param   {Function}  cb          callback function arguments:
+         *                                  @err     string: if request failed
+         *                                  @address string: deposit address
+         */
+        this.crowdsaleDAA = (blockchain, ethAddress, cb) => isFn(cb) && socket.emit(
+            'crowdsale-daa',
+            blockchain,
+            ethAddress,
+            cb,
+        )
+
+        /**
+         * @name    crowdsaleKYC
+         * @summary register for crowdsale or check if already registered
+         * 
+         * @param   {Object|Boolean}    kycData use `true` to check if user already registered.
+         *                                      Required object properties:
+         *                                      @email      string
+         *                                      @familyName string
+         *                                      @givenName  string
+         *                                      @identity   string
+         *                                      @location   object
+         * @param   {Function}          cb      arguments:
+         *                                      @err        string
+         *                                      @publicKey  string
          */
         this.crowdsaleKYC = (kycData, cb) => isFn(cb) && socket.emit(
             'crowdsale-kyc',
             kycData,
             cb,
         )
+
         /**
+         * @name    crowdsaleKYCPublicKey
+         * @summary get Totem Live Association's encryption public key
          * 
+         * @param   {Function}          cb      arguments:
+         *                                      @err        string
+         *                                      @publicKey  string
          */
-        this.crowdsaleDAA = (blockchain, ethAddress, cb) => isFn(cb) && socket.emit(
-            'crowdsale-daa',
-            blockchain,
-            ethAddress,
+        this.crowdsaleKYCPublicKey = cb => isFn(cb) && socket.emit(
+            'crowdsale-kyc-publicKey',
             cb,
         )
     }
@@ -411,6 +516,7 @@ export class ChatClient {
             if (!err) {
                 setUser({ id, secret })
                 rxIsLoggedIn.next(true)
+                rxIsRegistered.next(true)
             }
             cb(err)
         },
