@@ -17,7 +17,7 @@ import UtilitiesView from '../views/UtilitiesView'
 // temp
 import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
 import EventList from '../modules/event/EventList'
-import CrowdsaleView from '../modules/crowdsale/Crowdsale'
+// import CrowdsaleView from '../modules/crowdsale/Crowdsale'
 // utils
 import DataStorage from '../utils/DataStorage'
 import { isBool, isBond } from '../utils/utils'
@@ -163,12 +163,12 @@ export const sidebarItems = [
         name: gsName,
         title: textsCap.gettingStartedTitle,
     },
-    {
-        content: CrowdsaleView,
-        icon: 'rocket',
-        name: 'crowdsale',
-        title: textsCap.crowdsaleTitle,
-    },
+    // {
+    //     content: CrowdsaleView,
+    //     icon: 'rocket',
+    //     name: 'crowdsale',
+    //     title: textsCap.crowdsaleTitle,
+    // },
     {
         content: KeyRegistryPlayground,
         icon: 'play circle outline',
