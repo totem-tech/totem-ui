@@ -3,6 +3,8 @@ import { isAddress, isFn, isDefined } from '../../utils/utils'
 import { query as queryHelper } from '../../services/blockchain'
 import client from '../chat/ChatClient'
 import { translated } from '../../services/language'
+import { iUseReducer, useRxSubject } from '../../services/react'
+import { rxSelected } from '../identity/identity'
 
 const textsCap = translated({
     errorHeader: 'failed to retrieve accounts',
@@ -13,16 +15,20 @@ const textsCap = translated({
 }, true)[1]
 
 /**
- * @name            useLedgerAcBalances
- * @summary         a custom React hook that retrieves a list of ledger accounts and their balances by identity
- * @param {String}  address identity of the user
+ * @name    useLedgerAcBalances
+ * @summary a custom React hook that retrieves a list of ledger accounts and their balances by identity
+ * 
+ * @param   {String}    address             identity of the user. If falsy, will use selected identity.
+ * @param   {Function}  balancesModifier    (optional) modifier for `balances returned`
  * 
  * @returns {Array} [
- *                      @result {Array|null} list of ledger accounts with balances
+ *                      @result     {Array|null} list of ledger accounts with balances,
+ *                      @message    {Object}    message with request status for use with `Message` component
  *                  ]
  */
-export default function useLedgerAcBalances(address, timeout = 10000) {
-    const [result, setResult] = useState()
+export default function useLedgerAcBalances(address, balancesModifier, timeout = 10000) {
+    address = address || useRxSubject(rxSelected)[0]
+    const [balances, setBalancesOrg] = useState()
     const [message, setMessage] = useState()
 
     useEffect(() => {
@@ -30,6 +36,11 @@ export default function useLedgerAcBalances(address, timeout = 10000) {
         const unsubscribers = {}
         let loaded = false
         let error = false
+        const setBalances = balances => setBalancesOrg(
+            !isFn(balancesModifier)
+                ? balances
+                : balancesModifier(balances)
+        )
         const loadingMsg = {
             content: textsCap.loading,
             icon: true,
@@ -58,7 +69,7 @@ export default function useLedgerAcBalances(address, timeout = 10000) {
                 )
             } catch (err) {
                 error = true
-                setResult(null)
+                setBalances(null)
                 setMessage({
                     ...(!empty ? errorMsg : {
                         status: 'basic',
@@ -77,11 +88,11 @@ export default function useLedgerAcBalances(address, timeout = 10000) {
                 glAccount.balance = balances[index] || 0
             })
             loaded = true
-            setResult(glAccounts)
+            setBalances(glAccounts)
         }
 
         // in case of address change, force empty result and show loading message
-        setResult(null)
+        setBalances(null)
         setMessage(loadingMsg)
 
         query.accountsById(address, handleAccounts)
@@ -102,7 +113,7 @@ export default function useLedgerAcBalances(address, timeout = 10000) {
         }
     }, [address])
 
-    return [result, message]
+    return [balances, message]
 }
 
 const query = {

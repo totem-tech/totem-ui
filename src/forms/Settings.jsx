@@ -10,28 +10,44 @@ import {
 } from '../services/currency'
 import { limit as historyItemsLimit } from '../modules/history/history'
 import {
-    getSelected as getSelectedLanguage,
+    getSelected as getSelectedLang,
     languages,
     setSelected as setSelectedLang,
     translated,
 } from '../services/language'
 import { gridColumns } from '../services/window'
+import { confirm } from '../services/modal'
+import DataTable from '../components/DataTable'
 
 const [texts, textsCap] = translated({
+    chatLimitLabel: 'chat message limit per conversation',
     column: 'column',
     columns: 'columns',
-    chatLimitLabel: 'chat message limit per conversation',
     error: 'error',
     gridColumnsLabel: 'number of columns on main content (experimental)',
     gsCurrencyLabel: 'display currency',
     gsLanguageLabel: 'display language (experimental)',
     historyLimitLabel: 'history limit',
-    unlimited: 'unlimited',
+    kbShortcuts: 'keyboard shortcuts',
+    langConfirmCancelBtn: 'later',
+    langConfirmHeader: 'page reload required',
+    langConfirmOk: 'reload page',
     saved: 'saved',
+    settings: 'settings',
+    unlimited: 'unlimited',
 }, true)
 const savedMsg = { content: textsCap.saved, status: 'success' }
 
-export default class Settings extends Component {
+export const inputNames = {
+    chatMsgLimit: 'chatMsgLimit',
+    currency: 'currency',
+    gridCols: 'gridCols',
+    historyLimit: 'historyLimit',
+    kbShortcutsBtn: 'kbShortcutsBtn',
+    languageCode: 'languageCode',
+}
+
+export default class SettingsForm extends Component {
     constructor(props) {
         super(props)
 
@@ -42,15 +58,16 @@ export default class Settings extends Component {
             inputs: [
                 {
                     label: textsCap.gsLanguageLabel,
-                    name: 'languageCode',
+                    name: inputNames.languageCode,
                     onChange: this.handleLanguageChange,
                     options: arrSort(
-                        Object.keys(languages).sort().map(code => ({
-                            description: code,
-                            key: code,
-                            text: languages[code],
-                            value: code,
-                        })),
+                        Object.keys(languages).sort()
+                            .map(code => ({
+                                description: code,
+                                key: code,
+                                text: languages[code],
+                                value: code,
+                            })),
                         'text',
                     ),
                     search: ['text', 'description'], // sort search results by specific keys
@@ -58,58 +75,68 @@ export default class Settings extends Component {
                     selectOnNavigation: false,
                     selection: true,
                     type: 'dropdown',
-                    value: getSelectedLanguage(),
+                    value: getSelectedLang(),
                 },
                 {
                     label: textsCap.gsCurrencyLabel,
-                    name: 'currency',
+                    name: inputNames.currency,
                     onChange: this.handleCurrencyChange,
                     options: [],
-                    search: ['text', 'description', 'value'],
+                    search: ['text', 'description'],
                     selection: true,
                     type: 'dropdown',
                     value: getSelectedCurrency()
                 },
                 {
                     label: textsCap.historyLimitLabel,
-                    name: 'historyLimit',
+                    name: inputNames.historyLimit,
                     onChange: this.handleHistoryLimitChange,
-                    options: [0, 10, 50, 100, 500, 1000].map((limit, i) => ({
-                        key: i,
-                        text: limit || textsCap.unlimited,
-                        value: limit,
-                    })),
+                    options: [0, 10, 50, 100, 500, 1000]
+                        .map((limit, i) => ({
+                            key: i,
+                            text: limit || textsCap.unlimited,
+                            value: limit,
+                        })),
                     selection: true,
                     type: 'dropdown',
                     value: historyItemsLimit(),
                 },
                 {
                     label: textsCap.chatLimitLabel,
-                    name: 'chatMsgLimit',
+                    name: inputNames.chatMsgLimit,
                     onChange: this.handleChatLimitChange,
                     //0 for unlimited
-                    options: [10, 50, 100, 200, 300, 500].map((limit, i) => ({
-                        key: i,
-                        text: limit || textsCap.unlimited,
-                        value: limit,
-                    })),
+                    options: [10, 50, 100, 200, 300, 500]
+                        .map((limit, i) => ({
+                            key: i,
+                            text: limit || textsCap.unlimited,
+                            value: limit,
+                        })),
                     selection: true,
                     type: 'dropdown',
                     value: chatHistoryLimit(),
                 },
                 {
                     label: textsCap.gridColumnsLabel,
-                    name: 'gridCols',
+                    name: inputNames.gridCols,
                     onChange: this.handleGridCollumnsChange,
-                    options: [1, 2, 3, 4, 5, 6].map(n => ({
-                        icon: n === 1 ? 'bars' : 'grid layout',
-                        key: n,
-                        text: `${n} ${n > 1 ? texts.columns : texts.column}`,
-                        value: n,
-                    })),
+                    options: [1, 2, 3, 4, 5, 6]
+                        .map(n => ({
+                            icon: n === 1 ? 'bars' : 'grid layout',
+                            key: n,
+                            text: `${n} ${n > 1 ? texts.columns : texts.column}`,
+                            value: n,
+                        })),
                     selection: true,
                     type: 'dropdown',
                     value: gridColumns(),
+                },
+                {
+                    content: `${textsCap.kbShortcuts} (K)`,
+                    icon: 'keyboard',
+                    name: inputNames.kbShortcutsBtn,
+                    onClick: showKeyboardShortcuts,
+                    type: 'button'
                 },
             ]
         }
@@ -117,11 +144,11 @@ export default class Settings extends Component {
         const { inputs } = this.state
         const currencyIn = findInput(inputs, 'currency')
         getCurrencies().then(currencies => {
-            const options = currencies.map(({ currency, nameInLanguage, ISO }) => ({
-                description: currency,
-                key: ISO,
-                text: nameInLanguage,
-                value: ISO
+            const options = currencies.map(c => ({
+                description: c.currency,
+                key: c.ISO,
+                text: c.nameInLanguage,
+                value: c.ISO,
             }))
             currencyIn.options = arrSort(options, 'text')
             this.setState({ inputs })
@@ -156,7 +183,20 @@ export default class Settings extends Component {
 
     handleLanguageChange = (_, { languageCode }) => {
         this.setInputMessage('languageCode', savedMsg, 0)
-        setSelectedLang(languageCode).catch(err => {
+        const changed = getSelectedLang() !== languageCode
+        setSelectedLang(languageCode)
+            .then(updated => {
+                const reloadRequired = changed || updated
+                if (!reloadRequired) return
+                confirm({
+                    cancelButton: textsCap.langConfirmCancelBtn,
+                    confirmButton: textsCap.langConfirmOk,
+                    header: textsCap.langConfirmHeader,
+                    onConfirm: () => window.location.reload(true),
+                    size: 'mini',
+                })
+            })
+            .catch(err => {
             this.setInputMessage('languageCode', {
                 content: `${err}`,
                 header: textsCap.error,
@@ -181,3 +221,59 @@ export default class Settings extends Component {
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
+SettingsForm.defaultProps = {
+    closeOnDimmerClick: true,
+    closeOnEscape: true,
+    closeText: null,
+    header: textsCap.settings,
+    // prevents multiple modal being open at the same time
+    modalId: 'SettingsForm',
+}
+
+
+export const showKeyboardShortcuts = () => confirm(
+    {
+        cancelButton: null,
+        confirmButton: null,
+        content: (
+                <DataTable {...{
+                    searchable: false,
+                    columns: [
+                        { key: 'key', title: 'Shortcut Key'},
+                        { key: 'action', title: 'Action'},
+                    ],
+                    data: [
+                        { key: 'SHIFT + C', action: 'Start new chat'},
+                        { key: 'SHIFT + S', action: 'Settings'},
+                        { key: 'SHIFT + T', action: 'Timekeeping form'},
+                        { key: 'C', action: 'Toggle chat bar visibility'},
+                        { key: 'K', action: 'Toggle keyboard shortcuts view'},
+                        { key: 'I', action: 'Toggle identity dropdown visibility'},
+                        { key: 'N', action: 'Toggle notification visibility'},
+                        { key: 'S', action: 'Toggle sidebar'},
+                ],
+                style: {margin: '-15px 0'}
+                }} />
+        ),
+        header: 'Keyboard shortcuts',
+        size: 'mini',
+    },
+    'shortcutKey-K',
+    { style: { padding: 0 }},
+)
+
+/*
+
+
+        <div>
+            SHIFT + C => Start new chat<br />
+            SHIFT + S => Settings<br />
+            SHIFT + T => Timekeeping form<br />
+            C => Toggle chat bar visibility<br />
+            K => Toggle keyboard shortcuts view<br />
+            I => Toggle identity dropdown visibility<br />
+            N => Toggle notification visibility<br />
+            S => Toggle sidebar<br />
+
+        </div>
+        */

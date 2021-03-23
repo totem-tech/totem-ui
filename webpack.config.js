@@ -1,7 +1,10 @@
 // webpack v4
+const webpack = require('webpack')
 const path = require('path');
 module.exports = {
-  entry: { main: './src/index.js' },
+  entry: {
+    main: './src/index.js',
+  },
   module: {
     rules: [
       {
@@ -21,8 +24,17 @@ module.exports = {
         test: /\.(md)$/,
         loader: 'ignore-loader',
       },
+      // {}
     ]
   },
+  // ignore nodejs modules and not found warning
+  plugins: [
+    new webpack.IgnorePlugin(/abort-controller/),
+    new webpack.IgnorePlugin(/form-data/),
+    new webpack.IgnorePlugin(/nano/), // CouchDB Client
+    new webpack.IgnorePlugin(/node-localstorage/),
+    new webpack.IgnorePlugin(/node-fetch/),
+  ],
   resolve: {
     extensions: ['*', '.js', '.jsx']
   },
@@ -36,6 +48,8 @@ module.exports = {
   },
   // solves "Can't resolve 'fs'" error
   node: {
-    fs: "empty"
+    'fs': "empty",
   }
-};
+}
+
+

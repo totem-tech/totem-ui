@@ -86,7 +86,10 @@ export default class ContentSegment extends Component {
 							color='grey'
 							link
 							name='expand'//'expand arrows alternate' 'compress'
-							onClick={() => toggleFullscreen(`.main-content div[name="${name}"]`)}
+							onClick={() => {
+								console.log('full screen')
+								toggleFullscreen(`#main-content div[name="${name}"]`)
+							}}
 							size='mini'
 							style={{ display: 'inline' }}
 						/>

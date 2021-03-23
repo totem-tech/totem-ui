@@ -127,5 +127,5 @@ export default class KeyRegistryPlayground extends Component {
         }))
     }
 
-    render = () => 'REQUIRES MIGRATIN TO POLKADOTJS' //<FormBuilder {...this.state} />
+    render = () => 'REQUIRES MIGRATION TO POLKADOTJS' //<FormBuilder {...this.state} />
 }

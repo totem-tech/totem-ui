@@ -1,10 +1,10 @@
-import React, { useEffect, useReducer } from 'react'
+import React, { useEffect } from 'react'
 import { Icon, Grid, GridRow, GridColumn } from 'semantic-ui-react'
 // import Identicon from 'polkadot-identicon'
 import { translated } from '../services/language'
 import { isFn, objCreate } from '../utils/utils'
 import { getConnection, query } from '../services/blockchain'
-import { reducer } from '../services/react'
+import { iUseReducer } from '../services/react'
 
 const [texts, textsCap] = translated({
 	blockchainRuntime: 'Connected Host Runtime Version',
@@ -23,7 +23,7 @@ const [texts, textsCap] = translated({
 }, true)
 
 export default function SystemStatus() {
-	const [state, setState] = useReducer(reducer, {})
+	const [state, setState] = iUseReducer(null, {})
 	const {
 		newHead = { number: 0 },
 		finalizedHead = { number: 0 },

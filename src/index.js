@@ -2,7 +2,7 @@ import React from 'react'
 import { render } from 'react-dom'
 import 'semantic-ui-css/semantic.min.css'
 import PromisE from './utils/PromisE'
-import { generateHash, isObj, isStr, objClean } from './utils/utils'
+import { isArrLike, isError, isObj, isStr, objClean } from './utils/utils'
 import App from './App'
 import NewsletterSignup from './forms/NewsletterSignup'
 // services
@@ -11,11 +11,16 @@ import client from './modules/chat/ChatClient'
 import { fetchNSaveTexts } from './services/language'
 import storage from './services/storage'
 import { getUrlParam, MOBILE, rxLayout } from './services/window'
+import CountDown from './modules/crowdsale/CountDown'
 
-const isSignUp = getUrlParam('NewsletterSignup').toLowerCase() === 'true'
+const urlParams = getUrlParam()
+const isSignUp = urlParams.hasOwnProperty('NewsletterSignup')
+const isCountDown = urlParams.hasOwnProperty('countdown')
 const debug = getUrlParam('debug').toLowerCase()
-window.isDebug = debug === 'force' || debug === 'true' && rxLayout.value === MOBILE
-window.isInIFrame = isSignUp
+window.isDebug = debug === 'force'
+    || debug === 'true'
+    && rxLayout.value === MOBILE
+window.isInIFrame = isSignUp || isCountDown
 if (!window.isInIFrame && window.isDebug) {
     // for debugging purposes only, when on a mobile device
     // adds interceptors to below console functions and prints all logs into a DOM element above page contents
@@ -36,7 +41,15 @@ if (!window.isInIFrame && window.isDebug) {
             let content = args.map(x => {
                 let str = x
                 try {
-                    str = isStr(x) ? x : isObj(x) && x.stack || JSON.stringify(x, null, 4)
+                    str = isError(x)
+                        ? x.stack
+                        : typeof x !== 'object'
+                            ? x
+                            : JSON.stringify(
+                                isArrLike(x) ? Array.from(x) : x,
+                                null,
+                                4,
+                            )
                 } catch (e) {
                     // in case of Object circular dependency
                     str = `${x}`
@@ -79,9 +92,12 @@ const init = () => PromisE.timeout((resolve, reject) => {
     })
 }, 2000)
 const doRender = () => {
-    if (isSignUp) {
-        render(<NewsletterSignup />, document.getElementById('app'))
-        setTimeout(() => document.querySelector('body').classList.add('iframe'), 100)
+    if (isSignUp || isCountDown) {
+        const El = isSignUp 
+            ? NewsletterSignup
+            : CountDown
+        document.body.classList.add('iframe')
+        render(<El />, document.getElementById('app'))
         return
     }
     render(<App />, document.getElementById('app'))
@@ -89,4 +105,6 @@ const doRender = () => {
 
 // initiate connection to blockchain
 getConnection()
-init().then(doRender).catch(doRender)
+init()
+    .then(doRender)
+    .catch(doRender)

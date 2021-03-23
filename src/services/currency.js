@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { generateHash, arrSort, isArr } from '../utils/utils'
+import { generateHash, arrSort, isArr, isValidNumber } from '../utils/utils'
 import PromisE from '../utils/PromisE'
-import client from '../modules/chat/ChatClient'
+import client, { rxIsConnected } from '../modules/chat/ChatClient'
 import { translated } from './language'
 import storage from './storage'
+import { subjectAsPromise } from './react'
 
 const textsCap = translated({
     invalidCurency: 'invalid currency supplied',
@@ -35,19 +35,45 @@ export const rxSelected = new BehaviorSubject(getSelected())
  * @returns {Array} [@convertedAmount Number, @rounded String]
  */
 export const convertTo = async (amount = 0, from, to, decimals) => {
-    from = from.toUpperCase()
-    to = to.toUpperCase()
+    // from = from.toUpperCase()
+    // to = to.toUpperCase()
     const ft = [from, to]
     // await client.currencyConvert.promise(from, to, amount)
+    // wait up to 10 seconds if messaging service is not connected yet
+    if (!rxIsConnected.value) await subjectAsPromise(rxIsConnected, true, 10000)[0]
     const currencies = await getCurrencies()
     const fromTo = currencies.filter(({ ISO }) => ft.includes(ISO))
-    if (!ft.every(x => fromTo.find(c => c.ISO === x))) throw new Error(textsCap.invalidCurency)
+    const gotBoth = ft.every(x => fromTo.find(c => c.ISO === x))
+    if (!gotBoth) throw new Error(textsCap.invalidCurency)
+    
     const fromCurrency = fromTo.find(({ ISO }) => ISO === from)
     const toCurrency = currencies.find(({ ISO }) => ISO === to)
     const convertedAmount = (fromCurrency.ratioOfExchange / toCurrency.ratioOfExchange) * amount
-    decimals = decimals || parseInt(toCurrency.decimals)
+    
+    if (!isValidNumber(decimals)) {
+        decimals = parseInt(toCurrency.decimals)
+    }
     const rounded = convertedAmount.toFixed(decimals)
-    return [convertedAmount, rounded]
+    return [convertedAmount, rounded, decimals]
+}
+
+const fetchCurrencies = async (cached = rwCache().currencies) => {
+    const hash = generateHash(cached)
+    let currencies = await client.currencyList.promise(hash)
+    // currencies list is the same as in the server => use cached
+    if (currencies.length === 0) return cached
+
+    // sort by ISO and  makes sure there is a name and ISO
+    currencies = arrSort(currencies.map(c => {
+        c.nameInLanguage = c.nameInLanguage || c.currency
+        c.ISO = c.ISO || c.currency
+        return c
+    }), 'ISO')
+
+    rwCache('currencies', currencies)
+    lastUpdated = new Date()
+    console.log('Currency list updated', currencies)
+    return currencies
 }
 
 // get selected currency code
@@ -80,27 +106,21 @@ export const updateCurrencies = async () => {
         // prevents making multiple requests
         if (updatePromise) return await updatePromise
 
-        const sortedArr = rwCache().currencies
-        const hash = generateHash(sortedArr)
-        const currencyPromise = client.currencyList.promise(hash)
-        const handleCurrencies = async (currencies) => {
-            if (currencies.length === 0) return
-            currencies.forEach(x => {
-                x.nameInLanguage = x.nameInLanguage || x.currency
-                x.ISO = x.ISO || x.currency
-            })
-            rwCache('currencies', arrSort(currencies, 'ISO'))
-            lastUpdated = new Date()
-            console.log('Currency list updated', currencies)
-        }
-        currencyPromise.then(handleCurrencies)
+        const cached = rwCache().currencies
+        // messaging service is not connected
+        if (!rxIsConnected.value) {
+            // return existing list if available
+            if (cached && cached.length) return cached
 
-        // for first time user wait as long at it takes otherwise, timeout and force use cached
-        // cached list of currencies exists, timeout if list not loaded within 3 seconds
-        updateCurrencies.updatePromise = !sortedArr ? currencyPromise : PromisE.timeout(currencyPromise, 3000)
-        await updateCurrencies.updatePromise
+            // wait till connected
+            await subjectAsPromise(rxIsConnected, true)[0]
+        }
+
+        updateCurrencies.updatePromise = PromisE.timeout(fetchCurrencies(cached), 3000)
+
+        return await updateCurrencies.updatePromise
     } catch (err) {
-        console.error('Failed to retrieve currencies', err)
+        console.trace('Failed to retrieve currencies:', err)
     }
 }
 

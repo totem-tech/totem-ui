@@ -60,27 +60,30 @@ export default class DataTable extends Component {
     getFooter(totalPages, pageNo) {
         let { footerContent, navLimit } = this.props
         const { isMobile } = this.state
-        const paginator = totalPages <= 1 ? '' : (
-            <Paginator
-                current={pageNo}
-                float={isMobile ? 'left' : 'right'}
-                key='paginator'
-                navLimit={navLimit}
-                total={totalPages}
-                onSelect={this.handlePageSelect}
-            />
+        const paginator = totalPages > 1 && (
+            <Paginator {...{
+                current: pageNo,
+                float: isMobile ? 'left' : 'right',
+                key: 'paginator',
+                navLimit: navLimit,
+                total: totalPages,
+                onSelect: this.handlePageSelect,
+            }} />
         )
         const footer = footerContent && (
-            <div key='footer-content' style={{ float: 'left' }}>
-                {footerContent}
-            </div>
+            <div {...{
+                children: footerContent,
+                key: 'footer-content',
+                style: { float: !!paginator ? 'left' : '' }
+            }} />
         )
         return [paginator, footer].filter(Boolean)
     }
 
     getHeaders(totalRows, columns, selectedIndexes) {
-        let { columnsHidden, selectable } = this.props
+        let { columnsHidden, selectable, tableProps = {} } = this.props
         const { sortAsc, sortBy } = this.state
+        const { sortable } = tableProps
 
         const headersColumns = columns
             .filter(x => !x.hidden && !columnsHidden.includes(x.name))
@@ -90,7 +93,7 @@ export default class DataTable extends Component {
                     ...x.headerProps,
                     content: x.title,
                     key: i,
-                    onClick: () => x.key && this.setState({
+                    onClick: () => x.key && sortable && this.setState({
                         sortBy: x.key,
                         sortAsc: sortBy === x.key ? !sortAsc : true
                     }),
@@ -368,22 +371,29 @@ export default class DataTable extends Component {
                 <div style={styles.tableContent} >
                     {totalRows === 0 && emptyMessage && <Message {...emptyMessage} />}
                     {totalRows > 0 && (
-                        <Invertible {...{ ...tableProps, El: Table }}>
+                        <Invertible {...{
+                            ...DataTable.defaultProps.tableProps, // merge when prop supplied
+                            ...tableProps,
+                            El: Table,
+                        }}>
                             <Table.Header>
                                 <Table.Row>{headers}</Table.Row>
                             </Table.Header>
 
                             <Table.Body>{rows}</Table.Body>
 
-                            {!footerContent && totalPages <= 1 ? undefined : (
-                                <Table.Footer>
-                                    <Table.Row>
-                                        <Table.HeaderCell colSpan={columns.length + 1}>
-                                            {this.getFooter(totalPages, pageNo)}
-                                        </Table.HeaderCell>
-                                    </Table.Row>
-                                </Table.Footer>
-                            )}
+                            {!footerContent && totalPages <= 1
+                                ? undefined
+                                : (
+                                    <Table.Footer>
+                                        <Table.Row>
+                                            <Table.HeaderCell colSpan={columns.length + 1}>
+                                                {this.getFooter(totalPages, pageNo)}
+                                            </Table.HeaderCell>
+                                        </Table.Row>
+                                    </Table.Footer>
+                                )
+                            }
                         </Invertible>
                     )}
                 </div >

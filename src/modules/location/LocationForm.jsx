@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { arrSort, deferred, isFn, objHasKeys } from '../../utils/utils'
+import { arrSort, deferred, isBool, isFn, objCopy, objHasKeys, textEllipsis } from '../../utils/utils'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { closeModal, confirm } from '../../services/modal'
@@ -24,13 +24,14 @@ const textsCap = translated({
 	locationRemoveWarning: 'this location is used by the following identities:',
 	nameLabel: 'location name',
 	namePlaceholder: 'enter a name for this location',
+	partnerIdentityLabel: 'partner user ID',
 	partnerNameLabel: 'partner name',
 	postcodeLabel: 'postcode or zip',
 	postcodePlaceholder: 'enter your postcode or zip',
 	remove: 'remove location',
 	stateLabel: 'state or province',
 	statePlaceholder: 'enter your state or province',
-	partnerIdentityLabel: 'partner user ID',
+	successMsg: 'location created successfully'
 }, true)[1]
 
 export const requiredFields = {
@@ -50,22 +51,45 @@ export const inputNames = {
 	...optionalFields,
 	partnerName: 'partnerName',
 	removeBtn: 'removeBtn',
+	groupCityPostcode: 'groupCityPostcode',
+	groupStateCountry: 'groupStateCountry',
 }
 
 export default class LocationForm extends Component {
 	constructor(props) {
 		super(props)
 
-		let { autoSave, header, id, subheader, submitText, values } = props
-		const location = get(id)
-		const { partnerIdentity } = location || values || {}
+		let {
+			autoSave,
+			closeOnDimmerClick,
+			closeOnEscape,
+			closeText,
+			header,
+			id,
+			subheader,
+			submitText,
+			values,
+		} = props
+		const location = get(id) || values || {}
+		const { partnerIdentity } = location 
 		this.isUpdate = !!id && !!location
 		const partner = getPartner(partnerIdentity)
 		const noFlags = ['aq', 'bl', 'bq', 'cw', 'gg', 'im', 'je', 'mf', 'ss', 'sx', 'xk']
 			.map(x => x.toUpperCase())
 		
+		autoSave = this.isUpdate && autoSave
 		this.state = {
-			closeText: !this.isUpdate ? undefined : { negative: false },
+			closeOnDimmerClick: isBool(closeOnDimmerClick)
+				? closeOnDimmerClick
+				: autoSave,
+			closeOnEscape:  isBool(closeOnEscape)
+				? closeOnEscape
+				: autoSave,
+			closeText: closeText || (
+				autoSave
+					? null
+					: undefined
+			),
 			header: header || (this.isUpdate ? textsCap.formHeaderUpdate : textsCap.formHeaderCreate),
 			onChange: this.handleChange,
 			onSubmit: this.handleSubmit,
@@ -121,8 +145,10 @@ export default class LocationForm extends Component {
 					type: 'text',
 				},
 				{
-					name: 'group_city-postcode',
+					name: inputNames.groupCityPostcode,
 					type: 'group',
+					unstackable: true,
+					widths: 'equal',
 					inputs: [
 						{
 							label: textsCap.cityLabel,
@@ -145,8 +171,10 @@ export default class LocationForm extends Component {
 					],
 				},
 				{
-					name: 'group_state-country',
+					name: inputNames.groupStateCountry,
 					type: 'group',
+					unstackable: true,
+					widths: 'equal',
 					inputs: [
 						{
 							label: textsCap.stateLabel,
@@ -165,7 +193,8 @@ export default class LocationForm extends Component {
 									description: code,
 									flag: !noFlags.includes(code) ? code.toLowerCase() : '',
 									key: code,
-									text: name,
+									name,
+									text: textEllipsis(name, 25, 3, false),
 									value: code,
 								})),
 								'text'
@@ -173,7 +202,7 @@ export default class LocationForm extends Component {
 							placeholder: textsCap.countryPlaceholder,
 							required: true,
 							selection: true,
-							search: ['description', 'text', 'code3'],
+							search: ['description', 'name', 'code3'],
 							type: 'dropdown',
 						},
 					]
@@ -216,11 +245,11 @@ export default class LocationForm extends Component {
 		}
 	}
 
-	handleChange = (e, values) => {
+	handleChange = (e, values, invalid) => {
 		const { autoSave, onChange } = this.props
 		isFn(onChange) && onChange(e, values)
 		// auto save if update
-		if (!this.isUpdate || !autoSave) return
+		if (invalid || !this.isUpdate || !autoSave) return
 		// prevent saving without required fields
 		if (!objHasKeys(values, Object.keys(requiredFields), true)) return
 		this.handleSubmit(e, values)
@@ -229,7 +258,15 @@ export default class LocationForm extends Component {
 	handleSubmit = deferred((_, values) => {
 		let { id, onSubmit } = this.props
 		id = set(values, id)
-		!this.isUpdate && this.setState({ success: true})
+		// new location created
+		!this.isUpdate && this.setState({
+			message: {
+				content: textsCap.successMsg,
+				icon: true,
+				status: 'success',
+			},
+			success: true,
+		})
 		isFn(onSubmit) && onSubmit(true, values, id)
 	}, 300)
 

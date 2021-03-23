@@ -43,9 +43,17 @@ const icons = {
 export default function InboxMessages(props) {
     const { className, isPrivate, messages, onScroll } = props
     const userId = (getUser() || {}).id
+    
     return (
         <div {...{ className, onScroll, }}>
-            {messages.map((message, key) => <InboxMessage {...{ key, isPrivate, userId, ...message }} />)}
+            {messages.map((message, i) => (
+                <InboxMessage {...{
+                    key: message.id || i,
+                    isPrivate,
+                    userId,
+                    ...message,
+                }} />
+            ))}
         </ div>
     )
 }
@@ -106,7 +114,7 @@ const InboxMessage = props => {
                                     fontSize: 11,
                                     color: 'grey',
                                 },
-                                time: timestamp,
+                                date: timestamp,
                             }} />
                         )}
                     </span>

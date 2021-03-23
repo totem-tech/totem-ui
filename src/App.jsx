@@ -12,29 +12,28 @@ import currency from './services/currency'
 import identity from './modules/identity/identity'
 import language from './services/language'
 import filePaths from './services/languageFiles'
-import modal, { ModalsConainer } from './services/modal'
+import modal from './services/modal'
+import activity from './modules/activity/activity'
+import './services/KeyboardShortcuts'
 import NotificationView from './modules/notification/NotificationView'
 import partner from './modules/partner/partner'
-import activity from './modules/activity/activity'
 import queue, { resumeQueue } from './services/queue'
 import sidebar, { sidebarItems } from './services/sidebar'
 import storage from './services/storage'
 import timeKeeping from './modules/timekeeping/timekeeping'
-import toast, { ToastsContainer } from './services/toast'
-import windw, { rxGridColumns, rxLayout, MOBILE } from './services/window'
+import toast from './services/toast'
+import windowService, { rxGridColumns, gridClasses } from './services/window'
 // Images
-import TotemButtonLogo from './assets/totem-button-grey.png'
+import TotemButtonLogo from './assets/logos/button-288-colour.png' //button-240-colour.png'
+//'./assets/totem-button-grey.png'
 // import PlaceholderImage from './assets/totem-placeholder.png'
 import ChatBar from './modules/chat/ChatBar'
-import { useRxSubject } from './services/react'
+import { className } from './utils/utils'
 
 let queueResumed = false
+const logoSrc = TotemButtonLogo
 
 export default function App() {
-	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
-	const [numCol] = useRxSubject(rxGridColumns)
-	const logoSrc = TotemButtonLogo
-
 	useEffect(() => {
 		// For debug only.
 		window.utils = {
@@ -60,7 +59,7 @@ export default function App() {
 			storage,
 			timeKeeping,
 			toast,
-			window: windw,
+			window: windowService,
 		}
 
 		window.queryBlockchain = async (func, args, multi) => await blockchain.query(func, args, multi, true)
@@ -77,10 +76,9 @@ export default function App() {
 		return () => { }
 	}, [])
 
+	const gridClass = gridClasses[rxGridColumns.value - 1]
 	return (
 		<div className='wrapper'>
-			<ModalsConainer />
-			<ToastsContainer />
 			<ErrorBoundary>
 				<PageHeader logoSrc={logoSrc} />
 			</ErrorBoundary>
@@ -89,52 +87,30 @@ export default function App() {
 				<NotificationView />
 			</ErrorBoundary>
 
-			<Sidebar.Pushable style={styles.pushable}>
+			<Sidebar.Pushable>
 				<ErrorBoundary>
 					<SidebarLeft />
 				</ErrorBoundary>
 
 				<Sidebar.Pusher
 					as={Invertible.asCallback(Segment)}
-					className="main-content"
+					className={className([
+						'main-content',
+						gridClass,
+						{ 'simple-grid': !!gridClass },
+					])}
 					dimmed={false}
 					id="main-content"
-					// fluid
-					style={{
-						...styles.mainContent,
-						...(isMobile ? styles.mainContentMobile : {}),
-						...getGridStyle(numCol),
-					}}
 				>
-					{sidebarItems.map(({ name }, i) => <MainContentItem key={i + name} name={name} />)}
+					{sidebarItems.map(({ name }, i) =>
+						<MainContentItem key={i + name} name={name} />
+					)}
 					<div className='empty-message'>
 						{/* <Image style={{ margin: '100px auto auto' }} src={PlaceholderImage} /> */}
 					</div>
 				</Sidebar.Pusher>
 			</Sidebar.Pushable>
-			<ChatBar {...{ isMobile, inverted: false }} />
+			<ChatBar />
 		</div>
 	)
-}
-
-const getGridStyle = (numCol = 1) => numCol <= 1 ? {} : {
-	display: 'grid',
-	gridTemplateColumns: `repeat(${numCol}, 1fr)`,
-	gridGap: '15px',
-	gridAutoRows: 'auto',
-}
-const styles = {
-	mainContent: {
-		borderRadius: 0,
-		height: '100%',
-		margin: 0,
-		padding: '15px 15px 0',
-		overflow: 'hidden auto',
-		scrollBehavior: 'smooth',
-		transition: 'resize 0.3s ease',
-		WebkitOverflow: 'hidden auto',
-	},
-	mainContentMobile: {
-		padding: 0
-	}
 }

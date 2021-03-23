@@ -1,10 +1,12 @@
-import React, { useEffect, useState, isValidElement } from 'react'
+import React, { createRef, isValidElement, useEffect, useState } from 'react'
+import { render } from 'react-dom'
 import uuid from 'uuid'
-import { Confirm } from 'semantic-ui-react'
+import { Button, Confirm, Icon } from 'semantic-ui-react'
 import DataStorage from '../utils/DataStorage'
-import { isBool, isFn, className } from '../utils/utils'
+import { isBool, isFn, className, isStr, isObj } from '../utils/utils'
 import { translated } from './language'
 import { toggleFullscreen, useInverted, getUrlParam } from './window'
+import PromisE from '../utils/PromisE'
 
 const modals = new DataStorage()
 export const rxModals = modals.rxData
@@ -25,8 +27,8 @@ export const ModalsConainer = () => {
             setModalsArr(Array.from(map))
 
             // add/remove class to element to inticate at least one modal is open
-            const func = !!modals.size ? 'add' : 'remove'
-            // document.getElementById('app').classList[func]('modal-open')
+            const func = !!map.size ? 'add' : 'remove'
+            document.body.classList[func]('modal-open')
         })
         return () => {
             mounted = false
@@ -34,59 +36,170 @@ export const ModalsConainer = () => {
         }
     }, [])
 
-    return (
-        <div className="modal-service">
-            {modalsArr.map(([id, modalEl]) => (
-                <span {...{ key: id, id }}>{modalEl}</span>
-            ))}
-        </div>
-    )
+    return modalsArr.map(([id, modalEl]) => (
+        <span {...{ key: id, id }}>{modalEl}</span>
+    ))
 }
 
-const add = (id, element) => {
+/**
+ * 
+ * @param   {String}    id       Modal ID
+ * @param   {Element}   element  Modal Element
+ * @param   {*}         focusRef element reference to auto focus on
+ */
+const add = (id, element, focusRef) => {
     id = id || uuid.v1()
     modals.set(id, element)
     // If already in fullscreen, exit. Otherwise, modal will not be visible.
     toggleFullscreen()
+
+    focusRef && setTimeout(() => {
+        const focus = focusRef.focus || focusRef.current && focusRef.current.focus
+        isFn(focus) && focus()
+    }, 100)
     return id
 }
 
 export const closeModal = (id, delay = 0) => setTimeout(() => modals.delete(id), delay)
 
-// confirm opens a confirm dialog
-//
-// Params: 
-// @confirmProps    object: properties to be supplied to the Confirm component
-// @id              string: if supplied and any modal with this ID will be replaced
-//
-// returns
-// @id              string : random id assigned to the modal. Can be used to remove using the remove function
-export const confirm = (confirmProps, id) => {
-    id = id || uuid.v1()
-    let { cancelButton, confirmButton, content, open, onCancel, onConfirm } = confirmProps
+/**
+ * @name        confirm
+ * @summary     opens a confirm modal/dialog
+ * 
+ * @param   {Object|String} confirmProps props to be used in Semantic UI Confirm component.
+ *                                       If string supplied, it will be used as `content` prop
+ * @param   {String}        modalId      (optional) if supplied and any existing modal with this ID will be replaced.
+ *                                       Otherwise, a random UUID will be generated.
+ * @param   {Object}        contentProps (optional) props to be passed on to the content element
+ * @param   {Boolean}       focusConfirm (optional) If value is
+ *                                          - true or no cancel button, will focus confirm button.
+ *                                          2. if false or no `confirmButton`, will focus `cancelButton`
+ *                                        Default: false
+ * 
+ * @returns {String}        @modalId      can be used with `closeModal` function to externally close the modal
+ */
+export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm = false) => {
+    const focusRef = createRef()
+    modalId = modalId || uuid.v1()
+    confirmProps = !isStr(confirmProps)
+        ? confirmProps
+        : { content: confirmProps }
+    let { cancelButton, confirmButton, content, header, open, onCancel, onConfirm } = confirmProps
     if (confirmButton !== null && !confirmButton) {
+        // use default translated text for confirm button
         confirmButton = textsCap.ok
     }
     if (cancelButton !== null && !cancelButton) {
-        cancelButton = !confirmButton ? textsCap.close : textsCap.cancel
+        // use default translated text for cancel button
+        cancelButton = !confirmButton
+            ? textsCap.close
+            : textsCap.cancel
     }
-    if (!content && content !== null) {
-        content = textsCap.areYouSure
+    // use default translated text for content
+    content = !content && content !== null
+        ? textsCap.areYouSure
+        : content
+    // add a close button if both confirm and cancel buttons are hidden
+    // (Semantic confirm dialoge doesn't have a close icon by default)
+    if (!confirmButton && !cancelButton && (header || content)) {
+        content = (
+            <div>
+                <div style={{
+                    position: 'absolute',
+                    right: 15,
+                    top: 15,
+                }}>
+                    <Icon {...{
+                        className: 'grey large link icon no-margin',
+                        name: 'times circle outline',
+                        onClick: () => closeModal(modalId) | (isFn(onCancel) && onCancel(e, d)),
+                        ref: focusRef,
+                    }} />
+                </div>
+                    {content}
+            </div>
+        )
     }
-    return add(
-        id,
-        <IConfirm {...{
-            ...confirmProps,
-            cancelButton,
-            confirmButton,
-            content: content && <div className="content">{content}</div>,
-            open: isBool(open) ? open : true,
-            onCancel: (e, d) => closeModal(id) | (isFn(onCancel) && onCancel(e, d)),
-            onConfirm: (e, d) => closeModal(id) | (isFn(onConfirm) && onConfirm(e, d)),
+    const attachRef = btn => (
+        <Button {...{
+            ...(isValidElement(btn)
+                ? btn.props
+                : isObj(btn)
+                    ? btn
+                    : { content: btn }),
+            ref: focusRef,
         }} />
     )
+
+    if (cancelButton && (!focusConfirm || !confirmButton)) {
+        cancelButton = attachRef(cancelButton)
+    } else if (confirmButton) {
+        confirmButton = attachRef(confirmButton)
+    }
+
+    return add(
+        modalId,
+        <IConfirm {...{
+            ...confirmProps,
+            className: 'confirm-modal',
+            cancelButton,
+            confirmButton,
+            content: content && (
+                <div {...{
+                    ...contentProps,
+                    children: content,
+                    className: className([
+                        'content',
+                        contentProps.className,
+                    ])
+                }}/>
+            ),
+            open: !isBool(open) || open,
+            onCancel: (...args) => {
+                closeModal(modalId)
+                isFn(onCancel) && onCancel(...args)
+            },
+            onConfirm: (...args) => {
+                closeModal(modalId)
+                isFn(onConfirm) && onConfirm(...args)
+            },
+        }} />,
+        focusRef,
+    )
 }
+
+/**
+ * @name    confirmAsPromise
+ * @summary opens a confirm modal and returns a promise that resolves with `true` or `false`
+ *          indicating user accepted or rejected respectively
+ * 
+ * @param   {Object|String} props 
+ * @param   {...any}        args    see `confirm` for rest of the accepted arguments
+ * 
+ * @returns {Promise}       promise will reject only if there was an uncaught error 
+ */
+export const confirmAsPromise = (props, ...args) => new PromisE((resolve, reject) => {
+    try {
+        props = !isStr(props)
+            ? props
+            : { content: props }
+        const { onCancel, onConfirm } = props
+        props.onCancel = (...args) => {
+            isFn(onCancel) && onCancel(...args)
+            resolve(false)
+        }
+        props.onConfirm = (...args) => {
+            isFn(onConfirm) && onConfirm(...args)
+            resolve(true)
+        }
+        confirm(props, ...args)
+    } catch (err) {
+        reject(err)
+    }
+})
+
 // Invertible Confirm component
+// This is a sugar for the Confirm component with auto inverted/dark mode
 const IConfirm = props => {
     const inverted = useInverted()
     return (
@@ -104,50 +217,90 @@ const IConfirm = props => {
     )
 }
 
-// showForm opens form in a modal dialog
-//
-// Params: 
-// @FormComponent   function/class  : FormBuilder or any other form that uses FormBuilder component (not element) class 
-// @id              string          : if supplied and any modal with this ID will be replaced
-//
-// returns
-// @id              string : random id assigned to the modal. Can be used to remove using the remove function
-export const showForm = (FormComponent, props, id) => {
+/**
+ * @name    get
+ * @summary get modal elememnt by it's ID
+ * 
+ * @param {String} modalId 
+ * 
+ * @returns {Element}
+ */
+export const get = modalId => modals.get(modalId)
+
+/**
+ * @name    showForm
+ * @summary opens form in a modal dialog
+ * 
+ * @param   {Function}  FormComponent FormBuilder or any other form that uses FormBuilder component (not element) class 
+ * @param   {Object}    props         (optional) any props to supply when instantiating the form element
+ * @param   {String}    modalId       (optional) if not supplied, will generate a random UUID
+ * @param   {*}         focusRef      (optional) if supplied will focus element on form open.
+ *                                    Otherwise, will attempt to focus first form input element.
+ * 
+ * @returns {String}    @modalId      can be used with `closeModal` function to externally close the modal
+ */
+export const showForm = (FormComponent, props, modalId, focusRef) => {
     // Invalid component supplied
     if (!isFn(FormComponent)) return
-    id = id || uuid.v1()
+    // grab the default modalId if already defined in the defualtProps
+    modalId = modalId || (FormComponent.defaultProps || {}).modalId || uuid.v1()
     const form = (
         <FormComponent {...{
             ...props,
             modal: true,
-            modalId: id,
+            modalId,
             open: true,
             onClose: (e, d) => {
                 const { onClose } = props || {}
-                closeModal(id)
+                closeModal(modalId)
                 isFn(onClose) && onClose(e, d)
             },
         }} />
     )
-    return add(id, form)
+    if (!focusRef) setTimeout(() => {
+        // if focusRef not supplied attempt to auto-focus first input element
+        const selector = `#form-${modalId} input:first-child`
+        const firstInputEl = document.querySelector(selector)
+        firstInputEl && firstInputEl.focus()
+    }, 50)
+    return add(modalId, form, focusRef)
 }
 
-// open any form within './forms/ in a modal
-(() => {
-    const form = (getUrlParam('form') || '').trim()
-    if (!form) return
+// enable user to open any form within './forms/ in a modal by using URL parameter `?form=FormComponentFileName`
+// any other URL parameter will be supplied to the from as the `values` prop.
+// Exception: `?ref=XXX` is a shortcut to `?form=registration&user=XXX`
+setTimeout(() => {
+    let fileName = (getUrlParam('form') || '')
+        .trim()
+        .toLowerCase()
+    const referralCode = !fileName && getUrlParam('ref')
+    if (!!referralCode) fileName = 'registration'
+    if (!fileName) return
     try {
-        const Form = require(`../forms/${form}${form.endsWith('.jsx') ? '' : '.jsx'}`)
-        const values = getUrlParam()
+        fileName = (require('./languageFiles').default || [])
+            .map(x => x.split('./src/forms/')[1])
+            .filter(Boolean)
+            .find(x => x.toLowerCase().startsWith(fileName))
+        if (!fileName) return
+
+        const Form = require(`../forms/${fileName}`)
+        const values = !referralCode
+            ? getUrlParam()
+            : { referralCode }
+
         showForm(Form.default, { values })
         history.pushState({}, null, `${location.protocol}//${location.host}`)
     } catch (e) {
-        form && console.log(e)
+        fileName && console.log(e)
     }
-})()
+})
+
+const el = document.getElementById('modals-container')
+el && render(<ModalsConainer />, el)
 export default {
     closeModal,
     confirm,
     ModalsConainer,
+    rxModals,
     showForm,
 }

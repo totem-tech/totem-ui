@@ -5,7 +5,10 @@ import { isObj, isStr, objClean, objHasKeys } from '../../utils/utils'
 
 const locations = new DataStorage('totem_locations', true)
 export const rxLocations = locations.rxData // RxJS Subject (because caching is disabled)
-export const allKeys = { ...requiredFields, ...optionalFields }
+export const validKeys = Object.freeze([
+	...Object.values(requiredFields),
+	...Object.values(optionalFields),
+])
 
 /**
  * @name	find
@@ -65,7 +68,6 @@ export const search = (...args) => locations.search(...args)
 export const set = (location, id = randomHex(), replace = false) => {
 	if (!isStr(id) || !isObj(location)) return null
 	const existingItem = locations.get(id)
-	const validKeys = Object.values(allKeys)
 	const requiredKeys = Object.values(requiredFields)
 	// merge with existing item and get rid of any unwanted properties
 	location = objClean({ ...(replace ? {} : existingItem), ...location }, validKeys)

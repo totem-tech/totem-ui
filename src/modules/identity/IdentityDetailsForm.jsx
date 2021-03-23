@@ -8,6 +8,7 @@ import { translated } from '../../services/language'
 import { confirm } from '../../services/modal'
 import { get, getSelected, remove } from './identity'
 import IdentityForm from './IdentityForm'
+import { getCrowdsaleIdentity } from '../crowdsale/crowdsale'
 
 const textsCap = translated({
     availableBalance: 'available balance',
@@ -29,7 +30,8 @@ const textsCap = translated({
     removeWarningPart1: 'you are about to remove the following identity',
     removeWarningPart2: 'if not backed up, this action is irreversible',
     removeWarningPart3: 'you will lose access to all activity/data related to this identity.',
-    selectedWalletWarning: 'cannot remove identity you are currently using',
+    identityDeleteWarningSelected: 'cannot remove identity you are currently using',
+    identityDeleteWarningCrowdsale: 'cannot remove your crowdsale identity',
     show: 'show',
     showSeed: 'show seed phrase',
     seed: 'seed',
@@ -154,24 +156,19 @@ export default class IdentityDetailsForm extends Component {
 
     getUri = uri => this.showSeed || !uri ? uri : '*'.repeat(uri.length)
 
-    handleChange = deferred((_, values) => {
-        // const requiredKeys = Object.keys(requiredFields)
-        // // prevent saving if one or more fields are empty
-        // if (!objHasKeys(values, requiredKeys, true)) return
-        // set(values.address, values)
-    }, 300)
-
     handleDelete = () => {
         const { onSubmit } = this.props
         const { address, name } = this.identity
-        if (address === getSelected().address) {
-            return confirm({
-                cancelButton: textsCap.ok,
-                confirmButton: null,
-                content: textsCap.selectedWalletWarning,
-                size: 'mini',
-            })
-        }
+        const isCrowdsale = getCrowdsaleIdentity() === address
+        const allowDelete = !isCrowdsale && address !== getSelected().address
+        if (!allowDelete) return confirm({
+            cancelButton: textsCap.ok,
+            confirmButton: null,
+            content: isCrowdsale
+                ? textsCap.identityDeleteWarningCrowdsale
+                : textsCap.identityDeleteWarningSelected,
+            size: 'mini',
+        })
 
         confirm({
             confirmButton: <Button icon='trash' content={textsCap.removePermanently} negative />,

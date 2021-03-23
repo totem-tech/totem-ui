@@ -2,6 +2,7 @@
  * Toast service displays toast messages/notifications
  */
 import React, { useEffect, useState } from 'react'
+import { render } from 'react-dom'
 import uuid from 'uuid'
 import { deferred, isObj, isStr } from '../utils/utils'
 import Message from '../components/Message'
@@ -42,7 +43,6 @@ export const ToastsContainer = () => {
 
     return hide ? '' : (
         <div
-            className='toast-service'
             style={{
                 ...styles.toastService,
                 left: animationInProgress ? 250 : left + 15,
@@ -98,13 +98,17 @@ const styles = {
         overflowY: 'auto',
         paddingRight: 10,
         position: 'fixed',
-        right: 10, // TODO: use 15 when scrollbar visible
+        right: 0, // TODO: use 15 when scrollbar visible
         transition: 'all 0.5s ease',
         WebkitTransition: 'all 0.5s ease',
         top: 61,
         zIndex: 1001
     }
 }
+
+
+const el = document.getElementById('toasts-container')
+el && render(<ToastsContainer />, el)
 
 export default {
     getById,

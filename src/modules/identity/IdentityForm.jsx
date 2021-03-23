@@ -6,7 +6,7 @@ import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder
 import { translated } from '../../services/language'
 import { getAllTags } from '../partner/partner'
 import { addFromUri, find, generateUri, get, set } from './identity'
-import { getAll as getLocations } from '../location/location'
+import { getAll as getLocations, rxLocations } from '../location/location'
 import { showForm } from '../../services/modal'
 import LocationForm from '../location/LocationForm'
 import { Button } from 'semantic-ui-react'
@@ -27,9 +27,10 @@ const textsCap = translated({
     headerCreate: 'create identity',
     headerRestore: 'restore identity',
     headerUpdate: 'update identity',
-    identityNamePlaceholder: 'a name for the identity',
-    locationLabel: 'contact address',
-    locationPlaceholder: 'select a location for this identity',
+    identityNamePlaceholder: 'enter a name for your Blockchain identity',
+    locationIdLabel: 'contact address',
+    locationIdPlaceholder: 'select a location for this identity',
+    locationIdCreateTittle: 'create a new location',
     restoreInputLabel: 'restore my existing identity',
     seedExists: 'seed already exists in the identity list with name:',
     seedPlaceholder: 'enter existing seed or generate one',
@@ -161,47 +162,32 @@ export default class IdentityForm extends Component {
                     clearable: true,
                     label: (
                         <div>
-                            {textsCap.locationLabel}
-                            <div style={{
-                                position: 'absolute',
-                                zIndex: 11,
-                                marginTop: 4,
-                            }}>
-                                <Button {...{
-                                    as: 'a',
-                                    // button to add contact address
-                                    icon: 'plus',
-                                    onClick: () => showForm(LocationForm, { onSubmit: this.handleLocationCreate }),
-                                    style: {
-                                        borderTopRightRadius: 0,
-                                        borderBottomRightRadius: 0,
-                                        cursor: 'pointer',
-                                        padding: 12,
-                                    },
-                                }} />
-                            </div>
+                            {textsCap.locationIdLabel + ' '}
+                            <Button {...{
+                                as: 'a', // prevents form being submitted unexpectedly
+                                icon: 'plus',
+                                onClick: () => showForm(LocationForm, { onSubmit: this.handleLocationCreate }),
+                                size: 'mini',
+                                style: { padding: 3 },
+                                title: textsCap.locationIdCreateTittle,
+                            }} />
                         </div>
                     ),
                     name: inputNames.locationId,
-                    options: this.getLocationOptions(),
-                    placeholder: textsCap.locationPlaceholder,
+                    options: this.getLocationOptions(getLocations()),
+                    placeholder: textsCap.locationIdPlaceholder,
+                    rxOptions: rxLocations,
+                    rxOptionsModifier: this.getLocationOptions,
+                    rxValue: new BehaviorSubject(),
                     search: ['text'],
                     selection: true,
-                    style: { 
-                        borderLeft: 'none',
-                        borderTopLeftRadius: 0,
-                        borderBottomLeftRadius: 0,
-                        maxWidth: 'calc( 100% - 42px )',
-                        marginLeft: 40,
-                        minWidth: 'auto',
-                     }, // extra spacing for the plus button
                     type: 'dropdown',
                 },
             ], this.values),
         }
     }
 
-    getLocationOptions = () => Array.from(getLocations())
+    getLocationOptions = locationsMap => Array.from(locationsMap)
         .map(([id, loc]) => loc.partnerIdentity
             ? null
             : ({
@@ -226,10 +212,10 @@ export default class IdentityForm extends Component {
 
     handleChange = (...args) => {
         const { autoSave, onChange } = this.props
-        const values = args[1]
+        const [_, values, invalid] = args
         this.values = values
         isFn(onChange) && onChange(...args)
-        if (!autoSave || !this.doUpdate) return
+        if (invalid || !autoSave || !this.doUpdate) return
 
         // prevent saving if one or more fields are empty
         if (!objHasKeys(values, Object.keys(requiredFields), true)) return
@@ -240,13 +226,11 @@ export default class IdentityForm extends Component {
         if (!success) return
         const { inputs } = this.state
         const locationIdIn = findInput(inputs, inputNames.locationId)
-        locationIdIn.options = this.getLocationOptions()
-        locationIdIn.value = id
-        this.setState({ inputs })
+        locationIdIn.rxValue.next(id)
     }
 
     handleRestoreChange = (_, values) => {
-        const { header, inputs } = this.state
+        const { inputs } = this.state
         const restore = values[inputNames.restore]
         const uriInput = findInput(inputs, inputNames.uri)
         uriInput.action = restore ? undefined : this.generateBtn

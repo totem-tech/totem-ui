@@ -43,3 +43,7 @@ body:not(.notification-visible) .notification-list:not(.inline) {
     left: 5px;
     position: absolute;
 }
+
+.notification-list .icon.close {
+    margin: 0 !important;
+}
