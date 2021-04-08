@@ -5,15 +5,17 @@ import { isFn, arrUnique, deferred, objHasKeys } from '../../utils/utils'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { getAllTags } from '../partner/partner'
-import { addFromUri, find, generateUri, get, set } from './identity'
+import { addFromUri, find, generateUri, get, set, USAGE_TYPES } from './identity'
 import { getAll as getLocations, rxLocations } from '../location/location'
 import { showForm } from '../../services/modal'
 import LocationForm from '../location/LocationForm'
 import { Button } from 'semantic-ui-react'
+import { validateMnemonic } from 'bip39'
 
 const textsCap = translated({
     address: 'address',
     autoSaved: 'changes will be auto-saved',
+    bip39Warning: 'The mnemonic you have entered is not BIP39 compatible. You may or may not be able to restore your identity on any other wallet applications. It is recommended that you use a BIP39 compatible mnemonic. If you choose to use BIP39 incompatible mnemonic, please use at your own risk!',
     create: 'create',
     business: 'business',
     generate: 'generate',
@@ -84,7 +86,7 @@ export default class IdentityForm extends Component {
         this.state = {
             header: this.header,
             message,
-            onChange: this.handleChange,
+            onChange: this.handleFormChange,
             onSubmit: this.handleSubmit,
             submitText,
             success: false,
@@ -114,21 +116,22 @@ export default class IdentityForm extends Component {
                     hidden: true,
                     label: textsCap.seed,
                     name: inputNames.uri,
+                    onChange: this.handleUriChange,
                     placeholder: textsCap.seedPlaceholder,
                     readOnly: true,
                     required: true,
                     rxValue: new BehaviorSubject(),
                     type: 'text',
-                    validate: this.values.restore ? this.validateUri : undefined,
+                    validate: this.values.restore && this.validateUri,
                 },
                 {
                     inline: true,
                     label: textsCap.usageType,
                     name: inputNames.usageType,
-                    onChange: (_, { usageType }) => this.updateSeed(this.values.uri, usageType),
+                    onChange: this.handleUsageTypeChange,
                     options: [
-                        { label: textsCap.personal, value: 'personal' },
-                        { label: textsCap.business, value: 'business' }
+                        { label: textsCap.personal, value: USAGE_TYPES.PERSONAL },
+                        { label: textsCap.business, value: USAGE_TYPES.BUSINESS }
                     ],
                     radio: true,
                     required: true,
@@ -148,11 +151,15 @@ export default class IdentityForm extends Component {
                     noResultsMessage: textsCap.tagsInputEmptyMessage,
                     multiple: true,
                     onAddItem: this.handleAddTag,
-                    options: arrUnique([...getAllTags(), ...(this.values.tags || [])]).map(tag => ({
-                        key: tag,
-                        text: tag,
-                        value: tag,
-                    })),
+                    options: arrUnique([
+                        ...getAllTags(),
+                        ...(this.values.tags || []),
+                    ])
+                        .map(tag => ({
+                            key: tag,
+                            text: tag,
+                            value: tag,
+                        })),
                     placeholder: textsCap.tagsPlaceholder,
                     type: 'dropdown',
                     search: true,
@@ -210,7 +217,7 @@ export default class IdentityForm extends Component {
         this.setState({ inputs })
     }
 
-    handleChange = (...args) => {
+    handleFormChange = (...args) => {
         const { autoSave, onChange } = this.props
         const [_, values, invalid] = args
         this.values = values
@@ -249,6 +256,24 @@ export default class IdentityForm extends Component {
         })
     }
 
+    handleUriChange = deferred(() => {
+        const { inputs } = this.state
+        const isRestore = !!this.values.restore
+        const seed = this.values[inputNames.uri]
+        const mnemonic = this.values[inputNames.uri].split('/')[0]
+        const uriInput = findInput(inputs, inputNames.uri)
+        const valid = !seed || !mnemonic || !isRestore || validateMnemonic(mnemonic)
+
+        // validate BIP39 compatibility and warn user if not compatible
+        uriInput.message = valid
+            ? null
+            : {
+                content: textsCap.bip39Warning,
+                status: 'warning'
+            }
+        this.setState({ inputs })
+    }, 500)
+
     handleSubmit = deferred(() => {
         const { onSubmit } = this.props
         const { values } = this
@@ -258,17 +283,21 @@ export default class IdentityForm extends Component {
         this.setState({ success: true })
     }, 100)
 
-    updateSeed(seed, usageType = 'personal') {
+    handleUsageTypeChange = (_, { usageType = USAGE_TYPES.PERSONAL}) => {
+        const isRestore = !!this.values[inputNames.restore]
+        if (isRestore) return // nothing to do
+
         const { inputs } = this.state
-        const restore = this.values[inputNames.restore]
-        if (restore) return
+        const seed = this.values[inputNames.uri]
         if (!this.doUpdate) {
             seed = seed || generateUri()
-            seed = seed.split('/totem/')[0] + `/totem/${usageType === 'personal' ? 0 : 1}/0`
+            const usageTypeCode = usageType === USAGE_TYPES.PERSONAL ? 0 : 1
+            seed = seed.split('/totem/')[0] + `/totem/${usageTypeCode}/0`
         }
         const { address = '' } = seed && addFromUri(seed) || {}
+        const uriInput = findInput(inputs, inputNames.uri)
         this.rxAddress.next(address)
-        findInput(inputs, inputNames.uri).rxValue.next(seed)
+        uriInput.rxValue.next(seed)
         this.setState({ inputs })
     }
 
@@ -278,6 +307,8 @@ export default class IdentityForm extends Component {
     }
 
     validateUri = (_, { value: seed }) => {
+        if (!seed) return
+
         const { inputs } = this.state
         const { address } = seed && addFromUri(seed) || {}
         if (!address) {
@@ -298,6 +329,7 @@ export default class IdentityForm extends Component {
             usageTypeIn.rxValue.next(usageType)
             this.setState({ inputs })
         }
+
         return null
     }
 
