@@ -1,9 +1,8 @@
 import React, { Component } from 'react'
 import { blake2AsHex } from '@polkadot/util-crypto'
 import { compactAddLength } from '@polkadot/util'
-import { ss58Encode } from '../utils/convert'
 import FormBuilder, { findInput } from '../components/FormBuilder'
-import { getConnection } from '../services/blockchain'
+import { getConnection, query } from '../services/blockchain'
 import { get as getIdentity, getSelected } from '../modules/identity/identity'
 
 // Translation not required
@@ -66,7 +65,11 @@ export default class UpgradeForm extends Component {
                     icon: true,
                     status: 'info',
                 }
-                this.setState({ inputs, codeBytes, submitDisabled: false })
+                this.setState({
+                    inputs,
+                    codeBytes,
+                    submitDisabled: false,
+                })
             }
             reader.readAsArrayBuffer(file)
         } catch (err) {
@@ -77,7 +80,11 @@ export default class UpgradeForm extends Component {
                 icon: true,
                 status: 'error',
             }
-            this.setState({ inputs, codeBytes: null, submitDisabled: false })
+            this.setState({
+                inputs,
+                codeBytes: null,
+                submitDisabled: false,
+            })
         }
     }
 
@@ -86,13 +93,17 @@ export default class UpgradeForm extends Component {
             const { codeBytes } = this.state
             const { api, keyring } = await getConnection()
             // tx will fail if selected is not sudo identity
-            const adminAddress = ss58Encode(await api.query.sudo.key())  //getSelected().address
+            const adminAddress = await query('api.query.sudo.key')  //getSelected().address
             const identity = getIdentity(adminAddress)
             this.setState({
                 message: {
-                    header: identity ? texts.upgradingRuntime : texts.accessDenied,
+                    header: identity
+                        ? texts.upgradingRuntime
+                        : texts.accessDenied,
                     icon: true,
-                    status: identity ? 'loading' : 'error',
+                    status: identity
+                        ? 'loading'
+                        : 'error',
                 },
                 submitDisabled: !!identity,
             })
