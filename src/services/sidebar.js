@@ -12,7 +12,7 @@ import ActivityList from '../modules/activity/ActivityList'
 import SettingsForm from '../forms/Settings'
 import TaskView from '../modules/task/TaskView'
 import TimekeepingView from '../modules/timekeeping/TimekeepingView'
-import TransferForm from '../forms/Transfer'
+import TransferForm from '../modules/identity/Transfer'
 import UtilitiesView from '../views/UtilitiesView'
 // temp
 import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'

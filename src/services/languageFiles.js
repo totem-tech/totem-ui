@@ -1,6 +1,5 @@
 export default [
     "./src/App.jsx",
-    "./src/components/Balance.jsx",
     "./src/components/CatchReactErrors.jsx",
     "./src/components/CheckboxGroup.jsx",
     "./src/components/ContentSegment.jsx",
@@ -32,7 +31,6 @@ export default [
     "./src/forms/RestoreBackup.jsx",
     "./src/forms/RuntimeUpgrade.jsx",
     "./src/forms/Settings.jsx",
-    "./src/forms/Transfer.jsx",
     "./src/index.js",
     "./src/modules/activity/ActivityForm.jsx",
     "./src/modules/activity/ActivityList.jsx",
@@ -75,6 +73,7 @@ export default [
     "./src/modules/identity/IdentityList.jsx",
     "./src/modules/identity/IdentityRequestForm.jsx",
     "./src/modules/identity/IdentityShareForm.jsx",
+    "./src/modules/identity/Transfer.jsx",
     "./src/modules/identity/identity.js",
     "./src/modules/identity/notificationHandlers.jsx",
     "./src/modules/location/LocationForm.jsx",

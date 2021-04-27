@@ -1,33 +1,33 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { Button, Icon } from 'semantic-ui-react'
+import { Icon } from 'semantic-ui-react'
 // utils
-import { ss58Decode } from '../utils/convert'
-import { getTxFee } from '../utils/polkadotHelper'
-import { arrSort, textEllipsis, deferred, isValidNumber } from '../utils/utils'
+import { ss58Decode } from '../../utils/convert'
+import { getTxFee } from '../../utils/polkadotHelper'
+import { arrSort, textEllipsis, deferred, isValidNumber } from '../../utils/utils'
 // components
-import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
-import Text from '../components/Text'
+import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
+import Text from '../../components/Text'
 // services
-import { getConnection, query, queueables } from '../services/blockchain'
-import { translated } from '../services/language'
-import { confirm, showForm } from '../services/modal'
-import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import { unsubscribe } from '../services/react'
+import { getConnection, query, queueables } from '../../services/blockchain'
+import { translated } from '../../services/language'
+import { confirm, showForm } from '../../services/modal'
+import { addToQueue, QUEUE_TYPES } from '../../services/queue'
+import { unsubscribe } from '../../services/react'
 // modules
-import Currency from '../modules/currency/Currency'
+import Currency from '../currency/Currency'
 import {
     convertTo,
     currencyDefault,
     getCurrencies,
     rxSelected as rxSelectedCurrency,
-} from '../modules/currency/currency'
-import Balance from '../modules/identity/Balance'
-import { get as getIdentity, rxIdentities, rxSelected } from '../modules/identity/identity'
-import { remove as removeNotif, setItemViewHandler } from '../modules/notification/notification'
-import { get as getPartner, getAddressName, rxPartners } from '../modules/partner/partner'
-import PartnerForm from '../modules/partner/PartnerForm'
+} from '../currency/currency'
+import { remove as removeNotif, setItemViewHandler } from '../notification/notification'
+import { get as getPartner, getAddressName, rxPartners } from '../partner/partner'
+import PartnerForm from '../partner/PartnerForm'
+import Balance from './Balance'
+import { get as getIdentity, rxIdentities, rxSelected } from './identity'
 
 const textsCap = translated({
     amount: 'amount',
