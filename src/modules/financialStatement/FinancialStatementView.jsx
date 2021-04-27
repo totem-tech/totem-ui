@@ -1,12 +1,16 @@
 import React, { useState } from 'react'
+// utils
 import { isArr, objClean } from '../../utils/utils'
-import Currency from '../../components/Currency'
+// components
 import Message from '../../components/Message'
 import DrillDownList from '../../components/DrillDownList'
-import useLedgerAcBalances from './useLedgerAcBalances'
+// services
 import storage from '../../services/storage'
 import { Button } from 'semantic-ui-react'
 import { translated } from '../../services/language'
+// components
+import Currency from '../currency/Currency'
+import useLedgerAcBalances from './useLedgerAcBalances'
 
 const MODULE_KEY = 'financialStatement'
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}

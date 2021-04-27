@@ -1,10 +1,13 @@
 import { BehaviorSubject } from 'rxjs'
+// utils
 import { isObj, isValidNumber, objClean } from '../../utils/utils'
-import { convertTo, currencyDefault, getCurrencies } from '../../services/currency'
-import storage from '../../services/storage'
-import client, { rxIsLoggedIn } from '../chat/ChatClient'
 import PromisE from '../../utils/PromisE'
+// services
 import { subjectAsPromise } from '../../services/react'
+import storage from '../../services/storage'
+// modules
+import client, { rxIsLoggedIn } from '../chat/ChatClient'
+import { convertTo, currencyDefault, getCurrencies } from '../currency/currency'
 
 const MODULE_KEY = 'crowdsale'
 export const rxCrowdsaleData = new BehaviorSubject(crowdsaleData() || {})

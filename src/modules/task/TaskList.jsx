@@ -1,20 +1,21 @@
-import React, { useReducer } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Button, Label } from 'semantic-ui-react'
-import { isArr, isObj } from '../../utils/utils'
+import { isObj } from '../../utils/utils'
 // components
 import { ButtonAcceptOrReject } from '../../components/buttons'
-import Currency from '../../components/Currency'
 import DataTable from '../../components/DataTable'
-import { FormInput } from '../../components/FormInput'
+// import { FormInput } from '../../components/FormInput'
 // forms
 import TaskForm from './TaskForm'
 // services
 import { translated } from '../../services/language'
 import { showForm, confirm } from '../../services/modal'
 import { rxOnSave, statuses as queueStatuses } from '../../services/queue'
-import { reducer, useRxSubject } from '../../services/react'
+import { useRxSubject } from '../../services/react'
+// modules
+import Currency from '../currency/Currency'
 import { getSelected } from '../identity/identity'
 import { queueableApis, statuses } from './task'
 import { handleAssignmentResponse, handleInvoicedResponse, handleUpdateStatus } from './notificationHandlers'

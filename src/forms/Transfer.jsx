@@ -7,18 +7,23 @@ import { getTxFee } from '../utils/polkadotHelper'
 import { arrSort, textEllipsis, deferred, isValidNumber } from '../utils/utils'
 import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
 import Balance from '../components/Balance'
-import Currency from '../components/Currency'
 import Text from '../components/Text'
 import PartnerForm from '../modules/partner/PartnerForm'
 import { get as getIdentity, rxIdentities, rxSelected } from '../modules/identity/identity'
 import { remove as removeNotif, setItemViewHandler } from '../modules/notification/notification'
 import { get as getPartner, getAddressName, rxPartners } from '../modules/partner/partner'
 import { getConnection, query, queueables } from '../services/blockchain'
-import { convertTo, currencyDefault, getCurrencies, rxSelected as rxSelectedCurrency } from '../services/currency'
 import { translated } from '../services/language'
 import { confirm, showForm } from '../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { unsubscribe } from '../services/react'
+import Currency from '../modules/currency/Currency'
+import {
+    convertTo,
+    currencyDefault,
+    getCurrencies,
+    rxSelected as rxSelectedCurrency,
+} from '../modules/currency/currency'
 
 const textsCap = translated({
     amount: 'amount',

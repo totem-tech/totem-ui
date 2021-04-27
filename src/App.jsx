@@ -8,7 +8,7 @@ import SidebarLeft, { MainContentItem } from './components/SidebarLeft'
 // Services
 import blockchain from './services/blockchain'
 import chatClient from './modules/chat/ChatClient'
-import currency from './services/currency'
+import currency from './modules/currency/currency'
 import identity from './modules/identity/identity'
 import language from './services/language'
 import filePaths from './services/languageFiles'

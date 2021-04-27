@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import { isValidNumber, isFn, isDefined } from '../utils/utils'
-import { convertTo, currencyDefault, rxSelected } from '../services/currency'
-import { subjectAsPromise, unsubscribe, useRxSubject } from '../services/react'
-import { rxIsConnected } from '../modules/chat/ChatClient'
+import { isValidNumber, isFn, isDefined } from '../../utils/utils'
+import { subjectAsPromise, unsubscribe, useRxSubject } from '../../services/react'
+import { convertTo, currencyDefault, rxSelected } from './currency'
+// import { rxIsConnected } from '../modules/chat/ChatClient'
 
-export const Currency = props => {
+const Currency = props => {
     let {
         className,
         decimalPlaces,

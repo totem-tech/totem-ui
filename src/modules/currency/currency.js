@@ -1,10 +1,10 @@
 import { BehaviorSubject } from 'rxjs'
-import { generateHash, arrSort, isArr, isValidNumber } from '../utils/utils'
-import PromisE from '../utils/PromisE'
-import client, { rxIsConnected } from '../modules/chat/ChatClient'
-import { translated } from './language'
-import storage from './storage'
-import { subjectAsPromise } from './react'
+import { generateHash, arrSort, isValidNumber } from '../../utils/utils'
+import PromisE from '../../utils/PromisE'
+import client, { rxIsConnected } from '../chat/ChatClient'
+import { translated } from '../../services/language'
+import storage from '../../services/storage'
+import { subjectAsPromise } from '../../services/react'
 
 const textsCap = translated({
     invalidCurency: 'invalid currency supplied',

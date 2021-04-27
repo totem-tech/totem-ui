@@ -3,17 +3,21 @@ import uuid from 'uuid'
 import { Button } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
+// utils
 import { arrSort, deferred, generateHash, isFn, isHash, isObj, isValidNumber, objClean } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 import { BLOCK_DURATION_SECONDS, blockNumberToTS, format } from '../../utils/time'
+// components
 import { Balance } from '../../components/Balance'
-import Currency from '../../components/Currency'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
+// services
 import { getCurrentBlock, hashTypes, query, queueables as bcQueueables } from '../../services/blockchain'
-import { convertTo, currencyDefault, getCurrencies, getSelected as getSelectedCurrency } from '../../services/currency'
 import { translated } from '../../services/language'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import { showForm } from '../../services/modal'
+// modules
+import { convertTo, currencyDefault, getCurrencies, getSelected as getSelectedCurrency } from '../currency/currency'
+import Currency from '../currency/Currency'
 import { getById } from '../history/history'
 import { find as findIdentity, getSelected } from '../identity/identity'
 import { get as getPartner, getAll as getPartners } from '../partner/partner'
