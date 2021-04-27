@@ -1,14 +1,18 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
-import { copyToClipboard, deferred, isFn } from '../../utils/utils'
-import Balance from '../../components/Balance'
+//utils
+import { copyToClipboard, isFn } from '../../utils/utils'
+// components
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
+// services
 import { translated } from '../../services/language'
 import { confirm } from '../../services/modal'
+// modules
+import { getCrowdsaleIdentity } from '../crowdsale/crowdsale'
+import Balance from './Balance'
 import { get, getSelected, remove } from './identity'
 import IdentityForm from './IdentityForm'
-import { getCrowdsaleIdentity } from '../crowdsale/crowdsale'
 
 const textsCap = translated({
     availableBalance: 'available balance',

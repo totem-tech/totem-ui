@@ -1,11 +1,11 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { arrSort, generateHash, isFn, objClean } from '../../utils/utils'
-import Balance from '../../components/Balance'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import { getAll as getIdentities, getSelected, rxIdentities } from '../identity/identity'
+import { getAll as getIdentities, getSelected } from '../identity/identity'
+import Balance from '../identity/Balance'
 import { getProjects, queueables } from './activity'
 
 const textsCap = translated({

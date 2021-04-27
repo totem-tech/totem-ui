@@ -1,6 +1,5 @@
 export default [
     "./src/App.jsx",
-    "./src/components/Address.jsx",
     "./src/components/Balance.jsx",
     "./src/components/CatchReactErrors.jsx",
     "./src/components/CheckboxGroup.jsx",
@@ -69,6 +68,8 @@ export default [
     "./src/modules/history/HistoryItemDetailsForm.jsx",
     "./src/modules/history/HistoryList.jsx",
     "./src/modules/history/history.js",
+    "./src/modules/identity/Address.jsx",
+    "./src/modules/identity/Balance.jsx",
     "./src/modules/identity/IdentityDetailsForm.jsx",
     "./src/modules/identity/IdentityForm.jsx",
     "./src/modules/identity/IdentityList.jsx",

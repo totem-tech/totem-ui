@@ -8,7 +8,6 @@ import { arrSort, deferred, generateHash, isFn, isHash, isObj, isValidNumber, ob
 import PromisE from '../../utils/PromisE'
 import { BLOCK_DURATION_SECONDS, blockNumberToTS, format } from '../../utils/time'
 // components
-import { Balance } from '../../components/Balance'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 // services
 import { getCurrentBlock, hashTypes, query, queueables as bcQueueables } from '../../services/blockchain'
@@ -19,6 +18,7 @@ import { showForm } from '../../services/modal'
 import { convertTo, currencyDefault, getCurrencies, getSelected as getSelectedCurrency } from '../currency/currency'
 import Currency from '../currency/Currency'
 import { getById } from '../history/history'
+import { Balance } from '../identity/Balance'
 import { find as findIdentity, getSelected } from '../identity/identity'
 import { get as getPartner, getAll as getPartners } from '../partner/partner'
 import PartnerForm from '../partner/PartnerForm'

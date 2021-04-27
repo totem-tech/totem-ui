@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { Icon } from 'semantic-ui-react'
-import { isArr, isValidNumber } from '../utils/utils'
+import { isArr, isValidNumber } from '../../utils/utils'
 // services
-import { query } from '../services/blockchain'
-import { translated } from '../services/language'
-import { unsubscribe } from '../services/react'
+import { query } from '../../services/blockchain'
+import { translated } from '../../services/language'
+import { unsubscribe } from '../../services/react'
 // modules
-import { currencyDefault } from '../modules/currency/currency'
-import Currency from '../modules/currency/Currency'
+import { currencyDefault } from '../currency/currency'
+import Currency from '../currency/Currency'
 
 const textsCap = translated({
     loadingAccBal: 'loading account balance',

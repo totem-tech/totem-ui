@@ -2,31 +2,32 @@ import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Dropdown, Icon, Image, Menu } from 'semantic-ui-react'
-import Balance from '../components/Balance'
 // utils
 import { arrSort, className, copyToClipboard, textEllipsis } from '../utils/utils'
 // forms
 import IdentityForm from '../modules/identity/IdentityForm'
 import TimekeepingForm from '../modules/timekeeping/TimekeepingForm'
 import SettingsForm, { inputNames as settingsInputNames} from '../forms/Settings'
-// services
-import { getUser, rxIsLoggedIn } from '../modules/chat/ChatClient'
-import { getSelected, setSelected, rxIdentities } from '../modules/identity/identity'
-import { getSelected as getSelectedLang, translated } from '../services/language'
-import { showForm } from '../services/modal'
+// modules
 import {
 	rxUnreadCount as rxUnreadMsgCount,
 	rxVisible as rxChatVisible,
 } from '../modules/chat/chat'
+import { getUser, rxIsLoggedIn } from '../modules/chat/ChatClient'
+import Balance from '../modules/identity/Balance'
+import { getSelected, setSelected, rxIdentities } from '../modules/identity/identity'
 import {
 	rxNewNotification,
 	rxVisible as rxNotifVisible,
 	rxUnreadCount as rxUnreadNotifCount,
 } from '../modules/notification/notification'
+import { rxTimerInProgress } from '../modules/timekeeping/timekeeping'
+// services
+import { getSelected as getSelectedLang, translated } from '../services/language'
+import { showForm } from '../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { unsubscribe, useRxSubject } from '../services/react'
-import { toggleSidebarState, setActive } from '../services/sidebar'
-import { rxTimerInProgress } from '../modules/timekeeping/timekeeping'
+import { toggleSidebarState } from '../services/sidebar'
 import { setToast } from '../services/toast'
 import { useInverted, rxInverted, rxLayout, MOBILE } from '../services/window'
 
