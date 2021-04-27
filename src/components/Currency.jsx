@@ -36,12 +36,12 @@ export const Currency = props => {
             if (!mounted) return
             try {
                 // if messaging service is not connected. Wait until connected
-                if (!rxIsConnected.value) {
-                    const [connectionPromise, unsubscriber] = subjectAsPromise(rxIsConnected, true)
-                    // makes sure to unsubscribe if component is unmounted
-                    subscriptions.isConnected = unsubscriber
-                    await connectionPromise
-                }
+                // if (!rxIsConnected.value) {
+                //     const [connectionPromise, unsubscriber] = subjectAsPromise(rxIsConnected, true)
+                //     // makes sure to unsubscribe if component is unmounted
+                //     subscriptions.isConnected = unsubscriber
+                //     await connectionPromise
+                // }
                 const [_, rounded] = await convertTo(
                     value || 0,
                     unit,

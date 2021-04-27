@@ -1,5 +1,6 @@
 import React from 'react'
 import { render } from 'react-dom'
+import { Loader } from 'semantic-ui-react'
 import 'semantic-ui-css/semantic.min.css'
 import PromisE from './utils/PromisE'
 import { isArrLike, isError, isObj, isStr, objClean } from './utils/utils'
@@ -11,16 +12,14 @@ import client from './modules/chat/ChatClient'
 import { fetchNSaveTexts } from './services/language'
 import storage from './services/storage'
 import { getUrlParam, MOBILE, rxLayout } from './services/window'
-import CountDown from './modules/crowdsale/CountDown'
 
 const urlParams = getUrlParam()
 const isSignUp = urlParams.hasOwnProperty('NewsletterSignup')
-const isCountDown = urlParams.hasOwnProperty('countdown')
 const debug = getUrlParam('debug').toLowerCase()
 window.isDebug = debug === 'force'
     || debug === 'true'
     && rxLayout.value === MOBILE
-window.isInIFrame = isSignUp || isCountDown
+window.isInIFrame = isSignUp
 if (!window.isInIFrame && window.isDebug) {
     // for debugging purposes only, when on a mobile device
     // adds interceptors to below console functions and prints all logs into a DOM element above page contents
@@ -63,7 +62,9 @@ if (!window.isInIFrame && window.isDebug) {
     })
 }
 
-const init = () => PromisE.timeout((resolve, reject) => {
+const initPromise = PromisE.timeout((resolve, reject) => {
+    // initiate connection to blockchain
+    getConnection()
     const countries = storage.countries.getAll()
     let countriesSaved = countries.size > 0
     let translationChecked = false
@@ -90,12 +91,10 @@ const init = () => PromisE.timeout((resolve, reject) => {
             reject() // continue on rendering the application
         }
     })
-}, 2000)
+}, 3000)
 const doRender = () => {
-    if (isSignUp || isCountDown) {
-        const El = isSignUp 
-            ? NewsletterSignup
-            : CountDown
+    if (isSignUp) {
+        const El = NewsletterSignup
         document.body.classList.add('iframe')
         render(<El />, document.getElementById('app'))
         return
@@ -103,8 +102,17 @@ const doRender = () => {
     render(<App />, document.getElementById('app'))
 }
 
-// initiate connection to blockchain
-getConnection()
-init()
+// show loading spinner if it takes longer than 100ms to initialize
+PromisE.timeout(initPromise, 100)
+    .catch(() => {
+        const styleCenter = {
+            top: 'calc( 50% - 29px )',
+            left: 'calc( 50% - 29px )',
+            position: 'fixed',
+        }
+        const loader = <Loader active style={styleCenter}>Loading...</Loader>
+        render(loader, document.getElementById('app'))
+    })
+initPromise
     .then(doRender)
     .catch(doRender)
