@@ -1,11 +1,9 @@
 import React from 'react'
-import { Button, Icon, Popup } from 'semantic-ui-react'
+import { Icon, Popup } from 'semantic-ui-react'
 import DataTable from '../../components/DataTable'
 import Invertible from '../../components/Invertible'
 import TimeSince from '../../components/TimeSince'
-import SettingsForm, { inputNames as settingsInputNames } from '../../forms/Settings'
 import { translated } from '../../services/language'
-import { showForm } from '../../services/modal'
 import { useRxSubject } from '../../services/react'
 import { format } from '../../utils/time'
 import Currency from './Currency'
@@ -13,7 +11,7 @@ import { getCurrencies, rxSelected } from './currency'
 
 const textsCap = translated({
     name: 'name',
-    price: 'price',
+    price: 'daily reference rate',
     status: 'status',
     ticker: 'ticker',
     updated: 'updated',
@@ -106,28 +104,7 @@ export default () => {
                 collapsing: true,
                 key: '_priceEl',
                 textAlign: 'center',
-                title: (
-                    <span>
-                        {textsCap.price}
-                        <Button {...{
-                            circular: true,
-                            className: 'no-margin',
-                            icon: 'pencil',
-                            size: 'mini',
-                            onClick: e => {
-                                // e.preventDefault()
-                                e.stopPropagation()
-                                showForm(SettingsForm, {
-                                    header: null,
-                                    // hide all inputs except the currency dropdown
-                                    inputsHidden: Object.values(settingsInputNames)
-                                        .filter(x => x !== settingsInputNames.currency),
-                                    size: 'mini',
-                                })
-                            },
-                        }} />
-                    </span>
-                ),
+                title: textsCap.price,
             }
         ],
     }
