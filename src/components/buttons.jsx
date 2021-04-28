@@ -266,12 +266,18 @@ export const UserID = React.memo(props => {
 
     const isOwnId = (getUser() || {}).id === rawId
     const allowClick = onClick !== null && !isOwnId
-
+    const handleClick = !allowClick ? undefined : (e => e.stopPropagation() | UserID.showModal(userId, address))
+    const handleDragStart = e => {
+        e.stopPropagation()
+        e.dataTransfer.setData('Text', rawId)
+    }
     return (
         <El {...{
             ...objWithoutKeys(props, ignoreAttributes),
             children: <b>{prefix}@{rawId}{suffix}</b>,
-            onClick: !allowClick ? undefined : (e => e.stopPropagation() | UserID.showModal(userId, address)),
+            draggable: true,
+            onClick: handleClick,
+            onDragStart: handleDragStart,
             style: {
                 cursor: allowClick && 'pointer',
                 fontWeight: 'bold',

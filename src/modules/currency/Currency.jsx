@@ -78,9 +78,11 @@ const Currency = props => {
             className,
             onClick,
             style: { color: error ? 'red' : undefined, ...style },
-            title: error ? `${error}` : title || (
-                !isDefined(value) || isSame ? '' : `${value || 0} ${unit}`
-            ),
+            title: error
+                ? `${error}`
+                : title || title === null || !isDefined(value) || isSame
+                    ? title
+                    : `${value || 0} ${unit}`,
         }}>
             {content}
         </EL>

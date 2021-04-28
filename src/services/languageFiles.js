@@ -59,6 +59,7 @@ export default [
     "./src/modules/crowdsale/Progress.jsx",
     "./src/modules/crowdsale/crowdsale.js",
     "./src/modules/currency/Currency.jsx",
+    "./src/modules/currency/CurrencyList.jsx",
     "./src/modules/currency/currency.js",
     "./src/modules/event/EventList.jsx",
     "./src/modules/financialStatement/FinancialStatementView.jsx",

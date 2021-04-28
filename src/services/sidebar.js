@@ -3,6 +3,7 @@ import uuid from 'uuid'
 import { Bond } from 'oo7'
 import { BehaviorSubject } from 'rxjs'
 // Views (including lists and forms)
+import CurrencyList from '../modules/currency/CurrencyList'
 import FinancialStatementsView from '../modules/financialStatement/FinancialStatementView'
 import GettingStarted from '../views/GettingStartedView'
 import HistoryList from '../modules/history/HistoryList'
@@ -27,6 +28,8 @@ import storage from './storage'
 import { getUrlParam, MOBILE, rxLayout, setClass } from './window'
 
 const textsCap = translated({
+    currenciesTitle: 'currencies',
+
     crowdsaleTitle: 'crowdsale',
 
     eventsTtile: 'events',
@@ -246,54 +249,66 @@ export const sidebarItems = [
     {
         content: TransferForm,
         contentProps: { style: { maxWidth: 450 } },
-        icon: 'money bill alternate outline',
+        icon: 'send',
         header: textsCap.transferHeader,
         name: 'transfer',
         subHeader: textsCap.transferSubheader,
         subHeaderDetails: textsCap.transferSubheaderDetails,
         title: textsCap.transferTitle,
     },
-    // { icon: 'file alternate', title: 'Invoice', subHeader: '', active: false, content: <Invoice /> },
     {
-        icon: 'file alternate',
-        name: 'invoices',
-        title: textsCap.invoicesTitle,
+        content: CurrencyList,
+        icon: 'money bill alternate outline',
+        name: 'currencies',
+        title: textsCap.currenciesTitle,
     },
-    {
-        icon: 'file alternate outline',
-        name: 'credit-note',
-        title: textsCap.creditNoteTitle,
-    },
-    {
-        icon: 'exchange',
-        name: 'purchase-order',
-        title: textsCap.purchaseOrderTitle,
-    },
-    {
-        icon: 'inbox',
-        name: 'manage-orders',
-        title: textsCap.manageOrderTitle,
-    },
-    {
-        icon: 'cc mastercard',
-        name: 'expense',
-        title: textsCap.expenseTitle,
-    },
-    {
-        icon: 'exclamation circle',
-        name: 'disputed-items',
-        title: textsCap.disputedItemsTitle,
-    },
-    {
-        icon: 'chart bar outline',
-        name: 'edit-accounting',
-        title: textsCap.editAccountingTitle,
-    },
-    {
-        icon: 'lightbulb',
-        name: 'products',
-        title: textsCap.productsTitle,
-    },
+    // {
+    //     icon: 'file alternate',
+    //     title: 'Invoice',
+    //     subHeader: '',
+    //     active: false,
+    //     content: <Invoice />,
+    // },
+    // {
+    //     icon: 'file alternate',
+    //     name: 'invoices',
+    //     title: textsCap.invoicesTitle,
+    // },
+    // {
+    //     icon: 'file alternate outline',
+    //     name: 'credit-note',
+    //     title: textsCap.creditNoteTitle,
+    // },
+    // {
+    //     icon: 'exchange',
+    //     name: 'purchase-order',
+    //     title: textsCap.purchaseOrderTitle,
+    // },
+    // {
+    //     icon: 'inbox',
+    //     name: 'manage-orders',
+    //     title: textsCap.manageOrderTitle,
+    // },
+    // {
+    //     icon: 'cc mastercard',
+    //     name: 'expense',
+    //     title: textsCap.expenseTitle,
+    // },
+    // {
+    //     icon: 'exclamation circle',
+    //     name: 'disputed-items',
+    //     title: textsCap.disputedItemsTitle,
+    // },
+    // {
+    //     icon: 'chart bar outline',
+    //     name: 'edit-accounting',
+    //     title: textsCap.editAccountingTitle,
+    // },
+    // {
+    //     icon: 'lightbulb',
+    //     name: 'products',
+    //     title: textsCap.productsTitle,
+    // },
     {
         content: HistoryList,
         icon: 'history',
