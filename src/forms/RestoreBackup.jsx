@@ -32,7 +32,7 @@ const textsCap = translated({
 	submitNoAction: 'no actionable item selected',
 }, true)[1]
 // data that can be merged (must be 2D array that represents a Map)
-const MERGEABLES = ['totem_identities', 'totem_partners']
+const MERGEABLES = ['totem_identities', 'totem_partners', 'totem_locations']
 // ignore meta data or unnecessary fields when comparing between current and backed up data
 const diffIgnoreKeys = {
 	totem_identities: ['address', 'cloudBackupStatus', 'cloudBackupTS', 'fileBackupTS'],
@@ -114,8 +114,14 @@ export default class RestoreBackup extends Component {
 			label: textsCap.chatUserId,
 			name: this.names.userId,
 			options: [
-				{ label: `${textsCap.preserveUser}: ${user.id}`, value: user },
-				backupUser.id && { label: `${restoreUser}: ${backupUser.id}`, value: backupUser }
+				{
+					label: `${textsCap.preserveUser}: @${user.id}`,
+					value: user,
+				},
+				backupUser.id && {
+					label: `${textsCap.restoreUser}: @${backupUser.id}`,
+					value: backupUser,
+				}
 			].filter(Boolean),
 			required: true,
 			radio: true,
@@ -246,7 +252,7 @@ export default class RestoreBackup extends Component {
 		]
 	}
 
-	handleFileChange = (e) => {
+	handleFileChange = async (e) => {
 		const { inputs } = this.state
 		const fileIn = findInput(inputs, 'file')
 		try {

@@ -155,6 +155,11 @@ export const reducer = (state = {}, newValue = {}) => ({ ...state, ...newValue }
  *                      0. @result : anyting the promise resolves with
  *                      1. @error  : anything the promise rejects with
  *                  ]
+ * 
+ * @example
+ * ```javascript
+ * const [result, error] = usePromise(Promise.resolve(1))
+ * ```
  */
 export const usePromise = (promise, resultModifier, errorModifier) => {
     const [state, setState] = useState({})

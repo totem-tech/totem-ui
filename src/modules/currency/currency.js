@@ -1,10 +1,10 @@
 import { BehaviorSubject } from 'rxjs'
-import { generateHash, arrSort, isArr, isValidNumber } from '../utils/utils'
-import PromisE from '../utils/PromisE'
-import client, { rxIsConnected } from '../modules/chat/ChatClient'
-import { translated } from './language'
-import storage from './storage'
-import { subjectAsPromise } from './react'
+import { generateHash, arrSort, isValidNumber } from '../../utils/utils'
+import PromisE from '../../utils/PromisE'
+import client, { rxIsConnected } from '../chat/ChatClient'
+import { translated } from '../../services/language'
+import storage from '../../services/storage'
+import { subjectAsPromise } from '../../services/react'
 
 const textsCap = translated({
     invalidCurency: 'invalid currency supplied',
@@ -35,12 +35,10 @@ export const rxSelected = new BehaviorSubject(getSelected())
  * @returns {Array} [@convertedAmount Number, @rounded String]
  */
 export const convertTo = async (amount = 0, from, to, decimals) => {
-    // from = from.toUpperCase()
-    // to = to.toUpperCase()
     const ft = [from, to]
-    // await client.currencyConvert.promise(from, to, amount)
-    // wait up to 10 seconds if messaging service is not connected yet
-    if (!rxIsConnected.value) await subjectAsPromise(rxIsConnected, true, 10000)[0]
+    // // await client.currencyConvert.promise(from, to, amount)
+    // // wait up to 10 seconds if messaging service is not connected yet
+    // if (!rxIsConnected.value) await subjectAsPromise(rxIsConnected, true, 10000)[0]
     const currencies = await getCurrencies()
     const fromTo = currencies.filter(({ ISO }) => ft.includes(ISO))
     const gotBoth = ft.every(x => fromTo.find(c => c.ISO === x))
@@ -116,9 +114,13 @@ export const updateCurrencies = async () => {
             await subjectAsPromise(rxIsConnected, true)[0]
         }
 
-        updateCurrencies.updatePromise = PromisE.timeout(fetchCurrencies(cached), 3000)
+        const p = fetchCurrencies(cached)
+        // only use timeout if there is cached data available.
+        // First time load must retrieve full list of currencies.
+        const tp = cached && PromisE.timeout(p, 3000)
+        updateCurrencies.updatePromise = p
 
-        return await updateCurrencies.updatePromise
+        return await (tp || p)
     } catch (err) {
         console.trace('Failed to retrieve currencies:', err)
     }

@@ -325,6 +325,7 @@ export default class DataTable extends Component {
             searchExtraKeys,
             style,
             tableProps,
+            defaultSort,
         } = this.props
         let {
             keywords,
@@ -333,6 +334,7 @@ export default class DataTable extends Component {
             sortAsc,
             sortBy,
         } = this.state
+
         keywords = keywords.trim()
         const columns = columnsOriginal.filter(x => !!x && !x.hidden)
         // Include extra searchable keys that are not visibile on the table
@@ -413,7 +415,10 @@ DataTable.propTypes = {
             hidden: PropTypes.bool,
             key: PropTypes.string,
             name: PropTypes.string,
-            title: PropTypes.string.isRequired
+            title: PropTypes.oneOfType([
+                PropTypes.string,
+                PropTypes.element,
+            ]).isRequired,
         })
     ).isRequired,
     // array of column `name`s to hide

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import { isValidNumber, isFn, isDefined } from '../utils/utils'
-import { convertTo, currencyDefault, rxSelected } from '../services/currency'
-import { subjectAsPromise, unsubscribe, useRxSubject } from '../services/react'
-import { rxIsConnected } from '../modules/chat/ChatClient'
+import { isValidNumber, isFn, isDefined } from '../../utils/utils'
+import { subjectAsPromise, unsubscribe, useRxSubject } from '../../services/react'
+import { convertTo, currencyDefault, rxSelected } from './currency'
+// import { rxIsConnected } from '../modules/chat/ChatClient'
 
-export const Currency = props => {
+const Currency = props => {
     let {
         className,
         decimalPlaces,
@@ -36,12 +36,12 @@ export const Currency = props => {
             if (!mounted) return
             try {
                 // if messaging service is not connected. Wait until connected
-                if (!rxIsConnected.value) {
-                    const [connectionPromise, unsubscriber] = subjectAsPromise(rxIsConnected, true)
-                    // makes sure to unsubscribe if component is unmounted
-                    subscriptions.isConnected = unsubscriber
-                    await connectionPromise
-                }
+                // if (!rxIsConnected.value) {
+                //     const [connectionPromise, unsubscriber] = subjectAsPromise(rxIsConnected, true)
+                //     // makes sure to unsubscribe if component is unmounted
+                //     subscriptions.isConnected = unsubscriber
+                //     await connectionPromise
+                // }
                 const [_, rounded] = await convertTo(
                     value || 0,
                     unit,
@@ -78,9 +78,11 @@ export const Currency = props => {
             className,
             onClick,
             style: { color: error ? 'red' : undefined, ...style },
-            title: error ? `${error}` : title || (
-                !isDefined(value) || isSame ? '' : `${value || 0} ${unit}`
-            ),
+            title: error
+                ? `${error}`
+                : title || title === null || !isDefined(value) || isSame
+                    ? title
+                    : `${value || 0} ${unit}`,
         }}>
             {content}
         </EL>

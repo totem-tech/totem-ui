@@ -2,11 +2,10 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Icon } from 'semantic-ui-react'
-import { isValidNumber } from '../../utils/utils'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
-import { convertTo, currencyDefault, rxSelected } from '../../services/currency'
 import { translated } from '../../services/language'
 import { iUseReducer } from '../../services/react'
+import { convertTo, currencyDefault, rxSelected } from '../currency/currency'
 import { BLOCKCHAINS, calculateAllocation, calculateToNextLevel, rxCrowdsaleData } from './crowdsale'
 
 const textsCap = translated({
@@ -243,7 +242,7 @@ export const getInputs = (rxSetState, deposits = {}) => {
 const handleAmountChange = (inputs, rxSetState, deposits) => async (_, values) => {
     const amount = values[inputNames.amount] || 0
     const currency = values[inputNames.currency]
-    if (!currency) return rxSetState.next({ message: null }) //|| !isValidNumber(amount)
+    if (!currency) return rxSetState.next({ message: null })
     
     const rxAmount = findInput(inputs, inputNames.amount).rxValue
     const depositAmounts = { ...deposits }
