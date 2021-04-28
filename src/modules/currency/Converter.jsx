@@ -23,7 +23,6 @@ const inputNames = {
 const Converter = props => {
     const [state] = iUseReducer(null, rxSetState => {
         const isMobile = rxLayout.value === MOBILE
-        console.log({isMobile})
         const currenciesPromise = getCurrencies()
         const rxFrom = new BehaviorSubject(rxSelected.value)
         const rxFromAmount = new BehaviorSubject(1)
@@ -58,7 +57,7 @@ const Converter = props => {
                         },
                         {
                             content: (
-                                <div style={isMobile && {
+                                <div style={!isMobile ? null : {
                                     paddingBottom: 7,
                                     textAlign: 'center',
                                     width: '100%',
@@ -92,7 +91,7 @@ const Converter = props => {
                             placeholder: textsCap.amount,
                             readOnly: true,
                             rxValue: rxToAmount,
-                            style: isMobile && { marginBottom: 10},
+                            style: isMobile ? { marginBottom: 10} : null,
                             type: 'text',
                         },
                     ],
