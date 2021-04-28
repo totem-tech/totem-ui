@@ -6,6 +6,7 @@ import TimeSince from '../../components/TimeSince'
 import { translated } from '../../services/language'
 import { useRxSubject } from '../../services/react'
 import { format } from '../../utils/time'
+import Converter from './Converter'
 import Currency from './Currency'
 import { getCurrencies, rxSelected } from './currency'
 
@@ -85,7 +86,7 @@ export default () => {
         columns: [
             {
                 collapsing: true,
-                content: ({_statusIndicator}) => _statusIndicator,
+                content: ({ _statusIndicator }) => _statusIndicator,
                 key: '_status',
                 style: { cursor: 'pointer' },
                 textAlign: 'center',
@@ -106,6 +107,9 @@ export default () => {
                 textAlign: 'center',
                 title: textsCap.price,
             }
+        ],
+        topLeftMenu: [
+            <Converter key='c' style={{ maxWidth: 470}}></Converter>
         ],
     }
     return <DataTable {...{ ...tableProps, data } } />
