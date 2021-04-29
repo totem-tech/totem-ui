@@ -137,7 +137,7 @@ export default class DataTable extends Component {
 
     getRows(filteredData, columns, selectedIndexes, pageNo) {
         let { columnsHidden, perPage, rowProps, selectable } = this.props
-
+        const nonAttrs = ['content', 'headerProps', 'sortable', 'sortKey', 'title']
         return mapItemsByPage(filteredData, pageNo, perPage, (item, key, items, isMap) => (
             <Table.Row
                 key={key}
@@ -164,7 +164,7 @@ export default class DataTable extends Component {
                             ...style
                         }
                         const props = {
-                            ...objWithoutKeys(cell, ['content', 'headerProps', 'title']),
+                            ...objWithoutKeys(cell, nonAttrs),
                             key: key + j,
                             draggable,
                             onDragStart: !draggable ? undefined : this.handleDragStart,

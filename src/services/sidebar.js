@@ -27,7 +27,7 @@ import storage from './storage'
 import { getUrlParam, MOBILE, rxLayout, setClass } from './window'
 
 const textsCap = translated({
-    currenciesTitle: 'currencies',
+    currenciesTitle: 'exchange rates',
 
     crowdsaleTitle: 'crowdsale',
 

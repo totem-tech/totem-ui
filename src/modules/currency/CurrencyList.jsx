@@ -13,6 +13,8 @@ import { getCurrencies, rxSelected } from './currency'
 const textsCap = translated({
     name: 'name',
     price: 'daily reference rate',
+    rank: 'rank',
+    source: 'source',
     status: 'status',
     ticker: 'ticker',
     updated: 'updated',
@@ -74,6 +76,7 @@ export default () => {
             )
             return {
                 ...currency,
+                _rankSort: currency.rank || 999999,
                 _priceEl,
                 _statusIndicator,
                 _statusName: statusCode + nameInLanguage,
@@ -95,6 +98,13 @@ export default () => {
                 title: textsCap.status,
             },
             {
+                collapsing: true,
+                key: 'rank',
+                sortKey: '_rankSort',
+                textAlign: 'center',
+                title: textsCap.rank,
+            },
+            {
                 key: 'nameInLanguage',
                 title: textsCap.name,
             },
@@ -109,8 +119,14 @@ export default () => {
                 sortable: false,
                 textAlign: 'center',
                 title: textsCap.price,
-            }
+            },
+            {
+                collapsing: true,
+                key: 'source',
+                title: textsCap.source,
+            },
         ],
+        tableProps: { celled: false },
         topLeftMenu: [
             <Converter key='c' style={{ maxWidth: 470}}></Converter>
         ],
