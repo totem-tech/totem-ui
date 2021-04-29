@@ -53,7 +53,7 @@ export default function IdentityList(props){
                         <div key={address} title={isCrowdsale ? textsCap.crowdsaleIdentity : ''}>
                             {isCrowdsale && (
                                 <Icon {...{
-                                    name: 'chess queen',
+                                    name: 'rocket',
                                     style: { color: 'gold' },
                                 }} />
                             )}
@@ -98,6 +98,7 @@ const getTableProps = () => ({
     columns: [
         {
             key: '_name',
+            sortKey: 'name',
             style: { minWidth: 150 },
             title: textsCap.name,
         },
@@ -105,12 +106,14 @@ const getTableProps = () => ({
             collapsing: true,
             draggable: false,
             key: '_balance',
+            sortable: false,
             textAlign: 'center',
             title: textsCap.txAllocations,
         },
         {
             key: '_tags',
             draggable: false, // individual tags are draggable
+            sortKey: 'tags',
             title: textsCap.tags
         },
         {
@@ -120,11 +123,11 @@ const getTableProps = () => ({
         },
         { collapsing: true, key: '_usageType', title: textsCap.usage },
         {
+            content: getActions,
             collapsing: true,
             draggable: false,
             textAlign: 'center',
             title: textsCap.actions,
-            content: getActions,
         }
     ],
     emptyMessage: { content: textsCap.emptyMessage },

@@ -22,7 +22,7 @@ export default () => {
     const [data] = useRxSubject(rxSelected, async (selectedISO) => {
         const arr = await getCurrencies()
         const data = arr.map(currency => {
-            const { ISO, priceUpdatedAt: ts } = currency
+            const { ISO, nameInLanguage, priceUpdatedAt: ts } = currency
             // checks if price has been updated within 24 hours
             const isActive = (new Date() - new Date(ts)) <= 86400000
             const _status = !ts
@@ -73,7 +73,13 @@ export default () => {
                     value: 1, // display the price of one unit
                 }} />
             )
-            return { ...currency, _priceEl, _status, _statusIndicator }
+            return {
+                ...currency,
+                _priceEl,
+                _status,
+                _statusName: _status + nameInLanguage,
+                _statusIndicator,
+            }
         })
 
         return data
@@ -81,13 +87,12 @@ export default () => {
 
 
     const tableProps = {
-        defaultSort: '_status',
-        defaultSortAsc: true,
         columns: [
             {
                 collapsing: true,
                 content: ({ _statusIndicator }) => _statusIndicator,
                 key: '_status',
+                sortKey: '_statusName',
                 style: { cursor: 'pointer' },
                 textAlign: 'center',
                 title: textsCap.status,
