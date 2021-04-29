@@ -20,8 +20,7 @@ const textsCap = translated({
 
 export default () => {
     const [data] = useRxSubject(rxSelected, async (selectedISO) => {
-        const arr = await getCurrencies()
-        const data = arr.map(currency => {
+        const data = (await getCurrencies()).map(currency => {
             const { ISO, nameInLanguage, priceUpdatedAt: ts } = currency
             // checks if price has been updated within 24 hours
             const isActive = (new Date() - new Date(ts)) <= 86400000
@@ -107,6 +106,7 @@ export default () => {
             {
                 collapsing: true,
                 key: '_priceEl',
+                sortable: false,
                 textAlign: 'center',
                 title: textsCap.price,
             }
