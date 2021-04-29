@@ -25,7 +25,7 @@ export default () => {
             const { ISO, nameInLanguage, priceUpdatedAt: ts } = currency
             // checks if price has been updated within 24 hours
             const isActive = (new Date() - new Date(ts)) <= 86400000
-            const _status = !ts
+            const statusCode = !ts
                 ? 3
                 : !isActive
                     ? 2
@@ -39,12 +39,12 @@ export default () => {
                 <div>
                     <Icon {...{
                         className: 'no-margin',
-                        color: statusColors[_status - 1],
+                        color: statusColors[statusCode - 1],
                         name: 'circle',
                     }} />
                 </div>
             )
-            const _statusIndicator = _status === 3
+            const _statusIndicator = statusCode === 3
                 ? icon
                 : (
                     <Invertible {...{
@@ -76,9 +76,8 @@ export default () => {
             return {
                 ...currency,
                 _priceEl,
-                _status,
-                _statusName: _status + nameInLanguage,
                 _statusIndicator,
+                _statusName: statusCode + nameInLanguage,
             }
         })
 
@@ -90,8 +89,7 @@ export default () => {
         columns: [
             {
                 collapsing: true,
-                content: ({ _statusIndicator }) => _statusIndicator,
-                key: '_status',
+                key: '_statusIndicator',
                 sortKey: '_statusName',
                 style: { cursor: 'pointer' },
                 textAlign: 'center',
