@@ -13,6 +13,8 @@ import { getCurrencies, rxSelected } from './currency'
 const textsCap = translated({
     name: 'name',
     price: 'daily reference rate',
+    rank: 'rank',
+    source: 'source',
     status: 'status',
     ticker: 'ticker',
     updated: 'updated',
@@ -20,12 +22,11 @@ const textsCap = translated({
 
 export default () => {
     const [data] = useRxSubject(rxSelected, async (selectedISO) => {
-        const arr = await getCurrencies()
-        const data = arr.map(currency => {
-            const { ISO, priceUpdatedAt: ts } = currency
+        const data = (await getCurrencies()).map(currency => {
+            const { ISO, nameInLanguage, priceUpdatedAt: ts } = currency
             // checks if price has been updated within 24 hours
             const isActive = (new Date() - new Date(ts)) <= 86400000
-            const _status = !ts
+            const statusCode = !ts
                 ? 3
                 : !isActive
                     ? 2
@@ -39,12 +40,12 @@ export default () => {
                 <div>
                     <Icon {...{
                         className: 'no-margin',
-                        color: statusColors[_status - 1],
+                        color: statusColors[statusCode - 1],
                         name: 'circle',
                     }} />
                 </div>
             )
-            const _statusIndicator = _status === 3
+            const _statusIndicator = statusCode === 3
                 ? icon
                 : (
                     <Invertible {...{
@@ -73,7 +74,13 @@ export default () => {
                     value: 1, // display the price of one unit
                 }} />
             )
-            return { ...currency, _priceEl, _status, _statusIndicator }
+            return {
+                ...currency,
+                _rankSort: currency.rank || 999999,
+                _priceEl,
+                _statusIndicator,
+                _statusName: statusCode + nameInLanguage,
+            }
         })
 
         return data
@@ -81,16 +88,21 @@ export default () => {
 
 
     const tableProps = {
-        defaultSort: '_status',
-        defaultSortAsc: true,
         columns: [
             {
                 collapsing: true,
-                content: ({ _statusIndicator }) => _statusIndicator,
-                key: '_status',
+                key: '_statusIndicator',
+                sortKey: '_statusName',
                 style: { cursor: 'pointer' },
                 textAlign: 'center',
                 title: textsCap.status,
+            },
+            {
+                collapsing: true,
+                key: 'rank',
+                sortKey: '_rankSort',
+                textAlign: 'center',
+                title: textsCap.rank,
             },
             {
                 key: 'nameInLanguage',
@@ -104,10 +116,17 @@ export default () => {
             {
                 collapsing: true,
                 key: '_priceEl',
+                sortable: false,
                 textAlign: 'center',
                 title: textsCap.price,
-            }
+            },
+            {
+                collapsing: true,
+                key: 'source',
+                title: textsCap.source,
+            },
         ],
+        tableProps: { celled: false },
         topLeftMenu: [
             <Converter key='c' style={{ maxWidth: 470}}></Converter>
         ],

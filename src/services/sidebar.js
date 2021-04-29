@@ -17,7 +17,6 @@ import TransferForm from '../modules/identity/Transfer'
 import UtilitiesView from '../views/UtilitiesView'
 // temp
 import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
-import EventList from '../modules/event/EventList'
 // import CrowdsaleView from '../modules/crowdsale/Crowdsale'
 // utils
 import DataStorage from '../utils/DataStorage'
@@ -28,11 +27,9 @@ import storage from './storage'
 import { getUrlParam, MOBILE, rxLayout, setClass } from './window'
 
 const textsCap = translated({
-    currenciesTitle: 'currencies',
+    currenciesTitle: 'exchange rates',
 
     crowdsaleTitle: 'crowdsale',
-
-    eventsTtile: 'events',
 
     financialStatementTitle: 'Financial Statement',
 
@@ -257,6 +254,12 @@ export const sidebarItems = [
         title: textsCap.transferTitle,
     },
     {
+        content: FinancialStatementsView,
+        icon: 'list alternate outline',
+        name: 'financial-statement',
+        title: textsCap.financialStatementTitle,
+    },
+    {
         content: CurrencyList,
         icon: 'money bill alternate outline',
         name: 'currencies',
@@ -329,18 +332,6 @@ export const sidebarItems = [
         name: 'utilities',
         subHeader: textsCap.utilitiesSubheader,
         title: textsCap.utilitiesTitle,
-    },
-    {
-        content: FinancialStatementsView,
-        icon: '',
-        name: 'financial-statement',
-        title: textsCap.financialStatementTitle,
-    },
-    {
-        content: EventList,
-        icon: '',
-        name: 'blockchain-events',
-        title: textsCap.eventsTtile,
     },
 ].map(item => {
     const {

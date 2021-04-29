@@ -30,14 +30,18 @@ export default class DataTable extends Component {
     constructor(props) {
         super(props)
 
-        const { columns, defaultSort, defaultSortAsc, keywords, pageNo } = props
+        let { columns, defaultSort, defaultSortAsc, keywords, pageNo } = props
+        if (!defaultSort) {
+            const { key, sortKey } = columns.find(x => x.sortable !== false) || {}
+            defaultSort = sortKey || key
+        }
         this.state = {
             isMobile: rxLayout.value === MOBILE,
             keywords: keywords || '',
             pageNo: pageNo,
             selectedIndexes: [],
             sortAsc: defaultSortAsc, // ascending/descending sort
-            sortBy: defaultSort || (columns.find(x => !!x.key) || {}).key,
+            sortBy: defaultSort,
         }
         this.originalSetState = this.setState
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
@@ -81,27 +85,31 @@ export default class DataTable extends Component {
     }
 
     getHeaders(totalRows, columns, selectedIndexes) {
-        let { columnsHidden, selectable, tableProps = {} } = this.props
+        let { columnsHidden, selectable, tableProps:tp } = this.props
         const { sortAsc, sortBy } = this.state
-        const { sortable } = tableProps
+        const { sortable } = {...DataTable.defaultProps.tableProps, ...tp }
 
-        const headersColumns = columns
+        const columnsVisible = columns
             .filter(x => !x.hidden && !columnsHidden.includes(x.name))
-        const headers = headersColumns
-            .map((x, i) => (
-                <Table.HeaderCell {...{
-                    ...x.headerProps,
-                    content: x.title,
-                    key: i,
-                    onClick: () => x.key && sortable && this.setState({
-                        sortBy: x.key,
-                        sortAsc: sortBy === x.key ? !sortAsc : true
-                    }),
-                    sorted: sortBy !== x.key ? null : (sortAsc ? 'ascending' : 'descending'),
-                    style: { ...((x.headerProps || {}).style), ...styles.columnHeader },
-                    textAlign: 'center',
-                }} />
-            ))
+        const headers = columnsVisible
+            .map((x, i) => {
+                const columnSortable = sortable && x.key && x.sortable !== false
+                const sortKey = x.sortKey || x.key
+                return (
+                    <Table.HeaderCell {...{
+                        ...x.headerProps,
+                        content: x.title,
+                        key: i,
+                        onClick: () => columnSortable && this.setState({
+                            sortBy: sortKey,
+                            sortAsc: sortBy === sortKey ? !sortAsc : true
+                        }),
+                        sorted: sortBy !== sortKey ? null : (sortAsc ? 'ascending' : 'descending'),
+                        style: { ...((x.headerProps || {}).style), ...styles.columnHeader },
+                        textAlign: 'center',
+                    }} />
+                )
+            })
               
         if (!selectable) return headers
         // include checkbox to select items
@@ -129,7 +137,7 @@ export default class DataTable extends Component {
 
     getRows(filteredData, columns, selectedIndexes, pageNo) {
         let { columnsHidden, perPage, rowProps, selectable } = this.props
-
+        const nonAttrs = ['content', 'headerProps', 'sortable', 'sortKey', 'title']
         return mapItemsByPage(filteredData, pageNo, perPage, (item, key, items, isMap) => (
             <Table.Row
                 key={key}
@@ -156,7 +164,7 @@ export default class DataTable extends Component {
                             ...style
                         }
                         const props = {
-                            ...objWithoutKeys(cell, ['content', 'headerProps', 'title']),
+                            ...objWithoutKeys(cell, nonAttrs),
                             key: key + j,
                             draggable,
                             onDragStart: !draggable ? undefined : this.handleDragStart,
@@ -410,11 +418,23 @@ DataTable.propTypes = {
     // ]),
     columns: PropTypes.arrayOf(
         PropTypes.shape({
+            // function/element/string: content to display for the each cell on this column.
+            // function props: currentItem, key, allItems, props
             content: PropTypes.any,
+            // column header cell properties
             headerProps: PropTypes.object,
+            // whether to hide the column
             hidden: PropTypes.bool,
+            // object property name. The value of the property will be displayed only if `content` is not provided. 
             key: PropTypes.string,
+            // (optional) specify a name for the column. Can be useful to hide the column externally using `columnsHidden` prop
             name: PropTypes.string,
+            // (optional) specify a key to use for sorting this column. Can be used when column content is React Element
+            // if undefined, will use `key` for sorting purposes
+            sortKey: PropTypes.string,
+            // indicates whether this column should be sortable
+            // if undefined, will use tableProps.sortable
+            sortable: PropTypes.bool,
             title: PropTypes.oneOfType([
                 PropTypes.string,
                 PropTypes.element,

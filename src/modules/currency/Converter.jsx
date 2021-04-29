@@ -6,6 +6,7 @@ import FormBuilder, { findInput } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { iUseReducer } from '../../services/react'
 import { convertTo, getCurrencies, rxSelected } from './currency'
+import { MOBILE, rxLayout } from '../../services/window'
 
 const textsCap = translated({
     amount: 'amount',
@@ -21,6 +22,7 @@ const inputNames = {
 
 const Converter = props => {
     const [state] = iUseReducer(null, rxSetState => {
+        const isMobile = rxLayout.value === MOBILE
         const currenciesPromise = getCurrencies()
         const rxFrom = new BehaviorSubject(rxSelected.value)
         const rxFromAmount = new BehaviorSubject(1)
@@ -55,22 +57,30 @@ const Converter = props => {
                         },
                         {
                             content: (
-                                <Icon {...{
-                                    className: 'no-margin clickable',
-                                    name: 'exchange',
-                                    onClick: () => {
-                                        const from = rxFrom.value
-                                        const fromAmount = rxFromAmount
-                                        rxFrom.next(rxTo.value)
-                                        rxTo.next(from)
-                                        rxFromAmount.next(rxToAmount.value)
-                                        setDropdowns()
-                                        console.log(rxFrom.value, rxTo.value)
-                                        updateToAmount()
-                                    },
-                                    size: 'big',
-                                    style: { paddingTop: 5 },
-                                }} />
+                                <div style={!isMobile ? null : {
+                                    paddingBottom: 7,
+                                    textAlign: 'center',
+                                    width: '100%',
+                                }}>
+                                    <Icon {...{
+                                        className: `no-margin clickable${isMobile ? ' rotated counterclockwise' : ''}`,
+                                        name: 'exchange',
+                                        onClick: () => {
+                                            const from = rxFrom.value
+                                            const fromAmount = rxFromAmount.value
+                                            rxFrom.next(rxTo.value)
+                                            rxTo.next(from)
+                                            rxFromAmount.next(rxToAmount.value)
+                                            rxToAmount.next(fromAmount)
+                                            setDropdowns()
+                                        },
+                                        size: 'big',
+                                        style: {
+                                            paddingTop: 5,
+                                            margin: 'auto'
+                                        },
+                                    }} />
+                                </div>
                             ),
                             name: 'exchangeIcon',
                             type: 'html',
@@ -81,6 +91,7 @@ const Converter = props => {
                             placeholder: textsCap.amount,
                             readOnly: true,
                             rxValue: rxToAmount,
+                            style: isMobile ? { marginBottom: 10} : null,
                             type: 'text',
                         },
                     ],
@@ -91,9 +102,7 @@ const Converter = props => {
         const setDropdowns = () => {
             currenciesPromise.then(currencies => {
                 const options = currencies.map(({ ISO }) => ({ text: ISO, value: ISO }))
-                const style = { minWidth: 95, paddingRight: 0 }
                 
-                                        console.log('set', rxFrom.value, rxTo.value)
                 const getDD = (from = true) => {
                     const rx = from ? rxFrom : rxTo
                     return (
@@ -119,7 +128,7 @@ const Converter = props => {
                             placeholder: textsCap.select,
                             selection: true,
                             search: true,
-                            style,
+                            style: { minWidth: 95, paddingRight: 0 },
                         }} />
                     )
                 }
