@@ -79,7 +79,7 @@ export default () => {
                 _rankSort: currency.rank || 999999,
                 _priceEl,
                 _statusIndicator,
-                _statusName: statusCode + nameInLanguage,
+                _statusName: statusCode + (currency.rank || 999999),
             }
         })
 
