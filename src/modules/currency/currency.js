@@ -40,12 +40,12 @@ export const convertTo = async (amount = 0, from, to, decimals) => {
     // // wait up to 10 seconds if messaging service is not connected yet
     // if (!rxIsConnected.value) await subjectAsPromise(rxIsConnected, true, 10000)[0]
     const currencies = await getCurrencies()
-    const fromTo = currencies.filter(({ ISO }) => ft.includes(ISO))
-    const gotBoth = ft.every(x => fromTo.find(c => c.ISO === x))
+    const fromTo = currencies.filter(({ ticker }) => ft.includes(ticker))
+    const gotBoth = ft.every(x => fromTo.find(c => c.ticker === x))
     if (!gotBoth) throw new Error(textsCap.invalidCurency)
     
-    const fromCurrency = fromTo.find(({ ISO }) => ISO === from)
-    const toCurrency = currencies.find(({ ISO }) => ISO === to)
+    const fromCurrency = fromTo.find(({ ticker }) => ticker === from)
+    const toCurrency = currencies.find(({ ticker }) => ticker === to)
     const convertedAmount = (fromCurrency.ratioOfExchange / toCurrency.ratioOfExchange) * amount
     
     if (!isValidNumber(decimals)) {
@@ -61,12 +61,12 @@ const fetchCurrencies = async (cached = rwCache().currencies) => {
     // currencies list is the same as in the server => use cached
     if (currencies.length === 0) return cached
 
-    // sort by ISO and  makes sure there is a name and ISO
+    // sort by ticker and  makes sure there is a name and ticker
     currencies = arrSort(currencies.map(c => {
         c.nameInLanguage = c.nameInLanguage || c.currency
-        c.ISO = c.ISO || c.currency
+        c.ticker = c.ticker || c.currency
         return c
-    }), 'ISO')
+    }), 'ticker')
 
     rwCache('currencies', currencies)
     lastUpdated = new Date()
@@ -88,12 +88,12 @@ export const getCurrencies = async () => {
 // get/set default currency
 //
 // Params:
-// @ISO   string: currency code
-export const setSelected = async (ISO) => {
+// @ticker   string: currency code
+export const setSelected = async (ticker) => {
     const currencies = await getCurrencies()
-    const exists = currencies.find(x => x.ISO === ISO)
-    const newValue = exists ? { selected: ISO } : undefined
-    newValue && rxSelected.next(ISO)
+    const exists = currencies.find(x => x.ticker === ticker)
+    const newValue = exists ? { selected: ticker } : undefined
+    newValue && rxSelected.next(ticker)
     return rw(newValue).selected || currencyDefault
 }
 

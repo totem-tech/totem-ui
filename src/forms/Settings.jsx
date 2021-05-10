@@ -149,9 +149,9 @@ export default class SettingsForm extends Component {
         getCurrencies().then(currencies => {
             const options = currencies.map(c => ({
                 description: c.currency,
-                key: c.ISO,
-                text: c.nameInLanguage,
-                value: c.ISO,
+                key: c.ticker,
+                text: c.name,
+                value: c.ticker,
             }))
             currencyIn.options = arrSort(options, 'text')
             this.setState({ inputs })

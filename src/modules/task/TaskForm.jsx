@@ -357,10 +357,10 @@ export default class TaskForm extends Component {
             }))
         assigneeIn.options = arrSort(assigneeOptions, 'text')
         const currencyOptions = (await getCurrencies())
-            .map(({ currency, ISO }) => ({
-                key: ISO,
+            .map(({ currency, ticker }) => ({
+                key: ticker,
                 text: currency,
-                value: ISO,
+                value: ticker,
             }))
         // currencyIn.deburr = true // ???
         currencyIn.options = arrSort(currencyOptions, 'text')

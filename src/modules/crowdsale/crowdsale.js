@@ -63,12 +63,12 @@ export const calculateAllocation = async (deposits = {}) => {
     const keys = Object.keys(deposits)
     for (let i = 0; i < keys.length; i++) {
         const currency = keys[i]
-        const isValidCurrency = !!currencies.find(({ ISO }) => ISO === currency)
-        if (!isValidCurrency) continue 
+        const isValidCurrency = !!currencies.find(({ ticker }) => ticker === currency)
+        if (!isValidCurrency) continue
 
         const amount = deposits[currency] || 0
         const [_, amountXTX] = await convertTo(amount, currency, currencyDefault)
-        amtDepositedXTX += eval(amountXTX) || 0   
+        amtDepositedXTX += eval(amountXTX) || 0
     }
     const level = await findLevel(amtDepositedXTX)
     const multiplier = LEVEL_MULTIPLIERS[level]
@@ -99,9 +99,9 @@ export const calculateToNextLevel = async (currency, amtDepositedXTX = 0, level)
     const negotiable = nextLevel >= lastLevel && amtDepositedXTX >= Level_NEGOTIATE_Entry_XTX
     // last level reached!
     // if (!isValidNumber(nextEntry)) return null
-    
+
     const isValidCurrency = !!currency && !!(await getCurrencies())
-        .find(({ ISO }) => ISO === currency)
+        .find(({ ticker }) => ticker === currency)
     const nextMultiplier = LEVEL_MULTIPLIERS[nextLevel]
     const amtXTXToNextEntry = nextEntry - amtDepositedXTX + 1
     let amtToNextEntry = 0
@@ -113,7 +113,7 @@ export const calculateToNextLevel = async (currency, amtDepositedXTX = 0, level)
         nextLevelAmt = eval(nextLevelResult[1])
     }
 
-    
+
     return [
         // amount in XTX to reach next level
         amtXTXToNextEntry,
@@ -155,7 +155,7 @@ export const fetchConstants = async () => {
     if (fetchConstants.promise && fetchConstants.promise.pending) {
         return await fetchConstants.promise
     }
-    
+
     fetchConstants.promise = PromisE(async () => {
         // wait until user is logged in
         await subjectAsPromise(rxIsLoggedIn, true)

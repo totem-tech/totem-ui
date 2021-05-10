@@ -233,15 +233,15 @@ export default class Transfer extends Component {
         const currencyReceivedIn = findInput(inputs, this.names.currencyReceived)
         const currencySentIn = findInput(inputs, this.names.currencySent)
         const options = arrSort(
-            this.currencies.map(({ currency, nameInLanguage, ISO }) => ({
+            this.currencies.map(({ currency, nameInLanguage, ticker }) => ({
                 description: (
                     <span className='description' style={{ fontSize: '75%' }}>
                         {nameInLanguage}
                     </span>
                 ),
-                key: ISO,
+                key: ticker,
                 text: currency,
-                value: ISO
+                value: ticker
             })),
             'text'
         )
@@ -392,7 +392,7 @@ export default class Transfer extends Component {
         const amountReceived = values[this.names.amountReceived]
         const currencyReceived = values[this.names.currencyReceived]
         const amountReceivedIn = findInput(inputs, this.names.amountReceived)
-        const currencyObj = this.currencies.find(x => x.ISO === currencyReceived) || {}
+        const currencyObj = this.currencies.find(x => x.ticker === currencyReceived) || {}
         amountReceivedIn.decimals = parseInt(currencyObj.decimals || 0)
         this.setState({ inputs })
 

@@ -21,9 +21,9 @@ const textsCap = translated({
 }, true)[1]
 
 export default () => {
-    const [data] = useRxSubject(rxSelected, async (selectedISO) => {
+    const [data] = useRxSubject(rxSelected, async (selectedticker) => {
         const data = (await getCurrencies()).map(currency => {
-            const { ISO, nameInLanguage, priceUpdatedAt: ts } = currency
+            const { ticker, priceUpdatedAt: ts, rank } = currency
             // checks if price has been updated within 24 hours
             const isActive = (new Date() - new Date(ts)) <= 86400000
             const statusCode = !ts
@@ -69,17 +69,17 @@ export default () => {
             const _priceEl = (
                 <Currency {...{
                     title: null,
-                    unit: ISO,
-                    unitDisplayed: selectedISO,
+                    unit: ticker,
+                    unitDisplayed: selectedticker,
                     value: 1, // display the price of one unit
                 }} />
             )
             return {
                 ...currency,
-                _rankSort: currency.rank || 999999,
+                _rankSort: rank || 999999,
                 _priceEl,
                 _statusIndicator,
-                _statusName: statusCode + (currency.rank || 999999),
+                _statusName: statusCode + (rank || 999999),
             }
         })
 
@@ -109,7 +109,7 @@ export default () => {
                 title: textsCap.name,
             },
             {
-                key: 'ISO',
+                key: 'ticker',
                 textAlign: 'center',
                 title: textsCap.ticker,
             },
