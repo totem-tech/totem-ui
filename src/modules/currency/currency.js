@@ -43,11 +43,11 @@ export const convertTo = async (amount = 0, from, to, decimals) => {
     const fromTo = currencies.filter(({ ticker }) => ft.includes(ticker))
     const gotBoth = ft.every(x => fromTo.find(c => c.ticker === x))
     if (!gotBoth) throw new Error(textsCap.invalidCurency)
-    
+
     const fromCurrency = fromTo.find(({ ticker }) => ticker === from)
     const toCurrency = currencies.find(({ ticker }) => ticker === to)
     const convertedAmount = (fromCurrency.ratioOfExchange / toCurrency.ratioOfExchange) * amount
-    
+
     if (!isValidNumber(decimals)) {
         decimals = parseInt(toCurrency.decimals)
     }
