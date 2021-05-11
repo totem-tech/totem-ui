@@ -222,31 +222,15 @@ export default class Transfer extends Component {
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
-    async componentWillMount() {
+    componentWillMount() {
         this._mounted = true
         this.subscriptions = {}
         const { inputs } = this.state
         const { values = {} } = this.props
         const fromIn = findInput(inputs, this.names.from)
         const toIn = findInput(inputs, this.names.to)
-        this.currencies = await getCurrencies()
         const currencyReceivedIn = findInput(inputs, this.names.currencyReceived)
         const currencySentIn = findInput(inputs, this.names.currencySent)
-        const options = arrSort(
-            this.currencies.map(({ currency, nameInLanguage }) => ({
-                description: (
-                    <span className='description' style={{ fontSize: '75%' }}>
-                        {nameInLanguage}
-                    </span>
-                ),
-                key: currency,
-                text: currency,
-                value: currency,
-            })),
-            'text'
-        )
-        currencyReceivedIn.options = options
-        currencySentIn.options = options
         values[this.names.currencyReceived] = rxSelectedCurrency.value
         values[this.names.currencySent] = rxSelectedCurrency.value
         fillValues(inputs, values)
@@ -278,6 +262,23 @@ export default class Transfer extends Component {
                 'text'
             )
             this.setState({ inputs })
+        })
+
+        // set currency dropdown options
+        getCurrencies().then(currencies => {
+            this.currencies = currencies
+            const options = this.currencies.map(({ currency, nameInLanguage }) => ({
+                description: (
+                    <span className='description' style={{ fontSize: '75%' }}>
+                        {nameInLanguage}
+                    </span>
+                ),
+                key: currency,
+                text: currency,
+                value: currency,
+            }))
+            currencyReceivedIn.options = options
+            currencySentIn.options = options
         })
     }
 
