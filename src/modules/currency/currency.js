@@ -43,10 +43,17 @@ export const convertTo = async (amount = 0, from, to, decimals) => {
 
     const convertedAmount = (fromCurrency.ratioOfExchange / toCurrency.ratioOfExchange) * amount
     if (!isValidNumber(decimals)) {
-        decimals = parseInt(toCurrency.decimals)
+        decimals = parseInt(toCurrency.decimals) || 0
     }
-    const rounded = convertedAmount.toFixed(decimals || 0)
-    return [convertedAmount, rounded, decimals, fromCurrency, toCurrency]
+    const rounded = convertedAmount.toFixed(decimals + 2)
+
+    return [
+        convertedAmount,
+        rounded.substr(0, rounded.length - (!decimals ? 3 : 2)),
+        decimals,
+        fromCurrency,
+        toCurrency,
+    ]
 }
 
 const fetchCurrencies = async (cached = rwCache().currencies) => {
