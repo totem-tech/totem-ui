@@ -105,7 +105,7 @@ export default () => {
                 title: textsCap.rank,
             },
             {
-                key: 'nameInLanguage',
+                key: 'name',
                 title: textsCap.name,
             },
             {

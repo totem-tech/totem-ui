@@ -267,10 +267,10 @@ export default class Transfer extends Component {
         // set currency dropdown options
         getCurrencies().then(currencies => {
             this.currencies = currencies
-            const options = this.currencies.map(({ currency, nameInLanguage }) => ({
+            const options = this.currencies.map(({ currency, name }) => ({
                 description: (
                     <span className='description' style={{ fontSize: '75%' }}>
-                        {nameInLanguage}
+                        {name}
                     </span>
                 ),
                 key: currency,
