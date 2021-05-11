@@ -43,14 +43,14 @@ export const setUser = (user = {}) => rw({ user })
  * @returns {String} referral code
  */
 export const referralCode = code => {
-    const override =  code === null
+    const override = code === null
     const value = isStr(code)
         ? { referralCode: code }
         : override
             // completely remove referral code property from storage
             ? objWithoutKeys(rw(), ['referralCode'])
             : undefined
-    
+
     return (storage.settings.module(MODULE_KEY, value, override) || {})
         .referralCode
 }
@@ -128,7 +128,7 @@ export const getClient = () => {
  * 
  * @param {Function} cb 
  */
-export const translateError = err => { 
+export const translateError = err => {
     // if no error return as is
     if (!err) return err
 
@@ -142,7 +142,7 @@ export const translateError = err => {
     // translate if there is any error message
     const separator = ' => '
     if (!err.includes(separator)) return translated({ err })[0].err
-    
+
     const [prefix, msg] = err.split(separator)
     const [texts] = translated({ prefix, msg })
     return `${texts.prefix}${separator}${texts.msg}`
@@ -207,8 +207,8 @@ export class ChatClient {
         // Currency conversion
         //
         // Params:
-        // @from    string: source currency ticker
-        // @to      string: target currency ticker
+        // @from    string: source currency ID
+        // @to      string: target currency ID
         // @amount  number: amount in source currency
         // @cb      function: args:
         //              @err                string: message in case of error. Otherwise, null.
@@ -412,7 +412,7 @@ export class ChatClient {
             ids,
             (err, result) => cb(err, new Map(result)),
         )
-        
+
         /**
          * @name    crowdsaleCheckDeposits
          * @summary check and retrieve user's crowdsale deposits
@@ -429,7 +429,7 @@ export class ChatClient {
             cached,
             cb,
         )
-        
+
         /**
          * @name    crowdsaleConstants
          * @summary retrieve crowdsale related constants for use with calcuation of allocation and multiplier levels
@@ -449,7 +449,7 @@ export class ChatClient {
          * @name    crowdsaleDAA
          * @summary request new or retrieve exisitng deposit address
          * 
-         * @param   {String}    blockchain  ticker/symbol of the Blockchain to request/retrieve address of
+         * @param   {String}    blockchain  ticker of the Blockchain to request/retrieve address of
          * @param   {String}    ethAddress  use `0x0` to retrieve existing address.
          *                                  If the @blockchain is `ETH`, user's Ethereum address for whitelisting.
          *                                  Otherwise, leave an empty string.

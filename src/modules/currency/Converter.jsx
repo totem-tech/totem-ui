@@ -101,7 +101,10 @@ const Converter = props => {
 
         const setDropdowns = () => {
             currenciesPromise.then(currencies => {
-                const options = currencies.map(({ ticker }) => ({ text: ticker, value: ticker }))
+                const options = currencies.map(({ currency }) => ({
+                    text: currency,
+                    value: currency,
+                }))
                 
                 const getDD = (from = true) => {
                     const rx = from ? rxFrom : rxTo

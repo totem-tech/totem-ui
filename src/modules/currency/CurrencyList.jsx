@@ -21,9 +21,9 @@ const textsCap = translated({
 }, true)[1]
 
 export default () => {
-    const [data] = useRxSubject(rxSelected, async (selectedticker) => {
+    const [data] = useRxSubject(rxSelected, async (selected) => {
         const data = (await getCurrencies()).map(currency => {
-            const { ticker, priceUpdatedAt: ts, rank } = currency
+            const { currency: unit, priceUpdatedAt: ts, rank } = currency
             // checks if price has been updated within 24 hours
             const isActive = (new Date() - new Date(ts)) <= 86400000
             const statusCode = !ts
@@ -69,8 +69,8 @@ export default () => {
             const _priceEl = (
                 <Currency {...{
                     title: null,
-                    unit: ticker,
-                    unitDisplayed: selectedticker,
+                    unit: unit,
+                    unitDisplayed: selected,
                     value: 1, // display the price of one unit
                 }} />
             )

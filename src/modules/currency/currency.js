@@ -18,7 +18,7 @@ let lastUpdated = null
 const updateFrequencyMs = 24 * 60 * 60 * 1000
 
 // default currency
-export const currencyDefault = 'XTX'
+export const currencyDefault = 'TOTEM'
 // RxJS Subject to keep track of selected currencly changes
 export const rxSelected = new BehaviorSubject(getSelected())
 
@@ -27,32 +27,26 @@ export const rxSelected = new BehaviorSubject(getSelected())
  * @summary convert to display currency and limit to decimal places
  * 
  * @param   {Number} amount     amount to convert
- * @param   {String} from       currency ticker to convert from
- * @param   {String} to         currency ticker to convert to
+ * @param   {String} from       source currency ID
+ * @param   {String} to         target currency ID
  * @param   {Number} decimals   (optional) number of decimal places to use. 
  *                               Default: decimals defined in `to` currency
  * 
  * @returns {Array} [@convertedAmount Number, @rounded String]
  */
 export const convertTo = async (amount = 0, from, to, decimals) => {
-    const ft = [from, to]
-    // // await client.currencyConvert.promise(from, to, amount)
-    // // wait up to 10 seconds if messaging service is not connected yet
-    // if (!rxIsConnected.value) await subjectAsPromise(rxIsConnected, true, 10000)[0]
     const currencies = await getCurrencies()
-    const fromTo = currencies.filter(({ ticker }) => ft.includes(ticker))
-    const gotBoth = ft.every(x => fromTo.find(c => c.ticker === x))
-    if (!gotBoth) throw new Error(textsCap.invalidCurency)
+    const fromCurrency = currencies.find(({ currency }) => currency === from)
+    const toCurrency = currencies.find(({ currency }) => currency === to)
 
-    const fromCurrency = fromTo.find(({ ticker }) => ticker === from)
-    const toCurrency = currencies.find(({ ticker }) => ticker === to)
+    if (!fromCurrency || !toCurrency) throw new Error(textsCap.invalidCurency)
+
     const convertedAmount = (fromCurrency.ratioOfExchange / toCurrency.ratioOfExchange) * amount
-
     if (!isValidNumber(decimals)) {
         decimals = parseInt(toCurrency.decimals)
     }
-    const rounded = convertedAmount.toFixed(decimals)
-    return [convertedAmount, rounded, decimals]
+    const rounded = convertedAmount.toFixed(decimals || 0)
+    return [convertedAmount, rounded, decimals, fromCurrency, toCurrency]
 }
 
 const fetchCurrencies = async (cached = rwCache().currencies) => {
@@ -61,12 +55,8 @@ const fetchCurrencies = async (cached = rwCache().currencies) => {
     // currencies list is the same as in the server => use cached
     if (currencies.length === 0) return cached
 
-    // sort by ticker and  makes sure there is a name and ticker
-    currencies = arrSort(currencies.map(c => {
-        c.nameInLanguage = c.nameInLanguage || c.currency
-        c.ticker = c.ticker || c.currency
-        return c
-    }), 'ticker')
+    // sort by ticker
+    currencies = arrSort(currencies, 'ticker')
 
     rwCache('currencies', currencies)
     lastUpdated = new Date()
@@ -85,15 +75,20 @@ export const getCurrencies = async () => {
     return rwCache().currencies || []
 }
 
-// get/set default currency
-//
-// Params:
-// @ticker   string: currency code
-export const setSelected = async (ticker) => {
+/**
+ * @name    setSelected
+ * @summary set display currency
+ * 
+ * @param   {String} currency 
+ * @returns {String}
+ */
+export const setSelected = async (currency) => {
     const currencies = await getCurrencies()
-    const exists = currencies.find(x => x.ticker === ticker)
-    const newValue = exists ? { selected: ticker } : undefined
-    newValue && rxSelected.next(ticker)
+    const exists = currencies.find(x => x.currency === currency)
+    const newValue = exists
+        ? { selected: currency }
+        : undefined
+    newValue && rxSelected.next(currency)
     return rw(newValue).selected || currencyDefault
 }
 
@@ -126,6 +121,17 @@ export const updateCurrencies = async () => {
     }
 }
 
+// if selected currency is not available in the currencies list, set to default currency
+(async () => {
+    const currencies = await getCurrencies()
+    if (!currencies.find(x => x.currency === rxSelected.value)) {
+        setSelected(
+            currencies
+                .find(x => x.ticker === currencyDefault)
+                .currency
+        )
+    }
+})()
 export default {
     currencyDefault,
     rxSelected,

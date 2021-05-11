@@ -3,9 +3,8 @@ import PropTypes from 'prop-types'
 import { isValidNumber, isFn, isDefined } from '../../utils/utils'
 import { subjectAsPromise, unsubscribe, useRxSubject } from '../../services/react'
 import { convertTo, currencyDefault, rxSelected } from './currency'
-// import { rxIsConnected } from '../modules/chat/ChatClient'
 
-const Currency = props => {
+export default function Currency (props) {
     let {
         className,
         decimalPlaces,
@@ -21,12 +20,15 @@ const Currency = props => {
         unitDisplayed,
         value,
     } = props
-    const [selected] = !unit && !unitDisplayed ? [] : useRxSubject(rxSelected)
+    const [selected] = !unit && !unitDisplayed
+        ? []
+        : useRxSubject(rxSelected)
     unit = unit || selected
     unitDisplayed = unitDisplayed || selected
     const isSame = unit === unitDisplayed
     let [valueConverted, setValueConverted] = useState(isSame ? value : undefined)
     let [error, setError] = useState()
+    const [ticker, setTicker] = useState()
 
     useEffect(() => {
         if (!isValidNumber(value)) return () => { }
@@ -35,14 +37,7 @@ const Currency = props => {
         const convert = async (value) => {
             if (!mounted) return
             try {
-                // if messaging service is not connected. Wait until connected
-                // if (!rxIsConnected.value) {
-                //     const [connectionPromise, unsubscriber] = subjectAsPromise(rxIsConnected, true)
-                //     // makes sure to unsubscribe if component is unmounted
-                //     subscriptions.isConnected = unsubscriber
-                //     await connectionPromise
-                // }
-                const [_, rounded] = await convertTo(
+                const [_, rounded, _2, from, to] = await convertTo(
                     value || 0,
                     unit,
                     unitDisplayed,
@@ -50,6 +45,7 @@ const Currency = props => {
                 )
                 error = null
                 valueConverted = rounded
+                setTicker([to.ticker])
             } catch (err) {
                 error = err
                 valueConverted = 0
@@ -71,7 +67,7 @@ const Currency = props => {
     }, [unit, unitDisplayed, value])
 
     const content = !isDefined(valueConverted) ? (emptyMessage || '') : (
-        <span>{prefix || ''}{valueConverted} {unitDisplayed}{suffix || ''}</span>
+        <span>{prefix || ''}{valueConverted} {ticker}{suffix || ''}</span>
     )
     return (
         <EL {...{
@@ -113,4 +109,4 @@ Currency.defaultProps = {
     EL: 'span',
     unit: currencyDefault, // XTX
 }
-export default React.memo(Currency)
+// export default React.memo(Currency)
