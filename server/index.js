@@ -14,10 +14,9 @@ const certPath = process.env.CertPath || './sslcert/fullchain.pem'
 const keyPath = process.env.KeyPath || './sslcert/privkey.pem'
 // indicates whether or not reverse proxy is used
 const REVERSE_PROXY = process.env.REVERSE_PROXY === 'TRUE'
-const npmEnv = JSON.parse(process.env.npm_config_argv)
 // value set in `webpack --mode`. Expected value: 'production' or 'developement'
-const mode = npmEnv.original[1]
-const isProd = mode === 'prod'
+const mode = process.env.NODE_ENV
+const isProd = mode === 'production'
 
 // compress all responses
 app.use(compression())
