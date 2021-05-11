@@ -4,7 +4,7 @@ import { isValidNumber, isFn, isDefined } from '../../utils/utils'
 import { subjectAsPromise, unsubscribe, useRxSubject } from '../../services/react'
 import { convertTo, currencyDefault, rxSelected } from './currency'
 
-export default function Currency (props) {
+function Currency (props) {
     let {
         className,
         decimalPlaces,
@@ -109,4 +109,4 @@ Currency.defaultProps = {
     EL: 'span',
     unit: currencyDefault, // XTX
 }
-// export default React.memo(Currency)
+export default React.memo(Currency)
