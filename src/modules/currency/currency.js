@@ -34,7 +34,7 @@ export const rxSelected = new BehaviorSubject(getSelected())
  * 
  * @returns {Array} [@convertedAmount Number, @rounded String]
  */
-export const convertTo = async (amount = 0, from, to, decimals) => {
+export const convertTo = async (amount = 0, from, to, decimals, fromROE, toROE) => {
     const currencies = await getCurrencies()
     const fromCurrency = currencies.find(({ currency }) => currency === from)
     const toCurrency = currencies.find(({ currency }) => currency === to)
@@ -43,8 +43,10 @@ export const convertTo = async (amount = 0, from, to, decimals) => {
         console.log({ from, to, fromCurrency, toCurrency })
         throw new Error(textsCap.invalidCurency)
     }
+    fromROE = fromROE || fromCurrency.ratioOfExchange
+    toROE = toROE || toCurrency.ratioOfExchange
 
-    const convertedAmount = (fromCurrency.ratioOfExchange / toCurrency.ratioOfExchange) * amount
+    const convertedAmount = (fromROE / toROE) * amount
     if (!isValidNumber(decimals)) {
         decimals = parseInt(toCurrency.decimals) || 0
     }

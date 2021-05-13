@@ -67,15 +67,11 @@ const Converter = props => {
                                         className: `no-margin clickable${isMobile ? ' rotated counterclockwise' : ''}`,
                                         name: 'exchange',
                                         onClick: () => {
-                                            const from = rxFrom.value
-                                            // const fromAmount = rxFromAmount.value
-                                            const to = rxTo.value
-                                            const toAmount = rxToAmount.value
-                                            rxTo.next(from)
-                                            // rxToAmount.next(fromAmount)
-                                            rxFrom.next(to)
-                                            rxFromAmount.next(toAmount)
-                                            setDropdowns()
+                                            const currency = rxTo.value
+                                            const amount = rxToAmount.value
+                                            rxTo.next(rxFrom.value)
+                                            rxFrom.next(currency)
+                                            rxFromAmount.next(amount)
                                         },
                                         size: 'big',
                                         style: {
@@ -94,7 +90,7 @@ const Converter = props => {
                             placeholder: textsCap.amount,
                             readOnly: true,
                             rxValue: rxToAmount,
-                            style: isMobile ? { marginBottom: 10} : null,
+                            style: !isMobile ? null : { marginBottom: 10},
                             type: 'text',
                         },
                     ],

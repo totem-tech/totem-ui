@@ -1,16 +1,19 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Icon, Popup } from 'semantic-ui-react'
+import { format } from '../../utils/time'
 import DataTable from '../../components/DataTable'
 import Invertible from '../../components/Invertible'
 import TimeSince from '../../components/TimeSince'
 import { translated } from '../../services/language'
-import { useRxSubject } from '../../services/react'
-import { format } from '../../utils/time'
+import { iUseReducer, usePromise, useRxSubject } from '../../services/react'
+import client from '../chat/ChatClient'
 import Converter from './Converter'
 import Currency from './Currency'
 import { getCurrencies, rxSelected } from './currency'
+import { isDate } from '../../utils/utils'
 
 const textsCap = translated({
+    emptyMessageDate: 'no data available for the selected date',
     name: 'name',
     price: 'daily reference rate',
     rank: 'rank',
@@ -21,74 +24,12 @@ const textsCap = translated({
     updated: 'updated',
 }, true)[1]
 
-export default () => {
-    const [data] = useRxSubject(rxSelected, async (selected) => {
-        const data = (await getCurrencies()).map(currency => {
-            const { currency: unit, priceUpdatedAt: ts, rank } = currency
-            // checks if price has been updated within 24 hours
-            const isActive = (new Date() - new Date(ts)) <= 86400000
-            const statusCode = !ts
-                ? 3
-                : !isActive
-                    ? 2
-                    : 1
-            const statusColors = [
-                'green',
-                'yellow',
-                'grey',
-            ]
-            const icon = (
-                <div>
-                    <Icon {...{
-                        className: 'no-margin',
-                        color: statusColors[statusCode - 1],
-                        name: 'circle',
-                    }} />
-                </div>
-            )
-            const _statusIndicator = statusCode === 3
-                ? icon
-                : (
-                    <Invertible {...{
-                        content: `${textsCap.updatedAt} ${format(new Date(ts), false)}`,
-                        content: (
-                            <div>
-                                {textsCap.updated + ' '}
-                                <TimeSince {...{
-                                    El: 'span',
-                                    date: ts,
-                                }} />
-                            </div>
-                        ),
-                        El: Popup,
-                        eventsEnabled: false,
-                        on: ['click', 'focus', 'hover'],
-                        size: 'mini',
-                        trigger: icon,
-                    }} />
-                )
-            const _priceEl = (
-                <Currency {...{
-                    title: null,
-                    unit: unit,
-                    unitDisplayed: selected,
-                    value: 1, // display the price of one unit
-                }} />
-            )
-            return {
-                ...currency,
-                _rankSort: rank || 999999,
-                _priceEl,
-                _statusIndicator,
-                _statusName: statusCode + (rank || 999999),
-            }
-        })
-
-        return data
-    })
-
-
-    const tableProps = {
+export default function CurrencyList(props) {
+    const { date } = props
+    const useDate = `${date}`.length === 10 && isDate(new Date(date))
+    const [selectedCurrency] = useRxSubject(rxSelected)
+    const [tableData, setTableData] = useState([])
+    const [tableProps] = useState({
         columns: [
             {
                 collapsing: true,
@@ -133,9 +74,133 @@ export default () => {
             },
         ],
         tableProps: { celled: false },
-        topLeftMenu: [
-            <Converter key='c' style={{ maxWidth: 470}}></Converter>
-        ],
+    })
+
+    useEffect(() => {
+        let mounted = true
+        const fetchData = async () => {
+            let unitDisplayedROE, currencies = new Map(), USD
+            let unitDisplayed = rxSelected.value
+            const allCurrencies = new Map(
+                (await getCurrencies())
+                    .map(c => {
+                        if (c.type === 'fiat' && c.ticker === 'USD') USD = c
+                        return [c._id, c]
+                    })
+            )
+            if (useDate) {
+                const prices = await client.currencyPricesByDate.promise(date, [])
+                prices.map(p => {
+                    const { currencyID, ratioOfExchange } = p
+                    const currency = allCurrencies.get(currencyID || USD._id)
+                    if (!currency) return 
+
+                    currency.ratioOfExchange = ratioOfExchange
+                    currency.priceUpdatedAt = date
+                    currencies.set(currencyID, { ...currency })
+                    
+                    if (currency.currency !== unitDisplayed) return
+                    unitDisplayedROE = ratioOfExchange
+                })
+
+                unitDisplayed = unitDisplayedROE
+                    ? unitDisplayed
+                    : USD.currency
+                unitDisplayedROE = unitDisplayedROE || USD.ratioOfExchange
+            } else {
+                currencies = allCurrencies
+            }
+
+            const data = Array.from(currencies)
+                .map(getRowData( unitDisplayed, unitDisplayedROE ))
+            
+            mounted && setTableData(data)
+        }
+        fetchData()
+
+        return () => mounted = false
+    }, [date, selectedCurrency])
+
+    return (
+        <DataTable {...{
+            ...props,
+            ...tableProps,
+            data: tableData,
+            emptyMessage: useDate
+                ? { content: textsCap.emptyMessageDate }
+                : props.emptyMessage,
+        }} />
+    )
+}
+
+CurrencyList.defaultProps = {
+    date: null, // show current prices
+    topLeftMenu: [
+        <Converter key='c' style={{ maxWidth: 470}}></Converter>
+    ],
+}
+
+const getRowData = (unitDisplayed, unitDisplayedROE) => ([_, currency]) => {
+    const {
+        currency: unit,
+        priceUpdatedAt: ts,
+        rank,
+        ratioOfExchange,
+    } = currency
+    // checks if price has been updated within 24 hours
+    const isActive = (new Date() - new Date(ts)) <= 86400000
+    const statusCode = !ts
+        ? 3
+        : !isActive
+            ? 2
+            : 1
+    const statusColors = [
+        'green',
+        'yellow',
+        'grey',
+    ]
+    const icon = (
+        <div>
+            <Icon {...{
+                className: 'no-margin',
+                color: statusColors[statusCode - 1],
+                name: 'circle',
+            }} />
+        </div>
+    )
+    const _statusIndicator = statusCode === 3
+        ? icon
+        : (
+            <Invertible {...{
+                content: `${textsCap.updatedAt} ${format(new Date(ts), false)}`,
+                content: (
+                    <div>
+                        {textsCap.updated + ' '}
+                        <TimeSince {...{ El: 'span', date: ts, key: ts }} />
+                    </div>
+                ),
+                El: Popup,
+                eventsEnabled: false,
+                on: ['click', 'focus', 'hover'],
+                size: 'mini',
+                trigger: icon,
+            }} />
+        )
+    
+    // display the price of one unit
+    const _priceEl = <Currency {...{
+        fromROE: ratioOfExchange,
+        title: null,
+        unit,
+        unitDisplayed, 
+        unitDisplayedROE,
+        value: 1,
+    }} />
+    return {
+        ...currency,
+        _rankSort: rank || 999999,
+        _priceEl,
+        _statusIndicator,
+        _statusName: statusCode + (rank || 999999),
     }
-    return <DataTable {...{ ...tableProps, data } } />
 }

@@ -69,9 +69,11 @@ export class FormInput extends Component {
 		super(props)
 
 		const { defer } = props
-		this.state = { message: undefined }
+		this.state = { message: undefined, validationFailed: false }
 		this.value = undefined
-		this.setMessage = defer !== null ? deferred(this.setMessage, defer) : this.setMessage
+		this.setMessage = defer !== null
+			? deferred(this.setMessage, defer)
+			: this.setMessage
 
 		this.originalSetState = this.setState
 		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
@@ -146,9 +148,19 @@ export class FormInput extends Component {
 				case 'date':
 					validatorConfig = { type: TYPES.date }
 					break
+				case 'dateinput':
+					customMsgs.date = null
+					validatorConfig = { type: TYPES.date }
+					break
 				case 'number':
-					validatorConfig = { type: integer ? TYPES.integer : TYPES.number }
-					data.value = !data.value ? data.value : parseFloat(data.value)
+					validatorConfig = {
+						type: integer
+							? TYPES.integer
+							: TYPES.number
+					}
+					data.value = !data.value
+						? data.value
+						: parseFloat(data.value)
 					customMsgs.lengthMax = textsCap.maxLengthNum
 					customMsgs.lengthMin = textsCap.minLengthNum
 					break
@@ -179,7 +191,7 @@ export class FormInput extends Component {
 			isFn(onChange) && onChange(event, data, this.props)
 			this.value = data.value
 			rxValue && rxValue.next(data.value)
-			this.setMessage(message)
+			this.setMessage(message, data.invalid)
 		}
 		if (message || !isFn(validate)) return triggerChange()
 
@@ -288,7 +300,7 @@ export class FormInput extends Component {
 			case 'date':
 			case 'dateinput': 
 				attrs.rxValue = rxValue
-				inputEl = <DateInput {...attrs} />
+				inputEl = <DateInput {...{ ...attrs, invalid }} />
 				break
 			case 'dropdown':
 				attrs.openOnFocus = isBool(attrs.openOnFocus)

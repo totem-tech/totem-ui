@@ -17,7 +17,9 @@ function Currency (props) {
         suffix,
         title,
         unit,
+        unitROE,
         unitDisplayed,
+        unitDisplayedROE,
         value,
     } = props
     const [selected] = !unit && !unitDisplayed
@@ -42,6 +44,8 @@ function Currency (props) {
                     unit,
                     unitDisplayed,
                     decimalPlaces,
+                    unitROE,
+                    unitDisplayedROE,
                 )
                 error = null
                 valueConverted = rounded

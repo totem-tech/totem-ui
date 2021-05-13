@@ -2,12 +2,19 @@ import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Dropdown as DD, Icon } from 'semantic-ui-react'
-import { isDate, isFn, isStr, objWithoutKeys, strFill } from '../utils/utils'
+import { isDate, isFn, isStr, isValidDate, objWithoutKeys, strFill } from '../utils/utils'
 // import FormBuilder from './FormBuilder'
 // import { showForm } from '../services/modal'
 
 export default function DateInput(props) {
-    const { clearable, disabled, icon, ignoreAttributes, rxValue, value } = props
+    const {
+        clearable,
+        disabled,
+        icon,
+        ignoreAttributes,
+        rxValue,
+        value,
+    } = props
     const [[yearOptions, monthOptions, dayOptions]] = useState(() => [years, months, days]
         .map((arr, i) =>
             arr.map(value => {
@@ -16,7 +23,7 @@ export default function DateInput(props) {
             })
         )
     )
-    let [[yyyy, mm, dd], setValue] = useState([])
+    let [[yyyy, mm, dd, invalid], setValue] = useState([])
 
     useEffect(() => {
         let mounted = true
@@ -37,7 +44,10 @@ export default function DateInput(props) {
     }, [setValue])
 
     return (
-        <div {...objWithoutKeys(props, ignoreAttributes)}>
+        <div {...{
+            ...objWithoutKeys(props, ignoreAttributes),
+            className: `ui button${invalid ? ' negative' : ''}`,
+        }}>
             <Dropdown {...{
                 disabled,
                 icon: yyyy ? null : icon,
@@ -110,6 +120,11 @@ DateInput.defaultProps = {
 }
 const triggerChange = (e, props, valueArr, setValue) => {
     const { onChange } = props
+    const dateStr = valueArr.slice(0, 3).join('-')
+    const invalid = dateStr.length < 10
+        ? undefined
+        : !isValidDate(dateStr)
+    valueArr[3] = invalid
     setValue(valueArr)
     if (!isFn(onChange) || valueArr.filter(Boolean).length < 3) return
 

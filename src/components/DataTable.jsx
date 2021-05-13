@@ -30,14 +30,14 @@ export default class DataTable extends Component {
     constructor(props) {
         super(props)
 
-        let { columns, defaultSort, defaultSortAsc, keywords, pageNo } = props
+        let { columns, defaultSort, defaultSortAsc, pageNo } = props
         if (!defaultSort) {
             const { key, sortKey } = columns.find(x => x.sortable !== false) || {}
             defaultSort = sortKey || key
         }
         this.state = {
             isMobile: rxLayout.value === MOBILE,
-            keywords: keywords || '',
+            keywords: '',
             pageNo: pageNo,
             selectedIndexes: [],
             sortAsc: defaultSortAsc, // ascending/descending sort
@@ -181,6 +181,7 @@ export default class DataTable extends Component {
     getTopContent(totalRows, selectedIndexes) {
         let {
             data,
+            keywords: keywordsP,
             searchable,
             searchHideOnEmpty,
             searchOnChange,
@@ -188,7 +189,7 @@ export default class DataTable extends Component {
             topLeftMenu,
             topRightMenu: onSelectMenu,
         } = this.props
-        const { keywords, isMobile } = this.state
+        const { keywords = keywordsP, isMobile } = this.state
         topLeftMenu = (topLeftMenu || []).filter(x => !x.hidden)
         onSelectMenu = (onSelectMenu || []).filter(x => !x.hidden)
         const showSearch = searchable && (keywords || totalRows > 0 || !searchHideOnEmpty)
@@ -329,11 +330,11 @@ export default class DataTable extends Component {
             data,
             emptyMessage,
             footerContent,
+            keywords: keywordsP,
             perPage,
             searchExtraKeys,
             style,
             tableProps,
-            defaultSort,
         } = this.props
         let {
             keywords,
@@ -343,7 +344,7 @@ export default class DataTable extends Component {
             sortBy,
         } = this.state
 
-        keywords = keywords.trim()
+        keywords = `${keywords || keywordsP || ''}`.trim()
         const columns = columnsOriginal.filter(x => !!x && !x.hidden)
         // Include extra searchable keys that are not visibile on the table
         const keys = arrUnique([
@@ -451,7 +452,7 @@ DataTable.propTypes = {
         PropTypes.string, PropTypes.object
     ]),
     footerContent: PropTypes.any,
-    // initial search keywords
+    // Search keywords. If search input is visible, this will set only the initial value.
     keywords: PropTypes.string,
     // total of page numbers to be visible including current
     navLimit: PropTypes.number,
@@ -461,6 +462,8 @@ DataTable.propTypes = {
         PropTypes.func,
         PropTypes.object
     ]),
+    // Indicates whether table should be searchable and the search input be visible
+    // If element supplied, the `keywords` prop is expected to be set externally
     searchable: PropTypes.oneOfType([
         PropTypes.bool,
         PropTypes.element,
