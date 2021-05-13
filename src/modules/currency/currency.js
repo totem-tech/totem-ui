@@ -39,7 +39,10 @@ export const convertTo = async (amount = 0, from, to, decimals) => {
     const fromCurrency = currencies.find(({ currency }) => currency === from)
     const toCurrency = currencies.find(({ currency }) => currency === to)
 
-    if (!fromCurrency || !toCurrency) throw new Error(textsCap.invalidCurency)
+    if (!fromCurrency || !toCurrency) {
+        console.log({ from, to, fromCurrency, toCurrency })
+        throw new Error(textsCap.invalidCurency)
+    }
 
     const convertedAmount = (fromCurrency.ratioOfExchange / toCurrency.ratioOfExchange) * amount
     if (!isValidNumber(decimals)) {

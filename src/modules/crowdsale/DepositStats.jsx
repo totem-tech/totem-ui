@@ -42,7 +42,7 @@ export default React.memo(() => {
                 _,
                 nextLevel,
                 nextMultiplier,
-            ] = await calculateToNextLevel('XTX', amtDepositedXTX)
+            ] = await calculateToNextLevel(currencyDefault, amtDepositedXTX)
 
             setState({ 
                 amtDepositedXTX,

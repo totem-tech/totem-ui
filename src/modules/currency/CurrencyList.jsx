@@ -17,6 +17,7 @@ const textsCap = translated({
     source: 'source',
     status: 'status',
     ticker: 'ticker',
+    type: 'type',
     updated: 'updated',
 }, true)[1]
 
@@ -112,6 +113,11 @@ export default () => {
                 key: 'ticker',
                 textAlign: 'center',
                 title: textsCap.ticker,
+            },
+            {
+                key: 'type',
+                textAlign: 'center',
+                title: textsCap.type,
             },
             {
                 collapsing: true,

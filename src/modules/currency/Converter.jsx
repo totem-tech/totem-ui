@@ -2,7 +2,7 @@ import React from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Dropdown, Icon } from 'semantic-ui-react'
 import { deferred } from '../../utils/utils'
-import FormBuilder, { findInput } from '../../components/FormBuilder'
+import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { iUseReducer } from '../../services/react'
 import { convertTo, getCurrencies, rxSelected } from './currency'
@@ -26,7 +26,7 @@ const Converter = props => {
         const currenciesPromise = getCurrencies()
         const rxFrom = new BehaviorSubject(rxSelected.value)
         const rxFromAmount = new BehaviorSubject(1)
-        const rxTo = new BehaviorSubject('USD')
+        const rxTo = new BehaviorSubject()
         const rxToAmount = new BehaviorSubject()
         const updateToAmount = deferred(async () => {
             // not enough data for conversion
@@ -39,6 +39,7 @@ const Converter = props => {
             )
             rxToAmount.next(`${newAmount[1]}`)
         }, 100)
+
         const state = {
             submitText: null,
             inputs: [
@@ -67,11 +68,13 @@ const Converter = props => {
                                         name: 'exchange',
                                         onClick: () => {
                                             const from = rxFrom.value
-                                            const fromAmount = rxFromAmount.value
-                                            rxFrom.next(rxTo.value)
+                                            // const fromAmount = rxFromAmount.value
+                                            const to = rxTo.value
+                                            const toAmount = rxToAmount.value
                                             rxTo.next(from)
-                                            rxFromAmount.next(rxToAmount.value)
-                                            rxToAmount.next(fromAmount)
+                                            // rxToAmount.next(fromAmount)
+                                            rxFrom.next(to)
+                                            rxFromAmount.next(toAmount)
                                             setDropdowns()
                                         },
                                         size: 'big',
@@ -98,6 +101,8 @@ const Converter = props => {
                 },
             ]
         }
+        // pre-fill values if supplied in the props
+        fillValues(state.inputs, props.values)
 
         const setDropdowns = () => {
             currenciesPromise.then(currencies => {

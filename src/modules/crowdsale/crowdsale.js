@@ -169,7 +169,7 @@ export const fetchConstants = async () => {
         (await convertTo(
             result.Level_NEGOTIATE_Entry_USD,
             'USD',
-            'XTX',
+            currencyDefault,
         ))[1]
     )
     // convert USD to XTX
@@ -178,7 +178,7 @@ export const fetchConstants = async () => {
         const [_, rounded] = await convertTo(
             result.LEVEL_ENTRY_USD[i],
             'USD',
-            'XTX',
+            currencyDefault,
         )
         LEVEL_ENTRY_XTX[i] = eval(rounded)
     }

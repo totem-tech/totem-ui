@@ -229,6 +229,12 @@ export class ChatClient {
         //                  @list   map: list of all currenies (objects)
         this.currencyList = (hash, cb) => isFn(cb) && socket.emit('currency-list', hash, cb)
 
+        this.currencyPricesByDate = (date, currencyIds, cb) => isFn(cb) && socket.emit('currency-prices-by-date',
+            date,
+            currencyIds,
+            cb,
+        )
+
         // Request funds
         this.faucetRequest = (address, cb) => isFn(cb) && socket.emit('faucet-request', address, cb)
 
