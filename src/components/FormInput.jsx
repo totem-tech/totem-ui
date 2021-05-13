@@ -69,7 +69,7 @@ export class FormInput extends Component {
 		super(props)
 
 		const { defer } = props
-		this.state = { message: undefined, validationFailed: false }
+		this.state = { message: undefined }
 		this.value = undefined
 		this.setMessage = defer !== null
 			? deferred(this.setMessage, defer)
@@ -148,10 +148,6 @@ export class FormInput extends Component {
 				case 'date':
 					validatorConfig = { type: TYPES.date }
 					break
-				case 'dateinput':
-					customMsgs.date = null
-					validatorConfig = { type: TYPES.date }
-					break
 				case 'number':
 					validatorConfig = {
 						type: integer
@@ -191,7 +187,7 @@ export class FormInput extends Component {
 			isFn(onChange) && onChange(event, data, this.props)
 			this.value = data.value
 			rxValue && rxValue.next(data.value)
-			this.setMessage(message, data.invalid)
+			this.setMessage(data.invalid, message)
 		}
 		if (message || !isFn(validate)) return triggerChange()
 
@@ -224,7 +220,7 @@ export class FormInput extends Component {
 		)
 	}
 
-	setMessage = (message = {}) => this.setState({ message })
+	setMessage = (invalid, message = {}) => this.setState({ invalid, message })
 
 	render() {
 		const {
@@ -236,7 +232,7 @@ export class FormInput extends Component {
 			ignoreAttributes,
 			inline,
 			inlineLabel,
-			invalid,
+			invalid: invalidP,
 			label,
 			labelDetails,
 			loading,
@@ -251,10 +247,12 @@ export class FormInput extends Component {
 		} = this.props
 		let useInput = useInputOrginal
 		const {
+			invalid: invalidS,
 			loading: loadingS,
 			message: internalMsg,
 			options,
 		} = this.state
+		const invalid = invalidP || invalidS 
 		const message = internalMsg || externalMsg
 		let hideLabel = false
 		let inputEl = ''
@@ -356,7 +354,9 @@ export class FormInput extends Component {
 
 		if (!isGroup) return (
 			<Form.Field {...{
-				error: (message && message.status === 'error') || !!error || !!invalid,
+				error: ['dateinput', 'date'].includes(typeLC)
+					? false
+					: (message && message.status === 'error') || !!error || !!invalid,
 				required,
 				style: styleContainer,
 				title: editable ? undefined : textsCap.readOnlyField,

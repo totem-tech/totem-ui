@@ -46,7 +46,7 @@ export default function DateInput(props) {
     return (
         <div {...{
             ...objWithoutKeys(props, ignoreAttributes),
-            className: `ui button${invalid ? ' negative' : ''}`,
+            className: `ui button${props.invalid || invalid ? ' negative' : ''}`,
         }}>
             <Dropdown {...{
                 disabled,
@@ -87,7 +87,7 @@ export default function DateInput(props) {
                     className: 'no-margin',
                     name: 'x',
                     onClick: e => triggerChange(e, props, [`${currentYear}`, '', ''], setValue),
-                    style: { cursor: 'pointer' },
+                    style: { cursor: 'pointer', paddingLeft: 5 },
                 }} />
             )}
         </div>
@@ -112,6 +112,7 @@ DateInput.defaultProps = {
         'clearable',
         'icon',
         'ignoreAttributes',
+        'invalid',
         'rxValue',
     ],
     style: {
@@ -128,7 +129,7 @@ const triggerChange = (e, props, valueArr, setValue) => {
     setValue(valueArr)
     if (!isFn(onChange) || valueArr.filter(Boolean).length < 3) return
 
-    onChange(e, {...props, value: valueArr.join('-')})
+    onChange(e, {...props, value: dateStr, invalid})
 }
 const Dropdown = React.memo(DD)
 const days = new Array(31)
