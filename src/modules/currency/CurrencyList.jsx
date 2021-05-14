@@ -136,7 +136,7 @@ export default function CurrencyList(props) {
 CurrencyList.defaultProps = {
     date: null, // show current prices
     topLeftMenu: [
-        <Converter key='c' style={{ maxWidth: 470}}></Converter>
+        <Converter key='c' style={{ maxWidth: 500}}></Converter>
     ],
 }
 

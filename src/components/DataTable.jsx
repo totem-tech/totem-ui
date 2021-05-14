@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Button, Dropdown, Grid, Icon, Input, Segment, Table } from 'semantic-ui-react'
 import {
-    arrMapSlice, getKeys, isArr, isFn, objWithoutKeys, search, sort, isStr, arrUnique, isObj
+    arrMapSlice, getKeys, isArr, isFn, objWithoutKeys, search, sort, isStr, arrUnique, isObj, isDefined
 } from '../utils/utils'
 import Invertible from './Invertible'
 import Message from './Message'
@@ -37,7 +37,7 @@ export default class DataTable extends Component {
         }
         this.state = {
             isMobile: rxLayout.value === MOBILE,
-            keywords: '',
+            keywords: undefined,
             pageNo: pageNo,
             selectedIndexes: [],
             sortAsc: defaultSortAsc, // ascending/descending sort
@@ -250,7 +250,7 @@ export default class DataTable extends Component {
                         },
                         placeholder: textsCap.search,
                         type: 'search', // enables escape to clear
-                        value: keywords,
+                        value: keywords || '',
                     }} />
                 )
         )
@@ -344,7 +344,7 @@ export default class DataTable extends Component {
             sortBy,
         } = this.state
 
-        keywords = `${keywords || keywordsP || ''}`.trim()
+        keywords = `${isDefined(keywords) ? keywords : keywordsP || ''}`.trim()
         const columns = columnsOriginal.filter(x => !!x && !x.hidden)
         // Include extra searchable keys that are not visibile on the table
         const keys = arrUnique([

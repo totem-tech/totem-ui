@@ -104,9 +104,21 @@ Currency.propTypes = {
     style: PropTypes.object,
     suffix: PropTypes.any,
     title: PropTypes.any,
+    // (optional) specify the price (ratio of exchange) of the source currency
+    // if not defined, will use latest price for the currency
     unit: PropTypes.string,
+    unitROE: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.number,
+    ]),
     // Display currency. Default: selected currency from currency service
     unitDisplayed: PropTypes.string,
+    // (optional) specify the price (ratio of exchange) of the display currency
+    // if not defined, will use latest price for the currency
+    unitDisplayedROE: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.number,
+    ]),
     value: PropTypes.number,
 }
 Currency.defaultProps = {

@@ -274,7 +274,7 @@ export const sidebarItems = [
                             // validate: (_, { value }) => isDate(new Date(value)),
                         }} />
                     </div>
-                    <CurrencyList date={date} xkeywords='ibm' />
+                    <CurrencyList date={date} keywords='ibm' />
                 </div >
             )
         },

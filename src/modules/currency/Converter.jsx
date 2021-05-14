@@ -20,6 +20,14 @@ const inputNames = {
     group: 'group',
 }
 
+/**
+ * @name    Converter
+ * @summary a simple currency converter that uses the latest available prices
+ * 
+ * @param   {Object} props 
+ * 
+ * @returns {Element}
+ */
 const Converter = props => {
     const [state] = iUseReducer(null, rxSetState => {
         const isMobile = rxLayout.value === MOBILE
@@ -38,7 +46,7 @@ const Converter = props => {
                 rxTo.value,
             )
             rxToAmount.next(`${newAmount[1]}`)
-        }, 100)
+        }, 200)
 
         const state = {
             submitText: null,
@@ -67,6 +75,7 @@ const Converter = props => {
                                         className: `no-margin clickable${isMobile ? ' rotated counterclockwise' : ''}`,
                                         name: 'exchange',
                                         onClick: () => {
+                                            // on exchange icon click, switch the currencies and amounts
                                             const currency = rxTo.value
                                             const amount = rxToAmount.value
                                             rxTo.next(rxFrom.value)
@@ -102,8 +111,9 @@ const Converter = props => {
 
         const setDropdowns = () => {
             currenciesPromise.then(currencies => {
-                const options = currencies.map(({ currency }) => ({
+                const options = currencies.map(({ currency, type }) => ({
                     text: currency,
+                    title: type,
                     value: currency,
                 }))
                 
@@ -132,7 +142,7 @@ const Converter = props => {
                             placeholder: textsCap.select,
                             selection: true,
                             search: true,
-                            style: { minWidth: 95, paddingRight: 0 },
+                            style: { minWidth: 120, paddingRight: 0 },
                         }} />
                     )
                 }
