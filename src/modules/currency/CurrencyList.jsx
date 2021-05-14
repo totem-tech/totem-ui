@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react'
+import PropTypes from 'prop-types'
 import { Icon, Popup } from 'semantic-ui-react'
 import { format } from '../../utils/time'
+import { isDate } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
 import Invertible from '../../components/Invertible'
 import TimeSince from '../../components/TimeSince'
 import { translated } from '../../services/language'
-import { iUseReducer, usePromise, useRxSubject } from '../../services/react'
+import { useRxSubject } from '../../services/react'
 import client from '../chat/ChatClient'
 import Converter from './Converter'
 import Currency from './Currency'
 import { getCurrencies, rxSelected } from './currency'
-import { isDate } from '../../utils/utils'
 
 const textsCap = translated({
     emptyMessageDate: 'no data available for the selected date',
@@ -132,7 +133,12 @@ export default function CurrencyList(props) {
         }} />
     )
 }
-
+CurrencyList.propTypes = {
+    // (optional) if specified will display prices for that date only
+    // PS: currencies that does not have a daily historical price for that date will not be listed
+    // Expected date format: YYYY-MM-DD
+    date: PropTypes.string,
+}
 CurrencyList.defaultProps = {
     date: null, // show current prices
     topLeftMenu: [

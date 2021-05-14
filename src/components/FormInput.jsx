@@ -275,7 +275,10 @@ export class FormInput extends Component {
 
 		switch (typeLC) {
 			case 'button':
-				inputEl = <Button as='a' {...attrs} />
+				attrs.content = !isFn(content)
+					? content
+					: content(this.props)
+				inputEl = <Button {...{ as: 'a', ...attrs }} />
 				break
 			case 'checkbox':
 			case 'radio':

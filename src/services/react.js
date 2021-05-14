@@ -1,7 +1,7 @@
 // a set of reusable React and state related utility functions
 import { useEffect, useReducer, useState } from "react"
 import PropTypes from 'prop-types'
-import { BehaviorSubject,  Subject } from 'rxjs'
+import { BehaviorSubject, Subject } from 'rxjs'
 import PromisE from "../utils/PromisE"
 import { hasValue, isDefined, isFn, isSubjectLike, isValidNumber } from "../utils/utils"
 
@@ -22,8 +22,8 @@ export const iUseReducer = (reducerFn, initialState = {}) => {
         initialState = !rxSetState
             ? initialState
             : initialState(rxSetState)
-        
-        return [ rxSetState, initialState ]
+
+        return [rxSetState, initialState]
     })
     const [state, setStateOrg] = useReducer(
         isFn(reducerFn) ? reducerFn : reducer,
@@ -167,16 +167,16 @@ export const usePromise = (promise, resultModifier, errorModifier) => {
     useState(() => {
         let mounted = true
         const handler = (key, modifier, setState) => value => {
-            if (!mounted) return console.log({mounted})
+            if (!mounted) return console.log({ mounted })
             const newState = {}
             newState[key] = isFn(modifier)
                 ? modifier(value)
                 : value
-            setState(newState)            
+            setState(newState)
         }
         new PromisE(promise)
-            .then(handler('result', resultModifier,setState))
-            .catch(handler('error', errorModifier,setState))
+            .then(handler('result', resultModifier, setState))
+            .catch(handler('error', errorModifier, setState))
         return () => mounted = false
     }, [setState, promise])
 
@@ -232,9 +232,9 @@ export const useRxSubject = (subject, valueModifier, initialValue, allowSubjectU
     }, [])
 
     const setValue = newValue => !allowSubjectUpdate
-            ? setState({ value: newValue })
-            : subject.next(newValue)
-    return [ value, setValue ]
+        ? setState({ value: newValue })
+        : subject.next(newValue)
+    return [value, setValue]
 }
 // To prevent an update return this in valueModifier
 useRxSubject.IGNORE_UPDATE = Symbol('ignore-rx-subject-update')
