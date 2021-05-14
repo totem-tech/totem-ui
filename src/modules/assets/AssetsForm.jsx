@@ -44,6 +44,7 @@ export default function AssetForm(props) {
                     inputs: [
                         {
                             name: inputNames.date,
+                            onChange: () => rxShowList.next(true),
                             type: 'date',
                             with: 4
                         },
