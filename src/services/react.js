@@ -16,7 +16,7 @@ import { hasValue, isDefined, isFn, isSubjectLike, isValidNumber } from "../util
  * 
  * @returns {Array}     [@state {Object}, @setState {Function}]
  */
-export const iUseReducer = (reducerFn, initialState = {}) => {
+export const iUseReducer = (reducerFn, initialState = {}, onUnmount) => {
     const [[rxSetState, iniState]] = useState(() => {
         const rxSetState = isFn(initialState) && new Subject()
         initialState = !rxSetState
@@ -42,6 +42,7 @@ export const iUseReducer = (reducerFn, initialState = {}) => {
 
         return () => {
             setStateOrg.mounted = false
+            isFn(onUnmount) && onUnmount()
             subscription && subscription.unsubscribe()
         }
     }, [setStateOrg, rxSetState])

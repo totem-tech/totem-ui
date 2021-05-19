@@ -26,8 +26,8 @@ const textsCap = translated({
 }, true)[1]
 
 export default function CurrencyList(props) {
-    const { date } = props
-    const useDate = `${date}`.length === 10 && isDate(new Date(date))
+    const { date = '' } = props
+    const gotDate = `${date}`.length === 10 && isDate(new Date(date))
     const [selectedCurrency] = useRxSubject(rxSelected)
     const [tableData, setTableData] = useState([])
     const [tableProps] = useState({
@@ -89,7 +89,7 @@ export default function CurrencyList(props) {
                         return [c._id, c]
                     })
             )
-            if (useDate) {
+            if (gotDate) {
                 const prices = await client.currencyPricesByDate.promise(date, [])
                 prices.map(p => {
                     const { currencyID, ratioOfExchange } = p
@@ -127,7 +127,7 @@ export default function CurrencyList(props) {
             ...props,
             ...tableProps,
             data: tableData,
-            emptyMessage: useDate
+            emptyMessage: gotDate
                 ? { content: textsCap.emptyMessageDate }
                 : props.emptyMessage,
         }} />

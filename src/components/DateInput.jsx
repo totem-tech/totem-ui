@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Dropdown as DD, Icon } from 'semantic-ui-react'
-import { isDate, isFn, isStr, isValidDate, objWithoutKeys, strFill } from '../utils/utils'
-// import FormBuilder from './FormBuilder'
-// import { showForm } from '../services/modal'
+import { className, isDate, isFn, isStr, isValidDate, objWithoutKeys, strFill } from '../utils/utils'
+import { useRxSubject } from '../services/react'
+import { MOBILE, rxLayout } from '../services/window'
 
 export default function DateInput(props) {
     const {
@@ -12,16 +12,25 @@ export default function DateInput(props) {
         disabled,
         icon,
         ignoreAttributes,
+        fluidOnMobile = true,
         rxValue,
         value,
     } = props
+    const isMobile = !fluidOnMobile
+        ? false
+        : useRxSubject(rxLayout, l => l === MOBILE)[0]
     const [[yearOptions, monthOptions, dayOptions]] = useState(() => [years, months, days]
-        .map((arr, i) =>
-            arr.map(value => {
+        .map((arr, i) => [
+            {
+                // empty
+                text: '--',
+                value: '',
+            },
+            ...arr.map(value => {
                 value = `${i === 0 ? value : strFill(value, 2, '0')}`
                 return { text: value, value}
             })
-        )
+        ])
     )
     let [[yyyy, mm, dd, invalid], setValue] = useState([])
 
@@ -46,7 +55,12 @@ export default function DateInput(props) {
     return (
         <div {...{
             ...objWithoutKeys(props, ignoreAttributes),
-            className: `ui button${props.invalid || invalid ? ' negative' : ''}`,
+            className: className({
+                'ui button': true,
+                negative: props.invalid || invalid,
+                fluid: isMobile,
+            }),
+            title: 'YYYY-MM-DD',
         }}>
             <Dropdown {...{
                 disabled,
