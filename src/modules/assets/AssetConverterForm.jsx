@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { deferred, isDefined, isFn } from '../../utils/utils'
+import { arrReverse, deferred, isDefined, isFn } from '../../utils/utils'
 import FormBuilder from '../../components/FormBuilder'
 import { iUseReducer } from '../../services/react'
 import { translated } from '../../services/language'
@@ -18,7 +18,8 @@ const textsCap = translated({
 }, true)[1]
 const inputNames = {
     asset: 'asset',
-    amountFrom: 'amount',
+    assetTo: 'assetTo',
+    amountFrom: 'amountFrom',
     amountTo: 'amountTo',
     group: 'group',
 }
@@ -26,15 +27,31 @@ const datesCache = new Map()
 const rxCurrencyOptions = new BehaviorSubject([])
 
 export default function AssetConverterForm(props) {
-    const { rxDate, submitText } = props
+    let {
+        labels,
+        reverseInputs = false,
+        rxDate,
+        rxAmountFrom,
+        rxAmountTo,
+        rxAssetFrom,
+        rxAssetTo,
+        submitText
+    } = props
+    labels = {
+        asset: textsCap.assetLabel,
+        amountFrom: textsCap.amountFromLabel,
+        amountTo: textsCap.amountToLabel,
+        ...labels,
+    }
     const [state] = iUseReducer(null, () => {
-        const rxAmountTo = new BehaviorSubject()
+        rxAmountTo = rxAmountTo || new BehaviorSubject()
         const rxValues = new BehaviorSubject({})
-        const handleAmountFromChange = deferred(async () => {
+        const updateAmountTo = async () => {
             try {
-                const amountFrom = rxValues.value[inputNames.amountFrom]
-                const assetFrom = rxValues.value[inputNames.asset]
-                const assetTo = currencyDefault
+                const values = rxValues.value
+                const amountFrom = values[inputNames.amountFrom]
+                const assetFrom = values[inputNames.asset]
+                const assetTo =  values[inputNames.assetTo]//rxAssetTo.value
                 let roeFrom, roeTo
                 // conversion no required
                 if (!assetFrom || !assetTo || !amountFrom) return
@@ -65,14 +82,15 @@ export default function AssetConverterForm(props) {
                     status: 'error',
                 }, 5000, 'AssetConverterForm')
             }
-        }, 300)
+        }
         const state = {
             submitText: isDefined(submitText) && submitText || null,
-            onChange: (e, values, invalid) => {
+            onChange: deferred((e, values, invalid) => {
                 const { onChange } = props
                 isFn(onChange) && onChange(e, values, invalid)
+                updateAmountTo()
                 rxValues.next(values)
-            },
+            }, 200),
             inputs: [
                 {
                     inline: true,
@@ -82,11 +100,12 @@ export default function AssetConverterForm(props) {
                     style: { margin: '0 -10px'},
                     inputs: [
                         {
-                            label: textsCap.assetLabel,
+                            label: labels.asset,
                             name: inputNames.asset,
                             options: [],
                             placeholder: textsCap.assetPlaceholder,
                             rxOptions: rxCurrencyOptions,
+                            rxValue: rxAssetFrom,
                             search: [ 'text', 'description'],
                             selection: true,
                             style: { maxHeight: 36},
@@ -97,21 +116,26 @@ export default function AssetConverterForm(props) {
                             type: 'dropdown',
                         },
                         {
-                            label: textsCap.amountFromLabel,
+                            label: labels.amountFrom,
                             name: inputNames.amountFrom,
                             min: 0,
                             placeholder: textsCap.amountFromPlaceholder,
-                            onChange: handleAmountFromChange,
+                            rxValue: rxAmountFrom,
                             type: 'number',
                         },
                         {
-                            label: textsCap.amountToLabel,
+                            label: labels.amountTo,
                             name: inputNames.amountTo,
                             readOnly: true,
                             rxValue: rxAmountTo,
                             type: 'text',
                         },
-                    ]
+                    ],
+                },
+                {
+                    name: inputNames.assetTo,
+                    rxValue: rxAssetTo,
+                    type: 'hidden',
                 },
             ],
         }
@@ -129,8 +153,15 @@ export default function AssetConverterForm(props) {
         return state
     })
 
-    return <FormBuilder {...{...props, ...state }} />
+    return <FormBuilder {...{
+        ...props,
+        ...state,
+        inputs: reverseInputs
+            ? arrReverse(state.inputs, true, true)
+            : state.inputs,
+    }} />
 }
 AssetConverterForm.propTypes = {
+    rxAmount: PropTypes.instanceOf(BehaviorSubject),
     rxDate: PropTypes.instanceOf(BehaviorSubject),
 }

@@ -92,13 +92,13 @@ export default function CurrencyList(props) {
             if (gotDate) {
                 const prices = await client.currencyPricesByDate.promise(date, [])
                 prices.map(p => {
-                    const { currencyID, ratioOfExchange } = p
-                    const currency = allCurrencies.get(currencyID || USD._id)
+                    const { currencyId, ratioOfExchange } = p
+                    const currency = allCurrencies.get(currencyId || USD._id)
                     if (!currency) return 
 
                     currency.ratioOfExchange = ratioOfExchange
                     currency.priceUpdatedAt = date
-                    currencies.set(currencyID, { ...currency })
+                    currencies.set(currencyId, { ...currency })
                     
                     if (currency.currency !== unitDisplayed) return
                     unitDisplayedROE = ratioOfExchange
@@ -114,7 +114,8 @@ export default function CurrencyList(props) {
 
             const data = Array.from(currencies)
                 .map(getRowData( unitDisplayed, unitDisplayedROE ))
-            
+            console.log({data})
+
             mounted && setTableData(data)
         }
         fetchData()
