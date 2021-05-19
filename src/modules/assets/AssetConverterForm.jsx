@@ -41,7 +41,6 @@ export default function AssetConverterForm(props) {
 
                 if (rxDate.value && assetFrom !== assetTo) {
                     const result = await client.currencyPricesByDate.promise(rxDate.value, [assetFrom, assetTo])
-                    console.log({result})
                     result.forEach(({ currencyId, ratioOfExchange }) => {
                         roeFrom = currencyId === assetFrom
                             ? ratioOfExchange
@@ -60,7 +59,6 @@ export default function AssetConverterForm(props) {
                     roeTo,
                 )
                 rxAmountTo.next(amountConverted)
-                
             } catch (err) {
                 setToast({
                     content: `${err}`,
@@ -81,6 +79,7 @@ export default function AssetConverterForm(props) {
                     name: inputNames.group,
                     type: 'group',
                     // widths: 'equal',
+                    style: { margin: '0 -10px'},
                     inputs: [
                         {
                             label: textsCap.assetLabel,
@@ -88,7 +87,7 @@ export default function AssetConverterForm(props) {
                             options: [],
                             placeholder: textsCap.assetPlaceholder,
                             rxOptions: rxCurrencyOptions,
-                            search: true,
+                            search: [ 'text', 'description'],
                             selection: true,
                             style: { maxHeight: 36},
                             styleContainer: {
@@ -120,7 +119,7 @@ export default function AssetConverterForm(props) {
         !rxCurrencyOptions.value.length && getCurrencies()
             .then(currencies => {
                 const options = currencies.map(({ currency, name, ticker, type }) => ({
-                    description: `${currency}`,
+                    description: currency,
                     text: name,
                     value: currency,
                 }))

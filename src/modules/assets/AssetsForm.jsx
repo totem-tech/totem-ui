@@ -9,6 +9,7 @@ import AssetConverterForm from './AssetConverterForm'
 import { rxSelected } from '../identity/identity'
 import { Button } from 'semantic-ui-react'
 import { MOBILE, rxLayout } from '../../services/window'
+import { setToast } from '../../services/toast'
 
 const textsCap = translated({
     searchAssets: 'search assets',
@@ -57,7 +58,7 @@ function newPortfolioGroup(onChange, isMobile) {
                     onChange,
                     style: {
                         display: 'inline-block',
-                        width: isMobile ? '100%': '80% ',
+                        width: isMobile ? '100%': '75%',
                     },
                     rxDate,
                 }} />
@@ -97,7 +98,8 @@ export default function AssetForm(props) {
     const [portfolioInputs] = useRxSubject(rxPortfolioInputs)
     const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
     const [state] = iUseReducer(null, rxSetState => {
-        const isMobile = ({layout}) => layout === MOBILE
+        const isMobile = ({ layout }) => layout === MOBILE
+        const notImplemented = () => setToast('Feature not implemented yet!', 2000, 'not-implemented')
         const searchInput = {
             name: inputNames.keywords,
             // forces table to be visible on search change
@@ -148,15 +150,14 @@ export default function AssetForm(props) {
                             width: 4,
                         },
                         {
-                            hidden: isMobile,
                             name: 'empty1',
-                            type: 'html',
+                            type: 'hidden',
                             width: 4,
                         },
                         {
-                            hidden: isMobile,
+                            // hidden: isMobile,
                             name: 'empty2',
-                            type: 'html',
+                            type: 'hidden',
                             width: 4,
                         },
                         {
@@ -211,17 +212,17 @@ export default function AssetForm(props) {
                         },
                         {
                             content: textsCap.btnSubtract,
-                            disabled: true,
                             fluid: true,
                             name: inputNames.btnSubtract,
                             negative: true,
+                            onClick: notImplemented,
                             type: 'button',
                         },
                         {
                             content: textsCap.btnAdd,
-                            disabled: true,
                             fluid: true,
                             name: inputNames.btnAdd,
+                            onClick: notImplemented,
                             positive: true,
                             type: 'button',
                         },
