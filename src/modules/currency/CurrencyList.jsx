@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
+import { BehaviorSubject } from 'rxjs'
 import { Icon, Popup } from 'semantic-ui-react'
 import { format } from '../../utils/time'
 import { arrSort, isDate } from '../../utils/utils'
@@ -26,9 +27,9 @@ const textsCap = translated({
 }, true)[1]
 
 export default function CurrencyList(props) {
-    const { date = '' } = props
+    const { date = '', rxCurrencyId } = props
     const gotDate = `${date}`.length === 10 && isDate(new Date(date))
-    const [selectedCurrency] = useRxSubject(rxSelected)
+    const [displayCurrency] = useRxSubject(rxCurrencyId || rxSelected)
     const [tableData, setTableData] = useState([])
     const [tableProps] = useState({
         columns: [
@@ -81,7 +82,7 @@ export default function CurrencyList(props) {
         let mounted = true
         const fetchData = async () => {
             let unitDisplayedROE, currencies = new Map()
-            let unitDisplayed = rxSelected.value
+            let unitDisplayed = displayCurrency
             const result = await getCurrencies()
             const usdEntry = result.find(c => c.type === 'fiat' && c.ticker === 'USD')
             const allCurrencies = new Map(
@@ -127,7 +128,7 @@ export default function CurrencyList(props) {
         fetchData()
 
         return () => mounted = false
-    }, [date, selectedCurrency])
+    }, [date, displayCurrency])
 
     return (
         <DataTable {...{
@@ -145,6 +146,7 @@ CurrencyList.propTypes = {
     // PS: currencies that does not have a daily historical price for that date will not be listed
     // Expected date format: YYYY-MM-DD
     date: PropTypes.string,
+    rxCurrencyId: PropTypes.instanceOf(BehaviorSubject)
 }
 CurrencyList.defaultProps = {
     date: null, // show current prices

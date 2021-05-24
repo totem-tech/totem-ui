@@ -137,7 +137,7 @@ export default function AssetConverterForm(props) {
         // set currency dropdown options
         !rxCurrencyOptions.value.length && getCurrencies()
             .then(currencies => {
-                const options = currencies.map(({ _id, currency, name }) => ({
+                const options = currencies.map(({ currency, name }) => ({
                     description: currency,
                     text: name,
                     value: currency,
