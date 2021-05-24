@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { isFn, isValidNumber } from '../../utils/utils'
+import { isFn, isValidNumber, objWithoutKeys } from '../../utils/utils'
 import FormBuilder, { findInput } from "../../components/FormBuilder"
 import { randomHex } from '../../services/blockchain'
 import { translated } from '../../services/language'
@@ -79,12 +79,40 @@ function newPortfolioGroup(valuePrefix, isMobile) {
                             ...rxPortfolioInputs.value,
                             newPortfolioGroup(lineIdPrefix, isMobile)
                         ]),
+                        positive: true,
                         style: isMobile
                             ? {}
                             : {
                                 position: 'absolute',
                                 top: 10,
                                 left: 10,
+                            },
+                        type: 'button',
+                    }} />
+                    <Button {...{
+                        as: 'div',
+                        circular: !isMobile,
+                        className: 'no-margin',
+                        fluid: isMobile,
+                        icon: 'minus',
+                        name: `btnAdd-${lineId}`,
+                        negative: true,
+                        onClick: () => {
+                            // ignore if only one line left
+                            if (rxPortfolioInputs.value.length <= 1) return
+                            rxPortfolioInputs.next(
+                                rxPortfolioInputs.value.filter(({ name }) => name !== lineId)
+                            )
+                            rxValues.next(
+                                objWithoutKeys(rxValues.value, lineIdPrefix + lineId)
+                            )
+                        },
+                        style: isMobile
+                            ? {}
+                            : {
+                                position: 'absolute',
+                                top: 10,
+                                left: 50,
                             },
                         type: 'button',
                     }} />

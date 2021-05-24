@@ -80,10 +80,15 @@ export default function AssetConverterForm(props) {
             }, 200),
             inputs: [
                 {
+                    hidden: true,
                     name: inputNames.date,
-                    // onChange: (_, values) => console.log({ date: values.date }),//updateAmountTo(),
-                    // value: '',
                     rxValue: rxDate,
+                    type: 'hidden',
+                },
+                {
+                    hidden: true,
+                    name: inputNames.assetTo,
+                    rxValue: rxAssetTo,
                     type: 'hidden',
                 },
                 {
@@ -125,11 +130,6 @@ export default function AssetConverterForm(props) {
                             type: 'text',
                         },
                     ],
-                },
-                {
-                    name: inputNames.assetTo,
-                    rxValue: rxAssetTo,
-                    type: 'hidden',
                 },
             ],
         }
