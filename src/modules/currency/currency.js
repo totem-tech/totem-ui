@@ -177,12 +177,11 @@ export const updateCurrencies = async () => {
 // if selected currency is not available in the currencies list, set to default currency
 (async () => {
     const currencies = await getCurrencies()
-    if (!currencies.find(x => x.currency === rxSelected.value)) {
-        setSelected(
-            currencies
-                .find(x => x.ticker === currencyDefault)
-                .currency
-        )
+    const selected = currencies.find(x => x.currency === rxSelected.value)
+    if (!selected) {
+        const { _id } = currencies
+            .find(x => x.ticker === currencyDefault)
+        _id && setSelected(_id)
     }
 })()
 export default {
