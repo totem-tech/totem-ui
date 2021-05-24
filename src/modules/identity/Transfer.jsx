@@ -222,31 +222,15 @@ export default class Transfer extends Component {
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
-    async componentWillMount() {
+    componentWillMount() {
         this._mounted = true
         this.subscriptions = {}
         const { inputs } = this.state
         const { values = {} } = this.props
         const fromIn = findInput(inputs, this.names.from)
         const toIn = findInput(inputs, this.names.to)
-        this.currencies = await getCurrencies()
         const currencyReceivedIn = findInput(inputs, this.names.currencyReceived)
         const currencySentIn = findInput(inputs, this.names.currencySent)
-        const options = arrSort(
-            this.currencies.map(({ currency, nameInLanguage, ISO }) => ({
-                description: (
-                    <span className='description' style={{ fontSize: '75%' }}>
-                        {nameInLanguage}
-                    </span>
-                ),
-                key: ISO,
-                text: currency,
-                value: ISO
-            })),
-            'text'
-        )
-        currencyReceivedIn.options = options
-        currencySentIn.options = options
         values[this.names.currencyReceived] = rxSelectedCurrency.value
         values[this.names.currencySent] = rxSelectedCurrency.value
         fillValues(inputs, values)
@@ -278,6 +262,23 @@ export default class Transfer extends Component {
                 'text'
             )
             this.setState({ inputs })
+        })
+
+        // set currency dropdown options
+        getCurrencies().then(currencies => {
+            this.currencies = currencies
+            const options = this.currencies.map(({ currency, name }) => ({
+                description: (
+                    <span className='description' style={{ fontSize: '75%' }}>
+                        {name}
+                    </span>
+                ),
+                key: currency,
+                text: currency,
+                value: currency,
+            }))
+            currencyReceivedIn.options = options
+            currencySentIn.options = options
         })
     }
 
@@ -388,11 +389,12 @@ export default class Transfer extends Component {
 
     handleCurrencyReceivedChange = deferred((_, values) => {
         if (!this.currencies) return
+
         const { inputs } = this.state
         const amountReceived = values[this.names.amountReceived]
         const currencyReceived = values[this.names.currencyReceived]
         const amountReceivedIn = findInput(inputs, this.names.amountReceived)
-        const currencyObj = this.currencies.find(x => x.ISO === currencyReceived) || {}
+        const currencyObj = this.currencies.find(x => x.currency === currencyReceived) || {}
         amountReceivedIn.decimals = parseInt(currencyObj.decimals || 0)
         this.setState({ inputs })
 

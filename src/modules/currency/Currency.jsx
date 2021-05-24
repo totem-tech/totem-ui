@@ -3,11 +3,11 @@ import PropTypes from 'prop-types'
 import { isValidNumber, isFn, isDefined } from '../../utils/utils'
 import { subjectAsPromise, unsubscribe, useRxSubject } from '../../services/react'
 import { convertTo, currencyDefault, rxSelected } from './currency'
-// import { rxIsConnected } from '../modules/chat/ChatClient'
 
-const Currency = props => {
+function Currency (props) {
     let {
         className,
+        date,
         decimalPlaces,
         EL,
         emptyMessage,
@@ -18,15 +18,28 @@ const Currency = props => {
         suffix,
         title,
         unit,
+        unitROE,
         unitDisplayed,
+        unitDisplayedROE,
         value,
     } = props
-    const [selected] = !unit && !unitDisplayed ? [] : useRxSubject(rxSelected)
+    const [selected] = !unit && !unitDisplayed
+        ? []
+        : useRxSubject(rxSelected)
     unit = unit || selected
     unitDisplayed = unitDisplayed || selected
     const isSame = unit === unitDisplayed
     let [valueConverted, setValueConverted] = useState(isSame ? value : undefined)
     let [error, setError] = useState()
+    const [ticker, setTicker] = useState()
+    const valuesToWatch = [
+        date,
+        unit,
+        unitROE,
+        unitDisplayed,
+        unitDisplayedROE,
+        value,
+    ]
 
     useEffect(() => {
         if (!isValidNumber(value)) return () => { }
@@ -35,21 +48,16 @@ const Currency = props => {
         const convert = async (value) => {
             if (!mounted) return
             try {
-                // if messaging service is not connected. Wait until connected
-                // if (!rxIsConnected.value) {
-                //     const [connectionPromise, unsubscriber] = subjectAsPromise(rxIsConnected, true)
-                //     // makes sure to unsubscribe if component is unmounted
-                //     subscriptions.isConnected = unsubscriber
-                //     await connectionPromise
-                // }
-                const [_, rounded] = await convertTo(
+                const [_, rounded, _2, _3, to] = await convertTo(
                     value || 0,
                     unit,
                     unitDisplayed,
                     decimalPlaces,
+                    date || [ unitROE, unitDisplayedROE ]
                 )
                 error = null
                 valueConverted = rounded
+                setTicker([to.ticker])
             } catch (err) {
                 error = err
                 valueConverted = 0
@@ -68,10 +76,10 @@ const Currency = props => {
             mounted = false
             unsubscribe(subscriptions)
         }
-    }, [unit, unitDisplayed, value])
+    }, valuesToWatch)
 
     const content = !isDefined(valueConverted) ? (emptyMessage || '') : (
-        <span>{prefix || ''}{valueConverted} {unitDisplayed}{suffix || ''}</span>
+        <span>{prefix || ''}{valueConverted} {ticker}{suffix || ''}</span>
     )
     return (
         <EL {...{
@@ -91,6 +99,8 @@ const Currency = props => {
 Currency.propTypes = {
     className: PropTypes.string,
     decimalPlaces: PropTypes.number,
+    // Valid format: YYYY-MM-DD
+    date: PropTypes.string,
     // @EL (optional) HTML element to use. Default: 'span'
     EL: PropTypes.string,
     emptyMessage: PropTypes.oneOfType([
@@ -104,9 +114,21 @@ Currency.propTypes = {
     style: PropTypes.object,
     suffix: PropTypes.any,
     title: PropTypes.any,
+    // (optional) specify the price (ratio of exchange) of the source currency
+    // if not defined, will use latest price for the currency
     unit: PropTypes.string,
+    unitROE: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.number,
+    ]),
     // Display currency. Default: selected currency from currency service
     unitDisplayed: PropTypes.string,
+    // (optional) specify the price (ratio of exchange) of the display currency
+    // if not defined, will use latest price for the currency
+    unitDisplayedROE: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.number,
+    ]),
     value: PropTypes.number,
 }
 Currency.defaultProps = {

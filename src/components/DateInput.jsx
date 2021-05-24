@@ -2,21 +2,37 @@ import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Dropdown as DD, Icon } from 'semantic-ui-react'
-import { isDate, isFn, isStr, objWithoutKeys, strFill } from '../utils/utils'
-// import FormBuilder from './FormBuilder'
-// import { showForm } from '../services/modal'
+import { className, isDate, isFn, isStr, isValidDate, objWithoutKeys, strFill } from '../utils/utils'
+import { useRxSubject } from '../services/react'
+import { MOBILE, rxLayout } from '../services/window'
 
 export default function DateInput(props) {
-    const { clearable, disabled, icon, ignoreAttributes, rxValue, value } = props
+    const {
+        clearable,
+        disabled,
+        icon,
+        ignoreAttributes,
+        fluidOnMobile = true,
+        rxValue,
+        value,
+    } = props
+    const isMobile = !fluidOnMobile
+        ? false
+        : useRxSubject(rxLayout, l => l === MOBILE)[0]
     const [[yearOptions, monthOptions, dayOptions]] = useState(() => [years, months, days]
-        .map((arr, i) =>
-            arr.map(value => {
+        .map((arr, i) => [
+            {
+                // empty
+                text: '--',
+                value: '',
+            },
+            ...arr.map(value => {
                 value = `${i === 0 ? value : strFill(value, 2, '0')}`
                 return { text: value, value}
             })
-        )
+        ])
     )
-    let [[yyyy, mm, dd], setValue] = useState([])
+    let [[yyyy, mm, dd, invalid], setValue] = useState([])
 
     useEffect(() => {
         let mounted = true
@@ -37,7 +53,15 @@ export default function DateInput(props) {
     }, [setValue])
 
     return (
-        <div {...objWithoutKeys(props, ignoreAttributes)}>
+        <div {...{
+            ...objWithoutKeys(props, ignoreAttributes),
+            className: className({
+                'ui button': true,
+                negative: props.invalid || invalid,
+                fluid: isMobile,
+            }),
+            title: 'YYYY-MM-DD',
+        }}>
             <Dropdown {...{
                 disabled,
                 icon: yyyy ? null : icon,
@@ -77,7 +101,7 @@ export default function DateInput(props) {
                     className: 'no-margin',
                     name: 'x',
                     onClick: e => triggerChange(e, props, [`${currentYear}`, '', ''], setValue),
-                    style: { cursor: 'pointer' },
+                    style: { cursor: 'pointer', paddingLeft: 5 },
                 }} />
             )}
         </div>
@@ -102,6 +126,7 @@ DateInput.defaultProps = {
         'clearable',
         'icon',
         'ignoreAttributes',
+        'invalid',
         'rxValue',
     ],
     style: {
@@ -110,10 +135,15 @@ DateInput.defaultProps = {
 }
 const triggerChange = (e, props, valueArr, setValue) => {
     const { onChange } = props
+    const dateStr = valueArr.slice(0, 3).join('-')
+    const invalid = dateStr.length < 10
+        ? undefined
+        : !isValidDate(dateStr)
+    valueArr[3] = invalid
     setValue(valueArr)
     if (!isFn(onChange) || valueArr.filter(Boolean).length < 3) return
 
-    onChange(e, {...props, value: valueArr.join('-')})
+    onChange(e, {...props, value: dateStr, invalid})
 }
 const Dropdown = React.memo(DD)
 const days = new Array(31)

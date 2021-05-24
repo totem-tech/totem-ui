@@ -11,6 +11,7 @@ import { QUEUE_TYPES } from './queue'
 import storage from './storage'
 import { setToast } from './toast'
 import { rxOnline } from './window'
+import { currencyDefault } from '../modules/currency/currency'
 
 export const rxBlockNumber = new BehaviorSubject()
 const MODULE_KEY = 'blockchain'
@@ -24,7 +25,7 @@ const textsCap = translated({
 let config = {
     primary: 'Ktx',
     unit: 'Transactions',
-    ticker: 'XTX'
+    ticker: currencyDefault
 }
 let connection = {
     api: null,

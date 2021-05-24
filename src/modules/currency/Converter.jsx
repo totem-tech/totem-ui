@@ -2,7 +2,7 @@ import React from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Dropdown, Icon } from 'semantic-ui-react'
 import { deferred } from '../../utils/utils'
-import FormBuilder, { findInput } from '../../components/FormBuilder'
+import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { iUseReducer } from '../../services/react'
 import { convertTo, getCurrencies, rxSelected } from './currency'
@@ -20,13 +20,21 @@ const inputNames = {
     group: 'group',
 }
 
+/**
+ * @name    Converter
+ * @summary a simple currency converter that uses the latest available prices
+ * 
+ * @param   {Object} props 
+ * 
+ * @returns {Element}
+ */
 const Converter = props => {
     const [state] = iUseReducer(null, rxSetState => {
         const isMobile = rxLayout.value === MOBILE
         const currenciesPromise = getCurrencies()
         const rxFrom = new BehaviorSubject(rxSelected.value)
         const rxFromAmount = new BehaviorSubject(1)
-        const rxTo = new BehaviorSubject('USD')
+        const rxTo = new BehaviorSubject()
         const rxToAmount = new BehaviorSubject()
         const updateToAmount = deferred(async () => {
             // not enough data for conversion
@@ -38,7 +46,8 @@ const Converter = props => {
                 rxTo.value,
             )
             rxToAmount.next(`${newAmount[1]}`)
-        }, 100)
+        }, 200)
+
         const state = {
             submitText: null,
             inputs: [
@@ -66,13 +75,12 @@ const Converter = props => {
                                         className: `no-margin clickable${isMobile ? ' rotated counterclockwise' : ''}`,
                                         name: 'exchange',
                                         onClick: () => {
-                                            const from = rxFrom.value
-                                            const fromAmount = rxFromAmount.value
-                                            rxFrom.next(rxTo.value)
-                                            rxTo.next(from)
-                                            rxFromAmount.next(rxToAmount.value)
-                                            rxToAmount.next(fromAmount)
-                                            setDropdowns()
+                                            // on exchange icon click, switch the currencies and amounts
+                                            const currency = rxTo.value
+                                            const amount = rxToAmount.value
+                                            rxTo.next(rxFrom.value)
+                                            rxFrom.next(currency)
+                                            rxFromAmount.next(amount)
                                         },
                                         size: 'big',
                                         style: {
@@ -91,17 +99,23 @@ const Converter = props => {
                             placeholder: textsCap.amount,
                             readOnly: true,
                             rxValue: rxToAmount,
-                            style: isMobile ? { marginBottom: 10} : null,
+                            style: !isMobile ? null : { marginBottom: 10},
                             type: 'text',
                         },
                     ],
                 },
             ]
         }
+        // pre-fill values if supplied in the props
+        fillValues(state.inputs, props.values)
 
         const setDropdowns = () => {
             currenciesPromise.then(currencies => {
-                const options = currencies.map(({ ISO }) => ({ text: ISO, value: ISO }))
+                const options = currencies.map(({ currency, type }) => ({
+                    text: currency,
+                    title: type,
+                    value: currency,
+                }))
                 
                 const getDD = (from = true) => {
                     const rx = from ? rxFrom : rxTo
@@ -128,7 +142,7 @@ const Converter = props => {
                             placeholder: textsCap.select,
                             selection: true,
                             search: true,
-                            style: { minWidth: 95, paddingRight: 0 },
+                            style: { minWidth: 120, paddingRight: 0 },
                         }} />
                     )
                 }
