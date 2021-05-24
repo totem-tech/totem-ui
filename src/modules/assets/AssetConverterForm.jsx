@@ -55,7 +55,6 @@ export default function AssetConverterForm(props) {
                 const date = values[inputNames.date]
                 // conversion no required
                 if (!assetFrom || !assetTo || !amountFrom) return
-                console.log({date})
                 const [_, amountConverted] = await convertTo(
                     amountFrom,
                     assetFrom,
@@ -66,7 +65,7 @@ export default function AssetConverterForm(props) {
                 rxAmountTo.next(amountConverted)
             } catch (err) {
                 setToast({
-                    content: `${err}`,
+                    content: `${err}`.replace('Error: ', ''),
                     status: 'error',
                 }, 5000, 'AssetConverterForm')
             }
@@ -76,7 +75,6 @@ export default function AssetConverterForm(props) {
             onChange: deferred((e, values, invalid) => {
                 const { onChange } = props
                 isFn(onChange) && onChange(e, values, invalid)
-                console.log('AssetConverterForm', values)
                 updateAmountTo()
                 rxValues.next(values)
             }, 200),

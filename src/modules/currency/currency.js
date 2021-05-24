@@ -8,6 +8,7 @@ import { subjectAsPromise } from '../../services/react'
 
 const textsCap = translated({
     invalidCurency: 'invalid or unsupported currency supplied',
+    datePriceNotAvailable: 'price is not available for selected date'
 }, true)[1]
 const MODULE_KEY = 'currency'
 // read or write to currency settings storage
@@ -69,9 +70,8 @@ export const convertTo = async (amount = 0, from, to, decimals, dateOrROE) => {
             ]),
         )
         const fromEntry = result.find(x => x.currencyId === fromCurrency._id)
-        if (!fromEntry) throw new Error(textsCap.invalidCurency)
+        if (!fromEntry) throw new Error(`${fromCurrency.name} ${textsCap.datePriceNotAvailable} ${dateOrROE}`)
         fromROE = fromEntry.ratioOfExchange
-        console.log({ fromROE })
 
         let toEntry = result.find(x => x.currencyId === toCurrency._id)
         // fall back to USD, if target currency price for supplied date is not availabe.
