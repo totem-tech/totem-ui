@@ -9,7 +9,7 @@ export default function AssetFormView(props) {
         date: undefined,
         keywords: '',
         showList: false,
-        handleChange: deferred((_, values) => rxSetState.next(values) | console.log({values}), 200),
+        handleChange: deferred((_, values) => rxSetState.next(values), 200),
     }))
     return (
         <div>

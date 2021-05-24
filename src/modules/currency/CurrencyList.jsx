@@ -121,7 +121,6 @@ export default function CurrencyList(props) {
 
             const data = Array.from(currencies)
                 .map(getRowData( unitDisplayed, unitDisplayedROE ))
-            console.log({data})
 
             mounted && setTableData(data)
         }
@@ -130,7 +129,6 @@ export default function CurrencyList(props) {
         return () => mounted = false
     }, [date, selectedCurrency])
 
-    console.log({btc: tableData.find(x => x.ticker === 'BTC')})
     return (
         <DataTable {...{
             ...props,

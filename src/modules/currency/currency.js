@@ -105,7 +105,6 @@ const fetchCurrencies = async (cached = rwCache().currencies) => {
     const hash = generateHash(cached)
     let currencies = await client.currencyList.promise(hash)
     // currencies list is the same as in the server => use cached
-    console.log({ currencies })
     if (currencies.length === 0) return cached
 
     // sort by ticker
@@ -156,7 +155,6 @@ export const updateCurrencies = async () => {
         // messaging service is not connected
         if (!rxIsConnected.value) {
             // return existing list if available
-            console.log({ cached })
 
             if (cached && cached.length) return cached
 
