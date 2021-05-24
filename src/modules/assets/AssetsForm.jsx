@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
+import { Button } from 'semantic-ui-react'
 import { isFn, isValidNumber, objWithoutKeys } from '../../utils/utils'
 import FormBuilder, { findInput } from "../../components/FormBuilder"
 import { randomHex } from '../../services/blockchain'
 import { translated } from '../../services/language'
-import { iUseReducer, unsubscribe, useRxSubject } from "../../services/react"
-import AssetConverterForm from './AssetConverterForm'
-import { rxSelected } from '../identity/identity'
-import { Button } from 'semantic-ui-react'
+import { unsubscribe, useRxSubject } from "../../services/react"
 import { MOBILE, rxLayout } from '../../services/window'
 import { setToast } from '../../services/toast'
-import { currencyDefault } from '../currency/currency'
+import { rxSelected } from '../currency/currency'
+import AssetConverterForm from './AssetConverterForm'
 
 const textsCap = translated({
     btnSubtract: 'subtract all',
@@ -25,6 +24,7 @@ export const inputNames = {
     amount: 'amount',
     amountTotal: 'amountTotal',
     date: 'date',
+    currencyId: 'currencyId',
     btnListToggle: 'btnListToggle',
     btnSubtract: 'btnSubtract',
     btnAdd: 'btnAdd',
@@ -238,6 +238,12 @@ export default function AssetForm(props) {
                     type: 'group',
                     inputs: [
                         {
+                            hidden: true,
+                            name: inputNames.currencyId,
+                            rxValue: rxAssetFrom,
+                            type: 'hidden',
+                        },
+                        {
                             ...listToggle,
                             hidden: checkIfMobile,
                         },
@@ -306,7 +312,7 @@ export default function AssetForm(props) {
         }
 
         // set default functional currency 
-        !rxAssetFrom.value && rxAssetFrom.next(currencyDefault)
+        !rxAssetFrom.value && rxAssetFrom.next(rxSelected.value)
 
         return () => {
             mounted = false
