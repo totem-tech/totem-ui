@@ -173,7 +173,7 @@ export default function AssetForm(props) {
                             type: 'date',
                             // only accept a date between 1999-01-01 and today
                             validate: (_, { value }) => {
-                                if (!value) return console.log('value', value)
+                                if (!value) return
                                 const date = new Date(value)
                                 const invalid = (date - new Date()) > 0 || value.substr(0, 4) < 1999
                                 return invalid
