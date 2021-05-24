@@ -1,15 +1,16 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { isFn, isValidNumber, objWithoutKeys } from '../../utils/utils'
 import FormBuilder, { findInput } from "../../components/FormBuilder"
 import { randomHex } from '../../services/blockchain'
 import { translated } from '../../services/language'
-import { iUseReducer, useRxSubject } from "../../services/react"
+import { iUseReducer, unsubscribe, useRxSubject } from "../../services/react"
 import AssetConverterForm from './AssetConverterForm'
 import { rxSelected } from '../identity/identity'
 import { Button } from 'semantic-ui-react'
 import { MOBILE, rxLayout } from '../../services/window'
 import { setToast } from '../../services/toast'
+import { currencyDefault } from '../currency/currency'
 
 const textsCap = translated({
     btnSubtract: 'subtract all',
@@ -45,7 +46,6 @@ const rxDate = new BehaviorSubject()
 const rxValues = new BehaviorSubject({})
 const rxAmountFrom = new BehaviorSubject('')
 const rxAssetFrom = new BehaviorSubject('')
-// const rxAssetTo = new BehaviorSubject('')
 const lineIdPrefix = 'lineId-'
 function newPortfolioGroup(valuePrefix, isMobile) {
     const lineId = randomHex(rxSelected.value)
@@ -77,6 +77,7 @@ function newPortfolioGroup(valuePrefix, isMobile) {
                         name: `btnAdd-${lineId}`,
                         onClick: () => rxPortfolioInputs.next([
                             ...rxPortfolioInputs.value,
+                            // add new line item
                             newPortfolioGroup(lineIdPrefix, isMobile)
                         ]),
                         positive: true,
@@ -100,9 +101,11 @@ function newPortfolioGroup(valuePrefix, isMobile) {
                         onClick: () => {
                             // ignore if only one line left
                             if (rxPortfolioInputs.value.length <= 1) return
+                            // remove from inputs list
                             rxPortfolioInputs.next(
                                 rxPortfolioInputs.value.filter(({ name }) => name !== lineId)
                             )
+                            // remove from values
                             rxValues.next(
                                 objWithoutKeys(rxValues.value, lineIdPrefix + lineId)
                             )
@@ -124,28 +127,10 @@ function newPortfolioGroup(valuePrefix, isMobile) {
         width: 16,
     }
 }
-const removePortfolioGroup = lineId => {
-    
-}
 export default function AssetForm(props) {
     const [portfolioInputs] = useRxSubject(rxPortfolioInputs)
-    const [] = useRxSubject(rxValues, (allValues) => {
-        const lineItems = Object.keys(allValues)
-            .filter(name => `${name}`.startsWith(lineIdPrefix) && !!allValues[name].amountTo)
-            .map(key => allValues[key].amountTo)
-        console.log({allValues, lineItems})
-        if (!lineItems.length) return
-
-        const total = lineItems.reduce((sum, next) => sum + parseFloat(next), 0)
-        
-        console.log({ allValues, lineItems, total })
-        
-        // update 
-        rxAmountFrom.next(`${total|| ''}`)
-    })
-    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
-    const [state] = iUseReducer(null, rxSetState => {
-        const isMobile = ({ layout }) => layout === MOBILE
+    const [state] = useState(() => {
+        const checkIfMobile = ({ layout }) => layout === MOBILE
         const notImplemented = () => setToast('Feature not implemented yet!', 2000, 'not-implemented')
         const searchInput = {
             name: inputNames.keywords,
@@ -199,7 +184,7 @@ export default function AssetForm(props) {
                         getEmptyField(),
                         {
                             ...searchInput,
-                            hidden: isMobile,
+                            hidden: checkIfMobile,
                             width: 4,
                         },
                     ]
@@ -235,12 +220,12 @@ export default function AssetForm(props) {
                                     // rxAmountFrom,
                                     rxAmountTo: rxAmountFrom,
                                     rxAssetFrom,
-                                    // rxAssetTo: rxAssetFrom,
+                                    rxAssetTo: rxAssetFrom,
                                     reverseInputs: true,
                                     style: {
                                         padding: '0 10px',
                                         width: '50%',
-                                    }
+                                    },
                                 }} />
                             ),
                             name: inputNames.total,
@@ -254,10 +239,10 @@ export default function AssetForm(props) {
                     inputs: [
                         {
                             ...listToggle,
-                            hidden: isMobile,
+                            hidden: checkIfMobile,
                         },
                         {
-                            hidden: isMobile,
+                            hidden: checkIfMobile,
                             name: inputNames.showList,
                             rxValue: rxShowList,
                             type: 'hidden',
@@ -282,22 +267,53 @@ export default function AssetForm(props) {
                 },
                 {
                     ...listToggle,
-                    hidden: v => !isMobile(v),
+                    hidden: v => !checkIfMobile(v),
                     style: { marginTop: 10 },
                 },
                 {
                     ...searchInput,
-                    hidden: v => !isMobile(v),
+                    hidden: v => !checkIfMobile(v),
                 },
             ],
         }
     })
 
     useEffect(() => {
+        let mounted = true
+        // update total amount automatically
+        const subscription = rxValues.subscribe(values => {
+            if (!mounted) return
+            const lineItems = Object.keys(values)
+                .filter(name =>
+                    `${name}`.startsWith(lineIdPrefix)
+                    && !!values[name].amountTo
+                )
+                .map(key => values[key].amountTo)
+            if (!lineItems.length) return
+
+            const total = lineItems.reduce((sum, next) => sum + parseFloat(next), 0)        
+            rxAmountFrom.next(`${total|| ''}`)
+        })
+
+        // add first asset line item
         if (!rxPortfolioInputs.value.length) {
-            rxPortfolioInputs.next([newPortfolioGroup(lineIdPrefix, isMobile)])
+            rxPortfolioInputs.next([
+                newPortfolioGroup(
+                    lineIdPrefix,
+                    rxLayout.value === MOBILE,
+                )
+            ])
+        }
+
+        // set default functional currency 
+        !rxAssetFrom.value && rxAssetFrom.next(currencyDefault)
+
+        return () => {
+            mounted = false
+            unsubscribe({subscription})
         }
     })
+
     if (state.inputs) {
         const input = findInput(state.inputs, inputNames.groupPortfolio)
         input.inputs = portfolioInputs

@@ -245,14 +245,15 @@ useRxSubject.IGNORE_UPDATE = Symbol('ignore-rx-subject-update')
  * @summary unsubscribe to multiple RxJS subscriptions
  * @param   {Object|Array} subscriptions 
  */
-export const unsubscribe = (subscriptions = {}) => Object.values(subscriptions).forEach(x => {
-    try {
-        if (!x) return
-        const fn = isFn(x)
-            ? x
-            : isFn(x.unsubscribe)
-                ? x.unsubscribe
-                : null
-        fn && fn()
-    } catch (e) { } // ignore
-})
+export const unsubscribe = (subscriptions = {}) => Object.values(subscriptions)
+    .forEach(x => {
+        try {
+            if (!x) return
+            const fn = isFn(x)
+                ? x
+                : isFn(x.unsubscribe)
+                    ? x.unsubscribe
+                    : null
+            fn && fn()
+        } catch (e) { } // ignore
+    })

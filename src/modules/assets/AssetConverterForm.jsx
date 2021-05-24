@@ -113,6 +113,7 @@ export default function AssetConverterForm(props) {
                                 // marginTop: '0.8em'
                             },
                             type: 'dropdown',
+                            value: (rxAmountFrom || {}).value
                         },
                         {
                             label: labels.amountFrom,
@@ -139,9 +140,10 @@ export default function AssetConverterForm(props) {
                 const options = currencies.map(({ _id, currency, name }) => ({
                     description: currency,
                     text: name,
-                    value: _id,
+                    value: currency,
                 }))
                 rxCurrencyOptions.next(options)
+                window.rxCurrencyOptions = rxCurrencyOptions
             })
 
         return state
