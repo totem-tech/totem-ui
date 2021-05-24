@@ -96,10 +96,11 @@ export default function CurrencyList(props) {
                 
                 arrSort(prices, 'marketCapUSD', true)
                     .map((p, rank) => {
-                        const { currencyId, marketCapUSD, ratioOfExchange } = p
+                        const { currencyId, marketCapUSD, ratioOfExchange, source } = p
                         const currency = allCurrencies.get(currencyId)
                         if (!currency) return
                         
+                        currency.source = source || ''
                         currency.rank = marketCapUSD === -1 ? '' : ++rank
                         currency._rankSort = rank
                         currency.ratioOfExchange = ratioOfExchange
