@@ -57,7 +57,7 @@ export const referralCode = code => {
 
 // Returns a singleton instance of the websocket client
 // Instantiates the client if not already done
-export const getClient = () => {
+export const getClient = (instance) => {
     if (instance) return instance
     // automatically login to messaging service
     const { id, secret } = getUser() || {}
@@ -77,38 +77,39 @@ export const getClient = () => {
     //              console.log(errMsg)
     //          }
     //
-    Object.keys(instance).forEach(key => {
-        const func = instance[key]
-        if (!isFn(func) || nonCbs.includes(key)) return
-        func.promise = function () {
-            const args = [...arguments]
-            return new Promise((resolve, reject) => {
-                try {
-                    // last argument must be a callback
-                    let callbackIndex = args.length - 1
-                    const originalCallback = args[callbackIndex]
-                    // if last argument is not a callback increment index to add a new callback
-                    // on page reload callbacks stored by queue service will become null, due to JSON spec
-                    if (!isFn(originalCallback) && originalCallback !== null) callbackIndex++
-                    args[callbackIndex] = (...cbArgs) => {
-                        // first argument indicates whether there is an error.
-                        const err = translateError(cbArgs[0])
-                        isFn(originalCallback) && originalCallback.apply({}, cbArgs)
-                        if (!!err) return reject(err)
-                        const result = cbArgs.slice(1)
-                        // resolver only takes a single argument
-                        // if callback is invoked with more than one value (excluding error message),
-                        // then resolve with an array of value arguments, otherwise, resolve with only the result value.
-                        resolve(result.length > 1 ? result : result[0])
-                    }
+    Object.keys(instance)
+        .forEach(key => {
+            const func = instance[key]
+            if (!isFn(func) || nonCbs.includes(key)) return
+            func.promise = function () {
+                const args = [...arguments]
+                return new Promise((resolve, reject) => {
+                    try {
+                        // last argument must be a callback
+                        let callbackIndex = args.length - 1
+                        const originalCallback = args[callbackIndex]
+                        // if last argument is not a callback increment index to add a new callback
+                        // on page reload callbacks stored by queue service will become null, due to JSON spec
+                        if (!isFn(originalCallback) && originalCallback !== null) callbackIndex++
+                        args[callbackIndex] = (...cbArgs) => {
+                            // first argument indicates whether there is an error.
+                            const err = translateError(cbArgs[0])
+                            isFn(originalCallback) && originalCallback.apply({}, cbArgs)
+                            if (!!err) return reject(err)
+                            const result = cbArgs.slice(1)
+                            // resolver only takes a single argument
+                            // if callback is invoked with more than one value (excluding error message),
+                            // then resolve with an array of value arguments, otherwise, resolve with only the result value.
+                            resolve(result.length > 1 ? result : result[0])
+                        }
 
-                    func.apply(instance, args)
-                } catch (err) {
-                    reject(err)
-                }
-            })
-        }
-    })
+                        func.apply(instance, args)
+                    } catch (err) {
+                        reject(err)
+                    }
+                })
+            }
+        })
 
     instance.onConnect(() => {
         rxIsConnected.next(true)

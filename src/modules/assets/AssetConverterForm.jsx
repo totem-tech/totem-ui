@@ -21,9 +21,9 @@ const inputNames = {
     assetTo: 'assetTo',
     amountFrom: 'amountFrom',
     amountTo: 'amountTo',
+    date: 'date',
     group: 'group',
 }
-const datesCache = new Map()
 const rxCurrencyOptions = new BehaviorSubject([])
 
 export default function AssetConverterForm(props) {
@@ -51,29 +51,17 @@ export default function AssetConverterForm(props) {
                 const values = rxValues.value
                 const amountFrom = values[inputNames.amountFrom]
                 const assetFrom = values[inputNames.asset]
-                const assetTo =  values[inputNames.assetTo]//rxAssetTo.value
-                let roeFrom, roeTo
+                const assetTo = values[inputNames.assetTo]
+                const date = values[inputNames.date]
                 // conversion no required
                 if (!assetFrom || !assetTo || !amountFrom) return
-
-                if (rxDate.value && assetFrom !== assetTo) {
-                    const result = await client.currencyPricesByDate.promise(rxDate.value, [assetFrom, assetTo])
-                    result.forEach(({ currencyId, ratioOfExchange }) => {
-                        roeFrom = currencyId === assetFrom
-                            ? ratioOfExchange
-                            : roeFrom
-                        roeTo = currencyId === assetTo
-                            ? ratioOfExchange
-                            : roeTo
-                    })
-                }
+                console.log({date})
                 const [_, amountConverted] = await convertTo(
                     amountFrom,
                     assetFrom,
                     assetTo,
-                    undefined,
-                    roeFrom,
-                    roeTo,
+                    null,
+                    date,
                 )
                 rxAmountTo.next(amountConverted)
             } catch (err) {
@@ -88,10 +76,18 @@ export default function AssetConverterForm(props) {
             onChange: deferred((e, values, invalid) => {
                 const { onChange } = props
                 isFn(onChange) && onChange(e, values, invalid)
+                console.log('AssetConverterForm', values)
                 updateAmountTo()
                 rxValues.next(values)
             }, 200),
             inputs: [
+                {
+                    name: inputNames.date,
+                    // onChange: (_, values) => console.log({ date: values.date }),//updateAmountTo(),
+                    // value: '',
+                    rxValue: rxDate,
+                    type: 'hidden',
+                },
                 {
                     inline: true,
                     name: inputNames.group,
@@ -142,10 +138,10 @@ export default function AssetConverterForm(props) {
         // set currency dropdown options
         !rxCurrencyOptions.value.length && getCurrencies()
             .then(currencies => {
-                const options = currencies.map(({ currency, name, ticker, type }) => ({
+                const options = currencies.map(({ _id, currency, name }) => ({
                     description: currency,
                     text: name,
-                    value: currency,
+                    value: _id,
                 }))
                 rxCurrencyOptions.next(options)
             })

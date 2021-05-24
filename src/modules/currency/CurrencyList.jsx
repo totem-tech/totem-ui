@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Icon, Popup } from 'semantic-ui-react'
 import { format } from '../../utils/time'
-import { isDate } from '../../utils/utils'
+import { arrSort, isDate } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
 import Invertible from '../../components/Invertible'
 import TimeSince from '../../components/TimeSince'
@@ -80,34 +80,40 @@ export default function CurrencyList(props) {
     useEffect(() => {
         let mounted = true
         const fetchData = async () => {
-            let unitDisplayedROE, currencies = new Map(), USD
+            let unitDisplayedROE, currencies = new Map()
             let unitDisplayed = rxSelected.value
+            const result = await getCurrencies()
+            const usdEntry = result.find(c => c.type === 'fiat' && c.ticker === 'USD')
             const allCurrencies = new Map(
-                (await getCurrencies())
-                    .map(c => {
-                        if (c.type === 'fiat' && c.ticker === 'USD') USD = c
-                        return [c._id, c]
-                    })
+                result.map(c => [c._id, { ...c }])
             )
             if (gotDate) {
-                const prices = await client.currencyPricesByDate.promise(date, [])
-                prices.map(p => {
-                    const { currencyId, ratioOfExchange } = p
-                    const currency = allCurrencies.get(currencyId || USD._id)
-                    if (!currency) return 
-
-                    currency.ratioOfExchange = ratioOfExchange
-                    currency.priceUpdatedAt = date
-                    currencies.set(currencyId, { ...currency })
-                    
-                    if (currency.currency !== unitDisplayed) return
-                    unitDisplayedROE = ratioOfExchange
-                })
+                const prices = (await client.currencyPricesByDate.promise(date, []))
+                    .map(c => {
+                        c.marketCapUSD = c.marketCapUSD || -1
+                        return c
+                    })
+                
+                arrSort(prices, 'marketCapUSD', true)
+                    .map((p, rank) => {
+                        const { currencyId, marketCapUSD, ratioOfExchange } = p
+                        const currency = allCurrencies.get(currencyId)
+                        if (!currency) return
+                        
+                        currency.rank = marketCapUSD === -1 ? '' : ++rank
+                        currency._rankSort = rank
+                        currency.ratioOfExchange = ratioOfExchange
+                        currency.priceUpdatedAt = date
+                        currencies.set(currencyId, { ...currency })
+                        
+                        if (currency.currency !== unitDisplayed) return
+                        unitDisplayedROE = ratioOfExchange
+                    })
 
                 unitDisplayed = unitDisplayedROE
                     ? unitDisplayed
-                    : USD.currency
-                unitDisplayedROE = unitDisplayedROE || USD.ratioOfExchange
+                    : usdEntry.currency
+                unitDisplayedROE = unitDisplayedROE || usdEntry.ratioOfExchange
             } else {
                 currencies = allCurrencies
             }
@@ -123,6 +129,7 @@ export default function CurrencyList(props) {
         return () => mounted = false
     }, [date, selectedCurrency])
 
+    console.log({btc: tableData.find(x => x.ticker === 'BTC')})
     return (
         <DataTable {...{
             ...props,
@@ -195,14 +202,16 @@ const getRowData = (unitDisplayed, unitDisplayedROE) => ([_, currency]) => {
         )
     
     // display the price of one unit
-    const _priceEl = <Currency {...{
-        fromROE: ratioOfExchange,
-        title: null,
-        unit,
-        unitDisplayed, 
-        unitDisplayedROE,
-        value: 1,
-    }} />
+    const _priceEl = (
+        <Currency {...{
+            title: null,
+            unit,
+            unitROE: ratioOfExchange,
+            unitDisplayed, 
+            unitDisplayedROE,
+            value: 1,
+        }} />
+    )
     return {
         ...currency,
         _rankSort: rank || 999999,

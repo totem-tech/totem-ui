@@ -51,12 +51,7 @@ function newPortfolioGroup(valuePrefix, isMobile) {
     const lineId = randomHex(rxSelected.value)
     return {
         content: (
-            <div
-                style={{
-                    display: 'block',
-                    width: '100%',
-                }}
-            >
+            <div style={{ display: 'block', width: '100%' }}>
                 <AssetConverterForm {...{
                     El: 'div',
                     key: lineId,
@@ -146,7 +141,6 @@ export default function AssetForm(props) {
             submitText: null,
             onChange: (e, values, invalid) => {
                 const { onChange } = props
-                // rxValues.next(values)
                 isFn(onChange) && onChange(e, values, invalid)
             },
             inputs: [
@@ -196,34 +190,33 @@ export default function AssetForm(props) {
                     inputs: [
                         {
                             content: (
-                                <h1 style={{ fontWeight: 400, fontSize: 25, paddingLeft: 10 }}>
+                                <h1 style={{ fontWeight: 400, fontSize: 25, paddingLeft: 10, width: '50%' }}>
                                     {textsCap.totalValueOfAssets}
                                 </h1>
                             ),
                             name: inputNames.htmlTotalValue,
                             type: 'html',
-                            width: 4,
                         },
-                        getEmptyField(),
                         {
                             content: (
-                                <div>
-                                    <AssetConverterForm {...{
-                                        El: 'div',
-                                        labels: { asset: textsCap.labelFE},
-                                        inputsHidden: ['amountFrom'],
-                                        rxDate,
-                                        // rxAmountFrom,
-                                        rxAmountTo: rxAmountFrom,
-                                        rxAssetFrom,
-                                        // rxAssetTo: rxAssetFrom,
-                                        reverseInputs: true,
-                                    }} />
-                                </div>
+                                <AssetConverterForm {...{
+                                    El: 'div',
+                                    labels: { asset: textsCap.labelFE },
+                                    inputsHidden: ['amountFrom'],
+                                    rxDate,
+                                    // rxAmountFrom,
+                                    rxAmountTo: rxAmountFrom,
+                                    rxAssetFrom,
+                                    // rxAssetTo: rxAssetFrom,
+                                    reverseInputs: true,
+                                    style: {
+                                        padding: '0 10px',
+                                        width: '50%',
+                                    }
+                                }} />
                             ),
                             name: inputNames.total,
                             type: 'html',
-                            width: 8,
                         }
                     ]
                 },

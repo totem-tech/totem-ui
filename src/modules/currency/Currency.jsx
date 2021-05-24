@@ -7,6 +7,7 @@ import { convertTo, currencyDefault, rxSelected } from './currency'
 function Currency (props) {
     let {
         className,
+        date,
         decimalPlaces,
         EL,
         emptyMessage,
@@ -31,6 +32,14 @@ function Currency (props) {
     let [valueConverted, setValueConverted] = useState(isSame ? value : undefined)
     let [error, setError] = useState()
     const [ticker, setTicker] = useState()
+    const valuesToWatch = [
+        date,
+        unit,
+        unitROE,
+        unitDisplayed,
+        unitDisplayedROE,
+        value,
+    ]
 
     useEffect(() => {
         if (!isValidNumber(value)) return () => { }
@@ -39,13 +48,12 @@ function Currency (props) {
         const convert = async (value) => {
             if (!mounted) return
             try {
-                const [_, rounded, _2, from, to] = await convertTo(
+                const [_, rounded, _2, _3, to] = await convertTo(
                     value || 0,
                     unit,
                     unitDisplayed,
                     decimalPlaces,
-                    unitROE,
-                    unitDisplayedROE,
+                    date || [ unitROE, unitDisplayedROE ]
                 )
                 error = null
                 valueConverted = rounded
@@ -68,7 +76,7 @@ function Currency (props) {
             mounted = false
             unsubscribe(subscriptions)
         }
-    }, [unit, unitDisplayed, value])
+    }, valuesToWatch)
 
     const content = !isDefined(valueConverted) ? (emptyMessage || '') : (
         <span>{prefix || ''}{valueConverted} {ticker}{suffix || ''}</span>
@@ -91,6 +99,8 @@ function Currency (props) {
 Currency.propTypes = {
     className: PropTypes.string,
     decimalPlaces: PropTypes.number,
+    // Valid format: YYYY-MM-DD
+    date: PropTypes.string,
     // @EL (optional) HTML element to use. Default: 'span'
     EL: PropTypes.string,
     emptyMessage: PropTypes.oneOfType([
