@@ -13,6 +13,7 @@ import client from '../chat/ChatClient'
 import Converter from './Converter'
 import Currency from './Currency'
 import { getCurrencies, rxSelected } from './currency'
+import { setToast } from '../../services/toast'
 
 const textsCap = translated({
     emptyMessageDate: 'no data available for the selected date',
@@ -89,13 +90,20 @@ export default function CurrencyList(props) {
                 result.map(c => [c._id, { ...c }])
             )
             if (gotDate) {
-                const prices = (await client.currencyPricesByDate.promise(date, []))
+                const prices = (
+                    await client.currencyPricesByDate
+                        .promise(date, []) // retrieve all prices for this date
+                        .catch(err => setToast({
+                            content: `${err}`,
+                            status: 'error',
+                        }, 5000, 'currencyPricesByDate'))
+                )
                     .map(c => {
                         c.marketCapUSD = c.marketCapUSD || -1
                         return c
                     })
                 
-                arrSort(prices, 'marketCapUSD', true)
+                arrSort(prices || [], 'marketCapUSD', true)
                     .map((p, rank) => {
                         const { currencyId, marketCapUSD, ratioOfExchange, source } = p
                         const currency = allCurrencies.get(currencyId)
