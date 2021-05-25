@@ -90,18 +90,22 @@ export default function CurrencyList(props) {
                 result.map(c => [c._id, { ...c }])
             )
             if (gotDate) {
-                const prices = (
-                    await client.currencyPricesByDate
-                        .promise(date, []) // retrieve all prices for this date
-                        .catch(err => setToast({
-                            content: `${err}`,
-                            status: 'error',
-                        }, 5000, 'currencyPricesByDate'))
-                )
-                    .map(c => {
-                        c.marketCapUSD = c.marketCapUSD || -1
-                        return c
-                    })
+                let prices
+                try {
+                    // retrieve all prices for this date
+                    prices = (await client.currencyPricesByDate.promise(date, []))
+                        .map(c => {
+                            c.marketCapUSD = c.marketCapUSD || -1
+                            return c
+                        })
+                } catch (err) {
+                    return setToast(
+                        { content: `${err}`, status: 'error' },
+                        5000,
+                        'currencyPricesByDate',
+                    )
+                }
+                    
                 
                 arrSort(prices || [], 'marketCapUSD', true)
                     .map((p, rank) => {
