@@ -26,7 +26,7 @@ import { isBool, isBond, isDate } from '../utils/utils'
 import { translated } from './language'
 import storage from './storage'
 import { getUrlParam, MOBILE, rxLayout, setClass } from './window'
-import AssetFormView from '../modules/assets/AssetFormView'
+import AssetFormView from '../modules/assets/AssetsFormView'
 
 const textsCap = translated({
     currenciesTitle: 'exchange rates',

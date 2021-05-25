@@ -1,10 +1,9 @@
 import React from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { iUseReducer } from '../../services/react'
-import { deferred } from '../../utils/utils'
-import { rxSelected } from '../currency/currency'
 import CurrencyList from "../currency/CurrencyList"
-import AssetForm, { inputNames } from './AssetsForm'
+import AssetsForm, { inputNames } from './AssetsForm'
+import './style.css'
 
 export default function AssetFormView() {
     const [state] = iUseReducer(null, rxSetState => {
@@ -14,18 +13,18 @@ export default function AssetFormView() {
             keywords: '',
             rxCurrencyId,
             showList: false,
-            handleChange: deferred((_, values) => {
-                rxSetState.next(values)
+            handleChange: (_, values) => {
+                rxSetState.next({ ...values })
                 const currencyId = values[inputNames.currencyId]
                 if (!currencyId) return
                 rxCurrencyId.next(currencyId)
-            }, 200),
+            },
         }
     })
     const { date, handleChange, keywords, rxCurrencyId, showList } = state
     return (
         <div>
-            <AssetForm {...{ onChange: handleChange }} />
+            <AssetsForm {...{ onChange: handleChange }} />
             {showList && (
                 <CurrencyList {...{
                     date,

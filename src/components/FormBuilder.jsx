@@ -41,6 +41,7 @@ export default class FormBuilder extends Component {
 			inputsReadOnly = [],
 		} = this.props
 		let {
+			content,
 			disabled,
 			hidden,
 			inputs: childInputs,
@@ -54,6 +55,9 @@ export default class FormBuilder extends Component {
 		index = isDefined(index) ? index : null
 		const props = {
 			...input,
+			content: isFn(content)
+				? content(values, i)
+				: content,
 			disabled: inputsDisabled.includes(name)
 				|| (isFn(disabled)
 					? disabled(values, i)
@@ -270,18 +274,26 @@ export default class FormBuilder extends Component {
 		}
 
 		const FormEl = El || Invertible
+
 		const form = (
-			<FormEl {...(El ? { className: 'ui form', style} : {
-				El: Form,
-				error: message.status === statuses.ERROR,
-				loading,
-				onSubmit: (...args) => !shouldDisable && this.handleSubmit(...args),
-				style,
-				success: success || message.status === statuses.SUCCESS,
-				warning: message.status === statuses.WARNING,
-				widths,
-				...formProps,
-			})}>
+			<FormEl {...(El
+				? {
+					className: 'ui form',
+					style,
+					...formProps,
+				}
+				: {
+					El: Form,
+					error: message.status === statuses.ERROR,
+					loading,
+					onSubmit: (...args) => !shouldDisable && this.handleSubmit(...args),
+					style,
+					success: success || message.status === statuses.SUCCESS,
+					warning: message.status === statuses.WARNING,
+					widths,
+					...formProps,
+				}
+			)}>
 				{inputs.map(props => <FormInput {...props} />)}
 				{/* Include submit button if not a modal */}
 				{!modal && !hideFooter && (

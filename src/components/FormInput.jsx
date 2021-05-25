@@ -82,9 +82,12 @@ export class FormInput extends Component {
 	componentWillMount() {
 		this._mounted = true
 		this.subscriptions = {}
-		const { rxOptions, rxOptionsModifier, rxValue } = this.props
+		const { rxOptions, rxOptionsModifier, rxValue, rxValueModifier } = this.props
 		if (isSubjectLike(rxValue)) {
 			this.subscriptions.rxValue = rxValue.subscribe(value => {
+				value = isFn(rxValueModifier)
+					? rxValueModifier(value)
+					: value
 				if (this.value === value) return
 				this.handleChange({ }, { ...this.props, value })
 			})
@@ -469,9 +472,15 @@ FormInput.propTypes = {
 	onChange: PropTypes.func,
 	placeholder: PropTypes.string,
 	readOnly: PropTypes.bool,
-	rxValue: PropTypes.shape({
-		subscribe: PropTypes.func.isRequired,
-	}),
+	// @rxValue	BehaviorSubject: (optional)only applications to input types that uses the `options` property
+	// On value change `options` will be updated
+	rxOptions: PropTypes.instanceOf(BehaviorSubject),
+	// @rxOptionsModifier function: (optional) allows value of rxOptions to be modified before being applied to input
+	rxOptionsModifier: PropTypes.func,
+	// @rxValue	BehaviorSubject: (optional) if supplied, rxValue and input value will be synced automatically
+	rxValue: PropTypes.instanceOf(BehaviorSubject),
+	// @rxValueModifier function: (optional) allows the value of rxValue to be modified before being applied to input
+	rxValueModifier: PropTypes.func,
 	// element ref
 	elementRef: PropTypes.any,
 	required: PropTypes.bool,

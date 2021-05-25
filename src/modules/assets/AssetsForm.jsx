@@ -1,20 +1,21 @@
 import React, { useEffect, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { Button } from 'semantic-ui-react'
-import { isFn, isValidNumber, objWithoutKeys } from '../../utils/utils'
+import { Button, Divider } from 'semantic-ui-react'
+import { isFn, objWithoutKeys } from '../../utils/utils'
 import FormBuilder, { findInput } from "../../components/FormBuilder"
 import { randomHex } from '../../services/blockchain'
 import { translated } from '../../services/language'
 import { unsubscribe, useRxSubject } from "../../services/react"
-import { MOBILE, rxLayout } from '../../services/window'
 import { setToast } from '../../services/toast'
 import { rxSelected } from '../currency/currency'
 import AssetConverterForm from './AssetConverterForm'
 
 const textsCap = translated({
+    addAsset: 'add asset',
     btnSubtract: 'subtract all',
     btnAdd: 'add all to folio',
     labelFE: 'Selection Functional Currency',
+    removeAsset: 'remove asset',
     searchAssets: 'search assets',
     tableHide: 'Hide Rates Table',
     tableShow: 'Show Rates Table',
@@ -43,94 +44,14 @@ export const inputNames = {
 const rxPortfolioInputs = new BehaviorSubject([])
 const rxShowList = new BehaviorSubject(false)
 const rxDate = new BehaviorSubject()
-const rxValues = new BehaviorSubject({})
+const rxPortfolioValues = new BehaviorSubject({})
 const rxAmountFrom = new BehaviorSubject('')
 const rxAssetFrom = new BehaviorSubject('')
 const lineIdPrefix = 'lineId-'
-function newPortfolioGroup(valuePrefix, isMobile) {
-    const lineId = randomHex(rxSelected.value)
-    return {
-        content: (
-            <div style={{ display: 'block', width: '100%' }}>
-                <AssetConverterForm {...{
-                    El: 'div',
-                    key: lineId,
-                    onChange: (_, values) => {
-                        const { value: allValues } = rxValues
-                        allValues[valuePrefix + lineId] = values
-                        rxValues.next({...allValues})
-                    },
-                    style: {
-                        display: 'inline-block',
-                        width: isMobile ? '100%': '75%',
-                    },
-                    rxAssetTo: rxAssetFrom,
-                    rxDate,
-                }} />
-                <div style={{ display: 'inline-block', position: 'relative' }}>
-                    <Button {...{
-                        as: 'div',
-                        circular: !isMobile,
-                        className: 'no-margin',
-                        fluid: isMobile,
-                        icon: 'plus',
-                        name: `btnAdd-${lineId}`,
-                        onClick: () => rxPortfolioInputs.next([
-                            ...rxPortfolioInputs.value,
-                            // add new line item
-                            newPortfolioGroup(lineIdPrefix, isMobile)
-                        ]),
-                        positive: true,
-                        style: isMobile
-                            ? {}
-                            : {
-                                position: 'absolute',
-                                top: 10,
-                                left: 10,
-                            },
-                        type: 'button',
-                    }} />
-                    <Button {...{
-                        as: 'div',
-                        circular: !isMobile,
-                        className: 'no-margin',
-                        fluid: isMobile,
-                        icon: 'minus',
-                        name: `btnAdd-${lineId}`,
-                        negative: true,
-                        onClick: () => {
-                            // ignore if only one line left
-                            if (rxPortfolioInputs.value.length <= 1) return
-                            // remove from inputs list
-                            rxPortfolioInputs.next(
-                                rxPortfolioInputs.value.filter(({ name }) => name !== lineId)
-                            )
-                            // remove from values
-                            rxValues.next(
-                                objWithoutKeys(rxValues.value, lineIdPrefix + lineId)
-                            )
-                        },
-                        style: isMobile
-                            ? {}
-                            : {
-                                position: 'absolute',
-                                top: 10,
-                                left: 50,
-                            },
-                        type: 'button',
-                    }} />
-                </div>
-            </div>
-        ),
-        name: lineId,
-        type: 'html',
-        width: 16,
-    }
-}
-export default function AssetForm(props) {
+
+export default function AssetsForm(props) {
     const [portfolioInputs] = useRxSubject(rxPortfolioInputs)
     const [state] = useState(() => {
-        const checkIfMobile = ({ layout }) => layout === MOBILE
         const notImplemented = () => setToast('Feature not implemented yet!', 2000, 'not-implemented')
         const searchInput = {
             name: inputNames.keywords,
@@ -140,7 +61,9 @@ export default function AssetForm(props) {
             type: 'search',
         }
         const listToggle = {
-            content: () => rxShowList.value ? textsCap.tableHide : textsCap.tableShow,
+            content: () => rxShowList.value
+                ? textsCap.tableHide
+                : textsCap.tableShow,
             name: inputNames.btnListToggle,
             onClick: () => rxShowList.next(!rxShowList.value),
             type: 'button',
@@ -150,18 +73,16 @@ export default function AssetForm(props) {
             type: 'hidden',
             width: 4,
         })
+        let formValues = {}
         return {
+            formProps: { className: 'assets-form' },
             submitText: null,
             onChange: (e, values, invalid) => {
                 const { onChange } = props
+                formValues = values
                 isFn(onChange) && onChange(e, values, invalid)
             },
             inputs: [
-                {
-                    name: 'layout',
-                    rxValue: rxLayout,
-                    type: 'hidden',
-                },
                 {
                     name: inputNames.groupDateSearch,
                     type: 'group',
@@ -169,6 +90,12 @@ export default function AssetForm(props) {
                         {
                             name: inputNames.date,
                             onChange: () => rxShowList.next(true),
+                            onReset: () => {
+                                const { onChange } = props
+                                if (!isFn(onChange)) return
+                                formValues[inputNames.date] = undefined
+                                onChange({}, formValues)
+                            },
                             rxValue: rxDate,
                             type: 'date',
                             // only accept a date between 1999-01-01 and today
@@ -184,7 +111,7 @@ export default function AssetForm(props) {
                         getEmptyField(),
                         {
                             ...searchInput,
-                            hidden: checkIfMobile,
+                            className: 'hide-on-mobile',
                             width: 4,
                         },
                     ]
@@ -196,14 +123,13 @@ export default function AssetForm(props) {
                     type: 'group',
                 },
                 {
-                    inline: true,
+                    // inline: true,
                     name: inputNames.groupTotalValue,
                     type: 'group',
-                    widths: 'equal',
                     inputs: [
                         {
                             content: (
-                                <h1 style={{ fontWeight: 400, fontSize: 25, paddingLeft: 10, width: '50%' }}>
+                                <h1 className='total-assets'>
                                     {textsCap.totalValueOfAssets}
                                 </h1>
                             ),
@@ -211,9 +137,10 @@ export default function AssetForm(props) {
                             type: 'html',
                         },
                         {
-                            content: (
+                        content: (
                                 <AssetConverterForm {...{
                                     El: 'div',
+                                    formProps: { className: 'total-form' },
                                     labels: { asset: textsCap.labelFE },
                                     inputsHidden: ['amountFrom'],
                                     rxDate,
@@ -222,10 +149,6 @@ export default function AssetForm(props) {
                                     rxAssetFrom,
                                     rxAssetTo: rxAssetFrom,
                                     reverseInputs: true,
-                                    style: {
-                                        padding: '0 10px',
-                                        width: '50%',
-                                    },
                                 }} />
                             ),
                             name: inputNames.total,
@@ -245,10 +168,10 @@ export default function AssetForm(props) {
                         },
                         {
                             ...listToggle,
-                            hidden: checkIfMobile,
+                            className: 'hide-on-mobile',
                         },
                         {
-                            hidden: checkIfMobile,
+                            className: 'hide-on-mobile',
                             name: inputNames.showList,
                             rxValue: rxShowList,
                             type: 'hidden',
@@ -273,12 +196,12 @@ export default function AssetForm(props) {
                 },
                 {
                     ...listToggle,
-                    hidden: v => !checkIfMobile(v),
+                    className: 'hide-on-desktop',
                     style: { marginTop: 10 },
                 },
                 {
                     ...searchInput,
-                    hidden: v => !checkIfMobile(v),
+                    className: 'hide-on-desktop',
                 },
             ],
         }
@@ -287,7 +210,8 @@ export default function AssetForm(props) {
     useEffect(() => {
         let mounted = true
         // update total amount automatically
-        const subscription = rxValues.subscribe(values => {
+        const subscriptions = {}
+        subscriptions.inputs = rxPortfolioValues.subscribe(values => {
             if (!mounted) return
             const lineItems = Object.keys(values)
                 .filter(name =>
@@ -303,12 +227,11 @@ export default function AssetForm(props) {
 
         // add first asset line item
         if (!rxPortfolioInputs.value.length) {
-            rxPortfolioInputs.next([
-                newPortfolioGroup(
-                    lineIdPrefix,
-                    rxLayout.value === MOBILE,
+            rxPortfolioInputs.next(
+                processLines(
+                    [newPortfolioGroup()]
                 )
-            ])
+            )
         }
 
         // set default functional currency 
@@ -316,7 +239,7 @@ export default function AssetForm(props) {
 
         return () => {
             mounted = false
-            unsubscribe({subscription})
+            unsubscribe(subscriptions)
         }
     })
 
@@ -325,4 +248,103 @@ export default function AssetForm(props) {
         input.inputs = portfolioInputs
     }
     return <FormBuilder {...{ ...props, ...state }} />
+}
+
+const getGroupName = lineId => `group-${lineIdPrefix}-${lineId}`
+const processLines = (portFolioInuts, removeLineId) => {
+    const inputs = !removeLineId
+        ? portFolioInuts
+        : portFolioInuts.filter(({ name }) =>
+            name !== getGroupName(removeLineId)
+        )    
+    return inputs
+}
+function newPortfolioGroup() {
+    const lineId = randomHex(rxSelected.value)
+    const valueKey = lineIdPrefix + lineId
+    const inputForm = {
+        name: lineId,
+        type: 'html',
+        width: 16,
+        content: (
+            <div className='portfolio'>
+                <AssetConverterForm {...{
+                    El: 'div',
+                    key: lineId,
+                    onChange: (_, values) => {
+                        const { value: allValues } = rxPortfolioValues
+                        allValues[valueKey] = values
+                        rxPortfolioValues.next({ ...allValues })
+                    },
+                    rxAssetTo: rxAssetFrom,
+                    rxDate,
+                }} />
+            </div>
+        ),
+    }
+    return {
+        className: 'portfolio-line',
+        name: getGroupName(lineId),
+        type: 'group',
+        style: { margin: '0 -.5em 0' },
+        inputs: [
+            {
+                ...inputForm,
+                width: 12,
+            },
+            {
+                name: `btnAdd-${lineId}-remove`,
+                type: 'html',
+                width: 2,
+                content: (
+                    <div className='action remove-asset'>
+                        <Button {...{
+                            as: 'div',
+                            circular: true,
+                            className: 'no-margin',
+                            content: <span>{textsCap.removeAsset}</span>,
+                            icon: 'minus',
+                            negative: true,
+                            onClick: () => {
+                                // ignore if only one line left
+                                if (rxPortfolioInputs.value.length <= 1) return
+                                // remove from inputs list
+                                rxPortfolioInputs.next(
+                                    processLines(rxPortfolioInputs.value, lineId)
+                                )
+                                // remove from values
+                                rxPortfolioValues.next(
+                                    objWithoutKeys(rxPortfolioValues.value, valueKey)
+                                )
+                            },
+                        }} />
+                        <Divider />
+                    </div>
+                )
+            },
+            {
+                name: `btnAdd-${lineId}-add`,
+                type: 'html',
+                width: 2,
+                content: (
+                    <div className='action add-asset'>
+                        <Button {...{
+                            as: 'div',
+                            circular: true,
+                            content: <span>{textsCap.addAsset}</span>,
+                            icon: 'plus',
+                            positive: true,
+                            onClick: () => rxPortfolioInputs.next(
+                                processLines([
+                                    ...rxPortfolioInputs.value,
+                                    // add new line item
+                                    newPortfolioGroup()
+                                ])
+                            ),
+                        }} />
+                    </div>
+                )
+            },
+        ]
+    }
 }
