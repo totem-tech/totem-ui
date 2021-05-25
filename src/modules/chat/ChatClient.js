@@ -43,21 +43,21 @@ export const setUser = (user = {}) => rw({ user })
  * @returns {String} referral code
  */
 export const referralCode = code => {
-    const override =  code === null
+    const override = code === null
     const value = isStr(code)
         ? { referralCode: code }
         : override
             // completely remove referral code property from storage
             ? objWithoutKeys(rw(), ['referralCode'])
             : undefined
-    
+
     return (storage.settings.module(MODULE_KEY, value, override) || {})
         .referralCode
 }
 
 // Returns a singleton instance of the websocket client
 // Instantiates the client if not already done
-export const getClient = () => {
+export const getClient = (instance) => {
     if (instance) return instance
     // automatically login to messaging service
     const { id, secret } = getUser() || {}
@@ -77,38 +77,39 @@ export const getClient = () => {
     //              console.log(errMsg)
     //          }
     //
-    Object.keys(instance).forEach(key => {
-        const func = instance[key]
-        if (!isFn(func) || nonCbs.includes(key)) return
-        func.promise = function () {
-            const args = [...arguments]
-            return new Promise((resolve, reject) => {
-                try {
-                    // last argument must be a callback
-                    let callbackIndex = args.length - 1
-                    const originalCallback = args[callbackIndex]
-                    // if last argument is not a callback increment index to add a new callback
-                    // on page reload callbacks stored by queue service will become null, due to JSON spec
-                    if (!isFn(originalCallback) && originalCallback !== null) callbackIndex++
-                    args[callbackIndex] = (...cbArgs) => {
-                        // first argument indicates whether there is an error.
-                        const err = translateError(cbArgs[0])
-                        isFn(originalCallback) && originalCallback.apply({}, cbArgs)
-                        if (!!err) return reject(err)
-                        const result = cbArgs.slice(1)
-                        // resolver only takes a single argument
-                        // if callback is invoked with more than one value (excluding error message),
-                        // then resolve with an array of value arguments, otherwise, resolve with only the result value.
-                        resolve(result.length > 1 ? result : result[0])
-                    }
+    Object.keys(instance)
+        .forEach(key => {
+            const func = instance[key]
+            if (!isFn(func) || nonCbs.includes(key)) return
+            func.promise = function () {
+                const args = [...arguments]
+                return new Promise((resolve, reject) => {
+                    try {
+                        // last argument must be a callback
+                        let callbackIndex = args.length - 1
+                        const originalCallback = args[callbackIndex]
+                        // if last argument is not a callback increment index to add a new callback
+                        // on page reload callbacks stored by queue service will become null, due to JSON spec
+                        if (!isFn(originalCallback) && originalCallback !== null) callbackIndex++
+                        args[callbackIndex] = (...cbArgs) => {
+                            // first argument indicates whether there is an error.
+                            const err = translateError(cbArgs[0])
+                            isFn(originalCallback) && originalCallback.apply({}, cbArgs)
+                            if (!!err) return reject(err)
+                            const result = cbArgs.slice(1)
+                            // resolver only takes a single argument
+                            // if callback is invoked with more than one value (excluding error message),
+                            // then resolve with an array of value arguments, otherwise, resolve with only the result value.
+                            resolve(result.length > 1 ? result : result[0])
+                        }
 
-                    func.apply(instance, args)
-                } catch (err) {
-                    reject(err)
-                }
-            })
-        }
-    })
+                        func.apply(instance, args)
+                    } catch (err) {
+                        reject(err)
+                    }
+                })
+            }
+        })
 
     instance.onConnect(() => {
         rxIsConnected.next(true)
@@ -128,7 +129,7 @@ export const getClient = () => {
  * 
  * @param {Function} cb 
  */
-export const translateError = err => { 
+export const translateError = err => {
     // if no error return as is
     if (!err) return err
 
@@ -142,7 +143,7 @@ export const translateError = err => {
     // translate if there is any error message
     const separator = ' => '
     if (!err.includes(separator)) return translated({ err })[0].err
-    
+
     const [prefix, msg] = err.split(separator)
     const [texts] = translated({ prefix, msg })
     return `${texts.prefix}${separator}${texts.msg}`
@@ -207,8 +208,8 @@ export class ChatClient {
         // Currency conversion
         //
         // Params:
-        // @from    string: source currency ticker
-        // @to      string: target currency ticker
+        // @from    string: source currency ID
+        // @to      string: target currency ID
         // @amount  number: amount in source currency
         // @cb      function: args:
         //              @err                string: message in case of error. Otherwise, null.
@@ -228,6 +229,12 @@ export class ChatClient {
         //                  @err    string: message in case of error. Otherwise, null.
         //                  @list   map: list of all currenies (objects)
         this.currencyList = (hash, cb) => isFn(cb) && socket.emit('currency-list', hash, cb)
+
+        this.currencyPricesByDate = (date, currencyIds, cb) => isFn(cb) && socket.emit('currency-prices-by-date',
+            date,
+            currencyIds,
+            cb,
+        )
 
         // Request funds
         this.faucetRequest = (address, cb) => isFn(cb) && socket.emit('faucet-request', address, cb)
@@ -412,7 +419,7 @@ export class ChatClient {
             ids,
             (err, result) => cb(err, new Map(result)),
         )
-        
+
         /**
          * @name    crowdsaleCheckDeposits
          * @summary check and retrieve user's crowdsale deposits
@@ -429,7 +436,7 @@ export class ChatClient {
             cached,
             cb,
         )
-        
+
         /**
          * @name    crowdsaleConstants
          * @summary retrieve crowdsale related constants for use with calcuation of allocation and multiplier levels
@@ -449,7 +456,7 @@ export class ChatClient {
          * @name    crowdsaleDAA
          * @summary request new or retrieve exisitng deposit address
          * 
-         * @param   {String}    blockchain  ticker/symbol of the Blockchain to request/retrieve address of
+         * @param   {String}    blockchain  ticker of the Blockchain to request/retrieve address of
          * @param   {String}    ethAddress  use `0x0` to retrieve existing address.
          *                                  If the @blockchain is `ETH`, user's Ethereum address for whitelisting.
          *                                  Otherwise, leave an empty string.

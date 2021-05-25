@@ -1,14 +1,15 @@
 import { BehaviorSubject } from 'rxjs'
-import { generateHash, arrSort, isValidNumber } from '../../utils/utils'
+import { generateHash, arrSort, isValidNumber, isValidDate, arrUnique, isArr } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 import client, { rxIsConnected } from '../chat/ChatClient'
 import { translated } from '../../services/language'
 import storage from '../../services/storage'
 import { subjectAsPromise } from '../../services/react'
 
-const textsCap = translated({
-    invalidCurency: 'invalid currency supplied',
-}, true)[1]
+const [texts, textsCap] = translated({
+    invalidCurency: 'invalid or unsupported currency supplied',
+    datePriceNotAvailable: 'price is not available for selected date'
+}, true)
 const MODULE_KEY = 'currency'
 // read or write to currency settings storage
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
@@ -16,9 +17,8 @@ const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 const rwCache = (key, value) => storage.cache(MODULE_KEY, key, value) || {}
 let lastUpdated = null
 const updateFrequencyMs = 24 * 60 * 60 * 1000
-
 // default currency
-export const currencyDefault = 'XTX'
+export const currencyDefault = 'TOTEM'
 // RxJS Subject to keep track of selected currencly changes
 export const rxSelected = new BehaviorSubject(getSelected())
 
@@ -27,32 +27,78 @@ export const rxSelected = new BehaviorSubject(getSelected())
  * @summary convert to display currency and limit to decimal places
  * 
  * @param   {Number} amount     amount to convert
- * @param   {String} from       currency ticker to convert from
- * @param   {String} to         currency ticker to convert to
+ * @param   {String} from       source currency ID
+ * @param   {String} to         target currency ID
  * @param   {Number} decimals   (optional) number of decimal places to use. 
  *                               Default: decimals defined in `to` currency
  * 
- * @returns {Array} [@convertedAmount Number, @rounded String]
+ * @returns {Array} [
+ *                      @convertedAmount Number,
+ *                      @rounded         String,
+ *                      @decimals        Number,
+ *                      @fromCurrency    Object,
+ *                      @toCurrency      Object
+ *                  ]
  */
-export const convertTo = async (amount = 0, from, to, decimals) => {
-    const ft = [from, to]
-    // // await client.currencyConvert.promise(from, to, amount)
-    // // wait up to 10 seconds if messaging service is not connected yet
-    // if (!rxIsConnected.value) await subjectAsPromise(rxIsConnected, true, 10000)[0]
+export const convertTo = async (amount = 0, from, to, decimals, dateOrROE) => {
     const currencies = await getCurrencies()
-    const fromTo = currencies.filter(({ ISO }) => ft.includes(ISO))
-    const gotBoth = ft.every(x => fromTo.find(c => c.ISO === x))
-    if (!gotBoth) throw new Error(textsCap.invalidCurency)
-    
-    const fromCurrency = fromTo.find(({ ISO }) => ISO === from)
-    const toCurrency = currencies.find(({ ISO }) => ISO === to)
-    const convertedAmount = (fromCurrency.ratioOfExchange / toCurrency.ratioOfExchange) * amount
-    
-    if (!isValidNumber(decimals)) {
-        decimals = parseInt(toCurrency.decimals)
+    const USD = 'USD'
+    let fromCurrency, toCurrency, usdEntry
+    currencies.forEach(c => {
+        if ([c.currency, c._id].includes(from)) fromCurrency = c
+        if ([c.currency, c._id].includes(to)) toCurrency = c
+        if (c.type === 'fiat' && c.ticker === USD) usdEntry = c
+    })
+
+    if (!fromCurrency || !toCurrency || !usdEntry) {
+        const invalidTicker = !fromCurrency
+            ? from
+            : !toCurrency
+                ? to
+                : USD
+        throw new Error(`${textsCap.invalidCurency}: ${invalidTicker}`)
     }
-    const rounded = convertedAmount.toFixed(decimals)
-    return [convertedAmount, rounded, decimals]
+    let { ratioOfExchange: fromROE } = fromCurrency
+    let { ratioOfExchange: toROE } = toCurrency
+    // retrieve price of a specific date
+    if (isValidDate(dateOrROE)) {
+        const result = await client.currencyPricesByDate.promise(
+            dateOrROE,
+            arrUnique([
+                fromCurrency._id,
+                toCurrency._id,
+            ]),
+        )
+        const fromEntry = result.find(x => x.currencyId === fromCurrency._id)
+        if (!fromEntry) throw new Error(`${fromCurrency.name} ${texts.datePriceNotAvailable} ${dateOrROE}`)
+        fromROE = fromEntry.ratioOfExchange
+
+        let toEntry = result.find(x => x.currencyId === toCurrency._id)
+        // fall back to USD, if target currency price for supplied date is not availabe.
+        if (!toEntry) toCurrency = usdEntry
+        toROE = (toEntry || toCurrency).ratioOfExchange
+    } else if (
+        isArr(dateOrROE)
+        && dateOrROE.length === 2
+        && dateOrROE.every(x => isValidNumber(parseInt(x)))
+    ) {
+        fromROE = dateOrROE[0]
+        toROE = dateOrROE[1]
+    }
+
+    const convertedAmount = (fromROE / toROE) * amount
+    if (!isValidNumber(decimals)) {
+        decimals = parseInt(toCurrency.decimals) || 0
+    }
+    const rounded = convertedAmount.toFixed(decimals + 2)
+
+    return [
+        convertedAmount,
+        rounded.substr(0, rounded.length - (!decimals ? 3 : 2)),
+        decimals,
+        fromCurrency,
+        toCurrency,
+    ]
 }
 
 const fetchCurrencies = async (cached = rwCache().currencies) => {
@@ -61,12 +107,8 @@ const fetchCurrencies = async (cached = rwCache().currencies) => {
     // currencies list is the same as in the server => use cached
     if (currencies.length === 0) return cached
 
-    // sort by ISO and  makes sure there is a name and ISO
-    currencies = arrSort(currencies.map(c => {
-        c.nameInLanguage = c.nameInLanguage || c.currency
-        c.ISO = c.ISO || c.currency
-        return c
-    }), 'ISO')
+    // sort by ticker
+    currencies = arrSort(currencies, 'ticker')
 
     rwCache('currencies', currencies)
     lastUpdated = new Date()
@@ -85,15 +127,20 @@ export const getCurrencies = async () => {
     return rwCache().currencies || []
 }
 
-// get/set default currency
-//
-// Params:
-// @ISO   string: currency code
-export const setSelected = async (ISO) => {
+/**
+ * @name    setSelected
+ * @summary set display currency
+ * 
+ * @param   {String} currency 
+ * @returns {String}
+ */
+export const setSelected = async (currency) => {
     const currencies = await getCurrencies()
-    const exists = currencies.find(x => x.ISO === ISO)
-    const newValue = exists ? { selected: ISO } : undefined
-    newValue && rxSelected.next(ISO)
+    const exists = currencies.find(x => x.currency === currency)
+    const newValue = exists
+        ? { selected: currency }
+        : undefined
+    newValue && rxSelected.next(currency)
     return rw(newValue).selected || currencyDefault
 }
 
@@ -108,6 +155,7 @@ export const updateCurrencies = async () => {
         // messaging service is not connected
         if (!rxIsConnected.value) {
             // return existing list if available
+
             if (cached && cached.length) return cached
 
             // wait till connected
@@ -126,6 +174,16 @@ export const updateCurrencies = async () => {
     }
 }
 
+// if selected currency is not available in the currencies list, set to default currency
+(async () => {
+    const currencies = await getCurrencies()
+    const selected = currencies.find(x => x.currency === rxSelected.value)
+    if (!selected) {
+        const { currency } = currencies
+            .find(x => x.ticker === currencyDefault)
+        currency && setSelected(currency)
+    }
+})()
 export default {
     currencyDefault,
     rxSelected,

@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useState } from 'react'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
 import { BehaviorSubject } from 'rxjs'
+import { FormInput } from '../components/FormInput'
 // Views (including lists and forms)
 import CurrencyList from '../modules/currency/CurrencyList'
 import FinancialStatementsView from '../modules/financialStatement/FinancialStatementView'
@@ -20,11 +21,12 @@ import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
 // import CrowdsaleView from '../modules/crowdsale/Crowdsale'
 // utils
 import DataStorage from '../utils/DataStorage'
-import { isBool, isBond } from '../utils/utils'
+import { isBool, isBond, isDate } from '../utils/utils'
 // services
 import { translated } from './language'
 import storage from './storage'
 import { getUrlParam, MOBILE, rxLayout, setClass } from './window'
+import AssetFormView from '../modules/assets/AssetsFormView'
 
 const textsCap = translated({
     currenciesTitle: 'exchange rates',
@@ -260,7 +262,23 @@ export const sidebarItems = [
         title: textsCap.financialStatementTitle,
     },
     {
-        content: CurrencyList,
+        // content: () => {
+        //     const [date, setDate] = useState(null)
+
+        //     return (
+        //         <div>
+        //             <div style={{ marginBottom: 15 }}>
+        //                 <FormInput {...{
+        //                     name: 'date',
+        //                     onChange: (_, { value }) => setDate(value),
+        //                     type: 'DateInput',
+        //                 }} />
+        //             </div>
+        //             <CurrencyList date={date} keywords='ibm' />
+        //         </div >
+        //     )
+        // },
+        content: AssetFormView,
         icon: 'money bill alternate outline',
         name: 'currencies',
         title: textsCap.currenciesTitle,
@@ -425,7 +443,7 @@ rxSidebarState.subscribe(() => {
 setTimeout(() => {
     const modules = (getUrlParam('module') || '').trim()
     if (!modules) return
-    
+
     const names = modules.split(',')
         .map(x => x.trim().toLowerCase())
     const validNames = names.map(name => (setActive(name) || {}).name)
