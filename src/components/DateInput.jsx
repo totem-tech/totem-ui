@@ -93,7 +93,6 @@ export default function DateInput(props) {
                 }
             })
             .filter(Boolean)
-    console.log({dayOptions, yyyy, dd})
 
     return (
         <div {...{
