@@ -5,8 +5,7 @@ import { arrReverse, deferred, isDefined, isFn } from '../../utils/utils'
 import FormBuilder from '../../components/FormBuilder'
 import { iUseReducer } from '../../services/react'
 import { translated } from '../../services/language'
-import { convertTo, currencyDefault, getCurrencies } from '../currency/currency'
-import client from '../chat/ChatClient'
+import { convertTo, getCurrencies } from '../currency/currency'
 import { setToast } from '../../services/toast'
 
 const textsCap = translated({
@@ -25,7 +24,6 @@ const inputNames = {
     group: 'group',
 }
 const rxCurrencyOptions = new BehaviorSubject([])
-
 export default function AssetConverterForm(props) {
     let {
         labels,
@@ -149,13 +147,15 @@ export default function AssetConverterForm(props) {
         return state
     })
 
-    return <FormBuilder {...{
-        ...props,
-        ...state,
-        inputs: reverseInputs
-            ? arrReverse(state.inputs, true, true)
-            : state.inputs,
-    }} />
+    return (
+        <FormBuilder {...{
+            ...props,
+            ...state,
+            inputs: reverseInputs
+                ? arrReverse(state.inputs, true, true)
+                : state.inputs,
+        }} />
+    )
 }
 AssetConverterForm.propTypes = {
     rxAmount: PropTypes.instanceOf(BehaviorSubject),

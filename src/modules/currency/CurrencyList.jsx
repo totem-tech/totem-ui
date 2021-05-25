@@ -121,14 +121,14 @@ export default function CurrencyList(props) {
             }
 
             const data = Array.from(currencies)
-                .map(getRowData( unitDisplayed, unitDisplayedROE ))
-
+            .map(getRowData( unitDisplayed, unitDisplayedROE ))
+            
             mounted && setTableData(data)
         }
         fetchData()
 
         return () => mounted = false
-    }, [date, displayCurrency])
+    }, [date, gotDate, displayCurrency])
 
     return (
         <DataTable {...{

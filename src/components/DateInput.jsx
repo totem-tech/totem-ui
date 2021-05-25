@@ -13,6 +13,7 @@ export default function DateInput(props) {
         icon,
         ignoreAttributes,
         fluidOnMobile = true,
+        onReset,
         rxValue,
         value,
     } = props
@@ -40,7 +41,9 @@ export default function DateInput(props) {
             if (!mounted) return
             let arr = !isDate(new Date(newValue))
                 ? [`${currentYear}`]
-                : `${isStr(newValue) ? newValue : ''}`.split('T')[0].split('-')
+                : `${isStr(newValue) ? newValue : ''}`
+                    .split('T')[0]
+                    .split('-')
             setValue(arr)
         }
         const subscribed = rxValue && rxValue.subscribe(updateValue)
@@ -100,7 +103,11 @@ export default function DateInput(props) {
                 <Icon {...{
                     className: 'no-margin',
                     name: 'x',
-                    onClick: e => triggerChange(e, props, [`${currentYear}`, '', ''], setValue),
+                    onClick: e => {
+                        triggerChange(e, props, [`${currentYear}`, '', ''], setValue)
+
+                        isFn(onReset) && onReset(e)
+                    },
                     style: { cursor: 'pointer', paddingLeft: 5 },
                 }} />
             )}
@@ -116,6 +123,8 @@ DateInput.propTypes = {
     min: PropTypes.string,
     ignoreAttributes: PropTypes.arrayOf(PropTypes.string).isRequired,
     rxValue: PropTypes.instanceOf(BehaviorSubject),
+    // triggered on date reset.
+    onReset: PropTypes.func,
     // date value string in the following format: YYYY-DD-MM
     value: PropTypes.string,
 }
