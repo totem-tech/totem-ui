@@ -89,7 +89,7 @@ export default function AssetsForm(props) {
                     inputs: [
                         {
                             name: inputNames.date,
-                            onChange: () => rxShowList.next(true),
+                            // onChange: () => rxShowList.next(true),
                             onReset: () => {
                                 const { onChange } = props
                                 if (!isFn(onChange)) return
