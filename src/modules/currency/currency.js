@@ -6,10 +6,10 @@ import { translated } from '../../services/language'
 import storage from '../../services/storage'
 import { subjectAsPromise } from '../../services/react'
 
-const textsCap = translated({
+const [texts, textsCap] = translated({
     invalidCurency: 'invalid or unsupported currency supplied',
     datePriceNotAvailable: 'price is not available for selected date'
-}, true)[1]
+}, true)
 const MODULE_KEY = 'currency'
 // read or write to currency settings storage
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
@@ -70,7 +70,7 @@ export const convertTo = async (amount = 0, from, to, decimals, dateOrROE) => {
             ]),
         )
         const fromEntry = result.find(x => x.currencyId === fromCurrency._id)
-        if (!fromEntry) throw new Error(`${fromCurrency.name} ${textsCap.datePriceNotAvailable} ${dateOrROE}`)
+        if (!fromEntry) throw new Error(`${fromCurrency.name} ${texts.datePriceNotAvailable} ${dateOrROE}`)
         fromROE = fromEntry.ratioOfExchange
 
         let toEntry = result.find(x => x.currencyId === toCurrency._id)

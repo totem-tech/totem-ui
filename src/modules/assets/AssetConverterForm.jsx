@@ -62,6 +62,7 @@ export default function AssetConverterForm(props) {
                 )
                 rxAmountTo.next(amountConverted)
             } catch (err) {
+                rxAmountTo.next('')
                 setToast({
                     content: `${err}`.replace('Error: ', ''),
                     status: 'error',
