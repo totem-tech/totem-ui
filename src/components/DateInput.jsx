@@ -5,6 +5,26 @@ import { Dropdown as DD, Icon } from 'semantic-ui-react'
 import { className, isDate, isFn, isStr, isValidDate, objWithoutKeys, strFill } from '../utils/utils'
 import { useRxSubject } from '../services/react'
 import { MOBILE, rxLayout } from '../services/window'
+import { translated } from '../services/language'
+
+const textsCap = translated({
+    friday: 'friday',
+    monday: 'monday',
+    saturday: 'saturday',
+    sunday: 'sunday',
+    thursday: 'thursday',
+    tuesday: 'tuesday',
+    wednesday: 'wednesday',
+}, true)[1]
+const daysTranslated = [
+    textsCap.sunday,
+    textsCap.monday,
+    textsCap.tuesday,
+    textsCap.wednesday,
+    textsCap.thursday,
+    textsCap.friday,
+    textsCap.saturday,
+]
 
 export default function DateInput(props) {
     const {
@@ -55,6 +75,25 @@ export default function DateInput(props) {
             subscribed && subscribed.unsubscribe
         }
     }, [setValue])
+    const dayOptions1 = !yyyy || !mm 
+        ? dayOptions
+        : dayOptions
+            .map(option => {
+                const { value: dd } = option
+                if (!dd) return option
+
+                const date = `${yyyy}-${mm}-${dd}`
+                return isValidDate(date) && {
+                    ...option,
+                    description: (
+                        <small>
+                            {daysTranslated[new Date(date).getDay()]}
+                        </small>
+                    )
+                }
+            })
+            .filter(Boolean)
+    console.log({dayOptions, yyyy, dd})
 
     return (
         <div {...{
@@ -93,11 +132,12 @@ export default function DateInput(props) {
             }} />
             {mm && ' - '}
             <Dropdown {...{
+                ...dropdownProps,
                 disabled,
                 icon: dd ? null : icon,
                 lazyLoad: true,
                 onChange: (e, d) => triggerChange(e, props, [yyyy, mm, d.value], setValue),
-                options: dayOptions,
+                options: dayOptions1,
                 placeholder: 'DD',
                 search: true,
                 value: dd || '',
@@ -108,7 +148,6 @@ export default function DateInput(props) {
                     name: 'x',
                     onClick: e => {
                         triggerChange(e, props, [`${currentYear}`, '', ''], setValue)
-
                         isFn(onReset) && onReset(e)
                     },
                     style: { cursor: 'pointer', paddingLeft: 5 },
@@ -137,6 +176,7 @@ DateInput.defaultProps = {
     icon: { name: 'dropdown' },
     ignoreAttributes: [
         'clearable',
+        'dropdownProps',
         'icon',
         'ignoreAttributes',
         'invalid',
