@@ -90,14 +90,19 @@ export default function AssetsForm(props) {
                         {
                             name: inputNames.date,
                             // onChange: () => rxShowList.next(true),
+                            rxValue: rxDate,
+                            dropdownProps: {
+                                selectOnBlur: true,
+                                selectOnNavigation: false,
+                            },
+                            type: 'date',
+                            width: 4,
                             onReset: () => {
                                 const { onChange } = props
                                 if (!isFn(onChange)) return
                                 formValues[inputNames.date] = undefined
                                 onChange({}, formValues)
                             },
-                            rxValue: rxDate,
-                            type: 'date',
                             // only accept a date between 1999-01-01 and today
                             validate: (_, { value }) => {
                                 if (!value) return
@@ -105,7 +110,6 @@ export default function AssetsForm(props) {
                                 const invalid = (date - new Date()) > 0 || value.substr(0, 4) < 1999
                                 return invalid
                             },
-                            width: 4,
                         },
                         getEmptyField(),
                         getEmptyField(),
@@ -126,6 +130,7 @@ export default function AssetsForm(props) {
                     // inline: true,
                     name: inputNames.groupTotalValue,
                     type: 'group',
+                    // widths: 'equal',
                     inputs: [
                         {
                             content: (

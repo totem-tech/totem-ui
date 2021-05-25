@@ -10,6 +10,7 @@ export default function DateInput(props) {
     const {
         clearable,
         disabled,
+        dropdownProps,
         icon,
         ignoreAttributes,
         fluidOnMobile = true,
@@ -66,6 +67,7 @@ export default function DateInput(props) {
             title: 'YYYY-MM-DD',
         }}>
             <Dropdown {...{
+                ...dropdownProps,
                 disabled,
                 icon: yyyy ? null : icon,
                 lazyLoad: true,
@@ -78,6 +80,7 @@ export default function DateInput(props) {
             }} />
             {yyyy && ' - '}
             <Dropdown {...{
+                ...dropdownProps,
                 disabled,
                 icon: mm ? null : icon,
                 lazyLoad: true,
@@ -117,6 +120,7 @@ export default function DateInput(props) {
 DateInput.propTypes = {
     clearable: PropTypes.bool,
     disabled: PropTypes.bool,
+    dropdownProps: PropTypes.object,
     // lowest value
     max: PropTypes.string,
     // highest value
@@ -136,6 +140,7 @@ DateInput.defaultProps = {
         'icon',
         'ignoreAttributes',
         'invalid',
+        'onReset',
         'rxValue',
     ],
     style: {

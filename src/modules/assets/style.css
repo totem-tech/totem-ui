@@ -40,11 +40,12 @@ body:not(.mobile) .action .button {
     padding-left: 10px;
     width: 50%;
 }
-body.mobile .assets-form .total-form {
-    padding: 0 10px 10px;
+.assets-form .total-form {
     width: 50%;
+    padding: 0 10px 0 25px;
 }
 body.mobile .assets-form .total-form,
 body.mobile .assets-form .total-assets {
+    padding: 0 10px;
     width: 100%;
 }
