@@ -165,6 +165,7 @@ export default function AssetsForm(props) {
                 {
                     name: inputNames.groupButtons,
                     type: 'group',
+                    unstackable: true,
                     inputs: [
                         {
                             hidden: true,
@@ -183,6 +184,7 @@ export default function AssetsForm(props) {
                             type: 'hidden',
                         },
                         {
+                            containerProps: { className: 'btn-subtract' },
                             content: textsCap.btnSubtract,
                             fluid: true,
                             name: inputNames.btnSubtract,
@@ -191,6 +193,7 @@ export default function AssetsForm(props) {
                             type: 'button',
                         },
                         {
+                            containerProps: { className: 'btn-add' },
                             content: textsCap.btnAdd,
                             fluid: true,
                             name: inputNames.btnAdd,

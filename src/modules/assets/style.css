@@ -52,11 +52,20 @@ body.mobile .assets-form .total-assets {
     width: 100%;
 }
 
+body.mobile .assets-form .sixteen.wide.field.btn-add,
+body.mobile .assets-form .sixteen.wide.field.btn-subtract {
+    display: inline-block;
+    width: 50% !important;
+}
+
 @media only screen and (min-width : 360px)  {
     body.mobile .assets-form .portfolio .form-group > .field:not(:first-child) {
         display: inline-block !important;
-        width: auto !important;
-        min-width: 45% !important;
+        width: calc( 100% - 197px ) !important;
+    }
+
+    body.mobile .assets-form .portfolio .form-group > .field:last-child {
+        width: 197px !important;
     }
 }
 
