@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { arrReverse, deferred, isDefined, isFn } from '../../utils/utils'
-import FormBuilder from '../../components/FormBuilder'
+import FormBuilder, { findInput } from '../../components/FormBuilder'
 import { iUseReducer } from '../../services/react'
 import { translated } from '../../services/language'
 import { convertTo, getCurrencies } from '../currency/currency'
@@ -92,11 +92,13 @@ export default function AssetConverterForm(props) {
                 },
                 {
                     inline: true,
+                    // grouped: true,
                     name: inputNames.group,
                     type: 'group',
                     // widths: 'equal',
-                    style: { margin: '0 -10px'},
-                    inputs: [
+                    style: { margin: '0 -10px' },
+                    unstackable: true,
+                    inputs: arrReverse([
                         {
                             label: labels.asset,
                             name: inputNames.asset,
@@ -104,17 +106,23 @@ export default function AssetConverterForm(props) {
                             placeholder: textsCap.assetPlaceholder,
                             rxOptions: rxCurrencyOptions,
                             rxValue: rxAssetFrom,
-                            search: [ 'text', 'description'],
+                            search: [ 'text', 'description', 'value'],
                             selection: true,
-                            style: { maxHeight: 36},
+                            style: {
+                                maxHeight: 38,
+                                // marginTop: 3,
+                            },
                             styleContainer: {
-                                minWidth: 210,
+                                // minWidth: 210,
                                 // marginTop: '0.8em'
                             },
                             type: 'dropdown',
                             value: (rxAmountFrom || {}).value
                         },
                         {
+                            containerProps: {
+                                className: 'six wide tablet'
+                            },
                             label: labels.amountFrom,
                             name: inputNames.amountFrom,
                             min: 0,
@@ -123,16 +131,20 @@ export default function AssetConverterForm(props) {
                             type: 'number',
                         },
                         {
+                            containerProps: {
+                                className: 'six wide tablet'
+                            },
                             label: labels.amountTo,
                             name: inputNames.amountTo,
                             readOnly: true,
                             rxValue: rxAmountTo,
                             type: 'text',
                         },
-                    ],
+                    ], reverseInputs),
                 },
             ],
         }
+        
         // set currency dropdown options
         !rxCurrencyOptions.value.length && getCurrencies()
             .then(currencies => {
@@ -148,15 +160,7 @@ export default function AssetConverterForm(props) {
         return state
     })
 
-    return (
-        <FormBuilder {...{
-            ...props,
-            ...state,
-            inputs: reverseInputs
-                ? arrReverse(state.inputs, true, true)
-                : state.inputs,
-        }} />
-    )
+    return <FormBuilder {...{ ...props, ...state }} />
 }
 AssetConverterForm.propTypes = {
     rxAmount: PropTypes.instanceOf(BehaviorSubject),

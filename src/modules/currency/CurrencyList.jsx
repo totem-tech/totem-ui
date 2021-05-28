@@ -93,7 +93,7 @@ export default function CurrencyList(props) {
                 let prices
                 try {
                     // retrieve all prices for this date
-                    prices = (await client.currencyPricesByDate.promise(date, []))
+                    prices = (await client.currencyPricesByDate.promise(date, []) || [])
                         .map(c => {
                             c.marketCapUSD = c.marketCapUSD || -1
                             return c
@@ -106,7 +106,6 @@ export default function CurrencyList(props) {
                     )
                 }
                     
-                
                 arrSort(prices || [], 'marketCapUSD', true)
                     .map((p, rank) => {
                         const { currencyId, marketCapUSD, ratioOfExchange, source } = p
