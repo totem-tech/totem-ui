@@ -8,7 +8,7 @@ const identities = new DataStorage('totem_identities')
 export const DEFAULT_NAME = 'Default' // default identity name
 export const rxIdentities = identities.rxData
 export const rxSelected = new BehaviorSubject()
-const USAGE_TYPES = Object.freeze({
+export const USAGE_TYPES = Object.freeze({
 	PERSONAL: 'personal',
 	BUSINESS: 'business',
 })

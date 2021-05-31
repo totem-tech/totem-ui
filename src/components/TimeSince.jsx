@@ -40,8 +40,9 @@ const TimeSince = props => {
         const update = () => {
             if (!mounted) return
             
-            const [formatted, frequencyMS] = asDuration
-                ? _formatDuration(
+            const [formatted, frequencyMS] = !asDuration
+                ? _format(date)
+                : _formatDuration(
                     date,
                     {
                         ...durationConfig,
@@ -51,7 +52,6 @@ const TimeSince = props => {
                         },
                     }
                 )
-                : _format(date)
             const autoUpdate = updateFrequency !== null && frequencyMS !== null
             const delay = updateFrequency || frequencyMS
             setFormatted(formatted)
@@ -75,17 +75,26 @@ const TimeSince = props => {
         }} />
 }
 TimeSince.propTypes = {
+    // @asDuration: whether to display as duration (hh:mm:ss) or a single number (2 hour ago)
+    // if `true`, will use Semantic UI's `Statistic` component
     asDuration: PropTypes.bool,
+    // @date the date to use to display the time
     date: PropTypes.oneOfType([
         PropTypes.instanceOf(Date),
         PropTypes.string,
     ]).isRequired,
     durationConfig: PropTypes.shape({
+        // whether to prefix with 0 when number is less than 10
         fill: PropTypes.bool,
+        // optional props to be supplied to the Statistic component
         statisticProps: PropTypes.object,
+        // whether to display the unit title below or above the time segments (hours, minutes...)
         titleBelow: PropTypes.bool,
+        // whether to display number of hours
         withHours: PropTypes.bool,
+        // whether to display number of minutes
         withMinutes: PropTypes.bool,
+        // whether to display number of seconds
         withSeconds: PropTypes.bool,
     }),
     El: PropTypes.oneOfType([
@@ -99,6 +108,14 @@ TimeSince.propTypes = {
 }
 TimeSince.defaultProps = {
     asDuration: false,
+    durationConfig: { 
+        fill: true,
+        statisticProps: {},
+        titleBelow: true,
+        withHours: false,
+        withMinutes: true,
+        withSeconds: true,
+    },
     El: 'div',
     ignoreAttributes: [
         'asDuration',
@@ -213,7 +230,7 @@ const _calcDurationUnits = (date, withHours, withMinutes, withSeconds) => {
                 : secondMS // update every second
     ]
 }
-const _formatDuration = (date, config = {}) => {
+const _formatDuration = (date, durationConfig = {}) => {
     const { 
         fill = true,
         statisticProps = {},
@@ -221,7 +238,7 @@ const _formatDuration = (date, config = {}) => {
         withHours = true,
         withMinutes = true,
         withSeconds = true,
-    } = config
+    } = durationConfig
     let [values, frequencyMS] = _calcDurationUnits(date, withHours, withMinutes, withSeconds)
 
     return [

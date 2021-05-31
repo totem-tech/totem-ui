@@ -68,11 +68,16 @@ export default function PartnerList(props = {}) {
 
 const tableProps = Object.freeze({
     columns: [
-        { key: '_name', title: textsCap.partnerName },
+        {
+            key: '_name',
+            sortKey: 'name',
+            title: textsCap.partnerName,
+        },
         { key: '_associatedIdentity', title: textsCap.usedBy, style: { maxWidth: 200 } },
         {
             key: '_tags',
             draggable: false, // individual tags are draggable
+            sortKey: 'tags',
             title: textsCap.tags
         },
         { collapsing: true, key: '_type', title: textsCap.usage },

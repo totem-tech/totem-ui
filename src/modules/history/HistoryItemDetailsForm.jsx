@@ -10,6 +10,7 @@ import { translated } from '../../services/language'
 import { statusTitles } from '../../services/queue'
 import { query } from '../../services/blockchain'
 import LabelCopy from '../../components/LabelCopy'
+import { currencyDefault } from '../currency/currency'
 
 // Read-only form
 const textsCap = translated({
@@ -180,7 +181,7 @@ export default function HistoryItemDetailsForm(props) {
             widths: 8,
             inputs: [
                 before && {
-                    action: { content: 'XTX' },
+                    action: { content: currencyDefault },
                     label: textsCap.balanceBeforeTx,
                     name: 'balance-before',
                     readOnly: true,
@@ -188,7 +189,7 @@ export default function HistoryItemDetailsForm(props) {
                     type: 'number',
                 },
                 after && {
-                    action: { content: 'XTX' },
+                    action: { content: currencyDefault },
                     label: textsCap.balanceAfterTx,
                     name: 'balance-after',
                     readOnly: true,

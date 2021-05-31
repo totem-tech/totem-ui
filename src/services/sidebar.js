@@ -1,8 +1,10 @@
-import React from 'react'
+import React, { useState } from 'react'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
 import { BehaviorSubject } from 'rxjs'
+import { FormInput } from '../components/FormInput'
 // Views (including lists and forms)
+import CurrencyList from '../modules/currency/CurrencyList'
 import FinancialStatementsView from '../modules/financialStatement/FinancialStatementView'
 import GettingStarted from '../views/GettingStartedView'
 import HistoryList from '../modules/history/HistoryList'
@@ -12,24 +14,24 @@ import ActivityList from '../modules/activity/ActivityList'
 import SettingsForm from '../forms/Settings'
 import TaskView from '../modules/task/TaskView'
 import TimekeepingView from '../modules/timekeeping/TimekeepingView'
-import TransferForm from '../forms/Transfer'
+import TransferForm from '../modules/identity/Transfer'
 import UtilitiesView from '../views/UtilitiesView'
 // temp
 import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
-import EventList from '../modules/event/EventList'
 // import CrowdsaleView from '../modules/crowdsale/Crowdsale'
 // utils
 import DataStorage from '../utils/DataStorage'
-import { isBool, isBond } from '../utils/utils'
+import { isBool, isBond, isDate } from '../utils/utils'
 // services
 import { translated } from './language'
 import storage from './storage'
 import { getUrlParam, MOBILE, rxLayout, setClass } from './window'
+import AssetFormView from '../modules/assets/AssetsFormView'
 
 const textsCap = translated({
-    crowdsaleTitle: 'crowdsale',
+    currenciesTitle: 'exchange rates',
 
-    eventsTtile: 'events',
+    crowdsaleTitle: 'crowdsale',
 
     financialStatementTitle: 'Financial Statement',
 
@@ -246,54 +248,88 @@ export const sidebarItems = [
     {
         content: TransferForm,
         contentProps: { style: { maxWidth: 450 } },
-        icon: 'money bill alternate outline',
+        icon: 'send',
         header: textsCap.transferHeader,
         name: 'transfer',
         subHeader: textsCap.transferSubheader,
         subHeaderDetails: textsCap.transferSubheaderDetails,
         title: textsCap.transferTitle,
     },
-    // { icon: 'file alternate', title: 'Invoice', subHeader: '', active: false, content: <Invoice /> },
     {
-        icon: 'file alternate',
-        name: 'invoices',
-        title: textsCap.invoicesTitle,
+        content: FinancialStatementsView,
+        icon: 'list alternate outline',
+        name: 'financial-statement',
+        title: textsCap.financialStatementTitle,
     },
     {
-        icon: 'file alternate outline',
-        name: 'credit-note',
-        title: textsCap.creditNoteTitle,
+        // content: () => {
+        //     const [date, setDate] = useState(null)
+
+        //     return (
+        //         <div>
+        //             <div style={{ marginBottom: 15 }}>
+        //                 <FormInput {...{
+        //                     name: 'date',
+        //                     onChange: (_, { value }) => setDate(value),
+        //                     type: 'DateInput',
+        //                 }} />
+        //             </div>
+        //             <CurrencyList date={date} keywords='ibm' />
+        //         </div >
+        //     )
+        // },
+        content: AssetFormView,
+        icon: 'money bill alternate outline',
+        name: 'currencies',
+        title: textsCap.currenciesTitle,
     },
-    {
-        icon: 'exchange',
-        name: 'purchase-order',
-        title: textsCap.purchaseOrderTitle,
-    },
-    {
-        icon: 'inbox',
-        name: 'manage-orders',
-        title: textsCap.manageOrderTitle,
-    },
-    {
-        icon: 'cc mastercard',
-        name: 'expense',
-        title: textsCap.expenseTitle,
-    },
-    {
-        icon: 'exclamation circle',
-        name: 'disputed-items',
-        title: textsCap.disputedItemsTitle,
-    },
-    {
-        icon: 'chart bar outline',
-        name: 'edit-accounting',
-        title: textsCap.editAccountingTitle,
-    },
-    {
-        icon: 'lightbulb',
-        name: 'products',
-        title: textsCap.productsTitle,
-    },
+    // {
+    //     icon: 'file alternate',
+    //     title: 'Invoice',
+    //     subHeader: '',
+    //     active: false,
+    //     content: <Invoice />,
+    // },
+    // {
+    //     icon: 'file alternate',
+    //     name: 'invoices',
+    //     title: textsCap.invoicesTitle,
+    // },
+    // {
+    //     icon: 'file alternate outline',
+    //     name: 'credit-note',
+    //     title: textsCap.creditNoteTitle,
+    // },
+    // {
+    //     icon: 'exchange',
+    //     name: 'purchase-order',
+    //     title: textsCap.purchaseOrderTitle,
+    // },
+    // {
+    //     icon: 'inbox',
+    //     name: 'manage-orders',
+    //     title: textsCap.manageOrderTitle,
+    // },
+    // {
+    //     icon: 'cc mastercard',
+    //     name: 'expense',
+    //     title: textsCap.expenseTitle,
+    // },
+    // {
+    //     icon: 'exclamation circle',
+    //     name: 'disputed-items',
+    //     title: textsCap.disputedItemsTitle,
+    // },
+    // {
+    //     icon: 'chart bar outline',
+    //     name: 'edit-accounting',
+    //     title: textsCap.editAccountingTitle,
+    // },
+    // {
+    //     icon: 'lightbulb',
+    //     name: 'products',
+    //     title: textsCap.productsTitle,
+    // },
     {
         content: HistoryList,
         icon: 'history',
@@ -314,18 +350,6 @@ export const sidebarItems = [
         name: 'utilities',
         subHeader: textsCap.utilitiesSubheader,
         title: textsCap.utilitiesTitle,
-    },
-    {
-        content: FinancialStatementsView,
-        icon: '',
-        name: 'financial-statement',
-        title: textsCap.financialStatementTitle,
-    },
-    {
-        content: EventList,
-        icon: '',
-        name: 'blockchain-events',
-        title: textsCap.eventsTtile,
     },
 ].map(item => {
     const {
@@ -419,7 +443,7 @@ rxSidebarState.subscribe(() => {
 setTimeout(() => {
     const modules = (getUrlParam('module') || '').trim()
     if (!modules) return
-    
+
     const names = modules.split(',')
         .map(x => x.trim().toLowerCase())
     const validNames = names.map(name => (setActive(name) || {}).name)

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import { ss58Encode } from '../utils/convert'
 // components
 import ContentSegment from '../components/ContentSegment'
 import PageUtilitiesView from './PageUtilitiesView'
@@ -7,14 +6,16 @@ import AdminUtilsForm from '../forms/AdminUtils'
 import SystemStatusView from './SystemStatusView'
 import RuntimeUpgradeForm from '../forms/RuntimeUpgrade'
 // services
-import { getConnection, query } from '../services/blockchain'
+import { query } from '../services/blockchain'
 import { find as findIdentity } from '../modules/identity/identity'
 import { BUILD_MODE, translated } from '../services/language'
+import EventList from '../modules/event/EventList'
 
 // import TransactionsView from './TransactionsView'
 // import PokeView from './PokeView'
 // import UpgradeView from './UpgradeView'
 const [texts] = translated({
+    blockchainEvents: 'Blockchain events',
     pageUtilsHeader: 'App Tools',
     pageUtilsSubheader: 'Utilities to help fix issues with the app',
     statusHeader: 'Network status',
@@ -28,12 +29,10 @@ export default function UtilitiesView() {
 
     useEffect(() => {
         let mounted = true
-        getConnection().then(async ({ api }) => {
-            if (!mounted) return
-            const adminAddress = await query(api.query.sudo.key)
-            const userIsAdmin = !!findIdentity(adminAddress)
-            userIsAdmin && setIsAdmin(true)
-        })
+        query('api.query.sudo.key')
+            .then(adminAddress => 
+                mounted && setIsAdmin(!!findIdentity(adminAddress))
+            )
 
         return () => mounted = false
     }, [])
@@ -60,6 +59,11 @@ export default function UtilitiesView() {
             icon: 'wrench',
             header: texts.upgradeHeader,
             subHeader: texts.upgradeSubheader,
+        },
+        {
+            content: EventList,
+            icon: '',
+            header: texts.blockchainEvents,
         },
         // {
         //     content: <TransactionsView />,

@@ -1,14 +1,18 @@
 import React, { Component } from 'react'
-import FormBuilder, { findInput } from '../components/FormBuilder'
+// utils
 import { arrSort } from '../utils/utils'
-// services
+// components
+import DataTable from '../components/DataTable'
+import FormBuilder, { findInput } from '../components/FormBuilder'
+// modules
 import { historyLimit as chatHistoryLimit } from '../modules/chat/chat'
 import {
     getCurrencies,
     getSelected as getSelectedCurrency,
     setSelected as setSelectedCurrency
-} from '../services/currency'
+} from '../modules/currency/currency'
 import { limit as historyItemsLimit } from '../modules/history/history'
+// services
 import {
     getSelected as getSelectedLang,
     languages,
@@ -17,7 +21,6 @@ import {
 } from '../services/language'
 import { gridColumns } from '../services/window'
 import { confirm } from '../services/modal'
-import DataTable from '../components/DataTable'
 
 const [texts, textsCap] = translated({
     chatLimitLabel: 'chat message limit per conversation',
@@ -146,9 +149,9 @@ export default class SettingsForm extends Component {
         getCurrencies().then(currencies => {
             const options = currencies.map(c => ({
                 description: c.currency,
-                key: c.ISO,
-                text: c.nameInLanguage,
-                value: c.ISO,
+                key: c.currency,
+                text: c.name,
+                value: c.currency,
             }))
             currencyIn.options = arrSort(options, 'text')
             this.setState({ inputs })

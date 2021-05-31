@@ -1,19 +1,22 @@
 import React from 'react'
 import { Button, Icon } from 'semantic-ui-react'
 import { format } from '../../utils/time'
-import Balance from '../../components/Balance'
+// components
 import { ButtonGroup } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import Tags from '../../components/Tags'
+// services
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
 import { useRxSubject } from '../../services/react'
+// modules
+import { getCrowdsaleIdentity } from '../crowdsale/crowdsale'
 import { showLocations } from '../location/LocationsList'
 import { rxIdentities } from './identity'
 import IdentityDetailsForm from './IdentityDetailsForm'
 import IdentityForm from './IdentityForm'
 import IdentityShareForm from './IdentityShareForm'
-import { getCrowdsaleIdentity } from '../crowdsale/crowdsale'
+import Balance from './Balance'
 
 const textsCap = translated({
     actions: 'actions',
@@ -50,7 +53,7 @@ export default function IdentityList(props){
                         <div key={address} title={isCrowdsale ? textsCap.crowdsaleIdentity : ''}>
                             {isCrowdsale && (
                                 <Icon {...{
-                                    name: 'chess queen',
+                                    name: 'rocket',
                                     style: { color: 'gold' },
                                 }} />
                             )}
@@ -95,6 +98,7 @@ const getTableProps = () => ({
     columns: [
         {
             key: '_name',
+            sortKey: 'name',
             style: { minWidth: 150 },
             title: textsCap.name,
         },
@@ -102,12 +106,14 @@ const getTableProps = () => ({
             collapsing: true,
             draggable: false,
             key: '_balance',
+            sortable: false,
             textAlign: 'center',
             title: textsCap.txAllocations,
         },
         {
             key: '_tags',
             draggable: false, // individual tags are draggable
+            sortKey: 'tags',
             title: textsCap.tags
         },
         {
@@ -117,11 +123,11 @@ const getTableProps = () => ({
         },
         { collapsing: true, key: '_usageType', title: textsCap.usage },
         {
+            content: getActions,
             collapsing: true,
             draggable: false,
             textAlign: 'center',
             title: textsCap.actions,
-            content: getActions,
         }
     ],
     emptyMessage: { content: textsCap.emptyMessage },

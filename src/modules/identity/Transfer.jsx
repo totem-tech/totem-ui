@@ -1,24 +1,33 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { Button, Icon } from 'semantic-ui-react'
-import { ss58Decode } from '../utils/convert'
-import { getTxFee } from '../utils/polkadotHelper'
-import { arrSort, textEllipsis, deferred, isValidNumber } from '../utils/utils'
-import FormBuilder, { findInput, fillValues } from '../components/FormBuilder'
-import Balance from '../components/Balance'
-import Currency from '../components/Currency'
-import Text from '../components/Text'
-import PartnerForm from '../modules/partner/PartnerForm'
-import { get as getIdentity, rxIdentities, rxSelected } from '../modules/identity/identity'
-import { remove as removeNotif, setItemViewHandler } from '../modules/notification/notification'
-import { get as getPartner, getAddressName, rxPartners } from '../modules/partner/partner'
-import { getConnection, query, queueables } from '../services/blockchain'
-import { convertTo, currencyDefault, getCurrencies, rxSelected as rxSelectedCurrency } from '../services/currency'
-import { translated } from '../services/language'
-import { confirm, showForm } from '../services/modal'
-import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import { unsubscribe } from '../services/react'
+import { Icon } from 'semantic-ui-react'
+// utils
+import { ss58Decode } from '../../utils/convert'
+import { getTxFee } from '../../utils/polkadotHelper'
+import { arrSort, textEllipsis, deferred, isValidNumber } from '../../utils/utils'
+// components
+import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
+import Text from '../../components/Text'
+// services
+import { getConnection, query, queueables } from '../../services/blockchain'
+import { translated } from '../../services/language'
+import { confirm, showForm } from '../../services/modal'
+import { addToQueue, QUEUE_TYPES } from '../../services/queue'
+import { unsubscribe } from '../../services/react'
+// modules
+import Currency from '../currency/Currency'
+import {
+    convertTo,
+    currencyDefault,
+    getCurrencies,
+    rxSelected as rxSelectedCurrency,
+} from '../currency/currency'
+import { remove as removeNotif, setItemViewHandler } from '../notification/notification'
+import { get as getPartner, getAddressName, rxPartners } from '../partner/partner'
+import PartnerForm from '../partner/PartnerForm'
+import Balance from './Balance'
+import { get as getIdentity, rxIdentities, rxSelected } from './identity'
 
 const textsCap = translated({
     amount: 'amount',
@@ -213,31 +222,15 @@ export default class Transfer extends Component {
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
-    async componentWillMount() {
+    componentWillMount() {
         this._mounted = true
         this.subscriptions = {}
         const { inputs } = this.state
         const { values = {} } = this.props
         const fromIn = findInput(inputs, this.names.from)
         const toIn = findInput(inputs, this.names.to)
-        this.currencies = await getCurrencies()
         const currencyReceivedIn = findInput(inputs, this.names.currencyReceived)
         const currencySentIn = findInput(inputs, this.names.currencySent)
-        const options = arrSort(
-            this.currencies.map(({ currency, nameInLanguage, ISO }) => ({
-                description: (
-                    <span className='description' style={{ fontSize: '75%' }}>
-                        {nameInLanguage}
-                    </span>
-                ),
-                key: ISO,
-                text: currency,
-                value: ISO
-            })),
-            'text'
-        )
-        currencyReceivedIn.options = options
-        currencySentIn.options = options
         values[this.names.currencyReceived] = rxSelectedCurrency.value
         values[this.names.currencySent] = rxSelectedCurrency.value
         fillValues(inputs, values)
@@ -269,6 +262,23 @@ export default class Transfer extends Component {
                 'text'
             )
             this.setState({ inputs })
+        })
+
+        // set currency dropdown options
+        getCurrencies().then(currencies => {
+            this.currencies = currencies
+            const options = this.currencies.map(({ currency, name }) => ({
+                description: (
+                    <span className='description' style={{ fontSize: '75%' }}>
+                        {name}
+                    </span>
+                ),
+                key: currency,
+                text: currency,
+                value: currency,
+            }))
+            currencyReceivedIn.options = options
+            currencySentIn.options = options
         })
     }
 
@@ -379,11 +389,12 @@ export default class Transfer extends Component {
 
     handleCurrencyReceivedChange = deferred((_, values) => {
         if (!this.currencies) return
+
         const { inputs } = this.state
         const amountReceived = values[this.names.amountReceived]
         const currencyReceived = values[this.names.currencyReceived]
         const amountReceivedIn = findInput(inputs, this.names.amountReceived)
-        const currencyObj = this.currencies.find(x => x.ISO === currencyReceived) || {}
+        const currencyObj = this.currencies.find(x => x.currency === currencyReceived) || {}
         amountReceivedIn.decimals = parseInt(currencyObj.decimals || 0)
         this.setState({ inputs })
 

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Accordion, Button, Checkbox, Dropdown, Form, Icon, Input, TextArea } from 'semantic-ui-react'
 import PromisE from '../utils/PromisE'
-import { deferred, hasValue, isArr, isFn, isObj, isStr, objWithoutKeys, searchRanked, isBool, isPromise, isSubjectLike, isValidNumber } from '../utils/utils'
+import { deferred, hasValue, isArr, isFn, isObj, isStr, objWithoutKeys, searchRanked, isBool, isPromise, isSubjectLike, isValidNumber, className } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
 import Message from './Message'
 import Invertible from './Invertible'
@@ -71,7 +71,9 @@ export class FormInput extends Component {
 		const { defer } = props
 		this.state = { message: undefined }
 		this.value = undefined
-		this.setMessage = defer !== null ? deferred(this.setMessage, defer) : this.setMessage
+		this.setMessage = defer !== null
+			? deferred(this.setMessage, defer)
+			: this.setMessage
 
 		this.originalSetState = this.setState
 		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
@@ -80,9 +82,12 @@ export class FormInput extends Component {
 	componentWillMount() {
 		this._mounted = true
 		this.subscriptions = {}
-		const { rxOptions, rxOptionsModifier, rxValue } = this.props
+		const { rxOptions, rxOptionsModifier, rxValue, rxValueModifier } = this.props
 		if (isSubjectLike(rxValue)) {
 			this.subscriptions.rxValue = rxValue.subscribe(value => {
+				value = isFn(rxValueModifier)
+					? rxValueModifier(value)
+					: value
 				if (this.value === value) return
 				this.handleChange({ }, { ...this.props, value })
 			})
@@ -147,8 +152,14 @@ export class FormInput extends Component {
 					validatorConfig = { type: TYPES.date }
 					break
 				case 'number':
-					validatorConfig = { type: integer ? TYPES.integer : TYPES.number }
-					data.value = !data.value ? data.value : parseFloat(data.value)
+					validatorConfig = {
+						type: integer
+							? TYPES.integer
+							: TYPES.number
+					}
+					data.value = !data.value
+						? data.value
+						: parseFloat(data.value)
 					customMsgs.lengthMax = textsCap.maxLengthNum
 					customMsgs.lengthMin = textsCap.minLengthNum
 					break
@@ -179,7 +190,7 @@ export class FormInput extends Component {
 			isFn(onChange) && onChange(event, data, this.props)
 			this.value = data.value
 			rxValue && rxValue.next(data.value)
-			this.setMessage(message)
+			this.setMessage(data.invalid, message)
 		}
 		if (message || !isFn(validate)) return triggerChange()
 
@@ -212,11 +223,12 @@ export class FormInput extends Component {
 		)
 	}
 
-	setMessage = (message = {}) => this.setState({ message })
+	setMessage = (invalid, message = {}) => this.setState({ invalid, message })
 
 	render() {
 		const {
 			accordion,
+			containerProps,
 			content,
 			elementRef,
 			error,
@@ -224,7 +236,7 @@ export class FormInput extends Component {
 			ignoreAttributes,
 			inline,
 			inlineLabel,
-			invalid,
+			invalid: invalidP,
 			label,
 			labelDetails,
 			loading,
@@ -239,10 +251,12 @@ export class FormInput extends Component {
 		} = this.props
 		let useInput = useInputOrginal
 		const {
+			invalid: invalidS,
 			loading: loadingS,
 			message: internalMsg,
 			options,
 		} = this.state
+		const invalid = invalidP || invalidS 
 		const message = internalMsg || externalMsg
 		let hideLabel = false
 		let inputEl = ''
@@ -265,7 +279,10 @@ export class FormInput extends Component {
 
 		switch (typeLC) {
 			case 'button':
-				inputEl = <Button as='a' {...attrs} />
+				attrs.content = !isFn(content)
+					? content
+					: content(this.props)
+				inputEl = <Button {...{ as: 'a', ...attrs }} />
 				break
 			case 'checkbox':
 			case 'radio':
@@ -288,7 +305,7 @@ export class FormInput extends Component {
 			case 'date':
 			case 'dateinput': 
 				attrs.rxValue = rxValue
-				inputEl = <DateInput {...attrs} />
+				inputEl = <DateInput {...{ ...attrs, invalid }} />
 				break
 			case 'dropdown':
 				attrs.openOnFocus = isBool(attrs.openOnFocus)
@@ -297,11 +314,16 @@ export class FormInput extends Component {
 				attrs.disabled = attrs.disabled || attrs.readOnly
 				attrs.inline = inline
 				// if number of options is higher than 50 and if lazyLoad is disabled, can slowdown FormBuilder
-				attrs.lazyLoad = isBool(attrs.lazyLoad) ? attrs.lazyLoad : true
-				attrs.search = isArr(attrs.search) ? searchRanked(attrs.search) : attrs.search
+				attrs.lazyLoad = isBool(attrs.lazyLoad)
+					? attrs.lazyLoad
+					: true
+				attrs.search = isArr(attrs.search)
+					? searchRanked(attrs.search)
+					: attrs.search
 				attrs.style = { ...attrs.style }
 				attrs.options = !!options ? options : attrs.options
-				attrs.value = (rxValue ? rxValue.value : attrs.value) || (attrs.multiple ? [] : '')
+				attrs.value = (rxValue ? rxValue.value : attrs.value)
+					|| (attrs.multiple ? [] : '')
 				inputEl = <Dropdown {...attrs} />
 				break
 			case 'group':
@@ -315,8 +337,15 @@ export class FormInput extends Component {
 					<FormInput {...{
 						...childInput,
 						key: childInput.name,
-						styleContainer: { ...childContainerStyle, ...childInput.styleContainer },
-						width: childInput.width || (attrs.widths === 'equal' ? null : attrs.widths),
+						styleContainer: {
+							...childContainerStyle,
+							...childInput.styleContainer,
+						},
+						width: childInput.width || (
+							attrs.widths === 'equal'
+								? null
+								: attrs.widths
+						),
 					}} />
 				))
 				break
@@ -344,11 +373,18 @@ export class FormInput extends Component {
 
 		if (!isGroup) return (
 			<Form.Field {...{
-				error: (message && message.status === 'error') || !!error || !!invalid,
+				...containerProps,
+				error: ['dateinput', 'date'].includes(typeLC)
+					? false
+					: (message && message.status === 'error') || !!error || !!invalid,
 				required,
 				style: styleContainer,
-				title: editable ? undefined : textsCap.readOnlyField,
-				width: width === null ? undefined : width,
+				title: editable
+					? undefined
+					: textsCap.readOnlyField,
+				width: width === null
+					? undefined
+					: width,
 			}}>
 				{!hideLabel && label && [
 					<label htmlFor={name} key='label'>{label}</label>,
@@ -373,10 +409,10 @@ export class FormInput extends Component {
 					...attrs,
 					className: 'form-group',
 					...objWithoutKeys(attrs, ['inputs']),
-					style: {
-						...styleContainer,
-						...attrs.style,
-					},
+					// style: {
+					// 	...styleContainer,
+					// 	...attrs.style,
+					// },
 				}}>
 					{inputEl}
 				</Form.Group>
@@ -454,9 +490,15 @@ FormInput.propTypes = {
 	onChange: PropTypes.func,
 	placeholder: PropTypes.string,
 	readOnly: PropTypes.bool,
-	rxValue: PropTypes.shape({
-		subscribe: PropTypes.func.isRequired,
-	}),
+	// @rxValue	BehaviorSubject: (optional)only applications to input types that uses the `options` property
+	// On value change `options` will be updated
+	rxOptions: PropTypes.instanceOf(BehaviorSubject),
+	// @rxOptionsModifier function: (optional) allows value of rxOptions to be modified before being applied to input
+	rxOptionsModifier: PropTypes.func,
+	// @rxValue	BehaviorSubject: (optional) if supplied, rxValue and input value will be synced automatically
+	rxValue: PropTypes.instanceOf(BehaviorSubject),
+	// @rxValueModifier function: (optional) allows the value of rxValue to be modified before being applied to input
+	rxValueModifier: PropTypes.func,
 	// element ref
 	elementRef: PropTypes.any,
 	required: PropTypes.bool,

@@ -369,6 +369,8 @@ form.ui.form div.field > label {
 }
 /* Group inputs: remove extra padding */
 .ui.form .fields.form-group > .field > .field {
+	/* fix for secondary form input group */
+	margin-top: 0;
     padding: 0;
 }
 body.mobile .fields.form-group > .field:not(:last-child) {

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
-import Currency from '../../components/Currency'
-import { currencyDefault } from '../../services/currency'
+import Currency from '../currency/Currency'
+import { currencyDefault } from '../currency/currency'
 import { translated } from '../../services/language'
 import { iUseReducer, useRxSubject } from '../../services/react'
 import {
@@ -42,7 +42,7 @@ export default React.memo(() => {
                 _,
                 nextLevel,
                 nextMultiplier,
-            ] = await calculateToNextLevel('XTX', amtDepositedXTX)
+            ] = await calculateToNextLevel(currencyDefault, amtDepositedXTX)
 
             setState({ 
                 amtDepositedXTX,
