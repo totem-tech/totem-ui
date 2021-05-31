@@ -115,7 +115,7 @@ export default function AssetConverterForm(props) {
                             selectOnNavigation: false,
                             style: { maxHeight: 38 },
                             type: 'dropdown',
-                            value: (rxAmountFrom || {}).value
+                            value: (rxAmountFrom || {}).value,
                         },
                         {
                             label: labels.amountFrom,
