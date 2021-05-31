@@ -9,6 +9,7 @@ import { unsubscribe, useRxSubject } from "../../services/react"
 import { setToast } from '../../services/toast'
 import { rxSelected } from '../currency/currency'
 import AssetConverterForm from './AssetConverterForm'
+import Invertible from '../../components/Invertible'
 
 const textsCap = translated({
     addAsset: 'add asset',
@@ -164,6 +165,7 @@ export default function AssetsForm(props) {
                 {
                     name: inputNames.groupButtons,
                     type: 'group',
+                    unstackable: true,
                     inputs: [
                         {
                             hidden: true,
@@ -182,6 +184,7 @@ export default function AssetsForm(props) {
                             type: 'hidden',
                         },
                         {
+                            containerProps: { className: 'btn-subtract' },
                             content: textsCap.btnSubtract,
                             fluid: true,
                             name: inputNames.btnSubtract,
@@ -190,6 +193,7 @@ export default function AssetsForm(props) {
                             type: 'button',
                         },
                         {
+                            containerProps: { className: 'btn-add' },
                             content: textsCap.btnAdd,
                             fluid: true,
                             name: inputNames.btnAdd,
@@ -303,13 +307,14 @@ function newPortfolioGroup() {
                 width: 2,
                 content: (
                     <div className='action remove-asset'>
-                        <Button {...{
+                        <Invertible {...{
+                            El: Button,
                             as: 'div',
+                            basic: true,
                             circular: true,
                             className: 'no-margin',
                             content: <span>{textsCap.removeAsset}</span>,
                             icon: 'minus',
-                            negative: true,
                             onClick: () => {
                                 // ignore if only one line left
                                 if (rxPortfolioInputs.value.length <= 1) return
@@ -333,12 +338,13 @@ function newPortfolioGroup() {
                 width: 2,
                 content: (
                     <div className='action add-asset'>
-                        <Button {...{
+                        <Invertible {...{
+                            El: Button,
                             as: 'div',
+                            basic: true,
                             circular: true,
                             content: <span>{textsCap.addAsset}</span>,
                             icon: 'plus',
-                            positive: true,
                             onClick: () => rxPortfolioInputs.next(
                                 processLines([
                                     ...rxPortfolioInputs.value,

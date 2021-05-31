@@ -1,9 +1,11 @@
 /* put module specific custom styles here */
 .assets-form .portfolio {
-    margin: 0 10px;
+    margin-top: -5px;
+    padding: 0 10px;
     width: 75%
 }
 body.mobile .assets-form .portfolio {
+    margin-top: -20px;
     width: 100%
 }
 .assets-form .hide-on-desktop,
@@ -17,21 +19,21 @@ body:not(.mobile) .assets-form .portfolio-line .action .divider,
     display: none !important;
 }
 .assets-form .portfolio-line .action {
-    padding: 30px  5px 0 0;
+    padding: 27px  5px 0 5px;
 }
 body.mobile .assets-form .portfolio-line .action {
-    padding: 0 10px 5px;
+    padding: 0 10px 10px;
     text-align: center;
     width: 100%
 }
-body:not(.mobile) .action .button span {
+body:not(.mobile) .assets-form .action .button span {
     display: none;
 }
-body:not(.mobile) .action .icon {
+body:not(.mobile) .assets-form .action .icon {
     margin: 0 !important;
 }
-body:not(.mobile) .action .button {
-    padding: 14px;
+body:not(.mobile) .assets-form .action .button {
+    padding: 10px;
 }
 
 .assets-form .total-assets {
@@ -41,11 +43,29 @@ body:not(.mobile) .action .button {
     width: 50%;
 }
 .assets-form .total-form {
+    padding: 0 10px;
     width: 50%;
-    padding: 0 10px 0 25px;
 }
 body.mobile .assets-form .total-form,
 body.mobile .assets-form .total-assets {
     padding: 0 10px;
     width: 100%;
 }
+
+body.mobile .assets-form .sixteen.wide.field.btn-add,
+body.mobile .assets-form .sixteen.wide.field.btn-subtract {
+    display: inline-block;
+    width: 50% !important;
+}
+
+@media only screen and (min-width : 360px)  {
+    body.mobile .assets-form .portfolio .form-group > .field:not(:first-child) {
+        display: inline-block !important;
+        width: calc( 100% - 197px ) !important;
+    }
+
+    body.mobile .assets-form .portfolio .form-group > .field:last-child {
+        width: 197px !important;
+    }
+}
+

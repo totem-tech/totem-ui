@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Accordion, Button, Checkbox, Dropdown, Form, Icon, Input, TextArea } from 'semantic-ui-react'
 import PromisE from '../utils/PromisE'
-import { deferred, hasValue, isArr, isFn, isObj, isStr, objWithoutKeys, searchRanked, isBool, isPromise, isSubjectLike, isValidNumber } from '../utils/utils'
+import { deferred, hasValue, isArr, isFn, isObj, isStr, objWithoutKeys, searchRanked, isBool, isPromise, isSubjectLike, isValidNumber, className } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
 import Message from './Message'
 import Invertible from './Invertible'
@@ -228,6 +228,7 @@ export class FormInput extends Component {
 	render() {
 		const {
 			accordion,
+			containerProps,
 			content,
 			elementRef,
 			error,
@@ -313,11 +314,16 @@ export class FormInput extends Component {
 				attrs.disabled = attrs.disabled || attrs.readOnly
 				attrs.inline = inline
 				// if number of options is higher than 50 and if lazyLoad is disabled, can slowdown FormBuilder
-				attrs.lazyLoad = isBool(attrs.lazyLoad) ? attrs.lazyLoad : true
-				attrs.search = isArr(attrs.search) ? searchRanked(attrs.search) : attrs.search
+				attrs.lazyLoad = isBool(attrs.lazyLoad)
+					? attrs.lazyLoad
+					: true
+				attrs.search = isArr(attrs.search)
+					? searchRanked(attrs.search)
+					: attrs.search
 				attrs.style = { ...attrs.style }
 				attrs.options = !!options ? options : attrs.options
-				attrs.value = (rxValue ? rxValue.value : attrs.value) || (attrs.multiple ? [] : '')
+				attrs.value = (rxValue ? rxValue.value : attrs.value)
+					|| (attrs.multiple ? [] : '')
 				inputEl = <Dropdown {...attrs} />
 				break
 			case 'group':
@@ -331,8 +337,15 @@ export class FormInput extends Component {
 					<FormInput {...{
 						...childInput,
 						key: childInput.name,
-						styleContainer: { ...childContainerStyle, ...childInput.styleContainer },
-						width: childInput.width || (attrs.widths === 'equal' ? null : attrs.widths),
+						styleContainer: {
+							...childContainerStyle,
+							...childInput.styleContainer,
+						},
+						width: childInput.width || (
+							attrs.widths === 'equal'
+								? null
+								: attrs.widths
+						),
 					}} />
 				))
 				break
@@ -360,13 +373,18 @@ export class FormInput extends Component {
 
 		if (!isGroup) return (
 			<Form.Field {...{
+				...containerProps,
 				error: ['dateinput', 'date'].includes(typeLC)
 					? false
 					: (message && message.status === 'error') || !!error || !!invalid,
 				required,
 				style: styleContainer,
-				title: editable ? undefined : textsCap.readOnlyField,
-				width: width === null ? undefined : width,
+				title: editable
+					? undefined
+					: textsCap.readOnlyField,
+				width: width === null
+					? undefined
+					: width,
 			}}>
 				{!hideLabel && label && [
 					<label htmlFor={name} key='label'>{label}</label>,
@@ -391,10 +409,10 @@ export class FormInput extends Component {
 					...attrs,
 					className: 'form-group',
 					...objWithoutKeys(attrs, ['inputs']),
-					style: {
-						...styleContainer,
-						...attrs.style,
-					},
+					// style: {
+					// 	...styleContainer,
+					// 	...attrs.style,
+					// },
 				}}>
 					{inputEl}
 				</Form.Group>
