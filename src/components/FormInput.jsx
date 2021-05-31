@@ -35,6 +35,7 @@ const validationTypes = Object.values(TYPES)
 // properties exclude from being used in the DOM
 const NON_ATTRIBUTES = Object.freeze([
 	'collapsed',
+	'containerProps',
 	'defer',
 	'elementRef',
 	'groupValues',
