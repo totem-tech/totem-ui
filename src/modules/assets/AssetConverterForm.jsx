@@ -115,7 +115,7 @@ export default function AssetConverterForm(props) {
                             selectOnNavigation: false,
                             style: { maxHeight: 38 },
                             type: 'dropdown',
-                            value: (rxAmountFrom || {}).value
+                            value: (rxAmountFrom || {}).value,
                         },
                         {
                             label: labels.amountFrom,
@@ -132,10 +132,16 @@ export default function AssetConverterForm(props) {
                             rxValue: rxAmountTo,
                             type: 'text',
                         },
-                    ],
+                    ]
                 },
             ],
         }
+ 
+        const groupIn = findInput(state.inputs, inputNames.group)
+        groupIn.inputs = arrReverse(
+            groupIn.inputs,
+            !isMobile && reverseInputs,
+        )
         
         // set currency dropdown options
         !rxCurrencyOptions.value.length && getCurrencies()
@@ -151,12 +157,7 @@ export default function AssetConverterForm(props) {
 
         return state
     })
-    arrReverse(
-        findInput(state.inputs, inputNames.group).inputs,
-        !isMobile && reverseInputs,
-        false,
-    )
-
+    
     return <FormBuilder {...{ ...props, ...state }} />
 }
 AssetConverterForm.propTypes = {
