@@ -64,7 +64,7 @@ export default function AssetsForm(props) {
         const date = new Date(new Date() - 1000 * 60 * 60 * 24)
             .toISOString()
             .substr(0, 10)
-        const rxDate = new BehaviorSubject(date)
+        rxDate.next(date)
 
         const notImplemented = () => setToast('Feature not implemented yet!', 2000, 'not-implemented')
         const searchInput = {
