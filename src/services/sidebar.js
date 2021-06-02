@@ -278,7 +278,7 @@ export const sidebarItems = [
         // },
         content: AssetFormView,
         icon: 'money bill alternate outline',
-        name: 'referece-rates',
+        name: 'reference-rates',
         title: textsCap.refereceRates,
     },
     // {
