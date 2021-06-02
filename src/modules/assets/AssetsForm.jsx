@@ -110,10 +110,11 @@ export default function AssetsForm(props) {
                             years,
                             rxValue: rxDate,
                             onReset: () => {
-                                const { onChange } = props
-                                if (!isFn(onChange)) return
-                                formValues[inputNames.date] = undefined
-                                onChange({}, formValues)
+                                rxDate.next(undefined)
+                                // const { onChange } = props
+                                // if (!isFn(onChange)) return
+                                // formValues[inputNames.date] = undefined
+                                // onChange({}, formValues)
                             },
                             // only accept a date between 1999-01-01 and today
                             validate: (_, { value }) => {
@@ -242,8 +243,12 @@ export default function AssetsForm(props) {
             if (!lineItems.length) return
 
             const total = lineItems.reduce((sum, next) => sum + parseFloat(next), 0)
-            convertTo(total, rxAssetFrom.value, rxAssetFrom.value, null, [1, 1])
-            rxAmountFrom.next(`${total|| ''}`)
+            const [_, totalRounded] = await convertTo(
+                total,
+                rxAssetFrom.value,
+                rxAssetFrom.value,
+            )
+            rxAmountFrom.next(totalRounded)
         })
 
         // add first asset line item
