@@ -106,7 +106,6 @@ export default class SettingsForm extends Component {
         this.defaultNodeUrlChanged = !!nodeUrl && nodeUrl !== nodesDefault[0]
         const values = {}
         values[inputNames.nodeUrl] = nodeUrl
-        console.log({nodeUrl})
 
         this.state = {
             values,
