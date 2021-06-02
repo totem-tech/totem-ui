@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 // utils
-import { arrSort } from '../utils/utils'
+import { arrSort, deferred } from '../utils/utils'
 // components
 import DataTable from '../components/DataTable'
 import FormBuilder, { findInput } from '../components/FormBuilder'
@@ -21,6 +21,7 @@ import {
 } from '../services/language'
 import { gridColumns } from '../services/window'
 import { confirm } from '../services/modal'
+import { nodes, nodesDefault, setNodes } from '../services/blockchain'
 
 const [texts, textsCap] = translated({
     chatLimitLabel: 'chat message limit per conversation',
@@ -35,11 +36,24 @@ const [texts, textsCap] = translated({
     langConfirmCancelBtn: 'later',
     langConfirmHeader: 'page reload required',
     langConfirmOk: 'reload page',
+    nodeUrlCofirmHeader: 'are you sure?',
+    nodeUrlCofirmMsg: `
+    CAUTION: an invalid node URL will cause Blockchain connectivity to fail.
+    Page will be reloaded to apply the change.
+    
+    If you would like to revert to default node URL, remove it from the input field.
+    `,
+    nodeUrlCofirmBtn: 'Yes, proceed',
+    nodeUrlLabel: 'blockchain node URL',
+    nodeUrlReset: 'Revert to default Node URL',
     saved: 'saved',
     settings: 'settings',
     unlimited: 'unlimited',
 }, true)
-const savedMsg = { content: textsCap.saved, status: 'success' }
+const savedMsg = {
+    content: textsCap.saved,
+    status: 'success',
+}
 
 export const inputNames = {
     chatMsgLimit: 'chatMsgLimit',
@@ -48,15 +62,54 @@ export const inputNames = {
     historyLimit: 'historyLimit',
     kbShortcutsBtn: 'kbShortcutsBtn',
     languageCode: 'languageCode',
+    nodeUrl: 'nodeUrl',
 }
+
+export const showKeyboardShortcuts = () => confirm(
+    {
+        cancelButton: null,
+        confirmButton: null,
+        content: (
+                <DataTable {...{
+                    searchable: false,
+                    columns: [
+                        { key: 'key', title: 'Shortcut Key'},
+                        { key: 'action', title: 'Action'},
+                    ],
+                    data: [
+                        { key: 'SHIFT + C', action: 'Start new chat'},
+                        { key: 'SHIFT + S', action: 'Settings'},
+                        { key: 'SHIFT + T', action: 'Timekeeping form'},
+                        { key: 'C', action: 'Toggle chat bar visibility'},
+                        { key: 'K', action: 'Toggle keyboard shortcuts view'},
+                        { key: 'I', action: 'Toggle identity dropdown visibility'},
+                        { key: 'N', action: 'Toggle notification visibility'},
+                        { key: 'S', action: 'Toggle sidebar'},
+                ],
+                style: { margin: '-15px 0' },
+                }} />
+        ),
+        header: 'Keyboard shortcuts',
+        size: 'mini',
+    },
+    'shortcutKey-K',
+    { style: { padding: 0 }},
+)
 
 export default class SettingsForm extends Component {
     constructor(props) {
         super(props)
 
         this.timeoutIds = {}
+        this.defaultNodeUrl = nodesDefault[0]
+        const nodeUrl = nodes[0] || ''
+        this.defaultNodeUrlChanged = !!nodeUrl && nodeUrl !== nodesDefault[0]
+        const values = {}
+        values[inputNames.nodeUrl] = nodeUrl
+        console.log({nodeUrl})
 
         this.state = {
+            values,
             submitText: null,
             inputs: [
                 {
@@ -82,6 +135,7 @@ export default class SettingsForm extends Component {
                 },
                 {
                     label: textsCap.gsCurrencyLabel,
+                    lazyLoad: true,
                     name: inputNames.currency,
                     onChange: this.handleCurrencyChange,
                     options: [],
@@ -135,6 +189,13 @@ export default class SettingsForm extends Component {
                     value: gridColumns(),
                 },
                 {
+                    label: textsCap.nodeUrlLabel,
+                    name: inputNames.nodeUrl,
+                    onChange: deferred((_, values) => this.setState({ values }), 100),
+                    type: 'url',
+                    value: nodeUrl || this.defaultNodeUrl,
+                },
+                {
                     content: `${textsCap.kbShortcuts} (K)`,
                     icon: 'keyboard',
                     name: inputNames.kbShortcutsBtn,
@@ -164,27 +225,32 @@ export default class SettingsForm extends Component {
     componentWillMount = () => this._mounted = true
     componentWillUnmount = () => this._mounted = false
 
-    handleCurrencyChange = async (_, { currency }) => {
+    handleCurrencyChange = async (_, values) => {
+        const currency = values[inputNames.currency]
         await setSelectedCurrency(currency)
         this.setInputMessage('currency', savedMsg)
     }
 
-    handleChatLimitChange = (_, { chatMsgLimit }) => {
+    handleChatLimitChange = (_, values) => {
+        const chatMsgLimit = values[inputNames.chatMsgLimit]
         chatHistoryLimit(chatMsgLimit)
         this.setInputMessage('chatMsgLimit', savedMsg)
     }
 
-    handleGridCollumnsChange = (_, { gridCols }) => {
+    handleGridCollumnsChange = (_, values) => {
+        const gridCols = values[inputNames.gridCols]
         gridColumns(gridCols)
         this.setInputMessage('gridCols', savedMsg)
     }
 
-    handleHistoryLimitChange = (_, { historyLimit: limit }) => {
+    handleHistoryLimitChange = (_, values) => {
+        const limit = values[inputNames.historyLimit]
         historyItemsLimit(limit === textsCap.unlimited ? null : limit, true)
         this.setInputMessage('historyLimit', savedMsg)
     }
 
-    handleLanguageChange = (_, { languageCode }) => {
+    handleLanguageChange = (_, values) => {
+        const languageCode = values[inputNames.languageCode]
         this.setInputMessage('languageCode', savedMsg, 0)
         const changed = getSelectedLang() !== languageCode
         setSelectedLang(languageCode)
@@ -209,6 +275,28 @@ export default class SettingsForm extends Component {
         })
     }
 
+    handleNodeUrlSubmit = (reset = false) => {
+        const nodes = reset
+            ? []
+            : [
+                this.state
+                    .values[inputNames.nodeUrl]
+                    .trim()
+            ]
+        confirm({
+            confirmButton: {
+                content: textsCap.nodeUrlCofirmBtn,
+                negative: !reset,
+            },
+            content: reset
+                ? textsCap.nodeUrlReset
+                : textsCap.nodeUrlCofirmMsg,
+            header: textsCap.nodeUrlCofirmHeader,
+            onConfirm: () => setNodes(nodes),
+            size: 'mini',
+        })
+    }
+
     setInputMessage = (inputName, message, delay = 2000) => {
         const { inputs } = this.state
         const input = findInput(inputs, inputName)
@@ -222,7 +310,32 @@ export default class SettingsForm extends Component {
         }, delay)
     }
 
-    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
+    render = () => {
+        const { values } = this.state
+        const nodeUrl = values[inputNames.nodeUrl]
+        const input = findInput(this.state.inputs, inputNames.nodeUrl)
+        input.action = {
+            disabled: !nodeUrl || this.defaultNodeUrl === nodeUrl,
+            icon: 'check',
+            onClick: () => this.handleNodeUrlSubmit(),
+        }
+        input.inlineLabel = !this.defaultNodeUrlChanged
+            ? null 
+            : {
+                icon: {
+                    className: 'no-margin',
+                    name: 'reply',
+                },
+                title: textsCap.nodeUrlReset,
+                onClick: () => {
+                    const { values } = this.state
+                    values[inputNames.nodeUrl] = ''
+                    this.setState({ values })
+                    this.handleNodeUrlSubmit(true)
+                },
+            }
+        return <FormBuilder {...{ ...this.props, ...this.state }} />
+    }
 }
 SettingsForm.defaultProps = {
     closeOnDimmerClick: true,
@@ -232,51 +345,3 @@ SettingsForm.defaultProps = {
     // prevents multiple modal being open at the same time
     modalId: 'SettingsForm',
 }
-
-
-export const showKeyboardShortcuts = () => confirm(
-    {
-        cancelButton: null,
-        confirmButton: null,
-        content: (
-                <DataTable {...{
-                    searchable: false,
-                    columns: [
-                        { key: 'key', title: 'Shortcut Key'},
-                        { key: 'action', title: 'Action'},
-                    ],
-                    data: [
-                        { key: 'SHIFT + C', action: 'Start new chat'},
-                        { key: 'SHIFT + S', action: 'Settings'},
-                        { key: 'SHIFT + T', action: 'Timekeeping form'},
-                        { key: 'C', action: 'Toggle chat bar visibility'},
-                        { key: 'K', action: 'Toggle keyboard shortcuts view'},
-                        { key: 'I', action: 'Toggle identity dropdown visibility'},
-                        { key: 'N', action: 'Toggle notification visibility'},
-                        { key: 'S', action: 'Toggle sidebar'},
-                ],
-                style: {margin: '-15px 0'}
-                }} />
-        ),
-        header: 'Keyboard shortcuts',
-        size: 'mini',
-    },
-    'shortcutKey-K',
-    { style: { padding: 0 }},
-)
-
-/*
-
-
-        <div>
-            SHIFT + C => Start new chat<br />
-            SHIFT + S => Settings<br />
-            SHIFT + T => Timekeeping form<br />
-            C => Toggle chat bar visibility<br />
-            K => Toggle keyboard shortcuts view<br />
-            I => Toggle identity dropdown visibility<br />
-            N => Toggle notification visibility<br />
-            S => Toggle sidebar<br />
-
-        </div>
-        */
