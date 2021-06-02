@@ -25,6 +25,34 @@ const daysTranslated = [
     textsCap.friday,
     textsCap.saturday,
 ]
+const Dropdown = React.memo(DD)
+const days = new Array(31)
+    .fill(0)
+    .map((_, i) => i + 1)
+const months = new Array(12)
+    .fill(0)
+    .map((_, i) => i + 1)
+const currentYear = new Date()
+    .getFullYear()
+const years = new Array(100)
+    .fill(0)
+    .map((_, i) => [currentYear + i, currentYear - i - 1])
+    .flat()
+    .sort()
+    .reverse()
+
+const triggerChange = (e, props, valueArr, setValue) => {
+    const { onChange } = props
+    const dateStr = valueArr.slice(0, 3).join('-')
+    const invalid = dateStr.length < 10
+        ? undefined
+        : !isValidDate(dateStr)
+    valueArr[3] = invalid
+    setValue(valueArr)
+    if (!isFn(onChange) || valueArr.filter(Boolean).length < 3) return
+
+    onChange(e, {...props, value: dateStr, invalid})
+}
 
 export default function DateInput(props) {
     const {
@@ -36,6 +64,7 @@ export default function DateInput(props) {
         fluidOnMobile = true,
         onReset,
         rxValue,
+        years,
         value,
     } = props
     const isMobile = !fluidOnMobile
@@ -167,6 +196,7 @@ DateInput.propTypes = {
     rxValue: PropTypes.instanceOf(BehaviorSubject),
     // triggered on date reset.
     onReset: PropTypes.func,
+    years: PropTypes.arrayOf(PropTypes.number),
     // date value string in the following format: YYYY-DD-MM
     value: PropTypes.string,
 }
@@ -175,6 +205,7 @@ DateInput.defaultProps = {
     icon: { name: 'dropdown' },
     ignoreAttributes: [
         'clearable',
+        'years',
         'dropdownProps',
         'icon',
         'ignoreAttributes',
@@ -184,35 +215,9 @@ DateInput.defaultProps = {
     ],
     style: {
         whiteSpace: 'nowrap',
-    }
+    },
+    years,
 }
-const triggerChange = (e, props, valueArr, setValue) => {
-    const { onChange } = props
-    const dateStr = valueArr.slice(0, 3).join('-')
-    const invalid = dateStr.length < 10
-        ? undefined
-        : !isValidDate(dateStr)
-    valueArr[3] = invalid
-    setValue(valueArr)
-    if (!isFn(onChange) || valueArr.filter(Boolean).length < 3) return
-
-    onChange(e, {...props, value: dateStr, invalid})
-}
-const Dropdown = React.memo(DD)
-const days = new Array(31)
-    .fill(0)
-    .map((_, i) => i + 1)
-const months = new Array(12)
-    .fill(0)
-    .map((_, i) => i + 1)
-const currentYear = new Date()
-    .getFullYear()
-const years = new Array(100)
-    .fill(0)
-    .map((_, i) => [currentYear + i, currentYear - i - 1])
-    .flat()
-    .sort()
-    .reverse()
 
 // const demoFormProps = {
 //     header: 'Demoing DateInput',
