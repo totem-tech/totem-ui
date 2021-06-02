@@ -28,8 +28,8 @@ const textsCap = translated({
 	minLengthText: 'minimum number of characters required',
 	number: 'please enter a valid number',
 	required: 'required field',
-
 	readOnlyField: 'read only field',
+	url: 'invalid URL'
 }, true)[1]
 const validationTypes = Object.values(TYPES)
 // properties exclude from being used in the DOM

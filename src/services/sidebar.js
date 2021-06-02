@@ -27,7 +27,7 @@ import storage from './storage'
 import { getUrlParam, MOBILE, rxLayout, setClass } from './window'
 
 const textsCap = translated({
-    exchangeRates: 'exchange rates',
+    refereceRates: 'Referece Rates',
 
     crowdsaleTitle: 'crowdsale',
 
@@ -68,7 +68,7 @@ const textsCap = translated({
     partnersTitle: 'partners',
     partnersHeader: 'Partner Contact List',
     partnersSubheader: 'Manage suppliers, customers, and any other party that you have contact with in Totem.',
-    partnersSubheaderDetails1: `In Totem, a partner is anyone that you intend to interact with.`,
+    partnersSubheaderDetails1: 'In Totem, a partner is anyone that you intend to interact with.',
     partnersSubheaderDetails2: `
         Each partner has one or more identities that they can share with you. 
         The best way to get someone\'s identity is to request it, which you can do using the request button.
@@ -278,8 +278,8 @@ export const sidebarItems = [
         // },
         content: AssetFormView,
         icon: 'money bill alternate outline',
-        name: 'exchange-rates',
-        title: textsCap.exchangeRates,
+        name: 'referece-rates',
+        title: textsCap.refereceRates,
     },
     // {
     //     icon: 'file alternate',
