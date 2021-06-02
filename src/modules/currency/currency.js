@@ -103,16 +103,22 @@ export const convertTo = async (amount = 0, from, to, decimals, dateOrROE) => {
 
 const fetchCurrencies = async (cached = rwCache().currencies) => {
     const hash = generateHash(cached)
+
     let currencies = await client.currencyList.promise(hash)
+
     // currencies list is the same as in the server => use cached
-    if (currencies.length === 0) return cached
+    if (!currencies || currencies.length === 0) return cached
 
     // sort by ticker
     currencies = arrSort(currencies, 'ticker')
 
+    // save to cache storage
     rwCache('currencies', currencies)
+
+    // save timestamp to auto update if application is open for long period of time
     lastUpdated = new Date()
     console.log('Currency list updated', currencies)
+
     return currencies
 }
 

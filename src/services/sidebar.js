@@ -1,10 +1,9 @@
-import React, { useState } from 'react'
+import React from 'react'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
 import { BehaviorSubject } from 'rxjs'
-import { FormInput } from '../components/FormInput'
 // Views (including lists and forms)
-import CurrencyList from '../modules/currency/CurrencyList'
+import AssetFormView from '../modules/assets/AssetsFormView'
 import FinancialStatementsView from '../modules/financialStatement/FinancialStatementView'
 import GettingStarted from '../views/GettingStartedView'
 import HistoryList from '../modules/history/HistoryList'
@@ -21,15 +20,14 @@ import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
 // import CrowdsaleView from '../modules/crowdsale/Crowdsale'
 // utils
 import DataStorage from '../utils/DataStorage'
-import { isBool, isBond, isDate } from '../utils/utils'
+import { isBool, isBond } from '../utils/utils'
 // services
 import { translated } from './language'
 import storage from './storage'
 import { getUrlParam, MOBILE, rxLayout, setClass } from './window'
-import AssetFormView from '../modules/assets/AssetsFormView'
 
 const textsCap = translated({
-    currenciesTitle: 'exchange rates',
+    refereceRates: 'Referece Rates',
 
     crowdsaleTitle: 'crowdsale',
 
@@ -70,7 +68,7 @@ const textsCap = translated({
     partnersTitle: 'partners',
     partnersHeader: 'Partner Contact List',
     partnersSubheader: 'Manage suppliers, customers, and any other party that you have contact with in Totem.',
-    partnersSubheaderDetails1: `In Totem, a partner is anyone that you intend to interact with.`,
+    partnersSubheaderDetails1: 'In Totem, a partner is anyone that you intend to interact with.',
     partnersSubheaderDetails2: `
         Each partner has one or more identities that they can share with you. 
         The best way to get someone\'s identity is to request it, which you can do using the request button.
@@ -280,8 +278,8 @@ export const sidebarItems = [
         // },
         content: AssetFormView,
         icon: 'money bill alternate outline',
-        name: 'currencies',
-        title: textsCap.currenciesTitle,
+        name: 'referece-rates',
+        title: textsCap.refereceRates,
     },
     // {
     //     icon: 'file alternate',

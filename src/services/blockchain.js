@@ -59,11 +59,12 @@ export const hashTypes = {
     /// 8000
     /// 9000
 }
-export const nodes = [
-    //'wss://rpc.polkadot.io',
-    // 'ws://localhost:9944'
+export const nodesDefault = [
     'wss://node1.totem.live',
+    // 'wss://127.0.0.1:1618',
+    // 'ws://localhost:9944',
 ]
+export const nodes = (storage.settings.module(MODULE_KEY) || {}).nodes || nodesDefault
 setDefaultConfig(
     nodes,
     types,
@@ -79,10 +80,11 @@ setDefaultConfig(
 
 export const getConfig = () => config
 export const getConnection = async (create = false) => {
+
     // never connect to blockchain
     if (window.isInIFrame) return await (new Promise(() => { }))
     try {
-        let isConnected = !connection.api ? false : connection.api._isConnected.value
+        let isConnected = !!connection.api && connection.api._isConnected.value
         if (isConnected) return connection
         if (!navigator.onLine && !create && (!connectPromise || !connectPromise.pending)) {
             // working offline. wait for connection to be re-established
@@ -253,10 +255,31 @@ export const queueables = {
  */
 export const randomHex = address => generateHash(`${address}${uuid.v1()}`)
 
-// Replace configs
+// Replace config
 export const setConfig = newConfig => {
     config = { ...config, ...newConfig }
     storage.settings.module(MODULE_KEY, { config })
+
+    return config
+}
+
+/**
+ * @name    setNodes 
+ * @summary set blockchain node URLs
+ * 
+ * @param   {Array} nodes   use empty array to remove all custom nodes
+ *                          use null to retrieve saved custom Node URL
+ */
+export const setNodes = nodes => {
+    if (!isArr(nodes)) return storage.settings.module(MODULE_KEY).nodes
+    nodes = nodes.filter(Boolean)
+
+    if (!nodes.length) {
+        // remove custom URLs
+        nodes = null
+    }
+    storage.settings.module(MODULE_KEY, { nodes })
+    window.location.reload(true)
 }
 
 export default {

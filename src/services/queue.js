@@ -9,7 +9,7 @@ import { getTxFee, signAndSend } from '../utils/polkadotHelper'
 import { isArr, isFn, isObj, isStr, objClean, isValidNumber, isError } from '../utils/utils'
 // services
 // keep the `client` variable as it will be used the `handleChatClient` function
-import client, { rxIsConnected } from '../modules/chat/ChatClient'
+import _client, { rxIsConnected } from '../modules/chat/ChatClient'
 import { getConnection, query, getCurrentBlock } from './blockchain'
 import { save as addToHistory } from '../modules/history/history'
 import { find as findIdentity, getSelected } from '../modules/identity/identity'
@@ -376,7 +376,8 @@ const handleChatClient = async (id, rootTask, task, toastId) => {
             console.log('Queue task execution suspended due to being offline. ID:', id)
             return
         }
-        // just make sure client variable isn't removed by accident
+        // to make sure `client` variable isn't renamed when compiled
+        const client = _client
         eval(client)
         let func = task.func
         func = (func.startsWith('client.') ? '' : 'client.') + func
