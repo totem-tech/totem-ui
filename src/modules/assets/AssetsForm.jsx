@@ -7,7 +7,7 @@ import { randomHex } from '../../services/blockchain'
 import { translated } from '../../services/language'
 import { unsubscribe, useRxSubject } from "../../services/react"
 import { setToast } from '../../services/toast'
-import { rxSelected } from '../currency/currency'
+import { convertTo, rxSelected } from '../currency/currency'
 import AssetConverterForm from './AssetConverterForm'
 import Invertible from '../../components/Invertible'
 
@@ -161,10 +161,10 @@ export default function AssetsForm(props) {
                                     labels: { asset: textsCap.labelFE },
                                     inputsHidden: ['amountFrom'],
                                     rxDate,
-                                    rxAmountFrom: rxAmountFrom,
-                                    // rxAmountTo: rxAmountFrom,
+                                    // rxAmountFrom: rxAmountFrom,
+                                    rxAmountTo: rxAmountFrom,
                                     rxAssetFrom,
-                                    rxAssetTo: rxAssetFrom,
+                                    // rxAssetTo: rxAssetFrom,
                                     reverseInputs: true,
                                 }} />
                             ),
@@ -231,7 +231,7 @@ export default function AssetsForm(props) {
         let mounted = true
         // update total amount automatically
         const subscriptions = {}
-        subscriptions.inputs = rxPortfolioValues.subscribe(values => {
+        subscriptions.inputs = rxPortfolioValues.subscribe(async (values) => {
             if (!mounted) return
             const lineItems = Object.keys(values)
                 .filter(name =>
@@ -241,7 +241,8 @@ export default function AssetsForm(props) {
                 .map(key => values[key].amountTo)
             if (!lineItems.length) return
 
-            const total = lineItems.reduce((sum, next) => sum + parseFloat(next), 0)        
+            const total = lineItems.reduce((sum, next) => sum + parseFloat(next), 0)
+            convertTo(total, rxAssetFrom.value, rxAssetFrom.value, null, [1, 1])
             rxAmountFrom.next(`${total|| ''}`)
         })
 
