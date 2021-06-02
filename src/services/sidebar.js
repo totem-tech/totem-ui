@@ -1,10 +1,9 @@
-import React, { useState } from 'react'
+import React from 'react'
 import uuid from 'uuid'
 import { Bond } from 'oo7'
 import { BehaviorSubject } from 'rxjs'
-import { FormInput } from '../components/FormInput'
 // Views (including lists and forms)
-import CurrencyList from '../modules/currency/CurrencyList'
+import AssetFormView from '../modules/assets/AssetsFormView'
 import FinancialStatementsView from '../modules/financialStatement/FinancialStatementView'
 import GettingStarted from '../views/GettingStartedView'
 import HistoryList from '../modules/history/HistoryList'
@@ -21,15 +20,14 @@ import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
 // import CrowdsaleView from '../modules/crowdsale/Crowdsale'
 // utils
 import DataStorage from '../utils/DataStorage'
-import { isBool, isBond, isDate } from '../utils/utils'
+import { isBool, isBond } from '../utils/utils'
 // services
 import { translated } from './language'
 import storage from './storage'
 import { getUrlParam, MOBILE, rxLayout, setClass } from './window'
-import AssetFormView from '../modules/assets/AssetsFormView'
 
 const textsCap = translated({
-    currenciesTitle: 'exchange rates',
+    exchangeRates: 'exchange rates',
 
     crowdsaleTitle: 'crowdsale',
 
@@ -280,8 +278,8 @@ export const sidebarItems = [
         // },
         content: AssetFormView,
         icon: 'money bill alternate outline',
-        name: 'currencies',
-        title: textsCap.currenciesTitle,
+        name: 'exchange-rates',
+        title: textsCap.exchangeRates,
     },
     // {
     //     icon: 'file alternate',

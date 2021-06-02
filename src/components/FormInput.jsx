@@ -1,9 +1,9 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, Subject } from 'rxjs'
 import { Accordion, Button, Checkbox, Dropdown, Form, Icon, Input, TextArea } from 'semantic-ui-react'
 import PromisE from '../utils/PromisE'
-import { deferred, hasValue, isArr, isFn, isObj, isStr, objWithoutKeys, searchRanked, isBool, isPromise, isSubjectLike, isValidNumber, className } from '../utils/utils'
+import { deferred, hasValue, isArr, isFn, isObj, isStr, objWithoutKeys, searchRanked, isBool, isPromise, isSubjectLike } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
 import Message from './Message'
 import Invertible from './Invertible'
@@ -493,7 +493,10 @@ FormInput.propTypes = {
 	readOnly: PropTypes.bool,
 	// @rxValue	BehaviorSubject: (optional)only applications to input types that uses the `options` property
 	// On value change `options` will be updated
-	rxOptions: PropTypes.instanceOf(BehaviorSubject),
+	rxOptions: PropTypes.oneOfType([
+		PropTypes.instanceOf(BehaviorSubject),
+		PropTypes.instanceOf(Subject),
+	]),
 	// @rxOptionsModifier function: (optional) allows value of rxOptions to be modified before being applied to input
 	rxOptionsModifier: PropTypes.func,
 	// @rxValue	BehaviorSubject: (optional) if supplied, rxValue and input value will be synced automatically
