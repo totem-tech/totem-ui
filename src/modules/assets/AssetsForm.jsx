@@ -52,7 +52,20 @@ const lineIdPrefix = 'lineId-'
 
 export default function AssetsForm(props) {
     const [portfolioInputs] = useRxSubject(rxPortfolioInputs)
+    
     const [state] = useState(() => {
+        let formValues = {}
+        const startYear = 2009
+        const currentYear = new Date().getFullYear()
+        const years = new Array(currentYear - startYear + 1)
+            .fill(0)
+            .map((_, i) => startYear + i)
+            .reverse()
+        const date = new Date(new Date() - 1000 * 60 * 60 * 24)
+            .toISOString()
+            .substr(0, 10)
+        const rxDate = new BehaviorSubject(date)
+
         const notImplemented = () => setToast('Feature not implemented yet!', 2000, 'not-implemented')
         const searchInput = {
             name: inputNames.keywords,
@@ -74,7 +87,6 @@ export default function AssetsForm(props) {
             type: 'hidden',
             width: 4,
         })
-        let formValues = {}
         return {
             formProps: { className: 'assets-form' },
             submitText: null,
@@ -92,12 +104,11 @@ export default function AssetsForm(props) {
                             name: inputNames.date,
                             // onChange: () => rxShowList.next(true),
                             rxValue: rxDate,
-                            dropdownProps: {
-                                selectOnBlur: true,
-                                selectOnNavigation: false,
-                            },
+                            dropdownProps: { selectOnNavigation: false },
                             type: 'date',
                             width: 4,
+                            years,
+                            rxValue: rxDate,
                             onReset: () => {
                                 const { onChange } = props
                                 if (!isFn(onChange)) return
@@ -150,8 +161,8 @@ export default function AssetsForm(props) {
                                     labels: { asset: textsCap.labelFE },
                                     inputsHidden: ['amountFrom'],
                                     rxDate,
-                                    // rxAmountFrom,
-                                    rxAmountTo: rxAmountFrom,
+                                    rxAmountFrom: rxAmountFrom,
+                                    // rxAmountTo: rxAmountFrom,
                                     rxAssetFrom,
                                     rxAssetTo: rxAssetFrom,
                                     reverseInputs: true,
