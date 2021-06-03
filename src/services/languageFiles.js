@@ -38,7 +38,6 @@ export default [
     "./src/modules/activity/ActivityTeamList.jsx",
     "./src/modules/activity/activity.js",
     "./src/modules/assets/AssetConverterForm.jsx",
-    "./src/modules/assets/AssetsForm copy.jsx",
     "./src/modules/assets/AssetsForm.jsx",
     "./src/modules/assets/AssetsFormView.jsx",
     "./src/modules/chat/ChatBar.jsx",
