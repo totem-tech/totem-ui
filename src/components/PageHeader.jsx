@@ -35,11 +35,11 @@ const textsCap = translated({
 	addressCopied: 'your identity copied to clipboard',
 	changeCurrency: 'change display currency',
 	copyAddress: 'copy my identity',
-	darkModeOn: 'enable dark mode',
-	darkModeOff: 'disable dark mode',
+	darkModeOn: 'theme: light',
+	darkModeOff: 'theme: dark',
 	faucetRequest: 'faucet request',
 	faucetRequestDetails: 'requested transaction allocations',
-	requestFunds: 'request Funds',
+	requestFunds: 'request funds',
 	updateIdentity: 'update identity',
 }, true)[1]
 let copiedMsgId
@@ -190,7 +190,7 @@ const PageHeaderView = props => {
 								onClick: onCopy,
 							},
 							{
-								icon: inverted ? 'moon outline' : 'moon',
+								icon: !inverted ? 'moon outline' : 'moon',
 								content: inverted ? textsCap.darkModeOff : textsCap.darkModeOn,
 								onClick: () => rxInverted.next(!inverted)
 							},
