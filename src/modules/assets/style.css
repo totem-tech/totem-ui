@@ -1,6 +1,6 @@
 .assets-form {
-    max-width: 100%;
-    overflow-x: auto;
+    /* max-width: 100%; */
+    /* overflow-x: auto; */
 }
 .assets-form .button {
     white-space: nowrap;
@@ -17,7 +17,6 @@ body:not(.mobile) .assets-form .portfolio {
 body.mobile .assets-form .portfolio {
     margin-top: -20px;
     width: 100%;
-    /* min-width: 80%; */
 }
 .assets-form .hide-on-desktop,
 body.mobile .assets-form .hide-on-mobile {
