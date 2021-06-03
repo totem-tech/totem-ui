@@ -1,12 +1,23 @@
-/* put module specific custom styles here */
+.assets-form {
+    max-width: 100%;
+    overflow-x: auto;
+}
+.assets-form .button {
+    white-space: nowrap;
+}
+
 .assets-form .portfolio {
     margin-top: -5px;
     padding: 0 10px;
     width: 75%
 }
+body:not(.mobile) .assets-form .portfolio {
+    min-width: 550px;
+}
 body.mobile .assets-form .portfolio {
     margin-top: -20px;
-    width: 100%
+    width: 100%;
+    /* min-width: 80%; */
 }
 .assets-form .hide-on-desktop,
 body.mobile .assets-form .hide-on-mobile {
@@ -18,10 +29,14 @@ body:not(.mobile) .assets-form .portfolio-line .action .divider,
 .assets-form .portfolio-line:not(:last-child) .add-asset { 
     display: none !important;
 }
+.assets-form .portfolio-line {
+    display: block;
+}
 .assets-form .portfolio-line .action {
     padding: 27px  5px 0 5px;
 }
 body.mobile .assets-form .portfolio-line .action {
+    display: inline-block;
     padding: 0 10px 10px;
     text-align: center;
     width: 100%

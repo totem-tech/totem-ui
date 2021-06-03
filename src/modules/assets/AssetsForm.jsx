@@ -12,11 +12,11 @@ import AssetConverterForm from './AssetConverterForm'
 import Invertible from '../../components/Invertible'
 
 const textsCap = translated({
-    addAsset: 'add asset',
+    addAsset: 'add',
     btnSubtract: 'subtract all',
     btnAdd: 'add all to folio',
     labelFE: 'Selection Functional Currency',
-    removeAsset: 'remove asset',
+    removeAsset: 'remove',
     searchAssets: 'search assets',
     tableHide: 'Hide Rates Table',
     tableShow: 'Show Rates Table',
@@ -72,6 +72,7 @@ export default function AssetsForm(props) {
             // forces table to be visible on search change
             onChange: () => rxShowList.next(true),
             placeholder: textsCap.searchAssets,
+            style: { minWidth: 120 },
             type: 'search',
         }
         const listToggle = {

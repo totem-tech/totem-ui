@@ -123,6 +123,7 @@ export default function AssetConverterForm(props) {
                             min: 0,
                             placeholder: textsCap.amountFromPlaceholder,
                             rxValue: rxAmountFrom,
+                            style: { minWidth: 135 },
                             type: 'number',
                         },
                         {
@@ -130,6 +131,7 @@ export default function AssetConverterForm(props) {
                             name: inputNames.amountTo,
                             readOnly: true,
                             rxValue: rxAmountTo,
+                            style: { minWidth: 170 },
                             type: 'text',
                         },
                     ]
