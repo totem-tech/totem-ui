@@ -141,7 +141,7 @@ export default function GetingStarted() {
 				description: texts.step2Description,
 				onClick: handleRegister,
 				title: isRegistered
-					? `${texts.step2Title2}: @${getUser().id}`
+					? `${texts.step2Title2}: @${(getUser() || {}).id}`
 					: texts.step2Title,
 			},
 			{
@@ -321,7 +321,7 @@ export const getReferralURL = () => location.protocol
 	+ '//'
 	+ location.hostname
 	+ (location.port ? ':' + location.port : '')
-	+ '?ref=' + getUser().id
+	+ '?ref=' + (getUser() || {}).id
 
 const handleBackup = () => confirm({
 	confirmButton: textsCap.backupNow,
