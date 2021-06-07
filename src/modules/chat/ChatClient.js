@@ -34,6 +34,7 @@ if (rw().history) rw({ history: null })
 // retrieves user credentails from local storage
 export const getUser = () => rw().user
 export const setUser = (user = {}) => rw({ user })
+console.log({ user: getUser() })
 /**
  * @name    referralCode
  * @summary get/set referral code to LocalStorage
@@ -57,7 +58,7 @@ export const referralCode = code => {
 
 // Returns a singleton instance of the websocket client
 // Instantiates the client if not already done
-export const getClient = (instance) => {
+export const getClient = () => {
     if (instance) return instance
     // automatically login to messaging service
     const { id, secret } = getUser() || {}
