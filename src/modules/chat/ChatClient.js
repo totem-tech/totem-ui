@@ -237,7 +237,7 @@ export class ChatClient {
         )
 
         // Request funds
-        this.faucetRequest = (address, cb) => isFn(cb) && socket.emit('faucet-request', address, cb)
+        // this.faucetRequest = (address, cb) => isFn(cb) && socket.emit('faucet-request', address, cb)
 
         // Check if User ID Exists
         this.idExists = (userId, cb) => isFn(cb) && socket.emit('id-exists', userId, cb)
