@@ -40,8 +40,8 @@ const texts = translated({
 		You are about to replace application data with the JSON file. 
 		This is potentially dangerous and you can lose your identity, chat User ID and other data.
 	`,
-	faucetRequest: 'Faucet request',
-	faucetRequestDetails: 'Transaction allocations to get you started',
+	// faucetRequest: 'Faucet request',
+	// faucetRequestDetails: 'Transaction allocations to get you started',
 	newsletterSignup: 'Signup For Announcements',
 	registrationSuccess: `
 		Registration successful! You will shortly receive an allocation of transactions to get you started.
@@ -355,15 +355,17 @@ const handleRegister = () => showForm(RegistrationForm, {
 	closeOnSubmit: true,
 	silent: false,
 	onSubmit: ok => {
-		if (!ok) return
-		setToast({ content: texts.registrationSuccess, status: 'success' })
-		addToQueue({
-			type: QUEUE_TYPES.CHATCLIENT,
-			func: 'faucetRequest',
-			title: texts.faucetRequest,
-			description: texts.faucetRequestDetails,
-			args: [getSelected().address]
+		ok && setToast({
+			content: texts.registrationSuccess,
+			status: 'success',
 		})
+		// addToQueue({
+		// 	type: QUEUE_TYPES.CHATCLIENT,
+		// 	func: 'faucetRequest',
+		// 	title: texts.faucetRequest,
+		// 	description: texts.faucetRequestDetails,
+		// 	args: [getSelected().address]
+		// })
 	}
 })
 

@@ -512,12 +512,14 @@ export class ChatClient {
      * 
      * @param   {String}    id          new user ID
      * @param   {String}    secret
+     * @param   {String}    address     Blockchain identity
      * @param   {String}    referredBy  (optional) referrer user ID
      * @param   {Function}  cb 
      */
-    register = (id, secret, referredBy, cb) => isFn(cb) && socket.emit('register',
+    register = (id, secret, address, referredBy, cb) => isFn(cb) && socket.emit('register',
         id,
         secret,
+        address,
         referredBy,
         err => {
             if (!err) {

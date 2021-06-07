@@ -8,6 +8,7 @@ import { translated } from '../../services/language'
 import { useRxSubject } from '../../services/react'
 import { registerStepIndex, setActiveStep } from '../../views/GettingStartedView'
 import client, { referralCode, rxIsRegistered } from './ChatClient'
+import { rxSelected } from '../identity/identity'
 
 const textsCap = translated({
     alreadyRegistered: 'you have already registered!',
@@ -140,15 +141,20 @@ const handleSubmit = (props, setState) => (_, values) => {
     const referredBy = values[inputNames.referredBy]
     const redirectTo = values[inputNames.redirectTo]
     const secret = uuid.v1()
+    const address = rxSelected.value
 
     setState({ submitInProgress: true })
-    client.register(userId, secret, referredBy, err => {
+    client.register(userId, secret, address, referredBy, err => {
         const success = !err
         const message = {
             content: err,
-            header: success ? textsCap.registrationComplete : textsCap.registrationFailed,
+            header: success
+                ? textsCap.registrationComplete
+                : textsCap.registrationFailed,
             icon: true,
-            status: success ? 'success' : 'error'
+            status: success
+                ? 'success'
+                : 'error'
         }
         setState({
             message,
