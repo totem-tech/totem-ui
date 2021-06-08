@@ -34,7 +34,6 @@ if (rw().history) rw({ history: null })
 // retrieves user credentails from local storage
 export const getUser = () => rw().user
 export const setUser = (user = {}) => rw({ user })
-console.log({ user: getUser() })
 /**
  * @name    referralCode
  * @summary get/set referral code to LocalStorage
