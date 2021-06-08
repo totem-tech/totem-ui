@@ -37,8 +37,8 @@ const textsCap = translated({
 	copyAddress: 'copy my identity',
 	darkModeOn: 'theme: light',
 	darkModeOff: 'theme: dark',
-	faucetRequest: 'faucet request',
-	faucetRequestDetails: 'requested transaction allocations',
+	// faucetRequest: 'faucet request',
+	// faucetRequestDetails: 'requested transaction allocations',
 	requestFunds: 'request funds',
 	updateIdentity: 'update identity',
 }, true)[1]
@@ -67,13 +67,13 @@ export default function PageHeader(props) {
 			copiedMsgId = setToast(msg, 2000, copiedMsgId)
 		},
 		onEdit: () => showForm(IdentityForm, { values: getSelected() }),
-		onFaucetRequest: () => addToQueue({
-			type: QUEUE_TYPES.CHATCLIENT,
-			func: 'faucetRequest',
-			title: textsCap.faucetRequest,
-			description: textsCap.faucetRequestDetails,
-			args: [getSelected().address]
-		}),
+		// onFaucetRequest: () => addToQueue({
+		// 	type: QUEUE_TYPES.CHATCLIENT,
+		// 	func: 'faucetRequest',
+		// 	title: textsCap.faucetRequest,
+		// 	description: textsCap.faucetRequestDetails,
+		// 	args: [getSelected().address]
+		// }),
 		onSelection: (_, { value: address }) => setSelected(address),
 	}
 	return <PageHeaderView {...viewProps} />
@@ -98,7 +98,7 @@ const PageHeaderView = props => {
 		logoSrc,
 		onCopy,
 		onEdit,
-		onFaucetRequest,
+		// onFaucetRequest,
 		onSelection,
 		wallets,
 	} = props
@@ -194,11 +194,11 @@ const PageHeaderView = props => {
 								content: inverted ? textsCap.darkModeOff : textsCap.darkModeOn,
 								onClick: () => rxInverted.next(!inverted)
 							},
-							userId && {
-								icon: 'gem',
-								content: textsCap.requestFunds,
-								onClick: onFaucetRequest,
-							},
+							// userId && {
+							// 	icon: 'gem',
+							// 	content: textsCap.requestFunds,
+							// 	onClick: onFaucetRequest,
+							// },
 							{
 								icon: 'currency',
 								content: textsCap.changeCurrency,

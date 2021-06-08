@@ -34,6 +34,7 @@ if (rw().history) rw({ history: null })
 // retrieves user credentails from local storage
 export const getUser = () => rw().user
 export const setUser = (user = {}) => rw({ user })
+console.log({ user: getUser() })
 /**
  * @name    referralCode
  * @summary get/set referral code to LocalStorage
@@ -57,7 +58,7 @@ export const referralCode = code => {
 
 // Returns a singleton instance of the websocket client
 // Instantiates the client if not already done
-export const getClient = (instance) => {
+export const getClient = () => {
     if (instance) return instance
     // automatically login to messaging service
     const { id, secret } = getUser() || {}
@@ -237,7 +238,7 @@ export class ChatClient {
         )
 
         // Request funds
-        this.faucetRequest = (address, cb) => isFn(cb) && socket.emit('faucet-request', address, cb)
+        // this.faucetRequest = (address, cb) => isFn(cb) && socket.emit('faucet-request', address, cb)
 
         // Check if User ID Exists
         this.idExists = (userId, cb) => isFn(cb) && socket.emit('id-exists', userId, cb)
@@ -512,12 +513,14 @@ export class ChatClient {
      * 
      * @param   {String}    id          new user ID
      * @param   {String}    secret
+     * @param   {String}    address     Blockchain identity
      * @param   {String}    referredBy  (optional) referrer user ID
      * @param   {Function}  cb 
      */
-    register = (id, secret, referredBy, cb) => isFn(cb) && socket.emit('register',
+    register = (id, secret, address, referredBy, cb) => isFn(cb) && socket.emit('register',
         id,
         secret,
+        address,
         referredBy,
         err => {
             if (!err) {

@@ -210,11 +210,12 @@ export const queueables = {
         type: QUEUE_TYPES.TX_STORAGE,
         args: [type, recordId, archive],
     }),
-    balanceTransfer: (address, toAddress, amount, queueProps = {}) => ({
+    balanceTransfer: (address, toAddress, amount, queueProps = {}, txId = randomHex(address)) => ({
         ...queueProps,
         address,
-        args: [toAddress, amount],
-        func: 'api.tx.balances.transfer',
+        args: [toAddress, amount, txId],
+        func: 'api.tx.transfer.networkCurrency',
+        txId,
         type: QUEUE_TYPES.TX_STORAGE,
     }),
     bonsaiSaveToken: (ownerAddress, recordTypeCode, recordId, token, queueProps = {}) => ({
