@@ -288,7 +288,7 @@ export default class IdentityForm extends Component {
         if (isRestore) return // nothing to do
 
         const { inputs } = this.state
-        const seed = this.values[inputNames.uri]
+        let seed = this.values[inputNames.uri]
         if (!this.doUpdate) {
             seed = seed || generateUri()
             const usageTypeCode = usageType === USAGE_TYPES.PERSONAL ? 0 : 1

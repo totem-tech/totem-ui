@@ -1,6 +1,6 @@
 import { BehaviorSubject, Subject } from 'rxjs'
 import DataStorage from '../../utils/DataStorage'
-import { isArr, isFn, isObj} from '../../utils/utils'
+import { isArr, isFn, isObj } from '../../utils/utils'
 // services
 import client, { getUser, rxIsLoggedIn } from '../chat/ChatClient'
 import { translated } from '../../services/language'
@@ -83,7 +83,7 @@ export const getMatchingIds = (values = {}, data = {}) => {
     const dataKeys = isObj(data) ? Object.keys(data) : []
     const ids = dataKeys.length ? [] : resultArr.map(([id]) => id)
     // find notifications matching data
-    dataKeys.length && resultArr.forEach(([id, { data : iData }]) => {
+    dataKeys.length && resultArr.forEach(([id, { data: iData }]) => {
         const match = dataKeys.every(key => data[key] === iData[key])
         match && ids.push(id)
     })
@@ -116,7 +116,7 @@ export const remove = ids => setTimeout(() => {
  * 
  * @param   {Object}    values  notification values to match
  * @param   {Object}    data    (optional) notification data
- */ 
+ */
 export const removeMatching = (values, data) => remove(getMatchingIds(values, data))
 
 /**
