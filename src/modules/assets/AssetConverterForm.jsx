@@ -73,7 +73,6 @@ export default function AssetConverterForm(props) {
         }
         const state = {
             El: 'div',
-            formProps: { className: ''},
             submitText: isDefined(submitText) && submitText || null,
             onChange: deferred((e, values, invalid) => {
                 const { onChange } = props
