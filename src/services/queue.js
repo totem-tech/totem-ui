@@ -35,7 +35,7 @@ const textsCap = translated({
     transactions: 'transactions',
     addedToQueue: 'added to queue',
     insufficientBalance: 'insufficient balance',
-    invalidFunc: 'invalid function name supplied.',
+    invalidFunc: 'Queue service: invalid function name supplied.',
     processArgsFailed: 'failed to process dynamic task argument',
     txFailed: 'transaction failed',
     txForeignIdentity: 'cannot create a transaction from an identity that does not belong to you!',
@@ -457,8 +457,12 @@ const handleTx = async (id, rootTask, task, toastId) => {
 
         let txSuccess = await checkTxStatus(api, txId, true)
         if (txSuccess !== null) return _save(
-            txSuccess ? SUCCESS : ERROR,
-            txSuccess ? [] : textsCap.txFailed,
+            txSuccess
+                ? SUCCESS
+                : ERROR,
+            txSuccess
+                ? []
+                : textsCap.txFailed,
         )
         // attempt to execute the transaction
         const tx = txFunc.apply(null, task.argsProcessed || args)
@@ -474,7 +478,7 @@ const handleTx = async (id, rootTask, task, toastId) => {
         // retrieve and store account balance after execution
         balance = await query('api.query.balances.freeBalance', address)
         // if `txId` not supplied and transaction didn't already fail, assume success.
-        txSuccess = !txId ? true : (await checkTxStatus(api, txId, false))
+        txSuccess = !!txId || await checkTxStatus(api, txId, false)
         _save(
             txSuccess ? SUCCESS : ERROR,
             txSuccess ? result : textsCap.txFailed,

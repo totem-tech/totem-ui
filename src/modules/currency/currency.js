@@ -186,7 +186,7 @@ export const updateCurrencies = async () => {
     const selected = currencies.find(x => x.currency === rxSelected.value)
     if (!selected) {
         const { currency } = currencies
-            .find(x => x.ticker === currencyDefault)
+            .find(x => x.ticker === currencyDefault) || {}
         currency && setSelected(currency)
     }
 })()

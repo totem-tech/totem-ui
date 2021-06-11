@@ -159,7 +159,7 @@ export default function AssetsForm(props) {
                         content: (
                                 <AssetConverterForm {...{
                                     El: 'div',
-                                    formProps: { className: 'total-form' },
+                                    formProps: { className: 'total-form', test: 'test' },
                                     labels: { asset: textsCap.labelFE },
                                     inputsHidden: ['amountFrom'],
                                     rxDate,

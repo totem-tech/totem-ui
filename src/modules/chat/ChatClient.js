@@ -57,7 +57,7 @@ export const referralCode = code => {
 
 // Returns a singleton instance of the websocket client
 // Instantiates the client if not already done
-export const getClient = (instance) => {
+export const getClient = () => {
     if (instance) return instance
     // automatically login to messaging service
     const { id, secret } = getUser() || {}
@@ -512,12 +512,14 @@ export class ChatClient {
      * 
      * @param   {String}    id          new user ID
      * @param   {String}    secret
+     * @param   {String}    address     Blockchain identity
      * @param   {String}    referredBy  (optional) referrer user ID
      * @param   {Function}  cb 
      */
-    register = (id, secret, referredBy, cb) => isFn(cb) && socket.emit('register',
+    register = (id, secret, address, referredBy, cb) => isFn(cb) && socket.emit('register',
         id,
         secret,
+        address,
         referredBy,
         err => {
             if (!err) {

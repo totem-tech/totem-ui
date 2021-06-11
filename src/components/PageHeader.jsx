@@ -71,7 +71,7 @@ export default function PageHeader(props) {
 			type: QUEUE_TYPES.CHATCLIENT,
 			func: 'faucetRequest',
 			title: textsCap.faucetRequest,
-			description: textsCap.faucetRequestDetails,
+			// description: textsCap.faucetRequestDetails,
 			args: [getSelected().address]
 		}),
 		onSelection: (_, { value: address }) => setSelected(address),
