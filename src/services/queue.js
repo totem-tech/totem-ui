@@ -35,7 +35,7 @@ const textsCap = translated({
     transactions: 'transactions',
     addedToQueue: 'added to queue',
     insufficientBalance: 'insufficient balance',
-    invalidFunc: 'invalid function name supplied.',
+    invalidFunc: 'Queue service: invalid function name supplied.',
     processArgsFailed: 'failed to process dynamic task argument',
     txFailed: 'transaction failed',
     txForeignIdentity: 'cannot create a transaction from an identity that does not belong to you!',
