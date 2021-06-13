@@ -8,13 +8,17 @@ import { MOBILE, rxLayout } from '../services/window'
 import { translated } from '../services/language'
 
 const textsCap = translated({
+    day: 'day',
     friday: 'friday',
     monday: 'monday',
+    month: 'month',
+    reset: 'reset',
     saturday: 'saturday',
     sunday: 'sunday',
     thursday: 'thursday',
     tuesday: 'tuesday',
     wednesday: 'wednesday',
+    year: 'year',
 }, true)[1]
 const daysTranslated = [
     textsCap.sunday,
@@ -61,8 +65,9 @@ export default function DateInput(props) {
         dropdownProps,
         icon,
         ignoreAttributes,
-        fluidOnMobile = true,
+        fluidOnMobile,
         onReset,
+        resetIconTitle,
         rxValue,
         years,
         value,
@@ -74,11 +79,17 @@ export default function DateInput(props) {
         .map((arr, i) => [
             {
                 // empty
-                text: '--',
+                text: [
+                    textsCap.year,
+                    textsCap.month,
+                    textsCap.day
+                ][i],
                 value: '',
             },
             ...arr.map(value => {
-                value = `${i === 0 ? value : strFill(value, 2, '0')}`
+                value = `${i === 0
+                    ? value
+                    : strFill(value, 2, '0')}`
                 return { text: value, value}
             })
         ])
@@ -131,6 +142,7 @@ export default function DateInput(props) {
                 negative: props.invalid || invalid,
                 fluid: isMobile,
             }),
+            style: { cursor: 'unset' },
             title: 'YYYY-MM-DD',
         }}>
             <Dropdown {...{
@@ -178,7 +190,11 @@ export default function DateInput(props) {
                         triggerChange(e, props, [`${currentYear}`, '', ''], setValue)
                         isFn(onReset) && onReset(e)
                     },
-                    style: { cursor: 'pointer', paddingLeft: 5 },
+                    style: {
+                        cursor: 'pointer',
+                        paddingLeft: 5,
+                    },
+                    title: resetIconTitle,
                 }} />
             )}
         </div>
@@ -202,17 +218,21 @@ DateInput.propTypes = {
 }
 DateInput.defaultProps = {
     clearable: true,
+    fluidOnMobile: true,
     icon: { name: 'dropdown' },
     ignoreAttributes: [
         'clearable',
-        'years',
         'dropdownProps',
+        'fluidOnMobile',
         'icon',
         'ignoreAttributes',
         'invalid',
         'onReset',
+        'resetIconTitle',
         'rxValue',
+        'years',
     ],
+    resetIconTitle: textsCap.reset,
     style: {
         whiteSpace: 'nowrap',
     },
