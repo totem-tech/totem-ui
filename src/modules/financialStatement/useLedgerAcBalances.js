@@ -52,7 +52,7 @@ export default function useLedgerAcBalances(address, balancesModifier, timeout =
             status: 'error',
         }
         if (!isAddress(address)) return setMessage({ ...errorMsg, header: textsCap.invalidAddress })
-        
+
         const handleAccounts = async (accounts = []) => {
             if (!mounted) return
             let empty = !accounts.length
@@ -96,7 +96,9 @@ export default function useLedgerAcBalances(address, balancesModifier, timeout =
         setMessage(loadingMsg)
 
         query.accountsById(address, handleAccounts)
-            .then(unsubscribe => unsubscribers.accounts = unsubscribe)
+            .then(unsubscribe =>
+                unsubscribers.accounts = unsubscribe
+            )
 
         // update message if accounts and balances hasn't been loaded after timeout duration
         setTimeout(() => {
@@ -109,7 +111,8 @@ export default function useLedgerAcBalances(address, balancesModifier, timeout =
 
         return () => {
             mounted = false
-            Object.values(unsubscribers).forEach(fn => isFn(fn) && fn())
+            Object.values(unsubscribers)
+                .forEach(fn => isFn(fn) && fn())
         }
     }, [address])
 

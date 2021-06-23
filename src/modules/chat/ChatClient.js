@@ -4,6 +4,13 @@ import { isFn, isObj, isStr, objWithoutKeys } from '../../utils/utils'
 import { translated } from '../../services/language'
 import storage from '../../services/storage'
 
+let textsCap = {}
+setTimeout(() => {
+    textsCap = translated({
+        invalidRequest: 'invalid request'
+    }, true)[1]
+})
+
 // chat server port
 // use 3003 for dev.totem.live otherwise 3001
 const port = window.location.hostname === 'dev.totem.live' ? 3003 : 3001
@@ -103,7 +110,9 @@ export const getClient = () => {
                             resolve(result.length > 1 ? result : result[0])
                         }
 
-                        func.apply(instance, args)
+                        const emitted = func.apply(instance, args)
+                        // reject if one or more requests 
+                        if (!emitted) reject(textsCap.invalidRequest)
                     } catch (err) {
                         reject(err)
                     }
@@ -374,13 +383,16 @@ export class ChatClient {
             cb
         )
 
-        // add/get/update project
-        //
-        // Params:
-        // @projectId   string: A hash string generated using the project details as seed. Will be used as ID/key.
-        // @project     object
-        // @create      bool: whether to create or update project
-        // @cb          function
+        /**
+         * @name    project
+         * @summary add/get/update project
+         *
+         * 
+         * @param {String}   projectId   Project ID
+         * @param {Object}   project
+         * @param {Boolean}  create      whether to create or update project
+         * @param {Function} cb          
+         */
         this.project = (projectId, project, create, cb) => socket.emit('project',
             projectId,
             project,
@@ -388,9 +400,43 @@ export class ChatClient {
             cb,
         )
         // retrieve projects by an array of hashes
-        this.projectsByHashes = (projectIds, cb) => isFn(cb) && socket.emit('projects-by-hashes',
+        this.projectsByHashes = (projectIds, cb) => isFn(cb) && socket.emit(
+            'projects-by-hashes',
             projectIds,
             (err, res, notFoundHashes) => cb(err, new Map(res), notFoundHashes),
+        )
+
+        /**
+         * @name    rewardsGetVerificationCode
+         * @summary retrieves a verificaiton
+         * 
+         * @param   {String}    platform    social media platform name. Eg: twitter
+         * @param   {String}    handle      user's social media handle (username)
+         * @param   {Function}  cb          Callback function expected arguments:
+         *                                  @err    String: error message if query failed
+         *                                  @code   String: hex string
+         */
+        this.rewardsGetVerificationCode = (platform, handle, cb) => isFn(cb) && socket.emit(
+            'rewards-social-verificaton-code',
+            platform,
+            handle,
+            cb
+        )
+        /**
+         * @name    rewardsClaimTwitter
+         * @summary retrieves a verificaiton
+         * 
+         * @param   {String}    platform    social media platform name. Eg: twitter
+         * @param   {String}    handle      user's social media handle (username)
+         * @param   {Function}  cb          Callback function expected arguments:
+         *                                  @err    String: error message if query failed
+         *                                  @code   String: hex string
+         */
+        this.rewardsClaim = (platform, handle, cb) => isFn(cb) && socket.emit(
+            'rewards-claim',
+            platform,
+            handle,
+            cb
         )
 
         /**

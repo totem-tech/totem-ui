@@ -198,7 +198,6 @@ const getRowData = (unitDisplayed, unitDisplayedROE) => ([_, currency]) => {
         ? icon
         : (
             <Invertible {...{
-                content: `${textsCap.updatedAt} ${format(new Date(ts), false)}`,
                 content: (
                     <div>
                         {textsCap.updated + ' '}
