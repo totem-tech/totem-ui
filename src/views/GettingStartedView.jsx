@@ -234,7 +234,7 @@ export default function GetingStarted() {
 			)}
 			
 			
-			<a href='https://twitter.com/intent/follow?screen_name=Totem_Live_' >
+			{/* <a href='https://twitter.com/intent/follow?screen_name=Totem_Live_' >
 				Follow Totem
 			</a>
 			
@@ -242,7 +242,7 @@ export default function GetingStarted() {
 				href="https://twitter.com/intent/tweet?text=Hello%20world"
 				data-size="large">
 				Tweet
-			</a>
+			</a> */}
 			{/* Social links and support chat section */}
 			<div style={styles.space}>
 				<h3>{texts.supportChatHeader}</h3>

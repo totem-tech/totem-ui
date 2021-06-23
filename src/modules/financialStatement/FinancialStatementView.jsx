@@ -18,6 +18,7 @@ const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 const textsCap = translated({
     collapseAll: 'collapse all',
     expandAll: 'expand all',
+    unknownTitle: 'unknown title'
 }, true)[1]
 
 export default function FinancialStatementView(props) {
@@ -82,7 +83,7 @@ export default function FinancialStatementView(props) {
  */
 export const getNestedBalances = (glAccounts = []) => {
     if (!isArr(glAccounts)) return []
-    const setLevelBalance = (parent, title, balance = 0, balanceType, number) => {
+    const setLevelBalance = (parent, title = textsCap.unknownTitle, balance = 0, balanceType, number) => {
         let current = parent.find(x => x.title === title)
         if (!current) {
             current = {
