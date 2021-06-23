@@ -96,7 +96,8 @@ export const getNestedBalances = (glAccounts = []) => {
                             content: number,
                             El: Popup,
                             eventsEnabled: false,
-                            on: ['click', 'focus', ],
+                            on: ['click', 'focus',],
+                            position: 'bottom center',
                             size: 'mini',
                             trigger: <span>{title}</span>,
                         }} />
