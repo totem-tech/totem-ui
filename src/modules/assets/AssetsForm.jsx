@@ -16,6 +16,7 @@ const textsCap = translated({
     btnSubtract: 'subtract all',
     btnAdd: 'add all to folio',
     labelFE: 'Selection Functional Currency',
+    latestPriceMsg: 'using latest available prices',
     removeAsset: 'remove',
     searchAssets: 'search assets',
     tableHide: 'Hide Rates Table',
@@ -75,7 +76,8 @@ export default function AssetsForm(props) {
             style: { minWidth: 120 },
             type: 'search',
         }
-        const listToggle = {
+        const btnListToggle = {
+            fluid: true,
             content: () => rxShowList.value
                 ? textsCap.tableHide
                 : textsCap.tableShow,
@@ -111,11 +113,10 @@ export default function AssetsForm(props) {
                             years,
                             rxValue: rxDate,
                             onReset: () => {
+                                // clear the date so that latest prices are displayed on the currency list
                                 rxDate.next(undefined)
-                                // const { onChange } = props
-                                // if (!isFn(onChange)) return
-                                // formValues[inputNames.date] = undefined
-                                // onChange({}, formValues)
+                                if (!rxShowList.value) return
+                                setToast(textsCap.latestPriceMsg, 1500, 'currency-latest-prices')
                             },
                             // only accept a date between 1999-01-01 and today
                             validate: (_, { value }) => {
@@ -187,7 +188,7 @@ export default function AssetsForm(props) {
                             type: 'hidden',
                         },
                         {
-                            ...listToggle,
+                            ...btnListToggle,
                             className: 'hide-on-mobile',
                         },
                         {
@@ -217,7 +218,7 @@ export default function AssetsForm(props) {
                     ],
                 },
                 {
-                    ...listToggle,
+                    ...btnListToggle,
                     className: 'hide-on-desktop',
                     style: { marginTop: 10 },
                 },
