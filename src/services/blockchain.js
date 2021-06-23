@@ -60,9 +60,7 @@ export const hashTypes = {
     /// 9000
 }
 export const nodesDefault = [
-    'wss://node1.totem.live',
-    // 'wss://127.0.0.1:1618',
-    // 'ws://localhost:9944',
+    process.env.REACT_APP_Node_URL || 'wss://node1.totem.live',
 ]
 export const nodes = (storage.settings.module(MODULE_KEY) || {}).nodes || nodesDefault
 setDefaultConfig(

@@ -18,7 +18,7 @@ body.mobile .assets-form .portfolio {
     margin-top: -20px;
     width: 100%;
 }
-.assets-form .hide-on-desktop,
+body:not(.mobile) .assets-form .hide-on-desktop,
 body.mobile .assets-form .hide-on-mobile {
     display: none;
 }

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Button, Icon, Step } from 'semantic-ui-react'
 import PromisE from '../utils/PromisE'
@@ -232,7 +232,17 @@ export default function GetingStarted() {
 					}} />
 				</div>
 			)}
-
+			
+			
+			<a href='https://twitter.com/intent/follow?screen_name=Totem_Live_' >
+				Follow Totem
+			</a>
+			
+			<a className="twitter-share-button ui button"
+				href="https://twitter.com/intent/tweet?text=Hello%20world"
+				data-size="large">
+				Tweet
+			</a>
 			{/* Social links and support chat section */}
 			<div style={styles.space}>
 				<h3>{texts.supportChatHeader}</h3>
@@ -298,7 +308,7 @@ export default function GetingStarted() {
 					<a href='https://t.me/totemchat' target='_blank'>
 						<Invertible El={Icon} name='telegram' style={styles.appIconStyle} />
 					</a>
-					<a href='https://twitter.com/Totem_Live_' target='_blank'>
+					<a href='https://twitter.com/intent/follow?screen_name=Totem_Live_' target='_blank'>
 						<Invertible El={Icon} name='twitter' style={styles.appIconStyle} />
 					</a>
 					<a href='https://www.youtube.com/channel/UCV0ZV3kCLfi3AnlNR1Eyr0A' target='_blank'>

@@ -1,6 +1,8 @@
 // webpack v4
 const webpack = require('webpack')
 const path = require('path');
+const Dotenv = require('dotenv-webpack');
+
 module.exports = {
   entry: {
     main: './src/index.js',
@@ -34,6 +36,8 @@ module.exports = {
     new webpack.IgnorePlugin(/nano/), // CouchDB Client
     new webpack.IgnorePlugin(/node-localstorage/),
     new webpack.IgnorePlugin(/node-fetch/),
+    // Includes .env variables into the frontend app
+    new Dotenv(),
   ],
   resolve: {
     extensions: ['*', '.js', '.jsx']

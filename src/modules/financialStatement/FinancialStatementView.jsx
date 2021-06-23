@@ -1,16 +1,17 @@
 import React, { useState } from 'react'
+import { Button, Popup } from 'semantic-ui-react'
 // utils
 import { isArr, objClean } from '../../utils/utils'
 // components
-import Message from '../../components/Message'
 import DrillDownList from '../../components/DrillDownList'
+import Message from '../../components/Message'
 // services
 import storage from '../../services/storage'
-import { Button } from 'semantic-ui-react'
 import { translated } from '../../services/language'
 // components
 import Currency from '../currency/Currency'
 import useLedgerAcBalances from './useLedgerAcBalances'
+import Invertible from '../../components/Invertible'
 
 const MODULE_KEY = 'financialStatement'
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
@@ -81,13 +82,24 @@ export default function FinancialStatementView(props) {
  */
 export const getNestedBalances = (glAccounts = []) => {
     if (!isArr(glAccounts)) return []
-    const setLevelBalance = (parent, title, balance = 0, balanceType) => {
+    const setLevelBalance = (parent, title, balance = 0, balanceType, number) => {
         let current = parent.find(x => x.title === title)
         if (!current) {
             current = {
                 balance: balance,
                 children: [],
-                title,
+                title: !number
+                    ? title
+                    : (
+                        <Invertible {...{
+                            content: number,
+                            El: Popup,
+                            eventsEnabled: false,
+                            on: ['click', 'focus', ],
+                            size: 'mini',
+                            trigger: <span>{title}</span>,
+                        }} />
+                    ),
             }
             parent.push(current)
         } else {
@@ -99,11 +111,11 @@ export const getNestedBalances = (glAccounts = []) => {
     }
 
     return glAccounts.reduce((allItems, next) => {
-        const { balanceType, typeName, categoryName, categoryGrpName, groupName, balance = 0 } = next
-        const type = setLevelBalance(allItems, typeName, balance)
-        const category = setLevelBalance(type.children, categoryName, balance)
-        const categoryGrp = setLevelBalance(category.children, categoryGrpName, balance)
-        const group = setLevelBalance(categoryGrp.children, groupName, balance, balanceType)
+        const { number, balanceType, typeName, categoryName, categoryGrpName, groupName, balance = 0 } = next
+        const type = setLevelBalance(allItems, typeName, balance, number)
+        const category = setLevelBalance(type.children, categoryName, balance, number)
+        const categoryGrp = setLevelBalance(category.children, categoryGrpName, balance, number)
+        const group = setLevelBalance(categoryGrp.children, groupName, balance, balanceType, number)
         return allItems
     }, [])
 }
