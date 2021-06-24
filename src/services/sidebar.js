@@ -17,6 +17,7 @@ import TransferForm from '../modules/identity/Transfer'
 import UtilitiesView from '../views/UtilitiesView'
 // temp
 import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
+import RewardsView from '../modules/rewards/RewardsView'
 // import CrowdsaleView from '../modules/crowdsale/Crowdsale'
 // utils
 import DataStorage from '../utils/DataStorage'
@@ -349,6 +350,12 @@ export const sidebarItems = [
         subHeader: textsCap.utilitiesSubheader,
         title: textsCap.utilitiesTitle,
     },
+    {
+        content: RewardsView,
+        icon: 'money',
+        name: 'rewards',
+        title: 'Rewards'
+    }
 ].map(item => {
     const {
         active = false,
