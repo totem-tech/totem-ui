@@ -12,6 +12,7 @@ import { translated } from '../../services/language'
 import Currency from '../currency/Currency'
 import useLedgerAcBalances from './useLedgerAcBalances'
 import Invertible from '../../components/Invertible'
+import { MOBILE, rxLayout } from '../../services/window'
 
 const MODULE_KEY = 'financialStatement'
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
@@ -83,6 +84,7 @@ export default function FinancialStatementView(props) {
  */
 export const getNestedBalances = (glAccounts = []) => {
     if (!isArr(glAccounts)) return []
+    const isMobile = rxLayout.value === MOBILE
     const setLevelBalance = (parent, title = textsCap.unknownTitle, balance = 0, balanceType, number) => {
         let current = parent.find(x => x.title === title)
         if (!current) {
@@ -92,15 +94,20 @@ export const getNestedBalances = (glAccounts = []) => {
                 title: !number
                     ? title
                     : (
-                        <Invertible {...{
-                            content: number,
-                            El: Popup,
-                            eventsEnabled: false,
-                            on: ['click', 'focus',],
-                            position: 'bottom center',
-                            size: 'mini',
-                            trigger: <span>{title}</span>,
-                        }} />
+                        !isMobile
+                            ? <span>{title} ({number})</span>
+                            : (
+                                <Invertible {...{
+                                    content: number,
+                                    El: Popup,
+                                    eventsEnabled: false,
+                                    on: ['click', 'focus',],
+                                    position: 'bottom center',
+                                    positionFixed: true,
+                                    size: 'mini',
+                                    trigger: <span>{title}</span>,
+                                }} />
+                            )
                     ),
             }
             parent.push(current)
