@@ -24,7 +24,7 @@ const textsCap = translated({
     rejectInvitation: 'reject invitation',
     rejectedInvitation: 'rejected invitation to activity',
     timekeeping: 'timekeeping',
-    
+
     loadingData: 'loading data',
 }, true)[1]
 // notification types
@@ -48,24 +48,26 @@ const TK_ChildTypes = {
  * @returns {Boolean}   resolves with a boolean value indicating success or failue
  */
 export const handleInvitation = (projectId, workerAddress, accepted, notificationId) => new Promise(async (resolve) => {
-    let alertId
+    let confirmId
     const resolver = err => {
         resolve(!err)
+        // show error message
         err && confirm({
             content: `${err}`,
             confirmButton: null,
             size: 'tiny'
         })
-        closeModal(alertId)
     }
     try {
         const currentUserId = (getUser() || {}).id
-        alertId = confirm({
+        confirmId = confirm({
             cancelButton: null,
             content: textsCap.loadingData,
-            loading: true,
+            size: 'mini',
         })
-        const project = (await fetchProjects([projectId])).get(projectId)
+        const project = (await fetchProjects([projectId]))
+            .get(projectId)
+        closeModal(confirmId)
         if (!project) return resolver(textsCap.activityNotFound)
 
         const { name: projectName, userId: projectOwnerId } = project
@@ -128,7 +130,7 @@ export const handleInvitation = (projectId, workerAddress, accepted, notificatio
     }
 })
 
-setTimeout(()=> [
+setTimeout(() => [
     {
         childType: TK_ChildTypes.invitation,
         handler: (id, notification, { senderId, senderIdBtn }) => {
