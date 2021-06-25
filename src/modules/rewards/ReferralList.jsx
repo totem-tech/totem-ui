@@ -40,6 +40,10 @@ const tableProps = {
             title: 'User ID',
         },
         {
+            key: 'amount',
+            title: 'Amount',
+        },
+        {
             key: '_status',
             textAlign: 'center',
             title: 'Status',

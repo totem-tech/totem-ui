@@ -350,12 +350,12 @@ export const sidebarItems = [
         subHeader: textsCap.utilitiesSubheader,
         title: textsCap.utilitiesTitle,
     },
-    {
-        content: RewardsView,
-        icon: 'money',
-        name: 'rewards',
-        title: 'Rewards'
-    }
+    // {
+    //     content: RewardsView,
+    //     icon: 'money',
+    //     name: 'rewards',
+    //     title: 'Rewards'
+    // }
 ].map(item => {
     const {
         active = false,

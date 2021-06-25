@@ -478,7 +478,7 @@ const handleTx = async (id, rootTask, task, toastId) => {
         // retrieve and store account balance after execution
         balance = await query('api.query.balances.freeBalance', address)
         // if `txId` not supplied and transaction didn't already fail, assume success.
-        txSuccess = !!txId || await checkTxStatus(api, txId, false)
+        txSuccess = !txId || await checkTxStatus(api, txId, false)
         _save(
             txSuccess ? SUCCESS : ERROR,
             txSuccess ? result : textsCap.txFailed,
