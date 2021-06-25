@@ -407,23 +407,7 @@ export class ChatClient {
         )
 
         /**
-         * @name    rewardsGetVerificationCode
-         * @summary retrieves a verificaiton
-         * 
-         * @param   {String}    platform    social media platform name. Eg: twitter
-         * @param   {String}    handle      user's social media handle (username)
-         * @param   {Function}  cb          Callback function expected arguments:
-         *                                  @err    String: error message if query failed
-         *                                  @code   String: hex string
-         */
-        this.rewardsGetVerificationCode = (platform, handle, cb) => isFn(cb) && socket.emit(
-            'rewards-social-verificaton-code',
-            platform,
-            handle,
-            cb
-        )
-        /**
-         * @name    rewardsClaimTwitter
+         * @name    rewardsClaim
          * @summary retrieves a verificaiton
          * 
          * @param   {String}    platform    social media platform name. Eg: twitter
@@ -438,6 +422,16 @@ export class ChatClient {
             handle,
             cb
         )
+
+        /**
+         * @name    rewardsGetData
+         * @summary retrieves all received rewards by the user
+         *
+         * @param   {Function}  cb  Callback function expected arguments:
+         *                          @err     String: error message if query failed
+         *                          @rewards Object:
+         */
+        this.rewardsGetData = cb => isFn(cb) && socket.emit('rewards-get-data', cb)
 
         /**
          * @name task
