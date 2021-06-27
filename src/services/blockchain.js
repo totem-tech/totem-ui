@@ -77,14 +77,13 @@ setDefaultConfig(
 )
 
 export const getConfig = () => config
-export const getConnection = async (create = false) => {
-
+export const getConnection = async (force = false) => {
     // never connect to blockchain
     if (window.isInIFrame) return await (new Promise(() => { }))
     try {
         let isConnected = !!connection.api && connection.api._isConnected.value
         if (isConnected) return connection
-        if (!navigator.onLine && !create && (!connectPromise || !connectPromise.pending)) {
+        if (!navigator.onLine && !force && (!connectPromise || !connectPromise.pending)) {
             // working offline. wait for connection to be re-established
             connectPromise = PromisE(resolve => {
                 const subscribed = rxOnline.subscribe(online => {
@@ -100,7 +99,7 @@ export const getConnection = async (create = false) => {
             await connectPromise
             isConnected = connection.api._isConnected.value
             // if connection is rejected attempt to connect again
-            if ((connectPromise.rejected || !isConnected) && create) await getConnection(true)
+            if ((connectPromise.rejected || !isConnected) && force) await getConnection(true)
             return connection
         }
         const nodeUrl = nodes[0]

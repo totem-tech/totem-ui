@@ -1,7 +1,7 @@
 import { BehaviorSubject } from 'rxjs'
 import { generateHash, arrSort, isValidNumber, isValidDate, arrUnique, isArr } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
-import client, { rxIsConnected } from '../chat/ChatClient'
+import client, { rxIsConnected, rxIsInMaintenanceMode } from '../chat/ChatClient'
 import { translated } from '../../services/language'
 import storage from '../../services/storage'
 import { subjectAsPromise } from '../../services/react'
@@ -168,6 +168,7 @@ export const updateCurrencies = async () => {
             await subjectAsPromise(rxIsConnected, true)[0]
         }
 
+        await subjectAsPromise(rxIsInMaintenanceMode, false)[0]
         const p = fetchCurrencies(cached)
         // only use timeout if there is cached data available.
         // First time load must retrieve full list of currencies.

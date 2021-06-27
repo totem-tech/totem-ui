@@ -6,10 +6,10 @@ import uuid from 'uuid'
 import { BehaviorSubject, Subject } from 'rxjs'
 import DataStorage from '../utils/DataStorage'
 import { getTxFee, signAndSend } from '../utils/polkadotHelper'
-import { isArr, isFn, isObj, isStr, objClean, isValidNumber, isError } from '../utils/utils'
+import { isArr, isFn, isObj, isStr, objClean, isValidNumber, isError, deferred } from '../utils/utils'
 // services
 // keep the `client` variable as it will be used the `handleChatClient` function
-import _client, { rxIsConnected } from '../modules/chat/ChatClient'
+import _client, { rxIsConnected, rxIsInMaintenanceMode } from '../modules/chat/ChatClient'
 import { getConnection, query, getCurrentBlock } from './blockchain'
 import { save as addToHistory } from '../modules/history/history'
 import { find as findIdentity, getSelected } from '../modules/identity/identity'
@@ -370,7 +370,7 @@ const handleChatClient = async (id, rootTask, task, toastId) => {
     )
 
     try {
-        if (!rxIsConnected.value) {
+        if (rxIsInMaintenanceMode.value || !rxIsConnected.value) {
             suspendedIds.push(id)
             _save(SUSPENDED)
             console.log('Queue task execution suspended due to being offline. ID:', id)
@@ -692,21 +692,34 @@ window.addEventListener('beforeunload', function (e) {
     // Chrome requires returnValue to be set
     e.returnValue = ''
 })
-const resumeSuspended = async (online) => {
-    if (!online) return
-    // attempt to reconnect to blockchain, in case, first it failed.
-    await getConnection(true)
-    while (navigator.onLine && suspendedIds.length) {
-        const id = suspendedIds.pop()
+const resumeSuspended = deferred(async () => {
+    for (let i = 0; i < suspendedIds.length; i++) {
+        const id = suspendedIds[i]
         const task = queue.get(id)
+        const { type } = task
+        const isChat = type === QUEUE_TYPES.CHATCLIENT
+        const doResume = isChat
+            ? !rxIsInMaintenanceMode.value && rxIsConnected
+            : rxOnline.value
+        if (!doResume) continue
+
+        // remove from suspendedIds
+        if (!isChat) {
+            // attempt to reconnect to blockchain, in case, first it failed.
+            const { isConnected } = await getConnection(true)
+            if (!isConnected) continue
+        }
+        suspendedIds.splice(i, 1)
+
         console.log('resuming task', id)
         // resume execution by checking each step starting from the top level task
         _processTask(task, id, task.toastId, true)
     }
-}
+}, 300)
 // resume suspended tasks whenever browser is back online
-rxOnline.subscribe(resumeSuspended)
 rxIsConnected.subscribe(resumeSuspended)
+rxIsInMaintenanceMode.subscribe(resumeSuspended)
+rxOnline.subscribe(resumeSuspended)
 
 export default {
     addToQueue,

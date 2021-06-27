@@ -36,17 +36,20 @@ export function getLayout() {
     return _forcedLayout || (window.innerWidth <= 991 ? MOBILE : DESKTOP)
 }
 
-// getUrlParam reads the URL parameters
-//
-// Params:
-// @name    string: (optional) if supplied will return a specific paramenter as string.
-//                  Otherwise, will return an object containing all the URL parameters with respective values.
-//
-// returns  string/object
-export const getUrlParam = name => {
+/**
+ * @name    getUrlParam
+ * @summary read parameters of a given URL
+ * 
+ * @param   {String} name   (optional) if supplied will return a specific paramenter as string.
+ *                          Otherwise, will return an object containing all the URL parameters with respective values.
+ * @param   {String} url    Default: `window.location.href`
+ * 
+ * @returns {String|Object}
+ */
+export const getUrlParam = (name, url = window.location.href) => {
     const params = {}
     const regex = /[?&]+([^=&]+)=([^&]*)/gi
-    window.location.href.replace(
+    url.replace(
         regex,
         (_, key, value) => params[key] = decodeURIComponent(value)
     )

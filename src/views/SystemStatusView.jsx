@@ -1,18 +1,25 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Icon, Grid, GridRow, GridColumn } from 'semantic-ui-react'
-// import Identicon from 'polkadot-identicon'
-import { translated } from '../services/language'
 import { isFn, objCreate } from '../utils/utils'
+import FormInput from '../components/FormInput'
+import Text from '../components/Text'
 import { getConnection, query } from '../services/blockchain'
-import { iUseReducer } from '../services/react'
+import { translated } from '../services/language'
+import { iUseReducer, useRxSubject } from '../services/react'
+import client, { getUser, rxIsConnected, rxIsInMaintenanceMode } from '../modules/chat/ChatClient'
+import { confirm } from '../services/modal'
 
 const [texts, textsCap] = translated({
+	activateMaintenanceMode: 'activate maintenance mode',
 	blockchainRuntime: 'Connected Host Runtime Version',
 	blockNr: 'Block Nr.',
 	chainType: 'Chain type',
+	deactivateMainenanceMode: 'deactivate maintenance mode',
 	hostConneced: 'Connected to host',
 	hostDisconnected: 'Disconnected from host',
 	lag: 'lag',
+	maintenanceMode: 'maintenance mode',
+	messagingService: 'mesasging service',
 	networkVersion: 'Current Hot Upgrade',
 	no: 'no',
 	offline: 'offline',
@@ -23,7 +30,10 @@ const [texts, textsCap] = translated({
 }, true)
 
 export default function SystemStatus() {
+	const [isAdmin] = useState(() => ((getUser() || {}).roles || []).includes('admin'))
 	const [state, setState] = iUseReducer(null, {})
+	const [msConnected] = useRxSubject(rxIsConnected)
+	const [msMaintenanceMode] = useRxSubject(rxIsInMaintenanceMode)
 	const {
 		newHead = { number: 0 },
 		finalizedHead = { number: 0 },
@@ -56,16 +66,14 @@ export default function SystemStatus() {
 			// totalIssuance: 'api.query.balances.totalIssuance',
 		}
 
-		getConnection().then(
-			({ api, nodeUrl, provider }) => {
+		getConnection()
+			.then(({ api, nodeUrl, provider }) => {
 				setState({
 					isConnected: true,
 					nodeUrl,
 					runtimeVersion: JSON.parse(JSON.stringify(api.runtimeVersion))
 				})
-			},
-			() => setState({ isConnected: false, nodeUrl: '' }),
-		)
+			}, () => setState({ isConnected: false, nodeUrl: '' }))
 
 		Object.keys(x).forEach(async (key) =>
 			unsubFnArr[key] = await query(x[key], value => mounted && setState(objCreate(key, value)))
@@ -124,6 +132,54 @@ export default function SystemStatus() {
 				</GridColumn>
 				<GridColumn width={5}>
 					{textsCap.lag} : {chain_lag}
+				</GridColumn>
+			</GridRow>
+			<GridRow>
+				<GridColumn width={6}>
+					<Icon
+						name="circle"
+						color={
+							msMaintenanceMode
+								? 'yellow'
+								: msConnected
+									? 'green'
+									: 'red'
+						}
+					/>
+					{textsCap.messagingService}
+				</GridColumn>
+				<GridColumn width={6}>
+					<FormInput {...{
+						checked: msMaintenanceMode,
+						label: (
+							<label>
+								<Text>
+									{textsCap.maintenanceMode}
+								</Text>
+							</label>
+						),
+						name: 'maintenance-mode',
+						readOnly: !isAdmin,
+						toggle: true,
+						type: 'checkbox',
+						onClick: e => {
+							e.preventDefault()
+							e.stopPropagation()
+							if (!isAdmin) return
+							confirm({
+								header: rxIsInMaintenanceMode.value
+									? textsCap.deactivateMainenanceMode
+									: textsCap.activateMaintenanceMode,
+								// revert to original value
+								onCancel: () => rxIsInMaintenanceMode.next(rxIsInMaintenanceMode.value),
+								onConfirm: () => {
+									client.maintenanceMode
+										.promise(!rxIsInMaintenanceMode.value)
+								},
+								size: 'mini'
+							})
+						},
+					}} />
 				</GridColumn>
 			</GridRow>
 		</Grid>

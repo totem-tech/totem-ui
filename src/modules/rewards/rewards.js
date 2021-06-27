@@ -1,25 +1,16 @@
 import { generateHash } from "../../utils/utils"
 import { getUser } from "../chat/ChatClient"
 
-
-/*
-I just signed up to @totem_live_ the world's first true peer-to-peer accounting protocol on Polkadot. 
-
-Be an early adopter, signup now & refer friends to receive your $TOTEM bonus: https://totem.live?ref=user_handle1234@twitter
-
-#TotemLive #Airdrop #Polkadot #Kusama 0xf9c8dd2b
-*/
 export const generateSignupTweet = twitterHandle => {
     const { id } = getUser() || {}
     if (!id) return
 
     const code = generateVerificationCode(id, 'twitter', twitterHandle)
 
-    return `I just signed up to @totem_live_, the world's first true peer-to-peer accounting protocol on Polkadot.
-    
-    Be an early adopter, signup now & refer friends to receive your $TOTEM bonus: https://totem.live?ref=${twitterHandle}@twitter
-    
-    #TotemLive #Airdrop #Polkadot #Kusama ${code}`
+    return 'I just signed up to @totem_live_, the world\'s first true peer-to-peer accounting protocol on Polkadot.'
+        + '\n\nBe an early adopter, signup now & refer friends to receive your $TOTEM bonus: '
+        + `https://totem.live?ref=${twitterHandle}@twitter`
+        + `\n\n#TotemLive #Airdrop #Polkadot #Kusama ${code}`
 }
 
 /**

@@ -3,11 +3,12 @@ import { BehaviorSubject } from 'rxjs'
 import { isFn, isObj, isStr, objWithoutKeys } from '../../utils/utils'
 import { translated } from '../../services/language'
 import storage from '../../services/storage'
+import { subjectAsPromise } from '../../services/react'
 
 let textsCap = {}
 setTimeout(() => {
     textsCap = translated({
-        invalidRequest: 'invalid request'
+        invalidRequest: 'invalid request',
     }, true)[1]
 })
 
@@ -24,6 +25,8 @@ const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 export const rxIsConnected = new BehaviorSubject(false)
 export const rxIsLoggedIn = new BehaviorSubject(null)
 export const rxIsRegistered = new BehaviorSubject(!!(rw().user || {}).id)
+export const rxIsInMaintenanceMode = new BehaviorSubject(false)
+const eventMaintenanceMode = 'maintenance-mode'
 
 //- migrate existing user data
 const deprecatedKey = PREFIX + 'chat-user'
@@ -90,7 +93,7 @@ export const getClient = () => {
             if (!isFn(func) || nonCbs.includes(key)) return
             func.promise = function () {
                 const args = [...arguments]
-                return new Promise((resolve, reject) => {
+                return new Promise(async (resolve, reject) => {
                     try {
                         // last argument must be a callback
                         let callbackIndex = args.length - 1
@@ -110,6 +113,12 @@ export const getClient = () => {
                             resolve(result.length > 1 ? result : result[0])
                         }
 
+                        const doWait = rxIsInMaintenanceMode.value && key !== 'maintenanceMode'
+                        if (doWait) {
+                            console.info('Waiting for maintenance mode to be deactivated')
+                            await subjectAsPromise(rxIsInMaintenanceMode, false)[0]
+                            console.info('Maintenance mode is now deactivated')
+                        }
                         const emitted = func.apply(instance, args)
                         // reject if one or more requests 
                         if (!emitted) reject(textsCap.invalidRequest)
@@ -120,14 +129,22 @@ export const getClient = () => {
             }
         })
 
-    instance.onConnect(() => {
+    instance.onConnect(async () => {
+        const active = await instance.maintenanceMode.promise(null, null)
+        rxIsInMaintenanceMode.next(active)
+        console.log({ active })
         rxIsConnected.next(true)
         // auto login on connect to messaging service
-        !!id && instance.login(id, secret, () => { })
+        !!id && instance.login.promise(id, secret)
     })
     instance.onConnectError(() => {
         rxIsConnected.next(false)
         !!id && rxIsLoggedIn.next(false)
+    })
+    instance.onMaintenanceMode(active => {
+        console.log({ maintenanceMode: active })
+        rxIsInMaintenanceMode.next(active)
+
     })
     return instance
 }
@@ -279,6 +296,22 @@ export class ChatClient {
             cb,
         )
 
+        /**
+         * @name    maintenanceMode
+         * @summary check/enable/disable maintenance mode. Only admin users will be able change mode.
+         * 
+         * @param   {Boolean}     active
+         * @param   {Function}    cb 
+         */
+        this.maintenanceMode = (active, cb) => isFn(cb) && socket.emit(eventMaintenanceMode, active, cb)
+        /**
+         * @name    onMaintenanceMode
+         * @summary event received whenever messaging service is in/out of maintenance mode
+         * 
+         * @param   {Function} cb args: @active Boolean
+         */
+        this.onMaintenanceMode = cb => socket.on(eventMaintenanceMode, cb)
+
         // Send chat messages
         //
         // Params:
@@ -291,7 +324,6 @@ export class ChatClient {
             encrypted,
             cb,
         )
-
         // receive chat messages
         //
         // 
@@ -411,15 +443,17 @@ export class ChatClient {
          * @summary retrieves a verificaiton
          * 
          * @param   {String}    platform    social media platform name. Eg: twitter
-         * @param   {String}    handle      user's social media handle (username)
+         * @param   {String}    handle      user's social media handle/username
+         * @param   {String}    postId      social media post ID
          * @param   {Function}  cb          Callback function expected arguments:
          *                                  @err    String: error message if query failed
          *                                  @code   String: hex string
          */
-        this.rewardsClaim = (platform, handle, cb) => isFn(cb) && socket.emit(
+        this.rewardsClaim = (platform, handle, postId, cb) => isFn(cb) && socket.emit(
             'rewards-claim',
             platform,
             handle,
+            postId,
             cb
         )
 
