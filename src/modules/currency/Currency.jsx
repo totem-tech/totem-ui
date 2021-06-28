@@ -4,7 +4,7 @@ import { isValidNumber, isFn, isDefined } from '../../utils/utils'
 import { subjectAsPromise, unsubscribe, useRxSubject } from '../../services/react'
 import { convertTo, currencyDefault, rxSelected } from './currency'
 
-function Currency (props) {
+function Currency(props) {
     let {
         className,
         date,
@@ -53,11 +53,11 @@ function Currency (props) {
                     unit,
                     unitDisplayed,
                     decimalPlaces,
-                    date || [ unitROE, unitDisplayedROE ]
+                    date || [unitROE, unitDisplayedROE]
                 )
                 error = null
                 valueConverted = rounded
-                setTicker([to.ticker])
+                mounted && setTicker([to.ticker])
             } catch (err) {
                 error = err
                 valueConverted = 0

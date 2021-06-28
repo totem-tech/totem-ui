@@ -96,6 +96,7 @@ export default [
     "./src/modules/rewards/RewardsView.jsx",
     "./src/modules/rewards/SignupCard.jsx",
     "./src/modules/rewards/TwitterRewardWizard.jsx",
+    "./src/modules/rewards/notificationHandlers.jsx",
     "./src/modules/rewards/rewards.js",
     "./src/modules/task/TaskDetails.jsx",
     "./src/modules/task/TaskDetailsForm.jsx",

@@ -24,7 +24,8 @@ export default function SignupCard({ signupReward = {} }) {
     const total = amount + (twitterReward.amount || 0)
     const header = (
         <Text className='header'>
-            <Icon name='check' />{textsCap.signupHeader}
+            <Icon name={amount > 0 && twitterReward.amount > 0 ? 'check' : 'play'} />
+            {textsCap.signupHeader}
         </Text>
     )
     const content = !!twitterReward.amount
@@ -38,6 +39,7 @@ export default function SignupCard({ signupReward = {} }) {
                 </div>
             </Text>
         )
+    // console.log({ amount, twitterReward })
     return (
         <Card {...{
             fluid: true,

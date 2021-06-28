@@ -132,19 +132,19 @@ export const getClient = () => {
     instance.onConnect(async () => {
         const active = await instance.maintenanceMode.promise(null, null)
         rxIsInMaintenanceMode.next(active)
-        console.log({ active })
         rxIsConnected.next(true)
         // auto login on connect to messaging service
-        !!id && instance.login.promise(id, secret)
+        !!id && instance.login
+            .promise(id, secret)
+            .then(() => console.log('Logged into messaging service'))
+            .catch(console.error)
     })
     instance.onConnectError(() => {
         rxIsConnected.next(false)
         !!id && rxIsLoggedIn.next(false)
     })
     instance.onMaintenanceMode(active => {
-        console.log({ maintenanceMode: active })
         rxIsInMaintenanceMode.next(active)
-
     })
     return instance
 }

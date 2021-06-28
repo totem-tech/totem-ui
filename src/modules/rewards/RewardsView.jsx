@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { Icon } from 'semantic-ui-react'
-import Text from '../../components/Text'
 import { translated } from '../../services/language'
 import { useRxSubject } from '../../services/react'
 import client, { rxIsLoggedIn, rxIsRegistered } from '../chat/ChatClient'
 import ReferralCard from './ReferralCard'
+import { useRewards } from './rewards'
 import SignupCard from './SignupCard'
 
 let textsCap = translated({
@@ -15,19 +14,8 @@ let textsCap = translated({
 
 export default function RewardsView() {
     const [isRegistered] = useRxSubject(rxIsRegistered)
-    const [isLoggedIn] = useRxSubject(rxIsLoggedIn)
-    const [state, setState] = useState({})
-    const { error, referralRewards, signupReward } = state
-
-    useEffect(() => {
-        let mounted = true
-        !signupReward && client.rewardsGetData
-            .promise()
-            .then(result => mounted && setState(result || {}))
-            .catch(error => setState({ error }))
-
-        return () => mounted = false
-    }, [isLoggedIn])
+    const [rewards = {}, error] = useRewards()
+    const { referralRewards, signupReward } = rewards
 
     if (error) return error
 

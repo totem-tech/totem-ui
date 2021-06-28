@@ -711,7 +711,7 @@ const resumeSuspended = deferred(async () => {
         }
         suspendedIds.splice(i, 1)
 
-        console.log('resuming task', id)
+        console.log('Resuming task', id)
         // resume execution by checking each step starting from the top level task
         _processTask(task, id, task.toastId, true)
     }

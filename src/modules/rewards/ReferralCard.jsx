@@ -29,7 +29,6 @@ function ReferralCard({ referralRewards = {} }) {
     const [tableData, setTableData] = useState(new Map())
     const [amountTotal, setAmountTotal] = useState(0)
 
-
     useEffect(() => {
         const userIds = Object.keys(referralRewards)
         let amountTotal = 0
@@ -66,7 +65,7 @@ function ReferralCard({ referralRewards = {} }) {
 
     const referralHeader = (
         <Text className='header'>
-            {tableData.size && <Icon name='check' />}
+            <Icon name={tableData.size > 0 ? 'check' : 'play'} />
             {textsCap.referralHeader}
         </Text>
     )
@@ -89,7 +88,7 @@ function ReferralCard({ referralRewards = {} }) {
                         El: Accordion.Title,
                         onClick: () => setShowList(!showList)
                     }}>
-                        <Icon name='dropdown' />
+                        <Icon name={showList ? 'caret down' : 'caret right'} />
                         {textsCap.friendsReferred}: {tableData.size}
                     </Text>
                     <Accordion.Content active={showList}>
