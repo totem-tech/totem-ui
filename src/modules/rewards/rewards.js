@@ -8,7 +8,7 @@ import { rxNewNotification } from "../notification/notification"
 
 const moduleKey = 'rewards'
 const notificationType = 'rewards'
-const rxRewardsChanged = new BehaviorSubject(false)
+const rxRewardsChanged = new BehaviorSubject(0)
 const rwCache = (key, value) => storage.cache(moduleKey, key, value)
 
 export const generateSignupTweet = (twitterHandle = '') => {
@@ -52,7 +52,7 @@ export const getRewards = async () => {
         const rewards = await client.rewardsGetData.promise()
         Object.keys(rewards)
             .forEach(key => rwCache(key, rewards[key]))
-        rxRewardsChanged.next(rewards)
+        rxRewardsChanged.next(rxRewardsChanged.value + 1)
         return rewards
     } catch (err) {
         console.trace(err)
@@ -64,8 +64,9 @@ export const useRewards = () => {
 
     useEffect(() => {
         // retrieve initial rewards lists from database
-        if (!Object.keys(rewards).length) {
+        if (!useRewards.loaded) {
             getRewards()
+            useRewards.loaded = true
         }
     }, [])
 
