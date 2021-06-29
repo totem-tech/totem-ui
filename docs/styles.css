@@ -503,7 +503,7 @@ body.inverted .ui.modal .accordion > * {
 	background: #464646;
 	color: white;
 }
-body.inverted .ui.modal > .modal-close,
+/* body.inverted .ui.modal > .modal-close, */
 body.inverted .ui.modal > .header,
 body.inverted .ui.modal > .actions {
 	background: #2e2d2d;

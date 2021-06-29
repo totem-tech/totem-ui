@@ -72,9 +72,9 @@ export class FormInput extends Component {
 		const { defer } = props
 		this.state = { message: undefined }
 		this.value = undefined
-		this.setMessage = defer !== null
-			? deferred(this.setMessage, defer)
-			: this.setMessage
+		if (defer !== null) {
+			this.setMessage = deferred(this.setMessage, defer)
+		}
 
 		this.originalSetState = this.setState
 		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
@@ -90,7 +90,7 @@ export class FormInput extends Component {
 					? rxValueModifier(value)
 					: value
 				if (this.value === value) return
-				this.handleChange({ }, { ...this.props, value })
+				this.handleChange({}, { ...this.props, value })
 			})
 		}
 		if (isSubjectLike(rxOptions)) {
@@ -104,7 +104,7 @@ export class FormInput extends Component {
 				if (isOption) return
 				// value no longer exists in the options list
 				// force clear selection
-				rxValue.next(undefined)		
+				rxValue.next(undefined)
 			})
 		}
 	}
@@ -168,7 +168,7 @@ export class FormInput extends Component {
 					validatorConfig = { type: TYPES.hex }
 				case 'text':
 				case 'textarea':
-				// default: 
+					// default: 
 					validatorConfig = validatorConfig || { type: TYPES.string }
 					customMsgs.lengthMax = textsCap.maxLengthText
 					customMsgs.lengthMin = textsCap.minLengthText
@@ -185,7 +185,9 @@ export class FormInput extends Component {
 			)
 		}
 
-		let message = !err ? null : { content: err, status: 'error' }
+		let message = !err || isBool(err)
+			? null
+			: { content: err, status: 'error' }
 		const triggerChange = () => {
 			data.invalid = !!err
 			isFn(onChange) && onChange(event, data, this.props)
@@ -198,12 +200,18 @@ export class FormInput extends Component {
 		const handleValidate = msg => {
 			err = !!msg
 			const isEl = React.isValidElement(msg)
-			message = isBool(msg) || !msg 
+			message = isBool(msg) || !msg
 				? null // no need to display a message
 				: {
-					content: isEl ? msg : `${msg}`,
+					content: isEl
+						? msg
+						: `${msg}`,
 					status: 'error',
-					...(!isEl && isObj(msg) ? msg : {}),
+					...(
+						!isEl && isObj(msg)
+							? msg
+							: {}
+					),
 				}
 			triggerChange()
 		}
@@ -257,7 +265,7 @@ export class FormInput extends Component {
 			message: internalMsg,
 			options,
 		} = this.state
-		const invalid = invalidP || invalidS 
+		const invalid = invalidP || invalidS
 		const message = internalMsg || externalMsg
 		let hideLabel = false
 		let inputEl = ''
@@ -304,7 +312,7 @@ export class FormInput extends Component {
 				inputEl = <CheckboxGroup {...attrs} />
 				break
 			case 'date':
-			case 'dateinput': 
+			case 'dateinput':
 				attrs.rxValue = rxValue
 				inputEl = <DateInput {...{ ...attrs, invalid }} />
 				break
@@ -334,7 +342,7 @@ export class FormInput extends Component {
 				const childContainerStyle = attrs.widths !== 'equal'
 					? {}
 					: { width: `${100 / numChild}%` }
-				inputEl = attrs.inputs.map(childInput =>  (
+				inputEl = attrs.inputs.map(childInput => (
 					<FormInput {...{
 						...childInput,
 						key: childInput.name,

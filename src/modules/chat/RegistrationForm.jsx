@@ -44,7 +44,7 @@ export default function RegistrationForm(props) {
         }),
         false
     )
-    
+
     return (
         <FormBuilder {...{
             ...props,
@@ -63,7 +63,7 @@ RegistrationForm.propsTypes = {
         referredBy: PropTypes.string,
         secret: PropTypes.string,
         url: PropTypes.string,
-        userId: PropTypes.string,        
+        userId: PropTypes.string,
     }),
 }
 RegistrationForm.defaultProps = {
@@ -84,7 +84,22 @@ const getInputs = (props, isRegistered) => {
     referredBy = referredBySaved || referredBy || rfc || ''
     values.referredBy = referredBy
     // save referral information to local storage
+
     if (referredBy && !referredBySaved) referralCode(referredBy)
+
+    const supportedPlatforms = [
+        'twitter'
+    ]
+    const isSocialRefer = referredBy
+        && supportedPlatforms
+            .includes(`${referredBy}`.split('@')[1])
+    const validateRFC = async (_, { value }, _v, rxValue) => {
+        if (!value || !values.referredBy || await client.idExists.promise(value)) return
+        // reset value, if invalid referral code used in the URL
+        rxValue.next('')
+        referralCode(null)
+    }
+
     return fillValues([
         {
             disabled: isRegistered,
@@ -105,26 +120,24 @@ const getInputs = (props, isRegistered) => {
                 status: isRegistered ? 'error' : 'warning',
                 style: { textAlign: 'left' },
             },
-            name: inputNames.userId,
             multiple: false,
+            name: inputNames.userId,
             newUser: true,
+            required: true,
             placeholder: textsCap.userIdPlaceholder,
             type: 'UserIdInput',
-            required: true,
         },
         {
-            hidden: values => !!referredBy && values[inputNames.referredBy] === referredBy,
+            hidden: values => isSocialRefer || !!referredBy && values[inputNames.referredBy] === referredBy,
             label: textsCap.referredByLabel,
             name: inputNames.referredBy,
             placeholder: textsCap.referredByPlaceholder,
             rxValue: new BehaviorSubject(referredBy),
-            type: 'UserIdInput',
-            validate: async (_, { value }, _v, rxValue) => {
-                if (!value || !values.referredBy || await client.idExists.promise(value)) return
-                // reset value, if invalid referral code used in the URL
-                rxValue.next('')
-                referralCode(null)
-            },
+            type: isSocialRefer
+                ? 'text'
+                : 'UserIdInput',
+            // no need to validate UserID if referred from social platforms
+            validate: !isSocialRefer && validateRFC,
         },
         {
             // auto redirect after successful registration
@@ -156,11 +169,12 @@ const handleSubmit = (props, setState) => (_, values) => {
                 ? 'success'
                 : 'error'
         }
-        setState({
+        const state = {
             message,
             submitInProgress: false,
             success,
-        })
+        }
+        setState(state)
         isFn(onSubmit) && onSubmit(success, values)
 
         if (!success) return

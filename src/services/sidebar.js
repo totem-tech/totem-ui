@@ -164,6 +164,12 @@ export const sidebarItems = [
         name: gsName,
         title: textsCap.gettingStartedTitle,
     },
+    {
+        content: RewardsView,
+        icon: 'gift',
+        name: 'rewards',
+        title: 'Rewards'
+    },
     // {
     //     content: CrowdsaleView,
     //     icon: 'rocket',
@@ -350,12 +356,6 @@ export const sidebarItems = [
         subHeader: textsCap.utilitiesSubheader,
         title: textsCap.utilitiesTitle,
     },
-    // {
-    //     content: RewardsView,
-    //     icon: 'money',
-    //     name: 'rewards',
-    //     title: 'Rewards'
-    // }
 ].map(item => {
     const {
         active = false,
