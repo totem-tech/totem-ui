@@ -38,7 +38,6 @@ export const generateSignupTweet = (twitterHandle = '') => {
  * @returns {String} hex string
  */
 export const generateVerificationCode = (userId, platform, handle) => {
-    console.log({ userId, platform, handle })
     const code = generateHash(
         `${userId}:${platform}:${handle}`,
         'blake2',
@@ -48,12 +47,13 @@ export const generateVerificationCode = (userId, platform, handle) => {
 }
 export const getRewards = async () => {
     // make sure user is logged in
-    await subjectAsPromise(rxIsLoggedIn, true)
+    !rxIsLoggedIn.value && await subjectAsPromise(rxIsLoggedIn, true)
     try {
         const rewards = await client.rewardsGetData.promise()
         Object.keys(rewards)
             .forEach(key => rwCache(key, rewards[key]))
         rxRewardsChanged.next(rewards)
+        return rewards
     } catch (err) {
         console.trace(err)
     }

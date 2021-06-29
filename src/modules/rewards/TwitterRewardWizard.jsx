@@ -87,7 +87,6 @@ export default function TwitterRewardWizard(props) {
             const modalId = showForm(FormBuilder, formProps)
         },
         () => {
-            console.log({ value: rxTwitterHandle.value })
             const rxValue = new BehaviorSubject('')
             const formProps = {
                 header: textsCap.step3,
@@ -158,7 +157,6 @@ export default function TwitterRewardWizard(props) {
                             content: `${err}`,
                             status: 'error',
                         }
-                        console.log({ err })
                     } finally {
                         formProps.submitInProgress = false
                         showForm(FormBuilder, formProps, modalId)
