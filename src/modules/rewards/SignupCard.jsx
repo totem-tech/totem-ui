@@ -6,7 +6,6 @@ import LabelCopy from '../../components/LabelCopy'
 import Text from '../../components/Text'
 import { translated } from '../../services/language'
 import { useInverted } from '../../services/window'
-import { getUser } from '../chat/ChatClient'
 import Currency from '../currency/Currency'
 import { currencyDefault } from '../currency/currency'
 import TwitterRewardWizard from './TwitterRewardWizard'
@@ -39,7 +38,6 @@ export default function SignupCard({ signupReward = {} }) {
                 </div>
             </Text>
         )
-    // console.log({ amount, twitterReward })
     return (
         <Card {...{
             fluid: true,

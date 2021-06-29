@@ -14,10 +14,8 @@ let textsCap = translated({
 
 export default function RewardsView() {
     const [isRegistered] = useRxSubject(rxIsRegistered)
-    const [rewards = {}, error] = useRewards()
+    const rewards = useRewards()
     const { referralRewards, signupReward } = rewards
-
-    if (error) return error
 
     return !isRegistered
         ? textsCap.notRegistered

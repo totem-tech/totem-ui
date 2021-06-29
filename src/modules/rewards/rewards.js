@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react"
-import { unsubscribe, useRxSubject } from "../../services/react"
-import storage from "../../services/storage"
+import { BehaviorSubject } from 'rxjs'
 import { generateHash } from "../../utils/utils"
+import { subjectAsPromise, unsubscribe, useRxSubject } from "../../services/react"
+import storage from "../../services/storage"
 import client, { getUser, rxIsLoggedIn } from "../chat/ChatClient"
 import { rxNewNotification } from "../notification/notification"
 
 const moduleKey = 'rewards'
 const notificationType = 'rewards'
+const rxRewardsChanged = new BehaviorSubject(false)
 const rwCache = (key, value) => storage.cache(moduleKey, key, value)
 
 export const generateSignupTweet = (twitterHandle = '') => {
@@ -44,46 +46,42 @@ export const generateVerificationCode = (userId, platform, handle) => {
     )
     return code.substr(2) // get rid of 0x prefix
 }
+export const getRewards = async () => {
+    // make sure user is logged in
+    await subjectAsPromise(rxIsLoggedIn, true)
+    try {
+        const rewards = await client.rewardsGetData.promise()
+        Object.keys(rewards)
+            .forEach(key => rwCache(key, rewards[key]))
+        rxRewardsChanged.next(rewards)
+    } catch (err) {
+        console.trace(err)
+    }
+}
 
 export const useRewards = () => {
-    const [isLoggedIn] = useRxSubject(rxIsLoggedIn)
-    const [[rewards, error], setRewards] = useState(() => [rwCache()])
+    const [rewards] = useRxSubject(rxRewardsChanged, _ => rwCache())
 
     useEffect(() => {
-        if (!isLoggedIn) return () => { }
-        let mounted = true
-        const getRewards = () => client.rewardsGetData
-            .promise()
-            .then(rewards => {
-                mounted && setRewards([rewards, null])
-                Object.keys(rewards)
-                    .forEach(key => rwCache(key, rewards[key]))
-                console.log({ rewards })
-            })
-            .catch(error => setRewards([rewards, error]))
-        const subscriptions = {
-            notification: rxNewNotification.subscribe(([id, { childType, data, type }]) => {
-                const { status } = data || {}
-                const refresh = type === notificationType
-                    && status === 'success'
-                    || type === 'chat'
-                    && ['signupReward', 'referralSuccess'].includes(childType)
-                if (!refresh) return
-                // retrieve updated rewards lists
-                mounted && getRewards()
-            })
-        }
+        // retrieve initial rewards lists from database
         if (!Object.keys(rewards).length) {
-            // retrieve initial rewards lists from database
             getRewards()
         }
+    }, [])
 
-
-        return () => {
-            mounted = false
-            unsubscribe(subscriptions)
-        }
-    }, [isLoggedIn])
-
-    return [rewards, error]
+    return rewards
 }
+
+// automatically retrieve and store rewards data locally
+rxNewNotification.subscribe(async ([_, { childType, data, type }]) => {
+    const { status } = data || {}
+    const updateRequired = type === notificationType
+        && status === 'success'
+        || type === 'chat'
+        && ['signupReward', 'referralSuccess']
+            .includes(childType)
+    if (!updateRequired) return
+
+    // retrieve updated rewards lists
+    getRewards()
+})
