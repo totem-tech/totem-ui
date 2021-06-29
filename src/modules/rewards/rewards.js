@@ -47,7 +47,7 @@ export const generateVerificationCode = (userId, platform, handle) => {
 }
 export const getRewards = async () => {
     // make sure user is logged in
-    !rxIsLoggedIn.value && await subjectAsPromise(rxIsLoggedIn, true)
+    !rxIsLoggedIn.value && await subjectAsPromise(rxIsLoggedIn, true)[0]
     try {
         const rewards = await client.rewardsGetData.promise()
         Object.keys(rewards)
