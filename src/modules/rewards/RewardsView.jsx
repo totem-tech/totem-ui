@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { translated } from '../../services/language'
 import { useRxSubject } from '../../services/react'
-import client, { rxIsLoggedIn, rxIsRegistered } from '../chat/ChatClient'
+import { rxIsRegistered } from '../chat/ChatClient'
 import ReferralCard from './ReferralCard'
 import { useRewards } from './rewards'
 import SignupCard from './SignupCard'
+import SocialCard from './SocialCard'
 
 let textsCap = translated({
     notRegistered: 'please complete registration in the getting started module',
@@ -22,6 +23,7 @@ export default function RewardsView() {
         : (
             <div>
                 <SignupCard {...{ signupReward }} />
+                <SocialCard {...{ signupReward }} />
                 <ReferralCard {...{ referralRewards }} />
             </div>
         )

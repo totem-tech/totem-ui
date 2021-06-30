@@ -17,9 +17,9 @@ const textsCap = translated({
     copyLink: 'copy your referral link',
     friendsReferred: 'friends referred',
     paid: 'paid',
-    referralDesc1: 'Totem works best when you have partners. Referring will get both you and your friends free coins.',
+    referralDesc1: 'Totem works best when you have partners. Referring will get both you and your friends free $TOTEM.',
     referralDesc2: 'Invite your friends to join Totem using the following link:',
-    referralHeader: 'referral Reward',
+    referralHeader: 'referral rewards',
     totalEarned: 'total earned',
 }, true)[1]
 
@@ -65,7 +65,7 @@ function ReferralCard({ referralRewards = {} }) {
 
     const referralHeader = (
         <Text className='header'>
-            <Icon name={tableData.size > 0 ? 'check' : 'play'} />
+            <Icon name={tableData.size > 0 ? 'play' : 'hand point right'} />
             {textsCap.referralHeader}
         </Text>
     )
@@ -73,7 +73,7 @@ function ReferralCard({ referralRewards = {} }) {
         <Text>
             <p>{textsCap.referralDesc1}</p>
             <p>
-                {textsCap.referralDesc2}
+                {textsCap.referralDesc2 + ' '}
                 <LabelCopy {...{
                     as: 'span',
                     content: textsCap.copyLink,

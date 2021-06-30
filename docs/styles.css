@@ -537,26 +537,28 @@ body.inverted .ui.checkbox input:focus+label.checkbox-group-item {
 /* Semantic UI Steps (no built-in inverted!!)*/
 body.inverted .ui.steps .step,
 body.inverted .ui.ordered.steps .step,
+body.inverted .ui.ordered.steps .step.completed,
 body.inverted .ui.steps .step:not(.active):after,
 body.inverted .ui.steps .step:not(.active):after {
     background: #4c4c4c;
-    color: white;
+    color: white !important;
     transition: none;
 }
+
+body.inverted .ui.steps .step,
 body.inverted .ui.steps .step.active,
-body.inverted .ui.steps .step.active *,
-body.inverted .ui.steps .step:hover,
-body.inverted .ui.steps .step:hover *,
-body.inverted .ui.steps .step.active:after,
-body.inverted .ui.ordered.steps .step.active,
-body.inverted .ui.ordered.steps .step.active *,
-body.inverted .ui.ordered.steps .step:hover,
-body.inverted .ui.ordered.steps .step:hover *,
-body.inverted .ui.ordered.steps .step.active:after {
-    background: #2a2a2a;
+body.inverted .ui.steps .step.active:after {
+	background: #2a2a2a !important;
+	border: 1px solid #323030 !important;
 }
-body.inverted .steps > .step:not(:last-child) {
-	border-bottom: 1px solid #545454;
+body.inverted .ui.steps .step:hover,
+body.inverted .ui.steps .step:hover.active:after,
+body.inverted .ui.steps .step:focus,
+body.inverted .ui.steps .step:focus.active:after {
+	    background: #222121 !important;
+}
+body.inverted .ui.steps .step.active:after {
+	border: none !important
 }
 body.inverted .steps .step.active:before,
 body.inverted .steps .step.active .content .description,
@@ -564,8 +566,8 @@ body.inverted .ordered.steps .step.active:before,
 body.inverted .ordered.steps .step.active .description {
 	color: white;
 }
-body.inverted .steps .step.disabled, 
-body.inverted .steps .step.disabled * {
+body.inverted .steps .step:not(.active), 
+body.inverted .steps .step:not(.active) *{
     color: grey !important;
 }
 

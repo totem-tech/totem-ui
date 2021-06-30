@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Button, Step } from 'semantic-ui-react'
+import { Step } from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
 import { TYPES, validate } from '../../utils/validator'
 import FormBuilder from '../../components/FormBuilder'
@@ -9,11 +9,11 @@ import client from '../chat/ChatClient'
 import { generateSignupTweet } from './rewards'
 
 const textsCap = translated({
-    step1: 'follow Totem on Twitter',
-    step1Desc: `follow Totem's official account on Twitter`,
-    step1Confirm: 'You will be taken to Twitter.com. Click on the follow button and then return to this page.',
+    step1: 'Join Totem Discord server',
+    // step1Desc: `follow Totem's official account on Twitter`,
+    step1Confirm: 'You will be taken to Discord app. Follow instructions to join the server and return to this page.',
 
-    step2: 'post a Tweet',
+    step2: 'receive verification code',
     step2Confirm: 'You will be taken to Twitter.com.',
     step2ConfirmP1: 'Press Tweet!',
     step2ConfirmP2: 'Copy the Tweet link.',
@@ -34,7 +34,7 @@ const textsCap = translated({
     tweetIdLabelDetails: 'Go to the Tweet you posted on the step 2. Copy ID or URL of the Tweet and paste it below.',
 }, true)[1]
 
-export default function TwitterRewardWizard(props) {
+export default function DiscordRewardWizard(props) {
     const [activeStep, setActiveStep] = useState(0)
     const [rxTwitterHandle] = useState(() => new BehaviorSubject(''))
     const onClickHandlers = [
@@ -43,7 +43,7 @@ export default function TwitterRewardWizard(props) {
             content: textsCap.step1Confirm,
             size: 'mini',
             onConfirm: () => {
-                const url = 'https://twitter.com/intent/follow?screen_name=totem_live_'
+                const url = 'https://discord.gg/Vx7qbgn'
                 window.open(url, '_blank')
                 setActiveStep(1)
                 onClickHandlers[1]()
@@ -210,11 +210,9 @@ export default function TwitterRewardWizard(props) {
                 }}>
                     <Step.Content>
                         <Step.Title>{title}</Step.Title>
-                        {/* {activeStep === index && ( */}
                         <Step.Description>
                             {description}
                         </Step.Description>
-                        {/* )} */}
                     </Step.Content>
                 </Step>
             )).filter(Boolean)}

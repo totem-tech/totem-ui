@@ -133,6 +133,6 @@ Currency.propTypes = {
 }
 Currency.defaultProps = {
     EL: 'span',
-    unit: currencyDefault, // XTX
+    unit: currencyDefault, // TOTEM
 }
 export default React.memo(Currency)
