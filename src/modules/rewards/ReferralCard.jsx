@@ -7,10 +7,11 @@ import DataTable from '../../components/DataTable'
 import LabelCopy from '../../components/LabelCopy'
 import Text from '../../components/Text'
 import { translated } from '../../services/language'
-import { useInverted } from '../../services/window'
+import { MOBILE, rxLayout, useInverted } from '../../services/window'
 import { getUser } from '../chat/ChatClient'
 import Currency from '../currency/Currency'
 import { currencyDefault } from '../currency/currency'
+import { useRxSubject } from '../../services/react'
 
 const initialRewardAmount = 108154 // only used where amount has not been saved (initial drop)
 const textsCap = translated({
@@ -25,6 +26,7 @@ const textsCap = translated({
 
 function ReferralCard({ referralRewards = {} }) {
     const inverted = useInverted()
+    const isMobile = useRxSubject(rxLayout, l => l === MOBILE)[0]
     const [showList, setShowList] = useState(false)
     const [tableData, setTableData] = useState(new Map())
     const [amountTotal, setAmountTotal] = useState(0)
@@ -69,8 +71,19 @@ function ReferralCard({ referralRewards = {} }) {
             {textsCap.referralHeader}
         </Text>
     )
+    console.log({ showList })
+    const accordionTitle = (
+        <Text {...{
+            El: Accordion.Title,
+            key: 0,
+            onClick: () => setShowList(!showList),
+        }}>
+            <Icon name={showList ? 'caret down' : 'caret right'} />
+            {textsCap.friendsReferred}: {tableData.size}
+        </Text>
+    )
     const referralContent = (
-        <Text>
+        <Text El='div'>
             <p>{textsCap.referralDesc1}</p>
             <p>
                 {textsCap.referralDesc2 + ' '}
@@ -84,16 +97,11 @@ function ReferralCard({ referralRewards = {} }) {
 
             {tableData.size > 0 && (
                 <Accordion>
-                    <Text {...{
-                        El: Accordion.Title,
-                        onClick: () => setShowList(!showList)
-                    }}>
-                        <Icon name={showList ? 'caret down' : 'caret right'} />
-                        {textsCap.friendsReferred}: {tableData.size}
-                    </Text>
+                    {!showList && accordionTitle}
                     <Accordion.Content active={showList}>
                         <DataTable {...{
                             ...tableProps,
+                            topLeftMenu: [accordionTitle],
                             data: tableData,
                         }} />
                     </Accordion.Content>

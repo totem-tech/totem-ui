@@ -13,16 +13,18 @@ function Text(props) {
         style
     } = props
     const inverted = useInverted(reverseInverted)
-    
+
     return (
         <El {...{
             ...objWithoutKeys(props, ignoreAttributes),
             style: {
                 background: 'transparent',
-                color: inverted ? invertedColor : color,
+                color: inverted
+                    ? invertedColor
+                    : color,
                 ...style,
             },
-        }}/>
+        }} />
     )
 }
 Text.propTypes = {
