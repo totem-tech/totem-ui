@@ -32,6 +32,7 @@ module.exports = {
   // ignore nodejs modules and not found warning
   plugins: [
     new webpack.IgnorePlugin(/abort-controller/), // utils/PromisE.js
+    new webpack.IgnorePlugin(/discord.js/), // utils/PromisE.js
     new webpack.IgnorePlugin(/form-data/), // utils/utils.js
     new webpack.IgnorePlugin(/nano/), // utils/CouchDBStorage.js
     new webpack.IgnorePlugin(/node-localstorage/), // utils/DataStorage.js
