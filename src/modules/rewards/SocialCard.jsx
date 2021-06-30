@@ -15,6 +15,7 @@ const textsCap = translated({
     comingSoon: 'coming soon',
     desc: 'you can earn $TOTEM by following and sharing about Totem social media platforms. The steps below will guide you through the process.',
     header: 'social rewards',
+    reward: 'reward',
     step1Title: 'Twitter',
     step2Title: 'Discord',
     step3Title: 'Telegram',
@@ -27,7 +28,7 @@ export default function SocialCard({ signupReward = {} }) {
     let [activeStep, setActiveStep] = useState()
 
     const { discordReward = {}, telegramReward = {}, twitterReward = {} } = signupReward
-    const total = Object.keys(signupReward)
+    const total = [discordReward, telegramReward, twitterReward]
         .reduce((sum, { amount = 0 }) => sum + amount, 0)
     const completed = [discordReward, telegramReward, twitterReward]
         .every(({ amount }) => !!amount)
@@ -35,12 +36,12 @@ export default function SocialCard({ signupReward = {} }) {
     const steps = [
         {
             completed: twitterReward.amount > 0,
-            content: !twitterReward.amount && <TwitterRewardWizard />,
+            content: <TwitterRewardWizard completed={twitterReward.amount > 0} />,
             title: textsCap.step1Title,
         },
         {
             completed: discordReward.amount > 0,
-            content: !discordReward.amount && <DiscordRewardWizard />,
+            // content: !discordReward.amount && <DiscordRewardWizard />,
             title: textsCap.step2Title,
         },
         {
@@ -60,20 +61,30 @@ export default function SocialCard({ signupReward = {} }) {
                     <Step {...{
                         active: !completed && activeStep === index,
                         completed,
-                        disabled,
+                        disabled: disabled || completed,
                         key: index,
                         onClick: () => {
                             !content && confirm({
                                 cancelButton: null,
                                 content: textsCap.comingSoon,
-                                header: title,
+                                header: `${title} ${textsCap.reward}`,
                                 size: 'mini',
                             })
                             !completed && setActiveStep(index)
                         },
                     }}>
                         <Step.Content>
-                            <Step.Title>{title}</Step.Title>
+                            <Step.Title>
+                                {completed && (
+                                    <Icon {...{
+                                        className: 'no-margin',
+                                        color: 'green',
+                                        name: 'check',
+                                        size: 'large'
+                                    }} />
+                                )}
+                                {title}
+                            </Step.Title>
                             {description && (
                                 <Step.Description>
                                     {description}

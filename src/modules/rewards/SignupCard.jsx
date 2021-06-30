@@ -15,10 +15,12 @@ const textsCap = translated({
     totalEarned: 'total earned',
 }, true)[1]
 
-export default function SignupCard({ signupReward = {} }) {
+export default function SignupCard({ signupReward }) {
     const inverted = useInverted()
-    const { amount = initialRewardAmount } = signupReward
-    const total = amount
+    const { amount = initialRewardAmount } = signupReward || {}
+    const total = signupReward
+        ? amount
+        : 0
     const header = (
         <Text className='header'>
             <Icon name={amount > 0 ? 'check' : 'play'} />
@@ -48,5 +50,5 @@ export default function SignupCard({ signupReward = {} }) {
     )
 }
 SignupCard.propTypes = {
-    signupRewards: PropTypes.object,
+    signupReward: PropTypes.object,
 }

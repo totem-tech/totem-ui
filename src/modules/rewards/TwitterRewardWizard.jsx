@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { Button, Step } from 'semantic-ui-react'
+import PropTypes from 'prop-types'
+import { Step } from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
 import { TYPES, validate } from '../../utils/validator'
 import FormBuilder from '../../components/FormBuilder'
@@ -37,6 +38,7 @@ const textsCap = translated({
 export default function TwitterRewardWizard(props) {
     const [activeStep, setActiveStep] = useState(0)
     const [rxTwitterHandle] = useState(() => new BehaviorSubject(''))
+    const { completed } = props
     const onClickHandlers = [
         () => confirm({
             header: textsCap.step1,
@@ -186,25 +188,29 @@ export default function TwitterRewardWizard(props) {
 
     const steps = [
         {
-            as: 'div',
+            completed,
             description: textsCap.step1Desc,
             title: textsCap.step1,
         },
         {
+            completed,
             description: textsCap.step2Desc,
             title: textsCap.step2,
         },
         {
+            completed,
+            disabled: completed,
             description: textsCap.step3Desc,
             title: textsCap.step3,
         },
     ]
     return (
-        <Step.Group ordered vertical {...props}>
-            {steps.map(({ description, disabled, title }, index) => (
+        <Step.Group ordered vertical>
+            {steps.map(({ completed, description, disabled, title }, index) => (
                 <Step {...{
                     active: activeStep === index,
-                    completed: activeStep > index,
+                    completed: completed || activeStep > index,
+                    disabled,
                     key: index,
                     onClick: onClickHandlers[index],
                 }}>
