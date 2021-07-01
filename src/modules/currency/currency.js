@@ -168,11 +168,12 @@ export const updateCurrencies = async () => {
             await subjectAsPromise(rxIsConnected, true)[0]
         }
 
-        await subjectAsPromise(rxIsInMaintenanceMode, false)[0]
+        // if in maintenance mode wait for it to be switched off
+        rxIsInMaintenanceMode.value && await subjectAsPromise(rxIsInMaintenanceMode, false)[0]
         const p = fetchCurrencies(cached)
         // only use timeout if there is cached data available.
         // First time load must retrieve full list of currencies.
-        const tp = cached && PromisE.timeout(p, 3000)
+        const tp = !!cached && PromisE.timeout(p, 3000)
         updateCurrencies.updatePromise = p
 
         return await (tp || p)

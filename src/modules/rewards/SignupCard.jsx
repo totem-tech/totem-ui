@@ -8,8 +8,9 @@ import { translated } from '../../services/language'
 import { useInverted } from '../../services/window'
 import Currency from '../currency/Currency'
 import { currencyDefault } from '../currency/currency'
+import { useRxSubject } from '../../services/react'
+import { useRewards } from './rewards'
 
-const initialRewardAmount = 108154 // only used where amount has not been saved (initial drop)
 const textsCap = translated({
     header: 'signup rewards',
     totalEarned: 'total earned',
@@ -17,10 +18,7 @@ const textsCap = translated({
 
 export default function SignupCard({ signupReward }) {
     const inverted = useInverted()
-    const { amount = initialRewardAmount } = signupReward || {}
-    const total = signupReward
-        ? amount
-        : 0
+    const { amount } = signupReward || {}
     const header = (
         <Text className='header'>
             <Icon name={amount > 0 ? 'check' : 'play'} />
@@ -42,13 +40,10 @@ export default function SignupCard({ signupReward }) {
                     <Currency {...{
                         title: textsCap.totalEarned,
                         unit: currencyDefault,
-                        value: total,
+                        value: amount || 0,
                     }} />
                 </Text>
             </Card.Content>
         </Card>
     )
-}
-SignupCard.propTypes = {
-    signupReward: PropTypes.object,
 }

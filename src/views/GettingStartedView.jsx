@@ -256,13 +256,13 @@ export default function GetingStarted() {
 								size: 'mini',
 								style: styles.btnStyle,
 							},
-							{
-								content: texts.newsletterSignup,
-								icon: 'mail',
-								onClick: () => showForm(NewsletteSignup),
-								size: 'mini',
-								style: styles.btnStyle,
-							},
+							// {
+							// 	content: texts.newsletterSignup,
+							// 	icon: 'mail',
+							// 	onClick: () => showForm(NewsletteSignup),
+							// 	size: 'mini',
+							// 	style: styles.btnStyle,
+							// },
 						]
 							.filter(Boolean)
 							.map((props, i) => <Button {...props} key={props.icon + i} />)

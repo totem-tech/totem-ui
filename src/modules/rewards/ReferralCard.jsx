@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Accordion, Card, Icon } from 'semantic-ui-react'
 import { format } from '../../utils/time'
-import { className, isDefined } from '../../utils/utils'
+import { className, isArr, isDefined } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
 import LabelCopy from '../../components/LabelCopy'
 import Text from '../../components/Text'
@@ -12,6 +12,7 @@ import { getUser } from '../chat/ChatClient'
 import Currency from '../currency/Currency'
 import { currencyDefault } from '../currency/currency'
 import { useRxSubject } from '../../services/react'
+import { useRewards } from './rewards'
 
 const initialRewardAmount = 108154 // only used where amount has not been saved (initial drop)
 const textsCap = translated({
@@ -24,43 +25,44 @@ const textsCap = translated({
     totalEarned: 'total earned',
 }, true)[1]
 
-function ReferralCard({ referralRewards = {} }) {
+export default function ReferralCard({ referralRewards = [] }) {
     const inverted = useInverted()
-    const isMobile = useRxSubject(rxLayout, l => l === MOBILE)[0]
     const [showList, setShowList] = useState(false)
     const [tableData, setTableData] = useState(new Map())
     const [amountTotal, setAmountTotal] = useState(0)
+    const [referralUrl] = useState(() => getReferralURL())
 
     useEffect(() => {
-        const userIds = Object.keys(referralRewards)
         let amountTotal = 0
-        const list = userIds.map(userId => {
-            const item = referralRewards[userId]
-            if (!isDefined(item.amount)) {
-                item.amount = initialRewardAmount
-            }
-            const { amount, status, tsCreated, twitterReward = {} } = item
-            const _amountSum = amount + (twitterReward.amount || 0)
-            amountTotal += _amountSum
-            return [
-                userId,
-                {
-                    ...item,
-                    userId,
-                    _amountSum,
-                    _amount: (
-                        <Currency {...{
-                            unit: currencyDefault,
-                            value: _amountSum,
-                        }} />
-                    ),
-                    _status: status === 'success'
-                        ? textsCap.paid
-                        : '',
-                    _tsCreated: format(tsCreated, false, false),
+        const list = !isArr(referralRewards)
+            ? []
+            : referralRewards.map(item => {
+                const { data: { referredUserId } = {} } = item
+                if (!isDefined(item.amount)) {
+                    item.amount = initialRewardAmount
                 }
-            ]
-        })
+                const { amount, status, tsCreated, twitterReward = {} } = item
+                const _amountSum = amount + (twitterReward.amount || 0)
+                amountTotal += _amountSum
+                return [
+                    referredUserId,
+                    {
+                        ...item,
+                        referredUserId,
+                        _amountSum,
+                        _amount: (
+                            <Currency {...{
+                                unit: currencyDefault,
+                                value: _amountSum,
+                            }} />
+                        ),
+                        _status: status === 'success'
+                            ? textsCap.paid
+                            : '',
+                        _tsCreated: format(tsCreated, false, false),
+                    }
+                ]
+            })
         setAmountTotal(amountTotal)
         setTableData(new Map(list))
     }, [referralRewards])
@@ -71,7 +73,6 @@ function ReferralCard({ referralRewards = {} }) {
             {textsCap.referralHeader}
         </Text>
     )
-    console.log({ showList })
     const accordionTitle = (
         <Text {...{
             El: Accordion.Title,
@@ -91,7 +92,7 @@ function ReferralCard({ referralRewards = {} }) {
                     as: 'span',
                     content: textsCap.copyLink,
                     maxLength: null,
-                    value: getReferralURL(),
+                    value: referralUrl,
                 }} />
             </p>
 
@@ -130,7 +131,7 @@ function ReferralCard({ referralRewards = {} }) {
     )
 }
 ReferralCard.propTypes = {
-    referralRewards: PropTypes.object,
+    referralRewards: PropTypes.array,
 }
 const tableProps = {
     columns: [
@@ -141,7 +142,7 @@ const tableProps = {
             title: 'Date',
         },
         {
-            key: 'userId',
+            key: 'referredUserId',
             title: 'User ID',
         },
         {
@@ -162,5 +163,3 @@ export const getReferralURL = () => location.protocol
     + location.hostname
     + (location.port ? ':' + location.port : '')
     + '?ref=' + getUser().id
-
-export default React.memo(ReferralCard)

@@ -4,6 +4,7 @@ import { useRxSubject } from '../../services/react'
 import { rxIsRegistered } from '../chat/ChatClient'
 import ReferralCard from './ReferralCard'
 import { useRewards } from './rewards'
+import RewardsProgress from './RewardsProgress'
 import SignupCard from './SignupCard'
 import SocialCard from './SocialCard'
 
@@ -16,14 +17,15 @@ let textsCap = translated({
 export default function RewardsView() {
     const [isRegistered] = useRxSubject(rxIsRegistered)
     const rewards = useRewards()
-    const { referralRewards, signupReward } = rewards
+    const { socialRewards, signupReward, referralRewards } = rewards
 
     return !isRegistered
         ? textsCap.notRegistered
         : (
             <div>
+                <RewardsProgress {...{ rewards }} />
                 <SignupCard {...{ signupReward }} />
-                <SocialCard {...{ signupReward }} />
+                <SocialCard {...{ socialRewards }} />
                 <ReferralCard {...{ referralRewards }} />
             </div>
         )

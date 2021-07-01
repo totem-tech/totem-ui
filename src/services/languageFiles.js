@@ -94,6 +94,7 @@ export default [
     "./src/modules/partner/partner.js",
     "./src/modules/rewards/DiscordRewardWizard.jsx",
     "./src/modules/rewards/ReferralCard.jsx",
+    "./src/modules/rewards/RewardsProgress.jsx",
     "./src/modules/rewards/RewardsView.jsx",
     "./src/modules/rewards/SignupCard.jsx",
     "./src/modules/rewards/SocialCard.jsx",

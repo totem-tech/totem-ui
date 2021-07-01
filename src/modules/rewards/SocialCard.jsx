@@ -10,6 +10,8 @@ import { MOBILE, rxLayout, useInverted } from '../../services/window'
 import Currency, { currencyDefault } from '../currency/Currency'
 import DiscordRewardWizard from './DiscordRewardWizard'
 import TwitterRewardWizard from './TwitterRewardWizard'
+import { markNewsleterDone, useRewards } from './rewards'
+import NewsletteSignup from '../../forms/NewsletterSignup'
 
 const textsCap = translated({
     comingSoon: 'coming soon',
@@ -19,35 +21,51 @@ const textsCap = translated({
     step1Title: 'Twitter',
     step2Title: 'Discord',
     step3Title: 'Telegram',
+    step4Title: 'signup for announcements',
     totalEarned: 'total earned',
 }, true)[1]
 
-export default function SocialCard({ signupReward = {} }) {
+export default function SocialCard({ socialRewards = {} }) {
     const isMobile = useRxSubject(rxLayout, l => l === MOBILE)[0]
     const inverted = useInverted()
     let [activeStep, setActiveStep] = useState()
 
-    const { discordReward = {}, telegramReward = {}, twitterReward = {} } = signupReward
-    const total = [discordReward, telegramReward, twitterReward]
+    const { discord = {}, newsletter = false, telegram = {}, twitter = {} } = socialRewards
+    const total = [discord, telegram, twitter]
         .reduce((sum, { amount = 0 }) => sum + amount, 0)
-    const completed = [discordReward, telegramReward, twitterReward]
+    const completed = [discord, telegram, twitter]
         .every(({ amount }) => !!amount)
-
     const steps = [
         {
-            completed: twitterReward.amount > 0,
-            content: <TwitterRewardWizard completed={twitterReward.amount > 0} />,
+            completed: twitter.amount > 0,
+            content: <TwitterRewardWizard completed={twitter.amount > 0} />,
             title: textsCap.step1Title,
         },
         {
-            completed: discordReward.amount > 0,
+            completed: discord.amount > 0,
             // content: !discordReward.amount && <DiscordRewardWizard />,
             title: textsCap.step2Title,
         },
         {
-            completed: telegramReward.amount > 0,
+            completed: telegram.amount > 0,
             title: textsCap.step3Title,
         },
+        {
+            completed: newsletter,
+            content: (
+                <NewsletteSignup {...{
+                    onSubmit: ok => {
+                        if (!ok) return
+                        markNewsleterDone()
+                        setActiveStep(activeStep + 1)
+                    },
+                    style: {
+                        maxWidth: 450
+                    },
+                }} />
+            ),
+            title: textsCap.step4Title,
+        }
     ]
     if (!isDefined(activeStep)) {
         activeStep = steps.findIndex(x => !x.completed)
@@ -56,7 +74,7 @@ export default function SocialCard({ signupReward = {} }) {
     const content = (
         <div>
             <p>{textsCap.desc}</p>
-            <Step.Group fluid={isMobile} style={{ width: !isMobile ? 493 : '' }}>
+            <Step.Group fluid={isMobile}>
                 {steps.map(({ completed, content, description, disabled, title }, index) => (
                     <Step {...{
                         active: !completed && activeStep === index,
@@ -131,5 +149,7 @@ export default function SocialCard({ signupReward = {} }) {
     )
 }
 SocialCard.propTypes = {
-    signupRewards: PropTypes.object,
+    socialRewards: PropTypes.object,
 }
+
+

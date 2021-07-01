@@ -34,7 +34,6 @@ export default React.memo(({ id, notification }) => {
             <TimeSince className='time-since' date={tsCreated} />
         </div>
     )
-    if (type === 'rewards') console.log({ status })
     const msgStatus = msg.status || status
     return (
         <Message  {...{

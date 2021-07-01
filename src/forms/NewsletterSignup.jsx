@@ -4,7 +4,7 @@ import FormBuilder, { fillValues } from '../components/FormBuilder'
 import { translated } from '../services/language'
 import client from '../modules/chat/ChatClient'
 import Message from '../components/Message'
-import { isObj } from '../utils/utils'
+import { isFn, isObj } from '../utils/utils'
 
 const prodUrl = 'https://totem.live'
 const textsCap = translated({
@@ -80,6 +80,7 @@ export default class NewsletteSignup extends Component {
     }
 
     handleSubmit = async (_, values) => {
+        const { onSubmit } = this.props
         this.setState({
             loading: true,
             submitDisabled: true,
@@ -101,6 +102,7 @@ export default class NewsletteSignup extends Component {
                 status: error ? 'error' : 'success'
             },
         })
+        isFn(onSubmit) && onSubmit(!error)
     }
 
     render = () => {

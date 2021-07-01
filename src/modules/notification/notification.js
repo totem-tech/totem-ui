@@ -186,7 +186,8 @@ setTimeout(() => {
             read,
         }
         notifications.set(id, newNotification).sort('tsCreated', true, true)
-        const isNew = rw().tsLastReceived < tsCreated
+        const { tsLastReceived } = rw()
+        const isNew = !tsLastReceived || tsLastReceived < tsCreated
         if (!isNew) return
         rw({ tsLastReceived: tsCreated })
         !read && notify(id, newNotification)
@@ -236,7 +237,7 @@ setTimeout(() => {
             notifications.setAll(items, true).sort('tsCreated', true, true)
             if (!gotNew) return
 
-            rxNewNotification.next(itemsArr[0])
+            mostRecentId && rxNewNotification.next([mostRecentId, mostRecent])
 
             mostRecent && !mostRecent.read && notify(mostRecentId, mostRecent)
         })
