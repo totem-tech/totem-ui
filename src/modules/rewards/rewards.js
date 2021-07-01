@@ -58,7 +58,6 @@ export const getRewards = async () => {
     try {
         // make sure user is logged in
         !rxIsLoggedIn.value && await subjectAsPromise(rxIsLoggedIn, true)[0]
-        console.log('Retreiving rewards')
         const rewards = await client.rewardsGetData.promise()
         const result = {
             // include referral twitter rewards as well
@@ -80,8 +79,6 @@ export const getRewards = async () => {
             .forEach(key =>
                 rwCache(key, result[key])
             )
-
-        console.log({ rewards, result })
 
         rxRewardsChanged.next(rxRewardsChanged.value + 1)
         return result

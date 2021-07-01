@@ -10,13 +10,14 @@ export default function RewardsProgress({ rewards = {} }) {
         .length
     const cards = [
         signupReward.amount > 0 ? 1 : 0,
-        numSocialCompleted / socialKeys.length,
+        !numSocialCompleted
+            ? 0
+            : numSocialCompleted / socialKeys.length,
         referralRewards.length > 0 ? 1 : 0,
     ]
     const percent = cards
         .map(n => (n / cards.length) * 100)
         .reduce((sum, n) => sum + n, 0)
-    console.log({ percentage: percent })
     return (
         <Progress {...{
             active: percent <= 99,
