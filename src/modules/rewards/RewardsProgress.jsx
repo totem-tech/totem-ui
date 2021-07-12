@@ -3,7 +3,11 @@ import PropTypes from 'prop-types'
 import { Progress } from 'semantic-ui-react'
 
 export default function RewardsProgress({ rewards = {} }) {
-    const { referralRewards = [], signupReward = {}, socialRewards = {} } = rewards
+    const {
+        referralRewards = [],
+        signupReward = {},
+        socialRewards = {}
+    } = rewards
     const socialKeys = Object.keys(socialRewards)
     const numSocialCompleted = socialKeys.map(key => (socialRewards[key] || {}).amount > 0)
         .filter(Boolean)
@@ -18,12 +22,16 @@ export default function RewardsProgress({ rewards = {} }) {
     const percent = cards
         .map(n => (n / cards.length) * 100)
         .reduce((sum, n) => sum + n, 0)
+    const active = percent <= 99
     return (
         <Progress {...{
-            active: percent <= 99,
+            active,
+            color: active
+                ? 'pink'
+                : 'green',
             percent,
             size: 'tiny',
-            style: { margin: '-16px 0 0 0' }
+            style: { margin: '-16px 0 0 0' },
         }} />
     )
 }

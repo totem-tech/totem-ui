@@ -28,7 +28,7 @@ export default function FinancialStatementView(props) {
     const shouldExpand = Object.keys(expandedTitles)
         .filter(key => !!expandedTitles[key].active)
         .length === 0
-    
+
     return (
         <div {...{ ...props, style: { whiteSpace: 'pre', ...props.style } }}>
             {nestedBalances.length > 0 && (
@@ -120,11 +120,20 @@ export const getNestedBalances = (glAccounts = []) => {
     }
 
     return glAccounts.reduce((allItems, next) => {
-        const { number, balanceType, typeName, categoryName, categoryGrpName, groupName, balance = 0 } = next
+        const {
+            balance = 0,
+            balanceType,
+            name,
+            number,
+            categoryName,
+            categoryGrpName,
+            groupName,
+            typeName,
+        } = next
         const type = setLevelBalance(allItems, typeName, balance, number)
         const category = setLevelBalance(type.children, categoryName, balance, number)
         const categoryGrp = setLevelBalance(category.children, categoryGrpName, balance, number)
-        const group = setLevelBalance(categoryGrp.children, groupName, balance, balanceType, number)
+        const group = setLevelBalance(categoryGrp.children, name, balance, balanceType, number)
         return allItems
     }, [])
 }
