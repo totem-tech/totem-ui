@@ -130,10 +130,30 @@ export const getNestedBalances = (glAccounts = []) => {
             groupName,
             typeName,
         } = next
-        const type = setLevelBalance(allItems, typeName, balance, number)
-        const category = setLevelBalance(type.children, categoryName, balance, number)
-        const categoryGrp = setLevelBalance(category.children, categoryGrpName, balance, number)
-        const group = setLevelBalance(categoryGrp.children, name, balance, balanceType, number)
+        const type = setLevelBalance(
+            allItems,
+            typeName, balance,
+            number,
+        )
+        const category = setLevelBalance(
+            type.children,
+            categoryName,
+            balance,
+            number,
+        )
+        const categoryGrp = categoryGrpName && setLevelBalance(
+            category.children,
+            categoryGrpName,
+            balance,
+            number,
+        )
+        categoryGrp && groupName && setLevelBalance(
+            categoryGrp.children,
+            name,
+            balance,
+            balanceType,
+            number,
+        )
         return allItems
     }, [])
 }
