@@ -87,28 +87,27 @@ export const getNestedBalances = (glAccounts = []) => {
     const isMobile = rxLayout.value === MOBILE
     const setLevelBalance = (parent, title = textsCap.unknownTitle, balance = 0, balanceType, number) => {
         let current = parent.find(x => x.title === title)
+        if (number) {
+            title = !isMobile
+                ? <span>{title} ({number})</span>
+                : (
+                    <Invertible {...{
+                        content: number,
+                        El: Popup,
+                        eventsEnabled: false,
+                        on: ['click', 'focus',],
+                        position: 'bottom center',
+                        positionFixed: true,
+                        size: 'mini',
+                        trigger: <span>{title}</span>,
+                    }} />
+                )
+        }
         if (!current) {
             current = {
                 balance: balance,
                 children: [],
-                title: !number
-                    ? title
-                    : (
-                        !isMobile
-                            ? <span>{title} ({number})</span>
-                            : (
-                                <Invertible {...{
-                                    content: number,
-                                    El: Popup,
-                                    eventsEnabled: false,
-                                    on: ['click', 'focus',],
-                                    position: 'bottom center',
-                                    positionFixed: true,
-                                    size: 'mini',
-                                    trigger: <span>{title}</span>,
-                                }} />
-                            )
-                    ),
+                title,
             }
             parent.push(current)
         } else {
@@ -132,7 +131,8 @@ export const getNestedBalances = (glAccounts = []) => {
         } = next
         const type = setLevelBalance(
             allItems,
-            typeName, balance,
+            typeName,
+            balance,
             number,
         )
         const category = setLevelBalance(

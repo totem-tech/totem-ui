@@ -133,7 +133,10 @@ export const getConnection = async (force = false) => {
         connection.isConnected = false
         // set toast when connection fails for the first time
         !connection.errorShown && setToast(
-            { content: textsCap.nodeConnectionErr, status: 'error' },
+            {
+                content: textsCap.nodeConnectionErr,
+                status: 'error',
+            },
             3000,
             'blockchain-connection-error', // ensures same message not displayed twice
         )
@@ -147,7 +150,7 @@ export const getConnection = async (force = false) => {
  * @name    getCurrentBlock
  * @summary get current block number
  * 
- * @param {Function} callback (optional) to subscribe to block number changes
+ * @param   {Function} callback (optional) to subscribe to block number changes
  * 
  * @returns {Number|Function} latest block number if `@callback` not supplied, otherwise, function to unsubscribe
  */
