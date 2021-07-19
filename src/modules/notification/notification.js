@@ -10,6 +10,7 @@ import TotemLogo from '../../assets/totem-button-grey.png'
 import { rxVisible as rxWindowVisbile } from '../../services/window'
 
 export const MODULE_KEY = 'notifications'
+// remove legacy notifications data
 storage.settings.module('totem_notifications', null)
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 const notifications = new DataStorage('totem_' + MODULE_KEY)
@@ -185,11 +186,12 @@ setTimeout(() => {
             read,
         }
         notifications.set(id, newNotification).sort('tsCreated', true, true)
-        const isNew = rw().tsLastReceived < tsCreated
+        const { tsLastReceived } = rw()
+        const isNew = !tsLastReceived || tsLastReceived < tsCreated
         if (!isNew) return
         rw({ tsLastReceived: tsCreated })
         !read && notify(id, newNotification)
-        rxNewNotification.next(id)
+        rxNewNotification.next([id, newNotification])
         console.log('Notification received!', id, from, tsCreated)
     })
 
@@ -235,7 +237,7 @@ setTimeout(() => {
             notifications.setAll(items, true).sort('tsCreated', true, true)
             if (!gotNew) return
 
-            rxNewNotification.next(mostRecentId)
+            mostRecentId && rxNewNotification.next([mostRecentId, mostRecent])
 
             mostRecent && !mostRecent.read && notify(mostRecentId, mostRecent)
         })

@@ -233,7 +233,9 @@ export const useRxSubject = (subject, valueModifier, initialValue, allowSubjectU
     }, [])
 
     const setValue = newValue => !allowSubjectUpdate
-        ? setState({ value: newValue })
+        ? setState({
+            value: { ...value, ...newValue },
+        })
         : subject.next(newValue)
     return [value, setValue]
 }

@@ -7,13 +7,13 @@ import { arrSort, className, copyToClipboard, textEllipsis } from '../utils/util
 // forms
 import IdentityForm from '../modules/identity/IdentityForm'
 import TimekeepingForm from '../modules/timekeeping/TimekeepingForm'
-import SettingsForm, { inputNames as settingsInputNames} from '../forms/Settings'
+import SettingsForm, { inputNames as settingsInputNames } from '../forms/Settings'
 // modules
 import {
 	rxUnreadCount as rxUnreadMsgCount,
 	rxVisible as rxChatVisible,
 } from '../modules/chat/chat'
-import { getUser, rxIsLoggedIn } from '../modules/chat/ChatClient'
+import { getUser, rxIsInMaintenanceMode, rxIsLoggedIn } from '../modules/chat/ChatClient'
 import Balance from '../modules/identity/Balance'
 import { getSelected, setSelected, rxIdentities } from '../modules/identity/identity'
 import {
@@ -155,7 +155,7 @@ const PageHeaderView = props => {
 					item: true,
 					labeled: true,
 					onChange: onSelection,
-					onClose:  () => rxIdentityListVisible.next(false),
+					onClose: () => rxIdentityListVisible.next(false),
 					onClick: () => {
 						rxIdentityListVisible.next(!rxIdentityListVisible.value)
 						rxNotifVisible.next(false)
@@ -212,7 +212,7 @@ const PageHeaderView = props => {
 							{
 								icon: 'language',
 								content: 'Change language', // Better left un-translated
-								onClick: () => showForm( SettingsForm, {
+								onClick: () => showForm(SettingsForm, {
 									header: null,// 'Change language',
 									inputsHidden: Object.values(settingsInputNames)
 										.filter(x => x !== settingsInputNames.languageCode),
@@ -252,9 +252,12 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 	const [notifBlink, setNotifBlink] = useState(false)
 	const [notifVisible] = useRxSubject(rxNotifVisible)
 	const [chatVisible] = useRxSubject(rxChatVisible)
+	const [maintenanceMode] = useRxSubject(rxIsInMaintenanceMode)
 	const countStyle = {
 		...styles.countStyle,
-		top: isMobile ? 17 : styles.countStyle.top,
+		top: isMobile
+			? 17
+			: styles.countStyle.top,
 	}
 
 	useEffect(() => {
@@ -303,20 +306,30 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 			<Menu.Item {...{
 				active: !!notifVisible,
 				className: className([
-					notifBlink ? 'blink' : '',
+					notifBlink
+						? 'blink'
+						: '',
 					'shake-trigger',
 				]),
 				disabled: unreadNotifCount === -1,
 				onClick: () => setNotifBlink(false) | rxNotifVisible.next(!rxNotifVisible.value),
-				style: { background: unreadNotifCount > 0 ? '#2185d0' : '' }
+				style: {
+					background: unreadNotifCount > 0
+						? '#2185d0'
+						: ''
+				}
 			}}>
 				<Icon {...{
-					className: className([
-						'no-margin',
-						unreadNotifCount && 'shake',
-						notifBlink && 'shake forever',
-					]),
-					color: unreadNotifCount === -1 ? 'grey' : undefined,
+					className: className({
+						'no-margin': true,
+						'shake': unreadNotifCount,
+						'shake forever': notifBlink,
+					}),
+					color: maintenanceMode
+						? 'yellow'
+						: unreadNotifCount === -1
+							? 'grey'
+							: undefined,
 					name: 'bell',
 					size: 'large',
 				}} />
@@ -329,12 +342,18 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 
 			<Menu.Item {...{ active: chatVisible }}
 				onClick={() => {
-				rxChatVisible.next(!rxChatVisible.value)
-				rxNotifVisible.next(false)
-			}}>
+					rxChatVisible.next(!rxChatVisible.value)
+					rxNotifVisible.next(false)
+				}}>
 				<Icon {...{
 					className: 'no-margin',
-					color: !isLoggedIn ? 'red' : (unreadMsgCount > 0 ? 'blue' : undefined),
+					color: maintenanceMode
+						? 'yellow'
+						: !isLoggedIn
+							? 'red'
+							: unreadMsgCount > 0
+								? 'blue'
+								: undefined,
 					name: 'chat',
 					size: 'large'
 				}} />

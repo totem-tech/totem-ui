@@ -90,7 +90,7 @@ export default React.memo(Balance)
  * 
  * @param   {String|Array}  address user identity
  * 
- * @returns {Number|Array} account balance amount in XTX
+ * @returns {Number|Array} account balance amount in TOTEM
  */
 export const useBalance = (address) => {
     const [balance, setBalance] = useState()

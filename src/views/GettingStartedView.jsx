@@ -11,7 +11,7 @@ import NewsletteSignup from '../forms/NewsletterSignup'
 // services
 import { translated } from '../services/language'
 import { closeModal, confirm, showForm } from '../services/modal'
-import { addToQueue, QUEUE_TYPES } from '../services/queue'
+// import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { useRxSubject } from '../services/react'
 import storage, { downloadBackup } from '../services/storage'
 import { setToast } from '../services/toast'
@@ -22,6 +22,7 @@ import RegistrationForm from '../modules/chat/RegistrationForm'
 import { getSelected, rxIdentities } from '../modules/identity/identity'
 import IdentityForm from '../modules/identity/IdentityForm'
 import LabelCopy from '../components/LabelCopy'
+import { setActive } from '../services/sidebar'
 
 const texts = translated({
 	backupTitle: 'Backup your account',
@@ -50,7 +51,7 @@ const texts = translated({
 		Totem is currently under heavy development, but you can already use the Identities, Partners, Activities 
 		and Timekeeping Modules as well as make basic transfers of your transaction allocations balance using the Transfer Module.`,
 	quickGuidePara2: `
-		Most of what you do in Totem will consume transactions from your balance (XTX for short) but don't worry, 
+		Most of what you do in Totem will consume transactions from your balance ($TOTEM for short) but don't worry, 
 		we are nice open source people, and we'll give you plenty to get you started.
 	`,
 	quickGuidePara3: 'If you use up your balance - no problemo! Simply request some more from our automated faucet.',
@@ -82,6 +83,7 @@ const texts = translated({
 	video2Title: 'Backup your account. Watch the video:',
 })[0]
 const textsCap = translated({
+	backupLater: 'backup later',
 	backupNow: 'backup now',
 	backupConfirmHeader: 'confirm backup',
 	backupFileInvalid: `
@@ -115,7 +117,7 @@ export const registerStepIndex = 0
  * @returns {Number}
  */
 export const saveActiveStep = stepNo => {
-	const v = !isValidNumber(stepNo) 
+	const v = !isValidNumber(stepNo)
 		? undefined
 		: { activeStep: stepNo }
 	stepNo = rw(v).activeStep || 0
@@ -151,7 +153,7 @@ export default function GetingStarted() {
 			},
 			{
 				// allow the user to backup even after step is completed
-				disabled: activeStep =>  activeStep <= registerStepIndex, 
+				disabled: activeStep => activeStep <= registerStepIndex,
 				description: texts.backupDescription,
 				onClick: handleBackup,
 				title: texts.backupTitle,
@@ -209,7 +211,7 @@ export default function GetingStarted() {
 						source='vimeo'
 					/>
 				</div> */}
-			
+
 			{/* Restore backup section */}
 			<div style={styles.space}>
 				<h3>{texts.restoreTitle}</h3>
@@ -220,7 +222,7 @@ export default function GetingStarted() {
 			</div>
 
 			{/* Referral Link*/}
-			{isRegistered && (	
+			{/* {isRegistered && (
 				<div style={styles.space}>
 					<h3>{texts.referTitle}</h3>
 					<div>{texts.referDesc1}</div>
@@ -231,18 +233,8 @@ export default function GetingStarted() {
 						value: getReferralURL(),
 					}} />
 				</div>
-			)}
-			
-			
-			{/* <a href='https://twitter.com/intent/follow?screen_name=Totem_Live_' >
-				Follow Totem
-			</a>
-			
-			<a className="twitter-share-button ui button"
-				href="https://twitter.com/intent/tweet?text=Hello%20world"
-				data-size="large">
-				Tweet
-			</a> */}
+			)} */}
+
 			{/* Social links and support chat section */}
 			<div style={styles.space}>
 				<h3>{texts.supportChatHeader}</h3>
@@ -264,23 +256,29 @@ export default function GetingStarted() {
 								size: 'mini',
 								style: styles.btnStyle,
 							},
-							{
-								content: texts.newsletterSignup,
-								icon: 'mail',
-								onClick: () => showForm(NewsletteSignup),
-								size: 'mini',
-								style: styles.btnStyle,
-							},
+							// {
+							// 	content: texts.newsletterSignup,
+							// 	icon: 'mail',
+							// 	onClick: () => showForm(NewsletteSignup),
+							// 	size: 'mini',
+							// 	style: styles.btnStyle,
+							// },
 						]
 							.filter(Boolean)
-							.map((props, i) => <Button {...props} key={props.icon + i}/>)
+							.map((props, i) => <Button {...props} key={props.icon + i} />)
 						}
 					</div>
 				</div>
 				{texts.supportChatDesc2}
 				<div>
+					<a href='https://twitter.com/intent/follow?screen_name=Totem_Live_' target='_blank'>
+						<Invertible El={Icon} name='twitter' style={styles.appIconStyle} />
+					</a>
 					<a href='https://discord.gg/Vx7qbgn' target='_blank'>
 						<Invertible El={Icon} name='discord' style={styles.appIconStyle} />
+					</a>
+					<a href='https://t.me/totemchat' target='_blank'>
+						<Invertible El={Icon} name='telegram' style={styles.appIconStyle} />
 					</a>
 					<a href='https://www.linkedin.com/company/totem-live-accounting' target='_blank'>
 						<Invertible El={Icon} name='linkedin' style={styles.appIconStyle} />
@@ -290,6 +288,16 @@ export default function GetingStarted() {
 							dynamicProps: inverted => ({ color: !inverted ? 'black' : undefined }),
 							El: Icon,
 							name: 'medium',
+							style: styles.appIconStyle,
+						}} />
+					</a>
+					<a href='https://www.youtube.com/channel/UCV0ZV3kCLfi3AnlNR1Eyr0A' target='_blank'>
+						<Invertible {...{
+							dynamicProps: inverted => ({
+								className: !inverted ? 'red' : undefined,
+							}),
+							El: Icon,
+							name: 'youtube',
 							style: styles.appIconStyle,
 						}} />
 					</a>
@@ -305,22 +313,6 @@ export default function GetingStarted() {
 							name: 'reddit',
 						}} />
 					</a>
-					<a href='https://t.me/totemchat' target='_blank'>
-						<Invertible El={Icon} name='telegram' style={styles.appIconStyle} />
-					</a>
-					<a href='https://twitter.com/intent/follow?screen_name=Totem_Live_' target='_blank'>
-						<Invertible El={Icon} name='twitter' style={styles.appIconStyle} />
-					</a>
-					<a href='https://www.youtube.com/channel/UCV0ZV3kCLfi3AnlNR1Eyr0A' target='_blank'>
-						<Invertible {...{
-							dynamicProps: inverted => ({
-								className: !inverted ? 'red' : undefined,
-							}),
-							El: Icon,
-							name: 'youtube',
-							style: styles.appIconStyle,
-						}} />
-					</a>
 				</div>
 			</div>
 		</div >
@@ -334,6 +326,7 @@ export const getReferralURL = () => location.protocol
 	+ '?ref=' + getUser().id
 
 const handleBackup = () => confirm({
+	cancelButton: textsCap.backupLater,
 	confirmButton: textsCap.backupNow,
 	content: (
 		<div>
@@ -348,7 +341,8 @@ const handleBackup = () => confirm({
 	),
 	header: texts.backupTitle,
 	size: 'tiny',
-	onConfirm: () => confirmBackup().then(ok => ok && incrementStep()),
+	onConfirm: () => confirmBackup()
+		.then(ok => ok && incrementStep()),
 })
 
 const handleUpdateIdentity = () => {
@@ -356,6 +350,7 @@ const handleUpdateIdentity = () => {
 	// forces user to enter a new name for the identity
 	if (values.name === 'Default') values.name = ''
 	showForm(IdentityForm, {
+		onClose: incrementStep,
 		onSubmit: incrementStep,
 		values,
 	})
@@ -365,10 +360,12 @@ const handleRegister = () => showForm(RegistrationForm, {
 	closeOnSubmit: true,
 	silent: false,
 	onSubmit: ok => {
-		ok && setToast({
+		if (!ok) return
+		setToast({
 			content: texts.registrationSuccess,
 			status: 'success',
 		})
+		setActive('rewards')
 		// addToQueue({
 		// 	type: QUEUE_TYPES.CHATCLIENT,
 		// 	func: 'faucetRequest',
@@ -393,7 +390,11 @@ const handleRestoreBackup = () => confirm({
 	onConfirm: () => showForm(RestoreBackupForm),
 })
 
-const incrementStep = () => setActiveStep((rxActiveStep.value || 0) + 1)
+const incrementStep = () => {
+
+	setActiveStep((rxActiveStep.value || 0) + 1)
+
+}
 
 export const setActiveStep = (nextStep = rxActiveStep.value, silent = false) => {
 	const user = getUser()
@@ -412,7 +413,7 @@ export const setActiveStep = (nextStep = rxActiveStep.value, silent = false) => 
 		case 1:
 			handleUpdateIdentity()
 			break
-		case 2: 
+		case 2:
 			handleBackup()
 			break
 	}
@@ -428,7 +429,7 @@ export const setActiveStep = (nextStep = rxActiveStep.value, silent = false) => 
  */
 export const confirmBackup = (showSuccess = false) => new PromisE(resolve => {
 	const [content, fileBackupTS] = downloadBackup()
-    const contentHash = generateHash(content)
+	const contentHash = generateHash(content)
 	let modalId
 	// update identities with the new backup timestamp
 	const updateIdentities = () => {
@@ -471,24 +472,24 @@ export const confirmBackup = (showSuccess = false) => new PromisE(resolve => {
 			resolveValidate(err)
 		}
 	})
-	
-    const props = {
-        header: textsCap.backupConfirmHeader,
-        size: 'tiny',
-        submitText: null,
+
+	const props = {
+		header: textsCap.backupConfirmHeader,
+		size: 'tiny',
+		submitText: null,
 		closeText: null,
 		// in case user doesnt confirm download
 		onClose: () => resolve(false),
-        inputs: [{
-            accept: '.json',
-            label: textsCap.backupFileLabel,
-            labelDetails: textsCap.backupFileLabelDetails,
-            name: 'file',
-            type: 'file',
-            validate: validateFile,
-        }],
-    }
-	
+		inputs: [{
+			accept: '.json',
+			label: textsCap.backupFileLabel,
+			labelDetails: textsCap.backupFileLabelDetails,
+			name: 'file',
+			type: 'file',
+			validate: validateFile,
+		}],
+	}
+
 	modalId = showForm(FormBuilder, props)
 })
 

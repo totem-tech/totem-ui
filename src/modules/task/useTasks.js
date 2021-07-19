@@ -91,10 +91,15 @@ export default function useTasks(types, address, timeout = 5000) {
                         owner,
                     } = order || {}
                     try {
-                        amountXTX = !order ? 0 : ordersOrg[index].value.get('amountXTX').toNumber()
+                        amountXTX = !order
+                            ? 0
+                            : ordersOrg[index]
+                                .value
+                                .get('amountXTX')
+                                .toNumber()
                     } catch (err) {
                         // ignore error. should only happen when amountXTX is messed up due to blockchain storage reset
-                        console.log('AmontXTX parse error', err)
+                        console.log('amountXTX parse error', err)
                     }
                     const _owner = getAddressName(owner, true)
                     const isOwner = address === owner

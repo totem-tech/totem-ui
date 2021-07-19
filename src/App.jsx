@@ -41,6 +41,7 @@ export default function App() {
 			naclHelper: require('./utils/naclHelper'),
 			polkadotHelper: require('./utils/polkadotHelper'),
 			PromisE: require('./utils/PromisE'),
+			time: require('./utils/time'),
 			utils: require('./utils/utils'),
 			validator: require('./utils/validator'),
 		}

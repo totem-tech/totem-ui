@@ -5,7 +5,7 @@
 import { downloadFile, generateHash, hasValue, isMap, isObj, isSet, isStr, objClean } from '../utils/utils'
 import DataStorage from '../utils/DataStorage'
 // import FormBuilder from '../components/FormBuilder'
-import { getAll as getIdentities, set as saveIdentity} from '../modules/identity/identity'
+import { getAll as getIdentities, set as saveIdentity } from '../modules/identity/identity'
 import { translated } from './language'
 
 // Local Storage item key prefix for all items
@@ -54,7 +54,7 @@ export const downloadBackup = () => {
  */
 // generates user data for backup, excluding non-essential items such as cache etc...
 export const generateBackupData = (fileBackupTS) => {
-    const data =  objClean(localStorage, essentialKeys)
+    const data = objClean(localStorage, essentialKeys)
     const keys = Object.keys(data)
     keys.forEach(key => {
         // parse JSON string
@@ -63,8 +63,8 @@ export const generateBackupData = (fileBackupTS) => {
         // update backup timestamp
         data[key]
             .forEach(([_, identity]) =>
-            identity.fileBackupTS = fileBackupTS
-        )
+                identity.fileBackupTS = fileBackupTS
+            )
     })
     return data
 }
@@ -91,9 +91,9 @@ export const rw = (storage, key, propKey, value, override = false) => {
     if (!storage || !key) return {}
     const data = storage.get(key) || {}
     if (!isStr(propKey) && propKey !== null) return data
-    
+
     if (propKey === null) {
-        data.delete(key)
+        return storage.delete(key)
     } else if (value === null) {
         // remove from storage
         delete data[propKey]

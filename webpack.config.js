@@ -31,11 +31,13 @@ module.exports = {
   },
   // ignore nodejs modules and not found warning
   plugins: [
-    new webpack.IgnorePlugin(/abort-controller/),
-    new webpack.IgnorePlugin(/form-data/),
-    new webpack.IgnorePlugin(/nano/), // CouchDB Client
-    new webpack.IgnorePlugin(/node-localstorage/),
-    new webpack.IgnorePlugin(/node-fetch/),
+    new webpack.IgnorePlugin(/abort-controller/), // utils/PromisE.js
+    new webpack.IgnorePlugin(/discord.js/), // utils/PromisE.js
+    new webpack.IgnorePlugin(/form-data/), // utils/utils.js
+    new webpack.IgnorePlugin(/nano/), // utils/CouchDBStorage.js
+    new webpack.IgnorePlugin(/node-localstorage/), // utils/DataStorage.js
+    new webpack.IgnorePlugin(/node-fetch/), // utils/PromisE.js
+    new webpack.IgnorePlugin(/twitter-lite/), // utils/twitterHelper.js
     // Includes .env variables into the frontend app
     new Dotenv(),
   ],

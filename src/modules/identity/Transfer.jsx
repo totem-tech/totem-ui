@@ -293,22 +293,22 @@ export default class Transfer extends Component {
         this.setState({ inputs })
     }
 
-    getTxFeeEl = feeXTX => {
+    getTxFeeEl = feeAmount => {
         const { values } = this.state
         // const currentSent = values[this.names.currencySent]
 
         return (
-            <Text El='div' style={{ margin: `${feeXTX ? '-' : ''}15px 0 15px 3px` }}>
-                {feeXTX && (
+            <Text El='div' style={{ margin: `${feeAmount ? '-' : ''}15px 0 15px 3px` }}>
+                {feeAmount && (
                     <Currency {...{
                         prefix: `${textsCap.includesTxFee} `,
-                        value: feeXTX,
+                        value: feeAmount,
                         // unitDisplayed: currentSent,
                     }} />
                 )}
                 <div style={{
                     fontSize: 32,
-                    paddingTop: !feeXTX ? 0 : 15,
+                    paddingTop: !feeAmount ? 0 : 15,
                     textAlign: 'center',
                 }}>
                     <Icon {...{ name: 'exchange', rotated: 'counterclockwise' }} />
@@ -317,7 +317,7 @@ export default class Transfer extends Component {
         )
     }
 
-    handleAmountReceivedChange =  deferred(async (_, values) => {
+    handleAmountReceivedChange = deferred(async (_, values) => {
         const amountReceived = values[this.names.amountReceived]
         const currencyReceived = values[this.names.currencyReceived]
         const from = values[this.names.from]
@@ -341,9 +341,9 @@ export default class Transfer extends Component {
             currencyReceived,
             currencyDefault,
         )
-        this.amountXTX = eval(res[1] || '') || 0
+        this.amountRounded = eval(res[1] || '') || 0
         const resAmountSent = await convertTo(
-            this.amountXTX,
+            this.amountRounded,
             currencyDefault,
             rxSelectedCurrency.value,
         )
@@ -356,11 +356,11 @@ export default class Transfer extends Component {
         this.fee = await getTxFee(
             api,
             from,
-            await api.tx.balances.transfer(to || from, this.amountXTX),
+            await api.tx.balances.transfer(to || from, this.amountRounded),
             identity.uri,
         )
         txFeeIn.content = this.getTxFeeEl(this.fee)
-        const total = this.fee + this.amountXTX
+        const total = this.fee + this.amountRounded
         const gotFund = freeBalance - total > 0
         submitDisabled.loadingAmount = false
         amountIn.invalid = !gotFund
@@ -376,7 +376,7 @@ export default class Transfer extends Component {
         this.setState({ inputs, submitDisabled })
     }, 500)
 
-    handleAmountReceivedInvalid =  deferred(() => {
+    handleAmountReceivedInvalid = deferred(() => {
         const { inputs } = this.state
         const amountReceivedIn = findInput(inputs, this.names.amountReceived)
         const amountReceivedGrpIn = findInput(inputs, this.names.amountReceivedGroup)
@@ -418,7 +418,7 @@ export default class Transfer extends Component {
         const queueProps = queueables.balanceTransfer(
             from,
             to,
-            this.amountXTX,
+            this.amountRounded,
             {
                 description: description.join('\n'),
                 title: textsCap.queueTitle,
@@ -431,7 +431,7 @@ export default class Transfer extends Component {
                         {
                             addressFrom: from,
                             addressTo: to,
-                            amountXTX: this.amountXTX,
+                            amount: this.amountRounded,
                         },
                     ],
                     func: 'notify',
@@ -534,9 +534,9 @@ setItemViewHandler(
     null,
     (id, notification = {}, { senderIdBtn }) => {
         const { data = {} } = notification
-        const { addressFrom, addressTo, amountXTX } = data
+        const { addressFrom, addressTo, amount } = data
         const identity = getIdentity(addressTo)
-        if (!identity || !isValidNumber(amountXTX)) return removeNotif(id)
+        if (!identity || !isValidNumber(amount)) return removeNotif(id)
 
         return {
             icon: 'money bill alternate outline',
@@ -546,7 +546,7 @@ setItemViewHandler(
                     <Currency {...{
                         EL: 'div',
                         prefix: <b>{textsCap.amount}: </b>,
-                        value: amountXTX,
+                        value: amount,
                     }} />
                     <div><b>{textsCap.payerIdentity}: </b>{getAddressName(addressFrom)}</div>
                     <div><b>{textsCap.yourIdentity}: </b>{identity.name}</div>

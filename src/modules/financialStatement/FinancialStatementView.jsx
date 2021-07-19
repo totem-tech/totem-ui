@@ -28,7 +28,7 @@ export default function FinancialStatementView(props) {
     const shouldExpand = Object.keys(expandedTitles)
         .filter(key => !!expandedTitles[key].active)
         .length === 0
-    
+
     return (
         <div {...{ ...props, style: { whiteSpace: 'pre', ...props.style } }}>
             {nestedBalances.length > 0 && (
@@ -87,28 +87,27 @@ export const getNestedBalances = (glAccounts = []) => {
     const isMobile = rxLayout.value === MOBILE
     const setLevelBalance = (parent, title = textsCap.unknownTitle, balance = 0, balanceType, number) => {
         let current = parent.find(x => x.title === title)
+        if (number) {
+            title = !isMobile
+                ? <span>{title} ({number})</span>
+                : (
+                    <Invertible {...{
+                        content: number,
+                        El: Popup,
+                        eventsEnabled: false,
+                        on: ['click', 'focus',],
+                        position: 'bottom center',
+                        positionFixed: true,
+                        size: 'mini',
+                        trigger: <span>{title}</span>,
+                    }} />
+                )
+        }
         if (!current) {
             current = {
                 balance: balance,
                 children: [],
-                title: !number
-                    ? title
-                    : (
-                        !isMobile
-                            ? <span>{title} ({number})</span>
-                            : (
-                                <Invertible {...{
-                                    content: number,
-                                    El: Popup,
-                                    eventsEnabled: false,
-                                    on: ['click', 'focus',],
-                                    position: 'bottom center',
-                                    positionFixed: true,
-                                    size: 'mini',
-                                    trigger: <span>{title}</span>,
-                                }} />
-                            )
-                    ),
+                title,
             }
             parent.push(current)
         } else {
@@ -120,11 +119,41 @@ export const getNestedBalances = (glAccounts = []) => {
     }
 
     return glAccounts.reduce((allItems, next) => {
-        const { number, balanceType, typeName, categoryName, categoryGrpName, groupName, balance = 0 } = next
-        const type = setLevelBalance(allItems, typeName, balance, number)
-        const category = setLevelBalance(type.children, categoryName, balance, number)
-        const categoryGrp = setLevelBalance(category.children, categoryGrpName, balance, number)
-        const group = setLevelBalance(categoryGrp.children, groupName, balance, balanceType, number)
+        const {
+            balance = 0,
+            balanceType,
+            name,
+            number,
+            categoryName,
+            categoryGrpName,
+            groupName,
+            typeName,
+        } = next
+        const type = setLevelBalance(
+            allItems,
+            typeName,
+            balance,
+            number,
+        )
+        const category = setLevelBalance(
+            type.children,
+            categoryName,
+            balance,
+            number,
+        )
+        const categoryGrp = categoryGrpName && setLevelBalance(
+            category.children,
+            categoryGrpName,
+            balance,
+            number,
+        )
+        categoryGrp && groupName && setLevelBalance(
+            categoryGrp.children,
+            name,
+            balance,
+            balanceType,
+            number,
+        )
         return allItems
     }, [])
 }

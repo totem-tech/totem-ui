@@ -34,14 +34,21 @@ export default React.memo(({ id, notification }) => {
             <TimeSince className='time-since' date={tsCreated} />
         </div>
     )
+    const msgStatus = msg.status || status
     return (
         <Message  {...{
             ...msg,
-            icon: status === 'loading' ? true : msg.icon || { name: 'bell outline' },
+            icon: status === 'loading'
+                ? true
+                : msg.icon || { name: 'bell outline' },
             className: 'list-item',
             onClick: () => toggleRead(id),
             onDismiss: e => e.stopPropagation() | remove(id),
-            status: status === 'loading' ? 'loading' : read ? 'basic' : 'info',
+            status: read
+                ? 'basic'
+                : ['loading', 'error'].includes(msgStatus)
+                    ? msgStatus
+                    : 'info',
             style: {
                 ...msg.style,
                 cursor: 'pointer',

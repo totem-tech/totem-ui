@@ -1,12 +1,13 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { arrUnique, isFn, objWithoutKeys, arrSort, isStr } from '../utils/utils'
+import { arrUnique, isFn, objWithoutKeys, arrSort, isStr, deferred } from '../utils/utils'
 import FormInput from './FormInput'
 import { getChatUserIds } from '../modules/chat/chat'
 import client, { getUser } from '../modules/chat/ChatClient'
 import { translated } from '../services/language'
 import partners from '../modules/partner/partner'
+import PromisE from '../utils/PromisE'
 
 const textsCap = translated({
     add: 'add',
@@ -67,7 +68,7 @@ export default class UserIdInput extends Component {
         let input = !useDropwdown
             ? {
                 customMessages: {
-                    regex: textsCap.invalidUserId,
+                    regex: true, // turns input color to red but no message displayed
                     reject: textsCap.ownIdEntered,
                 },
                 inlineLabel: { icon: { className: 'no-margin', name: 'at' } },
@@ -76,10 +77,9 @@ export default class UserIdInput extends Component {
                 maxLength: MAX_LENGTH,
                 placeholder,
                 regex: userIdRegex,
-                reject: [ excludeOwnId && ownId, ...reject ].filter(Boolean),
+                reject: [excludeOwnId && ownId, ...reject].filter(Boolean),
                 rxValue,
                 type: 'text',
-                validate: this.validateTextField,
                 useInput: true,
             }
             : {
@@ -107,6 +107,7 @@ export default class UserIdInput extends Component {
         }
         this.originalSetState = this.setState
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
+        this.validateDeferred = PromisE.deferred()
     }
 
     componentWillMount() {
@@ -232,7 +233,13 @@ export default class UserIdInput extends Component {
             s.message = undefined
             s.searchQuery = ''
         } else {
-            s.icon = !value ? undefined : (invalid ? invalidIcon : validIcon)
+            s.icon = invalid
+                ? invalidIcon
+                : undefined
+            if (value && !invalid) {
+                s.loading = true
+                this.validateTextField(value)
+            }
         }
         this.setState(s)
         isFn(onChange) && onChange(e, data)
@@ -240,11 +247,24 @@ export default class UserIdInput extends Component {
 
     handleSearchChange = (_, { searchQuery: s }) => this.setState({ searchQuery: getRawUserID(s) })
 
-    validateTextField = async (e, { value }) => {
+    validateTextField = async (value) => {
         if (!value) return
+
+        this.validateCount = (this.validateCount || 0) + 1
+        await PromisE.delay(300)
+        this.validateCount--
+        if (this.validateCount > 0) return
+
         const { newUser } = this.props
         const exists = await client.idExists.promise(getRawUserID(value))
-        return newUser ? exists : !exists
+        const invalid = newUser ? exists : !exists
+        this.setState({
+            icon: invalid
+                ? invalidIcon
+                : validIcon,
+            invalid,
+            loading: false,
+        })
     }
 
     render() {
