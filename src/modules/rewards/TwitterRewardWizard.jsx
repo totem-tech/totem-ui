@@ -132,20 +132,13 @@ export default function TwitterRewardWizard(props) {
                         labelDetails: textsCap.tweetIdLabelDetails,
                         // if link pasted, only keep the tweet id
                         onPaste: e => setTimeout(() => {
-                            const { value } = rxValue
-                            if (!value) return
+                            const { value = '' } = rxValue
+                            const isValidUrl = !validate(value, { type: TYPES.url })
+                            if (!isValidUrl) return rxValue.next('')
 
-                            const isVlidUrl = !validate(value, { type: TYPES.url })
-                            const id = (
-                                isVlidUrl
-                                    ? (value.split('/status/')[1])
-                                        .split('/')[0]
-                                    : value
-                            )
-                                .match(/[0-9]/g) || []
-                                    .join('')
-                            if (!id) return
-                            rxValue.next(id.join(''))
+                            const tweetId = new URL(value)
+                                .pathname.split('/')[3]
+                            rxValue.next(tweetId || '')
                         }, 50),
                         placeholder: textsCap.tweetIdPlaceholder,
                         required: true,
