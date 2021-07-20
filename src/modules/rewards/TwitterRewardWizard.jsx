@@ -134,7 +134,7 @@ export default function TwitterRewardWizard(props) {
                         onPaste: e => setTimeout(() => {
                             const { value = '' } = rxValue
                             const isValidUrl = !validate(value, { type: TYPES.url })
-                            if (!isValidUrl) return rxValue.next('')
+                            if (!isValidUrl) return
 
                             const tweetId = new URL(value)
                                 .pathname.split('/')[3]
