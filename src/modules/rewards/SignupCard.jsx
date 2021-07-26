@@ -38,6 +38,7 @@ export default function SignupCard({ signupReward }) {
                 <Text>
                     <Icon name='money' />
                     <Currency {...{
+                        key: amount,
                         title: textsCap.totalEarned,
                         unit: currencyDefault,
                         value: amount || 0,

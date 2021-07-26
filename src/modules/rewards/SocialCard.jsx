@@ -42,15 +42,6 @@ export default function SocialCard({ socialRewards = {} }) {
             title: textsCap.step1Title,
         },
         {
-            completed: discord.amount > 0,
-            // content: !discordReward.amount && <DiscordRewardWizard />,
-            title: textsCap.step2Title,
-        },
-        {
-            completed: telegram.amount > 0,
-            title: textsCap.step3Title,
-        },
-        {
             completed: newsletter,
             content: (
                 <NewsletteSignup {...{
@@ -65,7 +56,16 @@ export default function SocialCard({ socialRewards = {} }) {
                 }} />
             ),
             title: textsCap.step4Title,
-        }
+        },
+        {
+            completed: discord.amount > 0,
+            // content: !discordReward.amount && <DiscordRewardWizard />,
+            title: textsCap.step2Title,
+        },
+        {
+            completed: telegram.amount > 0,
+            title: textsCap.step3Title,
+        },
     ]
     if (!isDefined(activeStep)) {
         activeStep = steps.findIndex(x => !x.completed)

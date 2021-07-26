@@ -22,7 +22,7 @@ const textsCap = translated({
     step2ConfirmWarn: 'To qualify for the reward, we recommend not changing the text.',
     step2Desc: 'Get rewarded by spreading the word about Totem',
     tweetSubmitText: 'Tweet now',
-    twHandleLabel: 'Twitter handle/username',
+    twHandleLabel: 'Twitter handle/username (case-sensitive)',
     twHandleLabelDetails: 'Please make sure that this is the same account you are logged in on Twitter.com',
     twHandlePlaceholder: 'enter your twitter handle',
 
@@ -113,6 +113,29 @@ export default function TwitterRewardWizard(props) {
                 submitText: textsCap.claimSubmitText,
                 inputs: [
                     {
+                        minLength: 18,
+                        name: 'tweetId',
+                        label: textsCap.tweetIdLabel,
+                        labelDetails: textsCap.tweetIdLabelDetails,
+                        // if link pasted, only keep the tweet id
+                        onPaste: e => setTimeout(() => {
+                            const { value = '' } = rxValue
+                            const isValidUrl = !validate(value, { type: TYPES.url })
+                            if (!isValidUrl) return
+
+                            const [_, twitterHandle, _2, tweetId] = new URL(value)
+                                .pathname
+                                .split('/')
+
+                            !rxTwitterHandle.value && rxTwitterHandle.next(twitterHandle)
+                            rxValue.next(tweetId || '')
+                        }, 50),
+                        placeholder: textsCap.tweetIdPlaceholder,
+                        required: true,
+                        rxValue,
+                        type: 'text',
+                    },
+                    {
                         icon: 'at',
                         iconPosition: 'left',
                         minLength: 3,
@@ -125,26 +148,6 @@ export default function TwitterRewardWizard(props) {
                         type: 'text',
                         validate: (_, { value }) => value && value.includes('@')
                     },
-                    {
-                        minLength: 18,
-                        name: 'tweetId',
-                        label: textsCap.tweetIdLabel,
-                        labelDetails: textsCap.tweetIdLabelDetails,
-                        // if link pasted, only keep the tweet id
-                        onPaste: e => setTimeout(() => {
-                            const { value = '' } = rxValue
-                            const isValidUrl = !validate(value, { type: TYPES.url })
-                            if (!isValidUrl) return
-
-                            const tweetId = new URL(value)
-                                .pathname.split('/')[3]
-                            rxValue.next(tweetId || '')
-                        }, 50),
-                        placeholder: textsCap.tweetIdPlaceholder,
-                        required: true,
-                        rxValue,
-                        type: 'text',
-                    }
                 ],
                 onSubmit: async (_, { tweetId, twHandle }) => {
                     // re-render modal form with loading spinner on the submit button
