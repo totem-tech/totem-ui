@@ -19,7 +19,7 @@ const [texts, textsCap] = translated({
 	hostDisconnected: 'Disconnected from host',
 	lag: 'lag',
 	maintenanceMode: 'maintenance mode',
-	messagingService: 'mesasging service',
+	messagingService: 'messaging service',
 	networkVersion: 'Current Hot Upgrade',
 	no: 'no',
 	offline: 'offline',

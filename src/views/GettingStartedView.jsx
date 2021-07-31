@@ -23,6 +23,7 @@ import { getSelected, rxIdentities } from '../modules/identity/identity'
 import IdentityForm from '../modules/identity/IdentityForm'
 import LabelCopy from '../components/LabelCopy'
 import { setActive } from '../services/sidebar'
+import { MOBILE, rxLayout } from '../services/window'
 
 const texts = translated({
 	backupTitle: 'Backup your account',
@@ -51,10 +52,8 @@ const texts = translated({
 		Totem is currently under heavy development, but you can already use the Identities, Partners, Activities 
 		and Timekeeping Modules as well as make basic transfers of your transaction allocations balance using the Transfer Module.`,
 	quickGuidePara2: `
-		Most of what you do in Totem will consume transactions from your balance ($TOTEM for short) but don't worry, 
-		we are nice open source people, and we'll give you plenty to get you started.
+		Most of what you do in the application will consume Totem Transactions ($TOTEM for short) from your balance but don't worry, we are nice open source people, and we'll give you plenty to get you started.
 	`,
-	quickGuidePara3: 'If you use up your balance - no problemo! Simply request some more from our automated faucet.',
 	quickGuideTitle: 'A quick guide to getting started with Totem Live Accounting.',
 	referCopy: 'Copy your referral link',
 	referDesc1: 'Totem works best when you have partners. Referring will get both you and your friends free tokens.',
@@ -91,17 +90,20 @@ const textsCap = translated({
 		If you did not save the backup file, please click on the close icon and initiate the backup process again.
 	`,
 	backupFileinvalidType: 'please select the .json file you have just downloaded',
-	backupFileLabel: 'backup file',
-	backupFileLabelDetails: `
-		Please select the file you have just downloaded.
-		You can drag-and-drop the file in the file chooser below.
-	`,
+	backupFileLabel: 'select backup file',
+	backupFileLabelDetails: 'Please select the file you have just downloaded. This is to make sure your backup was successfully downloaded.',
+	backupFileLabelDetailsLocation: 'Check for the following file in your default downloads folder (if you have NOT manually selected the download location).',
+	backupFileLabelDetailsDesktop: 'You can drag-and-drop the backup file on the file chooser below.',
 	backupSuccessContent: `
 		Excellent! You have just downloaded your account data. 
-		You can use this file to restore your account on any other devices you may have.
-		Make sure to keep the downloaded file in a safe place. :)
+		You can use this file to restore your account on any other devices you choose.
+		Make sure to keep the downloaded file in a safe place.
+		To keep your account safe, never ever share your backup file with anyone else.
+		Totem team will never ask you to share your backup file.
 	`,
-	backupSuccessHeader: 'backup complete!'
+	backupSuccessHeader: 'backup complete!',
+	fileName: 'file name',
+	invalidFileType: 'selected file name must end with .json extension.',
 }, true)[1]
 const MODULE_KEY = 'getting-started'
 // read/write to module settings
@@ -169,7 +171,6 @@ export default function GetingStarted() {
 			<h3>{texts.quickGuideTitle}</h3>
 			<p>{texts.quickGuidePara1}</p>
 			<p>{texts.quickGuidePara2}</p>
-			<p>{texts.quickGuidePara3}</p>
 			<h4>{texts.stepsTitle}</h4>
 			<div style={{ overflowX: 'auto' }}>
 				<Step.Group fluid ordered>
@@ -427,8 +428,8 @@ export const setActiveStep = (nextStep = rxActiveStep.value, silent = false) => 
  * 
  * @param	{Boolean}	showSuccess whether to show success message after backup has been confirmed
  */
-export const confirmBackup = (showSuccess = false) => new PromisE(resolve => {
-	const [content, fileBackupTS] = downloadBackup()
+export const confirmBackup = (showSuccess = true) => new PromisE(resolveConfirm => {
+	const [content, fileBackupTS, fileName] = downloadBackup()
 	const contentHash = generateHash(content)
 	let modalId
 	// update identities with the new backup timestamp
@@ -455,17 +456,16 @@ export const confirmBackup = (showSuccess = false) => new PromisE(resolve => {
 					return
 				}
 				updateIdentities()
-				const onClose = () => resolve(true) | closeModal(modalId)
+				closeModal(modalId)
 
-				!showSuccess
-					? onClose()
-					: confirm({
-						content: textsCap.backupSuccessContent,
-						confirmButton: null,
-						header: textsCap.backupSuccessHeader,
-						onClose,
-						size: 'tiny',
-					})
+				if (!showSuccess) return resolveConfirm(true)
+				confirm({
+					content: textsCap.backupSuccessContent,
+					confirmButton: null,
+					header: textsCap.backupSuccessHeader,
+					onCancel: () => resolveConfirm(true),
+					size: 'tiny',
+				})
 			}
 			reader.readAsText(file)
 		} catch (err) {
@@ -473,17 +473,35 @@ export const confirmBackup = (showSuccess = false) => new PromisE(resolve => {
 		}
 	})
 
+	const isMobile = rxLayout.value === MOBILE
 	const props = {
 		header: textsCap.backupConfirmHeader,
 		size: 'tiny',
 		submitText: null,
 		closeText: null,
 		// in case user doesnt confirm download
-		onClose: () => resolve(false),
+		onClose: () => resolveConfirm(false),
 		inputs: [{
 			accept: '.json',
 			label: textsCap.backupFileLabel,
-			labelDetails: textsCap.backupFileLabelDetails,
+			labelDetails: (
+				<div>
+					<p>
+						{textsCap.backupFileLabelDetails}
+						<b style={{ color: 'red' }}>
+							{' ' + textsCap.backupFileLabelDetailsLocation}
+						</b>
+					</p>
+
+					<p>
+						{textsCap.fileName}:
+						<br />
+						<b style={{ color: 'green' }}>{fileName}</b>
+					</p>
+
+					{!isMobile && <p>{textsCap.backupFileLabelDetailsDesktop}</p>}
+				</div>
+			),
 			name: 'file',
 			type: 'file',
 			validate: validateFile,

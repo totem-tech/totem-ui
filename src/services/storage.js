@@ -39,12 +39,16 @@ export const essentialKeys = [
 export const downloadBackup = () => {
     const fileBackupTS = new Date().toISOString()
     const content = JSON.stringify(generateBackupData(fileBackupTS))
+    let { hostname } = window.location
+    if (hostname === 'localhost') hostname = `totem-localhost`
+
+    const fileName = `${hostname}-backup-${fileBackupTS}.json`
     downloadFile(
         content,
-        `totem-backup-${fileBackupTS}.json`,
+        fileName,
         'application/json'
     )
-    return [content, fileBackupTS]
+    return [content, fileBackupTS, fileName]
 }
 
 /**
