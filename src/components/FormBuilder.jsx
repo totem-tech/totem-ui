@@ -49,7 +49,7 @@ export default class FormBuilder extends Component {
 			readOnly,
 			rxValue,
 			type,
-			validate: validate,
+			validate,
 		} = input || {}
 		const isGroup = `${type}`.toLowerCase() === 'group' && isArr(childInputs)
 		index = isDefined(index) ? index : null
@@ -129,10 +129,14 @@ export default class FormBuilder extends Component {
 			this.setState({ message: null, values })
 
 			// trigger input `onchange` callback if valid, otherwise `onInvalid` callback
-			const fn = invalid ? onInvalid : onInputChange
-			isFn(fn) && (await fn(event, values, index, childIndex))
+			const fn = invalid
+				? onInvalid
+				: onInputChange
+			isFn(fn)
+				&& (await fn(event, values, index, childIndex))
 			// trigger form's onchange callback
-			isFn(formOnChange) && !invalid
+			!invalid
+				&& isFn(formOnChange)
 				&& await formOnChange(event, values, invalid)
 		} catch (err) {
 			console.error(err)
@@ -519,7 +523,7 @@ export const isInputInvalid = (formValues = {}, input) => {
 
 	let gotValue = hasValue(formValues[name])
 	const isGroup = type === 'group'
-	if((!isGroup && !required && !gotValue)) return false
+	if ((!isGroup && !required && !gotValue)) return false
 
 	// Use recursion to validate input groups
 	if (isGroup) return isFormInvalid(inputs, !groupValues ? formValues : formValues[name] || {})
@@ -533,7 +537,7 @@ export const isInputInvalid = (formValues = {}, input) => {
 		: !hasValue(value) && isSubjectLike(rxValue)
 			? rxValue.value
 			: value
-	
+
 	return isCheckbox && required ? !value : !hasValue(value)
 }
 /**

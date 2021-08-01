@@ -9,6 +9,7 @@ import PromisE from '../../utils/PromisE'
 import { BLOCK_DURATION_SECONDS, blockNumberToTS, format } from '../../utils/time'
 // components
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
+import FormInput from '../../components/FormInput'
 // services
 import { getCurrentBlock, hashTypes, query, queueables as bcQueueables } from '../../services/blockchain'
 import { translated } from '../../services/language'
@@ -83,31 +84,50 @@ const deadlineMinMS = 48 * 60 * 60 * 1000
 // due date must be 24 hours after deadline
 const dueDateMinMS = 24 * 60 * 60 * 1000
 const strToDate = ymd => new Date(`${ymd}T23:59:59`)
-
+export const inputNames = Object.freeze({
+    advancedGroup: 'advancedGroup',
+    amountXTX: 'amountXTX',
+    assignee: 'fulfiller',
+    bounty: 'bounty',
+    bountyGroup: 'bountyGroup',
+    currency: 'currency',
+    currencyWrapper: 'currencyWrapper',
+    dates: 'dates',
+    deadline: 'deadline',
+    dueDate: 'dueDate',
+    description: 'description',
+    orderType: 'orderType',
+    isMarket: 'isMarket',
+    isSell: 'isSell',
+    parentId: 'parentId',
+    tags: 'tags',
+    title: 'title',
+})
+const inputsHidden = Object.values({
+    // advancedGroup: 'advancedGroup',
+    amountXTX: 'amountXTX',
+    assignee: 'fulfiller',
+    bounty: 'bounty',
+    // bountyGroup: 'bountyGroup',
+    // currency: 'currency',
+    dates: 'dates',
+    deadline: 'deadline',
+    dueDate: 'dueDate',
+    description: 'description',
+    orderType: 'orderType',
+    // isMarket: 'isMarket',
+    // isSell: 'isSell',
+    // parentId: 'parentId',
+    // tags: 'tags',
+    // title: 'title',
+})
 export default class TaskForm extends Component {
     constructor(props) {
         super(props)
 
         const { taskId, values } = this.props
         // list of input names
-        this.names = Object.freeze({
-            advancedGroup: 'advancedGroup',
-            amountXTX: 'amountXTX',
-            assignee: 'fulfiller',
-            bounty: 'bounty',
-            bountyGroup: 'bountyGroup',
-            currency: 'currency',
-            dates: 'dates',
-            deadline: 'deadline',
-            dueDate: 'dueDate',
-            description: 'description',
-            orderType: 'orderType',
-            isMarket: 'isMarket',
-            isSell: 'isSell',
-            parentId: 'parentId',
-            tags: 'tags',
-            title: 'title',
-        })
+        this.names = inputNames
         // keys used to generate BONSAI token hash
         // keep it in the same order as in the `VALID_KEYS` array in the messaging service
         this.bonsaiKeys = [
@@ -125,12 +145,16 @@ export default class TaskForm extends Component {
 
         this.state = {
             disabled: true,
-            header: isObj(values) && !!taskId ? textsCap.formHeaderUpdate : textsCap.formHeader,
+            header: isObj(values) && !!taskId
+                ? textsCap.formHeaderUpdate
+                : textsCap.formHeader,
             loading: true,
             submitDisabled: {
-                oldVsNew: !!taskId,
+                unchnaged: !!taskId,
             },
-            onChange: !taskId ? undefined : this.handleChange,
+            onChange: !taskId
+                ? undefined
+                : this.handleChange,
             onSubmit: this.handleSubmit,
             inputs: [
                 {
@@ -151,9 +175,11 @@ export default class TaskForm extends Component {
                         {
                             rxValue: new BehaviorSubject(),
                             label: textsCap.bountyLabel,
+                            maxLength: 18,
                             min: 0, // allows bounty-free tasks
                             name: this.names.bounty,
                             onChange: this.handleBountyChange,
+                            onInvalid: this.handleBountyInvalid,
                             placeholder: textsCap.bountyPlaceholder,
                             required: true,
                             type: 'number',
@@ -166,22 +192,17 @@ export default class TaskForm extends Component {
                             required: true,
                             rxValue: new BehaviorSubject(0),
                         },
-                        { // display currency
-                            rxValue: new BehaviorSubject(getSelectedCurrency()),
-                            label: textsCap.currency,
-                            maxLength: 18,
+                        {// display currency
+                            content: '',
+                            name: this.names.currencyWrapper,
+                            type: 'html'
+                        },
+                        {
+                            // ignoreAttributes: ['rxValue'],
                             name: this.names.currency,
                             onChange: this.handleBountyChange,
-                            options: [],
-                            search: true,
-                            selection: true,
-                            style: {
-                                minWidth: 0, // fixes overflow issue
-                                marginBottom: 0, // removes margin on popup open
-                            },
-                            type: 'dropdown',
-                            width: 6,
-                            // value: getSelectedCurrency(),
+                            rxValue: new BehaviorSubject(getSelectedCurrency()),
+                            type: 'hidden',
                         },
                     ]
                 },
@@ -347,6 +368,7 @@ export default class TaskForm extends Component {
         const { inputs } = this.state
         const assigneeIn = findInput(inputs, this.names.assignee)
         const currencyIn = findInput(inputs, this.names.currency)
+        const currencyWrapperIn = findInput(inputs, this.names.currencyWrapper)
         const tagsIn = findInput(inputs, this.names.tags)
         const assigneeOptions = Array.from(getPartners())
             .map(([address, { name, userId }]) => ({
@@ -363,8 +385,24 @@ export default class TaskForm extends Component {
                 value: currency,
             }))
         // currencyIn.deburr = true // ???
-        currencyIn.options = arrSort(currencyOptions, 'text')
-        currencyIn.search = ['text']
+        // currencyIn.options = arrSort(currencyOptions, 'text')
+        // currencyIn.search = ['text']
+        currencyWrapperIn.content = (
+            <FormInput {...{
+                label: textsCap.currency,
+                name: this.names.currency,
+                options: arrSort(currencyOptions, 'text'),
+                rxValue: currencyIn.rxValue,
+                search: ['text'],
+                selection: true,
+                style: {
+                    minWidth: 0, // fixes overflow issue
+                    marginBottom: 0, // removes margin on popup open
+                },
+                type: 'dropdown',
+                width: 6,
+            }} />
+        )
         if (!isObj(values)) return this.setState({ inputs, loading: false })
         const { number } = await query('api.rpc.chain.getHeader')
         const amountXTX = values[this.names.amountXTX]
@@ -467,7 +505,7 @@ export default class TaskForm extends Component {
             try {
                 // user account balance
                 let balance = await query('api.query.balances.freeBalance', address)
-                const locks =  await query('api.query.balances.locks', address)
+                const locks = await query('api.query.balances.locks', address)
                 const freeBalance = balance - locks.reduce((totalLocked, lock) => totalLocked + lock.amount, 0)
                 // no need to convert currency if amount is zero or XTX is the selected currency
                 const requireConversion = bounty && currency !== currencyDefault
@@ -476,7 +514,7 @@ export default class TaskForm extends Component {
                     ? [bounty, bounty]
                     : await convertTo(bounty, currency, currencyDefault)
                 const amountXTX = parseInt(amount[0])
-                resolve([ amountXTX, freeBalance ])
+                resolve([amountXTX, freeBalance])
             } catch (e) { reject(e) }
         })
         const handleBountyResult = result => {
@@ -527,11 +565,18 @@ export default class TaskForm extends Component {
         this.bountyDeferred(promise).then(handleBountyResult, handleErr)
     }, 300)
 
+    handleBountyInvalid = () => {
+        // clear message field
+        const { inputs } = this.state
+        findInput(inputs, this.names.bountyGroup).message = null
+        this.setState({ inputs })
+    }
+
     // disables submit button if values unchanged
     handleChange = deferred((_, newValues) => {
         const { submitDisabled } = this.state
         newValues = objClean(newValues, Object.values(this.names))
-        submitDisabled.oldVsNew = JSON.stringify(this.oldValues) === JSON.stringify(newValues)
+        submitDisabled.unchnaged = JSON.stringify(this.oldValues) === JSON.stringify(newValues)
         this.setState({ submitDisabled })
     }, 100)
 
@@ -603,29 +648,28 @@ export default class TaskForm extends Component {
             title: !doUpdate ? textsCap.formHeader : textsCap.formHeaderUpdate,
             then: thenCb(false),
         }
-        const queueProps = fn.apply(null,
-            !doUpdate ? (
-                [
-                    ownerAddress,
-                    ownerAddress,
-                    assignee,
-                    isSell,
-                    amountXTX,
-                    isMarket,
-                    orderType,
-                    deadline,
-                    dueDate,
-                    taskId,
-                    token,
-                    extraProps,
-                ]
-            ) : [
-                    ownerAddress,
-                    hashTypes.taskHash,
-                    taskId,
-                    token,
-                    extraProps,
-                ]
+        const queueProps = fn.apply(null, !doUpdate
+            ? [
+                ownerAddress,
+                ownerAddress,
+                assignee,
+                isSell,
+                amountXTX,
+                isMarket,
+                orderType,
+                deadline,
+                dueDate,
+                taskId,
+                token,
+                extraProps,
+            ]
+            : [
+                ownerAddress,
+                hashTypes.taskHash,
+                taskId,
+                token,
+                extraProps,
+            ]
         )
 
         // queue task to store off-chain data to messaging service
@@ -743,5 +787,6 @@ TaskForm.propTypes = {
     values: PropTypes.object,
 }
 TaskForm.defaultProps = {
+    inputsHidden,
     size: 'tiny',
 }

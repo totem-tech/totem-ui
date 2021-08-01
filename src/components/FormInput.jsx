@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject, Subject } from 'rxjs'
-import { Accordion, Button, Checkbox, Dropdown, Form, Icon, Input, TextArea } from 'semantic-ui-react'
+import { Accordion, Button, Checkbox, Dropdown as DD, Form, Icon, Input, TextArea } from 'semantic-ui-react'
 import PromisE from '../utils/PromisE'
 import { deferred, hasValue, isArr, isFn, isObj, isStr, objWithoutKeys, searchRanked, isBool, isPromise, isSubjectLike } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
@@ -15,6 +15,7 @@ import DateInput from './DateInput'
 import { translated } from '../services/language'
 import { unsubscribe } from '../services/react'
 
+const Dropdown = React.memo(DD)
 const textsCap = translated({
 	decimals: 'maximum number of decimals allowed',
 	email: 'please enter a valid email address',
@@ -120,7 +121,6 @@ export class FormInput extends Component {
 			falseValue: falseValue = false,
 			integer,
 			onChange,
-			regex,
 			required,
 			rxValue,
 			trueValue: trueValue = true,
@@ -187,7 +187,10 @@ export class FormInput extends Component {
 
 		let message = !err || isBool(err)
 			? null
-			: { content: err, status: 'error' }
+			: {
+				content: err,
+				status: 'error',
+			}
 		const triggerChange = () => {
 			data.invalid = !!err
 			isFn(onChange) && onChange(event, data, this.props)
@@ -305,10 +308,14 @@ export class FormInput extends Component {
 			case 'checkbox-group':
 			case 'radio-group':
 				attrs.inline = inline
-				attrs.options = !!options ? options : attrs.options
-				attrs.radio = typeLC === 'radio-group' ? true : attrs.radio
+				attrs.options = options || attrs.options
+				attrs.radio = typeLC === 'radio-group' || attrs.radio
 				attrs.rxValue = rxValue
-				attrs.value = (rxValue ? rxValue.value : attrs.value) || (attrs.multiple ? [] : '')
+				attrs.value = (
+					rxValue
+						? rxValue.value
+						: attrs.value
+				) || (attrs.multiple ? [] : '')
 				inputEl = <CheckboxGroup {...attrs} />
 				break
 			case 'date':
@@ -330,9 +337,12 @@ export class FormInput extends Component {
 					? searchRanked(attrs.search)
 					: attrs.search
 				attrs.style = { ...attrs.style }
-				attrs.options = !!options ? options : attrs.options
-				attrs.value = (rxValue ? rxValue.value : attrs.value)
-					|| (attrs.multiple ? [] : '')
+				attrs.options = options || attrs.options
+				attrs.value = (
+					rxValue
+						? rxValue.value
+						: attrs.value
+				) || (attrs.multiple ? [] : '')
 				inputEl = <Dropdown {...attrs} />
 				break
 			case 'group':
@@ -386,6 +396,7 @@ export class FormInput extends Component {
 				error: ['dateinput', 'date'].includes(typeLC)
 					? false
 					: (message && message.status === 'error') || !!error || !!invalid,
+				key: name,
 				required,
 				style: styleContainer,
 				title: editable
