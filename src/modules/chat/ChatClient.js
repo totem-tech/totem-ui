@@ -136,7 +136,7 @@ export const getClient = () => {
         // auto login on connect to messaging service
         !!id && instance.login
             .promise(id, secret)
-            .then(() => console.log('Logged into messaging service'))
+            .then(() => console.log(new Date().toISOString(), 'Logged into messaging service'))
             .catch(console.error)
     })
     instance.onConnectError(() => {

@@ -586,3 +586,8 @@ body.iframe .message.success-message {
 	line-height: 175%;
 	text-align: center;
 }
+
+/* Component: DrillDownList */
+.drill-down-list .title .dropdown {
+    margin-right: 3px !important;
+}

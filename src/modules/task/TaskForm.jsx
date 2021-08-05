@@ -103,24 +103,6 @@ export const inputNames = Object.freeze({
     tags: 'tags',
     title: 'title',
 })
-const inputsHidden = Object.values({
-    // advancedGroup: 'advancedGroup',
-    amountXTX: 'amountXTX',
-    assignee: 'fulfiller',
-    bounty: 'bounty',
-    // bountyGroup: 'bountyGroup',
-    // currency: 'currency',
-    dates: 'dates',
-    deadline: 'deadline',
-    dueDate: 'dueDate',
-    description: 'description',
-    orderType: 'orderType',
-    // isMarket: 'isMarket',
-    // isSell: 'isSell',
-    // parentId: 'parentId',
-    // tags: 'tags',
-    // title: 'title',
-})
 export default class TaskForm extends Component {
     constructor(props) {
         super(props)
@@ -195,7 +177,8 @@ export default class TaskForm extends Component {
                         {// display currency
                             content: '',
                             name: this.names.currencyWrapper,
-                            type: 'html'
+                            type: 'html',
+                            width: 6,
                         },
                         {
                             // ignoreAttributes: ['rxValue'],
@@ -787,6 +770,5 @@ TaskForm.propTypes = {
     values: PropTypes.object,
 }
 TaskForm.defaultProps = {
-    inputsHidden,
     size: 'tiny',
 }

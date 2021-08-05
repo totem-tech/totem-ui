@@ -4,7 +4,7 @@ import { Bond } from 'oo7'
 import { BehaviorSubject } from 'rxjs'
 // Views (including lists and forms)
 import AssetFormView from '../modules/assets/AssetsFormView'
-import FinancialStatementsView from '../modules/financialStatement/FinancialStatementView'
+import FinancialStatement from '../modules/financialStatement/FinancialStatement'
 import GettingStarted from '../views/GettingStartedView'
 import HistoryList from '../modules/history/HistoryList'
 import IdentityList from '../modules/identity/IdentityList'
@@ -261,7 +261,7 @@ export const sidebarItems = [
         title: textsCap.transferTitle,
     },
     {
-        content: FinancialStatementsView,
+        content: FinancialStatement,
         icon: 'list alternate outline',
         name: 'financial-statement',
         title: textsCap.financialStatementTitle,

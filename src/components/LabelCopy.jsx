@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Label, Popup } from 'semantic-ui-react'
-import { copyToClipboard, isStr, isValidNumber, objWithoutKeys, textEllipsis } from '../utils/utils'
+import { copyToClipboard, isFn, isStr, isValidNumber, objWithoutKeys, textEllipsis } from '../utils/utils'
 import { translated } from '../services/language'
 import { iUseReducer, useRxSubject } from '../services/react'
 import { MOBILE, rxLayout } from '../services/window'
@@ -22,12 +22,15 @@ export default function LabelCopy(props) {
         ignoreAttributes,
         maxLength,
         numDots,
+        onClick,
         split,
         style,
         value,
     } = props
     try {
-        value = isStr(value) ? value : JSON.stringify(value)
+        value = isStr(value)
+            ? value
+            : JSON.stringify(value)
     } catch (e) {
         // catch circular objects
         value = ''
@@ -39,11 +42,17 @@ export default function LabelCopy(props) {
                 ? value.length
                 : useRxSubject(rxLayout, l => l !== MOBILE ? 20 : 13)[0]
     }
-    
+
     const icon = props.icon || {
         className: 'no-margin',
-        name: state.copied ? 'check' : 'copy outline',
-        style: { paddingRight: 5 }
+        name: state.copied
+            ? 'check'
+            : 'copy outline',
+        style: {
+            paddingRight: content === null
+                ? 0
+                : 5
+        }
     }
 
     const el = (
@@ -54,7 +63,8 @@ export default function LabelCopy(props) {
                 : textEllipsis(value, maxLength, numDots, split),
             icon,
             key: 'El',
-            onClick: () => {
+            onClick: e => {
+                isFn(onClick) && onClick(e, value)
                 copyToClipboard(value)
                 setState({ copied: true, open: true, })
 
@@ -63,13 +73,13 @@ export default function LabelCopy(props) {
                 }, 1000)
             },
             onMouseEnter: () => setState({ open: true }),
-            onMouseLeave: () => setState({ open: false}),
+            onMouseLeave: () => setState({ open: false }),
             style: {
                 whiteSpace: 'nowrap',
                 ...style,
             }
         }} />
-    ) 
+    )
     return (
         <Popup {...{
             content: state.copied
@@ -99,6 +109,7 @@ LabelCopy.propTypes = {
     // @numDots number of dots to use when shortening the value.
     // Deafult: 3
     numDots: PropTypes.number,
+    onClick: PropTypes.func,
     split: PropTypes.bool,
     value: PropTypes.any.isRequired,
 }

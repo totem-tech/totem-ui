@@ -85,9 +85,9 @@ export default class DataTable extends Component {
     }
 
     getHeaders(totalRows, columns, selectedIndexes) {
-        let { columnsHidden, selectable, tableProps:tp } = this.props
+        let { columnsHidden, selectable, tableProps: tp } = this.props
         const { sortAsc, sortBy } = this.state
-        const { sortable } = {...DataTable.defaultProps.tableProps, ...tp }
+        const { sortable } = { ...DataTable.defaultProps.tableProps, ...tp }
 
         const columnsVisible = columns
             .filter(x => !x.hidden && !columnsHidden.includes(x.name))
@@ -110,7 +110,7 @@ export default class DataTable extends Component {
                     }} />
                 )
             })
-              
+
         if (!selectable) return headers
         // include checkbox to select items
         const n = selectedIndexes.length
@@ -198,7 +198,7 @@ export default class DataTable extends Component {
         const hasSearchOnChange = isFn(searchOnChange)
         const showActions = selectable && onSelectMenu && onSelectMenu.length > 0 && selectedIndexes.length > 0
         const triggerSearchChange = keywords => {
-            this.setState({ keywords})
+            this.setState({ keywords })
             hasSearchOnChange && searchOnChange(keywords, this.props)
         }
         const actions = showActions && (
@@ -233,7 +233,7 @@ export default class DataTable extends Component {
                 ? searchable
                 : (
                     <Input {...{
-                        action:!keywords ? undefined : {
+                        action: !keywords ? undefined : {
                             basic: true,
                             icon: { className: 'no-margin', name: 'close' },
                             onClick: () => triggerSearchChange('')
@@ -273,7 +273,7 @@ export default class DataTable extends Component {
                                 ...(isMobile ? { marginBottom: 5 } : {}),
                                 ...style,
                             }
-                        }}/>
+                        }} />
                     )
                 })}
             </Grid.Column>
@@ -375,7 +375,11 @@ export default class DataTable extends Component {
                 El: Segment,
                 basic: true,
                 className: 'data-table',
-                style: { margin: 0, padding: 0, ...style }
+                style: {
+                    margin: 0,
+                    padding: 0,
+                    ...style,
+                }
             }}>
                 {this.getTopContent(totalRows, selectedIndexes)}
 

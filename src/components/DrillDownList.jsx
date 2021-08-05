@@ -1,66 +1,87 @@
 import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { Accordion, Icon } from 'semantic-ui-react'
-import { className, isFn } from '../utils/utils'
-import { useInverted } from '../services/window'
-import { RecursiveShapeType } from '../services/react'
+import { className, hasValue, isFn } from '../utils/utils'
+import { MOBILE, rxLayout, useInverted } from '../services/window'
+import { RecursiveShapeType, useRxSubject } from '../services/react'
 import Text from './Text'
 
 const DrillDownList = props => {
     const {
-        expandedTitles: parentActive,
+        expandedNames: parentActive,
         className: clsName,
         items,
-        setExpandedTitles: parentSetActive,
+        setExpandedNames: parentSetActive,
         nestedLevelNum,
         singleMode,
         style,
     } = props
-    const [expandedTitles = {}, setExpandedTitles] = isFn(parentSetActive)
+    const [expandedItems = {}, setExpandedItems] = isFn(parentSetActive)
         ? [parentActive || {}, parentSetActive] // assume state is externally managed
         : useState() // manage state locally
     const inverted = useInverted()
+    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
     const AccordionEl = nestedLevelNum
         ? Accordion.Accordion
         : Accordion
     const elProps = {
-        className: className([clsName, { inverted }]),
-        styled: nestedLevelNum ? undefined : true,
-        fluid: nestedLevelNum ? undefined : true,
+        className: className(['drill-down-list', clsName, { inverted }]),
+        styled: nestedLevelNum
+            ? undefined
+            : true,
+        fluid: nestedLevelNum
+            ? undefined
+            : true,
         style: {
-            border: inverted ? 'grey 1px solid' : undefined,
-            margin: !nestedLevelNum ? 0 : undefined,
+            border: inverted
+                ? 'grey 1px solid'
+                : undefined,
+            margin: !nestedLevelNum
+                ? 0
+                : undefined,
             ...style,
         }
     }
+    const arrowLeftPadding = isMobile
+        ? 5
+        : 10
     return (
         <AccordionEl {...elProps}>
-            {items.map(({ balance, children = [], subtitle, title }, i) => {
-                const hasChildren = !!children.length
-                const self = expandedTitles[title] || { active: false }
-                const isActive = !hasChildren || !!self.active
+            {items.map(({ content, children = [], name, subtitle, title }, i) => {
+                const gotChildren = children.length > 0 || hasValue(content)
+                name = name || title
+                const self = expandedItems[name] || { active: false }
+                const isActive = !gotChildren || !!self.active
                 return (
-                    <React.Fragment key={title + balance}>
+                    <React.Fragment key={i}>
                         <Accordion.Title {...{
                             active: isActive,
                             index: i,
                             onClick: () => {
-                                if (!hasChildren) return
-                                const titles = singleMode ? {} : expandedTitles
-                                
-                                titles[title] = {
-                                    ...expandedTitles[title],
+                                if (!gotChildren) return
+                                const names = singleMode
+                                    ? {}
+                                    : expandedItems
+
+                                names[name] = {
+                                    ...expandedItems[name],
                                     active: !isActive,
                                 }
-                                setExpandedTitles({ ...titles })
+                                setExpandedItems({ ...names })
                             },
                             style: {
-                                paddingLeft: nestedLevelNum * 15 + (children.length ? 0 : 15),
+                                paddingLeft: nestedLevelNum * arrowLeftPadding
+                                    + (children.length && arrowLeftPadding || 0),
                                 position: 'relative',
                             },
                         }}>
 
-                            {children.length > 0 && <Icon inverted={inverted} name='dropdown' />}
+                            {gotChildren && (
+                                <Icon {...{
+                                    inverted,
+                                    name: 'dropdown',
+                                }} />
+                            )}
                             <Text {...{
                                 color: null,
                                 invertedColor: isActive ? 'white' : 'grey'
@@ -83,22 +104,27 @@ const DrillDownList = props => {
                                 </Text>
                             )}
                         </Accordion.Title>
-                        {children.length > 0 && (
+                        {gotChildren && (
                             <Accordion.Content
                                 level={nestedLevelNum}
                                 active={isActive}
                                 style={{ padding: 0 }}>
-                                <DrillDownList {...{
-                                    expandedTitles: self.children || {},
-                                    items: children,
-                                    nestedLevelNum: nestedLevelNum + 1,
-                                    setExpandedTitles: children => {
-                                        const titles = { ...expandedTitles }
-                                        titles[title] = { ...self, children }
-                                        setExpandedTitles(titles)
-                                    },
-                                    singleMode,
-                                }} />
+
+                                {content}
+
+                                {!!children.length && (
+                                    <DrillDownList {...{
+                                        expandedNames: self.children || {},
+                                        items: children,
+                                        nestedLevelNum: nestedLevelNum + 1,
+                                        setExpandedNames: children => {
+                                            const names = { ...expandedItems }
+                                            names[name] = { ...self, children }
+                                            setExpandedItems(names)
+                                        },
+                                        singleMode,
+                                    }} />
+                                )}
                             </Accordion.Content>
                         )}
                     </React.Fragment>
@@ -109,19 +135,21 @@ const DrillDownList = props => {
 }
 DrillDownList.propTypes = {
     className: PropTypes.string,
-    // @expandedTitles    required only if @setExpandedTitles is a function
-    expandedTitles: PropTypes.object,
+    // @expandedNames    required only if @setExpandedNames is a function
+    expandedNames: PropTypes.object,
     items: PropTypes.arrayOf(
         RecursiveShapeType({
+            content: PropTypes.any,
+            name: PropTypes.string,
             subtitle: PropTypes.any,
             title: PropTypes.any.isRequired,
         }, 'children')
     ).isRequired,
     // @nestedLevelNum for internal use only
     nestedLevelNum: PropTypes.number,
-    // @setExpandedTitles (optional) use this to maintain expanded statues externally.
+    // @setExpandedNames (optional) use this to maintain expanded statues externally.
     //                  If not a function, active statues are maintained internally
-    setExpandedTitles: PropTypes.func,
+    setExpandedNames: PropTypes.func,
     // if `false`, allows multiple children to be active at the same time
     singleMode: PropTypes.bool,
     style: PropTypes.object,

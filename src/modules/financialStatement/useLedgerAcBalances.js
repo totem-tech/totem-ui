@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { isAddress, isFn, isDefined } from '../../utils/utils'
-import { query as queryHelper } from '../../services/blockchain'
-import client from '../chat/ChatClient'
 import { translated } from '../../services/language'
-import { iUseReducer, useRxSubject } from '../../services/react'
+import { useRxSubject } from '../../services/react'
+import { isAddress, isFn } from '../../utils/utils'
+import client from '../chat/ChatClient'
 import { rxSelected } from '../identity/identity'
+import query from './query'
 
 const textsCap = translated({
     errorHeader: 'failed to retrieve accounts',
@@ -18,15 +18,17 @@ const textsCap = translated({
  * @name    useLedgerAcBalances
  * @summary a custom React hook that retrieves a list of ledger accounts and their balances by identity
  * 
- * @param   {String}    address             identity of the user. If falsy, will use selected identity.
- * @param   {Function}  balancesModifier    (optional) modifier for `balances returned`
+ * @param   {String}    address     identity of the user. If falsy, will use selected identity.
+ * @param   {Function}  modifier    (optional) function to modify balances before updating state.
+ *                                  Args: balances, address
  * 
  * @returns {Array} [
  *                      @result     {Array|null} list of ledger accounts with balances,
- *                      @message    {Object}    message with request status for use with `Message` component
+ *                      @message    {Object}     message with request status for use with `Message` component
+ *                      @address    {String}     user identity
  *                  ]
  */
-export default function useLedgerAcBalances(address, balancesModifier, timeout = 10000) {
+export default function useLedgerAcBalances(address, modifier, timeout = 10000) {
     address = address || useRxSubject(rxSelected)[0]
     const [balances, setBalancesOrg] = useState()
     const [message, setMessage] = useState()
@@ -37,9 +39,9 @@ export default function useLedgerAcBalances(address, balancesModifier, timeout =
         let loaded = false
         let error = false
         const setBalances = balances => setBalancesOrg(
-            !isFn(balancesModifier)
+            !isFn(modifier)
                 ? balances
-                : balancesModifier(balances)
+                : modifier(balances, address)
         )
         const loadingMsg = {
             content: textsCap.loading,
@@ -116,44 +118,5 @@ export default function useLedgerAcBalances(address, balancesModifier, timeout =
         }
     }, [address])
 
-    return [balances, message]
-}
-
-const query = {
-    /**
-     * @name    accountsById
-     * @summary retrieve a list of accounts by identity
-     * 
-     * @param {String|Array}    address user identity
-     * @param {Function|null}   callback (optional) callback function to subscribe to changes.
-     *                              If supplied, once result is retrieved function will be invoked with result.
-     *                              Default: null
-     * @param {Boolean}         multi (optional) indicates whether it is a multi query. Default: false.
-     * 
-     * @returns {*|Function}    if a @callback is a function, will return a function to unsubscribe. Otherwise, result.
-     */
-    accountsById: async (address, callback = null, multi = false) => await queryHelper(
-        'api.query.accounting.accountsById',
-        [address, callback].filter(isDefined),
-        multi,
-    ),
-    /**
-     * @name    balanceByLedger
-     * @summary retrieve ledger account balance
-     * 
-     * @param {String|Array}    address user identity
-     * @param {Number|Array}    ledgerAccount ledger account number
-     * @param {Function|null}   callback (optional) callback function to subscribe to changes.
-     *                              If supplied, once result is retrieved function will be invoked with result.
-     *                              Default: null
-     * @param {Boolean}         multi (optional) indicates whether it is a multi query. Default: false.
-     * 
-     * @returns {*|Function}    if a @callback is a function, will return a function to unsubscribe. Otherwise, result.
-     */
-    balanceByLedger: async (address, ledgerAccount, callback = null, multi = false) => await queryHelper(
-        'api.query.accounting.balanceByLedger',
-        [address, ledgerAccount, callback].filter(isDefined),
-        multi,
-    ),
-    glAccounts: async (accountNumbers) => await client.glAccounts.promise(accountNumbers.map(a => `${a}`))
+    return [balances, message, address]
 }
