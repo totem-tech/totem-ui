@@ -59,7 +59,7 @@
     "@polkadot/api": "^0.100.1",
     "@polkadot/keyring": "^1.8.1",
     "@polkadot/util": "^1.8.1",
-    "@polkadot/wasm-crypto": "^0.14.1",
+    "@polkadot/wasm-crypto": "^0.20.1",
     "add": "^2.0.6",
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
