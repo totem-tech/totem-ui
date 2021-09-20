@@ -58,6 +58,8 @@ const PostingList = props => {
             ...props,
             ...state,
             data,
+            defaultSort: 'id',
+            defaultSortAsc: false,
             searchable: data.length > 10,
         }} />
     )
@@ -81,8 +83,8 @@ const postingModifier = (posting = {}) => {
     const { blockNrSubmitted, blockNrEffective, id, isCredit, ledgerBalance } = posting
     posting.tsSubmitted = blockNumberToTS(blockNrSubmitted, rxBlockNumber.value)
     posting.tsEffective = blockNumberToTS(blockNrEffective, rxBlockNumber.value)
-    posting.credit = isCredit && ledgerBalance || 0
-    posting.debit = !isCredit && ledgerBalance || 0
+    posting.credit = isCredit && !!ledgerBalance || 0
+    posting.debit = !isCredit && !!ledgerBalance || 0
     posting.key = id
     return posting
 }

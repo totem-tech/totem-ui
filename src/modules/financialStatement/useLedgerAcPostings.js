@@ -24,14 +24,24 @@ const useLedgerAcPostings = (address, ledgerAccount, postingModifier) => {
         const handlePostingList = (postingList = []) => {
             if (!mounted) return
             postingList = postingList.map((arr, i) => {
+                const [
+                    partnerAddress,
+                    blockNrSubmitted,
+                    ledgerBalance,
+                    isCredit,
+                    entryId,
+                    blockNrEffective,
+                ] = arr
                 const posting = {
-                    blockNrSubmitted: arr[0],
-                    blockNrEffective: arr[4],
-                    entryId: arr[3], //hash
+                    partnerAddress,
+                    blockNrSubmitted,
+                    blockNrEffective,
+                    entryId, //hash
                     id: postingIds[i],
-                    isCredit: arr[2],
-                    ledgerBalance: arr[1] && eval(arr[1]), // convert hex to number
+                    isCredit,
+                    ledgerBalance: ledgerBalance && eval(ledgerBalance), // convert hex to number
                 }
+                console.log({ posting })
                 return isFn(postingModifier)
                     ? postingModifier(posting)
                     : posting
