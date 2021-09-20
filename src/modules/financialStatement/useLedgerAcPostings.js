@@ -27,7 +27,7 @@ const useLedgerAcPostings = (address, ledgerAccount, postingModifier) => {
                 const [
                     partnerAddress,
                     blockNrSubmitted,
-                    ledgerBalance,
+                    amount,
                     isCredit,
                     entryId,
                     blockNrEffective,
@@ -39,9 +39,8 @@ const useLedgerAcPostings = (address, ledgerAccount, postingModifier) => {
                     entryId, //hash
                     id: postingIds[i],
                     isCredit,
-                    ledgerBalance: ledgerBalance && eval(ledgerBalance), // convert hex to number
+                    ledgerBalance: amount && eval(amount), // convert hex to number
                 }
-                console.log({ posting })
                 return isFn(postingModifier)
                     ? postingModifier(posting)
                     : posting

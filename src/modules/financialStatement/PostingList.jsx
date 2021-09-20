@@ -87,11 +87,11 @@ const getActions = (posting) => (
 )
 
 const postingModifier = (posting = {}) => {
-    const { blockNrSubmitted, blockNrEffective, id, isCredit, ledgerBalance, partnerAddress } = posting
+    const { blockNrSubmitted, blockNrEffective, id, isCredit, amount, partnerAddress } = posting
     posting.tsSubmitted = blockNumberToTS(blockNrSubmitted, rxBlockNumber.value)
     posting.tsEffective = blockNumberToTS(blockNrEffective, rxBlockNumber.value)
-    posting.credit = isCredit && ledgerBalance || 0
-    posting.debit = !isCredit && ledgerBalance || 0
+    posting.credit = isCredit && amount || 0
+    posting.debit = !isCredit && amount || 0
     posting.key = id
     posting._partnerName = getAddressName(partnerAddress)
     return posting
