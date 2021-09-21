@@ -10,7 +10,7 @@ import { arrSort, textEllipsis, deferred, isValidNumber } from '../../utils/util
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import Text from '../../components/Text'
 // services
-import { getConnection, query, queueables } from '../../services/blockchain'
+import { getConnection, query, queueables, randomHex } from '../../services/blockchain'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
@@ -356,7 +356,11 @@ export default class Transfer extends Component {
         this.fee = await getTxFee(
             api,
             from,
-            await api.tx.balances.transfer(to || from, this.amountRounded),
+            await api.tx.transfer.networkCurrency(
+                to || from,
+                this.amountRounded,
+                randomHex(from)
+            ),
             identity.uri,
         )
         txFeeIn.content = this.getTxFeeEl(this.fee)

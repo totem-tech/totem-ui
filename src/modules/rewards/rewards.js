@@ -24,6 +24,7 @@ export const generateSignupTweet = (twitterHandle = '') => {
         .split('@')
         .join('')
         .trim()
+        .toLowerCase()
     const { id } = getUser() || {}
     if (!id || !twitterHandle) return
 
@@ -54,6 +55,12 @@ export const generateVerificationCode = (userId, platform, handle) => {
     return code.substr(2) // get rid of 0x prefix
 }
 
+/**
+ * @name    getRewards
+ * @summary retrieve user's rewards history
+ * 
+ * @returns {Object}
+ */
 export const getRewards = async () => {
     try {
         // make sure user is logged in
