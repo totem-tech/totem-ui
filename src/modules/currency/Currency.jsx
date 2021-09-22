@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { isValidNumber, isFn, isDefined } from '../../utils/utils'
-import { subjectAsPromise, unsubscribe, useRxSubject } from '../../services/react'
+import { unsubscribe, useRxSubject } from '../../services/react'
 import { convertTo, currencyDefault, rxSelected } from './currency'
 
 function Currency(props) {
@@ -78,14 +78,23 @@ function Currency(props) {
         }
     }, valuesToWatch)
 
-    const content = !isDefined(valueConverted) ? (emptyMessage || '') : (
-        <span>{prefix || ''}{valueConverted} {ticker}{suffix || ''}</span>
-    )
+    const content = !isDefined(valueConverted)
+        ? (emptyMessage || '')
+        : (
+            <span>
+                {prefix || ''}{valueConverted} {ticker}{suffix || ''}
+            </span>
+        )
     return (
         <EL {...{
             className,
             onClick,
-            style: { color: error ? 'red' : undefined, ...style },
+            style: {
+                color: error
+                    ? 'red'
+                    : undefined,
+                ...style
+            },
             title: error
                 ? `${error}`
                 : title || title === null || !isDefined(value) || isSame

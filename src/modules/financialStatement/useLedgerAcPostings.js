@@ -45,7 +45,6 @@ const useLedgerAcPostings = (address, ledgerAccount, postingModifier) => {
                     ? postingModifier(posting)
                     : posting
             })
-            console.table(postingList)
             setData(postingList)
         }
         // subscribe and retrieve details by posting IDs

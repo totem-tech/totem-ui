@@ -137,12 +137,14 @@ export default class DataTable extends Component {
 
     getRows(filteredData, columns, selectedIndexes, pageNo) {
         let { columnsHidden, perPage, rowProps, selectable } = this.props
-        const nonAttrs = ['content', 'headerProps', 'sortable', 'sortKey', 'title']
+        const nonAttrs = ['content', 'draggableValueKey', 'headerProps', 'sortable', 'sortKey', 'title']
         return mapItemsByPage(filteredData, pageNo, perPage, (item, key, items, isMap) => (
-            <Table.Row
-                key={key}
-                {...(isFn(rowProps) ? rowProps(item, key, items, this.props) : rowProps || {})}
-            >
+            <Table.Row {...{
+                key,
+                ...(isFn(rowProps)
+                    ? rowProps(item, key, items, this.props)
+                    : rowProps || {})
+            }}>
                 {selectable && ( /* include checkbox to select items */
                     <Table.Cell onClick={() => this.handleRowSelect(key, selectedIndexes)} style={styles.checkboxCell}>
                         <Icon
@@ -155,19 +157,39 @@ export default class DataTable extends Component {
                 {columns
                     .filter(({ hidden, name }) => !hidden && !columnsHidden.includes(name))
                     .map((cell, j) => {
-                        let { collapsing, content, draggable, key: contentKey, style, textAlign = 'left' } = cell || {}
+                        let {
+                            collapsing,
+                            content,
+                            draggable,
+                            draggableValueKey,
+                            key: contentKey,
+                            style,
+                            textAlign = 'left',
+                        } = cell || {}
                         draggable = draggable !== false
-                        content = isFn(content) ? content(item, key, items, this.props) : cell.content || item[contentKey]
+                        content = isFn(content)
+                            ? content(item, key, items, this.props)
+                            : cell.content || item[contentKey]
                         style = {
-                            cursor: draggable ? 'grab' : undefined,
-                            padding: collapsing ? '0 5px' : undefined,
+                            cursor: draggable
+                                ? 'grab'
+                                : undefined,
+                            padding:
+                                collapsing
+                                    ? '0 5px'
+                                    : undefined,
                             ...style
                         }
+                        const dragValue = draggableValueKey
+                            ? item[draggableValueKey]
+                            : null
                         const props = {
                             ...objWithoutKeys(cell, nonAttrs),
                             key: key + j,
                             draggable,
-                            onDragStart: !draggable ? undefined : this.handleDragStart,
+                            onDragStart: !draggable
+                                ? undefined
+                                : this.handleDragStartCb(dragValue),
                             style,
                             textAlign,
                         }
@@ -299,7 +321,13 @@ export default class DataTable extends Component {
         )
     }
 
-    handleDragStart = e => e.dataTransfer.setData('Text', e.target.textContent)
+    handleDragStartCb = dragValue => e => e.dataTransfer
+        .setData(
+            'Text',
+            dragValue !== null
+                ? `${dragValue}`
+                : e.target.textContent
+        )
 
     handlePageSelect = pageNo => {
         const { pageOnSelect } = this.props
@@ -426,6 +454,12 @@ DataTable.propTypes = {
             // function/element/string: content to display for the each cell on this column.
             // function props: currentItem, key, allItems, props
             content: PropTypes.any,
+            // indicates whether column cell should be draggable. 
+            // Default: true
+            draggable: PropTypes.bool,
+            // Property that should be used when dropped. 
+            // Default: text content of the cell
+            draggableValueKey: PropTypes.string,
             // column header cell properties
             headerProps: PropTypes.object,
             // whether to hide the column

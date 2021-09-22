@@ -9,6 +9,8 @@ import useLedgerAcPostings from './useLedgerAcPostings'
 import { blockNumberToTS } from '../../utils/time'
 import { rxBlockNumber } from '../../services/blockchain'
 import { getAddressName } from '../partner/partner'
+import Currency from '../currency/Currency'
+import { currencyDefault } from '../currency/currency'
 
 const textsCap = translated({
     actions: 'actions',
@@ -37,15 +39,18 @@ const PostingList = props => {
             },
             {
                 textAlign: 'center',
-                key: 'debit',
+                key: '_debit',
+                sortKey: 'debit',
                 title: textsCap.debit,
             },
             {
                 textAlign: 'center',
-                key: 'credit',
+                key: '_credit',
+                sortKey: 'credit',
                 title: textsCap.credit,
             },
             {
+                draggableValueKey: 'partnerAddress',
                 key: '_partnerName',
                 textAlign: 'center',
                 title: textsCap.partner,
@@ -94,6 +99,24 @@ const postingModifier = (posting = {}) => {
     posting.debit = !isCredit && amount || 0
     posting.key = id
     posting._partnerName = getAddressName(partnerAddress)
+    posting._credit = !isCredit
+        ? 0
+        : (
+            <Currency {...{
+                unit: currencyDefault,
+                value: posting.credit,
+            }} />
+        )
+    posting._debit = isCredit
+        ? 0
+        : (
+            <Currency {...{
+                unit: currencyDefault,
+                value: posting.debit,
+            }} />
+        )
+
+
     return posting
 }
 
