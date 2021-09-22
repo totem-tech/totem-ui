@@ -39,12 +39,13 @@ const useLedgerAcPostings = (address, ledgerAccount, postingModifier) => {
                     entryId, //hash
                     id: postingIds[i],
                     isCredit,
-                    ledgerBalance: amount && eval(amount), // convert hex to number
+                    amount: amount && eval(amount), // convert hex to number
                 }
                 return isFn(postingModifier)
                     ? postingModifier(posting)
                     : posting
             })
+            console.table(postingList)
             setData(postingList)
         }
         // subscribe and retrieve details by posting IDs
