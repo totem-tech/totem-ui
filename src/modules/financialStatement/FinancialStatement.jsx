@@ -91,7 +91,7 @@ export const getNestedBalances = (glAccounts = [], address) => {
     const setLevelBalance = (parents, title, balance = 0, balanceType, ledgerAccount, isLast) => {
         // should only happen if there was a mistake in the database
         title = title || textsCap.unknownTitle
-        const name = title + balanceType
+        const name = title //+ balanceType
         let parentItem = parents.find(x => x.name === name)
         if (isMobile) title = textEllipsis(title, 18, 3, false)
         if (isLast) {
@@ -182,6 +182,7 @@ export const getNestedBalances = (glAccounts = [], address) => {
             ledgerAcNumber,
             true
         )
+        console.log({ allItems })
         return allItems
     }, [])
 }
