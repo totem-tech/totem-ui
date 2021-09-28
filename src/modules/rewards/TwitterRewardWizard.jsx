@@ -158,7 +158,11 @@ export default function TwitterRewardWizard(props) {
                     try {
                         await client.rewardsClaim.promise(
                             'twitter',
-                            twHandle,
+                            twHandle
+                                .split('@')
+                                .join('')
+                                .trim()
+                                .toLowerCase(),
                             tweetId,
                         )
                         formProps.success = true

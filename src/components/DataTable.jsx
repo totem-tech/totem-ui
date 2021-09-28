@@ -372,25 +372,54 @@ export default class DataTable extends Component {
             sortBy,
         } = this.state
 
-        keywords = `${isDefined(keywords) ? keywords : keywordsP || ''}`.trim()
-        const columns = columnsOriginal.filter(x => !!x && !x.hidden)
+        keywords = `${isDefined(keywords)
+            ? keywords
+            : keywordsP || ''}`.trim()
+        const columns = columnsOriginal
+            .filter(x => !!x && !x.hidden)
         // Include extra searchable keys that are not visibile on the table
         const keys = arrUnique([
-            ...columns.filter(x => !!x.key).map(x => x.key),
+            ...columns
+                .filter(x => !!x.key)
+                .map(x => x.key),
             ...(searchExtraKeys || [])]
         )
-        let filteredData = !keywords ? data : search(data, keywords, keys)
-        filteredData = !sortBy ? filteredData : sort(filteredData, sortBy, !sortAsc, false)
-        selectedIndexes = selectedIndexes.filter(index => !!(isArr(data) ? data[index] : data.get(index)))
+        let filteredData = !keywords
+            ? data
+            : search(data, keywords, keys)
+        filteredData = !sortBy
+            ? filteredData
+            : sort(
+                filteredData,
+                sortBy,
+                !sortAsc,
+                false,
+            )
+        selectedIndexes = selectedIndexes
+            .filter(index => !!(isArr(data)
+                ? data[index]
+                : data.get(index))
+            )
         // actual total
         const totalItems = data.size || data.length
         // filtered total
         const totalRows = filteredData.length || filteredData.size || 0
         const totalPages = Math.ceil(totalRows / perPage)
-        pageNo = pageNo > totalPages ? 1 : pageNo
+        pageNo = pageNo > totalPages
+            ? 1
+            : pageNo
         this.state.pageNo = pageNo
-        const headers = this.getHeaders(totalRows, columns, selectedIndexes)
-        const rows = this.getRows(filteredData, columns, selectedIndexes, pageNo)
+        const headers = this.getHeaders(
+            totalRows,
+            columns,
+            selectedIndexes,
+        )
+        const rows = this.getRows(
+            filteredData,
+            columns,
+            selectedIndexes,
+            pageNo,
+        )
 
         if (totalItems > 0 && totalRows === 0) {
             // search resulted in zero rows

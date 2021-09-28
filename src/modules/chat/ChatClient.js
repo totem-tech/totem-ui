@@ -113,7 +113,12 @@ export const getClient = () => {
                             resolve(result.length > 1 ? result : result[0])
                         }
 
-                        const doWait = rxIsInMaintenanceMode.value && key !== 'maintenanceMode'
+                        // functions allowed during maintenace mode
+                        const maintenanceModeKeys = [
+                            'maintenanceMode',
+                            'login'
+                        ]
+                        const doWait = rxIsInMaintenanceMode.value && !maintenanceModeKeys.includes(key)
                         if (doWait) {
                             console.info('Waiting for maintenance mode to be deactivated')
                             await subjectAsPromise(rxIsInMaintenanceMode, false)[0]
@@ -144,6 +149,7 @@ export const getClient = () => {
         !!id && rxIsLoggedIn.next(false)
     })
     instance.onMaintenanceMode(active => {
+        console.log('onMaintenanceMode', active)
         rxIsInMaintenanceMode.next(active)
     })
     return instance
@@ -608,10 +614,14 @@ export class ChatClient {
     login = (id, secret, cb) => isFn(cb) && socket.emit('login',
         id,
         secret,
-        (err, data) => {
+        async (err, data) => {
             const isLoggedIn = !err
             // store user roles etc data sent from server
             isLoggedIn && setUser({ ...getUser(), ...data })
+
+            // wait until maintenance mode is turned off
+            rxIsInMaintenanceMode.value && await subjectAsPromise(rxIsInMaintenanceMode, false)
+
             if (isLoggedIn !== rxIsLoggedIn.value) rxIsLoggedIn.next(isLoggedIn)
             err && console.log('Login failed', err)
             cb(err, data)
