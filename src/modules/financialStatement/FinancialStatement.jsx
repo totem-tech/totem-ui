@@ -121,10 +121,10 @@ export const getNestedBalances = (glAccounts = [], address) => {
                             address,
                             key: `${address}${ledgerAccount}`,
                             ledgerAccount,
-                            style: {
-                                marginTop: -20,
-                                marginBottom: -15
-                            }
+                            // style: {
+                            //     marginTop: -20,
+                            //     marginBottom: -15
+                            // }
                         }} />
                     ),
                 name,

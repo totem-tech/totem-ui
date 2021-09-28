@@ -73,6 +73,9 @@ const PostingList = props => {
             defaultSort: 'id',
             defaultSortAsc: false,
             searchable: data.length > 10,
+            style: {
+                padding: '1px inherit inherit inherit', // overrides 0 padding in DataTable component
+            }
         }} />
     )
 }
