@@ -11,6 +11,7 @@ import { rxBlockNumber } from '../../services/blockchain'
 import { getAddressName } from '../partner/partner'
 import Currency from '../currency/Currency'
 import { currencyDefault } from '../currency/currency'
+import { MOBILE, rxLayout } from '../../services/window'
 
 const textsCap = translated({
     actions: 'actions',
@@ -64,6 +65,7 @@ const PostingList = props => {
         ],
     }))
     const data = useLedgerAcPostings(address, ledgerAccount, postingModifier)
+    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
 
     return (
         <DataTable {...{
@@ -74,7 +76,11 @@ const PostingList = props => {
             defaultSortAsc: false,
             searchable: data.length > 10,
             style: {
-                padding: '1px inherit inherit inherit', // overrides 0 padding in DataTable component
+                padding: undefined, // overrides 0 padding in DataTable component
+                paddingTop: 1,
+                marginTop: isMobile
+                    ? undefined
+                    : -10
             }
         }} />
     )
