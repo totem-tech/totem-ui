@@ -323,7 +323,6 @@ export default class Transfer extends Component {
         const from = values[this.names.from]
         const to = values[this.names.to]
         const valid = isValidNumber(amountReceived)
-        const identity = getIdentity(from)
         const { inputs, submitDisabled } = this.state
         const amountIn = findInput(inputs, this.names.amountReceived)
         const amountGroupIn = findInput(inputs, this.names.amountReceivedGroup)
@@ -355,13 +354,11 @@ export default class Transfer extends Component {
         const freeBalance = balance - locks.reduce((sum, x) => sum + x.amount, 0)
         this.fee = await getTxFee(
             api,
-            from,
             await api.tx.transfer.networkCurrency(
                 to || from,
                 this.amountRounded,
                 randomHex(from)
             ),
-            identity.uri,
         )
         txFeeIn.content = this.getTxFeeEl(this.fee)
         const total = this.fee + this.amountRounded

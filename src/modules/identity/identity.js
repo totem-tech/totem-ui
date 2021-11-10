@@ -3,6 +3,8 @@ import { generateMnemonic } from 'bip39'
 import DataStorage from '../../utils/DataStorage'
 import { keyring } from '../../utils/polkadotHelper'
 import { isObj, isStr, objClean, objHasKeys } from '../../utils/utils'
+import { web3AccountsSubscribe, web3Enable, web3EnablePromise } from '@polkadot/extension-dapp'
+import { addressToStr } from '../../utils/convert'
 
 const identities = new DataStorage('totem_identities')
 export const DEFAULT_NAME = 'Default' // default identity name
@@ -12,7 +14,12 @@ export const USAGE_TYPES = Object.freeze({
 	PERSONAL: 'personal',
 	BUSINESS: 'business',
 })
-const REQUIRED_KEYS = Object.freeze(['address', 'name', 'type', 'uri'])
+const REQUIRED_KEYS = Object.freeze([
+	'address',
+	'name',
+	'type',
+	'uri',
+])
 const VALID_KEYS = Object.freeze([
 	...REQUIRED_KEYS,
 	'cloudBackupStatus', // undefined: never backed up, in-progress, done
@@ -70,15 +77,26 @@ export const remove = address => { identities.delete(address) }
 export const set = (address, identity) => {
 	if (!isStr(address) || !isObj(identity)) return
 	const existingItem = identities.get(address)
-	if (!existingItem && objHasKeys(identity, REQUIRED_KEYS, true)) return
+	if (!existingItem && !objHasKeys(
+		identity,
+		identity.uri === null // allow saving identities from  PolkadotJS extension
+			? REQUIRED_KEYS.filter(x => x !== 'uri')
+			: REQUIRED_KEYS,
+		true,
+	)) return
 
-	const { selected, type, usageType } = identity
-	const isUsageTypeValid = Object.values(USAGE_TYPES).includes(usageType)
-	identity.type = type || 'sr25519'
-	identity.selected = !!selected
-	identity.usageType = !isUsageTypeValid ? USAGE_TYPES.PERSONAL : usageType
 	//  merge with existing values and get rid of any unwanted properties
 	identity = objClean({ ...existingItem, ...identity }, VALID_KEYS)
+
+	const { selected, type, usageType } = identity
+	const isUsageTypeValid = Object
+		.values(USAGE_TYPES)
+		.includes(usageType)
+	identity.type = type || 'sr25519'
+	identity.selected = !!selected
+	identity.usageType = !isUsageTypeValid
+		? USAGE_TYPES.PERSONAL
+		: usageType
 	identities.set(address, identity)
 
 	return identity
@@ -104,7 +122,7 @@ export const setSelected = address => {
 	rxSelected.next(address)
 }
 
-const init = () => {
+const init = async () => {
 	if (!getAll().length) {
 		// generate a new seed
 		const uri = generateUri() + '/totem/0/0'
@@ -121,8 +139,29 @@ const init = () => {
 		}
 		set(address, identity)
 	}
-
 	rxSelected.next(getSelected().address)
+	// const allInjected = await web3Enable('Totem Live Accounting')
+	// if (!allInjected.length) return
+
+	// // synchronize identities with PolkadotJS extension
+	// web3AccountsSubscribe(accounts => {
+	// 	accounts.forEach(account => {
+	// 		const {
+	// 			address,
+	// 			meta: { name } = {},
+	// 			type,
+	// 		} = account
+	// 		const identity = {
+	// 			address,
+	// 			name,
+	// 			type,
+	// 			uri: null,
+	// 		}
+	// 		set(address, identity)
+	// 	})
+	// 	console.log({ accounts, allInjected, signer: allInjected[0].signer })
+	// })
+
 }
 setTimeout(init)
 

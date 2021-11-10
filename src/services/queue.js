@@ -18,6 +18,7 @@ import { setToast } from './toast'
 import { rxOnline } from './window'
 import PromisE from '../utils/PromisE'
 import { BLOCK_DURATION_SECONDS } from '../utils/time'
+import { web3Enable, web3FromAddress } from '@polkadot/extension-dapp'
 
 const textsCap = translated({
     amount: 'amount',
@@ -411,9 +412,10 @@ const handleTx = async (id, rootTask, task, toastId) => {
     if (!isValidNumber(task.amountXTX)) {
         task.amountXTX = 0
     }
-    let api
+    let api, signer
     const { address, amountXTX, args, description, func, silent, title, toastDuration, txId } = task
     const identity = findIdentity(address)
+    const isInjected = identity.uri === null
     const msg = {
         content: [description],
         header: title,
@@ -438,7 +440,12 @@ const handleTx = async (id, rootTask, task, toastId) => {
         const { api: apiX, keyring } = await getConnection()
         api = apiX
         // add idenitity to keyring on demand
-        !keyring.contains(address) && keyring.add([identity.uri])
+        if (isInjected) {
+            const injector = await web3FromAddress(address)
+            signer = injector.signer
+        } else {
+            !keyring.contains(address) && keyring.add([identity.uri])
+        }
     } catch (err) {
         console.log('handleTxStorage: connectcion error', err)
         // attempt to execute again on page reload or manual resume
@@ -469,11 +476,12 @@ const handleTx = async (id, rootTask, task, toastId) => {
 
         // retrieve and store account balance before starting the transaction
         let balance = await query('api.query.balances.freeBalance', address)
-        const txFee = await getTxFee(api, address, tx)
+        const txFee = await getTxFee(api, tx)
         if (balance < (amountXTX + txFee)) throw textsCap.insufficientBalance
         _save(LOADING, null, { before: balance })
 
-        const result = await signAndSend(api, address, tx)
+        api.signer = signer
+        const result = await signAndSend(api, address, tx, null, null, signer)
 
         // retrieve and store account balance after execution
         balance = await query('api.query.balances.freeBalance', address)
@@ -491,6 +499,7 @@ const handleTx = async (id, rootTask, task, toastId) => {
         } catch (_) {
             _save(ERROR, err)
         }
+        console.error('Queue Service', err)
     }
 }
 

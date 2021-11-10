@@ -24,6 +24,7 @@ const textsCap = translated({
     hideSeed: 'hide seed',
     identity: 'identity',
     identityDetails: 'identity details',
+    injectedIdentity: 'identity injected from PolkadotJS extension',
     lastBackup: 'last backup',
     loadingBalance: 'loading account balance',
     never: 'never',
@@ -47,12 +48,20 @@ export default class IdentityDetailsForm extends Component {
         super(props)
 
         this.identity = get((props.values || {}).address) || {}
-        const { address, tags } = this.identity
+        this.isInjected = this.identity.uri === null
+        const { address } = this.identity
         this.showSeed = false
         this.state = {
             closeOnSubmit: true,
             closeText: { content: textsCap.close, negative: false },
-            subheader: <i style={{ color: 'grey' }}>{textsCap.autoSaved}</i>,
+            subheader: <div>
+                {this.isInjected && (
+                    <div style={{ color: 'orange' }}>
+                        <b>{textsCap.injectedIdentity}</b>
+                    </div>
+                )}
+                <i style={{ color: 'grey' }}>{textsCap.autoSaved}</i>
+            </div>,
             submitText: null, // hide submit button
             success: false, // sets true  when identity removed and modal will be auto closed
             inputs: [
@@ -82,8 +91,12 @@ export default class IdentityDetailsForm extends Component {
                     type: 'text',
                 },
                 {
+                    hidden: this.isInjected,
                     inlineLabel: {
-                        icon: { className: 'no-margin', name: 'eye' },
+                        icon: {
+                            className: 'no-margin',
+                            name: 'eye',
+                        },
                         style: { cursor: 'pointer' },
                         title: textsCap.showSeed,
                         onClick: () => {
@@ -97,7 +110,9 @@ export default class IdentityDetailsForm extends Component {
                                     title: textsCap.copySeed,
                                 }
                                 uriIn.inlineLabel.icon.name = `eye${this.showSeed ? ' slash' : ''}`
-                                uriIn.inlineLabel.title = `${this.showSeed ? textsCap.hideSeed : textsCap.showSeed}`
+                                uriIn.inlineLabel.title = this.showSeed
+                                    ? textsCap.hideSeed
+                                    : textsCap.showSeed
                                 uriIn.value = this.getUri(this.identity.uri)
                                 this.setState({ inputs })
                             }

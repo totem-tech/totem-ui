@@ -37,7 +37,7 @@ const textsCap = translated({
     updateIdentity: 'update your identity',
 }, true)[1]
 
-export default function IdentityList(props){
+export default function IdentityList(props) {
     const [data] = useRxSubject(
         rxIdentities,
         map => {
@@ -139,7 +139,7 @@ const getTableProps = () => ({
     },
     topLeftMenu: [
         {
-            El:ButtonGroup,
+            El: ButtonGroup,
             buttons: [
                 {
                     content: textsCap.create,
@@ -149,7 +149,7 @@ const getTableProps = () => ({
                 {
                     content: textsCap.locations,
                     icon: 'building',
-                    onClick: ()=> showLocations(),
+                    onClick: () => showLocations(),
                 },
             ],
             key: 0,

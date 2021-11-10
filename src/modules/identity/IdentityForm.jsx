@@ -14,7 +14,6 @@ import { validateMnemonic } from 'bip39'
 
 const textsCap = translated({
     address: 'address',
-    autoSaved: 'changes will be auto-saved',
     bip39Warning: 'The mnemonic you have entered is not BIP39 compatible. You may or may not be able to restore your identity on any other wallet applications. It is recommended that you use a BIP39 compatible mnemonic. If you choose to use BIP39 incompatible mnemonic, please use at your own risk!',
     create: 'create',
     business: 'business',
@@ -60,12 +59,14 @@ export default class IdentityForm extends Component {
     constructor(props) {
         super(props)
 
-        let  { autoSave, header, message, submitText, values } = props
+        let { autoSave, header, message, submitText, values } = props
         const { address, restore } = values || {}
         const existingValues = get(address)
         this.values = { ...existingValues, ...values }
         this.rxAddress = new BehaviorSubject(address)
         this.doUpdate = !!existingValues
+        this.isInjected = this.values[inputNames.uri] === null
+        console.log({ injected: this.isInjected })
 
         if (submitText !== null) {
             submitText = submitText || (
@@ -108,6 +109,7 @@ export default class IdentityForm extends Component {
                     minLength: 3,
                     name: inputNames.name,
                     placeholder: textsCap.identityNamePlaceholder,
+                    readOnly: this.isInjected,
                     required: true,
                     rxValue: new BehaviorSubject(),
                     validate: this.validateName,
@@ -198,10 +200,10 @@ export default class IdentityForm extends Component {
         .map(([id, loc]) => loc.partnerIdentity
             ? null
             : ({
-                description: [ loc.state, loc.countryCode ].filter(Boolean).join(', '),
+                description: [loc.state, loc.countryCode].filter(Boolean).join(', '),
                 key: id,
                 text: loc.name,
-                title: [ loc.addressLine1, loc.addressLine2, loc.city, loc.postcode ].filter(Boolean).join(' '),
+                title: [loc.addressLine1, loc.addressLine2, loc.city, loc.postcode].filter(Boolean).join(' '),
                 value: id,
             })
         )
@@ -229,7 +231,7 @@ export default class IdentityForm extends Component {
         this.handleSubmit(...args)
     }
 
-    handleLocationCreate = (success, _, id) => { 
+    handleLocationCreate = (success, _, id) => {
         if (!success) return
         const { inputs } = this.state
         const locationIdIn = findInput(inputs, inputNames.locationId)
@@ -258,9 +260,13 @@ export default class IdentityForm extends Component {
 
     handleUriChange = deferred(() => {
         const { inputs } = this.state
-        const isRestore = !!this.values.restore
         const seed = this.values[inputNames.uri]
-        const mnemonic = this.values[inputNames.uri].split('/')[0]
+
+        // Identity is injected from PolkadotJS extension
+        if (seed === null) return
+
+        const isRestore = !!this.values.restore
+        const mnemonic = seed.split('/')[0]
         const uriInput = findInput(inputs, inputNames.uri)
         const valid = !seed || !mnemonic || !isRestore || validateMnemonic(mnemonic)
 
@@ -283,7 +289,7 @@ export default class IdentityForm extends Component {
         this.setState({ success: true })
     }, 100)
 
-    handleUsageTypeChange = (_, { usageType = USAGE_TYPES.PERSONAL}) => {
+    handleUsageTypeChange = (_, { usageType = USAGE_TYPES.PERSONAL }) => {
         const isRestore = !!this.values[inputNames.restore]
         if (isRestore) return // nothing to do
 
