@@ -22,7 +22,7 @@ const textsCap = translated({
     step2ConfirmWarn: 'To qualify for the reward, we recommend not changing the text.',
     step2Desc: 'Get rewarded by spreading the word about Totem',
     tweetSubmitText: 'Tweet now',
-    twHandleLabel: 'Twitter handle/username (case-sensitive)',
+    twHandleLabel: 'Twitter handle/username',
     twHandleLabelDetails: 'Please make sure that this is the same account you are logged in on Twitter.com',
     twHandlePlaceholder: 'enter your twitter handle',
 
@@ -36,9 +36,9 @@ const textsCap = translated({
 }, true)[1]
 
 export default function TwitterRewardWizard(props) {
+    const { completed } = props
     const [activeStep, setActiveStep] = useState(0)
     const [rxTwitterHandle] = useState(() => new BehaviorSubject(''))
-    const { completed } = props
     const onClickHandlers = [
         () => confirm({
             header: textsCap.step1,
@@ -113,7 +113,7 @@ export default function TwitterRewardWizard(props) {
                 submitText: textsCap.claimSubmitText,
                 inputs: [
                     {
-                        minLength: 18,
+                        customMessages: { regex: '' }, // mark as invalid but don't show the default error message
                         name: 'tweetId',
                         label: textsCap.tweetIdLabel,
                         labelDetails: textsCap.tweetIdLabelDetails,
@@ -131,6 +131,7 @@ export default function TwitterRewardWizard(props) {
                             rxValue.next(tweetId || '')
                         }, 50),
                         placeholder: textsCap.tweetIdPlaceholder,
+                        regex: /^[0-9]{19}$/,
                         required: true,
                         rxValue,
                         type: 'text',
@@ -226,4 +227,7 @@ export default function TwitterRewardWizard(props) {
             )).filter(Boolean)}
         </Step.Group>
     )
+}
+TwitterRewardWizard.propTypes = {
+    completed: PropTypes.bool,
 }
