@@ -83,7 +83,7 @@ const initPromise = PromisE.timeout((resolve, reject) => {
         // check and update selected language texts
         if (translationChecked) return
         try {
-            await fetchNSaveTexts()
+            await fetchNSaveTexts(client)
             translationChecked = true
             resolve()
         } catch (err) {

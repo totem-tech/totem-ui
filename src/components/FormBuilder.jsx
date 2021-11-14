@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Button, Form, Header, Icon, Modal } from 'semantic-ui-react'
+import { BehaviorSubject } from 'rxjs'
 import { isDefined, isArr, isBool, isFn, isObj, isStr, hasValue, isSubjectLike } from '../utils/utils'
 import Message, { statuses } from '../components/Message'
 import FormInput, { nonValueTypes } from './FormInput'
@@ -439,14 +440,16 @@ FormBuilder.defaultProps = {
  *
  * @returns {Array} inputs
  */
-export const fillValues = (inputs, values, forceFill) => {
+export const fillValues = (inputs, values, forceFill, createRxValue = true) => {
 	if (!isObj(values)) return inputs
 	Object.keys(values).forEach(name => {
 		const input = findInput(inputs, name)
 		if (!input) return
+		if (createRxValue && !isSubjectLike(input.rxValue)) input.rxValue = new BehaviorSubject()
 		let { rxValue, type } = input
 		const newValue = values[name]
 		type = (isStr(type) ? type : 'text').toLowerCase()
+
 		if (type !== 'group' && !forceFill && (!hasValue(newValue) || hasValue(input.value))) return
 
 		switch (type) {

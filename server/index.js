@@ -22,7 +22,8 @@ const isProd = mode === 'production'
 app.use(compression())
 
 // Serve 'dist' directory
-app.use(express.static('dist'))
+app.use('/', express.static('dist'))
+app.use('/crowdloan', express.static('crowdloan/dist'))
 
 if (!REVERSE_PROXY) {
 	// when reverse proxy is used this is not needed.

@@ -116,7 +116,7 @@ export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm =
                         ref: focusRef,
                     }} />
                 </div>
-                    {content}
+                {content}
             </div>
         )
     }
@@ -152,7 +152,7 @@ export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm =
                         'content',
                         contentProps.className,
                     ])
-                }}/>
+                }} />
             ),
             open: !isBool(open) || open,
             onCancel: (...args) => {

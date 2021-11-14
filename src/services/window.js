@@ -1,6 +1,6 @@
 import React from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { isDefined, isFn } from '../utils/utils'
+import { getUrlParam as _getUrlParam, isDefined, isFn } from '../utils/utils'
 import storage from './storage'
 import { useRxSubject } from './react'
 
@@ -46,17 +46,7 @@ export function getLayout() {
  * 
  * @returns {String|Object}
  */
-export const getUrlParam = (name, url = window.location.href) => {
-    const params = {}
-    const regex = /[?&]+([^=&]+)=([^&]*)/gi
-    url.replace(
-        regex,
-        (_, key, value) => params[key] = decodeURIComponent(value)
-    )
-    return name
-        ? params[name] || ''
-        : params
-}
+export const getUrlParam = (name, url = window.location.href) => _getUrlParam(name, url)
 
 // gridColumns read/writes main content grid column count
 export function gridColumns(numCol) {
