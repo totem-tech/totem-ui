@@ -1,8 +1,8 @@
-import express from 'express'
-import http from 'http'
-import https from 'https'
-import fs from 'fs'
-import compression from 'compression'
+const express = require('express')
+const http = require('http')
+const https = require('https')
+const fs = require('fs')
+const compression = require('compression')
 
 const app = express()
 // Reverse Proxy config
