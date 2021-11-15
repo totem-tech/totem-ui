@@ -2,7 +2,7 @@
   "name": "totem-meccano-ui",
   "version": "1.10.1001",
   "description": "Totem Meccano UI",
-  "main": "index.js",
+  "main": "./src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "env NODE_ENV=development npm-run-all --parallel webpack-dev server",
