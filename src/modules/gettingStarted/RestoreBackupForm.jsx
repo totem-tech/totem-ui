@@ -1,36 +1,43 @@
 import React, { Component } from 'react'
 import uuid from 'uuid'
+import { BehaviorSubject } from 'rxjs'
 import { Table, Button } from 'semantic-ui-react'
-import FormBuilder, { findInput } from '../components/FormBuilder'
-import { objClean, textCapitalize, isFn, objWithoutKeys, hasValue } from '../utils/utils'
-import { rxForeUpdateCache } from '../utils/DataStorage'
-import { getUser, setUser } from '../modules/chat/ChatClient'
-import { translated } from '../services/language'
-import { confirm } from '../services/modal'
-import { essentialKeys, generateBackupData } from '../services/storage'
-import { MOBILE, rxLayout } from '../services/window'
+import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
+import { objClean, textCapitalize, isFn, objWithoutKeys, hasValue } from '../../utils/utils'
+import { rxForeUpdateCache } from '../../utils/DataStorage'
+import { getUser, setUser } from '../chat/ChatClient'
+import { translated } from '../../utils/languageHelper'
+import { confirm } from '../../services/modal'
+import { essentialKeys, generateBackupData } from '../../services/storage'
+import { MOBILE, rxLayout } from '../../services/window'
 
-const textsCap = translated({
+const [texts, textsCap] = translated({
 	backupValue: 'backup value',
 	cancel: 'cancel',
 	chatUserId: 'Chat User ID',
 	compare: 'compare',
+	dataTypes: 'history, identities, locations, notifications, partners, recent chat messages, settings, user credentials',
+	confirmRestoreContent: `
+		You are about to replace application data with the data in the JSON file. 
+		This is potentially dangerous and you can lose your identity, chat User ID and other data.
+	`,
 	confirmText: 'this action is irreversible',
 	conflicts: 'conflicts',
 	currentValue: 'current value',
-	fileLabel: 'restore file',
+	fileLabel: 'select your backup JSON file',
 	formHeader: 'restore backup',
 	ignore: 'ignore',
 	invalidFileType: 'invalid file type selected',
 	keepUnchanged: 'keep unchanged',
 	merge: 'merge',
 	preserveUser: 'preserve current credentials',
+	proceed: 'proceed',
 	remove: 'remove',
 	restore: 'restore',
 	restoreFromBackup: 'restore from backup',
 	restoreUser: 'restore credentials from backup',
 	submitNoAction: 'no actionable item selected',
-}, true)[1]
+}, true)
 // data that can be merged (must be 2D array that represents a Map)
 const MERGEABLES = ['totem_identities', 'totem_partners', 'totem_locations']
 // ignore meta data or unnecessary fields when comparing between current and backed up data
@@ -44,44 +51,77 @@ const MERGE = '__merge__'
 const REMOVE = '__remove__'
 const OVERRIDE = '__override__'
 const VALUE_KEY_PREFIX = '__values__'
+const inputNames = {
+	confirmed: 'confirmed',
+	confirmText: 'confirmText',
+	file: 'file',
+	restoreOpitons: 'restoreOptions',
+	userId: 'userId', // dynamically created if backup contains a different User ID
+}
 
-export default class RestoreBackup extends Component {
+export default class RestoreBackupForm extends Component {
 	constructor(props) {
 		super(props)
 
-		this.names = {
-			file: 'file',
-			restoreOpitons: 'restoreOptions',
-			userId: 'userId', // dynamically created if backup contains a different User ID
-		}
 		this.backupData = null
 		this.existingData = null
 		this.state = {
 			onSubmit: this.handleSubmit,
 			inputs: [
 				{
+					hidden: true,
+					name: inputNames.confirmed,
+					onChange: (_, values = {}) => this.setState({
+						submitText: this.checkConfirmed(values)
+							? textsCap.restore
+							: textsCap.proceed,
+					}),
+					rxValue: new BehaviorSubject(''),
+					type: 'hidden',
+				},
+				{
+					hidden: this.checkConfirmed,
+					name: inputNames.confirmText,
+					type: 'html',
+					content: (
+						<div>
+							{texts.confirmRestoreContent}
+							<ul>
+								{texts.dataTypes.split(',').map((str, i) => <li key={i}>{str}</li>)}
+							</ul>
+						</div>
+					)
+				},
+				{
 					accept: '.json',
+					hidden: values => !this.checkConfirmed(values),
 					label: textsCap.fileLabel,
 					multiple: false,
-					name: this.names.file,
+					name: inputNames.file,
 					onChange: this.handleFileChange,
 					required: true,
 					type: 'file',
 					useInput: true,
 				},
 				{
+					hidden: values => !this.checkConfirmed(values),
 					inputs: [],
 					grouped: true, // forces full width child inputs
-					name: this.names.restoreOpitons,
+					name: inputNames.restoreOpitons,
 					type: 'group',
 				},
 			],
 		}
+
+		fillValues(this.state.inputs, props.values)
 	}
+
+	checkConfirmed = values => (values[inputNames.confirmed] || '')
+		.toLowerCase() === 'yes'
 
 	generateInputs = str => {
 		const { inputs } = this.state
-		const restoreOptionsIn = findInput(inputs, this.names.restoreOpitons)
+		const restoreOptionsIn = findInput(inputs, inputNames.restoreOpitons)
 		this.backupData = objClean(JSON.parse(str), essentialKeys)
 		this.existingData = generateBackupData()
 		const settings = new Map(this.backupData.totem_settings)
@@ -112,7 +152,7 @@ export default class RestoreBackup extends Component {
 		// add options whether to keep existing user credentials
 		if (user.id && user.id !== backupUser.id) restoreOptionsIn.inputs.push({
 			label: textsCap.chatUserId,
-			name: this.names.userId,
+			name: inputNames.userId,
 			options: [
 				{
 					label: `${textsCap.preserveUser}: @${user.id}`,
@@ -311,11 +351,16 @@ export default class RestoreBackup extends Component {
 	}
 
 	handleSubmit = (_, values) => {
+		if (!this.checkConfirmed(values)) {
+			const confirmedIn = findInput(this.state.inputs, inputNames.confirmed)
+			confirmedIn.rxValue.next('yes')
+			return
+		}
 		const { onSubmit } = this.props
 		// select only data categories and not ignored
 		const dataKeys = Object.keys(this.backupData)
 			.filter(key => hasValue(values[key]) && values[key] !== IGNORE)
-		const user = values[this.names.userId]
+		const user = values[inputNames.userId]
 		const noAction = !user && dataKeys.every(key => values[key] === IGNORE)
 		if (noAction) return this.setState({
 			message: {
@@ -357,9 +402,9 @@ export default class RestoreBackup extends Component {
 		})
 	}
 
-	render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
+	render = () => <FormBuilder {...{ ...this.props, ...this.state, }} />
 }
-RestoreBackup.defaultProps = {
+RestoreBackupForm.defaultProps = {
 	header: textsCap.formHeader,
 	size: 'tiny'
 }

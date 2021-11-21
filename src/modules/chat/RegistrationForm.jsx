@@ -6,7 +6,7 @@ import { isFn } from '../../utils/utils'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { useRxSubject } from '../../services/react'
-import { registerStepIndex, setActiveStep } from '../../views/GettingStartedView'
+import { registerStepIndex, setActiveStep } from '../gettingStarted'
 import client, { referralCode, rxIsRegistered } from './ChatClient'
 import { rxSelected } from '../identity/identity'
 

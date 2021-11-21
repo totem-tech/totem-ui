@@ -1,30 +1,34 @@
 import React, { useEffect } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Button, Icon, Step } from 'semantic-ui-react'
-import PromisE from '../utils/PromisE'
-import { generateHash, isFn, isValidNumber } from '../utils/utils'
+import PromisE from '../../utils/PromisE'
+import { generateHash, isFn, isValidNumber } from '../../utils/utils'
 // forms and components
-import FormBuilder from '../components/FormBuilder'
-import Invertible from '../components/Invertible'
-import RestoreBackupForm from '../forms/RestoreBackup'
-import NewsletteSignup from '../forms/NewsletterSignup'
+import FormBuilder from '../../components/FormBuilder'
+import Invertible from '../../components/Invertible'
+import RestoreBackupForm from './RestoreBackupForm'
+import NewsletteSignup from '../../forms/NewsletterSignup'
 // services
-import { translated } from '../services/language'
-import { closeModal, confirm, showForm } from '../services/modal'
+import { translated } from '../../services/language'
+import { closeModal, confirm, showForm } from '../../services/modal'
 // import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import { useRxSubject } from '../services/react'
-import storage, { downloadBackup } from '../services/storage'
-import { setToast } from '../services/toast'
+import { useRxSubject } from '../../services/react'
+import storage, { downloadBackup } from '../../services/storage'
+import { setToast } from '../../services/toast'
 // modules
-import { createInbox, SUPPORT, TROLLBOX } from '../modules/chat/chat'
-import { getUser, rxIsRegistered } from '../modules/chat/ChatClient'
-import RegistrationForm from '../modules/chat/RegistrationForm'
-import { getSelected, rxIdentities } from '../modules/identity/identity'
-import IdentityForm from '../modules/identity/IdentityForm'
-import LabelCopy from '../components/LabelCopy'
-import { setActive } from '../services/sidebar'
-import { MOBILE, rxLayout } from '../services/window'
+import { createInbox, SUPPORT, TROLLBOX } from '../chat/chat'
+import { getUser, rxIsRegistered } from '../chat/ChatClient'
+import RegistrationForm from '../chat/RegistrationForm'
+import { getSelected, rxIdentities } from '../identity/identity'
+import IdentityForm from '../identity/IdentityForm'
+import LabelCopy from '../../components/LabelCopy'
+import { setActive } from '../../services/sidebar'
+import { MOBILE, rxLayout } from '../../services/window'
+import BackupForm from './BackupForm'
 
+
+setTimeout(() => showForm(BackupForm), 2000)
+console.log('oldindex')
 const texts = translated({
 	backupTitle: 'Backup your account',
 	backupDescription: `
@@ -222,20 +226,6 @@ export default function GetingStarted() {
 				}} />
 			</div>
 
-			{/* Referral Link*/}
-			{/* {isRegistered && (
-				<div style={styles.space}>
-					<h3>{texts.referTitle}</h3>
-					<div>{texts.referDesc1}</div>
-					<div>{texts.referDesc2}</div>
-					<LabelCopy {...{
-						content: texts.referCopy,
-						maxLength: null,
-						value: getReferralURL(),
-					}} />
-				</div>
-			)} */}
-
 			{/* Social links and support chat section */}
 			<div style={styles.space}>
 				<h3>{texts.supportChatHeader}</h3>
@@ -319,12 +309,6 @@ export default function GetingStarted() {
 		</div >
 	)
 }
-
-export const getReferralURL = () => location.protocol
-	+ '//'
-	+ location.hostname
-	+ (location.port ? ':' + location.port : '')
-	+ '?ref=' + getUser().id
 
 const handleBackup = () => confirm({
 	cancelButton: textsCap.backupLater,

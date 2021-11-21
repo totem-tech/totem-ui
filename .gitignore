@@ -23,3 +23,5 @@ sslcert/*.key
 server/local-storage
 server/start.sh
 
+# temp stagig site
+dist/staging

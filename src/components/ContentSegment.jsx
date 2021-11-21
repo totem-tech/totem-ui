@@ -39,11 +39,23 @@ export default class ContentSegment extends Component {
 
 	getContent = props => {
 		const { content, contentProps } = props || this.props
-		const ContentEl = isFn(content) ? content : undefined
-		return (!!ContentEl ? <ContentEl {...contentProps} /> : content) || placeholder
+		const ContentEl = isFn(content)
+			? content
+			: undefined
+		return (
+			!!ContentEl
+				? <ContentEl {...contentProps} />
+				: content
+		) || placeholder
 	}
 
-	toggleSubHeader = e => e.preventDefault() | e.stopPropagation() | this.setState({ showSubHeader: !this.state.showSubHeader })
+	toggleSubHeader = e => {
+		e.preventDefault()
+		e.stopPropagation()
+		this.setState({
+			showSubHeader: !this.state.showSubHeader,
+		})
+	}
 
 	render() {
 		const {
@@ -69,7 +81,7 @@ export default class ContentSegment extends Component {
 		} = this.props
 		const { content, showSubHeader } = this.state
 		const headerText = header || title
-		return !active ? '' : (
+		return !!active && (
 			<Invertible {...{
 				El: Segment,
 				basic: basic,
@@ -87,7 +99,6 @@ export default class ContentSegment extends Component {
 							link
 							name='expand'//'expand arrows alternate' 'compress'
 							onClick={() => {
-								console.log('full screen')
 								toggleFullscreen(`#main-content div[name="${name}"]`)
 							}}
 							size='mini'
@@ -95,14 +106,15 @@ export default class ContentSegment extends Component {
 						/>
 					)}
 
-					{isFn(onClose) && (<Icon
-						color='grey'
-						link
-						name='times circle outline'
-						onClick={() => onClose(name)}
-						size='mini'
-						style={{ display: 'inline' }}
-					/>
+					{isFn(onClose) && (
+						<Icon
+							color='grey'
+							link
+							name='times circle outline'
+							onClick={() => onClose(name)}
+							size='mini'
+							style={{ display: 'inline' }}
+						/>
 					)}
 				</Rail>
 
