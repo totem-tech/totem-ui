@@ -19,6 +19,7 @@ const mode = process.env.NODE_ENV
 const isProd = mode === 'production'
 const secondaryPages = (process.env.PAGES || '')
 	.split(',')
+	.filter(Boolean)
 	.map(x => x.trim().split(':'))
 
 // compress all responses
@@ -28,7 +29,7 @@ app.use(compression())
 app.use('/', express.static('dist'))
 secondaryPages
 	.forEach(([urlPath, distPath]) =>
-		app.use(
+		urlPath && app.use(
 			`${urlPath.startsWith('/') ? '' : '/'}${urlPath}`,
 			express.static(distPath),
 		)
