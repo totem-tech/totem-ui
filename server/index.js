@@ -17,14 +17,22 @@ const REVERSE_PROXY = process.env.REVERSE_PROXY === 'TRUE'
 // value set in `webpack --mode`. Expected value: 'production' or 'developement'
 const mode = process.env.NODE_ENV
 const isProd = mode === 'production'
-const CROWDLOAN_DAPP_DIST = process.env.CROWDLOAN_DAPP_DIST
+const secondaryPages = (process.env.PAGES || '')
+	.split(',')
+	.map(x => x.trim().split(':'))
 
 // compress all responses
 app.use(compression())
 
 // Serve 'dist' directory
 app.use('/', express.static('dist'))
-CROWDLOAN_DAPP_DIST && app.use('/crowdloan', express.static(CROWDLOAN_DAPP_DIST))
+secondaryPages
+	.forEach(([urlPath, distPath]) =>
+		app.use(
+			`${urlPath.startsWith('/') ? '' : '/'}${urlPath}`,
+			express.static(distPath),
+		)
+	)
 
 if (!REVERSE_PROXY) {
 	// when reverse proxy is used this is not needed.
