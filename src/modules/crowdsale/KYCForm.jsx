@@ -330,7 +330,7 @@ const handleSubmitCb = (rxSetState, props = {}) => async (_, values) => {
         crowdsaleData(objWithoutKeys(values, [inputNames.blockchains]))
 
         // force user to download a backup of all essential data including user credentials and identities
-        throw 'Update backup'
+        throw 'Update backup form ref'
         // const backupDone = await confirmBackup
         // if (!backupDone) throw textsCap.submitFailedBackupNotDone
 

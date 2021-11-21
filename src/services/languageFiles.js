@@ -76,7 +76,6 @@ export default [
     "./src/modules/financialStatement/useLedgerAcBalances.js",
     "./src/modules/financialStatement/useLedgerAcPostings.js",
     "./src/modules/gettingStarted/BackupForm.jsx",
-    "./src/modules/gettingStarted/OldIndex copy.jsx",
     "./src/modules/gettingStarted/RestoreBackupForm.jsx",
     "./src/modules/gettingStarted/index.jsx",
     "./src/modules/history/HistoryItemDetailsForm.jsx",

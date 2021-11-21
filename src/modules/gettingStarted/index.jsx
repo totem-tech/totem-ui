@@ -1,30 +1,26 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Button, Icon, Step } from 'semantic-ui-react'
-import PromisE from '../../utils/PromisE'
-import { generateHash, isFn, isValidNumber } from '../../utils/utils'
+import { translated } from '../../utils/languageHelper'
+import storage from '../../utils/storageHelper'
+import { useRxSubject } from '../../utils/reactHelper'
+import { isFn, isValidNumber } from '../../utils/utils'
 // forms and components
-import FormBuilder from '../../components/FormBuilder'
 import Invertible from '../../components/Invertible'
 import RestoreBackupForm from './RestoreBackupForm'
-import NewsletteSignup from '../../forms/NewsletterSignup'
 // services
-import { translated } from '../../services/language'
-import { closeModal, confirm, showForm } from '../../services/modal'
+import { showForm } from '../../services/modal'
 // import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import { useRxSubject } from '../../services/react'
-import storage, { downloadBackup } from '../../utils/storageHelper'
 import { setToast } from '../../services/toast'
+import { setActive } from '../../services/sidebar'
 // modules
 import { createInbox, SUPPORT, TROLLBOX } from '../chat/chat'
 import { getUser, rxIsRegistered } from '../chat/ChatClient'
 import RegistrationForm from '../chat/RegistrationForm'
-import { getSelected, rxIdentities } from '../identity/identity'
+import { getSelected } from '../identity/identity'
 import IdentityForm from '../identity/IdentityForm'
-import LabelCopy from '../../components/LabelCopy'
-import { setActive } from '../../services/sidebar'
-import { MOBILE, rxLayout } from '../../services/window'
 import BackupForm from './BackupForm'
+import { MOBILE, rxLayout } from '../../services/window'
 
 
 window.backup = () => showForm(BackupForm)
@@ -34,20 +30,8 @@ const texts = translated({
 		Creating a backup will help you make sure that you do not lose your account. 
 		Additionally, you will also be able to restore your account on another device.
 	`,
-	// confirmBackupContent: `
-	// 	You are about to download your Totem application data as a JSON file. 
-	// 	The following information will be included: 
-	// `,
 	// keep the commas. they will be used to generate an unordered list
 	confirmBackupTypes: 'history, identities, locations, notifications, partners, recent chat messages, settings, user credentials',
-	confirmHeader: 'Are you sure?',
-	confirmRestoreContent: `
-		You are about to replace application data with the data in the JSON file. 
-		This is potentially dangerous and you can lose your identity, chat User ID and other data.
-	`,
-	// faucetRequest: 'Faucet request',
-	// faucetRequestDetails: 'Transaction allocations to get you started',
-	newsletterSignup: 'Signup For Announcements',
 	registrationSuccess: `
 		Registration successful! You will shortly receive an allocation of transactions to get you started.
 	`,
@@ -58,14 +42,9 @@ const texts = translated({
 		Most of what you do in the application will consume Totem Transactions ($TOTEM for short) from your balance but don't worry, we are nice open source people, and we'll give you plenty to get you started.
 	`,
 	quickGuideTitle: 'A quick guide to getting started with Totem Live Accounting.',
-	referCopy: 'Copy your referral link',
-	referDesc1: 'Totem works best when you have partners. Referring will get both you and your friends free tokens.',
-	referDesc2: 'Invite your friends to join Totem using the following link:',
-	referTitle: 'Refer to earn free tokens!',
 	restoreTitle: 'Got a backup of an existing account?',
-	restoreTitle2: 'Want to restore an existing backup?',
 	restoreBtnTitle: 'Restore backup',
-	step1Description: `Identities are only known to you. You can create as many as you like in the Identities Module.`,
+	step1Description: 'Identities are only known to you. You can create as many as you like in the Identities Module.',
 	step1Title: 'Edit Default Identity',
 	stepsTitle: `Only 3 short steps to begin. Let's go!`,
 	step2Description: `
@@ -80,34 +59,11 @@ const texts = translated({
 	supportChatDesc2: 'You can also reach us over on the following applications:',
 	supportContact: 'Contact Support',
 	trollbox: 'Join Totem Global Conversation',
-	videoGuidTitle: 'Further essential steps:',
-	video1Title: 'What am I looking at? Watch the video:',
-	video2Title: 'Backup your account. Watch the video:',
+	// videoGuidTitle: 'Further essential steps:',
+	// video1Title: 'What am I looking at? Watch the video:',
+	// video2Title: 'Backup your account. Watch the video:',
 })[0]
-const textsCap = translated({
-	backupLater: 'backup later',
-	backupNow: 'backup now',
-	// backupConfirmHeader: 'confirm backup',
-	backupFileInvalid: `
-		Uploaded file contents do not match the backup file contents!
-		If you did not save the backup file, please click on the close icon and initiate the backup process again.
-	`,
-	backupFileinvalidType: 'please select the .json file you have just downloaded',
-	backupFileLabel: 'select backup file',
-	backupFileLabelDetails: 'Please select the file you have just downloaded. This is to make sure your backup was successfully downloaded.',
-	backupFileLabelDetailsLocation: 'Check for the following file in your default downloads folder (if you have NOT manually selected the download location).',
-	backupFileLabelDetailsDesktop: 'You can drag-and-drop the backup file on the file chooser below.',
-	backupSuccessContent: `
-		Excellent! You have just downloaded your account data. 
-		You can use this file to restore your account on any other devices you choose.
-		Make sure to keep the downloaded file in a safe place.
-		To keep your account safe, never ever share your backup file with anyone else.
-		Totem team will never ask you to share your backup file.
-	`,
-	backupSuccessHeader: 'backup complete!',
-	fileName: 'file name',
-	invalidFileType: 'selected file name must end with .json extension.',
-}, true)[1]
+
 const MODULE_KEY = 'getting-started'
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
@@ -142,6 +98,7 @@ try {
 } catch (e) { }
 
 export default function GetingStarted() {
+	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
 	const [[isRegistered, steps]] = useRxSubject(rxIsRegistered, isRegistered => {
 		const steps = [
 			{
@@ -221,7 +178,8 @@ export default function GetingStarted() {
 				<h3>{texts.restoreTitle}</h3>
 				<Button {...{
 					content: texts.restoreBtnTitle,
-					onClick: handleRestoreBackup,
+					fluid: isMobile,
+					onClick: () => showForm(RestoreBackupForm),
 				}} />
 			</div>
 
@@ -234,25 +192,24 @@ export default function GetingStarted() {
 						{[
 							isRegistered && {
 								content: texts.supportContact,
+								fluid: isMobile,
 								icon: 'heartbeat',
 								onClick: () => createInbox([SUPPORT], null, true),
-								size: 'mini',
+								size: isMobile
+									? undefined
+									: 'mini',
 								style: styles.btnStyle,
 							},
 							isRegistered && {
 								content: texts.trollbox,
+								fluid: isMobile,
 								icon: 'globe',
 								onClick: () => createInbox([TROLLBOX], null, true),
-								size: 'mini',
+								size: isMobile
+									? undefined
+									: 'mini',
 								style: styles.btnStyle,
 							},
-							// {
-							// 	content: texts.newsletterSignup,
-							// 	icon: 'mail',
-							// 	onClick: () => showForm(NewsletteSignup),
-							// 	size: 'mini',
-							// 	style: styles.btnStyle,
-							// },
 						]
 							.filter(Boolean)
 							.map((props, i) => <Button {...props} key={props.icon + i} />)
@@ -327,40 +284,25 @@ const handleUpdateIdentity = () => {
 	})
 }
 
-const handleRegister = () => showForm(RegistrationForm, {
-	closeOnSubmit: true,
-	silent: false,
-	onSubmit: ok => {
-		if (!ok) return
-		setToast({
-			content: texts.registrationSuccess,
-			status: 'success',
-		})
-		setActive('rewards')
-	}
-})
+const handleRegister = () => showForm(
+	RegistrationForm,
+	{
+		closeOnSubmit: true,
+		silent: false,
+		onSubmit: ok => {
+			if (!ok) return
+			setToast({
+				content: texts.registrationSuccess,
+				status: 'success',
+			})
+			setActive('rewards')
+		}
+	},
+)
 
-const handleRestoreBackup = () => showForm(RestoreBackupForm)
-
-// confirm({
-// 	content: (
-// 		<div>
-// 			{texts.confirmRestoreContent}
-// 			<ul>
-// 				{texts.confirmBackupTypes.split(',').map((str, i) => <li key={i}>{str}</li>)}
-// 			</ul>
-// 		</div>
-// 	),
-// 	header: texts.confirmHeader,
-// 	size: 'tiny',
-// 	onConfirm: () => showForm(RestoreBackupForm),
-// })
-
-const incrementStep = () => {
-
-	setActiveStep((rxActiveStep.value || 0) + 1)
-
-}
+const incrementStep = () => setActiveStep(
+	(rxActiveStep.value || 0) + 1
+)
 
 export const setActiveStep = (nextStep = rxActiveStep.value, silent = false) => {
 	const user = getUser()
@@ -385,96 +327,6 @@ export const setActiveStep = (nextStep = rxActiveStep.value, silent = false) => 
 	}
 	return nextStep
 }
-
-/*
- * confrim backup by forcing user to upload the file user just downloaded
- */
-/**
- * 
- * @param	{Boolean}	showSuccess whether to show success message after backup has been confirmed
- */
-export const confirmBackup = (showSuccess = true) => new PromisE(resolveConfirm => {
-	const [content, fileBackupTS, fileName] = downloadBackup()
-	const contentHash = generateHash(content)
-	let modalId
-	// update identities with the new backup timestamp
-	const updateIdentities = () => {
-		const arr = Array.from(rxIdentities.value)
-			.map(([key, value]) => [
-				key,
-				{ ...value, fileBackupTS },
-			])
-		rxIdentities.next(new Map(arr))
-	}
-	const validateFile = e => new Promise(resolveValidate => {
-		try {
-			const file = e.target.files[0]
-			const name = e.target.value
-			var reader = new FileReader()
-			if (name && !name.endsWith('.json')) throw textsCap.invalidFileType
-
-			reader.onload = file => {
-				const match = contentHash === generateHash(file.target.result)
-				resolveValidate(!match && textsCap.backupFileInvalid)
-				if (!match) {
-					file.target.value = null // reset file
-					return
-				}
-				updateIdentities()
-				closeModal(modalId)
-
-				if (!showSuccess) return resolveConfirm(true)
-				confirm({
-					content: textsCap.backupSuccessContent,
-					confirmButton: null,
-					header: textsCap.backupSuccessHeader,
-					onCancel: () => resolveConfirm(true),
-					size: 'tiny',
-				})
-			}
-			reader.readAsText(file)
-		} catch (err) {
-			resolveValidate(err)
-		}
-	})
-
-	const isMobile = rxLayout.value === MOBILE
-	const props = {
-		header: textsCap.backupConfirmHeader,
-		size: 'tiny',
-		submitText: null,
-		closeText: null,
-		// in case user doesnt confirm download
-		onClose: () => resolveConfirm(false),
-		inputs: [{
-			accept: '.json',
-			label: textsCap.backupFileLabel,
-			labelDetails: (
-				<div>
-					<p>
-						{textsCap.backupFileLabelDetails}
-						<b style={{ color: 'red' }}>
-							{' ' + textsCap.backupFileLabelDetailsLocation}
-						</b>
-					</p>
-
-					<p>
-						{textsCap.fileName}:
-						<br />
-						<b style={{ color: 'green' }}>{fileName}</b>
-					</p>
-
-					{!isMobile && <p>{textsCap.backupFileLabelDetailsDesktop}</p>}
-				</div>
-			),
-			name: 'file',
-			type: 'file',
-			validate: validateFile,
-		}],
-	}
-
-	modalId = showForm(FormBuilder, props)
-})
 
 const styles = {
 	appIconStyle: {

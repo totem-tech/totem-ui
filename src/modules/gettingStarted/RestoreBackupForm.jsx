@@ -3,23 +3,26 @@ import uuid from 'uuid'
 import { BehaviorSubject } from 'rxjs'
 import { Table, Button } from 'semantic-ui-react'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
-import { objClean, textCapitalize, isFn, objWithoutKeys, hasValue } from '../../utils/utils'
-import { rxForeUpdateCache } from '../../utils/DataStorage'
-import { getUser, setUser } from '../chat/ChatClient'
-import { translated } from '../../utils/languageHelper'
-import { confirm } from '../../services/modal'
-import { essentialKeys, generateBackupData } from '../../services/storage'
+import { confirm, showForm } from '../../services/modal'
 import { MOBILE, rxLayout } from '../../services/window'
+import { getUser, setUser } from '../../utils/chatClient'
+import { rxForeUpdateCache } from '../../utils/DataStorage'
+import { translated } from '../../utils/languageHelper'
+import { backup, essentialKeys } from '../../utils/storageHelper'
+import { objClean, textCapitalize, isFn, objWithoutKeys, hasValue } from '../../utils/utils'
+import BackupForm from './BackupForm'
 
 const [texts, textsCap] = translated({
+	backupNow: 'backup now',
 	backupValue: 'backup value',
 	cancel: 'cancel',
 	chatUserId: 'Chat User ID',
 	compare: 'compare',
 	dataTypes: 'history, identities, locations, notifications, partners, recent chat messages, settings, user credentials',
 	confirmRestoreContent: `
-		You are about to replace application data with the data in the JSON file. 
-		This is potentially dangerous and you can lose your identity, chat User ID and other data.
+		You are about to replace or merge the following application data with the data from you backup JSON file. 
+		This is potentially dangerous and you may lose your identity, chat User ID and other data if not done carefully.
+		To avoid any loss of data it is best to create a backup of your existing data before attempting restore.
 	`,
 	confirmText: 'this action is irreversible',
 	conflicts: 'conflicts',
@@ -37,6 +40,8 @@ const [texts, textsCap] = translated({
 	restoreFromBackup: 'restore from backup',
 	restoreUser: 'restore credentials from backup',
 	submitNoAction: 'no actionable item selected',
+	success1: 'restored successfully!',
+	success2: 'reloading page.'
 }, true)
 // data that can be merged (must be 2D array that represents a Map)
 const MERGEABLES = ['totem_identities', 'totem_partners', 'totem_locations']
@@ -86,8 +91,33 @@ export default class RestoreBackupForm extends Component {
 					content: (
 						<div>
 							{texts.confirmRestoreContent}
+
+							{/* <div style={{ textAlign: 'center' }}> */}
+							<Button {...{
+								content: textsCap.backupNow,
+								primary: true,
+								size: 'mini',
+								onClick: e => {
+									e.preventDefault()
+									showForm(
+										BackupForm,
+										{
+											closeOnSubmit: true,
+											values: {
+												confirmed: 'yes',
+											}
+										}
+									)
+								},
+							}} />
+							{/* </div> */}
 							<ul>
-								{texts.dataTypes.split(',').map((str, i) => <li key={i}>{str}</li>)}
+								{texts.dataTypes
+									.split(',')
+									.map((str, i) =>
+										<li key={i}>{str}</li>
+									)
+								}
 							</ul>
 						</div>
 					)
@@ -123,32 +153,34 @@ export default class RestoreBackupForm extends Component {
 		const { inputs } = this.state
 		const restoreOptionsIn = findInput(inputs, inputNames.restoreOpitons)
 		this.backupData = objClean(JSON.parse(str), essentialKeys)
-		this.existingData = generateBackupData()
+		this.existingData = backup.generateData()
 		const settings = new Map(this.backupData.totem_settings)
 		const backupUser = ((settings.get('module_settings') || {}).messaging || {}).user || {}
 		const user = getUser() || {}
-		restoreOptionsIn.inputs = Object.keys(this.backupData).map(key => {
-			const exists = !!this.existingData[key]
-			const numExists = (this.existingData[key] || []).length
-			const allowMerge = exists && MERGEABLES.includes(key)
-			const label = textCapitalize(key.split('totem_').join(''))
-			const options = [
-				{ label: !exists || numExists <= 0 ? textsCap.restoreFromBackup : textsCap.restore, value: OVERRIDE },
-				allowMerge && numExists > 0 && { label: textsCap.merge, value: MERGE },
-				{ label: textsCap.ignore, value: IGNORE }
-			].filter(Boolean)
-			return {
-				inline: true,
-				key: uuid.v1(),
-				label,
-				name: key,
-				onChange: this.handleRestoreOptionChange,
-				options,
-				radio: true,
-				required: true,
-				type: 'checkbox-group',
-			}
-		})
+		restoreOptionsIn.inputs = Object
+			.keys(this.backupData)
+			.map(key => {
+				const exists = !!this.existingData[key]
+				const numExists = (this.existingData[key] || []).length
+				const allowMerge = exists && MERGEABLES.includes(key)
+				const label = textCapitalize(key.split('totem_').join(''))
+				const options = [
+					{ label: !exists || numExists <= 0 ? textsCap.restoreFromBackup : textsCap.restore, value: OVERRIDE },
+					allowMerge && numExists > 0 && { label: textsCap.merge, value: MERGE },
+					{ label: textsCap.ignore, value: IGNORE }
+				].filter(Boolean)
+				return {
+					inline: true,
+					key: uuid.v1(),
+					label,
+					name: key,
+					onChange: this.handleRestoreOptionChange,
+					options,
+					radio: true,
+					required: true,
+					type: 'checkbox-group',
+				}
+			})
 		// add options whether to keep existing user credentials
 		if (user.id && user.id !== backupUser.id) restoreOptionsIn.inputs.push({
 			label: textsCap.chatUserId,
@@ -322,44 +354,62 @@ export default class RestoreBackupForm extends Component {
 		const restoreOptionsIn = inputs[index]
 		const input = restoreOptionsIn.inputs[childIndex]
 		if (!MERGEABLES.includes(input.name)) return
+
 		const dataB = this.backupData[input.name]
 		const dataC = this.existingData[input.name]
 		const optionGroupName = `${VALUE_KEY_PREFIX}${input.name}`
 		const optionGroupIn = findInput(inputs, optionGroupName) || {}
 		const exists = !!optionGroupIn.name
-		const valueInputs = this.generateValueOptions(dataC, dataB, input.name, values[input.name] === MERGE)
+		const valueInputs = this.generateValueOptions(
+			dataC,
+			dataB,
+			input.name,
+			values[input.name] === MERGE,
+		)
 		const numConflicts = valueInputs.filter(x => x.value === null).length
 		const hasConflict = numConflicts > 0
 		optionGroupIn.key = uuid.v1()
 		optionGroupIn.hidden = values[input.name] !== MERGE
 		optionGroupIn.accordion = {
-			collapsed: !hasConflict || [IGNORE, OVERRIDE].includes(values[input.name]),
+			collapsed: !hasConflict || [IGNORE, OVERRIDE]
+				.includes(values[input.name]),
 			styled: true, // enable/disable the boxed layout
 		}
 		optionGroupIn.grouped = true // forces full width child inputs
 		optionGroupIn.groupValues = true // true => create an object with child input values
 		optionGroupIn.inputs = valueInputs
-		optionGroupIn.label = `${input.label}: ${numConflicts} / ${valueInputs.length} ${textsCap.conflicts}`
+		optionGroupIn.label = `${input.label}: ${numConflicts} / ${valueInputs.length} ${texts.conflicts}`
 		optionGroupIn.name = optionGroupName
 		optionGroupIn.type = 'group'
-		restoreOptionsIn.inputs = exists ? restoreOptionsIn.inputs : [
-			...restoreOptionsIn.inputs.slice(0, childIndex + 1),
-			optionGroupIn, // puts compare inputs right after the current input
-			...restoreOptionsIn.inputs.slice(childIndex + 1),
-		]
+		restoreOptionsIn.inputs = exists
+			? restoreOptionsIn.inputs
+			: [
+				...restoreOptionsIn.inputs
+					.slice(0, childIndex + 1),
+				optionGroupIn, // puts compare inputs right after the current input
+				...restoreOptionsIn.inputs
+					.slice(childIndex + 1),
+			]
 		this.setState({ inputs })
 	}
 
 	handleSubmit = (_, values) => {
 		if (!this.checkConfirmed(values)) {
-			const confirmedIn = findInput(this.state.inputs, inputNames.confirmed)
+			const confirmedIn = findInput(
+				this.state.inputs,
+				inputNames.confirmed,
+			)
 			confirmedIn.rxValue.next('yes')
 			return
 		}
 		const { onSubmit } = this.props
 		// select only data categories and not ignored
-		const dataKeys = Object.keys(this.backupData)
-			.filter(key => hasValue(values[key]) && values[key] !== IGNORE)
+		const dataKeys = Object
+			.keys(this.backupData)
+			.filter(key =>
+				hasValue(values[key])
+				&& values[key] !== IGNORE
+			)
 		const user = values[inputNames.userId]
 		const noAction = !user && dataKeys.every(key => values[key] === IGNORE)
 		if (noAction) return this.setState({
@@ -369,6 +419,7 @@ export default class RestoreBackupForm extends Component {
 				status: 'warning',
 			}
 		})
+
 		const execute = async () => {
 			dataKeys.forEach(key => {
 				let value = this.backupData[key]
@@ -386,7 +437,14 @@ export default class RestoreBackupForm extends Component {
 			if (user) setUser(user)
 			// wait for onSubmit to finish executing
 			isFn(onSubmit) && await onSubmit(true, values)
-			this.setState({ success: true })
+			this.setState({
+				message: {
+					content: textsCap.success2,
+					header: textsCap.success1,
+					status: 'success',
+				},
+				success: true,
+			})
 			// reload page to reflect changes
 			setTimeout(() => {
 				window.location.reload(true)
