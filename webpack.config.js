@@ -2,6 +2,8 @@
 const webpack = require('webpack')
 const path = require('path');
 const Dotenv = require('dotenv-webpack');
+const HtmlWebpackPlugin = require('html-webpack-plugin')
+const uuid = require('uuid')
 
 module.exports = {
   entry: {
@@ -40,6 +42,13 @@ module.exports = {
     new webpack.IgnorePlugin(/twitter-lite/), // utils/twitterHelper.js
     // Includes .env variables into the frontend app
     new Dotenv(),
+    new HtmlWebpackPlugin({
+      cache: true,
+      hash: true,
+      minify: 'auto',
+      template: 'docs/index.html',
+      // favicon: 'public/favicon.ico'
+    }),
   ],
   resolve: {
     extensions: ['*', '.js', '.jsx']
@@ -47,7 +56,7 @@ module.exports = {
   output: {
     path: __dirname + '/dist',
     publicPath: '/',
-    filename: 'bundle.js'
+    filename: `bundle.js`,//`bundle-${uuid.v1()}.js`
   },
   devServer: {
     contentBase: './dist'
