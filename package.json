@@ -2,13 +2,15 @@
   "name": "totem-meccano-ui",
   "version": "1.10.1001",
   "description": "Totem Meccano UI",
-  "main": "index.js",
+  "main": "./src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack --mode production",
     "dev": "env NODE_ENV=development npm-run-all --parallel webpack-dev server",
     "prod": "env NODE_ENV=production npm-run-all --parallel webpack-prod server-prod",
+    "serve": "node server/index.js",
     "server": "nodemon --verbose --watch src/ --watch server/ --ignore server/data/ --ignore src/services/languageFiles.js --exec ./node_modules/.bin/babel-node ./server/index.js --ext jsx,js --presets env,react",
     "server-prod": "nodemon --verbose --exec ./node_modules/.bin/babel-node ./server/index.js --ignore ./",
+    "test": "echo \"Error: no test specified\" && exit 1",
     "webpack-dev": "webpack --mode development --watch --debug",
     "webpack-prod": "webpack --mode production --debug"
   },
@@ -49,6 +51,7 @@
   "license": "ISC",
   "devDependencies": {
     "express": "^4.17.1",
+    "html-webpack-plugin": "^4.0.0",
     "nodemon": "^2.0.2",
     "webpack": "^4.41.5",
     "webpack-cli": "^3.3.10"

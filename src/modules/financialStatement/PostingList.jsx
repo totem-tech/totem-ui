@@ -1,17 +1,16 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
+import DataTable from '../../components/DataTable'
+import { blockNumberToTS } from '../../utils/time'
 import { translated } from '../../services/language'
 import { useRxSubject } from '../../services/react'
-import DataTable from '../../components/DataTable'
-import query from './query'
-import useLedgerAcPostings from './useLedgerAcPostings'
-import { blockNumberToTS } from '../../utils/time'
-import { rxBlockNumber } from '../../services/blockchain'
-import { getAddressName } from '../partner/partner'
+import { MOBILE, rxLayout } from '../../services/window'
 import Currency from '../currency/Currency'
 import { currencyDefault } from '../currency/currency'
-import { MOBILE, rxLayout } from '../../services/window'
+import useLedgerAcPostings from './useLedgerAcPostings'
+import { rxBlockNumber } from '../../services/blockchain'
+import { getAddressName } from '../partner/partner'
 
 const textsCap = translated({
     actions: 'actions',
@@ -124,7 +123,6 @@ const postingModifier = (posting = {}) => {
                 value: posting.debit,
             }} />
         )
-
 
     return posting
 }

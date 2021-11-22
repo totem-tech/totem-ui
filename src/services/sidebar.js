@@ -5,7 +5,7 @@ import { BehaviorSubject } from 'rxjs'
 // Views (including lists and forms)
 import AssetFormView from '../modules/assets/AssetsFormView'
 import FinancialStatement from '../modules/financialStatement/FinancialStatement'
-import GettingStarted from '../views/GettingStartedView'
+import GettingStarted from '../modules/gettingStarted'
 import HistoryList from '../modules/history/HistoryList'
 import IdentityList from '../modules/identity/IdentityList'
 import PartnerList from '../modules/partner/PartnerList'

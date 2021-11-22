@@ -1,11 +1,13 @@
 import React, { Component } from 'react'
 // utils
-import { arrSort, deferred } from '../utils/utils'
+import { arrSort, deferred, isObj } from '../utils/utils'
 // components
 import DataTable from '../components/DataTable'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 // modules
 import { historyLimit as chatHistoryLimit } from '../modules/chat/chat'
+import client from '../modules/chat/ChatClient'
+
 import {
     getCurrencies,
     getSelected as getSelectedCurrency,
@@ -70,30 +72,30 @@ export const showKeyboardShortcuts = () => confirm(
         cancelButton: null,
         confirmButton: null,
         content: (
-                <DataTable {...{
-                    searchable: false,
-                    columns: [
-                        { key: 'key', title: 'Shortcut Key'},
-                        { key: 'action', title: 'Action'},
-                    ],
-                    data: [
-                        { key: 'SHIFT + C', action: 'Start new chat'},
-                        { key: 'SHIFT + S', action: 'Settings'},
-                        { key: 'SHIFT + T', action: 'Timekeeping form'},
-                        { key: 'C', action: 'Toggle chat bar visibility'},
-                        { key: 'K', action: 'Toggle keyboard shortcuts view'},
-                        { key: 'I', action: 'Toggle identity dropdown visibility'},
-                        { key: 'N', action: 'Toggle notification visibility'},
-                        { key: 'S', action: 'Toggle sidebar'},
+            <DataTable {...{
+                searchable: false,
+                columns: [
+                    { key: 'key', title: 'Shortcut Key' },
+                    { key: 'action', title: 'Action' },
+                ],
+                data: [
+                    { key: 'SHIFT + C', action: 'Start new chat' },
+                    { key: 'SHIFT + S', action: 'Settings' },
+                    { key: 'SHIFT + T', action: 'Timekeeping form' },
+                    { key: 'C', action: 'Toggle chat bar visibility' },
+                    { key: 'K', action: 'Toggle keyboard shortcuts view' },
+                    { key: 'I', action: 'Toggle identity dropdown visibility' },
+                    { key: 'N', action: 'Toggle notification visibility' },
+                    { key: 'S', action: 'Toggle sidebar' },
                 ],
                 style: { margin: '-15px 0' },
-                }} />
+            }} />
         ),
         header: 'Keyboard shortcuts',
         size: 'mini',
     },
     'shortcutKey-K',
-    { style: { padding: 0 }},
+    { style: { padding: 0 } },
 )
 
 export default class SettingsForm extends Component {
@@ -252,7 +254,7 @@ export default class SettingsForm extends Component {
         const languageCode = values[inputNames.languageCode]
         this.setInputMessage('languageCode', savedMsg, 0)
         const changed = getSelectedLang() !== languageCode
-        setSelectedLang(languageCode)
+        setSelectedLang(languageCode, client)
             .then(updated => {
                 const reloadRequired = changed || updated
                 if (!reloadRequired) return
@@ -265,13 +267,13 @@ export default class SettingsForm extends Component {
                 })
             })
             .catch(err => {
-            this.setInputMessage('languageCode', {
-                content: `${err}`,
-                header: textsCap.error,
-                icon: true,
-                status: 'error',
+                this.setInputMessage('languageCode', {
+                    content: `${err}`,
+                    header: textsCap.error,
+                    icon: true,
+                    status: 'error',
+                })
             })
-        })
     }
 
     handleNodeUrlSubmit = (reset = false) => {
@@ -302,7 +304,9 @@ export default class SettingsForm extends Component {
         input.message = message
         this.timeoutIds[inputName] && clearTimeout(this.timeoutIds[inputName])
         this.setState({ inputs })
-        if (delay === 0) return
+
+        const isError = isObj(message) && message.status === 'error'
+        if (delay === 0 || isError) return
         this.timeoutIds[inputName] = setTimeout(() => {
             input.message = null
             this.setState({ inputs })
@@ -319,7 +323,7 @@ export default class SettingsForm extends Component {
             onClick: () => this.handleNodeUrlSubmit(),
         }
         input.inlineLabel = !this.defaultNodeUrlChanged
-            ? null 
+            ? null
             : {
                 icon: {
                     className: 'no-margin',

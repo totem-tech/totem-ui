@@ -1,1 +1,0 @@
-// store tags used accoss the appication in a single place for easier access

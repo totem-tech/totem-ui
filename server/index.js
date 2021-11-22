@@ -1,8 +1,8 @@
-import express from 'express'
-import http from 'http'
-import https from 'https'
-import fs from 'fs'
-import compression from 'compression'
+const express = require('express')
+const http = require('http')
+const https = require('https')
+const fs = require('fs')
+const compression = require('compression')
 
 const app = express()
 // Reverse Proxy config
@@ -17,12 +17,23 @@ const REVERSE_PROXY = process.env.REVERSE_PROXY === 'TRUE'
 // value set in `webpack --mode`. Expected value: 'production' or 'developement'
 const mode = process.env.NODE_ENV
 const isProd = mode === 'production'
+const secondaryPages = (process.env.PAGES || '')
+	.split(',')
+	.filter(Boolean)
+	.map(x => x.trim().split(':'))
 
 // compress all responses
 app.use(compression())
 
 // Serve 'dist' directory
-app.use(express.static('dist'))
+app.use('/', express.static('dist'))
+secondaryPages
+	.forEach(([urlPath, distPath]) =>
+		urlPath && app.use(
+			`${urlPath.startsWith('/') ? '' : '/'}${urlPath}`,
+			express.static(distPath),
+		)
+	)
 
 if (!REVERSE_PROXY) {
 	// when reverse proxy is used this is not needed.

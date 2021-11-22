@@ -9,4 +9,5 @@ HTTPS_PORT="int: 443" \
 CertPath="string: /path/to/cert/file.pem" \
 KeyPath="string: /path/to/key/file.pem" \
 REVERSE_PROXY="string: TRUE" \
+PAGES="string: Secondary pages to be served. Expects comma-separated values. Example: `/test-page:/path/to/test/page/dist/directory, /test-page2:/path/to/dir`" \
 yarn run dev # dev: development mode, prod: production mode

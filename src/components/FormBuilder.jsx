@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Button, Form, Header, Icon, Modal } from 'semantic-ui-react'
+import { BehaviorSubject } from 'rxjs'
 import { isDefined, isArr, isBool, isFn, isObj, isStr, hasValue, isSubjectLike } from '../utils/utils'
 import Message, { statuses } from '../components/Message'
 import FormInput, { nonValueTypes } from './FormInput'
@@ -34,7 +35,10 @@ export default class FormBuilder extends Component {
 	componentWillUnmount = () => (this._mounted = false)
 
 	// recursive interceptor for infinite level of child inputs
-	addInterceptor = (index, values) => (input, i) => {
+	addInterceptor = (values, parentIndex) => (input, index) => {
+		parentIndex = isDefined(parentIndex)
+			? parentIndex
+			: null
 		const {
 			inputsDisabled = [],
 			inputsHidden = [],
@@ -52,24 +56,28 @@ export default class FormBuilder extends Component {
 			validate,
 		} = input || {}
 		const isGroup = `${type}`.toLowerCase() === 'group' && isArr(childInputs)
-		index = isDefined(index) ? index : null
 		const props = {
 			...input,
 			content: isFn(content)
-				? content(values, i)
+				? content(values, name)
 				: content,
 			disabled: inputsDisabled.includes(name)
 				|| (isFn(disabled)
-					? disabled(values, i)
+					? disabled(values, name)
 					: disabled
 				),
 			hidden: inputsHidden.includes(name)
 				|| (!isFn(hidden)
 					? hidden
-					: !!hidden(values, i)
+					: !!hidden(values, name)
 				),
 			inputs: isGroup
-				? childInputs.map(this.addInterceptor(index ? index : i, values))
+				? childInputs.map(
+					this.addInterceptor(
+						values,
+						parentIndex || index,
+					)
+				)
 				: undefined,
 			key: name,
 			readOnly: inputsReadOnly.includes(name) || readOnly,
@@ -79,11 +87,18 @@ export default class FormBuilder extends Component {
 					e,
 					data,
 					input,
-					index ? index : i,
-					index ? i : undefined,
+					parentIndex || index,
+					parentIndex
+						? index
+						: undefined,
 				),
 			validate: isFn(validate)
-				? (e, d) => validate(e, d, this.state.values, rxValue)
+				? (e, d) => validate(
+					e,
+					d,
+					this.state.values,
+					rxValue,
+				)
 				: undefined,
 		}
 		return props
@@ -215,26 +230,44 @@ export default class FormBuilder extends Component {
 		}
 		let { message: sMsg, open: sOpen, values } = this.state
 		// whether the 'open' status is controlled or uncontrolled
-		let modalOpen = isFn(onClose) ? open : sOpen
-		inputs = inputs.map(this.addInterceptor(null, values))
+		let modalOpen = isFn(onClose)
+			? open
+			: sOpen
+		inputs = inputs.map(this.addInterceptor(values))
 		if (success && closeOnSubmit) {
 			modalOpen = false
 			if (modalId) return closeModal(modalId)
 			isFn(onClose) && onClose({}, {})
 		}
 		msg = sMsg || msg
-		const msgStyle = { ...(modal ? styles.messageModal : styles.messageInline), ...(msg || {}).style }
+		const msgStyle = {
+			...(modal
+				? styles.messageModal
+				: styles.messageInline
+			),
+			...(msg || {}).style,
+		}
 		const message = { ...msg, style: msgStyle }
 		let submitBtn
 		submitDisabled = !isObj(submitDisabled)
 			? !!submitDisabled
 			: Object.values(submitDisabled)
 				.filter(Boolean).length > 0
-		const formIsInvalid = isFormInvalid(inputs, values)
+		const formIsInvalid = checkFormInvalid(inputs, values)
 		const shouldDisable = submitInProgress || submitDisabled || success || formIsInvalid
-		submitText = !isFn(submitText) ? submitText : submitText(values, shouldDisable)
+		submitText = !isFn(submitText)
+			? submitText
+			: submitText(
+				values,
+				this.props,
+				shouldDisable,
+			)
 		if (submitText !== null) {
-			const submitProps = !isObj(submitText) ? {} : React.isValidElement(submitText) ? { ...submitText.props } : submitText
+			const submitProps = !isObj(submitText)
+				? {}
+				: React.isValidElement(submitText)
+					? { ...submitText.props }
+					: submitText
 
 			let { content, disabled, icon, loading, onClick, positive, style } = submitProps
 			icon = icon || icon === null
@@ -245,40 +278,49 @@ export default class FormBuilder extends Component {
 						? 'exclamation circle' // one or more fields are invalid or unfilled
 						: 'thumbs up' // all fields are valid and user can now submit
 			submitBtn = (
-				<Button
-					{...{
-						...submitProps,
-						content: content || (!isStr(submitText) ? content : submitText),
-						disabled: isBool(disabled) ? disabled : shouldDisable,
-						icon,
-						loading: !success && (submitInProgress || loading),
-						onClick: isFn(onClick) ? onClick : this.handleSubmit,
-						positive: isBool(positive) ? positive : true,
-						style: {
-							paddingLeft: icon ? 10 : undefined,
-							marginLeft: modal ? undefined : 3,
-							...style,
-						},
-					}}
-				/>
+				<Button {...{
+					...submitProps,
+					content: content || (!isStr(submitText) ? content : submitText),
+					disabled: isBool(disabled) ? disabled : shouldDisable,
+					icon,
+					loading: !success && (submitInProgress || loading),
+					onClick: isFn(onClick) ? onClick : this.handleSubmit,
+					positive: isBool(positive) ? positive : true,
+					style: {
+						paddingLeft: icon ? 10 : undefined,
+						marginLeft: modal ? undefined : 3,
+						...style,
+					},
+				}} />
 			)
 		}
 		if (modal && closeText !== null) {
-			const closeProps = React.isValidElement(closeText) ? { ...closeText.props } : (
-				isObj(closeText) ? closeText : {}
-			)
-			closeProps.content = closeProps.content || (
-				isStr(closeText) ? closeText : (
-					success || submitText === null ? textsCap.close : textsCap.cancel
+			closeText = !isFn(closeText)
+				? closeText
+				: closeText(
+					values,
+					this.props,
 				)
+			const closeProps = React.isValidElement(closeText)
+				? { ...closeText.props }
+				: isObj(closeText)
+					? closeText
+					: {}
+			closeProps.content = closeProps.content || (
+				isStr(closeText)
+					? closeText
+					: success || submitText === null
+						? textsCap.close
+						: textsCap.cancel
 			)
-			closeProps.negative = isDefined(closeProps.negative) ? closeProps.negative : true
+			closeProps.negative = isDefined(closeProps.negative)
+				? closeProps.negative
+				: true
 			closeProps.onClick = closeProps.onClick || this.handleClose
 			closeText = <Button {...closeProps} />
 		}
 
 		const FormEl = El || Invertible
-
 		const form = (
 			<FormEl {...(El
 				? {
@@ -365,7 +407,12 @@ FormBuilder.propTypes = {
 	closeOnEscape: PropTypes.bool,
 	closeOnDimmerClick: PropTypes.bool,
 	closeOnSubmit: PropTypes.bool,
-	closeText: PropTypes.oneOfType([PropTypes.element, PropTypes.object, PropTypes.string]),
+	closeText: PropTypes.oneOfType([
+		PropTypes.element,
+		PropTypes.func,
+		PropTypes.object,
+		PropTypes.string,
+	]),
 	defaultOpen: PropTypes.bool,
 	El: PropTypes.elementType,
 	// props to be passed on to the Form or `El` component 
@@ -439,14 +486,16 @@ FormBuilder.defaultProps = {
  *
  * @returns {Array} inputs
  */
-export const fillValues = (inputs, values, forceFill) => {
+export const fillValues = (inputs, values, forceFill, createRxValue = true) => {
 	if (!isObj(values)) return inputs
 	Object.keys(values).forEach(name => {
 		const input = findInput(inputs, name)
 		if (!input) return
+		if (createRxValue && !isSubjectLike(input.rxValue)) input.rxValue = new BehaviorSubject()
 		let { rxValue, type } = input
 		const newValue = values[name]
 		type = (isStr(type) ? type : 'text').toLowerCase()
+
 		if (type !== 'group' && !forceFill && (!hasValue(newValue) || hasValue(input.value))) return
 
 		switch (type) {
@@ -506,7 +555,7 @@ export const inputsForEach = (inputs = [], callback) => {
 }
 
 /**
- * @name	isInputInvalid
+ * @name	checkInputInvalid
  * @summary	checks if an input is invalid
  * 
  * @param	{Object}	formValues 
@@ -514,19 +563,38 @@ export const inputsForEach = (inputs = [], callback) => {
  * 
  * @returns	{Boolean}
  */
-export const isInputInvalid = (formValues = {}, input) => {
-	let { _invalid, groupValues, hidden, inputs, invalid, name, required, rxValue, type, value } = input || {}
+export const checkInputInvalid = (formValues = {}, input) => {
+	let {
+		_invalid,
+		groupValues,
+		hidden,
+		inputs,
+		invalid,
+		name,
+		required,
+		rxValue,
+		type,
+		value,
+	} = input || {}
 	type = (type || 'text').toLowerCase()
 	// ignore current input if conditions met
-	if (['hidden', 'button'].includes(type)) return false
-	if (hidden === true || isFn(hidden) && hidden(formValues, name)) return false
+	if (['button', 'hidden', 'html'].includes(type)) return false
+	const isHidden = isFn(hidden)
+		? !!hidden(formValues, name)
+		: !!hidden
+	if (isHidden) return false
 
 	let gotValue = hasValue(formValues[name])
 	const isGroup = type === 'group'
 	if ((!isGroup && !required && !gotValue)) return false
 
 	// Use recursion to validate input groups
-	if (isGroup) return isFormInvalid(inputs, !groupValues ? formValues : formValues[name] || {})
+	if (isGroup) return checkFormInvalid(
+		inputs,
+		!groupValues
+			? formValues
+			: formValues[name] || {}
+	)
 
 	// if input is set invalid externally or internally by FormInput
 	if (invalid || _invalid) return true
@@ -538,10 +606,12 @@ export const isInputInvalid = (formValues = {}, input) => {
 			? rxValue.value
 			: value
 
-	return isCheckbox && required ? !value : !hasValue(value)
+	return isCheckbox && required
+		? !value
+		: !hasValue(value)
 }
 /**
- * @name	isFormInvalid
+ * @name	checkFormInvalid
  * @summary	checks if oe or more of a given list of inputs is invalid
  * 
  * @param	{Array}		inputs
@@ -549,12 +619,8 @@ export const isInputInvalid = (formValues = {}, input) => {
  * 
  * @returns	{Boolean}
  */
-export const isFormInvalid = (inputs = [], values = {}) => {
-	for (let i = 0; i < inputs.length; i++) {
-		if (isInputInvalid(values, inputs[i])) return true
-	}
-	return false
-}
+export const checkFormInvalid = (inputs = [], values = {}) => !!inputs
+	.find(input => checkInputInvalid(values, input))
 
 // findInput returns the first item matching supplied name.
 // If any input type is group it will recursively search in the child inputs as well

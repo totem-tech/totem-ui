@@ -21,7 +21,7 @@ const handleRewards = (id, notification, { senderId, senderIdBtn }) => {
     const { msg } = translated({ msg: message })[0]
 
     return {
-        icon: { name: 'user plus' },
+        icon: { name: 'gift' },
         status: !status || status === 'success'
             ? 'info'
             : 'error',
@@ -34,7 +34,7 @@ const handleRewards = (id, notification, { senderId, senderIdBtn }) => {
 }
 
 const handleReferralReward = (id, notification, { senderId, senderIdBtn }) => {
-    const item = { icon: 'clock outline' }
+    const item = { icon: 'user plus' }
     const removeAndClose = () => remove(id) | rxVisible.next(false)
     item.content = (
         <div>

@@ -34,7 +34,7 @@ const textsCap = translated({
     transaction: 'transaction',
     transactions: 'transactions',
     addedToQueue: 'added to queue',
-    insufficientBalance: 'insufficient balance',
+    insufficientBalance: 'insufficient balance on the following identity',
     invalidFunc: 'Queue service: invalid function name supplied.',
     processArgsFailed: 'failed to process dynamic task argument',
     txFailed: 'transaction failed',
@@ -470,7 +470,7 @@ const handleTx = async (id, rootTask, task, toastId) => {
         // retrieve and store account balance before starting the transaction
         let balance = await query('api.query.balances.freeBalance', address)
         const txFee = await getTxFee(api, address, tx)
-        if (balance < (amountXTX + txFee)) throw textsCap.insufficientBalance
+        if (balance < (amountXTX + txFee)) throw `${textsCap.insufficientBalance}: ${identity.name}`
         _save(LOADING, null, { before: balance })
 
         const result = await signAndSend(api, address, tx)

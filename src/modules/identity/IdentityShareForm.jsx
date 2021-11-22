@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { BehaviorSubject } from 'rxjs' 
-import { isFn, isObj, isArr } from '../../utils/utils'
+import { BehaviorSubject } from 'rxjs'
+import { isFn, isObj, isArr, isStr } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
@@ -10,7 +10,7 @@ import { getAll as getPartners } from '../partner/partner'
 import { find as findIdentity, getAll as getIdentities } from './identity'
 import { Button } from 'semantic-ui-react'
 import { showForm } from '../../services/modal'
-import LocationForm, { inputNames as locFormInputNames} from '../location/LocationForm'
+import LocationForm, { inputNames as locFormInputNames } from '../location/LocationForm'
 import { get as getLocation } from '../location/location'
 
 const notificationType = 'identity'
@@ -102,13 +102,17 @@ export default class IdentityShareForm extends Component {
                     readOnly: true,
                     type: 'UserIdInput',
                 },
-            ]
+            ],
         }
     }
 
     componentWillMount() {
         // prefill and disable fields 
         const { includePartners, includeOwnIdentities, values } = this.props
+
+        values.userIds = (values.userIds || [])
+        if (isStr(values.userIds)) values.userIds = values.userIds.split(',')
+
         const address = values[inputNames.address]
         const userIds = values[inputNames.userIds]
         const { inputs } = this.state
@@ -228,7 +232,7 @@ export default class IdentityShareForm extends Component {
         const userIds = values[inputNames.userIds]
         const location = includeLocation && identity ? getLocation(identity.locationId) : undefined
         const data = { address, name, location }
-        
+
         this.setState({ loading: true })
         const callback = err => {
             const success = !err
@@ -274,7 +278,16 @@ IdentityShareForm.propTypes = {
     // determines whether to include partner list as well as user owned identities
     includePartners: PropTypes.bool,
     includeOwnIdentities: PropTypes.bool,
-    values: PropTypes.object,
+    values: PropTypes.shape({
+        [inputNames.address]: PropTypes.string,
+        [inputNames.includeLocation]: PropTypes.bool,
+        [inputNames.introducedBy]: PropTypes.string,
+        [inputNames.name]: PropTypes.string,
+        [inputNames.userIds]: PropTypes.oneOfType([
+            PropTypes.array,
+            PropTypes.string,
+        ])
+    }),
 }
 IdentityShareForm.defaultProps = {
     includePartners: false,

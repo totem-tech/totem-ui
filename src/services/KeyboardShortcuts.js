@@ -26,7 +26,7 @@ const handlers = {
         modalId: 'TimekeepingForm',
         type: 'form',
     },
-    C: { 
+    C: {
         handler: () => rxChatVisible.next(!rxChatVisible.value),
         type: 'func'
     },
@@ -38,7 +38,7 @@ const handlers = {
         handler: showKeyboardShortcuts,
         type: 'func',
     },
-    N: { 
+    N: {
         handler: () => rxNotifVisible.next(!rxNotifVisible.value),
         type: 'func',
     },
@@ -84,3 +84,6 @@ window.addEventListener('keypress', e => {
     keys.add(key)
     handleKeypress(e.shiftKey)
 })
+// document.onkeydown = function (evt) {
+//     console.log('keyCode', evt.keyCode);
+// }

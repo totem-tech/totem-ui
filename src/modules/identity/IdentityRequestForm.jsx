@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { isFn } from '../../utils/utils'
+import { BehaviorSubject } from 'rxjs'
+import { isFn, isStr } from '../../utils/utils'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
@@ -13,7 +14,7 @@ const [words, wordsCap] = translated({
     submit: 'submit',
     user: 'user',
 }, true)
-const [texts] = translated({
+const [texts, textsCap] = translated({
     customReasonLabel: 'Custom Reason',
     customReasonPlaceholder: 'Enter a reason for your request',
     formHeader: 'Request Partner Identity',
@@ -21,7 +22,7 @@ const [texts] = translated({
     invalidUserId: 'Invalid User ID',
     reason1: 'To add your Identity to my Partner list',
     reason2: 'Timekeeping on an Activity',
-    reason3: 'Custom',
+    reason3: 'custom',
     reasonPlaceholder: 'Select a reason for this request',
     successMsg: `Identity request has been sent to selected user(s). You will receive notification once they agree to share their Identity with you.`,
     successMsgHeader: 'Request sent!',
@@ -29,16 +30,25 @@ const [texts] = translated({
     userIds: 'User ID(s)',
     userIdsNoResultsMessage: 'Type an User ID and press enter to add',
     userIdsPlaceholder: 'Enter User ID(s)',
-})
+}, true)
 const reasonList = [
-    texts.reason1,
-    texts.reason2,
-    texts.reason3,
+    textsCap.reason1,
+    textsCap.reason2,
+    textsCap.reason3,
 ]
+const inputNames = {
+    customReason: 'customReason',
+    reason: 'reason',
+    userIds: 'userIds',
+}
 
 export default class IdentityRequestForm extends Component {
     constructor(props) {
         super(props)
+
+        const { values } = props
+        values.userIds = (values.userIds || [])
+        if (isStr(values.userIds)) values.userIds = values.userIds.split(',')
 
         this.state = {
             loading: false,
@@ -50,7 +60,7 @@ export default class IdentityRequestForm extends Component {
                     includePartners: true,
                     includeFromChat: true,
                     label: wordsCap.user,
-                    name: 'userIds',
+                    name: inputNames.userIds,
                     multiple: true,
                     noResultsMessage: texts.userIdsNoResultsMessage,
                     required: true,
@@ -60,11 +70,12 @@ export default class IdentityRequestForm extends Component {
                 {
                     label: wordsCap.reason,
                     maxLength: 160,
-                    name: 'reason',
+                    name: inputNames.reason,
                     onChange: (e, values, i) => {
                         const { inputs } = this.state
-                        const showCustom = values.reason === texts.reason3
-                        findInput(inputs, 'customReason').hidden = !showCustom
+                        const showCustom = [texts.reason3, 'Custom']
+                            .includes(values.reason)
+                        findInput(inputs, inputNames.customReason).hidden = !showCustom
                         this.setState({ inputs })
                     },
                     options: reasonList.map(r => ({
@@ -81,7 +92,7 @@ export default class IdentityRequestForm extends Component {
                 {
                     hidden: true,
                     label: texts.customReasonLabel,
-                    name: 'customReason',
+                    name: inputNames.customReason,
                     maxLength: 160,
                     placeholder: texts.customReasonPlaceholder,
                     required: true,
@@ -91,7 +102,7 @@ export default class IdentityRequestForm extends Component {
             ]
         }
 
-        fillValues(this.state.inputs, props.values)
+        fillValues(this.state.inputs, values)
     }
 
     handleSubmit = (e, values) => {
@@ -139,7 +150,12 @@ export default class IdentityRequestForm extends Component {
 }
 IdentityRequestForm.propTypes = {
     values: PropTypes.shape({
-        userIds: PropTypes.array
+        [inputNames.customReason]: PropTypes.string,
+        [inputNames.reason]: PropTypes.string,
+        [inputNames.userIds]: PropTypes.oneOfType([
+            PropTypes.array,
+            PropTypes.string,
+        ])
     })
 }
 IdentityRequestForm.defaultProps = {

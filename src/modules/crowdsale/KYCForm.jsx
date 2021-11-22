@@ -5,7 +5,6 @@ import { Button, Icon } from 'semantic-ui-react'
 import PromisE from '../../utils/PromisE'
 import { isFn, objWithoutKeys, textEllipsis } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
-import { confirmBackup } from '../../views/GettingStartedView'
 import { translated } from '../../services/language'
 import { confirm, confirmAsPromise, showForm } from '../../services/modal'
 import { iUseReducer } from '../../services/react'
@@ -95,7 +94,7 @@ export default function KYCForm(props = {}) {
     // no need to check KYC status if form is in view only mode
     useEffect(() => {
         if (props.submitText === null) return
-        
+
         setState({ loading: true })
         // on-load check if user has already submitted KYC
         client.crowdsaleKYC.promise(true)
@@ -132,7 +131,7 @@ export default function KYCForm(props = {}) {
 }
 KYCForm.propTypes = {
     values: PropTypes.object,
-} 
+}
 KYCForm.defaultProps = {
     closeOnSubmit: true,
     header: textsCap.formHeader,
@@ -331,8 +330,9 @@ const handleSubmitCb = (rxSetState, props = {}) => async (_, values) => {
         crowdsaleData(objWithoutKeys(values, [inputNames.blockchains]))
 
         // force user to download a backup of all essential data including user credentials and identities
-        const backupDone = await confirmBackup()
-        if (!backupDone) throw textsCap.submitFailedBackupNotDone
+        throw 'Update backup form ref'
+        // const backupDone = await confirmBackup
+        // if (!backupDone) throw textsCap.submitFailedBackupNotDone
 
         // submit KYC data to messaging service
         const result = await client.crowdsaleKYC.promise(valuesEncrypted)
