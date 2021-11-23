@@ -928,6 +928,11 @@
   "resolved" "https://registry.npmjs.org/@polkadot/wasm-crypto/-/wasm-crypto-0.14.1.tgz"
   "version" "0.14.1"
 
+"@polkadot/wasm-crypto@^0.20.1":
+  version "0.20.1"
+  resolved "https://registry.yarnpkg.com/@polkadot/wasm-crypto/-/wasm-crypto-0.20.1.tgz#422f61cf61c8067b9800e6493608aeed2c701729"
+  integrity sha512-HVmKEQoC7RTS15nGJkQDam8pvwBLjO/JJfhq1OI/zBSqi0KPoh2ZxThkyI+O4CjjY1W+HGvybe0uf0c+VDn62Q==
+
 "@polkadot/wasm-crypto@^0.5.1":
   "integrity" "sha512-8h7uz85bvLVirtbxLkELr9H25oqAfgnQuDP6FP3QJeag7VfMtVvRF5U2JWGgsiUSiRg+UJnTuCleOSDnageRmg=="
   "resolved" "https://registry.npmjs.org/@polkadot/wasm-crypto/-/wasm-crypto-0.5.1.tgz"
