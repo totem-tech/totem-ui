@@ -62,6 +62,15 @@ const setupPullEndpoints = () => {
 		.filter(Boolean)
 	if (!endpoints.length) return
 
+	const executeCmd = async (cmd, args) => {
+		const result = spawnSync(cmd, args)
+		const { error, stderr } = result
+		const err = error
+			? error.message
+			: '' //stderr.toString()
+		if (err) throw new Error(err.split('Error: '))
+		return result
+	}
 	for (let endpoint of endpoints) {
 		endpoint = endpoint.split(':')
 		let [
@@ -75,15 +84,6 @@ const setupPullEndpoints = () => {
 			.filter(Boolean)
 
 		const pullUrl = `/pull/${pullURLSuffix}`
-		const executeCmd = async (cmd, args) => {
-			const result = spawnSync(cmd, args)
-			const { error, stderr } = result
-			const err = error
-				? error.message
-				: stderr.toString()
-			if (err) throw new Error(err.split('Error: '))
-			return result
-		}
 		const handlePull = async (request, response, next) => {
 			try {
 				const token = request.header('X-Gitlab-Token')
