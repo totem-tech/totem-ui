@@ -107,7 +107,7 @@ const setupPullEndpoints = () => {
 				})
 			}
 		}
-		app.get(pullUrl, handlePull)
+		app.post(pullUrl, handlePull)
 		console.log('Listening for GIT webhooks on', pullUrl)
 	}
 }
