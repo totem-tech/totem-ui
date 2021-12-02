@@ -3,6 +3,8 @@ const http = require('http')
 const https = require('https')
 const fs = require('fs')
 const compression = require('compression')
+const { spawnSync } = require('child_process')
+const { isFn } = require('../src/utils/utils')
 
 const app = express()
 // Reverse Proxy config
@@ -17,6 +19,7 @@ const REVERSE_PROXY = process.env.REVERSE_PROXY === 'TRUE'
 // value set in `webpack --mode`. Expected value: 'production' or 'developement'
 const mode = process.env.NODE_ENV
 const isProd = mode === 'production'
+const pullEndpoints = process.env.GIT_PULL_ENDPOINTS
 const secondaryPages = (process.env.PAGES || '')
 	.split(',')
 	.filter(Boolean)
@@ -47,10 +50,69 @@ if (!REVERSE_PROXY) {
 console.log(`Totem UI starting in ${mode.toUpperCase()} mode`)
 
 // create main https app server 
-https.createServer({
+const serverApp = https.createServer({
 	cert: fs.readFileSync(certPath),
 	key: fs.readFileSync(keyPath)
-}, app).listen(HTTPS_PORT, () => console.log('\nApp https web server listening on port ', HTTPS_PORT))
+}, app)
+serverApp.listen(HTTPS_PORT, () => console.log('\nApp https web server listening on port ', HTTPS_PORT))
+
+const setupPullEndpoints = () => {
+	const endpoints = (pullEndpoints || '')
+		.split(',')
+		.map(x => x.trim())
+		.filter(Boolean)
+	if (!endpoints.length) return
+
+	for (let endpoint of endpoints) {
+		endpoint = endpoint.split(':')
+		let [
+			pullURLSuffix,
+			pullSecret,
+			pullBaseDir = '~/',
+		] = endpoint
+		// projects valid for this endpoint configuration
+		const projects = endpoint
+			.slice('3')
+			.filter(Boolean)
+
+		const pullUrl = `/pull/${pullURLSuffix}`
+		const executeCmd = async (cmd, args) => {
+			const result = spawnSync(cmd, args)
+			const { error, stderr } = result
+			const err = error
+				? error.message
+				: stderr.toString()
+			if (err) throw new Error(err.split('Error: '))
+			return result
+		}
+		const handlePull = async (request, response, next) => {
+			try {
+				const token = request.header('X-Gitlab-Token')
+				if (token !== pullSecret) throw new Error('Invalid token')
+
+				const project = isFn(request.query)
+					? request.query('project')
+					: request.query['project']
+				const dir = `${pullBaseDir}${project}`
+				const valid = !projects.length || projects.includes(project)
+				if (!valid || !fs.existsSync(dir)) throw new Error(`Invalid project: ${project}`)
+
+				const result = await executeCmd('git', ['-C', dir, 'pull'])
+				console.log(`[PullResult] [${project}] ${result.stdout.toString()}`)
+				response.json({ success: true })
+			} catch (err) {
+				console.log('[PullError]', err.message)
+				response.json({
+					error: err.message.replace('Error: ', ''),
+					success: false,
+				})
+			}
+		}
+		app.get(pullUrl, handlePull)
+		console.log('Listening for GIT webhooks on', pullUrl)
+	}
+}
+setupPullEndpoints()
 
 /*
  * Automate building list of files for translation

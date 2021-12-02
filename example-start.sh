@@ -10,4 +10,5 @@ CertPath="string: /path/to/cert/file.pem" \
 KeyPath="string: /path/to/key/file.pem" \
 REVERSE_PROXY="string: TRUE" \
 PAGES="string: Secondary pages to be served. Expects comma-separated values. Example: `/test-page:/path/to/test/page/dist/directory, /test-page2:/path/to/dir`" \
+GIT_PULL_ENDPOINTS="string: configuration to setup endpoints to receive Gitlab webhook calls for pull requests. Example: `suffix1:secret1:/projectsRoot1:project1:project2:project3,suffix2:secret2:/projectsRoot2`" \
 yarn run dev # dev: development mode, prod: production mode
