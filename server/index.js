@@ -4,7 +4,6 @@ const https = require('https')
 const fs = require('fs')
 const compression = require('compression')
 const { spawnSync } = require('child_process')
-const { isFn } = require('../src/utils/utils')
 
 const app = express()
 // Reverse Proxy config
@@ -90,7 +89,7 @@ const setupPullEndpoints = () => {
 				const token = request.header('X-Gitlab-Token')
 				if (token !== pullSecret) throw new Error('Invalid token')
 
-				const project = isFn(request.query)
+				const project = typeof request.query === 'function'
 					? request.query('project')
 					: request.query['project']
 				const dir = `${pullBaseDir}${project}`
