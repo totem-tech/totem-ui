@@ -15,6 +15,7 @@ const certPath = process.env.CertPath || './sslcert/fullchain.pem'
 const keyPath = process.env.KeyPath || './sslcert/privkey.pem'
 // indicates whether or not reverse proxy is used
 const REVERSE_PROXY = process.env.REVERSE_PROXY === 'TRUE'
+const HTTP_REDIRECT = process.env.HTTP_REDIRECT !== 'FALSE'
 // value set in `webpack --mode`. Expected value: 'production' or 'developement'
 const mode = process.env.NODE_ENV
 const isProd = mode === 'production'
@@ -40,10 +41,22 @@ secondaryPages
 if (!REVERSE_PROXY) {
 	// when reverse proxy is used this is not needed.
 	// set up plain http server and have it listen on port 80 to redirect to https 
-	http.createServer(function (req, res) {
+	let cbRedirect = function (req, res) {
 		res.writeHead(307, { "Location": "https://" + req.headers['host'] + req.url })
 		res.end()
-	}).listen(HTTP_PORT, () => console.log('\nApp http to https redirection listening on port ', HTTP_PORT))
+	}
+	let httpApp = undefined
+	if (!HTTP_REDIRECT) {
+		cbRedirect = undefined
+		httpApp = app
+	}
+	http.createServer(cbRedirect, httpApp)
+		.listen(HTTP_PORT, () =>
+			console.log(
+				`\nApp http${HTTP_REDIRECT ? ' to https redirection' : ''} listening on port `,
+				HTTP_PORT,
+			)
+		)
 }
 
 console.log(`Totem UI starting in ${mode.toUpperCase()} mode`)
