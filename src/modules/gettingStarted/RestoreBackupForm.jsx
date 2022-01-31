@@ -41,7 +41,8 @@ const [texts, textsCap] = translated({
 	restoreUser: 'restore credentials from backup',
 	submitNoAction: 'no actionable item selected',
 	success1: 'restored successfully!',
-	success2: 'reloading page.'
+	success2: 'reloading page.',
+	successRedirect: 'Redirecting back to',
 }, true)
 // data that can be merged (must be 2D array that represents a Map)
 const MERGEABLES = ['totem_identities', 'totem_partners', 'totem_locations']
@@ -60,6 +61,7 @@ const inputNames = {
 	confirmed: 'confirmed',
 	confirmText: 'confirmText',
 	file: 'file',
+	redirectTo: 'redirectTo',
 	restoreOpitons: 'restoreOptions',
 	userId: 'userId', // dynamically created if backup contains a different User ID
 }
@@ -140,6 +142,10 @@ export default class RestoreBackupForm extends Component {
 					name: inputNames.restoreOpitons,
 					type: 'group',
 				},
+				{
+					name: inputNames.redirectTo,
+					type: 'hidden',
+				}
 			],
 		}
 
@@ -403,12 +409,13 @@ export default class RestoreBackupForm extends Component {
 			return
 		}
 		const { onSubmit } = this.props
+		const { redirectTo } = values
 		// select only data categories and not ignored
 		const dataKeys = Object
 			.keys(this.backupData)
 			.filter(key =>
 				hasValue(values[key])
-				&& values[key] !== IGNORE
+					&& values[key] !== IGNORE
 			)
 		const user = values[inputNames.userId]
 		const noAction = !user && dataKeys.every(key => values[key] === IGNORE)
@@ -440,14 +447,18 @@ export default class RestoreBackupForm extends Component {
 			this.setState({
 				message: {
 					content: textsCap.success2,
-					header: textsCap.success1,
+					header: redirectTo
+						? textsCap.successRedirect
+						: textsCap.success1,
 					status: 'success',
 				},
 				success: true,
 			})
 			// reload page to reflect changes
 			setTimeout(() => {
-				window.location.reload(true)
+				!redirectTo
+					? window.location.reload(true)
+					: window.location.href = redirectTo
 			}, 1000)
 		}
 
