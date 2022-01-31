@@ -101,13 +101,13 @@ export default function BackupForm(props) {
                     rxState.next({
                         message: {
                             content: textsCap.backupSuccessContent,
-                            header: textsCap.backupSuccessHeader + redirectTo || '\nno-redirect',
+                            header: textsCap.backupSuccessHeader,
                             status: 'success'
                         },
                         success: true,
                     })
                     isFn(onSubmit) && onSubmit(true, values)
-                    if (redirectTo) setTimeout(() => window.location.href = redirectTo, 2000)
+                    if (redirectTo) window.location.href = redirectTo
 
                 }
                 reader.readAsText(file)
@@ -121,6 +121,10 @@ export default function BackupForm(props) {
                 name: inputNames.confirmed,
                 onChange: handleConfirmChange,
                 rxValue: new BehaviorSubject('no'),
+                type: 'hidden',
+            },
+            {
+                name: inputNames.redirectTo,
                 type: 'hidden',
             },
             {
