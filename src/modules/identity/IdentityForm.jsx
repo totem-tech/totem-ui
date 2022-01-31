@@ -122,7 +122,7 @@ export default class IdentityForm extends Component {
                     required: true,
                     rxValue: new BehaviorSubject(),
                     type: 'text',
-                    validate: this.values.restore && this.validateUri,
+                    validate: values => values.restore && this.validateUri,
                 },
                 {
                     inline: true,
@@ -243,17 +243,22 @@ export default class IdentityForm extends Component {
         uriInput.action = restore ? undefined : this.generateBtn
         uriInput.readOnly = !restore
         uriInput.hidden = !restore
-        uriInput.validate = restore ? this.validateUri : undefined
-        if (restore) {
-            uriInput.rxValue.next('')
-            this.rxAddress.next('')
-        }
+        uriInput.validate = restore
+            ? this.validateUri
+            : undefined
         this.setState({
             inputs,
             header: restore
                 ? textsCap.headerRestore
                 : this.header
         })
+        if (restore) {
+            uriInput.rxValue.next('')
+            this.rxAddress.next('')
+        } else {
+            // regenerate address
+            this.handleUsageTypeChange(_, values)
+        }
     }
 
     handleUriChange = deferred(() => {
@@ -283,12 +288,14 @@ export default class IdentityForm extends Component {
         this.setState({ success: true })
     }, 100)
 
-    handleUsageTypeChange = (_, { usageType = USAGE_TYPES.PERSONAL}) => {
-        const isRestore = !!this.values[inputNames.restore]
+    // generate new seed
+    handleUsageTypeChange = (_, values) => {
+        const isRestore = !!values[inputNames.restore]
         if (isRestore) return // nothing to do
-
+        
+        const usageType = values[inputNames.usageType] || USAGE_TYPES.PERSONAL
         const { inputs } = this.state
-        let seed = this.values[inputNames.uri]
+        let seed = values[inputNames.uri]
         if (!this.doUpdate) {
             seed = seed || generateUri()
             const usageTypeCode = usageType === USAGE_TYPES.PERSONAL ? 0 : 1
