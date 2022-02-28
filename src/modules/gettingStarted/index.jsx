@@ -266,25 +266,29 @@ export default function GetingStarted() {
 	)
 }
 
-const handleBackup = () => showForm(
+const handleBackup = (redirectTo) => showForm(
 	BackupForm,
 	{
 		onSubmit: done => done && incrementStep(),
+		values: { redirectTo },
 	},
 )
 
-const handleUpdateIdentity = () => {
+const handleUpdateIdentity = (redirectTo) => {
 	const values = getSelected()
 	// forces user to enter a new name for the identity
 	if (values.name === 'Default') values.name = ''
 	showForm(IdentityForm, {
-		onClose: incrementStep,
-		onSubmit: incrementStep,
-		values,
+		onClose: ()=> incrementStep(redirectTo),
+		onSubmit: ()=> incrementStep(redirectTo),
+		values: {
+			...values,
+			redirectTo: values.redirectTo || redirectTo,
+		},
 	})
 }
 
-const handleRegister = () => showForm(
+const handleRegister = (redirectTo) => showForm(
 	RegistrationForm,
 	{
 		closeOnSubmit: true,
@@ -295,16 +299,21 @@ const handleRegister = () => showForm(
 				content: texts.registrationSuccess,
 				status: 'success',
 			})
+
+			// open rewards module
 			setActive('rewards')
-		}
+		},
+		values: { redirectTo }
 	},
 )
 
-const incrementStep = () => setActiveStep(
-	(rxActiveStep.value || 0) + 1
+const incrementStep = (redirectTo) => setActiveStep(
+	(rxActiveStep.value || 0) + 1,
+	!redirectTo, 
+	redirectTo,
 )
 
-export const setActiveStep = (nextStep = rxActiveStep.value, silent = false) => {
+export const setActiveStep = (nextStep = rxActiveStep.value, silent = false, redirectTo) => {
 	const user = getUser()
 	if (nextStep === registerStepIndex && user && user.id) {
 		// user Already registered => mark register step as done
@@ -316,13 +325,13 @@ export const setActiveStep = (nextStep = rxActiveStep.value, silent = false) => 
 
 	switch (nextStep) {
 		case 0:
-			handleRegister()
+			handleRegister(redirectTo)
 			break
 		case 1:
-			handleUpdateIdentity()
+			handleUpdateIdentity(redirectTo)
 			break
 		case 2:
-			handleBackup()
+			handleBackup(redirectTo)
 			break
 	}
 	return nextStep

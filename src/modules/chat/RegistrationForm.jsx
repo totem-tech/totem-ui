@@ -187,12 +187,18 @@ const handleSubmit = (props, setState) => (_, values) => {
         if (!success) return
         
         // set getting started active step
-        setActiveStep(registerStepIndex + 1, silent)
+        setActiveStep(
+            registerStepIndex + 1,
+            redirectTo
+                ? false
+                : silent,
+            redirectTo,
+        )
         
         // delete referral information from device
         referralCode(null)
         
         // redirect URL
-        redirectTo && setTimeout(() => window.location.href = redirectTo, 100)
+        // redirectTo && setTimeout(() => window.location.href = redirectTo, 100)
     })
 }
