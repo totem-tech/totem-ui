@@ -7,7 +7,7 @@ import { translated } from '../../services/language'
 import { addToQueue, QUEUE_TYPES, rxOnSave } from '../../services/queue'
 import storage from '../../services/storage'
 import TotemLogo from '../../assets/totem-button-grey.png'
-import { rxVisible as rxWindowVisbile } from '../../services/window'
+import { MOBILE, rxLayout, rxVisible as rxWindowVisbile } from '../../services/window'
 
 export const MODULE_KEY = 'notifications'
 // remove legacy notifications data
@@ -43,10 +43,12 @@ function getUnreadCount() {
 }
 
 const notify = (id, notification) => setTimeout(() => {
-    if (!browserNotification) return
+    const isMobile = rxLayout.value === MOBILE
+    if (!browserNotification || isMobile) return
+
     const { id: userId } = getUser() || {}
     const { childType, from, message, type } = notification
-    if (userId === from) return console.log('same user', { id, notification })
+    if (userId === from) return
     const options = {
         badge: TotemLogo,
         body: message || `@${from}: ${type} ${childType}`,
@@ -211,9 +213,9 @@ setTimeout(() => {
                     browserNotification = false
                     break
                 case 'default':
-                    Notification.requestPermission().then(
-                        permission => browserNotification = permission === 'granted'
-                    )
+                // Notification.requestPermission().then(
+                //     permission => browserNotification = permission === 'granted'
+                // )
             }
         }
 

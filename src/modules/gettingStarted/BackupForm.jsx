@@ -184,10 +184,16 @@ export default function BackupForm(props) {
                 inputs,
                 props.values || {},
             ),
+			onClose: (...args) => {
+				let { values: { redirectTo } = {}} = props
+                isFn(props.onClose) && props.onClose(...args)
+                try { 
+                    redirectTo = new URL(redirectTo)
+                    window.location.href = redirectTo.href
+                } catch (err) {}
+            },
             onSubmit: null, // trigger onSubmit locally
             values: { ...props.values },
-
-
             closeText: (values, props) => ({
                 content: !checkConfirmed(values)
                     ? textsCap.backupLater

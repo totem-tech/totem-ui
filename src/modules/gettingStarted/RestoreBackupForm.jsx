@@ -74,6 +74,15 @@ export default class RestoreBackupForm extends Component {
 		this.existingData = null
 		this.state = {
 			onSubmit: this.handleSubmit,
+			onClose: (...args) => {
+				let { values: { redirectTo } = {}} = props
+				console.log({onClose: true, props, redirectTo})
+                isFn(props.onClose) && props.onClose(...args)
+                try { 
+                    redirectTo = new URL(redirectTo)
+                    window.location.href = redirectTo.href
+                } catch (err) {}
+            },
 			inputs: [
 				{
 					hidden: true,

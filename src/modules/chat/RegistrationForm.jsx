@@ -50,6 +50,14 @@ export default function RegistrationForm(props) {
             ...props,
             ...state,
             onSubmit: handleSubmit(props, setState),
+            onClose: (...args) => {
+                let { values: { redirectTo } = {}} = props
+                isFn(props.onClose) && props.onClose(...args)
+                try { 
+                    redirectTo = new URL(redirectTo)
+                    window.location.href = redirectTo.href
+                } catch (err) {}
+            },
         }} />
     )
 }
@@ -176,14 +184,15 @@ const handleSubmit = (props, setState) => (_, values) => {
         }
         setState(state)
         isFn(onSubmit) && onSubmit(success, values)
-
         if (!success) return
+        
         // set getting started active step
         setActiveStep(registerStepIndex + 1, silent)
-        // redirect URL
-        redirectTo && setTimeout(() => window.location.href = redirectTo, 100)
-
+        
         // delete referral information from device
         referralCode(null)
+        
+        // redirect URL
+        redirectTo && setTimeout(() => window.location.href = redirectTo, 100)
     })
 }
