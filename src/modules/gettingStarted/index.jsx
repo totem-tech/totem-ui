@@ -103,21 +103,21 @@ export default function GetingStarted() {
 		const steps = [
 			{
 				description: texts.step2Description,
-				onClick: handleRegister,
+				onClick: ()=> handleRegister(),
 				title: isRegistered
 					? `${texts.step2Title2}: @${getUser().id}`
 					: texts.step2Title,
 			},
 			{
 				description: texts.step1Description,
-				onClick: handleUpdateIdentity,
+				onClick: () => handleUpdateIdentity(),
 				title: texts.step1Title,
 			},
 			{
 				// allow the user to backup even after step is completed
 				disabled: activeStep => activeStep <= registerStepIndex,
 				description: texts.backupDescription,
-				onClick: handleBackup,
+				onClick: ()=> handleBackup(),
 				title: texts.backupTitle,
 			},
 		]
