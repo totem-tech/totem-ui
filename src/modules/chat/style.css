@@ -231,6 +231,11 @@ body.inbox-expanded .chat-container .inbox .expand.icon:before {
     height: 58px;
     overflow: hidden;
 }
+
+.chat-container .inbox .member-list {
+    max-height: calc( 100% - 60px );
+    overflow-y: auto;
+}
 .chat-container .inbox .member-list-item {
     font-size: 14px;
     height: 40px;
@@ -352,6 +357,7 @@ body:not(.inverted) .chat-container .messages {
 
 /* hide scrollbars */
 .chat-container .inbox .messages::-webkit-scrollbar,
-.chat-container .inbox-list::-webkit-scrollbar {
+.chat-container .inbox-list::-webkit-scrollbar,
+.chat-container .member-list::-webkit-scrollbar {
     width: 0px;
 }

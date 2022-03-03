@@ -206,7 +206,7 @@ const MemberList = ({ inboxKey, isTrollbox, receiverIds }) => {
     }, [])
 
     return (
-        <div>
+        <div className='member-list'>
             {(!isTrollbox && !isSupport ? receiverIds : getInboxUserIds(inboxKey))
                 .sort()
                 .map(memberId => {
