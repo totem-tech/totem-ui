@@ -95,7 +95,7 @@ export default React.memo(() => {
                 },
                 onConfirm: () => Array
                     .from(rxNotifications.value)
-                    .map(([id]) => toggleRead(id, true)),
+                    .map(([id, { read }]) => !read && toggleRead(id, true)),
                 size: 'mini',
             }),
         }
