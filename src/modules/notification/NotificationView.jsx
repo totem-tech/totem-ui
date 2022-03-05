@@ -1,11 +1,19 @@
 import React from 'react'
-import { rxNotifications, rxVisible } from './notification'
+import { remove, rxNotifications, rxVisible, toggleRead } from './notification'
 import ListItem from './NotificationItem'
 import './style.css'
 import { useRxSubject } from '../../services/react'
 import { arrReverse } from '../../utils/utils'
 import { MOBILE, rxLayout } from '../../services/window'
+import { Button } from 'semantic-ui-react'
+import { ButtonGroup } from '../../components/buttons'
+import modalService from '../../services/modal'
+import { translated } from '../../utils/languageHelper'
 
+const textsCap = translated({
+    btnDelete: 'delete all',
+    btnRead: 'mark all as read',
+}, true)[1]
 export default React.memo(() => {
     const [visible] = useRxSubject(rxVisible, visible => {
         const { classList } = document.body
@@ -52,5 +60,54 @@ export default React.memo(() => {
         return arrReverse(items, isMobile)
     })
 
-    return <div className='notification-list'>{visible && items}</div>
+    const buttons = [
+        {
+            basic: true,
+            compact: true,
+            content: textsCap.btnDelete,
+            icon: 'trash',
+            key: 'all',
+            labelPosition: 'left',
+            onClick: () => modalService.confirm({
+                confirmButton: {
+                    content: textsCap.btnDelete,
+                    negative: true,
+                },
+                onConfirm: () => remove(
+                    Array
+                        .from(rxNotifications.value)
+                        .map(([id]) => id)
+                ),
+                size: 'mini',
+            }),
+        },
+        {
+            basic: true,
+            compact: true,
+            content: textsCap.btnRead,
+            icon: 'envelope open',
+            key: 'all',
+            labelPosition: 'right',
+            onClick: () => modalService.confirm({
+                confirmButton: {
+                    content: textsCap.btnRead,
+                    positive: true,
+                },
+                onConfirm: () => Array
+                    .from(rxNotifications.value)
+                    .map(([id]) => toggleRead(id, true)),
+                size: 'mini',
+            }),
+        }
+    ]
+    return <div className='notification-list'>
+        {visible && (
+            <ButtonGroup {...{
+                buttons,
+                className: 'actions',
+                fluid: true,
+            }} />
+        )}
+        {visible && items}
+    </div>
 })

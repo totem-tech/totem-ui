@@ -6,6 +6,7 @@ import client, { getUser, rxIsLoggedIn } from './ChatClient'
 import { addToQueue, QUEUE_TYPES, rxOnSave, statuses } from '../../services/queue'
 import storage from '../../services/storage'
 import { getLayout, MOBILE, setClass } from '../../services/window'
+import { subjectAsPromise } from '../../utils/reactHelper'
 
 const PREFIX = 'totem_'
 const MODULE_KEY = 'chat-history'
@@ -250,7 +251,8 @@ const saveMessage = (msg, trigger = false) => {
 // send message
 export const send = (receiverIds, message, encrypted = false) => {
     const { id: senderId } = getUser() || {}
-    if (!senderId) return
+    if (!senderId) return // should not occur
+
     const tempId = uuid.v1()
     const msg = {
         message,
@@ -266,19 +268,24 @@ export const send = (receiverIds, message, encrypted = false) => {
     // save as loading (sending in-progress)
     saveMessage(msg, true)
 
-    addToQueue({
-        args: [
-            receiverIds,
-            message,
-            false,
-            // on success remove temporary/loading message
-            // err => !err ? removeMessage(inboxKey, tempId) : saveMessage({ ...msg, status: statuses.ERROR }),
-        ],
-        func: 'message',
-        silent: true,
-        recordId: tempId,
-        type: QUEUE_TYPES.CHATCLIENT,
-    })
+
+    // wait until user is logged in
+    subjectAsPromise(rxIsLoggedIn, true)[0].then(() =>
+        addToQueue({
+            args: [
+                receiverIds,
+                message,
+                false,
+                // on success remove temporary/loading message
+                // err => !err ? removeMessage(inboxKey, tempId) : saveMessage({ ...msg, status: statuses.ERROR }),
+            ],
+            func: 'message',
+            silent: true,
+            recordId: tempId,
+            type: QUEUE_TYPES.CHATCLIENT,
+        })
+    )
+
     return tempId
 }
 

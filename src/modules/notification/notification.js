@@ -1,6 +1,6 @@
 import { BehaviorSubject, Subject } from 'rxjs'
 import DataStorage from '../../utils/DataStorage'
-import { isArr, isFn, isObj } from '../../utils/utils'
+import { isArr, isBool, isFn, isObj } from '../../utils/utils'
 // services
 import client, { getUser, rxIsLoggedIn } from '../chat/ChatClient'
 import { translated } from '../../services/language'
@@ -155,12 +155,15 @@ export const setItemViewHandler = (type, childType, renderer) => {
  * @name    toggleRead
  * @summary toggle notification read status
  * 
- * @param   {String} id Notification ID
+ * @param   {String}    id   Notification ID
+ * @param   {Boolean}   read (optional) set specific read status
  */
-export const toggleRead = id => {
+export const toggleRead = (id, read) => {
     const item = notifications.get(id)
     if (!item) return
-    const read = !item.read
+    read = isBool(read)
+        ? read
+        : !item.read
     notifications.set(id, { ...item, read })
 
     addToQueue({

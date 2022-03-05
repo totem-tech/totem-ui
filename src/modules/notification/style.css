@@ -22,6 +22,17 @@ body:not(.notification-visible) .notification-list:not(.inline) {
     width: 0px;
 }
 
+/* notification buttons */
+.notification-list .ui.buttons.actions {
+    background: white;
+    min-height: 36px;
+}
+.notification-list .ui.buttons.actions .ui.button:hover {
+    background: #434446 !important;
+    border-radius: 0;
+    color: white !important;
+}
+
 .notification-list .list-item {
     margin: 0;
     text-align: left;
