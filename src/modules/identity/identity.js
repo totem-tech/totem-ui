@@ -12,7 +12,11 @@ export const USAGE_TYPES = Object.freeze({
 	PERSONAL: 'personal',
 	BUSINESS: 'business',
 })
-const REQUIRED_KEYS = Object.freeze(['address', 'name', 'type', 'uri'])
+const REQUIRED_KEYS = Object.freeze([
+	'address',
+	'name',
+	'uri',
+])
 const VALID_KEYS = Object.freeze([
 	...REQUIRED_KEYS,
 	'cloudBackupStatus', // undefined: never backed up, in-progress, done
@@ -21,6 +25,7 @@ const VALID_KEYS = Object.freeze([
 	'locationId',
 	'selected',
 	'tags',
+	'type',
 	'usageType',
 ])
 
@@ -69,8 +74,9 @@ export const remove = address => { identities.delete(address) }
  */
 export const set = (address, identity) => {
 	if (!isStr(address) || !isObj(identity)) return
+
 	const existingItem = identities.get(address)
-	if (!existingItem && objHasKeys(identity, REQUIRED_KEYS, true)) return
+	if (!existingItem && !objHasKeys(identity, REQUIRED_KEYS, true)) return
 
 	const { selected, type, usageType } = identity
 	const isUsageTypeValid = Object.values(USAGE_TYPES).includes(usageType)
