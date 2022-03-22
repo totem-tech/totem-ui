@@ -1,6 +1,6 @@
 import { BehaviorSubject, Subject } from 'rxjs'
 import DataStorage from '../../utils/DataStorage'
-import { isArr, isBool, isFn, isObj } from '../../utils/utils'
+import { arrSort, isArr, isBool, isFn, isObj } from '../../utils/utils'
 // services
 import client, { getUser, rxIsLoggedIn } from '../chat/ChatClient'
 import { translated } from '../../services/language'
@@ -202,9 +202,10 @@ setTimeout(() => {
 
     // do stuff whenever user logs in
     rxIsLoggedIn.subscribe(isLoggedIn => {
+        console.log({ isLoggedIn })
         // ignore if not logged in
         if (!isLoggedIn) return
-        const { tsLastReceived } = rw()
+        let { tsLastReceived } = rw()
 
         // Request permission to use browser notifications
         if (browserNotification === null && !!window.Notification) {
@@ -223,8 +224,9 @@ setTimeout(() => {
         }
 
         // retrieve any new notifications since last logout
-        client.notificationGetRecent(null, (err, items) => {
-            if (!items.size) return err && console.log('client.notificationGetRecent', err)
+        client.notificationGetRecent(tsLastReceived, (err, items) => {
+            if (!items.size) return err && console.error('client.notificationGetRecent', err)
+
             const itemsArr = Array.from(items)
                 .filter(([id, { deleted }]) => {
                     // remove items deleted by user's other devices
@@ -234,17 +236,22 @@ setTimeout(() => {
                     }
                     return !deleted
                 })
-            const [mostRecentId, mostRecent] = itemsArr[0] || []
-            const gotNew = itemsArr.find(([_, { tsCreated }]) => tsCreated > tsLastReceived)
+            const latest = arrSort(
+                itemsArr.map(([_, doc]) => doc),
+                'tsCreated',
+            ).pop()
+            const gotNew = latest && latest.tsCreated > tsLastReceived
 
-            // save latest item's timestamp as last received
-            mostRecent && rw({ tsLastReceived: mostRecent.tsCreated })
-            notifications.setAll(items, true).sort('tsCreated', true, true)
+            notifications
+                .setAll(items, true)
+                .sort('tsCreated', true, true)
             if (!gotNew) return
 
-            mostRecentId && rxNewNotification.next([mostRecentId, mostRecent])
-
-            mostRecent && !mostRecent.read && notify(mostRecentId, mostRecent)
+            const { _id, read, tsCreated } = latest
+            // save latest item's timestamp as last received
+            rw({ tsLastReceived: tsCreated })
+            rxNewNotification.next([_id, latest])
+            !read && notify(_id, latest)
         })
     })
 

@@ -22,8 +22,6 @@ import IdentityForm from '../identity/IdentityForm'
 import BackupForm from './BackupForm'
 import { MOBILE, rxLayout } from '../../services/window'
 
-
-window.backup = () => showForm(BackupForm)
 const texts = translated({
 	backupTitle: 'Backup your account',
 	backupDescription: `
@@ -309,7 +307,7 @@ const handleRegister = (redirectTo) => showForm(
 
 const incrementStep = (redirectTo) => setActiveStep(
 	(rxActiveStep.value || 0) + 1,
-	!redirectTo, 
+	false, 
 	redirectTo,
 )
 
