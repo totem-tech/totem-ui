@@ -156,7 +156,7 @@ body:not(.chat-visible) .chat-container{
 .chat-container .inbox-list .list-item .actions {
     position: absolute;
     right: 5px;
-    top: 2px;
+    top: -9px;
 }
 .chat-container .inbox-list .list-item .actions .icon {
     font-size: 14px;

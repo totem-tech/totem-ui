@@ -350,7 +350,7 @@ const ToolsBar = React.memo(({ query, onSeachChange, showAll, toggleShowAll }) =
 ))
 
 const InboxActions = React.memo(props => {
-    const {
+    let {
         archived,
         deleted,
         inboxKey,
@@ -361,6 +361,7 @@ const InboxActions = React.memo(props => {
         setShowActions,
         showActions,
     } = props
+    const active = inboxKey === showActions
     const actions = [
         isGroup && !isTrollbox && !isSupport && {
             icon: 'pencil',
@@ -406,12 +407,18 @@ const InboxActions = React.memo(props => {
     return !actions.length ? '' : (
         <span className='actions'>
             {[
-                ...(showActions ? actions : []),
+                ...(active ? actions : []),
                 {
-                    active: showActions,
+                    active,
                     icon: 'cog',
-                    onClick: e => e.stopPropagation() | setShowActions(!showActions),
-                    title: showActions ? textsCap.actionsHide : textsCap.actionsShow,
+                    onClick: e => {
+                        e.stopPropagation()
+                        console.log()
+                        setShowActions(!active && inboxKey)
+                    },
+                    title: active
+                        ? textsCap.actionsHide
+                        : textsCap.actionsShow,
                 },
             ].map(action => (
                 <Button {...{
