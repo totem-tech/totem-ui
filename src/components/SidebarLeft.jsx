@@ -2,7 +2,7 @@ import React, { Component, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Icon, Label, Menu, Sidebar } from 'semantic-ui-react'
 import ContentSegment from './ContentSegment'
-import { isBond } from '../utils/utils'
+import { isBond, isFn } from '../utils/utils'
 import { translated } from '../services/language'
 import {
 	rxAllInactive, getItem, setActive, setSidebarState,
@@ -45,10 +45,9 @@ export default function SidebarLeft() {
 					onClick={toggleSidebarState}
 				>
 					<div
-						style={styles.sidebarToggle}
 						position="right"
-						title={collapsed ? 'Expand' : 'Collapse'}
 						style={styles.sidebarToggle}
+						title={collapsed ? 'Expand' : 'Collapse'}
 					>
 						<span>
 							<Icon name={`arrow alternate circle ${collapsed ? 'right' : 'left'} outline`} />
@@ -59,15 +58,13 @@ export default function SidebarLeft() {
 
 				{// menu items 
 					sidebarItems.map(({ name }, i) => (
-						<SidebarMenuItem
-							{...{
-								key: i + name,
-								isMobile,
-								name,
-								sidebarCollapsed: collapsed,
-								style: i === 0 ? styles.menuItem : undefined
-							}}
-						/>
+						<SidebarMenuItem {...{
+							key: i + name,
+							isMobile,
+							name,
+							sidebarCollapsed: collapsed,
+							style: i === 0 ? styles.menuItem : undefined
+						}} />
 					))}
 			</Sidebar>
 		</React.Fragment>
@@ -112,9 +109,20 @@ MainContentItem.propTypes = {
 }
 
 const SidebarMenuItem = props => {
-	const { isMobile, name, sidebarCollapsed, style } = props
+	let { isMobile, name, sidebarCollapsed, style } = props
 	const [item, setItem] = useState(getItem(name))
-	const { active, bond, badge, hidden, icon, title } = item || {}
+	const {
+		active,
+		anchorStyle,
+		bond,
+		badge,
+		hidden,
+		href,
+		icon,
+		onClick,
+		target,
+		title,
+	} = item || {}
 
 	useEffect(() => {
 		let mounted = true
@@ -131,9 +139,18 @@ const SidebarMenuItem = props => {
 		<Menu.Item {...{
 			as: 'a',
 			active,
-			style,
+			href,
+			style: {
+				...style,
+				...anchorStyle,
+			},
+			target,
 			title,
 			onClick: e => {
+				if (isFn(onClick)) onClick(e, item)
+				
+				if (href) return
+
 				e.stopPropagation()
 				if (e.shiftKey && getItem(name).active) return scrollTo(name)
 				const { active } = toggleActive(name)

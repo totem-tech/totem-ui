@@ -28,9 +28,8 @@ import storage from './storage'
 import { getUrlParam, MOBILE, rxLayout, setClass } from './window'
 
 const textsCap = translated({
-    refereceRates: 'Reference Rates',
-
-    crowdsaleTitle: 'crowdsale',
+    crowdloan: 'Crowdloan DApp',
+    // crowdsaleTitle: 'crowdsale',
 
     financialStatementTitle: 'Financial Statement',
 
@@ -103,6 +102,10 @@ const textsCap = translated({
         Activities are then automatically mapped to invoices or other payments, and all accounting will be correctly posted even into your partners' accounts.
     `,
 
+    refereceRates: 'Reference Rates',
+
+    rewards: 'rewards',
+
     tasksTitle: 'tasks',
     tasksSubheader: 'Create and manage tasks',
 
@@ -165,10 +168,20 @@ export const sidebarItems = [
         title: textsCap.gettingStartedTitle,
     },
     {
+        anchorStyle: {
+            background: 'deeppink',
+        },
+        icon: 'rocket',
+        name: 'crowdloan',
+        href: `${window.location.protocol}//${window.location.host}/crowdloan`,
+        target: '_blank',
+        title: textsCap.crowdloan,
+    },
+    {
         content: RewardsView,
         icon: 'gift',
         name: 'rewards',
-        title: 'Rewards'
+        title: textsCap.rewards,
     },
     // {
     //     content: CrowdsaleView,
@@ -176,13 +189,13 @@ export const sidebarItems = [
     //     name: 'crowdsale',
     //     title: textsCap.crowdsaleTitle,
     // },
-    {
-        content: KeyRegistryPlayground,
-        icon: 'play circle outline',
-        hidden: true,
-        name: 'key-registry',
-        title: 'Key Registry Playground'
-    },
+    // {
+    //     content: KeyRegistryPlayground,
+    //     icon: 'play circle outline',
+    //     hidden: true,
+    //     name: 'key-registry',
+    //     title: 'Key Registry Playground'
+    // },
     // {
     //     hidden: true,
     //     content: LedgerTransactionList,
