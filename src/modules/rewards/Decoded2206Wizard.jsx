@@ -26,8 +26,13 @@ const [texts, textsCap] = translated({
     step4Confirm1: 'you will be taken to',
     step4Confirm2: 'wait for the page to load completely',
     step4Confirm3: 'select the talk titled',
+    step4Confirm4: 'vote now',
+    step4Confirm5: 'i have voted',
     successMsgHeader: 'request submitted',
-    successMsgContent: 'your request will be validated and rewards will be processed in the coming weeks'
+    successMsgContent: 'your request will be validated and rewards will be processed in the coming weeks',
+    twHandleLabel: 'Twitter handle/username',
+    twHandleLabelDetails: 'Please make sure that this is the same account you are logged in on Twitter.com',
+    twHandlePlaceholder: 'enter your twitter handle',
 }, true)
 
 export default function Decoded2206Wizard(props) {
@@ -52,27 +57,38 @@ export default function Decoded2206Wizard(props) {
             size: 'mini',
             onConfirm: setStepCb(2, 'https://twitter.com/intent/follow?screen_name=toufiq_dev')
         }),
-        () => confirm({
-            header: textsCap.step3,
-            content: (
-                <div>
-                    {textsCap.step4Confirm1} decoded.polkadot.network
+        () => {
+            let modalId, linkOpened
+            const confirmProps = {
+                confirmButton: textsCap.step4Confirm4,
+                content: (
+                    <div>
+                        {textsCap.step4Confirm1} decoded.polkadot.network
 
-                    <ol>
-                        <li>{textsCap.step4Confirm2}</li>
-                        <li>{textsCap.step4Confirm3} <b>"Get Your Parachain Production Ready"</b></li>
-                        <li>{textsCap.press} <b>"Finalize vote"</b> {texts.button}</li>
-                        <li>{textsCap.press} <b>"Vote now"</b> {texts.button}</li>
-                        <li>{textsCap.press} <b>"Submit"</b> {texts.button}</li>
-                    </ol>
-                </div>
-            ),
-            size: 'mini',
-            onConfirm: setStepCb(
-                3,
-                'https://decoded.polkadot.network/vote/?search=Chris%20DCosta%20Get%20Your%20Parachain%20Production%20Ready'
-            )
-        }),
+                        <ol>
+                            <li>{textsCap.step4Confirm2}</li>
+                            <li>{textsCap.step4Confirm3} <b>"Get Your Parachain Production Ready"</b></li>
+                            <li>{textsCap.press} <b>"Finalize vote"</b> {texts.button}</li>
+                            <li>{textsCap.press} <b>"Vote now"</b> {texts.button}</li>
+                            <li>{textsCap.press} <b>"Submit"</b> {texts.button}</li>
+                        </ol>
+                    </div>
+                ),
+                header: textsCap.step3,
+                size: 'mini',
+                onConfirm: () => {
+                    if (linkOpened) return setStepCb(
+                        3,
+                        'https://decoded.polkadot.network/vote/?search=Chris%20DCosta%20Get%20Your%20Parachain%20Production%20Ready'
+                    )()
+                    
+                    linkOpened = true
+                    confirmProps.confirmButton = textsCap.step4Confirm5
+                    confirm(confirmProps, modalId)
+                }
+            }
+            modalId = confirm(confirmProps)
+        },
         () => {
             let modalId
             const formProps = {
