@@ -20,7 +20,7 @@ const [texts, textsCap] = translated({
     step2: 'follow co-founder',
     step2Desc: 'follow Toufiqur R Chowdhury on Twitter',
     step3: 'vote for Polkadot Decoded talk',
-    step3Desc: 'vote for Totem\'s Polkadot Decoded talk by Chris D\'Costa',
+    step3Desc: 'vote for Totem\'s Polkadot Decoded tech talk by the founder',
     step4: 'claim reward',
     step4Desc: 'to qualify for this reward you must complete all of the steps above',
     step4Confirm1: 'you will be taken to',
@@ -137,7 +137,7 @@ export default function Decoded2206Wizard(props) {
         {
             completed,
             disabled: completed,
-            description: textsCap.step3Desc,
+            description: `${textsCap.step3Desc} Chris D'Costa`,
             title: textsCap.step3,
         },
         {
