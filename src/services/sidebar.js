@@ -161,13 +161,6 @@ const gsName = 'getting-started'
 const sidebarItemNames = []
 export const sidebarItems = [
     {
-        content: GettingStarted,
-        // headerDividerHidden: true,
-        icon: 'play circle outline',
-        name: gsName,
-        title: textsCap.gettingStartedTitle,
-    },
-    {
         anchorStyle: {
             background: 'deeppink',
         },
@@ -176,6 +169,13 @@ export const sidebarItems = [
         href: `${window.location.protocol}//${window.location.host}/crowdloan`,
         target: '_blank',
         title: textsCap.crowdloan,
+    },
+    {
+        content: GettingStarted,
+        // headerDividerHidden: true,
+        icon: 'play circle outline',
+        name: gsName,
+        title: textsCap.gettingStartedTitle,
     },
     {
         content: RewardsView,

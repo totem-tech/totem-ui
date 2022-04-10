@@ -12,6 +12,7 @@ const rxRewardsChanged = new BehaviorSubject(0)
 const initialRewardAmount = 108154 // only used where amount has not been saved (initial drop)
 const rwCache = (key, value) => storage.cache(moduleKey, key, value)
 export const rewardTypes = {
+    decoded2206: 'decoded2206',
     referral: 'referral-reward',
     referralTwitter: 'referral-twitter-reward',
     signup: 'signup-reward',
@@ -76,8 +77,9 @@ export const getRewards = async () => {
                 })),
             signupReward: rewards.find(x => x.type === rewardTypes.signup),
             socialRewards: {
-                newsletter: (rwCache().socialRewards || {}).newsletter || false,
+                decoded2206: rewards.find(x => x.type === rewardTypes.decoded2206) || {},
                 discord: rewards.find(x => x.type === rewardTypes.signupDiscord) || {},
+                newsletter: (rwCache().socialRewards || {}).newsletter || false,
                 telegram: rewards.find(x => x.type === rewardTypes.signupTelegram) || {},
                 twitter: rewards.find(x => x.type === rewardTypes.signupTwitter) || {},
             }

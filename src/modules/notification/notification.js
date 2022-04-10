@@ -202,7 +202,6 @@ setTimeout(() => {
 
     // do stuff whenever user logs in
     rxIsLoggedIn.subscribe(isLoggedIn => {
-        console.log({ isLoggedIn })
         // ignore if not logged in
         if (!isLoggedIn) return
         let { tsLastReceived } = rw()

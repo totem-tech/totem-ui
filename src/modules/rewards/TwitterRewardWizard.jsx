@@ -15,19 +15,19 @@ const textsCap = translated({
     step1Confirm: 'You will be taken to Twitter.com. Click on the follow button and then return to this page.',
 
     step2: 'post a Tweet',
-    step2Confirm: 'You will be taken to Twitter.com.',
+    step2Confirm: 'you will be taken to',
     step2ConfirmP1: 'Press Tweet!',
     step2ConfirmP2: 'Copy the Tweet link.',
     step2ConfirmP3: 'Return to this page and paste the link in the "Tweet ID/Link field"',
     step2ConfirmWarn: 'To qualify for the reward, we recommend not changing the text.',
-    step2Desc: 'Get rewarded by spreading the word about Totem',
+    step2Desc: 'help spread the word about Totem',
     tweetSubmitText: 'Tweet now',
     twHandleLabel: 'Twitter handle/username',
     twHandleLabelDetails: 'Please make sure that this is the same account you are logged in on Twitter.com',
     twHandlePlaceholder: 'enter your twitter handle',
 
     step3: 'claim reward',
-    step3Desc: 'To qualify for this reward you must follow both of the above steps.',
+    step3Desc: 'this reward is no longer available', //'to qualify for this reward you must complete both of the steps above',
     claimSubmitText: 'claim reward',
     requestReceived: 'You request has been received. You will receive a notification from @rewards once your request has been processed.',
     tweetIdLabel: 'Tweet ID/Link',
@@ -73,34 +73,36 @@ export default function TwitterRewardWizard(props) {
                     }
                 ],
                 onSubmit: (_, { twHandle }) => {
-                    confirm({
-                        content: (
-                            <div>
-                                {textsCap.step2Confirm}
-                                <ul>
-                                    <li>
-                                        {textsCap.step2ConfirmP1}
-                                        <b style={{ color: 'red' }}> {textsCap.step2ConfirmWarn}</b>
-                                    </li>
-                                    <li>{textsCap.step2ConfirmP2}</li>
-                                    <li>{textsCap.step2ConfirmP3}</li>
-                                </ul>
-                            </div>
-                        ),
-                        size: 'tiny',
-                        onConfirm: () => {
-                            closeModal(modalId)
-                            const tweetText = encodeURIComponent(
-                                generateSignupTweet(twHandle)
-                            )
-                            const url = `https://twitter.com/intent/tweet?button_hashtag=share&text=${tweetText}`
-                            window.open(url, '_blank')
-                            rxTwitterHandle.next(twHandle)
-                            setActiveStep(2)
-                            onClickHandlers[2]()
+                    const onConfirm = () => {
+                        closeModal(modalId)
+                        const tweetText = encodeURIComponent(
+                            generateSignupTweet(twHandle)
+                        )
+                        const url = `https://twitter.com/intent/tweet?button_hashtag=share&text=${tweetText}`
+                        window.open(url, '_blank')
+                        rxTwitterHandle.next(twHandle)
+                        setActiveStep(2)
+                        onClickHandlers[2]()
 
-                        }
-                    })
+                    }
+                    onConfirm()
+                    // confirm({
+                    //     content: (
+                    //         <div>
+                    //             {textsCap.step2Confirm} Twitter.com
+                    //             <ul>
+                    //                 <li>
+                    //                     {textsCap.step2ConfirmP1}
+                    //                     <b style={{ color: 'red' }}> {textsCap.step2ConfirmWarn}</b>
+                    //                 </li>
+                    //                 <li>{textsCap.step2ConfirmP2}</li>
+                    //                 <li>{textsCap.step2ConfirmP3}</li>
+                    //             </ul>
+                    //         </div>
+                    //     ),
+                    //     size: 'tiny',
+                    //     onConfirm: onConfirm
+                    // })
                 }
             }
             const modalId = showForm(FormBuilder, formProps)
@@ -200,7 +202,7 @@ export default function TwitterRewardWizard(props) {
         },
         {
             completed,
-            disabled: completed,
+            disabled: true,
             description: textsCap.step3Desc,
             title: textsCap.step3,
         },

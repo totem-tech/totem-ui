@@ -102,6 +102,7 @@ export default [
     "./src/modules/partner/PartnerList.jsx",
     "./src/modules/partner/notificationHandlers.jsx",
     "./src/modules/partner/partner.js",
+    "./src/modules/rewards/Decoded2206Wizard.jsx",
     "./src/modules/rewards/DiscordRewardWizard.jsx",
     "./src/modules/rewards/ReferralCard.jsx",
     "./src/modules/rewards/RewardsProgress.jsx",

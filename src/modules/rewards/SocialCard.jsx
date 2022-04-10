@@ -12,6 +12,7 @@ import DiscordRewardWizard from './DiscordRewardWizard'
 import TwitterRewardWizard from './TwitterRewardWizard'
 import { markNewsleterDone, useRewards } from './rewards'
 import NewsletteSignup from '../../forms/NewsletterSignup'
+import Decoded2206Wizard from './Decoded2206Wizard'
 
 const textsCap = translated({
     comingSoon: 'coming soon',
@@ -30,12 +31,23 @@ export default function SocialCard({ socialRewards = {} }) {
     const inverted = useInverted()
     let [activeStep, setActiveStep] = useState()
 
-    const { discord = {}, newsletter = false, telegram = {}, twitter = {} } = socialRewards
-    const total = [discord, telegram, twitter]
+    const {
+        decoded2206 = {},
+        discord = {},
+        newsletter = false,
+        telegram = {},
+        twitter = {},
+    } = socialRewards
+    const total = [decoded2206, discord, telegram, twitter]
         .reduce((sum, { amount = 0 }) => sum + amount, 0)
     const completed = [discord, telegram, twitter]
         .every(({ amount }) => !!amount)
     const steps = [
+        {
+            completed: decoded2206.amount > 0,
+            content: <Decoded2206Wizard completed={decoded2206.amount > 0} />,
+            title: 'Polkadot Decoded 2022',
+        },
         {
             completed: twitter.amount > 0,
             content: <TwitterRewardWizard completed={twitter.amount > 0} />,
