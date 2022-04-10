@@ -84,10 +84,8 @@ export default function Decoded2206Wizard(props) {
                     )()
                     if (!linkOpened) {
                         linkOpened = true
-                        console.log({2: linkOpened})
                         confirmProps.confirmButton = textsCap.step4Confirm5
-                        // closeModal(modalId)
-                        setTimeout(() => confirm(confirmProps, modalId))
+                        confirm(confirmProps, modalId)
                     }
                 }
             }
