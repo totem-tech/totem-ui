@@ -58,7 +58,8 @@ export default function Decoded2206Wizard(props) {
             onConfirm: setStepCb(2, 'https://twitter.com/intent/follow?screen_name=toufiq_dev')
         }),
         () => {
-            let modalId, linkOpened
+            let modalId = 'confirm-vote'
+            let linkOpened = false
             const confirmProps = {
                 confirmButton: textsCap.step4Confirm4,
                 content: (
@@ -77,17 +78,21 @@ export default function Decoded2206Wizard(props) {
                 header: textsCap.step3,
                 size: 'mini',
                 onConfirm: () => {
-                    if (linkOpened) return setStepCb(
-                        3,
-                        'https://decoded.polkadot.network/vote/?search=Chris%20DCosta%20Get%20Your%20Parachain%20Production%20Ready'
+                    setStepCb(
+                        !linkOpened ? 2 : 3,
+                        !linkOpened && 'https://decoded.polkadot.network/vote/?search=Chris%20DCosta%20Get%20Your%20Parachain%20Production%20Ready'
                     )()
-                    
-                    linkOpened = true
-                    confirmProps.confirmButton = textsCap.step4Confirm5
-                    confirm(confirmProps, modalId)
+                    if (!linkOpened) {
+                        linkOpened = true
+                        console.log({2: linkOpened})
+                        confirmProps.confirmButton = textsCap.step4Confirm5
+                        // closeModal(modalId)
+                        setTimeout(() => confirm(confirmProps, modalId))
+                    }
                 }
             }
-            modalId = confirm(confirmProps)
+            
+            confirm(confirmProps, modalId)
         },
         () => {
             let modalId
