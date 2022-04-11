@@ -20,7 +20,7 @@ const [texts, textsCap] = translated({
     step2: 'follow co-founder',
     step2Desc: 'follow Toufiqur R Chowdhury on Twitter',
     step3: 'vote for Polkadot Decoded talk',
-    step3Desc: 'vote for Totem\'s Polkadot Decoded tech talk by the founder',
+    step3Desc: 'vote for Totem\'s Polkadot Decoded tech talk (under workshop category) by the founder',
     step4: 'post a Tweet',
     step4Desc: 'speard the word',
     step5: 'claim reward',
