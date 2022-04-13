@@ -48,7 +48,7 @@ export default function Decoded2206Wizard(props) {
     }
     const urlVote = 'https://decoded.polkadot.network/vote/?search=Chris%20DCosta'
     const tweetText = encodeURIComponent(
-        'Only days left to vote for talks and topics submitted for #PolkadotDecoded 2022 and help decide the final program of the biggest Polkadot event of the year.'
+        'Less than 48 hours left to vote for talks and topics submitted for #PolkadotDecoded 2022 and help decide the final program of the biggest Polkadot event of the year.'
         + '\n\nSupport your favorite speakers by voting now: \n'
         + urlVote
         + '\n\n $totem #polkadot #dotsama @totem_live_'
