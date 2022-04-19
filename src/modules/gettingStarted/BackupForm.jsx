@@ -198,11 +198,11 @@ export default function BackupForm(props) {
                         content: (
                             <div>
                                 {textsCap.manualBkp0}
-                            <ol>
-                                <li>{textsCap.manualBkp1}</li>
-                                <li>{textsCap.manualBkp2}</li>
-                                <li>{textsCap.manualBkp3} <br/><b>{filename}</b></li>
-                            </ol>
+                                <ol>
+                                    <li>{textsCap.manualBkp1}</li>
+                                    <li>{textsCap.manualBkp2}</li>
+                                    <li>{textsCap.manualBkp3} <br /><b>{filename}</b></li>
+                                </ol>
                             </div>
                         ),
                         header: textsCap.manualBkpHeader,
