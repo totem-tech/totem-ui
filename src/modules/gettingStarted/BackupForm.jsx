@@ -56,6 +56,7 @@ const inputNames = {
     notes: 'notes',
 	redirectTo: 'redirectTo',
 }
+console.log({textsCap})
 export default function BackupForm(props) {
     const [state] = iUseReducer(null, rxState => {
         const { onSubmit } = props
@@ -196,15 +197,16 @@ export default function BackupForm(props) {
                         confirmButton: textsCap.done,
                         content: (
                             <div>
-                                {textsCap.manualBkp1}
+                                {textsCap.manualBkp0}
                             <ol>
-                                <li></li>
-                                <li></li>
-                                <li> <br/><b>{filename}</b></li>
+                                <li>{textsCap.manualBkp1}</li>
+                                <li>{textsCap.manualBkp2}</li>
+                                <li>{textsCap.manualBkp3} <br/><b>{filename}</b></li>
                             </ol>
                             </div>
                         ),
                         header: textsCap.manualBkpHeader,
+                        size: 'tiny',
                     })
                 },
                 type: 'button',
@@ -275,166 +277,3 @@ BackupForm.defaultProps = {
 BackupForm.propTypes = {
     values: PropTypes.object
 }
-
-// const getInitialState = (rxState, props = {}) => {
-//     const { onSubmit } = props
-//     const filename = backup.generateFilename()
-//     const isMobile = rxLayout.value === MOBILE
-//     const checkConfirmed = values => (values[inputNames.confirmed] || '')
-//         .toLowerCase() === 'yes'
-
-//     const handleConfirmChange = deferred((_, values) => {
-//         const isConfirmed = checkConfirmed(values)
-//         const downloadData = isConfirmed && backup.download(filename)
-//         const ddIn = findInput(inputs, inputNames.downloadData)
-//         // store downloaded data for confirmation
-//         ddIn && ddIn.rxValue.next(downloadData)
-
-//         // update form header
-//         const header = isConfirmed
-//             ? textsCap.headerConfirmed
-//             : textsCap.header
-//         rxState.next({ header })
-//     }, 50)
-
-//     // on file select, check if the uploaded file matches the downloaded file
-//     const handleFileSelected = (e, _, values) => new Promise(resolve => {
-//         try {
-//             const file = e.target.files[0]
-//             const name = e.target.value
-//             var reader = new FileReader()
-//             if (name && !name.endsWith('.json')) throw textsCap.invalidFileType
-
-//             reader.onload = file => {
-//                 const {
-//                     data,
-//                     hash,
-//                     timestamp,
-//                 } = values[inputNames.downloadData] || {}
-//                 const hashUpload = generateHash(file.target.result)
-//                 const match = hash === hashUpload
-
-//                 setTimeout(() => resolve(!match && textsCap.backupFileInvalid))
-
-//                 if (!match) {
-//                     file.target.value = null // reset file
-//                     return
-//                 }
-
-//                 // update timestamp of identities and partners
-//                 backup.updateFileBackupTS(data, timestamp)
-
-//                 rxState.next({
-//                     message: {
-//                         content: textsCap.backupSuccessContent,
-//                         header: textsCap.backupSuccessHeader,
-//                         status: 'success'
-//                     },
-//                     success: true,
-//                 })
-//                 isFn(onSubmit) && onSubmit(true, values)
-//             }
-//             reader.readAsText(file)
-//         } catch (err) {
-//             resolve(err)
-//         }
-//     })
-
-//     const inputs = [
-//         {
-//             name: inputNames.confirmed,
-//             onChange: handleConfirmChange,
-//             rxValue: new BehaviorSubject('no'),
-//             type: 'hidden',
-//         },
-//         {
-//             hidden: true,
-//             name: inputNames.downloadData,
-//             rxValue: new BehaviorSubject(),
-//             type: 'hidden',
-//         },
-//         {
-//             hidden: checkConfirmed,
-//             name: inputNames.notes,
-//             type: 'html',
-//             content: (
-//                 <div>
-//                     {texts.confirmBackupContent}
-//                     <ul>
-//                         {texts.confirmBackupTypes
-//                             .split(',')
-//                             .map((str, i) => <li key={i}>{str}</li>)
-//                         }
-//                     </ul>
-//                 </div>
-//             )
-//         },
-//         {
-//             accept: '.json',
-//             disabled: () => rxState.value.success,
-//             hidden: values => !checkConfirmed(values),
-//             label: textsCap.backupFileLabel,
-//             labelDetails: (
-//                 <div>
-//                     <p>
-//                         {textsCap.backupFileLabelDetails}
-//                         <b style={{ color: 'red' }}>
-//                             {' ' + textsCap.backupFileLabelDetailsLocation}
-//                         </b>
-//                     </p>
-
-//                     <p>
-//                         {textsCap.fileName}:
-//                         <br />
-//                         <b style={{ color: 'green' }}>{filename}</b>
-//                     </p>
-
-//                     {!isMobile && <p>{textsCap.backupFileLabelDetailsDesktop}</p>}
-//                 </div>
-//             ),
-//             name: inputNames.file,
-//             type: 'file',
-//             validate: handleFileSelected,
-//         }
-//     ]
-
-//     return {
-//         ...props,
-//         inputs: fillValues(
-//             inputs,
-//             props.values || [],
-//         ),
-//         onSubmit: null, // trigger onSubmit locally
-//         values: { ...props.values },
-
-
-//         closeText: (values, props) => ({
-//             content: !checkConfirmed(values)
-//                 ? textsCap.backupLater
-//                 : textsCap.close,
-//             negative: false,
-//         }),
-//         submitText: (values, props = {}) => !checkConfirmed(values)
-//             ? {
-//                 content: textsCap.backupNow,
-//                 primary: true,
-//                 onClick: () => {
-//                     findInput(inputs, inputNames.confirmed)
-//                         .rxValue
-//                         .next('yes')
-//                 },
-//             }
-//             : {
-//                 content: textsCap.downloadAgain,
-//                 disabled: props.success, // forces button to be not disabled even when inputs are invalid
-//                 icon: 'download',
-//                 // primary: true,
-//                 positive: false,
-//                 onClick: () => {
-//                     findInput(inputs, inputNames.confirmed)
-//                         .rxValue
-//                         .next('no')
-//                 },
-//             }
-//     }
-// }
