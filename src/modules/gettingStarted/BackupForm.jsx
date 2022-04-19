@@ -56,7 +56,7 @@ const inputNames = {
     notes: 'notes',
 	redirectTo: 'redirectTo',
 }
-console.log({textsCap})
+
 export default function BackupForm(props) {
     const [state] = iUseReducer(null, rxState => {
         const { onSubmit } = props
