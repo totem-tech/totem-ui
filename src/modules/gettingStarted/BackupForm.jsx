@@ -6,7 +6,8 @@ import { MOBILE, rxLayout } from '../../services/window'
 import { translated } from '../../utils/languageHelper'
 import storage, { backup } from '../../utils/storageHelper'
 import { iUseReducer } from '../../utils/reactHelper'
-import { deferred, generateHash, isFn } from '../../utils/utils'
+import { copyToClipboard, deferred, generateHash, isFn } from '../../utils/utils'
+import { confirm } from '../../services/modal'
 
 const [texts, textsCap] = translated({
     backupLater: 'backup later',
@@ -35,11 +36,18 @@ const [texts, textsCap] = translated({
 		You are about to download your Totem application data as a JSON file. 
 		The following information will be included: 
 	`,
+    done: 'done',
     downloadAgain: 'download again',
+    downloadFailed: 'download not working?',
     fileName: 'file name',
     invalidFileType: 'selected file name must end with .json extension.',
     header: 'backup your account',
-    headerConfirmed: 'confirm backup'
+    headerConfirmed: 'confirm backup',
+    manualBkp0: 'Backup file contents have been copied to clipboard. Follow the instructions below:',
+    manualBkp1: 'Open a text editor and create a new file',
+    manualBkp2: 'Paste the backup file contents (press CTRL+V or CMD+V on an Apple computer)',
+    manualBkp3: 'Save the copied text with the following filename:',
+    manualBkpHeader: 'Save file manually',
 }, true)
 const inputNames = {
     confirmed: 'confirmed',
@@ -175,7 +183,32 @@ export default function BackupForm(props) {
                 name: inputNames.file,
                 type: 'file',
                 validate: handleFileSelected,
-            }
+            },
+            {
+                content: textsCap.downloadFailed,
+                hidden: values => !checkConfirmed(values),
+                name: 'download-text',
+                negative: true,
+                onClick: () => {
+                    const downloadData = JSON.stringify(findInput(inputs, inputNames.downloadData).value)
+                    copyToClipboard(downloadData)
+                    confirm({
+                        confirmButton: textsCap.done,
+                        content: (
+                            <div>
+                                {textsCap.manualBkp1}
+                            <ol>
+                                <li></li>
+                                <li></li>
+                                <li> <br/><b>{filename}</b></li>
+                            </ol>
+                            </div>
+                        ),
+                        header: textsCap.manualBkpHeader,
+                    })
+                },
+                type: 'button',
+            },
         ]
 
         return {
