@@ -203,7 +203,7 @@ export default function TwitterRewardWizard(props) {
         {
             completed,
             disabled: true,
-            description: textsCap.step3Desc,
+            description: <b style={{ color: 'red' }}>{textsCap.step3Desc}</b>,
             title: textsCap.step3,
         },
     ]

@@ -566,9 +566,9 @@ body.inverted .ordered.steps .step.active:before,
 body.inverted .ordered.steps .step.active .description {
 	color: white;
 }
-body.inverted .steps .step:not(.active), 
-body.inverted .steps .step:not(.active) *{
-    color: grey !important;
+body.inverted .steps .step:not(.active) .description,
+body.inverted .steps .step:not(.active) .title{
+    color: grey;
 }
 
 /* Newsletter signup iframe */

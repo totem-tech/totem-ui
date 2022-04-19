@@ -24,7 +24,7 @@ const [texts, textsCap] = translated({
     step4: 'post a Tweet',
     step4Desc: 'speard the word',
     step5: 'claim reward',
-    step5Desc: 'to qualify for this reward you must complete all of the steps above',
+    step5Desc: 'this reward is no longer available',
     step5Confirm1: 'you will be taken to',
     step5Confirm2: 'wait for the page to load completely',
     step5Confirm3: 'select the talk titled',
@@ -173,14 +173,14 @@ export default function Decoded2206Wizard(props) {
         },
         {
             completed,
-            disabled: completed,
+            disabled: true,
             description: textsCap.step4Desc,
             title: textsCap.step4,
         },
         {
             completed,
-            disabled: completed,
-            description: textsCap.step5Desc,
+            disabled: true,
+            description: <b style={{ color: 'red' }}>{textsCap.step5Desc}</b>,
             title: textsCap.step5,
         },
     ]
