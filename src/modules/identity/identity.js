@@ -111,7 +111,8 @@ export const setSelected = address => {
 }
 
 const init = () => {
-	if (!getAll().length) {
+	const all = getAll()
+	if (!all.length) {
 		// generate a new seed
 		const uri = generateUri() + '/totem/0/0'
 		const { address } = addFromUri(uri) || {}
@@ -126,6 +127,9 @@ const init = () => {
 			uri,
 		}
 		set(address, identity)
+	} else {
+		// remove extension identities
+		all.forEach(({ address, uri }) => !uri && identities.delete(address))
 	}
 
 	rxSelected.next(getSelected().address)
