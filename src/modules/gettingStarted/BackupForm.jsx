@@ -18,7 +18,7 @@ const [texts, textsCap] = translated({
 		If you did not save the backup file, please click on the close icon and initiate the backup process again.
 	`,
     backupFileinvalidType: 'please select the .json file you have just downloaded',
-    backupFileLabel: 'select backup file',
+    backupFileLabel: 'upload the file you just download',
     backupFileLabelDetails: 'Please select the file you have just downloaded. This is to make sure your backup was successfully downloaded.',
     backupFileLabelDetailsLocation: 'Check for the following file in your default downloads folder (if you have NOT manually selected the download location).',
     backupFileLabelDetailsDesktop: 'You can drag-and-drop the backup file on the file chooser below.',
