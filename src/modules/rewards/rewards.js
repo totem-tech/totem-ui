@@ -20,6 +20,15 @@ export const rewardTypes = {
     signupTelegram: 'signup-telegram',
     signupTwitter: 'signup-twitter-reward',
 }
+
+export const generateCrowdloanTweet = () => {
+    const { id } = getUser() || {}
+
+    return '@Totem_Live_, the world\'s first true peer-to-peer accounting protocol, has started it\'s #Polkadot #parachain #crowdloan.'
+        + '\n\nContribute to the crowdloan to receive 5% $KAPEX bonus (T&C applies): '
+        + `\n\nhttps://totem.live?ref=${id}`
+}
+
 export const generateSignupTweet = (twitterHandle = '') => {
     twitterHandle = twitterHandle
         .split('@')

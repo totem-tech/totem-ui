@@ -50,58 +50,58 @@ export default function DiscordRewardWizard(props) {
             }
         }),
         () => {
-            const formProps = {
-                header: textsCap.step2,
-                subheader: textsCap.step2Desc,
-                submitText: textsCap.tweetSubmitText,
-                inputs: [
-                    {
-                        icon: 'at',
-                        iconPosition: 'left',
-                        minLength: 3,
-                        maxLength: 15,
-                        name: 'twHandle',
-                        label: textsCap.twHandleLabel,
-                        labelDetails: textsCap.twHandleLabelDetails,
-                        placeholder: textsCap.twHandlePlaceholder,
-                        required: true,
-                        rxValue: rxTwitterHandle,
-                        type: 'text',
-                        validate: (_, { value }) => value && value.includes('@')
-                    }
-                ],
-                onSubmit: (_, { twHandle }) => {
-                    confirm({
-                        content: (
-                            <div>
-                                {textsCap.step2Confirm}
-                                <ul>
-                                    <li>
-                                        {textsCap.step2ConfirmP1}
-                                        <b style={{ color: 'red' }}> {textsCap.step2ConfirmWarn}</b>
-                                    </li>
-                                    <li>{textsCap.step2ConfirmP2}</li>
-                                    <li>{textsCap.step2ConfirmP3}</li>
-                                </ul>
-                            </div>
-                        ),
-                        size: 'tiny',
-                        onConfirm: () => {
-                            closeModal(modalId)
-                            const tweetText = encodeURIComponent(
-                                generateSignupTweet(twHandle)
-                            )
-                            const url = `https://twitter.com/intent/tweet?button_hashtag=share&text=${tweetText}`
-                            window.open(url, '_blank')
-                            rxTwitterHandle.next(twHandle)
-                            setActiveStep(2)
-                            onClickHandlers[2]()
+            // const formProps = {
+            //     header: textsCap.step2,
+            //     subheader: textsCap.step2Desc,
+            //     submitText: textsCap.tweetSubmitText,
+            //     inputs: [
+            //         {
+            //             icon: 'at',
+            //             iconPosition: 'left',
+            //             minLength: 3,
+            //             maxLength: 15,
+            //             name: 'twHandle',
+            //             label: textsCap.twHandleLabel,
+            //             labelDetails: textsCap.twHandleLabelDetails,
+            //             placeholder: textsCap.twHandlePlaceholder,
+            //             required: true,
+            //             rxValue: rxTwitterHandle,
+            //             type: 'text',
+            //             validate: (_, { value }) => value && value.includes('@')
+            //         }
+            //     ],
+            //     onSubmit: (_, { twHandle }) => {
+            //         confirm({
+            //             content: (
+            //                 <div>
+            //                     {textsCap.step2Confirm}
+            //                     <ul>
+            //                         <li>
+            //                             {textsCap.step2ConfirmP1}
+            //                             <b style={{ color: 'red' }}> {textsCap.step2ConfirmWarn}</b>
+            //                         </li>
+            //                         <li>{textsCap.step2ConfirmP2}</li>
+            //                         <li>{textsCap.step2ConfirmP3}</li>
+            //                     </ul>
+            //                 </div>
+            //             ),
+            //             size: 'tiny',
+            //             onConfirm: () => {
+            //                 closeModal(modalId)
+            //                 const tweetText = encodeURIComponent(
+            //                     generateSignupTweet(twHandle)
+            //                 )
+            //                 const url = `https://twitter.com/intent/tweet?button_hashtag=share&text=${tweetText}`
+            //                 window.open(url, '_blank')
+            //                 rxTwitterHandle.next(twHandle)
+            //                 setActiveStep(2)
+            //                 onClickHandlers[2]()
 
-                        }
-                    })
-                }
-            }
-            const modalId = showForm(FormBuilder, formProps)
+            //             }
+            //         })
+            //     }
+            // }
+            // const modalId = showForm(FormBuilder, formProps)
         },
         () => {
             const rxValue = new BehaviorSubject('')

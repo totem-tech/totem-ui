@@ -8,8 +8,8 @@ import FormBuilder from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { closeModal, confirm, showForm } from '../../services/modal'
 import client from '../chat/ChatClient'
-import { generateSignupTweet, getRewards } from './rewards'
-import { isFn } from '../../utils/utils'
+import { getRewards } from './rewards'
+import { isFn, isValidNumber } from '../../utils/utils'
 
 const [texts, textsCap] = translated({
     button: 'button',
@@ -41,7 +41,7 @@ export default function Decoded2206Wizard(props) {
     const { completed } = props
     const [activeStep, setActiveStep] = useState(0)
     const setStepCb = (stepIndex, url) => () => {
-        setActiveStep(stepIndex)
+        isValidNumber(stepIndex) && setActiveStep(stepIndex)
         const handler = onClickHandlers[stepIndex]
         isFn(handler) && handler()
         url && window.open(url, '_blank')
@@ -51,7 +51,7 @@ export default function Decoded2206Wizard(props) {
         'Less than 48 hours left to vote for talks and topics submitted for #PolkadotDecoded 2022 and help decide the final program of the biggest Polkadot event of the year.'
         + '\n\nSupport your favorite speakers by voting now: \n'
         + urlVote
-        + '\n\n $totem #polkadot #dotsama @totem_live_'
+        + '\n\n$totem #polkadot #dotsama @totem_live_'
     )
     const tweetUrl = `https://twitter.com/intent/tweet?button_hashtag=share&text=${tweetText}`
     const onClickHandlers = [
@@ -65,43 +65,43 @@ export default function Decoded2206Wizard(props) {
             header: textsCap.step2,
             content: textsCap.step1Confirm,
             size: 'mini',
-            onConfirm: setStepCb(2, 'https://twitter.com/intent/follow?screen_name=toufiq_dev')
+            onConfirm: setStepCb(null, 'https://twitter.com/intent/follow?screen_name=toufiq_dev')
         }),
         () => {
-            let modalId = 'confirm-vote'
-            let linkOpened = false
-            const confirmProps = {
-                confirmButton: textsCap.step5Confirm4,
-                content: (
-                    <div>
-                        {textsCap.step5Confirm1} decoded.polkadot.network
+            // let modalId = 'confirm-vote'
+            // let linkOpened = false
+            // const confirmProps = {
+            //     confirmButton: textsCap.step5Confirm4,
+            //     content: (
+            //         <div>
+            //             {textsCap.step5Confirm1} decoded.polkadot.network
 
-                        <ol>
-                            <li>{textsCap.step5Confirm2}</li>
-                            <li>{textsCap.step5Confirm3} <b>"Get Your Parachain Production Ready"</b></li>
-                            <li>{textsCap.press} <b>"Finalize vote"</b> {texts.button}</li>
-                            <li>{textsCap.press} <b>"Vote now"</b> {texts.button}</li>
-                            <li>{textsCap.press} <b>"Submit"</b> {texts.button}</li>
-                        </ol>
-                    </div>
-                ),
-                header: textsCap.step3,
-                size: 'mini',
-                onConfirm: () => {
-                    setStepCb(
-                        !linkOpened ? 2 : 3,
-                        !linkOpened && urlVote
-                    )()
-                    if (!linkOpened) {
-                        linkOpened = true
-                        confirmProps.confirmButton = textsCap.step5Confirm5
-                        // reopen modal with updated props
-                        setTimeout(() => confirm(confirmProps, modalId))
-                    }
-                }
-            }
+            //             <ol>
+            //                 <li>{textsCap.step5Confirm2}</li>
+            //                 <li>{textsCap.step5Confirm3} <b>"Get Your Parachain Production Ready"</b></li>
+            //                 <li>{textsCap.press} <b>"Finalize vote"</b> {texts.button}</li>
+            //                 <li>{textsCap.press} <b>"Vote now"</b> {texts.button}</li>
+            //                 <li>{textsCap.press} <b>"Submit"</b> {texts.button}</li>
+            //             </ol>
+            //         </div>
+            //     ),
+            //     header: textsCap.step3,
+            //     size: 'mini',
+            //     onConfirm: () => {
+            //         setStepCb(
+            //             !linkOpened ? 2 : 3,
+            //             !linkOpened && urlVote
+            //         )()
+            //         if (!linkOpened) {
+            //             linkOpened = true
+            //             confirmProps.confirmButton = textsCap.step5Confirm5
+            //             // reopen modal with updated props
+            //             setTimeout(() => confirm(confirmProps, modalId))
+            //         }
+            //     }
+            // }
             
-            confirm(confirmProps, modalId)
+            // confirm(confirmProps, modalId)
         },
         setStepCb(4, tweetUrl),
         () => {
@@ -167,7 +167,7 @@ export default function Decoded2206Wizard(props) {
         },
         {
             completed,
-            disabled: completed,
+            disabled: true,
             description: `${textsCap.step3Desc} Chris D'Costa`,
             title: textsCap.step3,
         },

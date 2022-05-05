@@ -1,25 +1,26 @@
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
-import { Accordion, Card, Icon } from 'semantic-ui-react'
+import { Accordion, Button, Card, Icon } from 'semantic-ui-react'
 import { format } from '../../utils/time'
 import { className, isArr, isDefined } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
 import LabelCopy from '../../components/LabelCopy'
 import Text from '../../components/Text'
 import { translated } from '../../services/language'
-import { MOBILE, rxLayout, useInverted } from '../../services/window'
+import { useInverted } from '../../services/window'
 import { getUser } from '../chat/ChatClient'
 import Currency from '../currency/Currency'
 import { currencyDefault } from '../currency/currency'
-import { useRxSubject } from '../../services/react'
-import { useRewards } from './rewards'
+import { generateCrowdloanTweet } from './rewards'
 
 const initialRewardAmount = 108154 // only used where amount has not been saved (initial drop)
 const textsCap = translated({
     copyLink: 'copy your referral link',
     friendsReferred: 'friends referred',
     paid: 'paid',
+    tweetWithReferral: 'post a Tweet with your referral link',
     referralDesc1: 'Totem works best when you have partners. Referring will get both you and your friends free $TOTEM.',
+    referralDesc1: 'Totem works best when you have partners. Referring will get both you and your friends free $KAPEX when they contribute to Totem\'s crowdloan.',
     referralDesc2: 'Invite your friends to join Totem using the following link:',
     referralHeader: 'referral rewards',
     totalEarned: 'total earned',
@@ -93,6 +94,24 @@ export default function ReferralCard({ referralRewards = [] }) {
                     content: textsCap.copyLink,
                     maxLength: null,
                     value: referralUrl,
+                }} />
+            </p>
+
+            <p>
+                <Button {...{
+                    content: textsCap.tweetWithReferral,
+                    onClick: () => {
+                        const tweetText = encodeURIComponent(
+                            generateCrowdloanTweet()                        
+                        )
+                        const url = `https://twitter.com/intent/tweet?button_hashtag=share&text=${tweetText}`
+                        window.open(url, '_blank')
+                     },
+                    size: 'mini',
+                    style: {
+                        background: 'deeppink',
+                        color: 'white',
+                    },
                 }} />
             </p>
 

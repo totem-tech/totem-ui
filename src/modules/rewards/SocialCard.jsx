@@ -44,11 +44,6 @@ export default function SocialCard({ socialRewards = {} }) {
         .every(({ amount }) => !!amount)
     const steps = [
         {
-            completed: decoded2206.amount > 0,
-            content: <Decoded2206Wizard completed={decoded2206.amount > 0} />,
-            title: 'Polkadot Decoded 2022',
-        },
-        {
             completed: twitter.amount > 0,
             content: <TwitterRewardWizard completed={twitter.amount > 0} />,
             title: textsCap.step1Title,
@@ -77,6 +72,12 @@ export default function SocialCard({ socialRewards = {} }) {
         {
             completed: telegram.amount > 0,
             title: textsCap.step3Title,
+        },
+        {
+            completed: decoded2206.amount > 0,
+            content: <Decoded2206Wizard completed={decoded2206.amount > 0} />,
+            disabled: true,
+            title: 'Polkadot Decoded 2022',
         },
     ]
     if (!isDefined(activeStep)) {
