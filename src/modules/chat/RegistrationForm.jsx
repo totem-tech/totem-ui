@@ -9,6 +9,7 @@ import { useRxSubject } from '../../services/react'
 import { registerStepIndex, setActiveStep } from '../gettingStarted'
 import client, { referralCode, rxIsRegistered } from './ChatClient'
 import { rxSelected } from '../identity/identity'
+import { setActive } from '../../services/sidebar'
 
 const textsCap = translated({
     alreadyRegistered: 'you have already registered!',
@@ -78,7 +79,7 @@ RegistrationForm.defaultProps = {
     closeOnSubmit: true,
     header: textsCap.formHeader,
     headerIcon: 'sign-in',
-    silent: true,
+    silent: false,
     size: 'tiny',
     subheader: textsCap.formSubheader,
     submitText: textsCap.createAccount
@@ -156,7 +157,7 @@ const getInputs = (props, isRegistered) => {
     ], values)
 }
 
-const handleSubmit = (props, setState) => (_, values) => {
+const handleSubmit = (props, setState) => async (_, values) => {
     const { onSubmit, silent } = props
     const userId = values[inputNames.userId]
     const referredBy = values[inputNames.referredBy]
@@ -165,40 +166,39 @@ const handleSubmit = (props, setState) => (_, values) => {
     const address = rxSelected.value
 
     setState({ submitInProgress: true })
-    client.register(userId, secret, address, referredBy, err => {
-        const success = !err
-        const message = {
-            content: err,
-            header: success
-                ? textsCap.registrationComplete
-                : textsCap.registrationFailed,
-            icon: true,
-            status: success
-                ? 'success'
-                : 'error'
-        }
-        const state = {
-            message,
-            submitInProgress: false,
-            success,
-        }
-        setState(state)
-        isFn(onSubmit) && onSubmit(success, values)
-        if (!success) return
-        
-        // set getting started active step
-        setActiveStep(
-            registerStepIndex + 1,
-            redirectTo
-                ? false
-                : silent,
-            redirectTo,
-        )
-        
-        // delete referral information from device
-        referralCode(null)
-        
-        // redirect URL
-        // redirectTo && setTimeout(() => window.location.href = redirectTo, 100)
-    })
+    const err = await client.register.promise(userId, secret, address, referredBy)
+    const success = !err
+    const message = {
+        content: err,
+        header: success
+            ? textsCap.registrationComplete
+            : textsCap.registrationFailed,
+        icon: true,
+        status: success
+            ? 'success'
+            : 'error'
+    }
+    const state = {
+        message,
+        submitInProgress: false,
+        success,
+    }
+    setState(state)
+    isFn(onSubmit) && onSubmit(success, values)
+    if (!success) return console.log('not success')
+    
+    // set getting started active step
+    setActiveStep(
+        registerStepIndex + 1,
+        redirectTo
+            ? false
+            : silent,
+        redirectTo,
+    )
+
+    // open rewards module
+    setActive('rewards')
+    
+    // delete referral information from device
+    referralCode(null)
 }
