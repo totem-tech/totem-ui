@@ -1,17 +1,23 @@
 import React from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { getUrlParam as _getUrlParam, isDefined, isFn } from '../utils/utils'
+import { getUrlParam as _getUrlParam, isBool, isDefined, isFn } from '../utils/utils'
 import storage from './storage'
 import { useRxSubject } from './react'
 
 const MODULE_KEY = 'window'
 let _forcedLayout = ''
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
+export const checkDarkPreferred = () => window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
 export const MOBILE = 'mobile'
 export const DESKTOP = 'desktop'
 export const rxGridColumns = new BehaviorSubject(gridColumns())
 export const rxOnline = new BehaviorSubject()
-export const rxInverted = new BehaviorSubject(rw().inverted)
+export const rxInverted = new BehaviorSubject(
+    [undefined, true].includes(rw().invertedBrowser)
+        || !isBool(rw().inverted)
+        ? !!checkDarkPreferred()
+        : rw().inverted
+)
 export const rxLayout = new BehaviorSubject(getLayout())
 export const rxVisible = new BehaviorSubject(true)
 export const gridClasses = [
@@ -61,6 +67,25 @@ export const setClass = (selector, obj, retry = true) => {
         const func = obj[className] ? 'add' : 'remove'
         el.classList[func](className)
     })
+}
+
+/**
+ * @summary user browser dark more settings
+ * 
+ * @param {Boolean} useBrowser 
+ */
+export const setInvertedBrowser = (useBrowser) => {
+    if (!isBool(useBrowser)) return rw().invertedBrowser
+
+    const inverted = useBrowser
+        ? checkDarkPreferred()
+        : rxInverted.value
+    rxInverted.next(inverted)
+    console.log({ inverted, useBrowser })
+    setTimeout(() => rw({
+        invertedBrowser: !!useBrowser,
+    }))
+    return false
 }
 
 /**
@@ -140,7 +165,10 @@ window.addEventListener('online', () => rxOnline.next(true))
 window.addEventListener('offline', () => rxOnline.next(false))
 let ignoredFirstInverted = false
 rxInverted.subscribe(inverted => {
-    ignoredFirstInverted && rw({ inverted })
+    ignoredFirstInverted && rw({
+        inverted,
+        invertedBrowser: false,
+    })
     ignoredFirstInverted = true
     setClass('body', { inverted })
 })
@@ -161,6 +189,7 @@ rxGridColumns.subscribe(numCol => {
     next && el.classList.add('simple-grid', next)
 })
 export default {
+    checkDarkPreferred,
     MOBILE,
     DESKTOP,
     forceLayout,

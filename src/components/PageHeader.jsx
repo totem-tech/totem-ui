@@ -29,19 +29,23 @@ import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { unsubscribe, useRxSubject } from '../services/react'
 import { toggleSidebarState } from '../services/sidebar'
 import { setToast } from '../services/toast'
-import { useInverted, rxInverted, rxLayout, MOBILE } from '../services/window'
+import { useInverted, rxInverted, rxLayout, MOBILE, setInvertedBrowser } from '../services/window'
 
-const textsCap = translated({
+const [texts, textsCap] = translated({
 	addressCopied: 'your identity copied to clipboard',
 	changeCurrency: 'change display currency',
 	copyAddress: 'copy my identity',
+	darkMode: 'dark mode',
+	on: 'on',
+	off: 'off',
+	auto: 'auto',
 	darkModeOn: 'dark mode: off',
 	darkModeOff: 'dark mode: on',
 	faucetRequest: 'faucet request',
 	faucetRequestDetails: 'requested transaction allocations',
 	requestFunds: 'request funds',
 	updateIdentity: 'update identity',
-}, true)[1]
+}, true)
 let copiedMsgId
 export const rxIdentityListVisible = new BehaviorSubject(false)
 
@@ -90,6 +94,7 @@ const PageHeaderView = props => {
 	const [open] = useRxSubject(rxIdentityListVisible)
 	const [showTools, setShowTools] = useState(false)
 	const inverted = useInverted()
+	const [invBrowser, setInvBrowser] = useState(() => setInvertedBrowser())
 	const {
 		userId,
 		isLoggedIn,
@@ -191,8 +196,31 @@ const PageHeaderView = props => {
 							},
 							{
 								icon: !inverted ? 'moon outline' : 'moon',
-								content: inverted ? textsCap.darkModeOff : textsCap.darkModeOn,
-								onClick: () => rxInverted.next(!inverted)
+								content: (
+									<div style={{display: 'inline-block'}}>
+										{textsCap.darkMode}: {inverted ? texts.off : texts.on}
+										&nbsp;
+										({invBrowser
+											? texts.auto
+											: (
+												<a {...{
+													onClick: e => {
+														e.preventDefault()
+														e.stopPropagation()
+														setInvBrowser(true)
+														setInvertedBrowser(true)
+													},
+													style: { cursor: 'pointer' },
+												}}>
+													{texts.auto}
+												</a>
+											)})
+									</div>
+								),
+								onClick: () => {
+									rxInverted.next(!inverted) 
+									setInvBrowser(false)
+								}
 							},
 							userId && {
 								icon: 'gem',
@@ -219,9 +247,11 @@ const PageHeaderView = props => {
 									size: 'mini',
 								}),
 							},
-						].filter(Boolean).map((props, i) =>
-							<Dropdown.Item {...props} key={props.icon + i} />
-						)}
+						]
+							.filter(Boolean)
+							.map((props, i) =>
+								<Dropdown.Item {...props} key={props.icon + i} />
+							)}
 					</Dropdown.Menu>
 				</Dropdown>
 			</Menu.Menu>
