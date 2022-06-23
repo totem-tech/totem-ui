@@ -100,6 +100,7 @@ export default [
     "./src/modules/partner/CompanyForm.jsx",
     "./src/modules/partner/PartnerForm.jsx",
     "./src/modules/partner/PartnerList.jsx",
+    "./src/modules/partner/PartnerNameOrAddButton.jsx",
     "./src/modules/partner/notificationHandlers.jsx",
     "./src/modules/partner/partner.js",
     "./src/modules/rewards/Decoded2206Wizard.jsx",

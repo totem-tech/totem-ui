@@ -30,9 +30,7 @@ const texts = translated({
 	`,
 	// keep the commas. they will be used to generate an unordered list
 	confirmBackupTypes: 'history, identities, locations, notifications, partners, recent chat messages, settings, user credentials',
-	registrationSuccess: `
-		Registration successful! You will shortly receive an allocation of transactions to get you started.
-	`,
+	registrationSuccess: 'Registration successful!',
 	quickGuidePara1: `
 		Totem is currently under heavy development, but you can already use the Identities, Partners, Activities 
 		and Timekeeping Modules as well as make basic transfers of your transaction allocations balance using the Transfer Module.`,

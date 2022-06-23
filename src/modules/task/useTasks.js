@@ -6,6 +6,7 @@ import { isFn, arrUnique, objCopy, isMap, isArr } from '../../utils/utils'
 import { translated } from '../../services/language'
 import { getAddressName } from '../partner/partner'
 import { approvalStatuses, approvalStatusNames, query, rwCache, statuses, statusNames } from './task'
+import PartnerNameOrAddButton from '../partner/PartnerNameOrAddButton'
 
 const textsCap = translated({
     errorHeader: 'failed to load tasks',
@@ -101,7 +102,6 @@ export default function useTasks(types, address, timeout = 5000) {
                         // ignore error. should only happen when amountXTX is messed up due to blockchain storage reset
                         console.log('amountXTX parse error', err)
                     }
-                    const _owner = getAddressName(owner, true)
                     const isOwner = address === owner
                     const isSubmitted = orderStatus === statuses.submitted
                     const isPendingApproval = approvalStatus == approvalStatuses.pendingApproval
@@ -113,10 +113,10 @@ export default function useTasks(types, address, timeout = 5000) {
                         allowEdit,
                         // pre-process values for use with DataTable
                         _approvalStatus: approvalStatusNames[approvalStatus],
-                        _fulfiller: fulfiller === owner ? _owner : getAddressName(fulfiller),
+                        _fulfiller: <PartnerNameOrAddButton {...{ address: fulfiller }} />,
                         _orderStatus: statusNames[orderStatus],
                         _taskId: taskId, // list search
-                        _owner,
+                        _owner: <PartnerNameOrAddButton {...{ address: owner }} />,
                     }
                     uniqueTasks.set(taskId, task)
                 })
@@ -213,18 +213,32 @@ const addDetails = (address, tasks, detailsMap, uniqueTaskIds, save = true) => {
     // no off-chain details to attach
     if (!detailsMap.size) return tasks
     const newTasks = new Map()
-    const cacheableAr = Array.from(tasks).map(([type, typeTasks = new Map()]) => {
-        uniqueTaskIds.forEach(id => {
-            let task = typeTasks.get(id)
-            if (!task) return
-            task = objCopy(detailsMap.get(id) || {}, task)
-            task._tsCreated = format(task.tsCreated, true)
-            typeTasks.set(id, task)
+    const cacheableAr = Array.from(tasks)
+        .map(([type, typeTasks = new Map()]) => {
+            uniqueTaskIds.forEach(id => {
+                let task = typeTasks.get(id)
+                if (!task) return
+
+                task._fulfiller = (
+                    <PartnerNameOrAddButton {...{
+                        address: task.fulfiller,
+                        userId: task.createdBy
+                    }} />
+                )
+                task._owner = (
+                    <PartnerNameOrAddButton {...{
+                        address: task.owner,
+                        userId: task.createdBy
+                    }} />
+                )
+                task = objCopy(detailsMap.get(id) || {}, task)
+                task._tsCreated = format(task.tsCreated, true)
+                typeTasks.set(id, task)
+            })
+            // tasks.set(type, typeTasks)
+            newTasks.set(type, typeTasks)
+            return [type, Array.from(typeTasks)]
         })
-        // tasks.set(type, typeTasks)
-        newTasks.set(type, typeTasks)
-        return [type, Array.from(typeTasks)]
-    })
     save && setCache(address, cacheableAr)
     return newTasks
 }

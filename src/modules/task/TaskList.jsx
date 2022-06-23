@@ -20,12 +20,15 @@ import { getSelected } from '../identity/identity'
 import { queueableApis, statuses } from './task'
 import { handleAssignmentResponse, handleInvoicedResponse, handleUpdateStatus } from './notificationHandlers'
 import TaskDetailsForm from './TaskDetailsForm'
+import { getAddressName } from '../partner/partner'
+import PartnerForm from '../partner/PartnerForm'
 
 const textsCap = translated({
     acceptInvoice: 'accept invoice',
     acceptInvoiceDesc: 'accept the invoice and pay the assignee?',
     acceptInvoiceTitle: 'task - accept invoice',
     action: 'action',
+    addPartner: 'add partner',
     approve: 'approve',
     approved: 'approved',
     approvedChangeNotAllowed: 'approved task cannot be changed',
@@ -221,6 +224,7 @@ const tableProps = Object.freeze({
         {
             key: '_owner',
             name: '_owner',
+            textAlign: 'center',
             title: textsCap.taskOwner,
         },
         {

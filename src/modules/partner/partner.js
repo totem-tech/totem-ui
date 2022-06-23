@@ -19,14 +19,14 @@ export const get = address => partners.get(address)
 
 // returns name of an address if available in identity or partner lists.
 // Otherwise, returns shortened address
-export const getAddressName = address => (identities.find(address) || {}).name
+export const getAddressName = (address, shortenAddress = true) => (identities.find(address) || {}).name
     // not found in wallet list
     // search in addressbook
     || (get(address) || {}).name
     // not available in addressbok or wallet list
     // display the address itself with ellipsis
     || textEllipsis(address, 15, 5)
-    
+
 export const getAll = () => partners.getAll()
 
 // returns an array of unique tags used in partner and identity modules
