@@ -2,15 +2,15 @@ import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
 import DataTable from '../../components/DataTable'
-import { blockNumberToTS } from '../../utils/time'
+import { rxBlockNumber } from '../../services/blockchain'
 import { translated } from '../../services/language'
 import { useRxSubject } from '../../services/react'
 import { MOBILE, rxLayout } from '../../services/window'
+import { blockNumberToTS } from '../../utils/time'
 import Currency from '../currency/Currency'
 import { currencyDefault } from '../currency/currency'
+import AddPartnerBtn from '../partner/AddPartnerBtn'
 import useLedgerAcPostings from './useLedgerAcPostings'
-import { rxBlockNumber } from '../../services/blockchain'
-import { getAddressName } from '../partner/partner'
 
 const textsCap = translated({
     actions: 'actions',
@@ -106,7 +106,7 @@ const postingModifier = (posting = {}) => {
     posting.credit = isCredit && amount || 0
     posting.debit = !isCredit && amount || 0
     posting.key = id
-    posting._partnerName = getAddressName(partnerAddress)
+    posting._partnerName = <AddPartnerBtn {...{ address: partnerAddress }} />
     posting._credit = !isCredit
         ? 0
         : (

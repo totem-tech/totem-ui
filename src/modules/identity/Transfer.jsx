@@ -28,6 +28,7 @@ import { get as getPartner, getAddressName, rxPartners } from '../partner/partne
 import PartnerForm from '../partner/PartnerForm'
 import Balance from './Balance'
 import { get as getIdentity, rxIdentities, rxSelected } from './identity'
+import AddPartnerBtn from '../partner/AddPartnerBtn'
 
 const textsCap = translated({
     amount: 'amount',
@@ -536,7 +537,7 @@ Transfer.defaultProps = {
 setItemViewHandler(
     TRANSFER_TYPE,
     null,
-    (id, notification = {}, { senderIdBtn }) => {
+    (id, notification = {}, { senderId, senderIdBtn }) => {
         const { data = {} } = notification
         const { addressFrom, addressTo, amount } = data
         const identity = getIdentity(addressTo)
@@ -552,7 +553,13 @@ setItemViewHandler(
                         prefix: <b>{textsCap.amount}: </b>,
                         value: amount,
                     }} />
-                    <div><b>{textsCap.payerIdentity}: </b>{getAddressName(addressFrom)}</div>
+                    <div>
+                        <b>{textsCap.payerIdentity}: </b>
+                        <AddPartnerBtn {...{
+                            address: addressFrom,
+                            userId: senderId,
+                        }} />
+                    </div>
                     <div><b>{textsCap.yourIdentity}: </b>{identity.name}</div>
                 </div>
             ),

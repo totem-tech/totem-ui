@@ -46,7 +46,7 @@ export default class IdentityRequestForm extends Component {
     constructor(props) {
         super(props)
 
-        const { values } = props
+        const { values = {} } = props
         values.userIds = (values.userIds || [])
         if (isStr(values.userIds)) values.userIds = values.userIds.split(',')
 
