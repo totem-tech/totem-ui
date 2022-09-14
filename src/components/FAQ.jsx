@@ -86,9 +86,13 @@ FAQ.propTypes = {
         answer: PropTypes.oneOfType([
             PropTypes.string,
             PropTypes.objectOf(PropTypes.string),
+            PropTypes.element,
         ]),
         // children: PropTypes.arrayOf(QuestionShapeType),
-        question: PropTypes.string,
+        question: PropTypes.oneOfType([
+            PropTypes.string,
+            PropTypes.element,
+        ]),
         render: PropTypes.func,
     })).isRequired,
     // @modalId: If FAQ is displayed in a modal,

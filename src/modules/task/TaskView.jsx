@@ -62,22 +62,24 @@ export default function TaskView({ address }) {
     }))
 
     const activeIndex = panes.findIndex(x => x.type === activeType)
-    return message ? <Message {...message} /> : (
-        <div>
-            <Tab {...{
-                activeIndex,
-                menu: { inverted, secondary: true, pointing: true },
-                panes,
-                key: activeIndex + activeType, // forces active pane to re-render on each change
-            }} />
-            <TaskList {...{
-                address,
-                asTabPane: true,
-                data: activeType !== 'marketplace' && allTasks && allTasks.get(activeType) || new Map(),
-                key: activeType,
-                style: { marginTop: 15 },
-                type: activeType,
-            }} />
-        </div>
-    )
+    return message
+        ? <Message {...message} />
+        : (
+            <div>
+                <Tab {...{
+                    activeIndex,
+                    menu: { inverted, secondary: true, pointing: true },
+                    panes,
+                    key: activeIndex + activeType, // forces active pane to re-render on each change
+                }} />
+                <TaskList {...{
+                    address,
+                    asTabPane: true,
+                    data: activeType !== 'marketplace' && allTasks && allTasks.get(activeType) || new Map(),
+                    key: activeType,
+                    style: { marginTop: 15 },
+                    type: activeType,
+                }} />
+            </div>
+        )
 }

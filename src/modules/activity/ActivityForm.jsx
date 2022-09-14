@@ -7,6 +7,9 @@ import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import { getAll as getIdentities, getSelected } from '../identity/identity'
 import Balance from '../identity/Balance'
 import { getProjects, queueables } from './activity'
+import ActivityTeamList from './ActivityTeamList'
+import { Button } from 'semantic-ui-react'
+import { closeModal, confirm } from '../../services/modal'
 
 const textsCap = translated({
     cancel: 'cancel',
@@ -16,6 +19,7 @@ const textsCap = translated({
     name: 'name',
     update: 'update',
 
+    addTeamMembers: 'add/view team members',
     descLabel: 'activity Description',
     descPlaceholder: 'enter short description of the activity... (max 160 characters)',
     formHeaderCreate: 'create a new Activity',
@@ -24,6 +28,7 @@ const textsCap = translated({
     namePlaceholder: 'enter activity name',
     ownerLabel: 'select the owner Identity for this Activity ',
     ownerPlaceholder: 'select owner',
+    projectTeam: 'activity team',
     saveBONSAIToken: 'save BONSAI auth token',
     saveDetailsTitle: 'save Activity details to messaging service',
     submitErrorHeader: 'request failed',
@@ -109,7 +114,9 @@ export default class ActivityForm extends Component {
         const hash = existingHash || generateHash(values)
         const token = generateHash(objClean(values, validKeys))
         const { description: desc, name: projectName, ownerAddress } = values
-        const title = create ? textsCap.submitTitleCreate : textsCap.submitTitleUpdate
+        const title = create
+            ? textsCap.submitTitleCreate
+            : textsCap.submitTitleUpdate
         const description = `${textsCap.name}: ${projectName}` + '\n' + `${textsCap.description}: ${desc}`
         const message = {
             content: textsCap.submitQueuedMsg,
@@ -147,8 +154,25 @@ export default class ActivityForm extends Component {
                         isFn(onSubmit) && onSubmit(!err, values)
                         this.setState({
                             message: {
-                                content: err || '',
-                                header: err ? textsCap.submitErrorHeader : textsCap.submitSuccessHeader,
+                                content: err
+                                    ? err
+                                    : (
+                                        <Button {...{
+                                            content: textsCap.addTeamMembers,
+                                            onClick: () => {
+                                                const { modalId } = this.props
+                                                closeModal(modalId)
+                                                confirm({
+                                                    confirmButton: null,
+                                                    content: <ActivityTeamList projectHash={hash} />,
+                                                    header: `${textsCap.projectTeam} - ${title}`,
+                                                })
+                                            },
+                                        }} />
+                                    ),
+                                header: err
+                                    ? textsCap.submitErrorHeader
+                                    : textsCap.submitSuccessHeader,
                                 icon: true,
                                 status: !err ? 'success' : 'warning',
                             },

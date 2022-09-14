@@ -64,15 +64,15 @@ export default function SocialCard({ socialRewards = {} }) {
             ),
             title: textsCap.step4Title,
         },
-        {
-            completed: discord.amount > 0,
-            // content: !discordReward.amount && <DiscordRewardWizard />,
-            title: textsCap.step2Title,
-        },
-        {
-            completed: telegram.amount > 0,
-            title: textsCap.step3Title,
-        },
+        // {
+        //     completed: discord.amount > 0,
+        //     // content: !discordReward.amount && <DiscordRewardWizard />,
+        //     title: textsCap.step2Title,
+        // },
+        // {
+        //     completed: telegram.amount > 0,
+        //     title: textsCap.step3Title,
+        // },
         {
             completed: decoded2206.amount > 0,
             content: <Decoded2206Wizard completed={decoded2206.amount > 0} />,

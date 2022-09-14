@@ -51,6 +51,7 @@ export default function App() {
 			blockchain,
 			chatClient,
 			currency,
+			history: require('./modules/history/history'),
 			identity,
 			language,
 			modal,

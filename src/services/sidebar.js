@@ -161,9 +161,9 @@ const gsName = 'getting-started'
 const sidebarItemNames = []
 export const sidebarItems = [
     {
-        anchorStyle: {
-            background: 'deeppink',
-        },
+        // anchorStyle: {
+        //     background: 'deeppink',
+        // },
         icon: 'rocket',
         name: 'crowdloan',
         href: `${window.location.protocol}//${window.location.host}/crowdloan`,
@@ -460,15 +460,17 @@ rxSidebarState.subscribe(() => {
 
 setTimeout(() => {
     const modules = (getUrlParam('module') || '').trim()
+    const exclusive = (getUrlParam('exclusive') || '').toLowerCase() !== 'false'
     if (!modules) return
 
     const names = modules.split(',')
         .map(x => x.trim().toLowerCase())
     const validNames = names.map(name => (setActive(name) || {}).name)
         .filter(Boolean)
-    // hide all other modules
     if (!validNames.length) return
-    sidebarItems.forEach(x =>
+
+    // hide all other modules
+    exclusive && sidebarItems.forEach(x =>
         !validNames.includes(x.name) && setActive(x.name, false)
     )
     history.pushState({}, null, `${location.protocol}//${location.host}`)

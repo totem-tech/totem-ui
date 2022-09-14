@@ -20,7 +20,7 @@ const textsCap = translated({
     step2ConfirmP2: 'Copy the Tweet link.',
     step2ConfirmP3: 'Return to this page and paste the link in the "Tweet ID/Link field"',
     step2ConfirmWarn: 'To qualify for the reward, we recommend not changing the text.',
-    step2Desc: 'help spread the word about Totem and earn crowdloan referral bonus (T&C apply)',
+    step2Desc: 'help spread the word about Totem',
     tweetSubmitText: 'Tweet now',
     twHandleLabel: 'Twitter handle/username',
     twHandleLabelDetails: 'Please make sure that this is the same account you are logged in on Twitter.com',
@@ -28,7 +28,7 @@ const textsCap = translated({
 
     step3: 'claim reward',
     step3Desc: 'this reward is no longer available', //'to qualify for this reward you must complete both of the steps above',
-    step3DescAlt: 'You will not receive any rewards for this Tweet. However, your referral link will be included in the Tweet. When anyone signs up using your referral code and if you both contribute to the crowdloan, you both will receive 5% of their contribution rewards.',
+    step3DescAlt: 'You will not receive any rewards for this Tweet.',
     claimSubmitText: 'claim reward',
     requestReceived: 'You request has been received. You will receive a notification from @rewards once your request has been processed.',
     tweetIdLabel: 'Tweet ID/Link',
@@ -44,7 +44,7 @@ export default function TwitterRewardWizard(props) {
         const url = `https://twitter.com/intent/follow?screen_name=${twitterHandle}`
         window.open(url, '_blank')
         setActiveStep(1)
-        onClickHandlers[1]()
+        // onClickHandlers[1]()
     }
     const onClickHandlers = [
         () => {

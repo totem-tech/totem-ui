@@ -24,8 +24,8 @@ export const rewardTypes = {
 export const generateCrowdloanTweet = () => {
     const { id } = getUser() || {}
 
-    return '@Totem_Live_, the world\'s first true peer-to-peer accounting protocol, has started it\'s #Polkadot #parachain #crowdloan.'
-        + '\n\nContribute to the crowdloan to receive 5% $KAPEX bonus (T&C applies): '
+    return '@Totem_Live_, is building the world\'s first peer-to-peer accounting consensus protocol. It\’s not just a first in the blockchain space – it\’s a first in the accounting world too.'
+        + '\n\nSignup and check out the testnet DApp here:'
         + `\n\nhttps://totem.live?ref=${id}`
 }
 

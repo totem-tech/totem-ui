@@ -8,7 +8,8 @@ import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
 
 import { getUser } from '../chat/ChatClient'
-import { get as getIdentity } from '../identity/identity'
+import { get as getIdentity, getSelected as getSelectedIdentity
+ } from '../identity/identity'
 import { get as getPartner } from '../partner/partner'
 import PartnerForm from '../partner/PartnerForm'
 import { query } from '../timekeeping/timekeeping'
@@ -22,6 +23,7 @@ const textsCap = translated({
     status: 'status',
     team: 'team',
 
+    addMyself: 'add myself',
     addPartner: 'add partner',
     emptyMessage: 'No team member available. Click on the invite button to invite parters.',
     userId: 'User ID',
@@ -38,7 +40,27 @@ export default class ActivityTeamList extends Component {
                 { key: '_status', textAlign: 'center', title: textsCap.status },
             ],
             data: new Map(),
-            emptyMessage: { content: textsCap.emptyMessage },
+            emptyMessage: {
+                content: (
+                    <div>
+                        {textsCap.emptyMessage}
+                        <div>
+                            <Button {...{
+                                content: textsCap.addMyself,
+                                icon: 'plus',
+                                onClick: () => showForm(TimekeepingInviteForm, {
+                                    submitText: textsCap.addMyself,
+                                    inputsHidden: ['addpartner'],
+                                    values: {
+                                        projectHash: this.props.projectHash,
+                                        workerAddress: getSelectedIdentity().address,
+                                    },
+                                })
+                            }} />
+                        </div>
+                    </div>
+                )
+            },
             rowProps: ({ accepted }) => ({ positive: accepted }),
             searchExtraKeys: ['address', 'userId'],
             topLeftMenu: [{

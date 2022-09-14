@@ -38,7 +38,6 @@ const textsCap = translated({
     partnerLabel: 'select a partner',
     partnerUserIdWarning: 'selected partner does not include an User ID.',
     queueTitleOwnAccept: 'Timekeeping - accept own invitation',
-    queueTitleInviteTeamMember: 'Timekeeping - invitation to join the Team',
     txFailed: 'transaction failed',
     updateParner: 'update Partner',
     zeroActivityWarning: 'you must have one or more open activities',
@@ -123,7 +122,6 @@ export default class TimeKeepingInviteForm extends Component {
                 })),
             'text'
         )
-        console.log(proIn.options)
         proIn.invalid = proIn.options.length === 0
         proIn.message = !proIn.invalid ? null : {
             content: textsCap.zeroActivityWarning,
@@ -137,19 +135,22 @@ export default class TimeKeepingInviteForm extends Component {
         this.subscriptions.partners = rxPartners.subscribe(map => {
             const { inputs } = this.state
             const partnerIn = findInput(inputs, 'workerAddress')
-            const { address, name } = getSelected()
-            const options = Array.from(map).map(([address, { name, userId }]) => ({
-                description: userId && '@' + userId,
-                key: address,
-                text: name,
-                value: address
-            })).concat({
-                // add selected identity so that project owner can invite themself
-                description: textsCap.myself,
-                key: address + name,
-                text: name,
-                value: address,
-            })
+            const { address: selectedAddress, name } = getSelected()
+            const options = Array.from(map)
+                .map(([address, { name, userId }]) => address !== selectedAddress && ({
+                    description: userId && '@' + userId,
+                    key: address,
+                    text: name,
+                    value: address
+                }))
+                .concat({
+                    // add selected identity so that project owner can invite themself
+                    description: textsCap.myself,
+                    key: selectedAddress + name,
+                    text: name,
+                    value: selectedAddress,
+                })
+                .filter(Boolean)
             // populate partner's list
             partnerIn.options = arrSort(options, 'text')
             this.setState({ inputs })
@@ -283,7 +284,7 @@ export default class TimeKeepingInviteForm extends Component {
         }
 
         const extraProps = {
-            title: textsCap.queueTitleInviteTeamMember,
+            title: textsCap.formHeader,
             description: `${textsCap.invitee}: ${name}`,
             then: isOwner ? selfInviteThen : (success, err) => {
                 if (success) return
