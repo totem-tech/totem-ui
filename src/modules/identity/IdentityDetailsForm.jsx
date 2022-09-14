@@ -9,10 +9,10 @@ import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder
 import { translated } from '../../services/language'
 import { confirm } from '../../services/modal'
 // modules
-import { getCrowdsaleIdentity } from '../crowdsale/crowdsale'
 import Balance from './Balance'
 import { get, getSelected, remove } from './identity'
 import IdentityForm from './IdentityForm'
+import storage from '../../utils/storageHelper'
 
 const textsCap = translated({
     availableBalance: 'available balance',
@@ -35,7 +35,7 @@ const textsCap = translated({
     removeWarningPart2: 'if not backed up, this action is irreversible',
     removeWarningPart3: 'you will lose access to all activity/data related to this identity.',
     identityDeleteWarningSelected: 'cannot remove identity you are currently using',
-    identityDeleteWarningCrowdsale: 'cannot remove your crowdsale identity',
+    identityDeleteWarningReward: 'cannot remove your rewards identity',
     show: 'show',
     showSeed: 'show seed phrase',
     seed: 'seed',
@@ -163,13 +163,19 @@ export default class IdentityDetailsForm extends Component {
     handleDelete = () => {
         const { onSubmit } = this.props
         const { address, name } = this.identity
-        const isCrowdsale = getCrowdsaleIdentity() === address
-        const allowDelete = !isCrowdsale && address !== getSelected().address
-        if (!allowDelete) return confirm({
+        const isSelectedIdentity = getSelected().address
+        const {
+            user: {
+                address: rewardsIdentity = ''
+            } = ''
+        } = storage.settings.module('messaging') || {}
+        const isRewardsIdentity = address === rewardsIdentity
+        const denyDelete = isRewardsIdentity || isSelectedIdentity
+        if (denyDelete) return confirm({
             cancelButton: textsCap.ok,
             confirmButton: null,
-            content: isCrowdsale
-                ? textsCap.identityDeleteWarningCrowdsale
+            content: isRewardsIdentity
+                ? textsCap.identityDeleteWarningReward
                 : textsCap.identityDeleteWarningSelected,
             size: 'mini',
         })

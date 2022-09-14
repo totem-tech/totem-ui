@@ -10,13 +10,13 @@ import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
 import { useRxSubject } from '../../services/react'
 // modules
-import { getCrowdsaleIdentity } from '../crowdsale/crowdsale'
 import { showLocations } from '../location/LocationsList'
 import { rxIdentities } from './identity'
 import IdentityDetailsForm from './IdentityDetailsForm'
 import IdentityForm from './IdentityForm'
 import IdentityShareForm from './IdentityShareForm'
 import Balance from './Balance'
+import storage from '../../utils/storageHelper'
 
 const textsCap = translated({
     actions: 'actions',
@@ -28,7 +28,7 @@ const textsCap = translated({
     personal: 'personal',
     tags: 'tags',
     usage: 'usage',
-    crowdsaleIdentity: 'this is your crowdsale identity',
+    rewardsIdentity: 'this is your rewards identity',
     emptyMessage: 'no matching identity found', // assumes there will always be an itentity
     lastBackup: 'last backup',
     showDetails: 'show details',
@@ -41,20 +41,29 @@ export default function IdentityList(props){
     const [data] = useRxSubject(
         rxIdentities,
         map => {
-            const csIdentity = getCrowdsaleIdentity()
+            const {
+                user: {
+                    address: rewardsIdentity = ''
+                } = ''
+            } = storage.settings.module('messaging') || {}
             return Array.from(map)
                 .map(([_, identityOrg]) => {
                     const identity = { ...identityOrg }
                     const { address, fileBackupTS, name, tags = [], usageType } = identity
-                    const isCrowdsale = address === csIdentity
+                    const isRewardsIdentity = address === rewardsIdentity
                     identity._balance = <Balance {...{ address, lockSeparator: <br /> }} />
                     identity._fileBackupTS = format(fileBackupTS) || textsCap.never
                     identity._name = (
-                        <div key={address} title={isCrowdsale ? textsCap.crowdsaleIdentity : ''}>
-                            {isCrowdsale && (
+                        <div {...{
+                            key: address,
+                            title: isRewardsIdentity
+                                ? textsCap.rewardsIdentity
+                                : '',
+                        }} >
+                            {isRewardsIdentity && (
                                 <Icon {...{
-                                    name: 'rocket',
-                                    style: { color: 'gold' },
+                                    name: 'gift',
+                                    style: { color: 'orange' },
                                 }} />
                             )}
                             {name}
