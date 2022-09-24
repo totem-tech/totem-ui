@@ -18,7 +18,7 @@ import SignupCard from './SignupCard'
 import SocialCard from './SocialCard'
 
 let textsCap = translated({
-    errIneligibleToMigrate: 'You are not eligible to migrate your rewards!',
+    errIneligibleToMigrate: 'You are not eligible to claim $KAPEX!',
     migrateRewards: 'claim $KAPEX',
     notRegistered: 'please complete registration in the getting started module',
     signupDesc: 'reward you received when you signed up',

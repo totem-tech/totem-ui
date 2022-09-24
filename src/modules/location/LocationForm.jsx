@@ -18,6 +18,8 @@ const textsCap = translated({
 	cityPlaceholder: 'enter your city',
 	countryLabel: 'country',
 	countryPlaceholder: 'select your country',
+	email: 'email',
+	emailPlaceholder: 'enter email address',
 	formHeaderCreate: 'add new location',
 	formHeaderUpdate: 'update location',
 	formSubheaderUpdate: 'changes will be auto-saved',
@@ -26,6 +28,9 @@ const textsCap = translated({
 	namePlaceholder: 'enter a name for this location',
 	partnerIdentityLabel: 'partner user ID',
 	partnerNameLabel: 'partner name',
+	phone: 'phone',
+	phonePlaceholder: 'enter phone number',
+	phoneRegex: 'numbers only',
 	postcodeLabel: 'postcode or zip',
 	postcodePlaceholder: 'enter your postcode or zip',
 	remove: 'remove location',
@@ -44,7 +49,9 @@ export const requiredFields = {
 }
 export const optionalFields = {
 	addressLine2: 'addressLine2',
+	email: 'email',
 	partnerIdentity: 'partnerIdentity', // if owned by partner
+	phone: 'phone',
 }
 export const inputNames = {
 	...requiredFields,
@@ -52,6 +59,7 @@ export const inputNames = {
 	partnerName: 'partnerName',
 	removeBtn: 'removeBtn',
 	groupCityPostcode: 'groupCityPostcode',
+	groupEmailPhone: 'groupEmailPhone',
 	groupStateCountry: 'groupStateCountry',
 }
 
@@ -119,13 +127,37 @@ export default class LocationForm extends Component {
 					value: (partner || {}).name,
 				},
 				{
-					label: textsCap.nameLabel,
+					label: textsCap.nameLabel + 'x',
 					minLength: 3,
 					maxLength: 64,
 					name: inputNames.name,
 					placeholder: textsCap.namePlaceholder,
 					required: true,
 					type: 'text',
+				},
+				{
+					name: inputNames.groupEmailPhone,
+					inputs: [
+						{
+							label: textsCap.email,
+							name: inputNames.email,
+							placeholder: textsCap.emailPlaceholder,
+							type: 'email',
+						},
+						{
+							customMessages: {
+								regex: textsCap.phoneRegex,
+							},
+							label: textsCap.phone,
+							maxLength: 32,
+							minLength: 3,
+							name: inputNames.phone,
+							placeholder: textsCap.phonePlaceholder,
+							regex: /^[0-9]*$/,
+							type: 'text',
+						},
+					],
+					type: 'group',
 				},
 				{
 					label: textsCap.addressLine1Label,
