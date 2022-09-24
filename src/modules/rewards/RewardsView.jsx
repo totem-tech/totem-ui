@@ -68,7 +68,7 @@ export default function RewardsView() {
             <div>
                 <RewardsProgress {...{ rewards }} />
                 {/* Migrate rewards button */}
-                <Button {...{
+                {/* <Button {...{
                     color: claimSubmitted && 'green' || undefined,
                     content: textsCap.migrateRewards,
                     disabled: claimSubmitted,
@@ -112,7 +112,7 @@ export default function RewardsView() {
                         color: 'white',
                         marginTop: 15,
                     },
-                }} />
+                }} /> */}
                 <SignupCard {...{ signupReward }} />
                 <SocialCard {...{ socialRewards }} />
                 <ReferralCard {...{ referralRewards }} />
