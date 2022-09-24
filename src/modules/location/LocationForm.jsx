@@ -127,7 +127,7 @@ export default class LocationForm extends Component {
 					value: (partner || {}).name,
 				},
 				{
-					label: textsCap.nameLabel + 'x',
+					label: textsCap.nameLabel,
 					minLength: 3,
 					maxLength: 64,
 					name: inputNames.name,
