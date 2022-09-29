@@ -654,7 +654,7 @@ const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, du
     queue.set(id, rootTask)
     const { args, argsProcessed, description, errorMessage, func, title, type } = task
     addToHistory(
-        [QUEUE_TYPES.TX_STORAGE, QUEUE_TYPES.TX_TRANSFER].includes(type) ? task.address : getSelected().address,
+        task.address || getSelected().address, //[QUEUE_TYPES.TX_STORAGE, QUEUE_TYPES.TX_TRANSFER].includes(type) ? 
         (type === QUEUE_TYPES.CHATCLIENT ? 'client.' : '') + func,
         argsProcessed || args,
         title,
