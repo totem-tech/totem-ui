@@ -4,7 +4,7 @@ import { Loader } from 'semantic-ui-react'
 import 'semantic-ui-css/semantic.min.css'
 import '../docs/styles.css'
 import PromisE from './utils/PromisE'
-import { isArrLike, isError, objClean } from './utils/utils'
+import { generateHash, isArrLike, isError, objClean } from './utils/utils'
 import App from './App'
 import NewsletterSignup from './forms/NewsletterSignup'
 // services
@@ -67,18 +67,21 @@ const initPromise = PromisE.timeout((resolve, reject) => {
     // initiate connection to blockchain
     getConnection()
     const countries = storage.countries.getAll()
-    let countriesSaved = countries.size > 0
+    const countriesHash = generateHash(
+        Array.from(countries),
+        'blake2',
+        256,
+    )
+    let countriesChecked = false
     let translationChecked = false
     client.onConnect(async () => {
         // Retrieve a list of countries and store in the browser local storage
-        !countriesSaved && client.countries(null, (err, countries) => {
-            if (err) return
-            // get rid of unwanted properties
-            countries = new Map(Array.from(countries)
-                .map(([id, country]) => [id, objClean(country, ['code', 'name'])])
-            )
+        client.countries(countriesHash, (err, countries) => {
+            countriesChecked = true
+            if (err || countries.size === 0) return
+
             storage.countries.setAll(countries)
-            countriesSaved = true
+            console.log('Countries list updated', countries)
         })
 
         // check and update selected language texts

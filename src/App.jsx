@@ -29,6 +29,8 @@ import TotemButtonLogo from './assets/logos/button-288-colour.png' //button-240-
 // import PlaceholderImage from './assets/totem-placeholder.png'
 import ChatBar from './modules/chat/ChatBar'
 import { className } from './utils/utils'
+import './modules/contact/ContactList'
+import './modules/contact/ContactForm'
 
 let queueResumed = false
 const logoSrc = TotemButtonLogo
@@ -64,18 +66,19 @@ export default function App() {
 			window: windowService,
 		}
 
-		window.queryBlockchain = async (func, args, multi) => await blockchain.query(func, args, multi, true)
-		queryBlockchain().then(api => window.api = api)
+		window.queryBlockchain = async (func, args, multi) =>
+			await blockchain.query(func, args, multi, true)
+		queryBlockchain().then(api => (window.api = api))
 
 		if (!queueResumed) {
-			// resume any incomplete queued tasks 
+			// resume any incomplete queued tasks
 			queueResumed = true
 			setTimeout(() => resumeQueue(), 1000)
 		}
 		filePaths
 			.filter(path => path.includes('/notificationHandlers.js'))
 			.forEach(path => require(`./${path.replace('./src/', '')}`))
-		return () => { }
+		return () => {}
 	}, [])
 
 	const gridClass = gridClasses[rxGridColumns.value - 1]
@@ -102,11 +105,11 @@ export default function App() {
 						{ 'simple-grid': !!gridClass },
 					])}
 					dimmed={false}
-					id="main-content"
+					id='main-content'
 				>
-					{sidebarItems.map(({ name }, i) =>
+					{sidebarItems.map(({ name }, i) => (
 						<MainContentItem key={i + name} name={name} />
-					)}
+					))}
 					<div className='empty-message'>
 						{/* <Image style={{ margin: '100px auto auto' }} src={PlaceholderImage} /> */}
 					</div>
