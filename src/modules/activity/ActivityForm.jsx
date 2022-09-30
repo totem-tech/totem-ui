@@ -149,7 +149,7 @@ export default class ActivityForm extends Component {
 				func: 'project',
 				title: textsCap.saveDetailsTitle,
 				description,
-				address: ownerAddress,
+				// address: ownerAddress,
 				args: [
 					hash,
 					values,

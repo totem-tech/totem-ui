@@ -17,151 +17,166 @@ import IdentityForm from './IdentityForm'
 import IdentityShareForm from './IdentityShareForm'
 import Balance from './Balance'
 import storage from '../../utils/storageHelper'
+import { UserContactList } from '../contact/UserContactList'
 
-const textsCap = translated({
-    actions: 'actions',
-    business: 'business',
-    create: 'create',
-    locations: 'locations',
-    name: 'name',
-    never: 'never',
-    personal: 'personal',
-    tags: 'tags',
-    usage: 'usage',
-    rewardsIdentity: 'this is your rewards identity',
-    emptyMessage: 'no matching identity found', // assumes there will always be an itentity
-    lastBackup: 'last backup',
-    showDetails: 'show details',
-    shareIdentityDetails: 'share your identity with other Totem users',
-    txAllocations: 'transaction balance',
-    updateIdentity: 'update your identity',
-}, true)[1]
+const textsCap = translated(
+	{
+		actions: 'actions',
+		business: 'business',
+		contacts: 'contacts',
+		create: 'create',
+		locations: 'locations',
+		name: 'name',
+		never: 'never',
+		personal: 'personal',
+		tags: 'tags',
+		usage: 'usage',
+		rewardsIdentity: 'this is your rewards identity',
+		emptyMessage: 'no matching identity found', // assumes there will always be an itentity
+		lastBackup: 'last backup',
+		showDetails: 'show details',
+		shareIdentityDetails: 'share your identity with other Totem users',
+		txAllocations: 'transaction balance',
+		updateIdentity: 'update your identity',
+	},
+	true
+)[1]
 
-export default function IdentityList(props){
-    const [data] = useRxSubject(
-        rxIdentities,
-        map => {
-            const {
-                user: {
-                    address: rewardsIdentity = ''
-                } = ''
-            } = storage.settings.module('messaging') || {}
-            return Array.from(map)
-                .map(([_, identityOrg]) => {
-                    const identity = { ...identityOrg }
-                    const { address, fileBackupTS, name, tags = [], usageType } = identity
-                    const isRewardsIdentity = address === rewardsIdentity
-                    identity._balance = <Balance {...{ address, lockSeparator: <br /> }} />
-                    identity._fileBackupTS = format(fileBackupTS) || textsCap.never
-                    identity._name = (
-                        <div {...{
-                            key: address,
-                            title: isRewardsIdentity
-                                ? textsCap.rewardsIdentity
-                                : '',
-                        }} >
-                            {isRewardsIdentity && (
-                                <Icon {...{
-                                    name: 'gift',
-                                    style: { color: 'orange' },
-                                }} />
-                            )}
-                            {name}
-                        </div>
-                    )
-                    identity._tagsStr = tags.join(' ') // for tags search
-                    identity._tags = <Tags key={address} tags={tags} />
-                    identity._usageType = usageType === 'personal' ? textsCap.personal : textsCap.business
-                    return identity
-                })
-        }
-    )
+export default function IdentityList(props) {
+	const [data] = useRxSubject(rxIdentities, map => {
+		const { user: { address: rewardsIdentity = '' } = '' } =
+			storage.settings.module('messaging') || {}
+		return Array.from(map).map(([_, identityOrg]) => {
+			const identity = { ...identityOrg }
+			const {
+				address,
+				fileBackupTS,
+				name,
+				tags = [],
+				usageType,
+			} = identity
+			const isRewardsIdentity = address === rewardsIdentity
+			identity._balance = (
+				<Balance {...{ address, lockSeparator: <br /> }} />
+			)
+			identity._fileBackupTS = format(fileBackupTS) || textsCap.never
+			identity._name = (
+				<div
+					{...{
+						key: address,
+						title: isRewardsIdentity
+							? textsCap.rewardsIdentity
+							: '',
+					}}
+				>
+					{isRewardsIdentity && (
+						<Icon
+							{...{
+								name: 'gift',
+								style: { color: 'orange' },
+							}}
+						/>
+					)}
+					{name}
+				</div>
+			)
+			identity._tagsStr = tags.join(' ') // for tags search
+			identity._tags = <Tags key={address} tags={tags} />
+			identity._usageType =
+				usageType === 'personal' ? textsCap.personal : textsCap.business
+			return identity
+		})
+	})
 
-    return <DataTable {...{ ...props, ...getTableProps(), data }} />
+	return <DataTable {...{ ...props, ...getTableProps(), data }} />
 }
 
-const getActions = ({ address, name }) => [
-    {
-        icon: 'share',
-        onClick: () => showForm(
-            IdentityShareForm,
-            {
-                inputsDisabled: ['address'],
-                includeOwnIdentities: true,
-                includePartners: false,
-                size: 'tiny',
-                values: { address, name },
-            }
-        ),
-        title: textsCap.shareIdentityDetails,
-    },
-    {
-        icon: 'pencil',
-        onClick: () => showForm(IdentityDetailsForm, { values: { address } }),
-        title: textsCap.showDetails,
-    },
-]
-    .map(props => <Button {...props} key={props.title + props.icon} />)
+const getActions = ({ address, name }) =>
+	[
+		{
+			icon: 'share',
+			onClick: () =>
+				showForm(IdentityShareForm, {
+					inputsDisabled: ['address'],
+					includeOwnIdentities: true,
+					includePartners: false,
+					size: 'tiny',
+					values: { address, name },
+				}),
+			title: textsCap.shareIdentityDetails,
+		},
+		{
+			icon: 'pencil',
+			onClick: () =>
+				showForm(IdentityDetailsForm, { values: { address } }),
+			title: textsCap.showDetails,
+		},
+	].map(props => <Button {...props} key={props.title + props.icon} />)
 
 const getTableProps = () => ({
-    columns: [
-        {
-            key: '_name',
-            sortKey: 'name',
-            style: { minWidth: 150 },
-            title: textsCap.name,
-        },
-        {
-            collapsing: true,
-            draggable: false,
-            key: '_balance',
-            sortable: false,
-            textAlign: 'center',
-            title: textsCap.txAllocations,
-        },
-        {
-            key: '_tags',
-            draggable: false, // individual tags are draggable
-            sortKey: 'tags',
-            title: textsCap.tags
-        },
-        {
-            key: '_fileBackupTS',
-            textAlign: 'center',
-            title: textsCap.lastBackup
-        },
-        { collapsing: true, key: '_usageType', title: textsCap.usage },
-        {
-            content: getActions,
-            collapsing: true,
-            draggable: false,
-            textAlign: 'center',
-            title: textsCap.actions,
-        }
-    ],
-    emptyMessage: { content: textsCap.emptyMessage },
-    searchExtraKeys: ['address', 'name', '_tagsStr'],
-    tableProps: {
-        // basic:  'very',
-        celled: false,
-        compact: true,
-    },
-    topLeftMenu: [
-        {
-            El:ButtonGroup,
-            buttons: [
-                {
-                    content: textsCap.create,
-                    icon: 'plus',
-                    onClick: () => showForm(IdentityForm)
-                },
-                {
-                    content: textsCap.locations,
-                    icon: 'building',
-                    onClick: ()=> showLocations(),
-                },
-            ],
-            key: 0,
-        },
-    ]
+	columns: [
+		{
+			key: '_name',
+			sortKey: 'name',
+			style: { minWidth: 150 },
+			title: textsCap.name,
+		},
+		{
+			collapsing: true,
+			draggable: false,
+			key: '_balance',
+			sortable: false,
+			textAlign: 'center',
+			title: textsCap.txAllocations,
+		},
+		{
+			key: '_tags',
+			draggable: false, // individual tags are draggable
+			sortKey: 'tags',
+			title: textsCap.tags,
+		},
+		{
+			key: '_fileBackupTS',
+			textAlign: 'center',
+			title: textsCap.lastBackup,
+		},
+		{ collapsing: true, key: '_usageType', title: textsCap.usage },
+		{
+			content: getActions,
+			collapsing: true,
+			draggable: false,
+			textAlign: 'center',
+			title: textsCap.actions,
+		},
+	],
+	emptyMessage: { content: textsCap.emptyMessage },
+	searchExtraKeys: ['address', 'name', '_tagsStr'],
+	tableProps: {
+		// basic:  'very',
+		celled: false,
+		compact: true,
+	},
+	topLeftMenu: [
+		{
+			El: ButtonGroup,
+			buttons: [
+				{
+					content: textsCap.create,
+					icon: 'plus',
+					onClick: () => showForm(IdentityForm),
+				},
+				{
+					content: textsCap.locations,
+					icon: 'building',
+					onClick: () => showLocations(),
+				},
+				{
+					content: textsCap.contacts,
+					icon: 'building',
+					onClick: () => UserContactList.asModal(),
+				},
+			],
+			key: 0,
+		},
+	],
 })
