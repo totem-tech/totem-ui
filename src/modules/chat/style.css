@@ -1,363 +1,383 @@
 .chat-container {
-    color: black;
-    bottom: 0px;
-    /* box-shadow: 3px 3px 5px 3px #979797; */
-    /* box-shadow: 3px 3px 5px 3px rgba(67,68,70 1); */
-    font-size: 14px;
-    font-weight: 100;
-    position: fixed;
-    right: 0px;
-    top: 61px;
-    transition: all 0.35s ease;
-    width: 400px;
-    z-index: 1;
+	color: black;
+	bottom: 0px;
+	/* box-shadow: 3px 3px 5px 3px #979797; */
+	/* box-shadow: 3px 3px 5px 3px rgba(67,68,70 1); */
+	font-size: 14px;
+	font-weight: 100;
+	position: fixed;
+	right: 0px;
+	top: 61px;
+	transition: all 0.35s ease;
+	width: 400px;
+	z-index: 1;
 }
 body:not(.inverted) .chat-container {
-    background: white;
+	background: white;
 }
 .mobile .chat-container {
-    width: 100%;
+	width: 100%;
 }
 .mobile.sidebar-visible > .chat-container {
-    display: none;
+	display: none;
 }
-body:not(.chat-visible) .chat-container{
-    right: -410px;
+body:not(.chat-visible) .chat-container {
+	right: -410px;
 }
 .mobile:not(.chat-visible) .chat-container {
-    right: -100%;
+	right: -100%;
 }
 .mobile .chat-container {
-    bottom: 47px;
+	bottom: 47px;
 }
 .chat-container .chat-contents {
-    height: 100%;
-    position: relative;
+	height: 100%;
+	position: relative;
 }
 
 /* inbox/conversation list */
 .chat-container .inbox-list {
-    height: 40%;
-    overflow-y: auto;
+	height: 40%;
+	overflow-y: auto;
 }
 .inbox-expanded .chat-container .inbox-list {
-    height: auto;
+	height: auto;
 }
-.inbox-expanded .chat-container .inbox-list .list { 
-    display: none;
+.inbox-expanded .chat-container .inbox-list .list {
+	display: none;
 }
 .mobile.inbox-expanded .chat-container .inbox-list {
-    display: none;
+	display: none;
 }
 .mobile:not(.inbox-expanded) .chat-container .inbox-list {
-    height: calc(100% - 57px);
+	height: calc(100% - 57px);
 }
 .chat-container .inbox-list div.search .input {
-    width: 100%;
+	width: 100%;
 }
 .chat-container .inbox-list div.search .input button {
-    background: #434446;
-    color: white;
+	background: #434446;
+	color: white;
 }
 .chat-container .inbox-list div.search .input input {
-    border-radius: 0;
-    padding-top: 10px;
-    padding-bottom: 13px;
-    padding-left: 18px;
+	border-radius: 0;
+	padding-top: 10px;
+	padding-bottom: 13px;
+	padding-left: 18px;
 }
 .chat-container .inbox-list .tools .actions button {
-    color: #434446;
-    border: none;
-    border-radius: 0;
-    text-align: left;
-    font-size: 14px;
+	color: #434446;
+	border: none;
+	border-radius: 0;
+	text-align: left;
+	font-size: 14px;
 }
 .inverted .chat-container .inbox-list .tools .actions button {
-    background: #434446;
-    color: white !important;
+	background: #434446;
+	color: white !important;
 }
-.inverted .chat-container .inbox-list .tools .actions button:focus:not(.active):not(:hover) {
-    background: #2a2a2a !important;
+.inverted
+	.chat-container
+	.inbox-list
+	.tools
+	.actions
+	button:focus:not(.active):not(:hover) {
+	background: #2a2a2a !important;
 }
 .chat-container .inbox-list .tools .actions button:hover,
 .chat-container .inbox-list .tools .actions button:active,
-.chat-container .inbox-list .tools .actions button.active{
-    background: #434446 !important;
-    color: white !important;
+.chat-container .inbox-list .tools .actions button.active {
+	background: #434446 !important;
+	color: white !important;
 }
 .chat-container .inbox-list .tools .actions button.active {
-    font-weight: bold;
+	font-weight: bold;
 }
 .chat-container .inbox-list .list-item {
-    border-radius: 0;
-    box-shadow: none;
-    cursor: pointer;
-    margin: 0;
-    overflow: hidden;
-    padding: 7px 17px;
-    position: relative;
-    white-space: nowrap;
+	border-radius: 0;
+	box-shadow: none;
+	cursor: pointer;
+	margin: 0;
+	overflow: hidden;
+	padding: 7px 17px;
+	position: relative;
+	white-space: nowrap;
 }
 .chat-container .inbox-list .list-item.active {
-    background: #C7F2C7
+	background: #c7f2c7;
 }
 .chat-container .inbox-list .list-item:hover {
-    background: #F2F2F2;
+	background: #f2f2f2;
 }
 .inverted .chat-container .inbox-list .list-item:hover,
 .inverted .chat-container .inbox-list .list-item.active {
-    background: grey;
+	background: grey;
 }
 .chat-container .inbox-list .list-item:not(:last-child) {
-    border-bottom: 1px solid #d1caca;
+	border-bottom: 1px solid #d1caca;
 }
 .chat-container .inbox-list .list-item * {
-    text-align: left;
+	text-align: left;
 }
 .chat-container .inbox-list .list-item .content {
-    height: 33px;
-    overflow: hidden;
-    padding-left: 70px;
-    white-space: nowrap;
-    width: 100%;
-    font-size: 12px;
-    font-weight: 100;
-    line-height: 17px;
+	height: 33px;
+	overflow: hidden;
+	padding-left: 70px;
+	white-space: nowrap;
+	width: 100%;
+	font-size: 12px;
+	font-weight: 100;
+	line-height: 17px;
 }
 .chat-container .inbox-list .list-item .left {
-    left: 5px;
-    position: absolute;
-    top: 7px;
+	left: 5px;
+	position: absolute;
+	top: 7px;
 }
 .chat-container .inbox-list .list-item:not(:hover):not(.active) .preview {
-    font-size: 12px;
-    color: #979797;
-    /* margin-top: 5px; */
+	font-size: 12px;
+	color: #979797;
+	/* margin-top: 5px; */
 }
 .chat-container .inbox-list .list-item .left .label {
-    overflow: hidden;
-    white-space: nowrap;
-    width: 70px;
+	overflow: hidden;
+	white-space: nowrap;
+	width: 70px;
 }
-.inverted .chat-container .inbox-list .list-item:not(:hover):not(.active) .left .label {
-    background: #80808026;
-    color: white;
+.inverted
+	.chat-container
+	.inbox-list
+	.list-item:not(:hover):not(.active)
+	.left
+	.label {
+	background: #80808026;
+	color: white;
 }
-.ui.mini.label, .ui.mini.labels .label {
-    margin-left: 9px;
-    font-size: 9px;
-    font-weight: 100 !important;
-    font-style: normal;
+.ui.mini.label,
+.ui.mini.labels .label {
+	margin-left: 9px;
+	font-size: 9px;
+	font-weight: 100 !important;
+	font-style: normal;
 }
 .chat-container .inbox-list .list-item .left .label .icon {
-    font-size: 13px;
-    margin: 3px;
+	font-size: 13px;
+	margin: 3px;
 }
 .chat-container .inbox-list .list-item .actions {
-    position: absolute;
-    right: 5px;
-    top: -9px;
+	position: absolute;
+	right: 5px;
+	top: -9px;
 }
 .chat-container .inbox-list .list-item .actions .icon {
-    font-size: 14px;
-    background: none;
-    font-weight: 100 !important;
-    color: #979797 !important;
-    padding-top: 8px;
-    padding-left: 0px;
-    padding-right: 10px;
-    padding-bottom: 0px;
+	font-size: 14px;
+	background: none;
+	font-weight: 100 !important;
+	color: #979797 !important;
+	padding-top: 8px;
+	padding-left: 0px;
+	padding-right: 10px;
+	padding-bottom: 0px;
 }
 .chat-container .inbox-list .list-item .actions .icon:hover {
-    color: #434446 !important;
+	color: #434446 !important;
 }
 .desktop .chat-container .inbox-list .list-item:not(:hover) .actions {
-    display: none;
+	display: none;
 }
 .chat-container .inbox-list .list-item .actions button:last-child {
-    background: none;
-    box-shadow: none;
+	background: none;
+	box-shadow: none;
 }
 .chat-container .inbox-list .list-item .actions .button {
-    width: auto !important;
+	width: auto !important;
 }
 .chat-container .inbox-list .list-item .label {
-    margin-right: 5px;
+	margin-right: 5px;
 }
 .chat-container .inbox-list .list-item b {
-    font-weight: 800;
+	font-weight: 800;
 }
 
-/* inbox */ 
+/* inbox */
 .chat-container .inbox {
-    height: 60%;
+	height: 60%;
 }
 .chat-container .inbox-wrap {
-    height: 100%;
+	height: 100%;
 }
 .chat-container .inbox .header {
-    background: #464646;
-    color: white;
-    padding: 10px 15px;
-    position: relative;
-    text-align: left;
+	background: #464646;
+	color: white;
+	padding: 10px 15px;
+	position: relative;
+	text-align: left;
 }
 .chat-container .inbox .header b {
-    font-weight: 800;
-    color: #F2F2F2;
+	font-weight: 800;
+	color: #f2f2f2;
 }
 .chat-container .inbox .header .tools.right {
-    display: inline;
-    position: absolute;
-    right: 0;
-    top: 17px;
+	display: inline;
+	position: absolute;
+	right: 0;
+	top: 17px;
 }
 .chat-container .inbox .header .tools.right .icon {
-    font-size: 16px;
-    padding-top: 3px;
-    padding-right: 15px;
-    cursor: pointer;
+	font-size: 16px;
+	padding-top: 3px;
+	padding-right: 15px;
+	cursor: pointer;
 }
 .chat-container .inbox .expand.icon:before {
-    content: "\f077";
+	content: '\f077';
 }
 body.inbox-expanded .chat-container .inbox .expand.icon:before {
-    content: "\f078";
+	content: '\f078';
 }
 .inbox-expanded .chat-container .inbox {
-    height: 100%;
+	height: 100%;
 }
 .mobile:not(.inbox-expanded) .chat-container .inbox {
-    height: 58px;
-    overflow: hidden;
+	height: 58px;
+	overflow: hidden;
 }
 
 .chat-container .inbox .member-list {
-    max-height: calc( 100% - 60px );
-    overflow-y: auto;
+	max-height: calc(100% - 60px);
+	overflow-y: auto;
 }
 .chat-container .inbox .member-list-item {
-    font-size: 14px;
-    height: 40px;
-    margin: 0;
-    padding: 8px 10px;
-    border-radius: 0;
+	font-size: 14px;
+	height: 40px;
+	margin: 0;
+	padding: 8px 10px;
+	border-radius: 0;
 }
 .chat-container .inbox .member-list-item .user-icon {
-    font-size: 16px !important;
-    width: 18px !important;
+	font-size: 16px !important;
+	width: 18px !important;
 }
 .chat-container .inbox .member-list-item .button-action {
-    cursor: pointer;
-    font-size: 12px;
-    position: absolute;
-    right: 1px;
-    top: 4px;
-    border-radius: 0px !important;
-    border: 0px !important;
+	cursor: pointer;
+	font-size: 12px;
+	position: absolute;
+	right: 1px;
+	top: 4px;
+	border-radius: 0px !important;
+	border: 0px !important;
 }
 .chat-container .inbox .member-list-item .button-action .icon {
-    font-size: 16px;
+	font-size: 16px;
 }
 .chat-container .inbox .scroll-to-bottom {
-    bottom: 45px;
-    position: fixed;
-    right: 5px;
+	bottom: 45px;
+	position: fixed;
+	right: 5px;
 }
 body.mobile .chat-container .inbox .scroll-to-bottom {
-    bottom: 90px;
+	bottom: 90px;
 }
 .chat-container .inbox .scroll-to-bottom:not(.visible),
 .mobile:not(.inbox-expanded) .chat-container .inbox .scroll-to-bottom {
-    display: none
+	display: none;
 }
 
 /* message list */
 .chat-container .messages {
-    height: calc(100% - 92px);
-    overflow-x: auto;
-    position: relative;
+	height: calc(100% - 92px);
+	overflow-x: auto;
+	position: relative;
+}
+body.inbox-expanded .chat-container .messages {
+	height: calc(100% - 176px);
 }
 body:not(.inverted) .chat-container .messages {
-    background: #EDE8E3;
+	background: #ede8e3;
 }
 .chat-container .messages.animate-scroll {
-    scroll-behavior: smooth;
-    transition: all 0.3s ease;
+	scroll-behavior: smooth;
+	transition: all 0.3s ease;
 }
 .chat-container .messages .action-message {
-    color: grey;
-    text-align: center;
-    padding: 10px 0;
+	color: grey;
+	text-align: center;
+	padding: 10px 0;
 }
 .chat-container .messages .message-wrap.user {
-    text-align: right !important;
+	text-align: right !important;
 }
 .chat-container .messages .message-wrap {
-    margin: 0 10px;
+	margin: 0 10px;
 }
 .chat-container .messages .message-wrap:first-child {
-    margin-top: 5px;
+	margin-top: 5px;
 }
 .chat-container .messages .message-wrap:last-child {
-    margin-bottom: 5px;
+	margin-bottom: 5px;
 }
 .chat-container .messages .message-wrap .message {
-    border-radius: 10px;
-    box-shadow: none;
-    max-width: 80%;
-    overflow-x: auto;
-    padding: 7px 15px;
-    width: auto;
+	border-radius: 10px;
+	box-shadow: none;
+	max-width: 80%;
+	overflow-x: auto;
+	padding: 7px 15px;
+	width: auto;
 }
 .chat-container .messages .message-wrap:last-child {
-    margin-bottom: 5px;
+	margin-bottom: 5px;
 }
 .chat-container .messages .message-wrap .error {
-    color: red;
+	color: red;
 }
 .chat-container .ui.brown.message {
-    background-color: 'white' !important;
+	background-color: 'white' !important;
 }
 
 /* highlights a searched message */
 .chat-container .messages .message-wrap.blink .message {
-    background: yellow !important;
-    color: black !important;
+	background: yellow !important;
+	color: black !important;
 }
 .chat-container .messages .message-wrap .message .content {
-    text-align: left;
+	text-align: left;
 }
 .chat-container .messages .message-wrap .message .icon {
-    font-size: 16px;
-    width: 18px !important;
+	font-size: 16px;
+	width: 18px !important;
 }
 
 /* message input */
 .chat-container .inbox .input-wrap {
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    width: 100%;
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	width: 100%;
 }
 .mobile:not(.inbox-expanded) .chat-container .inbox .input-wrap {
-    display: none;
+	display: none;
 }
 .chat-container .inbox .input-wrap input {
-    border-radius: 0;
+	border-radius: 0;
 }
 
 /* resize #main-content accordingly */
-.chat-visible:not(.mobile) .pushable > .ui.visible.left.sidebar.very.thin ~ .pusher#main-content {
-    max-width: calc(100% - 460px) !important;
+.chat-visible:not(.mobile)
+	.pushable
+	> .ui.visible.left.sidebar.very.thin
+	~ .pusher#main-content {
+	max-width: calc(100% - 460px) !important;
 }
-.chat-visible:not(.mobile) .pushable > .ui.visible.left.sidebar.wide ~ .pusher#main-content {
-    max-width: calc(100% - 635px) !important;
+.chat-visible:not(.mobile)
+	.pushable
+	> .ui.visible.left.sidebar.wide
+	~ .pusher#main-content {
+	max-width: calc(100% - 635px) !important;
 }
 
 /* hide scrollbars */
 .chat-container .inbox .messages::-webkit-scrollbar,
 .chat-container .inbox-list::-webkit-scrollbar,
 .chat-container .member-list::-webkit-scrollbar {
-    width: 0px;
+	width: 0px;
 }
