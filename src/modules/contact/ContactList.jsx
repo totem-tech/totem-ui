@@ -1,12 +1,8 @@
 import React, { useState } from 'react'
-import PropTypes from 'prop-types'
 import DataTable from '../../components/DataTable'
-import { confirm, showForm } from '../../services/modal'
-import DataStorage from '../../utils/DataStorage'
+import { showForm } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
-import ContactDetailsForm from './ContactForm'
-import { useRxSubject } from '../../utils/reactHelper'
-import { storage } from '.'
+import ContactForm from './ContactForm'
 import { Button } from 'semantic-ui-react'
 
 const textsCap = translated(
@@ -47,7 +43,7 @@ export const ContactList = props => {
 						{
 							icon: 'pencil',
 							onClick: () =>
-								showForm(ContactDetailsForm, { values: entry }),
+								showForm(ContactForm, { values: entry }),
 							title: textsCap.update,
 						},
 					].map((props, i) => <Button {...props} key={i} />),
@@ -64,9 +60,10 @@ export const ContactList = props => {
 				...tableProps,
 				topLeftMenu: [
 					{
+						// add user contact details
 						content: textsCap.add,
 						icon: 'plus',
-						onClick: () => showForm(ContactDetailsForm),
+						onClick: () => showForm(ContactForm),
 					},
 				],
 			}}
@@ -75,22 +72,3 @@ export const ContactList = props => {
 }
 ContactList.propTypes = {}
 ContactList.defaultProps = {}
-
-// export const UserContactList = props => {
-// 	const [data] = useRxSubject(storage.rxData, map => {
-// 		const result = new DataStorage(null, false, map).search({
-// 			partnerAddress: undefined,
-// 		})
-// 		return result
-// 	})
-// 	return <ContactList {...{ ...props, data }} />
-// }
-// UserContactList.asModal = (...args) => {
-// 	confirm({
-// 		content: <UserContactList />,
-// 		confirmButton: null,
-// 		cancelButton: null,
-// 		...args,
-// 	})
-// }
-// // UserContactList.asModal()

@@ -8,7 +8,8 @@ const textsCap = translated({
     errInvalidPhone: 'invalid phone number',
 }, true)[1]
 
-export const storage = new DataStorage('totem_contact-details')
+export const contacts = new DataStorage('totem_contact-details')
+export const rxContacts = contacts.rxData
 
 /**
  * @name    get
@@ -18,7 +19,7 @@ export const storage = new DataStorage('totem_contact-details')
  * 
  * @returns {Object}
  */
-export const get = id => storage.get(id)
+export const get = id => contacts.get(id)
 
 /**
  * @name    getAll
@@ -26,7 +27,7 @@ export const get = id => storage.get(id)
  * 
  * @returns {Array}
  */
-export const getAll = () => storage.getAll()
+export const getAll = () => contacts.getAll()
 
 /**
  * @name    newId
@@ -43,7 +44,7 @@ export const newId = () => generateHash(uuid.v4(), 'blake2', 48)
  * 
  * @param   {String}    id 
  */
-export const remove = id => { storage.delete(id) }
+export const remove = id => { contacts.delete(id) }
 
 /**
  * @name    set
@@ -53,7 +54,7 @@ export const remove = id => { storage.delete(id) }
  * @param   {String}    entry.email             (optional) email address
  * @param   {String}    entry.id                unique ID
  * @param   {String}    entry.name              name for the entry
- * @param   {String}    entry.partnerAddress    (optional) address of the partner this entry belongs to
+ * @param   {String}    entry.partnerIdentity    (optional) address of the partner this entry belongs to
  * @param   {String}    entry.phoneCode         (optional) phone country code starting with "+"
  * @param   {String}    entry.phoneNumber       (optional) phone number excluding country code
  */
@@ -67,7 +68,7 @@ export const set = entry => {
     if (err) throw new Error(err)
 
     const { id } = entry
-    storage.set(
+    contacts.set(
         id,
         objClean(
             entry,
@@ -87,6 +88,7 @@ export const validationConf = {
     email: {
         maxLength: 128,
         minLength: 6,
+        required: true,
         type: TYPES.email,
     },
     id: {
@@ -101,7 +103,7 @@ export const validationConf = {
         required: true,
         type: TYPES.string,
     },
-    partnerAddress: {
+    partnerIdentity: {
         type: TYPES.identity,
     },
     phoneCode: {
@@ -128,6 +130,6 @@ export default {
     newId,
     remove,
     set,
-    storage,
+    storage: contacts,
     validationConf,
 }

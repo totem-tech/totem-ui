@@ -11,7 +11,7 @@ import { translated } from '../../utils/languageHelper'
 import { iUseReducer } from '../../utils/reactHelper'
 import storage from '../../utils/storageHelper'
 import { arrSort, isBool, isFn, objSetPropUndefined } from '../../utils/utils'
-import { get, newId, set as save, validationConf } from '.'
+import { get, newId, set as save, validationConf } from './contact'
 
 const textsCap = translated(
 	{
@@ -31,21 +31,21 @@ const textsCap = translated(
 export const inputNames = {
 	email: 'email',
 	id: 'id',
-	partnerAddress: 'partnerAddress',
+	partnerIdentity: 'partnerIdentity',
 	name: 'name',
 	phoneNumber: 'phoneNumber',
 	phoneCode: 'phoneCode',
 	phoneGroup: 'phoneGroup',
 }
 
-export default function ContactDetailsForm(props) {
+export default function ContactForm(props) {
 	const [state = []] = iUseReducer(null, rxSetState => {
-		let { autosave, onChange, onSubmit, values = {} } = props
+		let { autoSave, onChange, onSubmit, values = {} } = props
 		// generate a random ID if not already provided
 		objSetPropUndefined(values, 'id', newId())
 		const { id } = values
 		const existingEntry = get(id)
-		autosave = existingEntry && autosave !== false
+		autoSave = existingEntry && autoSave !== false
 		const countryOptions = storage.countries
 			.map(([_, country]) => {
 				let { altSpellings = [], code, name, phoneCode } = country
@@ -72,13 +72,14 @@ export default function ContactDetailsForm(props) {
 			},
 			{
 				hidden: true,
-				name: inputNames.partnerAddress,
+				name: inputNames.partnerIdentity,
 			},
 			{
 				...validationConf.email,
 				label: textsCap.emailLabel,
 				name: inputNames.email,
 				placeholder: textsCap.emailPlaceholder,
+				required: true,
 			},
 			{
 				name: inputNames.phoneGroup,
@@ -135,13 +136,16 @@ export default function ContactDetailsForm(props) {
 			inputs: fillValues(inputs, { ...existingEntry, ...values }),
 			onChange: (...args) => {
 				const [e, values, invalid] = args
+				const id = values[inputNames.id]
 				if (invalid) return
-				if (autosave) {
-					save(values)
-					isFn(onSubmit) && onSubmit(e, values)
-					autosave = props.autosave
-				}
+
 				isFn(onChange) && onChange(...args)
+
+				if (!autoSave) return
+				save(values)
+
+				isFn(onSubmit) && onSubmit(!invalid, values, id)
+				autoSave = props.autoSave
 			},
 			onSubmit: (...args) => {
 				const [_, values] = args
@@ -157,7 +161,7 @@ export default function ContactDetailsForm(props) {
 			},
 		}
 
-		if (autosave) {
+		if (autoSave) {
 			state.closeText = null
 			state.subheader = textsCap.subheaderUpdate
 			state.submitText = null
@@ -167,19 +171,19 @@ export default function ContactDetailsForm(props) {
 
 	return <FormBuilder {...{ ...props, ...state }} />
 }
-ContactDetailsForm.propTypes = {
-	autosave: PropTypes.bool,
+ContactForm.propTypes = {
+	autoSave: PropTypes.bool,
 	values: PropTypes.shape({
 		email: PropTypes.string,
 		id: PropTypes.string,
-		partnerAddress: PropTypes.string,
+		partnerIdentity: PropTypes.string,
 		name: PropTypes.string,
 		phoneCode: PropTypes.string,
 		phoneNumber: PropTypes.string,
 	}),
 }
-ContactDetailsForm.defaultProps = {
-	autosave: true,
+ContactForm.defaultProps = {
+	autoSave: true,
 	// values: { id: '3a6c4ea06ba9' },
 	size: 'mini',
 }
