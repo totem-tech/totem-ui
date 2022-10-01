@@ -29,8 +29,6 @@ import TotemButtonLogo from './assets/logos/button-288-colour.png' //button-240-
 // import PlaceholderImage from './assets/totem-placeholder.png'
 import ChatBar from './modules/chat/ChatBar'
 import { className } from './utils/utils'
-import './modules/contact/ContactList'
-import './modules/contact/ContactForm'
 
 let queueResumed = false
 const logoSrc = TotemButtonLogo

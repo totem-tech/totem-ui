@@ -21,6 +21,7 @@ const VALID_KEYS = Object.freeze([
 	...REQUIRED_KEYS,
 	'cloudBackupStatus', // undefined: never backed up, in-progress, done
 	'cloudBackupTS', // most recent successful backup timestamp
+	'contactId',
 	'fileBackupTS', // most recent file backup timestamp
 	'locationId',
 	'selected',

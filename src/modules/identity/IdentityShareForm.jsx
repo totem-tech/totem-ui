@@ -36,13 +36,13 @@ const textsCap = translated(
 		identityLabel2: 'identity to be shared',
 		identityLabel3: 'partner to be shared',
 		identityPlaceholder: 'select an identity',
-		includeLocation: 'include contact address',
+		includeLocation: 'include location',
 		introducedByLabel: 'introduced by',
 		nameLabel: 'change partner name (this will be seen by recipients)',
 		namePlaceholder: 'enter a name to be shared',
 		successMsgContent: 'identity has been sent to selected users',
 		successMsgHeader: 'identity sent!',
-		updateLocation: 'update contact address',
+		updateLocation: 'update location',
 		userIdsLabel: 'recipients',
 		userIdsNoResultMsg: 'type user ID and press enter to add',
 		userIdsPlaceholder: 'enter user IDs',
@@ -174,7 +174,7 @@ export default class IdentityShareForm extends Component {
 		// add User Ids as options if supplied in values
 		if (isArr(userIds) && userIds.length > 0) {
 			const userIdIn = findInput(inputs, inputNames.userIds)
-			userIdIn.options = (userIds || []).map((id) => ({
+			userIdIn.options = (userIds || []).map(id => ({
 				key: id,
 				text: id,
 				value: id,
@@ -214,7 +214,7 @@ export default class IdentityShareForm extends Component {
 							{...{
 								// circular: true,
 								icon: 'pencil',
-								onClick: (e) => {
+								onClick: e => {
 									e.stopPropagation()
 									e.preventDefault()
 									showForm(LocationForm, {
@@ -248,7 +248,7 @@ export default class IdentityShareForm extends Component {
 		const includeLocation = values[inputNames.includeLocation]
 		const name =
 			values[inputNames.name] ||
-			addressIn.options.find((x) => x.value === address).name
+			addressIn.options.find(x => x.value === address).name
 		const userIds = values[inputNames.userIds]
 		const location =
 			includeLocation && identity
@@ -257,7 +257,7 @@ export default class IdentityShareForm extends Component {
 		const data = { address, name, location }
 
 		this.setState({ loading: true })
-		const callback = (err) => {
+		const callback = err => {
 			const success = !err
 			const message = {
 				content: textsCap.successMsgContent,

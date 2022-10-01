@@ -3,13 +3,13 @@ import { confirm } from '../../services/modal'
 import DataStorage from '../../utils/DataStorage'
 import { translated } from '../../utils/languageHelper'
 import { useRxSubject } from '../../utils/reactHelper'
-import { storage } from '.'
+import { contacts } from './contact'
 import { ContactList } from './ContactList'
 
 const textsCap = translated({ header: 'my contact details' }, true)[1]
 
 export const UserContactList = props => {
-	const [data] = useRxSubject(storage.rxData, map =>
+	const [data] = useRxSubject(contacts.rxData, map =>
 		new DataStorage(null, false, map).search({
 			partnerAddress: undefined,
 		})

@@ -18,6 +18,7 @@ import IdentityShareForm from './IdentityShareForm'
 import Balance from './Balance'
 import storage from '../../utils/storageHelper'
 import { UserContactList } from '../contact/UserContactList'
+import { MOBILE, rxLayout } from '../../services/window'
 
 const textsCap = translated(
 	{
@@ -43,6 +44,7 @@ const textsCap = translated(
 )[1]
 
 export default function IdentityList(props) {
+	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
 	const [data] = useRxSubject(rxIdentities, map => {
 		const { user: { address: rewardsIdentity = '' } = '' } =
 			storage.settings.module('messaging') || {}
@@ -88,7 +90,7 @@ export default function IdentityList(props) {
 		})
 	})
 
-	return <DataTable {...{ ...props, ...getTableProps(), data }} />
+	return <DataTable {...{ ...props, ...getTableProps(isMobile), data }} />
 }
 
 const getActions = ({ address, name }) =>
@@ -113,70 +115,74 @@ const getActions = ({ address, name }) =>
 		},
 	].map(props => <Button {...props} key={props.title + props.icon} />)
 
-const getTableProps = () => ({
-	columns: [
-		{
-			key: '_name',
-			sortKey: 'name',
-			style: { minWidth: 150 },
-			title: textsCap.name,
+const getTableProps = isMobile => {
+	const vertical = isMobile && window.innerWidth < 415
+	return {
+		columns: [
+			{
+				key: '_name',
+				sortKey: 'name',
+				style: { minWidth: 150 },
+				title: textsCap.name,
+			},
+			{
+				collapsing: true,
+				draggable: false,
+				key: '_balance',
+				sortable: false,
+				textAlign: 'center',
+				title: textsCap.txAllocations,
+			},
+			{
+				key: '_tags',
+				draggable: false, // individual tags are draggable
+				sortKey: 'tags',
+				title: textsCap.tags,
+			},
+			{
+				key: '_fileBackupTS',
+				textAlign: 'center',
+				title: textsCap.lastBackup,
+			},
+			{ collapsing: true, key: '_usageType', title: textsCap.usage },
+			{
+				content: getActions,
+				collapsing: true,
+				draggable: false,
+				textAlign: 'center',
+				title: textsCap.actions,
+			},
+		],
+		emptyMessage: { content: textsCap.emptyMessage },
+		searchExtraKeys: ['address', 'name', '_tagsStr'],
+		tableProps: {
+			// basic:  'very',
+			celled: false,
+			compact: true,
 		},
-		{
-			collapsing: true,
-			draggable: false,
-			key: '_balance',
-			sortable: false,
-			textAlign: 'center',
-			title: textsCap.txAllocations,
-		},
-		{
-			key: '_tags',
-			draggable: false, // individual tags are draggable
-			sortKey: 'tags',
-			title: textsCap.tags,
-		},
-		{
-			key: '_fileBackupTS',
-			textAlign: 'center',
-			title: textsCap.lastBackup,
-		},
-		{ collapsing: true, key: '_usageType', title: textsCap.usage },
-		{
-			content: getActions,
-			collapsing: true,
-			draggable: false,
-			textAlign: 'center',
-			title: textsCap.actions,
-		},
-	],
-	emptyMessage: { content: textsCap.emptyMessage },
-	searchExtraKeys: ['address', 'name', '_tagsStr'],
-	tableProps: {
-		// basic:  'very',
-		celled: false,
-		compact: true,
-	},
-	topLeftMenu: [
-		{
-			El: ButtonGroup,
-			buttons: [
-				{
-					content: textsCap.create,
-					icon: 'plus',
-					onClick: () => showForm(IdentityForm),
-				},
-				{
-					content: textsCap.locations,
-					icon: 'building',
-					onClick: () => showLocations(),
-				},
-				{
-					content: textsCap.contacts,
-					icon: 'building',
-					onClick: () => UserContactList.asModal(),
-				},
-			],
-			key: 0,
-		},
-	],
-})
+		topLeftMenu: [
+			{
+				El: ButtonGroup,
+				buttons: [
+					{
+						content: textsCap.create,
+						icon: 'plus',
+						onClick: () => showForm(IdentityForm),
+					},
+					{
+						content: textsCap.locations,
+						icon: 'building',
+						onClick: () => showLocations(),
+					},
+					{
+						content: textsCap.contacts,
+						icon: 'building',
+						onClick: () => UserContactList.asModal(),
+					},
+				],
+				key: 0,
+				vertical,
+			},
+		],
+	}
+}

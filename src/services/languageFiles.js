@@ -56,7 +56,7 @@ export default [
     "./src/modules/contact/ContactForm.jsx",
     "./src/modules/contact/ContactList.jsx",
     "./src/modules/contact/UserContactList.jsx",
-    "./src/modules/contact/index.js",
+    "./src/modules/contact/contact.js",
     "./src/modules/crowdsale/AddressList.jsx",
     "./src/modules/crowdsale/CalculatorForm.jsx",
     "./src/modules/crowdsale/CountDown.jsx",

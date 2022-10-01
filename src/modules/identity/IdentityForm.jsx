@@ -1,16 +1,28 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import { validateMnemonic } from 'bip39'
 import { BehaviorSubject } from 'rxjs'
+import { Button } from 'semantic-ui-react'
 import { isFn, arrUnique, deferred, objHasKeys } from '../../utils/utils'
-import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
+import FormBuilder, {
+	findInput,
+	fillValues,
+} from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { getAllTags } from '../partner/partner'
-import { addFromUri, find, generateUri, get, set, USAGE_TYPES } from './identity'
+import {
+	addFromUri,
+	find,
+	generateUri,
+	get,
+	set,
+	USAGE_TYPES,
+} from './identity'
 import { getAll as getLocations, rxLocations } from '../location/location'
 import { showForm } from '../../services/modal'
 import LocationForm from '../location/LocationForm'
-import { Button } from 'semantic-ui-react'
-import { validateMnemonic } from 'bip39'
+import ContactForm from '../contact/ContactForm'
+import { getAll as getContacts, rxContacts } from '../contact/contact'
 
 const textsCap = translated(
 	{
@@ -18,6 +30,9 @@ const textsCap = translated(
 		autoSaved: 'changes will be auto-saved',
 		bip39Warning:
 			'The mnemonic you have entered is not BIP39 compatible. You may or may not be able to restore your identity on any other wallet applications. It is recommended that you use a BIP39 compatible mnemonic. If you choose to use BIP39 incompatible mnemonic, please use at your own risk!',
+		contactIdCreateTittle: 'create a new contact',
+		contactIdLabel: 'contact details',
+		contactIdPlaceholder: 'select contact details for this identity',
 		create: 'create',
 		business: 'business',
 		generate: 'generate',
@@ -32,9 +47,9 @@ const textsCap = translated(
 		headerRestore: 'restore identity',
 		headerUpdate: 'update identity',
 		identityNamePlaceholder: 'enter a name for your Blockchain identity',
-		locationIdLabel: 'contact address',
-		locationIdPlaceholder: 'select a location for this identity',
 		locationIdCreateTittle: 'create a new location',
+		locationIdLabel: 'location',
+		locationIdPlaceholder: 'select a location for this identity',
 		restoreInputLabel: 'restore my existing identity',
 		seedExists: 'seed already exists in the identity list with name:',
 		seedPlaceholder: 'enter existing seed or generate one',
@@ -55,6 +70,7 @@ export const requiredFields = Object.freeze({
 })
 export const inputNames = Object.freeze({
 	...requiredFields,
+	contactId: 'contactId',
 	locationId: 'locationId',
 	restore: 'restore',
 	tags: 'tags',
@@ -74,9 +90,17 @@ export default class IdentityForm extends Component {
 		if (submitText !== null) {
 			submitText =
 				submitText ||
-				(this.doUpdate ? (autoSave ? null : textsCap.update) : restore ? textsCap.restore : textsCap.create)
+				(this.doUpdate
+					? autoSave
+						? null
+						: textsCap.update
+					: restore
+					? textsCap.restore
+					: textsCap.create)
 		}
-		this.header = header || (this.doUpdate ? textsCap.headerUpdate : textsCap.headerCreate)
+		this.header =
+			header ||
+			(this.doUpdate ? textsCap.headerUpdate : textsCap.headerCreate)
 		this.state = {
 			header: this.header,
 			message,
@@ -127,8 +151,14 @@ export default class IdentityForm extends Component {
 						name: inputNames.usageType,
 						onChange: this.handleUsageTypeChange,
 						options: [
-							{ label: textsCap.personal, value: USAGE_TYPES.PERSONAL },
-							{ label: textsCap.business, value: USAGE_TYPES.BUSINESS },
+							{
+								label: textsCap.personal,
+								value: USAGE_TYPES.PERSONAL,
+							},
+							{
+								label: textsCap.business,
+								value: USAGE_TYPES.BUSINESS,
+							},
 						],
 						radio: true,
 						required: true,
@@ -148,7 +178,10 @@ export default class IdentityForm extends Component {
 						noResultsMessage: textsCap.tagsInputEmptyMessage,
 						multiple: true,
 						onAddItem: this.handleAddTag,
-						options: arrUnique([...getAllTags(), ...(this.values.tags || [])]).map(tag => ({
+						options: arrUnique([
+							...getAllTags(),
+							...(this.values.tags || []),
+						]).map(tag => ({
 							key: tag,
 							text: tag,
 							value: tag,
@@ -167,7 +200,11 @@ export default class IdentityForm extends Component {
 									{...{
 										as: 'a', // prevents form being submitted unexpectedly
 										icon: 'plus',
-										onClick: () => showForm(LocationForm, { onSubmit: this.handleLocationCreate }),
+										onClick: () =>
+											showForm(LocationForm, {
+												onSubmit:
+													this.handleLocationCreate,
+											}),
 										size: 'mini',
 										style: { padding: 3 },
 										title: textsCap.locationIdCreateTittle,
@@ -176,10 +213,43 @@ export default class IdentityForm extends Component {
 							</div>
 						),
 						name: inputNames.locationId,
+						// get initial options
 						options: this.getLocationOptions(getLocations()),
 						placeholder: textsCap.locationIdPlaceholder,
 						rxOptions: rxLocations,
 						rxOptionsModifier: this.getLocationOptions,
+						rxValue: new BehaviorSubject(),
+						search: ['text'],
+						selection: true,
+						type: 'dropdown',
+					},
+					{
+						clearable: true,
+						label: (
+							<div>
+								{textsCap.contactIdLabel + ' '}
+								<Button
+									{...{
+										as: 'a', // prevents form being submitted unexpectedly
+										icon: 'plus',
+										onClick: () =>
+											showForm(ContactForm, {
+												onSubmit:
+													this.handleContactCreate,
+											}),
+										size: 'mini',
+										style: { padding: 3 },
+										title: textsCap.contactIdCreateTittle,
+									}}
+								/>
+							</div>
+						),
+						name: inputNames.contactId,
+						// get initial options
+						options: this.getContactOptions(getContacts()),
+						placeholder: textsCap.contactIdPlaceholder,
+						rxOptions: rxContacts,
+						rxOptionsModifier: this.getContactOptions,
 						rxValue: new BehaviorSubject(),
 						search: ['text'],
 						selection: true,
@@ -191,22 +261,77 @@ export default class IdentityForm extends Component {
 		}
 	}
 
-	getLocationOptions = locationsMap =>
-		Array.from(locationsMap)
-			.map(([id, loc]) =>
-				loc.partnerIdentity
-					? null
-					: {
-							description: [loc.state, loc.countryCode].filter(Boolean).join(', '),
-							key: id,
-							text: loc.name,
-							title: [loc.addressLine1, loc.addressLine2, loc.city, loc.postcode]
-								.filter(Boolean)
-								.join(' '),
-							value: id,
-					  }
-			)
-			.filter(Boolean)
+	getContactOptions = contactsMap => {
+		const excludePartnerContacts = ([_, c]) => !c.partnerIdentity
+		const formatOption = ([id, c]) => ({
+			description: <span style={{ marginTop: 4 }}>{c.email}</span>,
+			key: id,
+			text: (
+				<span>
+					<Button
+						{...{
+							compact: true,
+							icon: 'pencil',
+							onClick: e => {
+								e.preventDefault()
+								e.stopPropagation()
+								showForm(ContactForm, { values: c })
+							},
+							size: 'mini',
+						}}
+					/>
+					{c.name}
+				</span>
+			),
+			title: [c.email, (c.phoneCode || '') + (c.phoneNumber || '')]
+				.filter(Boolean)
+				.join(' '),
+			value: id,
+		})
+		return Array.from(contactsMap)
+			.filter(excludePartnerContacts)
+			.map(formatOption)
+	}
+
+	getLocationOptions = locationsMap => {
+		const excludePartnerLocations = ([_, l]) => !l.partnerIdentity
+		const formatOption = ([id, l]) => ({
+			description: (
+				<span style={{ marginTop: 4 }}>
+					{[l.state, l.countryCode].filter(Boolean).join(', ')}
+				</span>
+			),
+			key: id,
+			text: (
+				<span>
+					<Button
+						{...{
+							compact: true,
+							icon: 'pencil',
+							onClick: e => {
+								e.preventDefault()
+								e.stopPropagation()
+								showForm(LocationForm, {
+									// autoSave: true,
+									id,
+									values: l,
+								})
+							},
+							size: 'mini',
+						}}
+					/>
+					{l.name}
+				</span>
+			),
+			title: [l.addressLine1, l.addressLine2, l.city, l.postcode]
+				.filter(Boolean)
+				.join(' '),
+			value: id,
+		})
+		return Array.from(locationsMap)
+			.filter(excludePartnerLocations)
+			.map(formatOption)
+	}
 
 	handleAddTag = (_, data) => {
 		const { inputs } = this.state
@@ -216,6 +341,13 @@ export default class IdentityForm extends Component {
 			value: data.value,
 		})
 		this.setState({ inputs })
+	}
+
+	handleContactCreate = (success, _, id) => {
+		if (!success) return
+		const { inputs } = this.state
+		const contactIdIn = findInput(inputs, inputNames.contactId)
+		contactIdIn.rxValue.next(id)
 	}
 
 	handleFormChange = (...args) => {
@@ -264,7 +396,8 @@ export default class IdentityForm extends Component {
 		const seed = this.values[inputNames.uri]
 		const mnemonic = this.values[inputNames.uri].split('/')[0]
 		const uriInput = findInput(inputs, inputNames.uri)
-		const valid = !seed || !mnemonic || !isRestore || validateMnemonic(mnemonic)
+		const valid =
+			!seed || !mnemonic || !isRestore || validateMnemonic(mnemonic)
 
 		// validate BIP39 compatibility and warn user if not compatible
 		uriInput.message = valid
@@ -307,7 +440,8 @@ export default class IdentityForm extends Component {
 
 	validateName = (_, { value: name }) => {
 		const { address } = find(name) || {}
-		if (address && address !== this.values.address) return textsCap.uniqueNameRequired
+		if (address && address !== this.values.address)
+			return textsCap.uniqueNameRequired
 	}
 
 	validateUri = (_, { value: seed }) => {
