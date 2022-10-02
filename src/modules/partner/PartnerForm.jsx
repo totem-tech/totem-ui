@@ -19,8 +19,10 @@ import FormBuilder, {
 import { showForm } from '../../services/modal'
 import { translated } from '../../services/language'
 import client from '../chat/ChatClient'
+import { contacts } from '../contact/contact'
+import { inputNames as contactInputNames } from '../contact/ContactForm'
 import identityService from '../identity/identity'
-import { search as searchLocation } from '../location/location'
+import locations from '../location/location'
 import LocationForm, {
 	inputNames as locationInputNames,
 } from '../location/LocationForm'
@@ -35,16 +37,10 @@ import {
 	visibilityTypes,
 } from './partner'
 import CompanyForm from './CompanyForm'
+import ContactForm from '../contact/ContactForm'
 
 const textsCap = translated(
 	{
-		business: 'business',
-		close: 'close',
-		personal: 'personal',
-		tags: 'tags',
-		private: 'private',
-		public: 'public',
-
 		addressAdditionLabel: 'use',
 		addressLabel: 'search for Company or Identity',
 		addressEmptySearchMessage: 'enter a compnay name to search',
@@ -55,20 +51,28 @@ const textsCap = translated(
 		associatedIdentityLabel: 'associated with your identity',
 		associatedIdentityPlaceholder: 'select one of your identities',
 		autoSaved: 'changes will be auto saved',
+		business: 'business',
+		contactGroupLabel: 'contact details',
+		close: 'close',
 		companyFormOnOpenMsg: `
         You have chosen to make this partner public.
         Please ensure you fill in the correct details.
-        Click cancel to abort making public.
-    `,
+        Click cancel to abort making public.`,
 		header1: 'add partner',
 		header2: 'update partner',
-		locationGroupLabel: 'contact address',
+		locationGroupLabel: 'location',
 		nameLabel: 'enter partner name',
 		namePlaceholder: 'enter a name for this partner',
 		nameValidationMsg: 'please choose an unique partner name.',
+		personal: 'personal',
+		private: 'private',
+		public: 'public',
+		regNumberLabel: 'registered number',
+		regNumberPlaceholder: 'company registration number',
 		submitFailedMsg: 'failed to save partner',
 		submitSuccessMsg1: 'partner created successfully',
 		submitSuccessMsg2: 'partner updated successfully',
+		tags: 'tags',
 		tagsNoResultsMsg: 'enter tag and press enter to add, to tags list.',
 		tagsPlaceholder: 'enter tags',
 		typeLabel: 'partner usage type',
@@ -76,6 +80,8 @@ const textsCap = translated(
 		userIdLabel: 'user ID for this partner',
 		userIdPlaceholder: 'enter user ID for this partner',
 		visibilityLabel: 'decide partner visibility (on the network)',
+		vatNumberLabel: 'VAT number',
+		vatNumberPlaceholder: 'VAT registration number',
 	},
 	true
 )[1]
@@ -89,10 +95,14 @@ export const requiredFields = {
 export const inputNames = {
 	...requiredFields,
 	associatedIdentity: 'associatedIdentity',
+	contactFormHtml: 'contactFormHtml',
+	contactGroup: 'contactGroup',
 	locationFormHtml: 'locationFormHtml',
 	locationGroup: 'locationGroup',
+	registeredNumber: 'registeredNumber',
 	tags: 'tags',
 	userId: 'userId',
+	vatNumber: 'vatNumber',
 }
 
 export default class PartnerForm extends Component {
@@ -105,19 +115,20 @@ export default class PartnerForm extends Component {
 		this.doUpdate = !!this.partner
 		values = { ...this.partner, ...values }
 		const { address, name, tags = [], visibility } = values
-		const locationQuery = {}
-		locationQuery[locationInputNames.partnerIdentity] = address
-		const locationResult = !address
-			? new Map()
-			: searchLocation(locationQuery, true, true, false, 1)
-		const [locationId, location] = Array.from(locationResult)[0] || []
+		const query = { [locationInputNames.partnerIdentity]: address }
+		const [locationId, location] =
+			Array.from(
+				!address
+					? new Map()
+					: locations.search(query, true, true, false, 1)
+			)[0] || []
+		const contact = contacts.find(query)
 		this.companySearchDP = PromisE.deferred()
 
 		// placeholder to store user added address to the dropdown list
 		this.customAddresses = []
 		this.state = {
-			closeText:
-				closeText || (this.doUpdate ? textsCap.close : undefined),
+			closeText: this.doUpdate && autoSave ? null : closeText,
 			header:
 				header || (this.doUpdate ? textsCap.header2 : textsCap.header1),
 			message: {},
@@ -247,7 +258,7 @@ export default class PartnerForm extends Component {
 					placeholder: textsCap.userIdPlaceholder,
 					type: 'UserIdInput',
 				},
-				location && {
+				{
 					accordion: {
 						collapsed: true,
 						styled: true,
@@ -269,9 +280,15 @@ export default class PartnerForm extends Component {
 											locationInputNames.partnerName,
 											locationInputNames.removeBtn,
 										],
-										style: { width: '100%' },
-										submitText: null,
-										values: location,
+										style: {
+											marginBottom: -30,
+											width: '100%',
+										},
+										// submitText: null,
+										values: {
+											...location,
+											partnerIdentity: address,
+										},
 										// hide location related inputs when partner location is removed
 										onRemove: () => {
 											const { inputs } = this.state
@@ -288,6 +305,66 @@ export default class PartnerForm extends Component {
 							),
 						},
 					],
+				},
+				{
+					accordion: {
+						collapsed: true,
+						styled: true,
+					},
+					label: textsCap.contactGroupLabel,
+					name: inputNames.contactGroup,
+					type: 'group',
+					inputs: [
+						{
+							name: inputNames.contactFormHtml,
+							type: 'html',
+							content: (
+								<ContactForm
+									{...{
+										El: 'div',
+										autoSave: true,
+										inputsHidden: [
+											contactInputNames.removeBtn,
+											contactInputNames.partnerIdentity,
+										],
+										style: {
+											marginBottom: -30,
+											width: '100%',
+										},
+										values: {
+											...contact,
+											partnerIdentity: address,
+										},
+										// hide location related inputs when partner location is removed
+										onRemove: () => {
+											const { inputs } = this.state
+											const contactGroupIn =
+												findInput(
+													inputs,
+													inputNames.contactGroup
+												) || {}
+											contactGroupIn.hidden = true
+											this.setState({ inputs })
+										},
+									}}
+								/>
+							),
+						},
+					],
+				},
+				{
+					label: textsCap.regNumberLabel,
+					minLength: 3,
+					maxLength: 64,
+					name: inputNames.registeredNumber,
+					placeholder: textsCap.regNumberPlaceholder,
+				},
+				{
+					label: textsCap.vatNumberLabel,
+					minLength: 3,
+					maxLength: 64,
+					name: inputNames.vatNumber,
+					placeholder: textsCap.vatNumberPlaceholder,
 				},
 			].filter(Boolean),
 		}

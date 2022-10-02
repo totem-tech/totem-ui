@@ -3,7 +3,13 @@ import PropTypes from 'prop-types'
 import { validateMnemonic } from 'bip39'
 import { BehaviorSubject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
-import { isFn, arrUnique, deferred, objHasKeys } from '../../utils/utils'
+import {
+	isFn,
+	arrUnique,
+	deferred,
+	objHasKeys,
+	isBool,
+} from '../../utils/utils'
 import FormBuilder, {
 	findInput,
 	fillValues,
@@ -30,6 +36,7 @@ const textsCap = translated(
 		autoSaved: 'changes will be auto-saved',
 		bip39Warning:
 			'The mnemonic you have entered is not BIP39 compatible. You may or may not be able to restore your identity on any other wallet applications. It is recommended that you use a BIP39 compatible mnemonic. If you choose to use BIP39 incompatible mnemonic, please use at your own risk!',
+		businessInfoLabel: 'business information',
 		contactIdCreateTittle: 'create a new contact',
 		contactIdLabel: 'contact details',
 		contactIdPlaceholder: 'select contact details for this identity',
@@ -50,6 +57,8 @@ const textsCap = translated(
 		locationIdCreateTittle: 'create a new location',
 		locationIdLabel: 'location',
 		locationIdPlaceholder: 'select a location for this identity',
+		regNumberLabel: 'registered number',
+		regNumberPlaceholder: 'company registration number',
 		restoreInputLabel: 'restore my existing identity',
 		seedExists: 'seed already exists in the identity list with name:',
 		seedPlaceholder: 'enter existing seed or generate one',
@@ -58,6 +67,8 @@ const textsCap = translated(
 		uniqueNameRequired: 'please enter an unique name',
 		usageType: 'usage type',
 		validSeedRequired: 'please enter a valid seed',
+		vatNumberLabel: 'VAT number',
+		vatNumberPlaceholder: 'VAT registration number',
 	},
 	true
 )[1]
@@ -70,10 +81,13 @@ export const requiredFields = Object.freeze({
 })
 export const inputNames = Object.freeze({
 	...requiredFields,
+	businessInfo: 'businessInfo',
 	contactId: 'contactId',
 	locationId: 'locationId',
+	registeredNumber: 'registeredNumber',
 	restore: 'restore',
 	tags: 'tags',
+	vatNumber: 'vatNumber',
 })
 
 export default class IdentityForm extends Component {
@@ -86,6 +100,7 @@ export default class IdentityForm extends Component {
 		this.values = { ...existingValues, ...values }
 		this.rxAddress = new BehaviorSubject(address)
 		this.doUpdate = !!existingValues
+		autoSave = isBool(autoSave) ? autoSave : this.doUpdate
 
 		if (submitText !== null) {
 			submitText =
@@ -102,7 +117,9 @@ export default class IdentityForm extends Component {
 			header ||
 			(this.doUpdate ? textsCap.headerUpdate : textsCap.headerCreate)
 		this.state = {
+			closeText: autoSave ? null : undefined,
 			header: this.header,
+			subheader: autoSave ? textsCap.autoSaved : undefined,
 			message,
 			onChange: this.handleFormChange,
 			onSubmit: this.handleSubmit,
@@ -192,68 +209,98 @@ export default class IdentityForm extends Component {
 						selection: true,
 					},
 					{
-						clearable: true,
-						label: (
-							<div>
-								{textsCap.locationIdLabel + ' '}
-								<Button
-									{...{
-										as: 'a', // prevents form being submitted unexpectedly
-										icon: 'plus',
-										onClick: () =>
-											showForm(LocationForm, {
-												onSubmit:
-													this.handleLocationCreate,
-											}),
-										size: 'mini',
-										style: { padding: 3 },
-										title: textsCap.locationIdCreateTittle,
-									}}
-								/>
-							</div>
-						),
-						name: inputNames.locationId,
-						// get initial options
-						options: this.getLocationOptions(getLocations()),
-						placeholder: textsCap.locationIdPlaceholder,
-						rxOptions: rxLocations,
-						rxOptionsModifier: this.getLocationOptions,
-						rxValue: new BehaviorSubject(),
-						search: ['text'],
-						selection: true,
-						type: 'dropdown',
-					},
-					{
-						clearable: true,
-						label: (
-							<div>
-								{textsCap.contactIdLabel + ' '}
-								<Button
-									{...{
-										as: 'a', // prevents form being submitted unexpectedly
-										icon: 'plus',
-										onClick: () =>
-											showForm(ContactForm, {
-												onSubmit:
-													this.handleContactCreate,
-											}),
-										size: 'mini',
-										style: { padding: 3 },
-										title: textsCap.contactIdCreateTittle,
-									}}
-								/>
-							</div>
-						),
-						name: inputNames.contactId,
-						// get initial options
-						options: this.getContactOptions(getContacts()),
-						placeholder: textsCap.contactIdPlaceholder,
-						rxOptions: rxContacts,
-						rxOptionsModifier: this.getContactOptions,
-						rxValue: new BehaviorSubject(),
-						search: ['text'],
-						selection: true,
-						type: 'dropdown',
+						accordion: {
+							collapsed: true,
+							styled: true,
+						},
+						label: textsCap.businessInfoLabel,
+						name: inputNames.businessInfo,
+						grouped: true,
+						type: 'group',
+						inputs: [
+							{
+								clearable: true,
+								label: (
+									<div>
+										{textsCap.locationIdLabel + ' '}
+										<Button
+											{...{
+												as: 'a', // prevents form being submitted unexpectedly
+												icon: 'plus',
+												onClick: () =>
+													showForm(LocationForm, {
+														onSubmit:
+															this
+																.handleLocationCreate,
+													}),
+												size: 'mini',
+												style: { padding: 3 },
+												title: textsCap.locationIdCreateTittle,
+											}}
+										/>
+									</div>
+								),
+								name: inputNames.locationId,
+								// get initial options
+								options: this.getLocationOptions(
+									getLocations()
+								),
+								placeholder: textsCap.locationIdPlaceholder,
+								rxOptions: rxLocations,
+								rxOptionsModifier: this.getLocationOptions,
+								rxValue: new BehaviorSubject(),
+								search: ['text'],
+								selection: true,
+								type: 'dropdown',
+							},
+							{
+								clearable: true,
+								label: (
+									<div>
+										{textsCap.contactIdLabel + ' '}
+										<Button
+											{...{
+												as: 'a', // prevents form being submitted unexpectedly
+												icon: 'plus',
+												onClick: () =>
+													showForm(ContactForm, {
+														onSubmit:
+															this
+																.handleContactCreate,
+													}),
+												size: 'mini',
+												style: { padding: 3 },
+												title: textsCap.contactIdCreateTittle,
+											}}
+										/>
+									</div>
+								),
+								name: inputNames.contactId,
+								// get initial options
+								options: this.getContactOptions(getContacts()),
+								placeholder: textsCap.contactIdPlaceholder,
+								rxOptions: rxContacts,
+								rxOptionsModifier: this.getContactOptions,
+								rxValue: new BehaviorSubject(),
+								search: ['text'],
+								selection: true,
+								type: 'dropdown',
+							},
+							{
+								label: textsCap.regNumberLabel,
+								minLength: 3,
+								maxLength: 64,
+								name: inputNames.registeredNumber,
+								placeholder: textsCap.regNumberPlaceholder,
+							},
+							{
+								label: textsCap.vatNumberLabel,
+								minLength: 3,
+								maxLength: 64,
+								name: inputNames.vatNumber,
+								placeholder: textsCap.vatNumberPlaceholder,
+							},
+						],
 					},
 				],
 				this.values
@@ -267,7 +314,7 @@ export default class IdentityForm extends Component {
 			description: <span style={{ marginTop: 4 }}>{c.email}</span>,
 			key: id,
 			text: (
-				<span>
+				<span style={{ paddingLeft: 25 }}>
 					<Button
 						{...{
 							compact: true,
@@ -278,6 +325,11 @@ export default class IdentityForm extends Component {
 								showForm(ContactForm, { values: c })
 							},
 							size: 'mini',
+							// style adjustment to make sure height of the dropdown doesn't change because of the button
+							style: {
+								position: 'absolute',
+								margin: '-5px -30px',
+							},
 						}}
 					/>
 					{c.name}
@@ -303,7 +355,7 @@ export default class IdentityForm extends Component {
 			),
 			key: id,
 			text: (
-				<span>
+				<span style={{ paddingLeft: 25 }}>
 					<Button
 						{...{
 							compact: true,
@@ -312,12 +364,16 @@ export default class IdentityForm extends Component {
 								e.preventDefault()
 								e.stopPropagation()
 								showForm(LocationForm, {
-									// autoSave: true,
 									id,
 									values: l,
 								})
 							},
 							size: 'mini',
+							// style adjustment to make sure height of the dropdown doesn't change because of the button
+							style: {
+								position: 'absolute',
+								margin: '-5px -30px',
+							},
 						}}
 					/>
 					{l.name}
@@ -350,17 +406,19 @@ export default class IdentityForm extends Component {
 		contactIdIn.rxValue.next(id)
 	}
 
-	handleFormChange = (...args) => {
+	handleFormChange = deferred((...args) => {
 		const { autoSave, onChange } = this.props
 		const [_, values, invalid] = args
 		this.values = values
-		isFn(onChange) && onChange(...args)
+		!invalid && isFn(onChange) && onChange(...args)
 		if (invalid || !autoSave || !this.doUpdate) return
 
 		// prevent saving if one or more fields are empty
 		if (!objHasKeys(values, Object.keys(requiredFields), true)) return
-		this.handleSubmit(...args)
-	}
+
+		const address = values[inputNames.address]
+		set(address, values)
+	}, 300)
 
 	handleLocationCreate = (success, _, id) => {
 		if (!success) return

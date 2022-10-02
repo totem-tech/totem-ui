@@ -2,7 +2,6 @@ import DataStorage from '../../utils/DataStorage'
 import { textEllipsis, arrUnique, objHasKeys, isAddress, objClean } from '../../utils/utils'
 import identities from '../identity/identity'
 import { remove as removeLocation } from '../location/location'
-import { inputNames as allFields, requiredFields } from './PartnerForm'
 
 const partners = new DataStorage('totem_partners')
 export const rxPartners = partners.rxData
@@ -14,6 +13,24 @@ export const visibilityTypes = {
     PRIVATE: 'private',
     PUBLIC: 'public',
 }
+
+export const requiredKeys = [
+    'address',
+    'name',
+    'type',
+    'visibility',
+]
+export const validKeys = [
+    ...requiredKeys,
+    'associatedIdentity',
+    'contactId',
+    'locationFormHtml',
+    'locationGroup',
+    'registeredNumber',
+    'tags',
+    'userId',
+    'vatNumber',
+]
 
 export const get = address => partners.get(address)
 
@@ -46,24 +63,44 @@ export const getByName = name => partners.find({ name }, true, true, true)
 // returns first matching partner with userId
 export const getByUserId = userId => partners.find({ userId }, true, true, false)
 
+/**
+ * @name    remove
+ * @summary remove partner
+ * 
+ * @param   {String} address partner identity/key
+ */
 export const remove = address => {
-    const { name, locationId } = partners.get(address) || {}
-    name && partners.delete(address)
+    const { contactId, name, locationId } = partners.get(address) || {}
+    contactId && removeContact(contactId)
     locationId && removeLocation(locationId)
+    name && partners.delete(address)
 }
+
+/**
+ * @name	search
+ * @summary search partners
+ * 
+ * @param	{Object}	values
+ * @param	{...any}	args	See DataStorage.search
+ * 
+ * @returns {Map}
+ */
+export const search = (values = {}, ...args) => partners.search(values, ...args)
 
 /**
  * @name    set
  * @summary add or update partner
  * 
  * @param   {String}      values.address              partner address/identity. Also used as key/ID.
- * @param   {String}      values.name                 partner name
- * @param   {String}      values.type                 partner type: public or personal
- * @param   {String}      values.visibility           whether partner is public or private
  * @param   {String}      values.associatedIdentity   (optional) own identity/address
  * @param   {locationId}  values.locationId           (optional) partner location ID
+ * @param   {String}      values.name                 partner name
+ * @param   {String}      values.registeredNumber     (optional) company registration number
  * @param   {Array}       values.tags                 (optional)
+ * @param   {String}      values.type                 partner type: public or personal
  * @param   {String}      values.userId               (optional) partner user ID
+ * @param   {String}      values.vatNumber            (optional) VAT registration number
+ * @param   {String}      values.visibility           whether partner is public or private
  * 
  * @returns {Boolean} indicates save success or failure
  */
@@ -73,10 +110,10 @@ export const set = values => {
     values.address = address.trim()
     values.tags = tags || []
     values.type = Object.values(types).includes(type) ? type : types.PERSONAL
-    if (!objHasKeys(values, Object.values(requiredFields), true)) return false
+    if (!objHasKeys(values, requiredKeys, true)) return false
     if (!isAddress(values.address)) return false
     // get rid of any unwanted properties
-    values = objClean(values, Object.values(allFields))
+    values = objClean(values, validKeys)
     partners.set(address, values)
 
     return true
@@ -103,6 +140,7 @@ export default {
     getByName,
     getByUserId,
     remove,
+    search,
     set,
     setPublic,
 }

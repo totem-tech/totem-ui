@@ -6,12 +6,14 @@ import FormBuilder, {
 	fillValues,
 	findInput,
 } from '../../components/FormBuilder'
-import { showForm } from '../../services/modal'
+import { closeModal, confirm } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
 import { iUseReducer } from '../../utils/reactHelper'
 import storage from '../../utils/storageHelper'
-import { arrSort, isBool, isFn, objSetPropUndefined } from '../../utils/utils'
-import { get, newId, set as save, validationConf } from './contact'
+import { arrSort, isFn, objSetPropUndefined } from '../../utils/utils'
+import identities from '../identity/identity'
+import { get, newId, remove, set as save, validationConf } from './contact'
+import partners from '../partner/partner'
 
 const textsCap = translated(
 	{
@@ -20,11 +22,16 @@ const textsCap = translated(
 		headerCreate: 'new contact details',
 		headerUpdate: 'update contact details',
 		subheaderUpdate: 'changes will be auto-saved',
-		nameLabel: 'name',
-		namePlaceholder: 'enter a name',
+		nameLabel: 'contact name',
+		namePlaceholder: 'enter a name for this contact',
+		partnerIdentityLabel: 'associated partner',
 		phoneCodeLabel: 'phone number',
 		phoneCodePlaceholder: 'country',
+		remove: 'remove',
+		removeContact: 'remove contact',
+		saveContact: 'save contact',
 		update: 'update',
+		usedByIdentites: 'this contact is used by the following identities:',
 	},
 	true
 )[1]
@@ -36,15 +43,18 @@ export const inputNames = {
 	phoneNumber: 'phoneNumber',
 	phoneCode: 'phoneCode',
 	phoneGroup: 'phoneGroup',
+	removeBtn: 'removeBtn',
 }
 
 export default function ContactForm(props) {
 	const [state = []] = iUseReducer(null, rxSetState => {
 		let { autoSave, onChange, onSubmit, values = {} } = props
 		// generate a random ID if not already provided
-		objSetPropUndefined(values, 'id', newId())
-		const { id } = values
-		const existingEntry = get(id)
+		objSetPropUndefined(values, inputNames.id, newId())
+		const id = values[inputNames.id]
+		let existingEntry = get(id)
+		values = { ...existingEntry, ...values }
+		const partnerIdentity = values[inputNames.partnerIdentity]
 		autoSave = existingEntry && autoSave !== false
 		const countryOptions = storage.countries
 			.map(([_, country]) => {
@@ -71,8 +81,16 @@ export default function ContactForm(props) {
 				name: inputNames.id,
 			},
 			{
-				hidden: true,
+				disabled: true,
+				hidden: !partnerIdentity,
+				label: textsCap.partnerIdentityLabel,
 				name: inputNames.partnerIdentity,
+				options: Array.from(partners.getAll()).map(([address, p]) => ({
+					text: p.name,
+					value: address,
+				})),
+				selection: true,
+				type: 'dropdown',
 			},
 			{
 				...validationConf.email,
@@ -127,6 +145,54 @@ export default function ContactForm(props) {
 					},
 				],
 			},
+			{
+				content: textsCap.removeContact,
+				fluid: true,
+				hidden: () => !existingEntry,
+				icon: 'trash',
+				name: inputNames.removeBtn,
+				negative: true,
+				onClick: () => {
+					const { modalId } = props
+					const { id, partnerIdentity } = values
+					let content
+					if (!partnerIdentity) {
+						// find identities that are associated with this contact
+						const identityMatches = Array.from(
+							identities.search({ contactId: id }, true)
+						)
+						content = (
+							<div>
+								{identityMatches.length > 0 && (
+									<div>
+										<b>{textsCap.usedByIdentites}</b>
+										<ul>
+											{identityMatches.map(([id, x]) => (
+												<li key={id}>{x.name}</li>
+											))}
+										</ul>
+									</div>
+								)}
+							</div>
+						)
+					}
+					confirm({
+						header: textsCap.removeContact,
+						content: content,
+						confirmButton: {
+							content: textsCap.remove,
+							negative: true,
+						},
+						onConfirm: () => {
+							modalId && closeModal(modalId)
+							remove(id)
+						},
+						size: 'mini',
+					})
+				},
+				styleContainer: { textAlign: 'center' },
+				type: 'button',
+			},
 		]
 
 		const state = {
@@ -147,9 +213,9 @@ export default function ContactForm(props) {
 				isFn(onSubmit) && onSubmit(!invalid, values, id)
 				autoSave = props.autoSave
 			},
-			onSubmit: (...args) => {
-				const [_, values] = args
-				isFn(onSubmit) && onSubmit(...args)
+			onSubmit: (e, values) => {
+				existingEntry = values
+				const id = values[inputNames.id]
 				// save to separate local stoarge
 				save(values)
 
@@ -157,8 +223,11 @@ export default function ContactForm(props) {
 					...state,
 					header: textsCap.headerUpdate,
 					submitText: textsCap.update,
+					success: true,
 				})
+				isFn(onSubmit) && onSubmit(true, values, id)
 			},
+			submitText: !!existingEntry ? textsCap.update : undefined,
 		}
 
 		if (autoSave) {
@@ -184,8 +253,9 @@ ContactForm.propTypes = {
 }
 ContactForm.defaultProps = {
 	autoSave: true,
-	// values: { id: '3a6c4ea06ba9' },
+	closeOnSubmit: true,
 	size: 'mini',
+	submitText: textsCap.saveContact,
 }
 
 // showForm(ContactDetailsForm)
