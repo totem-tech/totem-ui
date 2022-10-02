@@ -19,6 +19,7 @@ import storage from '../../utils/storageHelper'
 
 const textsCap = translated(
 	{
+		advanced: 'advanced',
 		availableBalance: 'available balance',
 		autoSaved: 'changes will be auto-saved',
 		close: 'close',
@@ -79,85 +80,100 @@ export default class IdentityDetailsForm extends Component {
 					type: 'html',
 				},
 				{
-					action: {
-						icon: 'copy',
-						onClick: e =>
-							e.preventDefault() |
-							copyToClipboard(this.identity.address),
-						style: { cursor: 'pointer' },
-						title: textsCap.copyAddress,
+					accordion: {
+						collapsed: true,
+						styled: true,
 					},
-					label: textsCap.identity,
-					name: 'address',
-					readOnly: true,
-					type: 'text',
-				},
-				{
-					inlineLabel: {
-						icon: { className: 'no-margin', name: 'eye' },
-						style: { cursor: 'pointer' },
-						title: textsCap.showSeed,
-						onClick: () => {
-							const toggle = () => {
-								const { inputs } = this.state
-								this.showSeed = !this.showSeed
-								const uriIn = findInput(inputs, 'uri')
-								uriIn.action = !this.showSeed
-									? undefined
-									: {
-											icon: 'copy',
-											onClick: e =>
-												e.preventDefault() |
-												copyToClipboard(
-													this.identity.uri
-												),
-											title: textsCap.copySeed,
-									  }
-								uriIn.inlineLabel.icon.name = `eye${
-									this.showSeed ? ' slash' : ''
-								}`
-								uriIn.inlineLabel.title = `${
-									this.showSeed
-										? textsCap.hideSeed
-										: textsCap.showSeed
-								}`
-								uriIn.value = this.getUri(this.identity.uri)
-								this.setState({ inputs })
-							}
-							this.showSeed
-								? toggle()
-								: confirm({
-										cancelButton: (
-											<Button
-												positive
-												content={
-													textsCap.noKeepItHidden
-												}
-											/>
-										),
-										confirmButton: (
-											<Button
-												negative
-												content={textsCap.show}
-											/>
-										),
-										header: textsCap.showSeed,
-										onConfirm: toggle,
-										size: 'mini',
-								  })
+					grouped: true,
+					label: textsCap.advanced,
+					name: 'advanced',
+					type: 'group',
+					widths: 16,
+					inputs: [
+						{
+							action: {
+								icon: 'copy',
+								onClick: e =>
+									e.preventDefault() |
+									copyToClipboard(this.identity.address),
+								style: { cursor: 'pointer' },
+								title: textsCap.copyAddress,
+							},
+							label: textsCap.identity,
+							name: 'address',
+							readOnly: true,
+							type: 'text',
 						},
-					},
-					labelPosition: 'left', // for inlineLabel
-					label: textsCap.seed,
-					name: 'uri',
-					readOnly: true,
-					type: 'text',
-					useInput: true,
-				},
-				{
-					label: textsCap.cryptoType,
-					name: 'type',
-					readOnly: true,
+						{
+							inlineLabel: {
+								icon: { className: 'no-margin', name: 'eye' },
+								style: { cursor: 'pointer' },
+								title: textsCap.showSeed,
+								onClick: () => {
+									const toggle = () => {
+										const { inputs } = this.state
+										this.showSeed = !this.showSeed
+										const uriIn = findInput(inputs, 'uri')
+										uriIn.action = !this.showSeed
+											? undefined
+											: {
+													icon: 'copy',
+													onClick: e =>
+														e.preventDefault() |
+														copyToClipboard(
+															this.identity.uri
+														),
+													title: textsCap.copySeed,
+											  }
+										uriIn.inlineLabel.icon.name = `eye${
+											this.showSeed ? ' slash' : ''
+										}`
+										uriIn.inlineLabel.title = `${
+											this.showSeed
+												? textsCap.hideSeed
+												: textsCap.showSeed
+										}`
+										uriIn.value = this.getUri(
+											this.identity.uri
+										)
+										this.setState({ inputs })
+									}
+									this.showSeed
+										? toggle()
+										: confirm({
+												cancelButton: (
+													<Button
+														positive
+														content={
+															textsCap.noKeepItHidden
+														}
+													/>
+												),
+												confirmButton: (
+													<Button
+														negative
+														content={textsCap.show}
+													/>
+												),
+												header: textsCap.showSeed,
+												onConfirm: toggle,
+												size: 'mini',
+										  })
+								},
+							},
+							labelPosition: 'left', // for inlineLabel
+							label: textsCap.seed,
+							name: 'uri',
+							readOnly: true,
+							type: 'text',
+							useInput: true,
+						},
+						{
+							label: textsCap.cryptoType,
+							name: 'type',
+							readOnly: true,
+						},
+					],
 				},
 				{
 					label: textsCap.lastBackup,
@@ -174,6 +190,7 @@ export default class IdentityDetailsForm extends Component {
 								EL: 'label',
 								emptyMessage: textsCap.loadingBalance,
 								prefix: `${textsCap.availableBalance}: `,
+								showDetailed: true,
 								style: {
 									fontWeight: 'bold',
 									margin: '0 0 0 3px',
@@ -191,7 +208,10 @@ export default class IdentityDetailsForm extends Component {
 					name: 'delete',
 					negative: true,
 					onClick: this.handleDelete,
-					style: { marginTop: 15, textTransform: 'capitalize' },
+					style: {
+						marginTop: 15,
+						textTransform: 'capitalize',
+					},
 					type: 'button',
 				},
 			],

@@ -2,7 +2,14 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
-import { isFn, isObj, isArr, isStr } from '../../utils/utils'
+import {
+	isFn,
+	isObj,
+	isArr,
+	isStr,
+	deferred,
+	objCreate,
+} from '../../utils/utils'
 import FormBuilder, {
 	fillValues,
 	findInput,
@@ -11,37 +18,46 @@ import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import client from '../chat/ChatClient'
+import { get as getContact } from '../contact/contact'
+import ContactForm, {
+	inputNames as contactcInputNames,
+} from '../contact/ContactForm'
 import { getAll as getPartners } from '../partner/partner'
 import { get as getLocation } from '../location/location'
 import LocationForm, {
 	inputNames as locFormInputNames,
 } from '../location/LocationForm'
 import { find as findIdentity, getAll as getIdentities } from './identity'
+import IdentityForm, { inputNames as idInputNames } from './IdentityForm'
 
 const notificationType = 'identity'
 const childType = 'share'
 const textsCap = translated(
 	{
-		identities: 'identities',
-		identity: 'identity',
-		partners: 'partners',
-		partner: 'partner',
-
 		failedMsgHeader: 'submission failed!',
 		formHeader1: 'share identity/partner',
 		formHeader2: 'share identity',
 		formHeader3: 'share partner',
 		formSubheader: 'with one or more Totem users',
+		identities: 'identities',
+		identity: 'identity',
 		identityLabel1: 'partner/identity to be shared',
 		identityLabel2: 'identity to be shared',
 		identityLabel3: 'partner to be shared',
 		identityPlaceholder: 'select an identity',
+		includeContact: 'include contact details',
+		includeLabel: 'select optional information to share',
 		includeLocation: 'include location',
 		introducedByLabel: 'introduced by',
+		includeRegNumber: 'include registered number',
+		includeVATNumber: 'include VAT number',
 		nameLabel: 'change partner name (this will be seen by recipients)',
 		namePlaceholder: 'enter a name to be shared',
+		partner: 'partner',
+		partners: 'partners',
 		successMsgContent: 'identity has been sent to selected users',
 		successMsgHeader: 'identity sent!',
+		updateContact: 'update contact details',
 		updateLocation: 'update location',
 		userIdsLabel: 'recipients',
 		userIdsNoResultMsg: 'type user ID and press enter to add',
@@ -52,7 +68,7 @@ const textsCap = translated(
 
 export const inputNames = {
 	address: 'address',
-	includeLocation: 'includeLocation',
+	include: 'include',
 	introducedBy: 'introducedBy',
 	name: 'name',
 	userIds: 'userIds',
@@ -61,6 +77,7 @@ export default class IdentityShareForm extends Component {
 	constructor(props) {
 		super(props)
 
+		this.values = props.values || {}
 		this.state = {
 			header: textsCap.formHeader1,
 			message: {},
@@ -74,16 +91,9 @@ export default class IdentityShareForm extends Component {
 					placeholder: textsCap.identityPlaceholder,
 					required: true,
 					rxValue: new BehaviorSubject(),
-					search: true,
+					search: ['name', 'value'],
 					selection: true,
 					type: 'dropdown',
-				},
-				{
-					name: inputNames.includeLocation,
-					options: [],
-					type: 'checkbox-group',
-					toggle: true,
-					value: false,
 				},
 				{
 					label: textsCap.nameLabel,
@@ -91,6 +101,16 @@ export default class IdentityShareForm extends Component {
 					placeholder: textsCap.namePlaceholder,
 					required: false,
 					type: 'text',
+				},
+				{
+					label: textsCap.includeLabel,
+					// inline: true,
+					name: inputNames.include,
+					multiple: true,
+					options: [],
+					type: 'checkbox-group',
+					toggle: true,
+					value: false,
 				},
 				{
 					includePartners: true,
@@ -127,6 +147,46 @@ export default class IdentityShareForm extends Component {
 		const identityIn = findInput(inputs, inputNames.address)
 		// add identity options
 		identityIn.options = []
+
+		const getIdentityOption = ({ address, name }) => ({
+			key: address,
+			name, // keep
+			text: name,
+			value: address,
+			text: (
+				<span style={{ paddingLeft: 25 }}>
+					<Button
+						{...{
+							compact: true,
+							icon: 'pencil',
+							onClick: e => {
+								e.preventDefault()
+								e.stopPropagation()
+								showForm(IdentityForm, {
+									autoSave: true,
+									onChange: deferred(e => {
+										this.handleAddressChange(e, this.values)
+										// setTimeout(() => {})
+									}, 100),
+									values,
+									onClose: () => {
+										this.componentWillMount()
+									},
+								})
+							},
+							size: 'mini',
+							// style adjustment to make sure height of the dropdown doesn't change because of the button
+							style: {
+								position: 'absolute',
+								margin: '-5px -30px',
+							},
+						}}
+					/>
+					{name}
+				</span>
+			),
+		})
+
 		if (includeOwnIdentities) {
 			includePartners &&
 				identityIn.options.push({
@@ -135,14 +195,7 @@ export default class IdentityShareForm extends Component {
 					text: textsCap.identities,
 					value: '', // keep
 				})
-			identityIn.options.push(
-				...getIdentities().map(({ address, name }) => ({
-					key: address,
-					name, // keep
-					text: name,
-					value: address,
-				}))
-			)
+			identityIn.options.push(...getIdentities().map(getIdentityOption))
 		}
 		if (includePartners) {
 			includeOwnIdentities &&
@@ -201,42 +254,80 @@ export default class IdentityShareForm extends Component {
 
 	handleAddressChange = (_, values) => {
 		const { inputs } = this.state
-		const includeLocationIn = findInput(inputs, inputNames.includeLocation)
 		const address = values[inputNames.address]
-		const { locationId } = findIdentity(address) || {}
-		includeLocationIn.hidden = !locationId
-		includeLocationIn.options = [
-			{
-				label: (
-					<div style={{ marginTop: -5 }}>
-						{textsCap.includeLocation + ' '}
-						<Button
-							{...{
-								// circular: true,
-								icon: 'pencil',
-								onClick: e => {
-									e.stopPropagation()
-									e.preventDefault()
-									showForm(LocationForm, {
-										autoSave: true,
-										id: locationId,
-										// disable remove button prevent location being deleted from here
-										inputsHidden: [
-											locFormInputNames.removeBtn,
-										],
-									})
-								},
-								size: 'mini',
-								title: textsCap.updateLocation,
-							}}
-						/>
-					</div>
+		const identity = findIdentity(address) || {}
+		const { contactId, locationId, registeredNumber, vatNumber } = identity
+
+		// show/hide location share option
+		const includeIn = findInput(inputs, inputNames.include)
+		includeIn.hidden = !locationId
+		const getOption = (value, label, Form, formProps, btnTitle) => ({
+			label: !Form ? (
+				label
+			) : (
+				<div style={{ marginTop: -5 }}>
+					{label + ' '}
+					<Button
+						{...{
+							icon: 'pencil',
+							onClick: e => {
+								e.stopPropagation()
+								e.preventDefault()
+								showForm(Form, formProps)
+							},
+							size: 'mini',
+							title: btnTitle,
+						}}
+					/>
+				</div>
+			),
+			value,
+		})
+		includeIn.options = [
+			locationId &&
+				getOption(
+					idInputNames.locationId,
+					textsCap.includeLocation,
+					LocationForm,
+					{
+						autoSave: true,
+						id: locationId,
+						// disable remove button prevent location being deleted from here
+						inputsHidden: [locFormInputNames.removeBtn],
+					},
+					textsCap.updateLocation
 				),
-				value: true,
-			},
-		]
+			contactId &&
+				getOption(
+					idInputNames.contactId,
+					textsCap.includeContact,
+					ContactForm,
+					{
+						autoSave: true,
+						// disable remove button prevent location being deleted from here
+						inputsHidden: [contactcInputNames.removeBtn],
+						values: {
+							[contactcInputNames.id]: contactId,
+						},
+					},
+					textsCap.updateContact
+				),
+			registeredNumber &&
+				getOption(
+					idInputNames.registeredNumber,
+					`${textsCap.includeRegNumber}: "${registeredNumber}"`
+				),
+			vatNumber &&
+				getOption(
+					idInputNames.vatNumber,
+					`${textsCap.includeVATNumber}: "${vatNumber}"`
+				),
+		].filter(Boolean)
+
 		this.setState({ inputs })
 	}
+
+	handleFormChange = (_, values) => (this.values = values)
 
 	handleSubmit = (e, values) => {
 		const { onSubmit } = this.props
@@ -245,16 +336,28 @@ export default class IdentityShareForm extends Component {
 		const address = values[inputNames.address]
 		const identity = findIdentity(address)
 		const sharePartner = !identity
-		const includeLocation = values[inputNames.includeLocation]
+		const includeArr = values[inputNames.include] || []
 		const name =
 			values[inputNames.name] ||
 			addressIn.options.find(x => x.value === address).name
 		const userIds = values[inputNames.userIds]
-		const location =
-			includeLocation && identity
-				? getLocation(identity.locationId)
-				: undefined
-		const data = { address, name, location }
+		const data = {
+			address,
+			contactDetails: includeArr.includes(idInputNames.contactId)
+				? getContact(identity[idInputNames.contactId])
+				: undefined,
+			location: includeArr.includes(idInputNames.locationId)
+				? getLocation(identity[idInputNames.locationId])
+				: undefined,
+			name,
+			registeredNumber: includeArr.includes(idInputNames.registeredNumber)
+				? identity[idInputNames.registeredNumber]
+				: undefined,
+			vatNumber: includeArr.includes(idInputNames.vatNumber)
+				? identity[idInputNames.vatNumber]
+				: undefined,
+		}
+		console.log({ data })
 
 		this.setState({ loading: true })
 		const callback = err => {
@@ -302,7 +405,7 @@ IdentityShareForm.propTypes = {
 	includeOwnIdentities: PropTypes.bool,
 	values: PropTypes.shape({
 		[inputNames.address]: PropTypes.string,
-		[inputNames.includeLocation]: PropTypes.bool,
+		[inputNames.include]: PropTypes.array,
 		[inputNames.introducedBy]: PropTypes.string,
 		[inputNames.name]: PropTypes.string,
 		[inputNames.userIds]: PropTypes.oneOfType([

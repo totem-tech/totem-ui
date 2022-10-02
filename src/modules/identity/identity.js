@@ -12,18 +12,20 @@ export const USAGE_TYPES = Object.freeze({
 	PERSONAL: 'personal',
 	BUSINESS: 'business',
 })
-const REQUIRED_KEYS = Object.freeze([
+export const REQUIRED_KEYS = Object.freeze([
 	'address',
 	'name',
 	'uri',
 ])
-const VALID_KEYS = Object.freeze([
+export const VALID_KEYS = Object.freeze([
 	...REQUIRED_KEYS,
 	'cloudBackupStatus', // undefined: never backed up, in-progress, done
 	'cloudBackupTS', // most recent successful backup timestamp
 	'contactId',
 	'fileBackupTS', // most recent file backup timestamp
 	'locationId',
+	'registeredNumber',
+	'vatNumber',
 	'selected',
 	'tags',
 	'type',
@@ -62,6 +64,17 @@ export const find = addressOrName => identities.find({ address: addressOrName, n
  * @param   {String} address
  */
 export const remove = address => { identities.delete(address) }
+
+/**
+ * @name	search
+ * @summary search identities
+ * 
+ * @param	{Object}	values
+ * @param	{...any}	args	See DataStorage.search
+ * 
+ * @returns {Map}
+ */
+export const search = (values = {}, ...args) => identities.search(values, ...args)
 
 /**
  * @name    set
@@ -145,6 +158,12 @@ export default {
 	getAll,
 	getSelected,
 	remove,
+	REQUIRED_KEYS,
+	rxIdentities,
+	rxSelected,
+	search,
 	set,
 	setSelected,
+	USAGE_TYPES,
+	VALID_KEYS,
 }

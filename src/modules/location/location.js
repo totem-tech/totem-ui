@@ -80,3 +80,14 @@ export const set = (location, id = randomHex(), replace = false) => {
 
 	return id
 }
+
+export default {
+	find,
+	get,
+	getAll,
+	remove,
+	rxLocations,
+	search,
+	set,
+	validKeys,
+}

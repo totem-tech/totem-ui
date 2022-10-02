@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import DataTable from '../../components/DataTable'
 import { showForm } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
-import ContactForm from './ContactForm'
+import ContactForm, { inputNames } from './ContactForm'
 import { Button } from 'semantic-ui-react'
 
 const textsCap = translated(
@@ -21,16 +21,40 @@ const textsCap = translated(
 export const ContactList = props => {
 	const [tableProps] = useState(() => ({
 		columns: [
-			{
-				collapsing: true,
-				key: 'id',
-				textAlign: 'center',
-				title: textsCap.id,
-			},
+			// {
+			// 	collapsing: true,
+			// 	key: 'id',
+			// 	textAlign: 'center',
+			// 	title: textsCap.id,
+			// },
 			{ key: 'name', title: textsCap.name },
-			{ key: 'email', textAlign: 'center', title: textsCap.email },
 			{
-				content: x => `${x.phoneCode || ''}${x.phoneNumber || ''}`,
+				content: contact => {
+					const email = contact[inputNames.email]
+					return (
+						email && (
+							<a href={`mailto:${email}`} target='_blank'>
+								{email}
+							</a>
+						)
+					)
+				},
+				key: 'email',
+				textAlign: 'center',
+				title: textsCap.email,
+			},
+			{
+				content: contact => {
+					const code = contact[inputNames.phoneCode]
+					const number = contact[inputNames.phoneNumber]
+					if (!number || !code) return
+
+					return (
+						<a href={`tel:${`${code}${number}`}`} target='_blank'>
+							{`${code} ${number}`}
+						</a>
+					)
+				},
 				key: 'phone',
 				textAlign: 'center',
 				title: textsCap.phone,
@@ -58,6 +82,7 @@ export const ContactList = props => {
 			{...{
 				...props,
 				...tableProps,
+				// keywords: 'first',
 				topLeftMenu: [
 					{
 						// add user contact details

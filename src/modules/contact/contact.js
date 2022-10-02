@@ -1,10 +1,11 @@
 import uuid from 'uuid'
 import DataStorage from '../../utils/DataStorage'
 import { translated } from '../../utils/languageHelper'
-import { generateHash, objClean } from '../../utils/utils'
+import { generateHash, isObj, objClean } from '../../utils/utils'
 import { TYPES, validate, validateObj } from '../../utils/validator'
 
 const textsCap = translated({
+    errInvalidObject: 'object requied',
     errInvalidPhone: 'invalid phone number',
 }, true)[1]
 
@@ -35,7 +36,7 @@ export const getAll = () => contacts.getAll()
  * 
  * @returns {String}
  */
-export const newId = () => generateHash(uuid.v4(), 'blake2', 48)
+export const newId = seed => generateHash(seed || uuid.v4(), 'blake2', 48)
     .replace('0x', '')
 
 /**
@@ -57,23 +58,30 @@ export const remove = id => { contacts.delete(id) }
  * @param   {String}    entry.partnerIdentity    (optional) address of the partner this entry belongs to
  * @param   {String}    entry.phoneCode         (optional) phone country code starting with "+"
  * @param   {String}    entry.phoneNumber       (optional) phone number excluding country code
+ * @param   {String}    replace                 whether to replace existing entry
  */
-export const set = entry => {
+export const set = (entry, replace = false) => {
+    if (!isObj(entry)) throw new Error(textsCap.errInvalidObject)
+
+    const { id } = entry
+    entry = {
+        ...(replace ? {} : get(id)), // merge with existing entry if replace is falsy
+        ...entry,
+    }
     let err = validateObj(entry, validationConf, true, true)
     // require phone code if phone number is specified
     if (!err) {
         const { phoneCode, phoneNumber } = entry
-        err = phoneNumber && validate(phoneCode, { ...validationConf.phoneCode, required: true })
+        err = phoneNumber && validate(phoneCode, {
+            ...validationConf.phoneCode,
+            required: true,
+        })
     }
     if (err) throw new Error(err)
 
-    const { id } = entry
     contacts.set(
         id,
-        objClean(
-            entry,
-            Object.keys(validationConf)
-        )
+        objClean(entry, Object.keys(validationConf))
     )
 }
 

@@ -99,7 +99,7 @@ const getActions = ({ address, name }) =>
 			icon: 'share',
 			onClick: () =>
 				showForm(IdentityShareForm, {
-					inputsDisabled: ['address'],
+					// inputsDisabled: ['address'],
 					includeOwnIdentities: true,
 					includePartners: false,
 					size: 'tiny',
