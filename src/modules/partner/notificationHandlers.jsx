@@ -5,13 +5,14 @@ import { confirm, showForm } from '../../services/modal'
 import { generateHash, hasValue, isObj } from '../../utils/utils'
 import {
 	get as getContact,
-	newId,
+	newId as newContactId,
 	set as saveContact,
 	remove as removeContact,
 } from '../contact/contact'
 import { inputNames as contactInputNames } from '../contact/ContactForm'
 import {
 	get as getLocation,
+	newId as newLocationId,
 	remove as removeLocation,
 	set as saveLocation,
 } from '../location/location'
@@ -56,11 +57,11 @@ const handleIdentityReceived = (
 		try {
 			if (!accepted) return remove(id)
 
-			const locationId = generateHash(address)
+			const locationId = newLocationId(address)
 			const existingLocation = getLocation(locationId)
 			const hasLocation = isObj(location) && hasValue(location)
 			const hasContact = isObj(contactDetails) && hasValue(contactDetails)
-			const contactId = newId(address)
+			const contactId = newContactId(address)
 			contactDetails[contactInputNames.id] = contactId
 			const existingContact = getContact(contactId)
 			let partnerSaved = false

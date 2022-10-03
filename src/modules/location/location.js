@@ -1,7 +1,7 @@
+import uuid from 'uuid'
 import DataStorage from '../../utils/DataStorage'
-import { randomHex } from '../../services/blockchain'
 import { optionalFields, requiredFields } from './LocationForm'
-import { isObj, isStr, objClean, objHasKeys } from '../../utils/utils'
+import { generateHash, isObj, isStr, objClean, objHasKeys } from '../../utils/utils'
 
 const locations = new DataStorage('totem_locations', true)
 export const rxLocations = locations.rxData // RxJS Subject (because caching is disabled)
@@ -28,6 +28,16 @@ export const find = (...args) => locations.find(...args)
  * @returns {Object}
  */
 export const get = id => locations.get(id)
+
+/**
+ * @name	newId
+ * @summary	generate new location ID 
+ * 
+ * @param	{*} seed
+ * 
+ * @returns {String}
+ */
+export const newId = seed => generateHash(seed || uuid.v1(), 'blake2', 256)
 
 /**
  * @name    getAll
@@ -65,7 +75,7 @@ export const search = (...args) => locations.search(...args)
  * 
  * @returns	{String|null}		null if save failed
  */
-export const set = (location, id = randomHex(), replace = false) => {
+export const set = (location, id = newId(), replace = false) => {
 	if (!isStr(id) || !isObj(location)) return null
 	const existingItem = locations.get(id)
 	const requiredKeys = Object.values(requiredFields)

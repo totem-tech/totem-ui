@@ -11,6 +11,7 @@ import {
 	arrUnique,
 	objHasKeys,
 	isStr,
+	generateHash,
 } from '../../utils/utils'
 import FormBuilder, {
 	fillValues,
@@ -22,7 +23,10 @@ import client from '../chat/ChatClient'
 import { contacts } from '../contact/contact'
 import { inputNames as contactInputNames } from '../contact/ContactForm'
 import identityService from '../identity/identity'
-import locations from '../location/location'
+import locations, {
+	newId as newLocationId,
+	set as saveLocation,
+} from '../location/location'
 import LocationForm, {
 	inputNames as locationInputNames,
 } from '../location/LocationForm'
@@ -440,13 +444,24 @@ export default class PartnerForm extends Component {
 
 	handleAddressChange = (e, { address }, i) => {
 		const { inputs } = this.state
+		const locationGroupIn = findInput(inputs, inputNames.locationGroup)
 		const nameIn = findInput(inputs, inputNames.name)
-		const { company } =
-			inputs[i].options.find(x => x.value === address) || {}
-		findInput(inputs, inputNames.visibility).hidden = !!company
+		const regNumIn = findInput(inputs, inputNames.registeredNumber)
+		const visibilityIn = findInput(inputs, inputNames.visibility)
+		const { options = [] } = inputs[i]
+		const { company } = options.find(x => x.value === address) || {}
+
+		// hide location if company selected as company includes a location
+		locationGroupIn.hidden = !!company
 		nameIn.type = !!company ? 'hidden' : 'text'
+		// hide visitibity if company selected as it is already "public"
+		visibilityIn.hidden = !!company
+		// only hide registration number if selected company contains a number
+		regNumIn.hidden = !!company && !!company.registrationNumber
+
 		if (company) {
 			nameIn.rxValue.next(company.name)
+			visibilityIn.rxValue.next(visibilityTypes.PUBLIC)
 		}
 		this.setState({ inputs })
 	}
@@ -538,7 +553,7 @@ export default class PartnerForm extends Component {
 		const visibilityIn = findInput(inputs, inputNames.visibility)
 		const visibilityDisabled = visibilityIn.disabled || visibilityIn.hidden
 		const companyExists = !!company || visibilityDisabled
-		let { name, address, visibility } = values
+		let { name, address, locationId, visibility } = values
 		if (!!companyExists) {
 			name = (company && company.name) || name
 			visibility = visibilityTypes.PUBLIC
@@ -554,6 +569,35 @@ export default class PartnerForm extends Component {
 			valuesTemp[inputNames.visibility] = visibilityTypes.PRIVATE
 			visibilityIn.rxValue.next(visibilityTypes.PRIVATE)
 		}
+
+		// if company added from database add location
+		if (!!company && !!company.regAddress && !locationId) {
+			const { countryCode, regAddress = {} } = company
+			const {
+				addressLine1,
+				addressLine2,
+				postTown: city,
+				postCode,
+				county: state,
+			} = regAddress
+			const placeholderValue = '___'
+			// For required fields with empty value placeholder value is used with multiple underscores.
+			// This is so that the location can be saved without the need for user intervention.
+			const location = {
+				addressLine1: addressLine1 || placeholderValue,
+				addressLine2,
+				city: city || placeholderValue,
+				countryCode: countryCode || placeholderValue,
+				name: company.name,
+				partnerIdentity: address,
+				postcode: postCode || placeholderValue,
+				state: state || placeholderValue,
+			}
+			locationId = newLocationId(address)
+			saveLocation(location, locationId)
+			values.locationId = locationId
+		}
+
 		const success = set(values) && (!this.doUpdate || !autoSave)
 		const message =
 			closeOnSubmit || this.doUpdate

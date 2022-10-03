@@ -93,11 +93,22 @@ const tableProps = Object.freeze({
 		{
 			collapsing: true,
 			content: p => {
-				const isPersonal = p.type === types.PERSONAL
-				const name = isPersonal ? 'user circle' : 'building'
+				const { type, visibility } = p
+				const isPersonal = type === types.PERSONAL
+				const isPublic = visibility === visibilityTypes.PUBLIC
+				const name = isPublic
+					? 'certificate'
+					: isPersonal
+					? 'user circle'
+					: 'building'
 				return (
 					<Icon
-						{...{ className: 'no-margin', name, size: 'large' }}
+						{...{
+							className: 'no-margin',
+							color: isPublic ? 'blue' : undefined,
+							name,
+							size: 'large',
+						}}
 					/>
 				)
 			},

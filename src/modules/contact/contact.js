@@ -32,13 +32,12 @@ export const getAll = () => contacts.getAll()
 
 /**
  * @name    newId
- * @summary generates a new random hex with 32 byte length (8 characters)
+ * @summary generates a new random hex with 64 byte length (16 characters)
  * 
  * @returns {String}
  */
-export const newId = seed => generateHash(seed || uuid.v1(), 'blake2', 48)
+export const newId = seed => generateHash(seed || uuid.v1(), 'blake2', 64)
     .replace('0x', '')
-window.uuid = uuid
 
 /**
  * @name    remove

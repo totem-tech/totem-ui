@@ -149,7 +149,7 @@ const getTableProps = isMobile => {
 				draggable: false,
 				key: '_balance',
 				sortable: false,
-				textAlign: 'center',
+				textAlign: 'right',
 				title: textsCap.txAllocations,
 			},
 			{
