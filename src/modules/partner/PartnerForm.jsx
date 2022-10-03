@@ -122,7 +122,7 @@ export default class PartnerForm extends Component {
 					? new Map()
 					: locations.search(query, true, true, false, 1)
 			)[0] || []
-		const contact = contacts.find(query)
+		const contact = (address && contacts.find(query)) || undefined
 		this.companySearchDP = PromisE.deferred()
 
 		// placeholder to store user added address to the dropdown list
@@ -284,7 +284,6 @@ export default class PartnerForm extends Component {
 											marginBottom: -30,
 											width: '100%',
 										},
-										// submitText: null,
 										values: {
 											...location,
 											partnerIdentity: address,

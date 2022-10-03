@@ -36,8 +36,9 @@ export const getAll = () => contacts.getAll()
  * 
  * @returns {String}
  */
-export const newId = seed => generateHash(seed || uuid.v4(), 'blake2', 48)
+export const newId = seed => generateHash(seed || uuid.v1(), 'blake2', 48)
     .replace('0x', '')
+window.uuid = uuid
 
 /**
  * @name    remove

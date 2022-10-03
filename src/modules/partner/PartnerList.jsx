@@ -1,5 +1,5 @@
 import React from 'react'
-import { Checkbox, Button } from 'semantic-ui-react'
+import { Checkbox, Button, Icon } from 'semantic-ui-react'
 import { textEllipsis } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
 import { ButtonGroup, UserID } from '../../components/buttons'
@@ -14,6 +14,7 @@ import {
 	remove,
 	rxPartners,
 	setPublic,
+	types,
 	visibilityTypes,
 } from './partner'
 import CompanyForm from './CompanyForm'
@@ -90,8 +91,29 @@ export default function PartnerList(props = {}) {
 const tableProps = Object.freeze({
 	columns: [
 		{
+			collapsing: true,
+			content: p => {
+				const isPersonal = p.type === types.PERSONAL
+				const name = isPersonal ? 'user circle' : 'building'
+				return (
+					<Icon
+						{...{ className: 'no-margin', name, size: 'large' }}
+					/>
+				)
+			},
+			headerProps: { style: { borderRight: 'none' } },
+			style: {
+				borderRight: 'none',
+				paddingRight: 0,
+			},
+			textAlign: 'center',
+			title: '',
+		},
+		{
+			headerProps: { style: { borderLeft: 'none' } },
 			key: '_name',
 			sortKey: 'name',
+			style: { borderLeft: 'none' },
 			title: textsCap.partnerName,
 		},
 		{

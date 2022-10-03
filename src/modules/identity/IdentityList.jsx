@@ -11,7 +11,7 @@ import { showForm } from '../../services/modal'
 import { useRxSubject } from '../../services/react'
 // modules
 import { showLocations } from '../location/LocationsList'
-import { rxIdentities } from './identity'
+import { rxIdentities, USAGE_TYPES } from './identity'
 import IdentityDetailsForm from './IdentityDetailsForm'
 import IdentityForm from './IdentityForm'
 import IdentityShareForm from './IdentityShareForm'
@@ -119,6 +119,25 @@ const getTableProps = isMobile => {
 	const vertical = isMobile && window.innerWidth < 415
 	return {
 		columns: [
+			{
+				collapsing: true,
+				content: p => {
+					const isPersonal = p.usageType === USAGE_TYPES.PERSONAL
+					const name = isPersonal ? 'user circle' : 'building'
+					return (
+						<Icon
+							{...{ className: 'no-margin', name, size: 'large' }}
+						/>
+					)
+				},
+				headerProps: { style: { borderRight: 'none' } },
+				style: {
+					borderRight: 'none',
+					paddingRight: 0,
+				},
+				textAlign: 'center',
+				title: '',
+			},
 			{
 				key: '_name',
 				sortKey: 'name',
