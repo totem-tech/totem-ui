@@ -241,7 +241,7 @@ export default class DataTable extends Component {
 								...style,
 							}
 							const dragValue = draggableValueKey
-								? item[draggableValueKey]
+								? item[draggableValueKey] || ''
 								: null
 							const props = {
 								...objWithoutKeys(cell, nonAttrs),

@@ -50,11 +50,16 @@ export const ContactList = props => {
 					if (!number || !code) return
 
 					return (
-						<a href={`tel:${`${code}${number}`}`} target='_blank'>
+						<a
+							draggable={false}
+							href={`tel:${`${code}${number}`}`}
+							target='_blank'
+						>
 							{`${code} ${number}`}
 						</a>
 					)
 				},
+				draggableValueKey: 'phoneNumber',
 				key: 'phone',
 				textAlign: 'center',
 				title: textsCap.phone,
@@ -71,10 +76,12 @@ export const ContactList = props => {
 							title: textsCap.update,
 						},
 					].map((props, i) => <Button {...props} key={i} />),
+				draggable: false,
 				textAlign: 'center',
 				title: textsCap.action,
 			},
 		],
+		searchExtraKeys: ['phoneCode', 'phoneNumber'],
 	}))
 
 	return (
