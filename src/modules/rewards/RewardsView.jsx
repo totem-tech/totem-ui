@@ -5,7 +5,7 @@ import Message, { statuses } from '../../components/Message'
 import { translated } from '../../services/language'
 import { closeModal, confirm, showForm } from '../../services/modal'
 import { useRxSubject } from '../../services/react'
-import chatClient from '../../utils/chatClient'
+import chatClient, { rxIsLoggedIn } from '../../utils/chatClient'
 import PromisE from '../../utils/PromisE'
 import storage from '../../utils/storageHelper'
 import { isBool } from '../../utils/utils'
@@ -21,7 +21,8 @@ let textsCap = translated(
 	{
 		errIneligibleToMigrate: 'You are not eligible to claim $KAPEX!',
 		migrateRewards: 'claim $KAPEX',
-		notRegistered: 'please complete registration in the getting started module',
+		notRegistered:
+			'please complete registration in the getting started module',
 		signupDesc: 'reward you received when you signed up',
 		signupHeader: 'signup reward',
 	},
@@ -29,11 +30,13 @@ let textsCap = translated(
 )[1]
 
 // invoke without arguments to retrieve saved value
-const cacheEligible = (eligible) => storage.cache('rewards', 'KAPEXClaimEligible', eligible) || null
-const cacheSubmitted = (submitted) => storage.cache('rewards', 'KAPEXClaimSubmitted', submitted) || null
+const cacheEligible = eligible =>
+	storage.cache('rewards', 'KAPEXClaimEligible', eligible) || null
+const cacheSubmitted = submitted =>
+	storage.cache('rewards', 'KAPEXClaimSubmitted', submitted) || null
 
 export default function RewardsView() {
-	const [isRegistered] = useRxSubject(rxIsRegistered)
+	const [isLoggedIn] = useRxSubject(rxIsLoggedIn)
 	const rewards = useRewards()
 	const { socialRewards, signupReward, referralRewards } = rewards
 	const [isLoading, setLoading] = useState(false)
@@ -44,23 +47,28 @@ export default function RewardsView() {
 	useEffect(() => {
 		const init = async () => {
 			const eligible =
-				isEligible !== false && (await chatClient.rewardsClaimKAPEX.promise({ checkEligible: true }))
+				isEligible !== false &&
+				(await chatClient.rewardsClaimKAPEX.promise({
+					checkEligible: true,
+				}))
 			setIsEligible(eligible)
 			cacheEligible(eligible)
 			if (!eligible) return
 
-			const submitted = await chatClient.rewardsClaimKAPEX.promise({ checkSubmitted: true })
+			const submitted = await chatClient.rewardsClaimKAPEX.promise({
+				checkSubmitted: true,
+			})
 			setClaimSubmitted(submitted)
 			submitted && cacheSubmitted(submitted)
 		}
 
-		if (isRegistered && !claimSubmitted) {
+		if (isLoggedIn && !claimSubmitted) {
 			setLoading(true)
 			init().finally(() => setLoading(false))
 		}
-	}, [isRegistered])
+	}, [isLoggedIn])
 
-	return !isRegistered ? (
+	return !isLoggedIn ? (
 		textsCap.notRegistered
 	) : (
 		<div>
@@ -72,17 +80,23 @@ export default function RewardsView() {
 					content: textsCap.migrateRewards,
 					disabled: claimSubmitted,
 					icon: {
-						name: isEligible === false ? 'warning sign' : claimSubmitted ? 'check circle' : 'play',
+						name:
+							isEligible === false
+								? 'warning sign'
+								: claimSubmitted
+								? 'check circle'
+								: 'play',
 					},
 					loading: isLoading,
 					onClick: async () => {
 						try {
-							if (isEligible === false) throw new Error(textsCap.errIneligibleToMigrate)
+							if (isEligible === false)
+								throw new Error(textsCap.errIneligibleToMigrate)
 
 							showForm(
 								ClaimKAPEXForm,
 								{
-									onSubmit: (success) => {
+									onSubmit: success => {
 										if (!success) return
 										setClaimSubmitted(true)
 									},
@@ -93,7 +107,12 @@ export default function RewardsView() {
 							confirm(
 								{
 									content: (
-										<span style={{ color: 'red', fontWeight: 'bold' }}>
+										<span
+											style={{
+												color: 'red',
+												fontWeight: 'bold',
+											}}
+										>
 											{`${err}`.replace('Error: ', '')}
 										</span>
 									),
