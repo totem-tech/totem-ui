@@ -9,8 +9,9 @@ export const DEFAULT_NAME = 'Default' // default identity name
 export const rxIdentities = identities.rxData
 export const rxSelected = new BehaviorSubject()
 export const USAGE_TYPES = Object.freeze({
-	PERSONAL: 'personal',
 	BUSINESS: 'business',
+	PERSONAL: 'personal',
+	REWARD: 'reward',
 })
 export const REQUIRED_KEYS = Object.freeze([
 	'address',

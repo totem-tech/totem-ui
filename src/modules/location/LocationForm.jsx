@@ -216,18 +216,22 @@ export default class LocationForm extends Component {
 								options: arrSort(
 									storage.countries.map(([_, c]) => ({
 										altspellings: c.altSpellings.join(' '),
-										description: c.code,
+										// description: c.code,
 										flag: !noFlags.includes(c.code)
 											? c.code.toLowerCase()
 											: '',
 										key: c.code,
 										name: c.name,
-										text: <div>{c.name}</div>,
+										text: c.code,
 										value: c.code,
 									})),
 									'text'
 								),
-								placeholder: textsCap.countryPlaceholder,
+								placeholder: (
+									<span style={{ whiteSpace: 'nowrap' }}>
+										{textsCap.countryPlaceholder}
+									</span>
+								),
 								required: true,
 								selection: true,
 								search: ['name', 'altspellings'],

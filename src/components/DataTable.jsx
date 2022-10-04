@@ -54,7 +54,7 @@ export default class DataTable extends Component {
 		let { columns, defaultSort, defaultSortAsc, pageNo } = props
 		if (!defaultSort) {
 			const { key, sortKey } =
-				columns.find(x => x.sortable !== false) || {}
+				columns.find(x => !!x.key && x.sortable !== false) || {}
 			defaultSort = sortKey || key
 		}
 		this.state = {

@@ -79,8 +79,6 @@ export default function PartnerList(props = {}) {
 			partner._tags = <Tags tags={tags} />
 			// makes tags searchable
 			partner._tagsStr = tags.join(' ')
-			partner._type =
-				type === 'personal' ? textsCap.personal : textsCap.business
 			return partner
 		})
 	)
@@ -96,22 +94,31 @@ const tableProps = Object.freeze({
 				const { type, visibility } = p
 				const isPersonal = type === types.PERSONAL
 				const isPublic = visibility === visibilityTypes.PUBLIC
-				const name = isPublic
-					? 'certificate'
+				const icons = {
+					business: { name: 'building', title: textsCap.business },
+					personal: { name: 'user circle', title: textsCap.personal },
+					public: {
+						color: 'blue',
+						name: 'certificate',
+						title: textsCap.public,
+					},
+				}
+				const icon = isPublic
+					? icons.public
 					: isPersonal
-					? 'user circle'
-					: 'building'
+					? icons.personal
+					: icons.business
 				return (
 					<Icon
 						{...{
 							className: 'no-margin',
-							color: isPublic ? 'blue' : undefined,
-							name,
 							size: 'large',
+							...icon,
 						}}
 					/>
 				)
 			},
+			draggable: false,
 			headerProps: { style: { borderRight: 'none' } },
 			style: {
 				borderRight: 'none',
@@ -138,7 +145,6 @@ const tableProps = Object.freeze({
 			sortKey: 'tags',
 			title: textsCap.tags,
 		},
-		{ collapsing: true, key: '_type', title: textsCap.usage },
 		{
 			collapsing: true,
 			content: getActions,
@@ -160,7 +166,6 @@ const tableProps = Object.freeze({
 		'name',
 		'visibility',
 		'_tagsStr',
-		'_type',
 		'userId',
 	],
 	searchable: true,

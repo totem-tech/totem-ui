@@ -7,11 +7,8 @@ import {
 	arrSort,
 	deferred,
 	isFn,
-	isObj,
 	arrUnique,
 	objHasKeys,
-	isStr,
-	generateHash,
 } from '../../utils/utils'
 import FormBuilder, {
 	fillValues,
@@ -21,7 +18,9 @@ import { showForm } from '../../services/modal'
 import { translated } from '../../services/language'
 import client from '../chat/ChatClient'
 import { contacts } from '../contact/contact'
-import { inputNames as contactInputNames } from '../contact/ContactForm'
+import ContactForm, {
+	inputNames as contactInputNames,
+} from '../contact/ContactForm'
 import identityService from '../identity/identity'
 import locations, {
 	newId as newLocationId,
@@ -30,6 +29,7 @@ import locations, {
 import LocationForm, {
 	inputNames as locationInputNames,
 } from '../location/LocationForm'
+import CompanyForm from './CompanyForm'
 import {
 	get,
 	getAddressName,
@@ -40,8 +40,6 @@ import {
 	types,
 	visibilityTypes,
 } from './partner'
-import CompanyForm from './CompanyForm'
-import ContactForm from '../contact/ContactForm'
 
 const textsCap = translated(
 	{
@@ -163,8 +161,8 @@ export default class PartnerForm extends Component {
 					],
 					radio: true,
 					required: true,
+					rxValue: new BehaviorSubject(types.PERSONAL),
 					type: 'checkbox-group',
-					value: types.PERSONAL,
 				},
 				{
 					allowAdditions: false,
@@ -285,7 +283,7 @@ export default class PartnerForm extends Component {
 											locationInputNames.removeBtn,
 										],
 										style: {
-											marginBottom: -30,
+											// marginBottom: -30,
 											width: '100%',
 										},
 										values: {
@@ -331,7 +329,7 @@ export default class PartnerForm extends Component {
 											contactInputNames.partnerIdentity,
 										],
 										style: {
-											marginBottom: -30,
+											// marginBottom: -30,
 											width: '100%',
 										},
 										values: {
@@ -447,6 +445,7 @@ export default class PartnerForm extends Component {
 		const locationGroupIn = findInput(inputs, inputNames.locationGroup)
 		const nameIn = findInput(inputs, inputNames.name)
 		const regNumIn = findInput(inputs, inputNames.registeredNumber)
+		const typeIn = findInput(inputs, inputNames.type)
 		const visibilityIn = findInput(inputs, inputNames.visibility)
 		const { options = [] } = inputs[i]
 		const { company } = options.find(x => x.value === address) || {}
@@ -461,6 +460,7 @@ export default class PartnerForm extends Component {
 
 		if (company) {
 			nameIn.rxValue.next(company.name)
+			typeIn.rxValue.next(types.BUSINESS)
 			visibilityIn.rxValue.next(visibilityTypes.PUBLIC)
 		}
 		this.setState({ inputs })

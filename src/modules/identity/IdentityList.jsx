@@ -46,46 +46,20 @@ const textsCap = translated(
 export default function IdentityList(props) {
 	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
 	const [data] = useRxSubject(rxIdentities, map => {
-		const { user: { address: rewardsIdentity = '' } = '' } =
-			storage.settings.module('messaging') || {}
+		const settings = storage.settings.module('messaging') || {}
+		const { user: { address: rewardsIdentity = '' } = '' } = settings
+
 		return Array.from(map).map(([_, identityOrg]) => {
 			const identity = { ...identityOrg }
-			const {
-				address,
-				fileBackupTS,
-				name,
-				tags = [],
-				usageType,
-			} = identity
-			const isRewardsIdentity = address === rewardsIdentity
+			const { address, fileBackupTS, tags = [], usageType } = identity
+			const isPersonal = usageType === USAGE_TYPES.PERSONAL
+			identity._isReward = address === rewardsIdentity
 			identity._balance = (
 				<Balance {...{ address, lockSeparator: <br /> }} />
 			)
 			identity._fileBackupTS = format(fileBackupTS) || textsCap.never
-			identity._name = (
-				<div
-					{...{
-						key: address,
-						title: isRewardsIdentity
-							? textsCap.rewardsIdentity
-							: '',
-					}}
-				>
-					{isRewardsIdentity && (
-						<Icon
-							{...{
-								name: 'gift',
-								style: { color: 'orange' },
-							}}
-						/>
-					)}
-					{name}
-				</div>
-			)
 			identity._tagsStr = tags.join(' ') // for tags search
 			identity._tags = <Tags key={address} tags={tags} />
-			identity._usageType =
-				usageType === 'personal' ? textsCap.personal : textsCap.business
 			return identity
 		})
 	})
@@ -122,14 +96,41 @@ const getTableProps = isMobile => {
 			{
 				collapsing: true,
 				content: p => {
-					const isPersonal = p.usageType === USAGE_TYPES.PERSONAL
-					const name = isPersonal ? 'user circle' : 'building'
+					let icon
+					const ut = p._isReward ? USAGE_TYPES.REWARD : p.usageType
+					switch (ut) {
+						case USAGE_TYPES.BUSINESS:
+							icon = {
+								name: 'building',
+								title: textsCap.business,
+							}
+							break
+						case USAGE_TYPES.PERSONAL:
+							icon = {
+								name: 'user circle',
+								title: textsCap.personal,
+							}
+							break
+						case USAGE_TYPES.REWARD:
+							icon = {
+								color: 'orange',
+								name: 'gift',
+								title: textsCap.rewardsIdentity,
+							}
+							break
+					}
+
 					return (
 						<Icon
-							{...{ className: 'no-margin', name, size: 'large' }}
+							{...{
+								className: 'no-margin',
+								size: 'large',
+								...icon,
+							}}
 						/>
 					)
 				},
+				draggable: false,
 				headerProps: { style: { borderRight: 'none' } },
 				style: {
 					borderRight: 'none',
@@ -139,8 +140,8 @@ const getTableProps = isMobile => {
 				title: '',
 			},
 			{
-				key: '_name',
-				sortKey: 'name',
+				headerProps: { style: { borderLeft: 'none' } },
+				key: 'name',
 				style: { minWidth: 150 },
 				title: textsCap.name,
 			},
@@ -163,7 +164,6 @@ const getTableProps = isMobile => {
 				textAlign: 'center',
 				title: textsCap.lastBackup,
 			},
-			{ collapsing: true, key: '_usageType', title: textsCap.usage },
 			{
 				content: getActions,
 				collapsing: true,
@@ -172,8 +172,9 @@ const getTableProps = isMobile => {
 				title: textsCap.actions,
 			},
 		],
+		defaultSort: 'name',
 		emptyMessage: { content: textsCap.emptyMessage },
-		searchExtraKeys: ['address', 'name', '_tagsStr'],
+		searchExtraKeys: ['address', 'name', '_tagsStr', 'usageType'],
 		tableProps: {
 			// basic:  'very',
 			celled: false,
