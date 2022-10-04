@@ -36,13 +36,12 @@
   background: none #ffffff !important;
 } */
 
-
 /*
  * New styles
 */
 
 /* iphone XR */
- /* @media only screen 
+/* @media only screen 
     and (device-width : 414px) 
     and (device-height : 896px) 
     and (-webkit-device-pixel-ratio : 2) { 
@@ -113,9 +112,7 @@
 	}
 } */
 
-
-
- /* @media only screen and (max-width: 767px) {
+/* @media only screen and (max-width: 767px) {
 	.ui.container {
 		width: auto !important;
 		margin-left: 1em !important;
@@ -134,14 +131,10 @@
 		width: auto !important;
 	}
 } */
-					
-@media only screen and
-	/* iphone XR */
-	(device-width : 414px) and (device-height : 896px) and (-webkit-device-pixel-ratio : 2),
-	/* iphone XS */
-	(device-width : 375px) and (device-height : 812px) and (-webkit-device-pixel-ratio : 3),
-	/* iphone XS Max */
-	(device-width : 414px) and (device-height : 896px) and (-webkit-device-pixel-ratio : 3),
+
+@media only screen and /* iphone XR */ (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2),
+	/* iphone XS */ (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3),
+	/* iphone XS Max */ (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3),
 	(max-width: 767px) {
 	.ui.container {
 		width: auto !important;
@@ -162,11 +155,11 @@
 	}
 }
 
-
-#app, #app > div {
+#app,
+#app > div {
 	height: 100%;
 	width: 100%;
-  	overflow: hidden;
+	overflow: hidden;
 }
 #main-content {
 	border-radius: 0;
@@ -180,10 +173,10 @@
 }
 body.mobile #main-content {
 	padding: 0;
-  	margin: 0 !important;
-  	overflow: auto !important;
+	margin: 0 !important;
+	overflow: auto !important;
 }
-body .pushable{
+body .pushable {
 	margin: 0px;
 	height: calc(100% - 59px);
 	overflow: hidden;
@@ -193,12 +186,12 @@ body.mobile .pushable {
 	height: calc(100% - 108px);
 }
 .mobile #main-content::-webkit-scrollbar {
- 	width: 3px;
+	width: 3px;
 }
 .empty-message:not(:only-child) {
-  	display: none !important;
+	display: none !important;
 }
-/* Fixes the dimmer height being limited due to the use of scrollbar */ 
+/* Fixes the dimmer height being limited due to the use of scrollbar */
 body.mobile.sidebar-visible #main-content:after {
 	position: fixed;
 	top: 0;
@@ -208,7 +201,7 @@ body.mobile.sidebar-visible #main-content:after {
 	height: 100%;
 }
 .ui.visible.sidebar.left {
-  	transition: all 0.3s ease;
+	transition: all 0.3s ease;
 }
 .ui.left.visible.sidebar > a {
 	white-space: nowrap;
@@ -216,43 +209,43 @@ body.mobile.sidebar-visible #main-content:after {
 }
 /* hide footer bar when mobile sidebar is open */
 .mobile.sidebar-visible > .ui.menu.bottom {
-    display: none;
+	display: none;
 }
 .mobile.sidebar-visible > .notification-list {
-  	display: none;
+	display: none;
 }
 /* Main content width and positioning when sidebar is collapsed (icon-only mode) */
 body:not(.mobile) .ui.visible.left.sidebar.very.thin ~ .pusher#main-content {
-  -webkit-transform: translate3d(60px, 0, 0);
-  transform: translate3d(60px, 0, 0);
-  max-width: calc(100% - 60px) !important;
-  margin-left: 0 !important;
-  overflow: auto !important;
+	-webkit-transform: translate3d(60px, 0, 0);
+	transform: translate3d(60px, 0, 0);
+	max-width: calc(100% - 60px) !important;
+	margin-left: 0 !important;
+	overflow: auto !important;
 }
 body:not(.mobile) .ui.visible.left.sidebar:not(.thin) ~ .pusher#main-content {
-  -webkit-transform: translate3d(300px, 0, 0);
-  transform: translate3d(235px, 0, 0);
-  max-width: calc(100% - 235px) !important;
-  margin-left: 0 !important;
-  overflow: auto !important;
+	-webkit-transform: translate3d(300px, 0, 0);
+	transform: translate3d(235px, 0, 0);
+	max-width: calc(100% - 235px) !important;
+	margin-left: 0 !important;
+	overflow: auto !important;
 }
-body:not(.mobile) .ui.sidebar.left.wide { 
-  width: 235px !important;
+body:not(.mobile) .ui.sidebar.left.wide {
+	width: 235px !important;
 }
 
 /* Mobile sidebar */
 .mobile .ui.sidebar.left.menu {
-  width: 62% !important;
-  height: 100%;
+	width: 62% !important;
+	height: 100%;
 }
 .mobile .ui.visible.left.sidebar:not(.thin) ~ .pusher#main-content {
-  transform: none !important;
-  max-width: 100%;
+	transform: none !important;
+	max-width: 100%;
 }
 
-.no-margin, 
-.ui.menu .ui.dropdown .menu>.item .icon:not(.dropdown).no-margin {
-  margin: 0 !important;
+.no-margin,
+.ui.menu .ui.dropdown .menu > .item .icon:not(.dropdown).no-margin {
+	margin: 0 !important;
 }
 body .no-padding,
 body .ui.modal .no-padding {
@@ -262,34 +255,56 @@ body .ui.modal .no-padding {
 	cursor: pointer;
 }
 .blink {
-  animation: blinker 1s linear infinite;
+	animation: blinker 1s linear infinite;
 }
 @keyframes blinker {
-  50% {
-    opacity: 0;
-  }
+	50% {
+		opacity: 0;
+	}
 }
 .shake:hover,
 .shake-trigger:hover .shake {
-  animation: shake 1s;
-  animation-iteration-count: 1;
+	animation: shake 1s;
+	animation-iteration-count: 1;
 }
 .shake.forever {
-  animation: shake 1s;
-  animation-iteration-count: infinite;
+	animation: shake 1s;
+	animation-iteration-count: infinite;
 }
 @keyframes shake {
-  0% { transform: translate(1px, 1px) rotate(0deg); }
-  10% { transform: translate(-1px, -2px) rotate(-30deg); }
-  20% { transform: translate(-3px, 0px) rotate(30deg); }
-  30% { transform: translate(3px, 2px) rotate(-30deg); }
-  40% { transform: translate(1px, -1px) rotate(30deg); }
-  50% { transform: translate(-1px, 2px) rotate(-30deg); }
-  60% { transform: translate(-3px, 1px) rotate(30deg); }
-  70% { transform: translate(3px, 1px) rotate(-30deg); }
-  80% { transform: translate(-1px, -1px) rotate(30deg); }
-  90% { transform: translate(1px, 2px) rotate(-30deg); }
-  100% { transform: translate(1px, -2px) rotate(0deg); }
+	0% {
+		transform: translate(1px, 1px) rotate(0deg);
+	}
+	10% {
+		transform: translate(-1px, -2px) rotate(-30deg);
+	}
+	20% {
+		transform: translate(-3px, 0px) rotate(30deg);
+	}
+	30% {
+		transform: translate(3px, 2px) rotate(-30deg);
+	}
+	40% {
+		transform: translate(1px, -1px) rotate(30deg);
+	}
+	50% {
+		transform: translate(-1px, 2px) rotate(-30deg);
+	}
+	60% {
+		transform: translate(-3px, 1px) rotate(30deg);
+	}
+	70% {
+		transform: translate(3px, 1px) rotate(-30deg);
+	}
+	80% {
+		transform: translate(-1px, -1px) rotate(30deg);
+	}
+	90% {
+		transform: translate(1px, 2px) rotate(-30deg);
+	}
+	100% {
+		transform: translate(1px, -2px) rotate(0deg);
+	}
 }
 
 /* Simple Grid View */
@@ -325,35 +340,34 @@ i.icon {
 }
 
 i.icon:not(.no-margin) {
-  /*font-size: 1em  !important;*/
-  margin-right: 1rem  !important;
-  margin-left: 0.25rem  !important;
+	/*font-size: 1em  !important;*/
+	margin-right: 1rem !important;
+	margin-left: 0.25rem !important;
 }
 
-
-.ui.header>.icon {
-  font-size: 1.2em !important;
+.ui.header > .icon {
+	font-size: 1.2em !important;
 }
-
 
 div.ui.padded.segment {
-  padding-top: 0em !important;
+	padding-top: 0em !important;
 }
 
 .angle.left.icon {
-  margin-right: 0rem  !important;
+	margin-right: 0rem !important;
 }
- 
+
 .dropdown.icon {
-  margin-right: -1rem  !important;
-  margin-left: 0rem  !important;
+	margin-right: -1rem !important;
+	margin-left: 0rem !important;
 }
 
 .ui.sidebar.left a span {
-  font-weight: normal;
+	font-weight: normal;
 }
 /* overrides `font-weight: bolder` which doesn't seem to work for the fonts used */
-body b, body strong {
+body b,
+body strong {
 	font-weight: bold;
 }
 /*
@@ -365,38 +379,51 @@ body b, body strong {
 } */
 /* Capitalize input labels */
 form.ui.form div.field > label {
-    text-transform: capitalize;
+	text-transform: capitalize;
 }
 /* Group inputs: remove extra padding */
 .ui.form .fields.form-group > .field > .field {
 	/* fix for secondary form input group */
 	margin-top: 0;
-    padding: 0;
+	padding: 0;
 }
 body.mobile .fields.form-group > .field:not(:last-child) {
-    margin-bottom: 10px;
+	margin-bottom: 10px;
 }
 /* hide if no children */
 .form-group:empty {
-    display: none;
+	display: none;
 }
 /* Input group with accordion */
 .ui.form > .accordion.styled {
-    box-shadow: 1px 3px 3px 0 rgba(34,36,38,.15), 1px 3px 15px 2px rgba(34,36,38,.15);
+	box-shadow: 1px 3px 3px 0 rgba(34, 36, 38, 0.15),
+		1px 3px 15px 2px rgba(34, 36, 38, 0.15);
 }
 /* secondary form inside accordion */
 .ui.form > .accordion .ui.form > .field,
 .ui.form .accordion .ui.form > .fields > .field {
-    margin-bottom: 10px;
+	margin-bottom: 10px;
 }
 .ui.form > .accordion .ui.form > .fields {
-    margin: 0 0 10px;
+	margin: 0 0 10px;
 }
 .ui.form .fields.equal.width .field:not(.width) {
 	width: initial;
 }
+/* Accordion when in dark mode */
+body.inverted .ui.accordion.styled {
+	border: 1px solid grey !important;
+	border-radius: 3px;
+}
+body.inverted .ui.accordion.styled > .title:not(:first-child) {
+	border-top: 1px solid grey;
+}
+body.inverted .ui.accordion.styled > .title.active > .icon,
+body.inverted .ui.accordion.styled > .title:hover > .icon {
+	color: white !important;
+}
 /* checkbox/radios: bold text when checked */
-input:checked~label {
+input:checked ~ label {
 	font-weight: bold;
 }
 
@@ -409,7 +436,7 @@ input[readonly] {
 
 /* Message : forces close icon to be over content */
 .ui.message .icon.close {
-  z-index: 1;
+	z-index: 1;
 }
 
 .ui.modal > .header {
@@ -419,18 +446,18 @@ input[readonly] {
 	text-transform: initial;
 }
 body.mobile .ui.modal {
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    margin: 0 !important;
-    max-height: 100%;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	margin: 0 !important;
+	max-height: 100%;
 }
 body.mobile .ui.modals::-webkit-scrollbar {
- 	width: 3px;
+	width: 3px;
 }
 /* hide actions container if empty */
 .ui.modal > .actions:empty {
-    display: none;
+	display: none;
 }
 
 /* Page header:
@@ -440,24 +467,24 @@ body.mobile .ui.modals::-webkit-scrollbar {
 	max-height: 370px;
 	overflow: auto;
 	width: 400px;
- }
+}
 .identity-dropdown .menu > div > div:first-child {
-    float: left;
-    max-width: 60%;
-    overflow: hidden;
+	float: left;
+	max-width: 60%;
+	overflow: hidden;
 }
 .mobile .identity-dropdown:before {
-    background: transparent !important;
+	background: transparent !important;
 }
 .mobile .identity-dropdown .menu {
 	overflow-x: auto;
 	position: fixed !important;
-    top: 61px !important;
-    width: 100%;
+	top: 61px !important;
+	width: 100%;
 }
 .mobile .identity-dropdown .menu > div > div:first-child {
-    max-width: 55% !important;
-    overflow-x: hidden;
+	max-width: 55% !important;
+	overflow-x: hidden;
 }
 
 /* 
@@ -471,14 +498,14 @@ body.inverted #main-content.inverted {
 /* anything inside the #main-content with .inverted class */
 body.inverted #main-content .inverted,
 body.inverted .accordion {
-    background: #464646;
+	background: #464646;
 	color: white;
 }
 body.inverted #main-content .icon.inverted {
 	background: inherit;
 }
 /* Chat */
-body.inverted .chat-container{
+body.inverted .chat-container {
 	background: #2a2a2a;
 	color: white;
 }
@@ -493,12 +520,12 @@ body.inverted .chat-container{
 /* Data Table */
 body.inverted .data-table.inverted,
 body.inverted .ui.basic.inverted.segment.data-table {
-    background: #464646;
-    /* border: 1px solid #505050; */
+	background: #464646;
+	/* border: 1px solid #505050; */
 }
 /* Modals */
 body.inverted .ui.modal > .content,
-body.inverted .ui.modal .accordion, 
+body.inverted .ui.modal .accordion,
 body.inverted .ui.modal .accordion > * {
 	background: #464646;
 	color: white;
@@ -511,26 +538,27 @@ body.inverted .ui.modal > .actions {
 	color: white;
 }
 body.inverted .ui.form.inverted.loading::before {
-    background: rgba(90, 90, 90, 0.8);
+	background: rgba(90, 90, 90, 0.8);
 }
 
 /* Form loading backshadow when inverted */
-body.inverted .ui.inverted.loading.form:before{
+body.inverted .ui.inverted.loading.form:before {
 	background: #464646eb;
 }
 /* Form loading spinner when inverted */
-body.inverted .ui.inverted.loading.form:after{
-	border-color: white rgba(0,0,0,.1) rgba(0,0,0,.1) rgba(0,0,0,.1);
+body.inverted .ui.inverted.loading.form:after {
+	border-color: white rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1);
 }
 /* Form accordion when inverted */
-body.inverted .ui.form > .accordion.styled, 
+body.inverted .ui.form > .accordion.styled,
 body.inverted .ui.form > .accordion.styled {
-    box-shadow: 1px 3px 3px 0 rgba(34,36,38,.15), 1px 3px 15px 2px rgba(34,36,38,.5);
+	box-shadow: 1px 3px 3px 0 rgba(34, 36, 38, 0.15),
+		1px 3px 15px 2px rgba(34, 36, 38, 0.5);
 }
 
 /* checkbox/radio label when inverted */
-body.inverted .ui.checkbox input+label.checkbox-group-item,
-body.inverted .ui.checkbox input:focus+label.checkbox-group-item {
+body.inverted .ui.checkbox input + label.checkbox-group-item,
+body.inverted .ui.checkbox input:focus + label.checkbox-group-item {
 	color: white !important;
 }
 
@@ -540,9 +568,9 @@ body.inverted .ui.ordered.steps .step,
 body.inverted .ui.ordered.steps .step.completed,
 body.inverted .ui.steps .step:not(.active):after,
 body.inverted .ui.steps .step:not(.active):after {
-    background: #4c4c4c;
-    color: white !important;
-    transition: none;
+	background: #4c4c4c;
+	color: white !important;
+	transition: none;
 }
 
 body.inverted .ui.steps .step,
@@ -555,10 +583,10 @@ body.inverted .ui.steps .step:hover,
 body.inverted .ui.steps .step:hover.active:after,
 body.inverted .ui.steps .step:focus,
 body.inverted .ui.steps .step:focus.active:after {
-	    background: #222121 !important;
+	background: #222121 !important;
 }
 body.inverted .ui.steps .step.active:after {
-	border: none !important
+	border: none !important;
 }
 body.inverted .steps .step.active:before,
 body.inverted .steps .step.active .content .description,
@@ -567,16 +595,17 @@ body.inverted .ordered.steps .step.active .description {
 	color: white;
 }
 body.inverted .steps .step:not(.active) .description,
-body.inverted .steps .step:not(.active) .title{
-    color: grey;
+body.inverted .steps .step:not(.active) .title {
+	color: grey;
 }
 
 /* Newsletter signup iframe */
 body.iframe {
 	background: transparent;
 }
-body.iframe label, .success-message * {
-    color: white !important;
+body.iframe label,
+.success-message * {
+	color: white !important;
 }
 body.iframe .message.success-message {
 	background: transparent;
@@ -589,5 +618,5 @@ body.iframe .message.success-message {
 
 /* Component: DrillDownList */
 .drill-down-list .title .dropdown {
-    margin-right: 3px !important;
+	margin-right: 3px !important;
 }
