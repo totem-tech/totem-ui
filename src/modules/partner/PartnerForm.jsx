@@ -180,7 +180,7 @@ export default class PartnerForm extends Component {
 					hidden: this.doUpdate,
 					label: textsCap.addressLabel,
 					lazyLoad: true,
-					minCharacters: 3,
+					minCharacters: 1,
 					name: inputNames.address,
 					noResultsMessage: textsCap.addressEmptySearchMessage,
 					onAddItem: this.handleAddressAddItem,
