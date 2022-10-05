@@ -73,8 +73,8 @@ export default function RewardsView() {
 	) : (
 		<div>
 			<RewardsProgress {...{ rewards }} />
-			{/* Migrate rewards button */}
-			<Button
+			{/* Claim KAPEX button */}
+			{/* <Button
 				{...{
 					color: (claimSubmitted && 'green') || undefined,
 					content: textsCap.migrateRewards,
@@ -130,7 +130,7 @@ export default function RewardsView() {
 						marginTop: 15,
 					},
 				}}
-			/>
+			/> */}
 			<SignupCard {...{ signupReward }} />
 			<SocialCard {...{ socialRewards }} />
 			<ReferralCard {...{ referralRewards }} />
