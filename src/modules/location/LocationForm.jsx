@@ -227,11 +227,7 @@ export default class LocationForm extends Component {
 									})),
 									'text'
 								),
-								placeholder: (
-									<span style={{ whiteSpace: 'nowrap' }}>
-										{textsCap.countryPlaceholder}
-									</span>
-								),
+								placeholder: textsCap.countryPlaceholder,
 								required: true,
 								selection: true,
 								search: ['name', 'altspellings'],

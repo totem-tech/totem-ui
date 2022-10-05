@@ -32,17 +32,20 @@ export const validKeys = [
     'vatNumber',
 ]
 
+export const find = addressOrName => partners.find({ address: addressOrName, name: addressOrName }, true, false, true)
+
 export const get = address => partners.get(address)
 
 // returns name of an address if available in identity or partner lists.
 // Otherwise, returns shortened address
-export const getAddressName = (address, shortenAddress = true) => (identities.find(address) || {}).name
-    // not found in wallet list
-    // search in addressbook
-    || (get(address) || {}).name
-    // not available in addressbok or wallet list
-    // display the address itself with ellipsis
-    || textEllipsis(address, 15, 5)
+export const getAddressName = (address, shortenAddress = true) => {
+    const entry = identities.get(address) || get(address) || {}
+    return entry.name || (
+        shortenAddress
+            ? textEllipsis(address, 15, 5)
+            : address
+    )
+}
 
 export const getAll = () => partners.getAll()
 

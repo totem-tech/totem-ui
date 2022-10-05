@@ -40,6 +40,7 @@ import {
 	types,
 	visibilityTypes,
 } from './partner'
+import { Icon } from 'semantic-ui-react'
 
 const textsCap = translated(
 	{
@@ -111,8 +112,14 @@ export default class PartnerForm extends Component {
 	constructor(props = {}) {
 		super(props)
 
-		let { autoSave, closeText, header, subheader, submitText, values } =
-			props
+		let {
+			autoSave,
+			closeText,
+			header,
+			subheader,
+			submitText,
+			values,
+		} = props
 		this.partner = values && get(values.address)
 		this.doUpdate = !!this.partner
 		values = { ...this.partner, ...values }
@@ -172,6 +179,8 @@ export default class PartnerForm extends Component {
 					disabled: !this.doUpdate && !!ss58Decode(address),
 					hidden: this.doUpdate,
 					label: textsCap.addressLabel,
+					lazyLoad: true,
+					minCharacters: 3,
 					name: inputNames.address,
 					noResultsMessage: textsCap.addressEmptySearchMessage,
 					onAddItem: this.handleAddressAddItem,
@@ -188,7 +197,8 @@ export default class PartnerForm extends Component {
 						  ],
 					placeholder: textsCap.addressPlaceholder,
 					required: true,
-					search: ['text', 'value', 'key'],
+					search: ['search'],
+					selectOnNavigation: false,
 					selection: true,
 					type: 'dropdown',
 					validate: this.validateAddress,
@@ -448,7 +458,7 @@ export default class PartnerForm extends Component {
 		const typeIn = findInput(inputs, inputNames.type)
 		const visibilityIn = findInput(inputs, inputNames.visibility)
 		const { options = [] } = inputs[i]
-		const { company } = options.find(x => x.value === address) || {}
+		const { company = {} } = options.find(x => x.value === address) || {}
 
 		// hide location if company selected as company includes a location
 		locationGroupIn.hidden = !!company
@@ -456,7 +466,8 @@ export default class PartnerForm extends Component {
 		// hide visitibity if company selected as it is already "public"
 		visibilityIn.hidden = !!company
 		// only hide registration number if selected company contains a number
-		regNumIn.hidden = !!company && !!company.registrationNumber
+		regNumIn.value = company.registrationNumber || ''
+		regNumIn.readOnly = !!company && !!regNumIn.value
 
 		if (company) {
 			nameIn.rxValue.next(company.name)
@@ -467,7 +478,7 @@ export default class PartnerForm extends Component {
 	}
 
 	handleAddressSearchChange = deferred((_, { searchQuery }) => {
-		if (!searchQuery) return
+		if (`${searchQuery || ''}`.length < 3) return
 		const { inputs } = this.state
 		const { values = {} } = this.props
 		const addressIn = findInput(inputs, inputNames.address)
@@ -477,33 +488,49 @@ export default class PartnerForm extends Component {
 		addressIn.loading = true
 		this.setState({ inputs })
 
+		const AddressOptionText = React.memo(({ name, subText }) => (
+			<div>
+				{name}
+				<div style={{ color: 'grey' }}>
+					<small>{subText}</small>
+				</div>
+			</div>
+		))
+
 		const handleResult = success => result => {
 			const err = !success ? result : null
 			const companies = success ? result : new Map()
 			addressIn.loading = false
-			addressIn.allowAdditions =
-				!err && companies.size === 0 && isValidAddress
-			addressIn.options =
-				err || !companies
+			addressIn.allowAdditions = !err && companies.size === 0 && isValidAddress
+			addressIn.options = err || !companies
 					? []
-					: Array.from(companies).map(([hash, company]) => {
-							const identityName = getAddressName(company.address)
-							return {
-								company, // keep
-								hash,
-								description: `${identityName}${
-									identityName ? ' | ' : ''
-								}${company.countryCode}`,
-								key: Object.values(company).join(' '), // also used for DropDown's search
-								text: company.name,
-								value: company.identity,
-							}
-					  })
-			if (
-				values.address &&
-				isValidAddress &&
-				addressIn.options.length === 0
-			) {
+				: Array
+					.from(companies)
+					.map(([hash, company]) => {
+						const { countryCode, identity, name, regAddress = {} } = company
+						const { addressLine1, county, postCode, postTown } = regAddress 
+						const key = identity
+						const ar = [addressLine1, postTown, postCode, county]
+						const subText = ar
+							.map(x => `${x || ''}`.trim())
+							.filter(Boolean)
+							.map((x, i) => `${x}${i >= ar.length - 1 ? '' : x.endsWith(',') ? '' : ','} `)
+						return {
+							company, // keep
+							hash,
+							description: countryCode,
+							key, // also used for DropDown's search
+							name,
+							search: [name, identity, subText].join(' '),
+							style: { margin: '-6px 0' },
+							text: <AddressOptionText {...{ key, name, subText }} />,
+							value: identity,
+						}
+					})
+			const hideAddr = values.address
+				&& isValidAddress
+				&& addressIn.options.length === 0
+			if (hideAddr) {
 				// valid address
 				addressIn.hidden = true
 				addressIn.options = [
@@ -648,8 +675,8 @@ export default class PartnerForm extends Component {
 
 	validateName = (e, { value: name }, values) => {
 		const address = values[inputNames.address]
-		name = name.trim()
-		const partner = getByName(name)
+		name = `${name || ''}`.trim()
+		const partner = name && getByName(name)
 		return !partner || partner.address === address
 			? null
 			: textsCap.nameValidationMsg

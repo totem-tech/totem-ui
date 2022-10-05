@@ -262,6 +262,7 @@ export class FormInput extends Component {
 			useInput: useInputOrginal,
 			width,
 		} = this.props
+
 		let useInput = useInputOrginal
 		const { invalid: invalidS, loading: loadingS, message: internalMsg, options } = this.state
 		const invalid = invalidP || invalidS
