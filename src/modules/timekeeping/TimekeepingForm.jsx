@@ -290,7 +290,7 @@ export default class TimekeepingForm extends Component {
         }, 100)
         this.subscriptions.newHead = await queryBlockchain('api.rpc.chain.subscribeNewHeads', [updateValues])
         this.subscriptions.blockNumber = await getCurrentBlock(updateValues)
-        this.subscriptions.projects = await getProjects(false, updateProjects)
+        this.subscriptions.projects = await getProjects(true, updateProjects)
 
     }
 
