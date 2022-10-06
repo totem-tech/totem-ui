@@ -14,6 +14,7 @@ import { arrSort, isFn, objSetPropUndefined } from '../../utils/utils'
 import identities from '../identity/identity'
 import { get, newId, remove, set as save, validationConf } from './contact'
 import partners from '../partner/partner'
+import { statuses } from '../../components/Message'
 
 const textsCap = translated(
 	{
@@ -30,6 +31,7 @@ const textsCap = translated(
 		remove: 'remove',
 		removeContact: 'remove contact',
 		saveContact: 'save contact',
+		saved: 'saved',
 		update: 'update',
 		usedByIdentites: 'this contact is used by the following identities:',
 	},
@@ -228,12 +230,20 @@ export default function ContactForm(props) {
 				const s = {
 					...state,
 					header: textsCap.headerUpdate,
-					submitText: getSubmitText(),
+					message: !autoSave
+						? undefined
+						: { 
+							header: textsCap.saved,
+							status: statuses.SUCCESS,
+						},
+					submitText: autoSave
+						? null
+						: getSubmitText(),
 					success: true,
 				}
-				console.log({state:s})
 				rxSetState.next(s)
 				isFn(onSubmit) && onSubmit(true, values, id)
+				autoSave && setTimeout(() => rxSetState.next({...s, message: undefined}), 2000)
 			},
 			submitText: getSubmitText(),
 		}

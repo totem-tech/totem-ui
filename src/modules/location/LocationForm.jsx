@@ -8,6 +8,7 @@ import storage from '../../services/storage'
 import identities from '../identity/identity'
 import partners from '../partner/partner'
 import { get, remove, set } from './location'
+import { statuses } from '../../components/Message'
 
 const textsCap = translated(
 	{
@@ -30,6 +31,7 @@ const textsCap = translated(
 		postcodePlaceholder: 'enter your postcode or zip',
 		remove: 'remove',
 		removeLocation: 'remove location',
+		saved: 'saved',
 		saveLocation: 'save location',
 		stateLabel: 'state or province',
 		statePlaceholder: 'enter your state or province',
@@ -217,7 +219,7 @@ export default class LocationForm extends Component {
 								options: arrSort(
 									storage.countries.map(([_, c]) => ({
 										altspellings: c.altSpellings.join(' '),
-										// description: c.code,
+										description: c.name,
 										flag: !noFlags.includes(c.code)
 											? c.code.toLowerCase()
 											: '',
@@ -338,16 +340,24 @@ export default class LocationForm extends Component {
 	}
 
 	handleSubmit = deferred((_, values) => {
-		let { id, onSubmit } = this.props
+		let { autoSave, id, onSubmit } = this.props
 		id = set(values, id)
 		// new location created
-		!this.isUpdate &&
-			this.setState({
-				subheader: textsCap.formSubheaderUpdate,
-				success: true,
-				submitText: null,
-			})
+		autoSave && this.setState({
+			message: !autoSave
+				? undefined
+				: { 
+					header: textsCap.saved,
+					status: statuses.SUCCESS,
+				},
+			subheader: textsCap.formSubheaderUpdate,
+			success: true,
+			submitText: null,
+		})
 		isFn(onSubmit) && onSubmit(true, values, id)
+		autoSave && setTimeout(() => this.setState({
+			message: undefined,
+		}), 2000)
 	}, 300)
 
 	render = () => <FormBuilder {...{ ...this.props, ...this.state }} />

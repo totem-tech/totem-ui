@@ -313,16 +313,6 @@ export default class PartnerForm extends Component {
 										locationInputNames.partnerName,
 										locationInputNames.removeBtn,
 									],
-									key: newLocationId(),
-									style: {
-										// marginBottom: -30,
-										width: '100%',
-									},
-									values: {
-										...location,
-										name: (location || {}).name || values.name,
-										partnerIdentity: address
-									},
 									// hide location related inputs when partner location is removed
 									onRemove: () => {
 										const { inputs } = this.state
@@ -332,6 +322,15 @@ export default class PartnerForm extends Component {
 										) || {}
 										locationGroupIn.hidden = true
 										this.setState({ inputs })
+									},
+									style: {
+										// marginBottom: -30,
+										width: '100%',
+									},
+									values: {
+										...location,
+										name: (location || {}).name || values.name,
+										partnerIdentity: address
 									},
 								}} />
 							),

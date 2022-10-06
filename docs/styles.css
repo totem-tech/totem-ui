@@ -410,6 +410,11 @@ body.mobile .fields.form-group > .field:not(:last-child) {
 .ui.form .fields.equal.width .field:not(.width) {
 	width: initial;
 }
+/* Fix for .message > .content  weird padding when inside an accordion */
+.accordion .message > .content,
+.accordion .message > .content > .content {
+	padding: initial !important;
+}
 /* Accordion when in dark mode */
 body.inverted .ui.accordion.styled {
 	border: 1px solid grey !important;

@@ -181,6 +181,7 @@ export default class FormBuilder extends Component {
 	handleSubmit = async event => {
 		try {
 			event.preventDefault()
+			event.stopPropagation()
 			const { onSubmit } = this.props
 			const { values } = this.state
 			isFn(onSubmit) && (await onSubmit(event, values))
