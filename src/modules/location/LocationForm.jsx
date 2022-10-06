@@ -77,6 +77,7 @@ export default class LocationForm extends Component {
 			submitText,
 			values,
 		} = props
+		this.id = id
 		const location = get(id)
 		values = { ...location, ...values }
 		const { partnerIdentity } = values
@@ -330,18 +331,21 @@ export default class LocationForm extends Component {
 	}
 
 	handleChange = (e, values, invalid) => {
-		const { autoSave, onChange } = this.props
+		const { autoSave, onChange, onSubmit } = this.props
 		isFn(onChange) && onChange(e, values)
 		// auto save if update
 		if (invalid || !this.isUpdate || !autoSave) return
 		// prevent saving without required fields
 		if (!objHasKeys(values, Object.keys(requiredFields), true)) return
-		this.handleSubmit(e, values)
+
+		set(values, this.id)
+		isFn(onSubmit) && onSubmit(true, values, this.id)
 	}
 
 	handleSubmit = deferred((_, values) => {
-		let { autoSave, id, onSubmit } = this.props
-		id = set(values, id)
+		let { autoSave, onSubmit } = this.props
+		this.id = set(values, this.id)
+		this.isUpdate = this.isUpdate || autoSave
 		// new location created
 		autoSave && this.setState({
 			message: !autoSave
@@ -354,7 +358,7 @@ export default class LocationForm extends Component {
 			success: true,
 			submitText: null,
 		})
-		isFn(onSubmit) && onSubmit(true, values, id)
+		isFn(onSubmit) && onSubmit(true, values, this.id)
 		autoSave && setTimeout(() => this.setState({
 			message: undefined,
 		}), 2000)
