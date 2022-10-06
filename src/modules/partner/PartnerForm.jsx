@@ -9,6 +9,7 @@ import {
 	isFn,
 	arrUnique,
 	objHasKeys,
+	isObj,
 } from '../../utils/utils'
 import FormBuilder, {
 	fillValues,
@@ -122,15 +123,22 @@ export default class PartnerForm extends Component {
 		} = props
 		this.partner = values && get(values.address)
 		this.doUpdate = !!this.partner
+		this.contact = null
+		this.location = null
 		values = { ...this.partner, ...values }
 		const { address, name, tags = [], visibility } = values
-		const query = { [locationInputNames.partnerIdentity]: address }
-		const [locationId, location] =
-			Array.from(
-				!address
-					? new Map()
-					: locations.search(query, true, true, false, 1)
-			)[0] || []
+		const query = { partnerIdentity: address }
+		const [locationId, location] = Array.from(
+			!address
+				? new Map()
+				: locations.search(
+					query,
+					true,
+					true,
+					false,
+					1,
+				)
+		)[0] || []
 		const contact = (address && contacts.find(query)) || undefined
 		this.companySearchDP = PromisE.deferred()
 
@@ -271,99 +279,6 @@ export default class PartnerForm extends Component {
 					type: 'UserIdInput',
 				},
 				{
-					accordion: {
-						collapsed: true,
-						styled: true,
-					},
-					label: textsCap.locationGroupLabel,
-					name: inputNames.locationGroup,
-					type: 'group',
-					inputs: [
-						{
-							name: inputNames.locationFormHtml,
-							type: 'html',
-							content: (
-								<LocationForm
-									{...{
-										El: 'div',
-										autoSave: true,
-										id: locationId,
-										inputsHidden: [
-											locationInputNames.partnerName,
-											locationInputNames.removeBtn,
-										],
-										style: {
-											// marginBottom: -30,
-											width: '100%',
-										},
-										values: {
-											...location,
-											partnerIdentity: address,
-										},
-										// hide location related inputs when partner location is removed
-										onRemove: () => {
-											const { inputs } = this.state
-											const locationGroupIn =
-												findInput(
-													inputs,
-													inputNames.locationGroup
-												) || {}
-											locationGroupIn.hidden = true
-											this.setState({ inputs })
-										},
-									}}
-								/>
-							),
-						},
-					],
-				},
-				{
-					accordion: {
-						collapsed: true,
-						styled: true,
-					},
-					label: textsCap.contactGroupLabel,
-					name: inputNames.contactGroup,
-					type: 'group',
-					inputs: [
-						{
-							name: inputNames.contactFormHtml,
-							type: 'html',
-							content: (
-								<ContactForm
-									{...{
-										El: 'div',
-										autoSave: true,
-										inputsHidden: [
-											contactInputNames.removeBtn,
-											contactInputNames.partnerIdentity,
-										],
-										style: {
-											// marginBottom: -30,
-											width: '100%',
-										},
-										values: {
-											...contact,
-											partnerIdentity: address,
-										},
-										// hide location related inputs when partner location is removed
-										onRemove: () => {
-											const { inputs } = this.state
-											const contactGroupIn =
-												findInput(
-													inputs,
-													inputNames.contactGroup
-												) || {}
-											contactGroupIn.hidden = true
-											this.setState({ inputs })
-										},
-									}}
-								/>
-							),
-						},
-					],
-				},
-				{
 					label: textsCap.regNumberLabel,
 					minLength: 3,
 					maxLength: 64,
@@ -376,6 +291,98 @@ export default class PartnerForm extends Component {
 					maxLength: 64,
 					name: inputNames.vatNumber,
 					placeholder: textsCap.vatNumberPlaceholder,
+				},
+				this.doUpdate && {
+					accordion: {
+						collapsed: true,
+						styled: true,
+					},
+					label: textsCap.locationGroupLabel,
+					name: inputNames.locationGroup,
+					type: 'group',
+					inputs: [
+						{
+							name: inputNames.locationFormHtml,
+							type: 'html',
+							content: (
+								<LocationForm {...{
+									El: 'div',
+									autoSave: true,
+									id: locationId,
+									inputsHidden: [
+										locationInputNames.partnerName,
+										locationInputNames.removeBtn,
+									],
+									key: newLocationId(),
+									style: {
+										// marginBottom: -30,
+										width: '100%',
+									},
+									values: {
+										...location,
+										name: (location || {}).name || values.name,
+										partnerIdentity: address
+									},
+									// hide location related inputs when partner location is removed
+									onRemove: () => {
+										const { inputs } = this.state
+										const locationGroupIn = findInput(
+											inputs,
+											inputNames.locationGroup
+										) || {}
+										locationGroupIn.hidden = true
+										this.setState({ inputs })
+									},
+								}} />
+							),
+
+						},
+					],
+				},
+				this.doUpdate && {
+					accordion: {
+						collapsed: true,
+						styled: true,
+					},
+					label: textsCap.contactGroupLabel,
+					name: inputNames.contactGroup,
+					type: 'group',
+					inputs: [
+						{
+							name: inputNames.contactFormHtml,
+							type: 'html',
+							content: (
+								<ContactForm {...{
+									El: 'div',
+									autoSave: true,
+									inputsHidden: [
+										contactInputNames.removeBtn,
+										contactInputNames.partnerIdentity,
+									],
+									// hide contact related inputs when partner contact is removed
+									onRemove: () => {
+										const { inputs } = this.state
+										const contactGroupIn =
+											findInput(
+												inputs,
+												inputNames.contactGroup
+											) || {}
+										contactGroupIn.hidden = true
+										this.setState({ inputs })
+									},
+									style: {
+										width: '100%',
+									},
+									values: {
+										...contact,
+										name: (contact || {}).name
+											|| values.name,
+										partnerIdentity: address,
+									},
+								}} />
+							),
+						},
+					],
 				},
 			].filter(Boolean),
 		}
@@ -398,14 +405,13 @@ export default class PartnerForm extends Component {
 			'text'
 		)
 
-		values.address &&
-			setTimeout(() => {
-				this.checkVisibility(values.address)
-				this.handleAddressSearchChange(
-					{},
-					{ searchQuery: values.address }
-				)
-			})
+		values.address && setTimeout(() => {
+			this.checkVisibility(values.address)
+			this.handleAddressSearchChange(
+				{},
+				{ searchQuery: values.address }
+			)
+		})
 
 		fillValues(inputs, values, true)
 		this.setState({ inputs })
@@ -439,40 +445,105 @@ export default class PartnerForm extends Component {
 		this.setState({ inputs, values })
 	}
 
+	getCompanyLocation = (company) => {
+		if (!isObj(company)) return
+
+		const {
+			countryCode,
+			identity,
+			name,
+			regAddress = {},
+		} = company
+		const {
+			addressLine1,
+			addressLine2,
+			postTown: city,
+			postCode,
+			county: state,
+		} = regAddress
+		const placeholderValue = '___'
+		// For required fields with empty value placeholder value is used with multiple underscores.
+		// This is so that the location can be saved without the need for user intervention.
+		const location = {
+			addressLine1: addressLine1 || placeholderValue,
+			addressLine2,
+			city: city || placeholderValue,
+			countryCode: countryCode || placeholderValue,
+			name,
+			partnerIdentity: identity,
+			postcode: postCode || placeholderValue,
+			state: state || placeholderValue,
+		}
+		return location
+	}
+
+	getLocationForm = (location = {}, locationId) => (
+		<LocationForm {...{
+			El: 'div',
+			autoSave: true,
+			id: locationId,
+			inputsHidden: [
+				locationInputNames.partnerName,
+				locationInputNames.removeBtn,
+			],
+			key: newLocationId(),
+			style: {
+				// marginBottom: -30,
+				width: '100%',
+			},
+			values: { ...location },
+			// hide location related inputs when partner location is removed
+			onRemove: () => {
+				const { inputs } = this.state
+				const locationGroupIn = findInput(
+					inputs,
+					inputNames.locationGroup
+				) || {}
+				locationGroupIn.hidden = true
+				this.setState({ inputs })
+			},
+		}} />
+	)
+	
 	handleAddressAddItem = (_, { value }) => {
 		if (this.customAddresses.includes(value)) return
+
 		const { inputs } = this.state
-		findInput(inputs, inputNames.address).options.push({
-			key: value,
-			text: value,
-			value,
-		})
+		findInput(inputs, inputNames.address)
+			.options
+			.push({
+				key: value,
+				text: value,
+				value,
+			})
 		this.setState({ inputs })
 	}
 
 	handleAddressChange = (e, { address }, i) => {
 		const { inputs } = this.state
-		const locationGroupIn = findInput(inputs, inputNames.locationGroup)
 		const nameIn = findInput(inputs, inputNames.name)
 		const regNumIn = findInput(inputs, inputNames.registeredNumber)
 		const typeIn = findInput(inputs, inputNames.type)
 		const visibilityIn = findInput(inputs, inputNames.visibility)
 		const { options = [] } = inputs[i]
-		const { company = {} } = options.find(x => x.value === address) || {}
 
-		// hide location if company selected as company includes a location
-		locationGroupIn.hidden = !!company
-		nameIn.type = !!company ? 'hidden' : 'text'
-		// hide visitibity if company selected as it is already "public"
-		visibilityIn.hidden = !!company
-		// only hide registration number if selected company contains a number
-		regNumIn.value = company.registrationNumber || ''
-		regNumIn.readOnly = !!company && !!regNumIn.value
+		// stuff to do only when creating an entry
+		if (!this.doUpdate) {
+			const { company: com } = options.find(x => x.value === address) || {}
+			const { name, registrationNumber: reg } = com || {}
 
-		if (company) {
-			nameIn.rxValue.next(company.name)
-			typeIn.rxValue.next(types.BUSINESS)
-			visibilityIn.rxValue.next(visibilityTypes.PUBLIC)
+			nameIn.type = !!com ? 'hidden' : 'text'
+			// hide visitibity if company selected as it is already "public"
+			visibilityIn.hidden = !!com
+			// only hide registration number if selected company contains a number
+			regNumIn.value = reg || ''
+			regNumIn.readOnly = !!reg
+
+			if (com) {
+				nameIn.rxValue.next(name)
+				typeIn.rxValue.next(types.BUSINESS)
+				visibilityIn.rxValue.next(visibilityTypes.PUBLIC)
+			}
 		}
 		this.setState({ inputs })
 	}
@@ -573,10 +644,10 @@ export default class PartnerForm extends Component {
 	handleSubmit = deferred(() => {
 		const { autoSave, closeOnSubmit, onSubmit } = this.props
 		const { inputs, values } = this.state
-		const { company } =
-			(
-				findInput(inputs, inputNames.address) || { options: [] }
-			).options.find(x => x.value === values.address) || {}
+		const { company } = (findInput(inputs, inputNames.address) || { options: [] })
+			.options
+			.find(x => x.value === values.address)
+			|| {}
 		const visibilityIn = findInput(inputs, inputNames.visibility)
 		const visibilityDisabled = visibilityIn.disabled || visibilityIn.hidden
 		const companyExists = !!company || visibilityDisabled
@@ -585,10 +656,9 @@ export default class PartnerForm extends Component {
 			name = (company && company.name) || name
 			visibility = visibilityTypes.PUBLIC
 		}
-		const addCompany =
-			!visibilityDisabled &&
-			visibility === visibilityTypes.PUBLIC &&
-			!company
+		const addCompany = !visibilityDisabled
+			&& visibility === visibilityTypes.PUBLIC
+			&& !company
 		// save partner
 		const valuesTemp = { ...values }
 		if (addCompany) {
@@ -599,45 +669,26 @@ export default class PartnerForm extends Component {
 
 		// if company added from database add location
 		if (!!company && !!company.regAddress && !locationId) {
-			const { countryCode, regAddress = {} } = company
-			const {
-				addressLine1,
-				addressLine2,
-				postTown: city,
-				postCode,
-				county: state,
-			} = regAddress
-			const placeholderValue = '___'
-			// For required fields with empty value placeholder value is used with multiple underscores.
-			// This is so that the location can be saved without the need for user intervention.
-			const location = {
-				addressLine1: addressLine1 || placeholderValue,
-				addressLine2,
-				city: city || placeholderValue,
-				countryCode: countryCode || placeholderValue,
-				name: company.name,
-				partnerIdentity: address,
-				postcode: postCode || placeholderValue,
-				state: state || placeholderValue,
-			}
+			const location = this.getCompanyLocation(company)
 			locationId = newLocationId(address)
 			saveLocation(location, locationId)
 			values.locationId = locationId
 		}
 
 		const success = set(values) && (!this.doUpdate || !autoSave)
-		const message =
-			closeOnSubmit || this.doUpdate
-				? null
-				: {
-						content: !success
-							? textsCap.submitFailedMsg
-							: this.doUpdate
-							? textsCap.submitSuccessMsg2
-							: textsCap.submitSuccessMsg1,
-						icon: true,
-						status: success ? 'success' : 'error',
-				  }
+		const message = closeOnSubmit || this.doUpdate
+			? null
+			: {
+				content: !success
+					? textsCap.submitFailedMsg
+					: this.doUpdate
+						? textsCap.submitSuccessMsg2
+						: textsCap.submitSuccessMsg1,
+				icon: true,
+				status: success
+					? 'success'
+					: 'error',
+			}
 		this.setState({ message, success })
 
 		// Open add partner form

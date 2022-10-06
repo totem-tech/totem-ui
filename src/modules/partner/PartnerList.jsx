@@ -18,7 +18,7 @@ import {
 	visibilityTypes,
 } from './partner'
 import CompanyForm from './CompanyForm'
-import PartnerForm from './PartnerForm'
+import PartnerForm, { inputNames } from './PartnerForm'
 
 const textsCap = translated(
 	{
@@ -176,8 +176,26 @@ const tableProps = Object.freeze({
 				{ content: textsCap.add, icon: 'plus' },
 				{ content: textsCap.request },
 			],
-			onAction: (_, addPartner) =>
-				showForm(addPartner ? PartnerForm : IdentityRequestForm),
+			onAction: (_, addPartner) => {
+				const handleSubmit = (ok, partner) => ok && _showForm({
+						autoSave: true,
+						key: 'saved',
+						values: partner,
+					}) 
+				const _showForm = (props = {}) => showForm(
+					addPartner
+						? PartnerForm
+						: IdentityRequestForm,
+					props,
+					addPartner ? 'add-partner' : 'request-identity',
+				)
+
+				_showForm({
+					onSubmit: addPartner
+						? handleSubmit
+						: undefined
+				})
+			},
 			or: true,
 			values: [true, false],
 		},
@@ -186,36 +204,35 @@ const tableProps = Object.freeze({
 
 function getActions(partner = {}) {
 	const { address, name } = partner
-	const updatePartnerCb = onSubmit => () =>
-		showForm(PartnerForm, {
-			// auto save updates
-			autoSave: true,
-			onSubmit,
-			size: 'tiny',
-			values: partner,
-		})
+
 	return [
 		{
 			icon: 'pencil',
-			onClick: updatePartnerCb(),
+			onClick: () => showForm(PartnerForm, {
+				// auto save updates
+				autoSave: true,
+				size: 'tiny',
+				values: partner,
+			}),
 			title: textsCap.update,
 		},
 		{
 			icon: 'trash',
-			onClick: () =>
-				confirm({
-					confirmButton: (
-						<Button negative content={textsCap.delete} />
-					),
-					content: (
-						<p>
-							{textsCap.partnerName}: <b>{name}</b>
-						</p>
-					),
-					header: `${textsCap.removePartner}?`,
-					onConfirm: () => remove(address),
-					size: 'mini',
-				}),
+			onClick: () => confirm({
+				confirmButton: (
+					<Button negative content={textsCap.delete} />
+				),
+				content: (
+					<p>
+						{textsCap.partnerName}: <b>{name}</b>
+					</p>
+				),
+				header: `${textsCap.removePartner}?`,
+				onConfirm: () => {
+					remove(address)
+				},
+				size: 'mini',
+			}),
 			title: textsCap.delete,
 		},
 	]

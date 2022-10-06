@@ -1,7 +1,8 @@
 import DataStorage from '../../utils/DataStorage'
 import { textEllipsis, arrUnique, objHasKeys, isAddress, objClean } from '../../utils/utils'
+import contacts from '../contact/contact'
 import identities from '../identity/identity'
-import { remove as removeLocation } from '../location/location'
+import locations from '../location/location'
 
 const partners = new DataStorage('totem_partners')
 export const rxPartners = partners.rxData
@@ -73,10 +74,9 @@ export const getByUserId = userId => partners.find({ userId }, true, true, false
  * @param   {String} address partner identity/key
  */
 export const remove = address => {
-    const { contactId, name, locationId } = partners.get(address) || {}
-    contactId && removeContact(contactId)
-    locationId && removeLocation(locationId)
-    name && partners.delete(address)
+    contacts.removeByPartnerIdentity(address)
+    locations.removeByPartnerIdentity(address)
+    partners.delete(address)
 }
 
 /**

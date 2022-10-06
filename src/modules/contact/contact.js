@@ -9,7 +9,7 @@ const textsCap = translated({
     errInvalidPhone: 'invalid phone number',
 }, true)[1]
 
-export const contacts = new DataStorage('totem_contact-details')
+export const contacts = new DataStorage('totem_contacts')
 export const rxContacts = contacts.rxData
 
 /**
@@ -48,8 +48,33 @@ export const newId = seed => generateHash(seed || uuid.v1(), 'blake2', 64)
 export const remove = id => { contacts.delete(id) }
 
 /**
+ * @name    removeByPartnerIdentity
+ * 
+ * @param   {String}    partnerIdentity 
+ */
+export const removeByPartnerIdentity = partnerIdentity => {
+    const map = search({ partnerIdentity })
+    Array
+        .from(map)
+        .forEach(([id]) => remove(id))
+}
+
+/**
+ * @name   search
+ * @summary search contacts
+ * 
+ * @param   {Object}    keyValues
+ * @param   {...any}    args
+ * 
+ * @returns {Map}
+ */
+export const search = (keyValues, ...args) => contacts.search(keyValues, ...args)
+
+/**
  * @name    set
  * @summary create/update entry
+ * @description a contact is either associated with a single partner or 0+ identities.
+ * If a contact is associated with a partner it cannot be associated with any identity.
  * 
  * @param   {Object}    entry                   contact details
  * @param   {String}    entry.email             (optional) email address
@@ -100,8 +125,8 @@ export const validationConf = {
         type: TYPES.email,
     },
     id: {
-        maxLength: 12,
-        minLength: 12,
+        maxLength: 16,
+        minLength: 16,
         required: true,
         type: TYPES.string,
     },
@@ -137,6 +162,8 @@ export default {
     getAll,
     newId,
     remove,
+    removeByPartnerIdentity,
+    search,
     set,
     storage: contacts,
     validationConf,

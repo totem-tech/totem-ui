@@ -48,7 +48,7 @@ export const inputNames = {
 
 export default function ContactForm(props) {
 	const [state = []] = iUseReducer(null, rxSetState => {
-		let { autoSave, onChange, onSubmit, values = {} } = props
+		let { autoSave, onChange, onSubmit, submitText, values = {} } = props
 		// generate a random ID if not already provided
 		objSetPropUndefined(values, inputNames.id, newId())
 		const id = values[inputNames.id]
@@ -69,6 +69,11 @@ export default function ContactForm(props) {
 				}
 			})
 			.filter(x => !!x.value)
+		const getSubmitText = () => submitText || submitText === null 
+			? submitText
+			: !!existingEntry
+				? textsCap.update
+				: undefined
 		const inputs = [
 			{
 				...validationConf.name,
@@ -219,15 +224,18 @@ export default function ContactForm(props) {
 				// save to separate local stoarge
 				save(values)
 
-				rxSetState.next({
+				autoSave = props.autoSave
+				const s = {
 					...state,
 					header: textsCap.headerUpdate,
-					submitText: textsCap.update,
+					submitText: getSubmitText(),
 					success: true,
-				})
+				}
+				console.log({state:s})
+				rxSetState.next(s)
 				isFn(onSubmit) && onSubmit(true, values, id)
 			},
-			submitText: !!existingEntry ? textsCap.update : undefined,
+			submitText: getSubmitText(),
 		}
 
 		if (autoSave) {

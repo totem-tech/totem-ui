@@ -56,17 +56,33 @@ export const getAll = () => locations.getAll()
 export const remove = ids => { locations.delete(ids) }
 
 /**
+ * @name    removeByPartnerIdentity
+ * 
+ * @param   {String}    partnerIdentity 
+ */
+export const removeByPartnerIdentity = partnerIdentity => {
+	const map = search({ partnerIdentity })
+	Array
+		.from(map)
+		.forEach(([id]) => remove(id))
+}
+
+/**
  * @name	search
  * @summary search locations
- * @param	{...any} args see `DataStorage.find` for details
+ * 
+ * @param   {Object}    keyValues
+ * @param	{...any}	args		see `DataStorage.find` for details
  * 
  * @returns	{*}
  */
-export const search = (...args) => locations.search(...args)
+export const search = (keyValues, ...args) => locations.search(keyValues, ...args)
 
 /**
  * @name    set
  * @summary add or update location
+ * @description a location is either associated with a single partner or 0+ identities.
+ * If a location is associated with a partner it cannot be associated with any identity.
  *
  * @param   {Object} location	See `allKeys` for a list of accepted properties
  * @param   {String} id			(optional) Default: randomly generate unique hex string
@@ -96,6 +112,7 @@ export default {
 	get,
 	getAll,
 	remove,
+	removeByPartnerIdentity,
 	rxLocations,
 	search,
 	set,

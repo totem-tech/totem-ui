@@ -75,9 +75,10 @@ export default class LocationForm extends Component {
 			submitText,
 			values,
 		} = props
-		const location = get(id) || values || {}
-		const { partnerIdentity } = location
-		this.isUpdate = !!id && !!location
+		const location = get(id)
+		values = { ...location, ...values }
+		const { partnerIdentity } = values
+		this.isUpdate = !!location
 		const partner = partners.get(partnerIdentity)
 		const noFlags = [
 			'aq',
@@ -239,6 +240,7 @@ export default class LocationForm extends Component {
 							},
 						],
 					},
+					// show remove button if location is already saved
 					this.isUpdate && {
 						content: textsCap.removeLocation,
 						fluid: true,
@@ -320,7 +322,7 @@ export default class LocationForm extends Component {
 						},
 					},
 				].filter(Boolean),
-				location
+				values,
 			),
 		}
 	}

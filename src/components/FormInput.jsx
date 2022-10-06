@@ -105,21 +105,25 @@ export class FormInput extends Component {
 		const { rxOptions, rxOptionsModifier, rxValue, rxValueModifier } = this.props
 		if (isSubjectLike(rxValue)) {
 			this.subscriptions.rxValue = rxValue.subscribe(value => {
-				value = isFn(rxValueModifier) ? rxValueModifier(value) : value
+				value = isFn(rxValueModifier)
+					? rxValueModifier(value)
+					: value
 				if (this.value === value) return
 				this.handleChange({}, { ...this.props, value })
 			})
 		}
 		if (isSubjectLike(rxOptions)) {
 			this.subscriptions.rxOptions = rxOptions.subscribe(options => {
-				options = !isFn(rxOptionsModifier) ? options : rxOptionsModifier(options)
+				options = !isFn(rxOptionsModifier)
+					? options
+					: rxOptionsModifier(options)
 				isArr(options) && this.setState({ options })
 				if (!isSubjectLike(rxValue) || !hasValue(this.value)) return
-				const isOption = !!options.find(o => o.value === this.value)
-				if (isOption) return
+				
+				const isOption = !!options.find(o => o.value === this.value)				
 				// value no longer exists in the options list
 				// force clear selection
-				rxValue.next(undefined)
+				!isOption && rxValue.next(undefined)
 			})
 		}
 	}
