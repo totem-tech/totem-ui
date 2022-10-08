@@ -12,6 +12,7 @@ start.sh
 
 # bundled JS file
 public/bundle.js
+public/bundle.js.gz
 
 # certificate keys etc
 *totem.live.*
