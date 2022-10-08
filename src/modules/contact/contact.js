@@ -26,6 +26,11 @@ export const validationConf = {
         required: true,
         type: TYPES.email,
     },
+    fileBackupTS: {
+        maxLength: 24, // "2001-01-001T01:01:01.123Z"
+        minLength: 16, // "2001-01-001T01:01"
+        type: TYPES.string,
+    },
     id: {
         maxLength: 16,
         minLength: 16,

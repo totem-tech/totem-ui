@@ -393,7 +393,7 @@ export default class RestoreBackupForm extends Component {
 		optionGroupIn.grouped = true // forces full width child inputs
 		optionGroupIn.groupValues = true // true => create an object with child input values
 		optionGroupIn.inputs = valueInputs
-		optionGroupIn.label = `${input.label}: ${numConflicts} / ${valueInputs.length} ${texts.conflicts}`
+		optionGroupIn.label = `${input.label}: ${numConflicts} ${texts.conflicts} out of ${valueInputs.length} entries`
 		optionGroupIn.name = optionGroupName
 		optionGroupIn.type = 'group'
 		restoreOptionsIn.inputs = exists

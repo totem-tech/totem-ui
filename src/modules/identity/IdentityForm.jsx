@@ -29,17 +29,17 @@ import { showForm } from '../../services/modal'
 import LocationForm from '../location/LocationForm'
 import ContactForm from '../contact/ContactForm'
 import { getAll as getContacts, rxContacts } from '../contact/contact'
+import BackupForm from '../gettingStarted/BackupForm'
 
 const textsCap = translated(
 	{
 		address: 'address',
 		autoSaved: 'changes will be auto-saved',
-		bip39Warning:
-			'The mnemonic you have entered is not BIP39 compatible. You may or may not be able to restore your identity on any other wallet applications. It is recommended that you use a BIP39 compatible mnemonic. If you choose to use BIP39 incompatible mnemonic, please use at your own risk!',
+		bip39Warning: 'The mnemonic you have entered is not BIP39 compatible. You may or may not be able to restore your identity on any other wallet applications. It is recommended that you use a BIP39 compatible mnemonic. If you choose to use BIP39 incompatible mnemonic, please use at your own risk!',
 		businessInfoLabel: 'business information',
-		contactIdCreateTittle: 'create a new contact',
+		contactIdCreateTitle: 'create a new contact',
 		contactIdLabel: 'contact details',
-		contactIdPlaceholder: 'select contact details for this identity',
+		contactIdPlaceholder: 'select contact details',
 		create: 'create',
 		business: 'business',
 		generate: 'generate',
@@ -54,15 +54,15 @@ const textsCap = translated(
 		headerRestore: 'restore identity',
 		headerUpdate: 'update identity',
 		identityNamePlaceholder: 'enter a name for your Blockchain identity',
-		locationIdCreateTittle: 'create a new location',
+		locationIdCreateTitle: 'create a new location',
 		locationIdLabel: 'location',
-		locationIdPlaceholder: 'select a location for this identity',
+		locationIdPlaceholder: 'select a location',
 		regNumberLabel: 'registered number',
 		regNumberPlaceholder: 'company registration number',
 		restoreInputLabel: 'restore my existing identity',
 		seedExists: 'seed already exists in the identity list with name:',
 		seedPlaceholder: 'enter existing seed or generate one',
-		tagsInputEmptyMessage: 'enter tag and press enter to add, to tags list',
+		tagsInputEmptyMessage: 'type a tag and press enter to add, to tags list',
 		tagsPlaceholder: 'enter tags',
 		uniqueNameRequired: 'please enter an unique name',
 		usageType: 'usage type',
@@ -70,7 +70,7 @@ const textsCap = translated(
 		vatNumberLabel: 'VAT number',
 		vatNumberPlaceholder: 'VAT registration number',
 	},
-	true
+	true,
 )[1]
 
 export const requiredFields = Object.freeze({
@@ -100,242 +100,243 @@ export default class IdentityForm extends Component {
 		this.values = { ...existingValues, ...values }
 		this.rxAddress = new BehaviorSubject(address)
 		this.doUpdate = !!existingValues
-		autoSave = isBool(autoSave) ? autoSave : this.doUpdate
+		autoSave = isBool(autoSave)
+			? autoSave
+			: this.doUpdate
 
 		if (submitText !== null) {
-			submitText =
-				submitText ||
-				(this.doUpdate
+			submitText = submitText || submitText === null
+				? submitText
+				: this.doUpdate
 					? autoSave
 						? null
 						: textsCap.update
 					: restore
-					? textsCap.restore
-					: textsCap.create)
+						? textsCap.restore
+						: textsCap.create
 		}
-		this.header =
-			header ||
-			(this.doUpdate ? textsCap.headerUpdate : textsCap.headerCreate)
+		this.header = header || (
+			this.doUpdate
+				? textsCap.headerUpdate
+				: textsCap.headerCreate
+		)
+		const inputs = [
+			{
+				hidden: this.doUpdate,
+				name: inputNames.restore,
+				onChange: this.handleRestoreChange,
+				options: [
+					{
+						label: textsCap.restoreInputLabel,
+						value: true,
+					},
+				],
+				rxValue: new BehaviorSubject(),
+				type: 'Checkbox-group',
+			},
+			{
+				label: textsCap.name,
+				maxLength: 64,
+				minLength: 3,
+				name: inputNames.name,
+				placeholder: textsCap.identityNamePlaceholder,
+				required: true,
+				rxValue: new BehaviorSubject(),
+				validate: this.validateName,
+			},
+			{
+				hidden: true,
+				label: textsCap.seed,
+				name: inputNames.uri,
+				onChange: this.handleUriChange,
+				placeholder: textsCap.seedPlaceholder,
+				readOnly: true,
+				required: true,
+				rxValue: new BehaviorSubject(),
+				type: 'text',
+				validate: values => values.restore && this.validateUri,
+			},
+			{
+				inline: true,
+				label: textsCap.usageType,
+				name: inputNames.usageType,
+				onChange: this.handleUsageTypeChange,
+				options: [
+					{
+						label: textsCap.personal,
+						value: USAGE_TYPES.PERSONAL,
+					},
+					{
+						label: textsCap.business,
+						value: USAGE_TYPES.BUSINESS,
+					},
+				],
+				radio: true,
+				required: true,
+				rxValue: new BehaviorSubject(),
+				type: 'Checkbox-group',
+			},
+			{
+				label: textsCap.address,
+				name: inputNames.address,
+				rxValue: this.rxAddress,
+				type: 'hidden',
+			},
+			{
+				allowAdditions: true,
+				label: textsCap.tags,
+				name: inputNames.tags,
+				noResultsMessage: textsCap.tagsInputEmptyMessage,
+				multiple: true,
+				onAddItem: this.handleAddTag,
+				options: arrUnique([
+					...getAllTags(),
+					...(this.values.tags || []),
+				]).map(tag => ({
+					key: tag,
+					text: tag,
+					value: tag,
+				})),
+				placeholder: textsCap.tagsPlaceholder,
+				type: 'dropdown',
+				search: true,
+				selection: true,
+			},
+			{
+				accordion: {
+					collapsed: true,
+					styled: true,
+				},
+				label: textsCap.businessInfoLabel,
+				name: inputNames.businessInfo,
+				grouped: true,
+				type: 'group',
+				inputs: [
+					{
+						clearable: true,
+						label: (
+							<div>
+								{textsCap.locationIdLabel + ' '}
+								<Button {...{
+									as: 'a', // prevents form being submitted unexpectedly
+									icon: 'plus',
+									onClick: () => showForm(LocationForm, {
+										onSubmit: this.handleLocationCreate,
+									}),
+									size: 'mini',
+									style: { padding: 3 },
+									title: textsCap.locationIdCreateTitle,
+								}} />
+							</div>
+						),
+						name: inputNames.locationId,
+						// get initial options
+						options: this.getLocationOptions(
+							getLocations()
+						),
+						placeholder: textsCap.locationIdPlaceholder,
+						rxOptions: rxLocations,
+						rxOptionsModifier: this.getLocationOptions,
+						rxValue: new BehaviorSubject(),
+						search: ['text'],
+						selection: true,
+						type: 'dropdown',
+					},
+					{
+						clearable: true,
+						label: (
+							<div>
+								{textsCap.contactIdLabel + ' '}
+								<Button {...{
+									as: 'a', // prevents form being submitted unexpectedly
+									icon: 'plus',
+									onClick: () => showForm(ContactForm, {
+										onSubmit: this.handleContactCreate,
+									}),
+									size: 'mini',
+									style: { padding: 3 },
+									title: textsCap.contactIdCreateTitle,
+								}} />
+							</div>
+						),
+						name: inputNames.contactId,
+						// get initial options
+						options: this.getContactOptions(getContacts()),
+						placeholder: textsCap.contactIdPlaceholder,
+						rxOptions: rxContacts,
+						rxOptionsModifier: this.getContactOptions,
+						rxValue: new BehaviorSubject(),
+						search: ['text'],
+						selection: true,
+						type: 'dropdown',
+					},
+					{
+						label: textsCap.regNumberLabel,
+						minLength: 3,
+						maxLength: 64,
+						name: inputNames.registeredNumber,
+						placeholder: textsCap.regNumberPlaceholder,
+					},
+					{
+						label: textsCap.vatNumberLabel,
+						minLength: 3,
+						maxLength: 64,
+						name: inputNames.vatNumber,
+						placeholder: textsCap.vatNumberPlaceholder,
+					},
+				],
+			},
+		]
 		this.state = {
-			closeText: autoSave ? null : undefined,
+			closeText: autoSave
+				? null
+				: undefined,
 			header: this.header,
-			subheader: autoSave ? textsCap.autoSaved : undefined,
+			subheader: autoSave
+				? textsCap.autoSaved
+				: undefined,
 			message,
 			onChange: this.handleFormChange,
 			onSubmit: this.handleSubmit,
 			submitText,
 			success: false,
-			inputs: fillValues(
-				[
-					{
-						hidden: this.doUpdate,
-						name: inputNames.restore,
-						onChange: this.handleRestoreChange,
-						options: [
-							{
-								label: textsCap.restoreInputLabel,
-								value: true,
-							},
-						],
-						rxValue: new BehaviorSubject(),
-						type: 'Checkbox-group',
-					},
-					{
-						label: textsCap.name,
-						maxLength: 64,
-						minLength: 3,
-						name: inputNames.name,
-						placeholder: textsCap.identityNamePlaceholder,
-						required: true,
-						rxValue: new BehaviorSubject(),
-						validate: this.validateName,
-					},
-					{
-						hidden: true,
-						label: textsCap.seed,
-						name: inputNames.uri,
-						onChange: this.handleUriChange,
-						placeholder: textsCap.seedPlaceholder,
-						readOnly: true,
-						required: true,
-						rxValue: new BehaviorSubject(),
-						type: 'text',
-						validate: values => values.restore && this.validateUri,
-					},
-					{
-						inline: true,
-						label: textsCap.usageType,
-						name: inputNames.usageType,
-						onChange: this.handleUsageTypeChange,
-						options: [
-							{
-								label: textsCap.personal,
-								value: USAGE_TYPES.PERSONAL,
-							},
-							{
-								label: textsCap.business,
-								value: USAGE_TYPES.BUSINESS,
-							},
-						],
-						radio: true,
-						required: true,
-						rxValue: new BehaviorSubject(),
-						type: 'Checkbox-group',
-					},
-					{
-						label: textsCap.address,
-						name: inputNames.address,
-						rxValue: this.rxAddress,
-						type: 'hidden',
-					},
-					{
-						allowAdditions: true,
-						label: textsCap.tags,
-						name: inputNames.tags,
-						noResultsMessage: textsCap.tagsInputEmptyMessage,
-						multiple: true,
-						onAddItem: this.handleAddTag,
-						options: arrUnique([
-							...getAllTags(),
-							...(this.values.tags || []),
-						]).map(tag => ({
-							key: tag,
-							text: tag,
-							value: tag,
-						})),
-						placeholder: textsCap.tagsPlaceholder,
-						type: 'dropdown',
-						search: true,
-						selection: true,
-					},
-					{
-						accordion: {
-							collapsed: true,
-							styled: true,
-						},
-						label: textsCap.businessInfoLabel,
-						name: inputNames.businessInfo,
-						grouped: true,
-						type: 'group',
-						inputs: [
-							{
-								clearable: true,
-								label: (
-									<div>
-										{textsCap.locationIdLabel + ' '}
-										<Button
-											{...{
-												as: 'a', // prevents form being submitted unexpectedly
-												icon: 'plus',
-												onClick: () =>
-													showForm(LocationForm, {
-														onSubmit:
-															this
-																.handleLocationCreate,
-													}),
-												size: 'mini',
-												style: { padding: 3 },
-												title: textsCap.locationIdCreateTittle,
-											}}
-										/>
-									</div>
-								),
-								name: inputNames.locationId,
-								// get initial options
-								options: this.getLocationOptions(
-									getLocations()
-								),
-								placeholder: textsCap.locationIdPlaceholder,
-								rxOptions: rxLocations,
-								rxOptionsModifier: this.getLocationOptions,
-								rxValue: new BehaviorSubject(),
-								search: ['text'],
-								selection: true,
-								type: 'dropdown',
-							},
-							{
-								clearable: true,
-								label: (
-									<div>
-										{textsCap.contactIdLabel + ' '}
-										<Button
-											{...{
-												as: 'a', // prevents form being submitted unexpectedly
-												icon: 'plus',
-												onClick: () =>
-													showForm(ContactForm, {
-														onSubmit:
-															this
-																.handleContactCreate,
-													}),
-												size: 'mini',
-												style: { padding: 3 },
-												title: textsCap.contactIdCreateTittle,
-											}}
-										/>
-									</div>
-								),
-								name: inputNames.contactId,
-								// get initial options
-								options: this.getContactOptions(getContacts()),
-								placeholder: textsCap.contactIdPlaceholder,
-								rxOptions: rxContacts,
-								rxOptionsModifier: this.getContactOptions,
-								rxValue: new BehaviorSubject(),
-								search: ['text'],
-								selection: true,
-								type: 'dropdown',
-							},
-							{
-								label: textsCap.regNumberLabel,
-								minLength: 3,
-								maxLength: 64,
-								name: inputNames.registeredNumber,
-								placeholder: textsCap.regNumberPlaceholder,
-							},
-							{
-								label: textsCap.vatNumberLabel,
-								minLength: 3,
-								maxLength: 64,
-								name: inputNames.vatNumber,
-								placeholder: textsCap.vatNumberPlaceholder,
-							},
-						],
-					},
-				],
-				this.values
-			),
+			inputs: fillValues(inputs, this.values),
 		}
 	}
 
 	getContactOptions = contactsMap => {
 		const excludePartnerContacts = ([_, c]) => !c.partnerIdentity
 		const formatOption = ([id, c]) => ({
-			description: <span style={{ marginTop: 4 }}>{c.email}</span>,
+			description: (
+				<span style={{ marginTop: 4 }}>
+					{c.email}
+				</span>
+			),
 			key: id,
 			text: (
 				<span style={{ paddingLeft: 25 }}>
-					<Button
-						{...{
-							compact: true,
-							icon: 'pencil',
-							onClick: e => {
-								e.preventDefault()
-								e.stopPropagation()
-								showForm(ContactForm, { values: c })
-							},
-							size: 'mini',
-							// style adjustment to make sure height of the dropdown doesn't change because of the button
-							style: {
-								position: 'absolute',
-								margin: '-5px -30px',
-							},
-						}}
-					/>
+					<Button {...{
+						compact: true,
+						icon: 'pencil',
+						onClick: e => {
+							e.preventDefault()
+							e.stopPropagation()
+							showForm(ContactForm, { values: c })
+						},
+						size: 'mini',
+						// style adjustment to make sure height of the dropdown doesn't change because of the button
+						style: {
+							position: 'absolute',
+							margin: '-5px -30px',
+						},
+					}} />
 					{c.name}
 				</span>
 			),
-			title: [c.email, (c.phoneCode || '') + (c.phoneNumber || '')]
+			title: [
+				c.email,
+				(c.phoneCode || '') + (c.phoneNumber || '')
+			]
 				.filter(Boolean)
 				.join(' '),
 			value: id,
@@ -356,30 +357,33 @@ export default class IdentityForm extends Component {
 			key: id,
 			text: (
 				<span style={{ paddingLeft: 25 }}>
-					<Button
-						{...{
-							compact: true,
-							icon: 'pencil',
-							onClick: e => {
-								e.preventDefault()
-								e.stopPropagation()
-								showForm(LocationForm, {
-									id,
-									values: l,
-								})
-							},
-							size: 'mini',
-							// style adjustment to make sure height of the dropdown doesn't change because of the button
-							style: {
-								position: 'absolute',
-								margin: '-5px -30px',
-							},
-						}}
-					/>
+					<Button {...{
+						compact: true,
+						icon: 'pencil',
+						onClick: e => {
+							e.preventDefault()
+							e.stopPropagation()
+							showForm(LocationForm, {
+								id,
+								values: l,
+							})
+						},
+						size: 'mini',
+						// style adjustment to make sure height of the dropdown doesn't change because of the button
+						style: {
+							position: 'absolute',
+							margin: '-5px -30px',
+						},
+					}} />
 					{l.name}
 				</span>
 			),
-			title: [l.addressLine1, l.addressLine2, l.city, l.postcode]
+			title: [
+				l.addressLine1,
+				l.addressLine2,
+				l.city,
+				l.postcode,
+			]
 				.filter(Boolean)
 				.join(' '),
 			value: id,
@@ -448,6 +452,18 @@ export default class IdentityForm extends Component {
 		}
 	}
 
+	handleSubmit = deferred(() => {
+		const { onSubmit, warnBackup } = this.props
+		const { values } = this
+		const address = values[inputNames.address]
+		set(address, { ...values })
+		isFn(onSubmit) && onSubmit(true, values)
+		this.setState({ success: true })
+
+		// ask user to backup their account
+		warnBackup && BackupForm.checkAndWarn()
+	}, 100)
+
 	handleUriChange = deferred(() => {
 		const { inputs } = this.state
 		const isRestore = !!this.values.restore
@@ -466,15 +482,6 @@ export default class IdentityForm extends Component {
 			  }
 		this.setState({ inputs })
 	}, 500)
-
-	handleSubmit = deferred(() => {
-		const { onSubmit } = this.props
-		const { values } = this
-		const address = values[inputNames.address]
-		set(address, { ...values })
-		isFn(onSubmit) && onSubmit(true, values)
-		this.setState({ success: true })
-	}, 100)
 
 	// generate new seed
 	handleUsageTypeChange = (_, values) => {
@@ -536,10 +543,21 @@ IdentityForm.propTypes = {
 	autoSave: PropTypes.bool,
 	values: PropTypes.shape({
 		address: PropTypes.string,
+		name: PropTypes.string,
+		uri: PropTypes.string,
+		usageType: PropTypes.string,
+		businessInfo: PropTypes.string,
+		contactId: PropTypes.string,
+		locationId: PropTypes.string,
+		registeredNumber: PropTypes.string,
+		restore: PropTypes.bool,
+		tags: PropTypes.arrayOf(PropTypes.string),
+		vatNumber: PropTypes.string,
 	}),
 }
 IdentityForm.defaultProps = {
 	autoSave: false,
 	closeOnSubmit: true,
 	size: 'tiny',
+	warnBackup: true,
 }

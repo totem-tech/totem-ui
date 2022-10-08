@@ -60,7 +60,7 @@ const texts = translated({
 	// video2Title: 'Backup your account. Watch the video:',
 })[0]
 
-const MODULE_KEY = 'getting-started'
+export const MODULE_KEY = 'getting-started'
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 const rxActiveStep = new BehaviorSubject(rw().activeStep || 0)
@@ -262,13 +262,10 @@ export default function GetingStarted() {
 	)
 }
 
-const handleBackup = (redirectTo) => showForm(
-	BackupForm,
-	{
-		onSubmit: done => done && incrementStep(),
-		values: { redirectTo },
-	},
-)
+const handleBackup = (redirectTo) => showForm(BackupForm, {
+	onSubmit: done => done && incrementStep(),
+	values: { redirectTo },
+})
 
 const handleUpdateIdentity = (redirectTo) => {
 	const values = getSelected()
@@ -281,6 +278,7 @@ const handleUpdateIdentity = (redirectTo) => {
 			...values,
 			redirectTo: values.redirectTo || redirectTo,
 		},
+		warnBackup: false,
 	})
 }
 

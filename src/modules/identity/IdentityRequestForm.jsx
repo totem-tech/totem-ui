@@ -31,10 +31,20 @@ const [texts, textsCap] = translated({
     userIdsNoResultsMessage: 'Type an User ID and press enter to add',
     userIdsPlaceholder: 'Enter User ID(s)',
 }, true)
+const _reasonCustom = 'custom'
 const reasonList = [
-    textsCap.reason1,
-    textsCap.reason2,
-    textsCap.reason3,
+    { 
+        text: textsCap.reason1,
+        value: 'To add your Identity to my Partner list',
+    },
+    { 
+        text: textsCap.reason2,
+        value: 'Timekeeping on an Activity',
+    },
+    {
+        text: textsCap.reason3,
+        value: _reasonCustom,
+    },
 ]
 const inputNames = {
     customReason: 'customReason',
@@ -69,20 +79,16 @@ export default class IdentityRequestForm extends Component {
                 },
                 {
                     label: wordsCap.reason,
-                    maxLength: 160,
+                    maxLength: 64,
                     name: inputNames.reason,
                     onChange: (e, values, i) => {
                         const { inputs } = this.state
-                        const showCustom = [texts.reason3, 'Custom']
-                            .includes(values.reason)
+                        const reason = values[inputNames.reason]
+                        const showCustom = _reasonCustom === reason
                         findInput(inputs, inputNames.customReason).hidden = !showCustom
                         this.setState({ inputs })
                     },
-                    options: reasonList.map(r => ({
-                        key: r,
-                        text: r,
-                        value: r
-                    })),
+                    options: reasonList.map(x => x),
                     placeholder: texts.reasonPlaceholder,
                     required: true,
                     search: true,
@@ -93,7 +99,8 @@ export default class IdentityRequestForm extends Component {
                     hidden: true,
                     label: texts.customReasonLabel,
                     name: inputNames.customReason,
-                    maxLength: 160,
+                    minLength: 10,
+                    maxLength: 64,
                     placeholder: texts.customReasonPlaceholder,
                     required: true,
                     type: 'text',
@@ -108,7 +115,11 @@ export default class IdentityRequestForm extends Component {
     handleSubmit = (e, values) => {
         const { onSubmit } = this.props
         const { userIds, reason, customReason } = values
-        const data = { reason: reason === 'Custom' ? customReason : reason }
+        const data = {
+            reason: reason === _reasonCustom
+                ? customReason
+                : reason,
+        }
         this.setState({ loading: true })
         const callback = err => {
             const success = !err

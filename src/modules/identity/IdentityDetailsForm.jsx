@@ -17,38 +17,33 @@ import { get, getSelected, remove } from './identity'
 import IdentityForm from './IdentityForm'
 import storage from '../../utils/storageHelper'
 
-const textsCap = translated(
-	{
-		advanced: 'advanced',
-		availableBalance: 'available balance',
-		autoSaved: 'changes will be auto-saved',
-		close: 'close',
-		copyAddress: 'copy address',
-		copySeed: 'copy seed',
-		cryptoType: 'identity type',
-		hideSeed: 'hide seed',
-		identity: 'identity',
-		identityDetails: 'identity details',
-		lastBackup: 'last backup',
-		loadingBalance: 'loading account balance',
-		never: 'never',
-		noKeepItHidden: 'no, keep it hidden',
-		ok: 'OK',
-		removeIdentity: 'remove identity',
-		removePermanently: 'remove permanently',
-		removeWarningPart1: 'you are about to remove the following identity',
-		removeWarningPart2: 'if not backed up, this action is irreversible',
-		removeWarningPart3:
-			'you will lose access to all activity/data related to this identity.',
-		identityDeleteWarningSelected:
-			'cannot remove identity you are currently using',
-		identityDeleteWarningReward: 'cannot remove your rewards identity',
-		show: 'show',
-		showSeed: 'show seed phrase',
-		seed: 'seed',
-	},
-	true
-)[1]
+const textsCap = translated({
+	advanced: 'advanced',
+	availableBalance: 'available balance',
+	autoSaved: 'changes will be auto-saved',
+	close: 'close',
+	copyAddress: 'copy address',
+	copySeed: 'copy seed',
+	cryptoType: 'identity type',
+	hideSeed: 'hide seed',
+	identity: 'identity',
+	identityDetails: 'identity details',
+	lastBackup: 'last backup',
+	loadingBalance: 'loading account balance',
+	never: 'never',
+	noKeepItHidden: 'no, keep it hidden',
+	ok: 'OK',
+	removeIdentity: 'remove identity',
+	removePermanently: 'remove permanently',
+	removeWarningPart1: 'you are about to remove the following identity',
+	removeWarningPart2: 'if not backed up, this action is irreversible.',
+	removeWarningPart3: 'you will lose access to all activity/data related to this identity.',
+	identityDeleteWarningSelected: 'cannot remove identity you are currently using',
+	identityDeleteWarningReward: 'cannot remove your rewards identity',
+	show: 'show',
+	showSeed: 'show seed phrase',
+	seed: 'seed',
+}, true)[1]
 
 // A read only form to display identity details including seed
 export default class IdentityDetailsForm extends Component {
@@ -228,20 +223,19 @@ export default class IdentityDetailsForm extends Component {
 	handleDelete = () => {
 		const { onSubmit } = this.props
 		const { address, name } = this.identity
-		const isSelectedIdentity = getSelected().address
-		const { user: { address: rewardsIdentity = '' } = '' } =
-			storage.settings.module('messaging') || {}
+		const isSelectedIdentity = getSelected().address === address
+		const settings = storage.settings.module('messaging') || {}
+		const { user: { address: rewardsIdentity } = {} } = settings
 		const isRewardsIdentity = address === rewardsIdentity
 		const denyDelete = isRewardsIdentity || isSelectedIdentity
-		if (denyDelete)
-			return confirm({
-				cancelButton: textsCap.ok,
-				confirmButton: null,
-				content: isRewardsIdentity
-					? textsCap.identityDeleteWarningReward
-					: textsCap.identityDeleteWarningSelected,
-				size: 'mini',
-			})
+		if (denyDelete) return confirm({
+			cancelButton: textsCap.ok,
+			confirmButton: null,
+			content: isRewardsIdentity
+				? textsCap.identityDeleteWarningReward
+				: textsCap.identityDeleteWarningSelected,
+			size: 'mini',
+		})
 
 		confirm({
 			confirmButton: (
@@ -253,7 +247,8 @@ export default class IdentityDetailsForm extends Component {
 			),
 			content: [
 				<p key='1'>
-					{textsCap.removeWarningPart1}: <b>{name}</b>
+					{textsCap.removeWarningPart1}: <br />
+					<b>{name}</b>
 				</p>,
 				<p key='0'>
 					<b>

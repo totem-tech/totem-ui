@@ -176,26 +176,33 @@ const tableProps = Object.freeze({
 				{ content: textsCap.add, icon: 'plus' },
 				{ content: textsCap.request },
 			],
-			onAction: (_, addPartner) => {
-				const handleSubmit = (ok, partner) => ok && _showForm({
-						autoSave: true,
-						key: 'saved',
-						values: partner,
-					}) 
-				const _showForm = (props = {}) => showForm(
-					addPartner
-						? PartnerForm
-						: IdentityRequestForm,
-					props,
-					addPartner ? 'add-partner' : 'request-identity',
-				)
+			// onAction: (_, addPartner) => {
+			// // Immediately re-opens the form on update mode
+			// 	const handleSubmit = (ok, partner) => ok && _showForm({
+			// 			autoSave: true,
+			// 			key: 'saved',
+			// 			values: partner,
+			// 		})
+			// 	const _showForm = (props = {}) => showForm(
+			// 		addPartner
+			// 			? PartnerForm
+			// 			: IdentityRequestForm,
+			// 		props,
+			// 		addPartner ? 'add-partner' : 'request-identity',
+			// 	)
 
-				_showForm({
-					onSubmit: addPartner
-						? handleSubmit
-						: undefined
-				})
-			},
+			// 	_showForm({
+			//		closeOnSubmit: false,
+			// 		onSubmit: addPartner
+			// 			? handleSubmit
+			// 			: undefined,
+			// 	})
+			// },
+			onAction: (_, addPartner) => showForm(
+				addPartner
+					? PartnerForm
+					: IdentityRequestForm
+			),
 			or: true,
 			values: [true, false],
 		},
@@ -228,9 +235,7 @@ function getActions(partner = {}) {
 					</p>
 				),
 				header: `${textsCap.removePartner}?`,
-				onConfirm: () => {
-					remove(address)
-				},
+				onConfirm: () => remove(address),
 				size: 'mini',
 			}),
 			title: textsCap.delete,

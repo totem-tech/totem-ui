@@ -8,7 +8,6 @@ import {
 	isArr,
 	isStr,
 	deferred,
-	objCreate,
 } from '../../utils/utils'
 import FormBuilder, {
 	fillValues,
@@ -73,6 +72,7 @@ export const inputNames = {
 	name: 'name',
 	userIds: 'userIds',
 }
+
 export default class IdentityShareForm extends Component {
 	constructor(props) {
 		super(props)
@@ -97,6 +97,8 @@ export default class IdentityShareForm extends Component {
 				},
 				{
 					label: textsCap.nameLabel,
+					maxLength: 64,
+					minLenght: 3,
 					name: inputNames.name,
 					placeholder: textsCap.namePlaceholder,
 					required: false,

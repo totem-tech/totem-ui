@@ -48,6 +48,7 @@ import {
 	visibilityTypes,
 } from './partner'
 import { Icon } from 'semantic-ui-react'
+import BackupForm from '../gettingStarted/BackupForm'
 
 const textsCap = translated(
 	{
@@ -221,6 +222,8 @@ export default class PartnerForm extends Component {
 				},
 				{
 					label: textsCap.nameLabel,
+					maxLength: 64,
+					minLength: 3,
 					name: inputNames.name,
 					placeholder: textsCap.namePlaceholder,
 					required: true,
@@ -509,7 +512,7 @@ export default class PartnerForm extends Component {
 			},
 			values: {
 				...location,
-				name: '___',
+				name: location.name || '___',
 			},
 			...formProps,
 		}} />
@@ -562,7 +565,9 @@ export default class PartnerForm extends Component {
 			
 			nameIn.rxValue.next(cName)
 			typeIn.rxValue.next(
-				com ? types.BUSINESS : types.PERSONAL
+				com
+					? types.BUSINESS
+					: types.PERSONAL
 			)
 			visibilityIn.rxValue.next(
 				com ? visibilityTypes.PUBLIC : visibilityTypes.PRIVATE
@@ -665,7 +670,7 @@ export default class PartnerForm extends Component {
 	}
 
 	handleSubmit = deferred(() => {
-		const { autoSave, closeOnSubmit, onSubmit } = this.props
+		const { autoSave, closeOnSubmit, onSubmit, warnBackup } = this.props
 		const { inputs, values } = this.state
 		let address = values[inputNames.address]
 		let name = values[inputNames.name]
@@ -709,7 +714,6 @@ export default class PartnerForm extends Component {
 		}
 		this.setState({ message, success })
 		
-		
 		// check & save contact & location if necessary
 		this.saveContact()
 		this.saveLocation()
@@ -730,6 +734,8 @@ export default class PartnerForm extends Component {
 			size: 'tiny',
 			values: { name, identity: address },
 		})
+
+		return !this.doUpdate && warnBackup && BackupForm.checkAndWarn(false)
 	}, 100)
 
 	saveContact = () => {
@@ -800,5 +806,7 @@ PartnerForm.propTypes = {
 }
 PartnerForm.defaultProps = {
 	autoSave: false,
+	closeOnSubmit: true,
 	size: 'tiny',
+	warnBackup: true,
 }

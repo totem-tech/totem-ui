@@ -2,6 +2,7 @@ import uuid from 'uuid'
 import DataStorage from '../../utils/DataStorage'
 import { optionalFields, requiredFields } from './LocationForm'
 import { generateHash, isObj, isStr, objClean, objHasKeys } from '../../utils/utils'
+import { TYPES } from '../../utils/validator'
 
 const locations = new DataStorage('totem_locations', true)
 export const rxLocations = locations.rxData // RxJS Subject (because caching is disabled)
@@ -9,7 +10,17 @@ export const requiredKeys = Object.freeze(Object.values(requiredFields))
 export const validKeys = Object.freeze([
 	...requiredKeys,
 	...Object.values(optionalFields),
+	'fileBackupTS',
 ])
+
+// ToDo: add validation conf
+// const validationConf = {
+// 	fileBackupTS: {
+// 		maxLength: 24, // "2001-01-001T01:01:01.123Z"
+// 		minLength: 16, // "2001-01-001T01:01"
+// 		type: TYPES.string,
+// 	},
+// }
 
 /**
  * @name	find

@@ -4,7 +4,7 @@ import { useInverted } from '../services/window'
 import { objWithoutKeys } from '../utils/utils'
 
 function Text(props) {
-    const {
+    let {
         color,
         El,
         ignoreAttributes,
@@ -13,21 +13,24 @@ function Text(props) {
         style
     } = props
     const inverted = useInverted(reverseInverted)
-
+    color = inverted
+        ? invertedColor
+        : color
     return (
         <El {...{
             ...objWithoutKeys(props, ignoreAttributes),
+            color,
             style: {
                 background: 'transparent',
-                color: inverted
-                    ? invertedColor
-                    : color,
+                color,
                 ...style,
             },
         }} />
     )
 }
 Text.propTypes = {
+    // content
+    children: PropTypes.any,
     color: PropTypes.string,
     El: PropTypes.oneOfType([
         PropTypes.func,

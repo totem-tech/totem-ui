@@ -284,6 +284,7 @@ export class FormInput extends Component {
 			},
 			[...NON_ATTRIBUTES, ...(ignoreAttributes || [])]
 		)
+		attrs.id = attrs.id || name
 		attrs.ref = elementRef
 		attrs.onChange = this.handleChange
 		let isGroup = false
@@ -377,57 +378,51 @@ export class FormInput extends Component {
 				inputEl = <El {...attrs} />
 		}
 
-		if (!isGroup) {
-			return (
-				<Form.Field
-					{...{
-						...containerProps,
-						error: ['dateinput', 'date'].includes(typeLC)
-							? false
-							: (message && message.status === 'error') || !!error || !!invalid,
-						key: name,
-						required,
-						style: styleContainer,
-						title: editable ? undefined : errMsgs.readOnlyField,
-						width: width === null ? undefined : width,
-					}}
-				>
-					{!hideLabel &&
-						label && [
-							<label htmlFor={name} key='label'>
-								{label}
-							</label>,
-							labelDetails && (
-								<div
-									key='labelDetails'
-									style={{
-										lineHeight: '15px',
-										margin: '-5px 0 8px 0',
-									}}
-								>
-									<small style={{ color: 'grey' }}>{labelDetails}</small>
-								</div>
-							),
-						]}
-					{inputEl}
-					{message && <Message {...message} />}
-				</Form.Field>
-			)
-		}
+		if (!isGroup) return (
+			<Form.Field {...{
+				...containerProps,
+				error: ['dateinput', 'date'].includes(typeLC)
+					? false
+					: (message && message.status === 'error') || !!error || !!invalid,
+				key: name,
+				required,
+				style: styleContainer,
+				title: editable ? undefined : errMsgs.readOnlyField,
+				width: width === null ? undefined : width,
+			}}>
+				{!hideLabel &&
+					label && [
+						<label htmlFor={attrs.id} key='label'>
+							{label}
+						</label>,
+						labelDetails && (
+							<div
+								key='labelDetails'
+								style={{
+									lineHeight: '15px',
+									margin: '-5px 0 8px 0',
+								}}
+							>
+								<small style={{ color: 'grey' }}>{labelDetails}</small>
+							</div>
+						),
+					]}
+				{inputEl}
+				{message && <Message {...message} />}
+			</Form.Field>
+		)
 
 		let groupEl = (
 			<React.Fragment>
-				<Form.Group
-					{...{
-						...attrs,
-						className: 'form-group',
-						...objWithoutKeys(attrs, ['inputs']),
-						// style: {
-						// 	...styleContainer,
-						// 	...attrs.style,
-						// },
-					}}
-				>
+				<Form.Group {...{
+					...attrs,
+					className: 'form-group',
+					...objWithoutKeys(attrs, ['inputs']),
+					style: {
+						...styleContainer,
+						...attrs.style,
+					},
+				}}>
 					{inputEl}
 				</Form.Group>
 				<Message {...message} />
@@ -440,27 +435,30 @@ export class FormInput extends Component {
 		if (!isBool(collapsed)) collapsed = accordion.collapsed
 
 		return (
-			<Invertible
-				{...{
-					El: Accordion,
-					...objWithoutKeys(accordion, NON_ATTRIBUTES),
-					style: {
-						marginBottom: 15,
-						width: '100%',
-						...accordion.style,
-					},
-				}}
-			>
-				<Accordion.Title
-					active={!collapsed}
-					content={accordion.title || label}
-					icon={accordion.icon || 'dropdown'}
-					onClick={() => {
+			<Invertible {...{
+				El: Accordion,
+				...objWithoutKeys(accordion, NON_ATTRIBUTES),
+				style: {
+					marginBottom: 15,
+					width: '100%',
+					...accordion.style,
+				},
+			}}>
+				<Accordion.Title {...{
+					active: !collapsed,
+					content: accordion.title || label,
+					icon: accordion.icon || 'dropdown',
+					onClick: () => {
 						this.setState({ collapsed: !collapsed })
 						isFn(accordion.onClick) && accordion.onClick(!collapsed)
-					}}
-				/>
-				<Accordion.Content {...{ active: !collapsed, content: groupEl }} />
+					},
+					style: accordion.titleStyle,
+				}} />
+				<Accordion.Content {...{
+					active: !collapsed,
+					content: groupEl,
+					style: accordion.contentStyle,
+				}} />
 			</Invertible>
 		)
 	}

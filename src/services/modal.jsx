@@ -3,7 +3,7 @@ import { render } from 'react-dom'
 import uuid from 'uuid'
 import { Button, Confirm, Icon } from 'semantic-ui-react'
 import DataStorage from '../utils/DataStorage'
-import { isBool, isFn, className, isStr, isObj } from '../utils/utils'
+import { isBool, isFn, className, isStr, isObj, isDefined } from '../utils/utils'
 import { translated } from './language'
 import { toggleFullscreen, useInverted, getUrlParam } from './window'
 import PromisE from '../utils/PromisE'
@@ -184,14 +184,12 @@ export const confirmAsPromise = (props, ...args) => new PromisE((resolve, reject
             ? props
             : { content: props }
         const { onCancel, onConfirm } = props
-        props.onCancel = (...args) => {
-            isFn(onCancel) && onCancel(...args)
-            resolve(false)
+        const resolver = (defaultValue = false, func) => async (...args) => {
+            const value = isFn(func) && (await func(...args))
+            resolve(isDefined(value) ? value : defaultValue)
         }
-        props.onConfirm = (...args) => {
-            isFn(onConfirm) && onConfirm(...args)
-            resolve(true)
-        }
+        props.onCancel = resolver(false, onCancel)
+        props.onConfirm = resolver(true, onConfirm)
         confirm(props, ...args)
     } catch (err) {
         reject(err)
