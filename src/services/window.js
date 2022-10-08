@@ -81,7 +81,6 @@ export const setInvertedBrowser = (useBrowser) => {
         ? checkDarkPreferred()
         : rxInverted.value
     rxInverted.next(inverted)
-    console.log({ inverted, useBrowser })
     setTimeout(() => rw({
         invertedBrowser: !!useBrowser,
     }))

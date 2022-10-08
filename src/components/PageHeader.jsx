@@ -201,7 +201,7 @@ const PageHeaderView = props => {
 										{textsCap.darkMode}: {inverted ? texts.off : texts.on}
 										&nbsp;
 										({invBrowser
-											? texts.auto
+											? <b>{texts.auto}</b>
 											: (
 												<a {...{
 													onClick: e => {
