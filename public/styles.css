@@ -1,0 +1,627 @@
+/* .validator-balances {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  align-items: stretch;
+  align-content: flex-start;
+  display: flex;
+}
+
+.validator-balance {
+  margin: 6px;
+  padding: 12px;
+  width: 150px;
+  background: #fcfcfc;
+  border-radius: 8px;
+}
+
+.validator {
+  float: left;
+}
+
+.AccountId {
+  clear: both;
+  font-family: "Courier New", Courier, monospace;
+}
+
+.paren {
+  font-size: small;
+  color: #666;
+}
+
+.value {
+  font-weight: bold;
+}
+.ui.basic.label {
+  background: none #ffffff !important;
+} */
+
+/*
+ * New styles
+*/
+
+/* iphone XR */
+/* @media only screen 
+    and (device-width : 414px) 
+    and (device-height : 896px) 
+    and (-webkit-device-pixel-ratio : 2) { 
+	.ui.container {
+		width: auto !important;
+		margin-left: 1em !important;
+		margin-right: 1em !important;
+	}
+	
+	.ui.grid.container {
+		width: auto !important;
+	}
+
+	.ui.relaxed.grid.container {
+		width: auto !important;
+	}
+
+	.ui.very.relaxed.grid.container {
+		width: auto !important;
+	}
+} */
+
+/* iphone XS */
+/* @media only screen 
+	and (device-width : 375px) 
+	and (device-height : 812px) 
+	and (-webkit-device-pixel-ratio : 3) { 
+	.ui.container {
+		width: auto !important;
+		margin-left: 1em !important;
+		margin-right: 1em !important;
+	}
+
+	.ui.grid.container {
+		width: auto !important;
+	}
+
+	.ui.relaxed.grid.container {
+		width: auto !important;
+	}
+
+	.ui.very.relaxed.grid.container {
+		width: auto !important;
+	}
+} */
+
+/* iphone XS Max */
+/* @media only screen 
+	and (device-width : 414px) 
+	and (device-height : 896px) 
+	and (-webkit-device-pixel-ratio : 3) { 
+	.ui.container {
+		width: auto !important;
+		margin-left: 1em !important;
+		margin-right: 1em !important;
+	}
+
+	.ui.grid.container {
+		width: auto !important;
+	}
+
+	.ui.relaxed.grid.container {
+		width: auto !important;
+	}
+
+	.ui.very.relaxed.grid.container {
+		width: auto !important;
+	}
+} */
+
+/* @media only screen and (max-width: 767px) {
+	.ui.container {
+		width: auto !important;
+		margin-left: 1em !important;
+		margin-right: 1em !important;
+	}
+
+	.ui.grid.container {
+		width: auto !important;
+	}
+
+	.ui.relaxed.grid.container {
+		width: auto !important;
+	}
+
+	.ui.very.relaxed.grid.container {
+		width: auto !important;
+	}
+} */
+
+@media only screen and /* iphone XR */ (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2),
+	/* iphone XS */ (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3),
+	/* iphone XS Max */ (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3),
+	(max-width: 767px) {
+	.ui.container {
+		width: auto !important;
+		margin-left: 1em !important;
+		margin-right: 1em !important;
+	}
+
+	.ui.grid.container {
+		width: auto !important;
+	}
+
+	.ui.relaxed.grid.container {
+		width: auto !important;
+	}
+
+	.ui.very.relaxed.grid.container {
+		width: auto !important;
+	}
+}
+
+#app,
+#app > div {
+	height: 100%;
+	width: 100%;
+	overflow: hidden;
+}
+#main-content {
+	border-radius: 0;
+	height: 100%;
+	margin: 0;
+	padding: 15px 15px 0;
+	overflow: hidden auto;
+	scroll-behavior: smooth;
+	transition: resize 0.3s ease;
+	--webkit-overflow: hidden auto;
+}
+body.mobile #main-content {
+	padding: 0;
+	margin: 0 !important;
+	overflow: auto !important;
+}
+body .pushable {
+	margin: 0px;
+	height: calc(100% - 59px);
+	overflow: hidden;
+	-webkit-overflow: hidden;
+}
+body.mobile .pushable {
+	height: calc(100% - 108px);
+}
+.mobile #main-content::-webkit-scrollbar {
+	width: 3px;
+}
+.empty-message:not(:only-child) {
+	display: none !important;
+}
+/* Fixes the dimmer height being limited due to the use of scrollbar */
+body.mobile.sidebar-visible #main-content:after {
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 100%;
+}
+.ui.visible.sidebar.left {
+	transition: all 0.3s ease;
+}
+.ui.left.visible.sidebar > a {
+	white-space: nowrap;
+	overflow: hidden;
+}
+/* hide footer bar when mobile sidebar is open */
+.mobile.sidebar-visible > .ui.menu.bottom {
+	display: none;
+}
+.mobile.sidebar-visible > .notification-list {
+	display: none;
+}
+/* Main content width and positioning when sidebar is collapsed (icon-only mode) */
+body:not(.mobile) .ui.visible.left.sidebar.very.thin ~ .pusher#main-content {
+	-webkit-transform: translate3d(60px, 0, 0);
+	transform: translate3d(60px, 0, 0);
+	max-width: calc(100% - 60px) !important;
+	margin-left: 0 !important;
+	overflow: auto !important;
+}
+body:not(.mobile) .ui.visible.left.sidebar:not(.thin) ~ .pusher#main-content {
+	-webkit-transform: translate3d(300px, 0, 0);
+	transform: translate3d(235px, 0, 0);
+	max-width: calc(100% - 235px) !important;
+	margin-left: 0 !important;
+	overflow: auto !important;
+}
+body:not(.mobile) .ui.sidebar.left.wide {
+	width: 235px !important;
+}
+
+/* Mobile sidebar */
+.mobile .ui.sidebar.left.menu {
+	width: 62% !important;
+	height: 100%;
+}
+.mobile .ui.visible.left.sidebar:not(.thin) ~ .pusher#main-content {
+	transform: none !important;
+	max-width: 100%;
+}
+
+.no-margin,
+.ui.menu .ui.dropdown .menu > .item .icon:not(.dropdown).no-margin {
+	margin: 0 !important;
+}
+body .no-padding,
+body .ui.modal .no-padding {
+	padding: 0 !important;
+}
+.clickable {
+	cursor: pointer;
+}
+.blink {
+	animation: blinker 1s linear infinite;
+}
+@keyframes blinker {
+	50% {
+		opacity: 0;
+	}
+}
+.shake:hover,
+.shake-trigger:hover .shake {
+	animation: shake 1s;
+	animation-iteration-count: 1;
+}
+.shake.forever {
+	animation: shake 1s;
+	animation-iteration-count: infinite;
+}
+@keyframes shake {
+	0% {
+		transform: translate(1px, 1px) rotate(0deg);
+	}
+	10% {
+		transform: translate(-1px, -2px) rotate(-30deg);
+	}
+	20% {
+		transform: translate(-3px, 0px) rotate(30deg);
+	}
+	30% {
+		transform: translate(3px, 2px) rotate(-30deg);
+	}
+	40% {
+		transform: translate(1px, -1px) rotate(30deg);
+	}
+	50% {
+		transform: translate(-1px, 2px) rotate(-30deg);
+	}
+	60% {
+		transform: translate(-3px, 1px) rotate(30deg);
+	}
+	70% {
+		transform: translate(3px, 1px) rotate(-30deg);
+	}
+	80% {
+		transform: translate(-1px, -1px) rotate(30deg);
+	}
+	90% {
+		transform: translate(1px, 2px) rotate(-30deg);
+	}
+	100% {
+		transform: translate(1px, -2px) rotate(0deg);
+	}
+}
+
+/* Simple Grid View */
+.simple-grid,
+.simple-grid.col-1 {
+	display: grid;
+	grid-template-columns: repeat(1, 1fr);
+	grid-gap: 15px;
+	grid-auto-rows: auto;
+}
+.simple-grid.col-2 {
+	grid-template-columns: repeat(2, 1fr);
+}
+.simple-grid.col-3 {
+	grid-template-columns: repeat(3, 1fr);
+}
+.simple-grid.col-4 {
+	grid-template-columns: repeat(4, 1fr);
+}
+.simple-grid.col-5 {
+	grid-template-columns: repeat(5, 1fr);
+}
+.simple-grid.col-6 {
+	grid-template-columns: repeat(6, 1fr);
+}
+/* Prevents text selection. Useful for clickable icons */
+.text-deselect,
+i.icon {
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-khtml-user-select: none;
+	-ms-user-select: none;
+}
+
+i.icon:not(.no-margin) {
+	/*font-size: 1em  !important;*/
+	margin-right: 1rem !important;
+	margin-left: 0.25rem !important;
+}
+
+.ui.header > .icon {
+	font-size: 1.2em !important;
+}
+
+div.ui.padded.segment {
+	padding-top: 0em !important;
+}
+
+.angle.left.icon {
+	margin-right: 0rem !important;
+}
+
+.dropdown.icon {
+	margin-right: -1rem !important;
+	margin-left: 0rem !important;
+}
+
+.ui.sidebar.left a span {
+	font-weight: normal;
+}
+/* overrides `font-weight: bolder` which doesn't seem to work for the fonts used */
+body b,
+body strong {
+	font-weight: bold;
+}
+/*
+ * Form Builder
+ */
+/* adds extra spacing to Dropdown field when active. ":not(.item)" excludes Dropdown fields inside Menu */
+/* .form :not(.item) > .ui.dropdown.active.visible:not(.no-margin):not(.item) {
+  margin-bottom: 37px;
+} */
+/* Capitalize input labels */
+form.ui.form div.field > label {
+	text-transform: capitalize;
+}
+/* Group inputs: remove extra padding */
+.ui.form .fields.form-group > .field > .field {
+	/* fix for secondary form input group */
+	margin-top: 0;
+	padding: 0;
+}
+body.mobile .fields.form-group > .field:not(:last-child) {
+	margin-bottom: 10px;
+}
+/* hide if no children */
+.form-group:empty {
+	display: none;
+}
+/* Input group with accordion */
+.ui.form > .accordion.styled {
+	box-shadow: 1px 3px 3px 0 rgba(34, 36, 38, 0.15),
+		1px 3px 15px 2px rgba(34, 36, 38, 0.15);
+}
+/* secondary form inside accordion */
+.ui.form > .accordion .ui.form > .field,
+.ui.form .accordion .ui.form > .fields > .field {
+	margin-bottom: 10px;
+}
+.ui.form > .accordion .ui.form > .fields {
+	margin: 0 0 10px;
+}
+.ui.form .fields.equal.width .field:not(.width) {
+	width: initial;
+}
+/* Fix for .message > .content  weird padding when inside an accordion */
+.accordion .message > .content,
+.accordion .message > .content > .content {
+	padding: initial !important;
+}
+/* Accordion when in dark mode */
+body.inverted .ui.accordion.styled {
+	border: 1px solid grey !important;
+	border-radius: 3px;
+}
+body.inverted .ui.accordion.styled > .title:not(:first-child) {
+	border-top: 1px solid grey;
+}
+body.inverted .ui.accordion.styled > .title.active > .icon,
+body.inverted .ui.accordion.styled > .title:hover > .icon {
+	color: white !important;
+}
+/* checkbox/radios: bold text when checked */
+input:checked ~ label {
+	font-weight: bold;
+}
+
+/* read only inputs */
+.ui.input > input[readonly],
+input[readonly] {
+	background: #cccccc !important;
+	cursor: not-allowed;
+}
+
+/* Message : forces close icon to be over content */
+.ui.message .icon.close {
+	z-index: 1;
+}
+
+.ui.modal > .header {
+	text-transform: capitalize;
+}
+.ui.modal > .header > .sub {
+	text-transform: initial;
+}
+body.mobile .ui.modal {
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	margin: 0 !important;
+	max-height: 100%;
+}
+body.mobile .ui.modals::-webkit-scrollbar {
+	width: 3px;
+}
+/* hide actions container if empty */
+.ui.modal > .actions:empty {
+	display: none;
+}
+
+/* Page header:
+ * identity dropdown style fix
+ */
+.identity-dropdown .menu {
+	max-height: 370px;
+	overflow: auto;
+	width: 400px;
+}
+.identity-dropdown .menu > div > div:first-child {
+	float: left;
+	max-width: 60%;
+	overflow: hidden;
+}
+.mobile .identity-dropdown:before {
+	background: transparent !important;
+}
+.mobile .identity-dropdown .menu {
+	overflow-x: auto;
+	position: fixed !important;
+	top: 61px !important;
+	width: 100%;
+}
+.mobile .identity-dropdown .menu > div > div:first-child {
+	max-width: 55% !important;
+	overflow-x: hidden;
+}
+
+/* 
+ * DARK MODE/INVERTED STYLES 
+ */
+body.inverted,
+body.inverted #main-content.inverted {
+	background: #2e2d2d;
+	color: white;
+}
+/* anything inside the #main-content with .inverted class */
+body.inverted #main-content .inverted,
+body.inverted .accordion {
+	background: #464646;
+	color: white;
+}
+body.inverted #main-content .icon.inverted {
+	background: inherit;
+}
+/* Chat */
+body.inverted .chat-container {
+	background: #2a2a2a;
+	color: white;
+}
+/* Left Sidebar */
+/* body.inverted .pushable .ui.sidebar.left {
+	background: red
+} */
+/* header bar*/
+/* body.inverted > * > .ui.top.menu.inverted {
+    background: red;
+} */
+/* Data Table */
+body.inverted .data-table.inverted,
+body.inverted .ui.basic.inverted.segment.data-table {
+	background: #464646;
+	/* border: 1px solid #505050; */
+}
+/* Modals */
+body.inverted .ui.modal > .content,
+body.inverted .ui.modal .accordion,
+body.inverted .ui.modal .accordion > * {
+	background: #464646;
+	color: white;
+}
+/* body.inverted .ui.modal > .modal-close, */
+body.inverted .ui.modal > .header,
+body.inverted .ui.modal > .actions {
+	background: #2e2d2d;
+	border-radius: 0;
+	color: white;
+}
+body.inverted .ui.form.inverted.loading::before {
+	background: rgba(90, 90, 90, 0.8);
+}
+
+/* Form loading backshadow when inverted */
+body.inverted .ui.inverted.loading.form:before {
+	background: #464646eb;
+}
+/* Form loading spinner when inverted */
+body.inverted .ui.inverted.loading.form:after {
+	border-color: white rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1);
+}
+/* Form accordion when inverted */
+body.inverted .ui.form > .accordion.styled,
+body.inverted .ui.form > .accordion.styled {
+	box-shadow: 1px 3px 3px 0 rgba(34, 36, 38, 0.15),
+		1px 3px 15px 2px rgba(34, 36, 38, 0.5);
+}
+
+/* checkbox/radio label when inverted */
+body.inverted .ui.checkbox input + label.checkbox-group-item,
+body.inverted .ui.checkbox input:focus + label.checkbox-group-item {
+	color: white !important;
+}
+
+/* Semantic UI Steps (no built-in inverted!!)*/
+body.inverted .ui.steps .step,
+body.inverted .ui.ordered.steps .step,
+body.inverted .ui.ordered.steps .step.completed,
+body.inverted .ui.steps .step:not(.active):after,
+body.inverted .ui.steps .step:not(.active):after {
+	background: #4c4c4c;
+	color: white !important;
+	transition: none;
+}
+
+body.inverted .ui.steps .step,
+body.inverted .ui.steps .step.active,
+body.inverted .ui.steps .step.active:after {
+	background: #2a2a2a !important;
+	border: 1px solid #323030 !important;
+}
+body.inverted .ui.steps .step:hover,
+body.inverted .ui.steps .step:hover.active:after,
+body.inverted .ui.steps .step:focus,
+body.inverted .ui.steps .step:focus.active:after {
+	background: #222121 !important;
+}
+body.inverted .ui.steps .step.active:after {
+	border: none !important;
+}
+body.inverted .steps .step.active:before,
+body.inverted .steps .step.active .content .description,
+body.inverted .ordered.steps .step.active:before,
+body.inverted .ordered.steps .step.active .description {
+	color: white;
+}
+body.inverted .steps .step:not(.active) .description,
+body.inverted .steps .step:not(.active) .title {
+	color: grey;
+}
+
+/* Newsletter signup iframe */
+body.iframe {
+	background: transparent;
+}
+body.iframe label,
+.success-message * {
+	color: white !important;
+}
+body.iframe .message.success-message {
+	background: transparent;
+	box-shadow: none;
+	color: white;
+	font-size: 125%;
+	line-height: 175%;
+	text-align: center;
+}
+
+/* Component: DrillDownList */
+.drill-down-list .title .dropdown {
+	margin-right: 3px !important;
+}

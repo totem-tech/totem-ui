@@ -46,8 +46,8 @@ module.exports = {
       cache: true,
       hash: true,
       minify: 'auto',
-      template: 'docs/index.html',
-      // favicon: 'public/favicon.ico'
+      template: 'public/index.html',
+      favicon: 'public/favicon.png',
     }),
   ],
   resolve: {

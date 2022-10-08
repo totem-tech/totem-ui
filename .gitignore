@@ -11,7 +11,7 @@ server/data
 start.sh
 
 # bundled JS file
-docs/bundle.js
+public/bundle.js
 
 # certificate keys etc
 *totem.live.*

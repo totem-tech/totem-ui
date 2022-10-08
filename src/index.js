@@ -2,7 +2,7 @@ import React from 'react'
 import { render } from 'react-dom'
 import { Loader } from 'semantic-ui-react'
 import 'semantic-ui-css/semantic.min.css'
-import '../docs/styles.css'
+import '../public/styles.css'
 import PromisE from './utils/PromisE'
 import { generateHash, isArrLike, isError, objClean } from './utils/utils'
 import App from './App'
@@ -66,13 +66,11 @@ if (!window.isInIFrame && window.isDebug) {
 const initPromise = PromisE.timeout((resolve, reject) => {
     // initiate connection to blockchain
     getConnection()
-    const countries = storage.countries.getAll()
-    const countriesHash = generateHash(
-        Array.from(countries),
+    let countriesHash = generateHash(
+        Array.from(storage.countries.getAll()),
         'blake2',
         256,
     )
-    let countriesChecked = false
     let translationChecked = false
     client.onConnect(async () => {
         // Retrieve a list of countries and store in the browser local storage
@@ -81,6 +79,11 @@ const initPromise = PromisE.timeout((resolve, reject) => {
             if (err || countries.size === 0) return
 
             storage.countries.setAll(countries)
+            countriesHash = generateHash(
+                Array.from(countries),
+                'blake2',
+                256,
+            )
             console.log('Countries list updated', countries)
         })
 

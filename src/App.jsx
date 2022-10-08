@@ -25,6 +25,7 @@ import toast from './services/toast'
 import windowService, { rxGridColumns, gridClasses } from './services/window'
 // Images
 import TotemButtonLogo from './assets/logos/button-288-colour.png' //button-240-colour.png'
+
 //'./assets/totem-button-grey.png'
 // import PlaceholderImage from './assets/totem-placeholder.png'
 import ChatBar from './modules/chat/ChatBar'
