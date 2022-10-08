@@ -2,7 +2,7 @@ import uuid from 'uuid'
 import DataStorage from '../../utils/DataStorage'
 import { translated } from '../../utils/languageHelper'
 import { generateHash, isObj, objClean } from '../../utils/utils'
-import { TYPES, validate, validateObj } from '../../utils/validator'
+import { TYPES, validate as _validate, validateObj } from '../../utils/validator'
 
 const textsCap = translated({
     errInvalidObject: 'object requied',
@@ -11,6 +11,53 @@ const textsCap = translated({
 
 export const contacts = new DataStorage('totem_contacts')
 export const rxContacts = contacts.rxData
+
+/**
+ * @name    validationConf
+ * @summary validation configuration for contact details entry
+ * 
+ * @example
+ * validator.validateObj(entry, validationConf)
+ */
+export const validationConf = {
+    email: {
+        maxLength: 128,
+        minLength: 6,
+        required: true,
+        type: TYPES.email,
+    },
+    id: {
+        maxLength: 16,
+        minLength: 16,
+        required: true,
+        type: TYPES.string,
+    },
+    name: {
+        maxLength: 32,
+        minLength: 3,
+        required: true,
+        type: TYPES.string,
+    },
+    partnerIdentity: {
+        type: TYPES.identity,
+    },
+    phoneCode: {
+        minLength: 2,
+        maxLength: 6,
+        type: TYPES.string,
+    },
+    phoneNumber: {
+        customMessages: {
+            regex: textsCap.errInvalidPhone,
+        },
+        maxLength: 12,
+        minLength: 6,
+        // full phone regex
+        // regex: /^[\+]+[0-9]{6,12}$/,
+        // regex: /^[1-9][0-9]{5,11}$/,
+        type: TYPES.string,
+    },
+}
 
 /**
  * @name    get
@@ -76,28 +123,29 @@ export const search = (keyValues, ...args) => contacts.search(keyValues, ...args
  * @description a contact is either associated with a single partner or 0+ identities.
  * If a contact is associated with a partner it cannot be associated with any identity.
  * 
- * @param   {Object}    entry                   contact details
+ * @param   {Object}    contact                 contact details
  * @param   {String}    entry.email             (optional) email address
  * @param   {String}    entry.id                unique ID
  * @param   {String}    entry.name              name for the entry
- * @param   {String}    entry.partnerIdentity    (optional) address of the partner this entry belongs to
+ * @param   {String}    entry.partnerIdentity   (optional) address of the partner this entry belongs to
  * @param   {String}    entry.phoneCode         (optional) phone country code starting with "+"
  * @param   {String}    entry.phoneNumber       (optional) phone number excluding country code
- * @param   {String}    replace                 whether to replace existing entry
+ * @param   {String}    replace                 (optional) whether to replace existing entry. 
+ *                                              Default: false
  */
-export const set = (entry, replace = false) => {
-    if (!isObj(entry)) throw new Error(textsCap.errInvalidObject)
+export const set = (contact, replace = false) => {
+    if (!isObj(contact)) throw new Error(textsCap.errInvalidObject)
 
-    const { id } = entry
-    entry = {
+    const { id } = contact
+    contact = {
         ...(replace ? {} : get(id)), // merge with existing entry if replace is falsy
-        ...entry,
+        ...contact,
     }
-    let err = validateObj(entry, validationConf, true, true)
+    let err = validate(contact)
     // require phone code if phone number is specified
     if (!err) {
-        const { phoneCode, phoneNumber } = entry
-        err = phoneNumber && validate(phoneCode, {
+        const { phoneCode, phoneNumber } = contact
+        err = phoneNumber && _validate(phoneCode, {
             ...validationConf.phoneCode,
             required: true,
         })
@@ -106,56 +154,19 @@ export const set = (entry, replace = false) => {
 
     contacts.set(
         id,
-        objClean(entry, Object.keys(validationConf))
+        objClean(contact, Object.keys(validationConf))
     )
 }
 
 /**
- * @name    validationConf
- * @summary validation configuration for contact details entry
+ * @name    validate
+ * @summary validate contact
  * 
- * @example
- * validator.validateObj(entry, validationConf)
+ * @param   {Object} contact
+ * 
+ * @returns {String}
  */
-export const validationConf = {
-    email: {
-        maxLength: 128,
-        minLength: 6,
-        required: true,
-        type: TYPES.email,
-    },
-    id: {
-        maxLength: 16,
-        minLength: 16,
-        required: true,
-        type: TYPES.string,
-    },
-    name: {
-        maxLength: 32,
-        minLength: 3,
-        required: true,
-        type: TYPES.string,
-    },
-    partnerIdentity: {
-        type: TYPES.identity,
-    },
-    phoneCode: {
-        minLength: 2,
-        maxLength: 6,
-        type: TYPES.string,
-    },
-    phoneNumber: {
-        customMessages: {
-            regex: textsCap.errInvalidPhone,
-        },
-        maxLength: 12,
-        minLength: 6,
-        // full phone regex
-        // regex: /^[\+]+[0-9]{6,12}$/,
-        // regex: /^[1-9][0-9]{5,11}$/,
-        type: TYPES.string,
-    },
-}
+export const validate = contact => validateObj(contact, validationConf, true, true)
 
 export default {
     get,
@@ -166,5 +177,6 @@ export default {
     search,
     set,
     storage: contacts,
+    validate,
     validationConf,
 }

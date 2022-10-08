@@ -18,13 +18,19 @@ import FormBuilder, {
 import { showForm } from '../../services/modal'
 import { translated } from '../../services/language'
 import client from '../chat/ChatClient'
-import { contacts } from '../contact/contact'
+import {
+	contacts as contactStorage,
+	newId as newContactId,
+	set as saveContact,
+	validate as validateContact,
+} from '../contact/contact'
 import ContactForm, {
 	inputNames as contactInputNames,
 } from '../contact/ContactForm'
 import identityService from '../identity/identity'
 import locations, {
 	newId as newLocationId,
+	requiredKeys as locationRequiredKeys,
 	set as saveLocation,
 } from '../location/location'
 import LocationForm, {
@@ -65,7 +71,7 @@ const textsCap = translated(
 		header1: 'add partner',
 		header2: 'update partner',
 		locationGroupLabel: 'location',
-		nameLabel: 'enter partner name',
+		nameLabel: 'partner name',
 		namePlaceholder: 'enter a name for this partner',
 		nameValidationMsg: 'please choose an unique partner name.',
 		personal: 'personal',
@@ -123,8 +129,8 @@ export default class PartnerForm extends Component {
 		} = props
 		this.partner = values && get(values.address)
 		this.doUpdate = !!this.partner
-		this.contact = null
-		this.location = null
+		this.contactDraft = undefined
+		this.locationDraft = undefined
 		values = { ...this.partner, ...values }
 		const { address, name, tags = [], visibility } = values
 		const query = { partnerIdentity: address }
@@ -139,7 +145,9 @@ export default class PartnerForm extends Component {
 					1,
 				)
 		)[0] || []
-		const contact = (address && contacts.find(query)) || undefined
+		this.locationId = locationId
+		const contact = (address && contactStorage.find(query)) || undefined
+		this.contactId = contact && contact.id || undefined
 		this.companySearchDP = PromisE.deferred()
 
 		// placeholder to store user added address to the dropdown list
@@ -151,18 +159,18 @@ export default class PartnerForm extends Component {
 			message: {},
 			onChange: this.handleFormChange,
 			onSubmit: this.handleSubmit,
-			subheader:
-				subheader ||
-				(this.doUpdate && autoSave ? (
-					<i style={{ color: 'grey' }}>{textsCap.autoSaved}</i>
-				) : undefined),
-			submitText:
-				submitText ||
-				(this.doUpdate
-					? autoSave
+			subheader: subheader || (
+				this.doUpdate && autoSave
+					? <i style={{ color: 'grey' }}>{textsCap.autoSaved}</i>
+					: undefined
+			),
+			submitText: submitText || submitText === null
+				? submitText
+				: !this.doUpdate
+					? textsCap.header1
+					: autoSave
 						? null
-						: textsCap.header2
-					: textsCap.header1),
+						: textsCap.header2,
 			success: false,
 			values,
 			inputs: [
@@ -197,12 +205,12 @@ export default class PartnerForm extends Component {
 					options: !address
 						? []
 						: [
-								{
-									key: address + name,
-									text: name || address,
-									value: address,
-								},
-						  ],
+							{
+								key: address + name,
+								text: name || address,
+								value: address,
+							},
+						],
 					placeholder: textsCap.addressPlaceholder,
 					required: true,
 					search: ['search'],
@@ -292,7 +300,7 @@ export default class PartnerForm extends Component {
 					name: inputNames.vatNumber,
 					placeholder: textsCap.vatNumberPlaceholder,
 				},
-				this.doUpdate && {
+				{
 					accordion: {
 						collapsed: true,
 						styled: true,
@@ -304,41 +312,15 @@ export default class PartnerForm extends Component {
 						{
 							name: inputNames.locationFormHtml,
 							type: 'html',
-							content: (
-								<LocationForm {...{
-									El: 'div',
-									autoSave: true,
-									id: locationId,
-									inputsHidden: [
-										locationInputNames.partnerName,
-										locationInputNames.removeBtn,
-									],
-									// hide location related inputs when partner location is removed
-									onRemove: () => {
-										const { inputs } = this.state
-										const locationGroupIn = findInput(
-											inputs,
-											inputNames.locationGroup
-										) || {}
-										locationGroupIn.hidden = true
-										this.setState({ inputs })
-									},
-									style: {
-										// marginBottom: -30,
-										width: '100%',
-									},
-									values: {
-										...location,
-										name: (location || {}).name || values.name,
-										partnerIdentity: address
-									},
-								}} />
+							content: this.getLocationForm(
+								location,
+								locationId,
+								{ submitText: null }
 							),
-
 						},
 					],
 				},
-				this.doUpdate && {
+				{
 					accordion: {
 						collapsed: true,
 						styled: true,
@@ -350,35 +332,13 @@ export default class PartnerForm extends Component {
 						{
 							name: inputNames.contactFormHtml,
 							type: 'html',
-							content: (
-								<ContactForm {...{
-									El: 'div',
-									autoSave: true,
-									inputsHidden: [
-										contactInputNames.removeBtn,
-										contactInputNames.partnerIdentity,
-									],
-									// hide contact related inputs when partner contact is removed
-									onRemove: () => {
-										const { inputs } = this.state
-										const contactGroupIn =
-											findInput(
-												inputs,
-												inputNames.contactGroup
-											) || {}
-										contactGroupIn.hidden = true
-										this.setState({ inputs })
-									},
-									style: {
-										width: '100%',
-									},
-									values: {
-										...contact,
-										name: (contact || {}).name
-											|| values.name,
-										partnerIdentity: address,
-									},
-								}} />
+							content: this.getContactForm(
+								{
+									...contact,
+									name: (contact || {}).name
+										|| values.name,
+									partnerIdentity: address,
+								},
 							),
 						},
 					],
@@ -437,15 +397,15 @@ export default class PartnerForm extends Component {
 		addressIn.disabled = exists
 		visibilityIn.disabled = exists
 		visibilityIn.rxValue.next(visibility)
-		nameIn.disabled = exists
+		nameIn.readOnly = exists
 
 		// make sure partner list is also updated
 		this.doUpdate && setPublic(address, visibility)
 		this.setState({ inputs, values })
 	}
 
-	getCompanyLocation = (company) => {
-		if (!isObj(company)) return
+	getCompanyLocation = company => {
+		if (!isObj(company)) return {}
 
 		const {
 			countryCode,
@@ -476,21 +436,63 @@ export default class PartnerForm extends Component {
 		return location
 	}
 
-	getLocationForm = (location = {}, locationId) => (
+	getContactForm = (contact = {}, formProps) => (
+		<ContactForm {...{
+			El: 'div',
+			autoSave: true,
+			inputsHidden: [
+				contactInputNames.name,
+				contactInputNames.partnerIdentity,
+				contactInputNames.removeBtn,
+			],
+			onChange: this.contactId
+				? undefined
+				: (_, values) => {
+					this.contactDraft = values
+					this.saveContact()
+				},
+			// hide contact related inputs when partner contact is removed
+			onRemove: () => {
+				const { inputs } = this.state
+				const contactGroupIn =
+					findInput(
+						inputs,
+						inputNames.contactGroup
+					) || {}
+				contactGroupIn.hidden = true
+				this.setState({ inputs })
+			},
+			style: {
+				width: '100%',
+			},
+			submitText: null,
+			values: {
+				...contact,
+				// enter dummy data for hidden fields, if necessary
+				[contactInputNames.id]: contact.id || newContactId(),
+				[contactInputNames.name]: contact.name || '___',
+			},
+			...formProps,
+		}} />
+	)
+
+	getLocationForm = (location = {}, locationId = newLocationId(), formProps = {}) => (
 		<LocationForm {...{
 			El: 'div',
 			autoSave: true,
 			id: locationId,
 			inputsHidden: [
+				locationInputNames.name,
 				locationInputNames.partnerName,
 				locationInputNames.removeBtn,
 			],
-			key: newLocationId(),
-			style: {
-				// marginBottom: -30,
-				width: '100%',
-			},
-			values: { ...location },
+			key: locationId,
+			onChange: !!this.locationId
+				? undefined
+				: (_, values) => {
+					this.locationDraft = values
+					this.saveLocation()
+				},
 			// hide location related inputs when partner location is removed
 			onRemove: () => {
 				const { inputs } = this.state
@@ -501,6 +503,15 @@ export default class PartnerForm extends Component {
 				locationGroupIn.hidden = true
 				this.setState({ inputs })
 			},
+			style: {
+				// marginBottom: -30,
+				width: '100%',
+			},
+			values: {
+				...location,
+				name: '___',
+			},
+			...formProps,
 		}} />
 	)
 	
@@ -518,31 +529,44 @@ export default class PartnerForm extends Component {
 		this.setState({ inputs })
 	}
 
-	handleAddressChange = (e, { address }, i) => {
+	handleAddressChange = (e, values, i) => {
+		const address = values[inputNames.address]
+		const isPublic = values[inputNames.visibility] === visibilityTypes.PUBLIC
 		const { inputs } = this.state
 		const nameIn = findInput(inputs, inputNames.name)
 		const regNumIn = findInput(inputs, inputNames.registeredNumber)
 		const typeIn = findInput(inputs, inputNames.type)
 		const visibilityIn = findInput(inputs, inputNames.visibility)
 		const { options = [] } = inputs[i]
-
+		const { company: com } = options.find(x => x.value === address) || {}
+		
+		visibilityIn.disabled = isPublic || !!com
 		// stuff to do only when creating an entry
 		if (!this.doUpdate) {
-			const { company: com } = options.find(x => x.value === address) || {}
-			const { name, registrationNumber: reg } = com || {}
-
+			const { name: cName = '', registrationNumber: cReg } = com || {}
 			nameIn.type = !!com ? 'hidden' : 'text'
 			// hide visitibity if company selected as it is already "public"
-			visibilityIn.hidden = !!com
 			// only hide registration number if selected company contains a number
-			regNumIn.value = reg || ''
-			regNumIn.readOnly = !!reg
-
-			if (com) {
-				nameIn.rxValue.next(name)
-				typeIn.rxValue.next(types.BUSINESS)
-				visibilityIn.rxValue.next(visibilityTypes.PUBLIC)
-			}
+			regNumIn.value = cReg || ''
+			regNumIn.readOnly = !!cReg
+			const locationFormHtml = findInput(inputs, inputNames.locationFormHtml)
+			const location = this.getCompanyLocation(com)
+			locationFormHtml.content = this.getLocationForm(
+				location,
+				undefined,
+				{
+					// inputsReadOnly: Object.values(locationInputNames),
+					submitText: null,
+				},
+			)
+			
+			nameIn.rxValue.next(cName)
+			typeIn.rxValue.next(
+				com ? types.BUSINESS : types.PERSONAL
+			)
+			visibilityIn.rxValue.next(
+				com ? visibilityTypes.PUBLIC : visibilityTypes.PRIVATE
+			)
 		}
 		this.setState({ inputs })
 	}
@@ -643,14 +667,16 @@ export default class PartnerForm extends Component {
 	handleSubmit = deferred(() => {
 		const { autoSave, closeOnSubmit, onSubmit } = this.props
 		const { inputs, values } = this.state
-		const { company } = (findInput(inputs, inputNames.address) || { options: [] })
-			.options
-			.find(x => x.value === values.address)
+		let address = values[inputNames.address]
+		let name = values[inputNames.name]
+		let visibility = values[inputNames.visibility]
+		const addressIn = findInput(inputs, inputNames.address)
+		const { company } = !!address
+			&& (addressIn.options || []).find(x => x.value === address)
 			|| {}
 		const visibilityIn = findInput(inputs, inputNames.visibility)
 		const visibilityDisabled = visibilityIn.disabled || visibilityIn.hidden
 		const companyExists = !!company || visibilityDisabled
-		let { name, address, locationId, visibility } = values
 		if (!!companyExists) {
 			name = (company && company.name) || name
 			visibility = visibilityTypes.PUBLIC
@@ -666,48 +692,80 @@ export default class PartnerForm extends Component {
 			visibilityIn.rxValue.next(visibilityTypes.PRIVATE)
 		}
 
-		// if company added from database add location
-		if (!!company && !!company.regAddress && !locationId) {
-			const location = this.getCompanyLocation(company)
-			locationId = newLocationId(address)
-			saveLocation(location, locationId)
-			values.locationId = locationId
-		}
-
+		
 		const success = set(values) && (!this.doUpdate || !autoSave)
 		const message = closeOnSubmit || this.doUpdate
-			? null
-			: {
-				content: !success
-					? textsCap.submitFailedMsg
-					: this.doUpdate
-						? textsCap.submitSuccessMsg2
-						: textsCap.submitSuccessMsg1,
-				icon: true,
-				status: success
-					? 'success'
-					: 'error',
-			}
+		? null
+		: {
+			content: !success
+			? textsCap.submitFailedMsg
+			: this.doUpdate
+			? textsCap.submitSuccessMsg2
+			: textsCap.submitSuccessMsg1,
+			icon: true,
+			status: success
+			? 'success'
+			: 'error',
+		}
 		this.setState({ message, success })
-
+		
+		
+		// check & save contact & location if necessary
+		this.saveContact()
+		this.saveLocation()
+		
 		// Open add partner form
 		isFn(onSubmit) && onSubmit(true, values)
-		addCompany &&
-			showForm(CompanyForm, {
-				message: {
-					header: this.doUpdate
-						? textsCap.submitSuccessMsg2
-						: textsCap.submitSuccessMsg1,
-					content: textsCap.companyFormOnOpenMsg,
-					icon: true,
-					status: 'success',
-				},
-				onSubmit: (e, v, ok) =>
-					!ok && visibilityIn.rxValue.next(visibilityTypes.PUBLIC),
-				size: 'tiny',
-				values: { name, identity: address },
-			})
+		addCompany && showForm(CompanyForm, {
+			message: {
+				header: this.doUpdate
+					? textsCap.submitSuccessMsg2
+					: textsCap.submitSuccessMsg1,
+				content: textsCap.companyFormOnOpenMsg,
+				icon: true,
+				status: 'success',
+			},
+			onSubmit: (e, v, ok) =>
+				!ok && visibilityIn.rxValue.next(visibilityTypes.PUBLIC),
+			size: 'tiny',
+			values: { name, identity: address },
+		})
 	}, 100)
+
+	saveContact = () => {
+		if (!!this.contactId || !isObj(this.contactDraft)) return
+
+		const { values } = this.state
+		const address = values[inputNames.address]
+		const name = values[inputNames.name]
+		if (!address || !name) return
+
+		this.contactDraft = {
+			...this.contactDraft,
+			id: newContactId(address),
+			name,
+			partnerIdentity: address,
+		}
+		const err = validateContact(this.contactDraft)
+		!err && saveContact(this.contactDraft)
+	}
+
+	saveLocation = () => {
+		if (!!this.locationId || !isObj(this.locationDraft)) return
+
+		const { values } = this.state
+		const address = values[inputNames.address]
+		const name = values[inputNames.name]
+		if (!address || !name) return
+
+		this.locationDraft = {
+			...this.locationDraft,
+			name,
+			partnerIdentity: address,
+		}
+		const locationValid = objHasKeys(this.locationDraft, locationRequiredKeys)
+		locationValid && saveLocation(this.locationDraft, newLocationId(address))
+	}
 
 	validateAddress = (e, { value: address }) => {
 		if (!address || this.doUpdate) return

@@ -5,8 +5,9 @@ import { generateHash, isObj, isStr, objClean, objHasKeys } from '../../utils/ut
 
 const locations = new DataStorage('totem_locations', true)
 export const rxLocations = locations.rxData // RxJS Subject (because caching is disabled)
+export const requiredKeys = Object.freeze(Object.values(requiredFields))
 export const validKeys = Object.freeze([
-	...Object.values(requiredFields),
+	...requiredKeys,
 	...Object.values(optionalFields),
 ])
 
@@ -93,17 +94,17 @@ export const search = (keyValues, ...args) => locations.search(keyValues, ...arg
  */
 export const set = (location, id = newId(), replace = false) => {
 	if (!isStr(id) || !isObj(location)) return null
+
 	const existingItem = locations.get(id)
-	const requiredKeys = Object.values(requiredFields)
 	// merge with existing item and get rid of any unwanted properties
 	location = objClean({ ...(replace ? {} : existingItem), ...location }, validKeys)
 	const hasRequiredKeys = objHasKeys(location, requiredKeys, true)
+
 	// new item must have all the required keys
 	if (!existingItem && !hasRequiredKeys) return null
 
 	// save to localStorage
 	locations.set(id, location)
-
 	return id
 }
 

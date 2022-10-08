@@ -331,10 +331,12 @@ export default class LocationForm extends Component {
 	}
 
 	handleChange = (e, values, invalid) => {
+		if (invalid) return
+
 		const { autoSave, onChange, onSubmit } = this.props
 		isFn(onChange) && onChange(e, values)
 		// auto save if update
-		if (invalid || !this.isUpdate || !autoSave) return
+		if (!this.isUpdate || !autoSave) return
 		// prevent saving without required fields
 		if (!objHasKeys(values, Object.keys(requiredFields), true)) return
 

@@ -24,7 +24,6 @@ export const requiredKeys = [
 export const validKeys = [
     ...requiredKeys,
     'associatedIdentity',
-    'contactId',
     'locationFormHtml',
     'locationGroup',
     'registeredNumber',

@@ -1,20 +1,19 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { BehaviorSubject } from 'rxjs'
 import FormBuilder, {
 	checkFormInvalid,
 	fillValues,
 	findInput,
 } from '../../components/FormBuilder'
+import { statuses } from '../../components/Message'
 import { closeModal, confirm } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
 import { iUseReducer } from '../../utils/reactHelper'
 import storage from '../../utils/storageHelper'
 import { arrSort, isFn, objSetPropUndefined } from '../../utils/utils'
 import identities from '../identity/identity'
-import { get, newId, remove, set as save, validationConf } from './contact'
 import partners from '../partner/partner'
-import { statuses } from '../../components/Message'
+import { get, newId, remove, set as save, validationConf } from './contact'
 
 const textsCap = translated(
 	{
@@ -209,14 +208,14 @@ export default function ContactForm(props) {
 			inputs: fillValues(inputs, { ...existingEntry, ...values }),
 			onChange: (...args) => {
 				const [e, values, invalid] = args
-				const id = values[inputNames.id]
 				if (invalid) return
-
+				
 				isFn(onChange) && onChange(...args)
+				
+				if (!existingEntry || !autoSave) return
 
-				if (!autoSave) return
 				save(values)
-
+				const id = values[inputNames.id]
 				isFn(onSubmit) && onSubmit(!invalid, values, id)
 				autoSave = props.autoSave
 			},
@@ -273,7 +272,6 @@ ContactForm.defaultProps = {
 	autoSave: true,
 	closeOnSubmit: true,
 	size: 'mini',
-	submitText: textsCap.saveContact,
 }
 
 // showForm(ContactDetailsForm)
