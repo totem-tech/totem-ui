@@ -1,5 +1,6 @@
 // webpack v4
 const webpack = require('webpack')
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 const path = require('path');
 const Dotenv = require('dotenv-webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin')
@@ -33,6 +34,25 @@ module.exports = {
   },
   // ignore nodejs modules and not found warning
   plugins: [
+    // Copy static assets
+    new CopyWebpackPlugin({
+      patterns: [
+        './public/android-chrome-192x192.png',
+        './public/android-chrome-256x256.png',
+        './public/apple-touch-icon.png',
+        './public/browserconfig.xml',
+        './public/favicon.ico',
+        './public/favicon-16x16.png',
+        './public/favicon-32x32.png',
+        './public/mstile-150x150.png',
+        './public/safari-pinned-tab.svg',
+        './public/site.webmanifest',
+        // {
+        //   from: path.resolve(__dirname, 'public/'),
+        //   // to: './dist',
+        // }
+      ]
+    }),
     new webpack.IgnorePlugin(/abort-controller/), // utils/PromisE.js
     new webpack.IgnorePlugin(/discord.js/), // utils/PromisE.js
     new webpack.IgnorePlugin(/form-data/), // utils/utils.js
@@ -47,7 +67,6 @@ module.exports = {
       hash: true,
       minify: 'auto',
       template: 'public/index.html',
-      favicon: 'public/favicon.png',
     }),
   ],
   resolve: {

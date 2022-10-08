@@ -71,7 +71,7 @@ const initPromise = PromisE.timeout((resolve, reject) => {
         'blake2',
         256,
     )
-    let translationChecked = false
+    let translationChecked, countriesChecked
     client.onConnect(async () => {
         // Retrieve a list of countries and store in the browser local storage
         client.countries(countriesHash, (err, countries) => {
@@ -99,6 +99,7 @@ const initPromise = PromisE.timeout((resolve, reject) => {
         }
     })
 }, 3000)
+
 const doRender = () => {
     if (isSignUp) {
         const El = NewsletterSignup
