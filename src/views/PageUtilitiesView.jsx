@@ -6,15 +6,8 @@ import { confirm } from '../services/modal'
 import storage from '../services/storage'
 
 const [texts] = translated({
-	backupData: 'Backup data',
 	clearCachedData: 'Clear Cached Data',
-	confirmBackupContent: `
-		You are about to download your Totem application data as a JSON file. 
-		The following information will be included: 
-	`,
-
 	forceRefresh: 'Force App Refresh!',
-	restoreBackup: 'Restore backup',
 })
 
 const forceReloadPage = () => window.location.reload(true)

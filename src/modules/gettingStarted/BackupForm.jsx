@@ -22,34 +22,25 @@ const [texts, textsCap] = translated(
 		backupLater: 'backup later',
 		backupNow: 'backup now',
 		backupConfirmHeader: 'confirm backup',
-		backupFileInvalid: `
-		Uploaded file contents do not match the backup file contents!
-		If you did not save the backup file, please click on the close icon and initiate the backup process again.
-	`,
-		backupFileinvalidType:
-			'please select the .json file you have just downloaded',
+		backupFileInvalid: `Uploaded file contents do not match the backup file contents!
+		If you did not save the backup file, please click on the close icon and initiate the backup process again.`,
+		backupFileinvalidType: 'please select the .json file you have just downloaded',
 		backupFileLabel: 'upload the file you just downloaded',
-		backupFileLabelDetails:
-			'Please select the file you have just downloaded. This is to make sure your backup was successfully downloaded.',
-		backupFileLabelDetailsLocation:
-			'Check for the following file in your default downloads folder (if you have NOT manually selected the download location).',
-		backupFileLabelDetailsDesktop:
-			'You can drag-and-drop the backup file on the file chooser below.',
+		backupFileLabelDetails: 'Please select the file you have just downloaded. This is to make sure your backup was successfully downloaded.',
+		backupFileLabelDetailsLocation: 'Check for the following file in your default downloads folder (if you have NOT manually selected the download location).',
+		backupFileLabelDetailsDesktop: 'You can drag-and-drop the backup file on the file chooser below.',
 		backupSuccessContent: `
 		Excellent! You have just downloaded your account data. 
 		You can use this file to restore your account on any other devices you choose.
 		Make sure to keep the downloaded file in a safe place.
 		To keep your account safe, never ever share your backup file with anyone else.
-		Totem team will never ask you to share your backup file.
-	`,
+		Totem team will never ask you to share your backup file.`,
 		backupSuccessHeader: 'backup complete!',
 		close: 'close',
-		confirmBackupTypes:
-			'history, identities, locations, notifications, partners, recent chat messages, settings, user credentials',
+		confirmBackupTypes: 'contacts, history, identities, locations, notifications, partners, recent chat messages, settings, user credentials',
 		confirmBackupContent: `
 		You are about to download your Totem application data as a JSON file. 
-		The following information will be included: 
-	`,
+		The following information will be included: `,
 		done: 'done',
 		downloadAgain: 'download again',
 		downloadFailed: 'download not working?',
@@ -57,11 +48,9 @@ const [texts, textsCap] = translated(
 		invalidFileType: 'selected file name must end with .json extension.',
 		header: 'backup your account',
 		headerConfirmed: 'confirm backup',
-		manualBkp0:
-			'Backup file contents have been copied to clipboard. Follow the instructions below:',
+		manualBkp0: 'Backup file contents have been copied to clipboard. Follow the instructions below:',
 		manualBkp1: 'Open a text editor and create a new file',
-		manualBkp2:
-			'Paste the backup file contents (press CTRL+V or CMD+V on an Apple computer)',
+		manualBkp2: 'Paste the backup file contents (press CTRL+V or CMD+V on an Apple computer)',
 		manualBkp3: 'Save the copied text with the following filename:',
 		manualBkpHeader: 'Save file manually',
 	},
@@ -170,6 +159,7 @@ export default function BackupForm(props) {
 						<ul>
 							{texts.confirmBackupTypes
 								.split(',')
+								.sort()
 								.map((str, i) => (
 									<li key={i}>{str}</li>
 								))}
@@ -258,42 +248,30 @@ export default function BackupForm(props) {
 					: textsCap.close,
 				negative: false,
 			}),
-			submitText: (values, props = {}) =>
-				!checkConfirmed(values)
-					? {
-							content: textsCap.backupNow,
-							primary: true,
-							onClick: () => {
-								findInput(
-									inputs,
-									inputNames.confirmed
-								).rxValue.next('yes')
-							},
-					  }
-					: {
-							content: textsCap.downloadAgain,
-							disabled: props.success, // forces button to be not disabled even when inputs are invalid
-							icon: 'download',
-							// primary: true,
-							positive: false,
-							onClick: () => {
-								findInput(
-									inputs,
-									inputNames.confirmed
-								).rxValue.next('no')
-							},
-					  },
+			submitText: (values, props = {}) => !checkConfirmed(values)
+				? {
+					content: textsCap.backupNow,
+					primary: true,
+					onClick: () => findInput(
+						inputs,
+						inputNames.confirmed
+					).rxValue.next('yes'),
+				}
+				: {
+					content: textsCap.downloadAgain,
+					disabled: props.success, // forces button to be not disabled even when inputs are invalid
+					icon: 'download',
+					// primary: true,
+					positive: false,
+					onClick: () => findInput(
+						inputs,
+						inputNames.confirmed
+					).rxValue.next('no'),
+				},
 		}
 	})
 
-	return (
-		<FormBuilder
-			{...{
-				...props,
-				...state,
-			}}
-		/>
-	)
+	return <FormBuilder {...{ ...props, ...state }} />
 }
 BackupForm.defaultProps = {
 	closeOnSubmit: false,
