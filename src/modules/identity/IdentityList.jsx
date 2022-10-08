@@ -196,7 +196,7 @@ const getTableProps = isMobile => {
 					},
 					{
 						content: textsCap.contacts,
-						icon: 'building',
+						icon: 'text telephone',
 						onClick: () => UserContactList.asModal(),
 					},
 				],
