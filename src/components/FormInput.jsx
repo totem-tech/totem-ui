@@ -160,6 +160,7 @@ export class FormInput extends Component {
 		const hasVal = hasValue(isCheck ? data.checked : data.value)
 		const customMsgs = { ...errMsgs, ...customMessages }
 		let err, validatorConfig, isANum
+		let { value } = data
 
 		if (hasVal && !err) {
 			switch (typeLower) {
@@ -190,6 +191,7 @@ export class FormInput extends Component {
 				case 'text':
 				case 'textarea':
 				default:
+					value = `${value}`
 					validatorConfig = validatorConfig || { type: TYPES.string }
 					break
 			}
@@ -214,7 +216,7 @@ export class FormInput extends Component {
 		const requireValidator = (hasVal && validationTypes.includes(typeLower)) || validatorConfig
 		if (!err && requireValidator) {
 			err = validator.validate(
-				data.value,
+				value,
 				{
 					...this.props,
 					...validatorConfig,
@@ -246,7 +248,7 @@ export class FormInput extends Component {
 					text,
 				} = c
 				const invalid = regex instanceof RegExp
-					? !regex.test(data.value)
+					? !regex.test(`${value}`)
 					: false
 				const icon = invalid
 					? iconInvalid
