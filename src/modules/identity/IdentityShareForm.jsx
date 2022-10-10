@@ -98,7 +98,7 @@ export default class IdentityShareForm extends Component {
 				{
 					label: textsCap.nameLabel,
 					maxLength: 64,
-					minLenght: 3,
+					minLength: 3,
 					name: inputNames.name,
 					placeholder: textsCap.namePlaceholder,
 					required: false,

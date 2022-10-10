@@ -14,6 +14,10 @@ const textsCap = translated({
     enterUserId: 'enter user ID',
     enterUserIds: 'enter user IDs',
     fromChatHistory: 'from recent chats',
+    idCrAlphaNum: 'contains only letters and numbers characters',
+    idCrHeader: 'Enter an username matching the following criteria:',
+    idCrLength: 'between 3 and 16 characters',
+    idCrStart: 'start with a letter',
     invalidUserId: 'invalid user ID',
     noResultsMessage: 'type a User ID and press enter to add',
     partner: 'partner',
@@ -54,6 +58,7 @@ export default class UserIdInput extends Component {
             includePartners,
             includeFromChat,
             multiple,
+            newUser,
             options,
             placeholder,
             reject = [],
@@ -81,6 +86,27 @@ export default class UserIdInput extends Component {
                 rxValue,
                 type: 'text',
                 useInput: true,
+                ...(!newUser
+                    ? {}
+                    : {
+                        criteria: [
+                            {
+                                regex: /^.{3,16}$/,
+                                text: textsCap.idCrLength,
+                            },
+                            {
+                                regex: /^[a-z]+/,
+                                text: textsCap.idCrStart,
+                            },
+                            {
+                                regex: /^[a-z0-9]+$/,
+                                text: textsCap.idCrAlphaNum,
+                            },
+                        ],
+                        criteriaHeader: textsCap.idCrHeader,
+                        minLength: undefined,
+                        regex: undefined,
+                    }),
             }
             : {
                 additionLabel: `${textsCap.add} @`,

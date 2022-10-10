@@ -354,9 +354,8 @@ export default class LocationForm extends Component {
 	handleSubmit = deferred((_, values) => {
 		let { autoSave, onSubmit } = this.props
 		this.id = set(values, this.id)
-		this.isUpdate = this.isUpdate || autoSave
 		// new location created
-		autoSave && this.setState({
+		!this.isUpdate && this.setState({
 			message: !autoSave
 				? undefined
 				: { 
@@ -368,9 +367,12 @@ export default class LocationForm extends Component {
 			submitText: null,
 		})
 		isFn(onSubmit) && onSubmit(true, values, this.id)
-		autoSave && setTimeout(() => this.setState({
-			message: undefined,
-		}), 2000)
+		!this.isUpdate
+			&& autoSave
+			&& setTimeout(() => this.setState({
+				message: undefined,
+			}), 2000)
+		this.isUpdate = this.isUpdate || autoSave
 	}, 300)
 
 	render = () => <FormBuilder {...{ ...this.props, ...this.state }} />

@@ -467,11 +467,13 @@ export default class IdentityForm extends Component {
 	handleUriChange = deferred(() => {
 		const { inputs } = this.state
 		const isRestore = !!this.values.restore
-		const seed = this.values[inputNames.uri]
-		const mnemonic = this.values[inputNames.uri].split('/')[0]
+		const seed = this.values[inputNames.uri] || ''
+		const mnemonic = seed.split('/')[0]
 		const uriInput = findInput(inputs, inputNames.uri)
-		const valid =
-			!seed || !mnemonic || !isRestore || validateMnemonic(mnemonic)
+		const valid = !seed
+			|| !mnemonic
+			|| !isRestore
+			|| validateMnemonic(mnemonic)
 
 		// validate BIP39 compatibility and warn user if not compatible
 		uriInput.message = valid

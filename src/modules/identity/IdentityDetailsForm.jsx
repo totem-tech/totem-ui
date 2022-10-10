@@ -231,9 +231,9 @@ export default class IdentityDetailsForm extends Component {
 		if (denyDelete) return confirm({
 			cancelButton: textsCap.ok,
 			confirmButton: null,
-			content: isRewardsIdentity
-				? textsCap.identityDeleteWarningReward
-				: textsCap.identityDeleteWarningSelected,
+			content: isSelectedIdentity
+				? textsCap.identityDeleteWarningSelected
+				: textsCap.identityDeleteWarningReward,
 			size: 'mini',
 		})
 

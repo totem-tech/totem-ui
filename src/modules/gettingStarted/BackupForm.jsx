@@ -62,7 +62,7 @@ const textsCap = translated({
 	invalidFileType: 'selected file name must end with .json extension.',
 	header: 'backup your account',
 	headerConfirmed: 'confirm backup',
-	headerPassword: 'protect your backup',
+	headerPassword: 'encrypt your backup',
 	locations: 'locations',
 	manualBkp0: 'backup file contents have been copied to clipboard. Follow the instructions below:',
 	manualBkp1: 'open a text editor and create a new file',
@@ -71,6 +71,15 @@ const textsCap = translated({
 	manualBkpHeader: 'save file manually',
 	notifications: 'notifications',
 	partners: 'partners',
+	passwordConfirmErr: 'passwords do not match!',
+	passwordConfirmLabel: 'confirm password',
+	passwordConfirmPlaceholder: 're-enter your password',
+	passwordCrHeader: 'Enter a password matching the following criteria:',
+	passwordCrLength: 'between 8 and 64 characters',
+	passwordCrLower: 'lowercase letters',
+	passwordCrNum: 'numbers',
+	passwordCrSpecial: 'special characters',
+	passwordCrUpper: 'uppercase letters',
 	passwordLabel: 'password',
 	passwordPlaceholder: 'enter a password for this backup',
 	proceed: 'proceed',
@@ -89,6 +98,7 @@ const inputNames = {
 	file: 'file',
 	notes: 'notes',
 	password: 'password',
+	passwordConfirm: 'passwordConfirm',
 	redirectTo: 'redirectTo',
 }
 export const steps = {
@@ -97,6 +107,7 @@ export const steps = {
 	download: 'download',
 	verified: 'verified',
 }
+
 
 export default function BackupForm(props) {
 	const [state] = iUseReducer(null, rxState => {
@@ -201,17 +212,69 @@ export default function BackupForm(props) {
 
 		const inputs = [
 			{
+				action: {
+					icon: 'eye',
+					// toggle password view
+					onClick: e => {
+						e.preventDefault()
+						const pwIn = findInput(inputs, inputNames.password)
+						const show = pwIn.action.icon === 'eye'
+						pwIn.action.icon = `eye${show ? ' slash' : ''}`
+						pwIn.type = show 
+							? 'text'
+							: 'password'
+						rxState.next({ inputs })
+					},
+				},
+				criteria: [
+					{
+						regex: /^.{8,64}$/,
+						text: textsCap.passwordCrLength,
+					},
+					{
+						regex: /[A-Z]/,
+						text: textsCap.passwordCrUpper,
+					},
+					{
+						regex: /[a-z]/,
+						text: textsCap.passwordCrLower,
+					},
+					{
+						regex: /[0-9]/,
+						text: textsCap.passwordCrNum,
+					},
+					{
+						regex: /[\W|_]/,
+						text: textsCap.passwordCrSpecial,
+					},
+				],
+				criteriaHeader: textsCap.passwordCrHeader,
+				// hide regex error message
+				customMessages: { regex: true },
+				// // delay before showing error message
+				// defer: 500,
 				hidden: values => values[inputNames.confirmed] !== steps.confirmed,
 				label: textsCap.passwordLabel,
-				maxLength: 64,
-				minLength: 8,
+				// maxLength: 64,
+				// minLength: 8,
 				name: inputNames.password,
 				placeholder: textsCap.passwordPlaceholder,
-				// regex: new RegExp(//),
+				// regex: new RegExp(/^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[\W|_]).{4,32}$/),
 				required: true,
-				rxValue: new BehaviorSubject(''),
 				type: 'password',
 
+			},
+			{
+				hidden: values => values[inputNames.confirmed] !== steps.confirmed
+					|| `${values[inputNames.password] || ''}`.length < 8,
+				label: textsCap.passwordConfirmLabel,
+				name: inputNames.passwordConfirm,
+				placeholder: textsCap.passwordConfirmPlaceholder,
+				required: true,
+				type: 'password',
+				validate: (e, _, values) => values[inputNames.confirmed] === steps.confirmed
+					&& values[inputNames.password] !== values[inputNames.passwordConfirm]
+					&& textsCap.passwordConfirmErr,
 			},
 			{
 				name: inputNames.confirmed,
@@ -494,6 +557,9 @@ BackupForm.checkAndWarn = async (criticalOnly = false) => {
 
 
 setTimeout(() => { 
+	// prevent check if user is not registered
+	if (!(getUser() || {}).id) return
+
 	const key = 'autoCheckAndWarnTS'
 	const last = (storage.settings.module(MODULE_KEY) || {})[key]
 	// wait 24 hours if user closed without completing backup

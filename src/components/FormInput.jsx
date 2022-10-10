@@ -20,7 +20,7 @@ import {
 	objSetPropUndefined,
 } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
-import Message from './Message'
+import Message, { statuses } from './Message'
 import Invertible from './Invertible'
 // Custom Inputs
 import CheckboxGroup from './CheckboxGroup'
@@ -55,6 +55,8 @@ const validationTypes = Object.values(TYPES)
 const NON_ATTRIBUTES = Object.freeze([
 	'collapsed',
 	'containerProps',
+	'criteria',
+	'criteriaHeader',
 	'defer',
 	'elementRef',
 	'groupValues',
@@ -135,6 +137,8 @@ export class FormInput extends Component {
 
 	handleChange = (event = {}, data = {}) => {
 		const {
+			criteria = [],
+			criteriaHeader,
 			customMessages,
 			falseValue: falseValue = false,
 			integer,
@@ -173,9 +177,13 @@ export class FormInput extends Component {
 				case 'number':
 					isANum = true
 					validatorConfig = {
-						type: integer ? TYPES.integer : TYPES.number,
+						type: integer
+							? TYPES.integer
+							: TYPES.number,
 					}
-					data.value = !data.value ? data.value : parseFloat(data.value)
+					data.value = !data.value
+						? data.value
+						: parseFloat(data.value)
 					break
 				case 'hex':
 					validatorConfig = { type: TYPES.hex }
@@ -215,7 +223,9 @@ export class FormInput extends Component {
 			)
 		}
 
-		let message = !!err && !isBool(err) && { content: err, status: 'error' }
+		let message = !!err
+			&& !isBool(err)
+			&& { content: err, status: statuses.ERROR }
 		const triggerChange = () => {
 			data.invalid = !!err
 			isFn(onChange) && onChange(event, data, this.props)
@@ -223,24 +233,75 @@ export class FormInput extends Component {
 			rxValue && rxValue.next(data.value)
 			this.setMessage(data.invalid, message)
 		}
-		if (message || !isFn(validate)) return triggerChange()
+
+		const cList = !!err || !hasVal
+			? []
+			: criteria.map(c => {
+				const {
+					style,
+					iconInvalid = 'times circle',
+					iconValid = 'check circle',
+					persist = true,
+					regex,
+					text,
+				} = c
+				const invalid = regex instanceof RegExp
+					? !regex.test(data.value)
+					: false
+				const icon = invalid
+					? iconInvalid
+					: iconValid
+				return (persist || invalid) && { icon, invalid, style, text }
+			})
+			.filter(Boolean)
+		if (cList.length > 0) {
+			err = !!cList.find(x => x.invalid)
+			message = {
+				content: (
+					<div key='content' style={{ textAlign: 'left' }}>
+						{cList.map(({ icon, invalid, style, text }, i) => (
+							<div {...{
+								key: text + i,
+								style: {
+									color: invalid
+										? 'red'
+										: 'green',
+									...style,
+								},
+							}}>
+								{icon && <Icon name={icon} />}{text}
+							</div>
+						))}
+					</div>
+				),
+				header: criteriaHeader,
+				status: !!err
+					? statuses.ERROR
+					: statuses.SUCCESS,
+				style: { textAlign: 'left' },
+			}
+		}
+
+		if (!!err || !isFn(validate)) return triggerChange()
 
 		const handleValidate = msg => {
 			err = !!msg
 			const isEl = React.isValidElement(msg)
 			message = isBool(msg) || !msg
-				? null // no need to display a message
+				? !!message
+					? message 
+					: null // no need to display a message
 				: {
-						content: isEl ? msg : `${msg}`,
-						status: 'error',
-						...(!isEl && isObj(msg) ? msg : {}),
-					}
+					content: isEl ? msg : `${msg}`,
+					status: statuses.ERROR,
+					...(!isEl && isObj(msg) ? msg : {}),
+				}
 			triggerChange()
 		}
 
 		// forces any unexpected error to be handled gracefully
 		// and add loading spinner if `validate()` returns a promise
-		PromisE(async () => {
+		const validatePromise = PromisE(async () => {
 			let result = validate(event, data)
 			if (!isPromise(result)) return result
 
@@ -248,7 +309,14 @@ export class FormInput extends Component {
 			result = await result
 			this.setState({ loading: false })
 			return result
-		}).then(handleValidate, handleValidate)
+		})
+
+		// this makes sure there is no race condition
+		this.validateDeferred = this.validateDeferred || PromisE.deferred()
+		return this.validateDeferred(validatePromise).then(
+			handleValidate,
+			handleValidate,
+		)
 	}
 
 	setMessage = (invalid, message = {}) => this.setState({ invalid, message })
@@ -345,13 +413,13 @@ export class FormInput extends Component {
 			case 'group':
 				// NB: if `widths` property is used `unstackable` property is ignored by Semantic UI!!!
 				isGroup = true
-				const numChild = attrs.inputs.filter(({ hidden }) => !hidden).length
-				const childContainerStyle = {
-					// width:
-					// 	attrs.widths !== 'equal'
-					// 		? undefined
-					// 		: `${100 / numChild}%`,
-				}
+				// const numChild = attrs.inputs.filter(({ hidden }) => !hidden).length
+				// const childContainerStyle = {
+				// 	// width:
+				// 	// 	attrs.widths !== 'equal'
+				// 	// 		? undefined
+				// 	// 		: `${100 / numChild}%`,
+				// }
 				// attrs.widths !== 'equal' ? {} : { width: `${100 / numChild}%` }
 				inputEl = attrs.inputs.map(childInput => (
 					<FormInput
@@ -359,10 +427,14 @@ export class FormInput extends Component {
 							...childInput,
 							key: childInput.name,
 							styleContainer: {
-								...childContainerStyle,
+								// ...childContainerStyle,
 								...childInput.styleContainer,
 							},
-							width: childInput.width || (attrs.widths === 'equal' ? null : attrs.widths),
+							width: childInput.width || (
+								attrs.widths === 'equal'
+									? null
+									: attrs.widths
+							),
 						}}
 					/>
 				))
@@ -394,7 +466,9 @@ export class FormInput extends Component {
 				...containerProps,
 				error: ['dateinput', 'date'].includes(typeLC)
 					? false
-					: (message && message.status === 'error') || !!error || !!invalid,
+					: (message && message.status === statuses.ERROR)
+						|| !!error
+						|| !!invalid,
 				key: name,
 				required,
 				style: styleContainer,
@@ -475,6 +549,9 @@ export class FormInput extends Component {
 	}
 }
 FormInput.propTypes = {
+	criteria: PropTypes.arrayOf(
+		PropTypes.object
+	),
 	// Delay, in miliseconds, to display built-in and `validate` error messages
 	// Set `defer` to `null` to prevent using deferred mechanism
 	defer: PropTypes.number,

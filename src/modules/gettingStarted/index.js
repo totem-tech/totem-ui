@@ -16,7 +16,7 @@ export const decryptBackup = (backup, password) => {
         `0x${backup.slice(2, 26)}${backup.slice(-24)}`,
         secretBoxKeyFromPW(password),
     )
-    return JSON.parse(decrytped)
+    return decrytped
 }
 
 /**

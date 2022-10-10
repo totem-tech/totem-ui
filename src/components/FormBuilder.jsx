@@ -50,6 +50,7 @@ export default class FormBuilder extends Component {
 	addInterceptor = (values, parentIndex) => (input, index) => {
 		parentIndex = isDefined(parentIndex) ? parentIndex : null
 		const {
+			inputs,
 			inputsDisabled = [],
 			inputsHidden = [],
 			inputsReadOnly = [],
@@ -66,6 +67,17 @@ export default class FormBuilder extends Component {
 			validate,
 		} = input || {}
 		const isGroup = `${type}`.toLowerCase() === 'group' && isArr(childInputs)
+		const handleValidate = (event, data = {}) => validate(
+			event,
+			data,
+			{
+				...this.state.values,
+					// this is required because onChange() is trigger after validate().
+				// otherwise, current input will have the old value or last character missing for text/number inputs
+				[name]: data.value,
+			},
+			rxValue,
+		)
 		const props = {
 			...input,
 			content: isFn(content)
@@ -101,7 +113,7 @@ export default class FormBuilder extends Component {
 					parentIndex ? index : undefined
 				),
 			validate: isFn(validate)
-				? (e, d) => validate(e, d, this.state.values, rxValue)
+				? handleValidate
 				: undefined,
 		}
 		return props

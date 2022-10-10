@@ -113,22 +113,23 @@ const getInputs = (props, isRegistered) => {
         {
             disabled: isRegistered,
             label: textsCap.userId,
-            message: {
-                content: isRegistered ? '' : (
-                    <div>
-                        {textsCap.userIdCriteria}
-                        <ul>
-                            <li>{textsCap.userIdCriteria1}</li>
-                            <li>{textsCap.userIdCriteria2}</li>
-                            <li>{textsCap.userIdCriteria3}</li>
-                        </ul>
-                    </div>
-                ),
-                header: !isRegistered ? '' : textsCap.alreadyRegistered,
-                icon: isRegistered,
-                status: isRegistered ? 'error' : 'warning',
-                style: { textAlign: 'left' },
-            },
+            // message: {
+            //     content: isRegistered ? '' : (
+            //         <div>
+            //             {textsCap.userIdCriteria}
+            //             <ul>
+            //                 <li>{textsCap.userIdCriteria1}</li>
+            //                 <li>{textsCap.userIdCriteria2}</li>
+            //                 <li>{textsCap.userIdCriteria3}</li>
+            //             </ul>
+            //         </div>
+            //     ),
+            //     header: !isRegistered ? '' : textsCap.alreadyRegistered,
+            //     icon: isRegistered,
+            //     status: isRegistered ? 'error' : 'warning',
+            //     style: { textAlign: 'left' },
+            // },
+            // minLength: 0,
             multiple: false,
             name: inputNames.userId,
             newUser: true,

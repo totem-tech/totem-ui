@@ -3,7 +3,7 @@ import uuid from 'uuid'
 import { BehaviorSubject } from 'rxjs'
 import { Table, Button } from 'semantic-ui-react'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
-import { confirm, showForm } from '../../services/modal'
+import { closeModal, confirm, showForm } from '../../services/modal'
 import { MOBILE, rxLayout } from '../../services/window'
 import { getUser, setUser } from '../../utils/chatClient'
 import { rxForeUpdateCache } from '../../utils/DataStorage'
@@ -11,6 +11,9 @@ import { translated } from '../../utils/languageHelper'
 import { backup, essentialKeys } from '../../utils/storageHelper'
 import { objClean, textCapitalize, isFn, objWithoutKeys, hasValue } from '../../utils/utils'
 import BackupForm from './BackupForm'
+import { isHex } from 'web3-utils'
+import { decryptBackup } from '.'
+import { statuses } from '../../components/Message'
 
 const [texts, textsCap] = translated({
 	backupNow: 'backup now',
@@ -33,6 +36,9 @@ const [texts, textsCap] = translated({
 	invalidFileType: 'invalid file type selected',
 	keepUnchanged: 'keep unchanged',
 	merge: 'merge',
+	passwordFailed: 'invalid password',
+	passwordLabel: 'password',
+	passwordPlaceholder: 'enter password for this backup',
 	preserveUser: 'preserve current credentials',
 	proceed: 'proceed',
 	remove: 'remove',
@@ -110,15 +116,10 @@ export default class RestoreBackupForm extends Component {
 								size: 'mini',
 								onClick: e => {
 									e.preventDefault()
-									showForm(
-										BackupForm,
-										{
-											closeOnSubmit: true,
-											values: {
-												confirmed: 'yes',
-											}
-										}
-									)
+									showForm(BackupForm, {
+										closeOnSubmit: true,
+										values: { confirmed: 'yes' }
+									})
 								},
 							}} />
 							{/* </div> */}
@@ -348,9 +349,43 @@ export default class RestoreBackupForm extends Component {
 			var reader = new FileReader()
 			if (name && !name.endsWith(fileIn.accept)) throw textsCap.invalidFileType
 
-			reader.onload = file => {
-				if (this.generateInputs(file.target.result)) return
-				file.target.value = null
+			reader.onload = async (file) => {
+				let backup = file.target.result
+				const process = () => {
+					if (this.generateInputs(backup)) return
+					file.target.value = null
+				}
+				if (!isHex(backup)) return process()
+
+				const modalId = 'decrypt-backup'
+				let message
+				// encrypted file selected
+				const _showForm = () => showForm(FormBuilder, {
+					header: textsCap.passwordPlaceholder,
+					inputs: [{
+						label: textsCap.passwordLabel,
+						name: 'password',
+						placeholder: textsCap.passwordPlaceholder,
+						required: true,
+						type: 'password',
+					}],
+					message,
+					onSubmit: (_, { password }) => {
+						// attempt to decrypt password
+						const decrypted = decryptBackup(backup, password)
+						if (!!decrypted) {
+							backup = decrypted
+							closeModal(modalId)
+							return process()
+						}
+						message = {
+							content: textsCap.passwordFailed,
+							status: statuses.ERROR,
+						}
+						_showForm()
+					},
+				}, modalId)
+				_showForm()
 			}
 			reader.readAsText(file)
 			fileIn.message = null
