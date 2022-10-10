@@ -181,15 +181,27 @@ export class FormInput extends Component {
 					validatorConfig = { type: TYPES.hex }
 				case 'text':
 				case 'textarea':
-					// default:
+				default:
 					validatorConfig = validatorConfig || { type: TYPES.string }
 					break
 			}
 		}
 
 		// set min & max length error messages if not already defined
-		objSetPropUndefined(customMsgs, 'lengthMax', errMsgs.maxLengthText, !!isANum, errMsgs.maxLengthNum)
-		objSetPropUndefined(customMsgs, 'lengthMin', errMsgs.minLengthText, isANum, errMsgs.minLengthNum)
+		objSetPropUndefined(
+			customMsgs,
+			'lengthMax',
+			errMsgs.maxLengthText,
+			!!isANum,
+			errMsgs.maxLengthNum,
+		)
+		objSetPropUndefined(
+			customMsgs,
+			'lengthMin',
+			errMsgs.minLengthText,
+			isANum,
+			errMsgs.minLengthNum,
+		)
 
 		const requireValidator = (hasVal && validationTypes.includes(typeLower)) || validatorConfig
 		if (!err && requireValidator) {
@@ -216,14 +228,13 @@ export class FormInput extends Component {
 		const handleValidate = msg => {
 			err = !!msg
 			const isEl = React.isValidElement(msg)
-			message =
-				isBool(msg) || !msg
-					? null // no need to display a message
-					: {
-							content: isEl ? msg : `${msg}`,
-							status: 'error',
-							...(!isEl && isObj(msg) ? msg : {}),
-					  }
+			message = isBool(msg) || !msg
+				? null // no need to display a message
+				: {
+						content: isEl ? msg : `${msg}`,
+						status: 'error',
+						...(!isEl && isObj(msg) ? msg : {}),
+					}
 			triggerChange()
 		}
 

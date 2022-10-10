@@ -65,34 +65,41 @@ export default class FormBuilder extends Component {
 			type,
 			validate,
 		} = input || {}
-		const isGroup =
-			`${type}`.toLowerCase() === 'group' && isArr(childInputs)
+		const isGroup = `${type}`.toLowerCase() === 'group' && isArr(childInputs)
 		const props = {
 			...input,
-			content: isFn(content) ? content(values, name) : content,
-			disabled:
-				inputsDisabled.includes(name) ||
-				(isFn(disabled) ? disabled(values, name) : disabled),
-			hidden:
-				inputsHidden.includes(name) ||
-				(!isFn(hidden) ? hidden : !!hidden(values, name)),
+			content: isFn(content)
+				? content(values, name)
+				: content,
+			disabled: inputsDisabled.includes(name) || (
+				isFn(disabled)
+					? disabled(values, name)
+					: disabled
+			),
+			hidden: inputsHidden.includes(name) || (
+				!isFn(hidden)
+					? hidden
+					: !!hidden(values, name)
+			),
 			inputs: isGroup
 				? childInputs.map(
-						this.addInterceptor(values, parentIndex || index)
+					this.addInterceptor(
+						values,
+						parentIndex || index
+					)
 				  )
 				: undefined,
 			key: name,
 			readOnly: inputsReadOnly.includes(name) || readOnly,
 			onChange: isGroup
 				? undefined
-				: (e, data) =>
-						this.handleChange(
-							e,
-							data,
-							input,
-							parentIndex || index,
-							parentIndex ? index : undefined
-						),
+				: (e, data) => this.handleChange(
+					e,
+					data,
+					input,
+					parentIndex || index,
+					parentIndex ? index : undefined
+				),
 			validate: isFn(validate)
 				? (e, d) => validate(e, d, this.state.values, rxValue)
 				: undefined,
@@ -253,49 +260,56 @@ export default class FormBuilder extends Component {
 		submitDisabled = !isObj(submitDisabled)
 			? !!submitDisabled
 			: Object.values(submitDisabled).filter(Boolean).length > 0
-		const formIsInvalid = checkFormInvalid(inputs, values)
-		const shouldDisable =
-			submitInProgress || submitDisabled || success || formIsInvalid
+		// const formIsInvalid = checkFormInvalid(inputs, values)
+		const shouldDisable = submitDisabled
+			|| submitInProgress
+			|| success
+			|| checkFormInvalid(inputs, values)
 		submitText = !isFn(submitText)
 			? submitText
-			: submitText(values, this.props, shouldDisable)
+			: submitText(
+				values,
+				this.props,
+				shouldDisable,
+			)
 		if (submitText !== null) {
 			const submitProps = !isObj(submitText)
 				? {}
 				: React.isValidElement(submitText)
-				? { ...submitText.props }
-				: submitText
+					? { ...submitText.props }
+					: submitText
 
-			let { content, disabled, icon, loading, onClick, positive, style } =
-				submitProps
-			icon =
-				icon || icon === null
-					? icon
-					: success
+			let { content, disabled, icon, loading, onClick, positive, style } = submitProps
+			disabled = isBool(disabled)
+				? disabled
+				: shouldDisable
+			icon = icon || icon === null
+				? icon
+				: success
 					? 'check' // form has been successfully submitted
-					: shouldDisable
-					? 'exclamation circle' // one or more fields are invalid or unfilled
-					: 'thumbs up' // all fields are valid and user can now submit
+					: disabled
+						? 'exclamation circle' // one or more fields are invalid or unfilled
+						: 'thumbs up' // all fields are valid and user can now submit
 			submitBtn = (
-				<Button
-					{...{
-						...submitProps,
-						content:
-							content ||
-							(!isStr(submitText) ? content : submitText),
-						disabled: isBool(disabled) ? disabled : shouldDisable,
-						icon,
-						loading: !success && (submitInProgress || loading),
-						onClick: isFn(onClick) ? onClick : this.handleSubmit,
-						positive: isBool(positive) ? positive : true,
-						style: {
-							float: !modal ? 'right' : undefined,
-							paddingLeft: icon ? 10 : undefined,
-							marginLeft: modal ? undefined : 3,
-							...style,
-						},
-					}}
-				/>
+				<Button {...{
+					...submitProps,
+					content: content || (
+						!isStr(submitText)
+							? content
+							: submitText
+					),
+					disabled,
+					icon,
+					loading: !success && (submitInProgress || loading),
+					onClick: isFn(onClick) ? onClick : this.handleSubmit,
+					positive: isBool(positive) ? positive : true,
+					style: {
+						float: !modal ? 'right' : undefined,
+						paddingLeft: icon ? 10 : undefined,
+						marginLeft: modal ? undefined : 3,
+						...style,
+					},
+				}} />
 			)
 		}
 		if (modal && closeText !== null) {

@@ -82,6 +82,7 @@ export default [
     "./src/modules/gettingStarted/BackupForm.jsx",
     "./src/modules/gettingStarted/GettingStarted.jsx",
     "./src/modules/gettingStarted/RestoreBackupForm.jsx",
+    "./src/modules/gettingStarted/index.js",
     "./src/modules/history/HistoryItemDetailsForm.jsx",
     "./src/modules/history/HistoryList.jsx",
     "./src/modules/history/history.js",

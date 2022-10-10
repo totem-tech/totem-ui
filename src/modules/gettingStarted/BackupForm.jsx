@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import FormBuilder, {
+	checkFormInvalid,
 	fillValues,
 	findInput,
 } from '../../components/FormBuilder'
@@ -16,6 +17,7 @@ import {
 	deferred,
 	generateHash,
 	isFn,
+	isStr,
 } from '../../utils/utils'
 import identity from '../identity/identity'
 import partner from '../partner/partner'
@@ -24,6 +26,8 @@ import contact from '../contact/contact'
 import { Icon } from 'semantic-ui-react'
 import Text from '../../components/Text'
 import { MODULE_KEY } from './GettingStarted'
+import { encryptBackup } from '.'
+import { statuses } from '../../components/Message'
 
 const textsCap = translated({
 	backupLater: 'backup later',
@@ -58,6 +62,7 @@ const textsCap = translated({
 	invalidFileType: 'selected file name must end with .json extension.',
 	header: 'backup your account',
 	headerConfirmed: 'confirm backup',
+	headerPassword: 'protect your backup',
 	locations: 'locations',
 	manualBkp0: 'backup file contents have been copied to clipboard. Follow the instructions below:',
 	manualBkp1: 'open a text editor and create a new file',
@@ -66,6 +71,8 @@ const textsCap = translated({
 	manualBkpHeader: 'save file manually',
 	notifications: 'notifications',
 	partners: 'partners',
+	passwordLabel: 'password',
+	passwordPlaceholder: 'enter a password for this backup',
 	proceed: 'proceed',
 	settings: 'settings',
 	userCredentials: 'user credentials',
@@ -81,74 +88,24 @@ const inputNames = {
 	downloadData: 'downloadData',
 	file: 'file',
 	notes: 'notes',
+	password: 'password',
 	redirectTo: 'redirectTo',
+}
+export const steps = {
+	unconfirmed: 'no',
+	confirmed: 'yes',
+	download: 'download',
+	verified: 'verified',
 }
 
 export default function BackupForm(props) {
 	const [state] = iUseReducer(null, rxState => {
-		const { onSubmit } = props
+		const { onSubmit, values = {} } = props
+		if ((values.confirmed || '').toLowerCase() !== steps.confirmed) {
+			values.confirmed = steps.unconfirmed
+		}
 		const filename = backup.generateFilename()
 		const isMobile = rxLayout.value === MOBILE
-		const checkConfirmed = values => (values[inputNames.confirmed] || '')
-			.toLowerCase() === 'yes'
-
-		const handleConfirmChange = deferred((_, values) => {
-			const isConfirmed = checkConfirmed(values)
-			const downloadData = isConfirmed && backup.download(filename)
-			const ddIn = findInput(inputs, inputNames.downloadData)
-			// store downloaded data for confirmation
-			ddIn && ddIn.rxValue.next(downloadData)
-
-			// update form header
-			const header = isConfirmed
-				? textsCap.headerConfirmed
-				: textsCap.header
-			rxState.next({ header })
-		}, 50)
-
-		// on file select, check if the uploaded file matches the downloaded file
-		const handleFileSelected = (e, _, values) => new Promise(resolve => {
-			try {
-				const file = e.target.files[0]
-				const name = e.target.value
-				var reader = new FileReader()
-				if (name && !name.endsWith('.json'))
-					throw textsCap.invalidFileType
-
-				reader.onload = file => {
-					const { data, hash, timestamp } = values[inputNames.downloadData] || {}
-					window.data = data
-					// return console.log({data})
-					const redirectTo = values[inputNames.redirectTo]
-					const hashUpload = generateHash(file.target.result)
-					const match = hash === hashUpload
-
-					setTimeout(() => resolve(!match && textsCap.backupFileInvalid))
-
-					if (!match) {
-						file.target.value = null // reset file
-						return
-					}
-
-					// update timestamp of identities and partners
-					backup.updateFileBackupTS(data, timestamp)
-
-					rxState.next({
-						message: {
-							content: textsCap.backupSuccessContent,
-							header: textsCap.backupSuccessHeader,
-							status: 'success',
-						},
-						success: true,
-					})
-					isFn(onSubmit) && onSubmit(true, values)
-					if (redirectTo) window.location.href = redirectTo
-				}
-				reader.readAsText(file)
-			} catch (err) {
-				resolve(err)
-			}
-		})
 		const confirmBackupTypes = [
 			textsCap.contacts,
 			textsCap.history,
@@ -161,7 +118,101 @@ export default function BackupForm(props) {
 			textsCap.userCredentials,
 		]
 
+		const handleConfirmChange = deferred((_, values) => {
+			const confirmed = values[inputNames.confirmed]
+			const isConfirmed = confirmed === steps.confirmed
+			const isDownload = confirmed === steps.download
+			const downloadData = isDownload && backup.download(
+				filename,
+				data => encryptBackup(data, values[inputNames.password]),
+			)
+			const ddIn = findInput(inputs, inputNames.downloadData)
+			// store downloaded data for confirmation
+			ddIn && ddIn.rxValue.next(downloadData)
+
+			// update form header
+			const header = isConfirmed
+				? textsCap.headerPassword
+				: isConfirmed
+				? textsCap.headerConfirmed
+				: textsCap.header
+			rxState.next({ header })
+		}, 50)
+
+		// on file select, check if the uploaded file matches the downloaded file
+		const handleFileSelected = (e, _, values) => new Promise(resolve => {
+			try {
+				const file = e.target.files[0]
+				const name = e.target.value
+				var reader = new FileReader()
+				if (name && !name.endsWith('.json')) throw textsCap.invalidFileType
+
+				reader.onload = file => {
+					try {
+						const { data, hash, timestamp } = values[inputNames.downloadData] || {}
+						window.data = data
+						// return console.log({data})
+						const redirectTo = values[inputNames.redirectTo]
+						const hashUpload = generateHash(
+							file.target.result,
+							'blake2',
+							256,
+						)
+						const matched = hash === hashUpload
+
+						setTimeout(() => resolve(!matched && textsCap.backupFileInvalid))
+
+						if (!matched) {
+							file.target.value = null // reset file
+							return
+						}
+
+						// update timestamp of identities and partners
+						backup.updateFileBackupTS(data, timestamp)
+
+						findInput(inputs, inputNames.confirmed)
+							.rxValue
+							.next(steps.verified)
+						
+						rxState.next({
+							message: {
+								content: textsCap.backupSuccessContent,
+								header: textsCap.backupSuccessHeader,
+								status: statuses.SUCCESS,
+							},
+							success: true,
+						})
+						isFn(onSubmit) && onSubmit(true, values)
+						if (redirectTo) window.location.href = redirectTo
+					} catch (err) {
+						rxState.next({
+							message: {
+								content: `${err}`,
+								status: statuses.ERROR,
+							}
+						})
+					}
+				}
+				reader.readAsText(file)
+			} catch (err) {
+				resolve(err)
+			}
+		})
+
 		const inputs = [
+			{
+				hidden: values => values[inputNames.confirmed] !== steps.confirmed,
+				label: textsCap.passwordLabel,
+				maxLength: 64,
+				minLength: 8,
+				name: inputNames.password,
+				placeholder: textsCap.passwordPlaceholder,
+				// regex: new RegExp(//),
+				required: true,
+				rxValue: new BehaviorSubject(''),
+				type: 'password',
+
+			},
 			{
 				name: inputNames.confirmed,
 				onChange: handleConfirmChange,
@@ -179,7 +230,7 @@ export default function BackupForm(props) {
 				type: 'hidden',
 			},
 			{
-				hidden: checkConfirmed,
+				hidden: values => values[inputNames.confirmed] !== steps.unconfirmed,
 				name: inputNames.notes,
 				type: 'html',
 				content: (
@@ -197,8 +248,9 @@ export default function BackupForm(props) {
 			},
 			{
 				accept: '.json',
-				disabled: () => rxState.value.success,
-				hidden: values => !checkConfirmed(values),
+				disabled: values => steps.verified === values[inputNames.confirmed],
+				hidden: values => ![steps.download, steps.verified]
+					.includes(values[inputNames.confirmed]),
 				label: textsCap.backupFileLabel,
 				labelDetails: (
 					<div>
@@ -226,7 +278,7 @@ export default function BackupForm(props) {
 			},
 			{
 				content: textsCap.downloadFailed,
-				hidden: values => !checkConfirmed(values),
+				hidden: values => values[inputNames.confirmed] !== steps.download,
 				name: 'download-text',
 				negative: true,
 				onClick: () => {
@@ -259,7 +311,7 @@ export default function BackupForm(props) {
 
 		return {
 			...props,
-			inputs: fillValues(inputs, props.values || {}),
+			inputs: fillValues(inputs, values || {}),
 			onClose: (...args) => {
 				let { values: { redirectTo } = {} } = props
 				isFn(props.onClose) && props.onClose(...args)
@@ -270,32 +322,40 @@ export default function BackupForm(props) {
 			},
 			onSubmit: null, // trigger onSubmit locally
 			values: { ...props.values },
-			closeText: (values, props) => ({
-				content: !checkConfirmed(values)
+			closeText: values => ({
+				content: values[inputNames] === steps.unconfirmed
 					? textsCap.backupLater
 					: textsCap.close,
 				negative: false,
 			}),
-			submitText: (values, props = {}) => !checkConfirmed(values)
-				? {
-					content: textsCap.backupNow,
-					primary: true,
-					onClick: () => findInput(
-						inputs,
-						inputNames.confirmed
-					).rxValue.next('yes'),
+			submitText: (values, formProps, disabled) => {
+				const { success } = formProps
+				// hide submit button when download is completed
+				if (success) return null
+
+				const btn = { disabled }
+				const confirmedIn = findInput(inputs, inputNames.confirmed)
+				switch (values[inputNames.confirmed]) {
+					default:
+					case steps.unconfirmed: 
+						btn.content = textsCap.backupNow
+						btn.primary = true
+						btn.onClick = () => confirmedIn.rxValue.next(steps.confirmed)
+						break
+					case steps.confirmed:
+						btn.content = textsCap.proceed
+						btn.primary = true
+						btn.onClick = () => confirmedIn.rxValue.next(steps.download)
+						break
+					case steps.download: 
+						btn.content = textsCap.downloadAgain
+						btn.icon = 'download'
+						btn.positive = false
+						btn.onClick = () => confirmedIn.rxValue.next('no')
+						break
 				}
-				: {
-					content: textsCap.downloadAgain,
-					disabled: props.success, // forces button to be not disabled even when inputs are invalid
-					icon: 'download',
-					// primary: true,
-					positive: false,
-					onClick: () => findInput(
-						inputs,
-						inputNames.confirmed
-					).rxValue.next('no'),
-				},
+				return btn
+			},
 		}
 	})
 
