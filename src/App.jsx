@@ -106,8 +106,12 @@ export default function App() {
 					dimmed={false}
 					id='main-content'
 				>
-					{sidebarItems.map(({ name }, i) => (
-						<MainContentItem key={i + name} name={name} />
+					{sidebarItems.map(({ name, rxTrigger }, i) => (
+						<MainContentItem {...{
+							key: i + name,
+							name,
+							rxTrigger,
+						}} />
 					))}
 					<div className='empty-message'>
 						{/* <Image style={{ margin: '100px auto auto' }} src={PlaceholderImage} /> */}

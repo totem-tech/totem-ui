@@ -2,7 +2,7 @@ import React, { Component, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Icon, Label, Menu, Sidebar } from 'semantic-ui-react'
 import ContentSegment from './ContentSegment'
-import { isBond, isFn } from '../utils/utils'
+import { isSubjectLike, isFn } from '../utils/utils'
 import { translated } from '../services/language'
 import {
 	rxAllInactive, getItem, setActive, setSidebarState,
@@ -10,6 +10,7 @@ import {
 } from '../services/sidebar'
 import { rxLayout, MOBILE } from '../services/window'
 import { useRxSubject } from '../services/react'
+import { unsubscribe } from '../utils/reactHelper'
 
 const [_, textsCap] = translated({
 	closeSidebar: 'close sidebar',
@@ -57,11 +58,12 @@ export default function SidebarLeft() {
 				</Menu.Item>
 
 				{// menu items 
-					sidebarItems.map(({ name }, i) => (
+					sidebarItems.map(({ name, rxTrigger }, i) => (
 						<SidebarMenuItem {...{
 							key: i + name,
 							isMobile,
 							name,
+							rxTrigger,
 							sidebarCollapsed: collapsed,
 							style: i === 0 ? styles.menuItem : undefined
 						}} />
@@ -72,49 +74,44 @@ export default function SidebarLeft() {
 }
 
 export const MainContentItem = props => {
+	const { name, rxTrigger } = props
 	const [isMobile] = useRxSubject(rxLayout, layout => layout === MOBILE)
-	const [item, setItem] = useState(getItem(props.name) || {})
-	const { active, elementRef, hidden, name } = item
-	const show = active && !hidden
+	const [item] = useRxSubject(rxTrigger, () => getItem(name))
+	const { active, elementRef, hidden } = item || {}
+	const show = !!item && active && !hidden
 	item.style = {
 		...item.style,
 		height: '100%',
-		padding: !isMobile ? undefined : '0 15px',
+		padding: !isMobile
+			? undefined
+			: '0 15px',
 	}
 
-	useEffect(() => {
-		let mounted = true
-		const { name } = item
-		const { bond } = getItem(name) || {}
-		const tieId = isBond(bond) && bond.tie(() => mounted && setItem({ ...getItem(props.name) }))
-
-		return () => {
-			mounted = false
-			tieId && bond.untie(tieId)
-		}
-	}, [])
-	return !show ? '' : (
-		<div
-			key={name}
-			style={styles.spaceBelow}
-			ref={elementRef}
-			name={name}
-		>
-			<ContentSegment {...item} onClose={name => setActive(name, false)} />
-		</div>
-	)
+	return !show
+		? ''
+		: (
+			<div
+				key={name}
+				style={styles.spaceBelow}
+				ref={elementRef}
+				name={name}
+			>
+				<ContentSegment {...item} onClose={name => setActive(name, false)} />
+			</div>
+		)
 }
 MainContentItem.propTypes = {
 	name: PropTypes.string.isRequired,
+	// RxJS subject
+	rxTrigger: PropTypes.object.isRequired,
 }
 
 const SidebarMenuItem = props => {
-	let { isMobile, name, sidebarCollapsed, style } = props
-	const [item, setItem] = useState(getItem(name))
+	let { isMobile, name, rxTrigger, sidebarCollapsed, style } = props
+	const [item, setItem] = useRxSubject(rxTrigger, () => getItem(name))
 	const {
 		active,
 		anchorStyle,
-		bond,
 		badge,
 		hidden,
 		href,
@@ -124,54 +121,47 @@ const SidebarMenuItem = props => {
 		title,
 	} = item || {}
 
-	useEffect(() => {
-		let mounted = true
-		if (!isBond(bond)) return () => { }
-		const tieId = bond.tie(() => mounted && setItem({ ...getItem(name) }))
+	return !item || hidden
+		? ''
+		: (
+			<Menu.Item {...{
+				as: 'a',
+				active,
+				href,
+				style: {
+					...style,
+					...anchorStyle,
+				},
+				target,
+				title,
+				onClick: e => {
+					if (isFn(onClick)) onClick(e, item)
+					
+					if (href) return
 
-		return () => {
-			mounted = false
-			tieId && bond.untie(tieId)
-		}
-	}, [bond])
-
-	return !item || hidden ? '' : (
-		<Menu.Item {...{
-			as: 'a',
-			active,
-			href,
-			style: {
-				...style,
-				...anchorStyle,
-			},
-			target,
-			title,
-			onClick: e => {
-				if (isFn(onClick)) onClick(e, item)
-				
-				if (href) return
-
-				e.stopPropagation()
-				if (e.shiftKey && getItem(name).active) return scrollTo(name)
-				const { active } = toggleActive(name)
-				setItem({ ...item, active })
-				active && isMobile && toggleSidebarState()
-			},
-		}}>
-			{badge && <Label color='red'>{badge}</Label>}
-			<span>
-				<Icon {...{
-					name: icon || 'folder',
-					color: badge && sidebarCollapsed ? 'red' : undefined,
-				}} />
-				{!sidebarCollapsed ? item.title : ''}
-			</span>
-		</Menu.Item>
-	)
+					e.stopPropagation()
+					if (e.shiftKey && getItem(name).active) return scrollTo(name)
+					const { active } = toggleActive(name)
+					setItem({ ...item, active })
+					active && isMobile && toggleSidebarState()
+				},
+			}}>
+				{badge && <Label color='red'>{badge}</Label>}
+				<span>
+					<Icon {...{
+						name: icon || 'folder',
+						color: badge && sidebarCollapsed ? 'red' : undefined,
+					}} />
+					{!sidebarCollapsed ? item.title : ''}
+				</span>
+			</Menu.Item>
+		)
 }
 SidebarMenuItem.propTypes = {
 	isMobile: PropTypes.bool.isRequired,
 	name: PropTypes.string.isRequired,
+	// RxJS subject
+	rxTrigger: PropTypes.object.isRequired,
 	sidebarCollapsed: PropTypes.bool.isRequired,
 	style: PropTypes.object,
 }

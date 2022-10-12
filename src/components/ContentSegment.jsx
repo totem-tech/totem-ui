@@ -1,10 +1,11 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Divider, Header, Icon, Placeholder, Rail, Segment } from 'semantic-ui-react'
+import { unsubscribe } from '../utils/reactHelper'
+import { isSubjectLike, isFn } from '../utils/utils'
 import ErrorBoundary from './CatchReactErrors'
 import Invertible from './Invertible'
 import Text from './Text'
-import { isBond, isFn } from '../utils/utils'
 import { toggleFullscreen } from '../services/window'
 
 export default class ContentSegment extends Component {
@@ -22,19 +23,20 @@ export default class ContentSegment extends Component {
 
 	componentWillMount() {
 		this._mounted = true
-		const { bond } = this.props
-		if (!isBond(bond)) return
-		this.tieId = bond.tie(() => {
-			const { contentProps } = this.props
-			const content = this.getContent()
-			this.setState({ content, contentProps })
-		})
+		const { rxTrigger } = this.props
+		this.subscription = isSubjectLike(rxTrigger)
+			&& rxTrigger.subscribe(() => {
+				const { contentProps } = this.props
+
+				const content = this.getContent()
+				console.log({content, contentProps})
+				this.setState({ content, contentProps: {...contentProps} })
+			})
 	}
 
 	componentWillUnmount() {
 		this._mounted = false
-		const { bond } = this.props
-		isBond(bond) && bond.untie(this.tieId)
+		unsubscribe(this.subscription)
 	}
 
 	getContent = props => {
@@ -164,8 +166,6 @@ export default class ContentSegment extends Component {
 ContentSegment.propTypes = {
 	active: PropTypes.bool,
 	basic: PropTypes.bool,
-	// used to force trigger ContentSegment update
-	bond: PropTypes.object,
 	onClose: PropTypes.func,
 	color: PropTypes.string,
 	content: PropTypes.oneOfType([
@@ -190,6 +190,8 @@ ContentSegment.propTypes = {
 	index: PropTypes.number, // unused
 	inverted: PropTypes.bool,
 	name: PropTypes.string,
+	// used to force trigger ContentSegment update
+	rxTrigger: PropTypes.object,
 	subHeader: PropTypes.string,
 	style: PropTypes.object,
 	title: PropTypes.string,

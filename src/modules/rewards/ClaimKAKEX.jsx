@@ -8,8 +8,14 @@ import FormBuilder from '../../components/FormBuilder'
 import { getAll as getHistory } from '../history/history'
 import identities from '../identity/identity'
 import partners from '../partner/partner'
-import chatClient from '../../utils/chatClient'
+import chatClient, { rxIsLoggedIn } from '../../utils/chatClient'
 import storage from '../../utils/storageHelper'
+import { useRewards } from './rewards'
+
+
+// invoke without arguments to retrieve saved value
+const cacheEligible = eligible => storage.cache('rewards', 'KAPEXClaimEligible', eligible) || null
+const cacheSubmitted = submitted => storage.cache('rewards', 'KAPEXClaimSubmitted', submitted) || null
 
 export const getTaskList = targetIdentity => {
 	const historyArr2d = Array.from(getHistory())
@@ -305,10 +311,40 @@ const getInitialState = rxSetState => {
 		inputs: inputs(),
 	}
 }
+
 export default function ClaimKAPEXForm(props) {
 	const [state, setState] = iUseReducer(null, getInitialState)
+	const [isLoggedIn] = useRxSubject(rxIsLoggedIn)
+	const rewards = useRewards()
+	const [isLoading, setLoading] = useState(false)
+	const [isEligible, setIsEligible] = useState(cacheEligible())
+	const [claimSubmitted, setClaimSubmitted] = useState(cacheSubmitted())
 
-	useEffect(() => { }, [])
+	useEffect(() => {
+		const init = async () => {
+			const eligible = isEligible !== false && (
+				await chatClient.rewardsClaimKAPEX.promise({
+					checkEligible: true,
+				})
+			)
+			setIsEligible(eligible)
+			cacheEligible(eligible)
+			if (!eligible) return
+
+			const submitted = await chatClient.rewardsClaimKAPEX.promise({
+				checkSubmitted: true,
+			})
+			setClaimSubmitted(submitted)
+			submitted && cacheSubmitted(submitted)
+		}
+
+		if (isLoggedIn && !claimSubmitted) {
+			setLoading(true)
+			init().finally(() => setLoading(false))
+		}
+	}, [isLoggedIn])
+
+	if (isEligible === false) return '___'
 
 	return (
 		<FormBuilder {...{
@@ -316,7 +352,9 @@ export default function ClaimKAPEXForm(props) {
 			onSubmit: async (e, values) => {
 				const { onSubmit } = props
 				setState({ submitInProgress: true })
-				chatClient.rewardsClaimKAPEX.promise(values)
+				await chatClient.rewardsClaimKAPEX.promise(values)
+
+				setClaimSubmitted(true)
 
 				setState({ submitInProgress: false })
 				isFn(onSubmit) && onSubmit(true, values)

@@ -1,6 +1,5 @@
 import React from 'react'
 import uuid from 'uuid'
-import { Bond } from 'oo7'
 import { BehaviorSubject } from 'rxjs'
 // Views (including lists and forms)
 import AssetFormView from '../modules/assets/AssetsFormView'
@@ -21,15 +20,17 @@ import RewardsView from '../modules/rewards/RewardsView'
 // import CrowdsaleView from '../modules/crowdsale/Crowdsale'
 // utils
 import DataStorage from '../utils/DataStorage'
-import { isBool, isBond } from '../utils/utils'
+import { isBool, isSubjectLike } from '../utils/utils'
 // services
 import { translated } from './language'
 import storage from './storage'
 import { getUrlParam, MOBILE, rxLayout, setClass } from './window'
+import ClaimKAPEXForm from '../modules/rewards/ClaimKAKEX'
 
 const textsCap = translated({
-    crowdloan: 'Crowdloan DApp',
-    // crowdsaleTitle: 'crowdsale',
+    crowdloanTitle: 'Crowdloan DApp',
+
+    claimKapexTitle: 'claim KAPEX',
 
     financialStatementTitle: 'Financial Statement',
 
@@ -168,7 +169,7 @@ export const sidebarItems = [
         name: 'crowdloan',
         href: `${window.location.protocol}//${window.location.host}/crowdloan`,
         target: '_blank',
-        title: textsCap.crowdloan,
+        title: textsCap.crowdloanTitle,
     },
     {
         content: GettingStarted,
@@ -177,18 +178,19 @@ export const sidebarItems = [
         name: gsName,
         title: textsCap.gettingStartedTitle,
     },
+    // {
+    //     content: ClaimKAPEXForm,
+    //     contentProps: { style: { maxWidth: 450 } },
+    //     // icon: ,
+    //     name: 'claim-kapex',
+    //     title: textsCap.claimKapexTitle,
+    // },
     {
         content: RewardsView,
         icon: 'gift',
         name: 'rewards',
         title: textsCap.rewards,
     },
-    // {
-    //     content: CrowdsaleView,
-    //     icon: 'rocket',
-    //     name: 'crowdsale',
-    //     title: textsCap.crowdsaleTitle,
-    // },
     // {
     //     content: KeyRegistryPlayground,
     //     icon: 'play circle outline',
@@ -372,7 +374,7 @@ export const sidebarItems = [
 ].map(item => {
     const {
         active = false,
-        bond = new Bond().defaultTo(uuid.v1()),
+        rxTrigger = new BehaviorSubject(uuid.v1()),
         contentProps = {},
         title,
         // use title if name not provided
@@ -383,7 +385,7 @@ export const sidebarItems = [
     return {
         ...item,
         active: isBool(activeX) ? activeX : active,
-        bond,
+        rxTrigger,
         contentProps,
         name,
         // used for auto scrolling to element
@@ -401,7 +403,7 @@ export const setActive = (name, active = true, contentProps, hidden) => {
     item.hidden = isBool(hidden) ? hidden : item.hidden
     item.contentProps = { ...item.contentProps, ...contentProps }
     statuses.set(name, active)
-    item.bond.changed(uuid.v1())
+    item.rxTrigger.next(uuid.v1())
     const allInactive = sidebarItems.every(({ active, hidden }) => !active || hidden)
     rxAllInactive.next(allInactive)
 
@@ -414,8 +416,12 @@ export const setContentProps = (name, props = {}, scrollToItem = true) => {
     if (!item) return
 
     if (!item.active) return setActive(name, true, props)
-    Object.keys(props).forEach(key => item.contentProps[key] = props[key])
-    isBond(item.bond) && item.bond.changed(uuid.v1())
+    Object
+        .keys(props)
+        .forEach(key =>
+            item.contentProps[key] = props[key]
+        )
+    isSubjectLike(item.rxTrigger) && item.rxTrigger.next(uuid.v1())
 
     scrollToItem && scrollTo(name)
     return item

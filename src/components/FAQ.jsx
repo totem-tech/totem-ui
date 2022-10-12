@@ -7,6 +7,7 @@ import { translated } from '../services/language'
 import { closeModal, confirm } from '../services/modal'
 import { RecursiveShapeType } from '../services/react'
 import Text from './Text'
+import { useInverted } from '../services/window'
 
 const textsCap = translated({
     faqs: 'frequently asked questions',
@@ -66,11 +67,13 @@ export default function FAQ(props) {
             ...arr,
             ...(active ? [index] : []),
         ], [])
+    const inverted = useInverted()
     return (
         <Accordion {...{
             ...objWithoutKeys(props, props.ignoredAttributes),
             defaultActiveIndex,
             exclusive,
+            inverted,
             panels: questionsToPanels(questions, exclusive, modalId),
         }} />
     )
