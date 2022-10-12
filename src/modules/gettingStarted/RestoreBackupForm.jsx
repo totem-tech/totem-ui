@@ -370,6 +370,7 @@ export default class RestoreBackupForm extends Component {
 					if (this.generateInputs(backup)) return
 					file.target.value = null
 				}
+				// process unencrypted legacy backup file
 				if (!isHex(backup)) return startRestore()
 
 				const modalId = 'decrypt-backup'
