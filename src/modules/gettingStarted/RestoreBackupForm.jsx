@@ -8,7 +8,7 @@ import { MOBILE, rxLayout } from '../../services/window'
 import { getUser, setUser } from '../../utils/chatClient'
 import { rxForeUpdateCache } from '../../utils/DataStorage'
 import { translated } from '../../utils/languageHelper'
-import { backup, essentialKeys } from '../../utils/storageHelper'
+import storage, { backup, essentialKeys } from '../../utils/storageHelper'
 import { objClean, textCapitalize, isFn, objWithoutKeys, hasValue, deferred } from '../../utils/utils'
 import BackupForm from './BackupForm'
 import { isHex } from 'web3-utils'
@@ -500,6 +500,7 @@ export default class RestoreBackupForm extends Component {
 				localStorage.setItem(key, JSON.stringify(value))
 			})
 			// --keep this before setUser()--
+			// force update in-memory cache data by DataStorage
 			rxForeUpdateCache.next(true)
 			if (user) setUser(user)
 			// wait for onSubmit to finish executing
@@ -516,6 +517,8 @@ export default class RestoreBackupForm extends Component {
 			})
 			// reload page to reflect changes
 			setTimeout(() => {
+				// remove all non-essential data from localStorage
+				storage.clearNonEssentialData()
 				!redirectTo
 					? window.location.reload(true)
 					: window.location.href = redirectTo

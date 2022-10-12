@@ -46,11 +46,11 @@ export default function RewardsView() {
 
 	useEffect(() => {
 		const init = async () => {
-			const eligible =
-				isEligible !== false &&
-				(await chatClient.rewardsClaimKAPEX.promise({
+			const eligible = isEligible !== false && (
+				await chatClient.rewardsClaimKAPEX.promise({
 					checkEligible: true,
-				}))
+				})
+			)
 			setIsEligible(eligible)
 			cacheEligible(eligible)
 			if (!eligible) return

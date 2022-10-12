@@ -45,6 +45,16 @@ const textsCap = translated({
 	seed: 'seed',
 }, true)[1]
 
+export const inputNames = {
+	address: 'address',
+	advanced: 'advanced',
+	cryptoType: 'cryptoType',
+	delete: 'delete',
+	fileBackupTS: 'fileBackupTS',
+	identityForm: 'identityForm',
+	txAllocations: 'txAllocations',
+	uri: 'uri',
+}
 // A read only form to display identity details including seed
 export default class IdentityDetailsForm extends Component {
 	constructor(props) {
@@ -71,7 +81,7 @@ export default class IdentityDetailsForm extends Component {
 							}}
 						/>
 					),
-					name: 'identity-form',
+					name: inputNames.identityForm,
 					type: 'html',
 				},
 				{
@@ -81,7 +91,7 @@ export default class IdentityDetailsForm extends Component {
 					},
 					grouped: true,
 					label: textsCap.advanced,
-					name: 'advanced',
+					name: inputNames.advanced,
 					type: 'group',
 					widths: 16,
 					inputs: [
@@ -95,7 +105,7 @@ export default class IdentityDetailsForm extends Component {
 								title: textsCap.copyAddress,
 							},
 							label: textsCap.identity,
-							name: 'address',
+							name: inputNames.address,
 							readOnly: true,
 							type: 'text',
 						},
@@ -158,49 +168,47 @@ export default class IdentityDetailsForm extends Component {
 							},
 							labelPosition: 'left', // for inlineLabel
 							label: textsCap.seed,
-							name: 'uri',
+							name: inputNames.uri,
 							readOnly: true,
 							type: 'text',
 							useInput: true,
 						},
 						{
 							label: textsCap.cryptoType,
-							name: 'type',
+							name: inputNames.cryptoType,
 							readOnly: true,
 						},
 					],
 				},
 				{
 					label: textsCap.lastBackup,
-					name: 'fileBackupTS',
+					name: inputNames.fileBackupTS,
 					readOnly: true,
 					type: 'text',
-					value: textsCap.never,
+					// value: textsCap.never,
 				},
 				{
 					content: (
-						<Balance
-							{...{
-								address: address,
-								EL: 'label',
-								emptyMessage: textsCap.loadingBalance,
-								prefix: `${textsCap.availableBalance}: `,
-								showDetailed: true,
-								style: {
-									fontWeight: 'bold',
-									margin: '0 0 0 3px',
-								},
-							}}
-						/>
+						<Balance {...{
+							address: address,
+							EL: 'label',
+							emptyMessage: textsCap.loadingBalance,
+							prefix: `${textsCap.availableBalance}: `,
+							showDetailed: true,
+							style: {
+								fontWeight: 'bold',
+								margin: '0 0 0 3px',
+							},
+						}} />
 					),
-					name: 'txAllocations',
+					name: inputNames.txAllocations,
 					type: 'html',
 				},
 				{
 					content: textsCap.removePermanently,
 					icon: 'trash',
 					fluid: true,
-					name: 'delete',
+					name: inputNames.delete,
 					negative: true,
 					onClick: this.handleDelete,
 					style: {
@@ -213,6 +221,7 @@ export default class IdentityDetailsForm extends Component {
 		}
 
 		fillValues(this.state.inputs, {
+			[inputNames.fileBackupTS]: textsCap.never,
 			...this.identity,
 			uri: this.getUri(this.identity.uri),
 		})

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Button, Icon } from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
 import { iUseReducer, useRxSubject } from '../../utils/reactHelper'
@@ -308,21 +308,21 @@ const getInitialState = rxSetState => {
 export default function ClaimKAPEXForm(props) {
 	const [state, setState] = iUseReducer(null, getInitialState)
 
-	return (
-		<FormBuilder
-			{...{
-				...props,
-				onSubmit: async (e, values) => {
-					const { onSubmit } = props
-					setState({ submitInProgress: true })
-					chatClient.rewardsClaimKAPEX.promise(values)
+	useEffect(() => { }, [])
 
-					setState({ submitInProgress: false })
-					isFn(onSubmit) && onSubmit(true, values)
-				},
-				// inputs,
-				...state,
-			}}
-		/>
+	return (
+		<FormBuilder {...{
+			...props,
+			onSubmit: async (e, values) => {
+				const { onSubmit } = props
+				setState({ submitInProgress: true })
+				chatClient.rewardsClaimKAPEX.promise(values)
+
+				setState({ submitInProgress: false })
+				isFn(onSubmit) && onSubmit(true, values)
+			},
+			// inputs,
+			...state,
+		}} />
 	)
 }
