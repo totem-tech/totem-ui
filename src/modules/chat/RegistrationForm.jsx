@@ -6,7 +6,7 @@ import { isFn } from '../../utils/utils'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { useRxSubject } from '../../services/react'
-import { registerStepIndex, setActiveStep } from '../gettingStarted/GettingStarted'
+import { stepIndexes, setActiveStep } from '../gettingStarted/GettingStarted'
 import client, { referralCode, rxIsRegistered } from './ChatClient'
 import { rxSelected } from '../identity/identity'
 import { setActive } from '../../services/sidebar'
@@ -186,19 +186,19 @@ const handleSubmit = (props, setState) => async (_, values) => {
     }
     setState(state)
     isFn(onSubmit) && onSubmit(success, values)
-    if (!success) return console.log('not success')
+    if (!success) return
     
     // set getting started active step
     setActiveStep(
-        registerStepIndex + 1,
+        stepIndexes.register + 1,
         redirectTo
             ? false
             : silent,
         redirectTo,
     )
 
-    // open rewards module
-    setActive('rewards')
+    // // open rewards module
+    // setActive('rewards')
     
     // delete referral information from device
     referralCode(null)

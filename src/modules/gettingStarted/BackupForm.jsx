@@ -8,7 +8,7 @@ import FormBuilder, {
 } from '../../components/FormBuilder'
 import { MOBILE, rxLayout } from '../../services/window'
 import { confirm, confirmAsPromise, showForm } from '../../services/modal'
-import { getUser } from '../../utils/chatClient'
+import { getUser, rxIsRegistered } from '../../utils/chatClient'
 import { translated } from '../../utils/languageHelper'
 import storage, { backup } from '../../utils/storageHelper'
 import { iUseReducer } from '../../utils/reactHelper'
@@ -17,6 +17,7 @@ import {
 	deferred,
 	generateHash,
 	isFn,
+	isHex,
 	isStr,
 } from '../../utils/utils'
 import identity from '../identity/identity'
@@ -25,7 +26,7 @@ import location from '../location/location'
 import contact from '../contact/contact'
 import { Icon } from 'semantic-ui-react'
 import Text from '../../components/Text'
-import { MODULE_KEY } from './GettingStarted'
+import { getActiveStep, MODULE_KEY, saveActiveStep, stepIndexes } from './GettingStarted'
 import { encryptBackup } from '.'
 import { statuses } from '../../components/Message'
 
@@ -60,9 +61,9 @@ const textsCap = translated({
 	history: 'history',
 	identities: 'identities',
 	invalidFileType: 'selected file name must end with .json extension.',
-	header: 'backup your account',
-	headerConfirmed: 'confirm backup',
-	headerPassword: 'encrypt your backup',
+	headerUnconfirmed: 'backup your account',
+	headerConfirmed: 'encrypt your backup',
+	headerDownload: 'download and verify your backup',
 	locations: 'locations',
 	manualBkp0: 'backup file contents have been copied to clipboard. Follow the instructions below:',
 	manualBkp1: 'open a text editor and create a new file',
@@ -102,10 +103,10 @@ const inputNames = {
 	redirectTo: 'redirectTo',
 }
 export const steps = {
-	unconfirmed: 'no',
-	confirmed: 'yes',
-	download: 'download',
-	verified: 'verified',
+	unconfirmed: 'no', // initial state
+	confirmed: 'yes', // user enters password
+	download: 'download', // user is to verify downloaded backup
+	verified: 'verified', // verification + backup complete
 }
 
 
@@ -130,9 +131,8 @@ export default function BackupForm(props) {
 		]
 
 		const handleConfirmChange = deferred((_, values) => {
-			const confirmed = values[inputNames.confirmed]
-			const isConfirmed = confirmed === steps.confirmed
-			const isDownload = confirmed === steps.download
+			const step = values[inputNames.confirmed]
+			const isDownload = step === steps.download
 			const downloadData = isDownload && backup.download(
 				filename,
 				data => encryptBackup(data, values[inputNames.password]),
@@ -142,11 +142,11 @@ export default function BackupForm(props) {
 			ddIn && ddIn.rxValue.next(downloadData)
 
 			// update form header
-			const header = isConfirmed
-				? textsCap.headerPassword
-				: isConfirmed
-				? textsCap.headerConfirmed
-				: textsCap.header
+			const header = step === steps.unconfirmed
+				? textsCap.headerUnconfirmed
+				: step === steps.confirmed
+					? textsCap.headerConfirmed
+					: textsCap.headerDownload
 			rxState.next({ header })
 		}, 50)
 
@@ -181,9 +181,13 @@ export default function BackupForm(props) {
 						// update timestamp of identities and partners
 						backup.updateFileBackupTS(data, timestamp)
 
+						// set as verified
 						findInput(inputs, inputNames.confirmed)
 							.rxValue
 							.next(steps.verified)
+						
+						// update getting started active step if necessary
+						!!rxIsRegistered.value && saveActiveStep(stepIndexes.backup + 1)
 						
 						rxState.next({
 							message: {
@@ -269,6 +273,7 @@ export default function BackupForm(props) {
 					|| `${values[inputNames.password] || ''}`.length < 8,
 				label: textsCap.passwordConfirmLabel,
 				name: inputNames.passwordConfirm,
+				onPaste: e => e.preventDefault(),
 				placeholder: textsCap.passwordConfirmPlaceholder,
 				required: true,
 				type: 'password',
@@ -345,10 +350,11 @@ export default function BackupForm(props) {
 				name: 'download-text',
 				negative: true,
 				onClick: () => {
-					const downloadData = JSON.stringify(
-						findInput(inputs, inputNames.downloadData).value
-					)
-					copyToClipboard(downloadData)
+					const downloadData = findInput(inputs, inputNames.downloadData).value
+					const { data } = downloadData || {}
+					if (!isHex(data)) throw new Error('Invalid data')
+
+					copyToClipboard(data)
 					confirm({
 						confirmButton: textsCap.done,
 						content: (
@@ -426,7 +432,7 @@ export default function BackupForm(props) {
 }
 BackupForm.defaultProps = {
 	closeOnSubmit: false,
-	header: textsCap.header,
+	header: textsCap.headerUnconfirmed,
 	values: {
 		// confirmed: 'yes'
 	},
@@ -554,7 +560,6 @@ BackupForm.checkAndWarn = async (criticalOnly = false) => {
 		size: 'tiny',
 	})
 }
-
 
 setTimeout(() => { 
 	// prevent check if user is not registered

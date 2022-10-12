@@ -14,7 +14,7 @@ const textsCap = translated({
     enterUserId: 'enter user ID',
     enterUserIds: 'enter user IDs',
     fromChatHistory: 'from recent chats',
-    idCrAlphaNum: 'contains only letters and numbers characters',
+    idCrAlphaNum: 'contains only letters and numbers',
     idCrHeader: 'Enter an username matching the following criteria:',
     idCrLength: 'between 3 and 16 characters',
     idCrStart: 'start with a letter',

@@ -9,7 +9,7 @@ import { getUser, setUser } from '../../utils/chatClient'
 import { rxForeUpdateCache } from '../../utils/DataStorage'
 import { translated } from '../../utils/languageHelper'
 import { backup, essentialKeys } from '../../utils/storageHelper'
-import { objClean, textCapitalize, isFn, objWithoutKeys, hasValue } from '../../utils/utils'
+import { objClean, textCapitalize, isFn, objWithoutKeys, hasValue, deferred } from '../../utils/utils'
 import BackupForm from './BackupForm'
 import { isHex } from 'web3-utils'
 import { decryptBackup } from '.'
@@ -19,9 +19,10 @@ const [texts, textsCap] = translated({
 	backupNow: 'backup now',
 	backupValue: 'backup value',
 	cancel: 'cancel',
+	chatMessages: 'recent chat messages',
 	chatUserId: 'Chat User ID',
 	compare: 'compare',
-	dataTypes: 'history, identities, locations, notifications, partners, recent chat messages, settings, user credentials',
+	contacts: 'contacts',
 	confirmRestoreContent: `
 		You are about to replace or merge the following application data with the data from you backup JSON file. 
 		This is potentially dangerous and you may lose your identity, chat User ID and other data if not done carefully.
@@ -32,11 +33,16 @@ const [texts, textsCap] = translated({
 	currentValue: 'current value',
 	fileLabel: 'select your backup JSON file',
 	formHeader: 'restore backup',
+	history: 'history',
+	identities: 'identities',
 	ignore: 'ignore',
 	invalidFileType: 'invalid file type selected',
 	keepUnchanged: 'keep unchanged',
+	locations: 'locations',
 	merge: 'merge',
-	passwordFailed: 'invalid password',
+	notifications: 'notifications',
+	partners: 'partners',
+	passwordFailed: 'incorrect password',
 	passwordLabel: 'password',
 	passwordPlaceholder: 'enter password for this backup',
 	preserveUser: 'preserve current credentials',
@@ -45,10 +51,12 @@ const [texts, textsCap] = translated({
 	restore: 'restore',
 	restoreFromBackup: 'restore from backup',
 	restoreUser: 'restore credentials from backup',
+	settings: 'settings',
 	submitNoAction: 'no actionable item selected',
 	success1: 'restored successfully!',
 	success2: 'reloading page.',
 	successRedirect: 'Redirecting back to',
+	userCredentials: 'user credentials',
 }, true)
 // data that can be merged (must be 2D array that represents a Map)
 const MERGEABLES = ['totem_identities', 'totem_partners', 'totem_locations']
@@ -82,7 +90,6 @@ export default class RestoreBackupForm extends Component {
 			onSubmit: this.handleSubmit,
 			onClose: (...args) => {
 				let { values: { redirectTo } = {}} = props
-				console.log({onClose: true, props, redirectTo})
                 isFn(props.onClose) && props.onClose(...args)
                 try { 
                     redirectTo = new URL(redirectTo)
@@ -122,14 +129,22 @@ export default class RestoreBackupForm extends Component {
 									})
 								},
 							}} />
-							{/* </div> */}
 							<ul>
-								{texts.dataTypes
-									.split(',')
+								{[
+									textsCap.contacts,
+									textsCap.history,
+									textsCap.identities,
+									textsCap.locations,
+									textsCap.notifications,
+									textsCap.partners,
+									textsCap.chatMessages,
+									textsCap.settings,
+									textsCap.userCredentials,
+								]
+									.sort()
 									.map((str, i) =>
-										<li key={i}>{str}</li>
-									)
-								}
+									<li key={i}>{str}</li>
+								)}
 							</ul>
 						</div>
 					)
@@ -351,11 +366,11 @@ export default class RestoreBackupForm extends Component {
 
 			reader.onload = async (file) => {
 				let backup = file.target.result
-				const process = () => {
+				const startRestore = () => {
 					if (this.generateInputs(backup)) return
 					file.target.value = null
 				}
-				if (!isHex(backup)) return process()
+				if (!isHex(backup)) return startRestore()
 
 				const modalId = 'decrypt-backup'
 				let message
@@ -376,7 +391,7 @@ export default class RestoreBackupForm extends Component {
 						if (!!decrypted) {
 							backup = decrypted
 							closeModal(modalId)
-							return process()
+							return startRestore()
 						}
 						message = {
 							content: textsCap.passwordFailed,

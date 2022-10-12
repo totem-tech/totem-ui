@@ -12,7 +12,7 @@ import RestoreBackupForm from './RestoreBackupForm'
 import { showForm } from '../../services/modal'
 // import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { setToast } from '../../services/toast'
-import { setActive } from '../../services/sidebar'
+// import { setActive } from '../../services/sidebar'
 // modules
 import { createInbox, SUPPORT, TROLLBOX } from '../chat/chat'
 import { getUser, rxIsRegistered } from '../chat/ChatClient'
@@ -64,7 +64,19 @@ export const MODULE_KEY = 'getting-started'
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 const rxActiveStep = new BehaviorSubject(rw().activeStep || 0)
-export const registerStepIndex = 0
+export const stepIndexes = {
+	register: 0,
+	identity: 1,
+	backup: 2,
+}
+
+/**
+ * @name 	getActiveStep
+ * 
+ * @returns {Number}
+ */
+export const getActiveStep = () => saveActiveStep()
+
 /**
  * @name	setActiveStep
  * @summary	get/set active step
@@ -81,6 +93,7 @@ export const saveActiveStep = stepNo => {
 	v && rxActiveStep.next(stepNo)
 	return stepNo
 }
+
 // old localStorage key for active step 
 const legacyKey = 'totem_getting-started-step-index'
 try {
@@ -111,7 +124,7 @@ export default function GetingStarted() {
 			},
 			{
 				// allow the user to backup even after step is completed
-				disabled: activeStep => activeStep <= registerStepIndex,
+				disabled: activeStep => activeStep <= stepIndexes.register,
 				description: texts.backupDescription,
 				onClick: ()=> handleBackup(),
 				title: texts.backupTitle,
@@ -295,7 +308,7 @@ const handleRegister = (redirectTo) => showForm(
 			})
 
 			// open rewards module
-			setActive('rewards')
+			// setActive('rewards')
 		},
 		values: { redirectTo }
 	},
@@ -309,7 +322,7 @@ const incrementStep = (redirectTo) => setActiveStep(
 
 export const setActiveStep = (nextStep = rxActiveStep.value, silent = false, redirectTo) => {
 	const user = getUser()
-	if (nextStep === registerStepIndex && user && user.id) {
+	if (nextStep === stepIndexes.register && user && user.id) {
 		// user Already registered => mark register step as done
 		nextStep++
 	}

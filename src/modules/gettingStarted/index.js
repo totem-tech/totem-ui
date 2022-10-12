@@ -46,7 +46,3 @@ export default {
     decryptBackup,
     encryptBackup,
 }
-window.gs = {
-    decryptBackup,
-    encryptBackup,
-}
