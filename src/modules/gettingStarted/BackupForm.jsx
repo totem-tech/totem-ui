@@ -225,6 +225,11 @@ export default function BackupForm(props) {
 
 		const inputs = [
 			{
+				name: 'username',
+				type: 'hidden',
+				value: (getUser() || '').id || 'testuser',
+			},
+			{
 				action: {
 					icon: 'eye',
 					// toggle password view
@@ -288,6 +293,17 @@ export default function BackupForm(props) {
 				// maxLength: 64,
 				// minLength: 8,
 				name: inputNames.password,
+				// trigger a change on the password confirm input to force re-validation
+				onChange: (_, values) => {
+					const pwConfirm = values[inputNames.passwordConfirm]
+					if (!pwConfirm) return
+					
+					const pwConfirmIn = findInput(inputs, inputNames.passwordConfirm)
+					// first set a placeholder password, otherwise, RxJS won't register it as a change
+					pwConfirmIn.rxValue.next('-'.repeat(pwConfirm.length))
+					// set back the original value
+					setTimeout(() => pwConfirmIn.rxValue.next(pwConfirm), 100)
+				},
 				placeholder: textsCap.passwordPlaceholder,
 				// regex: new RegExp(/^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[\W|_]).{4,32}$/),
 				required: true,
@@ -296,6 +312,7 @@ export default function BackupForm(props) {
 
 			},
 			{
+				autoComplete: 'new-password',
 				hidden: values => values[inputNames.confirmed] !== steps.confirmed
 					|| `${values[inputNames.password] || ''}`.length < 8,
 				label: textsCap.passwordConfirmLabel,
@@ -307,6 +324,7 @@ export default function BackupForm(props) {
 				},
 				placeholder: textsCap.passwordConfirmPlaceholder,
 				required: true,
+				rxValue: new BehaviorSubject(),
 				type: 'password',
 				validate: (e, _, values) => {
 					const isConfirmed = values[inputNames.confirmed] === steps.confirmed

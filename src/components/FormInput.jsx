@@ -441,9 +441,18 @@ export class FormInput extends Component {
 					/>
 				))
 				break
-			case 'hidden':
-				hideLabel = true
-				break
+			// for accessibility as prescrived by Google
+			case 'hidden': return (
+				<input {...{
+					...attrs,
+					autoComplete: 'username',
+					style: {
+						...attrs.style,
+						display: 'none',
+					},
+					type: 'text',
+				}} />
+			)
 			case 'html':
 				return content || ''
 			case 'textarea':
@@ -474,8 +483,12 @@ export class FormInput extends Component {
 				key: name,
 				required,
 				style: styleContainer,
-				title: editable ? undefined : errMsgs.readOnlyField,
-				width: width === null ? undefined : width,
+				title: editable
+					? undefined
+					: errMsgs.readOnlyField,
+				width: width === null
+					? undefined
+					: width,
 			}}>
 				{!hideLabel &&
 					label && [
