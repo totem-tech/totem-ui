@@ -379,6 +379,7 @@ export default class RestoreBackupForm extends Component {
 				const _showForm = () => showForm(FormBuilder, {
 					header: textsCap.passwordPlaceholder,
 					inputs: [{
+						autoComplete: 'current-password',
 						label: textsCap.passwordLabel,
 						name: 'password',
 						placeholder: textsCap.passwordPlaceholder,

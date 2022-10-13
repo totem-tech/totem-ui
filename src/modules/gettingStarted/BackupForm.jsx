@@ -62,6 +62,7 @@ const textsCap = translated({
 	fileName: 'file name',
 	history: 'history',
 	identities: 'identities',
+	invalidData: 'invalid data',
 	invalidFileType: 'selected file name must end with .json extension.',
 	headerUnconfirmed: 'backup your account',
 	headerConfirmed: 'encrypt your backup',
@@ -93,12 +94,12 @@ const textsCap = translated({
 	proceed: 'proceed',
 	settings: 'settings',
 	userCredentials: 'user credentials',
-	warnBackupContent1: 'you are at risk of accidantal data loss!',
+	warnBackupContent1: 'you are at risk of accidental data loss!',
 	warnBackupContent2: 'the following items are not backed up:',
 	warnBackupContent3: 'click proceed to download a backup of your account now.',
 	warnBackupHeader: 'backup recommended!',
-	warnCriticalA: 'you maybe at risk of losing your account!',
-	warnCriticalB: 'you maybe at risk of losing your funds!',
+	warnCriticalA: 'you may be at risk of losing your account!',
+	warnCriticalB: 'you may be at risk of losing your funds!',
 }, true)[1]
 const inputNames = {
 	confirmed: 'confirmed',
@@ -115,7 +116,6 @@ export const steps = {
 	download: 'download', // user is to verify downloaded backup
 	verified: 'verified', // verification + backup complete
 }
-
 
 export default function BackupForm(props) {
 	const [state] = iUseReducer(null, rxState => {
@@ -239,6 +239,7 @@ export default function BackupForm(props) {
 						rxState.next({ inputs })
 					},
 				},
+				autoComplete: 'new-password',
 				criteria: [
 					{
 						regex: /^.{8,64}$/,
@@ -389,7 +390,7 @@ export default function BackupForm(props) {
 				onClick: () => {
 					const downloadData = findInput(inputs, inputNames.downloadData).value
 					const { data } = downloadData || {}
-					if (!isHex(data)) throw new Error('Invalid data')
+					if (!isHex(data)) throw new Error(textsCap.invalidData)
 
 					copyToClipboard(data)
 					confirm({
