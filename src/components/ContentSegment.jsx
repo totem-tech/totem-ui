@@ -27,9 +27,7 @@ export default class ContentSegment extends Component {
 		this.subscription = isSubjectLike(rxTrigger)
 			&& rxTrigger.subscribe(() => {
 				const { contentProps } = this.props
-
 				const content = this.getContent()
-				console.log({content, contentProps})
 				this.setState({ content, contentProps: {...contentProps} })
 			})
 	}

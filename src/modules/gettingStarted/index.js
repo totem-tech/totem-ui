@@ -1,5 +1,6 @@
-import { isStr } from '../../utils/utils'
+import { generateHash, isStr, isValidNumber, randomInt } from '../../utils/utils'
 import { secretBoxDecrypt, secretBoxEncrypt, secretBoxKeyFromPW } from '../../utils/naclHelper'
+import { addFromUri, generateUri } from '../identity/identity'
 
 /**
  * @name    decryptBackup
@@ -40,6 +41,44 @@ export const encryptBackup = (data, password) => {
 
     const encryptedData = `0x${nonce.slice(2, 26)}${encrypted.slice(2)}${nonce.slice(-24)}`
     return encryptedData
+}
+
+// generate a new password
+export const generatePassword = (specialCharLimit = randomInt(3, 10)) => {
+    // in rare case if identity is not successfully generated
+    const newIdentity = () => {
+        let id
+        do {
+            try {
+                id = addFromUri(generateUri())
+            } catch (_) { }
+        } while (!id)
+        return id
+    }
+    const { address } = newIdentity()
+    const specialChars = '!£$%^&*()_-+=[]{}~#@?/><|'
+    return generateHash(address, 'blake2', 256)
+        .slice(2) // remove '0x'
+        .split('') // convert into char array
+        .map((char, i) => {
+            if (i < 3 || i >= 60) return char
+
+            const num = randomInt(0, 99999)
+            const isEven = num % 2 === 0
+            if (!isValidNumber(parseInt(char))) {
+                // capitalize char
+                return isEven
+                    ? char.toLowerCase()
+                    : char.toUpperCase()
+            } else if (specialCharLimit > 0 && num % 7 === 0) {
+                specialCharLimit--
+                // add a special character
+                const spChar = specialChars[randomInt(0, specialChars.length - 1)]
+                return spChar || char
+            }
+            return char
+        })
+        .join('')
 }
 
 export default {

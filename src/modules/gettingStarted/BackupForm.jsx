@@ -19,15 +19,17 @@ import {
 	isFn,
 	isHex,
 	isStr,
+	isValidNumber,
+	randomInt,
 } from '../../utils/utils'
-import identity from '../identity/identity'
+import identity, { addFromUri, generateUri } from '../identity/identity'
 import partner from '../partner/partner'
 import location from '../location/location'
 import contact from '../contact/contact'
 import { Icon } from 'semantic-ui-react'
 import Text from '../../components/Text'
 import { getActiveStep, MODULE_KEY, saveActiveStep, stepIndexes } from './GettingStarted'
-import { encryptBackup } from '.'
+import { encryptBackup, generatePassword } from '.'
 import { statuses } from '../../components/Message'
 
 const textsCap = translated({
@@ -81,6 +83,11 @@ const textsCap = translated({
 	passwordCrNum: 'numbers',
 	passwordCrSpecial: 'special characters',
 	passwordCrUpper: 'uppercase letters',
+	passwordBtnTitle: 'generate a random password',
+	passwordGenWarnContent: 'please make sure to save the newly generated password in a secure place, preferably a password manager.',
+	passwordGenWarnHeader: 'have you saved your newly generated password?',
+	passwordGenWarnBtn: 'yes, proceed!',
+	passwordGenWarnClose: 'go back',
 	passwordLabel: 'password',
 	passwordPlaceholder: 'enter a password for this backup',
 	proceed: 'proceed',
@@ -113,6 +120,8 @@ export const steps = {
 export default function BackupForm(props) {
 	const [state] = iUseReducer(null, rxState => {
 		const { onSubmit, values = {} } = props
+		const rxPassword = new BehaviorSubject('')
+		const rxPasswordGen = new BehaviorSubject('')
 		if ((values.confirmed || '').toLowerCase() !== steps.confirmed) {
 			values.confirmed = steps.unconfirmed
 		}
@@ -258,6 +267,22 @@ export default function BackupForm(props) {
 				// // delay before showing error message
 				// defer: 500,
 				hidden: values => values[inputNames.confirmed] !== steps.confirmed,
+				inlineLabel: {
+					color: 'green',
+					icon: {
+						className: 'no-margin',
+						name: 'random',
+					},
+					onClick: e => {
+						e.preventDefault()
+						e.stopPropagation()
+						const pw = generatePassword()
+						rxPassword.next(pw)
+						rxPasswordGen.next(pw)
+					},
+					style: { cursor: 'pointer' },
+					title: textsCap.passwordBtnTitle,
+				},
 				label: textsCap.passwordLabel,
 				// maxLength: 64,
 				// minLength: 8,
@@ -265,6 +290,7 @@ export default function BackupForm(props) {
 				placeholder: textsCap.passwordPlaceholder,
 				// regex: new RegExp(/^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[\W|_]).{4,32}$/),
 				required: true,
+				rxValue: rxPassword,
 				type: 'password',
 
 			},
@@ -273,13 +299,24 @@ export default function BackupForm(props) {
 					|| `${values[inputNames.password] || ''}`.length < 8,
 				label: textsCap.passwordConfirmLabel,
 				name: inputNames.passwordConfirm,
-				onPaste: e => e.preventDefault(),
+				onPaste: (e, d) => {
+					const pastedStr = e.clipboardData.getData('text/plain')
+					// only allow pasting generated and/or medium to large passwords
+					if (pastedStr < 12) e.preventDefault()
+				},
 				placeholder: textsCap.passwordConfirmPlaceholder,
 				required: true,
 				type: 'password',
-				validate: (e, _, values) => values[inputNames.confirmed] === steps.confirmed
-					&& values[inputNames.password] !== values[inputNames.passwordConfirm]
-					&& textsCap.passwordConfirmErr,
+				validate: (e, _, values) => {
+					const isConfirmed = values[inputNames.confirmed] === steps.confirmed
+					const pw = `${values[inputNames.password] || ''}`
+					const pwConf = values[inputNames.passwordConfirm]
+					
+					return isConfirmed
+						&& !!pwConf
+						&& pw !== pwConf
+						&& textsCap.passwordConfirmErr
+				},
 			},
 			{
 				name: inputNames.confirmed,
@@ -406,17 +443,48 @@ export default function BackupForm(props) {
 				const confirmedIn = findInput(inputs, inputNames.confirmed)
 				switch (values[inputNames.confirmed]) {
 					default:
-					case steps.unconfirmed: 
+					case steps.unconfirmed:
+						// initial info text displayed
 						btn.content = textsCap.backupNow
 						btn.primary = true
 						btn.onClick = () => confirmedIn.rxValue.next(steps.confirmed)
 						break
 					case steps.confirmed:
+						// user enters password
 						btn.content = textsCap.proceed
 						btn.primary = true
-						btn.onClick = () => confirmedIn.rxValue.next(steps.download)
+						btn.onClick = () => {
+							const proceed = () => confirmedIn.rxValue.next(steps.download)
+							const isGenerated = rxPasswordGen.value === rxPassword.value
+							if (!isGenerated) return proceed()
+
+							confirm({
+								cancelButton: textsCap.passwordGenWarnClose,
+								confirmButton: textsCap.passwordGenWarnBtn,
+								content: textsCap.passwordGenWarnContent,
+								header: (
+									<Text {...{
+										className: 'header',
+										color: 'red',
+										invertedColor: 'orange',
+										style: {
+											// overrides the background color defined in the <Text /> component
+											background: undefined, 
+											// overrides the text capitalization on modal header
+											textTransform: 'initial',
+										},
+									}}>
+										
+										{textsCap.passwordGenWarnHeader}
+									</Text>
+								),
+								onConfirm: proceed,
+								size: 'mini',
+							})
+						}
 						break
 					case steps.download: 
+						// download and verify
 						btn.content = textsCap.downloadAgain
 						btn.icon = 'download'
 						btn.positive = false
