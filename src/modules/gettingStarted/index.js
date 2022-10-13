@@ -61,7 +61,8 @@ export const generatePassword = (specialCharLimit = randomInt(3, 10)) => {
         .slice(2) // remove '0x'
         .split('') // convert into char array
         .map((char, i) => {
-            if (i < 3 || i >= 60) return char
+            // leave first and last 4 characters unchanged
+            if (i < 5 || i >= 60) return char
 
             const num = randomInt(0, 99999)
             const isEven = num % 2 === 0
@@ -84,4 +85,5 @@ export const generatePassword = (specialCharLimit = randomInt(3, 10)) => {
 export default {
     decryptBackup,
     encryptBackup,
+    generatePassword,
 }

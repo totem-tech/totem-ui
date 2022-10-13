@@ -30,6 +30,7 @@ import TotemButtonLogo from './assets/logos/button-288-colour.png' //button-240-
 // import PlaceholderImage from './assets/totem-placeholder.png'
 import ChatBar from './modules/chat/ChatBar'
 import { className } from './utils/utils'
+import { generatePassword } from './modules/gettingStarted'
 
 let queueResumed = false
 const logoSrc = TotemButtonLogo
@@ -39,6 +40,7 @@ export default function App() {
 		// For debug only.
 		window.utils = {
 			convert: require('./utils/convert'),
+			generatePassword,
 			naclHelper: require('./utils/naclHelper'),
 			polkadotHelper: require('./utils/polkadotHelper'),
 			PromisE: require('./utils/PromisE'),
