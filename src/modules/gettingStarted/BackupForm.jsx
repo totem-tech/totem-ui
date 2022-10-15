@@ -227,7 +227,7 @@ export default function BackupForm(props) {
 			{
 				name: 'username',
 				type: 'hidden',
-				value: (getUser() || '').id || 'testuser',
+				value: `${(getUser() || {}).id || ''}@${window.location.host}`,
 			},
 			{
 				action: {
