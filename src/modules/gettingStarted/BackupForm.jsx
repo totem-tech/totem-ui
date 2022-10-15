@@ -520,9 +520,6 @@ export default function BackupForm(props) {
 BackupForm.defaultProps = {
 	closeOnSubmit: false,
 	header: textsCap.headerUnconfirmed,
-	values: {
-		// confirmed: 'yes'
-	},
 }
 BackupForm.propTypes = {
 	values: PropTypes.object,
