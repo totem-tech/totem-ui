@@ -157,33 +157,33 @@ export default class IdentityShareForm extends Component {
 			value: address,
 			text: (
 				<span style={{ paddingLeft: 25 }}>
-					<Button
-						{...{
-							compact: true,
-							icon: 'pencil',
-							onClick: e => {
-								e.preventDefault()
-								e.stopPropagation()
-								showForm(IdentityForm, {
-									autoSave: true,
-									onChange: deferred(e => {
-										this.handleAddressChange(e, this.values)
-										// setTimeout(() => {})
-									}, 100),
-									values,
-									onClose: () => {
-										this.componentWillMount()
-									},
-								})
-							},
-							size: 'mini',
-							// style adjustment to make sure height of the dropdown doesn't change because of the button
-							style: {
-								position: 'absolute',
-								margin: '-5px -30px',
-							},
-						}}
-					/>
+					<Button {...{
+						compact: true,
+						icon: 'pencil',
+						onClick: e => {
+							e.preventDefault()
+							e.stopPropagation()
+							showForm(IdentityForm, {
+								autoSave: true,
+								onChange: deferred(e => {
+									this.handleAddressChange(e, this.values)
+									// setTimeout(() => {})
+								}, 100),
+								values: {
+									[idInputNames.address]: address,
+								},
+								onClose: () => {
+									this.componentWillMount()
+								},
+							})
+						},
+						size: 'mini',
+						// style adjustment to make sure height of the dropdown doesn't change because of the button
+						style: {
+							position: 'absolute',
+							margin: '-5px -30px',
+						},
+					}} />
 					{name}
 				</span>
 			),
@@ -264,13 +264,12 @@ export default class IdentityShareForm extends Component {
 		const includeIn = findInput(inputs, inputNames.include)
 		includeIn.hidden = !locationId
 		const getOption = (value, label, Form, formProps, btnTitle) => ({
-			label: !Form ? (
-				label
-			) : (
-				<div style={{ marginTop: -5 }}>
-					{label + ' '}
-					<Button
-						{...{
+			label: !Form
+				? label
+				: (
+					<div style={{ marginTop: -5 }}>
+						{label + ' '}
+						<Button {...{
 							icon: 'pencil',
 							onClick: e => {
 								e.stopPropagation()
@@ -279,10 +278,9 @@ export default class IdentityShareForm extends Component {
 							},
 							size: 'mini',
 							title: btnTitle,
-						}}
-					/>
-				</div>
-			),
+						}} />
+					</div>
+				),
 			value,
 		})
 		includeIn.options = [
@@ -359,7 +357,6 @@ export default class IdentityShareForm extends Component {
 				? identity[idInputNames.vatNumber]
 				: undefined,
 		}
-		console.log({ data })
 
 		this.setState({ loading: true })
 		const callback = err => {

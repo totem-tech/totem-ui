@@ -544,7 +544,7 @@ IdentityForm.propTypes = {
 	// whether to auto save when upadating identity
 	autoSave: PropTypes.bool,
 	values: PropTypes.shape({
-		address: PropTypes.string,
+		address: PropTypes.string, // required when updating
 		name: PropTypes.string,
 		uri: PropTypes.string,
 		usageType: PropTypes.string,
