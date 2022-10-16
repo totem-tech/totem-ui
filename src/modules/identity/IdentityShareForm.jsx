@@ -105,6 +105,7 @@ export default class IdentityShareForm extends Component {
 					type: 'text',
 				},
 				{
+					hidden: true,
 					label: textsCap.includeLabel,
 					// inline: true,
 					name: inputNames.include,
@@ -165,16 +166,14 @@ export default class IdentityShareForm extends Component {
 							e.stopPropagation()
 							showForm(IdentityForm, {
 								autoSave: true,
-								onChange: deferred(e => {
-									this.handleAddressChange(e, this.values)
-									// setTimeout(() => {})
-								}, 100),
+								// onChange: deferred(e => {
+								// 	this.handleAddressChange(e, this.values)
+								// }, 100),
 								values: {
 									[idInputNames.address]: address,
 								},
-								onClose: () => {
-									this.componentWillMount()
-								},
+								// repopulate includeInput options
+								onClose: () => this.handleAddressChange(e, this.values),
 							})
 						},
 						size: 'mini',
