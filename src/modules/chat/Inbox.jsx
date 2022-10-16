@@ -48,7 +48,7 @@ const scrollToBottom = (animate = false, force = false) => setTimeout(() => {
     const btnWrapEl = document.querySelector(scrollBtnSelector)
     const isMobile = getLayout() === MOBILE
     // prevent scroll if scroll button is visible and not forced
-    if (btnWrapEl.classList.value.includes('visible') && !force) return
+    if (btnWrapEl && btnWrapEl.classList.value.includes('visible') && !force) return
     const animateClass = 'animate-scroll'
     animate && msgsEl.classList.add(animateClass)
     msgsEl && msgsEl.scrollTo(0, msgsEl.scrollHeight)
@@ -63,7 +63,7 @@ const handleScroll = () => {
     const { scrollHeight, scrollTop, offsetHeight } = document.querySelector(msgsSelector) || {}
     const showBtn = (scrollHeight - offsetHeight - scrollTop) > offsetHeight
     const btnWrapEl = document.querySelector(scrollBtnSelector)
-    btnWrapEl.classList[showBtn ? 'add' : 'remove']('visible')
+    btnWrapEl && btnWrapEl.classList[showBtn ? 'add' : 'remove']('visible')
 }
 
 export default function Inbox(props) {

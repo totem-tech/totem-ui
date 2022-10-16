@@ -175,7 +175,7 @@ export default class FormBuilder extends Component {
 			// trigger form's onchange callback
 			if (isFn(formOnChange)) {
 				const formInvalid = checkFormInvalid(inputs, values)
-				!formInvalid && (await formOnChange(event, values, formInvalid))
+				await formOnChange(event, values, formInvalid)
 			}
 		} catch (err) {
 			console.error(err)

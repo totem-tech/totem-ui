@@ -81,6 +81,7 @@ export default class IdentityShareForm extends Component {
 		this.state = {
 			header: textsCap.formHeader1,
 			message: {},
+			onChange: this.handleFormChange,
 			onSubmit: this.handleSubmit,
 			success: false,
 			inputs: [
@@ -173,7 +174,7 @@ export default class IdentityShareForm extends Component {
 									[idInputNames.address]: address,
 								},
 								// repopulate includeInput options
-								onClose: () => this.handleAddressChange(e, this.values),
+								onClose: () => this.handleAddressChange({}, this.values),
 							})
 						},
 						size: 'mini',
@@ -326,7 +327,7 @@ export default class IdentityShareForm extends Component {
 		this.setState({ inputs })
 	}
 
-	handleFormChange = (_, values) => (this.values = values)
+	handleFormChange = (_, values) => this.values = values
 
 	handleSubmit = (e, values) => {
 		const { onSubmit } = this.props
