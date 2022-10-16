@@ -6,6 +6,7 @@ import { isObj, isStr, objClean, objHasKeys } from '../../utils/utils'
 
 const identities = new DataStorage('totem_identities')
 export const DEFAULT_NAME = 'Default' // default identity name
+export const DERIVATION_PATH_PREFIX = '/totem/'
 export const rxIdentities = identities.rxData
 export const rxSelected = new BehaviorSubject()
 export const USAGE_TYPES = Object.freeze({
@@ -129,7 +130,7 @@ const init = () => {
 	const all = getAll()
 	if (!all.length) {
 		// generate a new seed
-		const uri = generateUri() + '/totem/0/0'
+		const uri = `${generateUri()}${DERIVATION_PATH_PREFIX}0/0`
 		const { address } = addFromUri(uri) || {}
 		// in case `wasm-crypto` hasn't been initiated yet, try again after a second
 		if (!address) return setTimeout(init, 1000)

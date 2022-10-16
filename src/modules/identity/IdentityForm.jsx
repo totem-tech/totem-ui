@@ -18,6 +18,7 @@ import { translated } from '../../services/language'
 import { getAllTags } from '../partner/partner'
 import {
 	addFromUri,
+	DERIVATION_PATH_PREFIX,
 	find,
 	generateUri,
 	get,
@@ -103,18 +104,6 @@ export default class IdentityForm extends Component {
 		autoSave = isBool(autoSave)
 			? autoSave
 			: this.doUpdate
-
-		if (submitText !== null) {
-			submitText = submitText || submitText === null
-				? submitText
-				: this.doUpdate
-					? autoSave
-						? null
-						: textsCap.update
-					: restore
-						? textsCap.restore
-						: textsCap.create
-		}
 		this.header = header || (
 			this.doUpdate
 				? textsCap.headerUpdate
@@ -142,7 +131,9 @@ export default class IdentityForm extends Component {
 				placeholder: textsCap.identityNamePlaceholder,
 				required: true,
 				rxValue: new BehaviorSubject(),
+				type: 'text',
 				validate: this.validateName,
+				// value: '',
 			},
 			{
 				hidden: true,
@@ -155,6 +146,7 @@ export default class IdentityForm extends Component {
 				rxValue: new BehaviorSubject(),
 				type: 'text',
 				validate: values => values.restore && this.validateUri,
+				// value: '',
 			},
 			{
 				inline: true,
@@ -181,6 +173,7 @@ export default class IdentityForm extends Component {
 				name: inputNames.address,
 				rxValue: this.rxAddress,
 				type: 'hidden',
+				// value: '',
 			},
 			{
 				allowAdditions: true,
@@ -298,7 +291,15 @@ export default class IdentityForm extends Component {
 			message,
 			onChange: this.handleFormChange,
 			onSubmit: this.handleSubmit,
-			submitText,
+			submitText: submitText || submitText === null
+				? submitText
+				: this.doUpdate
+					? autoSave
+						? null
+						: textsCap.update
+					: restore
+						? textsCap.restore
+						: textsCap.create,
 			success: false,
 			inputs: fillValues(inputs, this.values),
 		}
@@ -495,8 +496,11 @@ export default class IdentityForm extends Component {
 		let seed = values[inputNames.uri]
 		if (!this.doUpdate) {
 			seed = seed || generateUri()
-			const usageTypeCode = usageType === USAGE_TYPES.PERSONAL ? 0 : 1
-			seed = seed.split('/totem/')[0] + `/totem/${usageTypeCode}/0`
+			const usageTypeCode = usageType === USAGE_TYPES.PERSONAL
+				? 0
+				: 1
+			const seedWithoutPath = seed.split(DERIVATION_PATH_PREFIX)[0]
+			seed =  `${seedWithoutPath}${DERIVATION_PATH_PREFIX}${usageTypeCode}/0`
 		}
 		const { address = '' } = (seed && addFromUri(seed)) || {}
 		const uriInput = findInput(inputs, inputNames.uri)
@@ -524,10 +528,12 @@ export default class IdentityForm extends Component {
 		if (existing) return `${textsCap.seedExists} ${existing.name}`
 		this.values[inputNames.address] = address
 		this.rxAddress.next(address)
-		if (seed.includes('/totem/')) {
+		if (seed.includes(DERIVATION_PATH_PREFIX)) {
 			// extract usageType
-			const usagetypeInt = parseInt(seed.split('/totem/')[1])
-			const usageType = usagetypeInt === 1 ? 'business' : 'personal'
+			const usagetypeInt = parseInt(seed.split(DERIVATION_PATH_PREFIX)[1])
+			const usageType = usagetypeInt === 1
+				? USAGE_TYPES.BUSINESS
+				: USAGE_TYPES.PERSONAL
 			const usageTypeIn = findInput(inputs, inputNames.usageType)
 			usageTypeIn.hidden = true
 			this.values.usageType = usageType

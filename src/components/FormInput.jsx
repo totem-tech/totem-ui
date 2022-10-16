@@ -1,5 +1,3 @@
-/** @format */
-
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject, Subject } from 'rxjs'
@@ -31,25 +29,22 @@ import { translated } from '../services/language'
 import { unsubscribe } from '../services/react'
 
 const Dropdown = React.memo(DD)
-const errMsgs = translated(
-	{
-		decimals: 'maximum number of decimals allowed',
-		email: 'please enter a valid email address',
-		fileType: 'invalid file type selected',
-		integer: 'please enter a number without decimals',
-		max: 'number must be smaller than or equal to',
-		maxLengthNum: 'maximum number of digits allowed',
-		maxLengthText: 'maximum number of characters allowed',
-		min: 'number must be greater or equal',
-		minLengthNum: 'minimum number of digits required',
-		minLengthText: 'minimum number of characters required',
-		number: 'please enter a valid number',
-		required: 'required field',
-		readOnlyField: 'read only field',
-		url: 'invalid URL',
-	},
-	true
-)[1]
+const errMsgs = translated({
+	decimals: 'maximum number of decimals allowed',
+	email: 'please enter a valid email address',
+	fileType: 'invalid file type selected',
+	integer: 'please enter a number without decimals',
+	max: 'number must be smaller than or equal to',
+	maxLengthNum: 'maximum number of digits allowed',
+	maxLengthText: 'maximum number of characters allowed',
+	min: 'number must be greater or equal',
+	minLengthNum: 'minimum number of digits required',
+	minLengthText: 'minimum number of characters required',
+	number: 'please enter a valid number',
+	required: 'required field',
+	readOnlyField: 'read only field',
+	url: 'invalid URL',
+}, true)[1]
 const validationTypes = Object.values(TYPES)
 // properties exclude from being used in the DOM
 const NON_ATTRIBUTES = Object.freeze([
@@ -168,8 +163,11 @@ export class FormInput extends Component {
 				case 'radio':
 					// Sematic UI's Checkbox component only supports string and number as value
 					// This allows support for any value types
-					data.value = data.checked ? trueValue : falseValue
+					data.value = data.checked
+						? trueValue
+						: falseValue
 					if (!required || data.checked) break
+
 					err = errMsgs.required
 					break
 				case 'date':
@@ -213,8 +211,10 @@ export class FormInput extends Component {
 			errMsgs.minLengthNum,
 		)
 
-		const requireValidator = (hasVal && validationTypes.includes(typeLower)) || validatorConfig
-		if (!err && requireValidator) {
+		const requireValidator = hasVal
+			&& validationTypes.includes(typeLower)
+			|| validatorConfig
+		if (!err && !!requireValidator) {
 			err = validator.validate(
 				value,
 				{
@@ -349,12 +349,18 @@ export class FormInput extends Component {
 		} = this.props
 
 		let useInput = useInputOrginal
-		const { invalid: invalidS, loading: loadingS, message: internalMsg, options } = this.state
+		const {
+			invalid: invalidS,
+			loading: loadingS,
+			message: internalMsg,
+			options,
+		} = this.state
 		const invalid = invalidP || invalidS
 		const message = internalMsg || externalMsg
 		let hideLabel = false
 		let inputEl = ''
 		if (hidden) return ''
+
 		// Remove attributes that are used by the form or Form.Field but
 		// shouldn't be used or may cause error when using with inputEl
 		let attrs = objWithoutKeys(
@@ -374,7 +380,9 @@ export class FormInput extends Component {
 
 		switch (typeLC) {
 			case 'button':
-				attrs.content = !isFn(content) ? content : content(this.props)
+				attrs.content = !isFn(content)
+					? content
+					: content(this.props)
 				inputEl = <Button {...{ as: 'a', ...attrs }} />
 				break
 			case 'checkbox':
@@ -392,7 +400,8 @@ export class FormInput extends Component {
 				attrs.options = options || attrs.options
 				attrs.radio = typeLC === 'radio-group' || attrs.radio
 				attrs.rxValue = rxValue
-				attrs.value = (rxValue ? rxValue.value : attrs.value) || (attrs.multiple ? [] : '')
+				attrs.value = (rxValue ? rxValue.value : attrs.value)
+					|| (attrs.multiple ? [] : '')
 				inputEl = <CheckboxGroup {...attrs} />
 				break
 			case 'date':
@@ -401,15 +410,22 @@ export class FormInput extends Component {
 				inputEl = <DateInput {...{ ...attrs, invalid }} />
 				break
 			case 'dropdown':
-				attrs.openOnFocus = isBool(attrs.openOnFocus) ? attrs.openOnFocus : false // change default to false
+				attrs.openOnFocus = isBool(attrs.openOnFocus)
+					? attrs.openOnFocus
+					: false // change default to false
 				attrs.disabled = attrs.disabled || attrs.readOnly
 				attrs.inline = inline
 				// if number of options is higher than 50 and if lazyLoad is disabled, can slowdown FormBuilder
-				attrs.lazyLoad = isBool(attrs.lazyLoad) ? attrs.lazyLoad : true
-				attrs.search = isArr(attrs.search) ? searchRanked(attrs.search) : attrs.search
+				attrs.lazyLoad = isBool(attrs.lazyLoad)
+					? attrs.lazyLoad
+					: true
+				attrs.search = isArr(attrs.search)
+					? searchRanked(attrs.search)
+					: attrs.search
 				attrs.style = { ...attrs.style }
 				attrs.options = options || attrs.options
-				attrs.value = (rxValue ? rxValue.value : attrs.value) || (attrs.multiple ? [] : '')
+				attrs.value = (rxValue ? rxValue.value : attrs.value)
+					|| (attrs.multiple ? [] : '')
 				inputEl = <Dropdown {...attrs} />
 				break
 			case 'group':
@@ -424,21 +440,19 @@ export class FormInput extends Component {
 				// }
 				// attrs.widths !== 'equal' ? {} : { width: `${100 / numChild}%` }
 				inputEl = attrs.inputs.map(childInput => (
-					<FormInput
-						{...{
-							...childInput,
-							key: childInput.name,
-							styleContainer: {
-								// ...childContainerStyle,
-								...childInput.styleContainer,
-							},
-							width: childInput.width || (
-								attrs.widths === 'equal'
-									? null
-									: attrs.widths
-							),
-						}}
-					/>
+					<FormInput {...{
+						...childInput,
+						key: childInput.name,
+						styleContainer: {
+							// ...childContainerStyle,
+							...childInput.styleContainer,
+						},
+						width: childInput.width || (
+							attrs.widths === 'equal'
+								? null
+								: attrs.widths
+						),
+					}} />
 				))
 				break
 			// for accessibility as prescrived by Google
@@ -451,6 +465,9 @@ export class FormInput extends Component {
 						display: 'none',
 					},
 					type: 'text',
+					value: !hasValue(attrs.value)
+						? ''
+						: attrs.value,
 				}} />
 			)
 			case 'html':
@@ -465,10 +482,16 @@ export class FormInput extends Component {
 				delete attrs.value
 				useInput = true
 			default: //forces inputs to be controlled
-				attrs.value = !hasValue(attrs.value) ? '' : attrs.value
-				attrs.fluid = !useInput ? undefined : attrs.fluid
+				attrs.value = !hasValue(attrs.value)
+					? ''
+					: attrs.value
+				attrs.fluid = !useInput
+					? undefined
+					: attrs.fluid
 				attrs.label = inlineLabel || attrs.label
-				const El = useInput || inlineLabel ? Input : Form.Input
+				const El = useInput || inlineLabel
+					? Input
+					: Form.Input
 				inputEl = <El {...attrs} />
 		}
 
