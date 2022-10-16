@@ -262,7 +262,6 @@ export default class IdentityShareForm extends Component {
 
 		// show/hide location share option
 		const includeIn = findInput(inputs, inputNames.include)
-		includeIn.hidden = !locationId
 		const getOption = (value, label, Form, formProps, btnTitle) => ({
 			label: !Form
 				? label
@@ -323,6 +322,7 @@ export default class IdentityShareForm extends Component {
 					`${textsCap.includeVATNumber}: "${vatNumber}"`
 				),
 		].filter(Boolean)
+		includeIn.hidden = includeIn.options.length === 0
 
 		this.setState({ inputs })
 	}
