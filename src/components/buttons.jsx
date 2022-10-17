@@ -314,13 +314,6 @@ export const UserID = React.memo(props => {
 
 	const isOwnId = (getUser() || {}).id === rawId
 	const allowClick = onClick !== null && !isOwnId
-	const handleClick = !allowClick
-		? undefined
-		: e => e.stopPropagation() | UserID.showModal(userId, address)
-	const handleDragStart = e => {
-		e.stopPropagation()
-		e.dataTransfer.setData('Text', rawId)
-	}
 
 	return (
 		<El {...{
@@ -332,8 +325,14 @@ export const UserID = React.memo(props => {
 				</b>
 			),
 			draggable: true,
-			onClick: handleClick,
-			onDragStart: handleDragStart,
+			onClick: !allowClick
+				? undefined
+				: e => e.stopPropagation()
+					| UserID.showModal(userId, address),
+			onDragStart: e => {
+				e.stopPropagation()
+				e.dataTransfer.setData('Text', rawId)
+			},
 			style: {
 				cursor: allowClick && 'pointer',
 				fontWeight: 'bold',

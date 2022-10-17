@@ -60,20 +60,19 @@ export default function PartnerList(props = {}) {
 				associatedIdentity && getAddressName(associatedIdentity)
 			partner._name = (
 				<div style={{ margin: !userId ? 0 : '-10px 0' }}>
-					{textEllipsis(name, 25, 3, false)}
-					<UserID
-						{...{
-							address,
-							El: 'div',
-							style: {
-								color: 'grey',
-								fontSize: '80%',
-								marginTop: -15,
-								paddingTop: 15,
-							},
-							userId,
-						}}
-					/>
+					<div {...{
+						draggable: true,
+						onDragStart: (e) => e.dataTransfer.setData('Text', name),
+						style: { display: 'block'}
+					}}>
+						{textEllipsis(name, 25, 3, false)}
+					</div>
+					<UserID {...{
+						address,
+						El: 'div',
+						style: { color: 'grey' },
+						userId,
+					}} />
 				</div>
 			)
 			partner._tags = <Tags tags={tags} />
@@ -109,13 +108,11 @@ const tableProps = Object.freeze({
 					? icons.personal
 					: icons.business
 				return (
-					<Icon
-						{...{
-							className: 'no-margin',
-							size: 'large',
-							...icon,
-						}}
-					/>
+					<Icon {...{
+						className: 'no-margin',
+						size: 'large',
+						...icon,
+					}} />
 				)
 			},
 			draggable: false,
@@ -128,6 +125,7 @@ const tableProps = Object.freeze({
 			title: '',
 		},
 		{
+			draggable: false,
 			headerProps: { style: { borderLeft: 'none' } },
 			key: '_name',
 			sortKey: 'name',

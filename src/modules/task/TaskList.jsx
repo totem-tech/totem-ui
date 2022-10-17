@@ -238,7 +238,7 @@ const tableProps = Object.freeze({
                     draggable='true'
                     onDragStart={e => {
                         e.stopPropagation()
-                        e.dataTransfer.setData("Text", e.target.textContent)
+                        e.dataTransfer.setData('Text', e.target.textContent)
                     }}
                     style={{
                         cursor: 'grab',

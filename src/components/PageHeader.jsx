@@ -80,7 +80,7 @@ export default function PageHeader(props) {
 		}),
 		onSelection: (_, { value: address }) => setSelected(address),
 	}
-	console.log({viewProps})
+
 	return <PageHeaderView {...viewProps} />
 }
 

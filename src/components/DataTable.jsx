@@ -228,6 +228,7 @@ export default class DataTable extends Component {
 								draggable,
 								draggableValueKey,
 								key: contentKey,
+								onDragStart,
 								style,
 								textAlign = 'left',
 							} = cell || {}
@@ -249,7 +250,7 @@ export default class DataTable extends Component {
 								draggable,
 								onDragStart: !draggable
 									? undefined
-									: this.handleDragStartCb(dragValue),
+									: this.handleDragStartCb(dragValue, onDragStart, item),
 								style,
 								textAlign,
 							}
@@ -406,11 +407,15 @@ export default class DataTable extends Component {
 		)
 	}
 
-	handleDragStartCb = dragValue => e =>
+	handleDragStartCb = (dragValue, onDragStart, item) => e => {
 		e.dataTransfer.setData(
 			'Text',
-			dragValue !== null ? `${dragValue}` : e.target.textContent
+			dragValue !== null
+				? `${dragValue}`
+				: e.target.textContent,
 		)
+		isFn(onDragStart) && onDragStart(e, dragValue, item)
+	}
 
 	handlePageSelect = pageNo => {
 		const { pageOnSelect } = this.props
