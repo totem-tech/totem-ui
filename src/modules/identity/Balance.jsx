@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { Icon } from 'semantic-ui-react'
 import { isArr, isValidNumber } from '../../utils/utils'
+import { Reveal } from '../../components/buttons'
 // services
 import { query } from '../../services/blockchain'
 import { translated } from '../../services/language'
@@ -35,64 +36,87 @@ export const Balance = props => {
 	const lockedBalance = locks.reduce((sum, next) => sum + next.amount, 0)
 	const freeBalance = isLoading ? undefined : balance - lockedBalance
 	style = { cursor: 'pointer', ...style }
-	const handleClick =
-		showDetailed === null
-			? undefined
-			: e => e.stopPropagation() | setShowLocked(!showLocked)
-
-	if (!isLoading && showLocked)
-		return (
-			<Currency
-				{...{
-					...props,
-					onClick: handleClick,
-					prefix: `${textsCap.total}: `,
-					style,
-					value: balance,
-					unit: currencyDefault,
-					suffix: (
-						<Currency
-							{...{
-								prefix: (
-									<span>
-										{lockSeparator}
-										{textsCap.locked}:{' '}
-									</span>
-								),
-								value: lockedBalance,
-								unit: currencyDefault,
-								unitDisplayed,
-							}}
-						/>
-					),
-				}}
-			/>
+	const handleClick = showDetailed === null
+		? undefined
+		: e => e.stopPropagation() | setShowLocked(!showLocked)
+	
+	const getContent = show => () => (
+		<Currency {...{
+			...props,
+			// onClick: handleClick,
+			prefix: show && `${textsCap.total}: `,
+			style,
+			value: freeBalance,
+			emptyMessage: emptyMessage === null
+				? ''
+				: (
+					<span title={!isLoading ? '' : textsCap.loadingAccBal}>
+						<Icon {...{
+							className: 'no-margin',
+							name: 'spinner',
+							loading: true,
+							style: { padding: 0 },
+						}} />
+						{emptyMessage}
+					</span>
+				),
+		}} />
+	)
+	return showDetailed === null
+		? getContent(false)
+		: (
+			<Reveal {...{
+				defaultVisible: showDetailed,
+				content: getContent(false),
+				contentHidden: getContent(true),
+				ready: !isLoading,
+			}} />
 		)
-	return (
-		<Currency
-			{...{
-				...props,
-				onClick: handleClick,
-				style,
-				value: freeBalance,
-				emptyMessage:
-					emptyMessage === null ? (
-						''
-					) : (
-						<span title={!isLoading ? '' : textsCap.loadingAccBal}>
-							<Icon
-								{...{
-									className: 'no-margin',
-									name: 'spinner',
-									loading: true,
-									style: { padding: 0 },
-								}}
-							/>
-							{emptyMessage}
+
+	if (!isLoading && showLocked) return (
+		<Currency {...{
+			...props,
+			onClick: handleClick,
+			prefix: `${textsCap.total}: `,
+			style,
+			value: balance,
+			unit: currencyDefault,
+			suffix: (
+				<Currency {...{
+					prefix: (
+						<span>
+							{lockSeparator}
+							{textsCap.locked}:{' '}
 						</span>
 					),
-			}}
-		/>
+					value: lockedBalance,
+					unit: currencyDefault,
+					unitDisplayed,
+				}} />
+			),
+		}} />
+	)
+
+	return (
+		<Currency {...{
+			...props,
+			onClick: handleClick,
+			style,
+			value: freeBalance,
+			emptyMessage: emptyMessage === null
+				? ''
+				: (
+					<span title={!isLoading ? '' : textsCap.loadingAccBal}>
+						<Icon {...{
+							className: 'no-margin',
+							name: 'spinner',
+							loading: true,
+							style: { padding: 0 },
+						}} />
+						{emptyMessage}
+					</span>
+				),
+		}} />
 	)
 }
 Balance.propTypes = {

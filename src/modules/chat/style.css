@@ -289,7 +289,7 @@ body.mobile .chat-container .inbox .scroll-to-bottom {
 	overflow-x: auto;
 	position: relative;
 }
-body.inbox-expanded .chat-container .messages {
+body.desktop.inbox-expanded .chat-container .messages {
 	height: calc(100% - 176px);
 }
 body:not(.inverted) .chat-container .messages {

@@ -55,7 +55,7 @@ export default function IdentityList(props) {
 			const isPersonal = usageType === USAGE_TYPES.PERSONAL
 			identity._isReward = address === rewardsIdentity
 			identity._balance = (
-				<Balance {...{ address, lockSeparator: <br /> }} />
+				<Balance {...{ address, lockSeparator: <br />, showDetailed: true }} />
 			)
 			identity._fileBackupTS = format(fileBackupTS) || textsCap.never
 			identity._tagsStr = tags.join(' ') // for tags search

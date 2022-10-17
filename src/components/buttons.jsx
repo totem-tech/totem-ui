@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
-import { isFn, objWithoutKeys } from '../utils/utils'
+import { isBool, isFn, objWithoutKeys } from '../utils/utils'
 import { getRawUserID } from './UserIdInput'
 // forms
 import IdentityRequestForm from '../modules/identity/IdentityRequestForm'
@@ -196,8 +196,9 @@ ButtonGroup.defaultProps = {
 export const ButtonGroupOr = props => <ButtonGroup {...props} or={true} />
 
 export const Reveal = props => {
-	const {
-		content,
+	let {
+		children,
+		content = children,
 		contentHidden,
 		defaultVisible = false,
 		El = 'div',
@@ -206,63 +207,57 @@ export const Reveal = props => {
 		onClick,
 		onMouseEnter,
 		onMouseLeave,
+		ready,
 		style,
 		toggleOnClick = false,
-		toggleOnMousePresence = true,
+		toggleOnMousePresence: onHover = true,
 	} = props
 	const [visible, setVisible] = useState(defaultVisible)
-	const [triggerEvent] = useState(
-		() =>
-			(fn, args = []) =>
-				isFn(fn) && fn(...args)
-	)
-	const children = !visible ? (
-		content
-	) : exclusive ? (
-		contentHidden
-	) : (
-		<React.Fragment>
-			{content}
-			<div
-				onClick={
-					exclusive
-						? null
-						: e => e.preventDefault() | e.stopPropagation()
-				}
-			>
-				{contentHidden}
-			</div>
-		</React.Fragment>
-	)
+	const triggerEvent = useCallback((enable, func, show) => async (...args) => {
+		if (!enable) return
+		args[0].preventDefault()
+		const _ready = await (isFn(ready) ? ready() : ready)
+		if (!_ready) return
+
+		isFn(func) && func(...args)
+		console.log({visible: isBool(show) ? show : !visible})
+		setVisible(isBool(show) ? show : !visible)
+	}, [setVisible, ready, visible])
+	const getContent = c => isFn(c) ? c() : c
+	
+	children = !visible
+		? getContent(content)
+		: exclusive
+			? getContent(contentHidden)
+			: (
+				<React.Fragment>
+					{getContent(content)}
+					<div onClick={exclusive && (e => e.preventDefault() | e.stopPropagation())}>
+						{getContent(contentHidden)}
+					</div>
+				</React.Fragment>
+			)
+	
+	const elProps = {
+			...objWithoutKeys(props, ignoreAttributes),
+			children,
+			onClick: triggerEvent(toggleOnClick, onClick, null),
+			onMouseEnter: triggerEvent(onHover, onMouseEnter, true),
+			onMouseLeave: triggerEvent(onHover, onMouseLeave, false),
+			style: {
+				cursor: 'pointer',
+				...style,
+			},
+	}
+	console.log({elProps})
+
 	return (
-		<El
-			{...{
-				...objWithoutKeys(props, ignoreAttributes),
-				children,
-				onClick: (...args) => {
-					args[0].preventDefault()
-					toggleOnClick && setVisible(!visible)
-					triggerEvent(onClick)
-				},
-				onMouseEnter: () => {
-					toggleOnMousePresence && !visible && setVisible(true)
-					triggerEvent(onMouseEnter)
-				},
-				onMouseLeave: () => {
-					toggleOnMousePresence && visible && setVisible(false)
-					triggerEvent(onMouseLeave)
-				},
-				style: {
-					cursor: 'pointer',
-					...style,
-				},
-			}}
-		/>
+		<El {...elProps} />
 	)
 }
 Reveal.propTypes = {
 	// content to show when visible
-	content: PropTypes.any.isRequired,
+	content: PropTypes.any,
 	// content to show when not visible
 	contentHidden: PropTypes.any.isRequired,
 	// initial state of `hiddenContent`
@@ -275,6 +270,11 @@ Reveal.propTypes = {
 	// whether to only display `content` and `hiddenContent` together or exclusively
 	exclusive: PropTypes.bool,
 	ignoreAttributes: PropTypes.arrayOf(PropTypes.string).isRequired,
+	// will not display hiddenContent until ready is truthy
+	ready: PropTypes.oneOfType([
+		PropTypes.bool,
+		PropTypes.func,
+	]),
 	// whether to triggle visibility on mouse click
 	toggleOnClick: PropTypes.bool,
 	// whether to trigger visibility on mouse enter and leave
@@ -290,10 +290,12 @@ Reveal.defaultProps = {
 		'defaultVisible',
 		'El',
 		'exclusive',
+		'ready',
 		'ignoreAttributes',
 		'toggleOnClick',
 		'toggleOnMousePresence',
 	],
+	ready: true,
 	toggleOnClick: false,
 	toggleOnMousePresence: true,
 }
@@ -322,28 +324,29 @@ export const UserID = React.memo(props => {
 		e.stopPropagation()
 		e.dataTransfer.setData('Text', rawId)
 	}
+
 	return (
-		<El
-			{...{
-				...objWithoutKeys(props, ignoreAttributes),
-				children: (
-					<b>
-						{prefix}@{rawId}
-						{suffix}
-					</b>
-				),
-				draggable: true,
-				onClick: handleClick,
-				onDragStart: handleDragStart,
-				style: {
-					cursor: allowClick && 'pointer',
-					fontWeight: 'bold',
-					padding: 0,
-					...style,
-				},
-				title: !allowClick ? x.name : textsCap.userIdBtnTitle,
-			}}
-		/>
+		<El {...{
+			...objWithoutKeys(props, ignoreAttributes),
+			children: (
+				<b>
+					{prefix}@{rawId}
+					{suffix}
+				</b>
+			),
+			draggable: true,
+			onClick: handleClick,
+			onDragStart: handleDragStart,
+			style: {
+				cursor: allowClick && 'pointer',
+				fontWeight: 'bold',
+				padding: 0,
+				...style,
+			},
+			title: !allowClick
+				? userId
+				: textsCap.userIdBtnTitle,
+		}} />
 	)
 })
 UserID.propTypes = {
@@ -376,35 +379,36 @@ UserID.defaultProps = {
 }
 
 UserID.showModal = (userId, partnerAddress) => {
-	const { address, name = '' } =
-		(partnerAddress ? getPartner(partnerAddress) : getByUserId(userId)) ||
-		{}
+	const { address, name = '' } = (
+		partnerAddress
+			? getPartner(partnerAddress)
+			: getByUserId(userId)
+	) || {}
 	const buttons = [
 		!name && {
 			content: textsCap.partnerAdd,
 			icon: 'user plus',
-			onClick: () =>
-				showForm(PartnerForm, {
-					// prevent form modal to auto close
-					closeOnSubmit: false,
-					// after successfully adding partner close the original modal (confirm)
-					onSubmit: ok => ok && closeModal(modalId),
-					values: { userId },
-				}),
+			onClick: () => showForm(PartnerForm, {
+				// prevent form modal to auto close
+				closeOnSubmit: false,
+				// after successfully adding partner close the original modal (confirm)
+				onSubmit: ok => ok && closeModal(modalId),
+				values: { userId },
+			}),
 		},
 		!name && {
 			content: textsCap.identityRequest,
 			icon: 'download',
-			onClick: () =>
-				showForm(IdentityRequestForm, {
-					values: { userIds: [userId] },
-				}),
+			onClick: () => showForm(IdentityRequestForm, {
+				values: { userIds: [userId] },
+			}),
 		},
 		{
 			content: textsCap.identityShare,
 			icon: 'share',
-			onClick: () =>
-				showForm(IdentityShareForm, { values: { userIds: [userId] } }),
+			onClick: () => showForm(IdentityShareForm, {
+				values: { userIds: [userId] },
+			}),
 		},
 		{
 			content: textsCap.introduce,
@@ -421,30 +425,25 @@ UserID.showModal = (userId, partnerAddress) => {
 				{name && (
 					<div>
 						<b>{textsCap.partnerName}:</b> {`${name} `}
-						<Button
-							{...{
-								circular: true,
-								icon: 'pencil',
-								size: 'mini',
-								title: textsCap.partnerUpdate,
-								onClick: () =>
-									showForm(PartnerForm, {
-										values: { address, userId, name },
-									}),
-							}}
-						/>
+						<Button {...{
+							circular: true,
+							icon: 'pencil',
+							size: 'mini',
+							title: textsCap.partnerUpdate,
+							onClick: () => showForm(PartnerForm, {
+								values: { address, userId, name },
+							}),
+						}} />
 					</div>
 				)}
 				<div>
 					{buttons.map(props => (
-						<Button
-							{...{
-								fluid: true,
-								key: props.content,
-								style: { margin: '3px 0' },
-								...props,
-							}}
-						/>
+						<Button {...{
+							fluid: true,
+							key: props.content,
+							style: { margin: '3px 0' },
+							...props,
+						}} />
 					))}
 				</div>
 			</div>
@@ -452,16 +451,14 @@ UserID.showModal = (userId, partnerAddress) => {
 		header: (
 			<div className='header'>
 				@{userId + ' '}
-				<Button
-					{...{
-						circular: true,
-						icon: 'chat',
-						onClick: () =>
-							closeModal(modalId) |
-							createInbox([userId], null, true),
-						size: 'mini',
-					}}
-				/>
+				<Button {...{
+					circular: true,
+					icon: 'chat',
+					onClick: () =>
+						closeModal(modalId) |
+						createInbox([userId], null, true),
+					size: 'mini',
+				}} />
 			</div>
 		),
 		size: 'mini',

@@ -232,11 +232,19 @@ const saveMessage = (msg, trigger = false) => {
             settings.name = name
     }
 
-    chatHistory.set(inboxKey, !limit ? messages : messages.slice(-limit))
-    const resetCount = rxVisible.value && rxOpenInboxKey.value === inboxKey
+    chatHistory.set(
+        inboxKey,
+        !limit
+            ? messages
+            : messages.slice(-limit)
+    )
+    const resetCount = rxVisible.value
+        && rxOpenInboxKey.value === inboxKey
         && (getLayout() !== MOBILE || rxExpanded.value)
         && !!document.querySelector('.chat-container .inbox .scroll-to-bottom:not(.visible)')
-    settings.unread = resetCount ? 0 : unread + (senderId !== userId ? 1 : 0)
+    settings.unread = resetCount
+        ? 0
+        : unread + (senderId !== userId ? 1 : 0)
 
     // update settings
     inboxSettings(inboxKey, settings)
@@ -267,7 +275,6 @@ export const send = (receiverIds, message, encrypted = false) => {
 
     // save as loading (sending in-progress)
     saveMessage(msg, true)
-
 
     // wait until user is logged in
     subjectAsPromise(rxIsLoggedIn, true)[0].then(() =>
@@ -306,7 +313,11 @@ rxIsLoggedIn.subscribe(loggedIn => {
 // handle message received
 client.onMessage((m, s, r, e, t, id, action) => {
     const inboxKey = getInboxKey(r)
-    const userIds = inboxKey.split(',').filter(id => ![SUPPORT, TROLLBOX].includes(id))
+    const userIds = inboxKey
+        .split(',')
+        .filter(id =>
+            ![SUPPORT, TROLLBOX].includes(id)
+        )
     const online = { ...rxUsersOnline.value }
     userIds.forEach(id => online[id] = true)
     // set sender status as online
