@@ -31,7 +31,6 @@ import TotemButtonLogo from './assets/logos/button-288-colour.png' //button-240-
 import ChatBar from './modules/chat/ChatBar'
 import { className } from './utils/utils'
 import { generatePassword } from './modules/gettingStarted'
-import { Reveal } from './components/buttons'
 
 let queueResumed = false
 const logoSrc = TotemButtonLogo
@@ -86,11 +85,6 @@ export default function App() {
 	const gridClass = gridClasses[rxGridColumns.value - 1]
 	return (
 		<div className='wrapper'>
-			<Reveal
-				contentHidden='this is hidden secret'
-				toggleOnMousePresence={false}
-				toggleOnClick={true}
-			>Click to reveal secret</Reveal>
 			<ErrorBoundary>
 				<PageHeader logoSrc={logoSrc} />
 			</ErrorBoundary>

@@ -213,17 +213,17 @@ export const Reveal = props => {
 		toggleOnMousePresence: onHover = true,
 	} = props
 	const [visible, setVisible] = useState(defaultVisible)
+	const getContent = useCallback(c => isFn(c) ? c() : c)
 	const triggerEvent = useCallback((enable, func, show) => async (...args) => {
-		if (!enable) return
 		args[0].preventDefault()
+		if (!enable) return
+		
 		const _ready = await (isFn(ready) ? ready() : ready)
 		if (!_ready) return
 
 		isFn(func) && func(...args)
-		console.log({visible: isBool(show) ? show : !visible})
 		setVisible(isBool(show) ? show : !visible)
 	}, [setVisible, ready, visible])
-	const getContent = c => isFn(c) ? c() : c
 	
 	children = !visible
 		? getContent(content)
@@ -237,8 +237,9 @@ export const Reveal = props => {
 					</div>
 				</React.Fragment>
 			)
-	
-	const elProps = {
+
+	return (
+		<El {...{
 			...objWithoutKeys(props, ignoreAttributes),
 			children,
 			onClick: triggerEvent(toggleOnClick, onClick, null),
@@ -248,11 +249,7 @@ export const Reveal = props => {
 				cursor: 'pointer',
 				...style,
 			},
-	}
-	console.log({elProps})
-
-	return (
-		<El {...elProps} />
+		}} />
 	)
 }
 Reveal.propTypes = {

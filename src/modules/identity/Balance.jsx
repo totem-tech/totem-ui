@@ -8,17 +8,13 @@ import { query } from '../../services/blockchain'
 import { translated } from '../../services/language'
 import { unsubscribe } from '../../services/react'
 // modules
-import { currencyDefault } from '../currency/currency'
 import Currency from '../currency/Currency'
 
-const textsCap = translated(
-	{
-		loadingAccBal: 'loading account balance',
-		locked: 'locked',
-		total: 'funds',
-	},
-	true
-)[1]
+const textsCap = translated({
+	loadingAccBal: 'loading account balance',
+	locked: 'locked',
+	total: 'funds',
+}, true)[1]
 
 export const Balance = props => {
 	let {
@@ -29,59 +25,35 @@ export const Balance = props => {
 		style,
 		unitDisplayed,
 	} = props
-	const [showLocked, setShowLocked] = useState(showDetailed)
 	const balance = useBalance(address)
 	const locks = userLocks(address)
 	const isLoading = !isValidNumber(balance)
 	const lockedBalance = locks.reduce((sum, next) => sum + next.amount, 0)
-	const freeBalance = isLoading ? undefined : balance - lockedBalance
-	style = { cursor: 'pointer', ...style }
-	const handleClick = showDetailed === null
+	const freeBalance = isLoading
 		? undefined
-		: e => e.stopPropagation() | setShowLocked(!showLocked)
+		: balance - lockedBalance
+	style = { cursor: 'pointer', ...style }
 	
-	const getContent = show => () => (
+	const getContent = showLocked => () => (
 		<Currency {...{
 			...props,
-			// onClick: handleClick,
-			prefix: show && `${textsCap.total}: `,
+			prefix: showLocked && `${textsCap.total}: `,
 			style,
-			value: freeBalance,
-			emptyMessage: emptyMessage === null
-				? ''
-				: (
-					<span title={!isLoading ? '' : textsCap.loadingAccBal}>
-						<Icon {...{
-							className: 'no-margin',
-							name: 'spinner',
-							loading: true,
-							style: { padding: 0 },
-						}} />
-						{emptyMessage}
-					</span>
-				),
-		}} />
-	)
-	return showDetailed === null
-		? getContent(false)
-		: (
-			<Reveal {...{
-				defaultVisible: showDetailed,
-				content: getContent(false),
-				contentHidden: getContent(true),
-				ready: !isLoading,
-			}} />
-		)
-
-	if (!isLoading && showLocked) return (
-		<Currency {...{
-			...props,
-			onClick: handleClick,
-			prefix: `${textsCap.total}: `,
-			style,
-			value: balance,
-			unit: currencyDefault,
-			suffix: (
+			value: showLocked
+				? balance
+				: freeBalance,
+			emptyMessage: emptyMessage !== null && (
+				<span title={!isLoading ? '' : textsCap.loadingAccBal}>
+					<Icon {...{
+						className: 'no-margin',
+						name: 'spinner',
+						loading: true,
+						style: { padding: 0 },
+					}} />
+					{emptyMessage}
+				</span>
+			),
+			suffix: showLocked && (
 				<Currency {...{
 					prefix: (
 						<span>
@@ -90,34 +62,21 @@ export const Balance = props => {
 						</span>
 					),
 					value: lockedBalance,
-					unit: currencyDefault,
 					unitDisplayed,
 				}} />
 			),
 		}} />
 	)
-
-	return (
-		<Currency {...{
-			...props,
-			onClick: handleClick,
-			style,
-			value: freeBalance,
-			emptyMessage: emptyMessage === null
-				? ''
-				: (
-					<span title={!isLoading ? '' : textsCap.loadingAccBal}>
-						<Icon {...{
-							className: 'no-margin',
-							name: 'spinner',
-							loading: true,
-							style: { padding: 0 },
-						}} />
-						{emptyMessage}
-					</span>
-				),
-		}} />
-	)
+	return showDetailed === null
+		? getContent(false)()
+		: (
+			<Reveal {...{
+				content: getContent(!showDetailed),
+				contentHidden: getContent(showDetailed),
+				ready: !isLoading,
+				toggleOnClick: true,
+			}} />
+		)
 }
 Balance.propTypes = {
 	address: PropTypes.string.isRequired,
