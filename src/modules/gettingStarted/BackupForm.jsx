@@ -312,7 +312,7 @@ export default function BackupForm(props) {
 
 			},
 			{
-				autoComplete: 'current-password',
+				autoComplete: 'new-password',
 				hidden: values => values[inputNames.confirmed] !== steps.confirmed
 					|| `${values[inputNames.password] || ''}`.length < 8,
 				label: textsCap.passwordConfirmLabel,
