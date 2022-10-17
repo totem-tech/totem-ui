@@ -10,12 +10,12 @@ const textsCap = translated({
     ignore: 'ignore',
     share: 'share',
     reason: 'reason',
-    addPartner: 'add partner',
+    // addPartner: 'add partner',
     indentityIntroduceMsg: 'recommended you to share your identity with the following user:',
     identityRequestMsg: 'requested an identity',
-    identityShareMsg: 'identity received from:',
+    // identityShareMsg: 'identity received from:',
     introducedBy: 'introduced by',
-    yourIdentity: 'your identity',
+    // yourIdentity: 'your identity',
 }, true)[1]
 
 /**

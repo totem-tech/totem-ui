@@ -12,6 +12,7 @@ import {
 import { inputNames as contactInputNames } from '../contact/ContactForm'
 import {
 	get as getLocation,
+	search as searchLocation,
 	newId as newLocationId,
 	remove as removeLocation,
 	set as saveLocation,
@@ -25,24 +26,20 @@ import {
 import { get } from './partner'
 import PartnerForm from './PartnerForm'
 
-const textsCap = translated(
-	{
-		addPartner: 'add partner',
-		ignore: 'ignore',
-		indentityIntroduceMsg:
-			'recommended you to share your identity with the following user:',
-		identityRequestMsg: 'requested an identity',
-		identityShareMsg: 'identity received from:',
-		introducedBy: 'introduced by',
-		partnerName: 'partner name',
-		reason: 'reason',
-		share: 'share',
-		updatePartner: 'update partner',
-		unexpectedError: 'unexpected error occurred!',
-		yourIdentity: 'your identity',
-	},
-	true
-)[1]
+const textsCap = translated({
+	addPartner: 'add partner',
+	ignore: 'ignore',
+	indentityIntroduceMsg: 'recommended you to share your identity with the following user:',
+	identityRequestMsg: 'requested an identity',
+	identityShareMsg: 'identity received from:',
+	introducedBy: 'introduced by',
+	partnerName: 'partner name',
+	reason: 'reason',
+	share: 'share',
+	updatePartner: 'update partner',
+	unexpectedError: 'unexpected error occurred!',
+	yourIdentity: 'your identity',
+}, true)[1]
 
 // identity received from other user
 const handleIdentityReceived = (
@@ -57,8 +54,16 @@ const handleIdentityReceived = (
 		try {
 			if (!accepted) return remove(id)
 
-			const locationId = newLocationId(address)
-			const existingLocation = getLocation(locationId)
+			const [
+				locationId = newLocationId(address),
+				existingLocation,
+			] = searchLocation(
+				{ [locInputNames.partnerIdentity]: address },
+				true,
+				true,
+				false,
+				1,
+			)[0] || []
 			const hasLocation = isObj(location) && hasValue(location)
 			const hasContact = isObj(contactDetails) && hasValue(contactDetails)
 			const contactId = newContactId(address)
@@ -74,16 +79,29 @@ const handleIdentityReceived = (
 					: removeLocation(locationId)
 
 				existingContact
-					? saveContact(contactDetails, true)
+					? saveContact(contactDetails, true, true)
 					: removeContact(contactId)
 			}
 			if (hasLocation) {
-				location[locInputNames.partnerIdentity] = address
-				saveLocation({ ...existingLocation, ...location }, locationId)
+				saveLocation(
+					{
+						...existingLocation,
+						...location,
+						[locInputNames.partnerIdentity]: address,
+					},
+					locationId,
+				)
 			}
 			if (hasContact) {
-				contactDetails[contactInputNames.partnerIdentity] = address
-				saveContact({ ...existingContact, ...contactDetails })
+				saveContact(
+					{
+						...existingContact,
+						...contactDetails,
+						[contactInputNames.partnerIdentity]: address,
+					},
+					true,
+					true,
+				)
 			}
 
 			showForm(PartnerForm, {
@@ -134,15 +152,14 @@ const handleIdentityReceived = (
 						{textsCap.introducedBy} <UserID userId={introducedBy} />
 					</div>
 				)}
-				<ButtonAcceptOrReject
-					{...{
-						acceptColor: 'blue',
-						acceptText: partner
-							? textsCap.updatePartner
-							: textsCap.addPartner,
-						onAction,
-						rejectText: textsCap.ignore,
-					}}
+				<ButtonAcceptOrReject {...{
+					acceptColor: 'blue',
+					acceptText: partner
+						? textsCap.updatePartner
+						: textsCap.addPartner,
+					onAction,
+					rejectText: textsCap.ignore,
+				}}
 				/>
 				<div>{message}</div>
 			</div>

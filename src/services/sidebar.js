@@ -25,7 +25,7 @@ import { isBool, isSubjectLike } from '../utils/utils'
 import { translated } from './language'
 import storage from './storage'
 import { getUrlParam, MOBILE, rxLayout, setClass } from './window'
-import ClaimKAPEXForm from '../modules/rewards/ClaimKAKEX'
+import ClaimKAPEXView from '../modules/rewards/ClaimKAKEX'
 
 const textsCap = translated({
     crowdloanTitle: 'Crowdloan DApp',
@@ -179,9 +179,12 @@ export const sidebarItems = [
         title: textsCap.gettingStartedTitle,
     },
     // {
-    //     content: ClaimKAPEXForm,
-    //     contentProps: { style: { maxWidth: 450 } },
-    //     // icon: ,
+    //     anchorStyle: {
+    //         background: 'deeppink',
+    //     },
+    //     content: ClaimKAPEXView,
+    //     contentProps: { style: { maxWidth: 600 } },
+    //     icon: 'gift',
     //     name: 'claim-kapex',
     //     title: textsCap.claimKapexTitle,
     // },
@@ -411,6 +414,21 @@ export const setActive = (name, active = true, contentProps, hidden) => {
     return item
 }
 
+/**
+ * @name    setActiveExclusive
+ * @summary set active status for specified modules and reverse all other modules
+ * 
+ * @param   {Array}     names   module names
+ * @param   {Boolean}   active  whether to show/hide modules.
+ *                              Default: `true`
+ */
+export const setActiveExclusive = (names = [], active = true) => {
+    sidebarItems.forEach(({ name }) => {
+        const _active = names.includes(name) && !!active
+        setActive(name, _active)
+    })
+}
+
 export const setContentProps = (name, props = {}, scrollToItem = true) => {
     const item = findItem(name)
     if (!item) return
@@ -484,6 +502,7 @@ setTimeout(() => {
 export default {
     getItem,
     setActive,
+    setActiveExclusive,
     setContentProps,
     scrollTo,
     setSidebarState,

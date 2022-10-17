@@ -60,6 +60,7 @@ export default class FormBuilder extends Component {
 			disabled,
 			hidden,
 			inputs: childInputs,
+			key,
 			name,
 			readOnly,
 			rxValue,
@@ -101,7 +102,7 @@ export default class FormBuilder extends Component {
 					)
 				  )
 				: undefined,
-			key: name,
+			key: key || name,
 			readOnly: inputsReadOnly.includes(name) || readOnly,
 			onChange: isGroup
 				? undefined

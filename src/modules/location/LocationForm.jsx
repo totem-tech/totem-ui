@@ -96,9 +96,6 @@ export default class LocationForm extends Component {
 			'sx',
 			'xk',
 		].map(x => x.toUpperCase())
-		autoSave = isBool(autoSave)
-			? autoSave
-			: this.isUpdate
 		const inputs = [
 			{
 				hidden: true,
@@ -216,9 +213,10 @@ export default class LocationForm extends Component {
 				],
 			},
 			// show remove button if location is already saved
-			this.isUpdate && {
+			{
 				content: textsCap.removeLocation,
 				fluid: true,
+				hidden: () => !this.isUpdate,
 				icon: 'trash',
 				name: inputNames.removeBtn,
 				negative: true,
@@ -255,10 +253,9 @@ export default class LocationForm extends Component {
 						</span>
 					)
 			),
-			submitText:
-				submitText === null || submitText
-					? submitText
-					: this.isUpdate && autoSave
+			submitText: submitText === null || submitText
+				? submitText
+				: autoSave
 					? null
 					: textsCap.saveLocation,
 			inputs: fillValues(inputs, values),
@@ -268,19 +265,29 @@ export default class LocationForm extends Component {
 	handleChange = (e, values, invalid) => {
 		if (invalid) return
 
+		this.values = values
 		const { autoSave, onChange, onSubmit } = this.props
 		isFn(onChange) && onChange(e, values)
-		// auto save if update
-		if (!this.isUpdate || !autoSave) return
+		if (!autoSave) return
+		
 		// prevent saving without required fields
 		if (!objHasKeys(values, Object.keys(requiredFields), true)) return
 
+		// new location created
+		if (!this.isUpdate) {
+			this.isUpdate = true
+			this.setState({
+				subheader: textsCap.formSubheaderUpdate,
+				success: true,
+				submitText: null,
+			})
+		}
 		set(values, this.id)
 		isFn(onSubmit) && onSubmit(true, values, this.id)
 	}
 
 	handleRemove = () => {
-		const { id, modalId } = this.props
+		const { id, modalId, onRemove } = this.props
 		// find identities and partners that are associated with this locaiton
 		const identityMatches = Array.from(
 			identities.search({ locationId: id })
@@ -288,6 +295,7 @@ export default class LocationForm extends Component {
 		const partnerMatches = Array.from(
 			partners.search({ locationId: id })
 		)
+		const total = identityMatches.length + partnerMatches.length
 		const content = (
 			<div>
 				{identityMatches.length && (
@@ -321,8 +329,7 @@ export default class LocationForm extends Component {
 			</div>
 		)
 		const handleConfirm = () => {
-			const { onRemove } = this.props
-			closeModal(modalId)
+			modalId && closeModal(modalId)
 			remove(id)
 			// remove location ID form associated identitites and partners
 			identityMatches.forEach(([key, value]) =>
@@ -331,21 +338,21 @@ export default class LocationForm extends Component {
 					locationId: null,
 				})
 			)
-			partnerMatches.forEach(([key, value]) =>
-				partners.set({
-					...value,
-					locationId: null,
-				})
-			)
-			isFn(onRemove) && onRemove(id)
+			partnerMatches.forEach(([key, value]) => partners.set({
+				...value,
+				locationId: null,
+			}))
+			isFn(onRemove) && onRemove(id, this.values)
 		}
 		confirm({
-			content,
+			content: !total
+				? textsCap.areYouSure
+				: content,
 			confirmButton: {
 				content: textsCap.remove,
 				negative: true,
 			},
-			header: textsCap.areYouSure,
+			header: textsCap.removeLocation,
 			onConfirm: handleConfirm,
 			size: 'mini',
 		})

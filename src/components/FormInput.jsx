@@ -173,6 +173,12 @@ export class FormInput extends Component {
 				case 'date':
 					validatorConfig = { type: TYPES.date }
 					break
+				case 'email': 
+					validatorConfig = { type: TYPES.email }
+					break
+				case 'identity': 
+					validatorConfig = { type: TYPES.identity }
+					break
 				case 'number':
 					isANum = true
 					validatorConfig = {

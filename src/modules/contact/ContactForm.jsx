@@ -56,7 +56,6 @@ export default function ContactForm(props) {
 		let existingEntry = get(id)
 		values = { ...existingEntry, ...values }
 		const partnerIdentity = values[inputNames.partnerIdentity]
-		autoSave = existingEntry && autoSave !== false
 		const countryOptions = storage.countries
 			.map(([_, country]) => {
 				let { altSpellings = [], code, name, phoneCode } = country
@@ -159,7 +158,7 @@ export default function ContactForm(props) {
 				name: inputNames.removeBtn,
 				negative: true,
 				onClick: () => {
-					const { modalId } = props
+					const { modalId, onRemove } = props
 					const { id, partnerIdentity } = values
 					let content
 					if (!partnerIdentity) {
@@ -190,8 +189,9 @@ export default function ContactForm(props) {
 							negative: true,
 						},
 						onConfirm: () => {
-							modalId && closeModal(modalId)
 							remove(id)
+							isFn(onRemove) && onRemove(id, values)
+							modalId && closeModal(modalId)
 						},
 						size: 'mini',
 					})
@@ -211,11 +211,11 @@ export default function ContactForm(props) {
 				if (invalid) return
 				
 				isFn(onChange) && onChange(...args)
+				if (!autoSave) return
 				
-				if (!existingEntry || !autoSave) return
-
-				save(values)
+				existingEntry  = values
 				const id = values[inputNames.id]
+				save(values, false, true)
 				isFn(onSubmit) && onSubmit(!invalid, values, id)
 				autoSave = props.autoSave
 			},

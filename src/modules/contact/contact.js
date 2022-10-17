@@ -5,7 +5,6 @@ import { generateHash, isObj, objClean } from '../../utils/utils'
 import { TYPES, validate as _validate, validateObj } from '../../utils/validator'
 
 const textsCap = translated({
-    errInvalidObject: 'object requied',
     errInvalidPhone: 'invalid phone number',
 }, true)[1]
 
@@ -63,6 +62,9 @@ export const validationConf = {
         type: TYPES.string,
     },
 }
+export const requiredKeys = Object
+    .keys(validationConf)
+    .filter(key => validationConf[key].required)
 
 /**
  * @name    get
@@ -135,11 +137,16 @@ export const search = (keyValues, ...args) => contacts.search(keyValues, ...args
  * @param   {String}    entry.partnerIdentity   (optional) address of the partner this entry belongs to
  * @param   {String}    entry.phoneCode         (optional) phone country code starting with "+"
  * @param   {String}    entry.phoneNumber       (optional) phone number excluding country code
- * @param   {String}    replace                 (optional) whether to replace existing entry. 
- *                                              Default: false
+ * @param   {Boolean}   replace                 (optional) whether to replace existing entry. 
+ *                                              Default: `false`
+ * @param   {Boolean}   silent                  (optional) if true will ignore if validation fails
+ *                                              Default: `false`
  */
-export const set = (contact, replace = false) => {
-    if (!isObj(contact)) throw new Error(textsCap.errInvalidObject)
+export const set = (contact, replace = false, silent) => {
+    if (!isObj(contact)) {
+        if (!silent) throw new Error(textsCap.errInvalidObject)
+        return null
+    }
 
     const { id } = contact
     contact = {
@@ -155,7 +162,10 @@ export const set = (contact, replace = false) => {
             required: true,
         })
     }
-    if (err) throw new Error(err)
+    if (err) {
+        if (!silent) throw new Error(err)
+        return null
+    }
 
     contacts.set(
         id,
