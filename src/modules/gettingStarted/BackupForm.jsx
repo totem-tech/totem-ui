@@ -508,12 +508,24 @@ export default function BackupForm(props) {
 										{textsCap.passwordGenWarnBtn}
 									</ButtonDelayed>
 								),
-								content: textsCap.passwordGenWarnContent,
+								content: (
+									<div>
+										{/* <b style={{ color: 'green' }}>{textsCap.passwordCopiedToCB}</b> */}
+										<Text {...{
+											color: 'red',
+											invertedColor: 'orange',
+											style: { fontWeight: 'bold' },
+										}}>
+											{textsCap.passwordCopiedToCB}
+										</Text>
+										<br />
+										<br />
+										{textsCap.passwordGenWarnContent}
+									</div>
+								),
 								header: (
-									<Text {...{
+									<span {...{
 										className: 'header',
-										color: 'red',
-										invertedColor: 'orange',
 										style: {
 											// overrides the background color defined in the <Text /> component
 											background: undefined, 
@@ -522,7 +534,7 @@ export default function BackupForm(props) {
 										},
 									}}>
 										{textsCap.passwordGenWarnHeader}
-									</Text>
+									</span>
 								),
 								onConfirm: proceed,
 								size: 'mini',
