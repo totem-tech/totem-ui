@@ -50,15 +50,16 @@ export default class FormBuilder extends Component {
 	addInterceptor = (values, parentIndex) => (input, index) => {
 		parentIndex = isDefined(parentIndex) ? parentIndex : null
 		const {
-			inputs,
 			inputsDisabled = [],
 			inputsHidden = [],
 			inputsReadOnly = [],
 		} = this.props
 		let {
+			action = {},
 			content,
 			disabled,
 			hidden,
+			inlineLabel = {},
 			inputs: childInputs,
 			key,
 			name,
@@ -68,6 +69,14 @@ export default class FormBuilder extends Component {
 			validate,
 		} = input || {}
 		const isGroup = `${type}`.toLowerCase() === 'group' && isArr(childInputs)
+		// add type="button" to prevent action/label button trigger when enter is pressed in any inputs
+		const arr = [action, inlineLabel]
+		arr.forEach(btn => {
+			if (!isObj(btn)) return
+			if (!isFn(btn.onClick)) return
+			btn.type = btn.type || 'button'
+		})
+
 		const handleValidate = (event, data = {}) => validate(
 			event,
 			data,
@@ -285,6 +294,7 @@ export default class FormBuilder extends Component {
 				this.props,
 				shouldDisable,
 			)
+		const handleSubmit = (...args) => !shouldDisable && this.handleSubmit(...args)
 		if (submitText !== null) {
 			const submitProps = !isObj(submitText)
 				? {}
@@ -305,6 +315,7 @@ export default class FormBuilder extends Component {
 						: 'thumbs up' // all fields are valid and user can now submit
 			submitBtn = (
 				<Button {...{
+					type: 'submit',
 					...submitProps,
 					content: content || (
 						!isStr(submitText)
@@ -314,7 +325,9 @@ export default class FormBuilder extends Component {
 					disabled,
 					icon,
 					loading: !success && (submitInProgress || loading),
-					onClick: isFn(onClick) ? onClick : this.handleSubmit,
+					onClick: (...args) => isFn(onClick)
+						? onClick(...args)
+						: handleSubmit(...args),
 					positive: isBool(positive) ? positive : true,
 					style: {
 						float: !modal ? 'right' : undefined,
@@ -332,45 +345,45 @@ export default class FormBuilder extends Component {
 			const closeProps = React.isValidElement(closeText)
 				? { ...closeText.props }
 				: isObj(closeText)
-				? closeText
-				: {}
-			closeProps.content =
-				closeProps.content ||
-				(isStr(closeText)
+					? closeText
+					: {}
+			closeProps.content = closeProps.content || (
+				isStr(closeText)
 					? closeText
 					: success || submitText === null
-					? textsCap.close
-					: textsCap.cancel)
+						? textsCap.close
+						: textsCap.cancel
+			)					
 			closeProps.negative = isDefined(closeProps.negative)
 				? closeProps.negative
 				: true
 			closeProps.onClick = closeProps.onClick || this.handleClose
+			// prevent submitting the form
+			closeProps.type = 'button'
 			closeText = <Button {...closeProps} />
 		}
 
+		El = El || modal ? 'div' : undefined
 		const FormEl = El || Invertible
 		const form = (
-			<FormEl
-				{...(El
-					? {
-							className: 'ui form',
-							style,
-							...formProps,
-					  }
-					: {
-							El: Form,
-							error: message.status === statuses.ERROR,
-							loading,
-							onSubmit: (...args) =>
-								!shouldDisable && this.handleSubmit(...args),
-							style,
-							success:
-								success || message.status === statuses.SUCCESS,
-							warning: message.status === statuses.WARNING,
-							widths,
-							...formProps,
-					  })}
-			>
+			<FormEl {...(El
+				? {
+					className: 'ui form',
+					style,
+					...formProps,
+				}
+				: {
+					El: Form,
+					error: message.status === statuses.ERROR,
+					loading,
+					onSubmit: handleSubmit,
+					style,
+					success: success || message.status === statuses.SUCCESS,
+					warning: message.status === statuses.WARNING,
+					widths,
+					...formProps,
+				})
+			}>
 				{inputs.map(props => (
 					<FormInput {...props} />
 				))}
@@ -384,34 +397,31 @@ export default class FormBuilder extends Component {
 			</FormEl>
 		)
 
-		return !modal ? (
-			form
-		) : (
-			<IModal
-				{...{
-					closeOnEscape: !!closeOnEscape,
-					closeOnDimmerClick: !!closeOnDimmerClick,
-					defaultOpen: defaultOpen,
-					dimmer: true,
-					id: `form-${modalId}`,
-					onClose: this.handleClose,
-					onOpen: onOpen,
-					open: modalOpen,
-					size: size,
-					trigger: trigger,
-				}}
-			>
+		return !modal && form || (
+			<IModal {...{
+				as: 'form',
+				className: 'form', // fixes form input label and other styles
+				closeOnEscape: !!closeOnEscape,
+				closeOnDimmerClick: !!closeOnDimmerClick,
+				defaultOpen: defaultOpen,
+				dimmer: true,
+				id: `form-${modalId}`,
+				onClose: this.handleClose,
+				onOpen: onOpen,
+				onSubmit: handleSubmit,
+				open: modalOpen,
+				size: size,
+				trigger: trigger,
+			}}>
 				<div className='modal-close' style={styles.closeButton}>
-					<Icon
-						{...{
-							className: 'no-margin',
-							color: 'grey',
-							link: true,
-							name: 'times circle outline',
-							onClick: this.handleClose,
-							size: 'large',
-						}}
-					/>
+					<Icon {...{
+						className: 'no-margin',
+						color: 'grey',
+						link: true,
+						name: 'times circle outline',
+						onClick: this.handleClose,
+						size: 'large',
+					}} />
 				</div>
 				{header && (
 					<Header as={Modal.Header}>
@@ -422,12 +432,10 @@ export default class FormBuilder extends Component {
 							{header}
 						</Header.Content>
 						{subheader && (
-							<Header.Subheader
-								{...{
-									children: subheader,
-									style: { color: 'grey' },
-								}}
-							/>
+							<Header.Subheader {...{
+								children: subheader,
+								style: styles.subheader,
+							}} />
 						)}
 					</Header>
 				)}
@@ -670,8 +678,10 @@ export const findInput = (inputs, name) => {
 	for (let i = 0; i < inputs.length; i++) {
 		const { inputs: childInputs, name: iName, type } = inputs[i]
 		if (name === iName) return inputs[i]
+
 		const isGroup = `${type}`.toLowerCase() === 'group'
 		if (!isGroup) continue
+		
 		input = findInput(childInputs, name)
 		if (input) return input
 	}
@@ -693,6 +703,12 @@ const styles = {
 		borderTopRightRadius: 0,
 	},
 	header: {
+		fontSize: 20,
+		lineHeight: 1.5,
 		textTransform: 'capitalize',
+	},
+	subheader: {
+		color: 'grey',
+		fontSize: 16,
 	},
 }
