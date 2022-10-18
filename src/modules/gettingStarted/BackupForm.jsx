@@ -170,8 +170,6 @@ export default function BackupForm(props) {
 				reader.onload = file => {
 					try {
 						const { data, hash, timestamp } = values[inputNames.downloadData] || {}
-						window.data = data
-						// return console.log({data})
 						const redirectTo = values[inputNames.redirectTo]
 						const hashUpload = generateHash(
 							file.target.result,
@@ -207,7 +205,11 @@ export default function BackupForm(props) {
 							success: true,
 						})
 						isFn(onSubmit) && onSubmit(true, values)
-						if (redirectTo) window.location.href = redirectTo
+						if (redirectTo) {
+							window.location.href = redirectTo
+						} else {
+							window.location.reload(true)
+						}
 					} catch (err) {
 						rxState.next({
 							message: {
