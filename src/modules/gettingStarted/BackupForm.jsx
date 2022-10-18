@@ -126,7 +126,6 @@ export default function BackupForm(props) {
 		const { onSubmit, reload, values = {} } = props
 		const rxPassword = new BehaviorSubject('')
 		const rxPasswordGen = new BehaviorSubject('')
-		const rxPasswordConf = new BehaviorSubject('')
 		if ((values.confirmed || '').toLowerCase() !== steps.confirmed) {
 			values.confirmed = steps.unconfirmed
 		}
@@ -300,9 +299,8 @@ export default function BackupForm(props) {
 						e.preventDefault()
 						e.stopPropagation()
 						const pw = generatePassword()
-						rxPassword.next(pw)
-						rxPasswordConf.next(pw)
 						rxPasswordGen.next(pw)
+						rxPassword.next(pw)
 						copyToClipboard(pw)
 						const msg = {
 							content: textsCap.passwordCopiedToCB,
@@ -338,7 +336,8 @@ export default function BackupForm(props) {
 			{
 				autoComplete: 'new-password',
 				hidden: values => values[inputNames.confirmed] !== steps.confirmed
-					|| `${values[inputNames.password] || ''}`.length < 8,
+					|| `${values[inputNames.password] || ''}`.length < 8
+					|| rxPassword.value === rxPasswordGen.value,
 				label: textsCap.passwordConfirmLabel,
 				name: inputNames.passwordConfirm,
 				onPaste: (e, d) => {
@@ -348,7 +347,7 @@ export default function BackupForm(props) {
 				},
 				placeholder: textsCap.passwordConfirmPlaceholder,
 				required: true,
-				rxValue: rxPasswordConf,
+				rxValue: new BehaviorSubject(''),
 				type: 'password',
 				validate: (e, _, values) => {
 					const isConfirmed = values[inputNames.confirmed] === steps.confirmed
@@ -510,7 +509,6 @@ export default function BackupForm(props) {
 								),
 								content: (
 									<div>
-										{/* <b style={{ color: 'green' }}>{textsCap.passwordCopiedToCB}</b> */}
 										<Text {...{
 											color: 'red',
 											invertedColor: 'orange',
