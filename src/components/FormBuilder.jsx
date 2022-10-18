@@ -365,28 +365,23 @@ export default class FormBuilder extends Component {
 
 		El = El || modal ? 'div' : undefined
 		const FormEl = El || Invertible
+		const isForm = !El || ['form', Form].includes(El)
 		const form = (
-			<FormEl {...(El
-				? {
-					className: 'ui form',
-					style,
-					...formProps,
-				}
-				: {
+			<FormEl {...{
+				...!isForm && { className: 'ui form' },
+				...isForm && {
 					El: Form,
 					error: message.status === statuses.ERROR,
 					loading,
 					onSubmit: handleSubmit,
-					style,
 					success: success || message.status === statuses.SUCCESS,
 					warning: message.status === statuses.WARNING,
 					widths,
-					...formProps,
-				})
-			}>
-				{inputs.map(props => (
-					<FormInput {...props} />
-				))}
+				},
+				style,
+				...formProps,
+			}}>
+				{inputs.map(props => <FormInput {...props} />)}
 				{/* Include submit button if not a modal */}
 				{!modal && !hideFooter && (
 					<div>
