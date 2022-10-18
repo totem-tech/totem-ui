@@ -26,11 +26,13 @@ import identity, { addFromUri, generateUri } from '../identity/identity'
 import partner from '../partner/partner'
 import location from '../location/location'
 import contact from '../contact/contact'
-import { Icon } from 'semantic-ui-react'
+import { Button, Icon } from 'semantic-ui-react'
 import Text from '../../components/Text'
 import { getActiveStep, MODULE_KEY, saveActiveStep, stepIndexes } from './GettingStarted'
 import { encryptBackup, generatePassword } from '.'
 import { statuses } from '../../components/Message'
+import ButtonDelayed from '../../components/ButtonDelayed'
+import { setToast } from '../../services/toast'
 
 const textsCap = translated({
 	backupLater: 'backup later',
@@ -78,6 +80,7 @@ const textsCap = translated({
 	passwordConfirmErr: 'passwords do not match!',
 	passwordConfirmLabel: 'confirm password',
 	passwordConfirmPlaceholder: 're-enter your password',
+	passwordCopiedToCB: 'your newly generated password has been copied to clipboard.',
 	passwordCrHeader: 'Enter a password matching the following criteria:',
 	passwordCrLength: 'between 8 and 64 characters',
 	passwordCrLower: 'lowercase letters',
@@ -92,6 +95,7 @@ const textsCap = translated({
 	passwordLabel: 'password',
 	passwordPlaceholder: 'enter a password for this backup',
 	proceed: 'proceed',
+	reloadingPage: 'reloading page...',
 	settings: 'settings',
 	userCredentials: 'user credentials',
 	warnBackupContent1: 'you are at risk of accidental data loss!',
@@ -119,9 +123,10 @@ export const steps = {
 
 export default function BackupForm(props) {
 	const [state] = iUseReducer(null, rxState => {
-		const { onSubmit, values = {} } = props
+		const { onSubmit, reload, values = {} } = props
 		const rxPassword = new BehaviorSubject('')
 		const rxPasswordGen = new BehaviorSubject('')
+		const rxPasswordConf = new BehaviorSubject('')
 		if ((values.confirmed || '').toLowerCase() !== steps.confirmed) {
 			values.confirmed = steps.unconfirmed
 		}
@@ -198,7 +203,16 @@ export default function BackupForm(props) {
 						
 						rxState.next({
 							message: {
-								content: textsCap.backupSuccessContent,
+								content: (
+									<div>
+										{textsCap.backupSuccessContent}
+										<br />
+										<br />
+										<div style={{ color: 'red' }}>
+											<big>{textsCap.reloadingPage}</big>
+										</div>
+									</div>
+								),
 								header: textsCap.backupSuccessHeader,
 								status: statuses.SUCCESS,
 							},
@@ -207,8 +221,9 @@ export default function BackupForm(props) {
 						isFn(onSubmit) && onSubmit(true, values)
 						if (redirectTo) {
 							window.location.href = redirectTo
-						} else {
-							// window.location.reload(true)
+						} else if (reload) {
+							// reload page to make sure user's password is prompted to be saved/updated by browser
+							setTimeout(() => window.location.reload(true), 2000)
 						}
 					} catch (err) {
 						rxState.next({
@@ -286,7 +301,14 @@ export default function BackupForm(props) {
 						e.stopPropagation()
 						const pw = generatePassword()
 						rxPassword.next(pw)
+						rxPasswordConf.next(pw)
 						rxPasswordGen.next(pw)
+						copyToClipboard(pw)
+						const msg = {
+							content: textsCap.passwordCopiedToCB,
+							status: statuses.SUCCESS,
+						}
+						setToast(msg, 0, 'generated-password')
 					},
 					style: { cursor: 'pointer' },
 					title: textsCap.passwordBtnTitle,
@@ -326,7 +348,7 @@ export default function BackupForm(props) {
 				},
 				placeholder: textsCap.passwordConfirmPlaceholder,
 				required: true,
-				rxValue: new BehaviorSubject(),
+				rxValue: rxPasswordConf,
 				type: 'password',
 				validate: (e, _, values) => {
 					const isConfirmed = values[inputNames.confirmed] === steps.confirmed
@@ -481,7 +503,11 @@ export default function BackupForm(props) {
 
 							confirm({
 								cancelButton: textsCap.passwordGenWarnClose,
-								confirmButton: textsCap.passwordGenWarnBtn,
+								confirmButton: (
+									<ButtonDelayed seconds={10}>
+										{textsCap.passwordGenWarnBtn}
+									</ButtonDelayed>
+								),
 								content: textsCap.passwordGenWarnContent,
 								header: (
 									<Text {...{
@@ -495,7 +521,6 @@ export default function BackupForm(props) {
 											textTransform: 'initial',
 										},
 									}}>
-										
 										{textsCap.passwordGenWarnHeader}
 									</Text>
 								),
@@ -519,20 +544,30 @@ export default function BackupForm(props) {
 
 	return <FormBuilder {...{ ...props, ...state }} />
 }
+BackupForm.propTypes = {
+	redirectTo: PropTypes.oneOfType([
+		PropTypes.string,
+		PropTypes.instanceOf(URL),
+	]),
+	// whether to reload page after backup has been confirmed.
+	// ONLY applicable if `redirectTo` is falsy.
+	reload: PropTypes.bool,
+	values: PropTypes.object,
+}
 BackupForm.defaultProps = {
 	closeOnSubmit: false,
 	header: textsCap.headerUnconfirmed,
-}
-BackupForm.propTypes = {
-	values: PropTypes.object,
+	reload: true,
 }
 /**
  * @name	BackupForm.checkAndWarn
  * @summary check if any of the criticial and essential data has not been backed up and ask user to backup.
  * 
- * @param	{Boolean}	criticalOnly	warn only if critical data (eg: user creds, identities) is not backed up.
+ * @param	{Boolean} criticalOnly	  (optional) warn only if one or more critical data (eg: user creds, identities) 
+ * 									  is not backed up.
+ * @param 	{Boolean} allowPageReload (optional) whether to allow BackupForm to reload to page in order to prompt user to save password by the password manager
  */
-BackupForm.checkAndWarn = async (criticalOnly = false) => {
+BackupForm.checkAndWarn = async (criticalOnly = false, allowPageReload = true) => {
 	const { id, fileBackupTS } = getUser() || {}
 	const query = { fileBackupTS: undefined }
 	const warnContacts = contact.search(query)
@@ -618,7 +653,8 @@ BackupForm.checkAndWarn = async (criticalOnly = false) => {
 							{critical && iconWarning}{title} {!hideCount && `(${map.size})`}
 							{subtitle && (
 								<span>
-									{' - '}{subtitle}
+									{' - '}
+									{subtitle}
 								</span>
 							)}
 						</li>
@@ -631,6 +667,8 @@ BackupForm.checkAndWarn = async (criticalOnly = false) => {
 		showForm(BackupForm, {
 			onClose: () => resolve(false),
 			onSubmit: ok => resolve(!!ok),
+			// prevent reloading page?
+			reload: allowPageReload,
 			values: { confirmed: 'yes' },
 		})
 	})

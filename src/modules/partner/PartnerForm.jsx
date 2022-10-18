@@ -688,6 +688,7 @@ export default class PartnerForm extends Component {
 	handleSubmit = deferred(() => {
 		const { autoSave, closeOnSubmit, onSubmit, warnBackup } = this.props
 		const { inputs, values } = this.state
+		const doBackup = warnBackup && !this.doUpdate
 		let address = values[inputNames.address]
 		let name = values[inputNames.name]
 		let visibility = values[inputNames.visibility]
@@ -745,13 +746,20 @@ export default class PartnerForm extends Component {
 				icon: true,
 				status: 'success',
 			},
-			onSubmit: (e, v, ok) =>
-				!ok && visibilityIn.rxValue.next(visibilityTypes.PUBLIC),
+			onSubmit: (e, v, ok) => {
+				doBackup && BackupForm.checkAndWarn(false)
+				if (!ok) return
+				
+				visibilityIn.rxValue.next(
+					visibilityTypes.PUBLIC
+				)
+			},
 			size: 'tiny',
 			values: { name, identity: address },
 		})
-
-		return !this.doUpdate && warnBackup && BackupForm.checkAndWarn(false)
+		return !addCompany
+			&& doBackup
+			&& BackupForm.checkAndWarn(false)
 	}, 100)
 
 	saveContact = (id) => {
@@ -820,6 +828,9 @@ PartnerForm.propTypes = {
 	autoSave: PropTypes.bool,
 	// values to be prefilled into inputs
 	values: PropTypes.object,
+	// warn user to download a backup.
+	// only applicable when adding a partner.
+	warnBackup: PropTypes.bool,
 }
 PartnerForm.defaultProps = {
 	autoSave: false,

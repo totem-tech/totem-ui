@@ -60,7 +60,18 @@ export const getById = id => toasts.get(id)
 // remove existing toast message
 export const removeToast = id => toasts.delete(id)
 
-// add/update toast message
+/**
+ * @name    setToast
+ * @summary add/update toast message
+ * 
+ * @param   {String|Object} message  toast message. For Object see: components/Message
+ * @param   {Number}        duration (optional) duration in milliseconds to automatically close the toast.
+ *                                   If `0`, auto-close will be disabled (displayed until manual close).
+ *                                   Default: `5000`
+ * @param   {String}        id       (optional) tpast ID
+ * 
+ * @returns {String}        id  
+ */
 export const setToast = (message, duration, id) => {
     // if text supplied use it as message content, without header
     message = !isStr(message) ? message : { content: message }
