@@ -208,7 +208,7 @@ export default function BackupForm(props) {
 						if (redirectTo) {
 							window.location.href = redirectTo
 						} else {
-							window.location.reload(true)
+							// window.location.reload(true)
 						}
 					} catch (err) {
 						rxState.next({
