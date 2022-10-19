@@ -29,7 +29,7 @@ import contact from '../contact/contact'
 import { Button, Icon } from 'semantic-ui-react'
 import Text from '../../components/Text'
 import { getActiveStep, MODULE_KEY, saveActiveStep, stepIndexes } from './GettingStarted'
-import { encryptBackup, generatePassword } from '.'
+import { decryptBackup, encryptBackup, generatePassword } from '.'
 import { statuses } from '../../components/Message'
 import ButtonDelayed from '../../components/ButtonDelayed'
 import { setToast } from '../../services/toast'
@@ -174,6 +174,7 @@ export default function BackupForm(props) {
 				reader.onload = file => {
 					try {
 						const { data, hash, timestamp } = values[inputNames.downloadData] || {}
+						const password = values[inputNames.password]
 						const redirectTo = values[inputNames.redirectTo]
 						const hashUpload = generateHash(
 							file.target.result,
@@ -181,7 +182,6 @@ export default function BackupForm(props) {
 							256,
 						)
 						const matched = hash === hashUpload
-
 						setTimeout(() => resolve(!matched && textsCap.backupFileInvalid))
 
 						if (!matched) {
@@ -190,7 +190,7 @@ export default function BackupForm(props) {
 						}
 
 						// update timestamp of identities and partners
-						backup.updateFileBackupTS(data, timestamp)
+						backup.updateFileBackupTS(timestamp)
 
 						// set as verified
 						findInput(inputs, inputNames.confirmed)
@@ -225,6 +225,7 @@ export default function BackupForm(props) {
 							setTimeout(() => window.location.reload(true), 2000)
 						}
 					} catch (err) {
+						console.error(err)
 						rxState.next({
 							message: {
 								content: `${err}`,
