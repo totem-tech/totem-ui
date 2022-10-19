@@ -67,15 +67,14 @@ export const ContactList = props => {
 
 			{
 				collapsing: true,
-				content: entry =>
-					[
-						{
-							icon: 'pencil',
-							onClick: () =>
-								showForm(ContactForm, { values: entry }),
-							title: textsCap.update,
-						},
-					].map((props, i) => <Button {...props} key={i} />),
+				content: entry => [{
+					icon: 'pencil',
+					onClick: () => showForm(ContactForm, {
+						autoSave: true,
+						values: entry,
+					}),
+					title: textsCap.update,
+				}].map((props, i) => <Button {...props} key={i} />),
 				draggable: false,
 				textAlign: 'center',
 				title: textsCap.action,
@@ -85,21 +84,19 @@ export const ContactList = props => {
 	}))
 
 	return (
-		<DataTable
-			{...{
-				...props,
-				...tableProps,
-				// keywords: 'first',
-				topLeftMenu: [
-					{
-						// add user contact details
-						content: textsCap.add,
-						icon: 'plus',
-						onClick: () => showForm(ContactForm),
-					},
-				],
-			}}
-		/>
+		<DataTable {...{
+			...props,
+			...tableProps,
+			// keywords: 'first',
+			topLeftMenu: [
+				{
+					// add user contact details
+					content: textsCap.add,
+					icon: 'plus',
+					onClick: () => showForm(ContactForm),
+				},
+			],
+		}} />
 	)
 }
 ContactList.propTypes = {}

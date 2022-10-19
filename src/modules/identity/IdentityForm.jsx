@@ -322,7 +322,10 @@ export default class IdentityForm extends Component {
 						onClick: e => {
 							e.preventDefault()
 							e.stopPropagation()
-							showForm(ContactForm, { values: c })
+							showForm(ContactForm, {
+								autoSave: true,
+								values: c,
+							})
 						},
 						size: 'mini',
 						// style adjustment to make sure height of the dropdown doesn't change because of the button

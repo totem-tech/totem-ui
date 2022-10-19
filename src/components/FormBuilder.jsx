@@ -68,7 +68,8 @@ export default class FormBuilder extends Component {
 			type,
 			validate,
 		} = input || {}
-		const isGroup = `${type}`.toLowerCase() === 'group' && isArr(childInputs)
+		const typeLC = `${type || 'text'}`.toLowerCase()
+		const isGroup = typeLC === 'group' && isArr(childInputs)
 		// add type="button" to prevent action/label button trigger when enter is pressed in any inputs
 		const arr = [action, inlineLabel]
 		arr.forEach(btn => {
@@ -107,7 +108,7 @@ export default class FormBuilder extends Component {
 				? childInputs.map(
 					this.addInterceptor(
 						values,
-						parentIndex || index
+						parentIndex || index,
 					)
 				  )
 				: undefined,

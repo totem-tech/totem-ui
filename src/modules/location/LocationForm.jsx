@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import { BehaviorSubject } from 'rxjs'
 import { arrSort, deferred, isBool, isFn, objHasKeys } from '../../utils/utils'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
@@ -9,6 +10,7 @@ import identities from '../identity/identity'
 import partners from '../partner/partner'
 import { get, remove, set } from './location'
 import { statuses } from '../../components/Message'
+import FormInput from '../../components/FormInput'
 
 const textsCap = translated(
 	{
@@ -77,6 +79,7 @@ export default class LocationForm extends Component {
 			submitText,
 			values,
 		} = props
+		const rxCountryCode = new BehaviorSubject()
 		this.id = id
 		const location = get(id)
 		values = { ...location, ...values }
@@ -184,31 +187,43 @@ export default class LocationForm extends Component {
 						width: 8,
 					},
 					{
-						label: textsCap.countryLabel,
+						hidden: true,
 						name: inputNames.countryCode,
-						options: arrSort(
-							storage.countries.map(([_, c]) => ({
-								altspellings: c.altSpellings.join(' '),
-								description: c.name,
-								flag: !noFlags.includes(c.code)
-									? c.code.toLowerCase()
-									: '',
-								key: c.code,
-								name: c.name,
-								text: c.code,
-								value: c.code,
-							})),
-							'text'
+						rxValue: rxCountryCode,
+					},
+					{
+						content: (
+							<FormInput {...{
+								label: textsCap.countryLabel,
+								name: inputNames.countryCode,
+								options: arrSort(
+									storage.countries.map(([_, c]) => ({
+										altspellings: c.altSpellings.join(' '),
+										description: c.name,
+										flag: !noFlags.includes(c.code)
+											? c.code.toLowerCase()
+											: '',
+										key: c.code,
+										name: c.name,
+										text: c.code,
+										value: c.code,
+									})),
+									'text'
+								),
+								placeholder: textsCap.countryPlaceholder,
+								required: true,
+								rxValue: rxCountryCode,
+								selection: true,
+								search: ['name', 'altspellings'],
+								style: {
+									minWidth: 120,
+								},
+								type: 'dropdown',
+								width: 8,
+							}} />
 						),
-						placeholder: textsCap.countryPlaceholder,
-						required: true,
-						selection: true,
-						search: ['name', 'altspellings'],
-						style: {
-							minWidth: 120,
-						},
-						type: 'dropdown',
-						width: 8,
+						name: inputNames.countryCode + '-html',
+						type: 'html',
 					},
 				],
 			},

@@ -283,44 +283,40 @@ export default class IdentityShareForm extends Component {
 			value,
 		})
 		includeIn.options = [
-			locationId &&
-				getOption(
-					idInputNames.locationId,
-					textsCap.includeLocation,
-					LocationForm,
-					{
-						autoSave: true,
-						id: locationId,
-						// disable remove button prevent location being deleted from here
-						inputsHidden: [locFormInputNames.removeBtn],
+			locationId && getOption(
+				idInputNames.locationId,
+				textsCap.includeLocation,
+				LocationForm,
+				{
+					autoSave: true,
+					id: locationId,
+					// disable remove button prevent location being deleted from here
+					inputsHidden: [locFormInputNames.removeBtn],
+				},
+				textsCap.updateLocation
+			),
+			contactId && getOption(
+				idInputNames.contactId,
+				textsCap.includeContact,
+				ContactForm,
+				{
+					autoSave: true,
+					// disable remove button prevent location being deleted from here
+					inputsHidden: [contactcInputNames.removeBtn],
+					values: {
+						[contactcInputNames.id]: contactId,
 					},
-					textsCap.updateLocation
-				),
-			contactId &&
-				getOption(
-					idInputNames.contactId,
-					textsCap.includeContact,
-					ContactForm,
-					{
-						autoSave: true,
-						// disable remove button prevent location being deleted from here
-						inputsHidden: [contactcInputNames.removeBtn],
-						values: {
-							[contactcInputNames.id]: contactId,
-						},
-					},
-					textsCap.updateContact
-				),
-			registeredNumber &&
-				getOption(
-					idInputNames.registeredNumber,
-					`${textsCap.includeRegNumber}: "${registeredNumber}"`
-				),
-			vatNumber &&
-				getOption(
-					idInputNames.vatNumber,
-					`${textsCap.includeVATNumber}: "${vatNumber}"`
-				),
+				},
+				textsCap.updateContact
+			),
+			registeredNumber && getOption(
+				idInputNames.registeredNumber,
+				`${textsCap.includeRegNumber}: "${registeredNumber}"`
+			),
+			vatNumber && getOption(
+				idInputNames.vatNumber,
+				`${textsCap.includeVATNumber}: "${vatNumber}"`
+			),
 		].filter(Boolean)
 		includeIn.hidden = includeIn.options.length === 0
 

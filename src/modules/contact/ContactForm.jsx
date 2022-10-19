@@ -1,5 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { BehaviorSubject } from 'rxjs'
 import FormBuilder, {
 	checkFormInvalid,
 	fillValues,
@@ -14,6 +15,7 @@ import { arrSort, isFn, objSetPropUndefined } from '../../utils/utils'
 import identities from '../identity/identity'
 import partners from '../partner/partner'
 import { get, newId, remove, set as save, validationConf } from './contact'
+import FormInput from '../../components/FormInput'
 
 const textsCap = translated(
 	{
@@ -74,6 +76,46 @@ export default function ContactForm(props) {
 			: !!existingEntry
 				? textsCap.update
 				: undefined
+		const handleRemoveContact = () => {
+			const { modalId, onRemove } = props
+			const { id, partnerIdentity } = values
+			let content
+			if (!partnerIdentity) {
+				// find identities that are associated with this contact
+				const identityMatches = Array.from(
+					identities.search({ contactId: id }, true)
+				)
+				content = (
+					<div>
+						{identityMatches.length > 0 && (
+							<div>
+								<b>{textsCap.usedByIdentites}</b>
+								<ul>
+									{identityMatches.map(([id, x]) => (
+										<li key={id}>{x.name}</li>
+									))}
+								</ul>
+							</div>
+						)}
+					</div>
+				)
+			}
+			confirm({
+				header: textsCap.removeContact,
+				content: content,
+				confirmButton: {
+					content: textsCap.remove,
+					negative: true,
+				},
+				onConfirm: () => {
+					remove(id)
+					isFn(onRemove) && onRemove(id, values)
+					modalId && closeModal(modalId)
+				},
+				size: 'mini',
+			})
+		}
+		const rxPhoneCode = new BehaviorSubject()
 		const inputs = [
 			{
 				...validationConf.name,
@@ -110,19 +152,45 @@ export default function ContactForm(props) {
 				unstackable: true,
 				inputs: [
 					{
-						autoComplete: 'off',
-						input: <input autoComplete='off' />,
-						label: textsCap.phoneCodeLabel,
+						hidden: true,
 						name: inputNames.phoneCode,
-						options: arrSort(countryOptions, 'description'),
-						placeholder: textsCap.phoneCodePlaceholder,
-						search: ['search'],
-						selection: true,
-						style: { minWidth: 100 },
-						styleContainer: { paddingRight: 0 },
-						type: 'dropdown',
-						width: 7,
+						rxValue: rxPhoneCode,
 					},
+					{
+						content: (
+							<FormInput {...{
+								autoComplete: 'off',
+								input: <input autoComplete='off' />,
+								label: textsCap.phoneCodeLabel,
+								name: inputNames.phoneCode,
+								options: arrSort(countryOptions, 'description'),
+								placeholder: textsCap.phoneCodePlaceholder,
+								rxValue: rxPhoneCode,
+								search: ['search'],
+								selection: true,
+								style: { minWidth: 100 },
+								styleContainer: { paddingRight: 0 },
+								type: 'dropdown',
+								width: 7,
+							}} />
+						),
+						name: inputNames.phoneCode + 'html',
+						type: 'html',
+					},
+					// {
+					// 	autoComplete: 'off',
+					// 	input: <input autoComplete='off' />,
+					// 	label: textsCap.phoneCodeLabel,
+					// 	name: inputNames.phoneCode,
+					// 	options: arrSort(countryOptions, 'description'),
+					// 	placeholder: textsCap.phoneCodePlaceholder,
+					// 	search: ['search'],
+					// 	selection: true,
+					// 	style: { minWidth: 100 },
+					// 	styleContainer: { paddingRight: 0 },
+					// 	type: 'dropdown',
+					// 	width: 7,
+					// },
 					{
 						...validationConf.phoneNumber,
 						customMessages: {
@@ -157,45 +225,7 @@ export default function ContactForm(props) {
 				icon: 'trash',
 				name: inputNames.removeBtn,
 				negative: true,
-				onClick: () => {
-					const { modalId, onRemove } = props
-					const { id, partnerIdentity } = values
-					let content
-					if (!partnerIdentity) {
-						// find identities that are associated with this contact
-						const identityMatches = Array.from(
-							identities.search({ contactId: id }, true)
-						)
-						content = (
-							<div>
-								{identityMatches.length > 0 && (
-									<div>
-										<b>{textsCap.usedByIdentites}</b>
-										<ul>
-											{identityMatches.map(([id, x]) => (
-												<li key={id}>{x.name}</li>
-											))}
-										</ul>
-									</div>
-								)}
-							</div>
-						)
-					}
-					confirm({
-						header: textsCap.removeContact,
-						content: content,
-						confirmButton: {
-							content: textsCap.remove,
-							negative: true,
-						},
-						onConfirm: () => {
-							remove(id)
-							isFn(onRemove) && onRemove(id, values)
-							modalId && closeModal(modalId)
-						},
-						size: 'mini',
-					})
-				},
+				onClick: handleRemoveContact,
 				styleContainer: { textAlign: 'center' },
 				type: 'button',
 			},
@@ -269,7 +299,7 @@ ContactForm.propTypes = {
 	}),
 }
 ContactForm.defaultProps = {
-	autoSave: true,
+	autoSave: false,
 	closeOnSubmit: true,
 	size: 'mini',
 }

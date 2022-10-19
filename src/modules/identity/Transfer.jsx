@@ -147,11 +147,6 @@ export default class Transfer extends Component {
                     type: 'dropdown',
                 },
                 {
-                    hidden: true,
-                    name: this.names.currencySent,
-                    rxValue: this.rxCurrencyReceived,
-                },
-                {
                     name: this.names.amountSentGroup,
                     inputs: [
                         {
@@ -164,6 +159,11 @@ export default class Transfer extends Component {
                             type: 'number',
                             useInput: true,
                             width: 9,
+                        },
+                        {
+                            hidden: true,
+                            name: this.names.currencySent,
+                            rxValue: this.rxCurrencyReceived,
                         },
                         {
                             content: (
@@ -196,11 +196,6 @@ export default class Transfer extends Component {
                     type: 'html',
                 },
                 {
-                    hidden: true,
-                    name: this.names.currencyReceived,
-                    rxValue: this.rxCurrencyReceived,
-                },
-                {
                     name: this.names.amountReceivedGroup,
                     type: 'group',
                     unstackable: true,
@@ -220,6 +215,11 @@ export default class Transfer extends Component {
                             type: 'number',
                             useInput: true,
                             width: 9,
+                        },
+                        {
+                            hidden: true,
+                            name: this.names.currencyReceived,
+                            rxValue: this.rxCurrencyReceived,
                         },
                         {
                             content: (
