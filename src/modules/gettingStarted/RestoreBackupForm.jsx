@@ -14,6 +14,7 @@ import BackupForm from './BackupForm'
 import { isHex } from 'web3-utils'
 import { decryptBackup } from '.'
 import { statuses } from '../../components/Message'
+import ButtonDelayed from '../../components/ButtonDelayed'
 
 const [texts, textsCap] = translated({
 	backupNow: 'backup now',
@@ -528,7 +529,7 @@ export default class RestoreBackupForm extends Component {
 
 		confirm({
 			cancelButton: <Button positive content={textsCap.cancel} />,
-			confirmButton: <Button negative content={textsCap.restore} />,
+			confirmButton: <ButtonDelayed content={textsCap.restore} negative seconds={5} />,
 			content: textsCap.confirmText,
 			onConfirm: execute,
 			size: 'mini',
