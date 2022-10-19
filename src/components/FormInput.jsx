@@ -16,6 +16,7 @@ import {
 	isPromise,
 	isSubjectLike,
 	objSetPropUndefined,
+	isDefined,
 } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
 import Message, { statuses } from './Message'
@@ -155,7 +156,6 @@ export class FormInput extends Component {
 		const hasVal = hasValue(isCheck ? data.checked : data.value)
 		const customMsgs = { ...errMsgs, ...customMessages }
 		let err, validatorConfig, isANum
-		let { value } = data
 
 		if (hasVal && !err) {
 			switch (typeLower) {
@@ -195,12 +195,11 @@ export class FormInput extends Component {
 				case 'text':
 				case 'textarea':
 				default:
-					value = `${value}`
+					data.value = `${!isDefined(data.value) ? '' : data.value}`
 					validatorConfig = validatorConfig || { type: TYPES.string }
 					break
 			}
 		}
-
 		// set min & max length error messages if not already defined
 		objSetPropUndefined(
 			customMsgs,
@@ -222,11 +221,8 @@ export class FormInput extends Component {
 			|| validatorConfig
 		if (!err && !!requireValidator) {
 			err = validator.validate(
-				value,
-				{
-					...this.props,
-					...validatorConfig,
-				},
+				data.value,
+				{ ...this.props, ...validatorConfig },
 				customMsgs
 			)
 		}
@@ -254,7 +250,7 @@ export class FormInput extends Component {
 					text,
 				} = c
 				const invalid = regex instanceof RegExp
-					? !regex.test(`${value}`)
+					? !regex.test(`${data.value}`)
 					: false
 				const icon = invalid
 					? iconInvalid

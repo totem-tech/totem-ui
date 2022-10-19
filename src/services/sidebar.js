@@ -179,9 +179,8 @@ export const sidebarItems = [
         title: textsCap.gettingStartedTitle,
     },
     // {
-    //     anchorStyle: {
-    //         background: 'deeppink',
-    //     },
+    //     anchorStyle: { background: 'deeppink' },
+    //     anchorStyleActive: { background: undefined },
     //     content: ClaimKAPEXView,
     //     contentProps: { style: { maxWidth: 600 } },
     //     icon: 'gift',

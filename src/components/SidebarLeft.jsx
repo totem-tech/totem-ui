@@ -112,6 +112,7 @@ const SidebarMenuItem = props => {
 	const {
 		active,
 		anchorStyle,
+		anchorStyleActive,
 		badge,
 		hidden,
 		href,
@@ -131,6 +132,7 @@ const SidebarMenuItem = props => {
 				style: {
 					...style,
 					...anchorStyle,
+					...active && anchorStyleActive,
 				},
 				target,
 				title,

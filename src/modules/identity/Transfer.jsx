@@ -29,6 +29,7 @@ import PartnerForm from '../partner/PartnerForm'
 import Balance from './Balance'
 import { get as getIdentity, rxIdentities, rxSelected } from './identity'
 import AddPartnerBtn from '../partner/AddPartnerBtn'
+import FormInput from '../../components/FormInput'
 
 const textsCap = translated({
     amount: 'amount',
@@ -81,6 +82,9 @@ export default class Transfer extends Component {
             to: 'to',
             txFee: 'txFeeHTML'
         }
+        this.rxCurrencyReceived = new BehaviorSubject()
+        this.rxCurrencySent = new BehaviorSubject()
+        this.rxCurrencyOptions = new BehaviorSubject([])
         this.state = {
             message: undefined,
             onChange: (_, values) => this.setState({ values }),
@@ -143,6 +147,11 @@ export default class Transfer extends Component {
                     type: 'dropdown',
                 },
                 {
+                    hidden: true,
+                    name: this.names.currencySent,
+                    rxValue: this.rxCurrencyReceived,
+                },
+                {
                     name: this.names.amountSentGroup,
                     inputs: [
                         {
@@ -157,18 +166,25 @@ export default class Transfer extends Component {
                             width: 9,
                         },
                         {
-                            // mimics a `selection` dropdown without limitting the width of the dropdown list
-                            className: 'selection fluid',
-                            disabled: true,
-                            label: textsCap.currencySentLabel,
-                            name: this.names.currencySent,
-                            onChange: this.handleCurrencyReceivedChange,
-                            options: [],
-                            rxValue: new BehaviorSubject(),
-                            search: ['text', 'description'],
-                            selection: false,
-                            type: 'dropdown',
-                            width: 7,
+                            content: (
+                                <FormInput {...{
+                                    // mimics a `selection` dropdown without limitting the width of the dropdown list
+                                    className: 'selection fluid',
+                                    disabled: true,
+                                    label: textsCap.currencySentLabel,
+                                    name: this.names.currencySent,
+                                    onChange: this.handleCurrencyReceivedChange,
+                                    options: [],
+                                    rxOptions: this.rxCurrencyOptions,
+                                    rxValue: this.rxCurrencyReceived,
+                                    search: ['text', 'description'],
+                                    selection: false,
+                                    type: 'dropdown',
+                                    width: 7,
+                                }} />
+                            ),
+                            name: this.names.currencySent + '-html',
+                            type: 'html',
                         },
                     ],
                     type: 'group',
@@ -178,6 +194,11 @@ export default class Transfer extends Component {
                     content: undefined,
                     name: this.names.txFee,
                     type: 'html',
+                },
+                {
+                    hidden: true,
+                    name: this.names.currencyReceived,
+                    rxValue: this.rxCurrencyReceived,
                 },
                 {
                     name: this.names.amountReceivedGroup,
@@ -201,19 +222,26 @@ export default class Transfer extends Component {
                             width: 9,
                         },
                         {
-                            // mimics a `selection` dropdown without limitting the width of the dropdown list
-                            className: 'selection fluid',
-                            direction: 'left',
-                            label: textsCap.currencyReceivedLabel,
-                            name: this.names.currencyReceived,
-                            onChange: this.handleCurrencyReceivedChange,
-                            options: [],
-                            required: true,
-                            rxValue: new BehaviorSubject(),
-                            search: ['text', 'description'],
-                            selection: false,
-                            type: 'dropdown',
-                            width: 7,
+                            content: (
+                                <FormInput {...{
+                                    // mimics a `selection` dropdown without limitting the width of the dropdown list
+                                    className: 'selection fluid',
+                                    direction: 'left',
+                                    label: textsCap.currencyReceivedLabel,
+                                    name: this.names.currencyReceived,
+                                    onChange: this.handleCurrencyReceivedChange,
+                                    options: [],
+                                    required: true,
+                                    rxOptions: this.rxCurrencyOptions,
+                                    rxValue: this.rxCurrencyReceived,
+                                    search: ['text', 'description'],
+                                    selection: false,
+                                    type: 'dropdown',
+                                    width: 7,
+                                }} />
+                            ),
+                            name: this.names.currencyReceived + '-html',
+                            type: 'html',
                         },
                     ],
                 },
@@ -232,8 +260,6 @@ export default class Transfer extends Component {
         const toIn = findInput(inputs, this.names.to)
         const currencyReceivedIn = findInput(inputs, this.names.currencyReceived)
         const currencySentIn = findInput(inputs, this.names.currencySent)
-        values[this.names.currencyReceived] = rxSelectedCurrency.value
-        values[this.names.currencySent] = rxSelectedCurrency.value
         fillValues(inputs, values)
         findInput(inputs, this.names.txFee).content = this.getTxFeeEl()
         this.setState({ inputs })
@@ -278,8 +304,11 @@ export default class Transfer extends Component {
                 text: currency,
                 value: currency,
             }))
-            currencyReceivedIn.options = options
-            currencySentIn.options = options
+
+            const { value: curSelected } = rxSelectedCurrency
+            currencyReceivedIn.rxValue.next(curSelected)
+            currencySentIn.rxValue.next(curSelected)
+            this.rxCurrencyOptions.next(options)
         })
     }
 
