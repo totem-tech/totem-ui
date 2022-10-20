@@ -143,7 +143,7 @@ export const rxSidebarState = new BehaviorSubject({
 })
 
 export const setSidebarState = (collapsed, visible) => {
-    const lastState = rxSidebarState.value
+    const lastState = { ...rxSidebarState.value }
     const isMobile = rxLayout.value === MOBILE
     // force expand on mobile mode
     collapsed = !isMobile && collapsed
@@ -385,12 +385,14 @@ export const getItem = name => findItem(name)
 export const setActive = (name, active = true, contentProps, hidden) => {
     const item = findItem(name)
     if (!item) return
+
     item.active = active
     item.hidden = isBool(hidden) ? hidden : item.hidden
     item.contentProps = { ...item.contentProps, ...contentProps }
     statuses.set(name, active)
     item.rxTrigger.next(uuid.v1())
-    const allInactive = sidebarItems.every(({ active, hidden }) => !active || hidden)
+    const allInactive = sidebarItems
+        .every(({ active, hidden }) => !active || hidden)
     rxAllInactive.next(allInactive)
 
     scrollTo(name)

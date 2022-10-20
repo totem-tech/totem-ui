@@ -149,7 +149,7 @@ const _SidebarMenuItem = props => {
 					if (e.shiftKey && getItem(name).active) return scrollTo(name)
 					const { active } = toggleActive(name)
 					setItem({ ...item, active })
-					active && isMobile && toggleSidebarState()
+					// active && isMobile && toggleSidebarState()
 				},
 			}}>
 				{badge && <Label color='red'>{badge}</Label>}

@@ -31,6 +31,7 @@ import { get as getIdentity, rxIdentities, rxSelected } from './identity'
 import AddPartnerBtn from '../partner/AddPartnerBtn'
 import FormInput from '../../components/FormInput'
 import { Reveal } from '../../components/buttons'
+import { useRxSubject } from '../../utils/reactHelper'
 
 const textsCap = translated({
     amount: 'amount',
@@ -68,7 +69,7 @@ const textsCap = translated({
 // notification type
 const TRANSFER_TYPE = 'transfer'
 
-export default class Transfer extends Component {
+export default class TransferForm extends Component {
     constructor(props) {
         super(props)
 
@@ -83,6 +84,7 @@ export default class Transfer extends Component {
             to: 'to',
             txFee: 'txFeeHTML'
         }
+        this.rxAddress = new BehaviorSubject()
         this.rxCurrencyReceived = new BehaviorSubject()
         this.rxCurrencySent = new BehaviorSubject()
         this.rxCurrencyOptions = new BehaviorSubject([])
@@ -97,12 +99,18 @@ export default class Transfer extends Component {
             },
             inputs: [
                 {
-                    label: undefined,
+                    label: (
+                        <FromInputLabel {...{
+                            rxAddress: this.rxAddress,
+                            rxCurrencyReceived: this.rxCurrencyReceived,
+                            rxCurrencySent: this.rxCurrencySent,
+                        }} />
+                    ),
                     name: this.names.from,
                     onChange: this.handleCurrencyReceivedChange,
                     options: [],
                     required: true,
-                    rxValue: new BehaviorSubject(''),
+                    rxValue: this.rxAddress,
                     search: ['text', 'value'],
                     selection: true,
                     type: 'dropdown',
@@ -164,7 +172,8 @@ export default class Transfer extends Component {
                         {
                             hidden: true,
                             name: this.names.currencySent,
-                            rxValue: this.rxCurrencyReceived,
+                            onChange: this.handleCurrencyReceivedChange,
+                            rxValue: this.rxCurrencySent,
                         },
                         {
                             content: (
@@ -174,12 +183,13 @@ export default class Transfer extends Component {
                                     disabled: true,
                                     label: textsCap.currencySentLabel,
                                     name: this.names.currencySent,
-                                    onChange: this.handleCurrencyReceivedChange,
                                     options: [],
                                     rxOptions: this.rxCurrencyOptions,
-                                    rxValue: this.rxCurrencyReceived,
+                                    rxValue: this.rxCurrencySent,
                                     search: ['text', 'description'],
                                     selection: false,
+                                    // selectOnBlur: false,
+                                    // selectOnNavigation: false,
                                     type: 'dropdown',
                                     width: 7,
                                 }} />
@@ -220,6 +230,7 @@ export default class Transfer extends Component {
                         {
                             hidden: true,
                             name: this.names.currencyReceived,
+                            onChange: this.handleCurrencyReceivedChange,
                             rxValue: this.rxCurrencyReceived,
                         },
                         {
@@ -230,13 +241,14 @@ export default class Transfer extends Component {
                                     direction: 'left',
                                     label: textsCap.currencyReceivedLabel,
                                     name: this.names.currencyReceived,
-                                    onChange: this.handleCurrencyReceivedChange,
                                     options: [],
                                     required: true,
                                     rxOptions: this.rxCurrencyOptions,
                                     rxValue: this.rxCurrencyReceived,
                                     search: ['text', 'description'],
                                     selection: false,
+                                    // selectOnBlur: false,
+                                    // selectOnNavigation: false,
                                     type: 'dropdown',
                                     width: 7,
                                 }} />
@@ -300,8 +312,23 @@ export default class Transfer extends Component {
                 text: (
                     <Reveal {...{
                         content: currency,
-                        contentHidden: `${currency} - ${name}`,
-                        // style: { whiteSpace: 'pre-wrap'}
+                        contentHidden: (
+                            <span>
+                                <span style={{ fontWeight: 'bold' }}>
+                                    {currency}
+                                </span>
+                                {' - '}
+                                <span style={{ color: 'grey' }}>
+                                    {name}
+                                </span>
+                            </span>
+                        ),
+                        El: 'div',
+                        style: {
+                            margin: '-10px -15px',
+                            padding: '10px 15px',
+                            whiteSpace: 'pre-wrap',
+                        }
                     }} />
                 ),
                 value: currency,
@@ -423,7 +450,7 @@ export default class Transfer extends Component {
         this.setState({ inputs })
     }, 100)
 
-    handleCurrencyReceivedChange = deferred((_, values) => {
+    handleCurrencyReceivedChange = (_, values) => {
         if (!this.currencies) return
 
         const { inputs } = this.state
@@ -437,7 +464,7 @@ export default class Transfer extends Component {
         if (!isValidNumber(amountReceived)) return
         amountReceivedIn.rxValue.next('')
         amountReceivedIn.rxValue.next(amountReceived)
-    }, 200)
+    }
 
     handleSubmit = (_, values) => {
         const amountReceived = values[this.names.amountReceived]
@@ -513,43 +540,9 @@ export default class Transfer extends Component {
         })
     }
 
-    render = () => {
-        const { inputs, values } = this.state
-        const address = rxSelected.value
-        const currencyReceived = values[this.names.currencyReceived]
-        const currencySent = rxSelectedCurrency.value
-        const dualBalance = currencyReceived && currencyReceived !== currencySent
-        if (this.address !== address || this.curs !== currencyReceived + currencySent) {
-            this.curs = currencyReceived + currencySent
-            this.address = address
-            const fromIn = findInput(inputs, this.names.from)
-            fromIn.label = !address ? undefined : (
-                <span>
-                    {textsCap.payerIdentity} (
-                    <Balance {...{
-                        address,
-                        emptyMessage: textsCap.loadingBalance + '...',
-                        prefix: `${textsCap.availableBalance}: `,
-                        unitDisplayed: currencySent,
-                        suffix: !dualBalance ? '' : (
-                            <Balance {...{
-                                address,
-                                prefix: ' | ',
-                                showDetailed: null,
-                                unitDisplayed: currencyReceived,
-                            }} />
-                        )
-                    }} />
-                    )
-                </span>
-            )
-        }
-
-        return <FormBuilder {...{ ...this.props, ...this.state }} />
-    }
+    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
-
-Transfer.propTypes = {
+TransferForm.propTypes = {
     values: PropTypes.shape({
         amount: PropTypes.number,
         from: PropTypes.string,
@@ -557,11 +550,41 @@ Transfer.propTypes = {
         currency: PropTypes.string,
     })
 }
-Transfer.defaultProps = {
+TransferForm.defaultProps = {
     inputsDisabled: ['from'],
     header: textsCap.queueTitle,
     size: 'tiny',
     submitText: textsCap.send,
+}
+const FromInputLabel = ({ rxAddress, rxCurrencyReceived, rxCurrencySent }) => {
+    const [address] = useRxSubject(rxAddress)
+    const [currencyReceived] = useRxSubject(rxCurrencyReceived)
+    const [currencySent = currencyReceived] = useRxSubject(rxCurrencySent)
+    const dualBalance = currencyReceived !== currencySent
+    const key = `${dualBalance}${address}${currencyReceived}${currencySent}`
+    return (
+        <span>
+            {textsCap.payerIdentity} (
+                <Balance {...{
+                    address,
+                    emptyMessage: textsCap.loadingBalance + '...',
+                    key,
+                    prefix: `${textsCap.availableBalance}: `,
+                    showDetailed: true,
+                    suffix: !dualBalance ? undefined : (
+                        <Balance {...{
+                            address,
+                            key,
+                            prefix: ' | ',
+                            showDetailed: null,
+                            unitDisplayed: currencyReceived,
+                        }} />
+                    ),
+                    unitDisplayed: currencySent,
+                }} />
+            )
+        </span>
+    )
 }
 
 // set transfer notificaton item view handler

@@ -9,6 +9,8 @@ import { translated } from '../../services/language'
 import { unsubscribe } from '../../services/react'
 // modules
 import Currency from '../currency/Currency'
+import { useRxSubject } from '../../utils/reactHelper'
+import { MOBILE, rxLayout } from '../../services/window'
 
 const textsCap = translated({
 	loadingAccBal: 'loading account balance',
@@ -21,10 +23,13 @@ export const Balance = props => {
 		address,
 		emptyMessage,
 		lockSeparator,
+		prefix,
 		showDetailed,
 		style,
+		suffix,
 		unitDisplayed,
 	} = props
+	const isMobile = useRxSubject(rxLayout, l => l === MOBILE)[0]
 	const balance = useBalance(address)
 	const locks = userLocks(address)
 	const isLoading = !isValidNumber(balance)
@@ -37,11 +42,6 @@ export const Balance = props => {
 	const getContent = showLocked => () => (
 		<Currency {...{
 			...props,
-			prefix: showLocked && `${textsCap.total}: `,
-			style,
-			value: showLocked
-				? balance
-				: freeBalance,
 			emptyMessage: emptyMessage !== null && (
 				<span title={!isLoading ? '' : textsCap.loadingAccBal}>
 					<Icon {...{
@@ -53,18 +53,27 @@ export const Balance = props => {
 					{emptyMessage}
 				</span>
 			),
-			suffix: showLocked && (
-				<Currency {...{
-					prefix: (
-						<span>
-							{lockSeparator}
-							{textsCap.locked}:{' '}
-						</span>
-					),
-					value: lockedBalance,
-					unitDisplayed,
-				}} />
-			),
+			prefix: showLocked
+				? `${textsCap.total}: `
+				: prefix,
+			style,
+			suffix: !showLocked
+				? suffix
+				: (
+					<Currency {...{
+						prefix: (
+							<span>
+								{lockSeparator}
+								{textsCap.locked}:{' '}
+							</span>
+						),
+						value: lockedBalance,
+						unitDisplayed,
+					}} />
+				),
+			value: showLocked
+				? balance
+				: freeBalance,
 		}} />
 	)
 	return showDetailed === null
@@ -74,7 +83,8 @@ export const Balance = props => {
 				content: getContent(!showDetailed),
 				contentHidden: getContent(showDetailed),
 				ready: !isLoading,
-				toggleOnClick: true,
+				toggleOnClick: isMobile,
+				toggleOnHover: !isMobile,
 			}} />
 		)
 }
@@ -90,7 +100,7 @@ Balance.defaultProps = {
 	lockSeparator: ' | ',
 	showDetailed: false,
 }
-export default React.memo(Balance)
+export default Balance
 
 /**
  * @name    useBalance

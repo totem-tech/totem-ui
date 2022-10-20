@@ -328,7 +328,7 @@ class FormBuilder extends Component {
 						: handleSubmit(...args),
 					positive: isBool(positive) ? positive : true,
 					style: {
-						float: !modal ? 'right' : undefined,
+						// float: !modal ? 'right' : undefined,
 						paddingLeft: icon ? 10 : undefined,
 						marginLeft: modal ? undefined : 3,
 						...style,
@@ -364,6 +364,8 @@ class FormBuilder extends Component {
 		El = El || (modal ? 'div' : undefined)
 		const FormEl = El || Invertible
 		const isForm = !El || ['form', Form].includes(El)
+		msg = true
+
 		const form = (
 			<FormEl {...{
 				...!isForm && { className: 'ui form' },
@@ -382,7 +384,7 @@ class FormBuilder extends Component {
 				{inputs.map(props => <FormInput {...props} />)}
 				{/* Include submit button if not a modal */}
 				{!modal && !hideFooter && (
-					<div>
+					<div style={{ textAlign: 'right' }}>
 						{submitBtn}
 						{msg && <Message {...message} />}
 					</div>

@@ -193,57 +193,57 @@ export const Reveal = React.memo(function Reveal(props){
 		children,
 		content = children,
 		contentHidden,
-		defaultVisible = false,
-		El = 'span',
-		exclusive = true,
+		defaultVisible,
+		El,
+		exclusive,
 		ignoreAttributes,
 		onClick,
+		onMouseHover,
 		onMouseEnter,
 		onMouseLeave,
 		ready,
 		style,
-		toggleOnClick = false,
-		toggleOnMousePresence: onHover = true,
+		toggleOnClick,
+		toggleOnHover,
 	} = props
 	const [visible, setVisible] = useState(defaultVisible)
 	const getContent = useCallback(c => isFn(c) ? c() : c)
 	const triggerEvent = useCallback((enable, func, show) => async (...args) => {
-		args[0].preventDefault()
 		if (!enable) return
 		
 		const _ready = await (isFn(ready) ? ready() : ready)
 		if (!_ready) return
 
 		isFn(func) && func(...args)
-		setVisible(isBool(show) ? show : !visible)
+		setVisible(show)
 	}, [setVisible, ready, visible])
 	
 	children = !visible
 		? getContent(content)
 		: exclusive
 			? getContent(contentHidden)
-			: (
-				<React.Fragment>
-					{getContent(content)}
-					<div onClick={exclusive && (e => e.preventDefault() | e.stopPropagation())}>
+			: [
+				<span key='c'>{getContent(content)}</span>,
+					<span key='ch' onClick={exclusive && (e => e.preventDefault() | e.stopPropagation())}>
 						{getContent(contentHidden)}
-					</div>
-				</React.Fragment>
-			)
+					</span >
+			]
 
-	return (
-		<El {...{
-			...objWithoutKeys(props, ignoreAttributes),
-			children,
-			onClick: triggerEvent(toggleOnClick, onClick, null),
-			onMouseEnter: triggerEvent(onHover, onMouseEnter, true),
-			onMouseLeave: triggerEvent(onHover, onMouseLeave, false),
-			style: {
-				cursor: 'pointer',
-				...style,
-			},
-		}} />
-	)
+	const elProps = {
+		...objWithoutKeys(props, ignoreAttributes),
+		children,
+		...toggleOnClick && { onClick: triggerEvent(true, onClick, !visible) },
+		...toggleOnHover && {
+				onMouseEnter: triggerEvent(true, onMouseEnter, true),
+				onMouseOver: triggerEvent(true, onMouseHover, true),
+				onMouseLeave: triggerEvent(true, onMouseLeave, false),
+		},
+		style: {
+			cursor: 'pointer',
+			...style,
+		},
+	}
+	return <El {...elProps} />
 })
 Reveal.propTypes = {
 	// content to show when visible
@@ -268,11 +268,11 @@ Reveal.propTypes = {
 	// whether to triggle visibility on mouse click
 	toggleOnClick: PropTypes.bool,
 	// whether to trigger visibility on mouse enter and leave
-	toggleOnMousePresence: PropTypes.bool,
+	toggleOnHover: PropTypes.bool,
 }
 Reveal.defaultProps = {
 	defaultVisible: false,
-	El: 'div',
+	El: 'span',
 	exclusive: true,
 	ignoreAttributes: [
 		'content',
@@ -280,14 +280,15 @@ Reveal.defaultProps = {
 		'defaultVisible',
 		'El',
 		'exclusive',
+		'onClick',
 		'ready',
 		'ignoreAttributes',
 		'toggleOnClick',
-		'toggleOnMousePresence',
+		'toggleOnHover',
 	],
 	ready: true,
 	toggleOnClick: false,
-	toggleOnMousePresence: true,
+	toggleOnHover: true,
 }
 
 export const UserID = React.memo(function UserId(props) {
@@ -363,7 +364,13 @@ UserID.propTypes = {
 }
 UserID.defaultProps = {
 	El: 'span',
-	ignoreAttributes: ['El', 'ignoreAttributes', 'prefix', 'suffix', 'userId'],
+	ignoreAttributes: [
+		'El',
+		'ignoreAttributes',
+		'prefix',
+		'suffix',
+		'userId',
+	],
 }
 
 UserID.showModal = (userId, partnerAddress) => {
