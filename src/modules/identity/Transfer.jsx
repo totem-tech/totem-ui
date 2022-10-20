@@ -30,6 +30,7 @@ import Balance from './Balance'
 import { get as getIdentity, rxIdentities, rxSelected } from './identity'
 import AddPartnerBtn from '../partner/AddPartnerBtn'
 import FormInput from '../../components/FormInput'
+import { Reveal } from '../../components/buttons'
 
 const textsCap = translated({
     amount: 'amount',
@@ -295,13 +296,20 @@ export default class Transfer extends Component {
         getCurrencies().then(currencies => {
             this.currencies = currencies
             const options = this.currencies.map(({ currency, name }) => ({
-                description: (
-                    <span className='description' style={{ fontSize: '75%' }}>
-                        {name}
-                    </span>
-                ),
+                // description: (
+                //     <span className='description' style={{ fontSize: '75%' }}>
+                //         {name}
+                //     </span>
+                // ),
                 key: currency,
-                text: currency,
+                // text: currency,
+                text: (
+                    <Reveal {...{
+                        content: currency,
+                        contentHidden: `${currency} - ${name}`,
+                        style: { whiteSpace: 'pre-wrap'}
+                    }} />
+                ),
                 value: currency,
             }))
 

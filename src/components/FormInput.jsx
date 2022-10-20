@@ -156,6 +156,7 @@ export class FormInput extends Component {
 		const hasVal = hasValue(isCheck ? data.checked : data.value)
 		const customMsgs = { ...errMsgs, ...customMessages }
 		let err, validatorConfig, isANum
+		let {value} = data
 
 		if (hasVal && !err) {
 			switch (typeLower) {
@@ -189,13 +190,14 @@ export class FormInput extends Component {
 					data.value = !data.value
 						? data.value
 						: parseFloat(data.value)
+					value = data.value
 					break
 				case 'hex':
 					validatorConfig = { type: TYPES.hex }
 				case 'text':
 				case 'textarea':
 				default:
-					data.value = `${!isDefined(data.value) ? '' : data.value}`
+					value = `${!isDefined(value) ? '' : value}`
 					validatorConfig = validatorConfig || { type: TYPES.string }
 					break
 			}
@@ -221,7 +223,7 @@ export class FormInput extends Component {
 			|| validatorConfig
 		if (!err && !!requireValidator) {
 			err = validator.validate(
-				data.value,
+				value,
 				{ ...this.props, ...validatorConfig },
 				customMsgs
 			)
@@ -250,7 +252,7 @@ export class FormInput extends Component {
 					text,
 				} = c
 				const invalid = regex instanceof RegExp
-					? !regex.test(`${data.value}`)
+					? !regex.test(`${value}`)
 					: false
 				const icon = invalid
 					? iconInvalid
